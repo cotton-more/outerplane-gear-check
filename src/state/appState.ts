@@ -1,6 +1,7 @@
 // Состояние страницы и все переходы — чистый reducer, без React и DOM.
 import { GRADES, SLOTS, isArmor, type Index } from '../data';
-import type { Grade, SlotId } from '../data/types';
+import type { GearKind, Grade, SlotId } from '../data/types';
+import { epicMains, legendMains } from '../logic/builds';
 import type { Settings, Stage } from '../logic/context';
 import type { CharFilter } from '../logic/lists';
 import { maxSubs, type Subs } from '../logic/subs';
@@ -155,4 +156,35 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
     cOwned: bool(p.cOwned, false),
     cAll: bool(p.cAll, false),
   };
+}
+
+// --- недовведённый предмет: отдельный ключ 'ogc.item'. Android выгружает PWA из памяти, пока ты в игре, —
+// после перезапуска продолжаешь с того же места; «Далее» очищает.
+
+export type PersistedItem = Pick<AppState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'>;
+
+export const toPersistedItem = (s: AppState): PersistedItem =>
+  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs });
+
+// сохранённый предмет → состояние; всё, что не сходится с текущими данными, слотом и грейдом, отбрасывается
+export function restoreItem(s: AppState, saved: unknown, idx: Index): AppState {
+  if (!saved || typeof saved !== 'object') return s;
+  const r = saved as Record<string, unknown>;
+  const armor = isArmor(s.slot);
+  const legend = !armor && s.grade === 'unique';
+  const kind = s.slot as GearKind;
+  const setId = armor && typeof r.setId === 'string' && idx.SET[r.setId] ? r.setId : null;
+  const itemKey = legend && typeof r.itemKey === 'string' && idx.ITEM[kind][r.itemKey] ? r.itemKey : null;
+  const unlisted = legend && !itemKey && r.unlisted === true;
+  const item = itemKey ? idx.ITEM[kind][itemKey] : null;
+  const mains = armor ? [] : item ? [...item.mains, ...item.extraMains] : unlisted ? legendMains(idx, kind) : legend ? [] : epicMains(idx, kind);
+  const main = typeof r.main === 'string' && mains.includes(r.main) ? r.main : null;
+  const subs: Subs = {};
+  if (r.subs && typeof r.subs === 'object') {
+    for (const [k, v] of Object.entries(r.subs as Record<string, unknown>)) {
+      if (Object.keys(subs).length >= maxSubs(s.grade)) break;
+      if (idx.SUB[k] && k !== main && Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 4) subs[k] = v as number;
+    }
+  }
+  return { ...s, setId, itemKey, main, unlisted, subs };
 }
