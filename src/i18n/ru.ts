@@ -33,6 +33,7 @@ export const ru = {
     soFar: (good: string, who: string) => `Пока полезных ${good}. Лучший кандидат: ${who}.`,
     topRoll: 'Топ-ролл',
     worthUpgrading: 'Стоит прокачать',
+    flatHint: (key: string) => `Проверь ${key}: без знака % это flat, а билдам нужен ${key}% — flat им почти ничего не даёт. Если на предмете ${key}%, выбери ${key}%.`,
     roll: (good: string, n: number, yellow: number, max: number, level: 'high' | 'mid' | 'low') =>
       `Ролл: полезных ${good} из ${n}, жёлтых сегментов на них ${yellow} из ${max} возможных — ${{ high: 'высокий, стоит вкладываться в прокачку', mid: 'средний', low: 'низкий' }[level]}.`,
   },
@@ -65,6 +66,12 @@ export const ru = {
     best: (who: string, good: string, n: number, list: string) => `Лучше всего: ${who}. Полезны ${good} из ${n}: ${list}.`,
     spdCarries: (good: string, roll: number) => `Полезных всего ${good}, но SPD с ${roll} жёлтыми сегментами вытягивает.`,
     eventQuality: 'Все 4 сабстата с 3 жёлтыми сегментами (3×4) — ивентовое качество.',
+    rerollOne: (key: string) =>
+      `Лишний сабстат — ${key}: его одного можно перебросить Transistone (Individual), остальные три закрепятся. По гайду outerpedia Transistone тратят на Irregular-предметы и красную броню.`,
+    weakEpicTitle: 'Разбирай — полезные, но слабые',
+    weakEpic: (who: string, n: number, top: string[], yellow: number, max: number) =>
+      `Все ${n} сабстата полезны для ${who}, но это нижние ступени приоритета: главного (${top.join(', ')}) нет, жёлтых сегментов — ${yellow} из ${max}. Вкладываться в такой Epic невыгодно: Transistone на Epic не тратят (гайд outerpedia), а в Breakthrough для Legendary он не годится.`,
+    weakEpicKeepIf: (top: string[], yellow: number) => `Оставить стоило бы с ${top.join(' или ')} либо с ${yellow}+ жёлтыми сегментами на полезных статах.`,
     wrongSubs: (set: string) => `Носят ${set} Set, но сабстаты не те`,
     fodderTitle: 'Фоддер — сабстаты не дотянули',
     fodderBest: (who: string, good: string, list: string) => `Лучший вариант: ${who}, полезны только ${good}: ${list}.`,

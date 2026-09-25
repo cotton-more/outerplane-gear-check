@@ -106,6 +106,14 @@ export function dedupe(list: Omit<Row, 'alt'>[], rank: (r: Omit<Row, 'alt'>) => 
   return [...seen.values()];
 }
 
+// flat-статы предмета, которые не засчитались, хотя их ось (ATK/DEF/HP) у билда в приоритете, —
+// частая путаница: на предмете HP%, а отмечен HP. Если %-версия тоже отмечена, путаницы нет.
+export function flatMisses(m: Omit<Row, 'alt'>): string[] {
+  const marked = new Set(m.parts.map((p) => p.key));
+  const wanted = (axis: string) => m.b.subs.some((tier, t) => (CFG.tierCredit[t] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
+  return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
+}
+
 export interface RollInfo { level: 'high' | 'mid' | 'low'; text: string }
 
 // «Ролл» предмета: сколько сабстатов полезны лучшему кандидату и сколько на них жёлтых сегментов.

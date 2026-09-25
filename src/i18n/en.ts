@@ -20,6 +20,7 @@ export const en: Texts = {
     soFar: (good, who) => `Useful so far: ${good}. Best candidate: ${who}.`,
     topRoll: 'Top roll',
     worthUpgrading: 'Worth upgrading',
+    flatHint: (key) => `Check ${key}: without a % sign it's flat, but builds want ${key}% — flat gives them almost nothing. If the item has ${key}%, pick ${key}% instead.`,
     roll: (good, n, yellow, max, level) =>
       `Roll: ${good} of ${n} useful, ${yellow} of ${max} possible yellow segments on them — ${{ high: 'high, worth investing in', mid: 'average', low: 'low' }[level]}.`,
   },
@@ -50,6 +51,12 @@ export const en: Texts = {
     best: (who, good, n, list) => `Best for: ${who}. Useful ${good} of ${n}: ${list}.`,
     spdCarries: (good, roll) => `Only ${good} useful, but SPD with ${roll} yellow segments carries it.`,
     eventQuality: 'All 4 substats with 3 yellow segments (3×4) — event quality.',
+    rerollOne: (key) =>
+      `The odd one out is ${key}: a Transistone (Individual) rerolls just it and locks the other three. outerpedia's guide spends Transistones on Irregular gear and red armor.`,
+    weakEpicTitle: 'Dismantle — useful but weak',
+    weakEpic: (who, n, top, yellow, max) =>
+      `All ${n} substats are useful for ${who}, but they're the lower tiers of the priority: none of the key stats (${top.join(', ')}), and ${yellow} of ${max} yellow segments. Not worth investing in such an Epic: Transistones aren't spent on Epics (outerpedia's guide), and it can't be Breakthrough fodder for a Legendary.`,
+    weakEpicKeepIf: (top, yellow) => `It would be worth keeping with ${top.join(' or ')}, or with ${yellow}+ yellow segments on useful stats.`,
     wrongSubs: (set) => `Wear ${set} Set, but the substats don't fit`,
     fodderTitle: 'Fodder — the substats fall short',
     fodderBest: (who, good, list) => `Best option: ${who}, only ${good} useful: ${list}.`,

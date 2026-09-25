@@ -5,7 +5,7 @@ import { CFG } from '../config';
 import type { GearKind } from '../data/types';
 import { buildsOf, gearList, gearRef, slotMains, uniqChars, type BuildRef } from './builds';
 import type { Ctx } from './context';
-import { dedupe, rollInfo, rows, type Row } from './score';
+import { dedupe, flatMisses, rollInfo, rows, type Row } from './score';
 import { maxSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
@@ -68,6 +68,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
       res.lines.push(G.weakLine(s.main ?? '', cands.length, who, fmtGood(bestGood)));
       if (roll) res.lines.push(roll.text);
       if (bestGood >= tempNeed) res.lines.push(G.markYellow(CFG.tempYellow));
+      for (const k of flatMisses(best)) res.lines.push(t.verdict.flatHint(k));
       res.sections.push({ title: G.byMain, rows: cands, collapsed: true, mainNote: s.main });
     }
     return true;

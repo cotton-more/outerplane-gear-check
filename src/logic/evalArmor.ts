@@ -3,7 +3,7 @@ import { CFG } from '../config';
 import { GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
-import { dedupe, rollInfo, rows, type Row } from './score';
+import { dedupe, flatMisses, rollInfo, rows, type Row } from './score';
 import { maxSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
@@ -35,7 +35,10 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   const judged = all.filter((x) => x.b.subs.some((tier) => tier.length));
   const spdRoll = subs.SPD || 0;
-  const qualifies = (m: Scored) => m.good != null && (m.good >= CFG.keepCount || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll));
+  // Epic: три полезных — ещё не повод держать, если это нижние ступени приоритета с минимальным роллом
+  const topTier = (m: Scored) => m.parts.some((p) => p.ok && (p.key === 'SPD' || (p.tier ?? Infinity) < CFG.epicTopTiers));
+  const strong = (m: Scored) => legend || topTier(m) || m.yellow >= CFG.epicYellow;
+  const qualifies = (m: Scored) => m.good != null && ((m.good >= CFG.keepCount && strong(m)) || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll));
   res.qualifies = qualifies;
   const rank = (r: Scored) => (qualifies(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
   const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, new Set(), (x) => ({ combos: combosWith(x.b, set.id) })), rank);
@@ -84,6 +87,9 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     if (best.yellow >= CFG.godYellow || (best.spd && spdRoll >= 3)) res.badge = t.verdict.topRoll;
     else if (roll && roll.level === 'high') res.badge = t.verdict.worthUpgrading;
     if (legend && nSubs === 4 && Object.values(subs).every((r) => r >= 3)) res.lines.push(A.eventQuality);
+    // Legendary с одним лишним сабстатом: Transistone (Individual) меняет только его, остальные закрепляются
+    const extra = best.parts.filter((p) => !p.ok);
+    if (legend && nSubs === 4 && extra.length === 1) res.lines.push(A.rerollOne(extra[0].key));
     res.sections.push({ title: t.verdict.suits, rows: keepers, limit: 12, count: keepers.length });
     const rest = scoped.filter((m) => !qualifies(m));
     if (rest.length) res.sections.push({ title: A.wrongSubs(set.short), rows: rest, collapsed: true });
@@ -97,7 +103,13 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     othersSection();
     return res;
   }
-  if (legend && settings.fodder && !partial) {
+  if (!legend && !partial && bestGood >= CFG.keepCount) {
+    // все сабстаты Epic полезны, но слабые: ни SPD, ни стата с верхних ступеней, ролл ниже порога
+    const top = [...new Set(['SPD', ...best.b.subs.slice(0, CFG.epicTopTiers).flat().map((k) => k.trim()).filter(Boolean)])];
+    res.v = 'junk';
+    res.title = A.weakEpicTitle;
+    res.lines.push(A.weakEpic(who, nSubs, top, best.yellow, 3 * nSubs), A.weakEpicKeepIf(top, CFG.epicYellow));
+  } else if (legend && settings.fodder && !partial) {
     res.v = 'fodder';
     res.title = A.fodderTitle;
     res.lines.push(bestGood ? A.fodderBest(who, fmtGood(bestGood), okList) : A.noneNeeded(set.short));
@@ -109,6 +121,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     if (!legend && bestGood >= 2) res.lines.push(A.epicTwo);
     if (legend && !partial) res.lines.push(A.enableFodder(set.short));
   }
+  for (const k of flatMisses(best)) res.lines.push(t.verdict.flatHint(k));
   if (spdHint) res.lines.push(A.checkSpd(CFG.spdRoll));
   res.sections.push({ title: whoWears, rows: scoped, collapsed: true });
   // предмет хорош для тех, кого нет в ростере — не даём разобрать молча
