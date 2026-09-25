@@ -1,6 +1,6 @@
 // Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
 // слот → грейд + сет/предмет/main → строки сабстатов. Конкретные значения выбираются в окнах (Sheet).
-import { useState, type Dispatch } from 'react';
+import { useEffect, useRef, useState, type Dispatch } from 'react';
 import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
 import type { Ctx } from '../../logic/context';
@@ -23,6 +23,13 @@ export function EvalPanel({ s, dispatch, ctx, onNext }: { s: AppState; dispatch:
   const { D, SET, ITEM } = ctx.idx;
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
+  // окно закрылось — следующая пустая строка сабстата встаёт над плашкой вердикта, если была под ней.
+  // В эффекте, а не сразу: к этому моменту шторка уже сняла блокировку прокрутки страницы.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open === null && wasOpen.current) document.querySelector('.form .subadd')?.scrollIntoView({ block: 'nearest' });
+    wasOpen.current = open !== null;
+  }, [open]);
   const armor = isArmor(s.slot);
   const kind = s.slot as GearKind;
   const epic = s.grade === 'rare';

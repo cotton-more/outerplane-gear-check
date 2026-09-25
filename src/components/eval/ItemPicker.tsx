@@ -19,13 +19,13 @@ export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
           onChange={(e) => setQ(e.target.value)} autoComplete="off" enterKeyHint="search" />
         <div className="filt">
           {Object.entries(ctx.idx.D.classes).map(([k, v]) => (
-            <button key={k} type="button" className="fbtn" aria-pressed={cls === k} onClick={() => setCls(cls === k ? '' : k)}>
-              <Img k={'class:' + k} />{v}
+            <button key={k} type="button" className="fbtn" aria-pressed={cls === k} aria-label={v} title={v} onClick={() => setCls(cls === k ? '' : k)}>
+              <Img k={'class:' + k} /><span>{v}</span>
             </button>
           ))}
         </div>
+        <button type="button" className="linkbtn unlisted" onClick={onUnlisted}>нет в списке →</button>
       </div>
-      <button type="button" className="btn unlisted" onClick={onUnlisted}>Нет в списке — оценить по main stat</button>
       <div className="items">
         {list.length ? list.map(({ i, n }) => (
           <button key={i.key} type="button" className={`item${i.users ? '' : ' unused'}`} aria-pressed={current === i.key} onClick={() => onPick(i.key)}>
@@ -35,7 +35,12 @@ export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
               <span>{i.passives[0] ? i.passives[0].name : 'без пассивки'} · {i.users ? (ctx.scoped ? `${n} из ростера` : `в билдах у ${n}`) : 'нет в билдах'}</span>
             </div>
           </button>
-        )) : <p className="empty">Ничего не нашлось. Проверь написание{cls ? ' или сними фильтр класса' : ''}.</p>}
+        )) : (
+          <div className="empty">
+            <p style={{ margin: '0 0 8px' }}>Ничего не нашлось. Проверь написание{cls ? ' или сними фильтр класса' : ''}.</p>
+            <button type="button" className="btn" onClick={onUnlisted}>Нет в списке — оценить по main stat</button>
+          </div>
+        )}
       </div>
     </>
   );
