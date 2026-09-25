@@ -143,4 +143,4 @@ html.xs .subdel { width: 30px; }
 html.narrow .drawer .fbtn span { display: none; }
 html.narrow .drawer .fbtn { padding: 4px 7px; }
 html.narrow .subadd { scroll-margin-bottom: 72px; }
-html.narrow .actions .btn.primary { display: none; } /* на телефоне «Далее» — на нижней плашке */
+html.narrow .actions .btn.primary { display: none; } /* на телефоне «Сброс» — на нижней плашке */

@@ -50,9 +50,9 @@ export function App() {
   useHashRoute(idx, s.tab, s.charId, openChar);
   useHotkeys(s, dispatch, layout);
 
-  const onNext = () => {
+  const onReset = () => {
     setVerdictOpen(false);
-    dispatch({ type: 'next' });
+    dispatch({ type: 'reset' });
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
@@ -69,7 +69,7 @@ export function App() {
       )}
       <main>
         <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-          <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onNext={onNext} />
+          <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onReset={onReset} />
           {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
         </section>
         <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -79,7 +79,7 @@ export function App() {
         </section>
       </main>
       <Footer canInstall={pwa.canInstall} onInstall={pwa.install} />
-      <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onNext={onNext} onOpen={() => setVerdictOpen(true)} />
+      <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
       {verdictOpen && layout.narrow && s.tab === 'eval' && (
         <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
       )}

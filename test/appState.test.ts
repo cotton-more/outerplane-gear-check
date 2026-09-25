@@ -80,7 +80,7 @@ describe('reducer: смена грейда', () => {
   });
 });
 
-describe('reducer: слот и «Далее»', () => {
+describe('reducer: слот и «Сброс»', () => {
   it('нажатие на выбранный слот ничего не меняет', () => {
     const s = fresh({ slot: 'gloves', setId: '13' });
     expect(reducer(s, { type: 'slot', slot: 'gloves' })).toBe(s);
@@ -98,8 +98,8 @@ describe('reducer: слот и «Далее»', () => {
     expect(run(s, { type: 'slot', slot: 'accessory' }, { type: 'slot', slot: 'helmet' }).setId).toBeNull();
   });
 
-  it('«Далее» сбрасывает предмет вместе с сетом', () => {
-    const next = reducer(fresh({ slot: 'gloves', setId: '13', subs: subsOf('SPD'), expand: { x: true } }), { type: 'next' });
+  it('«Сброс» очищает предмет вместе с сетом', () => {
+    const next = reducer(fresh({ slot: 'gloves', setId: '13', subs: subsOf('SPD'), expand: { x: true } }), { type: 'reset' });
     expect([next.setId, next.subs, next.expand]).toEqual([null, {}, {}]);
   });
 });
@@ -149,8 +149,8 @@ describe('недовведённый предмет переживает пер�
     expect([epic.main, epic.subs]).toEqual(['ATK%', { SPD: 1 }]);
   });
 
-  it('«Далее» очищает сохранённый предмет', () => {
-    const s = reducer(fresh({ setId: '13', subs: { SPD: 1 } }), { type: 'next' });
+  it('«Сброс» очищает сохранённый предмет', () => {
+    const s = reducer(fresh({ setId: '13', subs: { SPD: 1 } }), { type: 'reset' });
     expect(toPersistedItem(s)).toEqual({ setId: null, itemKey: null, main: null, unlisted: false, subs: {} });
   });
 

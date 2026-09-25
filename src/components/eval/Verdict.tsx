@@ -1,4 +1,4 @@
-// Панель вердикта и её мобильная версия — плашка внизу экрана с кнопкой «Далее».
+// Панель вердикта и её мобильная версия — плашка внизу экрана с кнопкой «Сброс».
 import { useEffect, type Dispatch } from 'react';
 import { CFG } from '../../config';
 import { isArmor } from '../../data';
@@ -129,11 +129,11 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — ') ? r.title.slice(r.title.indexOf(' — ') + 3) : r.title);
 
 // Узкий экран (телефон, разделённый экран с игрой): шапки нет, внизу одна плашка на обе вкладки.
-//   Оценка:    [★ ростер → персонажи] [вердикт — нажми, подробности шторкой] [Далее]
+//   Оценка:    [★ ростер → персонажи] [вердикт — нажми, подробности шторкой] [Сброс — следующий предмет]
 //   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
 // compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету
-export function VBar({ r, show, compact, tab, rosterSize, onTab, onNext, onOpen }: {
-  r: VerdictData; show: boolean; compact: boolean; tab: Tab; rosterSize: number; onTab: (t: Tab) => void; onNext: () => void; onOpen: () => void;
+export function VBar({ r, show, compact, tab, rosterSize, onTab, onReset, onOpen }: {
+  r: VerdictData; show: boolean; compact: boolean; tab: Tab; rosterSize: number; onTab: (t: Tab) => void; onReset: () => void; onOpen: () => void;
 }) {
   useEffect(() => {
     document.body.classList.toggle('has-vbar', show);
@@ -151,7 +151,7 @@ export function VBar({ r, show, compact, tab, rosterSize, onTab, onNext, onOpen 
         {!compact && <span className="stamp">{LABEL[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span>
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
-      {evalTab && <button type="button" className="vb-next" onClick={onNext}>Далее</button>}
+      {evalTab && <button type="button" className="vb-reset" aria-label="Сбросить предмет" onClick={onReset}>Сброс</button>}
     </div>
   );
 }

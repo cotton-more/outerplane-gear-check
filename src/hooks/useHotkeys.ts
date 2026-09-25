@@ -19,7 +19,7 @@ export function useHotkeys(state: AppState, dispatch: Dispatch<Action>, layout: 
       if (s.tab !== 'eval') return;
       const target = e.target as HTMLElement;
       const typing = !!target.matches?.('input[type="search"], input[type="text"], textarea');
-      if (e.key === 'Escape') { if (typing) target.blur(); dispatch({ type: 'next' }); return; }
+      if (e.key === 'Escape') { if (typing) target.blur(); dispatch({ type: 'reset' }); return; }
       if (typing) return;
       if (/^[1-6]$/.test(e.key)) dispatch({ type: 'slot', slot: SLOTS[Number(e.key) - 1].id });
       else if (LEGEND.includes(e.key)) dispatch({ type: 'grade', grade: 'unique' });

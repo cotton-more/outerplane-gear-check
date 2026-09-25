@@ -39,7 +39,7 @@ export type Action =
   | { type: 'replaceSub'; from: string; to: string }
   | { type: 'roll'; key: string; n: number }
   | { type: 'clearSubs' }
-  | { type: 'next' }
+  | { type: 'reset' }
   | { type: 'load'; item: ItemInput }
   | { type: 'expand'; key: string }
   | { type: 'settings'; patch: Partial<Settings> }
@@ -94,7 +94,7 @@ export function reducer(s: AppState, a: Action): AppState {
       return a.key in s.subs ? { ...s, subs: { ...s.subs, [a.key]: a.n } } : s;
     case 'clearSubs':
       return { ...s, subs: {} };
-    case 'next':
+    case 'reset':
       return { ...s, ...EMPTY_ITEM };
     case 'load':
       return { ...s, ...EMPTY_ITEM, ...a.item, tab: 'eval' };
@@ -163,7 +163,7 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
 }
 
 // --- недовведённый предмет: отдельный ключ 'ogc.item'. Android выгружает PWA из памяти, пока ты в игре, —
-// после перезапуска продолжаешь с того же места; «Далее» очищает.
+// после перезапуска продолжаешь с того же места; «Сброс» очищает.
 
 export type PersistedItem = Pick<AppState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'>;
 

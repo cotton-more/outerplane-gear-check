@@ -20,7 +20,7 @@ type Open = null | 'set' | 'item' | 'main' | 'code' | { sub: string | null }; //
 
 const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-export function EvalPanel({ s, dispatch, ctx, onNext }: { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; onNext: () => void }) {
+export function EvalPanel({ s, dispatch, ctx, onReset }: { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; onReset: () => void }) {
   const { D, SET, ITEM } = ctx.idx;
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
@@ -73,14 +73,14 @@ export function EvalPanel({ s, dispatch, ctx, onNext }: { s: AppState; dispatch:
       </div>
 
       <div className="actions">
-        <button type="button" className="btn primary" onClick={onNext}>Следующий предмет</button>
+        <button type="button" className="btn primary" onClick={onReset}>Сбросить предмет</button>
         <button type="button" className="btn" onClick={() => setOpen('code')}>Ввести код</button>
         <label className="toggle">
           <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
           {' '}только мои персонажи{ctx.roster.size ? ` (${ctx.roster.size})` : ' — отметь их во вкладке «Персонажи»'}
         </label>
         <span className="hk">
-          {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> слот · <kbd>L</kbd>/<kbd>E</kbd> грейд · <kbd>Esc</kbd> следующий</>}
+          {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> слот · <kbd>L</kbd>/<kbd>E</kbd> грейд · <kbd>Esc</kbd> сброс</>}
         </span>
       </div>
       <EvalSettings s={s} dispatch={dispatch} />
