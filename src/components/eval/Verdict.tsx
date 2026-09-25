@@ -11,19 +11,26 @@ import type { Action, AppState } from '../../state/appState';
 import { Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
+import { Sheet } from '../Sheet';
 
 const LABEL: Record<VerdictKind, string> = { keep: 'Оставить', temp: 'Временно', maybe: 'Спорно', fodder: 'Фоддер', junk: 'Разобрать', idle: '…' };
 
 interface Props { r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void }
 
-export function Verdict({ r, s, dispatch, onOpenChar }: Props) {
+// Широкий экран: вердикт колонкой справа от формы.
+export function Verdict(props: Props) {
+  return <aside className="panel verdict eval-out" id="verdict" aria-live="polite"><VerdictBody {...props} /></aside>;
+}
+
+// Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
+export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
   const idx = useIndex();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
   const set = isArmor(s.slot) && s.setId ? idx.SET[s.setId] : undefined;
   const icon = item && s.grade === 'unique' ? item.icon : set ? (isArmor(s.slot) && set.pieces[s.slot]) || set.icon : null;
   const nSubs = Object.keys(s.subs).length;
   return (
-    <aside className="panel verdict eval-out" id="verdict" aria-live="polite">
+    <>
       <div className={`v-head v-${r.v}`}>
         <div className="v-row">
           <span className="stamp">{LABEL[r.v]}</span>
@@ -45,7 +52,7 @@ export function Verdict({ r, s, dispatch, onOpenChar }: Props) {
         {nSubs > 0 && <span>Цифра у стата — ступень приоритета билда (1 — важнее всего); жёлтый — засчитан за ½; зачёркнут — билду не нужен.</span>}
         <span>{r.foot}</span>
       </div>
-    </aside>
+    </>
   );
 }
 
@@ -116,8 +123,12 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
   );
 }
 
-// Узкий экран: вердикт закреплён внизу — штамп, заголовок и «Далее». Нажатие прокручивает к подробностям.
-export function VBar({ r, show, onNext }: { r: VerdictData; show: boolean; onNext: () => void }) {
+// На плашке слово вердикта уже есть в штампе: «Оставляй — подходит 26 персонажам» → «подходит 26 персонажам»
+const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — ') ? r.title.slice(r.title.indexOf(' — ') + 3) : r.title);
+
+// Узкий экран (разделённый экран с игрой): вердикт закреплён внизу — штамп, заголовок и «Далее».
+// Нажатие открывает подробности шторкой, без прокрутки страницы.
+export function VBar({ r, show, onNext, onOpen }: { r: VerdictData; show: boolean; onNext: () => void; onOpen: () => void }) {
   useEffect(() => {
     document.body.classList.toggle('has-vbar', show);
     return () => document.body.classList.remove('has-vbar');
@@ -125,11 +136,19 @@ export function VBar({ r, show, onNext }: { r: VerdictData; show: boolean; onNex
   if (!show) return null;
   return (
     <div className={`vbar v-${r.v}`} id="vbar">
-      <button type="button" className="vb-main" aria-label="Вердикт — показать подробности"
-        onClick={() => document.getElementById('verdict')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-        <span className="stamp">{LABEL[r.v]}</span><span className="vt">{r.title}</span>
+      <button type="button" className="vb-main" aria-label="Вердикт — показать подробности" onClick={onOpen}>
+        <span className="stamp">{LABEL[r.v]}</span><span className="vt">{barTitle(r)}</span><span className="vb-more" aria-hidden="true">▴</span>
       </button>
       <button type="button" className="vb-next" onClick={onNext}>Далее</button>
     </div>
+  );
+}
+
+export function VerdictSheet(props: Props & { onClose: () => void }) {
+  const { onClose, onOpenChar, ...rest } = props;
+  return (
+    <Sheet title="Вердикт" onClose={onClose} className="vdrawer">
+      <div className="verdict"><VerdictBody {...rest} onOpenChar={(id) => { onClose(); onOpenChar(id); }} /></div>
+    </Sheet>
   );
 }

@@ -1,49 +1,69 @@
-// Панель ввода предмета: слот → грейд → сет / предмет / main → сабстаты, плюс настройки оценки.
-import type { Dispatch } from 'react';
+// Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
+// слот → грейд + сет/предмет/main → строки сабстатов. Конкретные значения выбираются в окнах (Sheet).
+import { useState, type Dispatch } from 'react';
 import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
 import type { Ctx } from '../../logic/context';
+import { maxSubs } from '../../logic/subs';
 import type { Action, AppState } from '../../state/appState';
-import { Img } from '../Img';
-import { ItemStep } from './ItemStep';
-import { MainStatStep } from './MainStatStep';
-import { SetStep } from './SetStep';
-import { SubStep } from './SubStep';
+import { Frame, Img, StatIcon } from '../Img';
+import { Sheet } from '../Sheet';
+import { ItemPicker } from './ItemPicker';
+import { MainPicker } from './MainPicker';
+import { PickField } from './PickField';
+import { SetPicker } from './SetPicker';
+import { SubPicker } from './SubPicker';
+import { SubRows } from './SubRows';
 
-export interface StepProps { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx }
+type Open = null | 'set' | 'item' | 'main' | { sub: string | null }; // sub: какой стат заменяем (null — новый)
 
 const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-export function EvalPanel({ s, dispatch, ctx, onNext }: StepProps & { onNext: () => void }) {
-  const { D } = ctx.idx;
+export function EvalPanel({ s, dispatch, ctx, onNext }: { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; onNext: () => void }) {
+  const { D, SET, ITEM } = ctx.idx;
+  const [open, setOpen] = useState<Open>(null);
+  const close = () => setOpen(null);
+  const armor = isArmor(s.slot);
   const kind = s.slot as GearKind;
+  const epic = s.grade === 'rare';
+  const set = armor && s.setId ? SET[s.setId] : undefined;
+  const item = !armor && !epic && s.itemKey ? ITEM[kind][s.itemKey] : undefined;
+  const hasMains = (key: string) => { const it = ITEM[kind][key]; return !!it && (it.mains.length > 0 || it.extraMains.length > 0); };
+  const mainRow = !armor && !epic && (s.unlisted || (!!s.itemKey && hasMains(s.itemKey)));
+  const mainValue = s.main ? <><StatIcon stat={s.main} />{s.main}</> : undefined;
+  const gearName = kind === 'weapon' ? 'Оружие' : 'Аксессуар';
+
   return (
     <div className="panel eval-in" id="eval-in">
-      <div className="step">
-        <div className="step-h"><h2>Слот</h2><span className="hint">что за предмет</span></div>
-        <div className="slots">
+      <div className="form">
+        <div className="slotrow" role="group" aria-label="Слот">
           {SLOTS.map((sl, i) => (
-            <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} onClick={() => dispatch({ type: 'slot', slot: sl.id })}>
+            <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
+              onClick={() => dispatch({ type: 'slot', slot: sl.id })}>
               <Img k={'eq:' + D.slotIcons[sl.id]} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
             </button>
           ))}
         </div>
-      </div>
-      <div className="step">
-        <div className="step-h"><h2>Грейд</h2><span className="hint">6★ · Etheric = Legendary, Steel = Epic</span></div>
-        <div className="grades">
-          {GRADES.map((g) => (
-            <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} onClick={() => dispatch({ type: 'grade', grade: g })}>
-              <Img k={'frame:' + g} /><span className="gname">{GRADE_NAME[g]}</span>
-            </button>
-          ))}
+        <div className="formrow">
+          <div className="gradesw" role="group" aria-label="Грейд: Etheric — Legendary, Steel — Epic">
+            {GRADES.map((g) => (
+              <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
+                onClick={() => dispatch({ type: 'grade', grade: g })}>
+                <Img k={'frame:' + g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
+              </button>
+            ))}
+          </div>
+          {armor
+            ? <PickField value={set && <><Img k={'eq:' + set.icon} />{set.short} Set</>} placeholder="Выбрать сет" onClick={() => setOpen('set')} />
+            : epic
+              ? <PickField value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} />
+              : <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? 'Нет в списке' : undefined}
+                  placeholder={`${gearName} — найти`} onClick={() => setOpen('item')} />}
         </div>
+        {mainRow && <div className="formrow"><PickField className="main" value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} /></div>}
+        <SubRows subs={s.subs} grade={s.grade} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} />
       </div>
-      {isArmor(s.slot) ? <SetStep s={s} dispatch={dispatch} ctx={ctx} />
-        : s.grade === 'rare' ? <MainStatStep s={s} dispatch={dispatch} ctx={ctx} kind={kind} mode="epic" />
-        : s.unlisted ? <MainStatStep s={s} dispatch={dispatch} ctx={ctx} kind={kind} mode="unlisted" />
-        : <ItemStep s={s} dispatch={dispatch} ctx={ctx} kind={kind} />}
-      <SubStep s={s} dispatch={dispatch} ctx={ctx} />
+
       <div className="actions">
         <button type="button" className="btn primary" onClick={onNext}>Следующий предмет</button>
         <label className="toggle">
@@ -51,15 +71,44 @@ export function EvalPanel({ s, dispatch, ctx, onNext }: StepProps & { onNext: ()
           {' '}только мои персонажи{ctx.roster.size ? ` (${ctx.roster.size})` : ' — отметь их во вкладке «Персонажи»'}
         </label>
         <span className="hk">
-          {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> слот · <kbd>L</kbd>/<kbd>E</kbd> грейд · <kbd>/</kbd> поиск · <kbd>Esc</kbd> сброс</>}
+          {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> слот · <kbd>L</kbd>/<kbd>E</kbd> грейд · <kbd>Esc</kbd> следующий</>}
         </span>
       </div>
       <EvalSettings s={s} dispatch={dispatch} />
+
+      {open === 'set' && (
+        <Sheet title="Сет — в названии после «of»" onClose={close}>
+          <SetPicker ctx={ctx} current={s.setId} onPick={(setId) => { dispatch({ type: 'set', setId }); close(); }} />
+        </Sheet>
+      )}
+      {open === 'item' && (
+        <Sheet title={`Legendary ${gearName.toLowerCase()}`} onClose={close}>
+          <ItemPicker ctx={ctx} kind={kind} current={s.itemKey}
+            onPick={(key) => { dispatch({ type: 'item', itemKey: key }); setOpen(hasMains(key) ? 'main' : null); }}
+            onUnlisted={() => { dispatch({ type: 'unlisted' }); setOpen('main'); }} />
+        </Sheet>
+      )}
+      {open === 'main' && (
+        <Sheet title={item ? `Main stat · ${item.name}` : epic ? `Main stat · Epic ${gearName.toLowerCase()}` : 'Main stat · нет в списке'} onClose={close}>
+          <MainPicker ctx={ctx} kind={kind} item={item} epic={epic} current={s.main}
+            onPick={(main) => { if (main !== s.main) dispatch({ type: 'main', main }); close(); }} />
+        </Sheet>
+      )}
+      {open !== null && typeof open === 'object' && (
+        <Sheet title={open.sub ? `Заменить ${open.sub}` : `Сабстат ${Object.keys(s.subs).length + 1} из ${maxSubs(s.grade)}`} onClose={close}>
+          <SubPicker ctx={ctx} subs={s.subs} main={s.main} editing={open.sub}
+            onPick={(key) => {
+              if (!open.sub) dispatch({ type: 'sub', key });
+              else if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key });
+              close();
+            }} />
+        </Sheet>
+      )}
     </div>
   );
 }
 
-function EvalSettings({ s, dispatch }: Omit<StepProps, 'ctx'>) {
+function EvalSettings({ s, dispatch }: { s: AppState; dispatch: Dispatch<Action> }) {
   const st = s.settings;
   const set = (patch: Partial<typeof st>) => dispatch({ type: 'settings', patch });
   const cur = [st.stage === 'end' ? 'эндгейм' : 'развитие', st.fodder ? 'коплю фоддер' : 'без фоддера брони', st.lv120 ? 'lv 120' : 'lv 100', st.quirks ? 'Quirks' : 'без Quirks'];

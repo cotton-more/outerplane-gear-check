@@ -18,8 +18,6 @@ export interface AppState extends CharFilter {
   main: string | null;
   unlisted: boolean;                // Legendary оружие/аксессуар, которого нет в списке: оценка по main stat
   subs: Subs;
-  q: string;                        // поиск предмета
-  cls: string;                      // фильтр класса в поиске предмета
   expand: Record<string, boolean>;  // раскрытые секции вердикта
   // настройки оценки
   settings: Settings;
@@ -37,11 +35,10 @@ export type Action =
   | { type: 'unlisted' }
   | { type: 'main'; main: string }
   | { type: 'sub'; key: string }
+  | { type: 'replaceSub'; from: string; to: string }
   | { type: 'roll'; key: string; n: number }
   | { type: 'clearSubs' }
   | { type: 'next' }
-  | { type: 'query'; q: string }
-  | { type: 'cls'; cls: string }
   | { type: 'expand'; key: string }
   | { type: 'settings'; patch: Partial<Settings> }
   | { type: 'settingsOpen'; open: boolean }
@@ -49,7 +46,7 @@ export type Action =
   | { type: 'selectChar'; id: string | null }
   | { type: 'charFilter'; patch: Partial<CharFilter> };
 
-const EMPTY_ITEM = { setId: null, itemKey: null, main: null, unlisted: false, subs: {}, q: '', cls: '', expand: {} };
+const EMPTY_ITEM = { setId: null, itemKey: null, main: null, unlisted: false, subs: {}, expand: {} };
 
 export function reducer(s: AppState, a: Action): AppState {
   switch (a.type) {
@@ -85,16 +82,17 @@ export function reducer(s: AppState, a: Action): AppState {
       else return s;
       return { ...s, subs };
     }
+    case 'replaceSub': {
+      // другой стат в той же строке: позиция сохраняется, жёлтые — снова 1
+      if (!(a.from in s.subs) || a.to in s.subs || a.to === s.main) return s;
+      return { ...s, subs: Object.fromEntries(Object.entries(s.subs).map(([k, v]) => (k === a.from ? [a.to, 1] : [k, v]))) };
+    }
     case 'roll':
       return a.key in s.subs ? { ...s, subs: { ...s.subs, [a.key]: a.n } } : s;
     case 'clearSubs':
       return { ...s, subs: {} };
     case 'next':
       return { ...s, ...EMPTY_ITEM };
-    case 'query':
-      return { ...s, q: a.q };
-    case 'cls':
-      return { ...s, cls: s.cls === a.cls ? '' : a.cls };
     case 'expand':
       return { ...s, expand: { ...s.expand, [a.key]: true } };
     case 'settings':

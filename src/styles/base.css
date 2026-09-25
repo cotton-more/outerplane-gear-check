@@ -153,3 +153,26 @@ html.narrow .brand p { display: none; }
 .fitnote button { flex: none; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 2px 0; }
 footer.foot { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
 footer.foot a { color: var(--ink-2); }
+
+/* ---------- шторка снизу (.drawer; класс .sheet занят раскладкой на <html>): окна выбора и подробности вердикта */
+body.drawer-lock { overflow: hidden; }
+.drawer-back { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; background: rgb(0 0 0 / .4); }
+.drawer { width: 100%; max-width: 640px; max-height: 88vh; display: flex; flex-direction: column; background: var(--surface); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgb(0 0 0 / .18); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html:not(.narrow) .drawer-back { align-items: center; }
+html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
+.drawer-h { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--line); }
+.drawer-h h3 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drawer-x { flex: none; width: 40px; height: 40px; border: 0; background: none; font-size: 16px; color: var(--ink-2); border-radius: var(--radius-s); }
+.drawer-b { overflow: auto; overscroll-behavior: contain; padding: 12px 14px 14px; }
+.drawer .items { max-height: none; overflow: visible; }
+
+/* ---------- низкий экран (разделённый экран с игрой): шапка в одну строку */
+@media (max-height: 560px) {
+  .top { flex-wrap: nowrap; padding-block: 4px 6px; gap: 8px; }
+  .brand { margin-right: 0; }
+  .brand > div { display: none; }
+  .brand-mark { width: 28px; height: 28px; }
+  .tabs { flex: 1; padding: 3px; }
+  .tabs button { flex: 1; padding: 5px 8px; font-size: 13px; }
+  .step { padding-block: 10px; }
+}

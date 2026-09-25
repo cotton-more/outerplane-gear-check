@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
 import { EvalPanel } from './components/eval/EvalPanel';
-import { VBar, Verdict } from './components/eval/Verdict';
+import { VBar, Verdict, VerdictSheet } from './components/eval/Verdict';
 import { Header } from './components/Header';
 import { useIndex } from './components/IndexContext';
 import { Notice } from './components/Notice';
@@ -43,12 +43,14 @@ export function App() {
   const verdict = useMemo(() => evaluate(ctx, input), [ctx, ...Object.values(input)]); // eslint-disable-line react-hooks/exhaustive-deps
   const pwa = usePwa();
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
+  const [verdictOpen, setVerdictOpen] = useState(false);
 
   const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id)), [idx, s, roster, dispatch]);
   useHashRoute(idx, s.tab, s.charId, openChar);
   useHotkeys(s, dispatch, layout);
 
   const onNext = () => {
+    setVerdictOpen(false);
     dispatch({ type: 'next' });
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
@@ -67,7 +69,7 @@ export function App() {
       <main>
         <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
           <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onNext={onNext} />
-          <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />
+          {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
         </section>
         <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
           <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} />
@@ -76,7 +78,10 @@ export function App() {
         </section>
       </main>
       <Footer canInstall={pwa.canInstall} onInstall={pwa.install} />
-      <VBar r={verdict} show={s.tab === 'eval' && verdict.v !== 'idle'} onNext={onNext} />
+      <VBar r={verdict} show={s.tab === 'eval' && layout.narrow} onNext={onNext} onOpen={() => setVerdictOpen(true)} />
+      {verdictOpen && layout.narrow && s.tab === 'eval' && (
+        <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
+      )}
     </div>
   );
 }

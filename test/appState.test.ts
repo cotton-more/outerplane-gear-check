@@ -35,6 +35,12 @@ describe('reducer: сабстаты', () => {
     expect(reducer(on, { type: 'sub', key: 'SPD' }).subs).toEqual({});
   });
 
+  it('замена стата сохраняет его строку и сбрасывает жёлтые до 1', () => {
+    const s = fresh({ subs: { SPD: 2, CHC: 3, CHD: 1 } });
+    expect(reducer(s, { type: 'replaceSub', from: 'CHC', to: 'ATK%' }).subs).toEqual({ SPD: 2, 'ATK%': 1, CHD: 1 });
+    expect(reducer(s, { type: 'replaceSub', from: 'CHC', to: 'SPD' })).toBe(s); // уже отмечен
+  });
+
   it('жёлтые сегменты ставятся только отмеченному стату', () => {
     const s = fresh({ subs: subsOf('SPD') });
     expect(reducer(s, { type: 'roll', key: 'SPD', n: 3 }).subs).toEqual({ SPD: 3 });
