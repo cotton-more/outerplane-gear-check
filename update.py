@@ -29,6 +29,7 @@ import datetime as dt
 import hashlib
 import http.client
 import json
+import math
 import shutil
 import struct
 import zlib
@@ -969,36 +970,52 @@ def png_bytes(size: int, pixels: bytearray) -> bytes:
 
 
 def render_app_icon(size: int, maskable: bool) -> bytes:
-    """Иконка приложения: знак страницы — шесть сегментов сабстата (3 жёлтых, 2 оранжевых, 1 серый)."""
+    """Иконка приложения: амбер-шестерёнка с вырезанной галочкой."""
     bg = (0x15, 0x1A, 0x22)
-    colors = [(0xF0, 0xB0, 0x30)] * 3 + [(0xEE, 0x7A, 0x1A)] * 2 + [(0x56, 0x60, 0x6F)]
+    top, bot = (0xF0, 0xB0, 0x30), (0xEE, 0x7A, 0x1A)   # градиент как у сегментов сабстата
     # maskable: фон на весь квадрат, знак в безопасной зоне (центральные ~60%)
-    radius = 0.0 if maskable else 0.2 * size
-    logo_w = size * (0.46 if maskable else 0.6)
-    bar_w = logo_w / (6 + 5 * 0.45)
-    gap = bar_w * 0.45
-    bar_h = logo_w * 0.62
-    x0 = (size - logo_w) / 2
-    y0 = (size - bar_h) / 2
-    bars = [(x0 + i * (bar_w + gap), y0, bar_w, bar_h, colors[i]) for i in range(6)]
+    corner = 0.0 if maskable else 0.2 * size
+    L = size * (0.62 if maskable else 0.78)             # диаметр знака
+    c = size / 2
+    root, tip = 0.395 * L, 0.50 * L                     # впадина и вершина зубьев
+    t_mid, t_half, t_wide, t_round = 0.40 * L, 0.10 * L, 0.085 * L, 0.025 * L
+    teeth = [(math.cos(a), math.sin(a)) for a in (i * math.pi / 4 - math.pi / 2 for i in range(8))]
+    check = [(-0.200 * L, 0.015 * L), (-0.055 * L, 0.165 * L), (0.205 * L, -0.170 * L)]
+    pen = 0.0675 * L                                    # половина толщины галочки
     px = bytearray(size * size * 4)
 
-    def cover(a0: float, a1: float, p: int) -> float:  # доля пикселя [p, p+1] внутри отрезка [a0, a1]
-        return max(0.0, min(a1, p + 1) - max(a0, p))
+    def seg_dist(x: float, y: float, a: tuple, b: tuple) -> float:
+        ax, ay = x - a[0], y - a[1]
+        bx, by = b[0] - a[0], b[1] - a[1]
+        t = max(0.0, min(1.0, (ax * bx + ay * by) / (bx * bx + by * by)))
+        return math.hypot(ax - bx * t, ay - by * t)
 
     for y in range(size):
+        k = y / max(1, size - 1)
+        gr, gg, gb = (top[i] + (bot[i] - top[i]) * k for i in range(3))
         for x in range(size):
-            alpha = 1.0
-            if radius:  # скруглённые углы фона со сглаживанием
-                cx = min(max(x + 0.5, radius), size - radius)
-                cy = min(max(y + 0.5, radius), size - radius)
-                d = ((x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2) ** 0.5
-                alpha = max(0.0, min(1.0, radius - d + 0.5))
+            dx, dy = x + 0.5 - c, y + 0.5 - c
+            rr = math.hypot(dx, dy)
+            d = rr - root                               # диск-основание
+            if rr < tip + 2:                            # зубья: повёрнутые скруглённые прямоугольники
+                for ca, sa in teeth:
+                    if dx * ca + dy * sa < 0.5 * rr:    # смотрим только на ближние зубья
+                        continue
+                    qx = abs(dx * ca + dy * sa - t_mid) - (t_half - t_round)
+                    qy = abs(dy * ca - dx * sa) - (t_wide - t_round)
+                    d = min(d, math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - t_round)
+            cov = max(0.0, min(1.0, 0.5 - d))
+            if cov:                                     # галочка вырезана из шестерёнки
+                dc = min(seg_dist(dx, dy, check[0], check[1]), seg_dist(dx, dy, check[1], check[2])) - pen
+                cov *= 1.0 - max(0.0, min(1.0, 0.5 - dc))
             r, g, b = bg
-            for bx, by, bw, bh, col in bars:
-                k = cover(bx, bx + bw, x) * cover(by, by + bh, y)
-                if k:
-                    r, g, b = (r + (col[0] - r) * k, g + (col[1] - g) * k, b + (col[2] - b) * k)
+            if cov:
+                r, g, b = (r + (gr - r) * cov, g + (gg - g) * cov, b + (gb - b) * cov)
+            alpha = 1.0
+            if corner:                                  # скруглённые углы фона со сглаживанием
+                ex = min(max(x + 0.5, corner), size - corner)
+                ey = min(max(y + 0.5, corner), size - corner)
+                alpha = max(0.0, min(1.0, corner - math.hypot(x + 0.5 - ex, y + 0.5 - ey) + 0.5))
             i = (y * size + x) * 4
             px[i:i + 4] = bytes((int(r), int(g), int(b), int(alpha * 255)))
     return png_bytes(size, px)
