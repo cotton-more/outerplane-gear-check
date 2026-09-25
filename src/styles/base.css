@@ -176,3 +176,7 @@ html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
   .tabs button { flex: 1; padding: 5px 8px; font-size: 13px; }
   .step { padding-block: 10px; }
 }
+
+/* ---------- телефон: шапки с лого и вкладками нет — вкладки переключаются с нижней плашки */
+html.narrow .top { display: none; }
+html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); }

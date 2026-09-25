@@ -78,7 +78,7 @@ export function App() {
         </section>
       </main>
       <Footer canInstall={pwa.canInstall} onInstall={pwa.install} />
-      <VBar r={verdict} show={s.tab === 'eval' && layout.narrow} onNext={onNext} onOpen={() => setVerdictOpen(true)} />
+      <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onNext={onNext} onOpen={() => setVerdictOpen(true)} />
       {verdictOpen && layout.narrow && s.tab === 'eval' && (
         <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
       )}

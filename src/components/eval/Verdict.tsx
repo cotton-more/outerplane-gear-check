@@ -7,7 +7,7 @@ import { comboText } from '../../logic/builds';
 import type { Row } from '../../logic/score';
 import { fmtGood, persons } from '../../logic/text';
 import type { Section, Verdict as VerdictData, VerdictKind } from '../../logic/verdict';
-import type { Action, AppState } from '../../state/appState';
+import type { Action, AppState, Tab } from '../../state/appState';
 import { Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
@@ -126,20 +126,30 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 // На плашке слово вердикта уже есть в штампе: «Оставляй — подходит 26 персонажам» → «подходит 26 персонажам»
 const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — ') ? r.title.slice(r.title.indexOf(' — ') + 3) : r.title);
 
-// Узкий экран (разделённый экран с игрой): вердикт закреплён внизу — штамп, заголовок и «Далее».
-// Нажатие открывает подробности шторкой, без прокрутки страницы.
-export function VBar({ r, show, onNext, onOpen }: { r: VerdictData; show: boolean; onNext: () => void; onOpen: () => void }) {
+// Узкий экран (телефон, разделённый экран с игрой): шапки нет, внизу одна плашка на обе вкладки.
+//   Оценка:    [★ ростер → персонажи] [вердикт — нажми, подробности шторкой] [Далее]
+//   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
+// compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету
+export function VBar({ r, show, compact, tab, rosterSize, onTab, onNext, onOpen }: {
+  r: VerdictData; show: boolean; compact: boolean; tab: Tab; rosterSize: number; onTab: (t: Tab) => void; onNext: () => void; onOpen: () => void;
+}) {
   useEffect(() => {
     document.body.classList.toggle('has-vbar', show);
     return () => document.body.classList.remove('has-vbar');
   }, [show]);
   if (!show) return null;
+  const evalTab = tab === 'eval';
   return (
     <div className={`vbar v-${r.v}`} id="vbar">
-      <button type="button" className="vb-main" aria-label="Вердикт — показать подробности" onClick={onOpen}>
-        <span className="stamp">{LABEL[r.v]}</span><span className="vt">{barTitle(r)}</span><span className="vb-more" aria-hidden="true">▴</span>
+      {evalTab
+        ? <button type="button" className="vb-tab" aria-label="Персонажи" onClick={() => onTab('chars')}>{rosterSize ? <><span className="vb-star">★</span>{rosterSize}</> : '☆'}</button>
+        : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>← Оценка</button>}
+      <button type="button" className="vb-main" aria-label={evalTab ? 'Вердикт — показать подробности' : 'Вернуться к оценке'}
+        onClick={evalTab ? onOpen : () => onTab('eval')}>
+        {!compact && <span className="stamp">{LABEL[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span>
+        {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
-      <button type="button" className="vb-next" onClick={onNext}>Далее</button>
+      {evalTab && <button type="button" className="vb-next" onClick={onNext}>Далее</button>}
     </div>
   );
 }

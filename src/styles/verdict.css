@@ -59,3 +59,11 @@ html.narrow .vbar.v-idle .stamp { display: none; }
   html.narrow .vbar .vb-main, html.narrow .vbar .vb-next { min-height: 40px; }
 }
 html.xs .vbar .stamp { font-size: 12px; padding: 4px 6px 3px; }
+
+/* узкий экран: шапки нет — переключатель вкладок живёт слева на нижней плашке */
+html.narrow .vbar .vb-tab { flex: none; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); color: var(--ink); font: 700 13px/1 var(--font-body); white-space: nowrap; }
+html.narrow .vbar .vb-star { color: var(--star-on); margin-right: 3px; }
+html.narrow .vbar { z-index: 35; }
+html.narrow.sheet .char-detail.open { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+html.xs .vbar { gap: 8px; }
+html.xs .vbar .vb-more { display: none; }

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export interface Layout {
   narrow: boolean;  // < 720: вердикт под вводом, плашка вердикта внизу экрана
   xs: boolean;      // < 560
+  tiny: boolean;    // < 380: нижняя плашка без штампа
   sheet: boolean;   // < 900: билды персонажа — полноэкранной шторкой
   wide: boolean;    // ≥ 1100
   desktopModeOnPhone: boolean;
@@ -24,7 +25,7 @@ export function applyLayout(): Layout {
     r.style.zoom = String(w / screen.width);
     w = screen.width;
   }
-  const layout = { narrow: w < 720, xs: w < 560, sheet: w < 900, wide: w >= 1100, desktopModeOnPhone };
+  const layout = { narrow: w < 720, xs: w < 560, tiny: w < 380, sheet: w < 900, wide: w >= 1100, desktopModeOnPhone };
   r.classList.toggle('narrow', layout.narrow);
   r.classList.toggle('xs', layout.xs);
   r.classList.toggle('sheet', layout.sheet);
