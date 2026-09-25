@@ -142,10 +142,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 
 .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
 .brand h1 { font: 700 19px/1.1 var(--font-display); letter-spacing: .01em; margin: 0; }
 .brand p { margin: 2px 0 0; color: var(--ink-3); font-size: 13px; }
-.brand-mark { display: grid; grid-template-columns: repeat(6, 5px); gap: 2px; padding: 7px; border-radius: 9px; background: #151a22; }
-.brand-mark i { height: 18px; border-radius: 1.5px; background: #f0b030; }
-.brand-mark i:nth-child(n+4) { background: #ee7a1a; }
-.brand-mark i:nth-child(6) { background: #56606f; }
+.brand-mark { display: block; width: 34px; height: 34px; flex: none; }
 .tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-3); border-radius: 12px; }
 .tabs button { border: 0; background: transparent; padding: 9px 14px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
@@ -393,7 +390,19 @@ footer.foot a { color: var(--ink-2); }
 <div class="app">
   <header class="top">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="bm-ring" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="40">
+            <stop offset="0" stop-color="#f8c848"/><stop offset="1" stop-color="#ee7a1a"/>
+          </linearGradient>
+          <linearGradient id="bm-spark" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="40">
+            <stop offset="0" stop-color="#fffcf4"/><stop offset="1" stop-color="#ffdd9a"/>
+          </linearGradient>
+        </defs>
+        <rect width="40" height="40" rx="8" fill="#151a22"/>
+        <path fill="url(#bm-ring)" fill-rule="evenodd" d="M6.74 20a13.26 15.444 0 1 0 26.52 0a13.26 15.444 0 1 0-26.52 0Zm6.033 0a7.227 10.27 0 1 1 14.454 0a7.227 10.27 0 1 1-14.454 0Z"/>
+        <path fill="url(#bm-spark)" d="M20 10.757Q20 20 24.336 20Q20 20 20 29.243Q20 20 15.664 20Q20 20 20 10.757Z"/>
+      </svg>
       <div>
         <h1>Gear Check</h1>
         <p>Outerplane · что оставить, что разобрать</p>
