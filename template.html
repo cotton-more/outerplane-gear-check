@@ -1,0 +1,1465 @@
+<title>Outerplane Gear Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Unbounded:wght@500;700&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #eceff4;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --surface-3: #e5e9f0;
+  --ink: #121722;
+  --ink-2: #454f60;
+  --ink-3: #5f6979;
+  --line: #d6dce6;
+  --line-2: #bcc5d2;
+  --accent: #1d4fcf;
+  --accent-soft: #e2e9fb;
+  --keep: #11744a;
+  --keep-soft: #d9f0e3;
+  --temp: #8a5a00;
+  --temp-soft: #fbedd2;
+  --fodder: #6041b8;
+  --fodder-soft: #ebe4fb;
+  --junk: #b3262e;
+  --junk-soft: #fae0e1;
+  --idle: #566174;
+  --idle-soft: #e5e9f0;
+  --epic: #2f6bd8;
+  --legend: #cf3a31;
+  --seg-y: #e5a00f;
+  --seg-off: #aeb7c4;
+  --star-on: #b97c00;
+  --radius: 10px;
+  --radius-s: 7px;
+  --font-body: "Golos Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --font-display: "Unbounded", "Golos Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0c0f14;
+    --surface: #151a22;
+    --surface-2: #1a2029;
+    --surface-3: #232b36;
+    --ink: #e7ebf1;
+    --ink-2: #b0bacb;
+    --ink-3: #8b97aa;
+    --line: #29313e;
+    --line-2: #3b4555;
+    --accent: #7aa2ff;
+    --accent-soft: #1e2a44;
+    --keep: #45d193;
+    --keep-soft: #113322;
+    --temp: #f2b64e;
+    --temp-soft: #392a0d;
+    --fodder: #b39aff;
+    --fodder-soft: #2a2145;
+    --junk: #ff7373;
+    --junk-soft: #3d1618;
+    --idle: #b0bacb;
+    --idle-soft: #232b36;
+    --epic: #74a0ff;
+    --legend: #ff6d62;
+    --seg-y: #f0b030;
+    --seg-off: #3d4757;
+    --star-on: #f0b030;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c0f14;
+  --surface: #151a22;
+  --surface-2: #1a2029;
+  --surface-3: #232b36;
+  --ink: #e7ebf1;
+  --ink-2: #b0bacb;
+  --ink-3: #8b97aa;
+  --line: #29313e;
+  --line-2: #3b4555;
+  --accent: #7aa2ff;
+  --accent-soft: #1e2a44;
+  --keep: #45d193;
+  --keep-soft: #113322;
+  --temp: #f2b64e;
+  --temp-soft: #392a0d;
+  --fodder: #b39aff;
+  --fodder-soft: #2a2145;
+  --junk: #ff7373;
+  --junk-soft: #3d1618;
+  --idle: #b0bacb;
+  --idle-soft: #232b36;
+  --epic: #74a0ff;
+  --legend: #ff6d62;
+  --seg-y: #f0b030;
+  --seg-off: #3d4757;
+  --star-on: #f0b030;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  padding-inline: 16px;
+  padding-block: 0 40px;
+}
+img { max-width: 100%; }
+img.broken { visibility: hidden; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+.app { max-width: 1240px; margin: 0 auto; }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--ink-3); }
+.small { font-size: 13px; }
+kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-2); background: var(--surface-2); }
+.noimg { display: inline-block; background: var(--surface-3); border-radius: 6px; }
+
+/* ---------- шапка */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 16px 12px; }
+.brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+.brand h1 { font: 700 19px/1.1 var(--font-display); letter-spacing: .01em; margin: 0; }
+.brand p { margin: 2px 0 0; color: var(--ink-3); font-size: 13px; }
+.brand-mark { display: grid; grid-template-columns: repeat(6, 5px); gap: 2px; padding: 7px; border-radius: 9px; background: #151a22; }
+.brand-mark i { height: 18px; border-radius: 1.5px; background: #f0b030; }
+.brand-mark i:nth-child(n+4) { background: #ee7a1a; }
+.brand-mark i:nth-child(6) { background: #56606f; }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-3); border-radius: 12px; }
+.tabs button { border: 0; background: transparent; padding: 9px 14px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.tabs .count { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); margin-left: 4px; }
+html.xs .tabs { width: 100%; }
+html.xs .tabs button { flex: 1; }
+
+/* ---------- общие блоки */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.step { padding: 14px 16px 16px; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; min-height: 20px; }
+.step-h h2 { margin: 0; flex: none; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.step-h .hint { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.linkbtn { border: 0; background: none; padding: 4px 0; color: var(--accent); font-size: 13px; font-weight: 600; flex: none; }
+.linkbtn:hover { text-decoration: underline; }
+.linkbtn.ghost { visibility: hidden; }
+.note-line { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.empty { padding: 12px; color: var(--ink-3); font-size: 13px; }
+
+/* ---------- оценка: раскладка */
+.eval { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+html:not(.narrow) .eval { grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); align-items: start; }
+html:not(.narrow) .eval-out { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 170px); overflow: auto; overscroll-behavior: contain; }
+html.wide .eval { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
+
+/* слоты и грейд */
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+html.xs .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px 6px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.slot img, .slot .noimg { width: 38px; height: 38px; object-fit: contain; }
+.slot kbd { display: none; }
+@media (hover: hover) and (pointer: fine) { html:not(.sheet) .slot kbd { display: inline-block; } }
+.grades { display: flex; flex-wrap: wrap; gap: 8px; }
+.grade { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px 8px 8px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-weight: 700; }
+.grade img, .grade .noimg { width: 26px; height: 26px; border-radius: 5px; }
+.grade .gname { font-family: var(--font-mono); letter-spacing: .02em; }
+.grade.unique .gname { color: var(--legend); }
+.grade.rare .gname { color: var(--epic); }
+[aria-pressed="true"].slot, [aria-pressed="true"].grade, [aria-pressed="true"].set, [aria-pressed="true"].item, [aria-pressed="true"].chip, [aria-pressed="true"].sub, [aria-pressed="true"].ctile {
+  border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--ink);
+}
+
+/* сеты */
+.sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+.set { display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 7px 10px 7px 7px; min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); text-align: left; }
+.set img, .set .noimg { grid-row: 1 / 3; width: 32px; height: 32px; object-fit: contain; }
+.set b { font-weight: 600; font-size: 14px; line-height: 1.2; }
+.set span { font-size: 12px; color: var(--ink-3); }
+.dead-h { margin: 12px 0 6px; font-size: 12.5px; color: var(--ink-3); }
+.dead { display: flex; flex-wrap: wrap; gap: 6px; }
+.deadchip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px 5px 5px; min-height: 36px; border: 1px dashed var(--line-2); border-radius: 999px; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.deadchip img, .deadchip .noimg { width: 22px; height: 22px; }
+.picked { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
+.picked .pi { width: 44px; height: 44px; object-fit: contain; }
+.picked b { display: block; font-size: 15px; }
+.picked span { display: block; font-size: 12.5px; color: var(--ink-3); }
+
+/* предметы */
+.tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+.search { flex: 1 1 200px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); font-size: 16px; }
+.search::placeholder { color: var(--ink-3); }
+.filt { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.fbtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px 6px 7px; min-height: 34px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); font-size: 12.5px; font-weight: 600; color: var(--ink-2); text-align: left; }
+.fbtn img, .fbtn .noimg { width: 18px; height: 18px; }
+.fbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: min(420px, 55vh); overflow: auto; padding: 2px; overscroll-behavior: contain; }
+.item { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 10px; align-items: center; text-align: left; padding: 6px 10px 6px 6px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.item b { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+.item span { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item.unused b { color: var(--ink-2); font-weight: 500; }
+.frame { position: relative; flex: none; width: 44px; height: 44px; border-radius: 7px; overflow: hidden; background: var(--surface-3); }
+.frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.frame > img.ic { object-fit: contain; padding: 3px; }
+.passive { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
+.passive b { color: var(--ink); }
+
+/* статы */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px 7px 7px; min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+.chip img, .chip .noimg { width: 18px; height: 18px; }
+.chip.rare-main { border-style: dashed; }
+.chip .want { font-family: var(--font-body); font-weight: 600; font-size: 11px; color: var(--keep); }
+.subs { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; }
+.sub { display: grid; grid-template-columns: 18px 1fr; grid-template-rows: auto auto; gap: 5px 7px; align-items: center; padding: 8px 8px 9px; min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); text-align: left; }
+.sub img, .sub .noimg { width: 18px; height: 18px; }
+.sub .lab { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+.sub.flat .lab { font-weight: 500; color: var(--ink-2); }
+.sub .segs { grid-column: 1 / 3; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+.sub .segs i { height: 5px; border-radius: 1.5px; background: var(--seg-off); opacity: .55; }
+.sub[aria-pressed="true"] .segs i { opacity: 1; }
+.sub[aria-pressed="true"] .segs i.on { background: var(--seg-y); }
+.sub:disabled { opacity: .35; cursor: not-allowed; }
+.rolls { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); display: grid; gap: 6px; }
+.rolls-h { margin: 0 0 2px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.roll { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.roll-k { display: inline-flex; align-items: center; gap: 6px; min-width: 78px; }
+.roll-k img, .roll-k .noimg { width: 18px; height: 18px; }
+.roll-k .lab { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+.roll-b { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.roll-b button { min-width: 42px; height: 40px; border: 0; border-left: 1px solid var(--line); background: transparent; font: 700 14px/1 var(--font-mono); color: var(--ink-2); }
+.roll-b button:first-child { border-left: 0; }
+.roll-b button.r4 { color: var(--ink-3); }
+.roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: #1b1300; }
+.roll-b button[aria-pressed="true"] { background: var(--seg-y); color: #1b1300; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); }
+.actions .hk { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }
+.btn { padding: 9px 14px; min-height: 40px; border-radius: var(--radius-s); border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 14px; }
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; min-height: 32px; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.settings { border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); }
+.settings summary { cursor: pointer; padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.settings summary .cur { font-weight: 500; color: var(--ink-3); }
+.settings-body { padding: 0 16px 14px; display: grid; gap: 12px; }
+.settings-body p { margin: 0; }
+.seg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.seg .muted { margin-right: 4px; }
+
+/* ---------- вердикт */
+.verdict { overflow: hidden; }
+.v-head { padding: 16px 16px 14px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); background: var(--v-soft, var(--idle-soft)); }
+.v-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stamp { display: inline-block; padding: 7px 12px 6px; border: 2px solid var(--v, var(--idle)); border-radius: 6px; font: 700 clamp(18px, 2.6vw, 23px)/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--v, var(--idle)); box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 3.5px var(--v, var(--idle)); background: var(--surface); }
+.badge { font: 700 11px/1 var(--font-mono); letter-spacing: .04em; text-transform: uppercase; padding: 5px 7px; border-radius: 5px; background: var(--seg-y); color: #1b1300; }
+.v-item { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.v-item img.seticon { width: 28px; height: 28px; }
+.v-summary { margin: 0; font-weight: 700; font-size: 15px; }
+.v-reasons { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; }
+.v-reasons b { color: var(--ink); }
+.v-keep { --v: var(--keep); --v-soft: var(--keep-soft); }
+.v-temp, .v-maybe { --v: var(--temp); --v-soft: var(--temp-soft); }
+.v-fodder { --v: var(--fodder); --v-soft: var(--fodder-soft); }
+.v-junk { --v: var(--junk); --v-soft: var(--junk-soft); }
+.v-idle { --v: var(--idle); --v-soft: var(--idle-soft); }
+.v-sec { border-top: 1px solid var(--line); }
+.v-list-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 12px 16px 4px; }
+.v-list-h h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.v-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; min-height: 44px; border: 0; background: none; text-align: left; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.matches { list-style: none; margin: 0; padding: 4px 8px 10px; display: grid; gap: 2px; }
+.match { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 7px 8px; border-radius: var(--radius-s); }
+.match:hover { background: var(--surface-2); }
+.match .face { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--surface-3); }
+.match .nm { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.match .nm button { border: 0; background: none; padding: 0; font-weight: 600; text-align: left; }
+.match .nm button:hover { color: var(--accent); }
+.match .bn { font-size: 12px; color: var(--ink-3); }
+.match .det { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
+.match.dim { opacity: .82; }
+.score { font-family: var(--font-mono); font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 5px; background: var(--surface-3); color: var(--ink-2); min-width: 44px; text-align: center; }
+.score.hi { background: var(--keep-soft); color: var(--keep); }
+.score.mid { background: var(--temp-soft); color: var(--temp); }
+.score.lo { background: var(--junk-soft); color: var(--junk); }
+.tok { font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); white-space: nowrap; }
+.tok.ok { background: var(--keep-soft); color: var(--keep); }
+.tok.half { background: var(--temp-soft); color: var(--temp); }
+.tok.no { background: transparent; color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+.tok.bad { background: var(--junk-soft); color: var(--junk); }
+.tok.cmb { font-family: var(--font-body); font-weight: 600; }
+.more { padding: 0 16px 14px; }
+.v-foot { padding: 10px 16px 14px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-3); display: grid; gap: 6px; }
+
+/* мобильная плашка вердикта */
+.vbar { display: none; }
+html.narrow body.has-vbar { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+html.narrow .vbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--v-soft, var(--idle-soft)); border-top: 2px solid var(--v, var(--idle)); box-shadow: 0 -6px 18px rgb(0 0 0 / .14); }
+html.narrow .vbar .vb-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; text-align: left; color: var(--ink); min-height: 44px; }
+html.narrow .vbar .vb-next { flex: none; min-height: 44px; padding: 8px 14px; border-radius: var(--radius-s); border: 0; background: var(--ink); color: var(--surface); font-weight: 700; font-size: 14px; }
+html.narrow .vbar .stamp { font-size: 14px; padding: 5px 8px 4px; flex: none; }
+html.narrow .vbar .vt { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---------- персонажи */
+.chars { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+html:not(.sheet) .chars { grid-template-columns: minmax(0, 1fr) minmax(400px, 500px); align-items: start; }
+html:not(.sheet) .char-detail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; overscroll-behavior: contain; }
+html.sheet .char-detail:not(.open) { display: none; }
+html.sheet .char-detail.open { position: fixed; inset: 0; z-index: 30; border: 0; border-radius: 0; overflow: auto; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom, 0px); }
+html.sheet body.sheet-open { overflow: hidden; }
+.roster-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.roster-io { padding: 0 16px 14px; display: grid; gap: 8px; }
+.roster-io textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); font: 13px/1.4 var(--font-mono); resize: vertical; }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding: 14px 16px 16px; }
+.cwrap { position: relative; min-width: 0; }
+.ctile { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); text-align: center; min-width: 0; height: 100%; }
+.ctile img.face, .ctile .noimg.face { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+.ctile .cn { font-size: 12px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.ctile .cp { display: block; font-size: 10.5px; font-weight: 500; color: var(--ink-3); }
+.ctile .badges { position: absolute; top: 6px; left: 6px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+.ctile .badges img { width: 16px; height: 16px; }
+.ctile.nob .face { filter: grayscale(.7); }
+.ctile .newb { position: absolute; top: 58px; right: 8px; font: 700 9px/1 var(--font-mono); padding: 2px 4px; border-radius: 3px; background: #b3262e; color: #fff; }
+.star { position: absolute; top: 0; right: 0; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; font-size: 18px; line-height: 1; color: var(--ink-3); border-radius: var(--radius-s); }
+.star[aria-pressed="true"] { color: var(--star-on); }
+.cd-top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+html:not(.sheet) .cd-top { display: none; }
+.cd-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 16px 16px 12px; }
+.cd-head img.face, .cd-head .noimg.face { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+.cd-head h2 { margin: 0; font: 700 18px/1.2 var(--font-display); text-wrap: balance; }
+.cd-head .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.cd-head .meta img { width: 18px; height: 18px; vertical-align: -4px; }
+.own-row { padding: 0 16px 4px; }
+.own-btn { border: 1px solid var(--line-2); background: var(--surface); padding: 8px 12px; min-height: 40px; border-radius: var(--radius-s); font-weight: 600; font-size: 13.5px; }
+.own-btn[aria-pressed="true"] { border-color: var(--star-on); color: var(--ink); background: color-mix(in srgb, var(--star-on) 14%, var(--surface)); }
+.btabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
+.btabs button { border: 1px solid var(--line); background: var(--surface-2); padding: 7px 12px; min-height: 36px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.btabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.bsec { padding: 12px 16px 18px; display: grid; gap: 16px; }
+.bsec h4 { margin: 0 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.combo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.combo + .combo { margin-top: 6px; }
+.combo .or { font-size: 12px; color: var(--ink-3); width: 100%; }
+.setpill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px 4px 4px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+.setpill img, .setpill .noimg { width: 24px; height: 24px; }
+.setpill .n { font-family: var(--font-mono); color: var(--ink-3); font-weight: 700; }
+.gear { display: grid; gap: 8px; }
+.gearrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; }
+.gearrow b { font-size: 14px; }
+.gearrow .gm { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.gearrow .ps { font-size: 12.5px; color: var(--ink-3); }
+.prio { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.prio .gt { color: var(--ink-3); font-family: var(--font-mono); font-size: 12px; }
+.prio .tok { font-size: 12.5px; padding: 3px 7px; }
+.prio .tok.t0 { background: var(--ink); color: var(--surface); }
+.prio .tok.t1 { background: var(--accent-soft); color: var(--accent); }
+.prio-hint { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 12.5px; color: var(--ink-2); }
+.prio-hint b { font-family: var(--font-mono); }
+.tal { display: flex; flex-wrap: wrap; gap: 6px; }
+.tal span { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; padding: 3px 8px 3px 3px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); }
+.tal img, .tal .noimg { width: 22px; height: 22px; }
+.bnote { font-size: 13px; color: var(--ink-2); white-space: pre-line; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
+.cd-empty { padding: 28px 16px; color: var(--ink-3); text-align: center; }
+
+html.narrow .step { padding: 12px 14px 14px; }
+html.narrow .step-h { margin-bottom: 8px; }
+html.narrow .top { padding-block: 10px 8px; gap: 8px 16px; }
+html.narrow .brand p { display: none; }
+.fitnote { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--temp-soft); color: var(--ink); font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; }
+.fitnote button { flex: none; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 2px 0; }
+footer.foot { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
+footer.foot a { color: var(--ink-2); }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <div>
+        <h1>Gear Check</h1>
+        <p>Outerplane · что оставить, что разобрать</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Разделы">
+      <button type="button" role="tab" id="tab-eval" data-tab="eval" aria-controls="view-eval">Оценка предмета</button>
+      <button type="button" role="tab" id="tab-chars" data-tab="chars" aria-controls="view-chars">Персонажи <span class="count" id="roster-count"></span></button>
+    </nav>
+  </header>
+
+  <div id="updnote" hidden></div>
+  <div id="fitnote" hidden></div>
+  <main>
+    <section id="view-eval" class="view eval" role="tabpanel" aria-labelledby="tab-eval">
+      <div class="panel eval-in" id="eval-in"></div>
+      <aside class="panel verdict eval-out" id="verdict" aria-live="polite"></aside>
+    </section>
+    <section id="view-chars" class="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden>
+      <div class="panel" id="char-list"></div>
+      <aside class="panel char-detail" id="char-detail" aria-label="Билды персонажа"></aside>
+    </section>
+  </main>
+
+  <footer class="foot" id="foot"></footer>
+  <div class="vbar" id="vbar" hidden><button type="button" class="vb-main" data-act="toverdict" aria-label="Вердикт — показать подробности"></button><button type="button" class="vb-next" data-act="next">Далее</button></div>
+</div>
+
+<script>window.OGC_DATA = /*__OGC_DATA__*/null;</script>
+<script>
+(() => {
+'use strict';
+
+const D = window.OGC_DATA;
+if (!D) {
+  document.getElementById('eval-in').innerHTML = '<p class="empty">Нет данных. Запусти <code>python3 update.py</code> — он соберёт страницу.</p>';
+  return;
+}
+
+/* =====================================================================
+   Настройки оценки — все пороги и веса в одном месте.
+   ===================================================================== */
+const CFG = {
+  // вес ступени приоритета сабстатов (для сортировки и процента)
+  tierWeights: [1, 0.8, 0.65, 0.5, 0.4, 0.32, 0.26, 0.2],
+  // сколько «полезности» даёт стат на ступени приоритета: 1–3 — целиком, 4-я — половина, дальше — ничего
+  tierCredit: [1, 1, 1, 0.5],
+  // flat-стат против %-версии у конкретного персонажа: ≥0.9 — целиком, ≥0.6 — половина, ниже — не считается
+  flatFull: 0.9,
+  flatHalf: 0.6,
+  // множитель за жёлтые сегменты: индекс = сколько сегментов (у отмеченного стата минимум 1)
+  rollMult: [1, 1, 1.15, 1.3, 1.45],
+  keepCount: 3,      // полезных сабстатов для «Оставить» (Legendary из 4, Epic из 3–4)
+  spdKeep: 2,        // …или 2 полезных, если среди них SPD
+  spdRoll: 2,        // …с хотя бы 2 жёлтыми сегментами
+  godYellow: 8,      // «топ-ролл»: сумма жёлтых сегментов на полезных статах
+  // временная замена (нет нужной пассивки): держим только хороший ролл
+  tempGood: 3,       // 3 полезных сабстата…
+  tempGood2: 2,      // …или 2 полезных
+  tempYellow: 5,     // …с 5+ жёлтыми сегментами на них
+  // оценка ролла: доля жёлтых на полезных статах от максимума (3 на каждый сабстат)
+  rollHigh: 0.6,
+  rollMid: 0.4,
+  flatFallback: { ATK: 0.88, DEF: 1.05, HP: 0.57 }, // медианы по 3★ (lv100 + quirks), если нет данных
+};
+
+/* ---------- утилиты */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const img = (key, cls = '', alt = '') => (D.img && D.img[key])
+  ? `<img class="${cls}" src="${D.img[key]}" alt="${esc(alt)}" decoding="async">`
+  : `<span class="noimg ${cls}" aria-hidden="true"></span>`;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('ogc.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('ogc.' + k, JSON.stringify(v)); } catch { /* без хранилища живём в памяти */ } },
+};
+const plural = (n, one, few, many) => {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+};
+const persons = (n) => `${n} ${plural(n, 'персонаж', 'персонажа', 'персонажей')}`;
+const personsGen = (n) => `${n} ${plural(n, 'персонажа', 'персонажей', 'персонажей')}`;
+const personsDat = (n) => `${n} ${plural(n, 'персонажу', 'персонажам', 'персонажам')}`;
+const fmtGood = (x) => (x % 1 ? `${Math.floor(x) || ''}½` : String(x));
+const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+const root = document.documentElement;
+const isNarrow = () => root.classList.contains('narrow');
+const isSheet = () => root.classList.contains('sheet');
+// Реальная ширина экрана. В режиме «Версия для ПК» мобильный Chrome рисует страницу шириной ~980px
+// и сжимает её — текст становится мелким, а раскладка десктопной. screen.width при этом честный.
+let desktopModeOnPhone = false;
+function applyLayout() {
+  root.style.zoom = '';
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  let w = window.innerWidth;
+  desktopModeOnPhone = coarse && screen.width > 0 && screen.width < 720 && w > screen.width * 1.25;
+  if (desktopModeOnPhone) {
+    // масштабируем страницу обратно до ширины телефона: текст нормального размера, раскладка мобильная
+    root.style.zoom = String(w / screen.width);
+    w = screen.width;
+  }
+  root.classList.toggle('narrow', w < 720);
+  root.classList.toggle('xs', w < 560);
+  root.classList.toggle('sheet', w < 900);
+  root.classList.toggle('wide', w >= 1100);
+}
+applyLayout();
+
+/* ---------- индексы */
+const SET = Object.fromEntries(D.sets.map((s) => [s.id, s]));
+const ITEMS = { weapon: D.weapons, accessory: D.amulets };
+const ITEM = { weapon: Object.fromEntries(D.weapons.map((i) => [i.key, i])), accessory: Object.fromEntries(D.amulets.map((i) => [i.key, i])) };
+const CHAR = Object.fromEntries(D.chars.map((c) => [c.id, c]));
+const SUB = Object.fromEntries(D.substats.map((s) => [s.key, s]));
+const NEW = new Set(D.meta.newIds || []);
+const STAT_ICON = {
+  'ATK': 'CM_Stat_Icon_ATK', 'ATK%': 'CM_Stat_Icon_ATK', 'DEF': 'CM_Stat_Icon_DEF', 'DEF%': 'CM_Stat_Icon_DEF',
+  'HP': 'CM_Stat_Icon_HP', 'HP%': 'CM_Stat_Icon_HP', 'SPD': 'CM_Stat_Icon_SPEED', 'CHC': 'CM_Stat_Icon_CRITICAL',
+  'CHD': 'CM_Stat_Icon_CRITICAL_DMG', 'EFF': 'CM_Stat_Icon_CHANCE', 'RES': 'CM_Stat_Icon_RESIST', 'PEN%': 'CM_Stat_Icon_PIERCE_POWER',
+  'DMG UP%': 'CM_Stat_Icon_DMG_INCREASE', 'DMG RED%': 'CM_Stat_Icon_ENEMY_DMG_REDUCE', 'CDMG RED%': 'CM_Stat_Icon_ENEMY_CRITICAL_DMG_REDUCE',
+};
+const statIcon = (lab) => img('stat:' + (STAT_ICON[lab] || ''), '', lab);
+const SUB_ORDER = ['SPD', 'ATK%', 'CHC', 'CHD', 'DMG UP%', 'HP%', 'DEF%', 'DMG RED%', 'EFF', 'RES', 'ATK', 'HP', 'DEF'];
+const SUB_LIST = SUB_ORDER.filter((k) => SUB[k]).concat(D.substats.map((s) => s.key).filter((k) => !SUB_ORDER.includes(k)));
+const FLAT = new Set(['ATK', 'DEF', 'HP']);
+const TICK = {};
+for (const ax of FLAT) if (SUB[ax] && SUB[ax + '%']) TICK[ax] = [SUB[ax].step, SUB[ax + '%'].step];
+const SLOTS = [
+  { id: 'weapon', name: 'Weapon', ru: 'оружие', ruGen: 'оружия', ruPrep: 'оружии' },
+  { id: 'accessory', name: 'Accessory', ru: 'аксессуар', ruGen: 'аксессуара', ruPrep: 'аксессуаре' },
+  { id: 'helmet', name: 'Helmet', game: 'Helmet' },
+  { id: 'armor', name: 'Armor', game: 'Chest Armor' },
+  { id: 'gloves', name: 'Gloves', game: 'Gloves' },
+  { id: 'shoes', name: 'Shoes', game: 'Boots' },
+];
+const SLOT = Object.fromEntries(SLOTS.map((s) => [s.id, s]));
+const isArmor = (slot) => ['helmet', 'armor', 'gloves', 'shoes'].includes(slot);
+const GRADE_NAME = { unique: 'Legendary', rare: 'Epic' };
+const GRADE_PREFIX = { unique: 'Etheric', rare: 'Steel' };
+const LOW_STAR_USED = [...D.weapons, ...D.amulets].filter((i) => i.star < 6 && i.users > 0);
+// почему сет не берут — только там, где причина проверена; остальным хватает общего текста
+const DEAD_SET_WHY = {
+  'Critical Hit': 'Шанс крита набирают и без сета — quirks, сабстаты CHC, аксессуары с main CHC, — а выше 100% он сгорает; у части DPS в заметках outerpedia прямо сказано «CHC до 50%». Поэтому место под сет отдают Critical Strike (CHD), Penetration или Speed. Разработчики сами называют Critical Hit сетом для начала игры.',
+  'Lifesteal': 'Вампиризм 7–12% слабее того, что дают Swiftness, Immunity или Life — их и берут сустейн-билды outerpedia.',
+};
+
+/* ---------- состояние */
+const roster = new Set(store.get('roster', []).filter((id) => CHAR[id]));
+const state = Object.assign({
+  tab: 'eval', slot: 'gloves', grade: 'unique',
+  setId: null, itemKey: null, main: null, subs: {}, q: '', cls: '',
+  rosterOnly: true, fodder: false, stage: 'grow', lv120: false, quirks: true,
+  charId: null, buildIdx: 0, cq: '', cel: '', ccl: '', cOwned: false, cAll: false,
+  expand: {}, settingsOpen: false,
+}, store.get('state', {}), { setId: null, itemKey: null, main: null, subs: {}, q: '', cls: '', expand: {} });
+if (!['grow', 'end'].includes(state.stage)) state.stage = 'grow';
+const persist = () => store.set('state', {
+  tab: state.tab, slot: state.slot, grade: state.grade, rosterOnly: state.rosterOnly, fodder: state.fodder,
+  stage: state.stage, lv120: state.lv120, quirks: state.quirks, settingsOpen: state.settingsOpen,
+  charId: state.charId, cel: state.cel, ccl: state.ccl, cOwned: state.cOwned, cAll: state.cAll,
+});
+const saveRoster = () => { store.set('roster', [...roster]); $('#roster-count').textContent = roster.size ? `★ ${roster.size}` : ''; };
+const scopeActive = () => state.rosterOnly && roster.size > 0;
+const inScope = (c) => !scopeActive() || roster.has(c.id);
+
+/* =====================================================================
+   Оценка
+   ===================================================================== */
+
+// Сколько стоит сегмент flat-стата относительно сегмента %-версии у ЭТОГО персонажа.
+// %-сабстат умножает только собственную базу (уровень + эволюции + flat-quirks) — см. update.py.
+function flatFactor(c, axis) {
+  const f = c && c.flat && c.flat[axis];
+  const t = TICK[axis];
+  if (!f || !t || !f[0] || !f[1]) return CFG.flatFallback[axis]; // нет своей базы — берём средние
+  const base = f[state.lv120 ? 1 : 0] + (state.quirks ? f[2] : 0);
+  return t[0] / (base * t[1] / 100);
+}
+const flatCredit = (r) => (r >= CFG.flatFull ? 1 : r >= CFG.flatHalf ? 0.5 : 0);
+
+function subWeights(build, c) {
+  // «ключ сабстата предмета → вес / ступень / засчитывается (1, ½, 0)» по приоритету билда
+  const out = new Map();
+  const put = (key, w, tier, credit) => {
+    const prev = out.get(key);
+    credit = credit >= 1 ? 1 : credit >= 0.5 ? 0.5 : 0;
+    if (!prev || prev.credit < credit || (prev.credit === credit && prev.w < w)) out.set(key, { w, tier, credit });
+  };
+  build.subs.forEach((tier, t) => {
+    const w = CFG.tierWeights[Math.min(t, CFG.tierWeights.length - 1)];
+    const tc = CFG.tierCredit[t] ?? 0;
+    for (const raw of tier) {
+      const tok = raw.trim();
+      const axis = tok.replace(/%$/, '');
+      if (FLAT.has(axis)) {
+        // ATK/DEF/HP в приоритете — ось: подходит и flat, и %; лучшая из двух версий получает полный вес
+        const r = flatFactor(c, axis);
+        put(axis + '%', r > 1 ? w / r : w, t, tc * (r > 1 ? flatCredit(1 / r) : 1));
+        put(axis, r > 1 ? w : w * r, t, tc * flatCredit(Math.min(r, 1)));
+      } else if (tok === 'SPD') {
+        put(tok, w, t, 1); // скорость полезна на любой ступени — так её и оценивают игроки
+      } else if (SUB[tok]) {
+        put(tok, w, t, tc); // токены, которые не выпадают сабстатом (CDMG RED%), пропускаем
+      }
+    }
+  });
+  return out;
+}
+
+function scoreBuild(c, build, subs, excluded) {
+  const W = subWeights(build, c);
+  const keys = Object.keys(subs);
+  const n = Math.max(keys.length, state.grade === 'rare' ? 3 : 4);
+  const ideal = [...W.entries()].filter(([k]) => !excluded.has(k)).map(([, v]) => v.w).sort((a, b) => b - a).slice(0, n);
+  const max = ideal.reduce((a, b) => a + b, 0) || 1;
+  let got = 0, good = 0, yellow = 0;
+  const parts = keys.map((k) => {
+    const w = W.get(k);
+    const m = CFG.rollMult[Math.min(Math.max(subs[k] || 1, 1), CFG.rollMult.length - 1)];
+    if (w) { got += w.w * m; good += w.credit; if (w.credit) yellow += subs[k] || 1; }
+    return { key: k, ok: !!(w && w.credit), half: !!(w && w.credit > 0 && w.credit < 1), tier: w ? w.tier : null };
+  });
+  return { ratio: got / max, good, yellow, spd: !!(W.get('SPD') && 'SPD' in subs), parts };
+}
+
+function buildsOf(pred) {
+  const out = [];
+  for (const c of D.chars) c.builds.forEach((b, i) => { if (pred(b, c)) out.push({ c, b, i }); });
+  return out;
+}
+const combosWith = (b, setId) => b.sets.filter((combo) => combo.some((p) => p.set === setId));
+const comboText = (combo) => combo.map((p) => `${SET[p.set] ? SET[p.set].short : p.set} ×${p.n}`).join(' + ');
+const gearList = (b, kind) => (kind === 'weapon' ? b.weapons : b.amulets);
+const gearRef = (b, kind, key) => gearList(b, kind).find((g) => g.key === key) || { mains: [] };
+const slotMains = (b, kind) => new Set(gearList(b, kind).flatMap((g) => g.mains));
+const uniqChars = (list) => [...new Map(list.map((x) => [x.c.id, x.c])).values()];
+const namesLine = (list, max = 6) => {
+  const u = uniqChars(list).map((c) => c.name);
+  return esc(u.slice(0, max).join(', ')) + (u.length > max ? ` и ещё ${u.length - max}` : '');
+};
+
+// строки списка: оценка каждого билда + один персонаж — одна строка (лучший билд), остальные — в «ещё»
+function rows(list, subs, excluded, extra) {
+  const hasSubs = Object.keys(subs).length > 0;
+  return list.map((x) => ({
+    ...x,
+    ...(hasSubs ? scoreBuild(x.c, x.b, subs, excluded) : { ratio: null, good: null, parts: [], spd: false, yellow: 0 }),
+    ...(extra ? extra(x) : {}),
+  }));
+}
+function dedupe(list, rank) {
+  list.sort((a, b) => rank(b) - rank(a) || a.c.name.localeCompare(b.c.name));
+  const seen = new Map();
+  for (const r of list) {
+    const prev = seen.get(r.c.id);
+    if (prev) { if (!prev.alt.includes(r.b.name)) prev.alt.push(r.b.name); } else seen.set(r.c.id, { ...r, alt: [] });
+  }
+  return [...seen.values()];
+}
+
+function evaluate() {
+  const res = { v: 'idle', title: '', lines: [], sections: [], badge: '', foot: '' };
+  return isArmor(state.slot) ? evalArmor(res, state.subs) : evalGear(res, state.subs);
+}
+
+function evalArmor(res, subs) {
+  const s = state;
+  const legend = s.grade === 'unique';
+  const nSubs = Object.keys(subs).length;
+  const expected = legend ? 4 : 3;
+  res.foot = `Броня: полезный сабстат — из 1–3 ступени приоритета билда (4-я — за ½, SPD — на любой; слабый flat — за ½ или не считается). Оставить — ${CFG.keepCount}+ полезных под лучший билд или ${CFG.spdKeep} с SPD от ${CFG.spdRoll} жёлтых сегментов.`;
+  const set = SET[s.setId];
+  if (!set) {
+    res.title = 'Выбери сет';
+    res.lines = [`Сет написан в названии после «of»: <b>${GRADE_PREFIX[s.grade]} ${esc(SLOT[s.slot].game)} of Speed</b> → ${GRADE_NAME[s.grade]}, Speed Set.`];
+    return res;
+  }
+  const all = buildsOf((b) => combosWith(b, set.id).length);
+  if (!all.length) {
+    res.v = 'junk';
+    res.title = `Скорее разбирай — ${set.short} Set нет ни в одном билде`;
+    const eff = [set.p2 && `2 шт.: ${esc(set.p2)}`, set.p4 && `4 шт.: ${esc(set.p4)}`].filter(Boolean).join('; ');
+    res.lines = [
+      `outerpedia не ставит <b>${esc(set.name)}</b> ни одному из ${D.meta.counts.withBuilds} персонажей с билдами${eff ? ` (на T4 — ${eff})` : ''}.`,
+      DEAD_SET_WHY[set.short] || 'Эффект ситуативный: в каждом билде есть сет, который даёт больше.',
+      'Если сам играешь от этого сета (например, в PvP) — оставь экземпляры с хорошими сабстатами. Список обновится сам, когда сет появится в билдах outerpedia.',
+    ];
+    return res;
+  }
+  const judged = all.filter((x) => x.b.subs.some((t) => t.length));
+  const spdRoll = subs.SPD || 0;
+  const qualifies = (m) => m.good != null && (m.good >= CFG.keepCount || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll));
+  res.qualifies = qualifies;
+  const rank = (r) => (qualifies(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
+  const extra = (x) => ({ combos: combosWith(x.b, set.id) });
+  const scoped = dedupe(rows(judged.filter((x) => inScope(x.c)), subs, new Set(), extra), rank);
+  const others = dedupe(rows(judged.filter((x) => !inScope(x.c)), subs, new Set(), extra), rank);
+  const whoWears = `Кто носит ${set.short} Set`;
+  const othersSection = () => { if (others.length) res.sections.push({ title: 'Не из ростера', rows: others, dim: true, limit: 6 }); };
+
+  if (!scoped.length) {
+    res.v = 'junk';
+    res.title = `Разбирай — ${set.short} Set не нужен твоим персонажам`;
+    res.lines = [`Сет стоит только в билдах тех, кого нет в ростере: ${namesLine(others)}.`];
+    const good = others.filter(qualifies);
+    if (good.length) {
+      res.v = 'maybe'; res.title = 'Не для твоего ростера — но предмет хороший';
+      res.lines.push(`Для ${namesLine(good, 4)} это «Оставить». Если планируешь их качать — не разбирай.`);
+    }
+    othersSection();
+    return res;
+  }
+  if (!nSubs) {
+    res.title = `${set.short} Set нужен ${personsDat(scoped.length)}`;
+    res.lines = ['Отметь сабстаты предмета — посчитаю, кому он подходит.'];
+    res.sections.push({ title: whoWears, rows: scoped, limit: 12 });
+    othersSection();
+    return res;
+  }
+
+  const keepers = scoped.filter(qualifies);
+  const best = keepers[0] || scoped[0];
+  const okList = best.parts.filter((p) => p.ok).map((p) => esc(p.key) + (p.half ? ' (½)' : ''));
+  const who = `<b>${esc(best.c.name)}</b> — ${esc(best.b.name)}`;
+  const partial = nSubs < expected;
+  const canStillKeep = best.good + (expected - nSubs) >= CFG.spdKeep;
+  // SPD уже среди полезных, но выпало мало сегментов: если на самом деле их больше — это «Оставить»
+  const spdHint = spdRoll < CFG.spdRoll && scoped.some((m) => m.spd && m.good >= CFG.spdKeep);
+
+  if (keepers.length) {
+    res.v = 'keep';
+    res.title = `Оставляй — подходит ${personsDat(keepers.length)}`;
+    res.lines.push(`Лучше всего: ${who}. Полезны ${fmtGood(best.good)} из ${nSubs}: ${okList.join(', ')}.`);
+    if (best.good < CFG.keepCount) res.lines.push(`Полезных всего ${fmtGood(best.good)}, но SPD с ${spdRoll} жёлтыми сегментами вытягивает.`);
+    const roll = rollInfo(best, nSubs);
+    if (roll) res.lines.push(roll.text);
+    if (best.yellow >= CFG.godYellow || (best.spd && spdRoll >= 3)) res.badge = 'Топ-ролл';
+    else if (roll && roll.level === 'high') res.badge = 'Стоит прокачать';
+    if (legend && nSubs === 4 && Object.values(subs).every((r) => r >= 3)) res.lines.push('Все 4 сабстата с 3 жёлтыми сегментами (3×4) — ивентовое качество.');
+    res.sections.push({ title: 'Кому подходит', rows: keepers, limit: 12, count: keepers.length });
+    const rest = scoped.filter((m) => !qualifies(m));
+    if (rest.length) res.sections.push({ title: `Носят ${set.short} Set, но сабстаты не те`, rows: rest, collapsed: true });
+    othersSection();
+    return res;
+  }
+  if (partial && canStillKeep) {
+    res.title = `Отмечено ${nSubs} из ${expected} — отметь остальные`;
+    res.lines.push(`Пока полезных ${fmtGood(best.good)}. Лучший кандидат: ${who}.`);
+    res.sections.push({ title: whoWears, rows: scoped, limit: 12 });
+    othersSection();
+    return res;
+  }
+  if (legend && s.fodder && !partial) {
+    res.v = 'fodder';
+    res.title = 'Фоддер — сабстаты не дотянули';
+    res.lines.push(best.good ? `Лучший вариант: ${who}, полезны только ${fmtGood(best.good)}: ${okList.join(', ')}.` : `Ни один сабстат не нужен билдам с ${esc(set.short)} Set.`);
+    res.lines.push(`Для Breakthrough и реролла Transistone (Total) сабстаты не важны — годится любой Legendary ${esc(SLOT[s.slot].game)} ${esc(set.short)} Set. Держи не больше 4 на сет и слот: столько нужно, чтобы довести один предмет до T4.`);
+  } else {
+    res.v = 'junk';
+    res.title = partial ? 'Разбирай — даже с последним сабстатом не вытянет' : 'Разбирай — сабстаты мимо';
+    res.lines.push(best.good ? `Даже лучшему варианту (${who}) полезны только ${fmtGood(best.good)}: ${okList.join(', ')}.` : `Ни один сабстат не нужен билдам с ${esc(set.short)} Set.`);
+    if (!legend && best.good >= 2) res.lines.push('Для Epic двух полезных без хорошего SPD мало: Transistone на Epic не тратят, а в Breakthrough для Legendary он не годится.');
+    if (legend && !partial) res.lines.push(`Копишь фоддер для T4 ${esc(set.short)} Set? Включи это в «Настройках оценки» — такие предметы станут «Фоддер».`);
+  }
+  if (spdHint) res.lines.push(`Проверь SPD: если у него ${CFG.spdRoll}+ жёлтых сегмента — отметь, это уже «Оставить».`);
+  res.sections.push({ title: whoWears, rows: scoped, collapsed: true });
+  // предмет хорош для тех, кого нет в ростере — не даём разобрать молча
+  if (others.some(qualifies)) {
+    res.v = 'maybe';
+    res.title = 'Твоим не подходит, но предмет хороший';
+    res.lines.unshift(`Для персонажей не из ростера это «Оставить»: ${namesLine(others.filter(qualifies), 4)}. Если планируешь их качать — не разбирай.`);
+  }
+  othersSection();
+  return res;
+}
+
+// «Ролл» предмета: сколько сабстатов полезны лучшему кандидату и сколько на них жёлтых сегментов.
+// Жёлтые — стартовое качество; от него зависит, сколько получится после Reforge, то есть стоит ли вкладываться.
+function rollInfo(m, n) {
+  if (!m || m.good == null || !n) return null;
+  const max = 3 * n;
+  const level = m.yellow >= CFG.rollHigh * max ? 'high' : m.yellow >= CFG.rollMid * max ? 'mid' : 'low';
+  const word = { high: 'высокий, стоит вкладываться в прокачку', mid: 'средний', low: 'низкий' }[level];
+  return { level, text: `Ролл: полезных ${fmtGood(m.good)} из ${n}, жёлтых сегментов на них ${m.yellow} из ${max} возможных — ${word}.` };
+}
+
+function evalGear(res, subs) {
+  const s = state;
+  const kind = s.slot;
+  const sl = SLOT[kind];
+  const epic = s.grade === 'rare';
+  const nSubs = Object.keys(subs).length;
+  const expected = epic ? 3 : 4;
+  res.foot = `Оружие и аксессуары: ценность Legendary — в уникальной пассивке и правильном main stat; сабстаты правят Precise Craft и Transistone. Временная замена (без нужной пассивки) стоит места, только если ролл хороший: ${CFG.tempGood} полезных сабстата или ${CFG.tempGood2} полезных с ${CFG.tempYellow}+ жёлтыми сегментами на них.`;
+
+  // кто взял бы предмет с таким main как временный: класс подходит, и билд просит этот main в этом слоте
+  const stopgapFor = (main, classLimits) => buildsOf((b, c) => (!classLimits.length || classLimits.includes(c.class)) && slotMains(b, kind).has(main));
+  // «2 полезных + много жёлтых» — только для 3 сабстатов; у 4-сабстатного предмета нужно 3 полезных
+  const tempOk = (m) => m.good != null && (m.good >= CFG.tempGood || (m.good >= Math.max(CFG.tempGood2, nSubs - 1) && m.yellow >= CFG.tempYellow));
+  res.qualifies = tempOk;
+  const tempRank = (r) => (tempOk(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.yellow ?? 0) * 0.1 + (r.ratio ?? 0) * 0.01;
+
+  // общий вердикт для временной замены (Epic или Legendary с пассивкой не из билдов)
+  const judgeStopgap = (cands, what) => {
+    if (!cands.length) return false;
+    if (!nSubs) {
+      res.title = `Как временная замена подойдёт ${personsDat(cands.length)} — отметь сабстаты`;
+      res.lines.push(`${what} Держать стоит только с хорошим роллом: ${CFG.tempGood} полезных сабстата или ${CFG.tempGood2} полезных с ${CFG.tempYellow}+ жёлтыми сегментами на них.`);
+      res.sections.push({ title: 'Кому подошёл бы по main stat', rows: cands, limit: 8, mainNote: s.main });
+      return true;
+    }
+    const good = cands.filter(tempOk);
+    const best = good[0] || cands[0];
+    const roll = rollInfo(best, nSubs);
+    const who = `<b>${esc(best.c.name)}</b> — ${esc(best.b.name)}`;
+    if (good.length) {
+      res.v = 'temp';
+      res.title = `Временно — хороший ролл для ${personsGen(good.length)}`;
+      res.lines.push(`${what} Лучше всего: ${who}.`);
+      if (roll) res.lines.push(roll.text);
+      res.lines.push(`Носи, пока у персонажа нет рекомендованного Legendary. Держи 1–2 лучших экземпляра на main ${esc(s.main)}; остальные такие — в разбор.`);
+      if (roll && roll.level === 'high') res.badge = 'Стоит прокачать';
+      res.sections.push({ title: 'Кому пойдёт временно', rows: good, limit: 12, count: good.length, mainNote: s.main });
+      const rest = cands.filter((m) => !tempOk(m));
+      if (rest.length) res.sections.push({ title: 'Подошёл бы по main stat, но сабстаты не те', rows: rest, collapsed: true, mainNote: s.main });
+    } else if (nSubs < expected && best.good + (expected - nSubs) >= CFG.tempGood2) {
+      res.title = `Отмечено ${nSubs} из ${expected} — отметь остальные`;
+      res.lines.push(`Пока полезных ${fmtGood(best.good)}. Лучший кандидат: ${who}.`);
+      res.sections.push({ title: 'Кому подошёл бы по main stat', rows: cands, limit: 8, mainNote: s.main });
+    } else {
+      res.v = 'junk';
+      res.title = 'Разбирай — слабый ролл';
+      res.lines.push(`Main ${esc(s.main)} подошёл бы ${personsDat(cands.length)}, но сабстаты слабые: даже лучшему варианту (${who}) полезны только ${fmtGood(best.good)}.`);
+      if (roll) res.lines.push(roll.text);
+      if (best.good >= CFG.tempGood2) res.lines.push(`Отметь жёлтые сегменты, если их больше одного: при ${CFG.tempYellow}+ на полезных статах такой предмет стоит оставить.`);
+      res.sections.push({ title: 'Кому подошёл бы по main stat', rows: cands, collapsed: true, mainNote: s.main });
+    }
+    return true;
+  };
+
+  if (epic) {
+    // у Epic нет пассивки — важен main и ролл; Steel Sword/Necklace и [Settlement Support] равноценны
+    if (!s.main) {
+      res.title = `Epic ${sl.ru}: какой main stat?`;
+      res.lines = [`У Epic ${sl.ruGen} нет уникальной пассивки: это временная замена, пока нет Legendary. Решают main stat (цифры на кнопках — скольким персонажам он нужен) и ролл сабстатов.`];
+      if (s.stage === 'end') res.lines.push('Этап «Эндгейм»: Epic без пассивки идёт в разбор.');
+      return res;
+    }
+    if (s.stage === 'end') {
+      res.v = 'junk'; res.title = `Разбирай — Epic ${sl.ru} без пассивки`;
+      res.lines = ['Этап «Эндгейм»: в билдах outerpedia только Legendary с уникальной пассивкой. Если у кого-то слот пустой — переключи этап на «Развитие» в настройках.'];
+      return res;
+    }
+    const cands = dedupe(rows(stopgapFor(s.main, []).filter((x) => inScope(x.c)), subs, new Set([s.main])), tempRank);
+    if (!judgeStopgap(cands, `Пассивки нет, но main ${esc(s.main)} — тот, что просят в слоте ${sl.ruGen}.`)) {
+      res.v = 'junk'; res.title = `Разбирай — ${s.main} на ${sl.ruPrep} никому не нужен`;
+      res.lines = [`Ни один билд${scopeActive() ? ' твоих персонажей' : ''} не просит main ${esc(s.main)} в этом слоте.`];
+    }
+    return res;
+  }
+
+  const item = ITEM[kind][s.itemKey];
+  if (!item) {
+    res.title = `Выбери ${sl.ru}`;
+    res.lines = ['Найди по названию или пассивке — на английском, как в игре.'];
+    const low = LOW_STAR_USED.filter((i) => i.kind === kind);
+    for (const i of low) {
+      const who = buildsOf((b) => gearList(b, kind).some((g) => g.key === i.key)).filter((x) => inScope(x.c));
+      if (who.length) res.lines.push(`Всё ниже 6★ — в разбор, кроме <b>${esc(i.name)}</b> ${i.star}★: его носит ${namesLine(who, 3)}.`);
+    }
+    return res;
+  }
+  const noMainChoice = !item.mains.length && !item.extraMains.length;
+  const all = buildsOf((b) => gearList(b, kind).some((g) => g.key === item.key));
+  const scopedAll = all.filter((x) => inScope(x.c));
+  const wanted = [...new Set(scopedAll.flatMap((x) => gearRef(x.b, kind, item.key).mains))];
+  if (!s.main && !noMainChoice) {
+    res.title = scopedAll.length ? `Нужен ${personsDat(uniqChars(scopedAll).length)} — какой main stat?` : 'Какой main stat?';
+    res.lines = scopedAll.length
+      ? [`Для этой пассивки билды просят main <b>${wanted.map(esc).join(', ')}</b>.`]
+      : ['Пассивка не из билдов твоих персонажей — по main stat и роллу посчитаю, годится ли предмет как временная замена.'];
+    return res;
+  }
+  const excluded = new Set(s.main ? [s.main] : []);
+  const mainOkFor = (x) => { const m = gearRef(x.b, kind, item.key).mains; return noMainChoice || !m.length || m.includes(s.main); };
+  const extra = (x) => ({ mains: gearRef(x.b, kind, item.key).mains, mainOk: mainOkFor(x) });
+  const rank = (r) => (r.mainOk ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0);
+  const scoped = dedupe(rows(scopedAll, subs, excluded, extra), rank);
+  const others = dedupe(rows(all.filter((x) => !inScope(x.c)), subs, excluded, extra), rank);
+  const ok = scoped.filter((r) => r.mainOk);
+  const temp = s.main && s.stage === 'grow'
+    ? dedupe(rows(stopgapFor(s.main, item.classLimits).filter((x) => inScope(x.c) && !ok.some((o) => o.c.id === x.c.id)), subs, excluded), tempRank)
+    : [];
+
+  if (ok.length) {
+    res.v = 'keep';
+    res.qualifies = null;
+    res.title = noMainChoice ? `Оставляй — нужен ${personsDat(ok.length)}` : `Оставляй — ${s.main} подходит ${personsDat(ok.length)}`;
+    res.lines.push(`Уникальная пассивка + правильный main stat — это главное. ${nSubs ? 'Сабстаты правятся Precise Craft и Transistone.' : 'Отметь сабстаты, чтобы увидеть качество ролла.'}`);
+    if (item.irregular) res.lines.push('Irregular-предмет — первый кандидат на Transistone.');
+    const roll = nSubs ? rollInfo(ok[0], nSubs) : null;
+    if (roll) {
+      res.lines.push(roll.text);
+      if (roll.level === 'high') res.badge = 'Стоит прокачать';
+      else if (ok[0].good < 2) res.lines.push('Сабстаты слабые — кандидат на реролл, если под эту пассивку нет экземпляра лучше.');
+    }
+    res.sections.push({ title: 'Кому подходит', rows: ok, limit: 12, count: ok.length });
+    const wrong = scoped.filter((r) => !r.mainOk);
+    if (wrong.length) res.sections.push({ title: 'Нужен, но с другим main stat', rows: wrong, collapsed: true });
+  } else if (scoped.length) {
+    // предмет в билдах, но main не тот
+    res.v = 'fodder'; res.qualifies = null;
+    res.title = `Фоддер — ${s.main} для этой пассивки не берут`;
+    res.lines.push(`Билды просят main <b>${wanted.map(esc).join(' / ')}</b>, а main stat не перебрасывается. Гайд outerpedia советует такие не разбирать: это фоддер для Breakthrough такого же предмета с правильным main (до T4 — 4 копии).`);
+    const goodTemp = temp.filter(tempOk);
+    if (goodTemp.length) res.lines.push(`А пока — хорошая временная замена для ${personsGen(goodTemp.length)} (список ниже).`);
+    res.sections.push({ title: 'Кому нужен (с другим main)', rows: scoped, collapsed: !!goodTemp.length });
+    if (goodTemp.length) res.sections.push({ title: 'Кому пойдёт временно', rows: goodTemp, limit: 8, mainNote: s.main });
+  } else if (!judgeStopgap(temp, `<b>${esc(item.name)}</b> ${all.length ? 'не стоит в билдах твоих персонажей' : 'не стоит ни в одном билде outerpedia'}, но main ${esc(s.main)} — тот, что просят в слоте ${sl.ruGen}${item.classLimits.length ? ` у класса ${item.classLimits.map((c) => D.classes[c]).join('/')}` : ''}.`)) {
+    res.v = 'junk';
+    res.title = all.length ? 'Разбирай — не нужен твоим персонажам' : 'Разбирай — предмет никому не нужен';
+    res.lines.push(all.length
+      ? `Рекомендуют только тем, кого нет в ростере: ${namesLine(all.filter((x) => !inScope(x.c)))}.`
+      : `<b>${esc(item.name)}</b> не стоит ни в одном билде outerpedia${s.stage === 'grow' && s.main ? `, а main ${esc(s.main)} в этом слоте никому из подходящего класса не нужен` : ''}.`);
+    if (s.stage === 'end' && s.main) res.lines.push('Этап «Эндгейм»: временные замены не учитываются.');
+  }
+  if (res.v !== 'keep' && res.v !== 'fodder' && others.some((r) => r.mainOk)) {
+    if (res.v === 'junk') { res.v = 'maybe'; res.title = 'Твоим не нужен, но предмет хороший'; }
+    res.lines.unshift(`С этим main stat его берут персонажи не из ростера: ${namesLine(others.filter((r) => r.mainOk), 4)}.`);
+  }
+  if (others.length) res.sections.push({ title: 'Не из ростера', rows: others, dim: true, limit: 6 });
+  return res;
+}
+
+function epicMains(kind) {
+  const out = [];
+  for (const i of ITEMS[kind]) if (i.grade === 'rare' && i.star === 6) for (const m of [...i.mains, ...i.extraMains]) if (!out.includes(m)) out.push(m);
+  return out;
+}
+
+/* =====================================================================
+   Рендер: оценка
+   ===================================================================== */
+function renderEvalInput() {
+  const s = state;
+  let html = `<div class="step"><div class="step-h"><h2>Слот</h2><span class="hint">что за предмет</span></div><div class="slots">`;
+  SLOTS.forEach((sl, i) => {
+    html += `<button type="button" class="slot" data-slot="${sl.id}" aria-pressed="${s.slot === sl.id}">${img('eq:' + D.slotIcons[sl.id], '', '')}<span>${sl.name}</span><kbd>${i + 1}</kbd></button>`;
+  });
+  html += `</div></div>`;
+  html += `<div class="step"><div class="step-h"><h2>Грейд</h2><span class="hint">6★ · Etheric = Legendary, Steel = Epic</span></div><div class="grades">`;
+  for (const g of ['unique', 'rare']) html += `<button type="button" class="grade ${g}" data-grade="${g}" aria-pressed="${s.grade === g}">${img('frame:' + g, '', '')}<span class="gname">${GRADE_NAME[g]}</span></button>`;
+  html += `</div></div>`;
+  if (isArmor(s.slot)) html += renderSetStep();
+  else if (s.grade === 'rare') html += renderEpicMainStep();
+  else html += renderItemStep();
+  html += renderSubStep();
+
+  html += `<div class="actions"><button type="button" class="btn primary" data-act="next">Следующий предмет</button>
+    <label class="toggle"><input type="checkbox" id="opt-roster" ${s.rosterOnly ? 'checked' : ''}> только мои персонажи${roster.size ? ` (${roster.size})` : ' — отметь их во вкладке «Персонажи»'}</label>
+    <span class="hk">${hotkeysHint()}</span></div>`;
+  const cur = [s.stage === 'end' ? 'эндгейм' : 'развитие', s.fodder ? 'коплю фоддер' : 'без фоддера брони', s.lv120 ? 'lv 120' : 'lv 100', s.quirks ? 'Quirks' : 'без Quirks'];
+  html += `<details class="settings" id="settings"${s.settingsOpen ? ' open' : ''}><summary>Настройки оценки <span class="cur">· ${esc(cur.join(' · '))}</span></summary><div class="settings-body">
+      <div class="seg" role="group" aria-label="Этап аккаунта"><span class="muted small">Этап:</span>
+        <button type="button" class="fbtn" data-stage="grow" aria-pressed="${s.stage === 'grow'}">Развитие — держу временные замены</button>
+        <button type="button" class="fbtn" data-stage="end" aria-pressed="${s.stage === 'end'}">Эндгейм — только рекомендованное</button></div>
+      <label class="toggle"><input type="checkbox" id="opt-fodder" ${s.fodder ? 'checked' : ''}> коплю Legendary броню для Breakthrough <span class="muted">(не дотянувшие по сабстатам станут «Фоддер», а не «Разобрать»)</span></label>
+      <div class="seg" role="group" aria-label="Уровень персонажей"><span class="muted small">Уровень персонажей:</span>
+        <button type="button" class="fbtn" data-lv="100" aria-pressed="${!s.lv120}">lv 100</button><button type="button" class="fbtn" data-lv="120" aria-pressed="${s.lv120}">lv 120 (Limit Break)</button></div>
+      <label class="toggle"><input type="checkbox" id="opt-quirks" ${s.quirks ? 'checked' : ''}> Quirks прокачаны <span class="muted">(Base → Quirk: бонусы статов по элементу и классу)</span></label>
+      <p class="muted small">Уровень и Quirks влияют только на сравнение flat и % у ATK/DEF/HP: %-сабстат умножает собственную базу персонажа (уровень + эволюции + flat-бонусы Quirks), а flat прибавляет фиксированное число. Чем выше база, тем выгоднее %.</p>
+    </div></details>`;
+  $('#eval-in').innerHTML = html;
+}
+
+function hotkeysHint() {
+  return matchMedia('(hover: hover) and (pointer: fine)').matches ? '<kbd>1</kbd>–<kbd>6</kbd> слот · <kbd>L</kbd>/<kbd>E</kbd> грейд · <kbd>/</kbd> поиск · <kbd>Esc</kbd> сброс' : '';
+}
+
+function setTitle(set) {
+  const t4 = [set.p2 && '2: ' + set.p2, set.p4 && '4: ' + set.p4].filter(Boolean).join(', ');
+  const t0 = [set.p2base && '2: ' + set.p2base, set.p4base && '4: ' + set.p4base].filter(Boolean).join(', ');
+  return t0 && t0 !== t4 ? `T0 — ${t0}\nT4 — ${t4}` : t4;
+}
+
+function renderSetStep() {
+  const s = state;
+  const scoped = scopeActive();
+  const usersIn = (id) => uniqChars(buildsOf((b) => combosWith(b, id).length).filter((x) => inScope(x.c))).length;
+  const sel = SET[s.setId];
+  let html = `<div class="step"><div class="step-h"><h2>Сет</h2><span class="hint">в названии после «of»</span>${sel ? '<button type="button" class="linkbtn" data-act="unset">сменить</button>' : ''}</div>`;
+  if (sel) {
+    const n = sel.users ? (scoped ? `${usersIn(sel.id)} из ростера · ${sel.users} всего` : `в билдах у ${sel.users}`) : 'нет в билдах outerpedia';
+    html += `<div class="picked">${img('eq:' + sel.icon, 'pi', '')}<div><b>${esc(sel.name)}</b><span>${esc(n)}</span></div></div>`;
+    return html + `<p class="note-line">${esc(setTitle(sel).replace('\n', ' · '))}</p></div>`;
+  }
+  const live = D.sets.filter((x) => x.users > 0).map((set) => ({ set, n: scoped ? usersIn(set.id) : set.users })).sort((a, b) => b.n - a.n || b.set.users - a.set.users);
+  html += `<div class="sets">${live.map(({ set, n }) => `<button type="button" class="set" data-set="${set.id}" aria-pressed="false" title="${esc(setTitle(set))}">${img('eq:' + set.icon, '', '')}<b>${esc(set.short)}</b><span>${scoped ? `${n} из ростера` : persons(n)}</span></button>`).join('')}</div>`;
+  const dead = D.sets.filter((x) => x.users === 0);
+  if (dead.length) {
+    html += `<p class="dead-h">Нет ни в одном билде outerpedia — обычно в разбор (нажми, чтобы узнать почему):</p><div class="dead">`;
+    html += dead.map((set) => `<button type="button" class="deadchip" data-set="${set.id}" title="${esc(setTitle(set))}">${img('eq:' + set.icon, '', '')}${esc(set.short)}</button>`).join('');
+    html += `</div>`;
+  }
+  return html + `</div>`;
+}
+
+const itemPool = () => ITEMS[state.slot].filter((i) => i.star === 6 && i.grade === 'unique');
+
+function renderEpicMainStep() {
+  const s = state;
+  const kind = s.slot;
+  let html = `<div class="step"><div class="step-h"><h2>Main stat</h2><span class="hint">Epic: Steel ${kind === 'weapon' ? 'Sword' : 'Necklace'}, без пассивки</span></div><div class="chips">`;
+  const demand = (m) => uniqChars(buildsOf((b) => slotMains(b, kind).has(m)).filter((x) => inScope(x.c))).length;
+  for (const m of epicMains(kind)) {
+    const n = demand(m);
+    html += `<button type="button" class="chip" data-main="${esc(m)}" aria-pressed="${s.main === m}">${statIcon(m)}${esc(m)}${n ? `<span class="want">${n}</span>` : ''}</button>`;
+  }
+  return html + `</div><p class="note-line">Цифра — скольким${scopeActive() ? ' твоим' : ''} персонажам этот main нужен в слоте ${SLOT[kind].ruGen}.</p></div>`;
+}
+
+function renderItemStep() {
+  const s = state;
+  const kind = s.slot;
+  const item = ITEM[kind][s.itemKey];
+  let html = `<div class="step"><div class="step-h"><h2>${kind === 'weapon' ? 'Оружие' : 'Аксессуар'}</h2><span class="hint">название или пассивка — на английском</span>${item ? '<button type="button" class="linkbtn" data-act="unpick">сменить</button>' : ''}</div>`;
+  if (item) {
+    const multi = item.key.includes(':');
+    html += `<div class="picked">${frame(item)}<div><b>${esc(item.name)}${item.irregular ? ' <span class="tok">Irregular</span>' : ''}</b><span>${esc(classText(item))} · ${item.users ? `в билдах у ${item.users}` : 'нет в билдах outerpedia'}${item.src ? ' · ' + esc(item.src) : ''}</span></div></div>`;
+    html += item.passives.map((p) => `<p class="passive"><b>${esc(p.name)}.</b> ${esc(p.desc)}</p>`).join('');
+    if (multi) html += `<p class="note-line">В игре у всех классовых версий одно имя — класс видно по иконке на плитке и суффиксу пассивки: Aggression — Striker, Determination — Defender, Precision — Ranger, Mystery — Mage, Blessing — Healer.</p>`;
+    const mains = [...item.mains, ...item.extraMains];
+    if (mains.length) {
+      const wanted = new Set(buildsOf((b) => gearList(b, kind).some((g) => g.key === item.key)).filter((x) => inScope(x.c)).flatMap((x) => gearRef(x.b, kind, item.key).mains));
+      html += `<div class="step-h" style="margin-top:14px"><h2>Main stat</h2><span class="hint">«нужен» — что просят билды для этой пассивки</span></div><div class="chips">`;
+      for (const m of mains) {
+        const rare = item.extraMains.includes(m);
+        html += `<button type="button" class="chip${rare ? ' rare-main' : ''}" data-main="${esc(m)}" aria-pressed="${s.main === m}"${rare ? ' title="Только у фиксированных копий (ивенты, Dimensional Supply)"' : ''}>${statIcon(m)}${esc(m)}${wanted.has(m) ? '<span class="want">нужен</span>' : ''}</button>`;
+      }
+      html += `</div>`;
+      if (item.extraMains.length) html += `<p class="note-line">Пунктиром — main stat, который бывает только у фиксированных копий этого предмета.</p>`;
+    }
+    return html + `</div>`;
+  }
+  html += `<div class="tools"><input class="search" id="item-q" type="search" placeholder="Например: Caracal, Destruction…" value="${esc(s.q)}" autocomplete="off" enterkeyhint="search">
+    <div class="filt">${Object.entries(D.classes).map(([k, v]) => `<button type="button" class="fbtn" data-cls="${k}" aria-pressed="${s.cls === k}">${img('class:' + k, '', '')}${esc(v)}</button>`).join('')}</div></div>`;
+  html += `<div class="items" id="items">${renderItems()}</div></div>`;
+  return html;
+}
+
+function renderItems() {
+  const s = state;
+  const q = s.q.trim().toLowerCase();
+  const scoped = scopeActive();
+  const kind = s.slot;
+  const usersIn = (item) => uniqChars(buildsOf((b) => gearList(b, kind).some((g) => g.key === item.key)).filter((x) => inScope(x.c))).length;
+  const list = itemPool()
+    .filter((i) => !s.cls || !i.classLimits.length || i.classLimits.includes(s.cls))
+    .filter((i) => !q || i.name.toLowerCase().includes(q) || i.passives.some((p) => p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)))
+    .map((i) => ({ i, n: scoped ? usersIn(i) : i.users }))
+    .sort((a, b) => (b.i.users > 0) - (a.i.users > 0) || b.n - a.n || a.i.name.localeCompare(b.i.name));
+  if (!list.length) return `<p class="empty">Ничего не нашлось. Проверь написание${s.cls ? ' или сними фильтр класса' : ''}.</p>`;
+  return list.map(({ i, n }) => `<button type="button" class="item${i.users ? '' : ' unused'}" data-item="${esc(i.key)}">${frame(i)}<div style="min-width:0"><b>${esc(i.name)}</b><span>${esc(i.passives[0] ? i.passives[0].name : 'без пассивки')} · ${i.users ? (scoped ? `${n} из ростера` : `в билдах у ${n}`) : 'нет в билдах'}</span></div></button>`).join('');
+}
+
+function frame(item) {
+  return `<span class="frame">${img('frame:' + (item.grade === 'rare' ? 'rare' : 'unique'), '', '')}${img('eq:' + item.icon, 'ic', '')}</span>`;
+}
+function classText(item) {
+  return item.classLimits.length ? item.classLimits.map((c) => D.classes[c] || c).join(', ') : 'любой класс';
+}
+
+function renderSubStep() {
+  const s = state;
+  const keys = Object.keys(s.subs);
+  const n = keys.length;
+  const blocked = new Set(s.main ? [s.main] : []);
+  let html = `<div class="step"><div class="step-h"><h2>Сабстаты</h2><span class="hint">до 4${s.grade === 'rare' ? ' · у Epic изначально 3' : ''}</span><button type="button" class="linkbtn${n ? '' : ' ghost'}" data-act="clearsubs"${n ? '' : ' tabindex="-1" aria-hidden="true"'}>очистить</button></div><div class="subs">`;
+  for (const k of SUB_LIST) {
+    const on = k in s.subs;
+    const r = s.subs[k] || 0;
+    const dis = blocked.has(k) || (!on && n >= 4);
+    let segs = '';
+    for (let i = 1; i <= 6; i++) segs += `<i class="${on && i <= r ? 'on' : ''}"></i>`;
+    html += `<button type="button" class="sub${FLAT.has(k) ? ' flat' : ''}" data-sub="${esc(k)}" aria-pressed="${on}" ${dis ? 'disabled' : ''} title="${esc((D.statNames[k] || k) + (FLAT.has(k) ? ' (flat)' : '') + (SUB[k] ? ` · +${SUB[k].step}${SUB[k].pct ? '%' : ''} за сегмент` : ''))}">${statIcon(k)}<span class="lab">${esc(k)}</span><span class="segs" aria-hidden="true">${segs}</span></button>`;
+  }
+  html += `</div>`;
+  if (n) {
+    html += `<div class="rolls"><p class="rolls-h">Жёлтых сегментов <span class="muted">— 1 по умолчанию; снять стат — нажать на него ещё раз</span></p>`;
+    for (const k of keys) {
+      const r = s.subs[k] || 1;
+      html += `<div class="roll"><span class="roll-k">${statIcon(k)}<span class="lab">${esc(k)}</span></span><span class="roll-b" role="group" aria-label="Жёлтые сегменты ${esc(k)}">`;
+      for (let i = 1; i <= 4; i++) html += `<button type="button" data-roll="${esc(k)}" data-n="${i}" aria-pressed="${r === i}" class="${i < r ? 'lit' : ''}${i === 4 ? ' r4' : ''}"${i === 4 ? ' title="4 жёлтых — только из спец. магазинов и Dimensional Supply"' : ''}>${i}</button>`;
+      html += `</span></div>`;
+    }
+    html += `<p class="note-line">Жёлтые — стартовый ролл: обычно 1–3, 4 — редкость из спец. магазинов и Dimensional Supply. Оранжевые (от Reforge) не считай — это вложения, а не качество дропа.</p></div>`;
+  } else {
+    html += `<p class="note-line">Отметь статы, которые видишь на предмете. Flat ATK/DEF/HP подписаны тоньше: их ценность зависит от базы персонажа.</p>`;
+  }
+  return html + `</div>`;
+}
+
+const LABEL = { keep: 'Оставить', temp: 'Временно', maybe: 'Спорно', fodder: 'Фоддер', junk: 'Разобрать', idle: '…' };
+
+function renderVerdict() {
+  const s = state;
+  const r = evaluate();
+  const item = !isArmor(s.slot) ? ITEM[s.slot][s.itemKey] : null;
+  const set = isArmor(s.slot) ? SET[s.setId] : null;
+  let html = `<div class="v-head v-${r.v}"><div class="v-row"><span class="stamp">${LABEL[r.v]}</span>${r.badge ? `<span class="badge">${esc(r.badge)}</span>` : ''}`;
+  if ((item && s.grade === 'unique') || set) {
+    const icon = item ? item.icon : set.pieces[s.slot] || set.icon;
+    html += `<span class="v-item"><span class="frame">${img('frame:' + s.grade, '', '')}${img('eq:' + icon, 'ic', '')}</span>${set ? img('eq:' + set.icon, 'seticon', '') : ''}</span>`;
+  }
+  html += `</div><p class="v-summary">${esc(r.title)}</p>`;
+  if (r.lines.length) html += `<ul class="v-reasons">${r.lines.map((l) => `<li>${l}</li>`).join('')}</ul>`;
+  html += `</div>`;
+
+  for (const sec of r.sections) {
+    if (!sec.rows.length) continue;
+    const key = sec.title;
+    const count = sec.count ?? sec.rows.length;
+    html += `<div class="v-sec">`;
+    if (sec.collapsed && !s.expand[key]) {
+      html += `<button type="button" class="v-toggle" data-expand="${esc(key)}"><span>${esc(sec.title)} · ${count}</span><span aria-hidden="true">▾</span></button></div>`;
+      continue;
+    }
+    html += `<div class="v-list-h"><h3>${esc(sec.title)}</h3><span class="muted small">${persons(count)}</span></div>`;
+    const limit = s.expand[key + ':all'] ? 999 : (sec.limit || 12);
+    html += `<ul class="matches">${sec.rows.slice(0, limit).map((m) => matchRow(m, sec, r)).join('')}</ul>`;
+    if (sec.rows.length > limit) html += `<div class="more"><button type="button" class="linkbtn" data-expand="${esc(key + ':all')}">показать всех (${sec.rows.length})</button></div>`;
+    html += `</div>`;
+  }
+  const legend = Object.keys(s.subs).length ? '<span>Цифра у стата — ступень приоритета билда (1 — важнее всего); жёлтый — засчитан за ½; зачёркнут — билду не нужен.</span>' : '';
+  html += `<div class="v-foot">${legend}<span>${esc(r.foot)}</span></div>`;
+  $('#verdict').innerHTML = html;
+
+  const bar = $('#vbar');
+  const show = s.tab === 'eval' && r.v !== 'idle';
+  bar.hidden = !show;
+  if (document.body) document.body.classList.toggle('has-vbar', show);
+  if (show) {
+    bar.className = `vbar v-${r.v}`;
+    bar.querySelector('.vb-main').innerHTML = `<span class="stamp">${LABEL[r.v]}</span><span class="vt">${esc(r.title)}</span>`;
+  }
+}
+
+function matchRow(m, sec, r) {
+  const c = m.c;
+  const tokens = [];
+  if (m.combos && m.combos.length) tokens.push(...m.combos.map((cb) => `<span class="tok cmb">${esc(comboText(cb))}</span>`));
+  if (m.mainOk !== undefined) tokens.push(`<span class="tok ${m.mainOk ? 'ok' : 'bad'}">main ${esc(m.mains.join('/') || 'любой')}</span>`);
+  else if (sec.mainNote) tokens.push(`<span class="tok ok">main ${esc(sec.mainNote)}</span>`);
+  for (const p of m.parts) tokens.push(`<span class="tok ${p.ok ? (p.half ? 'half' : 'ok') : 'no'}" title="${p.ok ? `ступень ${p.tier + 1}${p.half ? ' — засчитан за ½' : ''}` : 'билду не нужен'}">${esc(p.key)}${p.ok ? `<sup>${p.tier + 1}</sup>` : ''}</span>`);
+  if (!m.parts.length && m.b.subs.length) tokens.push(`<span class="tok">${esc(m.b.subs.filter((t) => t.length).map((t) => t.join('=')).join(' › '))}</span>`);
+  let score = '<span></span>';
+  if (m.good != null) {
+    const n = Object.keys(state.subs).length;
+    const ok = r.qualifies ? r.qualifies(m) : m.good >= CFG.keepCount;
+    const cls = ok ? 'hi' : m.good >= 2 ? 'mid' : 'lo';
+    score = `<span class="score ${cls}" title="Полезных сабстатов ${fmtGood(m.good)} из ${n}; взвешенно по приоритету — ${Math.round(Math.min(m.ratio, 1) * 100)}%">${fmtGood(m.good) || 0}/${n}</span>`;
+  }
+  return `<li class="match${sec.dim ? ' dim' : ''}">${img('face:' + c.icon, 'face', '')}
+    <div class="nm"><button type="button" data-open="${c.id}" title="Открыть билды">${esc(c.name)}</button><span class="bn">${esc(m.b.name)}${m.alt.length ? ` · ещё: ${esc(m.alt.join(', '))}` : ''}</span></div>
+    ${score}<div class="det">${tokens.join('')}</div></li>`;
+}
+
+/* =====================================================================
+   Рендер: персонажи
+   ===================================================================== */
+function charMatches(c) {
+  const s = state;
+  const q = s.cq.trim().toLowerCase();
+  if (q && !(c.name.toLowerCase().includes(q) || c.slug.includes(q) || (c.nick || '').toLowerCase().includes(q))) return false;
+  if (s.cel && c.element !== s.cel) return false;
+  if (s.ccl && c.class !== s.ccl) return false;
+  if (s.cOwned && !roster.has(c.id)) return false;
+  if (!s.cAll && !c.builds.length && !q) return false;
+  return true;
+}
+
+function renderCharList() {
+  const s = state;
+  let html = `<div class="step"><div class="step-h"><h2>Персонажи</h2><span class="hint">☆ — отметь своих: оценка будет учитывать только их</span></div>
+    <div class="tools"><input class="search" id="char-q" type="search" placeholder="Имя: Stella, Demiurge, Gnosis…" value="${esc(s.cq)}" autocomplete="off" enterkeyhint="search"></div>
+    <div class="tools"><div class="filt">${Object.entries(D.elements).map(([k, v]) => `<button type="button" class="fbtn" data-cel="${k}" aria-pressed="${s.cel === k}">${img('elem:' + k, '', '')}${esc(v)}</button>`).join('')}</div>
+    <div class="filt">${Object.entries(D.classes).map(([k, v]) => `<button type="button" class="fbtn" data-ccl="${k}" aria-pressed="${s.ccl === k}">${img('class:' + k, '', '')}${esc(v)}</button>`).join('')}</div></div>
+    <div class="filt"><label class="toggle"><input type="checkbox" id="c-owned" ${s.cOwned ? 'checked' : ''}> только мои</label>
+    <label class="toggle"><input type="checkbox" id="c-all" ${s.cAll ? 'checked' : ''}> показать и без билдов</label></div></div>`;
+  html += `<div class="roster-bar"><span>В ростере: <b>${roster.size}</b></span><button type="button" class="linkbtn" data-act="markshown">отметить всех показанных</button><button type="button" class="linkbtn" data-act="io">экспорт / импорт</button>${roster.size ? `<button type="button" class="linkbtn" data-act="clearroster">${s.confirmClear ? 'точно очистить? нажми ещё раз' : 'очистить ростер'}</button>` : ''}</div>`;
+  if (s.io) {
+    const code = [...roster].map((id) => CHAR[id].slug).join(', ');
+    html += `<div class="roster-io"><label class="small muted" for="roster-code">Код ростера (slug через запятую). Скопируй, чтобы перенести в другой браузер, или вставь свой: «Заменить» заменит текущий ростер, «Добавить» — допишет.</label>
+      <textarea id="roster-code">${esc(code)}</textarea><div class="filt"><button type="button" class="btn" data-act="copyroster">Скопировать</button><button type="button" class="btn" data-act="applyroster">Заменить</button><button type="button" class="btn" data-act="addroster">Добавить</button><span class="small muted" id="io-msg" role="status"></span></div></div>`;
+  }
+  const list = D.chars.filter(charMatches);
+  html += `<div class="cgrid" id="cgrid">${list.map(charTile).join('') || '<p class="empty">Никого не нашлось.</p>'}</div>`;
+  $('#char-list').innerHTML = html;
+}
+
+function charTile(c) {
+  const own = roster.has(c.id);
+  const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
+  return `<div class="cwrap"><button type="button" class="ctile${c.builds.length ? '' : ' nob'}" data-char="${c.id}" aria-pressed="${state.charId === c.id}" title="${esc(c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : ''))}">
+    <span class="badges">${img('elem:' + c.element, '', '')}${img('class:' + c.class, '', '')}</span>
+    ${img('face:' + c.icon, 'face', '')}${NEW.has(c.id) ? '<span class="newb">NEW</span>' : ''}
+    <span class="cn">${c.prefix ? `<span class="cp">${esc(c.prefix)}</span>` : ''}${esc(base)}</span></button>
+    <button type="button" class="star" data-own="${c.id}" aria-pressed="${own}" aria-label="${esc(c.name)} — ${own ? 'убрать из ростера' : 'добавить в ростер'}">${own ? '★' : '☆'}</button></div>`;
+}
+
+function renderCharDetail() {
+  const s = state;
+  const c = CHAR[s.charId];
+  const box = $('#char-detail');
+  box.classList.toggle('open', !!c);
+  if (document.body) document.body.classList.toggle('sheet-open', !!c && isSheet() && s.tab === 'chars');
+  if (!c) { box.innerHTML = `<div class="cd-empty">Выбери персонажа — покажу рекомендованные сеты, оружие, аксессуары и приоритет сабстатов по билдам outerpedia.</div>`; return; }
+  const own = roster.has(c.id);
+  let html = `<div class="cd-top"><button type="button" class="btn" data-act="closechar">← к списку</button></div>
+    <div class="cd-head">${img('face:' + c.icon, 'face', '')}<div><h2>${esc(c.name)}</h2>
+    <div class="meta"><span>${img('elem:' + c.element, '', '')} ${esc(D.elements[c.element] || c.element)}</span><span>${img('class:' + c.class, '', '')} ${esc(D.classes[c.class] || c.class)}${c.subClass ? ' · ' + esc(cap(c.subClass)) : ''}</span>${c.role ? `<span>${esc(({ dps: 'DPS', support: 'Support', sustain: 'Sustain' })[c.role] || c.role)}</span>` : ''}${c.rank ? `<span>PvE ${esc(c.rank)}</span>` : ''}${c.rankPvp ? `<span>PvP ${esc(c.rankPvp)}</span>` : ''}</div>
+    ${c.nick && c.nick !== c.prefix ? `<div class="muted small">${esc(c.nick)}</div>` : ''}</div></div>
+    <div class="own-row"><button type="button" class="own-btn" data-own="${c.id}" aria-pressed="${own}">${own ? '★ в ростере' : '☆ добавить в ростер'}</button></div>`;
+  if (!c.builds.length) {
+    html += `<div class="cd-empty">У outerpedia пока нет рекомендаций по шмоту для этого персонажа.${c.gameSets && c.gameSets.length ? `<br>Сама игра советует сеты: ${c.gameSets.map((id) => esc(SET[id] ? SET[id].short : id)).join(', ')}.` : ''}</div>`;
+    box.innerHTML = html; return;
+  }
+  const bi = Math.min(s.buildIdx, c.builds.length - 1);
+  html += `<div class="btabs" role="tablist" aria-label="Билды">${c.builds.map((b, i) => `<button type="button" role="tab" data-build="${i}" aria-selected="${i === bi}">${esc(b.name)}</button>`).join('')}</div>`;
+  const b = c.builds[bi];
+  html += `<div class="bsec">`;
+  html += `<div><h4>Сеты брони</h4>${b.sets.map((combo, i) => `<div class="combo">${i ? '<span class="or">или</span>' : ''}${combo.map((p) => { const st = SET[p.set]; return `<span class="setpill">${img('eq:' + (st ? st.icon : ''), '', '')}${esc(st ? st.short : p.set)} <span class="n">×${p.n}</span></span>`; }).join('')}</div>`).join('') || '<span class="muted">—</span>'}</div>`;
+  html += gearBlock('Оружие', b.weapons, 'weapon');
+  html += gearBlock('Аксессуар', b.amulets, 'accessory');
+  html += `<div><h4>Приоритет сабстатов</h4><div class="prio">${b.subs.map((tier, t) => (t ? '<span class="gt">›</span>' : '') + (tier.length ? tier.map((k) => (SUB[k] || FLAT.has(k.replace(/%$/, ''))) ? `<span class="tok t${Math.min(t, 2)}">${esc(k)}</span>` : `<span class="tok no" title="не выпадает сабстатом на 6★ снаряжении">${esc(k)}</span>`).join('<span class="gt">=</span>') : '<span class="gt" title="разрыв в приоритете">…</span>')).join('')}</div>${prioHint(c, b)}</div>`;
+  if (b.talismans.length) html += `<div><h4>Талисманы</h4><div class="tal">${b.talismans.map((id) => { const t = D.talismans[id]; return `<span>${img('eq:' + t.icon, '', '')}${esc(t.name)}${t.name === "Executioner's Charm" ? ' +10' : ''}</span>`; }).join('')}</div></div>`;
+  if (b.note) html += `<div><h4>Заметка outerpedia</h4><div class="bnote">${esc(b.note)}</div></div>`;
+  html += `</div>`;
+  box.innerHTML = html;
+}
+
+// «ATK, DEF, HP в приоритете — что брать: flat или %» для этого персонажа
+function prioHint(c, b) {
+  const axes = [...new Set(b.subs.flat().map((k) => k.replace(/%$/, '')).filter((k) => FLAT.has(k)))];
+  if (!axes.length) return '';
+  const items = axes.map((ax) => {
+    const r = flatFactor(c, ax);
+    const pct = Math.round(r * 100);
+    if (Math.abs(1 / r - 1) <= 0.05) return `<li><b>${ax}</b> — flat и ${ax}% примерно равны, бери любой.</li>`;
+    if (r > 1) return `<li><b>${ax}</b> — выгоднее flat: сегмент flat ${ax} даёт ≈${pct}% от сегмента ${ax}% (то есть больше).</li>`;
+    return `<li><b>${ax}</b> — выгоднее ${ax}%: сегмент flat ${ax} даёт только ≈${pct}% от сегмента ${ax}%.</li>`;
+  });
+  return `<ul class="prio-hint">${items.join('')}</ul><p class="muted small" style="margin:4px 0 0">Для lv ${state.lv120 ? 120 : 100}${state.quirks ? ' с прокачанными Quirks' : ' без Quirks'} — меняется в «Настройках оценки».</p>`;
+}
+
+function gearBlock(title, refs, kind) {
+  if (!refs.length) return '';
+  return `<div><h4>${title}</h4><div class="gear">${refs.map((g) => {
+    const it = ITEM[kind][g.key];
+    if (!it) return '';
+    return `<div class="gearrow">${frame(it)}<div><b>${esc(it.name)}</b>${it.passives[0] ? ` <span class="ps">· ${esc(it.passives[0].name)}</span>` : ''}${it.star < 6 ? ` <span class="ps">· ${it.star}★</span>` : ''}
+      <div class="gm">${g.mains.map((m) => `<span class="tok ok">${esc(m)}</span>`).join('')}${(g.bad || []).map((m) => `<span class="tok bad" title="у этого предмета не бывает такого main stat — вероятно, опечатка в outerpedia">${esc(m)}?</span>`).join('')}${it.classLimits.length ? `<span class="tok">${esc(classText(it))}</span>` : ''}</div></div></div>`;
+  }).join('')}</div></div>`;
+}
+
+/* =====================================================================
+   Навигация, события
+   ===================================================================== */
+function renderTabs() {
+  for (const t of ['eval', 'chars']) {
+    $('#tab-' + t).setAttribute('aria-selected', String(state.tab === t));
+    $('#view-' + t).hidden = state.tab !== t;
+  }
+}
+const FOCUS_KEYS = ['sub', 'roll', 'set', 'slot', 'grade', 'main', 'item', 'lv', 'stage', 'act', 'expand', 'cls'];
+function focusKey() {
+  const el = document.activeElement;
+  if (!el || !el.dataset || typeof CSS === 'undefined') return null;
+  for (const k of FOCUS_KEYS) if (el.dataset[k] !== undefined) return `[data-${k}="${CSS.escape(el.dataset[k])}"]${el.dataset.n !== undefined ? `[data-n="${el.dataset.n}"]` : ''}`;
+  return el.id ? '#' + CSS.escape(el.id) : null;
+}
+function renderEval() {
+  const f = focusKey();
+  renderEvalInput(); renderVerdict();
+  if (f) { const el = document.querySelector(f); if (el && el.focus) el.focus({ preventScroll: true }); }
+}
+function renderChars() { renderCharList(); renderCharDetail(); }
+function renderAll() {
+  renderTabs();
+  if (state.tab === 'eval') { renderEval(); if (document.body) document.body.classList.remove('sheet-open'); }
+  else { renderChars(); $('#vbar').hidden = true; if (document.body) document.body.classList.remove('has-vbar'); }
+  persist();
+}
+function resetItem() { Object.assign(state, { setId: null, itemKey: null, main: null, subs: {}, q: '', cls: '', expand: {} }); }
+function setGrade(g) {
+  if (state.grade !== g && !isArmor(state.slot)) { state.itemKey = null; state.main = null; }
+  state.grade = g; state.expand = {}; renderEval(); persist();
+}
+function setSlot(id) {
+  if (state.slot !== id) resetItem();
+  state.slot = id; renderEval(); persist();
+}
+function syncHash(slug) {
+  try { history.replaceState(null, '', slug ? '#' + slug : location.pathname + location.search); } catch { /* file:// или песочница */ }
+}
+function openChar(id) {
+  const c = CHAR[id];
+  state.tab = 'chars'; state.charId = id; state.buildIdx = 0;
+  if (c && !charMatches(c)) { state.cel = ''; state.ccl = ''; state.cq = ''; state.cOwned = false; if (!c.builds.length) state.cAll = true; }
+  syncHash(c && c.slug);
+  renderAll();
+  if (!isSheet()) $('#char-detail').scrollTop = 0;
+}
+function closeChar() { state.charId = null; syncHash(null); renderChars(); persist(); }
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  const s = state;
+  const ds = t.dataset;
+  if (ds.act !== 'clearroster' && s.confirmClear) s.confirmClear = false;
+
+  if (ds.tab) { s.tab = ds.tab; if (ds.tab === 'eval') syncHash(null); else if (CHAR[s.charId]) syncHash(CHAR[s.charId].slug); renderAll(); return; }
+  if (ds.own) {
+    roster.has(ds.own) ? roster.delete(ds.own) : roster.add(ds.own);
+    saveRoster(); renderChars(); persist();
+    const again = document.querySelector(`${t.classList.contains('star') ? '.star' : '.own-btn'}[data-own="${ds.own}"]`);
+    if (again) again.focus({ preventScroll: true });
+    return;
+  }
+  if (ds.roll) { if (ds.roll in s.subs) s.subs[ds.roll] = Number(ds.n); renderEval(); return; }
+  if (ds.sub) {
+    // выбранный стат сразу получает 1 жёлтый сегмент; повторное нажатие снимает выбор
+    const k = ds.sub;
+    if (k in s.subs) delete s.subs[k]; else if (Object.keys(s.subs).length < 4) s.subs[k] = 1;
+    renderEval(); return;
+  }
+  if (ds.slot) { setSlot(ds.slot); return; }
+  if (ds.grade) { setGrade(ds.grade); return; }
+  if (ds.set) { s.setId = ds.set; s.expand = {}; renderEval(); return; }
+  if (ds.item) { s.itemKey = ds.item; s.main = null; s.expand = {}; renderEval(); return; }
+  if (ds.main) { s.main = s.main === ds.main ? null : ds.main; if (s.main) delete s.subs[s.main]; s.expand = {}; renderEval(); return; }
+  if (ds.cls !== undefined) { s.cls = s.cls === ds.cls ? '' : ds.cls; renderEval(); return; }
+  if (ds.expand) { s.expand[ds.expand] = true; renderVerdict(); return; }
+  if (ds.open) { openChar(ds.open); return; }
+  if (ds.char) { s.charId = ds.char; s.buildIdx = 0; syncHash(CHAR[ds.char].slug); renderChars(); persist(); if (!isSheet()) $('#char-detail').scrollTop = 0; return; }
+  if (ds.build) { s.buildIdx = Number(ds.build); renderCharDetail(); return; }
+  if (ds.lv) { s.lv120 = ds.lv === '120'; renderEval(); persist(); return; }
+  if (ds.stage) { s.stage = ds.stage; renderEval(); persist(); return; }
+  if (ds.cel !== undefined) { s.cel = s.cel === ds.cel ? '' : ds.cel; renderCharList(); persist(); return; }
+  if (ds.ccl !== undefined) { s.ccl = s.ccl === ds.ccl ? '' : ds.ccl; renderCharList(); persist(); return; }
+
+  switch (ds.act) {
+    case 'next':
+      resetItem(); renderEval();
+      if (isNarrow()) $('#eval-in').scrollIntoView({ block: 'start' });
+      break;
+    case 'toverdict': $('#verdict').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    case 'unpick': s.itemKey = null; s.main = null; renderEval(); break;
+    case 'unset': s.setId = null; renderEval(); break;
+    case 'clearsubs': s.subs = {}; renderEval(); break;
+    case 'closechar': closeChar(); break;
+    case 'hidefit': store.set('fitnoteHidden', true); renderFitNote(); break;
+    case 'applyupdate': if (pendingWorker) pendingWorker.postMessage('skipWaiting'); break;
+    case 'install': if (installPrompt) { installPrompt.prompt(); installPrompt.userChoice.finally(() => { installPrompt = null; renderFoot(); }); } break;
+    case 'markshown': D.chars.filter(charMatches).forEach((c) => roster.add(c.id)); saveRoster(); renderChars(); break;
+    case 'clearroster':
+      if (s.confirmClear) { roster.clear(); s.confirmClear = false; saveRoster(); }
+      else { s.confirmClear = true; setTimeout(() => { if (s.confirmClear) { s.confirmClear = false; if (s.tab === 'chars') renderCharList(); } }, 4000); }
+      renderCharList(); break;
+    case 'io': s.io = !s.io; renderCharList(); break;
+    case 'copyroster': {
+      const ta = $('#roster-code');
+      const fallback = () => { ta.select(); $('#io-msg').textContent = 'Выделено — нажми Ctrl/Cmd+C'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(() => { $('#io-msg').textContent = 'Скопировано'; }, fallback);
+      else fallback();
+      break;
+    }
+    case 'applyroster':
+    case 'addroster': {
+      const bySlug = Object.fromEntries(D.chars.map((c) => [c.slug, c.id]));
+      const raw = $('#roster-code').value.split(/[\s,;]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+      const found = [], missed = [];
+      for (const x of raw) { const id = bySlug[x] || (CHAR[x] ? x : null); if (id) found.push(id); else missed.push(x); }
+      if (ds.act === 'applyroster') roster.clear();
+      found.forEach((id) => roster.add(id)); saveRoster(); renderCharList();
+      $('#io-msg').textContent = `${ds.act === 'applyroster' ? 'Заменено' : 'Добавлено'}: ${found.length}${missed.length ? `; не распознано: ${missed.slice(0, 5).join(', ')}${missed.length > 5 ? '…' : ''}` : ''}`;
+      break;
+    }
+  }
+});
+
+document.addEventListener('toggle', (e) => { if (e.target.id === 'settings') { state.settingsOpen = e.target.open; persist(); } }, true);
+document.addEventListener('error', (e) => { if (e.target.tagName === 'IMG') e.target.classList.add('broken'); }, true);
+document.addEventListener('change', (e) => {
+  const s = state;
+  const id = e.target.id;
+  if (id === 'opt-roster') { s.rosterOnly = e.target.checked; renderEval(); persist(); }
+  if (id === 'opt-fodder') { s.fodder = e.target.checked; renderEval(); persist(); }
+  if (id === 'opt-quirks') { s.quirks = e.target.checked; renderEval(); persist(); }
+  if (id === 'c-owned') { s.cOwned = e.target.checked; renderCharList(); persist(); }
+  if (id === 'c-all') { s.cAll = e.target.checked; renderCharList(); persist(); }
+});
+document.addEventListener('input', (e) => {
+  const s = state;
+  if (e.target.id === 'item-q') { s.q = e.target.value; $('#items').innerHTML = renderItems(); }
+  if (e.target.id === 'char-q') { s.cq = e.target.value; $('#cgrid').innerHTML = D.chars.filter(charMatches).map(charTile).join('') || '<p class="empty">Никого не нашлось.</p>'; }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (state.tab === 'chars' && e.key === 'Escape' && state.charId && isSheet()) { closeChar(); return; }
+  if (state.tab !== 'eval') return;
+  const typing = e.target.matches('input[type="search"], input[type="text"], textarea');
+  if (e.key === 'Escape') { if (typing) e.target.blur(); resetItem(); renderEval(); return; }
+  if (typing) return;
+  if (/^[1-6]$/.test(e.key)) setSlot(SLOTS[Number(e.key) - 1].id);
+  else if (['l', 'L', 'д', 'Д'].includes(e.key)) setGrade('unique');
+  else if (['e', 'E', 'у', 'У'].includes(e.key)) setGrade('rare');
+  else if (e.key === '/' || e.code === 'Slash') { const q = $('#item-q'); if (q) { e.preventDefault(); q.focus(); } }
+});
+window.addEventListener('resize', () => {
+  const before = root.className;
+  applyLayout();
+  if (root.className !== before) { renderAll(); renderFitNote(); }
+});
+function renderFitNote() {
+  const box = $('#fitnote');
+  const show = desktopModeOnPhone && !store.get('fitnoteHidden', false);
+  box.hidden = !show;
+  if (show) box.innerHTML = `<p class="fitnote"><span>Браузер открыл страницу в режиме «Версия для ПК» — я подстроил масштаб. Если что-то выглядит странно, выключи этот режим: меню ⋮ → «Версия для ПК».</span><button type="button" data-act="hidefit">Понятно</button></p>`;
+}
+// PWA (сборка для GitHub Pages): офлайн через service worker, обновление данных и установка на экран
+let installPrompt = null;
+let pendingWorker = null;
+function setupPwa() {
+  if (!window.OGC_PWA || !('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const offer = (worker) => { pendingWorker = worker; renderUpdNote(); };
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      if (w) w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+    });
+    // проверяем обновление каждый раз, когда возвращаешься в приложение
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => { /* без service worker страница просто работает онлайн */ });
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloading) { reloading = true; location.reload(); } });
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; renderFoot(); });
+  window.addEventListener('appinstalled', () => { installPrompt = null; renderFoot(); });
+}
+function renderUpdNote() {
+  const box = $('#updnote');
+  box.hidden = !pendingWorker;
+  if (pendingWorker) box.innerHTML = `<p class="fitnote"><span>Вышли новые данные outerpedia — обнови, чтобы видеть свежие билды.</span><button type="button" data-act="applyupdate">Обновить</button></p>`;
+}
+
+window.addEventListener('hashchange', () => {
+  const c = D.chars.find((x) => x.slug === decodeURIComponent(location.hash.slice(1)));
+  if (c && c.id !== state.charId) openChar(c.id);
+});
+
+/* ---------- подвал и старт */
+function renderFoot() {
+  const m = D.meta;
+  const when = (m.commitDate || m.generatedAt || '').slice(0, 10);
+  $('#foot').innerHTML = `<span>Данные: <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco) · версия игры ${esc(m.gameVersion || '?')} · снимок от ${esc(when)}${m.commit ? ` · <span class="mono">${esc(String(m.commit).slice(0, 7))}</span>` : ''} · ${persons(m.counts.characters)}, с билдами ${m.counts.withBuilds}, билдов ${m.counts.builds}.</span>
+    <span>${window.OGC_PWA ? 'Данные обновляются автоматически каждый день.' : 'Обновить данные: <span class="mono">python3 update.py</span> в папке со страницей.'} Игровые данные и изображения принадлежат Major9 / VA Games, билды — авторам outerpedia; это личный инструмент, не связанный с издателем.</span>
+    ${installPrompt ? '<span><button type="button" class="btn" data-act="install">Установить как приложение</button></span>' : ''}`;
+}
+
+const hash = decodeURIComponent(location.hash.slice(1));
+const fromHash = hash && D.chars.find((x) => x.slug === hash);
+saveRoster();
+renderFoot();
+renderFitNote();
+setupPwa();
+if (fromHash) openChar(fromHash.id); else renderAll();
+// для отладки и автотестов
+window.__ogc = { state, roster, evaluate, scoreBuild, flatFactor, subWeights, renderAll, CFG, D };
+})();
+</script>

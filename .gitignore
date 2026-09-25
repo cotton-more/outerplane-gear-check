@@ -1,0 +1,8 @@
+# локальные сборки (одиночная страница и вариант для Claude Artifact)
+outerplane-gear.html
+*.artifact.html
+build/
+# старое место кэша иконок (теперь он в ~/Library/Caches/outerplane-gear)
+.cache/
+__pycache__/
+.DS_Store
