@@ -970,49 +970,56 @@ def png_bytes(size: int, pixels: bytearray) -> bytes:
 
 
 def render_app_icon(size: int, maskable: bool) -> bytes:
-    """Иконка приложения: амбер-шестерёнка с вырезанной галочкой."""
+    """Иконка приложения: буква O из логотипа Outerplane с четырёхлучевой искрой."""
     bg = (0x15, 0x1A, 0x22)
-    top, bot = (0xF0, 0xB0, 0x30), (0xEE, 0x7A, 0x1A)   # градиент как у сегментов сабстата
+    ring_top, ring_bot = (0xF8, 0xC8, 0x48), (0xEE, 0x7A, 0x1A)     # кольцо — палитра страницы
+    spark_top, spark_bot = (0xFF, 0xFC, 0xF4), (0xFF, 0xDD, 0x9A)   # искра — светлая, как в логотипе
     # maskable: фон на весь квадрат, знак в безопасной зоне (центральные ~60%)
     corner = 0.0 if maskable else 0.2 * size
-    L = size * (0.62 if maskable else 0.78)             # диаметр знака
+    L = size * (0.62 if maskable else 0.78)
     c = size / 2
-    root, tip = 0.395 * L, 0.50 * L                     # впадина и вершина зубьев
-    t_mid, t_half, t_wide, t_round = 0.40 * L, 0.10 * L, 0.085 * L, 0.025 * L
-    teeth = [(math.cos(a), math.sin(a)) for a in (i * math.pi / 4 - math.pi / 2 for i in range(8))]
-    check = [(-0.200 * L, 0.015 * L), (-0.055 * L, 0.165 * L), (0.205 * L, -0.170 * L)]
-    pen = 0.0675 * L                                    # половина толщины галочки
+    rx, ry = 0.425 * L, 0.495 * L       # внешний овал: по бокам шире, чем высок штрих сверху
+    hx, hy = rx * 0.545, ry * 0.665     # просвет буквы
+    sa, sb = hx * 0.60, hy * 0.90       # полуоси искры: вертикальный луч длиннее
+    pw = 0.45                           # < 1 — рёбра искры вогнутые
     px = bytearray(size * size * 4)
 
-    def seg_dist(x: float, y: float, a: tuple, b: tuple) -> float:
-        ax, ay = x - a[0], y - a[1]
-        bx, by = b[0] - a[0], b[1] - a[1]
-        t = max(0.0, min(1.0, (ax * bx + ay * by) / (bx * bx + by * by)))
-        return math.hypot(ax - bx * t, ay - by * t)
+    def ellipse(dx: float, dy: float, ax: float, ay: float) -> float:
+        """Знаковое расстояние до овала (снаружи > 0)."""
+        q = math.hypot(dx / ax, dy / ay)
+        if q < 1e-9:
+            return -min(ax, ay)
+        return (q - 1.0) / math.hypot(dx / (ax * ax * q), dy / (ay * ay * q))
+
+    def spark(t: float) -> float:
+        return (abs(math.cos(t) / sa) ** pw + abs(math.sin(t) / sb) ** pw) ** (-1.0 / pw)
 
     for y in range(size):
         k = y / max(1, size - 1)
-        gr, gg, gb = (top[i] + (bot[i] - top[i]) * k for i in range(3))
+        rr, rg, rb = (ring_top[i] + (ring_bot[i] - ring_top[i]) * k for i in range(3))
+        sr, sg, sb_ = (spark_top[i] + (spark_bot[i] - spark_top[i]) * k for i in range(3))
         for x in range(size):
             dx, dy = x + 0.5 - c, y + 0.5 - c
-            rr = math.hypot(dx, dy)
-            d = rr - root                               # диск-основание
-            if rr < tip + 2:                            # зубья: повёрнутые скруглённые прямоугольники
-                for ca, sa in teeth:
-                    if dx * ca + dy * sa < 0.5 * rr:    # смотрим только на ближние зубья
-                        continue
-                    qx = abs(dx * ca + dy * sa - t_mid) - (t_half - t_round)
-                    qy = abs(dy * ca - dx * sa) - (t_wide - t_round)
-                    d = min(d, math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - t_round)
-            cov = max(0.0, min(1.0, 0.5 - d))
-            if cov:                                     # галочка вырезана из шестерёнки
-                dc = min(seg_dist(dx, dy, check[0], check[1]), seg_dist(dx, dy, check[1], check[2])) - pen
-                cov *= 1.0 - max(0.0, min(1.0, 0.5 - dc))
             r, g, b = bg
-            if cov:
-                r, g, b = (r + (gr - r) * cov, g + (gg - g) * cov, b + (gb - b) * cov)
+            if abs(dx) < rx + 1 and abs(dy) < ry + 1:       # кольцо буквы
+                cov = (max(0.0, min(1.0, 0.5 - ellipse(dx, dy, rx, ry)))
+                       * max(0.0, min(1.0, 0.5 + ellipse(dx, dy, hx, hy))))
+                if cov:
+                    r, g, b = (r + (rr - r) * cov, g + (rg - g) * cov, b + (rb - b) * cov)
+            if abs(dx) < sa + 1 and abs(dy) < sb + 1:       # искра в просвете
+                rad = math.hypot(dx, dy)
+                if rad < 1e-9:
+                    d = -min(sa, sb)
+                else:
+                    t = math.atan2(dy, dx)
+                    base = spark(t)
+                    slope = (spark(t + 1e-3) - spark(t - 1e-3)) / 2e-3
+                    d = (rad - base) / math.hypot(1.0, slope / base)
+                cov = max(0.0, min(1.0, 0.5 - d))
+                if cov:
+                    r, g, b = (r + (sr - r) * cov, g + (sg - g) * cov, b + (sb_ - b) * cov)
             alpha = 1.0
-            if corner:                                  # скруглённые углы фона со сглаживанием
+            if corner:                                      # скруглённые углы фона со сглаживанием
                 ex = min(max(x + 0.5, corner), size - corner)
                 ey = min(max(y + 0.5, corner), size - corner)
                 alpha = max(0.0, min(1.0, corner - math.hypot(x + 0.5 - ex, y + 0.5 - ey) + 0.5))
