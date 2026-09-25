@@ -64,29 +64,34 @@ describe('код предмета', () => {
     expect(back.ok && Object.entries(back.item.subs)).toEqual([['SPD', 2], ['CHC', 1], ['CHD', 4], ['ATK%', 3]]);
   });
 
-  it('влезает в игровой чат: броня — 8 символов, Legendary оружие и аксессуар — не больше 10', () => {
-    const len = (x: ItemInput) => encodeItem(x)!.replace(/-/g, '').length;
+  it('влезает в игровой чат: броня — 8 букв, Legendary оружие и аксессуар — не больше 11', () => {
+    const len = (x: ItemInput) => encodeItem(x)!.replace(/ /g, '').length;
     expect(Math.max(...all.filter((x) => isArmor(x.slot)).map(len))).toBe(8);
-    expect(Math.max(...all.map(len))).toBeLessThanOrEqual(10);
+    expect(Math.max(...all.map(len))).toBeLessThanOrEqual(11);
   });
 
-  it('регистр, пробелы, дефисы, приставка OGC и похожие буквы (I, L → 1, O → 0) не мешают', () => {
+  it('только буквы без I и O, группами по 4 через пробел', () => {
+    for (const x of all) expect(encodeItem(x)).toMatch(/^[A-HJ-NP-Z]{1,4}( [A-HJ-NP-Z]{1,4})*$/);
+    expect(all.every((x) => encodeItem(x)!.split(' ').slice(0, -1).every((g) => g.length === 4))).toBe(true);
+  });
+
+  it('регистр, пробелы, дефисы и приставка OGC (в том числе слитно) не мешают', () => {
     const x = item({ slot: 'weapon', itemKey: legendPool('weapon')[0].key, main: legendPool('weapon')[0].mains[0], subs: { SPD: 1 } });
     const code = encodeItem(x)!;
-    const typed = [code.toLowerCase(), code.replace(/-/g, ' '), `OGC ${code}`, `ogc: ${code}`, code.replace(/1/g, 'l').replace(/0/g, 'O'), `ОGС ${code}`];
+    const typed = [code.toLowerCase(), code.replace(/ /g, ''), code.replace(/ /g, '-'), `OGC ${code}`, `ogc: ${code}`, `OGC${code.replace(/ /g, '')}`, `ОGС ${code}`];
     for (const t of typed) expect(decodeItem(t)).toEqual({ ok: true, item: x });
   });
 
   it('кириллические двойники латинских букв читаются как латиница', () => {
     const x = item({ setId: '21', subs: { SPD: 2, CHC: 1 } });
     const code = encodeItem(x)!;
-    const cyr = code.replace(/[ABEKMHPCTXY3]/g, (ch) => ({ A: 'А', B: 'В', E: 'Е', K: 'к', M: 'М', H: 'Н', P: 'Р', C: 'с', T: 'Т', X: 'Х', Y: 'У', 3: 'З' })[ch]!);
+    const cyr = code.replace(/[ABEKMHPCTXY]/g, (ch) => ({ A: 'А', B: 'В', E: 'Е', K: 'к', M: 'М', H: 'Н', P: 'Р', C: 'с', T: 'Т', X: 'Х', Y: 'У' })[ch]!);
     expect(decodeItem(cyr)).toEqual({ ok: true, item: x });
   });
 
   it('опечатка в любом одном символе ловится', () => {
-    const code = encodeItem(item({ setId: '13', subs: { SPD: 2, CHC: 1, CHD: 3, 'ATK%': 1 } }))!.replace(/-/g, '');
-    const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    const code = encodeItem(item({ setId: '13', subs: { SPD: 2, CHC: 1, CHD: 3, 'ATK%': 1 } }))!.replace(/ /g, '');
+    const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     for (let i = 0; i < code.length; i++) {
       for (const ch of ALPHABET) {
         if (ch === code[i]) continue;
@@ -97,18 +102,18 @@ describe('код предмета', () => {
 
   it('перестановка двух соседних символов ловится', () => {
     for (const x of all.slice(0, 200)) {
-      const code = encodeItem(x)!.replace(/-/g, '');
+      const code = encodeItem(x)!.replace(/ /g, '');
       for (let i = 0; i + 1 < code.length; i++) {
         const a = code[i], b = code[i + 1];
-        if (a === b || (a === '0' && b === 'Z') || (a === 'Z' && b === '0')) continue; // единственная пара, которую Luhn mod 32 не различает
+        if (a === b || (a === 'A' && b === 'Z') || (a === 'Z' && b === 'A')) continue; // единственная пара, которую Luhn mod 24 не различает
         expect(decodeItem(code.slice(0, i) + b + a + code.slice(i + 2)).ok).toBe(false);
       }
     }
   });
 
-  it('пустой ввод и чужие символы — отдельные ошибки', () => {
+  it('пустой ввод и чужие символы (цифры, I, O) — отдельные ошибки', () => {
     expect(decodeItem('  ')).toEqual({ ok: false, error: 'empty' });
-    expect(decodeItem('K3QX-7U2A')).toEqual({ ok: false, error: 'chars' });
+    for (const bad of ['KXRM 7PWA', 'KXRM IPWA', 'KXRM OPWA']) expect(decodeItem(bad)).toEqual({ ok: false, error: 'chars' });
   });
 });
 

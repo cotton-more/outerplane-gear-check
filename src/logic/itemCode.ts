@@ -1,13 +1,14 @@
 // Код предмета для чата гильдии. Игровой чат — 50 символов, и сообщения из него не копируются:
-// код перепечатывают руками. Поэтому алфавит Crockford base32 — цифры и заглавные без I, L, O, U;
-// регистр, пробелы и дефисы не важны, I/L читаются как 1, O — как 0, кириллические двойники (К, М, Т…)
-// — как латиница: с русской раскладки их легко набрать случайно. Последний символ контрольный
-// (Luhn mod 32): опечатка в одном символе или перестановка двух соседних дают «код с ошибкой».
+// код перепечатывают руками. Поэтому в нём только латинские буквы (на телефоне не надо переключаться
+// на цифры), кроме I и O — они похожи на l, 1, Q, D, 0, — группами по 4 через пробел. Регистр, пробелы
+// и дефисы не важны, кириллические двойники (К, М, Т…) читаются как латиница: с русской раскладки их легко
+// набрать случайно. Последний символ контрольный (Luhn mod 24): опечатка в одном символе или
+// перестановка двух соседних дают «код с ошибкой».
 //
 // Внутри одно число в смешанной системе счисления, от младшего разряда к старшему:
 //   слот и грейд (12) → main, кроме брони (16) → 4 строки сабстатов (по 53) → сет или предмет.
 // Сет или предмет — старший разряд, без верхней границы: новые id просто удлиняют код.
-// Броня — 8 символов, Legendary оружие или аксессуар — 10.
+// Броня — 8 букв, Legendary оружие или аксессуар — 11.
 import { GRADES, SLOTS, isArmor } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import type { Subs } from './subs';
@@ -24,11 +25,11 @@ const SLOT_GRADE = SLOTS.length * GRADES.length;
 const MAIN_R = 16;
 const SUB_R = 1 + SUBS.length * 4;
 const CLASS_R = 1 + CLASSES.length;
-const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // чётное число знаков — иначе Luhn mod N не работает
 const N = ALPHABET.length;
 
 export const CODE_PREFIX = 'OGC';
-const LOOKALIKE: Record<string, string> = { А: 'A', В: 'B', Е: 'E', З: '3', К: 'K', М: 'M', Н: 'H', О: 'O', Р: 'P', С: 'C', Т: 'T', У: 'Y', Х: 'X' };
+const LOOKALIKE: Record<string, string> = { А: 'A', В: 'B', Е: 'E', К: 'K', М: 'M', Н: 'H', О: 'O', Р: 'P', С: 'C', Т: 'T', У: 'Y', Х: 'X' };
 
 // Luhn mod N: контрольный символ по цифрам кода
 function checkDigit(digits: number[]): number {
@@ -42,7 +43,7 @@ function checkDigit(digits: number[]): number {
   return (N - (sum % N)) % N;
 }
 
-// предмет → код вида «K3QX-7M2A»; null, если в предмете есть что-то, чего нет в таблицах формата
+// предмет → код вида «KXRM TPWA»; null, если в предмете есть что-то, чего нет в таблицах формата
 export function encodeItem(item: ItemInput): string | null {
   const slot = SLOTS.findIndex((x) => x.id === item.slot);
   const parts: [value: number, radix: number][] = [[slot * GRADES.length + GRADES.indexOf(item.grade), SLOT_GRADE]];
@@ -79,7 +80,7 @@ export function encodeItem(item: ItemInput): string | null {
   const digits: number[] = [];
   do { digits.unshift(n % N); n = Math.floor(n / N); } while (n > 0);
   digits.push(checkDigit(digits));
-  return digits.map((d) => ALPHABET[d]).join('').replace(/(.{4})(?=.)/g, '$1-');
+  return digits.map((d) => ALPHABET[d]).join('').replace(/(.{4})(?=.)/g, '$1 ');
 }
 
 export type DecodeError = 'empty' | 'chars' | 'check' | 'format';
@@ -89,11 +90,12 @@ const fail = (error: DecodeError): Decoded => ({ ok: false, error });
 
 // текст из чата → предмет. Проверяет только сам код; есть ли такой сет или предмет в данных — забота вызывающего.
 export function decodeItem(text: string): Decoded {
-  const latin = text.toUpperCase().replace(/[АВЕЗКМНОРСТУХ]/g, (ch) => LOOKALIKE[ch]);
-  const raw = latin.replace(new RegExp(`^\\s*${CODE_PREFIX}[\\s:]+`), '').replace(/[\s-]/g, '');
+  const latin = text.toUpperCase().replace(/[АВЕКМНОРСТУХ]/g, (ch) => LOOKALIKE[ch]);
+  // O в коде не бывает, поэтому OGC в начале — всегда приставка, даже слитно с кодом
+  const raw = latin.replace(new RegExp(`^\\s*${CODE_PREFIX}[\\s:-]*`), '').replace(/[\s-]/g, '');
   if (!raw) return fail('empty');
   const digits: number[] = [];
-  for (const ch of raw.replace(/[IL]/g, '1').replace(/O/g, '0')) {
+  for (const ch of raw) {
     const d = ALPHABET.indexOf(ch);
     if (d < 0) return fail('chars');
     digits.push(d);

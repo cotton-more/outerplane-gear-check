@@ -26,7 +26,7 @@ export function ShareCode({ item }: { item: ItemInput }) {
 
 const ERROR: Record<DecodeError | 'data', string> = {
   empty: 'Введи код из чата.',
-  chars: 'В коде только цифры и латинские буквы — проверь, нет ли лишнего.',
+  chars: 'В коде только латинские буквы — проверь, нет ли цифр или лишних знаков.',
   check: 'Код не сходится — где-то опечатка. Сверь ещё раз.',
   format: 'Это не код предмета.',
   data: 'Такого предмета нет в твоих данных — обнови приложение (или устарело оно у отправителя).',
@@ -45,7 +45,7 @@ export function CodeInput({ fits, onLoad }: { fits: (item: ItemInput) => boolean
   };
   return (
     <form className="codein" onSubmit={submit}>
-      <input className="search" autoFocus value={text} placeholder={`${CODE_PREFIX} K3QX-7M2A`} aria-label="Код предмета"
+      <input className="search" autoFocus value={text} placeholder={`${CODE_PREFIX} KXRM TPWA`} aria-label="Код предмета"
         autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go"
         onChange={(e) => { setText(e.target.value); setError(null); }} />
       <button type="submit" className="btn primary">Открыть</button>
