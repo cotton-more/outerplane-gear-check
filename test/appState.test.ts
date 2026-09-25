@@ -120,6 +120,11 @@ describe('сохранение в localStorage', () => {
     const s = fromPersisted({ slot: 'bogus', grade: 'mythic', tab: 'x', stage: 'late', charId: 'nobody', rosterOnly: 'yes' } as never, idx);
     expect([s.slot, s.grade, s.tab, s.settings.stage, s.charId, s.settings.rosterOnly]).toEqual(['gloves', 'unique', 'eval', 'grow', null, true]);
   });
+
+  it('новичку фоддер включён, сохранённый выбор не трогаем', () => {
+    expect(fromPersisted(null, idx).settings.fodder).toBe(true);
+    expect(fromPersisted({ fodder: false }, idx).settings.fodder).toBe(false);
+  });
 });
 
 describe('недовведённый предмет переживает перезапуск', () => {

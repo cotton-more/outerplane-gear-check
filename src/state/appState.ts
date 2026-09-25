@@ -147,7 +147,7 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
     ...EMPTY_ITEM,
     settings: {
       rosterOnly: bool(p.rosterOnly, true),
-      fodder: bool(p.fodder, false),
+      fodder: bool(p.fodder, true), // красную броню со слабыми сабстатами — в фоддер, а не в разбор (гайд outerpedia)
       stage: oneOf(p.stage, ['grow', 'end'] as const, 'grow'),
       lv120: bool(p.lv120, false),
       quirks: bool(p.quirks, true),
