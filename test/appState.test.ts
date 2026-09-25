@@ -35,9 +35,10 @@ describe('reducer: сабстаты', () => {
     expect(reducer(on, { type: 'sub', key: 'SPD' }).subs).toEqual({});
   });
 
-  it('замена стата сохраняет его строку и сбрасывает жёлтые до 1', () => {
+  it('замена стата сохраняет его строку и жёлтые сегменты', () => {
     const s = fresh({ subs: { SPD: 2, CHC: 3, CHD: 1 } });
-    expect(reducer(s, { type: 'replaceSub', from: 'CHC', to: 'ATK%' }).subs).toEqual({ SPD: 2, 'ATK%': 1, CHD: 1 });
+    const next = reducer(s, { type: 'replaceSub', from: 'CHC', to: 'ATK%' });
+    expect(Object.entries(next.subs)).toEqual([['SPD', 2], ['ATK%', 3], ['CHD', 1]]);
     expect(reducer(s, { type: 'replaceSub', from: 'CHC', to: 'SPD' })).toBe(s); // уже отмечен
   });
 
@@ -60,6 +61,12 @@ describe('reducer: смена грейда', () => {
     expect(s.subs).toEqual({ SPD: 2, 'ATK%': 1, CHC: 3 });
   });
 
+  it('отброшенный четвёртый можно отметить в другой строке, а у Legendary четвёртая строка вернётся пустой', () => {
+    const s = run(fresh({ grade: 'unique', subs: { SPD: 2, CHC: 1, CHD: 3, 'ATK%': 1 } }),
+      { type: 'grade', grade: 'rare' }, { type: 'replaceSub', from: 'CHC', to: 'ATK%' }, { type: 'grade', grade: 'unique' });
+    expect(Object.entries(s.subs)).toEqual([['SPD', 2], ['ATK%', 1], ['CHD', 3]]);
+  });
+
   it('сабстаты, которые помещаются, сохраняются', () => {
     const subs = subsOf('SPD', 'CHC');
     expect(reducer(fresh({ grade: 'unique', subs }), { type: 'grade', grade: 'rare' }).subs).toBe(subs);
@@ -79,11 +86,21 @@ describe('reducer: слот и «Далее»', () => {
     expect(reducer(s, { type: 'slot', slot: 'gloves' })).toBe(s);
   });
 
-  it('другой слот и «Далее» сбрасывают предмет', () => {
+  it('другой слот брони сбрасывает сабстаты, но оставляет сет', () => {
     const s = fresh({ slot: 'gloves', setId: '13', subs: subsOf('SPD'), expand: { x: true } });
-    for (const next of [reducer(s, { type: 'slot', slot: 'shoes' }), reducer(s, { type: 'next' })]) {
-      expect([next.setId, next.subs, next.expand]).toEqual([null, {}, {}]);
-    }
+    const next = reducer(s, { type: 'slot', slot: 'shoes' });
+    expect([next.setId, next.subs, next.expand]).toEqual(['13', {}, {}]);
+  });
+
+  it('оружие и аксессуар сет не наследуют: вернувшись к броне, его выбирают заново', () => {
+    const s = fresh({ slot: 'gloves', setId: '13' });
+    expect(reducer(s, { type: 'slot', slot: 'weapon' }).setId).toBeNull();
+    expect(run(s, { type: 'slot', slot: 'accessory' }, { type: 'slot', slot: 'helmet' }).setId).toBeNull();
+  });
+
+  it('«Далее» сбрасывает предмет вместе с сетом', () => {
+    const next = reducer(fresh({ slot: 'gloves', setId: '13', subs: subsOf('SPD'), expand: { x: true } }), { type: 'next' });
+    expect([next.setId, next.subs, next.expand]).toEqual([null, {}, {}]);
   });
 });
 

@@ -37,6 +37,7 @@ html.narrow .slot span { display: none; }
 .subrow .roll-b button.r4 { min-width: 28px; font-size: 12px; }
 .subdel { flex: none; width: 36px; height: 44px; border: 0; background: none; color: var(--ink-3); font-size: 15px; border-radius: var(--radius-s); }
 .subadd { justify-content: flex-start; }
+.pick.suboff { opacity: .6; background: repeating-linear-gradient(135deg, transparent 0 7px, var(--line) 7px 8px); cursor: default; }
 html.xs .subrow .roll-b button { min-width: 32px; }
 html.xs .subdel { width: 30px; }
 /* окна выбора */

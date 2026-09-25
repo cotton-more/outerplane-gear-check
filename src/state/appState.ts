@@ -54,7 +54,8 @@ export function reducer(s: AppState, a: Action): AppState {
     case 'tab':
       return { ...s, tab: a.tab };
     case 'slot':
-      return s.slot === a.slot ? s : { ...s, ...EMPTY_ITEM, slot: a.slot };
+      // сет один на всю броню: между шлемом, бронёй, перчатками и ботинками он остаётся (в игре инвентарь фильтруется по сету)
+      return s.slot === a.slot ? s : { ...s, ...EMPTY_ITEM, setId: isArmor(a.slot) ? s.setId : null, slot: a.slot };
     case 'grade': {
       if (s.grade === a.grade) return { ...s, expand: {} };
       // у Epic сабстатов три: при смене грейда лишний (последний отмеченный) отбрасываем
@@ -84,9 +85,9 @@ export function reducer(s: AppState, a: Action): AppState {
       return { ...s, subs };
     }
     case 'replaceSub': {
-      // другой стат в той же строке: позиция сохраняется, жёлтые — снова 1
+      // другой стат в той же строке: позиция и жёлтые сегменты сохраняются — обычно ошибка только в названии стата
       if (!(a.from in s.subs) || a.to in s.subs || a.to === s.main) return s;
-      return { ...s, subs: Object.fromEntries(Object.entries(s.subs).map(([k, v]) => (k === a.from ? [a.to, 1] : [k, v]))) };
+      return { ...s, subs: Object.fromEntries(Object.entries(s.subs).map(([k, v]) => [k === a.from ? a.to : k, v])) };
     }
     case 'roll':
       return a.key in s.subs ? { ...s, subs: { ...s.subs, [a.key]: a.n } } : s;
