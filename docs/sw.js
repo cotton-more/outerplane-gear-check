@@ -1,6 +1,6 @@
 // Service worker Outerplane Gear Check: офлайн-режим и обновление данных.
 // Сгенерирован update.py — не редактируй вручную.
-const VERSION = '932d16659316';
+const VERSION = 'd57063b27cd3';
 const CACHE = 'ogc-' + VERSION;
 const FONTS = 'ogc-fonts';
 const PRECACHE = [
@@ -246,8 +246,9 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  // новая версия ждёт: страница сама предложит обновиться, чтобы не перезагружаться посреди оценки
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
+  // новая версия ждёт: страница сама предложит обновиться, чтобы не перезагружаться посреди оценки.
+  // cache: 'reload' — мимо HTTP-кэша браузера: иначе под новой версией может лечь старая страница
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.map((url) => new Request(url, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', (event) => {

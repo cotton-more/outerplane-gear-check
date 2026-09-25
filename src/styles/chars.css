@@ -1,0 +1,60 @@
+/* ---------- персонажи */
+.chars { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+html:not(.sheet) .chars { grid-template-columns: minmax(0, 1fr) minmax(400px, 500px); align-items: start; }
+html:not(.sheet) .char-detail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; overscroll-behavior: contain; }
+html.sheet .char-detail:not(.open) { display: none; }
+html.sheet .char-detail.open { position: fixed; inset: 0; z-index: 30; border: 0; border-radius: 0; overflow: auto; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom, 0px); }
+html.sheet body.sheet-open { overflow: hidden; }
+.roster-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.roster-io { padding: 0 16px 14px; display: grid; gap: 8px; }
+.roster-io textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); font: 13px/1.4 var(--font-mono); resize: vertical; }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding: 14px 16px 16px; }
+.cwrap { position: relative; min-width: 0; }
+.ctile { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); text-align: center; min-width: 0; height: 100%; }
+.ctile img.face, .ctile .noimg.face { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+.ctile .cn { font-size: 12px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.ctile .cp { display: block; font-size: 10.5px; font-weight: 500; color: var(--ink-3); }
+.ctile .badges { position: absolute; top: 6px; left: 6px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+.ctile .badges img { width: 16px; height: 16px; }
+.ctile.nob .face { filter: grayscale(.7); }
+.ctile .newb { position: absolute; top: 58px; right: 8px; font: 700 9px/1 var(--font-mono); padding: 2px 4px; border-radius: 3px; background: #b3262e; color: #fff; }
+.star { position: absolute; top: 0; right: 0; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; font-size: 18px; line-height: 1; color: var(--ink-3); border-radius: var(--radius-s); }
+.star[aria-pressed="true"] { color: var(--star-on); }
+.cd-top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+html:not(.sheet) .cd-top { display: none; }
+.cd-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 16px 16px 12px; }
+.cd-head img.face, .cd-head .noimg.face { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+.cd-head h2 { margin: 0; font: 700 18px/1.2 var(--font-display); text-wrap: balance; }
+.cd-head .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.cd-head .meta img { width: 18px; height: 18px; vertical-align: -4px; }
+.own-row { padding: 0 16px 4px; }
+.own-btn { border: 1px solid var(--line-2); background: var(--surface); padding: 8px 12px; min-height: 40px; border-radius: var(--radius-s); font-weight: 600; font-size: 13.5px; }
+.own-btn[aria-pressed="true"] { border-color: var(--star-on); color: var(--ink); background: color-mix(in srgb, var(--star-on) 14%, var(--surface)); }
+.btabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
+.btabs button { border: 1px solid var(--line); background: var(--surface-2); padding: 7px 12px; min-height: 36px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.btabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.bsec { padding: 12px 16px 18px; display: grid; gap: 16px; }
+.bsec h4 { margin: 0 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.combo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.combo + .combo { margin-top: 6px; }
+.combo .or { font-size: 12px; color: var(--ink-3); width: 100%; }
+.setpill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px 4px 4px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+.setpill img, .setpill .noimg { width: 24px; height: 24px; }
+.setpill .n { font-family: var(--font-mono); color: var(--ink-3); font-weight: 700; }
+.gear { display: grid; gap: 8px; }
+.gearrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; }
+.gearrow b { font-size: 14px; }
+.gearrow .gm { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.gearrow .ps { font-size: 12.5px; color: var(--ink-3); }
+.prio { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.prio .gt { color: var(--ink-3); font-family: var(--font-mono); font-size: 12px; }
+.prio .tok { font-size: 12.5px; padding: 3px 7px; }
+.prio .tok.t0 { background: var(--ink); color: var(--surface); }
+.prio .tok.t1 { background: var(--accent-soft); color: var(--accent); }
+.prio-hint { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 12.5px; color: var(--ink-2); }
+.prio-hint b { font-family: var(--font-mono); }
+.tal { display: flex; flex-wrap: wrap; gap: 6px; }
+.tal span { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; padding: 3px 8px 3px 3px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); }
+.tal img, .tal .noimg { width: 22px; height: 22px; }
+.bnote { font-size: 13px; color: var(--ink-2); white-space: pre-line; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
+.cd-empty { padding: 28px 16px; color: var(--ink-3); text-align: center; }

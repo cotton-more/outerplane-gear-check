@@ -1,0 +1,80 @@
+# Команды проекта: `task --list`. Нужен go-task: brew install go-task
+# Флаги update.py (--source, --ref, --refresh-images, --no-embed) — после «--»: task build:pwa -- --ref <sha>
+version: '3'
+
+vars:
+  PAGES_URL: https://cotton-more.github.io/outerplane-gear-check
+
+tasks:
+  default:
+    cmds: [task --list]
+    silent: true
+
+  setup:
+    desc: Поставить зависимости (npm ci)
+    cmds: [npm ci]
+    sources: [package.json, package-lock.json]
+    generates: [node_modules/.package-lock.json]
+
+  dev:
+    desc: Dev-сервер с горячей перезагрузкой — данные и картинки берёт из docs/
+    deps: [setup]
+    cmds: [npm run dev]
+
+  build:app:
+    desc: Собрать приложение в build/app/index.html (без данных)
+    deps: [setup]
+    cmds: [npm run -s build]
+
+  build:pwa:
+    desc: PWA-сайт в docs/ со свежими данными outerpedia
+    aliases: [data]
+    deps: [build:app]
+    cmds: ['python3 update.py --pwa docs {{.CLI_ARGS}}']
+
+  build:single:
+    desc: Одиночная страница outerplane-gear.html и build/artifact.html для Claude Artifact
+    deps: [build:app]
+    cmds: ['python3 update.py {{.CLI_ARGS}}']
+
+  preview:
+    desc: Открыть docs/ локально на http://localhost:8000 — как на Pages, с офлайн-режимом
+    cmds: [python3 -m http.server -d docs 8000]
+
+  test:
+    desc: Проверка типов и тесты (эталон логики + юнит-тесты)
+    deps: [setup]
+    cmds:
+      - npm run -s typecheck
+      - npm test --silent
+
+  golden:update:
+    desc: Перегенерировать эталон логики после намеренных изменений — потом просмотри diff test/golden.json
+    deps: [setup]
+    cmds: [npm run -s golden:update]
+
+  publish:
+    desc: 'Тесты → docs/ → коммит → пуш → ждать выкладки. Своё сообщение: task publish MSG="…"'
+    vars:
+      MSG: '{{.MSG | default "Обновление данных outerpedia"}}'
+    cmds:
+      - task: test
+      - task: build:pwa
+      - git add -A
+      - cmd: 'git diff --cached --quiet && echo "Изменений нет — коммитить нечего" || git commit -qm "{{.MSG}}"'
+      - git push
+      - task: pages:check
+
+  pages:check:
+    desc: Дождаться, пока GitHub Pages отдаст ту же версию, что в docs/sw.js
+    silent: true
+    cmds:
+      - |
+        want=$(sed -n "s/^const VERSION = '\(.*\)';/\1/p" docs/sw.js)
+        echo "Жду версию $want на {{.PAGES_URL}}"
+        for i in $(seq 1 40); do
+          got=$(curl -fsS "{{.PAGES_URL}}/sw.js?t=$(date +%s)" 2>/dev/null | sed -n "s/^const VERSION = '\(.*\)';/\1/p")
+          if [ "$got" = "$want" ]; then echo "Выложено: $want"; exit 0; fi
+          echo "  на сайте ${got:-?} — жду"; sleep 15
+        done
+        echo "За 10 минут новая версия не появилась — проверь Settings → Pages"; exit 1

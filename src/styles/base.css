@@ -1,0 +1,155 @@
+:root {
+  color-scheme: light;
+  --bg: #eceff4;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --surface-3: #e5e9f0;
+  --ink: #121722;
+  --ink-2: #454f60;
+  --ink-3: #5f6979;
+  --line: #d6dce6;
+  --line-2: #bcc5d2;
+  --accent: #1d4fcf;
+  --accent-soft: #e2e9fb;
+  --keep: #11744a;
+  --keep-soft: #d9f0e3;
+  --temp: #8a5a00;
+  --temp-soft: #fbedd2;
+  --fodder: #6041b8;
+  --fodder-soft: #ebe4fb;
+  --junk: #b3262e;
+  --junk-soft: #fae0e1;
+  --idle: #566174;
+  --idle-soft: #e5e9f0;
+  --epic: #2f6bd8;
+  --legend: #cf3a31;
+  --seg-y: #e5a00f;
+  --seg-off: #aeb7c4;
+  --star-on: #b97c00;
+  --radius: 10px;
+  --radius-s: 7px;
+  --font-body: "Golos Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --font-display: "Unbounded", "Golos Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0c0f14;
+    --surface: #151a22;
+    --surface-2: #1a2029;
+    --surface-3: #232b36;
+    --ink: #e7ebf1;
+    --ink-2: #b0bacb;
+    --ink-3: #8b97aa;
+    --line: #29313e;
+    --line-2: #3b4555;
+    --accent: #7aa2ff;
+    --accent-soft: #1e2a44;
+    --keep: #45d193;
+    --keep-soft: #113322;
+    --temp: #f2b64e;
+    --temp-soft: #392a0d;
+    --fodder: #b39aff;
+    --fodder-soft: #2a2145;
+    --junk: #ff7373;
+    --junk-soft: #3d1618;
+    --idle: #b0bacb;
+    --idle-soft: #232b36;
+    --epic: #74a0ff;
+    --legend: #ff6d62;
+    --seg-y: #f0b030;
+    --seg-off: #3d4757;
+    --star-on: #f0b030;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c0f14;
+  --surface: #151a22;
+  --surface-2: #1a2029;
+  --surface-3: #232b36;
+  --ink: #e7ebf1;
+  --ink-2: #b0bacb;
+  --ink-3: #8b97aa;
+  --line: #29313e;
+  --line-2: #3b4555;
+  --accent: #7aa2ff;
+  --accent-soft: #1e2a44;
+  --keep: #45d193;
+  --keep-soft: #113322;
+  --temp: #f2b64e;
+  --temp-soft: #392a0d;
+  --fodder: #b39aff;
+  --fodder-soft: #2a2145;
+  --junk: #ff7373;
+  --junk-soft: #3d1618;
+  --idle: #b0bacb;
+  --idle-soft: #232b36;
+  --epic: #74a0ff;
+  --legend: #ff6d62;
+  --seg-y: #f0b030;
+  --seg-off: #3d4757;
+  --star-on: #f0b030;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  padding-inline: 16px;
+  padding-block: 0 40px;
+}
+img { max-width: 100%; }
+img.broken { visibility: hidden; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+.app { max-width: 1240px; margin: 0 auto; }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--ink-3); }
+.small { font-size: 13px; }
+kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-2); background: var(--surface-2); }
+.noimg { display: inline-block; background: var(--surface-3); border-radius: 6px; }
+
+/* ---------- шапка */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 16px 12px; }
+.brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+.brand h1 { font: 700 19px/1.1 var(--font-display); letter-spacing: .01em; margin: 0; }
+.brand p { margin: 2px 0 0; color: var(--ink-3); font-size: 13px; }
+.brand-mark { display: block; width: 34px; height: 34px; flex: none; }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-3); border-radius: 12px; }
+.tabs button { border: 0; background: transparent; padding: 9px 14px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.tabs .count { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); margin-left: 4px; }
+html.xs .tabs { width: 100%; }
+html.xs .tabs button { flex: 1; }
+
+/* ---------- общие блоки */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.step { padding: 14px 16px 16px; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; min-height: 20px; }
+.step-h h2 { margin: 0; flex: none; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.step-h .hint { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.linkbtn { border: 0; background: none; padding: 4px 0; color: var(--accent); font-size: 13px; font-weight: 600; flex: none; }
+.linkbtn:hover { text-decoration: underline; }
+.linkbtn.ghost { visibility: hidden; }
+.note-line { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.empty { padding: 12px; color: var(--ink-3); font-size: 13px; }
+
+/* ---------- узкий экран, плашки, подвал */
+html.narrow .step { padding: 12px 14px 14px; }
+html.narrow .step-h { margin-bottom: 8px; }
+html.narrow .top { padding-block: 10px 8px; gap: 8px 16px; }
+html.narrow .brand p { display: none; }
+.fitnote { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--temp-soft); color: var(--ink); font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; }
+.fitnote button { flex: none; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 2px 0; }
+footer.foot { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
+footer.foot a { color: var(--ink-2); }

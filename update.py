@@ -3,12 +3,14 @@
 Outerplane Gear Check — обновление данных страницы.
 
 Берёт свежие данные из репозитория outerpedia (https://github.com/Sevih/outerpedia),
-собирает компактный датасет (персонажи, билды, сеты, оружие, аксессуары, талисманы, база статов),
-встраивает иконки как data URI и генерирует готовую страницу из template.html.
+собирает компактный датасет (персонажи, билды, сеты, оружие, аксессуары, талисманы, база статов)
+и подставляет его в собранное приложение (build/app/index.html — результат `npm run build`).
 
-Запуск (нужен только Python 3.9+, без внешних пакетов):
+Обычно запускается через Taskfile (task build:single / task build:pwa), который сначала собирает приложение.
+Напрямую (нужен Python 3.9+, без внешних пакетов; build/app/index.html должен уже быть):
 
     python3 update.py                        # скачать последнюю версию с GitHub
+    python3 update.py --pwa docs             # PWA-сайт для GitHub Pages
     python3 update.py --source ~/outerpedia  # взять данные из локального клона
     python3 update.py --no-embed             # не встраивать иконки (файл меньше, нужен интернет)
     python3 update.py --refresh-images       # перекачать иконки, не глядя в кэш
@@ -51,11 +53,15 @@ IMG_BASE = "https://img.outerpedia.com"
 USER_AGENT = "outerplane-gear-check/1.0 (+personal inventory tool)"
 
 HERE = Path(__file__).resolve().parent
-TEMPLATE = HERE / "template.html"
+TEMPLATE = HERE / "build" / "app" / "index.html"  # собранное приложение (npm run build)
+SW_TEMPLATE = HERE / "pwa" / "sw.template.js"
 OUT_LOCAL = HERE / "outerplane-gear.html"
 OUT_ARTIFACT = HERE / "build" / "artifact.html"
 OLD_CACHE_DIR = HERE / ".cache"  # старое место кэша иконок — переносим в системный кэш
 DATA_MARKER = "/*__OGC_DATA__*/null"
+# точки разреза в index.html приложения: сюда — теги PWA; отсюда начинается фрагмент для Artifact
+HEAD_MARKER = "<!--ogc:head-->"
+CUT_MARKERS = (HEAD_MARKER, "<!--ogc:data-->", "<!--ogc:app-->")
 APP_NAME = "Outerplane Gear Check"
 APP_SHORT = "Gear Check"
 
@@ -1028,56 +1034,10 @@ def render_app_icon(size: int, maskable: bool) -> bytes:
     return png_bytes(size, px)
 
 
-SW_TEMPLATE = """// Service worker Outerplane Gear Check: офлайн-режим и обновление данных.
-// Сгенерирован update.py — не редактируй вручную.
-const VERSION = '__VERSION__';
-const CACHE = 'ogc-' + VERSION;
-const FONTS = 'ogc-fonts';
-const PRECACHE = __FILES__;
-
-self.addEventListener('install', (event) => {
-  // новая версия ждёт: страница сама предложит обновиться, чтобы не перезагружаться посреди оценки
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('ogc-') && k !== CACHE && k !== FONTS).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim()),
-  );
-});
-
-self.addEventListener('message', (event) => {
-  if (event.data === 'skipWaiting') self.skipWaiting();
-});
-
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (url.origin === self.location.origin) {
-    // файлы сборки — из кэша (офлайн), иначе из сети; навигация — всегда index.html
-    event.respondWith((async () => {
-      const hit = await caches.match(req, { ignoreSearch: true });
-      if (hit) return hit;
-      if (req.mode === 'navigate') {
-        const page = await caches.match('index.html');
-        if (page) return page;
-      }
-      return fetch(req);
-    })());
-  } else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    // шрифты: сразу из кэша, в фоне обновляем
-    event.respondWith((async () => {
-      const cache = await caches.open(FONTS);
-      const hit = await cache.match(req);
-      const net = fetch(req).then((res) => { cache.put(req, res.clone()); return res; }).catch(() => hit);
-      return hit || net;
-    })());
-  }
-});
-"""
+def sw_template() -> str:
+    """Шаблон service worker из pwa/sw.template.js (первая строка — комментарий для читающего шаблон)."""
+    text = SW_TEMPLATE.read_text(encoding="utf-8")
+    return text.split("\n", 1)[1] if text.startswith("// Шаблон") else text
 
 
 def build_pwa(site: Path, data: dict, fragment_for, warn: Warnings, refresh: bool) -> dict:
@@ -1142,13 +1102,13 @@ def build_pwa(site: Path, data: dict, fragment_for, warn: Warnings, refresh: boo
     (site / "index.html").write_text(page, encoding="utf-8")
     (site / ".nojekyll").write_text("")
 
-    files = ["./", "index.html", "manifest.webmanifest"] + [f"icons/{f.name}" for f in sorted(icons.iterdir())] + sorted(data["img"].values())
+    files = ["./", "index.html", "manifest.webmanifest"] + [f"icons/{f.name}" for f in sorted(icons.glob("*.png"))] + sorted(data["img"].values())
     digest = hashlib.sha1()
     for rel in files[1:]:
         digest.update(rel.encode())
         digest.update((site / rel).read_bytes())
     version = digest.hexdigest()[:12]
-    sw = SW_TEMPLATE.replace("__VERSION__", version).replace("__FILES__", json.dumps(files, ensure_ascii=False, indent=2))
+    sw = sw_template().replace("__VERSION__", version).replace("__FILES__", json.dumps(files, ensure_ascii=False, indent=2))
     (site / "sw.js").write_text(sw, encoding="utf-8")
     size = sum((site / rel).stat().st_size for rel in files[1:])
     return {"version": version, "files": len(files), "bytes": size, "page": len(page.encode("utf-8"))}
@@ -1161,7 +1121,7 @@ def previous_data(path: Path) -> dict | None:
     if not path.exists():
         return None
     text = path.read_text(encoding="utf-8")
-    m = re.search(r"window\.OGC_DATA\s*=\s*(\{.*?\});\s*</script>", text, re.S)
+    m = re.search(r"<script>window\.OGC_DATA\s*=\s*(\{.*?\});\s*</script>", text, re.S)
     if not m:
         return None
     try:
@@ -1197,25 +1157,53 @@ def diff_report(prev: dict | None, data: dict) -> list[str]:
     return lines
 
 
-def render_fragment(data: dict) -> str:
-    template = TEMPLATE.read_text(encoding="utf-8")
-    if DATA_MARKER not in template:
-        raise SystemExit(f"В {TEMPLATE.name} нет маркера {DATA_MARKER}")
+def load_template() -> str:
+    """Собранное приложение (build/app/index.html) — с проверками, что его можно безопасно резать и заполнять."""
+    rel = TEMPLATE.relative_to(HERE)
+    if not TEMPLATE.exists():
+        raise SystemExit(f"Нет {rel} — сначала собери приложение: task build:app (или npm run build)")
+    page = TEMPLATE.read_text(encoding="utf-8")
+    for marker in (DATA_MARKER, *CUT_MARKERS):
+        if page.count(marker) != 1:
+            raise SystemExit(f"В {rel} маркер {marker} встречается {page.count(marker)} раз, а должен ровно один")
+    # встроенный бандл (от маркера до </head>) не должен закрывать <script> раньше времени и открывать
+    # HTML-комментарий: иначе браузер оборвёт скрипт посередине
+    bundle = page[page.index(CUT_MARKERS[2]) + len(CUT_MARKERS[2]):page.rindex("</head>")]
+    if len(re.findall(r"</script", bundle, re.I)) != 1 or "<!--" in bundle:
+        raise SystemExit(f"Во встроенном JS {rel} есть «</script» или «<!--» — браузер разберёт страницу неверно")
+    return page
+
+
+def data_blob(data: dict) -> str:
     # «<» → \\u003c: ни «</script», ни «<!--» из данных не сломают разбор страницы; U+2028/2029 — для старых движков
-    blob = (json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    return (json.dumps(data, ensure_ascii=False, separators=(",", ":"))
             .replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
-    return template.replace(DATA_MARKER, blob)
+
+
+def drop_marker(page: str, marker: str, insert: str = "") -> str:
+    """Убирает маркер вместе с отступом и переводом строки после него, на его место ставит insert."""
+    return re.sub(re.escape(marker) + r"[ \t]*\n?[ \t]*", lambda _: insert, page, count=1)
 
 
 def render_document(data: dict, head_extra: str = "") -> str:
-    fragment = render_fragment(data)
-    cut = fragment.find("</style>")
-    head, body = (fragment[:cut + 8], fragment[cut + 8:]) if cut != -1 else ("", fragment)
-    return (
-        '<!doctype html>\n<html lang="ru">\n<head>\n<meta charset="utf-8">\n'
-        '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
-        + head_extra + head + "\n</head>\n<body>\n" + body.lstrip() + "\n</body>\n</html>\n"
-    )
+    """Страница целиком (одиночный файл и PWA): данные подставлены, head_extra — в начале <head>."""
+    page = load_template().replace(DATA_MARKER, data_blob(data), 1)
+    page = drop_marker(page, HEAD_MARKER, head_extra)
+    for marker in CUT_MARKERS[1:]:
+        page = drop_marker(page, marker)
+    return page
+
+
+def render_fragment(data: dict) -> str:
+    """Для Claude Artifact: без <html>/<head>/<body> — содержимое <head> после маркера и <body>.
+    Порядок в <head> сохраняется: сначала данные, потом бандл."""
+    page = load_template().replace(DATA_MARKER, data_blob(data), 1)
+    head_end = page.rindex("</head>")  # последний: встроенный JS тоже живёт в <head>
+    body_start = page.index("<body>", head_end) + len("<body>")
+    frag = page[page.index(HEAD_MARKER) + len(HEAD_MARKER):head_end].strip() + "\n" + page[body_start:page.rindex("</body>")].strip() + "\n"
+    for marker in CUT_MARKERS[1:]:
+        frag = drop_marker(frag, marker)
+    return frag
 
 
 def render(data: dict) -> tuple[str, str]:
@@ -1302,6 +1290,11 @@ def main_pwa(args) -> None:
     site = args.pwa.expanduser()
     warn = Warnings()
     src, prov = load_sources(args.source, args.ref)
+    if not prov.get("commit") or not prov.get("commitDate"):
+        # без sha и даты коммита данные нельзя сравнить с прошлой сборкой: сменится generatedAt,
+        # и у всех установленных приложений выскочит ложная плашка «вышли новые данные»
+        raise SystemExit("Не удалось узнать коммит outerpedia (лимит GitHub API или нет git в --source) — "
+                         "сборку PWA не делаю, чтобы не выпустить ложное обновление. Повтори позже.")
     data = build_dataset(src, prov, warn)
     prev = previous_data(site / "index.html")
     carry_new_ids(data, prev)
