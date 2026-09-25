@@ -1,8 +1,8 @@
 {
   "name": "Outerplane Gear Check",
   "short_name": "Gear Check",
-  "description": "Что оставить, а что разобрать в Outerplane — по билдам outerpedia",
-  "lang": "ru",
+  "description": "Keep or dismantle? Outerplane gear check based on outerpedia builds (English / Русский)",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

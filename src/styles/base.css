@@ -194,4 +194,5 @@ html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); }
 .guide h4:first-child { margin-top: 0; }
 .guide p { margin: 0; }
 html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
-
+footer.foot .lang { margin-top: 4px; }
+.drawer .lang { margin-bottom: 12px; }

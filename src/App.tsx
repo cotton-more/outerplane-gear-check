@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
 import { EvalPanel } from './components/eval/EvalPanel';
@@ -13,10 +13,10 @@ import { useHotkeys } from './hooks/useHotkeys';
 import { useLayout } from './hooks/useLayout';
 import { usePwa } from './hooks/usePwa';
 import type { Index } from './data';
+import { LANG_NAME, LANGS, LangContext, TEXTS, savedLang, useT, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
 import { charMatches } from './logic/lists';
-import { persons } from './logic/text';
 import { itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -40,7 +40,11 @@ export function App() {
     const c = idx.CHAR_BY_SLUG[slugFromHash()];
     return c ? reducer(init, openCharAction(idx, init, roster, c.id)) : init;
   });
-  const ctx = useMemo(() => makeCtx(idx, s.settings, roster), [idx, s.settings, roster]);
+  const [lang, setLang] = useState<Lang>(savedLang);
+  const t = TEXTS[lang];
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  const changeLang = (l: Lang) => { storage.set('lang', l); setLang(l); };
+  const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t), [idx, s.settings, roster, t]);
   // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
   const verdict = useMemo(() => evaluate(ctx, input), [ctx, ...Object.values(input)]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -64,59 +68,74 @@ export function App() {
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
 
   return (
-    <div className="app">
-      <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} />
-      {pwa.updateReady && <div id="updnote"><Notice text="Вышли новые данные outerpedia — обнови, чтобы видеть свежие билды." action="Обновить" onAction={pwa.applyUpdate} /></div>}
-      {layout.desktopModeOnPhone && !fitHidden && (
-        <div id="fitnote">
-          <Notice text="Браузер открыл страницу в режиме «Версия для ПК» — я подстроил масштаб. Если что-то выглядит странно, выключи этот режим: меню ⋮ → «Версия для ПК»."
-            action="Понятно" onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
-        </div>
-      )}
-      {s.tab === 'eval' && !welcomeHidden && roster.size === 0 && (
-        <Welcome install={install} onRoster={() => onTab('chars')} onClose={() => { storage.set('welcomeHidden', true); setWelcomeHidden(true); }} />
-      )}
-      <main>
-        <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-          <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onReset={onReset} onHelp={() => setHelpOpen(true)} />
-          {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
-        </section>
-        <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-          <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} />
-          <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi}
-            sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
-        </section>
-      </main>
-      <Footer install={install} />
-      <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
-      {helpOpen && <Sheet title="Справка" onClose={() => setHelpOpen(false)}><Help install={install} /></Sheet>}
-      {verdictOpen && layout.narrow && s.tab === 'eval' && (
-        <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
-      )}
+    <LangContext.Provider value={t}>
+      <div className="app">
+        <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} />
+        {pwa.updateReady && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
+        {layout.desktopModeOnPhone && !fitHidden && (
+          <div id="fitnote">
+            <Notice text={t.ui.desktopModeNotice}
+              action={t.ui.gotIt} onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
+          </div>
+        )}
+        {s.tab === 'eval' && !welcomeHidden && roster.size === 0 && (
+          <Welcome install={install} onRoster={() => onTab('chars')} onClose={() => { storage.set('welcomeHidden', true); setWelcomeHidden(true); }} />
+        )}
+        <main>
+          <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
+            <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onReset={onReset} onHelp={() => setHelpOpen(true)} />
+            {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
+          </section>
+          <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} />
+            <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi}
+              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
+          </section>
+        </main>
+        <Footer install={install} lang={lang} onLang={changeLang} />
+        <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
+        {helpOpen && <Sheet title={t.ui.help} onClose={() => setHelpOpen(false)}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} /></Sheet>}
+        {verdictOpen && layout.narrow && s.tab === 'eval' && (
+          <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
+        )}
+      </div>
+    </LangContext.Provider>
+  );
+}
+
+// «Язык: Русский · English» — в подвале и в справке
+function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+  const t = useT();
+  return (
+    <div className="seg lang" role="group" aria-label={t.ui.language}>
+      <span className="muted small">{t.ui.language}:</span>
+      {LANGS.map((l) => <button key={l} type="button" className="fbtn" lang={l} aria-pressed={lang === l} onClick={() => onLang(l)}>{LANG_NAME[l]}</button>)}
     </div>
   );
 }
 
-function Footer({ install }: { install: InstallInfo }) {
+function Footer({ install, lang, onLang }: { install: InstallInfo; lang: Lang; onLang: (l: Lang) => void }) {
   const m = useIndex().D.meta;
+  const t = useT();
   const when = (m.commitDate || m.generatedAt || '').slice(0, 10);
   return (
     <footer className="foot" id="foot">
       <span>
-        Данные: <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco, © 2026 Sevih, MIT) · версия игры {m.gameVersion || '?'} · снимок от {when}
-        {m.commit && <> · <span className="mono">{String(m.commit).slice(0, 7)}</span></>} · {persons(m.counts.characters)}, с билдами {m.counts.withBuilds}, билдов {m.counts.builds}.
+        {t.ui.footData} <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco, © 2026 Sevih, MIT) · {t.ui.footGameVersion} {m.gameVersion || '?'} · {t.ui.footSnapshot} {when}
+        {m.commit && <> · <span className="mono">{String(m.commit).slice(0, 7)}</span></>} · {t.ui.footCounts(m.counts.characters, m.counts.withBuilds, m.counts.builds)}
       </span>
       <span>
-        {window.OGC_PWA ? 'Когда выйдут новые данные, при открытии появится плашка «Обновить».' : <>Обновить данные: <span className="mono">task build:single</span> в папке проекта.</>}
-        {' '}Игровые данные и изображения принадлежат Major9 / VA Games, билды — авторам outerpedia. Неофициальный фанатский инструмент: не связан ни с издателем, ни с outerpedia.
+        {window.OGC_PWA ? t.ui.footUpdatePwa : <>{t.ui.footUpdateSingle} <span className="mono">task build:single</span> {t.ui.footUpdateSingleWhere}</>}
+        {' '}{t.ui.footRights}
       </span>
       <details className="lic">
-        <summary>Лицензии (MIT)</summary>
-        {MIT_HOLDERS.map((h) => <p key={h.what}><a href={h.url} target="_blank" rel="noopener">{h.what}</a><br />{h.who}</p>)}
+        <summary>{t.ui.licenses}</summary>
+        {MIT_HOLDERS.map((h) => <p key={h.what}><a href={h.url} target="_blank" rel="noopener">{t.ui.licenseWhat[h.what]}</a><br />{h.who}</p>)}
         {MIT_TEXT.split('\n\n').map((para) => <p key={para.slice(0, 20)} className="mit">{para.replace(/\n/g, ' ')}</p>)}
       </details>
-      {install.canInstall && <span><button type="button" className="btn" onClick={install.onInstall}>Установить как приложение</button></span>}
-      {install.ios && <span>На iPhone и iPad: в Safari «Поделиться» → «На экран „Домой“» — будет работать как приложение и без сети.</span>}
+      {install.canInstall && <span><button type="button" className="btn" onClick={install.onInstall}>{t.ui.installApp}</button></span>}
+      {install.ios && <span>{t.ui.iosFooter}</span>}
+      <LangSwitch lang={lang} onLang={onLang} />
     </footer>
   );
 }

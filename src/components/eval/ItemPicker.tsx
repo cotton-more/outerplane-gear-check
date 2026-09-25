@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { GearKind } from '../../data/types';
+import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { itemOptions } from '../../logic/lists';
 import { Frame, Img } from '../Img';
@@ -9,13 +10,14 @@ import { Frame, Img } from '../Img';
 export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
   ctx: Ctx; kind: GearKind; current: string | null; onPick: (key: string) => void; onUnlisted: () => void;
 }) {
+  const t = useT();
   const [q, setQ] = useState('');
   const [cls, setCls] = useState('');
   const list = useMemo(() => itemOptions(ctx, kind, q, cls), [ctx, kind, q, cls]);
   return (
     <>
       <div className="tools">
-        <input className="search" id="item-q" type="search" placeholder="Название или пассивка: Caracal…" value={q}
+        <input className="search" id="item-q" type="search" placeholder={t.ui.itemSearch} value={q}
           onChange={(e) => setQ(e.target.value)} autoComplete="off" enterKeyHint="search" />
         <div className="filt">
           {Object.entries(ctx.idx.D.classes).map(([k, v]) => (
@@ -24,7 +26,7 @@ export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
             </button>
           ))}
         </div>
-        <button type="button" className="linkbtn unlisted" onClick={onUnlisted}>нет в списке →</button>
+        <button type="button" className="linkbtn unlisted" onClick={onUnlisted}>{t.ui.unlistedLink}</button>
       </div>
       <div className="items">
         {list.length ? list.map(({ i, n }) => (
@@ -32,13 +34,13 @@ export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
             <Frame item={i} />
             <div style={{ minWidth: 0 }}>
               <b>{i.name}</b>
-              <span>{i.passives[0] ? i.passives[0].name : 'без пассивки'} · {i.users ? (ctx.scoped ? `${n} из ростера` : `в билдах у ${n}`) : 'нет в билдах'}</span>
+              <span>{i.passives[0] ? i.passives[0].name : t.ui.noPassive} · {i.users ? (ctx.scoped ? t.ui.inRoster(n) : t.ui.inBuilds(n)) : t.ui.notInBuilds}</span>
             </div>
           </button>
         )) : (
           <div className="empty">
-            <p style={{ margin: '0 0 8px' }}>Ничего не нашлось. Проверь написание{cls ? ' или сними фильтр класса' : ''}.</p>
-            <button type="button" className="btn" onClick={onUnlisted}>Нет в списке — оценить по main stat</button>
+            <p style={{ margin: '0 0 8px' }}>{t.ui.nothingFound(!!cls)}</p>
+            <button type="button" className="btn" onClick={onUnlisted}>{t.ui.unlistedButton}</button>
           </div>
         )}
       </div>

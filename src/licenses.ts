@@ -1,9 +1,10 @@
 // Лицензии того, что встроено в страницу. MIT требует, чтобы строка copyright и текст разрешения
 // шли вместе с копией, поэтому они здесь целиком и показываются в подвале.
+// what — ключ подписи в словаре (ui.licenseWhat)
 export const MIT_HOLDERS = [
-  { what: 'outerpedia — рекомендации по билдам, игровые таблицы, формула flat/%', who: 'Copyright (c) 2026 Sevih', url: 'https://github.com/Sevih/outerpedia' },
-  { what: 'React', who: 'Copyright (c) Meta Platforms, Inc. and affiliates', url: 'https://github.com/facebook/react' },
-];
+  { what: 'outerpedia', who: 'Copyright (c) 2026 Sevih', url: 'https://github.com/Sevih/outerpedia' },
+  { what: 'react', who: 'Copyright (c) Meta Platforms, Inc. and affiliates', url: 'https://github.com/facebook/react' },
+] as const;
 
 export const MIT_TEXT = `Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

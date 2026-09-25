@@ -5,6 +5,7 @@ import { IndexContext } from './components/IndexContext';
 import { CFG } from './config';
 import { createIndex } from './data';
 import { applyLayout } from './hooks/useLayout';
+import { TEXTS, savedLang } from './i18n';
 import * as logic from './logic/evaluate';
 import { flatFactor, scoreBuild, subWeights } from './logic/score';
 import './styles/base.css';
@@ -17,7 +18,7 @@ applyLayout(); // классы раскладки на <html> — до перв�
 const root = createRoot(document.getElementById('root')!);
 
 if (!D) {
-  root.render(<p className="empty">Нет данных. Собери страницу: <code>task build:single</code> или <code>task build:pwa</code>.</p>);
+  root.render(<p className="empty">{TEXTS[savedLang()].ui.noData} <code>task build:single</code> / <code>task build:pwa</code>.</p>);
 } else {
   const idx = createIndex(D);
   root.render(

@@ -1,4 +1,5 @@
 import { FLAT } from '../../data';
+import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
@@ -8,7 +9,8 @@ export function SubPicker({ ctx, subs, main, editing, onPick }: {
   ctx: Ctx; subs: Subs; main: string | null; editing: string | null; onPick: (key: string) => void;
 }) {
   const { D, SUB, SUB_LIST } = ctx.idx;
-  const title = (k: string) => (D.statNames[k] || k) + (FLAT.has(k) ? ' (flat)' : '') + (SUB[k] ? ` · +${SUB[k].step}${SUB[k].pct ? '%' : ''} за сегмент` : '');
+  const t = useT();
+  const title = (k: string) => (D.statNames[k] || k) + (FLAT.has(k) ? ' (flat)' : '') + (SUB[k] ? t.ui.perSegment(`${SUB[k].step}${SUB[k].pct ? '%' : ''}`) : '');
   return (
     <>
       <div className="subgrid">
@@ -22,7 +24,7 @@ export function SubPicker({ ctx, subs, main, editing, onPick }: {
           );
         })}
       </div>
-      <p className="note-line">Flat ATK/DEF/HP подписаны тоньше: их ценность зависит от базы персонажа. Жёлтые сегменты отмечаются в строке стата: по умолчанию 1; 4 — только из спецмагазинов и Dimensional Supply. Оранжевые (от Reforge) не считай.</p>
+      <p className="note-line">{t.ui.subNote}</p>
     </>
   );
 }

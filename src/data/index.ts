@@ -4,15 +4,12 @@ import type { ArmorSlot, Dataset, Grade, SlotId } from './types';
 export interface SlotInfo {
   id: SlotId;
   name: string;
-  ru?: string;     // оружие/аксессуар — для текстов вердикта
-  ruGen?: string;
-  ruPrep?: string;
   game?: string;   // броня — как слот называется в игре
 }
 
 export const SLOTS: SlotInfo[] = [
-  { id: 'weapon', name: 'Weapon', ru: 'оружие', ruGen: 'оружия', ruPrep: 'оружии' },
-  { id: 'accessory', name: 'Accessory', ru: 'аксессуар', ruGen: 'аксессуара', ruPrep: 'аксессуаре' },
+  { id: 'weapon', name: 'Weapon' },
+  { id: 'accessory', name: 'Accessory' },
   { id: 'helmet', name: 'Helmet', game: 'Helmet' },
   { id: 'armor', name: 'Armor', game: 'Chest Armor' },
   { id: 'gloves', name: 'Gloves', game: 'Gloves' },
@@ -34,12 +31,6 @@ export const STAT_ICON: Record<string, string> = {
 };
 const SUB_ORDER = ['SPD', 'ATK%', 'CHC', 'CHD', 'DMG UP%', 'HP%', 'DEF%', 'DMG RED%', 'EFF', 'RES', 'ATK', 'HP', 'DEF'];
 export const FLAT = new Set(['ATK', 'DEF', 'HP']);
-
-// почему сет не берут — только там, где причина проверена; остальным хватает общего текста
-export const DEAD_SET_WHY: Record<string, string> = {
-  'Critical Hit': 'Шанс крита набирают и без сета — quirks, сабстаты CHC, аксессуары с main CHC, — а выше 100% он сгорает; у части DPS в заметках outerpedia прямо сказано «CHC до 50%». Поэтому место под сет отдают Critical Strike (CHD), Penetration или Speed. Разработчики сами называют Critical Hit сетом для начала игры.',
-  'Lifesteal': 'Вампиризм 7–12% слабее того, что дают Swiftness, Immunity или Life — их и берут сустейн-билды outerpedia.',
-};
 
 export function createIndex(D: Dataset) {
   const SUB = Object.fromEntries(D.substats.map((s) => [s.key, s]));

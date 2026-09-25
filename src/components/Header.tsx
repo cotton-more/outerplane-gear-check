@@ -1,3 +1,4 @@
+import { useT } from '../i18n';
 import type { Tab } from '../state/appState';
 
 // Знак — тот же, что на иконке приложения (update.py, render_app_icon): буква O из логотипа Outerplane с искрой.
@@ -20,19 +21,20 @@ function BrandMark() {
 }
 
 export function Header({ tab, onTab, rosterSize }: { tab: Tab; onTab: (t: Tab) => void; rosterSize: number }) {
+  const t = useT();
   return (
     <header className="top">
       <div className="brand">
         <BrandMark />
         <div>
           <h1>Gear Check</h1>
-          <p>Outerplane · что оставить, что разобрать</p>
+          <p>{t.ui.tagline}</p>
         </div>
       </div>
-      <nav className="tabs" role="tablist" aria-label="Разделы">
-        <button type="button" role="tab" id="tab-eval" aria-controls="view-eval" aria-selected={tab === 'eval'} onClick={() => onTab('eval')}>Оценка предмета</button>
+      <nav className="tabs" role="tablist" aria-label={t.ui.sections}>
+        <button type="button" role="tab" id="tab-eval" aria-controls="view-eval" aria-selected={tab === 'eval'} onClick={() => onTab('eval')}>{t.ui.tabEval}</button>
         <button type="button" role="tab" id="tab-chars" aria-controls="view-chars" aria-selected={tab === 'chars'} onClick={() => onTab('chars')}>
-          Персонажи <span className="count">{rosterSize ? `★ ${rosterSize}` : ''}</span>
+          {t.ui.tabChars} <span className="count">{rosterSize ? `★ ${rosterSize}` : ''}</span>
         </button>
       </nav>
     </header>

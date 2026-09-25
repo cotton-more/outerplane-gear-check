@@ -1072,8 +1072,8 @@ def build_pwa(site: Path, data: dict, fragment_for, warn: Warnings, refresh: boo
     manifest = {
         "name": APP_NAME,
         "short_name": APP_SHORT,
-        "description": "Что оставить, а что разобрать в Outerplane — по билдам outerpedia",
-        "lang": "ru",
+        "description": "Keep or dismantle? Outerplane gear check based on outerpedia builds (English / Русский)",
+        "lang": "en",
         "start_url": "./",
         "scope": "./",
         "display": "standalone",

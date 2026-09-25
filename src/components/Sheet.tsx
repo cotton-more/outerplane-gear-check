@@ -1,8 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useT } from '../i18n';
 
 // Шторка снизу поверх страницы: окна выбора (сет, предмет, main, сабстат) и подробности вердикта.
 // Закрывается крестиком, нажатием мимо и Esc (Esc не доходит до горячих клавиш страницы).
 export function Sheet({ title, onClose, children, className }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
+  const t = useT();
   const close = useRef(onClose);
   close.current = onClose;
   useEffect(() => {
@@ -23,7 +25,7 @@ export function Sheet({ title, onClose, children, className }: { title: string; 
       <div className={className ? `drawer ${className}` : 'drawer'} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="drawer-h">
           <h3>{title}</h3>
-          <button type="button" className="drawer-x" aria-label="Закрыть" onClick={onClose}>✕</button>
+          <button type="button" className="drawer-x" aria-label={t.ui.close} onClick={onClose}>✕</button>
         </div>
         <div className="drawer-b">{children}</div>
       </div>

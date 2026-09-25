@@ -6,6 +6,6 @@ export const IndexContext = createContext<Index | null>(null);
 
 export function useIndex(): Index {
   const idx = useContext(IndexContext);
-  if (!idx) throw new Error('useIndex() вне <IndexContext.Provider>');
+  if (!idx) throw new Error('useIndex() outside <IndexContext.Provider>');
   return idx;
 }

@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { FLAT } from '../../data';
 import type { Build, Char, GearKind, GearRef } from '../../data/types';
+import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
@@ -16,6 +17,7 @@ interface Props { charId: string | null; ctx: Ctx; rosterApi: RosterApi; sheetOp
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
 export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props) {
   const { D, CHAR } = ctx.idx;
+  const t = useT();
   const c = charId ? CHAR[charId] : undefined;
   const [bi, setBi] = useState(0);
   useEffect(() => {
@@ -25,16 +27,16 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
 
   if (!c) {
     return (
-      <aside className="panel char-detail" id="char-detail" aria-label="Билды персонажа">
-        <div className="cd-empty">Выбери персонажа — покажу рекомендованные сеты, оружие, аксессуары и приоритет сабстатов по билдам outerpedia.</div>
+      <aside className="panel char-detail" id="char-detail" aria-label={t.ui.charBuilds}>
+        <div className="cd-empty">{t.ui.pickChar}</div>
       </aside>
     );
   }
   const own = rosterApi.roster.has(c.id);
   const b = c.builds[Math.min(bi, c.builds.length - 1)];
   return (
-    <aside className="panel char-detail open" id="char-detail" aria-label="Билды персонажа">
-      <div className="cd-top"><button type="button" className="btn" onClick={onClose}>← к списку</button></div>
+    <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
+      <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
       <div className="cd-head">
         <Img k={'face:' + c.icon} className="face" />
         <div>
@@ -50,11 +52,11 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
         </div>
       </div>
       <div className="own-row">
-        <button type="button" className="own-btn" aria-pressed={own} onClick={() => rosterApi.toggle(c.id)}>{own ? '★ в ростере' : '☆ добавить в ростер'}</button>
+        <button type="button" className="own-btn" aria-pressed={own} onClick={() => rosterApi.toggle(c.id)}>{own ? t.ui.inRosterBtn : t.ui.addToRoster}</button>
       </div>
       {b ? (
         <>
-          <div className="btabs" role="tablist" aria-label="Билды">
+          <div className="btabs" role="tablist" aria-label={t.ui.builds}>
             {c.builds.map((x, i) => (
               <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>{x.name}</button>
             ))}
@@ -63,8 +65,8 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
         </>
       ) : (
         <div className="cd-empty">
-          У outerpedia пока нет рекомендаций по шмоту для этого персонажа.
-          {c.gameSets && c.gameSets.length > 0 && <><br />Сама игра советует сеты: {c.gameSets.map((id) => ctx.idx.SET[id]?.short ?? id).join(', ')}.</>}
+          {t.ui.noBuilds}
+          {c.gameSets && c.gameSets.length > 0 && <><br />{t.ui.gameSets(c.gameSets.map((id) => ctx.idx.SET[id]?.short ?? id).join(', '))}</>}
         </div>
       )}
     </aside>
@@ -73,13 +75,14 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
 
 function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
   const { D, SET, SUB } = ctx.idx;
+  const t = useT();
   return (
     <div className="bsec">
       <div>
-        <h4>Сеты брони</h4>
+        <h4>{t.ui.armorSets}</h4>
         {b.sets.length ? b.sets.map((combo, i) => (
           <div key={i} className="combo">
-            {i > 0 && <span className="or">или</span>}
+            {i > 0 && <span className="or">{t.ui.or}</span>}
             {combo.map((p, j) => {
               const st = SET[p.set];
               return <span key={j} className="setpill"><Img k={'eq:' + (st ? st.icon : '')} />{st ? st.short : p.set} <span className="n">×{p.n}</span></span>;
@@ -87,22 +90,22 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
           </div>
         )) : <span className="muted">—</span>}
       </div>
-      <GearBlock title="Оружие" refs={b.weapons} kind="weapon" ctx={ctx} />
-      <GearBlock title="Аксессуар" refs={b.amulets} kind="accessory" ctx={ctx} />
+      <GearBlock title={t.ui.weapon} refs={b.weapons} kind="weapon" ctx={ctx} />
+      <GearBlock title={t.ui.accessory} refs={b.amulets} kind="accessory" ctx={ctx} />
       <div>
-        <h4>Приоритет сабстатов</h4>
+        <h4>{t.ui.subPriority}</h4>
         <div className="prio">
-          {b.subs.map((tier, t) => (
-            <Fragment key={t}>
-              {t > 0 && <span className="gt">›</span>}
+          {b.subs.map((tier, ti) => (
+            <Fragment key={ti}>
+              {ti > 0 && <span className="gt">›</span>}
               {tier.length ? tier.map((k, j) => (
                 <Fragment key={k}>
                   {j > 0 && <span className="gt">=</span>}
                   {SUB[k] || FLAT.has(k.replace(/%$/, ''))
-                    ? <span className={`tok t${Math.min(t, 2)}`}>{k}</span>
-                    : <span className="tok no" title="не выпадает сабстатом на 6★ снаряжении">{k}</span>}
+                    ? <span className={`tok t${Math.min(ti, 2)}`}>{k}</span>
+                    : <span className="tok no" title={t.ui.notSub}>{k}</span>}
                 </Fragment>
-              )) : <span className="gt" title="разрыв в приоритете">…</span>}
+              )) : <span className="gt" title={t.ui.prioGap}>…</span>}
             </Fragment>
           ))}
         </div>
@@ -110,7 +113,7 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
       </div>
       {b.talismans.length > 0 && (
         <div>
-          <h4>Талисманы</h4>
+          <h4>{t.ui.talismans}</h4>
           <div className="tal">
             {b.talismans.map((id) => {
               const t = D.talismans[id];
@@ -119,7 +122,7 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
           </div>
         </div>
       )}
-      {b.note && <div><h4>Заметка outerpedia</h4><div className="bnote">{b.note}</div></div>}
+      {b.note && <div><h4>{t.ui.buildNote}</h4><div className="bnote">{b.note}</div></div>}
     </div>
   );
 }
@@ -127,6 +130,7 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
 // «ATK, DEF, HP в приоритете — что брать: flat или %» для этого персонажа
 function PrioHint({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
   const axes = [...new Set(b.subs.flat().map((k) => k.replace(/%$/, '')).filter((k) => FLAT.has(k)))];
+  const t = useT();
   if (!axes.length) return null;
   const { lv120, quirks } = ctx.settings;
   return (
@@ -135,18 +139,19 @@ function PrioHint({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
         {axes.map((ax) => {
           const r = flatFactor(ctx, c, ax);
           const pct = Math.round(r * 100);
-          if (Math.abs(1 / r - 1) <= 0.05) return <li key={ax}><b>{ax}</b> — flat и {ax}% примерно равны, бери любой.</li>;
-          if (r > 1) return <li key={ax}><b>{ax}</b> — выгоднее flat: сегмент flat {ax} даёт ≈{pct}% от сегмента {ax}% (то есть больше).</li>;
-          return <li key={ax}><b>{ax}</b> — выгоднее {ax}%: сегмент flat {ax} даёт только ≈{pct}% от сегмента {ax}%.</li>;
+          if (Math.abs(1 / r - 1) <= 0.05) return <li key={ax}><b>{ax}</b>{t.ui.flatEqual(ax)}</li>;
+          if (r > 1) return <li key={ax}><b>{ax}</b>{t.ui.flatBetter(ax, pct)}</li>;
+          return <li key={ax}><b>{ax}</b>{t.ui.pctBetter(ax, pct)}</li>;
         })}
       </ul>
-      <p className="muted small" style={{ margin: '4px 0 0' }}>Для lv {lv120 ? 120 : 100}{quirks ? ' с прокачанными Quirks' : ' без Quirks'} — меняется в «Настройках оценки».</p>
+      <p className="muted small" style={{ margin: '4px 0 0' }}>{t.ui.flatFor(lv120 ? 120 : 100, quirks)}</p>
     </>
   );
 }
 
 function GearBlock({ title, refs, kind, ctx }: { title: string; refs: GearRef[]; kind: GearKind; ctx: Ctx }) {
   const { D, ITEM } = ctx.idx;
+  const t = useT();
   if (!refs.length) return null;
   return (
     <div>
@@ -164,8 +169,8 @@ function GearBlock({ title, refs, kind, ctx }: { title: string; refs: GearRef[];
                 {it.star < 6 && <> <span className="ps">· {it.star}★</span></>}
                 <div className="gm">
                   {g.mains.map((m) => <span key={m} className="tok ok">{m}</span>)}
-                  {(g.bad || []).map((m) => <span key={'bad' + m} className="tok bad" title="у этого предмета не бывает такого main stat — вероятно, опечатка в outerpedia">{m}?</span>)}
-                  {it.classLimits.length > 0 && <span className="tok">{classText(it, D.classes)}</span>}
+                  {(g.bad || []).map((m) => <span key={'bad' + m} className="tok bad" title={t.ui.badMain}>{m}?</span>)}
+                  {it.classLimits.length > 0 && <span className="tok">{classText(it, D.classes, t.anyClass)}</span>}
                 </div>
               </div>
             </div>

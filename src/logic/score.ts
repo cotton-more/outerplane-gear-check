@@ -6,6 +6,7 @@ import type { BuildRef } from './builds';
 import type { Ctx } from './context';
 import { maxSubs, type Subs } from './subs';
 import { fmtGood } from './text';
+import type { Texts } from '../i18n/ru';
 
 export interface Part { key: string; ok: boolean; half: boolean; tier: number | null }
 
@@ -109,10 +110,9 @@ export interface RollInfo { level: 'high' | 'mid' | 'low'; text: string }
 
 // «Ролл» предмета: сколько сабстатов полезны лучшему кандидату и сколько на них жёлтых сегментов.
 // Жёлтые — стартовое качество; от него зависит, сколько получится после Reforge, то есть стоит ли вкладываться.
-export function rollInfo(m: Row | undefined, n: number): RollInfo | null {
+export function rollInfo(t: Texts, m: Row | undefined, n: number): RollInfo | null {
   if (!m || m.good == null || !n) return null;
   const max = 3 * n;
   const level = m.yellow >= CFG.rollHigh * max ? 'high' : m.yellow >= CFG.rollMid * max ? 'mid' : 'low';
-  const word = { high: 'высокий, стоит вкладываться в прокачку', mid: 'средний', low: 'низкий' }[level];
-  return { level, text: `Ролл: полезных ${fmtGood(m.good)} из ${n}, жёлтых сегментов на них ${m.yellow} из ${max} возможных — ${word}.` };
+  return { level, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, max, level) };
 }
