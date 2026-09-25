@@ -19,6 +19,7 @@ import { itemInput, reducer, type Action, type AppState, type Tab } from './stat
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useRoster } from './state/useRoster';
+import { MIT_HOLDERS, MIT_TEXT } from './licenses';
 
 // открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
 function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string): Action {
@@ -92,13 +93,18 @@ function Footer({ canInstall, onInstall }: { canInstall: boolean; onInstall: () 
   return (
     <footer className="foot" id="foot">
       <span>
-        Данные: <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco) · версия игры {m.gameVersion || '?'} · снимок от {when}
+        Данные: <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco, © 2026 Sevih, MIT) · версия игры {m.gameVersion || '?'} · снимок от {when}
         {m.commit && <> · <span className="mono">{String(m.commit).slice(0, 7)}</span></>} · {persons(m.counts.characters)}, с билдами {m.counts.withBuilds}, билдов {m.counts.builds}.
       </span>
       <span>
         {window.OGC_PWA ? 'Когда выйдут новые данные, при открытии появится плашка «Обновить».' : <>Обновить данные: <span className="mono">task build:single</span> в папке проекта.</>}
-        {' '}Игровые данные и изображения принадлежат Major9 / VA Games, билды — авторам outerpedia; это личный инструмент, не связанный с издателем.
+        {' '}Игровые данные и изображения принадлежат Major9 / VA Games, билды — авторам outerpedia. Неофициальный фанатский инструмент: не связан ни с издателем, ни с outerpedia.
       </span>
+      <details className="lic">
+        <summary>Лицензии (MIT)</summary>
+        {MIT_HOLDERS.map((h) => <p key={h.what}><a href={h.url} target="_blank" rel="noopener">{h.what}</a><br />{h.who}</p>)}
+        {MIT_TEXT.split('\n\n').map((para) => <p key={para.slice(0, 20)} className="mit">{para.replace(/\n/g, ' ')}</p>)}
+      </details>
       {canInstall && <span><button type="button" className="btn" onClick={onInstall}>Установить как приложение</button></span>}
     </footer>
   );

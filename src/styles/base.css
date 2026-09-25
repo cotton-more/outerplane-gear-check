@@ -153,6 +153,9 @@ html.narrow .brand p { display: none; }
 .fitnote button { flex: none; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 2px 0; }
 footer.foot { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
 footer.foot a { color: var(--ink-2); }
+footer.foot .lic summary { cursor: pointer; width: fit-content; }
+footer.foot .lic p { margin: 6px 0 0; }
+footer.foot .lic .mit { font-size: 11.5px; }
 
 /* ---------- шторка снизу (.drawer; класс .sheet занят раскладкой на <html>): окна выбора и подробности вердикта */
 body.drawer-lock { overflow: hidden; }

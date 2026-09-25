@@ -7,11 +7,12 @@ import { comboText } from '../../logic/builds';
 import type { Row } from '../../logic/score';
 import { fmtGood, persons } from '../../logic/text';
 import type { Section, Verdict as VerdictData, VerdictKind } from '../../logic/verdict';
-import type { Action, AppState, Tab } from '../../state/appState';
+import { itemInput, type Action, type AppState, type Tab } from '../../state/appState';
 import { Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
+import { ShareCode } from './ItemCode';
 
 const LABEL: Record<VerdictKind, string> = { keep: 'Оставить', temp: 'Временно', maybe: 'Спорно', fodder: 'Фоддер', junk: 'Разобрать', idle: '…' };
 
@@ -45,6 +46,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
         <p className="v-summary">{r.title}</p>
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
       </div>
+      {r.v !== 'idle' && <ShareCode item={itemInput(s)} />}
       {r.sections.filter((sec) => sec.rows.length).map((sec) => (
         <VerdictSection key={sec.title} sec={sec} r={r} expand={s.expand} nSubs={nSubs} dispatch={dispatch} onOpenChar={onOpenChar} />
       ))}

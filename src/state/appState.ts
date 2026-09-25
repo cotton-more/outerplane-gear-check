@@ -40,6 +40,7 @@ export type Action =
   | { type: 'roll'; key: string; n: number }
   | { type: 'clearSubs' }
   | { type: 'next' }
+  | { type: 'load'; item: ItemInput }
   | { type: 'expand'; key: string }
   | { type: 'settings'; patch: Partial<Settings> }
   | { type: 'settingsOpen'; open: boolean }
@@ -95,6 +96,8 @@ export function reducer(s: AppState, a: Action): AppState {
       return { ...s, subs: {} };
     case 'next':
       return { ...s, ...EMPTY_ITEM };
+    case 'load':
+      return { ...s, ...EMPTY_ITEM, ...a.item, tab: 'eval' };
     case 'expand':
       return { ...s, expand: { ...s.expand, [a.key]: true } };
     case 'settings':
@@ -188,4 +191,12 @@ export function restoreItem(s: AppState, saved: unknown, idx: Index): AppState {
     }
   }
   return { ...s, setId, itemKey, main, unlisted, subs };
+}
+
+// предмет из кода гильдии подходит к текущим данным: restoreItem ничего не отбросил.
+// Иначе код от более новых данных (или старых) — такого сета, предмета или main здесь нет.
+export function fitsData(s: AppState, item: ItemInput, idx: Index): boolean {
+  const r = restoreItem({ ...s, slot: item.slot, grade: item.grade }, item, idx);
+  return r.setId === item.setId && r.itemKey === item.itemKey && r.main === item.main && r.unlisted === item.unlisted
+    && JSON.stringify(r.subs) === JSON.stringify(item.subs);
 }

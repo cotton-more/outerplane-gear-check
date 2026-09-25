@@ -5,9 +5,10 @@ import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
 import type { Ctx } from '../../logic/context';
 import { maxSubs } from '../../logic/subs';
-import type { Action, AppState } from '../../state/appState';
+import { fitsData, type Action, type AppState } from '../../state/appState';
 import { Frame, Img, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
+import { CodeInput } from './ItemCode';
 import { ItemPicker } from './ItemPicker';
 import { MainPicker } from './MainPicker';
 import { PickField } from './PickField';
@@ -15,7 +16,7 @@ import { SetPicker } from './SetPicker';
 import { SubPicker } from './SubPicker';
 import { SubRows } from './SubRows';
 
-type Open = null | 'set' | 'item' | 'main' | { sub: string | null }; // sub: какой стат заменяем (null — новый)
+type Open = null | 'set' | 'item' | 'main' | 'code' | { sub: string | null }; // sub: какой стат заменяем (null — новый)
 
 const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -73,6 +74,7 @@ export function EvalPanel({ s, dispatch, ctx, onNext }: { s: AppState; dispatch:
 
       <div className="actions">
         <button type="button" className="btn primary" onClick={onNext}>Следующий предмет</button>
+        <button type="button" className="btn" onClick={() => setOpen('code')}>Ввести код</button>
         <label className="toggle">
           <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
           {' '}только мои персонажи{ctx.roster.size ? ` (${ctx.roster.size})` : ' — отметь их во вкладке «Персонажи»'}
@@ -99,6 +101,11 @@ export function EvalPanel({ s, dispatch, ctx, onNext }: { s: AppState; dispatch:
         <Sheet title={item ? `Main stat · ${item.name}` : epic ? `Main stat · Epic ${gearName.toLowerCase()}` : 'Main stat · нет в списке'} onClose={close}>
           <MainPicker ctx={ctx} kind={kind} item={item} epic={epic} current={s.main}
             onPick={(main) => { if (main !== s.main) dispatch({ type: 'main', main }); close(); }} />
+        </Sheet>
+      )}
+      {open === 'code' && (
+        <Sheet title="Код предмета" onClose={close}>
+          <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); close(); }} />
         </Sheet>
       )}
       {open !== null && typeof open === 'object' && (
