@@ -20,7 +20,7 @@ type Open = null | 'set' | 'item' | 'main' | 'code' | { sub: string | null }; //
 
 const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-export function EvalPanel({ s, dispatch, ctx, onReset }: { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; onReset: () => void }) {
+export function EvalPanel({ s, dispatch, ctx, onReset, onHelp }: { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; onReset: () => void; onHelp: () => void }) {
   const { D, SET, ITEM } = ctx.idx;
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
@@ -75,6 +75,7 @@ export function EvalPanel({ s, dispatch, ctx, onReset }: { s: AppState; dispatch
       <div className="actions">
         <button type="button" className="btn primary" onClick={onReset}>Сбросить предмет</button>
         <button type="button" className="btn" onClick={() => setOpen('code')}>Ввести код</button>
+        <button type="button" className="btn" onClick={onHelp}>Справка</button>
         <label className="toggle">
           <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
           {' '}только мои персонажи{ctx.roster.size ? ` (${ctx.roster.size})` : ' — отметь их во вкладке «Персонажи»'}

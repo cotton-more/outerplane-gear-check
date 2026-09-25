@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<unknown>;
 }
+
+// iPhone и iPad (iPadOS притворяется Mac'ом, выдаёт его сенсорный экран)
+const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
 
 // PWA (сборка для GitHub Pages): офлайн через service worker, плашка «вышли новые данные» и установка на экран.
 // sw.js генерирует update.py; версия — хэш содержимого docs/, поэтому новая версия = новые данные или код.
@@ -50,5 +54,8 @@ export function usePwa() {
     installPrompt.userChoice.finally(() => setInstallPrompt(null));
   }, [installPrompt]);
 
-  return { updateReady: !!pendingWorker, applyUpdate, canInstall: !!installPrompt, install };
+  // Safari не присылает beforeinstallprompt: на iPhone и iPad подсказываем, как добавить на экран «Домой» вручную
+  const iosInstall = useMemo(() => !!window.OGC_PWA && isIos() && !isStandalone(), []);
+
+  return { updateReady: !!pendingWorker, applyUpdate, canInstall: !!installPrompt, install, iosInstall };
 }

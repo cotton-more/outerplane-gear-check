@@ -2,10 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
 import { EvalPanel } from './components/eval/EvalPanel';
+import { Help, Welcome, type InstallInfo } from './components/Guide';
 import { VBar, Verdict, VerdictSheet } from './components/eval/Verdict';
 import { Header } from './components/Header';
 import { useIndex } from './components/IndexContext';
 import { Notice } from './components/Notice';
+import { Sheet } from './components/Sheet';
 import { slugFromHash, useHashRoute } from './hooks/useHashRoute';
 import { useHotkeys } from './hooks/useHotkeys';
 import { useLayout } from './hooks/useLayout';
@@ -45,6 +47,10 @@ export function App() {
   const pwa = usePwa();
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  // карточка «Как пользоваться» — новичку, пока он не отметил своих персонажей и не закрыл её
+  const [welcomeHidden, setWelcomeHidden] = useState(() => storage.get('welcomeHidden', false));
+  const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
 
   const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id)), [idx, s, roster, dispatch]);
   useHashRoute(idx, s.tab, s.charId, openChar);
@@ -67,9 +73,12 @@ export function App() {
             action="Понятно" onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
         </div>
       )}
+      {s.tab === 'eval' && !welcomeHidden && roster.size === 0 && (
+        <Welcome install={install} onRoster={() => onTab('chars')} onClose={() => { storage.set('welcomeHidden', true); setWelcomeHidden(true); }} />
+      )}
       <main>
         <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-          <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onReset={onReset} />
+          <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onReset={onReset} onHelp={() => setHelpOpen(true)} />
           {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
         </section>
         <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -78,8 +87,9 @@ export function App() {
             sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
         </section>
       </main>
-      <Footer canInstall={pwa.canInstall} onInstall={pwa.install} />
+      <Footer install={install} />
       <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
+      {helpOpen && <Sheet title="Справка" onClose={() => setHelpOpen(false)}><Help install={install} /></Sheet>}
       {verdictOpen && layout.narrow && s.tab === 'eval' && (
         <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
       )}
@@ -87,7 +97,7 @@ export function App() {
   );
 }
 
-function Footer({ canInstall, onInstall }: { canInstall: boolean; onInstall: () => void }) {
+function Footer({ install }: { install: InstallInfo }) {
   const m = useIndex().D.meta;
   const when = (m.commitDate || m.generatedAt || '').slice(0, 10);
   return (
@@ -105,7 +115,8 @@ function Footer({ canInstall, onInstall }: { canInstall: boolean; onInstall: () 
         {MIT_HOLDERS.map((h) => <p key={h.what}><a href={h.url} target="_blank" rel="noopener">{h.what}</a><br />{h.who}</p>)}
         {MIT_TEXT.split('\n\n').map((para) => <p key={para.slice(0, 20)} className="mit">{para.replace(/\n/g, ' ')}</p>)}
       </details>
-      {canInstall && <span><button type="button" className="btn" onClick={onInstall}>Установить как приложение</button></span>}
+      {install.canInstall && <span><button type="button" className="btn" onClick={install.onInstall}>Установить как приложение</button></span>}
+      {install.ios && <span>На iPhone и iPad: в Safari «Поделиться» → «На экран „Домой“» — будет работать как приложение и без сети.</span>}
     </footer>
   );
 }
