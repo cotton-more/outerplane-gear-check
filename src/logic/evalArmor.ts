@@ -57,7 +57,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers)
     .map((k) => (FLAT.has(k.replace(/%$/, '')) ? k.replace(/%$/, '') + '%' : k)))]
     .filter((k) => idx.SUB[k] && !full(m).some((p) => p.key === k || p.key + '%' === k));
-  const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, new Set(), (x) => ({ combos: combosWith(x.b, set.id) })), rank);
+  const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, null, (x) => ({ combos: combosWith(x.b, set.id) })), rank);
   const scoped = score(judged.filter((x) => ctx.inScope(x.c)));
   const others = score(judged.filter((x) => !ctx.inScope(x.c)));
   const whoWears = A.whoWears(set.short);

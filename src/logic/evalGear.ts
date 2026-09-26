@@ -32,7 +32,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const tempOk = (m: Scored) => m.good != null && (m.good >= CFG.tempGood || (m.good >= tempNeed && m.yellow >= CFG.tempYellow));
   res.qualifies = tempOk;
   const tempRank = (r: Scored) => (tempOk(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.yellow ?? 0) * 0.1 + (r.ratio ?? 0) * 0.01;
-  const stopgapRows = (list: BuildRef[], excluded: Set<string>) => dedupe(rows(ctx, s.grade, list, subs, excluded), tempRank);
+  const stopgapRows = (list: BuildRef[]) => dedupe(rows(ctx, s.grade, list, subs, s.main), tempRank);
 
   // общий вердикт для временной замены (Epic или Legendary с пассивкой не из билдов)
   const judgeStopgap = (cands: Row[], what: string): boolean => {
@@ -86,7 +86,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
       res.lines = [G.endEpicLine];
       return res;
     }
-    const cands = stopgapRows(stopgapFor(s.main, []).filter((x) => ctx.inScope(x.c)), new Set([s.main]));
+    const cands = stopgapRows(stopgapFor(s.main, []).filter((x) => ctx.inScope(x.c)));
     if (!judgeStopgap(cands, G.epicWhat(s.main, kind))) {
       res.v = 'junk'; res.title = G.mainNobodyTitle(s.main, kind);
       res.lines = [G.mainNobodyLine(s.main, ctx.scoped)];
@@ -108,7 +108,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
       res.lines = [G.unlistedEndLine(kind)];
       return res;
     }
-    const cands = stopgapRows(stopgapFor(s.main, []).filter((x) => ctx.inScope(x.c)), new Set([s.main]));
+    const cands = stopgapRows(stopgapFor(s.main, []).filter((x) => ctx.inScope(x.c)));
     if (!judgeStopgap(cands, G.unlistedWhat(s.main, kind))) {
       res.v = 'junk'; res.title = G.mainNobodyTitle(s.main, kind);
       res.lines = [G.mainNobodyLine(s.main, ctx.scoped)];
@@ -136,15 +136,14 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     return res;
   }
   const main = s.main ?? '';
-  const excluded = new Set(s.main ? [s.main] : []);
   const mainOkFor = (x: BuildRef) => { const m = gearRef(x.b, kind, item.key).mains; return noMainChoice || !m.length || m.includes(main); };
   const extra = (x: BuildRef) => ({ mains: gearRef(x.b, kind, item.key).mains, mainOk: mainOkFor(x) });
   const rank = (r: Scored) => (r.mainOk ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0);
-  const scoped = dedupe(rows(ctx, s.grade, scopedAll, subs, excluded, extra), rank);
-  const others = dedupe(rows(ctx, s.grade, all.filter((x) => !ctx.inScope(x.c)), subs, excluded, extra), rank);
+  const scoped = dedupe(rows(ctx, s.grade, scopedAll, subs, s.main, extra), rank);
+  const others = dedupe(rows(ctx, s.grade, all.filter((x) => !ctx.inScope(x.c)), subs, s.main, extra), rank);
   const ok = scoped.filter((r) => r.mainOk);
   const temp = s.main && settings.stage === 'grow'
-    ? stopgapRows(stopgapFor(s.main, item.classLimits).filter((x) => ctx.inScope(x.c) && !ok.some((o) => o.c.id === x.c.id)), excluded)
+    ? stopgapRows(stopgapFor(s.main, item.classLimits).filter((x) => ctx.inScope(x.c) && !ok.some((o) => o.c.id === x.c.id)))
     : [];
 
   if (ok.length) {

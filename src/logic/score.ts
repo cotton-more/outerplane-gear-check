@@ -16,6 +16,7 @@ export interface Score {
   yellow: number;        // жёлтых сегментов на полезных
   spd: boolean;          // SPD отмечен и нужен билду
   parts: Part[];
+  main: string | null;   // main stat предмета, под который считали места цепочки (см. tierPlaces)
 }
 
 // Сколько стоит сегмент flat-стата относительно сегмента %-версии у ЭТОГО персонажа.
@@ -35,10 +36,21 @@ export interface SubWeight { w: number; tier: number; credit: number }
 // Связка делит одно место, а следующая ступень встаёт после всех её статов: иначе DMG UP% у Delta
 // (пятый по важности) считался бы четвёртым и получал ½, а у Lambda тот же пятый DMG UP% — 0.
 // Пустая ступень (SPD>>CHC) — разрыв в приоритете, занимает одно место.
-export function tierPlaces(build: Build): number[] {
+// main предмета сабстатом не бывает, поэтому места не занимает: у Luna (SPD › HP › CHC › ATK) на аксессуаре
+// с main SPD лучшие сабстаты — HP, CHC, ATK, и ATK для этого предмета третий, а не четвёртый.
+export function tierPlaces(build: Build, main: string | null = null): number[] {
   let pos = 0;
-  return build.subs.map((tier) => { const t = pos; pos += Math.max(tier.length, 1); return t; });
+  return build.subs.map((tier) => {
+    const t = pos;
+    const left = tier.filter((k) => !takenByMain(k, main)).length;
+    pos += left < tier.length ? left : Math.max(tier.length, 1); // ступень только из main — не разрыв, её просто нет
+    return t;
+  });
 }
+
+// токен цепочки занят main stat предмета. Кроме flat-осей: при main ATK% сабстатом ещё бывает flat ATK
+export const takenByMain = (tok: string, main: string | null): boolean =>
+  !!main && tok.trim() === main && !FLAT.has(main.replace(/%$/, ''));
 
 // токены приоритета на первых n местах — «главные статы» билда
 export const topTokens = (build: Build, n: number): string[] => {
@@ -46,7 +58,7 @@ export const topTokens = (build: Build, n: number): string[] => {
   return build.subs.filter((_, i) => place[i] < n).flat().map((k) => k.trim()).filter(Boolean);
 };
 
-export function subWeights(ctx: Ctx, build: Build, c: Char): Map<string, SubWeight> {
+export function subWeights(ctx: Ctx, build: Build, c: Char, main: string | null = null): Map<string, SubWeight> {
   // «ключ сабстата предмета → вес / ступень / засчитывается (1, ½, 0)» по приоритету билда
   const out = new Map<string, SubWeight>();
   const put = (key: string, w: number, tier: number, credit: number) => {
@@ -54,13 +66,14 @@ export function subWeights(ctx: Ctx, build: Build, c: Char): Map<string, SubWeig
     credit = credit >= 1 ? 1 : credit >= 0.5 ? 0.5 : 0;
     if (!prev || prev.credit < credit || (prev.credit === credit && prev.w < w)) out.set(key, { w, tier, credit });
   };
-  const place = tierPlaces(build);
+  const place = tierPlaces(build, main);
   build.subs.forEach((tier, i) => {
     const t = place[i];
     const w = CFG.tierWeights[Math.min(t, CFG.tierWeights.length - 1)];
     const tc = CFG.tierCredit[t] ?? 0;
     for (const raw of tier) {
       const tok = raw.trim();
+      if (takenByMain(tok, main)) continue;
       const axis = tok.replace(/%$/, '');
       if (FLAT.has(axis)) {
         // ATK/DEF/HP в приоритете — ось: подходит и flat, и %; лучшая из двух версий получает полный вес
@@ -77,11 +90,13 @@ export function subWeights(ctx: Ctx, build: Build, c: Char): Map<string, SubWeig
   return out;
 }
 
-export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: Subs, excluded: Set<string>): Score {
-  const W = subWeights(ctx, build, c);
+// main — main stat предмета (у брони null): сабстатом его не бывает, поэтому в идеал он не входит
+// и места в цепочке не занимает
+export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: Subs, main: string | null): Score {
+  const W = subWeights(ctx, build, c, main);
   const keys = Object.keys(subs);
   const n = Math.max(keys.length, dropSubs(grade));
-  const ideal = [...W.entries()].filter(([k]) => !excluded.has(k)).map(([, v]) => v.w).sort((a, b) => b - a).slice(0, n);
+  const ideal = [...W.entries()].filter(([k]) => k !== main).map(([, v]) => v.w).sort((a, b) => b - a).slice(0, n);
   const max = ideal.reduce((a, b) => a + b, 0) || 1;
   let got = 0, good = 0, yellow = 0;
   const parts = keys.map((k) => {
@@ -90,7 +105,7 @@ export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: 
     if (w) { got += w.w * m; good += w.credit; if (w.credit) yellow += subs[k] || 1; }
     return { key: k, ok: !!(w && w.credit), half: !!(w && w.credit > 0 && w.credit < 1), tier: w ? w.tier : null };
   });
-  return { ratio: got / max, good, yellow, spd: !!(W.get('SPD') && 'SPD' in subs), parts };
+  return { ratio: got / max, good, yellow, spd: !!(W.get('SPD') && 'SPD' in subs), parts, main };
 }
 
 // Строка списка «кому подходит»: билд, его оценка и доп. поля ветки (комбо сета, main stat).
@@ -106,11 +121,11 @@ export interface Row extends BuildRef, Score {
 export type RowExtra = Partial<Pick<Row, 'combos' | 'mains' | 'mainOk'>>;
 
 // строки списка: оценка каждого билда + один персонаж — одна строка (лучший билд), остальные — в «ещё»
-export function rows(ctx: Ctx, grade: Grade, list: BuildRef[], subs: Subs, excluded: Set<string>, extra?: (x: BuildRef) => RowExtra): Omit<Row, 'alt'>[] {
+export function rows(ctx: Ctx, grade: Grade, list: BuildRef[], subs: Subs, main: string | null, extra?: (x: BuildRef) => RowExtra): Omit<Row, 'alt'>[] {
   const hasSubs = Object.keys(subs).length > 0;
   return list.map((x) => ({
     ...x,
-    ...(hasSubs ? scoreBuild(ctx, grade, x.c, x.b, subs, excluded) : { ratio: null, good: null, parts: [], spd: false, yellow: 0 }),
+    ...(hasSubs ? scoreBuild(ctx, grade, x.c, x.b, subs, main) : { ratio: null, good: null, parts: [], spd: false, yellow: 0, main }),
     ...(extra ? extra(x) : {}),
   }));
 }
@@ -134,7 +149,7 @@ export function dedupe(list: Omit<Row, 'alt'>[], rank: (r: Omit<Row, 'alt'>) => 
 // частая путаница: на предмете HP%, а отмечен HP. Если %-версия тоже отмечена, путаницы нет.
 export function flatMisses(m: Omit<Row, 'alt'>): string[] {
   const marked = new Set(m.parts.map((p) => p.key));
-  const place = tierPlaces(m.b);
+  const place = tierPlaces(m.b, m.main);
   const wanted = (axis: string) => m.b.subs.some((tier, i) => (CFG.tierCredit[place[i]] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
   return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
 }

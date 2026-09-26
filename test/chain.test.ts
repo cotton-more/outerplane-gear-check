@@ -1,4 +1,5 @@
 // Цепочка приоритета в вердикте: main stat предмета — «есть на предмете», а не пунктир «нет».
+// Как main сдвигает места цепочки при подсчёте — test/armor.test.ts.
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -19,7 +20,7 @@ const ctx = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv12
 // цепочки всех кандидатов вердикта, у чьих билдов в приоритете есть stat
 function chains(item: ItemInput, stat: string): string[] {
   const rows = evaluate(ctx, item).sections.flatMap((s) => s.rows).filter((m) => m.b.subs.flat().some((k) => k.trim() === stat));
-  return rows.map((m) => renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m, main: item.main }))));
+  return rows.map((m) => renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m }))));
 }
 
 describe('цепочка: main stat предмета', () => {

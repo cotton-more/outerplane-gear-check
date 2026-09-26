@@ -121,6 +121,29 @@ describe('места в цепочке приоритета: связка дел
   });
 });
 
+describe('места в цепочке: main предмета места не занимает — сабстатом он не бывает', () => {
+  const build = (subs: string[][]) => ({ ...D.chars.find((c) => c.builds.length)!.builds[0], subs });
+  const luna = [['SPD'], ['HP'], ['CHC'], ['ATK'], ['CHD']]; // цепочка Luna
+
+  it('main SPD: остальные сдвигаются на место вперёд, ступень из одного main — не разрыв', () => {
+    expect(tierPlaces(build(luna), 'SPD')).toEqual([0, 0, 1, 2, 3]);
+  });
+
+  it('main в связке: связка просто становится короче', () => {
+    expect(tierPlaces(build([['SPD', 'CHD'], ['CHC'], ['ATK']]), 'SPD')).toEqual([0, 1, 2]);
+  });
+
+  it('main ATK% ось ATK не сдвигает: flat ATK сабстатом ещё бывает', () => {
+    expect(tierPlaces(build([['ATK'], ['CHC'], ['CHD'], ['SPD']]), 'ATK%')).toEqual([0, 1, 2, 3]);
+  });
+
+  it('у аксессуара с main SPD ATK для Luna — третий по важности сабстат, полный зачёт вместо ½', () => {
+    const c = D.chars.find((x) => x.builds.length)!;
+    expect(subWeights(ctx, build(luna), c).get('ATK%')?.credit).toBe(0.5);
+    expect(subWeights(ctx, build(luna), c, 'SPD').get('ATK%')?.credit).toBe(1);
+  });
+});
+
 describe('подсветка сетки: 0–1 нужных стата — «Оставить» и «Временно» невозможны', () => {
   const stats = idx.SUB_LIST;
   const combos = (n: number, from = 0): string[][] => (n === 0 ? [[]] : stats.slice(from).flatMap((k, i) => combos(n - 1, from + i + 1).map((rest) => [k, ...rest])));

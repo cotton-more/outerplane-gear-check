@@ -7,6 +7,8 @@
 A "useful" substat is one in places 1–3 of the build's priority chain (4th place counts for ½, SPD in any place).
 A tie like `SPD=CHD` shares one place, and the next stat comes after all of its stats: in
 `CHC › ATK › SPD=CHD › DMG UP%`, DMG UP% is in fifth place. The best build among characters who wear the set is used.
+On weapons and accessories the main stat takes no place: it is never a substat too. For an accessory with main SPD,
+the chain `SPD › HP › CHC › ATK` is `HP › CHC › ATK` for its substats, and ATK counts in full.
 
 - **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ yellow segments.
 - **Epic is stricter:** Transistones aren't spent on Epics (outerpedia guide), and an Epic can't be Breakthrough fodder

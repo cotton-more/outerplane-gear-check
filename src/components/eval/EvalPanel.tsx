@@ -75,7 +75,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         </div>
         <div className="subzone">
           {cardShown
-            ? <VerdictCard r={verdict} main={s.main} onOpen={onOpenVerdict} />
+            ? <VerdictCard r={verdict} onOpen={onOpenVerdict} />
             : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
         {hint && <p className="grid-hint">{hint}</p>}
