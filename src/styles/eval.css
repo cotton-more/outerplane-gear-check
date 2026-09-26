@@ -27,6 +27,15 @@ html.narrow .slot span { display: none; }
 .pick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
 .pick.empty { border-style: dashed; background: transparent; color: var(--ink-3); font-weight: 500; }
+/* main оружия — три кнопки рядом с грейдом; на узком экране без иконок */
+.mainsw { flex: 1; min-width: 0; display: flex; gap: 4px; }
+.msw { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 0 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 13px/1 var(--font-mono); color: var(--ink); white-space: nowrap; overflow: hidden; }
+.msw img, .msw .noimg { width: 18px; height: 18px; flex: none; }
+html.xs .msw img, html.xs .msw .noimg { display: none; }
+html.xs .msw { padding: 0 2px; font-size: 12px; }
+.msw.u0 { opacity: .5; }
+.msw[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); opacity: 1; }
+.msw:disabled { cursor: default; opacity: .22; }
 .subrows { display: grid; gap: 6px; }
 /* 4-й сабстат Epic — от первого Reforge: тонкая кнопка под строками и метка у самой строки */
 .subadd { height: 30px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); background: none; color: var(--ink-3); font-size: 12.5px; }
@@ -125,7 +134,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
   .form { padding: 6px 10px 8px; gap: 6px; }
   .slot { min-height: 40px; }
   .slot img, .slot .noimg { width: 28px; height: 28px; }
-  .grade, .pick { min-height: 40px; }
+  .grade, .pick, .msw { min-height: 40px; }
   .subrows { gap: 4px; }
   .subrow .roll-b button { height: 38px; }
 }
@@ -166,6 +175,10 @@ html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-botto
 .sg.u0 { opacity: .42; }
 .sg[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); opacity: 1; }
 .sg:disabled { cursor: default; }
+/* у аксессуара без main сетка выбирает main; выбранный main — отметка «main» на его месте в сетке сабстатов */
+.sg.rare { border-style: dashed; }
+.sg.is-main { border-color: color-mix(in srgb, var(--keep) 55%, transparent); background: none; color: var(--keep); }
+.sg.is-main small { font: 500 9px/1 var(--font-sans); opacity: .85; }
 .sg:disabled:not([aria-pressed="true"]) { opacity: .22; }
 .grid-hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
 html.narrow .grid-hint { display: none; }
@@ -184,7 +197,7 @@ html.narrow .app > footer.foot { display: none; }
   .form { padding: 4px 8px 6px; gap: 4px; }
   .slot { min-height: 38px; }
   .slot img, .slot .noimg { width: 26px; height: 26px; }
-  .grade, .pick { min-height: 38px; }
+  .grade, .pick, .msw { min-height: 38px; }
   .subzone { min-height: 76px; }
   .sg { min-height: 36px; }
   .subrows { gap: 3px; }

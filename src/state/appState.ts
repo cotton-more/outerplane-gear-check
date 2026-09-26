@@ -32,7 +32,7 @@ export type Action =
   | { type: 'slot'; slot: SlotId }
   | { type: 'grade'; grade: Grade }
   | { type: 'set'; setId: string | null }
-  | { type: 'item'; itemKey: string | null }
+  | { type: 'item'; itemKey: string | null; mains?: string[] } // mains — какие main бывают у этого предмета
   | { type: 'unlisted' }
   | { type: 'main'; main: string }
   | { type: 'sub'; key: string }
@@ -59,16 +59,20 @@ export function reducer(s: AppState, a: Action): AppState {
       return s.slot === a.slot ? s : { ...s, ...EMPTY_ITEM, setId: isArmor(a.slot) ? s.setId : null, slot: a.slot };
     case 'grade': {
       if (s.grade === a.grade) return { ...s, expand: {} };
-      // сабстаты остаются: четыре бывает и у Epic — четвёртый добавляет первый Reforge
-      const item = isArmor(s.slot) ? {} : { itemKey: null, main: null, unlisted: false };
+      // сабстаты остаются: четыре бывает и у Epic — четвёртый добавляет первый Reforge. Main тоже: у оружия
+      // и аксессуаров те же main на обоих грейдах, а на форме он отмечен рядом с грейдом или в сетке
+      const item = isArmor(s.slot) ? {} : { itemKey: null, unlisted: false };
       return { ...s, ...item, grade: a.grade, expand: {} };
     }
     case 'set':
       return a.setId ? { ...s, setId: a.setId, expand: {} } : { ...s, setId: null };
-    case 'item':
-      return a.itemKey ? { ...s, itemKey: a.itemKey, main: null, unlisted: false, expand: {} } : { ...s, itemKey: null, main: null, unlisted: false };
+    case 'item': {
+      // main, отмеченный до предмета, остаётся, если такой у предмета бывает
+      const main = s.main && a.mains?.includes(s.main) ? s.main : null;
+      return a.itemKey ? { ...s, itemKey: a.itemKey, main, unlisted: false, expand: {} } : { ...s, itemKey: null, main: null, unlisted: false };
+    }
     case 'unlisted':
-      return { ...s, itemKey: null, main: null, unlisted: true, expand: {} };
+      return { ...s, itemKey: null, unlisted: true, expand: {} }; // main «нет в списке» — любой из слота
     case 'main': {
       const main = s.main === a.main ? null : a.main;
       const subs = { ...s.subs };

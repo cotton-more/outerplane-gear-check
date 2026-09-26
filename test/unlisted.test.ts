@@ -57,9 +57,9 @@ describe('«нет в списке»: вердикт', () => {
 describe('«нет в списке»: переходы', () => {
   const base = { ...fromPersisted(null, idx), slot: 'weapon' as const, grade: 'unique' as const };
 
-  it('включается кнопкой и сбрасывается выбором предмета из списка', () => {
+  it('включается кнопкой и сбрасывается выбором предмета из списка; main остаётся — у «нет в списке» любой из слота', () => {
     const on = reducer({ ...base, main: 'ATK%' }, { type: 'unlisted' });
-    expect([on.unlisted, on.main, on.itemKey]).toEqual([true, null, null]);
+    expect([on.unlisted, on.main, on.itemKey]).toEqual([true, 'ATK%', null]);
     expect(reducer(on, { type: 'item', itemKey: D.weapons[0].key }).unlisted).toBe(false);
     expect(reducer(on, { type: 'item', itemKey: null }).unlisted).toBe(false);
   });

@@ -25,7 +25,10 @@ When new data comes out, an "Update" banner appears when you open it.
 3. **Enter the piece:**
    - the slot (row of icons) and grade: `L` — Legendary (Etheric), `E` — Epic (Steel);
    - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set);
-     **Legendary weapon and accessory** — find the item, then the main stat; **Epic weapon and accessory** — just the main stat;
+     **Legendary weapon and accessory** — find the item and mark the main stat; **Epic weapon and accessory** — just the main stat;
+   - **main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the
+     grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Faded —
+     no one needs that main;
    - **substats** — tap them in the grid in order, as in the game; yellow segments — buttons 1–4 in the stat's row.
      ATK%, HP% and DEF% sit above their flat versions so you don't mix them up.
 4. **Read the verdict** on the card; "details" — the full breakdown, "Upgrading", who it suits and the item code.

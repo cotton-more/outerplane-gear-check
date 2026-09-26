@@ -66,9 +66,9 @@ describe('reducer: смена грейда', () => {
     expect(reducer(fresh({ grade: 'rare', subs }), { type: 'grade', grade: 'unique' }).subs).toBe(subs);
   });
 
-  it('у оружия смена грейда сбрасывает предмет и main, у брони — сет остаётся', () => {
+  it('у оружия смена грейда сбрасывает предмет, main остаётся — он тот же на обоих грейдах; у брони — сет остаётся', () => {
     const gear = reducer(fresh({ slot: 'weapon', grade: 'unique', itemKey: 'x', main: 'ATK%' }), { type: 'grade', grade: 'rare' });
-    expect([gear.itemKey, gear.main]).toEqual([null, null]);
+    expect([gear.itemKey, gear.main]).toEqual([null, 'ATK%']);
     expect(reducer(fresh({ slot: 'gloves', setId: '13' }), { type: 'grade', grade: 'rare' }).setId).toBe('13');
   });
 });
@@ -94,6 +94,13 @@ describe('reducer: слот и «Следующий»', () => {
   it('«Следующий» очищает сабстаты, а слот, грейд и сет брони оставляет', () => {
     const next = reducer(fresh({ slot: 'gloves', grade: 'rare', setId: '13', subs: subsOf('SPD'), expand: { x: true } }), { type: 'reset' });
     expect([next.slot, next.grade, next.setId, next.subs, next.expand]).toEqual(['gloves', 'rare', '13', {}, {}]);
+  });
+
+  it('main, отмеченный до предмета, остаётся, если у предмета такой бывает; иначе снимается', () => {
+    const s = fresh({ slot: 'weapon', grade: 'unique', main: 'DEF%' });
+    expect(reducer(s, { type: 'item', itemKey: 'x', mains: ['ATK%', 'DEF%', 'HP%'] }).main).toBe('DEF%');
+    expect(reducer(s, { type: 'item', itemKey: 'y', mains: ['HP%'] }).main).toBe(null);
+    expect(reducer(s, { type: 'unlisted' }).main).toBe('DEF%');
   });
 
   it('у оружия «Следующий» очищает предмет и main', () => {

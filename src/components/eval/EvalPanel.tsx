@@ -1,6 +1,7 @@
 // Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
 // слот → грейд + сет/предмет/main → сетка сабстатов → строки с жёлтыми сегментами.
-// Сет, предмет и main выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием.
+// Сет и предмет выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием. Main тоже без окна:
+// у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main).
 // На телефоне, когда вердикт готов, на месте сетки встаёт карточка вердикта.
 import { useMemo, useState, type Dispatch } from 'react';
 import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
@@ -8,12 +9,13 @@ import type { GearKind } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { MAX_SUBS } from '../../logic/subs';
-import { setSubDemand } from '../../logic/lists';
+import { mainOptions, setSubDemand } from '../../logic/lists';
 import type { Verdict as VerdictData } from '../../logic/verdict';
 import type { Action, AppState } from '../../state/appState';
 import { Frame, Img, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
 import { ItemPicker } from './ItemPicker';
+import { MainButtons } from './MainButtons';
 import { MainPicker } from './MainPicker';
 import { PickField } from './PickField';
 import { SetPicker } from './SetPicker';
@@ -41,9 +43,20 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const epic = s.grade === 'rare';
   const set = armor && s.setId ? SET[s.setId] : undefined;
   const item = !armor && !epic && s.itemKey ? ITEM[kind][s.itemKey] : undefined;
-  const hasMains = (key: string) => { const it = ITEM[kind][key]; return !!it && (it.mains.length > 0 || it.extraMains.length > 0); };
-  const mainRow = !armor && !epic && (s.unlisted || (!!s.itemKey && hasMains(s.itemKey)));
+  const itemMains = (key: string) => { const it = ITEM[kind][key]; return it ? [...it.mains, ...it.extraMains] : []; };
+  const weapon = s.slot === 'weapon';
+  const mainRow = !armor && !epic && !weapon && (s.unlisted || !!s.main || (!!s.itemKey && itemMains(s.itemKey).length > 0));
   const mainValue = s.main ? <><StatIcon stat={s.main} />{s.main}</> : undefined;
+  const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
+  const allMains = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic) : []), [ctx, weapon, kind, epic]);
+  // у аксессуара без main сетка сначала выбирает main — в игре он сверху предмета
+  const mainMode = s.slot === 'accessory' && !s.main && opts.length > 0 ? opts : null;
+  const pickMain = (main: string) => dispatch({ type: 'main', main });
+  const itemField = (
+    <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
+      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} />
+  );
+  const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} />;
 
   return (
     <div className="panel eval-in" id="eval-in">
@@ -67,18 +80,18 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           </div>
           {armor
             ? <PickField value={set && <><Img k={'eq:' + set.icon} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} />
-            : epic
-              ? <PickField value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} />
-              : <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
-                  placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} />}
-          {mainRow && <PickField className="main" value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} />}
+            : weapon
+              ? <MainButtons all={allMains} opts={opts} current={s.main} onPick={pickMain} />
+              : epic ? mainField() : itemField}
+          {mainRow && mainField('main')}
         </div>
+        {weapon && !epic && <div className="formrow">{itemField}</div>}
         <div className="subzone">
           {cardShown
             ? <VerdictCard r={verdict} onOpen={onOpenVerdict} />
-            : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} onPick={(key) => dispatch({ type: 'sub', key })} />}
+            : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
-        {hint && <p className="grid-hint">{hint}</p>}
+        {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
         <SubRows subs={s.subs} epic={epic} fourth={epic && armor} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
       </div>
 
@@ -104,8 +117,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       {open === 'item' && (
         <Sheet title={t.ui.legendaryGear(kind)} onClose={close}>
           <ItemPicker ctx={ctx} kind={kind} current={s.itemKey}
-            onPick={(key) => { dispatch({ type: 'item', itemKey: key }); setOpen(hasMains(key) ? 'main' : null); }}
-            onUnlisted={() => { dispatch({ type: 'unlisted' }); setOpen('main'); }} />
+            onPick={(key) => { dispatch({ type: 'item', itemKey: key, mains: itemMains(key) }); close(); }}
+            onUnlisted={() => { dispatch({ type: 'unlisted' }); close(); }} />
         </Sheet>
       )}
       {open === 'main' && (

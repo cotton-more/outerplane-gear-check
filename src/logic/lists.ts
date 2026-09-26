@@ -1,7 +1,7 @@
 // Списки на панелях ввода: что показывать, в каком порядке и с какими счётчиками.
 import type { Index } from '../data';
 import type { Char, GearKind, GearSet, Item } from '../data/types';
-import { buildsOf, combosWith, gearList, slotMains, uniqChars } from './builds';
+import { buildsOf, combosWith, epicMains, gearList, gearRef, legendMains, slotMains, uniqChars } from './builds';
 import type { Ctx } from './context';
 import { subWeights } from './score';
 
@@ -46,6 +46,23 @@ export function itemOptions(ctx: Ctx, kind: GearKind, query: string, cls: string
 // скольким персонажам нужен такой main stat в этом слоте
 export const mainDemand = (ctx: Ctx, kind: GearKind, main: string): number =>
   uniqChars(buildsOf(ctx.idx, (b) => slotMains(b, kind).has(main)).filter((x) => ctx.inScope(x.c))).length;
+
+// Варианты main stat оружия или аксессуара — для окна выбора, кнопок оружия и сетки аксессуара:
+//   want — нужен: у предмета из списка — его просят билды с этой пассивкой, иначе (Epic, «нет в списке» или
+//          пассивку не берут) — он нужен кому-то в этом слоте; n — скольким персонажам, null у «нужен для пассивки»;
+//   rare — только у фиксированных копий предмета.
+export interface MainOption { key: string; want: boolean; n: number | null; rare: boolean }
+
+export function mainOptions(ctx: Ctx, kind: GearKind, item: Item | undefined, epic: boolean): MainOption[] {
+  const { idx } = ctx;
+  const mains = item ? [...item.mains, ...item.extraMains] : epic ? epicMains(idx, kind) : legendMains(idx, kind);
+  const wanted = new Set(item ? buildsOf(idx, (b) => gearList(b, kind).some((g) => g.key === item.key))
+    .filter((x) => ctx.inScope(x.c)).flatMap((x) => gearRef(x.b, kind, item.key).mains) : []);
+  return mains.map((key) => {
+    const n = wanted.size ? null : mainDemand(ctx, kind, key);
+    return { key, want: n === null ? wanted.has(key) : n > 0, n, rare: !!item?.extraMains.includes(key) };
+  });
+}
 
 export interface CharFilter {
   cq: string;      // поиск по имени

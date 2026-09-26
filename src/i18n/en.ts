@@ -132,7 +132,7 @@ export const en: Texts = {
     markYellow: (yellow) => `Mark the yellow segments if there's more than one: with ${yellow}+ on useful stats this piece is worth keeping.`,
     epicWhichMain: (k) => `Epic ${noun(k)}: which main stat?`,
     epicNoPassive: (k) =>
-      `Epic ${nouns(k)} have no unique passive: this is a stopgap until you have a Legendary. What matters is the main stat (numbers on the buttons: how many characters need it) and the substat roll.`,
+      `Epic ${nouns(k)} have no unique passive: this is a stopgap until you have a Legendary. What matters is the main stat (brighter — someone needs it in this slot) and the substat roll.`,
     endEpicNote: 'Endgame stage: Epics without a passive get dismantled.',
     endEpicTitle: (k) => `Dismantle — Epic ${noun(k)} without a passive`,
     endEpicLine: 'Endgame stage: outerpedia builds use only Legendaries with a unique passive. If someone has an empty slot, switch the stage to "Progression" in the settings.',
@@ -141,7 +141,7 @@ export const en: Texts = {
     mainNobodyLine: (main, scoped) => `No build${scoped ? ' of your characters' : ''} asks for ${main} main in this slot.`,
     unlistedWhichTitle: 'Not listed: which main stat?',
     unlistedWhichLine: (k) =>
-      `The item isn't in outerpedia's data, so its passive can't be judged. Pick the main stat — I'll check whether this ${noun(k)} works as a stopgap (numbers on the buttons: how many characters need it).`,
+      `The item isn't in outerpedia's data, so its passive can't be judged. Mark the main stat — I'll check whether this ${noun(k)} works as a stopgap (brighter — someone needs it in this slot).`,
     unknownNote: 'If the item is new, check outerpedia after the data updates: its passive may make it into builds.',
     unlistedEndTitle: "Maybe — the item isn't in outerpedia's data yet",
     unlistedEndLine: (k) =>
@@ -262,6 +262,10 @@ export const en: Texts = {
     yellow4: '4 yellow — only from special shops and Dimensional Supply',
     subRemove: (k) => `Remove ${k}`,
     addSub: 'Add a substat',
+    mainGroup: 'Main stat',
+    mainInGrid: 'Main ↓',
+    mainFirst: 'Main stat first — in the game it is on top of the piece, then the substats in order. Faded — no one needs that main.',
+    mainCell: (k) => `Main stat ${k} — tap to remove`,
     usefulTitle: (k, credit) => `${k}${credit >= 1 ? ' — needed by builds with this set' : credit > 0 ? ' — needed, but far down the priority (½)' : ' — no build with this set needs it'}`,
     triageHint: (legend, fodder) => (legend
       ? `0–1 bright stats on the piece — ${fodder ? 'fodder, don\'t upgrade' : 'dismantle'}`
@@ -345,8 +349,9 @@ export const en: Texts = {
     helpInput: 'Entering an item',
     helpInputItems: [
       '**Armor** — the set: it\'s in the name after "of" (Etheric Gloves of Speed → Speed Set).',
-      '**Legendary weapon and accessory** — find the item, then pick the main stat. Brand new and not listed yet — "not listed".',
+      '**Legendary weapon and accessory** — find the item and mark the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
+      '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions.',
       '**4th substat on Epic armor** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. "Upgrading" tells which one would.',
       'Tap a stat in its row to replace it (yellow segments stay) or remove it. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
@@ -359,7 +364,7 @@ export const en: Texts = {
       'For Epic, the verdict appears after two useless substats — no need to enter the third.',
       '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
       '**Epic Breakthrough** takes only the same piece: an Epic of the same set and slot, any substats. Have an Epic "Keep" below T4 — set Epics of the same set and slot aside for it instead of dismantling, you need 4.',
-      '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" pick the main stat first: 0 takers in the list — dismantle.',
+      '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: faded — no one needs it, dismantle.',
       '**Legendary** with "I save Legendary armor for Breakthrough": the verdict shows which to upgrade and which to keep for Breakthrough.',
     ],
     helpVerdicts: [

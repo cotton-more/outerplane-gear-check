@@ -14,8 +14,8 @@
 6. **Epic Breakthrough** takes only the same piece: an Epic of the same set and slot, substats don't matter. Have an
    Epic "Keep" below T4 — set Epics of the same set and slot aside for it instead of dismantling (you need 4);
    the verdict reminds you.
-7. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" pick the main stat first: 0 takers in the
-   list — dismantle.
+7. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
+   faded, no one needs that main — dismantle.
 8. **Legendary** with "I save Legendary armor for Breakthrough" (on by default): the verdict shows which to upgrade
    and which to keep for Breakthrough.
 
