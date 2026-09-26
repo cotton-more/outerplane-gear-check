@@ -27,7 +27,7 @@ tasks:
     cmds: [npm run -s build]
 
   build:pwa:
-    desc: PWA-сайт в docs/ со свежими данными outerpedia
+    desc: 'PWA-сайт в docs/ со свежими данными outerpedia — шаг ручной публикации; просто посмотреть — task preview'
     aliases: [data]
     deps: [build:app]
     cmds: ['python3 update.py --pwa docs --report-json build/data-report.json {{.CLI_ARGS}}']
@@ -48,8 +48,14 @@ tasks:
     cmds: [node scripts/screenshots.mjs]
 
   preview:
-    desc: Открыть docs/ локально на http://localhost:8000 — как на Pages, с офлайн-режимом
-    cmds: [python3 -m http.server -d docs 8000]
+    desc: 'Сайт как на Pages, с офлайн-режимом, на http://localhost:8000 — текущий код на данных из docs/; собирает в build/preview, docs/ не трогает'
+    deps: [build:app]
+    cmds:
+      # копия docs/ — картинки, иконки и прежняя страница: с неё берутся данные (тот же коммит outerpedia)
+      - rm -rf build/preview
+      - cp -R docs build/preview
+      - python3 update.py --pwa build/preview --same-data {{.CLI_ARGS}}
+      - python3 -m http.server -d build/preview 8000
 
   test:
     desc: Проверка типов и тесты (эталон логики + юнит-тесты)

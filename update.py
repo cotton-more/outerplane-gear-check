@@ -1226,7 +1226,11 @@ def main() -> None:
     ap.add_argument("--pwa", type=Path, metavar="DIR", help="собрать PWA-сайт в папку DIR (для GitHub Pages) вместо одиночной страницы")
     ap.add_argument("--report-json", type=Path, metavar="FILE", help="с --pwa: итог сборки в JSON (изменения, предупреждения, "
                                                                   "несопоставленные рекомендации) — для scripts/check-data.mjs")
+    ap.add_argument("--same-data", action="store_true", help="с --pwa: пересобрать только код — на том же коммите outerpedia, "
+                                                             "что в DIR/index.html, за свежими данными не ходить (task preview)")
     args = ap.parse_args()
+    if args.same_data and not args.pwa:
+        ap.error("--same-data — только вместе с --pwa DIR")
     if args.pwa:
         return main_pwa(args)
     out = args.out.expanduser()
@@ -1298,6 +1302,11 @@ def carry_new_ids(data: dict, prev: dict | None) -> None:
 def main_pwa(args) -> None:
     site = args.pwa.expanduser()
     warn = Warnings()
+    if args.same_data:
+        commit = ((previous_data(site / "index.html") or {}).get("meta") or {}).get("commit")
+        if not commit:
+            raise SystemExit(f"--same-data: в {site / 'index.html'} нет коммита outerpedia — нечего пересобирать")
+        args.ref = commit
     src, prov = load_sources(args.source, args.ref)
     if not prov.get("commit") or not prov.get("commitDate"):
         # без sha и даты коммита данные нельзя сравнить с прошлой сборкой: сменится generatedAt,
