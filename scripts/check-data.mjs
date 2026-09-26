@@ -20,6 +20,8 @@ const LIMITS = {
   examples: 10,         // сколько примеров показывать в каждом списке
 };
 const REPO = 'Sevih/outerpedia';
+// код приложения — те же пути, по которым vite.config.ts берёт версию для подвала
+const APP_PATHS = ['src', 'index.html', 'vite.config.ts', 'package.json', 'package-lock.json', 'update.py', 'pwa'];
 const golden = JSON.parse(readFileSync(new URL('../test/golden.json', import.meta.url), 'utf8'));
 
 // --------------------------------------------------------------------------- аргументы и входы
@@ -244,7 +246,7 @@ async function changedSourceFiles(from, to, files) {
 
 function codeCommits(from, to) {
   try {
-    return execFileSync('git', ['log', '--format=%h %s', `${from}..${to}`], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+    return execFileSync('git', ['log', '--format=%h %s', `${from}..${to}`, '--', ...APP_PATHS], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
   } catch {
     return [];
   }
