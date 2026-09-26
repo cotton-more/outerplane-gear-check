@@ -30,7 +30,12 @@ tasks:
     desc: PWA-сайт в docs/ со свежими данными outerpedia
     aliases: [data]
     deps: [build:app]
-    cmds: ['python3 update.py --pwa docs {{.CLI_ARGS}}']
+    cmds: ['python3 update.py --pwa docs --report-json build/data-report.json {{.CLI_ARGS}}']
+
+  check:
+    desc: Проверить собранный docs/ против опубликованного (git HEAD) — то же, что автообновление пишет в PR
+    deps: [setup]
+    cmds: [node scripts/check-data.mjs --report build/data-report.json]
 
   build:single:
     desc: Одиночная страница outerplane-gear.html и build/artifact.html для Claude Artifact
@@ -59,12 +64,15 @@ tasks:
     cmds: [npm run -s golden:update]
 
   publish:
-    desc: 'Тесты → docs/ → коммит → пуш → ждать выкладки. Своё сообщение: task publish MSG="…"'
+    desc: 'Подтянуть main → тесты → docs/ → проверки → коммит → пуш → ждать выкладки. Своё сообщение: task publish MSG="…"'
     vars:
       MSG: '{{.MSG | default "Обновление данных outerpedia"}}'
     cmds:
+      # в main на GitHub могут быть влитые PR автообновления — без этого push отклонят
+      - git pull -q --rebase --autostash
       - task: test
       - task: build:pwa
+      - task: check
       - git add -A
       - cmd: 'git diff --cached --quiet && echo "Изменений нет — коммитить нечего" || git commit -qm "{{.MSG}}"'
       - git push

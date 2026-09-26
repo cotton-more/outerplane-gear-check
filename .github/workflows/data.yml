@@ -1,0 +1,39 @@
+# Автообновление данных outerpedia: раз в сутки собирает сайт на свежих данных, проверяет и предлагает PR.
+# Сам ничего не публикует — сайт обновится, когда PR вольют в main. Схема и что делать с красным PR — AUTOUPDATE.md.
+name: Обновление данных
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 03:17 UTC каждый день (не ровно в час: в это время очередь раннеров длиннее)
+  workflow_dispatch:        # кнопка «Run workflow» на вкладке Actions — пересобрать PR, не дожидаясь ночи
+
+permissions:
+  contents: write           # пуш ветки data/auto (не main)
+  pull-requests: write
+  issues: write             # сборка упала — issue с причиной
+
+concurrency:
+  group: data-autoupdate
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}      # gh: PR и issue
+      GITHUB_TOKEN: ${{ github.token }}  # update.py и check-data: запросы к GitHub API без лимита 60 в час
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0                 # версия кода в подвале — последний коммит, менявший приложение: нужна история
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - run: npm ci
+      - run: npm run -s build
+      - run: scripts/autoupdate.sh
