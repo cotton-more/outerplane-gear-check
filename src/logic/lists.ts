@@ -3,6 +3,7 @@ import type { Index } from '../data';
 import type { Char, GearKind, GearSet, Item } from '../data/types';
 import { buildsOf, combosWith, gearList, slotMains, uniqChars } from './builds';
 import type { Ctx } from './context';
+import { subWeights } from './score';
 
 // скольким персонажам (в ростере, если он включён) нужен сет
 export const setUsersInScope = (ctx: Ctx, setId: string): number =>
@@ -14,6 +15,17 @@ export function setOptions(ctx: Ctx): { live: { set: GearSet; n: number }[]; dea
     .map((set) => ({ set, n: ctx.scoped ? setUsersInScope(ctx, set.id) : set.users }))
     .sort((a, b) => b.n - a.n || b.set.users - a.set.users);
   return { live, dead: D.sets.filter((x) => x.users === 0) };
+}
+
+// Сабстаты, нужные хоть одному билду с этим сетом (в ростере, если он включён): стат → лучший зачёт, 1 или ½.
+// Подсвечивает сетку сабстатов. Если на Epic-броне таких статов 0–1, «Оставить» и «Временно» невозможны:
+// обоим нужны два полезных стата под один билд.
+export function setSubDemand(ctx: Ctx, setId: string): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const { c, b } of buildsOf(ctx.idx, (b, c) => ctx.inScope(c) && combosWith(b, setId).length > 0)) {
+    for (const [k, w] of subWeights(ctx, b, c)) if (w.credit > (out.get(k) ?? 0)) out.set(k, w.credit);
+  }
+  return out;
 }
 
 // Legendary 6★ — из них выбирают предмет по названию или пассивке

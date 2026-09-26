@@ -13,6 +13,7 @@ import { Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
+import { Chain } from './Chain';
 import { ShareCode } from './ItemCode';
 
 interface Props { r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void }
@@ -127,15 +128,38 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
   );
 }
 
+// Карточка вердикта на форме (телефон): встаёт на место сетки сабстатов, когда вердикт готов.
+// Штамп, коротко — почему, и цепочка лучшего кандидата: что из нужного ему есть на предмете.
+export function VerdictCard({ r, onOpen }: { r: VerdictData; onOpen: () => void }) {
+  const t = useT();
+  const sec = r.v === 'junk' || r.v === 'idle' ? undefined : r.sections.find((x) => x.rows.length && !x.collapsed && !x.dim);
+  const best = sec?.rows[0];
+  return (
+    <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={t.ui.verdictDetails}>
+      <span className="vc-top">
+        <span className="stamp">{t.ui.verdictLabel[r.v]}</span>
+        {r.badge && <span className="badge">{r.badge}</span>}
+        <span className="vc-more">{t.ui.details} ▸</span>
+      </span>
+      <span className="vc-title">{barTitle(r)}</span>
+      {best && best.good != null
+        ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} /></span>
+        : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
+    </button>
+  );
+}
+
 // На плашке слово вердикта уже есть в штампе: «Оставляй — подходит 26 персонажам» → «подходит 26 персонажам»
 const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — ') ? r.title.slice(r.title.indexOf(' — ') + 3) : r.title);
 
 // Узкий экран (телефон, разделённый экран с игрой): шапки нет, внизу одна плашка на обе вкладки.
-//   Оценка:    [★ ростер → персонажи] [вердикт — нажми, подробности шторкой] [Сброс — следующий предмет]
+//   Оценка:    [☰ меню, ★ ростер] [вердикт или подсказка — нажми, подробности шторкой] [Следующий]
 //   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
-// compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету
-export function VBar({ r, show, compact, tab, rosterSize, onTab, onReset, onOpen }: {
-  r: VerdictData; show: boolean; compact: boolean; tab: Tab; rosterSize: number; onTab: (t: Tab) => void; onReset: () => void; onOpen: () => void;
+// compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету.
+// stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
+export function VBar({ r, show, compact, stampless, hint, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
+  r: VerdictData; show: boolean; compact: boolean; stampless: boolean; hint: string | null; tab: Tab; rosterSize: number;
+  onTab: (t: Tab) => void; onMenu: () => void; onReset: () => void; onOpen: () => void;
 }) {
   const t = useT();
   useEffect(() => {
@@ -147,11 +171,15 @@ export function VBar({ r, show, compact, tab, rosterSize, onTab, onReset, onOpen
   return (
     <div className={`vbar v-${r.v}`} id="vbar">
       {evalTab
-        ? <button type="button" className="vb-tab" aria-label={t.ui.tabChars} onClick={() => onTab('chars')}>{rosterSize ? <><span className="vb-star">★</span>{rosterSize}</> : '☆'}</button>
+        ? <button type="button" className="vb-tab" aria-label={t.ui.menu} onClick={onMenu}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
       <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval}
         onClick={evalTab ? onOpen : () => onTab('eval')}>
-        {!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span>
+        {evalTab && hint
+          ? <span className="vt">{hint}</span>
+          : evalTab && stampless
+            ? <span className="vt vt-more">{t.ui.details}</span>
+            : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
       {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset}>{t.ui.reset}</button>}

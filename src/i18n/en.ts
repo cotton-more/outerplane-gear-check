@@ -167,6 +167,7 @@ export const en: Texts = {
     licenses: 'Licenses (MIT)',
     licenseWhat: { outerpedia: 'outerpedia — build recommendations, game tables, flat/% formula', react: 'React' },
     installApp: 'Install as an app',
+    footBuild: (date, hash, dirty) => `App build: ${date} · ${hash}${dirty ? ' + uncommitted changes' : ''}`,
     iosFooter: 'On iPhone and iPad: in Safari, Share → "Add to Home Screen" — it will work as an app, even offline.',
     language: 'Language',
     slot: 'Slot',
@@ -188,7 +189,6 @@ export const en: Texts = {
     mainUnlisted: 'Main stat · not listed',
     codeSheet: 'Item code',
     replaceSub: (k) => `Replace ${k}`,
-    newSub: (n, of) => `Substat ${n} of ${of}`,
     settings: 'Evaluation settings',
     settingsNow: (end, fodder, lv120, quirks) =>
       [end ? 'endgame' : 'progression', fodder ? 'saving fodder' : 'no armor fodder', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'no Quirks'],
@@ -224,8 +224,11 @@ export const en: Texts = {
     subYellow: (k) => `Yellow segments of ${k}`,
     yellow4: '4 yellow — only from special shops and Dimensional Supply',
     subRemove: (k) => `Remove ${k}`,
-    addSub: '+ substat',
-    epicThree: 'Epic items have three substats',
+    addSub: 'Add a substat',
+    usefulTitle: (k, credit) => `${k}${credit >= 1 ? ' — needed by builds with this set' : credit > 0 ? ' — needed, but far down the priority (½)' : ' — no build with this set needs it'}`,
+    triageHint: (legend, fodder) => (legend
+      ? `0–1 bright stats on the piece — ${fodder ? 'fodder, don\'t upgrade' : 'dismantle'}`
+      : '0–1 bright stats on the piece — dismantle right away'),
     codeForChat: 'Code for chat',
     codeSelected: 'Selected — copy it',
     codeErrors: {
@@ -253,6 +256,8 @@ export const en: Texts = {
     reset: 'Next',
     undoText: 'Item cleared',
     undoAction: 'Undo',
+    menu: 'Menu',
+    details: 'details',
     charsHint: '☆ — mark yours: the evaluation will consider only them',
     charSearch: 'Name: Stella, Demiurge, Gnosis…',
     onlyMine: 'only mine',
@@ -294,7 +299,7 @@ export const en: Texts = {
     howTo: 'How to use',
     steps: [
       '**Mark your characters** — until you do, the evaluation considers every character in the game.',
-      '**Enter the item:** slot, grade (L — Etheric, E — Steel), set or item, substats with yellow segments.',
+      '**Enter the item:** slot, grade (L — Etheric, E — Steel), set or item; substats in the grid, in the in-game order, yellow segments in the rows.',
       '**The verdict** appears right away, with an explanation. "Next" — on to the next item; slot, grade and set stay.',
     ],
     markChars: 'Mark characters',
@@ -306,7 +311,18 @@ export const en: Texts = {
       '**Armor** — the set: it\'s in the name after "of" (Etheric Gloves of Speed → Speed Set).',
       '**Legendary weapon and accessory** — find the item, then pick the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
-      'Tap a picked substat to replace it, ✕ to remove it. Everything below 6★ Epic — dismantle right away.',
+      '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions.',
+      'Tap a stat in its row to replace it (yellow segments stay), ✕ to remove it. Code, help and settings are in the ☰ menu.',
+    ],
+    helpRoutine: 'How to clean up fast',
+    helpRoutineItems: [
+      'Everything below 6★ and below Epic — dismantle right away.',
+      'Go through the inventory by date received: consecutive drops usually come from one run, and the set stays from the previous piece.',
+      '**Epic armor:** pick the slot and set and look at the grid. 0–1 bright stats on the piece — dismantle without entering anything: "Keep" and "Stopgap" are impossible then. For Speed, Immunity and Swiftness almost everything is bright — enter those.',
+      'For Epic, the verdict appears after two useless substats — no need to enter the third.',
+      '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
+      '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" pick the main stat first: 0 takers in the list — dismantle.',
+      '**Legendary** with "I save Legendary armor for Breakthrough": the verdict shows which to upgrade and which to keep for Breakthrough.',
     ],
     helpVerdicts: [
       '**Keep** — the piece is needed: wear it and upgrade it. "Worth upgrading" — a good roll, worth investing Reforge.',

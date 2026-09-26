@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
-import { EvalPanel } from './components/eval/EvalPanel';
+import { EvalPanel, EvalSettings } from './components/eval/EvalPanel';
+import { CodeInput } from './components/eval/ItemCode';
 import { Help, Welcome, type InstallInfo } from './components/Guide';
 import { VBar, Verdict, VerdictSheet } from './components/eval/Verdict';
 import { Header } from './components/Header';
@@ -12,13 +13,14 @@ import { slugFromHash, useHashRoute } from './hooks/useHashRoute';
 import { useHotkeys } from './hooks/useHotkeys';
 import { useLayout } from './hooks/useLayout';
 import { usePwa } from './hooks/usePwa';
-import type { Index } from './data';
+import { isArmor, type Index } from './data';
 import { LANG_NAME, LANGS, LangContext, TEXTS, savedLang, useT, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
 import { charMatches } from './logic/lists';
+import { maxSubs } from './logic/subs';
 import type { ItemInput } from './logic/verdict';
-import { itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
+import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useRoster } from './state/useRoster';
@@ -53,6 +55,8 @@ export function App() {
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
   // «Следующий» убрал предмет по ошибке — несколько секунд его можно вернуть
   const [undo, setUndo] = useState<ItemInput | null>(null);
   useEffect(() => {
@@ -77,6 +81,11 @@ export function App() {
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
   useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
+  // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
+  const nSubs = Object.keys(s.subs).length;
+  const cardShown = layout.narrow && s.tab === 'eval' && (nSubs >= maxSubs(s.grade) || verdict.v === 'junk');
+  // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
+  const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 
   return (
     <LangContext.Provider value={t}>
@@ -94,7 +103,8 @@ export function App() {
         )}
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-            <EvalPanel s={s} dispatch={dispatch} ctx={ctx} onReset={onReset} onHelp={() => setHelpOpen(true)} />
+            <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}
+              onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onOpenVerdict={() => setVerdictOpen(true)} />
             {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -104,9 +114,34 @@ export function App() {
           </section>
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} />
-        <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
+        <VBar r={verdict} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
+          onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         {undo && s.tab === 'eval' && (
           <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
+        )}
+        {menuOpen && (
+          <Sheet title={t.ui.menu} onClose={() => setMenuOpen(false)}>
+            <div className="menu">
+              <div className="menu-nav">
+                <button type="button" className="btn" onClick={() => { setMenuOpen(false); onTab('chars'); }}>
+                  {roster.size ? <><span className="vb-star">★</span> {roster.size} · </> : '☆ '}{t.ui.tabChars}
+                </button>
+                <button type="button" className="btn" onClick={() => { setMenuOpen(false); setCodeOpen(true); }}>{t.ui.enterCode}</button>
+                <button type="button" className="btn" onClick={() => { setMenuOpen(false); setHelpOpen(true); }}>{t.ui.help}</button>
+              </div>
+              <label className="toggle">
+                <input type="checkbox" id="menu-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
+                {' '}{t.ui.rosterOnly}{roster.size ? ` (${roster.size})` : t.ui.rosterOnlyEmpty}
+              </label>
+              <EvalSettings s={s} dispatch={dispatch} inline />
+              <Footer install={install} lang={lang} onLang={changeLang} />
+            </div>
+          </Sheet>
+        )}
+        {codeOpen && (
+          <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>
+            <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); setCodeOpen(false); }} />
+          </Sheet>
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => setHelpOpen(false)}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
@@ -128,6 +163,9 @@ function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void })
   );
 }
 
+// дата последнего коммита кода — в часовом поясе того, кто смотрит
+const buildDate = (lang: Lang) => new Date(__BUILD__.date).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
+
 function Footer({ install, lang, onLang }: { install: InstallInfo; lang: Lang; onLang: (l: Lang) => void }) {
   const m = useIndex().D.meta;
   const t = useT();
@@ -147,6 +185,7 @@ function Footer({ install, lang, onLang }: { install: InstallInfo; lang: Lang; o
         {MIT_HOLDERS.map((h) => <p key={h.what}><a href={h.url} target="_blank" rel="noopener">{t.ui.licenseWhat[h.what]}</a><br />{h.who}</p>)}
         {MIT_TEXT.split('\n\n').map((para) => <p key={para.slice(0, 20)} className="mit">{para.replace(/\n/g, ' ')}</p>)}
       </details>
+      {__BUILD__.hash && <span>{t.ui.footBuild(buildDate(lang), __BUILD__.hash, __BUILD__.dirty)}</span>}
       {install.canInstall && <span><button type="button" className="btn" onClick={install.onInstall}>{t.ui.installApp}</button></span>}
       {install.ios && <span>{t.ui.iosFooter}</span>}
       <LangSwitch lang={lang} onLang={onLang} />

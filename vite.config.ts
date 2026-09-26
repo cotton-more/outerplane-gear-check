@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 // Сборка: одно HTML-приложение со встроенными JS и CSS (build/app/index.html).
 // Данные подставляет update.py вместо маркера /*__OGC_DATA__*/null — см. index.html.
+import { execFileSync } from 'node:child_process';
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
@@ -39,7 +40,22 @@ function server_warn() {
   console.warn('[ogc] в docs/index.html нет данных — собери сайт: task build:pwa');
 }
 
+// Версия сборки для подвала: последний коммит, который менял само приложение, — не данные в docs/.
+// Не время сборки и не HEAD: иначе каждая публикация (она коммитит данные) меняла бы страницу,
+// и у всех появлялась бы плашка «Обновить» без единой правки.
+const APP_PATHS = ['src', 'index.html', 'vite.config.ts', 'package.json', 'package-lock.json', 'update.py', 'pwa'];
+function buildInfo(): { hash: string; date: string; dirty: boolean } {
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: import.meta.dirname, encoding: 'utf8' }).trim();
+  try {
+    const [hash, date] = git('log', '-1', '--format=%h%n%cI', '--', ...APP_PATHS).split('\n');
+    return { hash, date, dirty: git('status', '--porcelain', '--', ...APP_PATHS) !== '' };
+  } catch {
+    return { hash: '', date: '', dirty: false }; // не git-копия (архив) — версию не показываем
+  }
+}
+
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(buildInfo()) },
   base: './',
   plugins: [react(), viteSingleFile(), devData()],
   build: {

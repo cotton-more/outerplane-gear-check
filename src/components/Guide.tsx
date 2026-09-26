@@ -49,6 +49,8 @@ export function Help({ install }: { install: InstallInfo }) {
       <List items={t.ui.steps} ordered />
       <h4>{t.ui.helpInput}</h4>
       <List items={t.ui.helpInputItems} />
+      <h4>{t.ui.helpRoutine}</h4>
+      <List items={t.ui.helpRoutineItems} ordered />
       <h4>{t.ui.verdict}</h4>
       <List items={t.ui.helpVerdicts} />
       <h4>{t.ui.tabChars}</h4>

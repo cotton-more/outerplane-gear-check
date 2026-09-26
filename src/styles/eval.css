@@ -36,8 +36,6 @@ html.narrow .slot span { display: none; }
 .subrow .roll-b button { min-width: 36px; height: 42px; }
 .subrow .roll-b button.r4 { min-width: 28px; font-size: 12px; }
 .subdel { flex: none; width: 36px; height: 44px; border: 0; background: none; color: var(--ink-3); font-size: 15px; border-radius: var(--radius-s); }
-.subadd { justify-content: flex-start; }
-.pick.suboff { opacity: .6; background: repeating-linear-gradient(135deg, transparent 0 7px, var(--line) 7px 8px); cursor: default; }
 html.xs .subrow .roll-b button { min-width: 32px; }
 html.xs .subdel { width: 30px; }
 /* окна выбора */
@@ -142,7 +140,6 @@ html.xs .subdel { width: 30px; }
 .drawer .search { padding: 8px 10px; }
 html.narrow .drawer .fbtn span { display: none; }
 html.narrow .drawer .fbtn { padding: 4px 7px; }
-html.narrow .subadd { scroll-margin-bottom: 72px; }
 html.narrow .actions .btn.primary { display: none; } /* на телефоне «Сброс» — на нижней плашке */
 
 /* «Предмет убран · Вернуть» — несколько секунд после «Следующий», над нижней плашкой */
@@ -150,3 +147,44 @@ html.narrow .actions .btn.primary { display: none; } /* на телефоне «
 .toast button { min-height: 36px; padding: 6px 12px; border: 0; border-radius: var(--radius-s); background: var(--surface); color: var(--accent); font-weight: 700; font-size: 13.5px; }
 html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
 @media (max-height: 560px) { html.narrow body.has-vbar .toast { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); } }
+
+/* сетка сабстатов на форме: 7×2, %-статы над своими flat-версиями; ярче — нужны билдам выбранного сета */
+.formrow .pick.main { flex: 0 0 auto; max-width: 40%; }
+.subzone { display: grid; min-height: 84px; }
+.statgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; align-content: start; }
+.sg { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; min-height: 40px; padding: 3px 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 10.5px/1.1 var(--font-mono); color: var(--ink); white-space: nowrap; }
+.sg img, .sg .noimg { width: 16px; height: 16px; flex: none; }
+.sg.flat { font-weight: 500; color: var(--ink-2); }
+.sg.u1 { border-color: color-mix(in srgb, var(--keep) 60%, var(--line)); background: color-mix(in srgb, var(--keep-soft) 75%, var(--surface-2)); }
+.sg.u2 { border-color: color-mix(in srgb, var(--temp) 50%, var(--line)); }
+.sg.u0 { opacity: .42; }
+.sg[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); opacity: 1; }
+.sg:disabled { cursor: default; }
+.sg:disabled:not([aria-pressed="true"]) { opacity: .22; }
+.grid-hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+html.narrow .grid-hint { display: none; }
+.subrows:empty { display: none; }
+/* телефон: код, справка, «только мои», настройки и подвал — в меню ☰ на нижней плашке */
+html.narrow .eval-in .actions, html.narrow .eval-in .settings { display: none; }
+html.narrow .app > footer.foot { display: none; }
+.menu { display: grid; gap: 14px; }
+.menu-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.menu .vb-star { color: var(--star-on); }
+.menu .settings-body { padding: 0; }
+.menu footer.foot { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+/* разделённый экран с игрой: Legendary из 4 сабстатов с карточкой вердикта помещается над плашкой без прокрутки */
+@media (max-height: 460px) {
+  html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 4px); }
+  .form { padding: 4px 8px 6px; gap: 4px; }
+  .slot { min-height: 38px; }
+  .slot img, .slot .noimg { width: 26px; height: 26px; }
+  .grade, .pick { min-height: 38px; }
+  .subzone { min-height: 76px; }
+  .sg { min-height: 36px; }
+  .subrows { gap: 3px; }
+  .subrow .roll-b button { height: 35px; }
+  .subdel { height: 36px; }
+  .pick.subkey { min-height: 36px; }
+}
+.menu .toggle { display: block; line-height: 1.4; }
+.menu .toggle input { vertical-align: -4px; margin: 0 6px 0 0; }

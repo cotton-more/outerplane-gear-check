@@ -1,39 +1,42 @@
 // Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
-// слот → грейд + сет/предмет/main → строки сабстатов. Конкретные значения выбираются в окнах (Sheet).
-import { useEffect, useRef, useState, type Dispatch } from 'react';
+// слот → грейд + сет/предмет/main → сетка сабстатов → строки с жёлтыми сегментами.
+// Сет, предмет и main выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием.
+// На телефоне, когда вердикт готов, на месте сетки встаёт карточка вердикта.
+import { useMemo, useState, type Dispatch } from 'react';
 import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { maxSubs } from '../../logic/subs';
-import { fitsData, type Action, type AppState } from '../../state/appState';
+import { setSubDemand } from '../../logic/lists';
+import type { Verdict as VerdictData } from '../../logic/verdict';
+import type { Action, AppState } from '../../state/appState';
 import { Frame, Img, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
-import { CodeInput } from './ItemCode';
 import { ItemPicker } from './ItemPicker';
 import { MainPicker } from './MainPicker';
 import { PickField } from './PickField';
 import { SetPicker } from './SetPicker';
 import { SubPicker } from './SubPicker';
+import { StatGrid } from './StatGrid';
 import { SubRows } from './SubRows';
+import { VerdictCard } from './Verdict';
 
-type Open = null | 'set' | 'item' | 'main' | 'code' | { sub: string | null }; // sub: какой стат заменяем (null — новый)
+type Open = null | 'set' | 'item' | 'main' | { sub: string }; // sub: какой стат заменяем
 
 const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-export function EvalPanel({ s, dispatch, ctx, onReset, onHelp }: { s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; onReset: () => void; onHelp: () => void }) {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onOpenVerdict }: {
+  s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
+  onReset: () => void; onHelp: () => void; onCode: () => void; onOpenVerdict: () => void;
+}) {
   const { D, SET, ITEM } = ctx.idx;
   const t = useT();
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
-  // окно закрылось — следующая пустая строка сабстата встаёт над плашкой вердикта, если была под ней.
-  // В эффекте, а не сразу: к этому моменту шторка уже сняла блокировку прокрутки страницы.
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    if (open === null && wasOpen.current) document.querySelector('.form .subadd')?.scrollIntoView({ block: 'nearest' });
-    wasOpen.current = open !== null;
-  }, [open]);
   const armor = isArmor(s.slot);
+  const useful = useMemo(() => (armor && s.setId ? setSubDemand(ctx, s.setId) : null), [ctx, armor, s.setId]);
+  const full = Object.keys(s.subs).length >= maxSubs(s.grade);
   const kind = s.slot as GearKind;
   const epic = s.grade === 'rare';
   const set = armor && s.setId ? SET[s.setId] : undefined;
@@ -68,14 +71,20 @@ export function EvalPanel({ s, dispatch, ctx, onReset, onHelp }: { s: AppState; 
               ? <PickField value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} />
               : <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
                   placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} />}
+          {mainRow && <PickField className="main" value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} />}
         </div>
-        {mainRow && <div className="formrow"><PickField className="main" value={mainValue} placeholder="Main stat" onClick={() => setOpen('main')} /></div>}
-        <SubRows subs={s.subs} grade={s.grade} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} />
+        <div className="subzone">
+          {cardShown
+            ? <VerdictCard r={verdict} onOpen={onOpenVerdict} />
+            : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} onPick={(key) => dispatch({ type: 'sub', key })} />}
+        </div>
+        {hint && <p className="grid-hint">{hint}</p>}
+        <SubRows subs={s.subs} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} />
       </div>
 
       <div className="actions">
         <button type="button" className="btn primary" onClick={onReset}>{t.ui.resetItem}</button>
-        <button type="button" className="btn" onClick={() => setOpen('code')}>{t.ui.enterCode}</button>
+        <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
         <button type="button" className="btn" onClick={onHelp}>{t.ui.help}</button>
         <label className="toggle">
           <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
@@ -105,33 +114,23 @@ export function EvalPanel({ s, dispatch, ctx, onReset, onHelp }: { s: AppState; 
             onPick={(main) => { if (main !== s.main) dispatch({ type: 'main', main }); close(); }} />
         </Sheet>
       )}
-      {open === 'code' && (
-        <Sheet title={t.ui.codeSheet} onClose={close}>
-          <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); close(); }} />
-        </Sheet>
-      )}
       {open !== null && typeof open === 'object' && (
-        <Sheet title={open.sub ? t.ui.replaceSub(open.sub) : t.ui.newSub(Object.keys(s.subs).length + 1, maxSubs(s.grade))} onClose={close}>
+        <Sheet title={t.ui.replaceSub(open.sub)} onClose={close}>
           <SubPicker ctx={ctx} subs={s.subs} main={s.main} editing={open.sub}
-            onPick={(key) => {
-              if (!open.sub) dispatch({ type: 'sub', key });
-              else if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key });
-              close();
-            }} />
+            onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }} />
         </Sheet>
       )}
     </div>
   );
 }
 
-function EvalSettings({ s, dispatch }: { s: AppState; dispatch: Dispatch<Action> }) {
+// Настройки оценки: под формой на широком экране; на телефоне — в меню (inline — без сворачивания).
+export function EvalSettings({ s, dispatch, inline }: { s: AppState; dispatch: Dispatch<Action>; inline?: boolean }) {
   const t = useT();
   const st = s.settings;
   const set = (patch: Partial<typeof st>) => dispatch({ type: 'settings', patch });
   const cur = t.ui.settingsNow(st.stage === 'end', st.fodder, st.lv120, st.quirks);
-  return (
-    <details className="settings" id="settings" open={s.settingsOpen} onToggle={(e) => dispatch({ type: 'settingsOpen', open: e.currentTarget.open })}>
-      <summary>{t.ui.settings} <span className="cur">· {cur.join(' · ')}</span></summary>
+  const body = (
       <div className="settings-body">
         <div className="seg" role="group" aria-label={t.ui.stageGroup}>
           <span className="muted small">{t.ui.stage}</span>
@@ -153,6 +152,12 @@ function EvalSettings({ s, dispatch }: { s: AppState; dispatch: Dispatch<Action>
         </label>
         <p className="muted small">{t.ui.flatNote}</p>
       </div>
+  );
+  if (inline) return body;
+  return (
+    <details className="settings" id="settings" open={s.settingsOpen} onToggle={(e) => dispatch({ type: 'settingsOpen', open: e.currentTarget.open })}>
+      <summary>{t.ui.settings} <span className="cur">· {cur.join(' · ')}</span></summary>
+      {body}
     </details>
   );
 }

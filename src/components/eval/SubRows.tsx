@@ -1,24 +1,20 @@
 import type { Dispatch } from 'react';
 import { FLAT } from '../../data';
-import type { Grade } from '../../data/types';
 import { useT } from '../../i18n';
-import { maxSubs, type Subs } from '../../logic/subs';
+import type { Subs } from '../../logic/subs';
 import type { Action } from '../../state/appState';
 import { StatIcon } from '../Img';
 
 const ROLLS = [1, 2, 3, 4];
-const ROWS = maxSubs('unique');
 
-// Строки сабстатов: всегда четыре, как у Legendary, чтобы форма не прыгала при смене грейда.
-// У Epic сабстатов три — лишняя строка неактивна. Пустая строка открывает окно выбора;
-// у заполненной жёлтые сегменты отмечаются прямо в строке.
-export function SubRows({ subs, grade, dispatch, onPick }: {
-  subs: Subs; grade: Grade; dispatch: Dispatch<Action>; onPick: (editing: string | null) => void;
+// Строки отмеченных сабстатов в порядке, как на предмете в игре. Жёлтые сегменты — прямо в строке,
+// нажатие на стат — заменить его (сегменты остаются). Добавляют сабстаты сеткой над строками:
+// строки растут вниз, и сетка при вводе не сдвигается.
+export function SubRows({ subs, dispatch, onPick }: {
+  subs: Subs; dispatch: Dispatch<Action>; onPick: (editing: string) => void;
 }) {
   const t = useT();
   const keys = Object.keys(subs);
-  const empty = Math.max(0, maxSubs(grade) - keys.length);
-  const off = ROWS - Math.max(maxSubs(grade), keys.length);
   return (
     <div className="subrows">
       {keys.map((k) => {
@@ -39,14 +35,6 @@ export function SubRows({ subs, grade, dispatch, onPick }: {
           </div>
         );
       })}
-      {Array.from({ length: empty }, (_, i) => (
-        <button key={'e' + i} type="button" className="pick empty subadd" onClick={() => onPick(null)}>
-          <span className="pick-v">{t.ui.addSub}</span>
-        </button>
-      ))}
-      {Array.from({ length: off }, (_, i) => (
-        <button key={'x' + i} type="button" className="pick empty suboff" disabled aria-label={t.ui.epicThree} title={t.ui.epicThree} />
-      ))}
     </div>
   );
 }

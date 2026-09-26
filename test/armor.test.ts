@@ -7,6 +7,7 @@ import { ru } from '../src/i18n/ru';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { subWeights, tierPlaces } from '../src/logic/score';
+import { setSubDemand } from '../src/logic/lists';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -118,4 +119,33 @@ describe('места в цепочке приоритета: связка дел
     const c = D.chars.find((x) => x.builds.length)!;
     expect(subWeights(ctx, build([['CHC'], ['ATK'], ['SPD'], ['CHD']]), c).get('CHD')?.credit).toBe(0.5);
   });
+});
+
+describe('подсветка сетки: 0–1 нужных стата — «Оставить» и «Временно» невозможны', () => {
+  const stats = idx.SUB_LIST;
+  const combos = (n: number, from = 0): string[][] => (n === 0 ? [[]] : stats.slice(from).flatMap((k, i) => combos(n - 1, from + i + 1).map((rest) => [k, ...rest])));
+
+  it('у Attack Set блёклые — статы, которые не нужны ни одному билду с этим сетом', () => {
+    const demand = setSubDemand(ctx, attack.id);
+    expect(demand.get('CHC')).toBe(1);
+    expect(demand.get('DMG RED%') ?? 0).toBe(0);
+  });
+
+  for (const grade of ['rare', 'unique'] as const) {
+    it(`${grade === 'rare' ? 'Epic' : 'Legendary'}: такие предметы всегда в разбор (фоддер выключен)`, () => {
+      const wrong: string[] = [];
+      let checked = 0;
+      for (const set of D.sets.filter((x) => x.users > 0)) {
+        const demand = setSubDemand(ctx, set.id);
+        for (const keys of combos(grade === 'rare' ? 3 : 4)) {
+          if (keys.filter((k) => (demand.get(k) ?? 0) > 0).length > 1) continue;
+          const r = evaluate(ctx, { slot: 'helmet', grade, setId: set.id, itemKey: null, main: null, subs: Object.fromEntries(keys.map((k) => [k, 3])) });
+          checked++;
+          if (r.v !== 'junk') wrong.push(`${set.short} ${keys.join(' ')} → ${r.v}`);
+        }
+      }
+      expect(checked).toBeGreaterThan(100);
+      expect(wrong).toEqual([]);
+    });
+  }
 });

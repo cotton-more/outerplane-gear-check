@@ -70,3 +70,28 @@ html.narrow .vbar { z-index: 35; }
 html.narrow.sheet .char-detail.open { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
 html.xs .vbar { gap: 8px; }
 html.xs .vbar .vb-more { display: none; }
+
+/* карточка вердикта на форме (телефон) */
+.vcard { display: grid; gap: 3px; align-content: start; width: 100%; min-height: 84px; padding: 6px 10px 7px; border: 1px solid var(--v); border-radius: var(--radius-s); background: var(--v-soft); text-align: left; color: var(--ink); }
+.vcard .vc-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vcard .stamp { font-size: 13px; padding: 4px 7px 3px; border-width: 2px; box-shadow: none; }
+.vcard .badge { font-size: 10px; padding: 4px 6px; }
+.vcard .vc-more { margin-left: auto; flex: none; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.vcard .vc-title { font-weight: 700; font-size: 13.5px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vcard .vc-line { font-size: 12.5px; line-height: 1.3; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vcard .vc-line b { color: var(--ink); }
+.vcard .vc-chain { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; overflow: hidden; }
+.vcard .vc-chain > b { flex: none; }
+.vcard .vc-chain .chain { flex-wrap: nowrap; overflow: hidden; }
+@media (max-height: 460px) { .vcard { min-height: 76px; padding: 5px 9px 6px; gap: 2px; } }
+html.narrow .vbar .vt-more { color: var(--ink-3); font-weight: 600; }
+/* цепочка приоритета: ok — есть и засчитан, half — за ½, low — есть, но далеко, miss — нет на предмете, no — лишний */
+.chain { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; }
+.chain .sep { font-style: normal; font-size: 11px; color: var(--ink-3); }
+.pill { font: 700 11.5px/1 var(--font-mono); padding: 3px 5px; border-radius: 4px; border: 1px solid transparent; white-space: nowrap; }
+.pill.ok { background: var(--keep-soft); color: var(--keep); border-color: color-mix(in srgb, var(--keep) 35%, transparent); }
+.pill.half { background: var(--temp-soft); color: var(--temp); }
+.pill.low { background: var(--surface-3); color: var(--ink-2); }
+.pill.miss { border: 1px dashed var(--line-2); color: var(--ink-3); font-weight: 500; }
+.pill.tail { font-size: 10.5px; padding: 2px 4px; opacity: .75; }
+.pill.no { color: var(--ink-3); font-weight: 500; text-decoration: line-through; text-decoration-thickness: 1px; }
