@@ -15,11 +15,12 @@ html.narrow .slot span { display: none; }
 @media (hover: hover) and (pointer: fine) { html:not(.sheet) .slot kbd { display: inline-block; } }
 .formrow { display: flex; gap: 6px; min-width: 0; }
 .gradesw { display: flex; gap: 4px; flex: none; }
-.grade { display: inline-flex; align-items: center; gap: 5px; padding: 0 9px 0 5px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-weight: 700; }
-.grade img, .grade .noimg { width: 22px; height: 22px; border-radius: 4px; }
-.grade .gname { font-family: var(--font-mono); font-size: 14px; }
-.grade.unique .gname { color: var(--legend); }
-.grade.rare .gname { color: var(--epic); }
+/* грейд — рамка из игры (красная Legendary, синяя Epic) с белой буквой; невыбранный приглушён */
+.grade { display: inline-grid; place-items: center; width: 44px; min-height: 44px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-weight: 700; }
+.grade > * { grid-area: 1 / 1; }
+.grade img, .grade .noimg { width: 100%; height: 100%; border-radius: 5px; object-fit: cover; }
+.grade .gname { position: relative; color: #fff; font: 700 16px/1 var(--font-mono); text-shadow: 0 1px 2px rgb(0 0 0 / .6); } /* над картинкой: с opacity она рисуется отдельным слоем поверх текста */
+.grade:not([aria-pressed="true"]) img { opacity: .55; }
 .pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 10px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); text-align: left; font-weight: 600; font-size: 14px; }
 .pick-v { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pick-v > img, .pick-v > .noimg { width: 26px; height: 26px; flex: none; object-fit: contain; }
@@ -135,6 +136,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
   .slot { min-height: 40px; }
   .slot img, .slot .noimg { width: 28px; height: 28px; }
   .grade, .pick, .msw { min-height: 40px; }
+  .grade { width: 40px; }
   .subrows { gap: 4px; }
   .subrow .roll-b button { height: 38px; }
 }
@@ -198,6 +200,7 @@ html.narrow .app > footer.foot { display: none; }
   .slot { min-height: 38px; }
   .slot img, .slot .noimg { width: 26px; height: 26px; }
   .grade, .pick, .msw { min-height: 38px; }
+  .grade { width: 38px; }
   .subzone { min-height: 76px; }
   .sg { min-height: 36px; }
   .subrows { gap: 3px; }
