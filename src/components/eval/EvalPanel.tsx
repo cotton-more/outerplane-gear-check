@@ -79,7 +79,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
         {hint && <p className="grid-hint">{hint}</p>}
-        <SubRows subs={s.subs} epic={epic} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
+        <SubRows subs={s.subs} epic={epic} fourth={epic && armor} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
       </div>
 
       <div className="actions">
@@ -123,7 +123,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       {open !== null && typeof open === 'object' && (
         <Sheet title={t.ui.replaceSub(open.sub)} onClose={close}>
           <SubPicker ctx={ctx} subs={s.subs} main={s.main} editing={open.sub}
-            onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }} />
+            onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }}
+            onRemove={() => { dispatch({ type: 'sub', key: open.sub }); close(); }} />
         </Sheet>
       )}
     </div>

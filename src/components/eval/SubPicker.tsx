@@ -4,9 +4,9 @@ import type { Ctx } from '../../logic/context';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
 
-// Окно выбора сабстата: новый (editing = null) или замена уже отмеченного в той же строке.
-export function SubPicker({ ctx, subs, main, editing, onPick }: {
-  ctx: Ctx; subs: Subs; main: string | null; editing: string | null; onPick: (key: string) => void;
+// Окно выбора сабстата: новый (editing = null) или замена уже отмеченного в той же строке — там же «Убрать».
+export function SubPicker({ ctx, subs, main, editing, onPick, onRemove }: {
+  ctx: Ctx; subs: Subs; main: string | null; editing: string | null; onPick: (key: string) => void; onRemove?: () => void;
 }) {
   const { D, SUB, SUB_LIST } = ctx.idx;
   const t = useT();
@@ -24,6 +24,7 @@ export function SubPicker({ ctx, subs, main, editing, onPick }: {
           );
         })}
       </div>
+      {editing && onRemove && <button type="button" className="btn subremove" onClick={onRemove}>{t.ui.subRemove(editing)}</button>}
       <p className="note-line">{t.ui.subNote}</p>
     </>
   );

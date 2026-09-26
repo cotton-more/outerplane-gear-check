@@ -1,8 +1,9 @@
 // Панель вердикта и её мобильная версия — плашка внизу экрана с кнопкой «Сброс».
-import { Fragment, useEffect, type Dispatch } from 'react';
+import { Fragment, useEffect, useRef, type Dispatch } from 'react';
 import { CFG } from '../../config';
 import { isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
+import { useFillViewport } from '../../hooks/useFillViewport';
 import { comboText } from '../../logic/builds';
 import type { Row } from '../../logic/score';
 import { useT } from '../../i18n';
@@ -18,9 +19,11 @@ import { ShareCode } from './ItemCode';
 
 interface Props { r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void }
 
-// Широкий экран: вердикт колонкой справа от формы.
+// Широкий экран: вердикт липкой колонкой справа от формы — во всю высоту до низа окна.
 export function Verdict(props: Props) {
-  return <aside className="panel verdict eval-out" id="verdict" aria-live="polite"><VerdictBody {...props} /></aside>;
+  const ref = useRef<HTMLElement>(null);
+  useFillViewport(ref);
+  return <aside ref={ref} className="panel verdict eval-out" id="verdict" aria-live="polite"><VerdictBody {...props} /></aside>;
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.

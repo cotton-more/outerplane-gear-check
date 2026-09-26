@@ -1,6 +1,7 @@
 /* ---------- оценка: раскладка */
 .eval { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 html:not(.narrow) .eval { grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); align-items: start; }
+/* высоту липкой колонки до низа окна считает useFillViewport; здесь — запасной вариант до первого замера */
 html:not(.narrow) .eval-out { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 170px); overflow: auto; overscroll-behavior: contain; }
 html.wide .eval { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
 
@@ -39,9 +40,11 @@ html.narrow .slot span { display: none; }
 .subrow .roll-b { flex: none; }
 .subrow .roll-b button { min-width: 36px; height: 42px; }
 .subrow .roll-b button.r4 { min-width: 28px; font-size: 12px; }
-.subdel { flex: none; width: 36px; height: 44px; border: 0; background: none; color: var(--ink-3); font-size: 15px; border-radius: var(--radius-s); }
-html.xs .subrow .roll-b button { min-width: 32px; }
-html.xs .subdel { width: 30px; }
+html.xs .subrow .roll-b button { min-width: 30px; }
+/* узкое окно рядом с игрой: место — названию стата («DMG RED%» целиком), кнопки сегментов чуть уже, «4» — редкая */
+html.xs .subrow .subkey { padding: 4px 6px; gap: 5px; }
+html.xs .subrow .roll-b button.r4 { min-width: 26px; }
+.subremove { margin-top: 10px; width: 100%; }
 /* окна выбора */
 .codein { display: flex; flex-wrap: wrap; gap: 8px; }
 .codein .search { flex: 1 1 180px; font: 700 18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
@@ -125,7 +128,6 @@ html.xs .subdel { width: 30px; }
   .grade, .pick { min-height: 40px; }
   .subrows { gap: 4px; }
   .subrow .roll-b button { height: 38px; }
-  .subdel { height: 40px; }
 }
 
 /* окна выбора — плотнее: в разделённом экране окно не выше ~300 px */
@@ -188,7 +190,6 @@ html.narrow .app > footer.foot { display: none; }
   .subrows { gap: 3px; }
   .subadd { height: 26px; }
   .subrow .roll-b button { height: 35px; }
-  .subdel { height: 36px; }
   .pick.subkey { min-height: 36px; }
 }
 .menu .toggle { display: block; line-height: 1.4; }

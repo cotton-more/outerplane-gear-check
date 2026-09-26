@@ -348,8 +348,8 @@ export const en: Texts = {
       '**Legendary weapon and accessory** — find the item, then pick the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions.',
-      '**4th substat on an Epic** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. "Upgrading" tells which one would.',
-      'Tap a stat in its row to replace it (yellow segments stay). To remove it, tap it again in the grid or ✕. Code, help and settings are in the ☰ menu.',
+      '**4th substat on Epic armor** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. "Upgrading" tells which one would.',
+      'Tap a stat in its row to replace it (yellow segments stay) or remove it. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
     ],
     helpRoutine: 'How to clean up fast',
     helpRoutineItems: [
