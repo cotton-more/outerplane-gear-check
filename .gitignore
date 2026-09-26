@@ -11,3 +11,5 @@ __pycache__/
 .claude/
 # настройки IDE (JetBrains)
 .idea/
+# служебные контрольные суммы go-task
+.task/
