@@ -6,7 +6,7 @@ import type { GearKind } from '../data/types';
 import { buildsOf, gearList, gearRef, slotMains, uniqChars, type BuildRef } from './builds';
 import type { Ctx } from './context';
 import { dedupe, flatMisses, rollInfo, rows, type Row } from './score';
-import { maxSubs } from './subs';
+import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
 
@@ -20,7 +20,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const kind = s.slot as GearKind;
   const epic = s.grade === 'rare';
   const nSubs = Object.keys(subs).length;
-  const expected = maxSubs(s.grade);
+  const expected = dropSubs(s.grade);
   res.foot = G.foot(CFG.tempGood, CFG.tempGood2, CFG.tempYellow);
 
   // кто взял бы предмет с таким main как временный: класс подходит, и билд просит этот main в этом слоте

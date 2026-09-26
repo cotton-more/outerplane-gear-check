@@ -7,7 +7,7 @@ import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
-import { maxSubs } from '../../logic/subs';
+import { MAX_SUBS } from '../../logic/subs';
 import { setSubDemand } from '../../logic/lists';
 import type { Verdict as VerdictData } from '../../logic/verdict';
 import type { Action, AppState } from '../../state/appState';
@@ -22,7 +22,7 @@ import { StatGrid } from './StatGrid';
 import { SubRows } from './SubRows';
 import { VerdictCard } from './Verdict';
 
-type Open = null | 'set' | 'item' | 'main' | { sub: string }; // sub: какой стат заменяем
+type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
 const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -36,7 +36,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const close = () => setOpen(null);
   const armor = isArmor(s.slot);
   const useful = useMemo(() => (armor && s.setId ? setSubDemand(ctx, s.setId) : null), [ctx, armor, s.setId]);
-  const full = Object.keys(s.subs).length >= maxSubs(s.grade);
+  const full = Object.keys(s.subs).length >= MAX_SUBS;
   const kind = s.slot as GearKind;
   const epic = s.grade === 'rare';
   const set = armor && s.setId ? SET[s.setId] : undefined;
@@ -79,7 +79,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
         {hint && <p className="grid-hint">{hint}</p>}
-        <SubRows subs={s.subs} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} />
+        <SubRows subs={s.subs} epic={epic} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
       </div>
 
       <div className="actions">
@@ -112,6 +112,12 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         <Sheet title={item ? `Main stat · ${item.name}` : epic ? t.ui.mainEpic(kind) : t.ui.mainUnlisted} onClose={close}>
           <MainPicker ctx={ctx} kind={kind} item={item} epic={epic} current={s.main}
             onPick={(main) => { if (main !== s.main) dispatch({ type: 'main', main }); close(); }} />
+        </Sheet>
+      )}
+      {open === 'fourth' && (
+        <Sheet title={t.ui.fourthSheet} onClose={close}>
+          <SubPicker ctx={ctx} subs={s.subs} main={s.main} editing={null}
+            onPick={(key) => { dispatch({ type: 'sub', key }); close(); }} />
         </Sheet>
       )}
       {open !== null && typeof open === 'object' && (

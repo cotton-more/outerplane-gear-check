@@ -4,7 +4,7 @@ import { FLAT } from '../data';
 import type { Build, Char, Grade } from '../data/types';
 import type { BuildRef } from './builds';
 import type { Ctx } from './context';
-import { maxSubs, type Subs } from './subs';
+import { dropSubs, type Subs } from './subs';
 import { fmtGood } from './text';
 import type { Texts } from '../i18n/ru';
 
@@ -80,7 +80,7 @@ export function subWeights(ctx: Ctx, build: Build, c: Char): Map<string, SubWeig
 export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: Subs, excluded: Set<string>): Score {
   const W = subWeights(ctx, build, c);
   const keys = Object.keys(subs);
-  const n = Math.max(keys.length, maxSubs(grade));
+  const n = Math.max(keys.length, dropSubs(grade));
   const ideal = [...W.entries()].filter(([k]) => !excluded.has(k)).map(([, v]) => v.w).sort((a, b) => b - a).slice(0, n);
   const max = ideal.reduce((a, b) => a + b, 0) || 1;
   let got = 0, good = 0, yellow = 0;
@@ -143,7 +143,7 @@ export type RollLevel = 'high' | 'mid' | 'low';
 export interface RollInfo { level: RollLevel; orange: number; segments: number; text: string }
 
 // сегментов, которые добавит Reforge: у Epic (3 сабстата) первая попытка уходит на 4-й сабстат
-export const reforgeSegments = (grade: Grade): number => CFG.reforges - (4 - maxSubs(grade));
+export const reforgeSegments = (grade: Grade): number => CFG.reforges - (4 - dropSubs(grade));
 
 // «Ролл» предмета: сколько сабстатов полезны лучшему кандидату, сколько на них жёлтых сегментов и сколько
 // оранжевых в среднем добавит Reforge. Reforge усиливает один сабстат из четырёх, поэтому вещь с 3 полезными
@@ -153,7 +153,7 @@ export function rollInfo(t: Texts, m: Row | undefined, n: number, grade: Grade):
   if (!m || m.good == null || !n) return null;
   const segments = reforgeSegments(grade);
   const orange = (segments * m.good) / 4;
-  const ideal = 3 * maxSubs(grade) + segments;
+  const ideal = 3 * Math.max(n, dropSubs(grade)) + segments;
   const total = m.yellow + orange;
   const level = total >= CFG.rollHigh * ideal ? 'high' : total >= CFG.rollMid * ideal ? 'mid' : 'low';
   return { level, orange, segments, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, 3 * n, orange, segments, level) };

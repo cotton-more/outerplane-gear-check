@@ -4,7 +4,7 @@ import type { GearKind, Grade, SlotId } from '../data/types';
 import { epicMains, legendMains } from '../logic/builds';
 import type { Settings, Stage } from '../logic/context';
 import type { CharFilter } from '../logic/lists';
-import { maxSubs, type Subs } from '../logic/subs';
+import { MAX_SUBS, type Subs } from '../logic/subs';
 import type { ItemInput } from '../logic/verdict';
 
 export type Tab = 'eval' | 'chars';
@@ -59,11 +59,9 @@ export function reducer(s: AppState, a: Action): AppState {
       return s.slot === a.slot ? s : { ...s, ...EMPTY_ITEM, setId: isArmor(a.slot) ? s.setId : null, slot: a.slot };
     case 'grade': {
       if (s.grade === a.grade) return { ...s, expand: {} };
-      // у Epic сабстатов три: при смене грейда лишний (последний отмеченный) отбрасываем
-      const keys = Object.keys(s.subs);
-      const subs = keys.length > maxSubs(a.grade) ? Object.fromEntries(keys.slice(0, maxSubs(a.grade)).map((k) => [k, s.subs[k]])) : s.subs;
+      // сабстаты остаются: четыре бывает и у Epic — четвёртый добавляет первый Reforge
       const item = isArmor(s.slot) ? {} : { itemKey: null, main: null, unlisted: false };
-      return { ...s, ...item, subs, grade: a.grade, expand: {} };
+      return { ...s, ...item, grade: a.grade, expand: {} };
     }
     case 'set':
       return a.setId ? { ...s, setId: a.setId, expand: {} } : { ...s, setId: null };
@@ -81,7 +79,7 @@ export function reducer(s: AppState, a: Action): AppState {
       // выбранный стат сразу получает 1 жёлтый сегмент; повторное нажатие снимает выбор
       const subs = { ...s.subs };
       if (a.key in subs) delete subs[a.key];
-      else if (Object.keys(subs).length < maxSubs(s.grade)) subs[a.key] = 1;
+      else if (Object.keys(subs).length < MAX_SUBS) subs[a.key] = 1;
       else return s;
       return { ...s, subs };
     }
@@ -188,7 +186,7 @@ export function restoreItem(s: AppState, saved: unknown, idx: Index): AppState {
   const subs: Subs = {};
   if (r.subs && typeof r.subs === 'object') {
     for (const [k, v] of Object.entries(r.subs as Record<string, unknown>)) {
-      if (Object.keys(subs).length >= maxSubs(s.grade)) break;
+      if (Object.keys(subs).length >= MAX_SUBS) break;
       if (idx.SUB[k] && k !== main && Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 4) subs[k] = v as number;
     }
   }

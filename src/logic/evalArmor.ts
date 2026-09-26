@@ -4,7 +4,7 @@ import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
 import { dedupe, flatMisses, rollInfo, rows, topTokens, type Part, type Row } from './score';
-import { maxSubs } from './subs';
+import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
 
@@ -17,7 +17,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const subs = s.subs;
   const legend = s.grade === 'unique';
   const nSubs = Object.keys(subs).length;
-  const expected = maxSubs(s.grade);
+  const expected = dropSubs(s.grade);
   res.foot = A.foot(CFG.keepCount, CFG.spdKeep, CFG.spdRoll);
   const set = s.setId ? idx.SET[s.setId] : undefined;
   if (!set) {

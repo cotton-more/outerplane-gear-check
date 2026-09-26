@@ -70,13 +70,43 @@ describe('«Прокачка»: броня', () => {
   it('Epic в разбор из сета, который носят: напоминание, что это материал для Epic-«Оставить» того же сета и слота', () => {
     const r = helmet('rare', { RES: 1, 'DEF%': 1, HP: 1 });
     expect(r.v).toBe('junk');
-    expect(r.plan).toEqual([P.junkEpicArmor('Helmet', 'Speed')]);
+    expect(r.plan.at(-1)).toBe(P.junkEpicArmor('Helmet', 'Speed'));
   });
 
   it('сет без билдов — никакой прокачки и никаких напоминаний', () => {
     const dead = D.sets.find((s) => !s.users)!;
     const r = evaluate(ctx(), { slot: 'helmet', grade: 'rare', setId: dead.id, itemKey: null, main: null, subs: { SPD: 3 } });
     expect([r.v, r.plan]).toEqual(['junk', []]);
+  });
+});
+
+// Attack Set: у атакеров главные статы — CHC и ATK%
+const attack = D.sets.find((s) => s.short === 'Attack')!;
+const attackHelmet = (subs: Record<string, number>) => evaluate(ctx(), { slot: 'helmet', grade: 'rare', setId: attack.id, itemKey: null, main: null, subs });
+
+describe('Epic: 4-й сабстат от первого Reforge', () => {
+  it('«Временно» без главного стата: подсказка, какой 4-й сделает вещь «Оставить», — и он правда делает', () => {
+    const r = attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+    expect(r.v).toBe('temp');
+    const line = r.plan.find((l) => l.startsWith('**Reforge** — один раз'))!;
+    expect(line).toContain('CHC');
+    expect(attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3, CHC: 1 }).v).toBe('keep');
+  });
+
+  it('два хороших и третий так себе, первый Reforge дал SPD — вещь вытянута', () => {
+    expect(attackHelmet({ CHC: 2, 'ATK%': 2, RES: 1 }).v).toBe('junk');
+    expect(attackHelmet({ CHC: 2, 'ATK%': 2, RES: 1, SPD: 1 }).v).toBe('keep');
+  });
+
+  it('у Epic с четырьмя сабстатами «Прокачка» не обещает, что Reforge добавит 4-й', () => {
+    const r = attackHelmet({ CHC: 3, 'ATK%': 3, CHD: 2, SPD: 2 });
+    expect(r.v).toBe('keep');
+    expect(r.plan[1]).toBe(P.reforgeFirst(false));
+  });
+
+  it('если никакой 4-й не спасёт — подсказки нет', () => {
+    const r = attackHelmet({ RES: 1, EFF: 1, 'DMG RED%': 1 });
+    expect(r.plan.some((l) => l.includes('попытать удачу'))).toBe(false);
   });
 });
 

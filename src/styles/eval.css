@@ -27,6 +27,10 @@ html.narrow .slot span { display: none; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
 .pick.empty { border-style: dashed; background: transparent; color: var(--ink-3); font-weight: 500; }
 .subrows { display: grid; gap: 6px; }
+/* 4-й сабстат Epic — от первого Reforge: тонкая кнопка под строками и метка у самой строки */
+.subadd { height: 30px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); background: none; color: var(--ink-3); font-size: 12.5px; }
+.subadd:hover { color: var(--ink-2); border-color: var(--ink-3); }
+.subkey .subtag { margin-left: auto; font: 600 9.5px/1 var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; }
 .subrow { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .subkey { flex: 1 1 90px; gap: 6px; padding: 4px 8px; }
 .subkey img, .subkey .noimg { width: 18px; height: 18px; flex: none; }
@@ -182,6 +186,7 @@ html.narrow .app > footer.foot { display: none; }
   .subzone { min-height: 76px; }
   .sg { min-height: 36px; }
   .subrows { gap: 3px; }
+  .subadd { height: 26px; }
   .subrow .roll-b button { height: 35px; }
   .subdel { height: 36px; }
   .pick.subkey { min-height: 36px; }

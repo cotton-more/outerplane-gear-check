@@ -44,6 +44,10 @@ export const en: Texts = {
       `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
     noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor. Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.",
     tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
+    gambleTemp: (keys) =>
+      `**Reforge** — one try is worth it: the first adds a 4th substat, and with ${keys.join(', ')} (even with 1 segment) the piece becomes a "Keep" — mark it. Got something else — invest no further, no **Breakthrough** either.`,
+    gambleJunk: (keys) =>
+      `You can try your luck with one **Reforge**: it adds a 4th substat, and with ${keys.join(', ')} (even with 1 segment) the piece becomes a "Keep" — mark it. Got something else — dismantle.`,
     fodderArmor: (piece, set) =>
       `**Don't upgrade** — it's material: one piece is one Breakthrough tier for the Legendary ${piece} ${set} Set you keep. Unless you reroll its substats with Transistone (Total).`,
     fodderGear: (name) =>
@@ -215,6 +219,8 @@ export const en: Texts = {
     mainUnlisted: 'Main stat · not listed',
     codeSheet: 'Item code',
     replaceSub: (k) => `Replace ${k}`,
+    addFourth: '4th substat from Reforge',
+    fourthSheet: 'Which 4th substat did Reforge add?',
     settings: 'Evaluation settings',
     settingsNow: (end, fodder, lv120, quirks) =>
       [end ? 'endgame' : 'progression', fodder ? 'saving fodder' : 'no armor fodder', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'no Quirks'],
@@ -337,6 +343,7 @@ export const en: Texts = {
       '**Legendary weapon and accessory** — find the item, then pick the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions.',
+      '**4th substat on an Epic** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. "Upgrading" tells which one would.',
       'Tap a stat in its row to replace it (yellow segments stay). To remove it, tap it again in the grid or ✕. Code, help and settings are in the ☰ menu.',
     ],
     helpRoutine: 'How to clean up fast',

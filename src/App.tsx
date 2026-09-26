@@ -18,7 +18,7 @@ import { LANG_NAME, LANGS, LangContext, TEXTS, savedLang, useT, type Lang } from
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
 import { charMatches } from './logic/lists';
-import { maxSubs } from './logic/subs';
+import { dropSubs } from './logic/subs';
 import type { ItemInput } from './logic/verdict';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
@@ -83,7 +83,7 @@ export function App() {
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
   // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
   const nSubs = Object.keys(s.subs).length;
-  const cardShown = layout.narrow && s.tab === 'eval' && (nSubs >= maxSubs(s.grade) || verdict.v === 'junk');
+  const cardShown = layout.narrow && s.tab === 'eval' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 

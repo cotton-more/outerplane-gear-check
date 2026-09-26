@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
-import { maxSubs } from '../src/logic/subs';
+import { MAX_SUBS, dropSubs } from '../src/logic/subs';
 import { fromPersisted, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '../src/state/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -11,10 +11,9 @@ const fresh = (patch: Partial<AppState> = {}): AppState => ({ ...fromPersisted(n
 const run = (s: AppState, ...actions: Action[]) => actions.reduce(reducer, s);
 const subsOf = (...keys: string[]) => Object.fromEntries(keys.map((k) => [k, 1]));
 
-describe('maxSubs', () => {
-  it('у Legendary четыре сабстата, у Epic — три', () => {
-    expect(maxSubs('unique')).toBe(4);
-    expect(maxSubs('rare')).toBe(3);
+describe('число сабстатов', () => {
+  it('из дропа у Legendary четыре сабстата, у Epic — три; ввести можно до четырёх у обоих', () => {
+    expect([dropSubs('unique'), dropSubs('rare'), MAX_SUBS]).toEqual([4, 3, 4]);
   });
 });
 
@@ -24,9 +23,9 @@ describe('reducer: сабстаты', () => {
     expect(Object.keys(s.subs)).toEqual(['SPD', 'ATK%', 'CHC', 'CHD']);
   });
 
-  it('Epic не принимает четвёртый сабстат', () => {
-    const three = run(fresh({ grade: 'rare' }), ...['SPD', 'ATK%', 'CHC'].map((key): Action => ({ type: 'sub', key })));
-    expect(reducer(three, { type: 'sub', key: 'CHD' })).toBe(three);
+  it('Epic принимает четвёртый сабстат (его добавляет первый Reforge), пятый — нет', () => {
+    const s = run(fresh({ grade: 'rare' }), ...['SPD', 'ATK%', 'CHC', 'CHD', 'HP%'].map((key): Action => ({ type: 'sub', key })));
+    expect(Object.keys(s.subs)).toEqual(['SPD', 'ATK%', 'CHC', 'CHD']);
   });
 
   it('отмеченный стат получает 1 жёлтый сегмент, повторное нажатие снимает его', () => {
@@ -56,18 +55,12 @@ describe('reducer: сабстаты', () => {
 });
 
 describe('reducer: смена грейда', () => {
-  it('Legendary → Epic с четырьмя сабстатами отбрасывает последний отмеченный', () => {
-    const s = reducer(fresh({ grade: 'unique', subs: { SPD: 2, 'ATK%': 1, CHC: 3, CHD: 1 } }), { type: 'grade', grade: 'rare' });
-    expect(s.subs).toEqual({ SPD: 2, 'ATK%': 1, CHC: 3 });
+  it('Legendary → Epic сохраняет все четыре сабстата: четвёртый у Epic бывает после Reforge', () => {
+    const subs = { SPD: 2, 'ATK%': 1, CHC: 3, CHD: 1 };
+    expect(reducer(fresh({ grade: 'unique', subs }), { type: 'grade', grade: 'rare' }).subs).toBe(subs);
   });
 
-  it('отброшенный четвёртый можно отметить в другой строке, а у Legendary четвёртая строка вернётся пустой', () => {
-    const s = run(fresh({ grade: 'unique', subs: { SPD: 2, CHC: 1, CHD: 3, 'ATK%': 1 } }),
-      { type: 'grade', grade: 'rare' }, { type: 'replaceSub', from: 'CHC', to: 'ATK%' }, { type: 'grade', grade: 'unique' });
-    expect(Object.entries(s.subs)).toEqual([['SPD', 2], ['ATK%', 1], ['CHD', 3]]);
-  });
-
-  it('сабстаты, которые помещаются, сохраняются', () => {
+  it('сабстаты сохраняются при смене грейда в обе стороны', () => {
     const subs = subsOf('SPD', 'CHC');
     expect(reducer(fresh({ grade: 'unique', subs }), { type: 'grade', grade: 'rare' }).subs).toBe(subs);
     expect(reducer(fresh({ grade: 'rare', subs }), { type: 'grade', grade: 'unique' }).subs).toBe(subs);
@@ -150,8 +143,8 @@ describe('недовведённый предмет переживает пер�
   it('то, что не сходится с данными, слотом и грейдом, отбрасывается', () => {
     const saved = { setId: 'nope', itemKey: weapon.key, main: 'ATK%', unlisted: true, subs: { SPD: 2, FOO: 1, CHC: 9, CHD: 1, 'HP%': 1, 'DEF%': 1 } };
     const armor = restoreItem(fresh({ slot: 'gloves', grade: 'rare' }), saved, idx);
-    // у брони нет предмета и main; неизвестный стат и 9 жёлтых выброшены; у Epic не больше 3 сабстатов
-    expect([armor.setId, armor.itemKey, armor.main, armor.unlisted, armor.subs]).toEqual([null, null, null, false, { SPD: 2, CHD: 1, 'HP%': 1 }]);
+    // у брони нет предмета и main; неизвестный стат и 9 жёлтых выброшены; сабстатов не больше четырёх
+    expect([armor.setId, armor.itemKey, armor.main, armor.unlisted, armor.subs]).toEqual([null, null, null, false, { SPD: 2, CHD: 1, 'HP%': 1, 'DEF%': 1 }]);
   });
 
   it('main stat не остаётся среди сабстатов', () => {
