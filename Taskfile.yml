@@ -37,6 +37,11 @@ tasks:
     deps: [build:app]
     cmds: ['python3 update.py {{.CLI_ARGS}}']
 
+  screenshots:
+    desc: Переснять скриншоты для README (screenshots/, нужен Chrome; путь — переменная CHROME)
+    deps: [build:app]
+    cmds: [node scripts/screenshots.mjs]
+
   preview:
     desc: Открыть docs/ локально на http://localhost:8000 — как на Pages, с офлайн-режимом
     cmds: [python3 -m http.server -d docs 8000]
