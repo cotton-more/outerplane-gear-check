@@ -20,6 +20,7 @@
 | `test/` | эталон логики оценки (`golden.json`) и юнит-тесты |
 | `Taskfile.yml` | все команды: `task --list` |
 | `PUBLISH.md` | как выложить `docs/` на GitHub Pages и обновлять сайт |
+| `AUTOUPDATE.md`, `AUTOINPUT.md` | планы на потом (не сделано): автообновление данных, автоввод предмета по скриншоту |
 | `outerplane-gear.html` | одиночная страница — один файл, иконки встроены, работает офлайн (не в git) |
 | `build/artifact.html` | та же страница без `<html>`-обёртки — для Claude Artifact (не в git) |
 
