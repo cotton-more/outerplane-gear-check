@@ -1305,6 +1305,9 @@ def main_pwa(args) -> None:
         raise SystemExit("Не удалось узнать коммит outerpedia (лимит GitHub API или нет git в --source) — "
                          "сборку PWA не делаю, чтобы не выпустить ложное обновление. Повтори позже.")
     data = build_dataset(src, prov, warn)
+    # не время сборки, а дата коммита outerpedia: сайт — функция только кода и коммита. Иначе две сборки одних
+    # и тех же новых данных различались бы, и автообновление перепушивало бы ветку PR каждую ночь
+    data["meta"]["generatedAt"] = prov["commitDate"]
     prev = previous_data(site / "index.html")
     carry_new_ids(data, prev)
     info = build_pwa(site, data, render_document, warn, args.refresh_images)
