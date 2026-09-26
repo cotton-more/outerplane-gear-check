@@ -31,6 +31,21 @@ const flatCredit = (r: number) => (r >= CFG.flatFull ? 1 : r >= CFG.flatHalf ? 0
 
 export interface SubWeight { w: number; tier: number; credit: number }
 
+// Место каждой ступени в цепочке приоритета, считая статы: «CHC › ATK › SPD=CHD › DMG UP%» → 0, 1, 2, 4.
+// Связка делит одно место, а следующая ступень встаёт после всех её статов: иначе DMG UP% у Delta
+// (пятый по важности) считался бы четвёртым и получал ½, а у Lambda тот же пятый DMG UP% — 0.
+// Пустая ступень (SPD>>CHC) — разрыв в приоритете, занимает одно место.
+export function tierPlaces(build: Build): number[] {
+  let pos = 0;
+  return build.subs.map((tier) => { const t = pos; pos += Math.max(tier.length, 1); return t; });
+}
+
+// токены приоритета на первых n местах — «главные статы» билда
+export const topTokens = (build: Build, n: number): string[] => {
+  const place = tierPlaces(build);
+  return build.subs.filter((_, i) => place[i] < n).flat().map((k) => k.trim()).filter(Boolean);
+};
+
 export function subWeights(ctx: Ctx, build: Build, c: Char): Map<string, SubWeight> {
   // «ключ сабстата предмета → вес / ступень / засчитывается (1, ½, 0)» по приоритету билда
   const out = new Map<string, SubWeight>();
@@ -39,7 +54,9 @@ export function subWeights(ctx: Ctx, build: Build, c: Char): Map<string, SubWeig
     credit = credit >= 1 ? 1 : credit >= 0.5 ? 0.5 : 0;
     if (!prev || prev.credit < credit || (prev.credit === credit && prev.w < w)) out.set(key, { w, tier, credit });
   };
-  build.subs.forEach((tier, t) => {
+  const place = tierPlaces(build);
+  build.subs.forEach((tier, i) => {
+    const t = place[i];
     const w = CFG.tierWeights[Math.min(t, CFG.tierWeights.length - 1)];
     const tc = CFG.tierCredit[t] ?? 0;
     for (const raw of tier) {
@@ -110,7 +127,8 @@ export function dedupe(list: Omit<Row, 'alt'>[], rank: (r: Omit<Row, 'alt'>) => 
 // частая путаница: на предмете HP%, а отмечен HP. Если %-версия тоже отмечена, путаницы нет.
 export function flatMisses(m: Omit<Row, 'alt'>): string[] {
   const marked = new Set(m.parts.map((p) => p.key));
-  const wanted = (axis: string) => m.b.subs.some((tier, t) => (CFG.tierCredit[t] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
+  const place = tierPlaces(m.b);
+  const wanted = (axis: string) => m.b.subs.some((tier, i) => (CFG.tierCredit[place[i]] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
   return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
 }
 

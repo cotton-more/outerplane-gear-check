@@ -95,7 +95,9 @@ export function reducer(s: AppState, a: Action): AppState {
     case 'clearSubs':
       return { ...s, subs: {} };
     case 'reset':
-      return { ...s, ...EMPTY_ITEM };
+      // следующий предмет: слот, грейд и сет брони остаются — подряд обычно идут дропы одного забега,
+      // а если сет другой, выбрать его стоит столько же, сколько с пустого поля
+      return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null };
     case 'load':
       return { ...s, ...EMPTY_ITEM, ...a.item, tab: 'eval' };
     case 'expand':

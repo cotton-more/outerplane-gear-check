@@ -3,7 +3,7 @@ import { CFG } from '../config';
 import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
-import { dedupe, flatMisses, rollInfo, rows, type Part, type Row } from './score';
+import { dedupe, flatMisses, rollInfo, rows, topTokens, type Part, type Row } from './score';
 import { maxSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
@@ -54,7 +54,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   // среди подходящих первыми — те, у кого сет основной; неподходящие — по совпадению статов (от лучшего зависят тексты)
   const rank = (r: Scored) => (qualifies(r) ? 100 + (primary(r) ? 10 : 0) : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
   // главные статы билда, которых на предмете нет (ось ATK/DEF/HP закрывает %-версия или сильный flat)
-  const missingMains = (m: Scored) => [...new Set(m.b.subs.slice(0, CFG.epicTopTiers).flat().map((k) => k.trim()).filter(Boolean)
+  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers)
     .map((k) => (FLAT.has(k.replace(/%$/, '')) ? k.replace(/%$/, '') + '%' : k)))]
     .filter((k) => idx.SUB[k] && !full(m).some((p) => p.key === k || p.key + '%' === k));
   const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, new Set(), (x) => ({ combos: combosWith(x.b, set.id) })), rank);
@@ -139,7 +139,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   if (!legend && !partial && bestGood >= CFG.keepCount) {
     // все сабстаты Epic полезны, но слабые: ни SPD, ни стата с верхних ступеней, ролл ниже порога
-    const top = [...new Set(['SPD', ...best.b.subs.slice(0, CFG.epicTopTiers).flat().map((k) => k.trim()).filter(Boolean)])];
+    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers)])];
     res.v = 'junk';
     res.title = A.weakEpicTitle;
     res.lines.push(A.weakEpic(who, nSubs, top, best.yellow, 3 * nSubs), A.weakEpicKeepIf(top, CFG.epicYellow));

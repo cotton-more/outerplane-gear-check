@@ -6,6 +6,7 @@ import type { Dataset, Grade } from '../src/data/types';
 import { ru } from '../src/i18n/ru';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
+import { subWeights, tierPlaces } from '../src/logic/score';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -95,5 +96,26 @@ describe('Legendary с одним лишним сабстатом', () => {
   it('у Epic такого совета нет: Transistone на Epic не тратят', () => {
     const r = lifeGloves('rare', { SPD: 2, 'HP%': 1, ATK: 1 });
     expect(r.lines.some((l) => l.startsWith('Лишний'))).toBe(false);
+  });
+});
+
+describe('места в цепочке приоритета: связка делит одно место', () => {
+  const build = (subs: string[][]) => ({ ...D.chars.find((c) => c.builds.length)!.builds[0], subs });
+
+  it('стат после связки встаёт на место после всех её статов; пустая ступень — одно место', () => {
+    expect(tierPlaces(build([['CHC'], ['ATK'], ['SPD', 'CHD'], ['DMG UP%']]))).toEqual([0, 1, 2, 4]);
+    expect(tierPlaces(build([['SPD'], [], ['CHC'], ['ATK', 'CHD', 'HP']]))).toEqual([0, 1, 2, 3]);
+  });
+
+  it('DMG UP% пятым после SPD=CHD не засчитывается, как и пятым без связки', () => {
+    const c = D.chars.find((x) => x.builds.length)!;
+    const tie = subWeights(ctx, build([['CHC'], ['ATK'], ['SPD', 'CHD'], ['DMG UP%']]), c).get('DMG UP%');
+    const plain = subWeights(ctx, build([['ATK'], ['CHC'], ['SPD'], ['CHD'], ['DMG UP%']]), c).get('DMG UP%');
+    expect([tie?.credit, plain?.credit]).toEqual([0, 0]);
+  });
+
+  it('четвёртый по месту — за ½', () => {
+    const c = D.chars.find((x) => x.builds.length)!;
+    expect(subWeights(ctx, build([['CHC'], ['ATK'], ['SPD'], ['CHD']]), c).get('CHD')?.credit).toBe(0.5);
   });
 });

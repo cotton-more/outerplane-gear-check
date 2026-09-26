@@ -64,7 +64,7 @@ describe('«нет в списке»: переходы', () => {
     expect(reducer(on, { type: 'item', itemKey: null }).unlisted).toBe(false);
   });
 
-  it('сбрасывается сменой грейда, слота и «Сбросом»', () => {
+  it('сбрасывается сменой грейда, слота и «Следующим»', () => {
     const on = reducer(base, { type: 'unlisted' });
     expect(reducer(on, { type: 'grade', grade: 'rare' }).unlisted).toBe(false);
     expect(reducer(on, { type: 'slot', slot: 'accessory' }).unlisted).toBe(false);

@@ -80,7 +80,7 @@ describe('reducer: смена грейда', () => {
   });
 });
 
-describe('reducer: слот и «Сброс»', () => {
+describe('reducer: слот и «Следующий»', () => {
   it('нажатие на выбранный слот ничего не меняет', () => {
     const s = fresh({ slot: 'gloves', setId: '13' });
     expect(reducer(s, { type: 'slot', slot: 'gloves' })).toBe(s);
@@ -98,9 +98,14 @@ describe('reducer: слот и «Сброс»', () => {
     expect(run(s, { type: 'slot', slot: 'accessory' }, { type: 'slot', slot: 'helmet' }).setId).toBeNull();
   });
 
-  it('«Сброс» очищает предмет вместе с сетом', () => {
-    const next = reducer(fresh({ slot: 'gloves', setId: '13', subs: subsOf('SPD'), expand: { x: true } }), { type: 'reset' });
-    expect([next.setId, next.subs, next.expand]).toEqual([null, {}, {}]);
+  it('«Следующий» очищает сабстаты, а слот, грейд и сет брони оставляет', () => {
+    const next = reducer(fresh({ slot: 'gloves', grade: 'rare', setId: '13', subs: subsOf('SPD'), expand: { x: true } }), { type: 'reset' });
+    expect([next.slot, next.grade, next.setId, next.subs, next.expand]).toEqual(['gloves', 'rare', '13', {}, {}]);
+  });
+
+  it('у оружия «Следующий» очищает предмет и main', () => {
+    const next = reducer(fresh({ slot: 'weapon', grade: 'unique', itemKey: 'x', main: 'ATK%', unlisted: false, subs: subsOf('SPD') }), { type: 'reset' });
+    expect([next.slot, next.itemKey, next.main, next.subs]).toEqual(['weapon', null, null, {}]);
   });
 });
 
@@ -154,9 +159,9 @@ describe('недовведённый предмет переживает пер�
     expect([epic.main, epic.subs]).toEqual(['ATK%', { SPD: 1 }]);
   });
 
-  it('«Сброс» очищает сохранённый предмет', () => {
-    const s = reducer(fresh({ setId: '13', subs: { SPD: 1 } }), { type: 'reset' });
-    expect(toPersistedItem(s)).toEqual({ setId: null, itemKey: null, main: null, unlisted: false, subs: {} });
+  it('«Следующий» очищает сохранённый предмет, кроме сета брони', () => {
+    const s = reducer(fresh({ slot: 'gloves', setId: '13', subs: { SPD: 1 } }), { type: 'reset' });
+    expect(toPersistedItem(s)).toEqual({ setId: '13', itemKey: null, main: null, unlisted: false, subs: {} });
   });
 
   it('мусор в хранилище не роняет запуск', () => {

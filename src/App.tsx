@@ -17,6 +17,7 @@ import { LANG_NAME, LANGS, LangContext, TEXTS, savedLang, useT, type Lang } from
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
 import { charMatches } from './logic/lists';
+import type { ItemInput } from './logic/verdict';
 import { itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -52,19 +53,29 @@ export function App() {
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  // «Следующий» убрал предмет по ошибке — несколько секунд его можно вернуть
+  const [undo, setUndo] = useState<ItemInput | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const id = setTimeout(() => setUndo(null), 6000);
+    return () => clearTimeout(id);
+  }, [undo]);
   // карточка «Как пользоваться» — новичку, пока он не отметил своих персонажей и не закрыл её
   const [welcomeHidden, setWelcomeHidden] = useState(() => storage.get('welcomeHidden', false));
   const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
 
   const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id)), [idx, s, roster, dispatch]);
   useHashRoute(idx, s.tab, s.charId, openChar);
-  useHotkeys(s, dispatch, layout);
 
   const onReset = () => {
+    const cur = itemInput(s);
     setVerdictOpen(false);
     dispatch({ type: 'reset' });
+    setUndo(Object.keys(cur.subs).length || cur.itemKey || cur.main || cur.unlisted ? cur : null);
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
+  const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
+  useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
 
   return (
@@ -94,6 +105,9 @@ export function App() {
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} />
         <VBar r={verdict} show={layout.narrow} compact={layout.tiny} tab={s.tab} rosterSize={roster.size} onTab={onTab} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
+        {undo && s.tab === 'eval' && (
+          <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
+        )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => setHelpOpen(false)}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
           <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />

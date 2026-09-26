@@ -6,20 +6,20 @@ import type { Layout } from './useLayout';
 const LEGEND = ['l', 'L', 'д', 'Д'];
 const EPIC = ['e', 'E', 'у', 'У'];
 
-// 1–6 — слот, L/E (и Д/У на русской раскладке) — грейд, Esc — сбросить предмет (открытое окно выбора закрывается раньше).
+// 1–6 — слот, L/E (и Д/У на русской раскладке) — грейд, Esc — «Следующий» (открытое окно выбора закрывается раньше).
 // На вкладке персонажей — только Esc, который закрывает шторку билдов на узком экране.
-export function useHotkeys(state: AppState, dispatch: Dispatch<Action>, layout: Layout) {
-  const ref = useRef({ state, layout });
-  ref.current = { state, layout };
+export function useHotkeys(state: AppState, dispatch: Dispatch<Action>, layout: Layout, onNext: () => void) {
+  const ref = useRef({ state, layout, onNext });
+  ref.current = { state, layout, onNext };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const { state: s, layout: l } = ref.current;
+      const { state: s, layout: l, onNext: next } = ref.current;
       if (s.tab === 'chars' && e.key === 'Escape' && s.charId && l.sheet) { dispatch({ type: 'selectChar', id: null }); return; }
       if (s.tab !== 'eval') return;
       const target = e.target as HTMLElement;
       const typing = !!target.matches?.('input[type="search"], input[type="text"], textarea');
-      if (e.key === 'Escape') { if (typing) target.blur(); dispatch({ type: 'reset' }); return; }
+      if (e.key === 'Escape') { if (typing) target.blur(); next(); return; }
       if (typing) return;
       if (/^[1-6]$/.test(e.key)) dispatch({ type: 'slot', slot: SLOTS[Number(e.key) - 1].id });
       else if (LEGEND.includes(e.key)) dispatch({ type: 'grade', grade: 'unique' });
