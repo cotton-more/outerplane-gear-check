@@ -42,7 +42,7 @@ export const en: Texts = {
       `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — the same piece: Epic ${piece} ${set} Set (substats don't matter) or Glunite. Until this one is T4, don't dismantle such Epics — you need 4.`,
     btGear: (name) =>
       `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
-    noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.",
+    noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor. Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.",
     tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
     fodderArmor: (piece, set) =>
       `**Don't upgrade** — it's material: one piece is one Breakthrough tier for the Legendary ${piece} ${set} Set you keep. Unless you reroll its substats with Transistone (Total).`,

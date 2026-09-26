@@ -57,7 +57,7 @@ export const ru = {
       `**Breakthrough** до T4: +5% к main stat за ступень и сильнее бонус сета. Материал — такая же вещь: Epic ${piece} ${set} Set (сабстаты не важны) или Glunite. Пока эта не на T4, такие Epic из разбора не выбрасывай — нужно 4 штуки.`,
     btGear: (name: string) =>
       `**Breakthrough** до T4 — обязательно: к T4 усиливается пассивка, и +20% к main stat. Материал — копии ${name} (годятся и с другим main stat) или Refined Glunite.`,
-    noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.',
+    noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню. Да и смена статов у Epic откроется, только когда первый Reforge добавит 4-й сабстат.',
     tempNoInvest: '**Reforge** и **Breakthrough** — не вкладывай: вещь на замену, её сменит нужная.',
     fodderArmor: (piece: string, set: string) =>
       `**Не прокачивай** — это материал: одна вещь — одна ступень Breakthrough для Legendary ${piece} ${set} Set, которую оставляешь. Исключение — если перебросишь ей сабстаты Transistone (Total).`,
