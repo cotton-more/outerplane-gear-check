@@ -9,6 +9,11 @@
 .v-summary { margin: 0; font-weight: 700; font-size: 15px; }
 .v-reasons { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; }
 .v-reasons b { color: var(--ink); }
+/* «Прокачка»: что вкладывать в вещь — под причинами вердикта */
+.v-plan { padding: 12px 16px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.v-plan h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.v-plan ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; }
+.v-plan b { color: var(--ink); }
 .v-keep { --v: var(--keep); --v-soft: var(--keep-soft); }
 .v-temp, .v-maybe { --v: var(--temp); --v-soft: var(--temp-soft); }
 .v-fodder { --v: var(--fodder); --v-soft: var(--fodder-soft); }

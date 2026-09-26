@@ -139,13 +139,22 @@ export function flatMisses(m: Omit<Row, 'alt'>): string[] {
   return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
 }
 
-export interface RollInfo { level: 'high' | 'mid' | 'low'; text: string }
+export type RollLevel = 'high' | 'mid' | 'low';
+export interface RollInfo { level: RollLevel; orange: number; segments: number; text: string }
 
-// «Ролл» предмета: сколько сабстатов полезны лучшему кандидату и сколько на них жёлтых сегментов.
-// Жёлтые — стартовое качество; от него зависит, сколько получится после Reforge, то есть стоит ли вкладываться.
-export function rollInfo(t: Texts, m: Row | undefined, n: number): RollInfo | null {
+// сегментов, которые добавит Reforge: у Epic (3 сабстата) первая попытка уходит на 4-й сабстат
+export const reforgeSegments = (grade: Grade): number => CFG.reforges - (4 - maxSubs(grade));
+
+// «Ролл» предмета: сколько сабстатов полезны лучшему кандидату, сколько на них жёлтых сегментов и сколько
+// оранжевых в среднем добавит Reforge. Reforge усиливает один сабстат из четырёх, поэтому вещь с 3 полезными
+// из 4 получит в полезные ~¾ всех попыток, а с 2 из 4 — половину: вкладываться выгоднее в первую.
+// Неотмеченные сабстаты и 4-й сабстат, который Epic получит от первого Reforge, считаем бесполезными.
+export function rollInfo(t: Texts, m: Row | undefined, n: number, grade: Grade): RollInfo | null {
   if (!m || m.good == null || !n) return null;
-  const max = 3 * n;
-  const level = m.yellow >= CFG.rollHigh * max ? 'high' : m.yellow >= CFG.rollMid * max ? 'mid' : 'low';
-  return { level, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, max, level) };
+  const segments = reforgeSegments(grade);
+  const orange = (segments * m.good) / 4;
+  const ideal = 3 * maxSubs(grade) + segments;
+  const total = m.yellow + orange;
+  const level = total >= CFG.rollHigh * ideal ? 'high' : total >= CFG.rollMid * ideal ? 'mid' : 'low';
+  return { level, orange, segments, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, 3 * n, orange, segments, level) };
 }

@@ -7,6 +7,7 @@ const persons = (n: number) => `${n} character${n === 1 ? '' : 's'}`;
 const noun = (k: GearKind) => (k === 'weapon' ? 'weapon' : 'accessory');
 const nouns = (k: GearKind) => (k === 'weapon' ? 'weapons' : 'accessories');
 const aNoun = (k: GearKind) => (k === 'weapon' ? 'a weapon' : 'an accessory');
+const dec = (x: number) => String(Math.round(x * 10) / 10);
 
 export const en: Texts = {
   persons,
@@ -20,10 +21,35 @@ export const en: Texts = {
     markRest: (n, of) => `${n} of ${of} marked — add the rest`,
     soFar: (good, who) => `Useful so far: ${good}. Best candidate: ${who}.`,
     topRoll: 'Top roll',
-    worthUpgrading: 'Worth upgrading',
+    worthReforge: 'Worth reforging',
     flatHint: (key) => `Check ${key}: without a % sign it's flat, but builds want ${key}% — flat gives them almost nothing. If the item has ${key}%, pick ${key}% instead.`,
-    roll: (good, n, yellow, max, level) =>
-      `Roll: ${good} of ${n} useful, ${yellow} of ${max} possible yellow segments on them — ${{ high: 'high, worth investing in', mid: 'average', low: 'low' }[level]}.`,
+    roll: (good, n, yellow, max, orange, segments, level) =>
+      `Roll: ${good} of ${n} useful, ${yellow} of ${max} yellow segments on them; Reforge adds ~${dec(orange)} of ${segments} orange segments to useful ones on average — ${{ high: 'high, worth investing Reforge', mid: 'average', low: 'low' }[level]}.`,
+  },
+
+  plan: {
+    title: 'Upgrading',
+    enhance: '**Enhance** to +10 right away: it raises the main stat.',
+    reforgeFirst: (epic) =>
+      `**Reforge** — all 6 attempts, first in line: a good roll${epic ? '. The first one adds a 4th substat, the rest add segments' : ''}.`,
+    reforgeLater: (epic) =>
+      `**Reforge** — after pieces with a good roll: fewer segments will land on useful stats${epic ? '. The first attempt adds a 4th substat' : ''}.`,
+    reforgeAfterReroll: '**Reforge** — after rerolling the substats (Precise Craft or Transistone): right now segments would land on unneeded stats.',
+    reforgeUnknown: '**Reforge** — depends on the substats: mark them and the verdict will tell.',
+    btArmorLegend: (piece, set) =>
+      `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — any Legendary ${piece} ${set} Set (that very fodder) or Armor Glunite; one piece per tier.`,
+    btArmorEpic: (piece, set) =>
+      `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — the same piece: Epic ${piece} ${set} Set (substats don't matter) or Glunite. Until this one is T4, don't dismantle such Epics — you need 4.`,
+    btGear: (name) =>
+      `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
+    noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.",
+    tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
+    fodderArmor: (piece, set) =>
+      `**Don't upgrade** — it's material: one piece is one Breakthrough tier for the Legendary ${piece} ${set} Set you keep. Unless you reroll its substats with Transistone (Total).`,
+    fodderGear: (name) =>
+      `**Don't upgrade** — it's material: one copy is one Breakthrough tier for a ${name} with the right main stat.`,
+    junkEpicArmor: (piece, set) =>
+      `Have an Epic ${piece} ${set} Set with a "Keep" verdict that isn't T4 yet? This piece is a tier of its Breakthrough: the same piece (Epic, same set and slot) with any substats works. If not — dismantle.`,
   },
 
   armor: {
@@ -320,11 +346,12 @@ export const en: Texts = {
       '**Epic armor:** pick the slot and set and look at the grid. 0–1 bright stats on the piece — dismantle without entering anything: "Keep" and "Stopgap" are impossible then. For Speed, Immunity and Swiftness almost everything is bright — enter those.',
       'For Epic, the verdict appears after two useless substats — no need to enter the third.',
       '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
+      '**Epic Breakthrough** takes only the same piece: an Epic of the same set and slot, any substats. Have an Epic "Keep" below T4 — set Epics of the same set and slot aside for it instead of dismantling, you need 4.',
       '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" pick the main stat first: 0 takers in the list — dismantle.',
       '**Legendary** with "I save Legendary armor for Breakthrough": the verdict shows which to upgrade and which to keep for Breakthrough.',
     ],
     helpVerdicts: [
-      '**Keep** — the piece is needed: wear it and upgrade it. "Worth upgrading" — a good roll, worth investing Reforge.',
+      '**Keep** — the piece is needed: wear it and upgrade it; what exactly is in the "Upgrading" block in the details. "Worth reforging" — a good roll: after Reforge its useful stats get many segments, invest here first.',
       '**Stopgap** — wear it until you find better: a weapon or accessory without the needed passive, or Epic armor with only one key stat.',
       '**Fodder** — keep it for Breakthrough of the same item with the right main stat.',
       "**Maybe** — your call: the details say what's in doubt (e.g. it's good for a character outside your roster).",

@@ -47,6 +47,12 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
         <p className="v-summary">{r.title}</p>
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
       </div>
+      {r.plan.length > 0 && (
+        <div className="v-plan">
+          <h3>{t.plan.title}</h3>
+          <ul>{r.plan.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>
+        </div>
+      )}
       {r.v !== 'idle' && <ShareCode item={itemInput(s)} />}
       {r.sections.filter((sec) => sec.rows.length).map((sec) => (
         <VerdictSection key={sec.title} sec={sec} r={r} expand={s.expand} nSubs={nSubs} setId={set?.id ?? null} dispatch={dispatch} onOpenChar={onOpenChar} />

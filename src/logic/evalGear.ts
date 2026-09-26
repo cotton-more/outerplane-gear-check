@@ -46,15 +46,14 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     const good = cands.filter(tempOk);
     const best = good[0] || cands[0];
     const bestGood = best.good ?? 0;
-    const roll = rollInfo(t, best, nSubs);
+    const roll = rollInfo(t, best, nSubs, s.grade);
     const who = `**${best.c.name}** — ${best.b.name}`;
     if (good.length) {
       res.v = 'temp';
       res.title = G.tempTitle(good.length);
       res.lines.push(G.tempBest(what, who));
-      if (roll) res.lines.push(roll.text);
+      if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
       res.lines.push(G.tempAdvice(s.main ?? ''));
-      if (roll && roll.level === 'high') res.badge = t.verdict.worthUpgrading;
       res.sections.push({ title: t.verdict.tempFor, rows: good, limit: 12, count: good.length, mainNote: s.main });
       const rest = cands.filter((m) => !tempOk(m));
       if (rest.length) res.sections.push({ title: G.byMainWrongSubs, rows: rest, collapsed: true, mainNote: s.main });
@@ -154,10 +153,11 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.title = noMainChoice ? G.keepNeeded(ok.length) : G.keepMain(main, ok.length);
     res.lines.push(G.keepLine(nSubs > 0));
     if (item.irregular) res.lines.push(G.irregular);
-    const roll = nSubs ? rollInfo(t, ok[0], nSubs) : null;
+    const roll = nSubs ? rollInfo(t, ok[0], nSubs, s.grade) : null;
     if (roll) {
       res.lines.push(roll.text);
-      if (roll.level === 'high') res.badge = t.verdict.worthUpgrading;
+      res.roll = roll.level;
+      if (roll.level === 'high') res.badge = t.verdict.worthReforge;
       else if ((ok[0].good ?? 0) < 2) res.lines.push(G.weakReroll);
     }
     res.sections.push({ title: t.verdict.suits, rows: ok, limit: 12, count: ok.length });

@@ -1,6 +1,6 @@
 // Результат оценки предмета — что показывает панель вердикта.
 import type { Grade, SlotId } from '../data/types';
-import type { Row } from './score';
+import type { RollLevel, Row } from './score';
 import type { Subs } from './subs';
 
 export type VerdictKind = 'idle' | 'keep' | 'temp' | 'maybe' | 'fodder' | 'junk';
@@ -22,6 +22,8 @@ export interface Verdict {
   sections: Section[];
   badge: string;
   foot: string;
+  roll?: RollLevel;        // ролл лучшего кандидата, если вердикт «Оставить» или «Временно»
+  plan: string[];          // «Прокачка»: Enhance, Reforge, Breakthrough, Transistone — что вкладывать в эту вещь
   // «подходит ли» строка — от этого цвет оценки в списке; null — считать по CFG.keepCount
   qualifies?: ((m: Omit<Row, 'alt'>) => boolean) | null;
 }
@@ -37,4 +39,4 @@ export interface ItemInput {
   subs: Subs;
 }
 
-export const emptyVerdict = (): Verdict => ({ v: 'idle', title: '', lines: [], sections: [], badge: '', foot: '' });
+export const emptyVerdict = (): Verdict => ({ v: 'idle', title: '', lines: [], sections: [], badge: '', foot: '', plan: [] });
