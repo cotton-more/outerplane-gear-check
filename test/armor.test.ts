@@ -33,6 +33,49 @@ describe('Epic-броня: три полезных ещё не повод дер
   });
 });
 
+// Attack Set: у атакеров (Titia, Lambda…) основной — Attack ×4, у Heatwave Cop Delta — запасной (Attack ×2 в связках)
+const attack = D.sets.find((s) => s.short === 'Attack')!;
+const attackHelmet = (grade: Grade, subs: Record<string, number>) => evaluate(ctx, { slot: 'helmet', grade, setId: attack.id, itemKey: null, main: null, subs });
+
+describe('Epic-броня: решают главные статы (1–2 ступень) и ролл на них', () => {
+  it('два главных стата с 5+ жёлтыми — «Оставить», даже если третий мимо', () => {
+    expect(attackHelmet('rare', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3 }).v).toBe('keep');
+    expect(attackHelmet('rare', { CHC: 3, 'ATK%': 2, RES: 1 }).v).toBe('keep');
+  });
+
+  it('два главных стата со слабым роллом и ненужный третий — в разбор', () => {
+    expect(attackHelmet('rare', { CHC: 2, 'ATK%': 2, RES: 1 }).v).toBe('junk');
+  });
+
+  it('один главный стат с хорошим роллом и ещё полезный — «Временно», в тексте — чего не хватает', () => {
+    const r = attackHelmet('rare', { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+    expect(r.v).toBe('temp');
+    expect(r.lines[0]).toContain('нет CHC');
+  });
+
+  it('главный стат с одним сегментом «Временно» не даёт, даже если на другом стате много', () => {
+    expect(attackHelmet('rare', { 'ATK%': 1, EFF: 1, CHD: 3 }).v).toBe('junk');
+  });
+
+  it('flat вместо % и без CHC — ловушка «всё про атаку», в разбор', () => {
+    expect(attackHelmet('rare', { 'DMG UP%': 3, ATK: 3, CHD: 3 }).v).toBe('junk');
+    expect(attackHelmet('rare', { 'DMG UP%': 3, ATK: 1, CHD: 3 }).v).toBe('junk');
+  });
+
+  it('Legendary эти пути не трогают: два главных из четырёх — по-прежнему не «Оставить»', () => {
+    expect(attackHelmet('unique', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3, RES: 1 }).v).not.toBe('keep');
+  });
+});
+
+describe('«Кому подходит»: сначала те, у кого сет основной', () => {
+  it('первыми идут персонажи, у которых сет в первой связке билда', () => {
+    const rows = attackHelmet('rare', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3 }).sections[0].rows;
+    const primary = rows.map((m) => m.b.sets[0].some((p) => p.set === attack.id));
+    expect(primary[0]).toBe(true);
+    expect(primary.indexOf(false) === -1 || primary.slice(primary.indexOf(false)).every((x) => !x)).toBe(true);
+  });
+});
+
 describe('подсказка про flat', () => {
   it('HP без % не засчитался, а билдам нужен HP% — просит проверить значок %', () => {
     expect(lifeGloves('rare', { HP: 3, CHC: 3, CHD: 3 }).lines).toContain(ru.verdict.flatHint('HP'));

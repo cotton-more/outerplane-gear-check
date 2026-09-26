@@ -55,7 +55,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
       if (roll) res.lines.push(roll.text);
       res.lines.push(G.tempAdvice(s.main ?? ''));
       if (roll && roll.level === 'high') res.badge = t.verdict.worthUpgrading;
-      res.sections.push({ title: G.tempFor, rows: good, limit: 12, count: good.length, mainNote: s.main });
+      res.sections.push({ title: t.verdict.tempFor, rows: good, limit: 12, count: good.length, mainNote: s.main });
       const rest = cands.filter((m) => !tempOk(m));
       if (rest.length) res.sections.push({ title: G.byMainWrongSubs, rows: rest, collapsed: true, mainNote: s.main });
     } else if (nSubs < expected && bestGood + (expected - nSubs) >= tempNeed) {
@@ -171,7 +171,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     const goodTemp = temp.filter(tempOk);
     if (goodTemp.length) res.lines.push(G.tempMeanwhile(goodTemp.length));
     res.sections.push({ title: G.neededOtherMain, rows: scoped, collapsed: !!goodTemp.length });
-    if (goodTemp.length) res.sections.push({ title: G.tempFor, rows: goodTemp, limit: 8, mainNote: s.main });
+    if (goodTemp.length) res.sections.push({ title: t.verdict.tempFor, rows: goodTemp, limit: 8, mainNote: s.main });
   } else if (!judgeStopgap(temp, G.itemWhat(item.name, all.length > 0, main, kind, item.classLimits.map((c) => idx.D.classes[c]).join('/')))) {
     res.v = 'junk';
     res.title = all.length ? G.junkRosterTitle : G.junkNobodyTitle;

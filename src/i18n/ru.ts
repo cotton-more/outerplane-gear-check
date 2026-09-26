@@ -29,6 +29,7 @@ export const ru = {
   verdict: {
     notInRoster: 'Не из ростера',
     suits: 'Кому подходит',
+    tempFor: 'Кому пойдёт временно',
     markRest: (n: number, of: number) => `Отмечено ${n} из ${of} — отметь остальные`,
     soFar: (good: string, who: string) => `Пока полезных ${good}. Лучший кандидат: ${who}.`,
     topRoll: 'Топ-ролл',
@@ -65,6 +66,12 @@ export const ru = {
     keepTitle: (n: number) => `Оставляй — подходит ${personsDat(n)}`,
     best: (who: string, good: string, n: number, list: string) => `Лучше всего: ${who}. Полезны ${good} из ${n}: ${list}.`,
     spdCarries: (good: string, roll: number) => `Полезных всего ${good}, но SPD с ${roll} жёлтыми сегментами вытягивает.`,
+    twoMainCarries: (keys: string[], yellow: number) =>
+      `Полезных меньше трёх, но оба главных стата — ${keys.join(' и ')} — с ${yellow} жёлтыми сегментами из 6: такой Epic стоит держать.`,
+    tempTitle: (n: number) => `Временно — пойдёт ${personsDat(n)}, пока нет лучше`,
+    tempWhy: (who: string, has: string[], missing: string[]) =>
+      `Лучше всего: ${who}. Главный стат есть (${has.join(', ')}), ${missing.length ? `но нет ${missing.join(' / ')}: носи, пока не выпадет вещь с ${missing.join(' / ')}` : 'но второго главного нет: носи, пока не выпадет вещь лучше'}.`,
+    tempFew: 'Держи 1–2 такие вещи на сет и слот, остальные — в разбор.',
     eventQuality: 'Все 4 сабстата с 3 жёлтыми сегментами (3×4) — ивентовое качество.',
     rerollOne: (key: string) =>
       `Лишний сабстат — ${key}: его одного можно перебросить Transistone (Individual), остальные три закрепятся. По гайду outerpedia Transistone тратят на Irregular-предметы и красную броню.`,
@@ -81,7 +88,7 @@ export const ru = {
     junkPartialTitle: 'Разбирай — даже с последним сабстатом не вытянет',
     junkTitle: 'Разбирай — сабстаты мимо',
     junkBest: (who: string, good: string, list: string) => `Даже лучшему варианту (${who}) полезны только ${good}: ${list}.`,
-    epicTwo: 'Для Epic двух полезных без хорошего SPD мало: Transistone на Epic не тратят, а в Breakthrough для Legendary он не годится.',
+    epicTwo: 'Для Epic двух полезных мало, если это не два главных стата с хорошим роллом: Transistone на Epic не тратят, а в Breakthrough для Legendary он не годится.',
     enableFodder: (set: string) => `Копишь фоддер для T4 ${set} Set? Включи это в «Настройках оценки» — такие предметы станут «Фоддер».`,
     checkSpd: (roll: number) => `Проверь SPD: если у него ${roll}+ жёлтых сегмента — отметь, это уже «Оставить».`,
     maybeTitle: 'Твоим не подходит, но предмет хороший',
@@ -99,7 +106,6 @@ export const ru = {
     tempTitle: (n: number) => `Временно — хороший ролл для ${personsGen(n)}`,
     tempBest: (what: string, who: string) => `${what} Лучше всего: ${who}.`,
     tempAdvice: (main: string) => `Носи, пока у персонажа нет рекомендованного Legendary. Держи 1–2 лучших экземпляра на main ${main}; остальные такие — в разбор.`,
-    tempFor: 'Кому пойдёт временно',
     byMainWrongSubs: 'Подошёл бы по main stat, но сабстаты не те',
     weakTitle: 'Разбирай — слабый ролл',
     weakLine: (main: string, n: number, who: string, good: string) =>
@@ -331,7 +337,7 @@ export const ru = {
     ],
     helpVerdicts: [
       '**Оставить** — вещь нужна: носи и прокачивай. «Стоит прокачать» — ролл хороший, выгодно вкладывать Reforge.',
-      '**Временно** — нужной пассивки нет, но main stat и ролл годятся: носи, пока не найдёшь рекомендованную.',
+      '**Временно** — носи, пока не найдёшь лучше: у оружия и аксессуара нет нужной пассивки, у Epic-брони только один главный стат.',
       '**Фоддер** — оставь на Breakthrough такой же вещи с правильным main stat.',
       '**Спорно** — решай сам: в подробностях написано, в чём сомнение (например, вещь хороша для персонажа не из твоего ростера).',
       '**Разобрать** — твоим персонажам не подходит или ролл слабый.',

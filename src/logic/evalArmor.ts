@@ -1,9 +1,9 @@
 // Вердикт для брони: сет из билдов + полезные сабстаты под лучший билд. Фразы — ctx.t.armor (src/i18n).
 import { CFG } from '../config';
-import { GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
+import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
-import { dedupe, flatMisses, rollInfo, rows, type Row } from './score';
+import { dedupe, flatMisses, rollInfo, rows, type Part, type Row } from './score';
 import { maxSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
@@ -35,12 +35,28 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   const judged = all.filter((x) => x.b.subs.some((tier) => tier.length));
   const spdRoll = subs.SPD || 0;
-  // Epic: три полезных — ещё не повод держать, если это нижние ступени приоритета с минимальным роллом
+  const yellowOf = (parts: Part[]) => parts.reduce((a, p) => a + (subs[p.key] || 1), 0);
+  const full = (m: Scored) => m.parts.filter((p) => p.ok && !p.half);
+  // главные статы — засчитаны целиком (не ½ и не слабый flat) и стоят на 1–2 ступени приоритета билда
+  const mains = (m: Scored) => full(m).filter((p) => (p.tier ?? Infinity) < CFG.epicTopTiers);
+  // Epic не исправить камнями, поэтому решают главные статы и ролл на них:
+  //   три полезных — если среди них SPD или главный стат, либо ролл хороший;
+  //   или два главных стата с хорошим роллом — тогда третий может быть любым
   const topTier = (m: Scored) => m.parts.some((p) => p.ok && (p.key === 'SPD' || (p.tier ?? Infinity) < CFG.epicTopTiers));
   const strong = (m: Scored) => legend || topTier(m) || m.yellow >= CFG.epicYellow;
-  const qualifies = (m: Scored) => m.good != null && ((m.good >= CFG.keepCount && strong(m)) || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll));
+  const twoMain = (m: Scored) => !legend && mains(m).length >= 2 && yellowOf(mains(m)) >= CFG.epicYellow;
+  const qualifies = (m: Scored) => m.good != null && ((m.good >= CFG.keepCount && strong(m)) || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll) || twoMain(m));
+  // «Временно» у Epic: главный стат с хорошим роллом и ещё полезный, вместе 5+ жёлтых — носить, пока не выпадет вещь с недостающим
+  const tempOk = (m: Scored) => !legend && mains(m).some((p) => (subs[p.key] || 1) >= CFG.epicTempRoll) && full(m).length >= 2 && yellowOf(full(m)) >= CFG.tempYellow;
   res.qualifies = qualifies;
-  const rank = (r: Scored) => (qualifies(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
+  // сет основной, если он в первой связке билда, — дальше идут запасные варианты
+  const primary = (r: Scored) => r.b.sets[0]?.some((p) => p.set === set.id) ?? false;
+  // среди подходящих первыми — те, у кого сет основной; неподходящие — по совпадению статов (от лучшего зависят тексты)
+  const rank = (r: Scored) => (qualifies(r) ? 100 + (primary(r) ? 10 : 0) : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
+  // главные статы билда, которых на предмете нет (ось ATK/DEF/HP закрывает %-версия или сильный flat)
+  const missingMains = (m: Scored) => [...new Set(m.b.subs.slice(0, CFG.epicTopTiers).flat().map((k) => k.trim()).filter(Boolean)
+    .map((k) => (FLAT.has(k.replace(/%$/, '')) ? k.replace(/%$/, '') + '%' : k)))]
+    .filter((k) => idx.SUB[k] && !full(m).some((p) => p.key === k || p.key + '%' === k));
   const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, new Set(), (x) => ({ combos: combosWith(x.b, set.id) })), rank);
   const scoped = score(judged.filter((x) => ctx.inScope(x.c)));
   const others = score(judged.filter((x) => !ctx.inScope(x.c)));
@@ -81,7 +97,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.v = 'keep';
     res.title = A.keepTitle(keepers.length);
     res.lines.push(A.best(who, fmtGood(bestGood), nSubs, okList));
-    if (bestGood < CFG.keepCount) res.lines.push(A.spdCarries(fmtGood(bestGood), spdRoll));
+    if (bestGood < CFG.keepCount) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => p.key), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
     const roll = rollInfo(t, best, nSubs);
     if (roll) res.lines.push(roll.text);
     if (best.yellow >= CFG.godYellow || (best.spd && spdRoll >= 3)) res.badge = t.verdict.topRoll;
@@ -100,6 +116,24 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.title = t.verdict.markRest(nSubs, expected);
     res.lines.push(t.verdict.soFar(fmtGood(bestGood), who));
     res.sections.push({ title: whoWears, rows: scoped, limit: 12 });
+    othersSection();
+    return res;
+  }
+  const tempers = scoped.filter(tempOk).sort((a, b) => Number(primary(b)) - Number(primary(a)));
+  if (!legend && !partial && tempers.length) {
+    // один главный стат с хорошим роллом: носить можно, но это замена до вещи с недостающим главным статом
+    const tb = tempers[0];
+    res.v = 'temp';
+    res.qualifies = tempOk;
+    res.title = A.tempTitle(tempers.length);
+    res.lines.push(A.tempWhy(`**${tb.c.name}** — ${tb.b.name}`, mains(tb).map((p) => p.key), missingMains(tb)));
+    const roll = rollInfo(t, tb, nSubs);
+    if (roll) res.lines.push(roll.text);
+    res.lines.push(A.tempFew);
+    for (const k of flatMisses(tb)) res.lines.push(t.verdict.flatHint(k));
+    res.sections.push({ title: t.verdict.tempFor, rows: tempers, limit: 12, count: tempers.length });
+    const rest = scoped.filter((m) => !tempOk(m));
+    if (rest.length) res.sections.push({ title: A.wrongSubs(set.short), rows: rest, collapsed: true });
     othersSection();
     return res;
   }

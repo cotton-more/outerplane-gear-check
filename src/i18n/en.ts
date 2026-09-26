@@ -16,6 +16,7 @@ export const en: Texts = {
   verdict: {
     notInRoster: 'Not in your roster',
     suits: 'Who it suits',
+    tempFor: 'Who can use it for now',
     markRest: (n, of) => `${n} of ${of} marked — add the rest`,
     soFar: (good, who) => `Useful so far: ${good}. Best candidate: ${who}.`,
     topRoll: 'Top roll',
@@ -50,6 +51,12 @@ export const en: Texts = {
     keepTitle: (n) => `Keep — fits ${persons(n)}`,
     best: (who, good, n, list) => `Best for: ${who}. Useful ${good} of ${n}: ${list}.`,
     spdCarries: (good, roll) => `Only ${good} useful, but SPD with ${roll} yellow segments carries it.`,
+    twoMainCarries: (keys, yellow) =>
+      `Fewer than three useful, but both key stats — ${keys.join(' and ')} — have ${yellow} of 6 yellow segments: an Epic like this is worth keeping.`,
+    tempTitle: (n) => `Stopgap — works for ${persons(n)} until something better`,
+    tempWhy: (who, has, missing) =>
+      `Best for: ${who}. It has a key stat (${has.join(', ')}), ${missing.length ? `but no ${missing.join(' / ')}: wear it until a piece with ${missing.join(' / ')} drops` : 'but not a second one: wear it until something better drops'}.`,
+    tempFew: 'Keep 1–2 of these per set and slot; dismantle the rest.',
     eventQuality: 'All 4 substats with 3 yellow segments (3×4) — event quality.',
     rerollOne: (key) =>
       `The odd one out is ${key}: a Transistone (Individual) rerolls just it and locks the other three. outerpedia's guide spends Transistones on Irregular gear and red armor.`,
@@ -66,7 +73,7 @@ export const en: Texts = {
     junkPartialTitle: "Dismantle — even the last substat won't save it",
     junkTitle: 'Dismantle — the substats miss',
     junkBest: (who, good, list) => `Even the best option (${who}) gets only ${good} useful: ${list}.`,
-    epicTwo: "Two useful substats without good SPD aren't enough for an Epic: Transistone isn't spent on Epics, and an Epic can't be Breakthrough fodder for a Legendary.",
+    epicTwo: "Two useful substats aren't enough for an Epic unless they're both key stats with a good roll: Transistone isn't spent on Epics, and an Epic can't be Breakthrough fodder for a Legendary.",
     enableFodder: (set) => `Saving fodder for T4 ${set} Set? Turn it on in "Evaluation settings" — such pieces will become "Fodder".`,
     checkSpd: (roll) => `Check SPD: if it has ${roll}+ yellow segments, mark them — that's already a "Keep".`,
     maybeTitle: "Doesn't fit your characters, but a good piece",
@@ -83,7 +90,6 @@ export const en: Texts = {
     tempTitle: (n) => `Stopgap — good roll for ${persons(n)}`,
     tempBest: (what, who) => `${what} Best for: ${who}.`,
     tempAdvice: (main) => `Use it until the character gets a recommended Legendary. Keep the 1–2 best copies with ${main} main; dismantle the rest like it.`,
-    tempFor: 'Who can use it for now',
     byMainWrongSubs: "Would suit by main stat, but the substats don't fit",
     weakTitle: 'Dismantle — weak roll',
     weakLine: (main, n, who, good) =>
@@ -302,7 +308,7 @@ export const en: Texts = {
     ],
     helpVerdicts: [
       '**Keep** — the piece is needed: wear it and upgrade it. "Worth upgrading" — a good roll, worth investing Reforge.',
-      '**Stopgap** — no needed passive, but the main stat and roll are fine: use it until you find a recommended one.',
+      '**Stopgap** — wear it until you find better: a weapon or accessory without the needed passive, or Epic armor with only one key stat.',
       '**Fodder** — keep it for Breakthrough of the same item with the right main stat.',
       "**Maybe** — your call: the details say what's in doubt (e.g. it's good for a character outside your roster).",
       "**Dismantle** — doesn't suit your characters, or the roll is weak.",
