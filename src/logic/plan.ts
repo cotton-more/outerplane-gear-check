@@ -25,20 +25,22 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
   const set = armor && s.setId ? idx.SET[s.setId] : undefined;
   const item = !armor && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
   const piece = SLOT[s.slot].game ?? '';
-  const adds4th = epic && Object.keys(s.subs).length < MAX_SUBS; // первый Reforge ещё не добавил 4-й сабстат
+  // Reforge у Epic: первый добавляет 4-й сабстат. Есть 4-й — одна попытка из 6 уже потрачена (сколько ещё — не знаем)
+  const has4th = Object.keys(s.subs).length >= MAX_SUBS;
+  const stage = !epic ? null : has4th ? 'started' : 'adds';
   const gamble = () => (armor && epic && Object.keys(s.subs).length === MAX_SUBS - 1 ? fourthToKeep(ctx, s) : []);
 
   switch (res.v) {
     case 'keep': {
       // оружию и аксессуару со слабыми сабстатами сначала реролл (Precise Craft, Transistone), иначе сегменты уйдут в мусор
       const reforge = !res.roll ? P.reforgeUnknown
-        : res.roll === 'high' ? P.reforgeFirst(adds4th)
+        : res.roll === 'high' ? P.reforgeFirst(stage)
         : res.roll === 'low' && !armor ? P.reforgeAfterReroll
-        : P.reforgeLater(adds4th);
+        : P.reforgeLater(stage);
       const out = [P.enhance, reforge];
       if (set) out.push(epic ? P.btArmorEpic(piece, set.short) : P.btArmorLegend(piece, set.short));
       else if (item) out.push(P.btGear(item.name));
-      if (epic) out.push(P.noTransistone);
+      if (epic) out.push(P.noTransistone(has4th));
       return out;
     }
     case 'temp': {

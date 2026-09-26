@@ -41,6 +41,10 @@ describe('ролл: жёлтые плюс оранжевые, которые Ref
     expect(rollInfo(ru, row(3, 5), 3, 'rare')!.level).toBe('high');
     expect(rollInfo(ru, row(3, 4), 3, 'rare')!.level).toBe('mid');
   });
+
+  it('Epic: бесполезный 4-й сабстат от Reforge ролл не портит — прогноз тот же', () => {
+    expect(rollInfo(ru, row(3, 6), 4, 'rare')!.level).toBe(rollInfo(ru, row(3, 6), 3, 'rare')!.level);
+  });
 });
 
 // Speed Set — самый частый; SPD на любой ступени полезен, поэтому «Оставить» получить легко
@@ -52,13 +56,13 @@ describe('«Прокачка»: броня', () => {
   it('Epic «Оставить» с хорошим роллом: Enhance, Reforge в первую очередь, Breakthrough такой же Epic-вещью, без Transistone', () => {
     const r = helmet('rare', { SPD: 3, CHC: 2, CHD: 2 });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.reforgeFirst(true), P.btArmorEpic('Helmet', 'Speed'), P.noTransistone]);
+    expect(r.plan).toEqual([P.enhance, P.reforgeFirst('adds'), P.btArmorEpic('Helmet', 'Speed'), P.noTransistone(false)]);
   });
 
   it('Legendary «Оставить»: Breakthrough фоддером того же сета и слота, Transistone не запрещён', () => {
     const r = helmet('unique', { SPD: 3, CHC: 3, CHD: 3, 'ATK%': 3 });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.reforgeFirst(false), P.btArmorLegend('Helmet', 'Speed')]);
+    expect(r.plan).toEqual([P.enhance, P.reforgeFirst(null), P.btArmorLegend('Helmet', 'Speed')]);
   });
 
   it('фоддер: не прокачивать — это ступень Breakthrough для такой же вещи', () => {
@@ -98,10 +102,14 @@ describe('Epic: 4-й сабстат от первого Reforge', () => {
     expect(attackHelmet({ CHC: 2, 'ATK%': 2, RES: 1, SPD: 1 }).v).toBe('keep');
   });
 
-  it('у Epic с четырьмя сабстатами «Прокачка» не обещает, что Reforge добавит 4-й', () => {
+  it('у Epic с 4-м сабстатом Reforge уже начат: «оставшиеся попытки», смена статов уже открыта, ролл — только по жёлтым', () => {
     const r = attackHelmet({ CHC: 3, 'ATK%': 3, CHD: 2, SPD: 2 });
     expect(r.v).toBe('keep');
-    expect(r.plan[1]).toBe(P.reforgeFirst(false));
+    expect(r.plan[1]).toBe(P.reforgeFirst('started'));
+    expect(r.plan.at(-1)).toBe(P.noTransistone(true));
+    const roll = r.lines.find((l) => l.startsWith('Ролл:'))!;
+    expect(roll).toContain('оранжевые');
+    expect(roll).toContain('оставшиеся Reforge — до 5');
   });
 
   it('если никакой 4-й не спасёт — подсказки нет', () => {

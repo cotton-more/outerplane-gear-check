@@ -23,17 +23,21 @@ export const en: Texts = {
     topRoll: 'Top roll',
     worthReforge: 'Worth reforging',
     flatHint: (key) => `Check ${key}: without a % sign it's flat, but builds want ${key}% — flat gives them almost nothing. If the item has ${key}%, pick ${key}% instead.`,
-    roll: (good, n, yellow, max, orange, segments, level) =>
-      `Roll: ${good} of ${n} useful, ${yellow} of ${max} yellow segments on them; Reforge adds ~${dec(orange)} of ${segments} orange segments to useful ones on average — ${{ high: 'high, worth investing Reforge', mid: 'average', low: 'low' }[level]}.`,
+    roll: (good, n, yellow, max, orange, segments, level, started) =>
+      `Roll: ${good} of ${n} useful, ${yellow} of ${max} yellow segments on them${started ? " (don't mark orange ones — they come from Reforges already done)" : ''}; ${started ? `the remaining Reforges — up to ${segments} — add` : 'Reforge adds'} ~${dec(orange)}${started ? '' : ` of ${segments}`} orange segments to useful ones on average — ${{ high: 'high, worth investing Reforge', mid: 'average', low: 'low' }[level]}.`,
   },
 
   plan: {
     title: 'Upgrading',
     enhance: '**Enhance** to +10 right away: it raises the main stat.',
-    reforgeFirst: (epic) =>
-      `**Reforge** — all 6 attempts, first in line: a good roll${epic ? '. The first one adds a 4th substat, the rest add segments' : ''}.`,
-    reforgeLater: (epic) =>
-      `**Reforge** — after pieces with a good roll: fewer segments will land on useful stats${epic ? '. The first attempt adds a 4th substat' : ''}.`,
+    reforgeFirst: (stage) =>
+      stage === 'started'
+        ? '**Reforge** — the remaining attempts, first in line: a good roll. One of the 6 already went to the 4th substat.'
+        : `**Reforge** — all 6 attempts, first in line: a good roll${stage === 'adds' ? '. The first one adds a 4th substat, the rest add segments' : ''}.`,
+    reforgeLater: (stage) =>
+      stage === 'started'
+        ? '**Reforge** — the remaining attempts — after pieces with a good roll: fewer segments will land on useful stats.'
+        : `**Reforge** — after pieces with a good roll: fewer segments will land on useful stats${stage === 'adds' ? '. The first attempt adds a 4th substat' : ''}.`,
     reforgeAfterReroll: '**Reforge** — after rerolling the substats (Precise Craft or Transistone): right now segments would land on unneeded stats.',
     reforgeUnknown: '**Reforge** — depends on the substats: mark them and the verdict will tell.',
     btArmorLegend: (piece, set) =>
@@ -42,7 +46,8 @@ export const en: Texts = {
       `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — the same piece: Epic ${piece} ${set} Set (substats don't matter) or Glunite. Until this one is T4, don't dismantle such Epics — you need 4.`,
     btGear: (name) =>
       `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
-    noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor. Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.",
+    noTransistone: (has4th) =>
+      `**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.${has4th ? '' : ' Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.'}`,
     tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
     gambleTemp: (keys) =>
       `**Reforge** — one try is worth it: the first adds a 4th substat, and with ${keys.join(', ')} (even with 1 segment) the piece becomes a "Keep" — mark it. Got something else — invest no further, no **Breakthrough** either.`,

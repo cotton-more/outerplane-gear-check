@@ -153,8 +153,11 @@ export function rollInfo(t: Texts, m: Row | undefined, n: number, grade: Grade):
   if (!m || m.good == null || !n) return null;
   const segments = reforgeSegments(grade);
   const orange = (segments * m.good) / 4;
-  const ideal = 3 * Math.max(n, dropSubs(grade)) + segments;
+  // идеал — по сабстатам из дропа: иначе бесполезный 4-й от Reforge у Epic снимал бы плашку, хотя шансы вещи те же
+  const ideal = 3 * dropSubs(grade) + segments;
   const total = m.yellow + orange;
   const level = total >= CFG.rollHigh * ideal ? 'high' : total >= CFG.rollMid * ideal ? 'mid' : 'low';
-  return { level, orange, segments, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, 3 * n, orange, segments, level) };
+  // Epic с 4-м сабстатом уже в Reforge: считаем только жёлтые и прогноз «до 5» — сколько попыток сделано, не знаем
+  const started = grade === 'rare' && n >= 4;
+  return { level, orange, segments, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, 3 * n, orange, segments, level, started) };
 }

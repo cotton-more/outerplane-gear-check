@@ -37,18 +37,22 @@ export const ru = {
     topRoll: 'Топ-ролл',
     worthReforge: 'Стоит Reforge',
     flatHint: (key: string) => `Проверь ${key}: без знака % это flat, а билдам нужен ${key}% — flat им почти ничего не даёт. Если на предмете ${key}%, выбери ${key}%.`,
-    roll: (good: string, n: number, yellow: number, max: number, orange: number, segments: number, level: 'high' | 'mid' | 'low') =>
-      `Ролл: полезных ${good} из ${n}, жёлтых сегментов на них ${yellow} из ${max}; Reforge добавит полезным в среднем ~${dec(orange)} оранжевых из ${segments} — ${{ high: 'высокий, стоит вкладываться в Reforge', mid: 'средний', low: 'низкий' }[level]}.`,
+    roll: (good: string, n: number, yellow: number, max: number, orange: number, segments: number, level: 'high' | 'mid' | 'low', started: boolean) =>
+      `Ролл: полезных ${good} из ${n}, жёлтых сегментов на них ${yellow} из ${max}${started ? ' (оранжевые — от уже сделанных Reforge — не отмечай)' : ''}; ${started ? `оставшиеся Reforge — до ${segments} — добавят` : 'Reforge добавит'} полезным в среднем ~${dec(orange)} оранжевых${started ? '' : ` из ${segments}`} — ${{ high: 'высокий, стоит вкладываться в Reforge', mid: 'средний', low: 'низкий' }[level]}.`,
   },
 
   // --- «Прокачка»: что вкладывать в предмет после вердикта
   plan: {
     title: 'Прокачка',
     enhance: '**Enhance** до +10 — сразу: растит main stat.',
-    reforgeFirst: (epic: boolean) =>
-      `**Reforge** — все 6 попыток, в первую очередь: ролл хороший${epic ? '. Первая добавит 4-й сабстат, остальные — сегменты' : ''}.`,
-    reforgeLater: (epic: boolean) =>
-      `**Reforge** — после вещей с хорошим роллом: полезным достанется меньше сегментов${epic ? '. Первая попытка добавит 4-й сабстат' : ''}.`,
+    reforgeFirst: (stage: 'adds' | 'started' | null) =>
+      stage === 'started'
+        ? '**Reforge** — оставшиеся попытки, в первую очередь: ролл хороший. Одна из 6 уже ушла на 4-й сабстат.'
+        : `**Reforge** — все 6 попыток, в первую очередь: ролл хороший${stage === 'adds' ? '. Первая добавит 4-й сабстат, остальные — сегменты' : ''}.`,
+    reforgeLater: (stage: 'adds' | 'started' | null) =>
+      stage === 'started'
+        ? '**Reforge** — оставшиеся попытки — после вещей с хорошим роллом: полезным достанется меньше сегментов.'
+        : `**Reforge** — после вещей с хорошим роллом: полезным достанется меньше сегментов${stage === 'adds' ? '. Первая попытка добавит 4-й сабстат' : ''}.`,
     reforgeAfterReroll: '**Reforge** — после реролла сабстатов (Precise Craft или Transistone): сейчас сегменты уйдут в ненужные статы.',
     reforgeUnknown: '**Reforge** — смотря по сабстатам: отметь их, и вердикт скажет, стоит ли.',
     btArmorLegend: (piece: string, set: string) =>
@@ -57,7 +61,8 @@ export const ru = {
       `**Breakthrough** до T4: +5% к main stat за ступень и сильнее бонус сета. Материал — такая же вещь: Epic ${piece} ${set} Set (сабстаты не важны) или Glunite. Пока эта не на T4, такие Epic из разбора не выбрасывай — нужно 4 штуки.`,
     btGear: (name: string) =>
       `**Breakthrough** до T4 — обязательно: к T4 усиливается пассивка, и +20% к main stat. Материал — копии ${name} (годятся и с другим main stat) или Refined Glunite.`,
-    noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню. Да и смена статов у Epic откроется, только когда первый Reforge добавит 4-й сабстат.',
+    noTransistone: (has4th: boolean) =>
+      `**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.${has4th ? '' : ' Да и смена статов у Epic откроется, только когда первый Reforge добавит 4-й сабстат.'}`,
     tempNoInvest: '**Reforge** и **Breakthrough** — не вкладывай: вещь на замену, её сменит нужная.',
     gambleTemp: (keys: string[]) =>
       `**Reforge** — один раз можно попытать удачу: первый добавит 4-й сабстат, и с ${keys.join(', ')} (даже с 1 сегментом) вещь станет «Оставить» — отметь его. Выпал другой — дальше не вкладывай, **Breakthrough** тоже.`,
