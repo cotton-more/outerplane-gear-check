@@ -18,6 +18,8 @@ The order of substats a character needs, left is more important: `ATK% › CHC �
 - **yellow** — counts for ½;
 - **grey** — on the piece, but too far down the chain;
 - **dashed** — not on the piece;
+- **marked main** — the piece's main stat: it is never a substat too, so it isn't part of the substat score, but
+  the piece has it. The main stat grows with Enhance, not Reforge, and gives more than the same stat as a substat;
 - **struck through at the end** — on the piece, the character doesn't need it.
 
 The first four places count. Two stats with a slash — for example `ATK/ATK%` — share one place in the chain and both

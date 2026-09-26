@@ -279,7 +279,7 @@ export const en: Texts = {
     codeHint: "A code from guild chat. Case, spaces and dashes don't matter. It replaces the current item; the verdict uses your roster and settings.",
     verdictLabel: { keep: 'Keep', temp: 'Stopgap', maybe: 'Maybe', fodder: 'Fodder', junk: 'Dismantle', idle: '…' },
     verdict: 'Verdict',
-    tierLegend: 'The chain is the build substat priority, left is more important. Green — on the item and counted, yellow — counts as ½, grey — on the item but far down the chain (small places from 5th on don\'t count), dashed — not on the item, crossed out — the build does not need it.',
+    tierLegend: 'The chain is the build substat priority, left is more important. Green — on the item and counted, yellow — counts as ½, grey — on the item but far down the chain (small places from 5th on don\'t count), dashed — not on the item, marked main — the item\'s main stat (never a substat, grows with Enhance), crossed out — the build does not need it.',
     altGroup: 'Below — the set is only in an alternative combo of the build',
     showAll: (n) => `show all (${n})`,
     scoreTitle: (good, n, pct) => `Useful substats: ${good} of ${n}; weighted by priority — ${pct}%`,

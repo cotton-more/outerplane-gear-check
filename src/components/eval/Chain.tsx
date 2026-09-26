@@ -10,9 +10,10 @@ interface Pill { label: string; cls: string; sep: string }
 
 // Цепочка приоритета сабстатов билда («ATK › CHC › SPD › CHD › DMG UP%») с отметками, что из неё есть на предмете:
 //   ok — есть и засчитан, half — за ½, low — есть, но далеко в цепочке (или слабый flat), miss — нет на предмете;
+//   main — это main stat предмета: сабстатом он быть не может, в оценке сабстатов его нет, но стат на предмете есть;
 //   tail — места дальше четвёртого, которые не считаются (кроме SPD).
 // Статы предмета, которых в цепочке нет вовсе, идут в конце зачёркнутыми.
-export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
+export function Chain({ m, main }: { m: Omit<Row, 'alt'>; main: string | null }) {
   const { SUB } = useIndex();
   const place = tierPlaces(m.b);
   const used = new Set<string>();
@@ -28,16 +29,19 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
       const tail = tok !== 'SPD' && place[i] >= CFG.tierCredit.length ? ' tail' : '';
       const sep = !pills.length ? '' : first ? '›' : '=';
       first = false;
+      // у flat-оси main — её %-версия (main ATK%, а flat ATK ещё может быть сабстатом)
+      const isMain = !!main && (flat ? main === axis + '%' : main === tok);
+      if (isMain) pills.push({ label: main, cls: 'main' + tail, sep });
       const hits = m.parts.filter((p) => !used.has(p.key) && (flat ? axisOf(p.key) === axis : p.key === tok));
-      if (!hits.length) { pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep }); continue; }
-      hits.forEach((p, j) => { used.add(p.key); pills.push({ label: p.key, cls: state(p) + tail, sep: j ? '/' : sep }); });
+      if (!hits.length) { if (!isMain) pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep }); continue; }
+      hits.forEach((p, j) => { used.add(p.key); pills.push({ label: p.key, cls: state(p) + tail, sep: j || isMain ? '/' : sep }); });
     }
   });
   const extra = m.parts.filter((p) => !used.has(p.key));
   return (
     <span className="chain">
       {pills.map((p, i) => (
-        <Fragment key={i}>{p.sep && <i className="sep">{p.sep}</i>}<span className={`pill ${p.cls}`}>{p.label}</span></Fragment>
+        <Fragment key={i}>{p.sep && <i className="sep">{p.sep}</i>}<span className={`pill ${p.cls}`}>{p.cls.startsWith('main') && <small>main </small>}{p.label}</span></Fragment>
       ))}
       {extra.length > 0 && <i className="sep">·</i>}
       {extra.map((p) => <span key={p.key} className="pill no">{p.key}</span>)}
