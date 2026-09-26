@@ -96,6 +96,8 @@ export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: 
 // Строка списка «кому подходит»: билд, его оценка и доп. поля ветки (комбо сета, main stat).
 export interface Row extends BuildRef, Score {
   alt: string[];         // другие билды того же персонажа
+  // из них — с другой цепочкой приоритета сабстатов (такое у 8 из 95 персонажей): в списке — своя строка цепочки
+  other?: Omit<Row, 'alt' | 'other'>[];
   combos?: BuildRef['b']['sets'];
   mains?: string[];
   mainOk?: boolean;
@@ -113,12 +115,17 @@ export function rows(ctx: Ctx, grade: Grade, list: BuildRef[], subs: Subs, exclu
   }));
 }
 
+const chainKey = (b: Build) => b.subs.map((tier) => tier.join('=')).join('>');
+
 export function dedupe(list: Omit<Row, 'alt'>[], rank: (r: Omit<Row, 'alt'>) => number): Row[] {
   list.sort((a, b) => rank(b) - rank(a) || a.c.name.localeCompare(b.c.name));
   const seen = new Map<string, Row>();
   for (const r of list) {
     const prev = seen.get(r.c.id);
-    if (prev) { if (!prev.alt.includes(r.b.name)) prev.alt.push(r.b.name); } else seen.set(r.c.id, { ...r, alt: [] });
+    if (!prev) { seen.set(r.c.id, { ...r, alt: [], other: [] }); continue; }
+    if (!prev.alt.includes(r.b.name)) prev.alt.push(r.b.name);
+    const key = chainKey(r.b);
+    if (key !== chainKey(prev.b) && !prev.other!.some((o) => chainKey(o.b) === key)) prev.other!.push(r);
   }
   return [...seen.values()];
 }

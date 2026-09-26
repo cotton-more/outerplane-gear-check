@@ -1,5 +1,5 @@
 // Панель вердикта и её мобильная версия — плашка внизу экрана с кнопкой «Сброс».
-import { useEffect, type Dispatch } from 'react';
+import { Fragment, useEffect, type Dispatch } from 'react';
 import { CFG } from '../../config';
 import { isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
@@ -49,7 +49,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
       </div>
       {r.v !== 'idle' && <ShareCode item={itemInput(s)} />}
       {r.sections.filter((sec) => sec.rows.length).map((sec) => (
-        <VerdictSection key={sec.title} sec={sec} r={r} expand={s.expand} nSubs={nSubs} dispatch={dispatch} onOpenChar={onOpenChar} />
+        <VerdictSection key={sec.title} sec={sec} r={r} expand={s.expand} nSubs={nSubs} setId={set?.id ?? null} dispatch={dispatch} onOpenChar={onOpenChar} />
       ))}
       <div className="v-foot">
         {nSubs > 0 && <span>{t.ui.tierLegend}</span>}
@@ -59,8 +59,8 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
   );
 }
 
-function VerdictSection({ sec, r, expand, nSubs, dispatch, onOpenChar }: {
-  sec: Section; r: VerdictData; expand: Record<string, boolean>; nSubs: number; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
+function VerdictSection({ sec, r, expand, nSubs, setId, dispatch, onOpenChar }: {
+  sec: Section; r: VerdictData; expand: Record<string, boolean>; nSubs: number; setId: string | null; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
 }) {
   const t = useT();
   const key = sec.title;
@@ -75,11 +75,20 @@ function VerdictSection({ sec, r, expand, nSubs, dispatch, onOpenChar }: {
     );
   }
   const limit = expand[key + ':all'] ? Infinity : (sec.limit || 12);
+  // броня: сначала те, у кого сет в первой связке билда; перед первым «запасным» — разделитель с пояснением,
+  // иначе непонятно, почему 2½/3 стоит ниже 2/3
+  const alt = (m: Row) => !!setId && !!m.combos && !m.b.sets[0]?.some((p) => p.set === setId);
+  const firstAlt = sec.rows.slice(0, limit).findIndex(alt);
   return (
     <div className="v-sec">
       <div className="v-list-h"><h3>{sec.title}</h3><span className="muted small">{t.persons(count)}</span></div>
       <ul className="matches">
-        {sec.rows.slice(0, limit).map((m) => <MatchRow key={m.c.id} m={m} sec={sec} r={r} nSubs={nSubs} onOpenChar={onOpenChar} />)}
+        {sec.rows.slice(0, limit).map((m, i) => (
+          <Fragment key={m.c.id}>
+            {i === firstAlt && <li className="match-div">{t.ui.altGroup}</li>}
+            <MatchRow m={m} sec={sec} r={r} nSubs={nSubs} onOpenChar={onOpenChar} />
+          </Fragment>
+        ))}
       </ul>
       {sec.rows.length > limit && (
         <div className="more">
@@ -117,13 +126,14 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
         {m.mainOk !== undefined
           ? <span className={`tok ${m.mainOk ? 'ok' : 'bad'}`}>main {m.mains?.join('/') || t.ui.anyMain}</span>
           : sec.mainNote && <span className="tok ok">main {sec.mainNote}</span>}
-        {m.parts.map((p) => (
-          <span key={p.key} className={`tok ${p.ok ? (p.half ? 'half' : 'ok') : 'no'}`} title={p.ok ? t.ui.tierTitle((p.tier ?? 0) + 1, p.half) : t.ui.notNeeded}>
-            {p.key}{p.ok && <sup>{(p.tier ?? 0) + 1}</sup>}
-          </span>
-        ))}
-        {!m.parts.length && m.b.subs.length > 0 && <span className="tok">{m.b.subs.filter((t) => t.length).map((t) => t.join('=')).join(' › ')}</span>}
       </div>
+      {/* цепочка приоритета лучшего билда; у билдов с другой цепочкой — своя строка с названием */}
+      {m.b.subs.length > 0 && (
+        <div className="chains">
+          <Chain m={m} />
+          {m.other?.map((o) => <span key={o.b.name} className="chain-alt"><span className="bn">{o.b.name}:</span><Chain m={o} /></span>)}
+        </div>
+      )}
     </li>
   );
 }

@@ -149,3 +149,20 @@ describe('подсветка сетки: 0–1 нужных стата — «О�
     });
   }
 });
+
+describe('«Кому подходит»: вторая цепочка у персонажа с разными приоритетами билдов', () => {
+  it('Heatwave Cop Delta на Speed Set: DPS и PvP-билд — две цепочки, одна строка', () => {
+    const speed = D.sets.find((s) => s.short === 'Speed')!;
+    const r = evaluate(ctx, { slot: 'gloves', grade: 'unique', setId: speed.id, itemKey: null, main: null, subs: { SPD: 2, CHC: 1, 'ATK%': 1, CHD: 1 } });
+    const rows = r.sections.flatMap((s) => s.rows).filter((m) => m.c.name === 'Heatwave Cop Delta');
+    expect(rows).toHaveLength(1);
+    const chains = [rows[0].b, ...(rows[0].other ?? []).map((o) => o.b)].map((b) => b.subs.map((t) => t.join('=')).join(' › '));
+    expect(new Set(chains).size).toBe(2);
+  });
+
+  it('у персонажа с одной цепочкой на все билды второй строки нет', () => {
+    const r = attackHelmet('rare', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3 });
+    const lambda = r.sections.flatMap((s) => s.rows).find((m) => m.c.name === 'Lambda');
+    expect(lambda?.other ?? []).toEqual([]);
+  });
+});
