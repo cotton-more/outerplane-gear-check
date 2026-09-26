@@ -3,7 +3,8 @@ import { useT } from '../../i18n';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
 
-// Сетка сабстатов прямо на форме вместо окна выбора: одно нажатие — стат встаёт в следующую строку с 1 жёлтым.
+// Сетка сабстатов прямо на форме вместо окна выбора: одно нажатие — стат встаёт в следующую строку с 1 жёлтым,
+// повторное — снимает его (как ✕ в строке).
 // Раскладка 7×2: %-статы над своими flat-версиями (ATK% над ATK, HP% над HP, DEF% над DEF),
 // чтобы «есть ли на предмете %» решалось местом кнопки, а не чтением подписи.
 // useful — спрос билдов выбранного сета: ярче — нужен, блёклый — не нужен никому.
@@ -20,9 +21,10 @@ export function StatGrid({ subs, main, full, useful, onPick }: {
         const credit = useful ? useful.get(k) ?? 0 : null;
         const tone = credit === null ? '' : credit >= 1 ? 'u1' : credit > 0 ? 'u2' : 'u0';
         const cls = ['sg', FLAT.has(k) && 'flat', tone].filter(Boolean).join(' ');
+        const on = k in subs;
         return (
-          <button key={k} type="button" className={cls} aria-pressed={k in subs} disabled={k in subs || k === main || full}
-            title={credit === null ? k : t.ui.usefulTitle(k, credit)} onClick={() => onPick(k)}>
+          <button key={k} type="button" className={cls} aria-pressed={on} disabled={k === main || (full && !on)}
+            title={on ? t.ui.subRemove(k) : credit === null ? k : t.ui.usefulTitle(k, credit)} onClick={() => onPick(k)}>
             <StatIcon stat={k} /><span>{SHORT[k] ?? k}</span>
           </button>
         );

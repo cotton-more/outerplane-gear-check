@@ -311,7 +311,7 @@ export const en: Texts = {
       '**Legendary weapon and accessory** — find the item, then pick the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions.',
-      'Tap a stat in its row to replace it (yellow segments stay), ✕ to remove it. Code, help and settings are in the ☰ menu.',
+      'Tap a stat in its row to replace it (yellow segments stay). To remove it, tap it again in the grid or ✕. Code, help and settings are in the ☰ menu.',
     ],
     helpRoutine: 'How to clean up fast',
     helpRoutineItems: [
