@@ -12,8 +12,8 @@
 | `update.py` | качает данные outerpedia и подставляет их в собранное приложение (Python 3.9+, без внешних пакетов) |
 | `pwa/sw.template.js` | шаблон service worker; `update.py` подставляет версию и список файлов |
 | `test/` | эталон логики оценки (`golden.json`) и юнит-тесты |
-| `scripts/` | проверка сборки перед публикацией (`check-data.mjs`), ночной прогон автообновления (`autoupdate.sh`), снятие эталона со старой страницы (`golden-old.mjs`), скриншоты для README (`screenshots.mjs`) |
-| `.github/workflows/data.yml` | автообновление данных: раз в сутки PR с отчётом проверок ([AUTOUPDATE.md](AUTOUPDATE.md)) |
+| `scripts/` | проверка сборки перед публикацией (`check-data.mjs`), робот сайта (`autoupdate.sh`), снятие эталона со старой страницы (`golden-old.mjs`), скриншоты для README (`screenshots.mjs`) |
+| `.github/workflows/data.yml` | робот сайта: push с правками кода — сборка и публикация на тех же данных; раз в сутки — PR с новыми данными ([AUTOUPDATE.md](AUTOUPDATE.md)) |
 | `.nvmrc` | версия Node — одна в Actions и локально, чтобы сборки совпадали байт в байт |
 | `screenshots/` | картинки для README; пересоздаются `task screenshots` |
 | `Taskfile.yml` | все команды: `task --list` |
@@ -36,7 +36,7 @@ task dev          # dev-сервер с горячей перезагрузко�
 task test         # проверка типов + тесты
 task build:pwa    # PWA-сайт в docs/ со свежими данными outerpedia
 task build:single # одиночная страница outerplane-gear.html (+ build/artifact.html)
-task check        # проверить собранный docs/ против опубликованного (то же, что в PR автообновления)
+task check        # проверить собранный docs/ против опубликованного (то же, что делает робот сайта)
 task preview      # посмотреть собранный docs/ на http://localhost:8000
 task screenshots  # переснять скриншоты для README (нужен Chrome)
 task publish      # подтянуть main → тесты → docs/ → проверки → коммит → пуш → дождаться выкладки на Pages
@@ -48,8 +48,8 @@ task publish      # подтянуть main → тесты → docs/ → про�
 ## Сборка и обновление данных
 
 Сборка двухшаговая: `vite build` собирает приложение в `build/app/index.html`, потом `update.py` подставляет туда
-данные и раскладывает три формата. Taskfile делает оба шага сам. Сайт обновляется `task publish` с этого компьютера
-или PR автообновления — подробности в [`PUBLISH.md`](PUBLISH.md) и [`AUTOUPDATE.md`](AUTOUPDATE.md).
+данные и раскладывает три формата. Taskfile делает оба шага сам. Сайт обновляет робот в GitHub Actions (push с правками
+кода — сразу, новые данные — через PR) или `task publish` с этого компьютера — подробности в [`PUBLISH.md`](PUBLISH.md) и [`AUTOUPDATE.md`](AUTOUPDATE.md).
 PWA — функция только кода и коммита outerpedia: дата данных — дата коммита, а не время сборки. Если данные и код
 не менялись, сборка байт в байт та же, в том числе когда у outerpedia новый коммит, не тронувший наши файлы: лишних
 коммитов и ложных «обновлений» на телефоне не будет. На Linux (Actions) сборка та же, что на Mac.
@@ -72,7 +72,7 @@ PWA — функция только кода и коммита outerpedia: да�
 - `--report-json отчёт.json` — итог сборки для проверок: изменения, предупреждения, несопоставленные рекомендации
   (`task build:pwa` пишет его в `build/data-report.json`, `task check` читает).
 
-Регулярное обновление данных делает GitHub Actions — [AUTOUPDATE.md](AUTOUPDATE.md). Запрос sha коммита outerpedia
+Регулярное обновление данных и публикацию кода по push делает GitHub Actions — [AUTOUPDATE.md](AUTOUPDATE.md). Запрос sha коммита outerpedia
 берёт `GITHUB_TOKEN` из окружения, если он есть (в Actions — лимит API выше).
 
 **Версия приложения в подвале** — дата и хеш последнего коммита, который менял код (`src`, `index.html`,
@@ -104,7 +104,7 @@ PWA — функция только кода и коммита outerpedia: да�
 Сам прогон `golden:update` печатает расхождения со старым файлом — это нормально, файл уже перезаписан.
 
 Эталон и юнит-тесты работают на замороженном `test/fixtures/data.json`, поэтому свежие данные outerpedia сторожит
-отдельная проверка — `scripts/check-data.mjs` (`task check`, PR автообновления): собранная страница в jsdom, те же
+отдельная проверка — `scripts/check-data.mjs` (`task check`, робот сайта): собранная страница в jsdom, те же
 входы эталона на старых и новых данных, «каждый билд находит свою вещь». Что именно проверяется — в
 [AUTOUPDATE.md](AUTOUPDATE.md).
 

@@ -1,7 +1,7 @@
 // Проверка сборки перед публикацией: сравнивает опубликованную страницу (docs/index.html в git) с новой.
 // Нужна автообновлению (.github/workflows/data.yml — пишет отчёт в описание PR) и task publish (останавливает публикацию).
 //
-//   node scripts/check-data.mjs [--old файл] [--new docs/index.html] [--report новый.json] [--base-report старый.json] [--md отчёт.md]
+//   node scripts/check-data.mjs [--old файл] [--new docs/index.html] [--report новый.json] [--base-report старый.json] [--md отчёт.md] [--for pr|publish]
 //
 // --old по умолчанию — docs/index.html из HEAD (то, что сейчас на сайте). --report/--base-report — итог update.py
 // (--report-json) для новых и для опубликованных данных: тогда новые предупреждения update.py тоже считаются ошибкой.
@@ -102,12 +102,30 @@ function runCases(ogc) {
     try {
       const res = evaluate(makeCtx(idx, settingsOf(inp), roster), { slot: inp.slot, grade: inp.grade, setId: inp.setId, itemKey: inp.itemKey, main: inp.main, unlisted: false, subs: Object.fromEntries(inp.subs) });
       const best = res.sections[0]?.rows[0];
-      out.push({ i, v: res.v, title: res.title, best: best ? `${best.c.name} / ${best.b.name}` : '' });
+      out.push({ i, v: res.v, title: res.title, badge: res.badge || '', best: best ? `${best.c.name} / ${best.b.name}` : '' });
     } catch (e) {
       out.push({ i, error: `${describeCase(inp, D)}: ${e.message}` });
     }
   }
   return out;
+}
+
+// разница двух прогонов одних и тех же входов: сменился вердикт, лучший кандидат или плашка
+function diffCases(was, now, D) {
+  const show = (x) => `${x.v}${x.badge ? ' «' + x.badge + '»' : ''}${x.best ? ' · ' + x.best : ''}`;
+  const changed = [];
+  let skipped = 0;
+  let total = 0;
+  for (const [k, x] of now.entries()) {
+    const y = was[k];
+    if (x.skip || y.skip || x.error || y.error) { skipped += x.skip || y.skip ? 1 : 0; continue; }
+    total++;
+    if (x.v !== y.v || x.best !== y.best || x.badge !== y.badge) {
+      changed.push({ item: describeCase(golden.cases[k].in, D), was: show(y), now: show(x), flip: x.v !== y.v });
+    }
+  }
+  changed.sort((p, q) => q.flip - p.flip); // сначала сменившие вердикт, потом лучшего кандидата или плашку
+  return { total, skipped, changed };
 }
 
 // каждый билд должен находить себя: Legendary-броня его основного сета с его же первыми сабстатами, ростер — только
@@ -254,10 +272,20 @@ function codeCommits(from, to) {
 
 // --------------------------------------------------------------------------- отчёт
 
-function markdown({ ok, oldD, newD, diff, verdicts, src, code, report }) {
+function verdictTable(L, v) {
+  if (!v.changed.length) return;
+  L.push('| Предмет | Было | Стало |', '|---|---|---|');
+  for (const x of v.changed.slice(0, LIMITS.examples)) L.push(`| ${x.item} | ${x.was} | ${x.now} |`);
+  L.push('');
+}
+const share = (v) => `**${v.changed.length} из ${v.total}** (${v.total ? Math.round((100 * v.changed.length) / v.total) : 0}%)`;
+
+function markdown({ ok, oldD, newD, diff, verdicts, byCode, src, code, report, publish }) {
   const L = [];
   const reasons = checks.filter((c) => c.ok === false).map((c) => c.name);
-  L.push(ok ? '## ✅ Проверки пройдены — можно вливать' : `## ⛔ Не вливать: ${reasons.join('; ')}`, '');
+  // PR данных вливаешь ты; публикацию кода робот делает сам — заголовок говорит, что будет дальше
+  const head = publish ? ['## ✅ Проверки пройдены — публикую', '## ⛔ Не публикую'] : ['## ✅ Проверки пройдены — можно вливать', '## ⛔ Не вливать'];
+  L.push(ok ? head[0] : `${head[1]}: ${reasons.join('; ')}`, '');
   const oc = oldD.meta.commit;
   const nc = newD.meta.commit;
   if (oc && nc && oc !== nc) {
@@ -279,7 +307,7 @@ function markdown({ ok, oldD, newD, diff, verdicts, src, code, report }) {
   ];
   L.push(...(items.length ? items.map((x) => `- ${x}`) : ['Персонажи, билды и предметы те же.']), '');
   if (code) {
-    L.push('### Код приложения', '', `Страница собрана из кода новее опубликованного (${code.from || '?'} → ${code.to}) — вместе с данными выйдут и эти правки:`, '');
+    L.push('### Код приложения', '', `Страница собрана из кода новее опубликованного (${code.from || '?'} → ${code.to}) — в сборку входят эти правки:`, '');
     L.push(...(code.commits.length ? cap(code.commits).map((x) => `- ${x}`) : ['- (список коммитов недоступен)']), '');
   }
 
@@ -290,15 +318,15 @@ function markdown({ ok, oldD, newD, diff, verdicts, src, code, report }) {
   }
   L.push('');
 
+  if (byCode) {
+    L.push('### Что изменил код', '', `Те же опубликованные данные, опубликованная страница против новой: изменилось ${share(byCode)} вердиктов, лучших кандидатов или плашек.`, '');
+    verdictTable(L, byCode);
+  }
   if (verdicts) {
-    L.push('### Вердикты на тестовых предметах', '');
-    L.push(`Изменилось **${verdicts.changed.length} из ${verdicts.total}** (${verdicts.total ? Math.round((100 * verdicts.changed.length) / verdicts.total) : 0}%)` +
+    L.push(byCode ? '### Что изменили данные' : '### Вердикты на тестовых предметах', '');
+    L.push(`${byCode ? 'Новый код, старые данные против новых' : 'Изменилось'}: ${share(verdicts)}` +
       (verdicts.skipped ? `; пропущено ${verdicts.skipped} — их сета или предмета нет в новых данных` : '') + '.', '');
-    if (verdicts.changed.length) {
-      L.push('| Предмет | Было | Стало |', '|---|---|---|');
-      for (const x of verdicts.changed.slice(0, LIMITS.examples)) L.push(`| ${x.item} | ${x.was} | ${x.now} |`);
-      L.push('');
-    }
+    verdictTable(L, verdicts);
   }
   if (report?.warnings?.length) {
     L.push('<details><summary>Предупреждения update.py (' + report.warnings.length + ')</summary>', '', ...report.warnings.map((w) => `- ${w}`), '', '</details>', '');
@@ -377,6 +405,7 @@ async function main() {
   const pOld = loadPage(withData(newHtml, oldHtml));
   await tick(50);
   let verdicts = null;
+  let byCode = null;
   await guarded('Оценка на новых данных', () => {
     if (!pNew.w.__ogc?.makeCtx || !pOld.w.__ogc?.makeCtx) {
       check('Оценка на новых данных', false, ['в странице нет window.__ogc.makeCtx — приложение не запустилось, см. «Страница работает»']);
@@ -390,22 +419,17 @@ async function main() {
     const lost = [...missNew].filter(([k]) => !missOld.has(k)).map(([k, v]) => `${k}: вещь по его же приоритету получила «${v}» вместо «keep»`);
     check('Оценка на новых данных', !errs.length && !lost.length, [...errs.map((e) => `исключение: ${e}`), ...lost,
       ...(!errs.length && !lost.length ? [`${now.filter((x) => !x.skip).length} тестовых предметов без ошибок; каждый билд находит свою вещь`] : [])]);
-    const changed = [];
-    let skipped = 0;
-    let total = 0;
-    for (const [k, x] of now.entries()) {
-      const y = was[k];
-      if (x.skip || y.skip || x.error || y.error) { skipped += x.skip || y.skip ? 1 : 0; continue; }
-      total++;
-      if (x.v !== y.v || x.best !== y.best) {
-        changed.push({ item: describeCase(golden.cases[k].in, newD), was: `${y.v}${y.best ? ' · ' + y.best : ''}`, now: `${x.v}${x.best ? ' · ' + x.best : ''}`, flip: x.v !== y.v });
-      }
-    }
-    changed.sort((p, q) => q.flip - p.flip); // сначала сменившие вердикт, потом сменившие лучшего кандидата
-    verdicts = { total, skipped, changed };
+    verdicts = diffCases(was, now, newD);
+    const { total, changed } = verdicts;
     if (total && changed.length / total > LIMITS.verdictShare) {
       check('Доля изменённых вердиктов', 'warn', [`изменилось ${Math.round((100 * changed.length) / total)}% — посмотри примеры ниже внимательнее`]);
     }
+    // код новее опубликованного: те же старые данные через опубликованную страницу и через новую
+    const pOldCode = loadPage(oldHtml);
+    if (pOldCode.w.__ogc?.makeCtx && buildOf(oldHtml, null)?.hash !== buildOf(newHtml, pNew.w)?.hash) {
+      byCode = diffCases(runCases(pOldCode.w.__ogc), was, oldD);
+    }
+    pOldCode.w.close();
   });
 
   // 6. код приложения новее опубликованного — выйдет вместе с данными
@@ -418,7 +442,7 @@ async function main() {
 
   const src = await changedSourceFiles(oldD.meta.commit, newD.meta.commit, report?.sourceFiles);
   const ok = checks.every((c) => c.ok !== false);
-  const md = markdown({ ok, oldD, newD, diff, verdicts, src, code, report });
+  const md = markdown({ ok, oldD, newD, diff, verdicts, byCode, src, code, report, publish: a.for === 'publish' });
   if (a.md) writeFileSync(a.md, md + '\n');
   console.log(md);
   return ok ? 0 : 1;

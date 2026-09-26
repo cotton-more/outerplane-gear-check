@@ -1,27 +1,39 @@
-# Автообновление данных outerpedia: раз в сутки собирает сайт на свежих данных, проверяет и предлагает PR.
-# Сам ничего не публикует — сайт обновится, когда PR вольют в main. Схема и что делать с красным PR — AUTOUPDATE.md.
-name: Обновление данных
+# Робот сайта. Ночью и кнопкой — свежие данные outerpedia: собрать, проверить и предложить PR (сам не публикует).
+# На push в main с правками приложения — пересобрать сайт на тех же данных и, если проверки зелёные, сразу выложить.
+# Схема и что делать с красным PR или issue — AUTOUPDATE.md.
+name: Обновление сайта
 
 on:
   schedule:
     - cron: '17 3 * * *'   # 03:17 UTC каждый день (не ровно в час: в это время очередь раннеров длиннее)
-  workflow_dispatch:        # кнопка «Run workflow» на вкладке Actions — пересобрать PR, не дожидаясь ночи
+  workflow_dispatch:        # кнопка «Run workflow» на вкладке Actions — пересобрать PR данных, не дожидаясь ночи
+  push:
+    branches: [main]
+    paths:                  # код приложения — те же пути, по которым vite.config.ts берёт версию для подвала
+      - 'src/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'update.py'
+      - 'pwa/**'
 
 permissions:
-  contents: write           # пуш ветки data/auto (не main)
+  contents: write           # PR данных — ветка data/auto; публикация кода — коммит docs/ в main
   pull-requests: write
-  issues: write             # сборка упала — issue с причиной
+  issues: write             # не собралось или проверки не прошли — issue с причиной
+  pages: write              # явный запрос выкладки после публикации кода
 
 concurrency:
-  group: data-autoupdate
+  group: site-robot
   cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
-      GH_TOKEN: ${{ github.token }}      # gh: PR и issue
+      GH_TOKEN: ${{ github.token }}      # gh: PR, issue, запрос выкладки
       GITHUB_TOKEN: ${{ github.token }}  # update.py и check-data: запросы к GitHub API без лимита 60 в час
     steps:
       - uses: actions/checkout@v5
@@ -36,4 +48,4 @@ jobs:
           python-version: '3.14'
       - run: npm ci
       - run: npm run -s build
-      - run: scripts/autoupdate.sh
+      - run: scripts/autoupdate.sh ${{ github.event_name == 'push' && 'code' || 'data' }}

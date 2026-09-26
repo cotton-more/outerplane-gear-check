@@ -35,7 +35,7 @@ tasks:
   check:
     desc: Проверить собранный docs/ против опубликованного (git HEAD) — то же, что автообновление пишет в PR
     deps: [setup]
-    cmds: [node scripts/check-data.mjs --report build/data-report.json]
+    cmds: [node scripts/check-data.mjs --report build/data-report.json --for publish]
 
   build:single:
     desc: Одиночная страница outerplane-gear.html и build/artifact.html для Claude Artifact
