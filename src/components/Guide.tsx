@@ -60,6 +60,7 @@ export function Help({ install }: { install: InstallInfo }) {
       <h4>{t.ui.helpInstall}</h4>
       <InstallHint install={{ ...install, ios: false }} /> {/* для iPhone — строка в списке ниже */}
       <List items={t.ui.helpInstallItems} />
+      <p className="guide-more"><a href={t.ui.wikiUrl} target="_blank" rel="noopener">{t.ui.wikiLink}</a></p>
     </div>
   );
 }

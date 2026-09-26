@@ -1,6 +1,7 @@
 # Разработка
 
-Как устроен проект, как собрать сайт и обновить данные. Для игроков — [README.md](README.md).
+Как устроен проект, как собрать сайт и обновить данные. Для игроков — [README.md](README.md) (английский, витрина)
+и [Wiki](https://github.com/cotton-more/outerplane-gear-check/wiki) (руководство на двух языках).
 
 ## Файлы
 
@@ -15,7 +16,8 @@
 | `scripts/` | проверка сборки перед публикацией (`check-data.mjs`), робот сайта (`autoupdate.sh`), снятие эталона со старой страницы (`golden-old.mjs`), скриншоты для README (`screenshots.mjs`) |
 | `.github/workflows/data.yml` | робот сайта: push с правками кода — сборка и публикация на тех же данных; раз в сутки — PR с новыми данными ([AUTOUPDATE.md](AUTOUPDATE.md)) |
 | `.nvmrc` | версия Node — одна в Actions и локально, чтобы сборки совпадали байт в байт |
-| `screenshots/` | картинки для README; пересоздаются `task screenshots` |
+| `screenshots/` | скриншоты на двух языках: `en/` — для README и английских страниц Wiki, `ru/` — для русских; пересоздаются `task screenshots` |
+| `wiki/` | исходники страниц [Wiki](https://github.com/cotton-more/outerplane-gear-check/wiki): пары EN/RU, `_Sidebar.md`, `_Footer.md`. Правятся здесь, вместе с кодом; на push в `main` их публикует `.github/workflows/wiki.yml` — правка прямо в Wiki перезапишется |
 | `Taskfile.yml` | все команды: `task --list` |
 | `PUBLISH.md` | как выложить `docs/` на GitHub Pages и обновлять сайт |
 | `AUTOUPDATE.md` | как работает автообновление данных и что делать с его PR и issue |
@@ -38,7 +40,7 @@ task build:pwa    # PWA-сайт в docs/ со свежими данными out
 task build:single # одиночная страница outerplane-gear.html (+ build/artifact.html)
 task check        # проверить собранный docs/ против опубликованного (то же, что делает робот сайта)
 task preview      # посмотреть собранный docs/ на http://localhost:8000
-task screenshots  # переснять скриншоты для README (нужен Chrome)
+task screenshots  # переснять скриншоты для README и Wiki, оба языка (нужен Chrome)
 task publish      # подтянуть main → тесты → docs/ → проверки → коммит → пуш → дождаться выкладки на Pages
 ```
 

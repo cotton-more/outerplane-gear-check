@@ -412,6 +412,8 @@ export const ru = {
       '**iPhone и iPad:** в Safari «Поделиться» → «На экран „Домой“».',
       'Установленное приложение работает без сети. Когда выйдут новые данные, появится плашка «Обновить».',
     ],
+    wikiLink: 'Подробное руководство — в Wiki ↗',
+    wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',
   },
 };
 

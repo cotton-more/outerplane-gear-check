@@ -1,0 +1,40 @@
+# Wiki: исходники страниц — папка wiki/ этого репозитория; на push в main они зеркалятся в Wiki GitHub.
+# Править страницы — здесь, в wiki/, вместе с кодом: правка прямо в Wiki перезапишется следующей публикацией.
+# Скриншоты страницы берут из screenshots/{en,ru}/ ветки main по raw-ссылкам — в Wiki их копировать не нужно.
+name: Wiki
+
+on:
+  push:
+    branches: [main]
+    paths: ['wiki/**']
+  workflow_dispatch:        # «Run workflow» — опубликовать заново, например после ручной правки в Wiki
+
+permissions:
+  contents: write           # пуш в репозиторий Wiki (…/<repo>.wiki.git)
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Зеркало wiki/ → Wiki
+        env:
+          # обычного токена Actions хватает; если GitHub его не пустит в Wiki — секрет WIKI_TOKEN (PAT с contents: write)
+          TOKEN: ${{ secrets.WIKI_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git clone -q "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"
+          cd "$RUNNER_TEMP/wiki"
+          git rm -rqf --ignore-unmatch -- .
+          cp -R "$GITHUB_WORKSPACE/wiki/." .
+          git add -A
+          if git diff --cached --quiet; then echo "Wiki уже совпадает с wiki/ — публиковать нечего"; exit 0; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm "Wiki: ${GITHUB_SHA::7}"
+          git push -q origin HEAD
+          echo "Опубликовано: https://github.com/${GITHUB_REPOSITORY}/wiki"

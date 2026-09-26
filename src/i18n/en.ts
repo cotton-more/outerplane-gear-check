@@ -381,5 +381,7 @@ export const en: Texts = {
       '**iPhone and iPad:** in Safari, Share → "Add to Home Screen".',
       'The installed app works offline. When new data is out, an "Update" banner appears.',
     ],
+    wikiLink: 'Full guide — in the Wiki ↗',
+    wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Getting-started',
   },
 };

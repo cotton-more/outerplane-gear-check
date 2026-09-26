@@ -196,3 +196,6 @@ html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); }
 html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
 footer.foot .lang { margin-top: 4px; }
 .drawer .lang { margin-bottom: 12px; }
+
+/* справка: ссылка на подробное руководство в Wiki */
+.guide .guide-more { margin-top: 14px; }
