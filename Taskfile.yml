@@ -43,7 +43,7 @@ tasks:
     cmds: ['python3 update.py {{.CLI_ARGS}}']
 
   screenshots:
-    desc: Переснять скриншоты для README (screenshots/, нужен Chrome; путь — переменная CHROME)
+    desc: 'Переснять скриншоты для README и Wiki (screenshots/en, screenshots/ru; нужен Chrome — переменная CHROME; один язык — LANGS=en)'
     deps: [build:app]
     cmds: [node scripts/screenshots.mjs]
 

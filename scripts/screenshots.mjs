@@ -1,4 +1,5 @@
-// Скриншоты для README: телефон в разделённом экране (412×430, тёмная тема, русский), сценарий оценки шлема.
+// Скриншоты для README (английские) и Wiki (на языке страницы): телефон в разделённом экране (412×430, тёмная тема),
+// сценарий оценки шлема. Снимает оба языка в screenshots/en/ и screenshots/ru/; только один — LANGS=en.
 // Страница — свежая сборка приложения (build/app/index.html) с данными и картинками из docs/.
 // Нужен установленный Chrome; путь меняется переменной CHROME. Запуск: task screenshots.
 import { readFileSync, existsSync, createReadStream, mkdirSync } from 'node:fs';
@@ -7,7 +8,7 @@ import { join, extname, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const OUT = join(ROOT, 'screenshots');
+const LANGS = (process.env.LANGS || 'en,ru').split(',');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const MIME = { '.webp': 'image/webp', '.png': 'image/png' };
 
@@ -34,17 +35,26 @@ const ROSTER = ['Lambda', 'Eris', 'Titia', 'Core Fusion Lisha', 'Demiurge Saeran
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
 try {
+  for (const lang of LANGS) await shoot(lang);
+} finally {
+  await browser.close();
+  server.close();
+}
+
+async function shoot(lang) {
+  const OUT = join(ROOT, 'screenshots', lang);
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
   await page.setViewport({ width: 412, height: 430, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await page.goto(url, { waitUntil: 'networkidle0' });
-  await page.evaluate((names) => {
+  await page.evaluate((names, lang) => {
     localStorage.clear();
-    localStorage.setItem('ogc.lang', JSON.stringify('ru'));
+    localStorage.setItem('ogc.lang', JSON.stringify(lang));
     localStorage.setItem('ogc.welcomeHidden', 'true');
+    localStorage.setItem('ogc.fitnoteHidden', 'true');
     localStorage.setItem('ogc.roster', JSON.stringify(window.OGC_DATA.chars.filter((c) => names.includes(c.name)).map((c) => c.id)));
-  }, ROSTER);
-  await page.reload({ waitUntil: 'networkidle0' });
+  }, ROSTER, lang);
+  await page.goto(url, { waitUntil: 'networkidle0' }); // не reload: адрес мог сохранить #персонажа с прошлого прогона
 
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));
   const step = (fn) => page.evaluate(async (src) => {
@@ -54,7 +64,7 @@ try {
     await eval(src)({ wait, tap, stat }); // eslint-disable-line no-eval
   }, fn.toString());
   mkdirSync(OUT, { recursive: true });
-  const shot = async (name) => { await pause(400); await page.screenshot({ path: join(OUT, `${name}.png`) }); console.log(`screenshots/${name}.png`); };
+  const shot = async (name) => { await pause(400); await page.screenshot({ path: join(OUT, `${name}.png`) }); console.log(`screenshots/${lang}/${name}.png`); };
 
   // 1. Epic-шлем, Attack Set: подсвечены нужные статы, на плашке — «ярких 0–1 — в разбор»
   await step(async ({ tap }) => {
@@ -70,24 +80,34 @@ try {
     for (const row of document.querySelectorAll('.subrow')) await tap(row.querySelectorAll('.roll-b button')[2]);
   });
   await shot('2-verdict');
-  // 3. подробности: «Кому подходит» с цепочками и разделителем «запасная связка»
+  // 3. подробности: блок «Прокачка» — Enhance, Reforge, Breakthrough, Transistone
   await step(async ({ tap, wait }) => {
     await tap(document.querySelector('.vcard'));
     await wait(200);
     const body = document.querySelector('.drawer-b');
+    const plan = body.querySelector('.v-plan');
+    body.scrollTop += plan.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+  });
+  await shot('3-upgrade');
+  // 4. подробности: «Кому подходит» с цепочками и разделителем «запасная связка»
+  await step(async () => {
+    const body = document.querySelector('.drawer-b');
     const div = body.querySelector('.match-div');
     body.scrollTop = div ? div.offsetTop - 250 : body.querySelector('.v-sec').offsetTop;
   });
-  await shot('3-who-fits');
-  // 4. «Следующий» и два ненужных сабстата — «Разобрать» сразу, третий можно не вводить
+  await shot('4-who-fits');
+  // 5. «Следующий» и два ненужных сабстата — «Разобрать» сразу, третий можно не вводить
   await step(async ({ tap, stat }) => {
     await tap(document.querySelector('.drawer-x'));
     await tap(document.querySelector('.vb-reset'));
     for (const l of ['RES', 'DMG↓%']) await tap(stat(l));
   });
   await pause(6500); // плашка «Вернуть» гаснет
-  await shot('4-early-junk');
-} finally {
-  await browser.close();
-  server.close();
+  await shot('5-early-junk');
+  // 6. персонаж: билды outerpedia — сеты, оружие, приоритет сабстатов (предмет сброшен, чтобы внизу не висел вердикт)
+  const slug = await page.evaluate(() => { localStorage.setItem('ogc.item', 'null'); return window.OGC_DATA.chars.find((c) => c.name === 'Lambda').slug; });
+  await page.goto('about:blank'); // переход, отличающийся только #, страницу не перезагружает — предмет остался бы в памяти
+  await page.goto(`${url}#${slug}`, { waitUntil: 'networkidle0' });
+  await shot('6-character');
+  await page.close();
 }
