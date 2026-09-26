@@ -6,6 +6,7 @@ import { CFG } from './config';
 import { createIndex } from './data';
 import { applyLayout } from './hooks/useLayout';
 import { TEXTS, savedLang } from './i18n';
+import { makeCtx } from './logic/context';
 import * as logic from './logic/evaluate';
 import { flatFactor, scoreBuild, subWeights } from './logic/score';
 import './styles/base.css';
@@ -28,6 +29,6 @@ if (!D) {
       </IndexContext.Provider>
     </StrictMode>,
   );
-  // для отладки из консоли: чистые функции оценки и датасет
-  window.__ogc = { D, idx, CFG, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights };
+  // для отладки из консоли и проверки данных перед публикацией (scripts/check-data.mjs): чистые функции оценки и датасет
+  window.__ogc = { D, idx, CFG, build: __BUILD__, makeCtx, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights };
 }

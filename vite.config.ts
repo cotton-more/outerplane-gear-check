@@ -47,8 +47,9 @@ const APP_PATHS = ['src', 'index.html', 'vite.config.ts', 'package.json', 'packa
 function buildInfo(): { hash: string; date: string; dirty: boolean } {
   const git = (...args: string[]) => execFileSync('git', args, { cwd: import.meta.dirname, encoding: 'utf8' }).trim();
   try {
-    const [hash, date] = git('log', '-1', '--format=%h%n%cI', '--', ...APP_PATHS).split('\n');
-    return { hash, date, dirty: git('status', '--porcelain', '--', ...APP_PATHS) !== '' };
+    // полный sha и обрезка здесь: длина %h зависит от числа объектов в репозитории, в свежем клоне (CI) она другая
+    const [sha, date] = git('log', '-1', '--format=%H%n%cI', '--', ...APP_PATHS).split('\n');
+    return { hash: sha.slice(0, 7), date, dirty: git('status', '--porcelain', '--', ...APP_PATHS) !== '' };
   } catch {
     return { hash: '', date: '', dirty: false }; // не git-копия (архив) — версию не показываем
   }

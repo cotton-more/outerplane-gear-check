@@ -148,8 +148,8 @@ class Warnings:
 # --------------------------------------------------------------------------- загрузка
 
 
-def http_get(url: str, timeout: int = 60) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+def http_get(url: str, timeout: int = 60, headers: dict[str, str] | None = None) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
 
@@ -183,8 +183,11 @@ def parse_json(blob: bytes | str, what: str):
 def resolve_ref(ref: str) -> tuple[str, str | None]:
     """(sha, дата коммита) для ветки/sha. Если API недоступен — качаем по имени ветки."""
     url = f"https://api.github.com/repos/{REPO}/commits/{ref}"
+    headers = {}
+    if os.environ.get("GITHUB_TOKEN"):  # в GitHub Actions: лимит 1000 запросов в час вместо 60 на IP
+        headers["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
     try:
-        info = json.loads(http_get(url, timeout=20))
+        info = json.loads(http_get(url, timeout=20, headers=headers))
         return info["sha"], info["commit"]["committer"]["date"]
     except urllib.error.HTTPError as exc:
         if exc.code in (404, 422):
@@ -1221,6 +1224,8 @@ def main() -> None:
                                                   "а при своём --out — рядом с ним: <имя>.artifact.html)")
     ap.add_argument("--dump-json", "--data-only", dest="dump_json", type=Path, help="дополнительно сохранить датасет в JSON")
     ap.add_argument("--pwa", type=Path, metavar="DIR", help="собрать PWA-сайт в папку DIR (для GitHub Pages) вместо одиночной страницы")
+    ap.add_argument("--report-json", type=Path, metavar="FILE", help="с --pwa: итог сборки в JSON (изменения, предупреждения, "
+                                                                  "несопоставленные рекомендации) — для scripts/check-data.mjs")
     args = ap.parse_args()
     if args.pwa:
         return main_pwa(args)
@@ -1271,10 +1276,14 @@ def report(data: dict, prev: dict | None, warn: Warnings) -> None:
             "Скорее всего, в outerpedia поменялась структура данных — стоит обновить update.py.")
 
 
+# метки сборки, а не данные: сменился только коммит outerpedia (правили не наши файлы) — это не обновление
+BUILD_STAMP = ("generatedAt", "commit", "commitDate")
+
+
 def same_content(a: dict, b: dict) -> bool:
     def strip(d: dict) -> str:
         d = {k: v for k, v in d.items()}
-        d["meta"] = {k: v for k, v in d.get("meta", {}).items() if k != "generatedAt"}
+        d["meta"] = {k: v for k, v in d.get("meta", {}).items() if k not in BUILD_STAMP}
         return json.dumps(d, sort_keys=True, ensure_ascii=False)
     return strip(a) == strip(b)
 
@@ -1299,10 +1308,12 @@ def main_pwa(args) -> None:
     prev = previous_data(site / "index.html")
     carry_new_ids(data, prev)
     info = build_pwa(site, data, render_document, warn, args.refresh_images)
-    if prev and same_content(prev, data):
-        # данные те же — оставляем прежнюю дату сборки, чтобы файлы не менялись: ни лишнего коммита,
-        # ни ложной плашки «вышли новые данные» у пользователей
-        data["meta"]["generatedAt"] = prev["meta"].get("generatedAt", data["meta"]["generatedAt"])
+    unchanged = bool(prev) and same_content(prev, data)
+    if unchanged:
+        # данные те же — оставляем прежние метки (дату сборки и коммит outerpedia), чтобы файлы не менялись:
+        # ни лишнего коммита, ни ложной плашки «вышли новые данные» у пользователей
+        for key in BUILD_STAMP:
+            data["meta"][key] = prev["meta"].get(key, data["meta"][key])
         info = build_pwa(site, data, render_document, warn, args.refresh_images)
     if args.dump_json:
         slim = {k: v for k, v in data.items() if k != "img"}
@@ -1312,6 +1323,23 @@ def main_pwa(args) -> None:
         f"{info['bytes'] / 1024 / 1024:.1f} МБ, версия {info['version']})")
     log(f"  персонажей {c['characters']} (с билдами {c['withBuilds']}), билдов {c['builds']}")
     report(data, prev, warn)
+    if args.report_json:
+        write_report_json(args.report_json, data, prev, prov, warn, unchanged)
+
+
+def write_report_json(path: Path, data: dict, prev: dict | None, prov: dict, warn: Warnings, unchanged: bool) -> None:
+    """Итог сборки для проверок (scripts/check-data.mjs) и описания PR автообновления."""
+    out = {
+        "fetched": {"commit": prov.get("commit"), "commitDate": prov.get("commitDate")},
+        "published": {k: (prev or {}).get("meta", {}).get(k) for k in ("commit", "commitDate")},
+        "unchanged": unchanged,
+        "counts": data["meta"]["counts"],
+        "changes": [line.strip() for line in diff_report(prev, data)],
+        "warnings": warn.items,
+        "dropped": DROPPED,
+        "sourceFiles": list(SOURCE_FILES.values()),
+    }
+    path.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 if __name__ == "__main__":
