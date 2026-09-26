@@ -60,8 +60,7 @@ wait_pages() {
   local url want got
   url="https://$(echo "$owner" | tr '[:upper:]' '[:lower:]').github.io/$repo"
   want=$(sed -n "s/^const VERSION = '\(.*\)';/\1/p" docs/sw.js)
-  # выкладку запускает сам push в main; явный запрос — на случай, если push бота её не запустил
-  gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds" >/dev/null 2>&1 || true
+  # выкладку запускает сам push в main (и push бота тоже — проверено); лишний запрос выкладки отменял бы её
   for _ in $(seq 1 40); do
     got=$(curl -fsS "$url/sw.js?t=$(date +%s)" 2>/dev/null | sed -n "s/^const VERSION = '\(.*\)';/\1/p" || true)
     if [ "$got" = "$want" ]; then echo "Выложено: $want — $url"; return 0; fi

@@ -22,7 +22,6 @@ permissions:
   contents: write           # PR данных — ветка data/auto; публикация кода — коммит docs/ в main
   pull-requests: write
   issues: write             # не собралось или проверки не прошли — issue с причиной
-  pages: write              # явный запрос выкладки после публикации кода
 
 concurrency:
   group: site-robot
@@ -33,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      GH_TOKEN: ${{ github.token }}      # gh: PR, issue, запрос выкладки
+      GH_TOKEN: ${{ github.token }}      # gh: PR и issue
       GITHUB_TOKEN: ${{ github.token }}  # update.py и check-data: запросы к GitHub API без лимита 60 в час
     steps:
       - uses: actions/checkout@v5
