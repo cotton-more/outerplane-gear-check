@@ -266,6 +266,7 @@ export const en: Texts = {
     mainInGrid: 'Main ↓',
     mainFirst: 'Main stat first — in the game it is on top of the piece, then the substats in order. Faded — no one needs that main.',
     mainCell: (k) => `Main stat ${k} — tap to remove`,
+    fixedMainCell: (k) => `${k} is this slot's main stat: it never rolls as a substat here`,
     usefulTitle: (k, credit) => `${k}${credit >= 1 ? ' — needed by builds with this set' : credit > 0 ? ' — needed, but far down the priority (½)' : ' — no build with this set needs it'}`,
     triageHint: (legend, fodder) => (legend
       ? `0–1 bright stats on the piece — ${fodder ? 'fodder, don\'t upgrade' : 'dismantle'}`
@@ -283,7 +284,7 @@ export const en: Texts = {
     codeHint: "A code from guild chat. Case, spaces and dashes don't matter. It replaces the current item; the verdict uses your roster and settings.",
     verdictLabel: { keep: 'Keep', temp: 'Stopgap', maybe: 'Maybe', fodder: 'Fodder', junk: 'Dismantle', idle: '…' },
     verdict: 'Verdict',
-    tierLegend: 'The chain is the build substat priority, left is more important. Green — on the item and counted, yellow — counts as ½, grey — on the item but far down the chain (small places from 5th on don\'t count), dashed — not on the item, marked main — the item\'s main stat (never a substat, grows with Enhance), crossed out — the build does not need it.',
+    tierLegend: 'The chain is the build substat priority, left is more important. Green — on the item and counted, yellow — counts as ½, grey — on the item but far down the chain (small places from 5th on don\'t count), dashed — not on the item, marked main — the stat is in the item\'s main (grows with Enhance, not Reforge); the same stat as a substat of the other kind (flat ATK with an ATK% main, EFF% with a flat EFF) sits next to it after «/», crossed out — the build does not need it.',
     altGroup: 'Below — the set is only in an alternative combo of the build',
     showAll: (n) => `show all (${n})`,
     scoreTitle: (good, n, pct) => `Useful substats: ${good} of ${n}; weighted by priority — ${pct}%`,
@@ -352,7 +353,7 @@ export const en: Texts = {
       '**Legendary weapon and accessory** — find the item and mark the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
-      '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions.',
+      '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions. A cell marked main never rolls as a substat on this piece — it is already in the main (HP% on helmets and boots, flat DEF on chest armor and gloves, flat ATK on weapons). A flat EFF or RES main doesn\'t block EFF and RES substats — in the game they are different stats.',
       '**4th substat on Epic armor** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. "Upgrading" tells which one would.',
       'Tap a stat in its row to replace it (yellow segments stay) or remove it. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
     ],

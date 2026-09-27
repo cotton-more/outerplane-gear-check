@@ -1,7 +1,8 @@
 import { Fragment } from 'react';
 import { CFG } from '../../config';
 import { FLAT } from '../../data';
-import { takenByMain, tierPlaces, type Part, type Row } from '../../logic/score';
+import { mainsOnAxis } from '../../logic/mains';
+import { tierPlaces, type Part, type Row } from '../../logic/score';
 import { useIndex } from '../IndexContext';
 
 const axisOf = (k: string) => k.trim().replace(/%$/, '');
@@ -10,13 +11,15 @@ interface Pill { label: string; cls: string; sep: string }
 
 // Цепочка приоритета сабстатов билда («ATK › CHC › SPD › CHD › DMG UP%») с отметками, что из неё есть на предмете:
 //   ok — есть и засчитан, half — за ½, low — есть, но далеко в цепочке (или слабый flat), miss — нет на предмете;
-//   main — это main stat предмета: сабстатом он быть не может, места в цепочке не занимает, но стат на предмете есть;
+//   main — стат есть в main предмета (у брони и оружия — и в фиксированных строках: HP% шлема, flat ATK оружия).
+//     Место в цепочке он занимает, только если сабстатом этому стату на предмете ещё можно выпасть: при main ATK%
+//     бывает flat ATK, при flat EFF в main — EFF%; такой сабстат идёт рядом через «/»;
 //   tail — места дальше четвёртого, которые не считаются (кроме SPD).
 // Статы предмета, которых в цепочке нет вовсе, идут в конце зачёркнутыми.
 export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
   const { SUB } = useIndex();
-  const { main } = m;
-  const place = tierPlaces(m.b, main);
+  const { im } = m;
+  const place = tierPlaces(m.b, im);
   const used = new Set<string>();
   const pills: Pill[] = [];
   const state = (p: Part) => (p.ok ? (p.half ? 'half' : 'ok') : 'low');
@@ -30,12 +33,11 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
       const tail = tok !== 'SPD' && place[i] >= CFG.tierCredit.length ? ' tail' : '';
       const sep = !pills.length ? '' : first ? '›' : '=';
       first = false;
-      // у flat-оси main — её %-версия: main ATK%, а flat ATK ещё бывает сабстатом и место в цепочке за осью остаётся
-      const isMain = takenByMain(tok, main) || (flat && main === axis + '%');
-      if (isMain) pills.push({ label: main!, cls: 'main' + tail, sep });
+      const on = mainsOnAxis(tok, im);
+      if (on.length) pills.push({ label: on.join('/'), cls: 'main' + tail, sep });
       const hits = m.parts.filter((p) => !used.has(p.key) && (flat ? axisOf(p.key) === axis : p.key === tok));
-      if (!hits.length) { if (!isMain) pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep }); continue; }
-      hits.forEach((p, j) => { used.add(p.key); pills.push({ label: p.key, cls: state(p) + tail, sep: j || isMain ? '/' : sep }); });
+      if (!hits.length) { if (!on.length) pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep }); continue; }
+      hits.forEach((p, j) => { used.add(p.key); pills.push({ label: p.key, cls: state(p) + tail, sep: j || on.length ? '/' : sep }); });
     }
   });
   const extra = m.parts.filter((p) => !used.has(p.key));

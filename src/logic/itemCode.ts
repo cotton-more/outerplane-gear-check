@@ -17,7 +17,7 @@ import type { ItemInput } from './verdict';
 // Порядок в таблицах (и в SLOTS, GRADES) — часть формата: только дописывать в конец, иначе старые коды прочитаются неверно.
 // Сабстатов ровно 13 и разряд под них полный (1 + 13·4 = 53): новый сабстат — это уже новый формат кода.
 const SUBS = ['ATK', 'ATK%', 'DEF', 'DEF%', 'DMG UP%', 'DMG RED%', 'HP', 'HP%', 'CHC', 'CHD', 'EFF', 'RES', 'SPD'];
-const MAINS = ['ATK%', 'CDMG RED%', 'CHC', 'CHD', 'DEF%', 'DMG RED%', 'DMG UP%', 'EFF', 'HP%', 'PEN%', 'RES', 'SPD']; // до 15
+export const MAINS = ['ATK%', 'CDMG RED%', 'CHC', 'CHD', 'DEF%', 'DMG RED%', 'DMG UP%', 'EFF', 'HP%', 'PEN%', 'RES', 'SPD']; // до 15
 const CLASSES = ['striker', 'defender', 'ranger', 'healer', 'mage']; // суффикс ключа «781:defender»
 
 const ROWS = 4;

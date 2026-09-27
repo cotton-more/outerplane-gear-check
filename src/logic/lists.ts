@@ -3,6 +3,7 @@ import type { Index } from '../data';
 import type { Char, GearKind, GearSet, Item } from '../data/types';
 import { buildsOf, combosWith, epicMains, gearList, gearRef, legendMains, slotMains, uniqChars } from './builds';
 import type { Ctx } from './context';
+import { NO_MAINS, type ItemMains } from './mains';
 import { subWeights } from './score';
 
 // скольким персонажам (в ростере, если он включён) нужен сет
@@ -18,12 +19,13 @@ export function setOptions(ctx: Ctx): { live: { set: GearSet; n: number }[]; dea
 }
 
 // Сабстаты, нужные хоть одному билду с этим сетом (в ростере, если он включён): стат → лучший зачёт, 1 или ½.
+// im — main брони этого слота: сабстатов, которые он запрещает, в спросе нет.
 // Подсвечивает сетку сабстатов. Если на Epic-броне таких статов 0–1, «Оставить» и «Временно» невозможны:
 // обоим нужны два полезных стата под один билд.
-export function setSubDemand(ctx: Ctx, setId: string): Map<string, number> {
+export function setSubDemand(ctx: Ctx, setId: string, im: ItemMains = NO_MAINS): Map<string, number> {
   const out = new Map<string, number>();
   for (const { c, b } of buildsOf(ctx.idx, (b, c) => ctx.inScope(c) && combosWith(b, setId).length > 0)) {
-    for (const [k, w] of subWeights(ctx, b, c)) if (w.credit > (out.get(k) ?? 0)) out.set(k, w.credit);
+    for (const [k, w] of subWeights(ctx, b, c, im)) if (w.credit > (out.get(k) ?? 0)) out.set(k, w.credit);
   }
   return out;
 }

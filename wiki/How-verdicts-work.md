@@ -7,8 +7,19 @@
 A "useful" substat is one in places 1–3 of the build's priority chain (4th place counts for ½, SPD in any place).
 A tie like `SPD=CHD` shares one place, and the next stat comes after all of its stats: in
 `CHC › ATK › SPD=CHD › DMG UP%`, DMG UP% is in fifth place. The best build among characters who wear the set is used.
-On weapons and accessories the main stat takes no place: it is never a substat too. For an accessory with main SPD,
-the chain `SPD › HP › CHC › ATK` is `HP › CHC › ATK` for its substats, and ATK counts in full.
+A stat in the main takes no place when it can no longer roll as a substat on this piece. The game never lets a
+substat repeat a main line, but it compares the stat together with its kind: a flat RES main on boots and a RES%
+substat do sit on one piece, like flat DEF and DEF% (checked in the game). So:
+
+- for an accessory with main SPD, the chain `SPD › HP › CHC › ATK` is `HP › CHC › ATK` for its substats, and ATK
+  counts in full; a flat EFF or RES accessory main takes no place — EFF% and RES% still roll as substats;
+- weapons always have a flat ATK line: with an ATK% main the ATK axis is taken entirely, with DEF% or HP% it isn't —
+  ATK% can still roll;
+- armor mains are fixed by slot: helmet — HP%, chest — flat DEF, gloves — flat EFF and flat DEF, boots — flat RES and
+  HP%. They take no place (the other kind of the same stat still rolls), but HP% on helmets and boots and flat DEF on
+  chest armor and gloves never roll as substats — in the grid those cells are marked main. The mains come from the
+  data per set and grade: if the game changes a set's main, the page recalculates on its own, and the update report
+  gets a line about it.
 
 - **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ yellow segments.
 - **Epic is stricter:** Transistones aren't spent on Epics (outerpedia guide), and an Epic can't be Breakthrough fodder

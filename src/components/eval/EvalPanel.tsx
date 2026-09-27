@@ -10,6 +10,7 @@ import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { MAX_SUBS } from '../../logic/subs';
 import { mainOptions, setSubDemand } from '../../logic/lists';
+import { blocksOf, itemMains as mainLines } from '../../logic/mains';
 import type { Verdict as VerdictData } from '../../logic/verdict';
 import type { Action, AppState } from '../../state/appState';
 import { Frame, Img, StatIcon } from '../Img';
@@ -37,7 +38,10 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
   const armor = isArmor(s.slot);
-  const useful = useMemo(() => (armor && s.setId ? setSubDemand(ctx, s.setId) : null), [ctx, armor, s.setId]);
+  // строки main: у брони фиксированы сетом, у оружия — flat ATK и выбранный; сабстатов, которые они запрещают, в сетке нет
+  const im = useMemo(() => mainLines(ctx.idx, { slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main }),
+    [ctx.idx, s.slot, s.grade, s.setId, s.itemKey, s.main]);
+  const useful = useMemo(() => (armor && s.setId ? setSubDemand(ctx, s.setId, im) : null), [ctx, armor, s.setId, im]);
   const full = Object.keys(s.subs).length >= MAX_SUBS;
   const kind = s.slot as GearKind;
   const epic = s.grade === 'rare';
@@ -51,7 +55,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const allMains = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic) : []), [ctx, weapon, kind, epic]);
   // у аксессуара без main сетка сначала выбирает main — в игре он сверху предмета
   const mainMode = s.slot === 'accessory' && !s.main && opts.length > 0 ? opts : null;
-  const pickMain = (main: string) => dispatch({ type: 'main', main });
+  const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
   const itemField = (
     <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
       placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} />
@@ -89,7 +93,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         <div className="subzone">
           {cardShown
             ? <VerdictCard r={verdict} onOpen={onOpenVerdict} />
-            : <StatGrid subs={s.subs} main={s.main} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
+            : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
         {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
         <SubRows subs={s.subs} epic={epic} fourth={epic && armor} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
@@ -124,18 +128,18 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       {open === 'main' && (
         <Sheet title={item ? `Main stat · ${item.name}` : epic ? t.ui.mainEpic(kind) : t.ui.mainUnlisted} onClose={close}>
           <MainPicker ctx={ctx} kind={kind} item={item} epic={epic} current={s.main}
-            onPick={(main) => { if (main !== s.main) dispatch({ type: 'main', main }); close(); }} />
+            onPick={(main) => { if (main !== s.main) pickMain(main); close(); }} />
         </Sheet>
       )}
       {open === 'fourth' && (
         <Sheet title={t.ui.fourthSheet} onClose={close}>
-          <SubPicker ctx={ctx} subs={s.subs} main={s.main} editing={null}
+          <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={null}
             onPick={(key) => { dispatch({ type: 'sub', key }); close(); }} />
         </Sheet>
       )}
       {open !== null && typeof open === 'object' && (
         <Sheet title={t.ui.replaceSub(open.sub)} onClose={close}>
-          <SubPicker ctx={ctx} subs={s.subs} main={s.main} editing={open.sub}
+          <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={open.sub}
             onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }}
             onRemove={() => { dispatch({ type: 'sub', key: open.sub }); close(); }} />
         </Sheet>

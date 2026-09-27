@@ -207,7 +207,84 @@ function dataDiff(A, B) {
     for (const [k, x] of now) if (!was.has(k)) d.items.push(`${label} ${x.name}`);
     for (const [k, x] of was) if (!now.has(k)) d.lostItems.push({ text: `${label} ${x.name}`, used: x.users > 0 });
   }
+  d.mains = mainChanges(A, B);
   return d;
+}
+
+// Смена main у вещи, которая была и раньше, и новая вещь с main не как у остальных в слоте. Страница считает
+// по данным и сама перейдёт на новые main — строка нужна, чтобы это было видно в PR. То же — main_changes в update.py.
+const SLOT_RU = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' };
+const GRADE_EN = { unique: 'Legendary', rare: 'Epic' };
+const joined = (ls) => ls.join(' + ') || '—';
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+function mainsText(x) {
+  let choice = (x.mains || []).join('/');
+  if (x.extraMains?.length) choice += ` (у фиксированных копий ещё ${x.extraMains.join('/')})`;
+  return [...(x.fixed || []), ...(choice ? [choice] : [])].join(' + ') || '—';
+}
+
+function mainChanges(A, B) {
+  const out = [];
+  const usual = B.fixedMains || {};
+  for (const [key, kind] of [['weapons', 'weapon'], ['amulets', 'accessory']]) {
+    const was = new Map(A[key].map((x) => [x.key, x]));
+    for (const x of B[key]) {
+      let o = was.get(x.key);
+      if (!o) {
+        const base = usual[kind]?.[x.grade];
+        if (x.star === 6 && base && !same(x.fixed || [], base)) out.push(`+ main не как у остальных: ${SLOT_RU[kind]} ${x.name} — ${mainsText(x)}`);
+        continue;
+      }
+      if (!('fixed' in o)) o = { ...o, fixed: x.fixed }; // данные до строк main: сравниваем только выбор
+      if (mainsText(o) !== mainsText(x)) out.push(`~ main: ${SLOT_RU[kind]} ${x.name}: ${mainsText(o)} → ${mainsText(x)}`);
+    }
+  }
+  const wasSets = new Map(A.sets.map((s) => [s.id, s]));
+  for (const s of B.sets) {
+    const o = wasSets.get(s.id);
+    for (const [slot, byGrade] of Object.entries(s.fixed || {})) {
+      for (const [grade, now] of Object.entries(byGrade)) {
+        const where = `${s.name}, ${SLOT_RU[slot]} ${GRADE_EN[grade]}`;
+        const then = o?.fixed?.[slot]?.[grade];
+        const base = usual[slot]?.[grade];
+        if (!then && base && !same(now, base) && (!o || 'fixed' in o)) out.push(`+ main не как у остальных: ${where} — ${joined(now)} (обычно ${joined(base)})`);
+        else if (then && !same(then, now)) out.push(`~ main: ${where}: ${joined(then)} → ${joined(now)}`);
+      }
+    }
+  }
+  for (const [slot, byGrade] of Object.entries(A.fixedMains || {})) {
+    for (const [grade, then] of Object.entries(byGrade)) {
+      const now = usual[slot]?.[grade];
+      if (now && !same(now, then)) out.push(`~ main у большинства вещей: ${SLOT_RU[slot]} ${GRADE_EN[grade]}: ${joined(then)} → ${joined(now)}`);
+    }
+  }
+  return out;
+}
+
+// main из данных, с которыми страница не справится: код предмета не запишет новую метку, сетка аксессуара её
+// не покажет, у строки брони или оружия не будет значка. Что страница знает — спрашиваем у неё (window.__ogc.known).
+function unknownMains(D, known) {
+  const out = new Set();
+  const code = new Set(known.codeMains);
+  const grid = new Set(known.gridMains);
+  const icons = new Set(known.icons);
+  for (const [kind, list] of [['weapon', D.weapons], ['accessory', D.amulets]]) {
+    for (const i of list) {
+      for (const m of [...i.mains, ...i.extraMains]) {
+        if (!code.has(m)) out.add(`main «${m}» (${i.name}) не записать в код предмета — допиши его в MAINS в src/logic/itemCode.ts`);
+        if (kind === 'accessory' && !grid.has(m)) out.add(`main «${m}» (${i.name}) нет в сетке аксессуара — MAIN_GRID в src/data/index.ts`);
+      }
+    }
+  }
+  const lines = [
+    ...Object.values(D.fixedMains || {}).flatMap((g) => Object.values(g).flat()),
+    ...D.sets.flatMap((s) => Object.values(s.fixed || {}).flatMap((g) => Object.values(g).flat())),
+    ...[...D.weapons, ...D.amulets].flatMap((i) => i.fixed || []),
+  ];
+  for (const m of lines) if (!icons.has(m)) out.add(`строка main «${m}» странице незнакома — нет значка в STAT_ICON (src/data/index.ts)`);
+  for (const m of Object.keys(D.mainBlocks || {})) if (!icons.has(m)) out.add(`main «${m}» странице незнаком — нет значка в STAT_ICON (src/data/index.ts)`);
+  return out;
 }
 
 // --------------------------------------------------------------------------- проверки
@@ -304,6 +381,7 @@ function markdown({ ok, oldD, newD, diff, verdicts, byCode, src, code, report, p
     ...diff.changed.map((x) => `~ обновлены билды: ${x}`),
     ...diff.items.map((x) => `+ новый ${x}`),
     ...diff.lostItems.map((x) => `− пропал ${x.text}${x.used ? ' (был в билдах)' : ''}`),
+    ...(diff.mains || []),
   ];
   L.push(...(items.length ? items.map((x) => `- ${x}`) : ['Персонажи, билды и предметы те же.']), '');
   if (code) {
@@ -373,7 +451,7 @@ async function main() {
   }
 
   // 2. правдоподобие: ничего заметного не пропало
-  let diff = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [] };
+  let diff = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [], mains: [] };
   await guarded('Ничего не пропало', () => {
     diff = dataDiff(oldD, newD);
     const oc = oldD.meta.counts;
@@ -430,6 +508,18 @@ async function main() {
       byCode = diffCases(runCases(pOldCode.w.__ogc), was, oldD);
     }
     pOldCode.w.close();
+  });
+
+  // 5б. новые main, с которыми страница не справится: новая метка, выбор вместо фиксированной строки брони
+  // (последнее update.py пишет предупреждением — его ловит «Разбор данных outerpedia»)
+  await guarded('Main stat знакомы странице', () => {
+    const known = pNew.w.__ogc?.known;
+    if (!known) {
+      check('Main stat знакомы странице', false, ['в странице нет window.__ogc.known — приложение не запустилось, см. «Страница работает»']);
+      return;
+    }
+    const bad = [...unknownMains(newD, known)];
+    check('Main stat знакомы странице', !bad.length, bad);
   });
 
   // 6. код приложения новее опубликованного — выйдет вместе с данными

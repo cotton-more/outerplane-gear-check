@@ -1,4 +1,4 @@
-import { FLAT } from '../../data';
+import { FLAT, MAIN_GRID } from '../../data';
 import { useT } from '../../i18n';
 import type { MainOption } from '../../logic/lists';
 import type { Subs } from '../../logic/subs';
@@ -12,13 +12,15 @@ import { StatIcon } from '../Img';
 // mains — у аксессуара без main: сетка сначала выбирает main (он в игре сверху предмета), потом сабстаты.
 // Flat-статы main не бывают — на их местах PEN% и CDMG RED%, которые бывают только main; остальные на своих местах.
 // Выбранный main отмечен в сетке «main»; нажатие снимает его, и сетка снова выбирает main.
+// blocked — сабстаты, которых на предмете не бывает из-за main (фиксированного у брони и оружия или выбранного):
+// клетка с пометкой «main». Игра сравнивает стат вместе с видом: flat EFF в main не мешает сабстату EFF% —
+// у аксессуара с main EFF клетка EFF остаётся обычной (main тогда виден в поле main над сеткой).
 const GRID = ['SPD', 'CHC', 'CHD', 'ATK%', 'HP%', 'DEF%', 'DMG UP%', 'EFF', 'RES', 'DMG RED%', 'ATK', 'HP', 'DEF'];
-const MAIN_GRID = ['SPD', 'CHC', 'CHD', 'ATK%', 'HP%', 'DEF%', 'DMG UP%', 'EFF', 'RES', 'DMG RED%', 'PEN%', 'CDMG RED%'];
 // подписи — не длиннее пяти знаков: в разделённом экране клетка ~24 px. CDMG RED% — «CD↓%»: «CDMG↓» обрезалось бы в «DMG↓»
 const SHORT: Record<string, string> = { 'DMG UP%': 'DMG↑%', 'DMG RED%': 'DMG↓%', 'CDMG RED%': 'CD↓%' };
 
-export function StatGrid({ subs, main, full, useful, mains, onPick, onMain }: {
-  subs: Subs; main: string | null; full: boolean; useful: Map<string, number> | null;
+export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onMain }: {
+  subs: Subs; main: string | null; blocked: Set<string>; full: boolean; useful: Map<string, number> | null;
   mains: MainOption[] | null; onPick: (key: string) => void; onMain: (key: string) => void;
 }) {
   const t = useT();
@@ -40,9 +42,12 @@ export function StatGrid({ subs, main, full, useful, mains, onPick, onMain }: {
   return (
     <div className="statgrid" role="group" aria-label={t.ui.addSub}>
       {GRID.map((k) => {
-        if (k === main) {
+        if (blocked.has(k) && !(k in subs)) {
+          // выбранный main снимается нажатием; фиксированная строка (HP% шлема, flat ATK оружия) — нет
+          const chosen = k === main;
           return (
-            <button key={k} type="button" className="sg is-main" title={t.ui.mainCell(k)} onClick={() => onMain(k)}>
+            <button key={k} type="button" className={`sg is-main${chosen ? '' : ' fixed'}`} disabled={!chosen}
+              title={chosen ? t.ui.mainCell(k) : t.ui.fixedMainCell(k)} onClick={chosen ? () => onMain(k) : undefined}>
               <small>main</small><span>{SHORT[k] ?? k}</span>
             </button>
           );

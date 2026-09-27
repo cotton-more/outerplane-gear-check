@@ -5,6 +5,7 @@ import { CFG } from '../config';
 import type { GearKind } from '../data/types';
 import { buildsOf, gearList, gearRef, slotMains, uniqChars, type BuildRef } from './builds';
 import type { Ctx } from './context';
+import { itemMains } from './mains';
 import { dedupe, flatMisses, rollInfo, rows, type Row } from './score';
 import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
@@ -21,6 +22,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const epic = s.grade === 'rare';
   const nSubs = Object.keys(subs).length;
   const expected = dropSubs(s.grade);
+  const im = itemMains(idx, s); // строки main: выбранная и у оружия базовый flat ATK
   res.foot = G.foot(CFG.tempGood, CFG.tempGood2, CFG.tempYellow);
 
   // кто взял бы предмет с таким main как временный: класс подходит, и билд просит этот main в этом слоте
@@ -32,7 +34,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const tempOk = (m: Scored) => m.good != null && (m.good >= CFG.tempGood || (m.good >= tempNeed && m.yellow >= CFG.tempYellow));
   res.qualifies = tempOk;
   const tempRank = (r: Scored) => (tempOk(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.yellow ?? 0) * 0.1 + (r.ratio ?? 0) * 0.01;
-  const stopgapRows = (list: BuildRef[]) => dedupe(rows(ctx, s.grade, list, subs, s.main), tempRank);
+  const stopgapRows = (list: BuildRef[]) => dedupe(rows(ctx, s.grade, list, subs, im), tempRank);
 
   // общий вердикт для временной замены (Epic или Legendary с пассивкой не из билдов)
   const judgeStopgap = (cands: Row[], what: string): boolean => {
@@ -139,8 +141,8 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const mainOkFor = (x: BuildRef) => { const m = gearRef(x.b, kind, item.key).mains; return noMainChoice || !m.length || m.includes(main); };
   const extra = (x: BuildRef) => ({ mains: gearRef(x.b, kind, item.key).mains, mainOk: mainOkFor(x) });
   const rank = (r: Scored) => (r.mainOk ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0);
-  const scoped = dedupe(rows(ctx, s.grade, scopedAll, subs, s.main, extra), rank);
-  const others = dedupe(rows(ctx, s.grade, all.filter((x) => !ctx.inScope(x.c)), subs, s.main, extra), rank);
+  const scoped = dedupe(rows(ctx, s.grade, scopedAll, subs, im, extra), rank);
+  const others = dedupe(rows(ctx, s.grade, all.filter((x) => !ctx.inScope(x.c)), subs, im, extra), rank);
   const ok = scoped.filter((r) => r.mainOk);
   const temp = s.main && settings.stage === 'grow'
     ? stopgapRows(stopgapFor(s.main, item.classLimits).filter((x) => ctx.inScope(x.c) && !ok.some((o) => o.c.id === x.c.id)))

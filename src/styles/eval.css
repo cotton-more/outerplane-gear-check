@@ -182,6 +182,8 @@ html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-botto
 .sg.is-main { border-color: color-mix(in srgb, var(--keep) 55%, transparent); background: none; color: var(--keep); }
 .sg.is-main small { font: 500 9px/1 var(--font-sans); opacity: .85; }
 .sg:disabled:not([aria-pressed="true"]) { opacity: .22; }
+/* фиксированный main слота (HP% шлема, flat ATK оружия): нажать нельзя, но пометку «main» видно */
+.sg.is-main.fixed:disabled { opacity: .6; border-style: dashed; }
 .grid-hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
 html.narrow .grid-hint { display: none; }
 .subrows:empty { display: none; }

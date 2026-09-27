@@ -5,8 +5,9 @@ import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
 
 // Окно выбора сабстата: новый (editing = null) или замена уже отмеченного в той же строке — там же «Убрать».
-export function SubPicker({ ctx, subs, main, editing, onPick, onRemove }: {
-  ctx: Ctx; subs: Subs; main: string | null; editing: string | null; onPick: (key: string) => void; onRemove?: () => void;
+// blocked — сабстаты, которых на предмете не бывает из-за main (см. logic/mains).
+export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
+  ctx: Ctx; subs: Subs; blocked: Set<string>; editing: string | null; onPick: (key: string) => void; onRemove?: () => void;
 }) {
   const { D, SUB, SUB_LIST } = ctx.idx;
   const t = useT();
@@ -15,7 +16,7 @@ export function SubPicker({ ctx, subs, main, editing, onPick, onRemove }: {
     <>
       <div className="subgrid">
         {SUB_LIST.map((k) => {
-          const taken = (k in subs && k !== editing) || k === main;
+          const taken = (k in subs && k !== editing) || (blocked.has(k) && k !== editing);
           return (
             <button key={k} type="button" className={`subopt${FLAT.has(k) ? ' flat' : ''}`} aria-pressed={k === editing} disabled={taken}
               title={title(k)} onClick={() => onPick(k)}>

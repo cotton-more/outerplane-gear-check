@@ -8,13 +8,16 @@ import type { GearKind } from '../data/types';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
 import { evalArmor } from './evalArmor';
+import { itemMains } from './mains';
 import { MAX_SUBS } from './subs';
 import { emptyVerdict, type ItemInput, type Verdict } from './verdict';
 
 // Epic-броня из дропа (3 сабстата): какие 4-е сабстаты от первого Reforge сделали бы её «Оставить» даже
-// с одним жёлтым сегментом. Считает та же оценка — перебором всех статов, которых на вещи нет.
+// с одним жёлтым сегментом. Считает та же оценка — перебором всех статов, которых на вещи нет и которым
+// на этом слоте можно выпасть (HP% шлему не выпадет: это его main).
 function fourthToKeep(ctx: Ctx, s: ItemInput): string[] {
-  return ctx.idx.SUB_LIST.filter((k) => !(k in s.subs) && evalArmor(ctx, { ...s, subs: { ...s.subs, [k]: 1 } }, emptyVerdict()).v === 'keep');
+  const { blocked } = itemMains(ctx.idx, s);
+  return ctx.idx.SUB_LIST.filter((k) => !(k in s.subs) && !blocked.has(k) && evalArmor(ctx, { ...s, subs: { ...s.subs, [k]: 1 } }, emptyVerdict()).v === 'keep');
 }
 
 export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {

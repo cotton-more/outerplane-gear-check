@@ -3,6 +3,7 @@ import { CFG } from '../config';
 import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
+import { itemMains } from './mains';
 import { dedupe, flatMisses, rollInfo, rows, topTokens, type Part, type Row } from './score';
 import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
@@ -20,6 +21,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const expected = dropSubs(s.grade);
   res.foot = A.foot(CFG.keepCount, CFG.spdKeep, CFG.spdRoll);
   const set = s.setId ? idx.SET[s.setId] : undefined;
+  const im = itemMains(idx, s); // main брони фиксирован сетом, слотом и грейдом
   if (!set) {
     res.title = A.pickSet;
     res.lines = [A.pickSetHint(GRADE_PREFIX[s.grade], SLOT[s.slot].game ?? '', GRADE_NAME[s.grade])];
@@ -54,10 +56,11 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   // среди подходящих первыми — те, у кого сет основной; неподходящие — по совпадению статов (от лучшего зависят тексты)
   const rank = (r: Scored) => (qualifies(r) ? 100 + (primary(r) ? 10 : 0) : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
   // главные статы билда, которых на предмете нет (ось ATK/DEF/HP закрывает %-версия или сильный flat)
-  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers)
+  // сабстат, которого на этом слоте не бывает (HP% у шлема — это его main), недостающим не считаем
+  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers, im)
     .map((k) => (FLAT.has(k.replace(/%$/, '')) ? k.replace(/%$/, '') + '%' : k)))]
-    .filter((k) => idx.SUB[k] && !full(m).some((p) => p.key === k || p.key + '%' === k));
-  const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, null, (x) => ({ combos: combosWith(x.b, set.id) })), rank);
+    .filter((k) => idx.SUB[k] && !im.blocked.has(k) && !full(m).some((p) => p.key === k || p.key + '%' === k));
+  const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, im, (x) => ({ combos: combosWith(x.b, set.id) })), rank);
   const scoped = score(judged.filter((x) => ctx.inScope(x.c)));
   const others = score(judged.filter((x) => !ctx.inScope(x.c)));
   const whoWears = A.whoWears(set.short);
@@ -139,7 +142,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   if (!legend && !partial && bestGood >= CFG.keepCount) {
     // все сабстаты Epic полезны, но слабые: ни SPD, ни стата с верхних ступеней, ролл ниже порога
-    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers)])];
+    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers, im)])];
     res.v = 'junk';
     res.title = A.weakEpicTitle;
     res.lines.push(A.weakEpic(who, nSubs, top, best.yellow, 3 * nSubs), A.weakEpicKeepIf(top, CFG.epicYellow));

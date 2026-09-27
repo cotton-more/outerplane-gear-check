@@ -31,6 +31,9 @@ export const STAT_ICON: Record<string, string> = {
 };
 const SUB_ORDER = ['SPD', 'ATK%', 'CHC', 'CHD', 'DMG UP%', 'HP%', 'DEF%', 'DMG RED%', 'EFF', 'RES', 'ATK', 'HP', 'DEF'];
 export const FLAT = new Set(['ATK', 'DEF', 'HP']);
+// main аксессуара в сетке (StatGrid): те же места, что у сабстатов, а на местах flat-статов — PEN% и CDMG RED%,
+// которые бывают только main. Новый main в данных без места здесь — красная проверка (scripts/check-data.mjs)
+export const MAIN_GRID = ['SPD', 'CHC', 'CHD', 'ATK%', 'HP%', 'DEF%', 'DMG UP%', 'EFF', 'RES', 'DMG RED%', 'PEN%', 'CDMG RED%'];
 
 export function createIndex(D: Dataset) {
   const SUB = Object.fromEntries(D.substats.map((s) => [s.key, s]));

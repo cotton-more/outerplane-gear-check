@@ -2,6 +2,7 @@
 import { GRADES, SLOTS, isArmor, type Index } from '../data';
 import type { GearKind, Grade, SlotId } from '../data/types';
 import { epicMains, legendMains } from '../logic/builds';
+import { itemMains } from '../logic/mains';
 import type { Settings, Stage } from '../logic/context';
 import type { CharFilter } from '../logic/lists';
 import { MAX_SUBS, type Subs } from '../logic/subs';
@@ -34,7 +35,7 @@ export type Action =
   | { type: 'set'; setId: string | null }
   | { type: 'item'; itemKey: string | null; mains?: string[] } // mains — какие main бывают у этого предмета
   | { type: 'unlisted' }
-  | { type: 'main'; main: string }
+  | { type: 'main'; main: string; blocks?: string | null } // blocks — какой сабстат этот main запрещает (logic/mains.blocksOf)
   | { type: 'sub'; key: string }
   | { type: 'replaceSub'; from: string; to: string }
   | { type: 'roll'; key: string; n: number }
@@ -76,7 +77,9 @@ export function reducer(s: AppState, a: Action): AppState {
     case 'main': {
       const main = s.main === a.main ? null : a.main;
       const subs = { ...s.subs };
-      if (main) delete subs[main]; // main stat не бывает сабстатом того же предмета
+      // сабстатом не бывает строка main того же стата и вида; flat EFF в main сабстат EFF% не убирает
+      const drop = a.blocks === undefined ? main : a.blocks;
+      if (main && drop) delete subs[drop];
       return { ...s, main, subs, expand: {} };
     }
     case 'sub': {
@@ -89,7 +92,7 @@ export function reducer(s: AppState, a: Action): AppState {
     }
     case 'replaceSub': {
       // другой стат в той же строке: позиция и жёлтые сегменты сохраняются — обычно ошибка только в названии стата
-      if (!(a.from in s.subs) || a.to in s.subs || a.to === s.main) return s;
+      if (!(a.from in s.subs) || a.to in s.subs) return s; // запрещённые main сабстаты окно замены не предлагает
       return { ...s, subs: Object.fromEntries(Object.entries(s.subs).map(([k, v]) => [k === a.from ? a.to : k, v])) };
     }
     case 'roll':
@@ -187,11 +190,12 @@ export function restoreItem(s: AppState, saved: unknown, idx: Index): AppState {
   const item = itemKey ? idx.ITEM[kind][itemKey] : null;
   const mains = armor ? [] : item ? [...item.mains, ...item.extraMains] : unlisted ? legendMains(idx, kind) : legend ? [] : epicMains(idx, kind);
   const main = typeof r.main === 'string' && mains.includes(r.main) ? r.main : null;
+  const { blocked } = itemMains(idx, { slot: s.slot, grade: s.grade, setId, itemKey, main }); // сабстатов, которых из-за main не бывает, не берём
   const subs: Subs = {};
   if (r.subs && typeof r.subs === 'object') {
     for (const [k, v] of Object.entries(r.subs as Record<string, unknown>)) {
       if (Object.keys(subs).length >= MAX_SUBS) break;
-      if (idx.SUB[k] && k !== main && Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 4) subs[k] = v as number;
+      if (idx.SUB[k] && !blocked.has(k) && Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 4) subs[k] = v as number;
     }
   }
   return { ...s, setId, itemKey, main, unlisted, subs };

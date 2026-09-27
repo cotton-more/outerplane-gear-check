@@ -60,7 +60,11 @@ export interface GearSet {
   p4base: string | null;
   pieces: Partial<Record<ArmorSlot, string>>;
   users: number;
+  fixed?: Partial<Record<ArmorSlot, Partial<Record<Grade, string[]>>>>; // строки main брони этого сета (у брони main не выбирают)
 }
+
+// слот → грейд → строки main, обычные для слота (у брони — все строки, у оружия — базовый flat ATK)
+export type FixedMains = Partial<Record<SlotId, Partial<Record<Grade, string[]>>>>;
 
 export interface Passive { name: string; desc: string; icon: string | null }
 
@@ -79,6 +83,7 @@ export interface Item {
   classLimits: string[];
   mains: string[];
   extraMains: string[]; // бывает только у фиксированных копий
+  fixed?: string[];     // строки main, которые есть всегда, а не на выбор: у оружия — flat ATK
   passives: Passive[];
   users: number;
 }
@@ -111,6 +116,10 @@ export interface Dataset {
   substats: Substat[];
   slotIcons: Record<SlotId, string | null>;
   mainLabels: string[];
+  // метка main → сабстат, который из-за неё не выпадает. Игра сравнивает стат вместе с видом: flat EFF в main
+  // сабстату EFF% не мешает (null). Нет поля — данные старше: main запрещает сабстат с той же меткой
+  mainBlocks?: Record<string, string | null>;
+  fixedMains?: FixedMains;
   sets: GearSet[];
   weapons: Item[];
   amulets: Item[];

@@ -3,11 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { IndexContext } from './components/IndexContext';
 import { CFG } from './config';
-import { createIndex } from './data';
+import { MAIN_GRID, STAT_ICON, createIndex } from './data';
 import { applyLayout } from './hooks/useLayout';
 import { TEXTS, savedLang } from './i18n';
 import { makeCtx } from './logic/context';
 import * as logic from './logic/evaluate';
+import { MAINS as CODE_MAINS } from './logic/itemCode';
 import { flatFactor, scoreBuild, subWeights } from './logic/score';
 import './styles/base.css';
 import './styles/eval.css';
@@ -29,6 +30,8 @@ if (!D) {
       </IndexContext.Provider>
     </StrictMode>,
   );
-  // для отладки из консоли и проверки данных перед публикацией (scripts/check-data.mjs): чистые функции оценки и датасет
-  window.__ogc = { D, idx, CFG, build: __BUILD__, makeCtx, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights };
+  // для отладки из консоли и проверки данных перед публикацией (scripts/check-data.mjs): чистые функции оценки и датасет;
+  // known — какие main страница умеет показать и записать в код: новая метка в данных без них — красная проверка
+  const known = { codeMains: CODE_MAINS, gridMains: MAIN_GRID, icons: Object.keys(STAT_ICON) };
+  window.__ogc = { D, idx, CFG, build: __BUILD__, makeCtx, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights, known };
 }

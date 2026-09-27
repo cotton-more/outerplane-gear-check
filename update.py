@@ -42,6 +42,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 if sys.version_info < (3, 9):
@@ -125,6 +126,9 @@ STAT_ICON = {
 }
 ARMOR_SLOTS = ("helmet", "armor", "gloves", "shoes")
 GRADE_RANK = {"normal": 1, "magic": 2, "rare": 3, "unique": 4}
+APP_GRADES = ("unique", "rare")  # грейды 6★, которые оценивает страница
+GRADE_EN = {"unique": "Legendary", "rare": "Epic"}
+SLOT_RU = {"weapon": "оружие", "accessory": "аксессуар", "helmet": "шлем", "armor": "броня", "gloves": "перчатки", "shoes": "ботинки"}
 CLASS_ORDER = ["striker", "defender", "ranger", "healer", "mage"]
 ELEMENT_ORDER = ["fire", "water", "earth", "light", "dark"]
 
@@ -274,6 +278,23 @@ def option_label(opt: dict) -> str | None:
     return LABEL_ALIASES.get(label, label)
 
 
+def live_options(pools: dict, group: str) -> list[dict]:
+    """Варианты строки main: пул с одним вариантом — строка фиксирована, с несколькими — выпадает один из них."""
+    return [o for o in pools.get(group, []) if o.get("weight", 1)]
+
+
+def base_lines(groups: list[str], pools: dict) -> list[str]:
+    """Строки main оружия, которые есть всегда, а не на выбор: базовый flat ATK (flat ATK/DEF/HP в своём пуле)."""
+    out: list[str] = []
+    for g in groups:
+        opts = live_options(pools, g)
+        if len(opts) == 1 and opts[0].get("mode") == "flat" and opts[0].get("stat") in ("atk", "def", "hp"):
+            lab = option_label(opts[0])
+            if lab and lab not in out:
+                out.append(lab)
+    return out
+
+
 def fill_passive(p: dict) -> str:
     """Подставляет значения пассивки: «[Value]» → «1%→2%» (T0→T4)."""
     text = en(p.get("desc")).replace("\\n", " ").replace("\n", " ")
@@ -408,6 +429,13 @@ def build_families(kind: str, table: dict, families: list, pools: dict, passives
     def rolled(groups_list: list[list[str]]) -> list[list[str]]:
         return [gs for gs in groups_list if any(len(pools.get(g, [])) > 1 for g in gs)]
 
+    def fixed_of(groups_list: list[list[str]]) -> list[str]:
+        # строки main, которые есть у каждой копии (у оружия — базовый flat ATK); у аксессуаров таких нет
+        if not exclude_flat_base or not groups_list:
+            return []
+        each = [base_lines(gs, pools) for gs in groups_list]
+        return [lab for lab in each[0] if all(lab in e for e in each[1:])]
+
     def passive_view(refs: list[dict]) -> list[dict]:
         out = []
         for ref in refs or []:
@@ -496,6 +524,7 @@ def build_families(kind: str, table: dict, families: list, pools: dict, passives
                     "classLimits": [cl],
                     "mains": (cm := mains_of([g for gs in (rc or v["groups"]) for g in gs])),
                     "extraMains": extra_mains([i for i in top_ids if (table[i].get("classLimit") or "") == cl], cm),
+                    "fixed": fixed_of(v["groups"]),
                     "passives": passive_view(v["passives"]),
                 })
             for i in fam["ids"]:
@@ -512,6 +541,7 @@ def build_families(kind: str, table: dict, families: list, pools: dict, passives
                 "classLimits": fam.get("classLimits", []),
                 "mains": mains,
                 "extraMains": extra_mains(top_ids, mains),
+                "fixed": fixed_of(member_groups),
                 "passives": passive_view(top.get("passives", [])),
             })
             for i in fam["ids"]:
@@ -536,6 +566,85 @@ def substat_pool(pools: dict, key: str = "106") -> list[dict]:
         step = o["value"] / 10 if pct else o["value"]
         out.append({"key": lab, "step": step, "pct": pct, "stat": o["stat"], "mode": o.get("mode")})
     return out
+
+
+def main_lines(src: dict, pools: dict, substats: list[dict], sets: list[dict], warn: Warnings) -> tuple[dict, dict]:
+    """Строки main 6★ вещей и сабстаты, которых из-за них не бывает.
+
+    Игра не даёт сабстату повторить строку main, но сравнивает стат вместе с видом: flat EFF в main
+    и EFF% сабстатом — разные статы, на одной вещи бывают оба (проверено в игре, как flat DEF и DEF%).
+    Поэтому совпадение ищем по паре (стат, вид), а не по метке.
+
+    Возвращает (mainBlocks, fixedMains):
+      mainBlocks — метка main → сабстат, который из-за неё не выпадает (None — такого сабстата нет);
+      fixedMains — слот → грейд → строки main, обычные для слота (у брони — все, у оружия — базовый flat ATK).
+    Каждому сету дописывает fixed: слот брони → грейд → строки main его вещей.
+    """
+    sub_of = {(o["stat"], o["mode"]): o["key"] for o in substats}
+    kind_of: dict[str, tuple] = {}
+    blocks: dict[str, str | None] = {}
+
+    def label(o: dict) -> str | None:
+        lab = option_label(o)
+        if not lab:
+            return None
+        sm = (o.get("stat"), o.get("mode"))
+        was = kind_of.setdefault(lab, sm)
+        if was != sm:
+            warn.add(f"main «{lab}» бывает и {was[1]}, и {sm[1]} — страница не отличит, какой сабстат он запрещает")
+        blocks[lab] = sub_of.get(sm)
+        return lab
+
+    def groups_of(item: dict) -> list[str]:
+        return item.get("options") if "options" in item else item.get("main", [])
+
+    def usual(counts: dict[str, Counter]) -> dict[str, list[str]]:
+        return {g: list(counts[g].most_common(1)[0][0]) for g in APP_GRADES if counts.get(g)}
+
+    fixed_mains: dict[str, dict[str, list[str]]] = {}
+    # оружие и аксессуары: main на выбор — только метки для mainBlocks; у оружия ещё базовый flat ATK
+    for kind in ("weapon", "accessory"):
+        counts: dict[str, Counter] = {}
+        for it in src[kind].values():
+            if it.get("star") != 6 or it.get("grade") not in APP_GRADES:
+                continue
+            for g in groups_of(it):
+                for o in live_options(pools, g):
+                    label(o)
+            fixed = tuple(base_lines(groups_of(it), pools)) if kind == "weapon" else ()
+            counts.setdefault(it["grade"], Counter())[fixed] += 1
+        fixed_mains[kind] = usual(counts)
+    # броня: main не выбирают — строки фиксированы у слота, но берём их по сету и грейду, а не одной таблицей:
+    # новый сет может принести другой main, и тогда он должен работать сразу
+    by_id = {s["id"]: s for s in sets}
+    fixed_by_set: dict[str, dict[str, dict[str, list[str]]]] = {}
+    for slot in ARMOR_SLOTS:
+        seen: dict[tuple[str, str], list[tuple]] = {}
+        for piece in src[slot].values():
+            if piece.get("star") != 6 or piece.get("grade") not in APP_GRADES or piece.get("set") not in by_id:
+                continue
+            where = f"{by_id[piece['set']]['name']}, {SLOT_RU[slot]} {GRADE_EN[piece['grade']]}"
+            lines = []
+            for g in groups_of(piece):
+                labs = [lab for lab in (label(o) for o in live_options(pools, g)) if lab]
+                if len(labs) == 1:
+                    lines.append(labs[0])
+                elif labs:
+                    warn.add(f"{where}: main — случайный выбор из {'/'.join(labs)}, а страница считает main брони фиксированным")
+            seen.setdefault((piece["set"], piece["grade"]), []).append(tuple(lines))
+        counts = {}
+        for (sid, grade), variants in seen.items():
+            common = [lab for lab in variants[0] if all(lab in v for v in variants)]
+            if len(set(variants)) > 1:
+                warn.add(f"{by_id[sid]['name']}, {SLOT_RU[slot]} {GRADE_EN[grade]}: у вещей разные main — "
+                         f"{' | '.join(' + '.join(v) for v in sorted(set(variants)))}; страница берёт только общие строки")
+            fixed_by_set.setdefault(sid, {}).setdefault(slot, {})[grade] = common
+            counts.setdefault(grade, Counter())[tuple(common)] += 1
+        fixed_mains[slot] = usual(counts)
+    for s in sets:
+        got = fixed_by_set.get(s["id"], {})
+        s["fixed"] = {slot: {g: got[slot][g] for g in APP_GRADES if g in got[slot]} for slot in ARMOR_SLOTS if slot in got}
+    return dict(sorted(blocks.items())), fixed_mains
 
 
 # --------------------------------------------------------------------------- сборка
@@ -604,6 +713,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
 
     item_index = {("weapon", w["key"]): w for w in weapons} | {("accessory", a["key"]): a for a in amulets}
     substats = substat_pool(pools)
+    main_blocks, fixed_mains = main_lines(src, pools, substats, sets, warn)
     ctx = {
         "presets": src["presets"], "weapon_key": weapon_key, "amulet_key": amulet_key, "talismans": talismans,
         "items": item_index, "tables": {"weapon": src["weapon"], "accessory": src["accessory"]},
@@ -744,6 +854,8 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         "substats": substats,
         "slotIcons": slot_icons,
         "mainLabels": main_labels,
+        "mainBlocks": main_blocks,
+        "fixedMains": fixed_mains,
         "sets": sets,
         "weapons": weapons,
         "amulets": amulets,
@@ -1157,6 +1269,56 @@ def diff_report(prev: dict | None, data: dict) -> list[str]:
         now = {x.get("key", x.get("id")): x.get("name") for x in data[key]}
         lines += [f"  + новый {kind}: {now[k]}" for k in now if k not in was]
         lines += [f"  - {kind} пропал: {was[k]}" for k in was if k not in now]
+    return lines + main_changes(prev, data)
+
+
+def mains_text(x: dict) -> str:
+    """Строки main предмета для отчёта: сначала те, что есть всегда, потом выбор — «ATK + ATK%/DEF%/HP%»."""
+    choice = "/".join(x.get("mains") or [])
+    if x.get("extraMains"):
+        choice += f" (у фиксированных копий ещё {'/'.join(x['extraMains'])})"
+    return " + ".join([*(x.get("fixed") or []), *([choice] if choice else [])]) or "—"
+
+
+def main_changes(prev: dict, data: dict) -> list[str]:
+    """Смена main у вещи, которая была и раньше, и новая вещь с main не как у остальных в слоте.
+
+    Страница считает по данным и сама перейдёт на новые main — строка нужна, чтобы это было видно в PR.
+    Такая же проверка — dataDiff в scripts/check-data.mjs.
+    """
+    lines = []
+    usual = data.get("fixedMains") or {}
+    for key, kind in (("weapons", "weapon"), ("amulets", "accessory")):
+        was = {x["key"]: x for x in prev.get(key, [])}
+        for x in data[key]:
+            o = was.get(x["key"])
+            if o is None:
+                base = (usual.get(kind) or {}).get(x.get("grade"))
+                if x.get("star") == 6 and base is not None and (x.get("fixed") or []) != base:
+                    lines.append(f"  + main не как у остальных: {SLOT_RU[kind]} {x['name']} — {mains_text(x)}")
+                continue
+            if "fixed" not in o:
+                o = {**o, "fixed": x.get("fixed")}  # данные до строк main: сравниваем только выбор
+            if mains_text(o) != mains_text(x):
+                lines.append(f"  ~ main: {SLOT_RU[kind]} {x['name']}: {mains_text(o)} → {mains_text(x)}")
+    was_sets = {s["id"]: s for s in prev.get("sets", [])}
+    joined = lambda ls: " + ".join(ls) or "—"  # noqa: E731
+    for s in data["sets"]:
+        o = was_sets.get(s["id"])
+        for slot, by_grade in (s.get("fixed") or {}).items():
+            for grade, now in by_grade.items():
+                where = f"{s['name']}, {SLOT_RU[slot]} {GRADE_EN[grade]}"
+                then = ((o or {}).get("fixed") or {}).get(slot, {}).get(grade)
+                base = (usual.get(slot) or {}).get(grade)
+                if then is None and base is not None and now != base and (o is None or "fixed" in o):
+                    lines.append(f"  + main не как у остальных: {where} — {joined(now)} (обычно {joined(base)})")
+                elif then is not None and then != now:
+                    lines.append(f"  ~ main: {where}: {joined(then)} → {joined(now)}")
+    for slot, by_grade in (prev.get("fixedMains") or {}).items():
+        for grade, then in by_grade.items():
+            now = (usual.get(slot) or {}).get(grade)
+            if now is not None and now != then:
+                lines.append(f"  ~ main у большинства вещей: {SLOT_RU[slot]} {GRADE_EN[grade]}: {joined(then)} → {joined(now)}")
     return lines
 
 

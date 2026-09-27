@@ -1,6 +1,7 @@
 // Скриншоты для README (английские) и Wiki (на языке страницы): телефон в разделённом экране (412×430, тёмная тема),
 // сценарий оценки шлема. Снимает оба языка в screenshots/en/ и screenshots/ru/; только один — LANGS=en.
-// Страница — свежая сборка приложения (build/app/index.html) с данными и картинками из docs/.
+// Страница — свежая сборка приложения (build/app/index.html) с данными и картинками из docs/ (или из SITE — например,
+// SITE=build/preview после task preview, если в данных новые поля, а сайт ещё не пересобран).
 // Нужен установленный Chrome; путь меняется переменной CHROME. Запуск: task screenshots.
 import { readFileSync, existsSync, createReadStream, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -8,21 +9,22 @@ import { join, extname, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
 
 const ROOT = resolve(import.meta.dirname, '..');
+const SITE = join(ROOT, process.env.SITE || 'docs');
 const LANGS = (process.env.LANGS || 'en,ru').split(',');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const MIME = { '.webp': 'image/webp', '.png': 'image/png' };
 
 const app = join(ROOT, 'build/app/index.html');
 if (!existsSync(app)) throw new Error('нет build/app/index.html — сначала task build:app');
-const data = /<script>window\.OGC_DATA = (\{.*?\});<\/script>/s.exec(readFileSync(join(ROOT, 'docs/index.html'), 'utf8'))?.[1];
-if (!data) throw new Error('в docs/index.html нет данных — сначала task build:pwa');
+const data = /<script>window\.OGC_DATA = (\{.*?\});<\/script>/s.exec(readFileSync(join(SITE, 'index.html'), 'utf8'))?.[1];
+if (!data) throw new Error(`в ${SITE}/index.html нет данных — сначала task build:pwa`);
 const html = readFileSync(app, 'utf8').replace('/*__OGC_DATA__*/null', data);
 
-// страница — из памяти, картинки — из docs/img
+// страница — из памяти, картинки — из SITE/img
 const server = createServer((req, res) => {
   const path = decodeURIComponent((req.url || '/').split('?')[0]);
   if (path === '/') { res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.end(html); }
-  const file = join(ROOT, 'docs', path);
+  const file = join(SITE, path);
   if (!path.startsWith('/img/') || !existsSync(file)) { res.statusCode = 404; return res.end(); }
   res.setHeader('Content-Type', MIME[extname(file)] || 'application/octet-stream');
   createReadStream(file).pipe(res);
