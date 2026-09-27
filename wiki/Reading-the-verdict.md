@@ -20,8 +20,10 @@ The order of substats a character needs, left is more important: `ATK% › CHC �
 - **dashed** — not on the piece;
 - **marked main** — the stat is in the piece's main (on armor and weapons also in the fixed lines: a helmet's HP%,
   a weapon's flat ATK). The main isn't part of the substat score. When the stat can still roll as a substat of the
-  other kind — flat ATK with an ATK% main, EFF% with a flat EFF — it sits next to it after a slash. The main grows with
-  Enhance, not Reforge, and gives more than the same stat as a substat;
+  other kind — flat ATK with an ATK% main, EFF% with a flat EFF — it sits next to it after a slash, dashed if the
+  piece doesn't have it: `main ATK / ATK%` on a weapon with a DEF% main means every weapon has flat ATK and it doesn't
+  count — only an ATK% substat would. The main grows with Enhance, not Reforge, and gives more than the same stat as a
+  substat;
 - **struck through at the end** — on the piece, the character doesn't need it.
 
 The first four places count. Two stats with a slash — for example `ATK/ATK%` — share one place in the chain and both

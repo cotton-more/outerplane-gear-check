@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { CFG } from '../../config';
 import { FLAT } from '../../data';
-import { mainsOnAxis } from '../../logic/mains';
+import { mainsOnAxis, subForms } from '../../logic/mains';
 import { tierPlaces, type Part, type Row } from '../../logic/score';
 import { useIndex } from '../IndexContext';
 
@@ -13,7 +13,8 @@ interface Pill { label: string; cls: string; sep: string }
 //   ok — есть и засчитан, half — за ½, low — есть, но далеко в цепочке (или слабый flat), miss — нет на предмете;
 //   main — стат есть в main предмета (у брони и оружия — и в фиксированных строках: HP% шлема, flat ATK оружия).
 //     Место в цепочке он занимает, только если сабстатом этому стату на предмете ещё можно выпасть: при main ATK%
-//     бывает flat ATK, при flat EFF в main — EFF%; такой сабстат идёт рядом через «/»;
+//     бывает flat ATK, при flat EFF в main — EFF%; такой сабстат идёт рядом через «/», а если его нет — пунктиром:
+//     у оружия с main DEF% «main ATK / ATK%» — базовый flat ATK есть всегда и в счёт не идёт, засчитается только ATK%;
 //   tail — места дальше четвёртого, которые не считаются (кроме SPD).
 // Статы предмета, которых в цепочке нет вовсе, идут в конце зачёркнутыми.
 export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
@@ -36,7 +37,13 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
       const on = mainsOnAxis(tok, im);
       if (on.length) pills.push({ label: on.join('/'), cls: 'main' + tail, sep });
       const hits = m.parts.filter((p) => !used.has(p.key) && (flat ? axisOf(p.key) === axis : p.key === tok));
-      if (!hits.length) { if (!on.length) pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep }); continue; }
+      if (!hits.length) {
+        // место за статом осталось, а сабстата нет: пунктир того вида, что ещё выпадает (при main рядом через «/»)
+        const open = subForms(tok).filter((k) => SUB[k] && !im.blocked.has(k));
+        if (!on.length) pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep });
+        else if (open.length) pills.push({ label: open.includes(axis + '%') ? axis + '%' : open[0], cls: 'miss' + tail, sep: '/' });
+        continue;
+      }
       hits.forEach((p, j) => { used.add(p.key); pills.push({ label: p.key, cls: state(p) + tail, sep: j || on.length ? '/' : sep }); });
     }
   });

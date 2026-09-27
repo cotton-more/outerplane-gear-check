@@ -11,7 +11,7 @@ import type { Dataset, Grade, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { itemMains, takenByMain } from '../src/logic/mains';
-import { tierPlaces } from '../src/logic/score';
+import { rows, tierPlaces } from '../src/logic/score';
 import type { ItemInput } from '../src/logic/verdict';
 import { fromPersisted, reducer, restoreItem, type AppState } from '../src/state/appState';
 
@@ -91,6 +91,30 @@ describe('оценка и цепочка', () => {
     const row = r.sections.flatMap((s) => s.rows).find((m) => m.b.subs.flat().includes('EFF'))!;
     const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m: row })));
     expect(html).toMatch(/<small>main <\/small>EFF<\/span><i class="sep">\/<\/i><span class="pill [^"]+">EFF<\/span>/);
+  });
+
+  // одна строка «кому подходит» с заданной цепочкой — чтобы проверить отрисовку, не завися от того, чьи билды в данных
+  const chainOf = (it: ItemInput, chain: string[][]) => {
+    const c = D.chars.find((x) => x.builds.length)!;
+    const [m] = rows(ctx, it.grade, [{ c, b: build(chain), i: 0 }], it.subs, itemMains(idx, it));
+    return renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m })));
+  };
+
+  it('оружие с main DEF% без сабстата ATK%: «main ATK» и пунктир ATK% — базовый flat ATK в счёт не идёт', () => {
+    const html = chainOf(item('weapon', 'DEF%', { subs: { CHC: 1, CHD: 1, SPD: 1 } }), [['ATK'], ['CHC'], ['CHD']]);
+    expect(html).toContain('<small>main </small>ATK</span><i class="sep">/</i><span class="pill miss">ATK%</span>');
+  });
+
+  it('с сабстатом ATK% пунктира нет, а при main ATK% ось занята целиком — пунктира тоже нет', () => {
+    const withSub = chainOf(item('weapon', 'DEF%', { subs: { 'ATK%': 2, CHC: 1, CHD: 1 } }), [['ATK'], ['CHC'], ['CHD']]);
+    expect(withSub).toMatch(/<small>main <\/small>ATK<\/span><i class="sep">\/<\/i><span class="pill ok">ATK%<\/span>/);
+    const taken = chainOf(item('weapon', 'ATK%', { subs: { CHC: 1, CHD: 1, SPD: 1 } }), [['ATK'], ['CHC'], ['CHD']]);
+    expect(taken).not.toContain('pill miss');
+  });
+
+  it('перчатки без сабстата EFF: «main EFF» и пунктир EFF — EFF% сабстатом ещё бывает', () => {
+    const html = chainOf(item('gloves', null, { subs: { SPD: 1, CHC: 1, CHD: 1 } }), [['EFF'], ['SPD']]);
+    expect(html).toContain('<small>main </small>EFF</span><i class="sep">/</i><span class="pill miss">EFF</span>');
   });
 
   it('цепочка оружия с main ATK%: на оси ATK обе строки main', () => {
