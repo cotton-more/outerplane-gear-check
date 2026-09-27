@@ -6,12 +6,13 @@ import { StatIcon } from '../Img';
 // Main stat оружия — кнопками рядом с грейдом, без окна: у оружия он всегда один из трёх (ATK%, DEF%, HP%).
 // all — все три по порядку; opts — какие бывают у выбранного предмета (у одного Legendary — только HP%),
 // ярче — нужен (просят билды для пассивки или кто-то в этом слоте). Повторное нажатие снимает main.
-export function MainButtons({ all, opts, current, onPick }: {
-  all: MainOption[]; opts: MainOption[]; current: string | null; onPick: (main: string) => void;
+// need — main не выбран, а сабстаты уже вводят: вердикта без него нет — выделить
+export function MainButtons({ all, opts, current, need, onPick }: {
+  all: MainOption[]; opts: MainOption[]; current: string | null; need?: boolean; onPick: (main: string) => void;
 }) {
   const t = useT();
   return (
-    <div className="mainsw" role="group" aria-label={t.ui.mainGroup} {...tour('pick')}>
+    <div className={need ? 'mainsw need' : 'mainsw'} role="group" aria-label={t.ui.mainGroup} {...tour('pick')}>
       {all.map(({ key }) => {
         const o = opts.find((x) => x.key === key);
         return (

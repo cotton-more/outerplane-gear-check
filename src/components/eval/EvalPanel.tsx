@@ -56,11 +56,18 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   // у аксессуара без main сетка сначала выбирает main — в игре он сверху предмета
   const mainMode = s.slot === 'accessory' && !s.main && opts.length > 0 ? opts : null;
   const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
+  // сабстаты уже вводят, а сет, main или предмет не выбран — без него вердикта нет: выделяем, чего не хватает
+  const started = Object.keys(s.subs).length > 0;
+  const found = !!s.itemKey || s.unlisted;
+  const need = !started ? null
+    : armor ? (s.setId ? null : 'set')
+      : weapon ? (!s.main ? 'main' : !epic && !found ? 'item' : null)
+        : epic || s.unlisted ? (s.main ? null : 'main') : found ? null : 'item';
   const itemField = (
     <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
-      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="item" />
+      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="item" need={need === 'item'} />
   );
-  const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" />;
+  const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" need={need === 'main'} />;
 
   return (
     <div className="panel eval-in" id="eval-in">
@@ -83,9 +90,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             ))}
           </div>
           {armor
-            ? <PickField value={set && <><SetIcon set={set} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" />
+            ? <PickField value={set && <><SetIcon set={set} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
             : weapon
-              ? <MainButtons all={allMains} opts={opts} current={s.main} onPick={pickMain} />
+              ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} />
               : epic ? mainField() : itemField}
           {mainRow && mainField('main')}
         </div>

@@ -39,7 +39,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
     <>
       <div className={`v-head v-${r.v}`}>
         <div className="v-row">
-          <span className="stamp">{t.ui.verdictLabel[r.v]}</span>
+          {r.v !== 'idle' && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}
           {r.badge && <span className="badge">{r.badge}</span>}
           {icon && (
             <span className="v-item">

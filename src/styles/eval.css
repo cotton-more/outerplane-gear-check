@@ -223,3 +223,7 @@ html.narrow .app > footer.foot { display: none; }
 }
 .menu .toggle { display: block; line-height: 1.4; }
 .menu .toggle input { vertical-align: -4px; margin: 0 6px 0 0; }
+/* без этого поля вердикта нет, а сабстаты уже вводят (EvalPanel need): поле сета, main или предмета — пунктиром
+   акцента с мягкой подложкой (пунктир, как в цепочке, — «этого нет»); сплошная рамка — это «выбрано» */
+.pick.need, .mainsw.need { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
+.pick.need, .mainsw.need .msw:not([disabled]) { background: var(--accent-soft); }

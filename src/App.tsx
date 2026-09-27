@@ -98,7 +98,9 @@ export function App() {
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
   // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
   const nSubs = Object.keys(s.subs).length;
-  const cardShown = layout.narrow && s.tab === 'eval' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
+  // Без вердикта (не выбран сет, main или предмет) карточка не встаёт: на её месте остаётся сетка, а то, чего не хватает,
+  // выделено на форме (EvalPanel need); вопрос — на плашке внизу
+  const cardShown = layout.narrow && s.tab === 'eval' && verdict.v !== 'idle' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 
