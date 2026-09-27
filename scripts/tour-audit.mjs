@@ -1,11 +1,12 @@
 // Обучение не отстаёт от поведения: коммиты после опубликованной сборки, которые меняют то, что видит игрок
-// (компоненты, состояние, логику, тексты, Wiki), должны либо трогать обучение (src/tour, *.tour.ts), либо нести
+// (компоненты, состояние, логику, тексты), должны либо трогать обучение (src/tour, *.tour.ts), либо нести
 // в теле строку «Обучение: …» — добавлено / обновлено (rev) / не нужно — почему. Только предупреждает: код выхода 0.
 // Запускается из `task test`. База — сборка из docs/index.html в HEAD: робот публикует сразу после push.
 //   node scripts/tour-audit.mjs            (TOUR_AUDIT_BASE=<sha> — считать от другого коммита)
 import { execFileSync } from 'node:child_process';
 
-const WATCH = ['src/components', 'src/state', 'src/logic', 'src/hooks', 'src/App.tsx', 'src/i18n/ru.ts', 'wiki'];
+// Wiki сюда не входит: база — сборка кода, и коммит только в Wiki оставался бы «непубликованным» до следующего кода
+const WATCH = ['src/components', 'src/state', 'src/logic', 'src/hooks', 'src/App.tsx', 'src/i18n/ru.ts'];
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 << 20 }).trim();
 const touchesTour = (files) => files.some((f) => f.startsWith('src/tour/') || f.endsWith('.tour.ts'));
 

@@ -58,7 +58,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
   const itemField = (
     <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
-      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="pick" />
+      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="item" />
   );
   const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" />;
 

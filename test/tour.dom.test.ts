@@ -8,8 +8,14 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '../src/data/types';
+import { TEXTS } from '../src/i18n';
+import { CORE } from '../src/tour/core';
+import { LIMITS } from '../src/tour/tips';
 
 // в jsdom import.meta.url — не file:, берём путь от этого файла
+// обучение пройдено, полоса была, ничего не «новое» (первый запуск в будущем)
+const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: true };
+const T = TEXTS.en.tour;
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 let root: Root | null = null;
 
@@ -64,27 +70,27 @@ describe('главный тур на примере', () => {
     expect(strip()).toContain('Use an example');
     await click(byText('.tour-strip button', 'Example'));
 
-    expect(strip()).toContain('Step 1 of 5');
+    expect(strip()).toContain(T.stepOf(1, CORE.length));
     expect($('[data-tour="slot"]') && $('[data-tour="grade"]')).toBeTruthy();
     await click($('.slot[aria-label="Armor"]'));
-    expect(strip()).toContain('Step 1 of 5'); // только броня: грейд ещё L
+    expect(strip()).toContain(T.stepOf(1, CORE.length)); // только броня: грейд ещё L
     await click($('.grade[aria-label="Epic"]'));
 
-    expect(strip()).toContain('Step 2 of 5');
+    expect(strip()).toContain(T.stepOf(2, CORE.length));
     expect(strip()).toContain('Speed Set');
     await click($('[data-tour="pick"]'));
     expect(strip()).toContain('Pick in the window'); // окно выбора открыто — узкая плашка
     await click(byText('.drawer .set', 'Speed'));
 
-    expect(strip()).toContain('Step 3 of 5');
+    expect(strip()).toContain(T.stepOf(3, CORE.length));
     for (const k of ['SPD', 'CHC', 'CHD']) await click(cell(k));
 
-    expect(strip()).toContain('Step 4 of 5');
+    expect(strip()).toContain(T.stepOf(4, CORE.length));
     await click($('.vcard[data-tour="verdict"]'));
 
     expect(strip()).toContain('Close the window'); // шаг 5, а шторка вердикта ещё открыта
     await click($('.drawer-x'));
-    expect(strip()).toContain('Step 5 of 5');
+    expect(strip()).toContain(T.stepOf(5, CORE.length));
     await click($('.vb-reset[data-tour="next"]'));
 
     expect(strip()).toContain("That's it");
@@ -108,29 +114,29 @@ describe('на примере — только то, что в примере', 
     const { pinSelector } = await import('../src/tour/anchors');
     expect($(pinSelector('slot:armor')) && $(pinSelector('grade:rare'))).toBeTruthy();
     await click($('.slot[aria-label="Helmet"]'));
-    expect(strip()).toContain('Step 1 of 5');
+    expect(strip()).toContain(T.stepOf(1, CORE.length));
     await click($(pinSelector('slot:armor')));
     await click($(pinSelector('grade:rare')));
     await click($('[data-tour="pick"]'));
     expect($(pinSelector('sets:Speed'))).toBeTruthy();
     await click([...document.querySelectorAll<HTMLElement>('.drawer .set')].find((b) => !b.textContent?.includes('Speed')));
-    expect(strip()).toContain('Step 2 of 5');
+    expect(strip()).toContain(T.stepOf(2, CORE.length));
     expect(strip()).toContain('needs Speed Set');
     await click($('[data-tour="pick"]'));
     await click($(pinSelector('sets:Speed')));
     for (const k of ['SPD', 'HP%', 'CHC']) await click(cell(k));
-    expect(strip()).toContain('Step 3 of 5');
+    expect(strip()).toContain(T.stepOf(3, CORE.length));
     expect(strip()).toContain('only SPD, CHC and CHD');
     await click($(pinSelector('rows:HP%')));
     expect(strip()).toContain('Pick in the window');
     await click($(pinSelector('subpick:CHD')));
-    expect(strip()).toContain('Step 4 of 5');
+    expect(strip()).toContain(T.stepOf(4, CORE.length));
   });
 });
 
 describe('вещь игрока не теряется', () => {
   it('повтор из меню: вещь на форме откладывается, во время тура не перезаписывается и возвращается', async () => {
-    await mount({ welcomeHidden: true, tour: { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: 'd', tips: true } });
+    await mount({ welcomeHidden: true, tour: DONE });
     await click(cell('SPD'));
     await click(cell('ATK'));
     const item = localStorage.getItem('ogc.item');
@@ -147,8 +153,37 @@ describe('вещь игрока не теряется', () => {
     expect($('.toast')).toBeNull();
   });
 
+  it('«Обучение» ещё раз посреди тура: начинаем сначала, а отложенной остаётся вещь игрока', async () => {
+    await mount({ welcomeHidden: true, tour: DONE });
+    await click(cell('SPD'));
+    await click(cell('ATK'));
+    const item = localStorage.getItem('ogc.item'), state = localStorage.getItem('ogc.state');
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Example'));
+    await click($('.slot[aria-label="Armor"]'));
+    await click($('.grade[aria-label="Epic"]'));
+    await click(byText('.actions button', 'Tutorial'));
+    expect(strip()).toContain(T.choose);
+    await click($('.tour-x'));
+    expect(localStorage.getItem('ogc.item')).toBe(item);
+    expect(localStorage.getItem('ogc.state')).toBe(state);
+    expect(document.querySelectorAll('.subrow')).toHaveLength(2);
+  });
+
+  it('во время тура слот, грейд и вкладка в ogc.state не меняются; в конце вкладка возвращается', async () => {
+    await mount({ welcomeHidden: true, tour: DONE, state: { tab: 'chars', slot: 'gloves', grade: 'unique' } });
+    const state = localStorage.getItem('ogc.state');
+    await click(byText('.actions button', 'Tutorial')); // кнопка под формой есть в DOM и на вкладке персонажей
+    await click(byText('.tour-strip button', 'Example'));
+    await click($('.slot[aria-label="Armor"]'));
+    await click($('.grade[aria-label="Epic"]'));
+    expect(localStorage.getItem('ogc.state')).toBe(state);
+    await click($('.tour-x'));
+    expect(stored('state')).toMatchObject({ tab: 'chars', slot: 'gloves', grade: 'unique' });
+  });
+
   it('Esc посреди тура закрывает его и не нажимает «Следующий»', async () => {
-    await mount({ welcomeHidden: true, tour: { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: 'd', tips: true } });
+    await mount({ welcomeHidden: true, tour: DONE });
     await click(cell('SPD'));
     await click(byText('.actions button', 'Tutorial'));
     await click(byText('.tour-strip button', 'Example'));
@@ -158,8 +193,43 @@ describe('вещь игрока не теряется', () => {
     expect($('.toast')).toBeNull();
   });
 
+  it('Esc при открытом окне закрывает окно, а тур идёт дальше', async () => {
+    await mount({ welcomeHidden: true, tour: DONE });
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Example'));
+    await click($('.slot[aria-label="Armor"]'));
+    await click($('.grade[aria-label="Epic"]'));
+    await click($('[data-tour="pick"]'));
+    expect($('.drawer')).toBeTruthy();
+    await esc();
+    expect($('.drawer')).toBeNull();
+    expect(strip()).toContain(T.stepOf(2, CORE.length));
+  });
+
+  it('на шаге «Следующий» Esc и есть «Следующий»; нечего очищать — закрывает тур', async () => {
+    await mount({ welcomeHidden: true, tour: DONE });
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'My own'));
+    for (let i = 0; i < 2; i++) await click(byText('.tour-strip button', T.next));
+    await click(cell('SPD'));
+    await click(cell('ATK'));
+    await click(cell('HP'));
+    await click(cell('CHC'));
+    await click(byText('.tour-strip button', T.next));
+    expect(strip()).toContain(T.stepOf(5, CORE.length));
+    await esc();
+    expect(document.querySelectorAll('.subrow')).toHaveLength(0);
+    expect(strip()).toContain("That's it");
+    await click(byText('.tour-strip button', 'Done'));
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'My own'));
+    for (let i = 0; i < 4; i++) await click(byText('.tour-strip button', T.next));
+    await esc();
+    expect($('.tour-strip')).toBeNull();
+  });
+
   it('на своей вещи: не нажал «Следующий» — спросим, какую оставить', async () => {
-    await mount({ welcomeHidden: true, tour: { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: 'd', tips: true } });
+    await mount({ welcomeHidden: true, tour: DONE });
     await click(cell('SPD'));
     await click(byText('.actions button', 'Tutorial'));
     await click(byText('.tour-strip button', 'My own'));
@@ -198,19 +268,29 @@ describe('низкое окно (полоска разделённого экр�
 });
 
 describe('давний игрок', () => {
-  it('тур не навязываем: один раз полоса «Появилось обучение», закрыл — больше не показываем', async () => {
+  it('тур не навязываем: полоса «Появилось обучение» — только в первый запуск, даже если её не закрыли', async () => {
     await mount({ roster: [D.chars[0].id] });
     expect($('.welcome')).toBeNull();
-    expect($('.tour-invite')?.textContent).toContain('tutorial');
-    expect(stored('tour')).toMatchObject({ first: 'skipped', invited: false });
-    await click($('.tour-invite .tour-x'));
+    expect($('.tour-invite')?.textContent).toContain(T.invite);
+    expect(stored('tour')).toMatchObject({ first: 'skipped', invited: true });
+    await act(async () => root?.unmount());
+    document.body.innerHTML = '';
+    await mount();
+    // вместо неё теперь «Новое»: давнему игроку подсказки с news — новые
+    expect($('.tour-invite')?.textContent).not.toContain(T.invite);
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.move, 0));
+  });
+
+  it('новичок закрыл карточку «Понятно» — от тура отказался, полосы «Появилось обучение» нет', async () => {
+    await mount();
+    await click(byText('.welcome button', 'Got it'));
+    expect($('.welcome')).toBeNull();
     expect($('.tour-invite')).toBeNull();
-    expect(stored('tour').invited).toBe(true);
   });
 });
 
 describe('подсказки по ходу и «Что нового»', () => {
-  const done = { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2026-09-28', tips: true };
+  const done = DONE;
   const wait = (ms: number) => act(() => new Promise<void>((r) => setTimeout(r, ms)));
 
   it('вкладка персонажей с пустым ростером: подсказка у звёздочки; нажал на звёздочку — подсказка увидена', async () => {
@@ -219,7 +299,7 @@ describe('подсказки по ходу и «Что нового»', () => {
     Element.prototype.getClientRects = function () { return [{}] as unknown as DOMRectList; };
     try {
       await mount({ welcomeHidden: true, tour: done, state: { tab: 'chars' } });
-      await wait(2_200);
+      await wait(LIMITS.idleMs + 700);
       expect($('.tour-tip')?.textContent).toContain('Star your characters');
       await act(async () => { $('.star')!.dispatchEvent(new Event('pointerdown', { bubbles: true })); });
       await frame();
@@ -232,14 +312,22 @@ describe('подсказки по ходу и «Что нового»', () => {
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, since: '2026-01-01' } });
-    expect($('.tour-invite')?.textContent).toContain('New: on replace');
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.move, 0));
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
     expect($('.vb-tab.has-news')).toBeTruthy();
     await click($('.vb-tab'));
     await click($('.menu .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known.replace).toBe(1);
+    expect(stored('tour').known.move).toBe(1);
     expect($('.vb-tab.has-news')).toBeNull();
+  });
+
+  it('«Показать подсказки заново» в Справке правда показывает их снова', async () => {
+    await mount({ welcomeHidden: true, tour: { ...done, seen: { star: 1, code: 1, slot: 1 } } });
+    await click($('.vb-tab'));
+    await click(byText('.menu button', 'Help'));
+    await click(byText('.tips-help button', T.tipsReset));
+    expect(stored('tour').seen).toEqual({ slot: 1 });
   });
 });

@@ -1,6 +1,6 @@
 // Общее для слоя тура и подсказок: найти на странице то, на что показывает шаг, и его рамку.
 export interface Rect { top: number; left: number; width: number; height: number }
-export interface Geom { rings: Rect[]; ring: Rect | null; overlay: boolean; bottom: number; h: number; vh: number }
+export interface Geom { rings: Rect[]; ring: Rect | null; overlay: boolean; card: boolean; bottom: number; h: number; vw: number; vh: number }
 
 export const visible = (el: Element) => el.getClientRects().length > 0;
 export const rect = (r: DOMRect): Rect => ({ top: r.top, left: r.left, width: r.width, height: r.height });
@@ -25,7 +25,22 @@ export function union(rs: Rect[]): Rect | null {
   return { top, left, width: right - left, height: bottom - top };
 }
 
-export const pad = (r: Rect, p: number) => ({ top: r.top - p, left: r.left - p, width: r.width + 2 * p, height: r.height + 2 * p });
+// рамка с отступом p, но не за краями окна по бокам: у элемента во всю ширину иначе не видно боковых линий
+export const pad = (r: Rect, p: number, vw = Infinity) => {
+  const left = Math.max(2, r.left - p), right = Math.min(vw - 2, r.left + r.width + p);
+  return { top: r.top - p, left, width: right - left, height: r.height + 2 * p };
+};
+
+// якорь в свободной части окна (не за краем и не под плашкой вердикта; в окне поверх страницы — в пределах окна)
+export function inView(el: Element): boolean {
+  const r = el.getBoundingClientRect();
+  if (!r.width && !r.height) return true; // jsdom раскладку не считает — там это не проверить
+  const bottom = el.closest(LAYER) ? window.innerHeight : freeBottom();
+  return r.height > 0 && r.bottom > 0 && r.top < bottom;
+}
+
+// карточка персонажа во весь экран (телефон): плашка тура встаёт снизу, чтобы не закрыть «← К списку»
+export const cardOpen = () => document.body.classList.contains('sheet-open');
 
 export const overlayOpen = () => {
   const b = document.body.classList;

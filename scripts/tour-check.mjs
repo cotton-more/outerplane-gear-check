@@ -105,7 +105,7 @@ function act(step, narrow) {
     if (step === 1) { pin('slot', 'armor')?.click(); await wait(200); pin('grade', 'rare')?.click(); }
     if (step === 2) { $('[data-tour="pick"]').click(); await wait(500); pin('sets', 'Speed')?.click(); }
     if (step === 3) for (const k of ['SPD', 'CHC', 'CHD']) { pin('grid', k)?.click(); await wait(200); }
-    if (step === 4) { if (narrow) $('.vcard').click(); else [...document.querySelectorAll('.tour-strip button')].find((b) => b.textContent === 'Next').click(); }
+    if (step === 4) { if (narrow) $('.vcard').click(); else [...document.querySelectorAll('.tour-strip button')].find((b) => b.textContent === 'Continue').click(); }
     if (step === 5) {
       if ($('.drawer-x')) { $('.drawer-x').click(); await wait(400); }
       (narrow ? $('.vb-reset') : $('.actions .btn.primary')).click();

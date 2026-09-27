@@ -19,7 +19,8 @@ export function nextTip(tips: Tip[], st: TourStore, c: TourCtx, sess: TipSession
   return unseen(tips, st).find((t) => (!t.when || t.when(c)) && onScreen(t.at)) ?? null;
 }
 
-// Новое — подсказка с news, которую игрок ещё не видел в этой ревизии: знакомая подсказка с rev + 1 или новая,
-// появившаяся после его первого запуска (иначе новичку «новым» было бы всё подряд)
+// Новое — подсказка с news, которую игрок ещё не знает в этой ревизии: знакомая подсказка с rev + 1 или новая,
+// появившаяся не раньше его первого запуска (иначе новичку «новым» было бы всё подряд). У давнего игрока since
+// пустой: он пришёл раньше обучения, и подсказки с news, которых нет в known (bootTour), для него новые
 export const newsOf = (tips: Tip[], st: TourStore) => tips.filter((t) => t.news && (st.known[t.id] ?? 0) < t.rev
-  && (t.id in st.known || t.since > st.since));
+  && (t.id in st.known || t.since >= st.since));

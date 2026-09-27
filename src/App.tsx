@@ -112,9 +112,15 @@ export function App() {
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
   // пока приложение откроют крупнее. Кнопка «Обучение» в меню и Справке работает всегда.
   // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
-  const inviteShown = layout.tall && tour.available && !tour.run && !tour.store.invited && tour.store.first !== 'done' && !welcomeShown
-    && s.tab === 'eval' && !undo;
-  // «Что нового» после обновления: полоса сама, «Позже» — до следующего запуска; точка на ☰ и «Обучении», пока не просмотрено
+  // (закрыл карточку «Понятно» — от тура уже отказался). Показали — отмечено; до закрытия полоса видна в этом запуске
+  const inviteDue = tour.available && !tour.store.invited
+    && (tour.store.first === 'skipped' || (tour.store.first === 'new' && !welcomeHidden));
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const inviteShown = (inviteOpen || inviteDue) && layout.tall && !tour.run && !welcomeShown && s.tab === 'eval' && !undo;
+  useEffect(() => {
+    if (inviteShown && !inviteOpen) { setInviteOpen(true); tour.markInvited(); }
+  }, [inviteShown]); // eslint-disable-line react-hooks/exhaustive-deps
+  // «Что нового» после обновления: полоса сама, «Позже» — до следующего запуска; точка на ☰ и «Справке», пока не просмотрено
   const news = useMemo(() => newsOf(TIPS, tour.store), [tour.store]);
   const [newsLater, setNewsLater] = useState(false);
   const [forcedTip, setForcedTip] = useState<Tip | null>(null);
@@ -162,8 +168,8 @@ export function App() {
         {inviteShown && (
           <div className="tour-strip tour-invite" role="status">
             <span>{t.tour.invite}</span>
-            <button type="button" className="btn" onClick={() => { tour.dismissInvite(); startTour(); }}>{t.tour.welcomeCta}</button>
-            <button type="button" className="tour-x" aria-label={t.ui.close} onClick={tour.dismissInvite}>✕</button>
+            <button type="button" className="btn" onClick={() => { setInviteOpen(false); startTour(); }}>{t.tour.welcomeCta}</button>
+            <button type="button" className="tour-x" aria-label={t.ui.close} onClick={() => setInviteOpen(false)}>✕</button>
           </div>
         )}
         {newsShown && (

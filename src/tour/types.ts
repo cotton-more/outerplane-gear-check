@@ -32,7 +32,7 @@ export type OffKey = keyof Texts['tour']['off'];
 
 export interface Step {
   id: StepId;
-  rev: number; // поменялось поведение, которое шаг объясняет, — rev + 1: шаг станет «новым» (этап 2)
+  rev: number; // записывается в seen, но пока ни на что не влияет: о новом в шаге давним игрокам — подсказкой с news
   at: (c: TourCtx) => Anchor[];
   // на примере — точные кнопки, которые осталось нажать; пусто — рамка вокруг всего якоря (at)
   pin?: (c: TourCtx) => Pin[];

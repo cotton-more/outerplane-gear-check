@@ -1,5 +1,5 @@
 // Слой обучения поверх страницы: рамка вокруг того, на что показывает шаг, и полоса с текстом и кнопками.
-// Экран не затемняется и нажатия проходят к странице: игрок делает шаг сам. Полоса встаёт снизу (над плашкой
+// Нажатия проходят к странице: игрок делает шаг сам. Полоса встаёт снизу (над плашкой
 // вердикта) или сверху — где не закроет рамку (place.ts); пока открыто окно выбора — узкой плашкой сверху.
 // На примере рамки показывают точные кнопки, а остальное приглушено — но нажимается: ошибку можно поправить.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -8,11 +8,27 @@ import { Rich } from '../components/Rich';
 import { useT } from '../i18n';
 import type { Tab } from '../state/appState';
 import { pinSelector, type Anchor } from './anchors';
-import { freeBottom, overlayOpen, pad, rect, targets, union, type Geom } from './dom';
+import { cardOpen, freeBottom, overlayOpen, pad, rect, targets, union, type Geom, type Rect } from './dom';
 import { CORE, stepText } from './core';
 import { place, type Box } from './place';
 import type { TourCtx } from './types';
 import type { TourApi } from './useTour';
+
+// На примере всё, кроме нужных кнопок, приглушено: маска с окном на каждую цель (одно общее окно открывало бы и
+// соседние кнопки). Нажатия проходят — слой pointer-events: none
+function Dim({ rings, vw }: { rings: Rect[]; vw: number }) {
+  return (
+    <svg className="tour-dim" aria-hidden="true">
+      <defs>
+        <mask id="tour-dim-mask">
+          <rect width="100%" height="100%" fill="white" />
+          {rings.map((r, i) => { const p = pad(r, 6, vw); return <rect key={i} x={p.left} y={p.top} width={p.width} height={p.height} rx="10" fill="black" />; })}
+        </mask>
+      </defs>
+      <rect width="100%" height="100%" mask="url(#tour-dim-mask)" />
+    </svg>
+  );
+}
 
 export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
   tour: TourApi; c: TourCtx; rosterEmpty: boolean; onTab: (t: Tab) => void; onRoster: () => void;
@@ -20,7 +36,7 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
   const t = useT();
   const run = tour.run;
   const strip = useRef<HTMLDivElement>(null);
-  const [g, setG] = useState<Geom>({ rings: [], ring: null, overlay: false, bottom: 0, h: 0, vh: 0 });
+  const [g, setG] = useState<Geom>({ rings: [], ring: null, overlay: false, card: false, bottom: 0, h: 0, vw: 0, vh: 0 });
   const step = run?.phase.kind === 'step' ? CORE[run.phase.i] : null;
   const demo = !!run?.demo;
   // на примере — точные кнопки, которые осталось нажать; иначе весь якорь
@@ -40,8 +56,10 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
         rings,
         ring: union(rings),
         overlay,
+        card: cardOpen(),
         bottom: freeBottom(),
         h: strip.current?.offsetHeight ?? 0,
+        vw: window.innerWidth,
         vh: window.innerHeight,
       };
       const s = JSON.stringify(next);
@@ -69,13 +87,17 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
   const off = step && demo ? step.off?.(c) ?? null : null;
   const away = c.s.tab !== 'eval';
   const box: Box | null = g.ring && { top: g.ring.top, bottom: g.ring.top + g.ring.height };
-  const side = away || g.overlay ? 'pill' : place(box, 0, g.bottom || g.vh, g.h);
-  const stripStyle = side === 'bottom' ? { bottom: Math.max(0, g.vh - (g.bottom || g.vh)) } : { top: 0 };
+  // Вне формы или при открытом окне — узкая плашка: сверху, а над карточкой персонажа во весь экран — снизу (сверху
+  // её кнопка «← К списку»). Цель выше свободного места (вердикт колонкой на ПК) — обычная полоса снизу, поверх низа цели
+  const pill = away || g.overlay;
+  const side = pill ? (g.card ? 'pill-low' : 'pill') : place(box, 0, g.bottom || g.vh, g.h) === 'top' ? 'top' : 'bottom';
+  const above = { bottom: Math.max(0, g.vh - (g.bottom || g.vh)) };
+  const stripStyle = side === 'bottom' || side === 'pill-low' ? above : side === 'top' ? { top: 0 } : undefined;
 
   const closeBtn = <button type="button" className="tour-x" aria-label={t.tour.close} onClick={tour.close}>✕</button>;
   let body;
   if (away) {
-    body = <><span>{t.tour.stepOf((stepNo < 0 ? CORE.length : stepNo) + 1, CORE.length)}</span>
+    body = <><span>{stepNo < 0 ? t.tour.start : t.tour.stepOf(stepNo + 1, CORE.length)}</span>
       <button type="button" className="btn" onClick={() => onTab('eval')}>{t.tour.backToEval}</button>{closeBtn}</>;
   } else if (run.phase.kind === 'choose') {
     body = <><p className="tour-t">{t.tour.choose}</p>
@@ -112,11 +134,9 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
 
   return createPortal(
     <>
-      {step && !away && demo && g.ring && (
-        <div className="tour-hole" aria-hidden="true" style={pad(g.ring, 6)} />
-      )}
-      {step && !away && g.rings.map((r, i) => <div key={i} className="tour-ring" aria-hidden="true" style={pad(r, 4)} />)}
-      <div ref={strip} className={`tour-strip tour-${side}`} style={side === 'pill' ? undefined : stripStyle} role="dialog" aria-modal="false" aria-label={t.tour.start}>
+      {step && !away && demo && g.rings.length > 0 && <Dim rings={g.rings} vw={g.vw} />}
+      {step && !away && g.rings.map((r, i) => <div key={i} className="tour-ring" aria-hidden="true" style={pad(r, 4, g.vw)} />)}
+      <div ref={strip} className={`tour-strip tour-${side === 'pill-low' ? 'pill low' : side}`} style={stripStyle} role="dialog" aria-modal="false" aria-label={t.tour.start}>
         {body}
       </div>
     </>,

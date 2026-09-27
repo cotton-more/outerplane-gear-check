@@ -539,6 +539,8 @@ async function main() {
       const p = loadPage(newHtml, { welcomeHidden: true }, width);
       await tick(50);
       for (const a of core) if (!p.w.document.querySelector(`[data-tour="${a}"]`)) missing.push(`${label}: нет элемента с data-tour="${a}" — перенеси якорь (src/tour/anchors.ts)`);
+      // на телефоне «Следующий» и вердикт — на нижней плашке; кнопка ПК под формой там есть в DOM, но скрыта CSS
+      if (width) for (const a of ['next', 'verdict']) if (!p.w.document.querySelector(`#vbar [data-tour="${a}"]`)) missing.push(`${label}: на нижней плашке нет data-tour="${a}"`);
       p.w.close();
     }
     check('Якоря обучения', missing.length ? null : true, missing);

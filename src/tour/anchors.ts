@@ -1,7 +1,7 @@
 // Якоря обучения: элементы, на которые показывает шаг, помечены data-tour. Одно имя можно повесить на несколько
 // вариантов раскладки (кнопка «Следующий» — внизу на телефоне и под формой на ПК): берётся первый видимый.
 export const ANCHORS = [
-  'slot', 'grade', 'pick', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
+  'slot', 'grade', 'pick', 'item', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', // подсказки модулей
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];

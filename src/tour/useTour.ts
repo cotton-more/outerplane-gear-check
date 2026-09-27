@@ -22,6 +22,8 @@ export interface Run { phase: Phase; demo: boolean; saved: ItemInput; tab: Tab }
 export const hasItem = (it: ItemInput) => Object.keys(it.subs).length > 0 || !!it.itemKey || !!it.unlisted;
 
 const coreRevs = (): Revs => Object.fromEntries(CORE.map((st) => [st.id, st.rev]));
+const TIP_IDS = TIPS.map((tp) => tp.id);
+const NEWS_IDS = TIPS.filter((tp) => tp.news).map((tp) => tp.id);
 export const currentRevs = (): Revs => ({ ...coreRevs(), ...Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])) });
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -37,12 +39,12 @@ export function useTour({ c, dispatch, was, onRunning, onDone }: {
   const available = useMemo(() => storage.available(), []);
   // исходную точку пишем сразу: иначе у того, кто обучение не трогает, «Что нового» считалось бы от каждого запуска
   const [store, setStore] = useState<TourStore>(() => {
-    const st = bootTour(loadTour(), was, currentRevs(), today());
-    return available ? saveTour(st) : st;
+    const st = bootTour(loadTour(), was, currentRevs(), today(), NEWS_IDS);
+    return available ? saveTour(st, TIP_IDS) : st;
   });
   const update = useCallback((f: (st: TourStore) => TourStore) => setStore((st) => {
     const next = f(st);
-    return available ? saveTour(next) : next;
+    return available ? saveTour(next, TIP_IDS) : next;
   }), [available]);
 
   const [run, setRun] = useState<Run | null>(null);
@@ -53,11 +55,13 @@ export function useTour({ c, dispatch, was, onRunning, onDone }: {
 
   const start = useCallback(() => {
     const now = cur.current;
-    onRunning(true);
-    const saved = itemInput(now.s);
+    const again = runRef.current;
+    // тур уже идёт («Обучение» нажали ещё раз): начать сначала, но отложенной остаётся вещь игрока, а не форма тура
+    const saved = again ? again.saved : itemInput(now.s);
+    if (!again) onRunning(true);
     // чистый лист: слот и грейд прежние, остальное пусто
     dispatch({ type: 'load', item: { slot: saved.slot, grade: saved.grade, setId: null, itemKey: null, main: null, unlisted: false, subs: {} } });
-    setRun({ phase: { kind: 'choose' }, demo: true, saved, tab: now.s.tab });
+    setRun({ phase: { kind: 'choose' }, demo: true, saved, tab: again ? again.tab : now.s.tab });
   }, [dispatch, onRunning]);
 
   const stepAt = (i: number): Phase => (i < CORE.length ? { kind: 'step', i, start: cur.current } : { kind: 'end', choice: false });
@@ -112,7 +116,8 @@ export function useTour({ c, dispatch, was, onRunning, onDone }: {
       const b = document.body.classList;
       if (b.contains('drawer-lock') || b.contains('sheet-open')) return;
       const r = runRef.current;
-      if (r?.phase.kind === 'step' && CORE[r.phase.i].id === 'next') return;
+      // на шаге «Следующий» Esc — это «Следующий», если ему есть что очистить; иначе Esc закрывает тур, как везде
+      if (r?.phase.kind === 'step' && CORE[r.phase.i].id === 'next' && cur.current.s.tab === 'eval' && cur.current.nSubs > 0) return;
       e.stopPropagation();
       close();
     };
@@ -120,18 +125,19 @@ export function useTour({ c, dispatch, was, onRunning, onDone }: {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [run !== null, close]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dismissInvite = useCallback(() => update((st) => ({ ...st, invited: true })), [update]);
+  const markInvited = useCallback(() => update((st) => ({ ...st, invited: true })), [update]);
   // подсказки: увидел (закрыл или нажал, на что она показывает); «Что нового» просмотрено; вкл/выкл; показать заново
   const seeTip = useCallback((tip: Tip) => update((st) => markSeen(st, { [tip.id]: tip.rev })), [update]);
   const knowTips = useCallback((tips: Tip[]) => update((st) => ({
     ...st, known: { ...st.known, ...Object.fromEntries(tips.map((tp) => [tp.id, tp.rev])) },
   })), [update]);
-  const setTips = useCallback((on: boolean) => update((st) => ({ ...st, tips: on })), [update]);
+  const setTips = useCallback((on: boolean) => update((st) => ({ ...st, tips: on, tipsAt: Date.now() })), [update]);
   const resetTips = useCallback(() => update((st) => ({
-    ...st, tips: true, seen: Object.fromEntries(Object.entries(st.seen).filter(([id]) => !TIPS.some((tp) => tp.id === id))),
+    ...st, tips: true, tipsAt: Date.now(), resetAt: Date.now(),
+    seen: Object.fromEntries(Object.entries(st.seen).filter(([id]) => !TIP_IDS.includes(id as never))),
   })), [update]);
 
-  return { store, available, run, start, choose, advance, close, finish, dismissInvite, seeTip, knowTips, setTips, resetTips };
+  return { store, available, run, start, choose, advance, close, finish, markInvited, seeTip, knowTips, setTips, resetTips };
 }
 
 export type TourApi = ReturnType<typeof useTour>;

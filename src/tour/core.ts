@@ -3,7 +3,7 @@
 // Тексты — ru.ts и en.ts, раздел tour.steps; подсказки отдельных функций — в *.tour.ts модулей (registry.ts).
 import { isArmor } from '../data';
 import { dropSubs } from '../logic/subs';
-import type { Pin } from './anchors';
+import type { Anchor, Pin } from './anchors';
 import type { Step, StepText, TourCtx } from './types';
 
 // на примере: Epic броня Speed Set и три сабстата — у Epic их три
@@ -25,13 +25,25 @@ const demoSet = (c: TourCtx) => demoItem(c) && c.set === DEMO.set;
 const demoSubs = (c: TourCtx) => demoSet(c) && c.nSubs === DEMO.subs.length && DEMO.subs.every((k) => k in c.s.subs);
 const extraSub = (c: TourCtx) => Object.keys(c.s.subs).some((k) => !(DEMO.subs as readonly string[]).includes(k));
 
+// Шаг «сет или предмет»: рамка на том, что осталось сделать. Legendary оружие — сначала main кнопками, потом поле
+// оружия; Legendary аксессуар — поле предмета; Epic аксессуар — сетка (первое нажатие в ней — main, как в тексте)
+const pickAt = ({ s }: TourCtx): Anchor[] => {
+  if (isArmor(s.slot)) return ['pick'];
+  const legend = s.grade === 'unique';
+  if (s.slot === 'weapon') return legend && s.main ? ['item'] : ['pick'];
+  return legend ? ['item'] : ['grid'];
+};
+
+// якоря главного тура на стартовом экране (броня по умолчанию): их проверяет check-data (main.tsx → __ogc.tour)
+export const CORE_ANCHORS: Anchor[] = ['slot', 'grade', 'pick', 'grid', 'verdict', 'next'];
+
 export const CORE: Step[] = [
   { id: 'slot', rev: 1, at: () => ['slot', 'grade'],
     pin: ({ s }) => [...(s.slot !== DEMO.slot ? ['slot:' + DEMO.slot] : []), ...(s.grade !== DEMO.grade ? ['grade:' + DEMO.grade] : [])] as Pin[],
     // на примере — когда выбраны именно броня и Epic: после одного «Armor» грейд ещё может быть L
     done: (c, start, demo) => (c.s.slot !== start.s.slot || c.s.grade !== start.s.grade)
       && (!demo || (c.s.slot === DEMO.slot && c.s.grade === DEMO.grade)) },
-  { id: 'pick', rev: 1, at: () => ['pick'], done: (c, _, demo) => (demo ? demoSet(c) : picked(c)),
+  { id: 'pick', rev: 1, at: pickAt, done: (c, _, demo) => (demo ? demoSet(c) : picked(c)),
     pin: (c) => (demoItem(c) ? ['pick:*', `sets:${DEMO.set}`] : ['slot:' + DEMO.slot, 'grade:' + DEMO.grade]) as Pin[],
     off: (c) => (!demoItem(c) ? 'item' : c.set && c.set !== DEMO.set ? 'set' : null) },
   { id: 'grid', rev: 1, at: () => ['grid'], done: (c, _, demo) => (demo ? demoSubs(c) : verdictReady(c)),

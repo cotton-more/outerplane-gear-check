@@ -406,7 +406,7 @@ export const en: Texts = {
     start: 'Tutorial',
     startLong: 'Take the tutorial',
     welcomeCta: 'Take it · 1 min',
-    next: 'Next',
+    next: 'Continue',
     done: 'Done',
     close: 'Close tutorial',
     stepOf: (n: number, m: number) => `Step ${n} of ${m}`,
@@ -438,11 +438,11 @@ export const en: Texts = {
       chain: 'The chain is the build’s stat priority: green is on the piece, dashed is not. Earlier places matter more.',
       code: 'The item code is for your guild chat: they enter it with “Enter code” and see the check for their roster.',
       temp: '“Temporary” — wear it until you find something better. No rush to dismantle it.',
-      prio: 'Substat priority: › is the order, = shares a place, grey never rolls on 6★ gear. The verdict chain is built from this line.',
+      prio: 'Substat priority: › is the order, = shares a place, crossed-out ones never roll as substats on 6★ gear. The verdict chain is built from this line.',
       builds: 'This character has several builds — switch the tabs. The item check counts all of them.',
     },
     news: {
-      replace: 'on replace, a stat from another row moves over',
+      move: 'on replace, a stat from another row moves over',
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',
@@ -456,8 +456,8 @@ export const en: Texts = {
       slot: (x: StepText) => x.demo
         ? `As an example, take Epic armor: tap ${x.narrow ? 'the armor icon (a shirt)' : '**Armor**'} and **E**.${x.keys ? ' Or press 4 and E.' : ''}`
         : `Pick the slot and grade, as on the piece in the game. **E** is Epic (Steel), **L** is Legendary (Etheric).${x.keys ? ' Keys: 1–6, L and E.' : ''}`,
-      pick: (x: StepText) => x.kind === 'armor'
-        ? (x.demo ? 'Tap the set field and pick **Speed Set**.' : 'Pick the set — it is in the item name after “of”.')
+      pick: (x: StepText) => x.demo ? 'Tap the set field and pick **Speed Set**.' : x.kind === 'armor'
+        ? 'Pick the set — it is in the item name after “of”.'
         : x.kind === 'weapon'
           ? `Main stat — one of the buttons next to the grade${x.legend ? '; below, find the weapon by name: the passive depends on it' : ''}.`
           : x.legend
@@ -467,8 +467,8 @@ export const en: Texts = {
         x.kind === 'armor' ? ' Bright cells are wanted by builds for this set.' : ''} Marked ${x.n} of ${x.of}.`,
       verdict: (x: StepText) => x.narrow
         ? 'The verdict is ready. Tap the card: who it suits, what to upgrade and the code for your guild.'
-        : 'On the right is the verdict: who it suits, what to upgrade and the code for your guild.',
-      next: (x: StepText) => `“Next” goes to a new piece: slot, grade, set and main stay, substats are cleared. Pressed it by accident? You can undo for a few seconds.${
+        : 'On the right is the verdict: who it suits, what to upgrade and the code for your guild. Have a look and press “Continue”.',
+      next: (x: StepText) => `“Next” goes to a new piece: slot, grade, set and main stay, substats are cleared. Pressed it by accident? “Undo” brings the piece back for a few seconds — except in the tutorial.${
         x.keys ? ' Key: Esc.' : ''}`,
     },
   },
