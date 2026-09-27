@@ -22,7 +22,7 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 | Verdict | What to invest |
 |---|---|
 | **Keep** | Enhance to +10 right away; Reforge — first if the roll is good, on a weapon with weak substats — after a reroll; Breakthrough to T4 — a must for a Legendary weapon (the passive grows); on an Epic — no Transistone |
-| **Stopgap** | Enhance only: it's a stopgap. On Epic armor fresh from a drop — one Reforge for luck, if some 4th substat would make it a "Keep": the block names which |
+| **Stopgap** | Enhance right away. A weapon or accessory with a high roll — Reforge is fine, after your "Keep" pieces: the replacement is a Legendary with the right passive, the same main and good substats all at once, and it can take a long time to drop; the verdict names which one. No Breakthrough. With an average or low roll — Enhance only. On Epic armor fresh from a drop — one Reforge for luck, if some 4th substat would make it a "Keep": the block names which |
 | **Fodder** | nothing: it's a Breakthrough tier for the same piece |
 | **Dismantle** on Epic armor | a hint about a lucky Reforge if a 4th substat can save it; and a reminder: if you have an Epic "Keep" of the same set and slot below T4, this is material for it |
 
@@ -37,4 +37,6 @@ segments. So:
   doesn't have, at one yellow segment.
 - **Change Stats (Transistone) opens on an Epic only with a 4th substat** — but per the guide they're not worth
   spending on Epics.
+- **You can mark the 4th** on any Epic piece — armor, weapon or accessory: the "+ 4th substat from Reforge" button
+  under the substat rows. The main and the stats already marked are unavailable there: they never roll as the fourth.
 - Once the 4th is there, the "Worth reforging" badge answers whether to put the **remaining** attempts into it.

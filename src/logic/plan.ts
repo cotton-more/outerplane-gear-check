@@ -48,7 +48,11 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
     }
     case 'temp': {
       const lucky = gamble();
-      return [P.enhance, lucky.length ? P.gambleTemp(lucky) : P.tempNoInvest];
+      if (lucky.length) return [P.enhance, P.gambleTemp(lucky)];
+      // оружие и аксессуар на замену с высоким роллом: Reforge можно — нужную Legendary (пассивка, main и сабстаты
+      // сразу) можно ждать долго; Breakthrough — нет. Ролл так и говорит: «высокий, стоит вкладываться в Reforge»
+      if (!armor && res.roll === 'high') return [P.enhance, P.reforgeTemp(stage), P.noBreakTemp];
+      return [P.enhance, P.tempNoInvest];
     }
     case 'fodder':
       if (set) return [P.fodderArmor(piece, set.short)];

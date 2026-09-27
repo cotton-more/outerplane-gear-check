@@ -5,7 +5,7 @@
 | Verdict | What to do |
 |---|---|
 | **Keep** | the piece is needed: wear it and upgrade it — what exactly is in the "Upgrading" block ([more](Upgrading)). "Worth reforging" — a good roll, put Reforge here first; "Top roll" — a rare roll on useful stats |
-| **Stopgap** | wear it until you find better: a weapon or accessory without the needed passive, or Epic armor with only one key stat (the verdict names the missing one) |
+| **Stopgap** | wear it until you find better. A weapon or accessory without the needed passive: wear it until a recommended Legendary drops — the verdict names which. That's why an Epic weapon or accessory never goes above "Stopgap", even with a perfect roll, and a good roll is worth Reforge. Epic armor — only one key stat (the verdict names the missing one) |
 | **Fodder** | keep it for Breakthrough: Legendary armor with weak substats, or an item with the needed passive but the wrong main stat |
 | **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster) |
 | **Dismantle** | doesn't suit your characters, or the roll is weak |

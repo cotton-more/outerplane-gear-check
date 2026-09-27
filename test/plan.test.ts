@@ -145,9 +145,15 @@ describe('«Прокачка»: оружие', () => {
     expect(r.plan).toEqual([P.fodderGear(weapon.name)]);
   });
 
-  it('временная замена: только Enhance — Reforge и Breakthrough не вкладывать', () => {
+  it('временная замена с высоким роллом: Reforge можно (нужную Legendary ждать долго), Breakthrough — нет', () => {
     const r = evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: 3, CHC: 3, CHD: 3 } });
-    expect(r.v).toBe('temp');
+    expect([r.v, r.roll]).toEqual(['temp', 'high']);
+    expect([r.plan, r.badge]).toEqual([[P.enhance, P.reforgeTemp('adds'), P.noBreakTemp], '']);
+  });
+
+  it('временная замена со средним роллом: только Enhance — Reforge и Breakthrough не вкладывать', () => {
+    const r = evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: 1, CHC: 1, CHD: 1 } });
+    expect([r.v, r.roll]).toEqual(['temp', 'mid']);
     expect([r.plan, r.badge]).toEqual([[P.enhance, P.tempNoInvest], '']);
   });
 });

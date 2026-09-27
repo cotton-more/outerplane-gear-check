@@ -12,6 +12,8 @@ const dec = (x: number) => String(Math.round(x * 10) / 10);
 export const en: Texts = {
   persons,
   more: (n) => ` and ${n} more`,
+  orList: (xs, max) =>
+    xs.length <= 1 ? xs.join('') : xs.length <= max ? `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}` : `${xs.slice(0, max).join(', ')} or ${xs.length - max} more`,
   anyClass: 'any class',
 
   verdict: {
@@ -49,6 +51,9 @@ export const en: Texts = {
     noTransistone: (has4th) =>
       `**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.${has4th ? '' : ' Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.'}`,
     tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
+    reforgeTemp: (stage) =>
+      `**Reforge** — fine, but after your "Keep" pieces: the roll is high, and the replacement — a Legendary with the right passive, the same main and good substats all at once — can take a long time to drop${stage === 'adds' ? '. The first attempt adds a 4th substat' : stage === 'started' ? '. One attempt already went into the 4th substat' : ''}.`,
+    noBreakTemp: "**Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
     gambleTemp: (keys) =>
       `**Reforge** — one try is worth it: the first adds a 4th substat, and with ${keys.join(', ')} (even with 1 segment) the piece becomes a "Keep" — mark it. Got something else — invest no further, no **Breakthrough** either.`,
     gambleJunk: (keys) =>
@@ -124,7 +129,8 @@ export const en: Texts = {
     byMain: 'Who it would suit by main stat',
     tempTitle: (n) => `Stopgap — good roll for ${persons(n)}`,
     tempBest: (what, who) => `${what} Best for: ${who}.`,
-    tempAdvice: (main) => `Use it until the character gets a recommended Legendary. Keep the 1–2 best copies with ${main} main; dismantle the rest like it.`,
+    tempAdvice: (main, who, items) =>
+      `Use it until ${who} gets a recommended Legendary${items ? ` — ${items}` : ''}. Keep the 1–2 best copies with ${main} main; dismantle the rest like it.`,
     byMainWrongSubs: "Would suit by main stat, but the substats don't fit",
     weakTitle: 'Dismantle — weak roll',
     weakLine: (main, n, who, good) =>
@@ -354,7 +360,7 @@ export const en: Texts = {
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions. A cell marked main never rolls as a substat on this piece — it is already in the main (HP% on helmets and boots, flat DEF on chest armor and gloves, flat ATK on weapons). A flat EFF or RES main doesn\'t block EFF and RES substats — in the game they are different stats.',
-      '**4th substat on Epic armor** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. "Upgrading" tells which one would.',
+      '**4th substat on an Epic** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. For armor, "Upgrading" tells which one would.',
       'Tap a stat in its row to replace it (yellow segments stay) or remove it. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
     ],
     helpRoutine: 'How to clean up fast',

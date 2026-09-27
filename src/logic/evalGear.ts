@@ -35,6 +35,11 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   res.qualifies = tempOk;
   const tempRank = (r: Scored) => (tempOk(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.yellow ?? 0) * 0.1 + (r.ratio ?? 0) * 0.01;
   const stopgapRows = (list: BuildRef[]) => dedupe(rows(ctx, s.grade, list, subs, im), tempRank);
+  // чем временную вещь заменят: рекомендованные предметы билда в этом слоте, с их main
+  const replacements = (m: Row) => t.orList(gearList(m.b, kind)
+    .map((g) => ({ name: idx.ITEM[kind][g.key]?.name, mains: g.mains }))
+    .filter((x) => x.name)
+    .map((x) => (x.mains.length ? `${x.name} (${x.mains.join('/')})` : x.name!)), 3);
 
   // общий вердикт для временной замены (Epic или Legendary с пассивкой не из билдов)
   const judgeStopgap = (cands: Row[], what: string): boolean => {
@@ -55,7 +60,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
       res.title = G.tempTitle(good.length);
       res.lines.push(G.tempBest(what, who));
       if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
-      res.lines.push(G.tempAdvice(s.main ?? ''));
+      res.lines.push(G.tempAdvice(s.main ?? '', best.c.name, replacements(best)));
       res.sections.push({ title: t.verdict.tempFor, rows: good, limit: 12, count: good.length, mainNote: s.main });
       const rest = cands.filter((m) => !tempOk(m));
       if (rest.length) res.sections.push({ title: G.byMainWrongSubs, rows: rest, collapsed: true, mainNote: s.main });
