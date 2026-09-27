@@ -6,6 +6,7 @@ import { CodeInput } from './components/eval/ItemCode';
 import { Help, Welcome, type InstallInfo } from './components/Guide';
 import { VBar, Verdict, VerdictSheet } from './components/eval/Verdict';
 import { Header } from './components/Header';
+import { GameIconsContext } from './components/Img';
 import { useIndex } from './components/IndexContext';
 import { Notice } from './components/Notice';
 import { Sheet } from './components/Sheet';
@@ -47,6 +48,9 @@ export function App() {
   const t = TEXTS[lang];
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   const changeLang = (l: Lang) => { storage.set('lang', l); setLang(l); };
+  // значки из игры вместо своих — только для сравнения, пока свои не утверждены
+  const [gameIcons, setGameIcons] = useState(() => storage.get('gameIcons', false));
+  const changeIcons = (game: boolean) => { storage.set('gameIcons', game); setGameIcons(game); };
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t), [idx, s.settings, roster, t]);
   // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
@@ -89,6 +93,7 @@ export function App() {
 
   return (
     <LangContext.Provider value={t}>
+    <GameIconsContext.Provider value={gameIcons}>
       <div className="app">
         <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} />
         {pwa.updateReady && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
@@ -113,7 +118,7 @@ export function App() {
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
           </section>
         </main>
-        <Footer install={install} lang={lang} onLang={changeLang} />
+        <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
         <VBar r={verdict} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         {undo && s.tab === 'eval' && (
@@ -134,7 +139,7 @@ export function App() {
                 {' '}{t.ui.rosterOnly}{roster.size ? ` (${roster.size})` : t.ui.rosterOnlyEmpty}
               </label>
               <EvalSettings s={s} dispatch={dispatch} inline />
-              <Footer install={install} lang={lang} onLang={changeLang} />
+              <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
             </div>
           </Sheet>
         )}
@@ -148,6 +153,7 @@ export function App() {
           <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
+    </GameIconsContext.Provider>
     </LangContext.Provider>
   );
 }
@@ -166,7 +172,21 @@ function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void })
 // дата последнего коммита кода — в часовом поясе того, кто смотрит
 const buildDate = (lang: Lang) => new Date(__BUILD__.date).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
 
-function Footer({ install, lang, onLang }: { install: InstallInfo; lang: Lang; onLang: (l: Lang) => void }) {
+// «Иконки: свои · из игры» — сравнить свои значки с картинками из игры (портреты персонажей — из игры всегда)
+function IconSwitch({ game, onChange }: { game: boolean; onChange: (game: boolean) => void }) {
+  const t = useT();
+  return (
+    <div className="seg lang" role="group" aria-label={t.ui.icons}>
+      <span className="muted small">{t.ui.icons}:</span>
+      <button type="button" className="fbtn" aria-pressed={!game} onClick={() => onChange(false)}>{t.ui.iconsOwn}</button>
+      <button type="button" className="fbtn" aria-pressed={game} onClick={() => onChange(true)}>{t.ui.iconsGame}</button>
+    </div>
+  );
+}
+
+function Footer({ install, lang, onLang, gameIcons, onIcons }: {
+  install: InstallInfo; lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void;
+}) {
   const m = useIndex().D.meta;
   const t = useT();
   const when = (m.commitDate || m.generatedAt || '').slice(0, 10);
@@ -189,6 +209,7 @@ function Footer({ install, lang, onLang }: { install: InstallInfo; lang: Lang; o
       {install.canInstall && <span><button type="button" className="btn" onClick={install.onInstall}>{t.ui.installApp}</button></span>}
       {install.ios && <span>{t.ui.iosFooter}</span>}
       <LangSwitch lang={lang} onLang={onLang} />
+      <IconSwitch game={gameIcons} onChange={onIcons} />
     </footer>
   );
 }

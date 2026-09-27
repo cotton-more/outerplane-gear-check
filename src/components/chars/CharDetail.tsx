@@ -8,7 +8,7 @@ import type { Ctx } from '../../logic/context';
 import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
-import { Frame, Img } from '../Img';
+import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
 
@@ -42,8 +42,8 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
         <div>
           <h2>{c.name}</h2>
           <div className="meta">
-            <span><Img k={'elem:' + c.element} /> {D.elements[c.element] || c.element}</span>
-            <span><Img k={'class:' + c.class} /> {D.classes[c.class] || c.class}{c.subClass ? ' · ' + cap(c.subClass) : ''}</span>
+            <span><ElementIcon el={c.element} /> {D.elements[c.element] || c.element}</span>
+            <span><ClassIcon cls={c.class} /> {D.classes[c.class] || c.class}{c.subClass ? ' · ' + cap(c.subClass) : ''}</span>
             {c.role && <span>{ROLE[c.role] || c.role}</span>}
             {c.rank && <span>PvE {c.rank}</span>}
             {c.rankPvp && <span>PvP {c.rankPvp}</span>}
@@ -85,7 +85,7 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
             {i > 0 && <span className="or">{t.ui.or}</span>}
             {combo.map((p, j) => {
               const st = SET[p.set];
-              return <span key={j} className="setpill"><Img k={'eq:' + (st ? st.icon : '')} />{st ? st.short : p.set} <span className="n">×{p.n}</span></span>;
+              return <span key={j} className="setpill"><SetIcon set={st} />{st ? st.short : p.set} <span className="n">×{p.n}</span></span>;
             })}
           </div>
         )) : <span className="muted">—</span>}
@@ -117,7 +117,7 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
           <div className="tal">
             {b.talismans.map((id) => {
               const t = D.talismans[id];
-              return <span key={id}><Img k={'eq:' + t.icon} />{t.name}{t.name === "Executioner's Charm" ? ' +10' : ''}</span>;
+              return <span key={id}><TalismanIcon icon={t.icon} />{t.name}{t.name === "Executioner's Charm" ? ' +10' : ''}</span>;
             })}
           </div>
         </div>

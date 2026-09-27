@@ -13,7 +13,7 @@ import { mainOptions, setSubDemand } from '../../logic/lists';
 import { blocksOf, itemMains as mainLines } from '../../logic/mains';
 import type { Verdict as VerdictData } from '../../logic/verdict';
 import type { Action, AppState } from '../../state/appState';
-import { Frame, Img, StatIcon } from '../Img';
+import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
 import { ItemPicker } from './ItemPicker';
 import { MainButtons } from './MainButtons';
@@ -33,7 +33,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; onHelp: () => void; onCode: () => void; onOpenVerdict: () => void;
 }) {
-  const { D, SET, ITEM } = ctx.idx;
+  const { SET, ITEM } = ctx.idx;
   const t = useT();
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
@@ -50,7 +50,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const itemMains = (key: string) => { const it = ITEM[kind][key]; return it ? [...it.mains, ...it.extraMains] : []; };
   const weapon = s.slot === 'weapon';
   const mainRow = !armor && !epic && !weapon && (s.unlisted || !!s.main || (!!s.itemKey && itemMains(s.itemKey).length > 0));
-  const mainValue = s.main ? <><StatIcon stat={s.main} />{s.main}</> : undefined;
+  const mainValue = s.main ? <><StatIcon stat={s.main} main />{s.main}</> : undefined;
   const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
   const allMains = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic) : []), [ctx, weapon, kind, epic]);
   // у аксессуара без main сетка сначала выбирает main — в игре он сверху предмета
@@ -69,7 +69,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           {SLOTS.map((sl, i) => (
             <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
               onClick={() => dispatch({ type: 'slot', slot: sl.id })}>
-              <Img k={'eq:' + D.slotIcons[sl.id]} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
+              <SlotIcon slot={sl.id} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
             </button>
           ))}
         </div>
@@ -78,12 +78,12 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             {GRADES.map((g) => (
               <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
                 onClick={() => dispatch({ type: 'grade', grade: g })}>
-                <Img k={'frame:' + g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
+                <GradeFrame grade={g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
               </button>
             ))}
           </div>
           {armor
-            ? <PickField value={set && <><Img k={'eq:' + set.icon} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} />
+            ? <PickField value={set && <><SetIcon set={set} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} />
             : weapon
               ? <MainButtons all={allMains} opts={opts} current={s.main} onPick={pickMain} />
               : epic ? mainField() : itemField}

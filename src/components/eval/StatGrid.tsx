@@ -42,7 +42,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
           const cls = ['sg', o && (o.want ? 'u1' : 'u0'), o?.rare && 'rare'].filter(Boolean).join(' ') + long(SHORT[k] ?? k);
           return (
             <button key={k} type="button" className={cls} disabled={!o} title={o?.rare ? `${k} — ${t.ui.fixedOnly}` : k} aria-label={k} onClick={() => onMain(k)}>
-              <StatIcon stat={k} /><span>{SHORT[k] ?? k}</span>
+              <StatIcon stat={k} main /><span>{SHORT[k] ?? k}</span>
             </button>
           );
         })}

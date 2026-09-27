@@ -25,7 +25,8 @@ This content is an unofficial fan creation. All related IP rights belong to VA G
 outerpedia's authors; the tool is not affiliated with VA Games or with outerpedia.
 
 Build recommendations, game tables and the flat/% formula come from outerpedia under the MIT license; the page also
-bundles React (MIT). Copyright lines and the full license texts are in the app footer ("Licenses") and in
+bundles React (MIT) and Tabler Icons (MIT) — the stat, slot, set, element and class icons. Copyright lines and the
+full license texts are in the app footer ("Licenses") and in
 [`src/licenses.ts`](https://github.com/cotton-more/outerplane-gear-check/blob/main/src/licenses.ts).
 
 Found a bug or a strange verdict — [open an issue](https://github.com/cotton-more/outerplane-gear-check/issues),

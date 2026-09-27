@@ -4,6 +4,7 @@
 export const MIT_HOLDERS = [
   { what: 'outerpedia', who: 'Copyright (c) 2026 Sevih', url: 'https://github.com/Sevih/outerpedia' },
   { what: 'react', who: 'Copyright (c) Meta Platforms, Inc. and affiliates', url: 'https://github.com/facebook/react' },
+  { what: 'tabler', who: 'Copyright (c) 2020-2026 Paweł Kuna', url: 'https://github.com/tabler/tabler-icons' },
 ] as const;
 
 export const MIT_TEXT = `Permission is hereby granted, free of charge, to any person obtaining a copy

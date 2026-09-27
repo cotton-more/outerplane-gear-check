@@ -3,7 +3,7 @@ import type { GearKind } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { itemOptions } from '../../logic/lists';
-import { Frame, Img } from '../Img';
+import { ClassIcon, Frame } from '../Img';
 
 // Окно выбора Legendary оружия/аксессуара. Поиск не фокусируется сам: в разделённом экране экранная клавиатура
 // закрыла бы почти всё окно, а чаще хватает фильтра класса и сортировки по спросу.
@@ -22,7 +22,7 @@ export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
         <div className="filt">
           {Object.entries(ctx.idx.D.classes).map(([k, v]) => (
             <button key={k} type="button" className="fbtn" aria-pressed={cls === k} aria-label={v} title={v} onClick={() => setCls(cls === k ? '' : k)}>
-              <Img k={'class:' + k} /><span>{v}</span>
+              <ClassIcon cls={k} /><span>{v}</span>
             </button>
           ))}
         </div>

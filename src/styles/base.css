@@ -23,6 +23,11 @@
   --idle-soft: #e5e9f0;
   --epic: #2f6bd8;
   --legend: #cf3a31;
+  --el-fire: #d9480f;
+  --el-water: #1971c2;
+  --el-earth: #2f9e44;
+  --el-light: #b07d00;
+  --el-dark: #7048e8;
   --seg-y: #e5a00f;
   --seg-off: #aeb7c4;
   --star-on: #b97c00;
@@ -58,6 +63,11 @@
     --idle-soft: #232b36;
     --epic: #74a0ff;
     --legend: #ff6d62;
+    --el-fire: #ff8a5b;
+    --el-water: #74b3ff;
+    --el-earth: #69db7c;
+    --el-light: #f5c542;
+    --el-dark: #b197fc;
     --seg-y: #f0b030;
     --seg-off: #3d4757;
     --star-on: #f0b030;
@@ -88,6 +98,11 @@
   --idle-soft: #232b36;
   --epic: #74a0ff;
   --legend: #ff6d62;
+  --el-fire: #ff8a5b;
+  --el-water: #74b3ff;
+  --el-earth: #69db7c;
+  --el-light: #f5c542;
+  --el-dark: #b197fc;
   --seg-y: #f0b030;
   --seg-off: #3d4757;
   --star-on: #f0b030;
@@ -117,6 +132,20 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .small { font-size: 13px; }
 kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-2); background: var(--surface-2); }
 .noimg { display: inline-block; background: var(--surface-3); border-radius: 6px; }
+/* свои значки (Img.tsx, Icon): контур цветом текста; размер — те же правила, что картинкам (… img, … .ico) */
+.ico { position: relative; display: inline-flex; flex: none; width: 1em; height: 1em; vertical-align: middle; }
+.ico > svg { display: block; width: 100%; height: 100%; }
+/* «%» у %-версии стата (DEF% — щит с %), «↓» у CD↓%: в правом нижнем углу, где у контуров пусто */
+.ico-b { position: absolute; right: -4px; bottom: -3px; font: 800 9px/1 var(--font-mono); letter-spacing: -.02em; }
+/* сет — в рамке, чтобы Attack Set не путался со статом ATK */
+/* с «%» или «↓» в углу — отступ, чтобы пометка не липла к подписи справа */
+.ico:has(> .ico-b) { margin-right: 3px; }
+.ico-set { padding: 2px; border: 1px solid var(--line-2); border-radius: 5px; }
+.ico.el-fire { color: var(--el-fire); }
+.ico.el-water { color: var(--el-water); }
+.ico.el-earth { color: var(--el-earth); }
+.ico.el-light { color: var(--el-light); }
+.ico.el-dark { color: var(--el-dark); }
 
 /* ---------- шапка */
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 16px 12px; }

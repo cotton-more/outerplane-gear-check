@@ -6,7 +6,7 @@ import { charMatches, type CharFilter } from '../../logic/lists';
 import { encodeRoster, parseRoster } from '../../logic/rosterCode';
 import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
-import { Img } from '../Img';
+import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 
 interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi }
@@ -31,14 +31,14 @@ export function CharList({ s, dispatch, rosterApi }: Props) {
           <div className="filt">
             {Object.entries(D.elements).map(([k, v]) => (
               <button key={k} type="button" className="fbtn" aria-pressed={s.cel === k} onClick={() => filter({ cel: s.cel === k ? '' : k })}>
-                <Img k={'elem:' + k} />{v}
+                <ElementIcon el={k} />{v}
               </button>
             ))}
           </div>
           <div className="filt">
             {Object.entries(D.classes).map(([k, v]) => (
               <button key={k} type="button" className="fbtn" aria-pressed={s.ccl === k} onClick={() => filter({ ccl: s.ccl === k ? '' : k })}>
-                <Img k={'class:' + k} />{v}
+                <ClassIcon cls={k} />{v}
               </button>
             ))}
           </div>
@@ -74,7 +74,7 @@ function CharTile({ c, own, selected, isNew, onSelect, onToggle }: {
     <div className="cwrap">
       <button type="button" className={`ctile${c.builds.length ? '' : ' nob'}`} aria-pressed={selected} onClick={onSelect}
         title={c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : '')}>
-        <span className="badges"><Img k={'elem:' + c.element} /><Img k={'class:' + c.class} /></span>
+        <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
       </button>

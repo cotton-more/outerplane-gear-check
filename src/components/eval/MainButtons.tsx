@@ -16,7 +16,7 @@ export function MainButtons({ all, opts, current, onPick }: {
         return (
           <button key={key} type="button" className={`msw${o && !o.want ? ' u0' : ''}`} aria-pressed={current === key} disabled={!o}
             title={`Main ${key}`} onClick={() => onPick(key)}>
-            <StatIcon stat={key} /><span>{key}</span>
+            <StatIcon stat={key} main /><span>{key}</span>
           </button>
         );
       })}

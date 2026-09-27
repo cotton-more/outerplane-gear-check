@@ -10,7 +10,7 @@ import { useT } from '../../i18n';
 import { fmtGood } from '../../logic/text';
 import type { Section, Verdict as VerdictData } from '../../logic/verdict';
 import { itemInput, type Action, type AppState, type Tab } from '../../state/appState';
-import { Img } from '../Img';
+import { GearFrame, Img, SetIcon } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
@@ -42,8 +42,8 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
           {r.badge && <span className="badge">{r.badge}</span>}
           {icon && (
             <span className="v-item">
-              <span className="frame"><Img k={'frame:' + s.grade} /><Img k={'eq:' + icon} className="ic" /></span>
-              {set && <Img k={'eq:' + set.icon} className="seticon" />}
+              <GearFrame grade={s.grade} slot={s.slot} icon={icon} />
+              {set && <SetIcon set={set} className="seticon" />}
             </span>
           )}
         </div>

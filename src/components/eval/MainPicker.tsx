@@ -28,7 +28,7 @@ export function MainPicker({ ctx, kind, item, epic, current, onPick }: {
         {opts.map((o) => (
           <button key={o.key} type="button" className={`chip${o.rare ? ' rare-main' : ''}`} aria-pressed={current === o.key} onClick={() => onPick(o.key)}
             title={o.rare ? t.ui.fixedOnly : undefined}>
-            <StatIcon stat={o.key} />{o.key}
+            <StatIcon stat={o.key} main />{o.key}
             {o.n === null ? o.want && <span className="want">{t.ui.wanted}</span> : o.n > 0 && <span className="want">{o.n}</span>}
           </button>
         ))}

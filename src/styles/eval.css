@@ -9,21 +9,23 @@ html.wide .eval { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
 .form { padding: 10px 12px 12px; display: grid; gap: 8px; }
 .slotrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 44px; padding: 4px 2px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
-.slot img, .slot .noimg { width: 32px; height: 32px; object-fit: contain; }
-html.narrow .slot span { display: none; }
+.slot img, .slot .noimg, .slot .ico { width: 32px; height: 32px; object-fit: contain; }
+html.narrow .slot > span:not(.ico) { display: none; }
 .slot kbd { display: none; }
 @media (hover: hover) and (pointer: fine) { html:not(.sheet) .slot kbd { display: inline-block; } }
 .formrow { display: flex; gap: 6px; min-width: 0; }
 .gradesw { display: flex; gap: 4px; flex: none; }
-/* грейд — рамка из игры (красная Legendary, синяя Epic) с белой буквой; невыбранный приглушён */
+/* грейд — цветная плашка (красная Legendary, синяя Epic; или рамка из игры — переключатель в подвале) с белой буквой; невыбранный приглушён */
 .grade { display: inline-grid; place-items: center; width: 44px; min-height: 44px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-weight: 700; }
 .grade > * { grid-area: 1 / 1; }
-.grade img, .grade .noimg { width: 100%; height: 100%; border-radius: 5px; object-fit: cover; }
+.grade img, .grade .noimg, .grade .gframe { width: 100%; height: 100%; border-radius: 5px; object-fit: cover; }
+.gframe.unique { background: var(--legend); }
+.gframe.rare { background: var(--epic); }
 .grade .gname { position: relative; color: #fff; font: 700 16px/1 var(--font-mono); text-shadow: 0 1px 2px rgb(0 0 0 / .6); } /* над картинкой: с opacity она рисуется отдельным слоем поверх текста */
-.grade:not([aria-pressed="true"]) img { opacity: .55; }
+.grade:not([aria-pressed="true"]) img, .grade:not([aria-pressed="true"]) .gframe { opacity: .55; }
 .pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 10px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); text-align: left; font-weight: 600; font-size: 14px; }
 .pick-v { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pick-v > img, .pick-v > .noimg { width: 26px; height: 26px; flex: none; object-fit: contain; }
+.pick-v > img, .pick-v > .noimg, .pick-v > .ico { width: 26px; height: 26px; flex: none; object-fit: contain; }
 .pick-v .frame { width: 32px; height: 32px; }
 .pick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
@@ -31,8 +33,8 @@ html.narrow .slot span { display: none; }
 /* main оружия — три кнопки рядом с грейдом; на узком экране без иконок */
 .mainsw { flex: 1; min-width: 0; display: flex; gap: 4px; }
 .msw { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 0 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 13px/1 var(--font-mono); color: var(--ink); white-space: nowrap; overflow: hidden; }
-.msw img, .msw .noimg { width: 18px; height: 18px; flex: none; }
-html.xs .msw img, html.xs .msw .noimg { display: none; }
+.msw img, .msw .noimg, .msw .ico { width: 18px; height: 18px; flex: none; }
+html.xs .msw img, html.xs .msw .noimg, html.xs .msw .ico { display: none; }
 html.xs .msw { padding: 0 2px; font-size: 12px; }
 .msw.u0 { opacity: .5; }
 .msw[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); opacity: 1; }
@@ -44,7 +46,7 @@ html.xs .msw { padding: 0 2px; font-size: 12px; }
 .subkey .subtag { margin-left: auto; font: 600 9.5px/1 var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; }
 .subrow { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .subkey { flex: 1 1 90px; gap: 6px; padding: 4px 8px; }
-.subkey img, .subkey .noimg { width: 18px; height: 18px; flex: none; }
+.subkey img, .subkey .noimg, .subkey .ico { width: 18px; height: 18px; flex: none; }
 .subkey .lab { font-family: var(--font-mono); font-weight: 700; font-size: 13px; white-space: nowrap; }
 .subkey.flat .lab { font-weight: 500; color: var(--ink-2); }
 .subrow .roll-b { flex: none; }
@@ -63,7 +65,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 .codein .err { color: var(--junk); font-size: 13.5px; font-weight: 600; }
 .subgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .subopt { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 12.5px/1.1 var(--font-mono); }
-.subopt img, .subopt .noimg { width: 16px; height: 16px; flex: none; }
+.subopt img, .subopt .noimg, .subopt .ico { width: 16px; height: 16px; flex: none; }
 .subopt.flat { font-weight: 500; color: var(--ink-2); }
 .subopt:disabled { opacity: .3; cursor: not-allowed; }
 /* стат уже стоит в другой строке: номер строки — выберешь, и он переедет сюда */
@@ -79,13 +81,13 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 /* сеты */
 .sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
 .set { display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 7px 10px 7px 7px; min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); text-align: left; }
-.set img, .set .noimg { grid-row: 1 / 3; width: 32px; height: 32px; object-fit: contain; }
+.set img, .set .noimg, .set .ico { grid-row: 1 / 3; width: 32px; height: 32px; object-fit: contain; }
 .set b { font-weight: 600; font-size: 14px; line-height: 1.2; }
-.set span { font-size: 12px; color: var(--ink-3); }
+.set > span:not(.ico) { font-size: 12px; color: var(--ink-3); }
 .dead-h { margin: 12px 0 6px; font-size: 12.5px; color: var(--ink-3); }
 .dead { display: flex; flex-wrap: wrap; gap: 6px; }
 .deadchip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px 5px 5px; min-height: 36px; border: 1px dashed var(--line-2); border-radius: 999px; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
-.deadchip img, .deadchip .noimg { width: 22px; height: 22px; }
+.deadchip img, .deadchip .noimg, .deadchip .ico { width: 22px; height: 22px; }
 
 /* предметы */
 .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
@@ -93,23 +95,27 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 .search::placeholder { color: var(--ink-3); }
 .filt { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .fbtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px 6px 7px; min-height: 34px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); font-size: 12.5px; font-weight: 600; color: var(--ink-2); text-align: left; }
-.fbtn img, .fbtn .noimg { width: 18px; height: 18px; }
+.fbtn img, .fbtn .noimg, .fbtn .ico { width: 18px; height: 18px; }
 .fbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
 .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: min(420px, 55vh); overflow: auto; padding: 2px; overscroll-behavior: contain; }
 .item { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 10px; align-items: center; text-align: left; padding: 6px 10px 6px 6px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .item b { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.25; }
-.item span { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item span:not(.frame, .ico, .ico-b) { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item.unused b { color: var(--ink-2); font-weight: 500; }
 .frame { position: relative; flex: none; width: 44px; height: 44px; border-radius: 7px; overflow: hidden; background: var(--surface-3); }
 .frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .frame > img.ic { object-fit: contain; padding: 3px; }
+/* своя рамка: значок слота цвета грейда на светлом фоне того же цвета */
+.frame.own { display: grid; place-items: center; color: var(--legend); background: color-mix(in srgb, var(--legend) 16%, var(--surface-2)); }
+.frame.own.rare { color: var(--epic); background: color-mix(in srgb, var(--epic) 16%, var(--surface-2)); }
+.frame.own > .ico { width: 62%; height: 62%; }
 .passive { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
 .passive b { color: var(--ink); }
 
 /* статы */
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px 7px 7px; min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
-.chip img, .chip .noimg { width: 18px; height: 18px; }
+.chip img, .chip .noimg, .chip .ico { width: 18px; height: 18px; }
 .chip.rare-main { border-style: dashed; }
 .chip .want { font-family: var(--font-body); font-weight: 600; font-size: 11px; color: var(--keep); }
 .roll-b { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface); }
@@ -137,7 +143,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 @media (max-height: 560px) {
   .form { padding: 6px 10px 8px; gap: 6px; }
   .slot { min-height: 40px; }
-  .slot img, .slot .noimg { width: 28px; height: 28px; }
+  .slot img, .slot .noimg, .slot .ico { width: 28px; height: 28px; }
   .grade, .pick, .msw { min-height: 40px; }
   .grade { width: 40px; }
   .subrows { gap: 4px; }
@@ -147,9 +153,9 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 /* окна выбора — плотнее: в разделённом экране окно не выше ~300 px */
 .drawer .sets { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 5px; }
 .drawer .set { display: flex; align-items: center; gap: 7px; min-height: 38px; padding: 4px 9px 4px 5px; }
-.drawer .set img, .drawer .set .noimg { width: 24px; height: 24px; flex: none; }
+.drawer .set img, .drawer .set .noimg, .drawer .set .ico { width: 24px; height: 24px; flex: none; }
 .drawer .set b { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.drawer .set span { flex: none; font: 700 12px/1 var(--font-mono); color: var(--ink-3); }
+.drawer .set > span:not(.ico) { flex: none; font: 700 12px/1 var(--font-mono); color: var(--ink-3); }
 .drawer .dead-h { margin: 10px 0 6px; }
 .drawer .deadchip { min-height: 34px; font-size: 12px; }
 .drawer .items { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
@@ -158,7 +164,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 .drawer .fbtn { min-height: 32px; padding: 4px 8px 4px 5px; font-size: 12px; }
 .drawer .tools { margin-bottom: 8px; gap: 6px; }
 .drawer .search { padding: 8px 10px; }
-html.narrow .drawer .fbtn span { display: none; }
+html.narrow .drawer .fbtn > span:not(.ico) { display: none; }
 html.narrow .drawer .fbtn { padding: 4px 7px; }
 html.narrow .actions .btn.primary { display: none; } /* на телефоне «Сброс» — на нижней плашке */
 
@@ -173,9 +179,9 @@ html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-botto
 .subzone { display: grid; min-height: 84px; }
 .statgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; align-content: start; container-type: inline-size; }
 /* пять знаков в клетке ~24 px (разделённый экран 280 px) не влезают: шрифт по ширине сетки, не крупнее обычного */
-.sg.long span { font-size: min(10.5px, 3.5cqi); }
+.sg.long > span:not(.ico) { font-size: min(10.5px, 3.5cqi); }
 .sg { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; min-height: 40px; padding: 3px 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 10.5px/1.1 var(--font-mono); color: var(--ink); white-space: nowrap; }
-.sg img, .sg .noimg { width: 16px; height: 16px; flex: none; }
+.sg img, .sg .noimg, .sg .ico { width: 16px; height: 16px; flex: none; }
 .sg.flat { font-weight: 500; color: var(--ink-2); }
 .sg.u1 { border-color: color-mix(in srgb, var(--keep) 60%, var(--line)); background: color-mix(in srgb, var(--keep-soft) 75%, var(--surface-2)); }
 .sg.u2 { border-color: color-mix(in srgb, var(--temp) 50%, var(--line)); }
@@ -205,7 +211,7 @@ html.narrow .app > footer.foot { display: none; }
   html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 4px); }
   .form { padding: 4px 8px 6px; gap: 4px; }
   .slot { min-height: 38px; }
-  .slot img, .slot .noimg { width: 26px; height: 26px; }
+  .slot img, .slot .noimg, .slot .ico { width: 26px; height: 26px; }
   .grade, .pick, .msw { min-height: 38px; }
   .grade { width: 38px; }
   .subzone { min-height: 76px; }

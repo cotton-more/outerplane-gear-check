@@ -5,6 +5,7 @@ import { IndexContext } from './components/IndexContext';
 import { CFG } from './config';
 import { MAIN_GRID, STAT_ICON, createIndex } from './data';
 import { applyLayout } from './hooks/useLayout';
+import { SET_ICON, statIcon } from './icons/own';
 import { TEXTS, savedLang } from './i18n';
 import { makeCtx } from './logic/context';
 import * as logic from './logic/evaluate';
@@ -31,7 +32,9 @@ if (!D) {
     </StrictMode>,
   );
   // для отладки из консоли и проверки данных перед публикацией (scripts/check-data.mjs): чистые функции оценки и датасет;
-  // known — какие main страница умеет показать и записать в код: новая метка в данных без них — красная проверка
-  const known = { codeMains: CODE_MAINS, gridMains: MAIN_GRID, icons: Object.keys(STAT_ICON) };
+  // known — какие main страница умеет показать и записать в код: новая метка в данных без них — красная проверка.
+  // icons — метки, у которых есть и свой значок, и картинка из игры; setIcons — сеты со своим значком (нет — предупреждение)
+  const icons = Object.keys(STAT_ICON).filter((k) => statIcon(k, true));
+  const known = { codeMains: CODE_MAINS, gridMains: MAIN_GRID, icons, setIcons: Object.keys(SET_ICON) };
   window.__ogc = { D, idx, CFG, build: __BUILD__, makeCtx, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights, known };
 }

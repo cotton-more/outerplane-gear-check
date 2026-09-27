@@ -282,8 +282,9 @@ function unknownMains(D, known) {
     ...D.sets.flatMap((s) => Object.values(s.fixed || {}).flatMap((g) => Object.values(g).flat())),
     ...[...D.weapons, ...D.amulets].flatMap((i) => i.fixed || []),
   ];
-  for (const m of lines) if (!icons.has(m)) out.add(`строка main «${m}» странице незнакома — нет значка в STAT_ICON (src/data/index.ts)`);
-  for (const m of Object.keys(D.mainBlocks || {})) if (!icons.has(m)) out.add(`main «${m}» странице незнаком — нет значка в STAT_ICON (src/data/index.ts)`);
+  const where = 'STAT_ICON в src/data/index.ts и STAT в src/icons/own.ts';
+  for (const m of lines) if (!icons.has(m)) out.add(`строка main «${m}» странице незнакома — нет значка (${where})`);
+  for (const m of Object.keys(D.mainBlocks || {})) if (!icons.has(m)) out.add(`main «${m}» странице незнаком — нет значка (${where})`);
   return out;
 }
 
@@ -520,6 +521,10 @@ async function main() {
     }
     const bad = [...unknownMains(newD, known)];
     check('Main stat знакомы странице', !bad.length, bad);
+    // новый сет без своего значка рисуется шестиугольником: не ошибка, но стоит дорисовать
+    const own = new Set(known.setIcons || []);
+    const noIcon = newD.sets.filter((st) => !own.has(st.short)).map((st) => `сет «${st.short}» без своего значка — допиши в SET_ICON (src/icons/own.ts), пока там шестиугольник`);
+    check('Свои значки сетов', noIcon.length ? null : true, noIcon);
   });
 
   // 6. код приложения новее опубликованного — выйдет вместе с данными
