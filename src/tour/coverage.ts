@@ -16,17 +16,10 @@ export const COVERAGE: Record<string, Coverage> = {
   'Rich.tsx': 'helper',            // жирный текст в фразах
   'Sheet.tsx': 'helper',           // шторка для окон
   'chars/CharDetail.tsx': 'todo',  // билды персонажа, «что искать»
-  'chars/CharList.tsx': 'todo',    // звёздочка — в ростер, фильтры
-  'eval/Chain.tsx': 'todo',        // цепочка приоритета в вердикте
   'eval/EvalPanel.tsx': 'core',    // форма: слот, грейд, сет или main, сетка
-  'eval/ItemCode.tsx': 'todo',     // код вещи для гильдии и «Ввести код»
   'eval/ItemPicker.tsx': 'core',   // окно выбора Legendary по названию — шаг «сет или предмет»
   'eval/MainButtons.tsx': 'core',  // main оружия кнопками — тот же шаг
   'eval/MainPicker.tsx': 'core',   // окно main — тот же шаг
   'eval/PickField.tsx': 'helper',  // поле, открывающее окно выбора
   'eval/SetPicker.tsx': 'core',    // окно сетов — шаг «сет»
-  'eval/StatGrid.tsx': 'todo',     // сетка — в туре; ещё подсказать пометку main и первое нажатие у аксессуара
-  'eval/SubPicker.tsx': 'todo',    // замена стата и переезд из другой строки
-  'eval/SubRows.tsx': 'todo',      // жёлтые сегменты, замена по нажатию, 4-й сабстат у Epic
-  'eval/Verdict.tsx': 'core',      // вердикт, карточка, плашка и «Следующий»
 };

@@ -1,6 +1,6 @@
 import { FLAT, MAIN_LAYOUT, subLabel } from '../../data';
 import { useT } from '../../i18n';
-import { tourItem } from '../../tour/anchors';
+import { tour, tourItem } from '../../tour/anchors';
 import type { MainOption } from '../../logic/lists';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
@@ -58,7 +58,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
           // выбранный main снимается нажатием; фиксированная строка (HP% шлема, flat ATK оружия) — нет
           const chosen = k === main;
           return (
-            <button key={k} type="button" className={`sg is-main${chosen ? '' : ' fixed'}${long(SHORT[k] ?? k)}`} disabled={!chosen}
+            <button key={k} type="button" className={`sg is-main${chosen ? '' : ' fixed'}${long(SHORT[k] ?? k)}`} disabled={!chosen} {...tour('maincell')}
               title={chosen ? t.ui.mainCell(k) : t.ui.fixedMainCell(k)} onClick={chosen ? () => onMain(k) : undefined}>
               <small>main</small><span>{SHORT[k] ?? k}</span>
             </button>

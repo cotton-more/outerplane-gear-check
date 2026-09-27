@@ -8,6 +8,7 @@ import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
 import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
+import { tour } from '../../tour/anchors';
 
 interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi }
 
@@ -78,7 +79,7 @@ function CharTile({ c, own, selected, isNew, onSelect, onToggle }: {
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
       </button>
-      <button type="button" className="star" aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>
+      <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>
         {own ? '★' : '☆'}
       </button>
     </div>

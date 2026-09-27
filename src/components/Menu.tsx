@@ -5,8 +5,8 @@ import type { Action, AppState } from '../state/appState';
 import { EvalSettings } from './eval/EvalPanel';
 import { Sheet } from './Sheet';
 
-export function Menu({ s, dispatch, rosterSize, onClose, onChars, onCode, onHelp, onTour, footer }: {
-  s: AppState; dispatch: Dispatch<Action>; rosterSize: number; onClose: () => void;
+export function Menu({ s, dispatch, rosterSize, news, onClose, onChars, onCode, onHelp, onTour, footer }: {
+  s: AppState; dispatch: Dispatch<Action>; rosterSize: number; news: boolean; onClose: () => void;
   onChars: () => void; onCode: () => void; onHelp: () => void; onTour: () => void; footer: ReactNode;
 }) {
   const t = useT();
@@ -19,7 +19,7 @@ export function Menu({ s, dispatch, rosterSize, onClose, onChars, onCode, onHelp
             {rosterSize ? <><span className="vb-star">★</span> {rosterSize} · </> : '☆ '}{t.ui.tabChars}
           </button>
           <button type="button" className="btn" onClick={go(onCode)}>{t.ui.enterCode}</button>
-          <button type="button" className="btn" onClick={go(onHelp)}>{t.ui.help}</button>
+          <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={go(onHelp)}>{t.ui.help}</button>
           <button type="button" className="btn" onClick={go(onTour)}>{t.tour.start}</button>
         </div>
         <label className="toggle">

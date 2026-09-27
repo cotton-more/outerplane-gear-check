@@ -29,9 +29,9 @@ import { VerdictCard } from './Verdict';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, onOpenVerdict }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
-  onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; onOpenVerdict: () => void;
+  onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -102,7 +102,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       <div className="actions">
         <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>
         <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
-        <button type="button" className="btn" onClick={onHelp}>{t.ui.help}</button>
+        <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={onHelp}>{t.ui.help}</button>
         <button type="button" className="btn" onClick={onTour}>{t.tour.start}</button>
         <label className="toggle">
           <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />

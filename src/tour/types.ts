@@ -7,6 +7,7 @@ import type { Anchor, Pin } from './anchors';
 // что шаг видит на странице: из этого считаются якорь, текст и «шаг выполнен»
 export interface TourCtx {
   s: AppState;
+  roster: number;       // сколько персонажей отмечено
   set: string | null;   // название выбранного сета (set.short)
   nSubs: number;
   verdict: Verdict;
@@ -41,13 +42,15 @@ export interface Step {
 }
 
 // Подсказка модуля — в файле Компонент.tour.ts рядом с компонентом: export default defineTips({...}).
-// Показ подсказок по ходу и «Что нового» — этап 2; сейчас реестр только собирает их и проверяет.
+// Показывается один раз, когда её якорь на экране и when() верно (tips.ts); текст — tour.tips[id] в ru.ts и en.ts.
+export type TipId = keyof Texts['tour']['tips'];
 export interface Tip {
-  id: string;
-  rev: number;
-  at: Anchor | null;
-  since: string; // дата появления, YYYY-MM-DD: новичку не покажем «новым» то, что было до его первого запуска
+  id: TipId;
+  rev: number;    // поменялось то, что подсказка объясняет, — rev + 1: покажется снова (и в «Что нового», если news)
+  at: Anchor;
+  since: string;  // дата появления функции, YYYY-MM-DD: новичку не покажем «новым» то, что было до его первого запуска
   when?: (c: TourCtx) => boolean;
+  news?: boolean; // попадает в «Что нового»; короткая строка — tour.news[id]
 }
 
 export const defineTips = (...tips: Tip[]): Tip[] => tips;

@@ -39,7 +39,7 @@ export function SubRows({ subs, epic, fourth, dispatch, onPick, onAddFourth }: {
         );
       })}
       {fourth && keys.length === MAX_SUBS - 1 && (
-        <button type="button" className="subadd" onClick={onAddFourth}>+ {t.ui.addFourth}</button>
+        <button type="button" className="subadd" onClick={onAddFourth} {...tour('fourth')}>+ {t.ui.addFourth}</button>
       )}
     </div>
   );

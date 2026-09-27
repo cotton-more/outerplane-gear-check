@@ -428,6 +428,28 @@ export const en: Texts = {
       set: 'The example needs Speed Set — change it in the set field.',
       subs: 'The example needs only SPD, CHC and CHD: tap the extra stat in its row and replace or remove it.',
     },
+    tips: {
+      star: 'Star your characters — the check will use them instead of every hero in the game.',
+      accMain: 'For an accessory, the first tap in the grid is the main stat, as at the top of the piece in the game. Then come the substats.',
+      mainCell: 'A “main” cell is a stat in the main line: it never rolls as a substat.',
+      fourth: 'After the first Reforge, Epic gets a 4th substat — mark it, it may save the piece.',
+      replace: 'Tap a stat in its row to replace or remove it. Handy for entering the next piece over the last one.',
+      move: 'You can pick a stat from another row too: it moves here and that row is freed.',
+      chain: 'The chain is the build’s stat priority: green is on the piece, dashed is not. Earlier places matter more.',
+      code: 'The item code is for your guild chat: they enter it with “Enter code” and see the check for their roster.',
+      temp: '“Temporary” — wear it until you find something better. No rush to dismantle it.',
+    },
+    news: {
+      replace: 'on replace, a stat from another row moves over',
+    },
+    newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
+    newsShow: 'Show',
+    newsLater: 'Later',
+    tipsTitle: 'Tips',
+    tipsOn: 'on',
+    tipsOff: 'off',
+    tipsReset: 'Show tips again',
+    newBadge: 'new',
     steps: {
       slot: (x: StepText) => x.demo
         ? `As an example, take Epic armor: tap ${x.narrow ? 'the armor icon (a shirt)' : '**Armor**'} and **E**.${x.keys ? ' Or press 4 and E.' : ''}`

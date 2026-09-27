@@ -8,35 +8,11 @@ import { Rich } from '../components/Rich';
 import { useT } from '../i18n';
 import type { Tab } from '../state/appState';
 import { pinSelector, type Anchor } from './anchors';
+import { freeBottom, overlayOpen, pad, rect, targets, union, type Geom } from './dom';
 import { CORE, stepText } from './core';
 import { place, type Box } from './place';
 import type { TourCtx } from './types';
 import type { TourApi } from './useTour';
-
-interface Rect { top: number; left: number; width: number; height: number }
-interface Geom { rings: Rect[]; ring: Rect | null; overlay: boolean; bottom: number; h: number; vh: number }
-
-const visible = (el: Element) => el.getClientRects().length > 0;
-const rect = (r: DOMRect): Rect => ({ top: r.top, left: r.left, width: r.width, height: r.height });
-
-// Цели шага: у каждого селектора — первый видимый элемент. Пока открыто окно — только то, что в нём,
-// иначе — только то, что не в окне (поле под шторкой формально видно).
-function targets(sels: string[], overlay: boolean): Element[] {
-  return sels.flatMap((sel) => {
-    const el = [...document.querySelectorAll(sel)].find((e) => visible(e) && !!e.closest('.drawer') === overlay);
-    return el ? [el] : [];
-  });
-}
-
-// общая рамка всех целей — от неё считается, где встать полосе, и «окно» в приглушении
-function union(rs: Rect[]): Rect | null {
-  if (!rs.length) return null;
-  const top = Math.min(...rs.map((r) => r.top)), left = Math.min(...rs.map((r) => r.left));
-  const bottom = Math.max(...rs.map((r) => r.top + r.height)), right = Math.max(...rs.map((r) => r.left + r.width));
-  return { top, left, width: right - left, height: bottom - top };
-}
-
-const pad = (r: Rect, p: number) => ({ top: r.top - p, left: r.left - p, width: r.width + 2 * p, height: r.height + 2 * p });
 
 export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
   tour: TourApi; c: TourCtx; rosterEmpty: boolean; onTab: (t: Tab) => void; onRoster: () => void;
@@ -58,15 +34,13 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
     if (!run) return;
     let id = 0, last = '';
     const tick = () => {
-      const b = document.body.classList;
-      const vbar = document.getElementById('vbar');
-      const overlay = b.contains('drawer-lock') || b.contains('sheet-open');
+      const overlay = overlayOpen();
       const rings = targets(selsRef.current, overlay).map((el) => rect(el.getBoundingClientRect()));
       const next: Geom = {
         rings,
         ring: union(rings),
         overlay,
-        bottom: vbar ? vbar.getBoundingClientRect().top : window.innerHeight,
+        bottom: freeBottom(),
         h: strip.current?.offsetHeight ?? 0,
         vh: window.innerHeight,
       };
@@ -85,7 +59,7 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
     const el = targets(selsRef.current, false)[0];
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const bottom = document.getElementById('vbar')?.getBoundingClientRect().top ?? window.innerHeight;
+    const bottom = freeBottom();
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
   }, [stepNo]); // eslint-disable-line react-hooks/exhaustive-deps

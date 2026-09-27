@@ -9,7 +9,7 @@ import type { ItemInput } from '../logic/verdict';
 import { CORE } from './core';
 import { TIPS } from './registry';
 import { bootTour, loadTour, markSeen, saveTour, type Revs, type TourStore } from './store';
-import type { TourCtx } from './types';
+import type { Tip, TourCtx } from './types';
 
 export type Phase =
   | { kind: 'choose' }
@@ -121,8 +121,17 @@ export function useTour({ c, dispatch, was, onRunning, onDone }: {
   }, [run !== null, close]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissInvite = useCallback(() => update((st) => ({ ...st, invited: true })), [update]);
+  // подсказки: увидел (закрыл или нажал, на что она показывает); «Что нового» просмотрено; вкл/выкл; показать заново
+  const seeTip = useCallback((tip: Tip) => update((st) => markSeen(st, { [tip.id]: tip.rev })), [update]);
+  const knowTips = useCallback((tips: Tip[]) => update((st) => ({
+    ...st, known: { ...st.known, ...Object.fromEntries(tips.map((tp) => [tp.id, tp.rev])) },
+  })), [update]);
+  const setTips = useCallback((on: boolean) => update((st) => ({ ...st, tips: on })), [update]);
+  const resetTips = useCallback(() => update((st) => ({
+    ...st, tips: true, seen: Object.fromEntries(Object.entries(st.seen).filter(([id]) => !TIPS.some((tp) => tp.id === id))),
+  })), [update]);
 
-  return { store, available, run, start, choose, advance, close, finish, dismissInvite };
+  return { store, available, run, start, choose, advance, close, finish, dismissInvite, seeTip, knowTips, setTips, resetTips };
 }
 
 export type TourApi = ReturnType<typeof useTour>;

@@ -9,8 +9,9 @@ import { CORE } from '../src/tour/core';
 import { COVERAGE } from '../src/tour/coverage';
 import { place } from '../src/tour/place';
 import { TIPS } from '../src/tour/registry';
-import { bootTour, markSeen, mergeTour } from '../src/tour/store';
-import type { StepText } from '../src/tour/types';
+import { bootTour, markSeen, mergeTour, type TourStore } from '../src/tour/store';
+import { LIMITS, newsOf, nextTip } from '../src/tour/tips';
+import type { StepText, Tip, TourCtx } from '../src/tour/types';
 
 const COMPONENTS = new URL('../src/components/', import.meta.url).pathname;
 const tsx = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
@@ -101,5 +102,51 @@ describe('где встаёт полоса', () => {
 
   it('низкий экран 420×390 (разделённый экран в ландшафте): сетка на всю высоту — узкая плашка', () => {
     expect(place({ top: 40, bottom: 300 }, 0, 330, 110)).toBe('pill');
+  });
+});
+
+describe('подсказки модулей', () => {
+  it('у каждой — текст на обоих языках не длиннее 160 знаков и якорь из списка; у новостей — строка «Что нового»', () => {
+    for (const [lang, t] of Object.entries(TEXTS)) {
+      expect(TIPS.filter((tp) => !t.tour.tips[tp.id]).map((tp) => `${lang}/${tp.id}`)).toEqual([]);
+      expect(TIPS.filter((tp) => t.tour.tips[tp.id].length > 160).map((tp) => `${lang}/${tp.id}`)).toEqual([]);
+      const news = t.tour.news as Record<string, string>;
+      expect(TIPS.filter((tp) => tp.news && !news[tp.id]).map((tp) => `${lang}/${tp.id}`)).toEqual([]);
+      expect(Object.keys(news).filter((id) => !TIPS.some((tp) => tp.id === id && tp.news))).toEqual([]);
+    }
+    expect(TIPS.filter((tp) => !ANCHORS.includes(tp.at)).map((tp) => tp.id)).toEqual([]);
+    expect(TIPS.filter((tp) => !/^\d{4}-\d{2}-\d{2}$/.test(tp.since)).map((tp) => tp.id)).toEqual([]);
+  });
+
+  const st = (patch: Partial<TourStore> = {}): TourStore =>
+    ({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2026-09-28', tips: true, ...patch });
+  const tipA: Tip = { id: 'star', rev: 1, at: 'star', since: '2026-09-27' };
+  const tipB: Tip = { id: 'code', rev: 1, at: 'code', since: '2026-09-27', when: () => false };
+  const c = {} as TourCtx;
+  const all = () => true;
+
+  it('показываем одну невиденную, чей якорь на экране и условие верно', () => {
+    expect(nextTip([tipB, tipA], st(), c, { shown: 0, lastAt: 0 }, 10_000, 0, all)).toBe(tipA);
+    expect(nextTip([tipA], st({ seen: { star: 1 } }), c, { shown: 0, lastAt: 0 }, 10_000, 0, all)).toBeNull();
+    expect(nextTip([tipA], st({ seen: { star: 1 } }), c, { shown: 0, lastAt: 0 }, 10_000, 0, all)).toBeNull();
+    expect(nextTip([{ ...tipA, rev: 2 }], st({ seen: { star: 1 } }), c, { shown: 0, lastAt: 0 }, 10_000, 0, all)?.id).toBe('star');
+    expect(nextTip([tipA], st(), c, { shown: 0, lastAt: 0 }, 10_000, 0, () => false)).toBeNull();
+  });
+
+  it('не навязываемся: выключены, три за запуск, 20 секунд между, пауза в нажатиях', () => {
+    expect(nextTip([tipA], st({ tips: false }), c, { shown: 0, lastAt: 0 }, 10_000, 0, all)).toBeNull();
+    expect(nextTip([tipA], st(), c, { shown: LIMITS.perLaunch, lastAt: 0 }, 99_000, 0, all)).toBeNull();
+    expect(nextTip([tipA], st(), c, { shown: 1, lastAt: 90_000 }, 99_000, 0, all)).toBeNull();
+    expect(nextTip([tipA], st(), c, { shown: 1, lastAt: 70_000 }, 99_000, 0, all)).toBe(tipA);
+    expect(nextTip([tipA], st(), c, { shown: 0, lastAt: 0 }, 10_000, 9_000, all)).toBeNull();
+  });
+
+  it('«Что нового»: знакомая с rev + 1 и новая после первого запуска; то, что было до него, новичку не новое', () => {
+    const n = (t: Tip, s: TourStore) => newsOf([{ ...t, news: true }], s).length;
+    expect(n({ ...tipA, since: '2026-10-01' }, st())).toBe(1);
+    expect(n(tipA, st())).toBe(0);
+    expect(n({ ...tipA, rev: 2 }, st({ known: { star: 1 } }))).toBe(1);
+    expect(n(tipA, st({ known: { star: 1 } }))).toBe(0);
+    expect(newsOf([{ ...tipA, since: '2026-10-01' }], st())).toEqual([]); // без news — не новость
   });
 });

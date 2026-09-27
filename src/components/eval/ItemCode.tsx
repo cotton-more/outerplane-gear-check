@@ -3,6 +3,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useT } from '../../i18n';
 import { CODE_PREFIX, decodeItem, encodeItem, type DecodeError } from '../../logic/itemCode';
 import type { ItemInput } from '../../logic/verdict';
+import { tour } from '../../tour/anchors';
 
 // строка в вердикте: код текущего предмета и «Скопировать» — вставить в чат игры
 export function ShareCode({ item }: { item: ItemInput }) {
@@ -17,7 +18,7 @@ export function ShareCode({ item }: { item: ItemInput }) {
     else fallback();
   };
   return (
-    <div className="v-share">
+    <div className="v-share" {...tour('code')}>
       <span className="muted">{t.ui.codeForChat}</span>
       <b className="code" ref={el}>{code}</b>
       <span className="muted small" aria-live="polite">{msg}</span>

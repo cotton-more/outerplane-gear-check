@@ -4,6 +4,7 @@ import { FLAT, subLabel } from '../../data';
 import { mainsOnAxis, subForms } from '../../logic/mains';
 import { tierPlaces, type Part, type Row } from '../../logic/score';
 import { useIndex } from '../IndexContext';
+import { tour } from '../../tour/anchors';
 
 const axisOf = (k: string) => k.trim().replace(/%$/, '');
 
@@ -52,7 +53,7 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
   });
   const extra = m.parts.filter((p) => !used.has(p.key));
   return (
-    <span className="chain">
+    <span className="chain" {...tour('chain')}>
       {pills.map((p, i) => (
         <Fragment key={i}>{p.sep && <i className="sep">{p.sep}</i>}<span className={`pill ${p.cls}`}>{p.cls.startsWith('main') && <small>main </small>}{p.label}</span></Fragment>
       ))}

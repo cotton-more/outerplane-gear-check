@@ -1,4 +1,5 @@
 // Справка для новичка: карточка при первом запуске (пока ростер пуст) и окно «Справка».
+import type { ReactNode } from 'react';
 import { useT } from '../i18n';
 import { CODE_PREFIX } from '../logic/itemCode';
 import { Rich } from './Rich';
@@ -42,12 +43,13 @@ export function Welcome({ install, onTour, onRoster, onClose }: { install: Insta
   );
 }
 
-// содержимое окна «Справка»; сверху — пройти обучение заново
-export function Help({ install, onTour }: { install: InstallInfo; onTour: () => void }) {
+// содержимое окна «Справка»; сверху — пройти обучение заново и подсказки (tips — src/tour/TipsHelp.tsx)
+export function Help({ install, onTour, tips }: { install: InstallInfo; onTour: () => void; tips?: ReactNode }) {
   const t = useT();
   return (
     <div className="guide">
       <p className="guide-tour"><button type="button" className="btn" onClick={onTour}>{t.tour.startLong}</button></p>
+      {tips}
       <h4>{t.ui.howTo}</h4>
       <List items={t.ui.steps} ordered />
       <h4>{t.ui.helpInput}</h4>

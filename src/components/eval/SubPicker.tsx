@@ -39,7 +39,7 @@ export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
         })}
       </div>
       {editing && onRemove && <button type="button" className="btn subremove" onClick={onRemove}>{t.ui.subRemove(subLabel(editing))}</button>}
-      {moves && <p className="note-line">{t.ui.subMoveNote}</p>}
+      {moves && <p className="note-line" {...tour('submove')}>{t.ui.subMoveNote}</p>}
       <p className="note-line">{t.ui.subNote}</p>
     </>
   );

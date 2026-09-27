@@ -208,3 +208,38 @@ describe('давний игрок', () => {
     expect(stored('tour').invited).toBe(true);
   });
 });
+
+describe('подсказки по ходу и «Что нового»', () => {
+  const done = { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2026-09-28', tips: true };
+  const wait = (ms: number) => act(() => new Promise<void>((r) => setTimeout(r, ms)));
+
+  it('вкладка персонажей с пустым ростером: подсказка у звёздочки; нажал на звёздочку — подсказка увидена', async () => {
+    // в jsdom нет раскладки: считаем видимым всё
+    const orig = Element.prototype.getClientRects;
+    Element.prototype.getClientRects = function () { return [{}] as unknown as DOMRectList; };
+    try {
+      await mount({ welcomeHidden: true, tour: done, state: { tab: 'chars' } });
+      await wait(2_200);
+      expect($('.tour-tip')?.textContent).toContain('Star your characters');
+      await act(async () => { $('.star')!.dispatchEvent(new Event('pointerdown', { bubbles: true })); });
+      await frame();
+      expect($('.tour-tip')).toBeNull();
+      expect(stored('tour').seen.star).toBe(1);
+    } finally {
+      Element.prototype.getClientRects = orig;
+    }
+  }, 10_000);
+
+  it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
+    await mount({ welcomeHidden: true, tour: { ...done, since: '2026-01-01' } });
+    expect($('.tour-invite')?.textContent).toContain('New: on replace');
+    await click(byText('.tour-invite button', 'Later'));
+    expect($('.tour-invite')).toBeNull();
+    expect($('.vb-tab.has-news')).toBeTruthy();
+    await click($('.vb-tab'));
+    await click($('.menu .has-news'));
+    expect($('.tips-help .tour-new')).toBeTruthy();
+    expect(stored('tour').known.replace).toBe(1);
+    expect($('.vb-tab.has-news')).toBeNull();
+  });
+});

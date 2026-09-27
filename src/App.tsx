@@ -27,8 +27,12 @@ import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } fr
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useRoster } from './state/useRoster';
+import { TIPS } from './tour/registry';
+import { TipLayer } from './tour/TipLayer';
+import { TipsHelp } from './tour/TipsHelp';
+import { newsOf } from './tour/tips';
 import { TourLayer } from './tour/TourLayer';
-import type { TourCtx } from './tour/types';
+import type { Tip, TourCtx } from './tour/types';
 import { useTour } from './tour/useTour';
 
 // открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
@@ -98,18 +102,34 @@ export function App() {
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 
-  const tourCtx: TourCtx = { s, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
+  const tourCtx: TourCtx = { s, roster: roster.size, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
   const tour = useTour({
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden },
     onRunning: useCallback((on: boolean) => { setTouring(on); setUndo(null); }, []), onDone: hideWelcome,
   });
-  const startTour = () => { setHelpOpen(false); setVerdictOpen(false); tour.start(); };
+  const startTour = () => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(); };
   const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
   // пока приложение откроют крупнее. Кнопка «Обучение» в меню и Справке работает всегда.
   // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
   const inviteShown = layout.tall && tour.available && !tour.run && !tour.store.invited && tour.store.first !== 'done' && !welcomeShown
     && s.tab === 'eval' && !undo;
+  // «Что нового» после обновления: полоса сама, «Позже» — до следующего запуска; точка на ☰ и «Обучении», пока не просмотрено
+  const news = useMemo(() => newsOf(TIPS, tour.store), [tour.store]);
+  const [newsLater, setNewsLater] = useState(false);
+  const [forcedTip, setForcedTip] = useState<Tip | null>(null);
+  const newsShown = layout.tall && tour.available && news.length > 0 && !newsLater && !tour.run && !welcomeShown && !inviteShown
+    && s.tab === 'eval' && !undo;
+  const showNews = () => { tour.knowTips(news); setForcedTip(news[0]); };
+  // открыл Справку — новое просмотрено; пометка «новое» в ней остаётся, пока Справка открыта
+  const [helpNews, setHelpNews] = useState<Tip[]>([]);
+  useEffect(() => {
+    if (!helpOpen || !news.length) return;
+    setHelpNews(news);
+    tour.knowTips(news);
+  }, [helpOpen, news]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tipsOn = layout.tall && tour.available && !tour.run && !welcomeShown && !inviteShown && !newsShown && !undo;
+  const onForced = useCallback(() => setForcedTip(null), []);
 
   return (
     <LangContext.Provider value={t}>
@@ -127,7 +147,7 @@ export function App() {
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}
-              onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} onOpenVerdict={() => setVerdictOpen(true)} />
+              onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
             {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -137,7 +157,7 @@ export function App() {
           </section>
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
-        <VBar r={verdict} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
+        <VBar r={verdict} news={news.length > 0} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         {inviteShown && (
           <div className="tour-strip tour-invite" role="status">
@@ -146,12 +166,20 @@ export function App() {
             <button type="button" className="tour-x" aria-label={t.ui.close} onClick={tour.dismissInvite}>✕</button>
           </div>
         )}
+        {newsShown && (
+          <div className="tour-strip tour-invite" role="status">
+            <span>{t.tour.newsStrip(t.tour.news[news[0].id as keyof typeof t.tour.news] ?? t.tour.tips[news[0].id], news.length - 1)}</span>
+            <button type="button" className="btn" onClick={showNews}>{t.tour.newsShow}</button>
+            <button type="button" className="btn" onClick={() => setNewsLater(true)}>{t.tour.newsLater}</button>
+          </div>
+        )}
+        <TipLayer tour={tour} c={tourCtx} enabled={tipsOn} forced={forcedTip} onForced={onForced} />
         <TourLayer tour={tour} c={tourCtx} rosterEmpty={roster.size === 0} onTab={onTab} onRoster={() => onTab('chars')} />
         {undo && s.tab === 'eval' && !tour.run && (
           <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
         {menuOpen && (
-          <Menu s={s} dispatch={dispatch} rosterSize={roster.size} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
+          <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
             onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={startTour}
             footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />} />
         )}
@@ -160,7 +188,7 @@ export function App() {
             <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); setCodeOpen(false); }} />
           </Sheet>
         )}
-        {helpOpen && <Sheet title={t.ui.help} onClose={() => setHelpOpen(false)}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={startTour} /></Sheet>}
+        {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={startTour} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
           <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
         )}

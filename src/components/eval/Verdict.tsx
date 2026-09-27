@@ -177,8 +177,8 @@ const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — '
 //   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
 // compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету.
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
-export function VBar({ r, show, compact, stampless, hint, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
-  r: VerdictData; show: boolean; compact: boolean; stampless: boolean; hint: string | null; tab: Tab; rosterSize: number;
+export function VBar({ r, news, show, compact, stampless, hint, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
+  r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; tab: Tab; rosterSize: number;
   onTab: (t: Tab) => void; onMenu: () => void; onReset: () => void; onOpen: () => void;
 }) {
   const t = useT();
@@ -191,7 +191,7 @@ export function VBar({ r, show, compact, stampless, hint, tab, rosterSize, onTab
   return (
     <div className={`vbar v-${r.v}`} id="vbar">
       {evalTab
-        ? <button type="button" className="vb-tab" aria-label={t.ui.menu} onClick={onMenu}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
+        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.menu} onClick={onMenu}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
       <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
         onClick={evalTab ? onOpen : () => onTab('eval')}>
