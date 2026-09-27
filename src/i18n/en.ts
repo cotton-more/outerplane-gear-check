@@ -264,6 +264,8 @@ export const en: Texts = {
     perSegment: (step) => ` · +${step} per segment`,
     subNote: "Flat ATK/DEF/HP are in lighter type: their value depends on the character's base. Yellow segments are marked in the stat's row: 1 by default; 4 only from special shops and Dimensional Supply. Don't count orange ones (from Reforge).",
     subReplace: (k) => `${k} — replace`,
+    subMoveTitle: (k, row) => `${k} is in row ${row}: it moves here and that row is freed`,
+    subMoveNote: 'A number on a stat is the row it already sits in: pick it and it moves here, freeing that row.',
     subYellow: (k) => `Yellow segments of ${k}`,
     yellow4: '4 yellow — only from special shops and Dimensional Supply',
     subRemove: (k) => `Remove ${k}`,
@@ -347,7 +349,7 @@ export const en: Texts = {
     steps: [
       '**Mark your characters** — until you do, the evaluation considers every character in the game.',
       '**Enter the item:** slot, grade (L — Etheric, E — Steel), set or item; substats in the grid, in the in-game order, yellow segments in the rows.',
-      '**The verdict** appears right away, with an explanation. "Next" — on to the next item; slot, grade and set stay.',
+      '**The verdict** appears right away, with an explanation. "Next" — on to the next item; slot, grade, set and main stay, substats are cleared.',
     ],
     markChars: 'Mark characters',
     canInstall: 'You can install it as an app — works offline too.',
@@ -361,7 +363,7 @@ export const en: Texts = {
       '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. % stats sit above their flat versions. A cell marked main never rolls as a substat on this piece — it is already in the main (HP% on helmets and boots, flat DEF on chest armor and gloves, flat ATK on weapons). A flat EFF or flat RES main doesn\'t block EFF% and RES% substats — in the game they are different stats. The grid has all 13 substats in the game; PEN%, CDMG RED%, flat EFF and flat RES never roll as substats — only as mains.',
       '**4th substat on an Epic** — Epics drop with three; the first Reforge adds a fourth. Did a Reforge — mark it with "+ 4th substat from Reforge": it can pull the piece up. For armor, "Upgrading" tells which one would.',
-      'Tap a stat in its row to replace it (yellow segments stay) or remove it. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
+      'Tap a stat in its row to replace it (yellow segments stay) or remove it. When replacing, you can also pick a stat from another row: it moves here and that row is freed — handy for entering the next piece over the last one. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
     ],
     helpRoutine: 'How to clean up fast',
     helpRoutineItems: [

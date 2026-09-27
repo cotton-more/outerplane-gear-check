@@ -34,7 +34,8 @@ When new data comes out, an "Update" banner appears when you open it.
      game: EFF% and RES% carry a % on the piece too, while flat EFF, flat RES, PEN% and CDMG RED% only come as mains;
      a cell marked main never rolls as a substat on this piece (HP% on helmets and boots).
 4. **Read the verdict** on the card; "details" — the full breakdown, "Upgrading", who it suits and the item code.
-5. **"Next"** — on to the next piece: slot, grade and set stay. Tapped it by mistake — "Undo".
+5. **"Next"** — on to the next piece: slot, grade, set and main stay, substats are cleared. Tapped it by mistake —
+   "Undo".
 
 <table>
 <tr>
@@ -49,7 +50,9 @@ When new data comes out, an "Update" banner appears when you open it.
 
 ## Made a mistake
 
-- **Wrong stat** — tap its name in the row and pick another: the yellow segments stay.
+- **Wrong stat** — tap its name in the row and pick another: the yellow segments stay. You can also pick a stat that
+  already sits in another row (the window shows its row number): it moves here and that row is freed. Handy for
+  entering the next piece over the last one.
 - **Extra stat** — tap its name → "Remove", or tap that stat in the grid again.
 - **Wrong piece altogether** — "Next", and "Undo" within a few seconds if you need it back.
 

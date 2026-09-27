@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { SubPicker } from '../src/components/eval/SubPicker';
+import { IndexContext } from '../src/components/IndexContext';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
+import { makeCtx } from '../src/logic/context';
 import { MAX_SUBS, dropSubs } from '../src/logic/subs';
 import { fromPersisted, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '../src/state/appState';
 
@@ -38,7 +43,13 @@ describe('reducer: сабстаты', () => {
     const s = fresh({ subs: { SPD: 2, CHC: 3, CHD: 1 } });
     const next = reducer(s, { type: 'replaceSub', from: 'CHC', to: 'ATK%' });
     expect(Object.entries(next.subs)).toEqual([['SPD', 2], ['ATK%', 3], ['CHD', 1]]);
-    expect(reducer(s, { type: 'replaceSub', from: 'CHC', to: 'SPD' })).toBe(s); // уже отмечен
+    expect(reducer(s, { type: 'replaceSub', from: 'CHC', to: 'CHC' })).toBe(s);
+  });
+
+  it('стат из другой строки переезжает в заменяемую, а его прежняя строка освобождается', () => {
+    // вещь вводят поверх прошлой: у новой первым идёт RES%, а у прошлой он стоял третьим
+    const s = fresh({ subs: { HP: 2, CHC: 1, RES: 3 } });
+    expect(Object.entries(reducer(s, { type: 'replaceSub', from: 'HP', to: 'RES' }).subs)).toEqual([['RES', 2], ['CHC', 1]]);
   });
 
   it('жёлтые сегменты ставятся только отмеченному стату', () => {
@@ -103,9 +114,11 @@ describe('reducer: слот и «Следующий»', () => {
     expect(reducer(s, { type: 'unlisted' }).main).toBe('DEF%');
   });
 
-  it('у оружия «Следующий» очищает предмет и main', () => {
+  it('у оружия и аксессуара «Следующий» очищает предмет и сабстаты, а main оставляет — как фильтр по main в игре', () => {
     const next = reducer(fresh({ slot: 'weapon', grade: 'unique', itemKey: 'x', main: 'ATK%', unlisted: false, subs: subsOf('SPD') }), { type: 'reset' });
-    expect([next.slot, next.itemKey, next.main, next.subs]).toEqual(['weapon', null, null, {}]);
+    expect([next.slot, next.itemKey, next.main, next.subs]).toEqual(['weapon', null, 'ATK%', {}]);
+    const acc = reducer(fresh({ slot: 'accessory', grade: 'rare', main: 'SPD', subs: subsOf('CHC') }), { type: 'reset' });
+    expect([acc.main, acc.subs]).toEqual(['SPD', {}]);
   });
 });
 
@@ -159,12 +172,33 @@ describe('недовведённый предмет переживает пер�
     expect([epic.main, epic.subs]).toEqual(['ATK%', { SPD: 1 }]);
   });
 
-  it('«Следующий» очищает сохранённый предмет, кроме сета брони', () => {
+  it('«Следующий» очищает сохранённый предмет, кроме сета брони и main', () => {
     const s = reducer(fresh({ slot: 'gloves', setId: '13', subs: { SPD: 1 } }), { type: 'reset' });
     expect(toPersistedItem(s)).toEqual({ setId: '13', itemKey: null, main: null, unlisted: false, subs: {} });
+    const w = reducer(fresh({ slot: 'weapon', main: 'HP%', subs: { SPD: 1 } }), { type: 'reset' });
+    expect(toPersistedItem(w)).toEqual({ setId: null, itemKey: null, main: 'HP%', unlisted: false, subs: {} });
   });
 
   it('мусор в хранилище не роняет запуск', () => {
     for (const junk of [null, 'x', 42, [], { subs: 'x' }]) expect(restoreItem(fresh(), junk, idx).subs).toEqual({});
+  });
+});
+
+describe('окно замены сабстата', () => {
+  const ctx = makeCtx(idx, fresh().settings, new Set());
+  const picker = (editing: string | null) => renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx },
+    createElement(SubPicker, { ctx, subs: { HP: 2, CHC: 1, RES: 3 }, blocked: new Set<string>(), editing, onPick: () => {}, onRemove: () => {} })));
+  const cell = (html: string, label: string) => html.split('<button').find((b) => b.includes(`<span>${label}</span>`))!;
+
+  it('при замене стат из другой строки можно выбрать, у него номер строки', () => {
+    const res = cell(picker('HP'), 'RES%');
+    expect(res).not.toContain('disabled');
+    expect(res).toContain('<small class="row-n">3</small>');
+  });
+
+  it('новый сабстат (не замена) — отмеченные статы выбрать нельзя, номеров нет', () => {
+    const res = cell(picker(null), 'RES%');
+    expect(res).toContain('disabled');
+    expect(res).not.toContain('row-n');
   });
 });

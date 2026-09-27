@@ -91,18 +91,23 @@ export function reducer(s: AppState, a: Action): AppState {
       return { ...s, subs };
     }
     case 'replaceSub': {
-      // другой стат в той же строке: позиция и жёлтые сегменты сохраняются — обычно ошибка только в названии стата
-      if (!(a.from in s.subs) || a.to in s.subs) return s; // запрещённые main сабстаты окно замены не предлагает
-      return { ...s, subs: Object.fromEntries(Object.entries(s.subs).map(([k, v]) => [k === a.from ? a.to : k, v])) };
+      // другой стат в той же строке: позиция и жёлтые сегменты сохраняются — обычно ошибка только в названии стата.
+      // Стат из другой строки переезжает сюда, а его строка освобождается: так вводят вещь поверх прошлой — у новой
+      // первым идёт RES%, а у прошлой он стоял третьим. Обмен строками оставил бы там старый стат, который легко
+      // не заметить. Запрещённые main сабстаты окно замены не предлагает
+      if (!(a.from in s.subs) || a.from === a.to) return s;
+      const subs = Object.entries(s.subs).filter(([k]) => k !== a.to).map(([k, v]) => [k === a.from ? a.to : k, v]);
+      return { ...s, subs: Object.fromEntries(subs) };
     }
     case 'roll':
       return a.key in s.subs ? { ...s, subs: { ...s.subs, [a.key]: a.n } } : s;
     case 'clearSubs':
       return { ...s, subs: {} };
     case 'reset':
-      // следующий предмет: слот, грейд и сет брони остаются — подряд обычно идут дропы одного забега,
-      // а если сет другой, выбрать его стоит столько же, сколько с пустого поля
-      return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null };
+      // следующий предмет: слот, грейд, сет брони и main оружия или аксессуара остаются — это как фильтр инвентаря:
+      // подряд идут дропы одного забега или вещи, отфильтрованные в игре по main. Если сет или main другой, сменить
+      // его стоит почти столько же, сколько выбрать с пустого поля. Предмет по названию и сабстаты — у каждой вещи свои
+      return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null, main: s.main };
     case 'load':
       return { ...s, ...EMPTY_ITEM, ...a.item, tab: 'eval' };
     case 'expand':

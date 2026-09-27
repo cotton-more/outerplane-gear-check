@@ -75,7 +75,7 @@ export function App() {
     const cur = itemInput(s);
     setVerdictOpen(false);
     dispatch({ type: 'reset' });
-    setUndo(Object.keys(cur.subs).length || cur.itemKey || cur.main || cur.unlisted ? cur : null);
+    setUndo(Object.keys(cur.subs).length || cur.itemKey || cur.unlisted ? cur : null); // main и сет «Следующий» не трогает
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
