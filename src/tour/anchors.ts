@@ -2,7 +2,7 @@
 // вариантов раскладки (кнопка «Следующий» — внизу на телефоне и под формой на ПК): берётся первый видимый.
 export const ANCHORS = [
   'slot', 'grade', 'pick', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
-  'star', 'maincell', 'fourth', 'submove', 'chain', 'code', // подсказки модулей
+  'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', // подсказки модулей
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 

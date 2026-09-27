@@ -2,7 +2,7 @@
 // Проверяет test/tour.test.ts: новый компонент без записи и без .tour.ts — тест падает и говорит, что сделать.
 //   core   — его функцию объясняет главный тур (src/tour/core.ts)
 //   helper — служебный или понятен без объяснений: отдельной подсказки не нужно
-//   todo   — игроку есть что подсказать, подсказка ещё не написана (этап 2: подсказки по ходу)
+//   todo   — игроку есть что подсказать, подсказка ещё не написана
 // Причина — в комментарии: значения только латиницей (русский в src — только в i18n, test/i18n.test.ts).
 export type Coverage = 'core' | 'helper' | 'todo';
 
@@ -15,7 +15,6 @@ export const COVERAGE: Record<string, Coverage> = {
   'Notice.tsx': 'helper',          // плашка с одной кнопкой
   'Rich.tsx': 'helper',            // жирный текст в фразах
   'Sheet.tsx': 'helper',           // шторка для окон
-  'chars/CharDetail.tsx': 'todo',  // билды персонажа, «что искать»
   'eval/EvalPanel.tsx': 'core',    // форма: слот, грейд, сет или main, сетка
   'eval/ItemPicker.tsx': 'core',   // окно выбора Legendary по названию — шаг «сет или предмет»
   'eval/MainButtons.tsx': 'core',  // main оружия кнопками — тот же шаг

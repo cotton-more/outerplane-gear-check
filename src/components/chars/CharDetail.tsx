@@ -9,6 +9,7 @@ import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
+import { tour } from '../../tour/anchors';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
 
@@ -56,7 +57,7 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
       </div>
       {b ? (
         <>
-          <div className="btabs" role="tablist" aria-label={t.ui.builds}>
+          <div className="btabs" role="tablist" aria-label={t.ui.builds} {...(c.builds.length > 1 && tour('btabs'))}>
             {c.builds.map((x, i) => (
               <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>{x.name}</button>
             ))}
@@ -94,7 +95,7 @@ function BuildView({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
       <GearBlock title={t.ui.accessory} refs={b.amulets} kind="accessory" ctx={ctx} />
       <div>
         <h4>{t.ui.subPriority}</h4>
-        <div className="prio">
+        <div className="prio" {...tour('prio')}>
           {b.subs.map((tier, ti) => (
             <Fragment key={ti}>
               {ti > 0 && <span className="gt">›</span>}

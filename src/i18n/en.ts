@@ -438,6 +438,8 @@ export const en: Texts = {
       chain: 'The chain is the build’s stat priority: green is on the piece, dashed is not. Earlier places matter more.',
       code: 'The item code is for your guild chat: they enter it with “Enter code” and see the check for their roster.',
       temp: '“Temporary” — wear it until you find something better. No rush to dismantle it.',
+      prio: 'Substat priority: › is the order, = shares a place, grey never rolls on 6★ gear. The verdict chain is built from this line.',
+      builds: 'This character has several builds — switch the tabs. The item check counts all of them.',
     },
     news: {
       replace: 'on replace, a stat from another row moves over',

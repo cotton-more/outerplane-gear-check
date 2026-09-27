@@ -5,11 +5,14 @@ export interface Geom { rings: Rect[]; ring: Rect | null; overlay: boolean; bott
 export const visible = (el: Element) => el.getClientRects().length > 0;
 export const rect = (r: DOMRect): Rect => ({ top: r.top, left: r.left, width: r.width, height: r.height });
 
+// Окно поверх страницы: шторка (Sheet) или карточка персонажа во весь экран на телефоне
+const LAYER = '.drawer, html.sheet .char-detail.open';
+
 // Цели шага: у каждого селектора — первый видимый элемент. Пока открыто окно — только то, что в нём,
 // иначе — только то, что не в окне (поле под шторкой формально видно).
 export function targets(sels: string[], overlay: boolean): Element[] {
   return sels.flatMap((sel) => {
-    const el = [...document.querySelectorAll(sel)].find((e) => visible(e) && !!e.closest('.drawer') === overlay);
+    const el = [...document.querySelectorAll(sel)].find((e) => visible(e) && !!e.closest(LAYER) === overlay);
     return el ? [el] : [];
   });
 }
