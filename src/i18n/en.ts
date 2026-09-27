@@ -204,7 +204,7 @@ export const en: Texts = {
     footUpdatePwa: 'When new data is out, an "Update" banner appears on launch.',
     footUpdateSingle: 'Update the data:',
     footUpdateSingleWhere: 'in the project folder.',
-    footRights: 'Game data and images belong to Major9 / VA Games, builds to the outerpedia authors. Unofficial fan tool: not affiliated with the publisher or with outerpedia.',
+    footRights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of the outerpedia authors; the tool is not affiliated with VA Games or with outerpedia.',
     licenses: 'Licenses (MIT)',
     licenseWhat: { outerpedia: 'outerpedia — build recommendations, game tables, flat/% formula', react: 'React' },
     installApp: 'Install as an app',

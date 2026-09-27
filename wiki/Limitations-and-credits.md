@@ -21,8 +21,8 @@ Builds are outerpedia's curated recommendations ([outerpedia](https://github.com
 
 ## Licenses and rights
 
-Game data and images belong to Major9 / VA Games; builds are the work of outerpedia's authors. This is an unofficial
-fan tool, not affiliated with the publisher or with outerpedia.
+This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of
+outerpedia's authors; the tool is not affiliated with VA Games or with outerpedia.
 
 Build recommendations, game tables and the flat/% formula come from outerpedia under the MIT license; the page also
 bundles React (MIT). Copyright lines and the full license texts are in the app footer ("Licenses") and in

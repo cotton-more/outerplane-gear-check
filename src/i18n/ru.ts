@@ -228,7 +228,7 @@ export const ru = {
     footUpdatePwa: 'Когда выйдут новые данные, при открытии появится плашка «Обновить».',
     footUpdateSingle: 'Обновить данные:',
     footUpdateSingleWhere: 'в папке проекта.',
-    footRights: 'Игровые данные и изображения принадлежат Major9 / VA Games, билды — авторам outerpedia. Неофициальный фанатский инструмент: не связан ни с издателем, ни с outerpedia.',
+    footRights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Неофициальный фан-проект: все права на игру принадлежат VA Games Co., Ltd., билды — работа авторов outerpedia. Инструмент не связан ни с издателем, ни с outerpedia.',
     licenses: 'Лицензии (MIT)',
     licenseWhat: { outerpedia: 'outerpedia — рекомендации по билдам, игровые таблицы, формула flat/%', react: 'React' },
     installApp: 'Установить как приложение',
