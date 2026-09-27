@@ -102,7 +102,7 @@ async function shoot(lang) {
   await step(async ({ tap, stat }) => {
     await tap(document.querySelector('.drawer-x'));
     await tap(document.querySelector('.vb-reset'));
-    for (const l of ['RES', 'DMG↓%']) await tap(stat(l));
+    for (const l of ['RES%', 'DMG↓%']) await tap(stat(l));
   });
   await pause(6500); // плашка «Вернуть» гаснет
   await shot('5-early-junk');

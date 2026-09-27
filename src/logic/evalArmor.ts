@@ -1,6 +1,6 @@
 // Вердикт для брони: сет из билдов + полезные сабстаты под лучший билд. Фразы — ctx.t.armor (src/i18n).
 import { CFG } from '../config';
-import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT } from '../data';
+import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT, subLabel } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
 import { itemMains } from './mains';
@@ -89,7 +89,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const keepers = scoped.filter(qualifies);
   const best = keepers[0] || scoped[0];
   const bestGood = best.good ?? 0;
-  const okList = best.parts.filter((p) => p.ok).map((p) => p.key + (p.half ? ' (½)' : '')).join(', ');
+  const okList = best.parts.filter((p) => p.ok).map((p) => subLabel(p.key) + (p.half ? ' (½)' : '')).join(', ');
   const who = `**${best.c.name}** — ${best.b.name}`;
   const partial = nSubs < expected;
   const canStillKeep = bestGood + (expected - nSubs) >= CFG.spdKeep;
@@ -100,7 +100,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.v = 'keep';
     res.title = A.keepTitle(keepers.length);
     res.lines.push(A.best(who, fmtGood(bestGood), nSubs, okList));
-    if (bestGood < CFG.keepCount) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => p.key), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
+    if (bestGood < CFG.keepCount) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => subLabel(p.key)), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
     const roll = rollInfo(t, best, nSubs, s.grade);
     if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
     if (best.yellow >= CFG.godYellow || (best.spd && spdRoll >= 3)) res.badge = t.verdict.topRoll;
@@ -108,7 +108,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     if (legend && nSubs === 4 && Object.values(subs).every((r) => r >= 3)) res.lines.push(A.eventQuality);
     // Legendary с одним лишним сабстатом: Transistone (Individual) меняет только его, остальные закрепляются
     const extra = best.parts.filter((p) => !p.ok);
-    if (legend && nSubs === 4 && extra.length === 1) res.lines.push(A.rerollOne(extra[0].key));
+    if (legend && nSubs === 4 && extra.length === 1) res.lines.push(A.rerollOne(subLabel(extra[0].key)));
     res.sections.push({ title: t.verdict.suits, rows: keepers, limit: 12, count: keepers.length });
     const rest = scoped.filter((m) => !qualifies(m));
     if (rest.length) res.sections.push({ title: A.wrongSubs(set.short), rows: rest, collapsed: true });
@@ -129,7 +129,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.v = 'temp';
     res.qualifies = tempOk;
     res.title = A.tempTitle(tempers.length);
-    res.lines.push(A.tempWhy(`**${tb.c.name}** — ${tb.b.name}`, mains(tb).map((p) => p.key), missingMains(tb)));
+    res.lines.push(A.tempWhy(`**${tb.c.name}** — ${tb.b.name}`, mains(tb).map((p) => subLabel(p.key)), missingMains(tb).map(subLabel)));
     const roll = rollInfo(t, tb, nSubs, s.grade);
     if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
     res.lines.push(A.tempFew);
@@ -142,7 +142,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   if (!legend && !partial && bestGood >= CFG.keepCount) {
     // все сабстаты Epic полезны, но слабые: ни SPD, ни стата с верхних ступеней, ролл ниже порога
-    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers, im, best.useless)])];
+    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers, im, best.useless)])].map(subLabel);
     res.v = 'junk';
     res.title = A.weakEpicTitle;
     res.lines.push(A.weakEpic(who, nSubs, top, best.yellow, 3 * nSubs), A.weakEpicKeepIf(top, CFG.epicYellow));

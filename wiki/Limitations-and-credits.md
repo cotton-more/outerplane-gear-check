@@ -17,7 +17,7 @@ Builds are outerpedia's curated recommendations ([outerpedia](https://github.com
 - Orange segments (from Reforge) aren't entered — only yellow: the piece is judged as dropped, plus the 4th substat
   on an Epic.
 - The class versions of Briareos/Gorgon have the same name: the class shows in the icon and the passive's suffix.
-- The effect of EFF/RES substats isn't fully clear from the game data, so they're judged by build priorities only.
+- The effect of EFF% and RES% substats isn't fully clear from the game data, so they're judged by build priorities only.
 
 ## Licenses and rights
 

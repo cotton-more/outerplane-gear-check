@@ -3,7 +3,7 @@
 // Reforge у 6★ — 6 попыток, у Epic первая добавляет 4-й сабстат; Breakthrough T0→T4 даёт +5% к main stat
 // за ступень и усиливает эффект — пассивку оружия и бонус сета; материал — такая же вещь (тот же грейд, эффект
 // и слот; у брони — тот же сет) или Glunite. Transistone по гайду тратят только на Irregular и красную броню.
-import { isArmor, SLOT } from '../data';
+import { isArmor, SLOT, subLabel } from '../data';
 import type { GearKind } from '../data/types';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
@@ -48,7 +48,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
     }
     case 'temp': {
       const lucky = gamble();
-      if (lucky.length) return [P.enhance, P.gambleTemp(lucky)];
+      if (lucky.length) return [P.enhance, P.gambleTemp(lucky.map(subLabel))];
       // оружие и аксессуар на замену с высоким роллом: Reforge можно — нужную Legendary (пассивка, main и сабстаты
       // сразу) можно ждать долго; Breakthrough — нет. Ролл так и говорит: «высокий, стоит вкладываться в Reforge»
       if (!armor && res.roll === 'high') return [P.enhance, P.reforgeTemp(stage), P.noBreakTemp];
@@ -63,7 +63,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       const worn = buildsOf(idx, (b) => combosWith(b, set.id).length).some((x) => ctx.inScope(x.c));
       if (!worn) return [];
       const lucky = gamble();
-      return [...(lucky.length ? [P.gambleJunk(lucky)] : []), P.junkEpicArmor(piece, set.short)];
+      return [...(lucky.length ? [P.gambleJunk(lucky.map(subLabel))] : []), P.junkEpicArmor(piece, set.short)];
     }
     default:
       return [];

@@ -1,4 +1,4 @@
-import { FLAT } from '../../data';
+import { FLAT, subLabel } from '../../data';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import type { Subs } from '../../logic/subs';
@@ -20,12 +20,12 @@ export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
           return (
             <button key={k} type="button" className={`subopt${FLAT.has(k) ? ' flat' : ''}`} aria-pressed={k === editing} disabled={taken}
               title={title(k)} onClick={() => onPick(k)}>
-              <StatIcon stat={k} /><span>{k}</span>
+              <StatIcon stat={k} /><span>{subLabel(k)}</span>
             </button>
           );
         })}
       </div>
-      {editing && onRemove && <button type="button" className="btn subremove" onClick={onRemove}>{t.ui.subRemove(editing)}</button>}
+      {editing && onRemove && <button type="button" className="btn subremove" onClick={onRemove}>{t.ui.subRemove(subLabel(editing))}</button>}
       <p className="note-line">{t.ui.subNote}</p>
     </>
   );

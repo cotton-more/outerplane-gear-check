@@ -114,6 +114,7 @@ STAT_ABBR = {
     "counter_rate": "Counter", "enter_ap": "AP", "kill_ap": "AP", "hit_ap": "AP",
 }
 # EFF/RES бывают flat и rate, но в игре и в билдах это одна стата — сводим к одной метке.
+# Метка — ключ; на вещи страница подписывает сабстаты EFF% и RES%, как в игре (subLabel в src/data/index.ts).
 LABEL_ALIASES = {"EFF%": "EFF", "RES%": "RES"}
 STAT_ICON = {
     "ATK": "CM_Stat_Icon_ATK", "ATK%": "CM_Stat_Icon_ATK",

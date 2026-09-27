@@ -92,7 +92,7 @@ describe('подсказка про flat', () => {
 
 describe('Legendary с одним лишним сабстатом', () => {
   it('называет лишний и советует перебросить только его Transistone (Individual)', () => {
-    expect(lifeGloves('unique', { 'HP%': 2, CHC: 1, CHD: 2, RES: 1 }).lines).toContain(ru.armor.rerollOne('RES'));
+    expect(lifeGloves('unique', { 'HP%': 2, CHC: 1, CHD: 2, RES: 1 }).lines).toContain(ru.armor.rerollOne('RES%'));
   });
 
   it('у Epic такого совета нет: Transistone на Epic не тратят', () => {

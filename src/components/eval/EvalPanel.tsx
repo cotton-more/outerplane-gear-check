@@ -4,7 +4,7 @@
 // у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main).
 // На телефоне, когда вердикт готов, на месте сетки встаёт карточка вердикта.
 import { useMemo, useState, type Dispatch } from 'react';
-import { GRADE_NAME, GRADES, SLOTS, isArmor } from '../../data';
+import { GRADE_NAME, GRADES, SLOTS, isArmor, subLabel } from '../../data';
 import type { GearKind } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
@@ -138,7 +138,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         </Sheet>
       )}
       {open !== null && typeof open === 'object' && (
-        <Sheet title={t.ui.replaceSub(open.sub)} onClose={close}>
+        <Sheet title={t.ui.replaceSub(subLabel(open.sub))} onClose={close}>
           <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={open.sub}
             onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }}
             onRemove={() => { dispatch({ type: 'sub', key: open.sub }); close(); }} />

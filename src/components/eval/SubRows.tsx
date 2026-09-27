@@ -1,5 +1,5 @@
 import type { Dispatch } from 'react';
-import { FLAT } from '../../data';
+import { FLAT, subLabel } from '../../data';
 import { useT } from '../../i18n';
 import { MAX_SUBS, type Subs } from '../../logic/subs';
 import type { Action } from '../../state/appState';
@@ -23,11 +23,11 @@ export function SubRows({ subs, epic, fourth, dispatch, onPick, onAddFourth }: {
         const r = subs[k] || 1;
         return (
           <div key={k} className="subrow">
-            <button type="button" className={`pick subkey${FLAT.has(k) ? ' flat' : ''}`} onClick={() => onPick(k)} aria-label={t.ui.subReplace(k)}>
-              <StatIcon stat={k} /><span className="lab">{k}</span>
+            <button type="button" className={`pick subkey${FLAT.has(k) ? ' flat' : ''}`} onClick={() => onPick(k)} aria-label={t.ui.subReplace(subLabel(k))}>
+              <StatIcon stat={k} /><span className="lab">{subLabel(k)}</span>
               {epic && i === MAX_SUBS - 1 && <span className="subtag">Reforge</span>}
             </button>
-            <span className="roll-b" role="group" aria-label={t.ui.subYellow(k)}>
+            <span className="roll-b" role="group" aria-label={t.ui.subYellow(subLabel(k))}>
               {ROLLS.map((n) => (
                 <button key={n} type="button" aria-pressed={r === n} className={[n < r && 'lit', n === 4 && 'r4'].filter(Boolean).join(' ') || undefined}
                   title={n === 4 ? t.ui.yellow4 : undefined}

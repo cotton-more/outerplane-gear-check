@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { CFG } from '../../config';
-import { FLAT } from '../../data';
+import { FLAT, subLabel } from '../../data';
 import { mainsOnAxis, subForms } from '../../logic/mains';
 import { tierPlaces, type Part, type Row } from '../../logic/score';
 import { useIndex } from '../IndexContext';
@@ -17,6 +17,7 @@ interface Pill { label: string; cls: string; sep: string }
 //     у оружия с main DEF% «main ATK / ATK%» — базовый flat ATK есть всегда и в счёт не идёт, засчитается только ATK%.
 //     Если оставшийся вид персонажу ничего не даёт (flat HP при main HP% — m.useless), место занято main, пунктира нет;
 //   tail — места дальше четвёртого, которые не считаются (кроме SPD).
+// Сабстаты подписаны, как на вещи (subLabel: EFF%, RES%), строки main — без %: «main EFF / EFF%» у перчаток.
 // Статы предмета, которых в цепочке нет вовсе, идут в конце зачёркнутыми.
 export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
   const { SUB } = useIndex();
@@ -42,11 +43,11 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
       if (!hits.length) {
         // место за статом осталось, а сабстата нет: пунктир того вида, что ещё выпадает (при main рядом через «/»)
         const open = subForms(tok).filter((k) => SUB[k] && !im.blocked.has(k) && !useless.includes(k));
-        if (!on.length) pills.push({ label: flat ? axis + '%' : tok, cls: 'miss' + tail, sep });
-        else if (open.length) pills.push({ label: open.includes(axis + '%') ? axis + '%' : open[0], cls: 'miss' + tail, sep: '/' });
+        if (!on.length) pills.push({ label: flat ? axis + '%' : subLabel(tok), cls: 'miss' + tail, sep });
+        else if (open.length) pills.push({ label: subLabel(open.includes(axis + '%') ? axis + '%' : open[0]), cls: 'miss' + tail, sep: '/' });
         continue;
       }
-      hits.forEach((p, j) => { used.add(p.key); pills.push({ label: p.key, cls: state(p) + tail, sep: j || on.length ? '/' : sep }); });
+      hits.forEach((p, j) => { used.add(p.key); pills.push({ label: subLabel(p.key), cls: state(p) + tail, sep: j || on.length ? '/' : sep }); });
     }
   });
   const extra = m.parts.filter((p) => !used.has(p.key));
@@ -56,7 +57,7 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
         <Fragment key={i}>{p.sep && <i className="sep">{p.sep}</i>}<span className={`pill ${p.cls}`}>{p.cls.startsWith('main') && <small>main </small>}{p.label}</span></Fragment>
       ))}
       {extra.length > 0 && <i className="sep">·</i>}
-      {extra.map((p) => <span key={p.key} className="pill no">{p.key}</span>)}
+      {extra.map((p) => <span key={p.key} className="pill no">{subLabel(p.key)}</span>)}
     </span>
   );
 }
