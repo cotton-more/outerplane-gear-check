@@ -18,6 +18,7 @@ export interface Score {
   spd: boolean;          // SPD отмечен и нужен билду
   parts: Part[];
   im: ItemMains;         // строки main предмета, под которые считали места цепочки (см. tierPlaces)
+  useless: string[];     // flat-сабстаты, которые этому персонажу не засчитываются (uselessFor) — тоже для мест
 }
 
 // Сколько стоит сегмент flat-стата относительно сегмента %-версии у ЭТОГО персонажа.
@@ -31,6 +32,11 @@ export function flatFactor(ctx: Ctx, c: Char | null | undefined, axis: string): 
 }
 const flatCredit = (r: number) => (r >= CFG.flatFull ? 1 : r >= CFG.flatHalf ? 0.5 : 0);
 
+// flat-сабстаты, которые персонажу не засчитываются даже на первом месте цепочки (сегмент слабее 0,6 %-сегмента).
+// Почти всегда это flat HP: из 78 билдов с HP в первой тройке он засчитывается троим; flat ATK и DEF — всем хотя бы за ½.
+// Если main закрывает ось, а сабстатом остался только такой вид, место в цепочке занято main (см. mains.takenByMain)
+export const uselessFor = (ctx: Ctx, c: Char): string[] => [...FLAT].filter((ax) => flatCredit(Math.min(flatFactor(ctx, c, ax), 1)) === 0);
+
 export interface SubWeight { w: number; tier: number; credit: number }
 
 // Место каждой ступени в цепочке приоритета, считая статы: «CHC › ATK › SPD=CHD › DMG UP%» → 0, 1, 2, 4.
@@ -39,19 +45,20 @@ export interface SubWeight { w: number; tier: number; credit: number }
 // Пустая ступень (SPD>>CHC) — разрыв в приоритете, занимает одно место.
 // Стат, который main занял целиком (сабстатом ему на этом предмете уже не выпасть), места не занимает: у Luna
 // (SPD › HP › CHC › ATK) на аксессуаре с main SPD лучшие сабстаты — HP, CHC, ATK, и ATK для него третий, а не четвёртый.
-export function tierPlaces(build: Build, im: ItemMains = NO_MAINS): number[] {
+export function tierPlaces(build: Build, im: ItemMains = NO_MAINS, useless: readonly string[] = []): number[] {
   let pos = 0;
+  const no = (k: string) => useless.includes(k);
   return build.subs.map((tier) => {
     const t = pos;
-    const left = tier.filter((k) => !takenByMain(k, im)).length;
+    const left = tier.filter((k) => !takenByMain(k, im, no)).length;
     pos += left < tier.length ? left : Math.max(tier.length, 1); // ступень только из main — не разрыв, её просто нет
     return t;
   });
 }
 
 // токены приоритета на первых n местах — «главные статы» билда
-export const topTokens = (build: Build, n: number, im: ItemMains = NO_MAINS): string[] => {
-  const place = tierPlaces(build, im);
+export const topTokens = (build: Build, n: number, im: ItemMains = NO_MAINS, useless: readonly string[] = []): string[] => {
+  const place = tierPlaces(build, im, useless);
   return build.subs.filter((_, i) => place[i] < n).flat().map((k) => k.trim()).filter(Boolean);
 };
 
@@ -64,14 +71,16 @@ export function subWeights(ctx: Ctx, build: Build, c: Char, im: ItemMains = NO_M
     credit = credit >= 1 ? 1 : credit >= 0.5 ? 0.5 : 0;
     if (!prev || prev.credit < credit || (prev.credit === credit && prev.w < w)) out.set(key, { w, tier, credit });
   };
-  const place = tierPlaces(build, im);
+  const useless = uselessFor(ctx, c);
+  const no = (k: string) => useless.includes(k);
+  const place = tierPlaces(build, im, useless);
   build.subs.forEach((tier, i) => {
     const t = place[i];
     const w = CFG.tierWeights[Math.min(t, CFG.tierWeights.length - 1)];
     const tc = CFG.tierCredit[t] ?? 0;
     for (const raw of tier) {
       const tok = raw.trim();
-      if (takenByMain(tok, im)) continue;
+      if (takenByMain(tok, im, no)) continue;
       const axis = tok.replace(/%$/, '');
       if (FLAT.has(axis)) {
         // ATK/DEF/HP в приоритете — ось: подходит и flat, и %; лучшая из двух версий получает полный вес
@@ -102,7 +111,7 @@ export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: 
     if (w) { got += w.w * m; good += w.credit; if (w.credit) yellow += subs[k] || 1; }
     return { key: k, ok: !!(w && w.credit), half: !!(w && w.credit > 0 && w.credit < 1), tier: w ? w.tier : null };
   });
-  return { ratio: got / max, good, yellow, spd: !!(W.get('SPD') && 'SPD' in subs), parts, im };
+  return { ratio: got / max, good, yellow, spd: !!(W.get('SPD') && 'SPD' in subs), parts, im, useless: uselessFor(ctx, c) };
 }
 
 // Строка списка «кому подходит»: билд, его оценка и доп. поля ветки (комбо сета, main stat).
@@ -122,7 +131,7 @@ export function rows(ctx: Ctx, grade: Grade, list: BuildRef[], subs: Subs, im: I
   const hasSubs = Object.keys(subs).length > 0;
   return list.map((x) => ({
     ...x,
-    ...(hasSubs ? scoreBuild(ctx, grade, x.c, x.b, subs, im) : { ratio: null, good: null, parts: [], spd: false, yellow: 0, im }),
+    ...(hasSubs ? scoreBuild(ctx, grade, x.c, x.b, subs, im) : { ratio: null, good: null, parts: [], spd: false, yellow: 0, im, useless: uselessFor(ctx, x.c) }),
     ...(extra ? extra(x) : {}),
   }));
 }
@@ -146,7 +155,7 @@ export function dedupe(list: Omit<Row, 'alt'>[], rank: (r: Omit<Row, 'alt'>) => 
 // частая путаница: на предмете HP%, а отмечен HP. Если %-версия тоже отмечена, путаницы нет.
 export function flatMisses(m: Omit<Row, 'alt'>): string[] {
   const marked = new Set(m.parts.map((p) => p.key));
-  const place = tierPlaces(m.b, m.im);
+  const place = tierPlaces(m.b, m.im, m.useless);
   const wanted = (axis: string) => m.b.subs.some((tier, i) => (CFG.tierCredit[place[i]] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
   return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
 }

@@ -19,7 +19,11 @@ substat do sit on one piece, like flat DEF and DEF% (checked in the game). So:
   HP%. They take no place (the other kind of the same stat still rolls), but HP% on helmets and boots and flat DEF on
   chest armor and gloves never roll as substats — in the grid those cells are marked main. The mains come from the
   data per set and grade: if the game changes a set's main, the page recalculates on its own, and the update report
-  gets a line about it.
+  gets a line about it;
+- the exception is when the remaining kind gives the character nothing. That's almost always flat HP: of 78 builds
+  with HP in the first three chain places it counts for only three (flat ATK and DEF count at least ½ for everyone).
+  So on helmets, boots and HP%-main pieces the HP place of such characters is taken by the main: for Delta
+  (`HP › CHC › CHD › SPD`) a helmet's substats are `CHC › CHD › SPD`.
 
 - **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ yellow segments.
 - **Epic is stricter:** Transistones aren't spent on Epics (outerpedia guide), and an Epic can't be Breakthrough fodder

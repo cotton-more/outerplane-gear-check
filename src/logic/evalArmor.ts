@@ -57,7 +57,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const rank = (r: Scored) => (qualifies(r) ? 100 + (primary(r) ? 10 : 0) : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
   // главные статы билда, которых на предмете нет (ось ATK/DEF/HP закрывает %-версия или сильный flat)
   // сабстат, которого на этом слоте не бывает (HP% у шлема — это его main), недостающим не считаем
-  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers, im)
+  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers, im, m.useless)
     .map((k) => (FLAT.has(k.replace(/%$/, '')) ? k.replace(/%$/, '') + '%' : k)))]
     .filter((k) => idx.SUB[k] && !im.blocked.has(k) && !full(m).some((p) => p.key === k || p.key + '%' === k));
   const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, im, (x) => ({ combos: combosWith(x.b, set.id) })), rank);
@@ -142,7 +142,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   if (!legend && !partial && bestGood >= CFG.keepCount) {
     // все сабстаты Epic полезны, но слабые: ни SPD, ни стата с верхних ступеней, ролл ниже порога
-    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers, im)])];
+    const top = [...new Set(['SPD', ...topTokens(best.b, CFG.epicTopTiers, im, best.useless)])];
     res.v = 'junk';
     res.title = A.weakEpicTitle;
     res.lines.push(A.weakEpic(who, nSubs, top, best.yellow, 3 * nSubs), A.weakEpicKeepIf(top, CFG.epicYellow));

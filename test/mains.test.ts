@@ -7,11 +7,11 @@ import { describe, expect, it } from 'vitest';
 import { Chain } from '../src/components/eval/Chain';
 import { IndexContext } from '../src/components/IndexContext';
 import { createIndex } from '../src/data';
-import type { Dataset, Grade, SlotId } from '../src/data/types';
+import type { Char, Dataset, FlatBase, Grade, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { itemMains, takenByMain } from '../src/logic/mains';
-import { rows, tierPlaces } from '../src/logic/score';
+import { flatFactor, rows, tierPlaces, uselessFor } from '../src/logic/score';
 import type { ItemInput } from '../src/logic/verdict';
 import { fromPersisted, reducer, restoreItem, type AppState } from '../src/state/appState';
 
@@ -94,8 +94,7 @@ describe('оценка и цепочка', () => {
   });
 
   // одна строка «кому подходит» с заданной цепочкой — чтобы проверить отрисовку, не завися от того, чьи билды в данных
-  const chainOf = (it: ItemInput, chain: string[][]) => {
-    const c = D.chars.find((x) => x.builds.length)!;
+  const chainOf = (it: ItemInput, chain: string[][], c: Char = D.chars.find((x) => x.builds.length)!) => {
     const [m] = rows(ctx, it.grade, [{ c, b: build(chain), i: 0 }], it.subs, itemMains(idx, it));
     return renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m })));
   };
@@ -117,11 +116,46 @@ describe('оценка и цепочка', () => {
     expect(html).toContain('<small>main </small>EFF</span><i class="sep">/</i><span class="pill miss">EFF</span>');
   });
 
+  it('шлем для персонажа, которому flat HP не засчитывается: «main HP%» без пунктира — место занято main', () => {
+    const low = D.chars.find((c) => uselessFor(ctx, c).includes('HP'))!;
+    const html = chainOf(item('helmet', null, { subs: { CHC: 1, CHD: 1, SPD: 1 } }), [['HP'], ['CHC'], ['CHD']], low);
+    expect(html).toContain('<small>main </small>HP%</span>');
+    expect(html).not.toContain('pill miss');
+  });
+
   it('цепочка оружия с main ATK%: на оси ATK обе строки main', () => {
     const r = evaluate(ctx, item('weapon', 'ATK%', { subs: { CHC: 2, CHD: 1, SPD: 1 } }));
     const row = r.sections.flatMap((s) => s.rows).find((m) => m.b.subs.flat().includes('ATK'))!;
     const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m: row })));
     expect(html).toContain('<small>main </small>ATK%/ATK</span>');
+  });
+});
+
+describe('место HP: flat HP почти никому не засчитывается — на вещи с HP% в main место занято', () => {
+  const chainHp = [['HP'], ['CHC'], ['CHD'], ['SPD']];
+  const low = D.chars.find((c) => uselessFor(ctx, c).includes('HP'))!;
+  // тот же персонаж, но с базой HP, при которой flat-сегмент равен %-сегменту: flat HP ему засчитывается
+  const r0 = flatFactor(ctx, low, 'HP');
+  const high: Char = { ...low, flat: { ...low.flat, HP: low.flat.HP!.map((x) => x * r0) as FlatBase } };
+
+  it('шлем: у персонажа со слабым flat HP место HP занято, CHC и CHD идут вперёд; с сильным — место остаётся', () => {
+    const im = itemMains(idx, item('helmet', null));
+    expect(uselessFor(ctx, high)).not.toContain('HP');
+    expect(tierPlaces(build(chainHp), im, uselessFor(ctx, low))).toEqual([0, 0, 1, 2]);
+    expect(tierPlaces(build(chainHp), im, uselessFor(ctx, high))).toEqual([0, 1, 2, 3]);
+  });
+
+  it('ботинки (RES + HP%) и оружие с main HP% — так же; броня без HP% в main — место HP остаётся', () => {
+    const no = uselessFor(ctx, low);
+    expect(tierPlaces(build(chainHp), itemMains(idx, item('shoes', null)), no)).toEqual([0, 0, 1, 2]);
+    expect(tierPlaces(build(chainHp), itemMains(idx, item('weapon', 'HP%')), no)).toEqual([0, 0, 1, 2]);
+    expect(tierPlaces(build(chainHp), itemMains(idx, item('armor', null)), no)).toEqual([0, 1, 2, 3]);
+  });
+
+  it('оценка шлема: CHC, CHD, ATK% засчитаны целиком, ATK — третий, а не четвёртый', () => {
+    const b = build([['HP'], ['CHC'], ['CHD'], ['ATK']]);
+    const [m] = rows(ctx, 'rare', [{ c: low, b, i: 0 }], { CHC: 1, CHD: 1, 'ATK%': 1 }, itemMains(idx, item('helmet', null)));
+    expect([m.good, m.parts.map((p) => p.half)]).toEqual([3, [false, false, false]]);
   });
 });
 

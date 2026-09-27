@@ -56,6 +56,8 @@ export const mainsOnAxis = (tok: string, im: ItemMains): string[] => im.lines.fi
 // токен цепочки занят main: стат есть в main, а сабстатом на этом предмете ему выпасть уже нечем.
 // Main SPD у аксессуара занимает SPD; у оружия с main ATK% ось ATK занята целиком (ATK% — main, flat ATK —
 // базовая строка), а с main DEF% — нет: ATK% сабстатом ещё бывает. Flat EFF в main перчаток EFF не занимает —
-// EFF% сабстатом бывает. PEN% сабстатом не бывает вовсе: main PEN% его занимает
-export const takenByMain = (tok: string, im: ItemMains): boolean =>
-  mainsOnAxis(tok, im).length > 0 && subForms(tok).every((k) => im.blocked.has(k) || !im.subKeys.has(k));
+// EFF% сабстатом бывает. PEN% сабстатом не бывает вовсе: main PEN% его занимает.
+// useless — сабстаты, которые этому персонажу ничего не дают (score.uselessFor): у шлема с main HP% сабстатом
+// остаётся только flat HP, а он почти никому не засчитывается — тогда место HP тоже занято main
+export const takenByMain = (tok: string, im: ItemMains, useless: (k: string) => boolean = () => false): boolean =>
+  mainsOnAxis(tok, im).length > 0 && subForms(tok).every((k) => im.blocked.has(k) || !im.subKeys.has(k) || useless(k));
