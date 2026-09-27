@@ -22,6 +22,8 @@ const GRID: (string | null)[] = [
   'SPD', 'CHC', 'ATK%', 'DMG UP%', 'HP%', 'DEF%', 'EFF',
   null, 'CHD', 'ATK', 'DMG RED%', 'HP', 'DEF', 'RES',
 ];
+// пятизнаковые подписи (DMG↑%, DMG↓%) в узком разделённом экране не влезают — класс long ужимает шрифт по ширине сетки
+const long = (label: string) => (label.length >= 5 ? ' long' : '');
 const gap = (i: number) => <span key={`gap${i}`} className="sg-gap" aria-hidden="true" />;
 // подписи — не длиннее пяти знаков: в разделённом экране клетка ~24 px. CDMG RED% — «CD↓%»: «CDMG↓» обрезалось бы в «DMG↓»
 const SHORT: Record<string, string> = { 'DMG UP%': 'DMG↑%', 'DMG RED%': 'DMG↓%', 'CDMG RED%': 'CD↓%' };
@@ -37,7 +39,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
         {MAIN_LAYOUT.map((k, i) => {
           if (k === null) return gap(i);
           const o = mains.find((x) => x.key === k);
-          const cls = ['sg', o && (o.want ? 'u1' : 'u0'), o?.rare && 'rare'].filter(Boolean).join(' ');
+          const cls = ['sg', o && (o.want ? 'u1' : 'u0'), o?.rare && 'rare'].filter(Boolean).join(' ') + long(SHORT[k] ?? k);
           return (
             <button key={k} type="button" className={cls} disabled={!o} title={o?.rare ? `${k} — ${t.ui.fixedOnly}` : k} aria-label={k} onClick={() => onMain(k)}>
               <StatIcon stat={k} /><span>{SHORT[k] ?? k}</span>
@@ -55,7 +57,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
           // выбранный main снимается нажатием; фиксированная строка (HP% шлема, flat ATK оружия) — нет
           const chosen = k === main;
           return (
-            <button key={k} type="button" className={`sg is-main${chosen ? '' : ' fixed'}`} disabled={!chosen}
+            <button key={k} type="button" className={`sg is-main${chosen ? '' : ' fixed'}${long(SHORT[k] ?? k)}`} disabled={!chosen}
               title={chosen ? t.ui.mainCell(k) : t.ui.fixedMainCell(k)} onClick={chosen ? () => onMain(k) : undefined}>
               <small>main</small><span>{SHORT[k] ?? k}</span>
             </button>
@@ -63,7 +65,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
         }
         const credit = useful ? useful.get(k) ?? 0 : null;
         const tone = credit === null ? '' : credit >= 1 ? 'u1' : credit > 0 ? 'u2' : 'u0';
-        const cls = ['sg', FLAT.has(k) && 'flat', tone].filter(Boolean).join(' ');
+        const cls = ['sg', FLAT.has(k) && 'flat', tone].filter(Boolean).join(' ') + long(SHORT[k] ?? subLabel(k));
         const on = k in subs;
         const label = subLabel(k);
         return (

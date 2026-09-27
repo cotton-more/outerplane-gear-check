@@ -171,7 +171,9 @@ html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-botto
 /* сетка сабстатов на форме: 7×2, пары по параметру одна над другой (%-статы над flat); ярче — нужны билдам выбранного сета */
 .formrow .pick.main { flex: 0 0 auto; max-width: 40%; }
 .subzone { display: grid; min-height: 84px; }
-.statgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; align-content: start; }
+.statgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; align-content: start; container-type: inline-size; }
+/* пять знаков в клетке ~24 px (разделённый экран 280 px) не влезают: шрифт по ширине сетки, не крупнее обычного */
+.sg.long span { font-size: min(10.5px, 3.5cqi); }
 .sg { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; min-height: 40px; padding: 3px 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 10.5px/1.1 var(--font-mono); color: var(--ink); white-space: nowrap; }
 .sg img, .sg .noimg { width: 16px; height: 16px; flex: none; }
 .sg.flat { font-weight: 500; color: var(--ink-2); }
