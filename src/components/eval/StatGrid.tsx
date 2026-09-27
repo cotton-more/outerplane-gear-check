@@ -1,5 +1,6 @@
 import { FLAT, MAIN_LAYOUT, subLabel } from '../../data';
 import { useT } from '../../i18n';
+import { tourItem } from '../../tour/anchors';
 import type { MainOption } from '../../logic/lists';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
@@ -69,7 +70,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
         const on = k in subs;
         const label = subLabel(k);
         return (
-          <button key={k} type="button" className={cls} aria-pressed={on} disabled={full && !on}
+          <button key={k} type="button" className={cls} aria-pressed={on} disabled={full && !on} {...tourItem(k)}
             title={on ? t.ui.subRemove(label) : credit === null ? label : t.ui.usefulTitle(label, credit)} onClick={() => onPick(k)}>
             <StatIcon stat={k} /><span>{SHORT[k] ?? label}</span>
           </button>

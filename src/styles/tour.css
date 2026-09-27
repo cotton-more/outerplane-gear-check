@@ -17,3 +17,6 @@
 html.narrow body.has-vbar .tour-invite { bottom: 66px; }
 @media (max-height: 560px) { html.narrow body.has-vbar .tour-invite { bottom: 52px; } }
 .guide .guide-tour { margin: 0 0 12px; }
+/* на примере всё, кроме нужных кнопок, приглушено; нажатия проходят — ошибку можно поправить */
+.tour-hole { position: fixed; z-index: 44; pointer-events: none; border-radius: 12px; box-shadow: 0 0 0 200vmax rgb(0 0 0 / .42); transition: top .18s, left .18s, width .18s, height .18s; }
+.tour-off { margin: -2px 0 8px !important; color: var(--temp); font-weight: 600; }

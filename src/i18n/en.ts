@@ -423,6 +423,11 @@ export const en: Texts = {
     keepItem: 'Keep this one',
     restoreItem: 'Bring back the old one',
     invite: 'New: a tutorial — enter one piece of gear, about a minute.',
+    off: {
+      item: 'The example needs Epic armor: the shirt icon and E.',
+      set: 'The example needs Speed Set — change it in the set field.',
+      subs: 'The example needs only SPD, CHC and CHD: tap the extra stat in its row and replace or remove it.',
+    },
     steps: {
       slot: (x: StepText) => x.demo
         ? `As an example, take Epic armor: tap ${x.narrow ? 'the armor icon (a shirt)' : '**Armor**'} and **E**.${x.keys ? ' Or press 4 and E.' : ''}`

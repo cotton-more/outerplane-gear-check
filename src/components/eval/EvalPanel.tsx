@@ -14,7 +14,7 @@ import { mainOptions, setSubDemand } from '../../logic/lists';
 import { blocksOf, itemMains as mainLines } from '../../logic/mains';
 import type { Verdict as VerdictData } from '../../logic/verdict';
 import type { Action, AppState } from '../../state/appState';
-import { tour } from '../../tour/anchors';
+import { tour, tourItem } from '../../tour/anchors';
 import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
 import { ItemPicker } from './ItemPicker';
@@ -68,7 +68,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
             <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
-              onClick={() => dispatch({ type: 'slot', slot: sl.id })}>
+              onClick={() => dispatch({ type: 'slot', slot: sl.id })} {...tourItem(sl.id)}>
               <SlotIcon slot={sl.id} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
             </button>
           ))}
@@ -77,7 +77,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           <div className="gradesw" role="group" aria-label={t.ui.gradeGroup} {...tour('grade')}>
             {GRADES.map((g) => (
               <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
-                onClick={() => dispatch({ type: 'grade', grade: g })}>
+                onClick={() => dispatch({ type: 'grade', grade: g })} {...tourItem(g)}>
                 <GradeFrame grade={g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
               </button>
             ))}

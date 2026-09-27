@@ -100,6 +100,34 @@ describe('главный тур на примере', () => {
   });
 });
 
+describe('на примере — только то, что в примере', () => {
+  it('лишний стат: шаг не засчитан, полоса подсказывает; снял лишний — дальше', async () => {
+    await mount();
+    await click(byText('.welcome button', 'Take it'));
+    await click(byText('.tour-strip button', 'Example'));
+    const { pinSelector } = await import('../src/tour/anchors');
+    expect($(pinSelector('slot:armor')) && $(pinSelector('grade:rare'))).toBeTruthy();
+    await click($('.slot[aria-label="Helmet"]'));
+    expect(strip()).toContain('Step 1 of 5');
+    await click($(pinSelector('slot:armor')));
+    await click($(pinSelector('grade:rare')));
+    await click($('[data-tour="pick"]'));
+    expect($(pinSelector('sets:Speed'))).toBeTruthy();
+    await click([...document.querySelectorAll<HTMLElement>('.drawer .set')].find((b) => !b.textContent?.includes('Speed')));
+    expect(strip()).toContain('Step 2 of 5');
+    expect(strip()).toContain('needs Speed Set');
+    await click($('[data-tour="pick"]'));
+    await click($(pinSelector('sets:Speed')));
+    for (const k of ['SPD', 'HP%', 'CHC']) await click(cell(k));
+    expect(strip()).toContain('Step 3 of 5');
+    expect(strip()).toContain('only SPD, CHC and CHD');
+    await click($(pinSelector('rows:HP%')));
+    expect(strip()).toContain('Pick in the window');
+    await click($(pinSelector('subpick:CHD')));
+    expect(strip()).toContain('Step 4 of 5');
+  });
+});
+
 describe('вещь игрока не теряется', () => {
   it('повтор из меню: вещь на форме откладывается, во время тура не перезаписывается и возвращается', async () => {
     await mount({ welcomeHidden: true, tour: { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: 'd', tips: true } });

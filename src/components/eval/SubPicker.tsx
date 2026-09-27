@@ -1,5 +1,6 @@
 import { FLAT, subLabel } from '../../data';
 import { useT } from '../../i18n';
+import { tour, tourItem } from '../../tour/anchors';
 import type { Ctx } from '../../logic/context';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
@@ -23,7 +24,7 @@ export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
   const moves = editing !== null && rows.length > 1;
   return (
     <>
-      <div className="subgrid">
+      <div className="subgrid" {...tour('subpick')}>
         {[...LAYOUT.filter((k) => k === null || SUB[k]), ...SUB_LIST.filter((k) => !LAYOUT.includes(k))].map((k, i) => {
           if (k === null) return <span key={`gap${i}`} aria-hidden="true" />;
           const row = rowOf(k);
@@ -31,7 +32,7 @@ export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
           const move = row > 0 && editing !== null;
           return (
             <button key={k} type="button" className={`subopt${FLAT.has(k) ? ' flat' : ''}`} aria-pressed={k === editing} disabled={taken}
-              title={move ? t.ui.subMoveTitle(subLabel(k), row) : title(k)} onClick={() => onPick(k)}>
+              title={move ? t.ui.subMoveTitle(subLabel(k), row) : title(k)} onClick={() => onPick(k)} {...tourItem(k)}>
               <StatIcon stat={k} /><span>{subLabel(k)}</span>{move && <small className="row-n">{row}</small>}
             </button>
           );

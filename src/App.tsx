@@ -98,7 +98,7 @@ export function App() {
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 
-  const tourCtx: TourCtx = { s, nSubs, verdict, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
+  const tourCtx: TourCtx = { s, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
   const tour = useTour({
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden },
     onRunning: useCallback((on: boolean) => { setTouring(on); setUndo(null); }, []), onDone: hideWelcome,
