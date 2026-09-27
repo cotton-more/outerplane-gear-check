@@ -105,6 +105,8 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .pill.main small { font-size: 9.5px; font-weight: 500; opacity: .8; }
 .pill.miss { border: 1px dashed var(--line-2); color: var(--ink-3); font-weight: 500; }
 .pill.tail { font-size: 10.5px; padding: 2px 4px; opacity: .75; }
+/* дальше четвёртого места, но есть на вещи: обычная серая плашка — стат на вещи видно, в счёт он не идёт */
+.pill.tail.on { font-size: 11.5px; padding: 3px 5px; opacity: 1; border-color: var(--line-2); }
 .pill.no { color: var(--ink-3); font-weight: 500; text-decoration: line-through; text-decoration-thickness: 1px; }
 /* строка «Кому подходит»: цепочки приоритета под именем; у билда с другой цепочкой — своя строка с названием */
 .match .det:empty { display: none; }
