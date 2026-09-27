@@ -1,6 +1,6 @@
 // Service worker Outerplane Gear Check: офлайн-режим и обновление данных.
 // Сгенерирован update.py — не редактируй вручную.
-const VERSION = 'd71c91c7f0de';
+const VERSION = '63b17fbf515d';
 const CACHE = 'ogc-' + VERSION;
 const FONTS = 'ogc-fonts';
 const PRECACHE = [
