@@ -25,7 +25,8 @@ function InstallHint({ install }: { install: InstallInfo }) {
   return null;
 }
 
-export function Welcome({ install, onTour, onRoster, onClose }: { install: InstallInfo; onTour: () => void; onRoster: () => void; onClose: () => void }) {
+// onTour нет — окно низкое, обучение не предлагаем (App: layout.tall)
+export function Welcome({ install, onTour, onRoster, onClose }: { install: InstallInfo; onTour?: () => void; onRoster: () => void; onClose: () => void }) {
   const t = useT();
   return (
     <section className="panel welcome" aria-label={t.ui.howTo}>
@@ -33,8 +34,8 @@ export function Welcome({ install, onTour, onRoster, onClose }: { install: Insta
       <List items={t.ui.steps} ordered />
       <InstallHint install={install} />
       <div className="welcome-actions">
-        <button type="button" className="btn primary" onClick={onTour}>{t.tour.welcomeCta}</button>
-        <button type="button" className="btn" onClick={onRoster}>{t.ui.markChars}</button>
+        {onTour && <button type="button" className="btn primary" onClick={onTour}>{t.tour.welcomeCta}</button>}
+        <button type="button" className={onTour ? 'btn' : 'btn primary'} onClick={onRoster}>{t.ui.markChars}</button>
         <button type="button" className="btn" onClick={onClose}>{t.ui.gotIt}</button>
       </div>
     </section>

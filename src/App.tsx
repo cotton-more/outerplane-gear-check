@@ -105,8 +105,10 @@ export function App() {
   });
   const startTour = () => { setHelpOpen(false); setVerdictOpen(false); tour.start(); };
   const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
+  // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
+  // пока приложение откроют крупнее. Кнопка «Обучение» в меню и Справке работает всегда.
   // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
-  const inviteShown = tour.available && !tour.run && !tour.store.invited && tour.store.first !== 'done' && !welcomeShown
+  const inviteShown = layout.tall && tour.available && !tour.run && !tour.store.invited && tour.store.first !== 'done' && !welcomeShown
     && s.tab === 'eval' && !undo;
 
   return (
@@ -121,7 +123,7 @@ export function App() {
               action={t.ui.gotIt} onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
           </div>
         )}
-        {welcomeShown && <Welcome install={install} onTour={startTour} onRoster={() => onTab('chars')} onClose={hideWelcome} />}
+        {welcomeShown && <Welcome install={install} onTour={layout.tall ? startTour : undefined} onRoster={() => onTab('chars')} onClose={hideWelcome} />}
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}

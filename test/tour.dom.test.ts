@@ -143,6 +143,32 @@ describe('вещь игрока не теряется', () => {
   });
 });
 
+describe('низкое окно (полоска разделённого экрана)', () => {
+  it('обучение само не предлагаем, а кнопка в меню работает', async () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 390 });
+    try {
+      await mount({ roster: [D.chars[0].id] });
+      expect($('.tour-invite')).toBeNull();
+      await click($('.vb-tab'));
+      await click(byText('.menu button', 'Tutorial'));
+      expect(strip()).toContain('Use an example');
+    } finally {
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 740 });
+    }
+  });
+
+  it('у новичка в карточке нет «Пройти»', async () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 390 });
+    try {
+      await mount();
+      expect($('.welcome')).toBeTruthy();
+      expect(byText('.welcome button', 'Take it')).toBeUndefined();
+    } finally {
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 740 });
+    }
+  });
+});
+
 describe('давний игрок', () => {
   it('тур не навязываем: один раз полоса «Появилось обучение», закрыл — больше не показываем', async () => {
     await mount({ roster: [D.chars[0].id] });

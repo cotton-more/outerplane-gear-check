@@ -6,6 +6,7 @@ export interface Layout {
   tiny: boolean;    // < 380: нижняя плашка без штампа
   sheet: boolean;   // < 900: билды персонажа — полноэкранной шторкой
   wide: boolean;    // ≥ 1100
+  tall: boolean;    // высота ≥ 560: весь экран или половина в портрете, а не полоска разделённого экрана
   desktopModeOnPhone: boolean;
 }
 
@@ -41,7 +42,8 @@ export function applyLayout(): Layout {
   });
   if (m.desktopModeOnPhone) r.style.zoom = String(m.zoom);
   const w = m.width;
-  const layout = { narrow: w < 720, xs: w < 560, tiny: w < 380, sheet: w < 900, wide: w >= 1100, desktopModeOnPhone: m.desktopModeOnPhone };
+  const tall = window.innerHeight / m.zoom >= 560;
+  const layout = { narrow: w < 720, xs: w < 560, tiny: w < 380, sheet: w < 900, wide: w >= 1100, tall, desktopModeOnPhone: m.desktopModeOnPhone };
   r.classList.toggle('narrow', layout.narrow);
   r.classList.toggle('xs', layout.xs);
   r.classList.toggle('sheet', layout.sheet);

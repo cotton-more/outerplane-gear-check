@@ -23,7 +23,8 @@ On the first launch, the "How to use" card has a **Take it · 1 min** button: a 
 slot and grade, set or main, substats, the verdict and "Next". Take it on the example piece or on your own one from the
 game. Each step waits until you do it, "Next" skips it, ✕ closes the tutorial. Whatever was on the form goes aside and
 comes back at the end. To take it again: ☰ → "Tutorial", or "Tutorial" under the form on a computer, or the top of
-Help. The idea came from Sevih, who runs outerpedia.
+Help. In a low window (a split-screen strip) the tutorial isn't offered by itself — only through the menu. The idea came
+from Sevih, who runs outerpedia.
 
 ## First steps
 
