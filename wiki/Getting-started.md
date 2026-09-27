@@ -17,6 +17,14 @@ works in the browser, installs on a phone as an app, works offline too. Language
 You get an icon: the app opens without the address bar and fits a split screen next to the game.
 When new data comes out, an "Update" banner appears when you open it.
 
+## Tutorial
+
+On the first launch, the "How to use" card has a **Take it · 1 min** button: a five-step walk through one piece of gear —
+slot and grade, set or main, substats, the verdict and "Next". Take it on the example piece or on your own one from the
+game. Each step waits until you do it, "Next" skips it, ✕ closes the tutorial. Whatever was on the form goes aside and
+comes back at the end. To take it again: ☰ → "Tutorial", or "Tutorial" under the form on a computer, or the top of
+Help. The idea came from Sevih, who runs outerpedia.
+
 ## First steps
 
 1. **Mark your characters:** ☰ → "Characters", the star on each one you own. While the roster is empty, the evaluation

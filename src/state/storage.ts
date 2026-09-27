@@ -15,4 +15,14 @@ export const storage = {
       localStorage.setItem(PREFIX + key, JSON.stringify(value));
     } catch { /* без хранилища живём в памяти */ }
   },
+  // хранилище есть и пишется: без него обучение само ничего не предлагает — иначе предлагало бы при каждом запуске
+  available(): boolean {
+    try {
+      localStorage.setItem(PREFIX + 'probe', '1');
+      localStorage.removeItem(PREFIX + 'probe');
+      return true;
+    } catch {
+      return false;
+    }
+  },
 };

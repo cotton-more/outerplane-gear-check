@@ -1,21 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
-import { EvalPanel, EvalSettings } from './components/eval/EvalPanel';
+import { EvalPanel } from './components/eval/EvalPanel';
 import { CodeInput } from './components/eval/ItemCode';
 import { Help, Welcome, type InstallInfo } from './components/Guide';
 import { VBar, Verdict, VerdictSheet } from './components/eval/Verdict';
+import { Footer, LangSwitch } from './components/Footer';
 import { Header } from './components/Header';
 import { GameIconsContext } from './components/Img';
 import { useIndex } from './components/IndexContext';
+import { Menu } from './components/Menu';
 import { Notice } from './components/Notice';
 import { Sheet } from './components/Sheet';
 import { slugFromHash, useHashRoute } from './hooks/useHashRoute';
 import { useHotkeys } from './hooks/useHotkeys';
-import { useLayout } from './hooks/useLayout';
+import { fineHover, useLayout } from './hooks/useLayout';
 import { usePwa } from './hooks/usePwa';
 import { isArmor, type Index } from './data';
-import { LANG_NAME, LANGS, LangContext, TEXTS, savedLang, useT, type Lang } from './i18n';
+import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
 import { charMatches } from './logic/lists';
@@ -25,7 +27,9 @@ import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } fr
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useRoster } from './state/useRoster';
-import { MIT_HOLDERS, MIT_TEXT } from './licenses';
+import { TourLayer } from './tour/TourLayer';
+import type { TourCtx } from './tour/types';
+import { useTour } from './tour/useTour';
 
 // открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
 function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string): Action {
@@ -40,10 +44,12 @@ export function App() {
   const rosterApi = useRoster(idx);
   const { roster } = rosterApi;
   // #slug в адресе при загрузке важнее сохранённой вкладки
+  // пока идёт обучение, страница не сохраняется: вещь игрока отложена и вернётся в конце (src/tour/useTour.ts)
+  const [touring, setTouring] = useState(false);
   const [s, dispatch] = useAppState(idx, (init) => {
     const c = idx.CHAR_BY_SLUG[slugFromHash()];
     return c ? reducer(init, openCharAction(idx, init, roster, c.id)) : init;
-  });
+  }, !touring);
   const [lang, setLang] = useState<Lang>(savedLang);
   const t = TEXTS[lang];
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
@@ -71,6 +77,7 @@ export function App() {
   // карточка «Как пользоваться» — новичку, пока он не отметил своих персонажей и не закрыл её
   const [welcomeHidden, setWelcomeHidden] = useState(() => storage.get('welcomeHidden', false));
   const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
+  const hideWelcome = () => { storage.set('welcomeHidden', true); setWelcomeHidden(true); };
 
   const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id)), [idx, s, roster, dispatch]);
   useHashRoute(idx, s.tab, s.charId, openChar);
@@ -91,6 +98,17 @@ export function App() {
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 
+  const tourCtx: TourCtx = { s, nSubs, verdict, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
+  const tour = useTour({
+    c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden },
+    onRunning: useCallback((on: boolean) => { setTouring(on); setUndo(null); }, []), onDone: hideWelcome,
+  });
+  const startTour = () => { setHelpOpen(false); setVerdictOpen(false); tour.start(); };
+  const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
+  // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
+  const inviteShown = tour.available && !tour.run && !tour.store.invited && tour.store.first !== 'done' && !welcomeShown
+    && s.tab === 'eval' && !undo;
+
   return (
     <LangContext.Provider value={t}>
     <GameIconsContext.Provider value={gameIcons}>
@@ -103,13 +121,11 @@ export function App() {
               action={t.ui.gotIt} onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
           </div>
         )}
-        {s.tab === 'eval' && !welcomeHidden && roster.size === 0 && (
-          <Welcome install={install} onRoster={() => onTab('chars')} onClose={() => { storage.set('welcomeHidden', true); setWelcomeHidden(true); }} />
-        )}
+        {welcomeShown && <Welcome install={install} onTour={startTour} onRoster={() => onTab('chars')} onClose={hideWelcome} />}
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}
-              onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onOpenVerdict={() => setVerdictOpen(true)} />
+              onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} onOpenVerdict={() => setVerdictOpen(true)} />
             {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -121,95 +137,33 @@ export function App() {
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
         <VBar r={verdict} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
-        {undo && s.tab === 'eval' && (
+        {inviteShown && (
+          <div className="tour-strip tour-invite" role="status">
+            <span>{t.tour.invite}</span>
+            <button type="button" className="btn" onClick={() => { tour.dismissInvite(); startTour(); }}>{t.tour.welcomeCta}</button>
+            <button type="button" className="tour-x" aria-label={t.ui.close} onClick={tour.dismissInvite}>✕</button>
+          </div>
+        )}
+        <TourLayer tour={tour} c={tourCtx} rosterEmpty={roster.size === 0} onTab={onTab} onRoster={() => onTab('chars')} />
+        {undo && s.tab === 'eval' && !tour.run && (
           <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
         {menuOpen && (
-          <Sheet title={t.ui.menu} onClose={() => setMenuOpen(false)}>
-            <div className="menu">
-              <div className="menu-nav">
-                <button type="button" className="btn" onClick={() => { setMenuOpen(false); onTab('chars'); }}>
-                  {roster.size ? <><span className="vb-star">★</span> {roster.size} · </> : '☆ '}{t.ui.tabChars}
-                </button>
-                <button type="button" className="btn" onClick={() => { setMenuOpen(false); setCodeOpen(true); }}>{t.ui.enterCode}</button>
-                <button type="button" className="btn" onClick={() => { setMenuOpen(false); setHelpOpen(true); }}>{t.ui.help}</button>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" id="menu-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
-                {' '}{t.ui.rosterOnly}{roster.size ? ` (${roster.size})` : t.ui.rosterOnlyEmpty}
-              </label>
-              <EvalSettings s={s} dispatch={dispatch} inline />
-              <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
-            </div>
-          </Sheet>
+          <Menu s={s} dispatch={dispatch} rosterSize={roster.size} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
+            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={startTour}
+            footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />} />
         )}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>
             <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); setCodeOpen(false); }} />
           </Sheet>
         )}
-        {helpOpen && <Sheet title={t.ui.help} onClose={() => setHelpOpen(false)}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} /></Sheet>}
+        {helpOpen && <Sheet title={t.ui.help} onClose={() => setHelpOpen(false)}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={startTour} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
           <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>
     </LangContext.Provider>
-  );
-}
-
-// «Язык: Русский · English» — в подвале и в справке
-function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
-  const t = useT();
-  return (
-    <div className="seg lang" role="group" aria-label={t.ui.language}>
-      <span className="muted small">{t.ui.language}:</span>
-      {LANGS.map((l) => <button key={l} type="button" className="fbtn" lang={l} aria-pressed={lang === l} onClick={() => onLang(l)}>{LANG_NAME[l]}</button>)}
-    </div>
-  );
-}
-
-// дата последнего коммита кода — в часовом поясе того, кто смотрит
-const buildDate = (lang: Lang) => new Date(__BUILD__.date).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
-
-// «Иконки: свои · из игры» — сравнить свои значки с картинками из игры (портреты персонажей — из игры всегда)
-function IconSwitch({ game, onChange }: { game: boolean; onChange: (game: boolean) => void }) {
-  const t = useT();
-  return (
-    <div className="seg lang" role="group" aria-label={t.ui.icons}>
-      <span className="muted small">{t.ui.icons}:</span>
-      <button type="button" className="fbtn" aria-pressed={!game} onClick={() => onChange(false)}>{t.ui.iconsOwn}</button>
-      <button type="button" className="fbtn" aria-pressed={game} onClick={() => onChange(true)}>{t.ui.iconsGame}</button>
-    </div>
-  );
-}
-
-function Footer({ install, lang, onLang, gameIcons, onIcons }: {
-  install: InstallInfo; lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void;
-}) {
-  const m = useIndex().D.meta;
-  const t = useT();
-  const when = (m.commitDate || m.generatedAt || '').slice(0, 10);
-  return (
-    <footer className="foot" id="foot">
-      <span>
-        {t.ui.footData} <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco, © 2026 Sevih, MIT) · {t.ui.footGameVersion} {m.gameVersion || '?'} · {t.ui.footSnapshot} {when}
-        {m.commit && <> · <span className="mono">{String(m.commit).slice(0, 7)}</span></>} · {t.ui.footCounts(m.counts.characters, m.counts.withBuilds, m.counts.builds)}
-      </span>
-      <span>
-        {window.OGC_PWA ? t.ui.footUpdatePwa : <>{t.ui.footUpdateSingle} <span className="mono">task build:single</span> {t.ui.footUpdateSingleWhere}</>}
-        {' '}{t.ui.footRights}
-      </span>
-      <details className="lic">
-        <summary>{t.ui.licenses}</summary>
-        {MIT_HOLDERS.map((h) => <p key={h.what}><a href={h.url} target="_blank" rel="noopener">{t.ui.licenseWhat[h.what]}</a><br />{h.who}</p>)}
-        {MIT_TEXT.split('\n\n').map((para) => <p key={para.slice(0, 20)} className="mit">{para.replace(/\n/g, ' ')}</p>)}
-      </details>
-      {__BUILD__.hash && <span>{t.ui.footBuild(buildDate(lang), __BUILD__.hash, __BUILD__.dirty)}</span>}
-      {install.canInstall && <span><button type="button" className="btn" onClick={install.onInstall}>{t.ui.installApp}</button></span>}
-      {install.ios && <span>{t.ui.iosFooter}</span>}
-      <LangSwitch lang={lang} onLang={onLang} />
-      <IconSwitch game={gameIcons} onChange={onIcons} />
-    </footer>
   );
 }

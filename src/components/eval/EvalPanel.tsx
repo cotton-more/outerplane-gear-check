@@ -6,6 +6,7 @@
 import { useMemo, useState, type Dispatch } from 'react';
 import { GRADE_NAME, GRADES, SLOTS, isArmor, subLabel } from '../../data';
 import type { GearKind } from '../../data/types';
+import { fineHover } from '../../hooks/useLayout';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { MAX_SUBS } from '../../logic/subs';
@@ -13,6 +14,7 @@ import { mainOptions, setSubDemand } from '../../logic/lists';
 import { blocksOf, itemMains as mainLines } from '../../logic/mains';
 import type { Verdict as VerdictData } from '../../logic/verdict';
 import type { Action, AppState } from '../../state/appState';
+import { tour } from '../../tour/anchors';
 import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
 import { ItemPicker } from './ItemPicker';
@@ -27,11 +29,9 @@ import { VerdictCard } from './Verdict';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
-const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onOpenVerdict }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, onOpenVerdict }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
-  onReset: () => void; onHelp: () => void; onCode: () => void; onOpenVerdict: () => void;
+  onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; onOpenVerdict: () => void;
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -58,14 +58,14 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
   const itemField = (
     <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
-      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} />
+      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="pick" />
   );
-  const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} />;
+  const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" />;
 
   return (
     <div className="panel eval-in" id="eval-in">
       <div className="form">
-        <div className="slotrow" role="group" aria-label={t.ui.slot}>
+        <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
             <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
               onClick={() => dispatch({ type: 'slot', slot: sl.id })}>
@@ -74,7 +74,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           ))}
         </div>
         <div className="formrow">
-          <div className="gradesw" role="group" aria-label={t.ui.gradeGroup}>
+          <div className="gradesw" role="group" aria-label={t.ui.gradeGroup} {...tour('grade')}>
             {GRADES.map((g) => (
               <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
                 onClick={() => dispatch({ type: 'grade', grade: g })}>
@@ -83,14 +83,14 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             ))}
           </div>
           {armor
-            ? <PickField value={set && <><SetIcon set={set} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} />
+            ? <PickField value={set && <><SetIcon set={set} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" />
             : weapon
               ? <MainButtons all={allMains} opts={opts} current={s.main} onPick={pickMain} />
               : epic ? mainField() : itemField}
           {mainRow && mainField('main')}
         </div>
         {weapon && !epic && <div className="formrow">{itemField}</div>}
-        <div className="subzone">
+        <div className="subzone" {...tour('grid')}>
           {cardShown
             ? <VerdictCard r={verdict} onOpen={onOpenVerdict} />
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
@@ -100,9 +100,10 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       </div>
 
       <div className="actions">
-        <button type="button" className="btn primary" onClick={onReset}>{t.ui.resetItem}</button>
+        <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>
         <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
         <button type="button" className="btn" onClick={onHelp}>{t.ui.help}</button>
+        <button type="button" className="btn" onClick={onTour}>{t.tour.start}</button>
         <label className="toggle">
           <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
           {' '}{t.ui.rosterOnly}{ctx.roster.size ? ` (${ctx.roster.size})` : t.ui.rosterOnlyEmpty}

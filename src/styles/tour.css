@@ -1,0 +1,19 @@
+/* Обучение (src/tour/TourLayer.tsx): рамка вокруг якоря и полоса с текстом. Экран не затемняется, нажатия
+   проходят к странице; полоса — выше шторок (40), плашки вердикта (35) и «Вернуть» (36). Цвета — токены темы. */
+.tour-ring { position: fixed; z-index: 45; pointer-events: none; border: 2px solid var(--accent); border-radius: 12px; transition: top .18s, left .18s, width .18s, height .18s; }
+.tour-strip { position: fixed; z-index: 46; left: 8px; right: 8px; margin: 8px auto calc(8px + env(safe-area-inset-bottom, 0px)); max-width: 440px; box-sizing: border-box; padding: 10px 10px 10px 14px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--surface-3); color: var(--ink); font-size: 13.5px; line-height: 1.45; box-shadow: 0 6px 18px rgb(0 0 0 / .25); }
+.tour-strip.tour-top { margin-top: calc(8px + env(safe-area-inset-top, 0px)); }
+.tour-strip p { margin: 0; }
+.tour-k { font-size: 12px; color: var(--ink-3); margin-bottom: 2px !important; }
+.tour-t { margin-bottom: 8px !important; }
+.tour-b { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tour-x { margin-left: auto; min-width: 36px; min-height: 36px; border: 0; border-radius: var(--radius-s); background: none; color: var(--ink-2); font-size: 15px; }
+.tour-strip.tour-pill { top: 0; display: flex; align-items: center; gap: 10px; padding: 4px 4px 4px 14px; margin-top: calc(6px + env(safe-area-inset-top, 0px)); font-size: 13px; }
+.tour-strip.tour-pill > span { flex: 1; }
+.tour-strip.tour-pill .tour-x { margin-left: 0; }
+/* полоса «Появилось обучение» — как «Вернуть»: над плашкой вердикта */
+.tour-invite { bottom: 0; display: flex; align-items: center; gap: 8px; }
+.tour-invite > span { flex: 1; }
+html.narrow body.has-vbar .tour-invite { bottom: 66px; }
+@media (max-height: 560px) { html.narrow body.has-vbar .tour-invite { bottom: 52px; } }
+.guide .guide-tour { margin: 0 0 12px; }

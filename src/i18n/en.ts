@@ -1,6 +1,7 @@
 // English texts: the same keys as ru.ts (type Texts) — TypeScript won't let a translation go missing.
 // **like this** — bold (components/Rich.tsx). Game terms are as in the English client.
 import type { GearKind } from '../data/types';
+import type { StepText } from '../tour/types';
 import type { Texts } from './ru';
 
 const persons = (n: number) => `${n} character${n === 1 ? '' : 's'}`;
@@ -400,5 +401,46 @@ export const en: Texts = {
     ],
     wikiLink: 'Full guide — in the Wiki ↗',
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Getting-started',
+  },
+  tour: {
+    start: 'Tutorial',
+    startLong: 'Take the tutorial',
+    welcomeCta: 'Take it · 1 min',
+    next: 'Next',
+    done: 'Done',
+    close: 'Close tutorial',
+    stepOf: (n: number, m: number) => `Step ${n} of ${m}`,
+    choose: "Let's enter one piece of gear — about a minute. Use an example or a piece from the game?",
+    demo: 'Example',
+    own: 'My own piece',
+    inSheet: 'Pick in the window — the tutorial will wait.',
+    closeSheet: 'Close the window ✕, then press “Next”.',
+    backToEval: '← Back to tutorial',
+    endText: (roster: boolean, narrow: boolean) => `That's it: every piece is checked this way.${roster
+      ? ` To take it again, open ${narrow ? 'the ☰ menu or ' : ''}Help.`
+      : ' Mark your characters — the check will use them instead of every hero in the game.'}`,
+    choice: 'Another piece was on the form before the tutorial. Which one to keep?',
+    keepItem: 'Keep this one',
+    restoreItem: 'Bring back the old one',
+    invite: 'New: a tutorial — enter one piece of gear, about a minute.',
+    steps: {
+      slot: (x: StepText) => x.demo
+        ? `As an example, take Epic armor: tap ${x.narrow ? 'the armor icon (a shirt)' : '**Armor**'} and **E**.${x.keys ? ' Or press 4 and E.' : ''}`
+        : `Pick the slot and grade, as on the piece in the game. **E** is Epic (Steel), **L** is Legendary (Etheric).${x.keys ? ' Keys: 1–6, L and E.' : ''}`,
+      pick: (x: StepText) => x.kind === 'armor'
+        ? (x.demo ? 'Tap the set field and pick **Speed Set**.' : 'Pick the set — it is in the item name after “of”.')
+        : x.kind === 'weapon'
+          ? `Main stat — one of the buttons next to the grade${x.legend ? '; below, find the weapon by name: the passive depends on it' : ''}.`
+          : x.legend
+            ? 'Find the accessory by name — the passive and possible mains depend on it.'
+            : 'Mark the main stat: the first tap in the grid is the main, then come the substats.',
+      grid: (x: StepText) => `${x.demo ? 'Mark **SPD**, **CHC** and **CHD** — in order, as in the game.' : 'Mark the substats in order, as in the game.'}${
+        x.kind === 'armor' ? ' Bright cells are wanted by builds for this set.' : ''} Marked ${x.n} of ${x.of}.`,
+      verdict: (x: StepText) => x.narrow
+        ? 'The verdict is ready. Tap the card: who it suits, what to upgrade and the code for your guild.'
+        : 'On the right is the verdict: who it suits, what to upgrade and the code for your guild.',
+      next: (x: StepText) => `“Next” goes to a new piece: slot, grade, set and main stay, substats are cleared. Pressed it by accident? You can undo for a few seconds.${
+        x.keys ? ' Key: Esc.' : ''}`,
+    },
   },
 };

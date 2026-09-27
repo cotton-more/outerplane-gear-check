@@ -11,6 +11,9 @@ export interface Layout {
 
 const root = () => document.documentElement;
 
+// есть мышь и клавиатура — можно подсказать горячие клавиши
+export const fineHover = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
+
 export interface Viewport { innerWidth: number; innerHeight: number; screenWidth: number; screenHeight: number; coarse: boolean }
 
 // Реальная ширина экрана. В режиме «Версия для ПК» мобильный Chrome рисует страницу шириной ~980px и сжимает её —

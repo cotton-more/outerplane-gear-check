@@ -10,6 +10,7 @@ import { useT } from '../../i18n';
 import { fmtGood } from '../../logic/text';
 import type { Section, Verdict as VerdictData } from '../../logic/verdict';
 import { itemInput, type Action, type AppState, type Tab } from '../../state/appState';
+import { tour } from '../../tour/anchors';
 import { GearFrame, Img, SetIcon } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
@@ -23,7 +24,7 @@ interface Props { r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpe
 export function Verdict(props: Props) {
   const ref = useRef<HTMLElement>(null);
   useFillViewport(ref);
-  return <aside ref={ref} className="panel verdict eval-out" id="verdict" aria-live="polite"><VerdictBody {...props} /></aside>;
+  return <aside ref={ref} className="panel verdict eval-out" id="verdict" aria-live="polite" {...tour('verdict')}><VerdictBody {...props} /></aside>;
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
@@ -154,7 +155,7 @@ export function VerdictCard({ r, onOpen }: { r: VerdictData; onOpen: () => void 
   const sec = r.v === 'junk' || r.v === 'idle' ? undefined : r.sections.find((x) => x.rows.length && !x.collapsed && !x.dim);
   const best = sec?.rows[0];
   return (
-    <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={t.ui.verdictDetails}>
+    <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={t.ui.verdictDetails} {...tour('verdict')}>
       <span className="vc-top">
         <span className="stamp">{t.ui.verdictLabel[r.v]}</span>
         {r.badge && <span className="badge">{r.badge}</span>}
@@ -192,7 +193,7 @@ export function VBar({ r, show, compact, stampless, hint, tab, rosterSize, onTab
       {evalTab
         ? <button type="button" className="vb-tab" aria-label={t.ui.menu} onClick={onMenu}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
-      <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval}
+      <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
         onClick={evalTab ? onOpen : () => onTab('eval')}>
         {evalTab && hint
           ? <span className="vt">{hint}</span>
@@ -201,7 +202,7 @@ export function VBar({ r, show, compact, stampless, hint, tab, rosterSize, onTab
             : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
-      {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset}>{t.ui.reset}</button>}
+      {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>}
     </div>
   );
 }

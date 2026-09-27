@@ -1,5 +1,6 @@
 import { useT } from '../../i18n';
 import type { MainOption } from '../../logic/lists';
+import { tour } from '../../tour/anchors';
 import { StatIcon } from '../Img';
 
 // Main stat оружия — кнопками рядом с грейдом, без окна: у оружия он всегда один из трёх (ATK%, DEF%, HP%).
@@ -10,7 +11,7 @@ export function MainButtons({ all, opts, current, onPick }: {
 }) {
   const t = useT();
   return (
-    <div className="mainsw" role="group" aria-label={t.ui.mainGroup}>
+    <div className="mainsw" role="group" aria-label={t.ui.mainGroup} {...tour('pick')}>
       {all.map(({ key }) => {
         const o = opts.find((x) => x.key === key);
         return (

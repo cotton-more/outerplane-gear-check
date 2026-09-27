@@ -25,7 +25,7 @@ function InstallHint({ install }: { install: InstallInfo }) {
   return null;
 }
 
-export function Welcome({ install, onRoster, onClose }: { install: InstallInfo; onRoster: () => void; onClose: () => void }) {
+export function Welcome({ install, onTour, onRoster, onClose }: { install: InstallInfo; onTour: () => void; onRoster: () => void; onClose: () => void }) {
   const t = useT();
   return (
     <section className="panel welcome" aria-label={t.ui.howTo}>
@@ -33,18 +33,20 @@ export function Welcome({ install, onRoster, onClose }: { install: InstallInfo; 
       <List items={t.ui.steps} ordered />
       <InstallHint install={install} />
       <div className="welcome-actions">
-        <button type="button" className="btn primary" onClick={onRoster}>{t.ui.markChars}</button>
+        <button type="button" className="btn primary" onClick={onTour}>{t.tour.welcomeCta}</button>
+        <button type="button" className="btn" onClick={onRoster}>{t.ui.markChars}</button>
         <button type="button" className="btn" onClick={onClose}>{t.ui.gotIt}</button>
       </div>
     </section>
   );
 }
 
-// содержимое окна «Справка»
-export function Help({ install }: { install: InstallInfo }) {
+// содержимое окна «Справка»; сверху — пройти обучение заново
+export function Help({ install, onTour }: { install: InstallInfo; onTour: () => void }) {
   const t = useT();
   return (
     <div className="guide">
+      <p className="guide-tour"><button type="button" className="btn" onClick={onTour}>{t.tour.startLong}</button></p>
       <h4>{t.ui.howTo}</h4>
       <List items={t.ui.steps} ordered />
       <h4>{t.ui.helpInput}</h4>

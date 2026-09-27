@@ -54,6 +54,8 @@ async function shoot(lang) {
     localStorage.setItem('ogc.lang', JSON.stringify(lang));
     localStorage.setItem('ogc.welcomeHidden', 'true');
     localStorage.setItem('ogc.fitnoteHidden', 'true');
+    // обучение пройдено: иначе на каждом кадре была бы полоса «Появилось обучение»
+    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2026-01-01', tips: false }));
     localStorage.setItem('ogc.roster', JSON.stringify(window.OGC_DATA.chars.filter((c) => names.includes(c.name)).map((c) => c.id)));
   }, ROSTER, lang);
   await page.goto(url, { waitUntil: 'networkidle0' }); // не reload: адрес мог сохранить #персонажа с прошлого прогона
