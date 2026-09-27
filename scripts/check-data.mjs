@@ -49,7 +49,8 @@ const readJson = (path) => (path ? JSON.parse(readFileSync(path, 'utf8')) : null
 
 // jsdom не исполняет <script type="module">: вынимаем бандл и запускаем его сами после разбора документа —
 // как браузер запускает отложенный модуль
-function loadPage(html, storage = {}) {
+// width — ширина окна: по умолчанию jsdom рисует 1024px (раскладка ПК), 360 — телефон
+function loadPage(html, storage = {}, width = 0) {
   const errors = [];
   const vc = new VirtualConsole();
   vc.on('error', (...a) => errors.push(a.map((x) => (x instanceof Error ? x.stack || x.message : String(x))).join(' ')));
@@ -61,6 +62,7 @@ function loadPage(html, storage = {}) {
     url: 'http://localhost/', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+      if (width) Object.defineProperty(w, 'innerWidth', { configurable: true, value: width });
       for (const [k, v] of Object.entries(storage)) w.localStorage.setItem('ogc.' + k, JSON.stringify(v));
     },
   });
@@ -527,6 +529,21 @@ async function main() {
     check('Свои значки сетов', noIcon.length ? null : true, noIcon);
   });
 
+  // 5в. обучение: элементы, на которые показывает главный тур, есть на стартовом экране на ПК и на телефоне.
+  // Подсказки модулей зависят от состояния (4-й сабстат, окно замены) — их якоря проверяют юнит-тесты
+  await guarded('Якоря обучения', async () => {
+    const core = pNew.w.__ogc?.tour?.core;
+    if (!core) return; // страница до обучения
+    const missing = [];
+    for (const [label, width] of [['ПК', 0], ['телефон 360px', 360]]) {
+      const p = loadPage(newHtml, { welcomeHidden: true }, width);
+      await tick(50);
+      for (const a of core) if (!p.w.document.querySelector(`[data-tour="${a}"]`)) missing.push(`${label}: нет элемента с data-tour="${a}" — перенеси якорь (src/tour/anchors.ts)`);
+      p.w.close();
+    }
+    check('Якоря обучения', missing.length ? null : true, missing);
+  });
+
   // 6. код приложения новее опубликованного — выйдет вместе с данными
   const bOld = buildOf(oldHtml, null);
   const bNew = buildOf(newHtml, pNew.w);
@@ -537,6 +554,10 @@ async function main() {
 
   const src = await changedSourceFiles(oldD.meta.commit, newD.meta.commit, report?.sourceFiles);
   const ok = checks.every((c) => c.ok !== false);
+  // в Actions предупреждения видны в итоге прогона: при публикации кода отчёт иначе никто не читает
+  if (process.env.GITHUB_ACTIONS) {
+    for (const c of checks.filter((x) => x.ok === null || x.ok === 'warn')) console.log(`::warning title=${c.name}::${c.lines.join('; ').replace(/\n/g, ' ')}`);
+  }
   const md = markdown({ ok, oldD, newD, diff, verdicts, byCode, src, code, report, publish: a.for === 'publish' });
   if (a.md) writeFileSync(a.md, md + '\n');
   console.log(md);

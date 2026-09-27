@@ -47,6 +47,11 @@ tasks:
     deps: [build:app]
     cmds: [node scripts/screenshots.mjs]
 
+  tour:check:
+    desc: 'Пройти тур обучения в Chrome на пяти размерах экрана и в двух темах; кадры — build/tour-check/'
+    deps: [build:app]
+    cmds: [node scripts/tour-check.mjs]
+
   preview:
     desc: 'Сайт как на Pages, с офлайн-режимом, на http://localhost:8000 — текущий код на данных из docs/; собирает в build/preview, docs/ не трогает'
     deps: [build:app]
@@ -58,11 +63,12 @@ tasks:
       - python3 -m http.server -d build/preview 8000
 
   test:
-    desc: Проверка типов и тесты (эталон логики + юнит-тесты)
+    desc: Проверка типов и тесты (эталон логики + юнит-тесты), предупреждение, если обучение отстало от кода
     deps: [setup]
     cmds:
       - npm run -s typecheck
       - npm test --silent
+      - node scripts/tour-audit.mjs   # обучение не отстаёт от поведения — только предупреждает
 
   golden:update:
     desc: Перегенерировать эталон логики после намеренных изменений — потом просмотри diff test/golden.json

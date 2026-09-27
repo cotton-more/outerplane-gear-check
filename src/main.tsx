@@ -11,6 +11,7 @@ import { makeCtx } from './logic/context';
 import * as logic from './logic/evaluate';
 import { MAINS as CODE_MAINS } from './logic/itemCode';
 import { flatFactor, scoreBuild, subWeights } from './logic/score';
+import { CORE } from './tour/core';
 import './styles/base.css';
 import './styles/eval.css';
 import './styles/verdict.css';
@@ -37,5 +38,7 @@ if (!D) {
   // icons — метки, у которых есть и свой значок, и картинка из игры; setIcons — сеты со своим значком (нет — предупреждение)
   const icons = Object.keys(STAT_ICON).filter((k) => statIcon(k, true));
   const known = { codeMains: CODE_MAINS, gridMains: MAIN_GRID, icons, setIcons: Object.keys(SET_ICON) };
-  window.__ogc = { D, idx, CFG, build: __BUILD__, makeCtx, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights, known };
+  // tour.core — якоря главного тура: check-data проверяет, что они есть на стартовом экране
+  const tour = { core: [...new Set(CORE.flatMap((st) => st.at({} as never)))] };
+  window.__ogc = { D, idx, CFG, build: __BUILD__, makeCtx, evaluate: logic.evaluate, scoreBuild, flatFactor, subWeights, known, tour };
 }
