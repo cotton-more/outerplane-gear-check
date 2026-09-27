@@ -168,7 +168,7 @@ html.narrow .actions .btn.primary { display: none; } /* на телефоне «
 html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
 @media (max-height: 560px) { html.narrow body.has-vbar .toast { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); } }
 
-/* сетка сабстатов на форме: 7×2, %-статы над своими flat-версиями; ярче — нужны билдам выбранного сета */
+/* сетка сабстатов на форме: 7×2, пары по параметру одна над другой (%-статы над flat); ярче — нужны билдам выбранного сета */
 .formrow .pick.main { flex: 0 0 auto; max-width: 40%; }
 .subzone { display: grid; min-height: 84px; }
 .statgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; align-content: start; }

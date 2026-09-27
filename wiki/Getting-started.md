@@ -30,8 +30,10 @@ When new data comes out, an "Update" banner appears when you open it.
      grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Faded —
      no one needs that main;
    - **substats** — tap them in the grid in order, as in the game; yellow segments — buttons 1–4 in the stat's row.
-     ATK%, HP% and DEF% sit above their flat versions so you don't mix them up. The grid has all 13 substats in the
-     game: EFF% and RES% carry a % on the piece too, while flat EFF, flat RES, PEN% and CDMG RED% only come as mains;
+     Stats sit in pairs by parameter, one above the other: ATK% over ATK, HP% over HP, DEF% over DEF, CHC over CHD,
+     DMG UP% over DMG RED%, EFF% over RES%; SPD and attack on the left, defense on the right. The grid has all 13
+     substats in the game: EFF% and RES% carry a % on the piece too, while flat EFF, flat RES, PEN% and CDMG RED% only
+     come as mains;
      a cell marked main never rolls as a substat on this piece (HP% on helmets and boots).
 4. **Read the verdict** on the card; "details" — the full breakdown, "Upgrading", who it suits and the item code.
 5. **"Next"** — on to the next piece: slot, grade, set and main stay, substats are cleared. Tapped it by mistake —

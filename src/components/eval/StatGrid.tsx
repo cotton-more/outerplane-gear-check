@@ -1,4 +1,4 @@
-import { FLAT, MAIN_GRID, subLabel } from '../../data';
+import { FLAT, MAIN_LAYOUT, subLabel } from '../../data';
 import { useT } from '../../i18n';
 import type { MainOption } from '../../logic/lists';
 import type { Subs } from '../../logic/subs';
@@ -6,8 +6,9 @@ import { StatIcon } from '../Img';
 
 // Сетка сабстатов прямо на форме вместо окна выбора: одно нажатие — стат встаёт в следующую строку с 1 жёлтым,
 // повторное — снимает его.
-// Раскладка 7×2: %-статы над своими flat-версиями (ATK% над ATK, HP% над HP, DEF% над DEF),
-// чтобы «есть ли на предмете %» решалось местом кнопки, а не чтением подписи.
+// Раскладка 7×2 по параметрам: пары стоят одна над другой — CHC над CHD, ATK% над ATK, DMG UP% над DMG RED%,
+// HP% над HP, DEF% над DEF, EFF% над RES%; слева SPD и атака, справа защита. %-статы над своими flat-версиями,
+// чтобы «есть ли на предмете %» решалось местом кнопки, а не чтением подписи. null — пустая клетка.
 // useful — спрос билдов выбранного сета: ярче — нужен, блёклый — не нужен никому.
 // mains — у аксессуара без main: сетка сначала выбирает main (он в игре сверху предмета), потом сабстаты.
 // Flat-статы main не бывают — на их местах PEN% и CDMG RED%, которые бывают только main; остальные на своих местах.
@@ -17,7 +18,11 @@ import { StatIcon } from '../Img';
 // у аксессуара с main EFF клетка EFF% остаётся обычной (main тогда виден в поле main над сеткой).
 // Сабстаты подписаны, как на вещи в игре (subLabel: EFF%, RES%), main — без %: flat RES ботинок сабстатом не бывает,
 // и клетка RES% рядом с ним — другой стат.
-const GRID = ['SPD', 'CHC', 'CHD', 'ATK%', 'HP%', 'DEF%', 'DMG UP%', 'EFF', 'RES', 'DMG RED%', 'ATK', 'HP', 'DEF'];
+const GRID: (string | null)[] = [
+  'SPD', 'CHC', 'ATK%', 'DMG UP%', 'HP%', 'DEF%', 'EFF',
+  null, 'CHD', 'ATK', 'DMG RED%', 'HP', 'DEF', 'RES',
+];
+const gap = (i: number) => <span key={`gap${i}`} className="sg-gap" aria-hidden="true" />;
 // подписи — не длиннее пяти знаков: в разделённом экране клетка ~24 px. CDMG RED% — «CD↓%»: «CDMG↓» обрезалось бы в «DMG↓»
 const SHORT: Record<string, string> = { 'DMG UP%': 'DMG↑%', 'DMG RED%': 'DMG↓%', 'CDMG RED%': 'CD↓%' };
 
@@ -29,7 +34,8 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
   if (mains) {
     return (
       <div className="statgrid main-mode" role="group" aria-label={t.ui.mainGroup}>
-        {MAIN_GRID.map((k) => {
+        {MAIN_LAYOUT.map((k, i) => {
+          if (k === null) return gap(i);
           const o = mains.find((x) => x.key === k);
           const cls = ['sg', o && (o.want ? 'u1' : 'u0'), o?.rare && 'rare'].filter(Boolean).join(' ');
           return (
@@ -43,7 +49,8 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
   }
   return (
     <div className="statgrid" role="group" aria-label={t.ui.addSub}>
-      {GRID.map((k) => {
+      {GRID.map((k, i) => {
+        if (k === null) return gap(i);
         if (blocked.has(k) && !(k in subs)) {
           // выбранный main снимается нажатием; фиксированная строка (HP% шлема, flat ATK оружия) — нет
           const chosen = k === main;

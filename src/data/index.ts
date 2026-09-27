@@ -36,9 +36,14 @@ export const FLAT = new Set(['ATK', 'DEF', 'HP']);
 // так они лежат в коде предмета и в сохранённых вещах. Main (MainButtons, main в сетке и в цепочке) — без %.
 const SUB_LABEL: Record<string, string> = { EFF: 'EFF%', RES: 'RES%' };
 export const subLabel = (k: string): string => SUB_LABEL[k] ?? k;
-// main аксессуара в сетке (StatGrid): те же места, что у сабстатов, а на местах flat-статов — PEN% и CDMG RED%,
-// которые бывают только main. Новый main в данных без места здесь — красная проверка (scripts/check-data.mjs)
-export const MAIN_GRID = ['SPD', 'CHC', 'CHD', 'ATK%', 'HP%', 'DEF%', 'DMG UP%', 'EFF', 'RES', 'DMG RED%', 'PEN%', 'CDMG RED%'];
+// main аксессуара в сетке (StatGrid), по строкам 7×2; null — пустая клетка. Те же места, что у сабстатов, а на местах
+// flat ATK и flat HP — PEN% (к атаке) и CDMG RED% (рядом с DMG RED%), которые бывают только main.
+// Новый main в данных без места здесь — красная проверка (scripts/check-data.mjs)
+export const MAIN_LAYOUT: (string | null)[] = [
+  'SPD', 'CHC', 'ATK%', 'DMG UP%', 'HP%', 'DEF%', 'EFF',
+  null, 'CHD', 'PEN%', 'DMG RED%', 'CDMG RED%', null, 'RES',
+];
+export const MAIN_GRID = MAIN_LAYOUT.filter((k): k is string => k !== null);
 
 export function createIndex(D: Dataset) {
   const SUB = Object.fromEntries(D.substats.map((s) => [s.key, s]));

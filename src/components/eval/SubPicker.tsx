@@ -8,6 +8,9 @@ import { StatIcon } from '../Img';
 // При замене можно взять и стат из другой строки: он переедет сюда, а та строка освободится (appState, replaceSub);
 // у такого стата — номер строки, где он стоит сейчас.
 // blocked — сабстаты, которых на предмете не бывает из-за main (см. logic/mains).
+// Раскладка 4 в ряд парами по параметрам, как в сетке на форме: CHC и CHD, ATK% и ATK, DMG UP% и DMG RED%,
+// HP% и HP, DEF% и DEF, EFF% и RES%. null — пустая клетка; сабстат, которого здесь нет, встаёт в конец.
+const LAYOUT: (string | null)[] = ['SPD', null, 'CHC', 'CHD', 'ATK%', 'ATK', 'DMG UP%', 'DMG RED%', 'HP%', 'HP', 'DEF%', 'DEF', 'EFF', 'RES'];
 export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
   ctx: Ctx; subs: Subs; blocked: Set<string>; editing: string | null; onPick: (key: string) => void; onRemove?: () => void;
 }) {
@@ -21,7 +24,8 @@ export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
   return (
     <>
       <div className="subgrid">
-        {SUB_LIST.map((k) => {
+        {[...LAYOUT.filter((k) => k === null || SUB[k]), ...SUB_LIST.filter((k) => !LAYOUT.includes(k))].map((k, i) => {
+          if (k === null) return <span key={`gap${i}`} aria-hidden="true" />;
           const row = rowOf(k);
           const taken = (blocked.has(k) && k !== editing) || (row > 0 && editing === null);
           const move = row > 0 && editing !== null;
