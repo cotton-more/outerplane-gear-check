@@ -90,6 +90,10 @@ html.xs .vbar .vb-more { display: none; }
 .vcard .vc-chain .chain { flex-wrap: nowrap; overflow: hidden; }
 @media (max-height: 460px) { .vcard { min-height: 76px; padding: 5px 9px 6px; gap: 2px; } }
 html.narrow .vbar .vt-more { color: var(--ink-3); font-weight: 600; }
+/* подсказка и «что ввести дальше» — приглушённо, со стрелкой, до трёх строк (вердикт — штампом, две строки) */
+html.narrow .vbar .vt-hint { font-size: 12.5px; font-weight: 500; line-height: 1.2; color: var(--ink-2); -webkit-line-clamp: 3; }
+html.narrow .vbar.compact .vt-hint { font-size: 12px; -webkit-line-clamp: 4; } /* 280–380px: рядом «Следующий», строки короткие */
+html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent); font-weight: 700; }
 /* цепочка приоритета: ok — есть и засчитан, half — за ½, low — есть, но далеко, miss — нет на предмете, no — лишний */
 .chain { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; }
 .chain .sep { font-style: normal; font-size: 11px; color: var(--ink-3); }
