@@ -1,9 +1,9 @@
 // Вердикт для брони: сет из билдов + полезные сабстаты под лучший билд. Фразы — ctx.t.armor (src/i18n).
 import { CFG } from '../config';
-import { FLAT, GRADE_NAME, GRADE_PREFIX, SLOT, subLabel } from '../data';
+import { GRADE_NAME, GRADE_PREFIX, SLOT, subLabel } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
-import { itemMains } from './mains';
+import { itemMains, subForms } from './mains';
 import { dedupe, flatMisses, rollInfo, rows, topTokens, type Part, type Row } from './score';
 import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
@@ -55,11 +55,16 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const primary = (r: Scored) => r.b.sets[0]?.some((p) => p.set === set.id) ?? false;
   // среди подходящих первыми — те, у кого сет основной; неподходящие — по совпадению статов (от лучшего зависят тексты)
   const rank = (r: Scored) => (qualifies(r) ? 100 + (primary(r) ? 10 : 0) : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0) + (r.combos!.some((cb) => cb.some((p) => p.n >= 4)) ? 0.001 : 0);
-  // главные статы билда, которых на предмете нет (ось ATK/DEF/HP закрывает %-версия или сильный flat)
-  // сабстат, которого на этом слоте не бывает (HP% у шлема — это его main), недостающим не считаем
-  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers, im, m.useless)
-    .map((k) => (FLAT.has(k.replace(/%$/, '')) ? k.replace(/%$/, '') + '%' : k)))]
-    .filter((k) => idx.SUB[k] && !im.blocked.has(k) && !full(m).some((p) => p.key === k || p.key + '%' === k));
+  // главные статы билда, которых на предмете нет, — тем сабстатом, что ещё может выпасть (как пунктир в цепочке):
+  // у ATK/DEF/HP — %-версия, а если её на этом слоте не бывает (HP% у шлема — это его main), — flat, если он персонажу
+  // что-то даёт. Параметр закрыт, если на нём уже есть засчитанный целиком сабстат любого вида
+  const missingMains = (m: Scored) => [...new Set(topTokens(m.b, CFG.epicTopTiers, im, m.useless).flatMap((tok) => {
+    const forms = subForms(tok);
+    const open = forms.filter((k) => idx.SUB[k] && !im.blocked.has(k) && !m.useless.includes(k));
+    if (!open.length || full(m).some((p) => forms.includes(p.key))) return [];
+    const pct = tok.replace(/%$/, '') + '%';
+    return [open.includes(pct) ? pct : open[0]];
+  }))];
   const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, im, (x) => ({ combos: combosWith(x.b, set.id) })), rank);
   const scoped = score(judged.filter((x) => ctx.inScope(x.c)));
   const others = score(judged.filter((x) => !ctx.inScope(x.c)));

@@ -47,10 +47,12 @@ describe('какие сабстаты запрещает main', () => {
     expect(blocked('accessory', 'SPD')).toEqual(['SPD']);
   });
 
-  it('данные без mainBlocks (старее этой версии): main запрещает сабстат с той же меткой, как раньше', () => {
+  it('данные без mainBlocks (старее этой версии): main запрещает сабстат с той же меткой и того же вида', () => {
     const old = createIndex({ ...D, mainBlocks: undefined, fixedMains: undefined, sets: D.sets.map((s) => ({ ...s, fixed: undefined })) });
-    const im = itemMains(old, item('accessory', 'EFF'));
-    expect([...im.blocked]).toEqual(['EFF']);
+    expect([...itemMains(old, item('accessory', 'SPD')).blocked]).toEqual(['SPD']);
+    expect([...itemMains(old, item('accessory', 'HP%')).blocked]).toEqual(['HP%']);
+    // flat EFF в main и сабстат EFF% — разные статы: сабстат остаётся и без таблицы
+    expect([...itemMains(old, item('accessory', 'EFF')).blocked]).toEqual([]);
     expect(itemMains(old, item('helmet', null)).blocked.size).toBe(0);
   });
 });

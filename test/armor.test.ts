@@ -1,13 +1,14 @@
 // Броня: строже к Epic (слабые «три полезных» — в разбор), подсказки про flat и про перековку одного сабстата.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { CFG } from '../src/config';
 import { createIndex } from '../src/data';
 import type { Dataset, Grade } from '../src/data/types';
 import { ru } from '../src/i18n/ru';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { itemMains } from '../src/logic/mains';
-import { subWeights, tierPlaces } from '../src/logic/score';
+import { flatFactor, subWeights, tierPlaces } from '../src/logic/score';
 import { setSubDemand } from '../src/logic/lists';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -87,6 +88,29 @@ describe('подсказка про flat', () => {
   it('если HP% тоже отмечен, путаницы нет — подсказки нет', () => {
     const r = lifeGloves('unique', { HP: 3, 'HP%': 1, CHC: 1, RES: 1 });
     expect(r.lines.some((l) => l.startsWith('Проверь HP'))).toBe(false);
+  });
+
+  it('на шлеме HP% — main, сабстатом там бывает только flat HP: подсказки «выбери HP%» нет, а на нагруднике — есть', () => {
+    const piece = (slot: 'helmet' | 'armor') => evaluate(ctx, { slot, grade: 'rare', setId: life.id, itemKey: null, main: null, subs: { HP: 3, CHC: 1, CHD: 1 } });
+    expect(piece('helmet').lines).not.toContain(ru.verdict.flatHint('HP'));
+    expect(piece('armor').lines).toContain(ru.verdict.flatHint('HP'));
+  });
+});
+
+describe('flat и % — разные статы одного параметра, % не хуже flat', () => {
+  // при базе ниже 1000 сегмент flat DEF (+40) крупнее сегмента DEF% (4% от базы), но % всё равно идёт целиком
+  const low = D.chars.find((c) => c.builds.length && flatFactor(ctx, c, 'DEF') > 1 / CFG.flatFull)!;
+  const b = { ...low.builds[0], subs: [['DEF'], ['SPD'], ['CHC']] };
+
+  it('DEF% засчитывается целиком и весит не меньше flat DEF', () => {
+    expect(low).toBeTruthy();
+    const W = subWeights(ctx, b, low);
+    expect(W.get('DEF%')!.credit).toBe(1);
+    expect(W.get('DEF%')!.w).toBeGreaterThanOrEqual(W.get('DEF')!.w);
+  });
+
+  it('flat DEF на той же вещи засчитывается тоже: у билда в приоритете параметр DEF', () => {
+    expect(subWeights(ctx, b, low).get('DEF')!.credit).toBe(1);
   });
 });
 

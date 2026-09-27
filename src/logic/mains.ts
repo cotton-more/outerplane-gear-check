@@ -16,11 +16,13 @@ export interface ItemMains {
 
 export const NO_MAINS: ItemMains = { lines: [], blocked: new Set(), subKeys: new Set() };
 
-// какой сабстат запрещает строка main; в данных до mainBlocks — сабстат с той же меткой, как было раньше
+// какой сабстат запрещает строка main. В данных до mainBlocks — сабстат с той же меткой и того же вида: метка main
+// без % — flat, а сабстаты EFF и RES — rate (EFF%, RES%), и flat EFF в main их не запрещает
 export function blocksOf(idx: Index, line: string): string | null {
   const table = idx.D.mainBlocks;
   if (table) return table[line] ?? null;
-  return idx.SUB[line] ? line : null;
+  const sub = idx.SUB[line];
+  return sub && (line.endsWith('%') || sub.mode !== 'rate') ? line : null;
 }
 
 // фиксированные строки main: у брони — по сету (или обычные для слота, пока сет не выбран), у оружия — базовый flat ATK

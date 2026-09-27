@@ -23,6 +23,8 @@ export interface Score {
 
 // Сколько стоит сегмент flat-стата относительно сегмента %-версии у ЭТОГО персонажа.
 // %-сабстат умножает только собственную базу (уровень + эволюции + flat-quirks) — см. update.py.
+// Больше 1 бывает у персонажей с низкой базой (flat DEF +40 против 4% от ~770 у Gnosis Domine на lv 100), но в счёт
+// идёт не больше 1: % не бывает хуже flat (см. subWeights).
 export function flatFactor(ctx: Ctx, c: Char | null | undefined, axis: string): number {
   const f = c && c.flat && c.flat[axis as 'ATK' | 'DEF' | 'HP'];
   const t = ctx.idx.TICK[axis];
@@ -83,10 +85,13 @@ export function subWeights(ctx: Ctx, build: Build, c: Char, im: ItemMains = NO_M
       if (takenByMain(tok, im, no)) continue;
       const axis = tok.replace(/%$/, '');
       if (FLAT.has(axis)) {
-        // ATK/DEF/HP в приоритете — ось: подходит и flat, и %; лучшая из двух версий получает полный вес
-        const r = flatFactor(ctx, c, axis);
-        put(axis + '%', r > 1 ? w / r : w, t, tc * (r > 1 ? flatCredit(1 / r) : 1));
-        put(axis, r > 1 ? w : w * r, t, tc * flatCredit(Math.min(r, 1)));
+        // ATK/DEF/HP в приоритете — параметр, который меняют два разных сабстата: flat и %. На одной вещи бывают оба,
+        // и оба засчитываются. % всегда идёт целиком, flat — по своей ценности для персонажа, но не выше %:
+        // % растёт вместе с базой (уровень, Awakening, Monad Gate — CalcFinalStat умножает и их, а в flatFactor их нет),
+        // flat — нет. Слабый flat в цепочке — жёлтый (½) или серый
+        const r = Math.min(flatFactor(ctx, c, axis), 1);
+        put(axis + '%', w, t, tc);
+        put(axis, w * r, t, tc * flatCredit(r));
       } else if (tok === 'SPD') {
         put(tok, w, t, 1); // скорость полезна на любой ступени — так её и оценивают игроки
       } else if (ctx.idx.SUB[tok]) {
@@ -151,13 +156,14 @@ export function dedupe(list: Omit<Row, 'alt'>[], rank: (r: Omit<Row, 'alt'>) => 
   return [...seen.values()];
 }
 
-// flat-статы предмета, которые не засчитались, хотя их ось (ATK/DEF/HP) у билда в приоритете, —
-// частая путаница: на предмете HP%, а отмечен HP. Если %-версия тоже отмечена, путаницы нет.
+// flat-статы предмета, которые не засчитались, хотя их параметр (ATK/DEF/HP) у билда в приоритете, —
+// частая путаница: на предмете HP%, а отмечен HP. Путаницы нет, если %-версия тоже отмечена или сабстатом её на этой
+// вещи не бывает: у шлема HP% — main, и flat HP отмечен верно.
 export function flatMisses(m: Omit<Row, 'alt'>): string[] {
   const marked = new Set(m.parts.map((p) => p.key));
   const place = tierPlaces(m.b, m.im, m.useless);
   const wanted = (axis: string) => m.b.subs.some((tier, i) => (CFG.tierCredit[place[i]] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
-  return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
+  return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && !m.im.blocked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
 }
 
 export type RollLevel = 'high' | 'mid' | 'low';

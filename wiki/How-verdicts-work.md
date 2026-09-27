@@ -7,20 +7,21 @@
 A "useful" substat is one in places 1–3 of the build's priority chain (4th place counts for ½, SPD in any place).
 A tie like `SPD=CHD` shares one place, and the next stat comes after all of its stats: in
 `CHC › ATK › SPD=CHD › DMG UP%`, DMG UP% is in fifth place. The best build among characters who wear the set is used.
-A stat in the main takes no place when it can no longer roll as a substat on this piece. The game never lets a
-substat repeat a main line, but it compares the stat together with its kind: a flat RES main on boots and a RES%
-substat do sit on one piece, like flat DEF and DEF% (checked in the game). So:
+When a parameter is in the main and can no longer roll as a substat on this piece, it takes no place in the chain.
+The game never lets a substat repeat a main line, but flat and % are different stats to it, even though they change
+one parameter: a flat RES main on boots and a RES% substat do sit on one piece, like flat DEF and DEF% (checked in the
+game). So:
 
 - for an accessory with main SPD, the chain `SPD › HP › CHC › ATK` is `HP › CHC › ATK` for its substats, and ATK
   counts in full; a flat EFF or RES accessory main takes no place — EFF% and RES% still roll as substats;
 - weapons always have a flat ATK line: with an ATK% main the ATK axis is taken entirely, with DEF% or HP% it isn't —
   ATK% can still roll;
 - armor mains are fixed by slot: helmet — HP%, chest — flat DEF, gloves — flat EFF and flat DEF, boots — flat RES and
-  HP%. They take no place (the other kind of the same stat still rolls), but HP% on helmets and boots and flat DEF on
-  chest armor and gloves never roll as substats — in the grid those cells are marked main. The mains come from the
-  data per set and grade: if the game changes a set's main, the page recalculates on its own, and the update report
-  gets a line about it;
-- the exception is when the remaining kind gives the character nothing. That's almost always flat HP: of 78 builds
+  HP%. Such a main doesn't take the chain place — the other stat of the same parameter still rolls — but HP% on
+  helmets and boots and flat DEF on chest armor and gloves never roll as substats — in the grid those cells are marked
+  main. The mains come from the data per set and grade: if the game changes a set's main, the page recalculates on its
+  own, and the update report gets a line about it;
+- the exception is when the remaining stat gives the character nothing. That's almost always flat HP: of 78 builds
   with HP in the first three chain places it counts for only three (flat ATK and DEF count at least ½ for everyone).
   So on helmets, boots and HP%-main pieces the HP place of such characters is taken by the main: for Delta
   (`HP › CHC › CHD › SPD`) a helmet's substats are `CHC › CHD › SPD`.
@@ -42,16 +43,20 @@ substat do sit on one piece, like flat DEF and DEF% (checked in the game). So:
 - **A Legendary with one odd substat out of four:** the verdict names it — a Transistone (Individual) rerolls just that
   substat and locks the other three.
 - **A flat ATK/DEF/HP is marked** that didn't count while the % version is needed — the verdict asks you to check the
-  % sign: a common mix-up is HP% on the piece but HP marked.
+  % sign: a common mix-up is HP% on the piece but HP marked. Where the % version is the main (HP% on helmets and
+  boots), there is no hint: only flat rolls as a substat there.
 - **Sets that aren't in any outerpedia build** (Critical Hit, Resilience, Fortification, Mitigation, Lifesteal,
   Bursting, Pulverization, Weakness) — "rather dismantle", with an explanation.
 
 ## Flat ATK/DEF/HP vs %
 
-A % substat multiplies the character's own base, flat adds a fixed number: an ATK% segment is +4% of the base, a flat
-ATK segment is +40. So the value of flat is calculated per character, with the same formula as on outerpedia. Flat
-counts in full if it gives 0.9+ of the % version, and for ½ at 0.6+. On average flat ATK ≈ 0.9 of ATK%, flat DEF ≈ 1.0
-of DEF%, flat HP ≈ 0.6 of HP%; for a fully built character (lv 120 and Quirks) flat is weaker. Level (100/120) and
+Flat and % are different stats of one parameter: both can sit on one piece, and both count. A % substat multiplies
+the character's own base, flat adds a fixed number: an ATK% segment is +4% of the base, a flat ATK segment is +40.
+% always counts in full. The value of flat is calculated per character, with the same formula as on outerpedia: flat
+counts in full if it gives 0.9+ of the % version, for ½ at 0.6+, otherwise not at all. Flat is never rated above %,
+even when its segment is bigger with a base under 1000: % grows with the base (level, Awakening, Monad Gate), flat
+doesn't. On average flat ATK ≈ 0.9 of ATK%, flat DEF ≈ 1.0 of DEF%, flat HP ≈ 0.6 of HP%; for a fully built character
+(lv 120 and Quirks) flat is weaker. Level (100/120) and
 Quirks are in the settings (☰ menu).
 
 ## Weapons and accessories
