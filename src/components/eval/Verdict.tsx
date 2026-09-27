@@ -1,5 +1,5 @@
 // Панель вердикта и её мобильная версия — плашка внизу экрана с кнопкой «Сброс».
-import { Fragment, useEffect, useRef, type Dispatch } from 'react';
+import { Fragment, useEffect, useRef, useState, type Dispatch } from 'react';
 import { CFG } from '../../config';
 import { isArmor } from '../../data';
 import type { GearKind } from '../../data/types';
@@ -186,10 +186,19 @@ export function VBar({ r, news, show, compact, stampless, hint, tab, rosterSize,
     document.body.classList.toggle('has-vbar', show);
     return () => document.body.classList.remove('has-vbar');
   }, [show]);
+  // вердикт сменился (не при первом показе) — плашка коротко вспыхивает его цветом: сигнал, не отрываясь от игры
+  const [flash, setFlash] = useState(0);
+  const prev = useRef(r.v);
+  useEffect(() => {
+    if (prev.current === r.v) return;
+    prev.current = r.v;
+    setFlash((n) => n + 1);
+  }, [r.v]);
   if (!show) return null;
   const evalTab = tab === 'eval';
   return (
     <div className={`vbar v-${r.v}`} id="vbar">
+      {flash > 0 && <span key={flash} className="vb-flash" aria-hidden="true" />}
       {evalTab
         ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.menu} onClick={onMenu}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}

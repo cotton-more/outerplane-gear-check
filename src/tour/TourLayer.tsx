@@ -136,7 +136,7 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
     <>
       {step && !away && demo && g.rings.length > 0 && <Dim rings={g.rings} vw={g.vw} />}
       {step && !away && g.rings.map((r, i) => <div key={i} className="tour-ring" aria-hidden="true" style={pad(r, 4, g.vw)} />)}
-      <div ref={strip} className={`tour-strip tour-${side === 'pill-low' ? 'pill low' : side}`} style={stripStyle} role="dialog" aria-modal="false" aria-label={t.tour.start}>
+      <div ref={strip} key={`${run.phase.kind}-${stepNo}-${pill}`} className={`tour-strip tour-${side === 'pill-low' ? 'pill low' : side}`} style={stripStyle} role="dialog" aria-modal="false" aria-label={t.tour.start}>
         {body}
       </div>
     </>,

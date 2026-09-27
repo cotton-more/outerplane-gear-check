@@ -46,7 +46,8 @@ try {
 async function shoot(lang) {
   const OUT = join(ROOT, 'screenshots', lang);
   const page = await browser.newPage();
-  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+  // без анимаций: кадр снимается, когда всё уже на месте
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
   await page.setViewport({ width: 412, height: 430, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await page.goto(url, { waitUntil: 'networkidle0' });
   await page.evaluate((names, lang) => {

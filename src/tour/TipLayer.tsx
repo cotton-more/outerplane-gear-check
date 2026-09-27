@@ -89,7 +89,7 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
   return createPortal(
     <>
       {g.ring && <div className="tour-ring tip" aria-hidden="true" style={pad(g.ring, 4, g.vw)} />}
-      <div ref={strip} className={`tour-strip tour-tip tour-${side}`} style={style} role="status">
+      <div ref={strip} key={tip.id} className={`tour-strip tour-tip tour-${side}`} style={style} role="status">
         <p className="tour-t">{t.tour.tips[tip.id]}</p>
         <div className="tour-b"><button type="button" className="btn" onClick={ok}>{t.ui.gotIt}</button></div>
       </div>

@@ -42,7 +42,7 @@ console.log(`\n✅ Тур проходится на ${SIZES.length} размер
 async function run(w, h, theme) {
   const tag = `${w}×${h} ${theme}`;
   const page = await browser.newPage();
-  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]);
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]); // анимации включены: шаги ждут дольше, чем длится появление
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 720, hasTouch: w < 720 });
   await page.goto(url, { waitUntil: 'networkidle0' });
   await page.evaluate(() => {

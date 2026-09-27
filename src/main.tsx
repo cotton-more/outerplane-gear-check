@@ -17,6 +17,7 @@ import './styles/eval.css';
 import './styles/verdict.css';
 import './styles/chars.css';
 import './styles/tour.css';
+import './styles/motion.css';
 
 const D = window.OGC_DATA;
 applyLayout(); // классы раскладки на <html> — до первого рендера
