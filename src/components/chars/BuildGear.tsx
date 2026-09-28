@@ -12,7 +12,8 @@ import {
   type Bt, type Piece,
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
-import { t4Only } from '../../logic/builds';
+import { combosWith, t4Only } from '../../logic/builds';
+import { tryOnPreset } from '../../logic/tryon';
 import { subWeights } from '../../logic/score';
 import { fits, lookFor, pieceValue } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
@@ -84,12 +85,18 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn, onPieceOpen }: {
   const shownPiece = active && !!open && !!piece;
   useEffect(() => { onPieceOpen?.(shownPiece); }, [shownPiece]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => onPieceOpen?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
-  // «Слабее всех»: вся броня надета — самая слабая по ценности для билда (как в сравнении) и что ей искать
+  // «Слабее всех»: вся броня надета — самая слабая по ценности для билда (как в сравнении) и что ей искать.
+  // Вещь не по билду (сет не из его связок) слабее любой: для билда это пустой слот. Искать — сет, который билду нужен
   const armor = SLOTS.filter((x) => isArmor(x.id)).map((x) => ({ slot: x.id, p: st.pieces[slots[x.id] ?? ''] }));
   const weak = n > 0 && armor.every((x) => x.p)
-    ? armor.map((x) => ({ ...x, v: pieceValue(ctx, c, b, x.p!) })).reduce((a, z) => (z.v < a.v ? z : a))
+    ? armor.map((x) => {
+      const off = !x.p!.setId || !combosWith(b, x.p!.setId).length;
+      return { ...x, off, v: off ? -1 : pieceValue(ctx, c, b, x.p!) };
+    }).reduce((a, z) => (z.v < a.v ? z : a))
     : null;
-  const look = weak ? lookFor(ctx, c, b, weak.p!) : [];
+  // у вещи не по билду менять всю вещь: что искать — первые места цепочки, как у пустой
+  const look = weak ? lookFor(ctx, c, b, weak.off ? { ...weak.p!, lit: {} } : weak.p!) : [];
+  const lookSet = weak ? tryOnPreset(st, key, b, weak.slot, weak.p).setId : null;
   // другие билды персонажа, где ничего не надето: вердикт для них вещей не просит
   const idle = n > 0 ? c.builds.filter((x) => x !== b && !st.builds[buildKey(c.id, x.name)]).map((x) => x.name) : [];
   const orphans = gear.newer ? [] : orphanBuilds(st, c.id, c.builds.map((x) => x.name));
@@ -149,7 +156,7 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn, onPieceOpen }: {
             <div className="bgear-weak">
               <p>
                 {t.ui.weakest(t.ui.slotNom[weak.slot], GRADE_NAME[weak.p!.grade], weak.p!.bt)}
-                {look.length > 0 && weak.p!.setId && <> {t.ui.weakestLook(`${ctx.idx.SET[weak.p!.setId]?.short ?? ''} ${SLOT[weak.slot].game}`, look.map(subLabel))}</>}
+                {look.length > 0 && lookSet && <> {t.ui.weakestLook(`${ctx.idx.SET[lookSet]?.short ?? ''} ${SLOT[weak.slot].game}`, look.map(subLabel))}</>}
               </p>
               {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, weak.slot, weak.p)}>{t.ui.weakestTry}</button>}
             </div>

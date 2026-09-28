@@ -179,6 +179,20 @@ describe('экипировка', () => {
     expect($('.tryon')?.textContent).toContain('Caren · Speed');
   });
 
+  it('«Слабее всех» — вещь не по билду: она и слабее всех, а искать и примерять — сет билда', async () => {
+    const def = D.sets.find((x) => x.short === 'Defense')!.id;
+    const pc = (id: string, slot: string, setId: string, lit: Record<string, number>) => ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow: lit, lit, bt: 4, at: '' });
+    const gear = { v: 1, seq: 4, pieces: {
+      p1: pc('p1', 'helmet', speed, { 'DEF%': 1, SPD: 1, EFF: 1, HP: 1 }), p2: pc('p2', 'armor', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }),
+      p3: pc('p3', 'gloves', speed, { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 1 }), p4: pc('p4', 'shoes', def, { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 }),
+    }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1', armor: 'p2', gloves: 'p3', shoes: 'p4' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id, slot: 'helmet' }, {}, { gear });
+
+    expect($('.bgear-weak p')?.textContent).toMatch(/^The weakest — boots .* Look for Speed Boots with /);
+    await click(byText('.bgear-weak button', 'Try on pieces'));
+    expect(JSON.parse(localStorage.getItem('ogc.item')!).setId).toBe(speed);
+  });
+
   it('меню ☰ «Gear · 1» — список с фильтром «with gear»: только Caren, на плитке «1/6», на вкладке билда тоже', async () => {
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, {}, { gear, roster: [caren.id, D.chars.find((c) => c.name === 'Kappa')!.id] });

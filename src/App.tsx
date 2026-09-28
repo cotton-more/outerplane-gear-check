@@ -105,7 +105,7 @@ export function App() {
     ? (verdict.v === 'idle' ? [] : [targetVs])
     : compareAll(ctx, gear.store, input, verdict)), [ctx, gear.store, verdict, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
-  const shown = useMemo(() => (target && vsList[0] ? { ...verdict, title: tryOnTitle(t, verdict, vsList[0]) } : verdict), [t, verdict, target, vsList]);
+  const shown = useMemo(() => (target && vsList[0] ? { ...verdict, title: tryOnTitle(t, verdict, vsList[0], isArmor(s.slot)) } : verdict), [t, verdict, target, vsList]);
   const [equipOpen, setEquipOpen] = useState(false);
   // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
   // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи

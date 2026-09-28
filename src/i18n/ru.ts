@@ -573,7 +573,7 @@ export const ru = {
     label: 'Примерка',
     end: 'Закончить примерку',
     // заголовок вердикта после « — »: кому ещё нужна и что с ней у этого персонажа (temp — вердикт «Временно»)
-    others: (names: string[]) => `нужна ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
+    others: (names: string[], armor = true) => `${armor ? 'нужна' : 'нужен'} ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
     clause: (kind: string, name: string, build: string, temp: boolean): string => ({
       fill: temp ? `${name}: пустой слот — пока сойдёт` : `у ${name} слот пуст`,
       up: `лучше, чем на ${name}`,

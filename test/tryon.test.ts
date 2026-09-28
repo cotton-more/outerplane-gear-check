@@ -61,6 +61,11 @@ describe('примерка: что встаёт на форму', () => {
     expect(tryOnPreset(r.store, buildKey(caren.id, 'Speed/Immu'), build('Speed/Immu'), 'helmet', r.piece).setId).toBe(set('Immunity'));
     expect(tryOnPreset(EMPTY_GEAR, buildKey(caren.id, 'Speed'), build('Speed'), 'weapon')).toEqual({ slot: 'weapon', setId: null });
   });
+
+  it('«Примерить замену» у вещи не по билду (Defense на Caren · Speed) — сет билда, а не её', () => {
+    const r = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), armor('shoes', 'Defense', { CHC: 1 }));
+    expect(tryOnPreset(r.store, buildKey(caren.id, 'Speed'), build('Speed'), 'shoes', r.piece).setId).toBe(set('Speed'));
+  });
 });
 
 describe('примерка: заголовок вердикта', () => {
@@ -103,6 +108,24 @@ describe('примерка: заголовок вердикта', () => {
     const junk = armor('helmet', 'Speed', { HP: 1, 'DMG RED%': 1, RES: 1, EFF: 1 });
     const { res, title } = on(junk, { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 });
     expect(title).toBe(`${res.title}; на Caren уже лучше`);
+  });
+
+  it('лучшей строки нет («Спорно») — причина вердикта остаётся, к ней — про неё', () => {
+    const res = { ...evaluate(ctx, NEW, { gamble: false }), v: 'maybe' as const, title: 'Спорно — предмета ещё нет в данных outerpedia', sections: [] };
+    const vs = compareFor(ctx, EMPTY_GEAR, caren, build('Speed'), armor('helmet', 'Defense', { CHC: 1 }));
+    expect(tryOnTitle(ru, res, vs)).toBe('Спорно — предмета ещё нет в данных outerpedia; Caren · Speed — не по билду');
+  });
+
+  it('в заголовке не было « — » — второго тире нет', () => {
+    const res = { ...evaluate(ctx, NEW, { gamble: false }), v: 'maybe' as const, title: 'Твоим не подходит, но предмет хороший', sections: [] };
+    expect(tryOnTitle(ru, res, compareFor(ctx, EMPTY_GEAR, caren, build('Speed'), NEW))).toBe('Твоим не подходит, но предмет хороший; у Caren слот пуст');
+  });
+
+  it('оружие и аксессуар — «нужен», броня — «нужна»; по-английски одному — «needs»', () => {
+    expect(ru.tryon.others(['Titia'], false)).toBe('нужен Titia');
+    expect(ru.tryon.others(['Titia', 'Kappa'])).toBe('нужна Titia и Kappa');
+    expect(TEXTS.en.tryon.others(['Titia'])).toBe('Titia needs it');
+    expect(TEXTS.en.tryon.others(['Titia', 'Kappa'])).toBe('Titia and Kappa need it');
   });
 
   it('вердикта ещё нет — заголовок как был', () => {

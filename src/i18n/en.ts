@@ -522,7 +522,7 @@ export const en: Texts = {
   tryon: {
     label: 'Try-on',
     end: 'End try-on',
-    others: (names) => `${names.length > 2 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(' and ')} need it`,
+    others: (names) => `${names.length > 2 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(' and ')} ${names.length === 1 ? 'needs' : 'need'} it`,
     clause: (kind, name, build, temp) => ({
       fill: temp ? `${name}: empty slot — fine for now` : `${name}'s slot is empty`,
       up: `better than what ${name} wears`,

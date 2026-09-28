@@ -6,7 +6,7 @@ import { isArmor, type Index } from '../data';
 import type { Build, Char, SlotId } from '../data/types';
 import type { Texts } from '../i18n';
 import type { GearStore, Piece } from './gear';
-import { uniqChars } from './builds';
+import { combosWith, uniqChars } from './builds';
 import { bestRow, type Verdict } from './verdict';
 import type { Vs } from './vs';
 
@@ -27,11 +27,12 @@ export function tryOnTarget(idx: Index, t: TryOn | null): Target | null {
   return c && b ? { c, b } : null;
 }
 
-// что поставить на форму: слот; у брони — сет, которого билду не хватает (у «Примерить замену» — сет надетой).
-// Связка — та, что уже собрана больше других; в ней — первый сет, которого меньше, чем нужно. Грейд не трогаем.
+// что поставить на форму: слот; у брони — сет, которого билду не хватает (у «Примерить замену» — сет надетой, если он
+// билду нужен: вещь не по билду меняют на свою). Связка — та, что уже собрана больше других; в ней — первый сет,
+// которого меньше, чем нужно. Грейд не трогаем.
 export function tryOnPreset(st: GearStore, key: string, b: Build, slot: SlotId, from?: Piece | null): { slot: SlotId; setId: string | null } {
   if (!isArmor(slot)) return { slot, setId: null };
-  if (from?.setId) return { slot, setId: from.setId };
+  if (from?.setId && combosWith(b, from.setId).length) return { slot, setId: from.setId };
   const count: Record<string, number> = {};
   for (const [sl, id] of Object.entries(st.builds[key]?.slots ?? {})) {
     const set = isArmor(sl as SlotId) ? st.pieces[id]?.setId : null;
@@ -45,7 +46,8 @@ export function tryOnPreset(st: GearStore, key: string, b: Build, slot: SlotId, 
 
 // Заголовок в примерке: то, что было до « — » (слово вердикта), и дальше — кому ещё нужна и что с ней.
 //   «Оставляй — нужна Titia и Kappa; на Caren уже лучше», «Разбирай — но лучше, чем на Caren: надень, пока нет лучше»
-export function tryOnTitle(t: Texts, res: Verdict, vs: Vs): string {
+// armor — броня («нужна»), иначе оружие или аксессуар («нужен»)
+export function tryOnTitle(t: Texts, res: Verdict, vs: Vs, armor = true): string {
   if (res.v === 'idle') return res.title;
   const T = t.tryon;
   const i = res.title.indexOf(' — ');
@@ -60,6 +62,9 @@ export function tryOnTitle(t: Texts, res: Verdict, vs: Vs): string {
   const top = bestRow(res);
   const sec = top ? res.sections.find((x) => x.rows[0] === top.row) : undefined;
   const others = sec ? uniqChars(sec.rows.filter((r) => r.c.id !== vs.c.id)).map((c) => c.name) : [];
-  const parts = [others.length ? T.others(others) : '', T.clause(vs.kind, name, vs.b.name, res.v === 'temp')].filter(Boolean);
-  return `${head} — ${parts.join('; ')}`;
+  // лучшей строки нет («Спорно», «не для твоего ростера») — причина вердикта остаётся, к ней — про неё
+  const lead = sec ? (others.length ? T.others(others, armor) : '') : tail;
+  const parts = [lead, T.clause(vs.kind, name, vs.b.name, res.v === 'temp')].filter(Boolean);
+  // в заголовке не было « — » («Твоим не подходит, но предмет хороший») — второе тире не ставим
+  return i >= 0 ? `${head} — ${parts.join('; ')}` : `${head}; ${parts.join('; ')}`;
 }
