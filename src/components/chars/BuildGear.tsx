@@ -3,7 +3,7 @@
 // Breakthrough, смена стата после Transistone (и его жёлтых), «Снять». Вещь в билд кладёт только вердикт («Надеть на…»);
 // «Собрать билд», «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого билда.
 import { useEffect, useState } from 'react';
-import { SLOTS, isArmor, subLabel } from '../../data';
+import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
@@ -14,7 +14,7 @@ import {
 import { itemMains } from '../../logic/mains';
 import { t4Only } from '../../logic/builds';
 import { subWeights } from '../../logic/score';
-import { fits } from '../../logic/vs';
+import { fits, lookFor, pieceValue } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
@@ -78,6 +78,14 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
     return null;
   };
   const piece = open ? st.pieces[slots[open] ?? ''] : undefined;
+  // «Слабее всех»: вся броня надета — самая слабая по ценности для билда (как в сравнении) и что ей искать
+  const armor = SLOTS.filter((x) => isArmor(x.id)).map((x) => ({ slot: x.id, p: st.pieces[slots[x.id] ?? ''] }));
+  const weak = n > 0 && armor.every((x) => x.p)
+    ? armor.map((x) => ({ ...x, v: pieceValue(ctx, c, b, x.p!) })).reduce((a, z) => (z.v < a.v ? z : a))
+    : null;
+  const look = weak ? lookFor(ctx, c, b, weak.p!) : [];
+  // другие билды персонажа, где ничего не надето: вердикт для них вещей не просит
+  const idle = n > 0 ? c.builds.filter((x) => x !== b && !st.builds[buildKey(c.id, x.name)]).map((x) => x.name) : [];
   const orphans = gear.newer ? [] : orphanBuilds(st, c.id, c.builds.map((x) => x.name));
   return (
     <div className="bgear">
@@ -131,6 +139,16 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
               );
             })}
           </ul>
+          {weak && (
+            <div className="bgear-weak">
+              <p>
+                {t.ui.weakest(t.ui.slotNom[weak.slot], GRADE_NAME[weak.p!.grade], weak.p!.bt)}
+                {look.length > 0 && weak.p!.setId && <> {t.ui.weakestLook(`${ctx.idx.SET[weak.p!.setId]?.short ?? ''} ${SLOT[weak.slot].game}`, look.map(subLabel))}</>}
+              </p>
+              {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, weak.slot, weak.p)}>{t.ui.weakestTry}</button>}
+            </div>
+          )}
+          {idle.length > 0 && <p className="muted small">{t.ui.gearIdle(idle.join(', '))}</p>}
         </>
       )}
       {active && open && piece && <PieceSheet c={c} b={b} bkey={key} slot={open} p={piece} ctx={ctx} gear={gear} onClose={() => setOpen(null)}

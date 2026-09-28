@@ -164,6 +164,21 @@ describe('экипировка', () => {
     expect($('.bgear-set')?.textContent).toBe('Immunity ×2 — complete · Speed ×2 — complete, but the bonus only works at T4: now T1');
   });
 
+  it('«Слабее всех» — перчатки Epic: что искать, «Примерить вещи» — примерка перчаток; другие билды не собираешь', async () => {
+    const pc = (id: string, slot: string, grade: string, lit: Record<string, number>, bt: number | null) => ({ id, slot, grade, setId: speed, itemKey: null, main: null, yellow: lit, lit, bt, at: '' });
+    const gear = { v: 1, seq: 4, pieces: {
+      p1: pc('p1', 'helmet', 'unique', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 1 }, 4), p2: pc('p2', 'armor', 'unique', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 4),
+      p3: pc('p3', 'gloves', 'rare', { 'DEF%': 1, SPD: 2, EFF: 1 }, 2), p4: pc('p4', 'shoes', 'unique', { 'DEF%': 2, CHC: 3, CHD: 3, SPD: 2 }, 4),
+    }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1', armor: 'p2', gloves: 'p3', shoes: 'p4' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id, slot: 'helmet' }, {}, { gear });
+
+    expect($('.bgear-weak p')?.textContent).toBe('The weakest — gloves (Epic, Breakthrough T2). Look for Speed Gloves with CHC and CHD — in try-on the verdict shows whether it beats the one on.');
+    expect(byText('.bgear p', "You don't fill")?.textContent).toBe("You don't fill Pen, Def, Speed/Immu, Def/Immu — the verdict doesn't ask pieces for them.");
+    await click(byText('.bgear-weak button', 'Try on pieces'));
+    expect(JSON.parse(localStorage.getItem('ogc.state')!)).toMatchObject({ tab: 'eval', slot: 'gloves' });
+    expect($('.tryon')?.textContent).toContain('Caren · Speed');
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     expect($('.vcard .vc-vs')).toBeNull();

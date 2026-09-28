@@ -100,3 +100,7 @@ html.xs .roll-b.seg6 button { min-width: 26px; }
 /* «Это шлем Rin?» — перенести ту же вещь или надеть новую */
 .twin { display: grid; gap: 10px; }
 .twin p { margin: 0; font-size: 13.5px; }
+/* «Слабее всех» — что менять первым и «Примерить вещи» */
+.bgear-weak { display: grid; gap: 6px; justify-items: start; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); font-size: 13px; }
+.bgear-weak p { margin: 0; color: var(--ink-2); }
+.bgear-weak .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }

@@ -73,6 +73,23 @@ function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: nu
   return { v, cover, segs };
 }
 
+// «Слабее всех» в блоке билда: ценность надетой вещи (как в сравнении) и каких статов на ней не хватает — первые места
+// цепочки, которые засчитываются целиком и которых на вещи нет (DEF и DEF% — из пары берём %)
+export const pieceValue = (ctx: Ctx, c: Char, b: Build, p: Piece): number => value(ctx, c, b, pieceInput(p), p.lit, reforgesDone(p)).v;
+export function lookFor(ctx: Ctx, c: Char, b: Build, p: Piece, max = 2): string[] {
+  const W = subWeights(ctx, b, c, itemMains(ctx.idx, pieceInput(p)));
+  const have = new Set(Object.keys(p.lit));
+  const out: string[] = [];
+  for (const [k] of [...W].filter(([, x]) => x.credit >= 1).sort((a, z) => a[1].tier - z[1].tier || Number(z[0].endsWith('%')) - Number(a[0].endsWith('%')))) {
+    const axis = k.replace(/%$/, '');
+    // на вещи уже есть этот стат; flat, когда на ней его % или % уже в списке, — лишний
+    if (have.has(k) || have.has(axis + '%') || out.some((x) => x.replace(/%$/, '') === axis)) continue;
+    out.push(k);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 // подходит ли вещь этому билду: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с нужным main;
 // остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду нужен
 type Fit = 'no' | 'rec' | 'stopgap';

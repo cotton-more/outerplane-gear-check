@@ -367,6 +367,11 @@ export const ru = {
     gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),
     gearShared: (builds: string) => `Есть и в ${builds} — правка изменит везде.`,
     gearTake: (build: string) => `Взять из ${build}`,
+    // «Слабее всех» — самая слабая вещь брони в билде и что искать ей на замену
+    weakest: (slot: string, grade: string, bt: number | null) => `Слабее всех — ${slot} (${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}).`,
+    weakestLook: (piece: string, stats: string[]) => `Ищи ${piece} с ${stats.join(' и ')} — в примерке вердикт покажет, лучше ли она надетой.`,
+    weakestTry: 'Примерить вещи',
+    gearIdle: (builds: string) => `${builds} ты не собираешь — вердикт не просит для них вещи.`,
     gearOld: (build: string, n: number) => `Из прежнего билда «${build}»: ${n} ${plural(n, 'вещь', 'вещи', 'вещей')}. В данных outerpedia его больше нет — похоже, переименовали.`,
     gearMove: 'Перенести в этот билд',
     pieceTitle: (slot: string, build: string) => `${slot} · ${build}`,
