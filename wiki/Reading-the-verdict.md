@@ -4,11 +4,11 @@
 
 | Verdict | What to do |
 |---|---|
-| **Keep** | the piece is needed: wear it and upgrade it — what exactly is in the "Upgrading" block ([more](Upgrading)). "Worth reforging" — a good roll, put Reforge here first; "Top roll" — a rare roll on useful stats |
+| **Keep** | the piece is needed: wear it and upgrade it — what exactly is in the "Upgrading" block ([more](Upgrading)). "Worth reforging" — a good roll, put Reforge here first; "Top roll" — a rare roll on useful stats. A piece that's already in a build is a "Keep" too, without "Upgrading": it's worn ([Equipment](Equipment)) |
 | **Stopgap** | wear it until you find better. A weapon or accessory without the needed passive: wear it until a recommended Legendary drops — the verdict names which. That's why an Epic weapon or accessory never goes above "Stopgap", even with a perfect roll, and a good roll is worth Reforge. Epic armor — only one key stat (the verdict names the missing one). A dice next to it — one Reforge may make it a "Keep" |
-| **Fodder** | keep it for Breakthrough: Legendary armor with weak substats, an item with the needed passive but the wrong main stat, or the same piece as one worn below T4 ([Equipment](Equipment)) |
+| **Fodder** | keep it for Breakthrough: Legendary armor with weak substats, an item with the needed passive but the wrong main stat, the same piece as one worn below T4, or a Legendary that won't improve anyone: everyone it suits already wears as good or better ([Equipment](Equipment)) |
 | **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster). A dice next to it — one Reforge may make it useful for your roster |
-| **Dismantle** | doesn't suit your characters, or the roll is weak. A dashed dice next to it — "3/9": one Reforge may save the piece, that many of the possible stats would ([more](Upgrading#the-dice-one-reforge-for-luck)) |
+| **Dismantle** | doesn't suit your characters, the roll is weak, or everyone it suits already wears as good or better ([Equipment](Equipment)). A dashed dice next to it — "3/9": one Reforge may save the piece, that many of the possible stats would ([more](Upgrading#the-dice-one-reforge-for-luck)) |
 
 ## Priority chain
 

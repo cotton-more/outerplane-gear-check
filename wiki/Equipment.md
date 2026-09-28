@@ -100,21 +100,29 @@ any Breakthrough.
 
 What's equipped changes the verdict stamp in three cases.
 
-**"Keep" → "Dismantle"** (a Legendary — **"Fodder"**; armor only if you keep fodder) when everyone the piece suits
-already wears as good or better — "on par" or ▼ — in the builds you're gearing. The piece itself isn't bad, it just
-won't improve anyone: "Dismantle — already better on Caren and Rin". The stamp stays when:
+**"Keep" and "Stopgap" → "Dismantle"** (a Legendary "Keep" — **"Fodder"**; armor only if you keep fodder) when all
+substats are entered and everyone the piece suits already wears as good or better — "on par" or ▼ — in the builds
+you're gearing. The piece itself isn't bad, it just won't improve anyone: "Dismantle — already better on Caren and
+Rin". If characters outside your roster want it, a line says who. The stamp stays when:
 
-- a character it suits has nothing recorded — that counts as wearing nothing, so the piece will come in handy;
+- a character it suits has nothing in Gear — that counts as wearing nothing, so the piece will come in handy;
 - a build you're gearing has this slot empty, or the piece in it is off-build;
-- the swap would break a 2+2 set, but the new piece has more useful segments — maybe it's worth reshuffling the sets.
+- the swap would break a 2+2 set, but the new piece has more useful segments — maybe it's worth reshuffling the sets;
+- it's "on par" only because the one on is the same piece at T4 (Speed ×2, Penetration ×2): after its own
+  Breakthrough the new one gets ahead;
+- a weapon or accessory has a different passive than the one on, and both are recommended: the build decides which is
+  better, not the substats;
+- the piece is Breakthrough material for the same piece worn and beats it: you wear it (see below).
 
-Only builds you've started count (at least one piece): a character you gear in Speed isn't held by a High Crit piece.
-Want a second build for them — start gearing it, and its empty slots keep the piece. Changed someone's gear in the
-game? Update it on their card, and the verdict follows.
+Only builds you've started count (at least one piece), plus the build you're gearing in try-on, even an empty one. A
+character you gear in Speed isn't held by a High Crit piece. Want a second build for them — start gearing it, and its
+empty slots keep the piece. Changed someone's gear in the game? Update it on their card, and the verdict follows. The
+dice on "Dismantle" doesn't count a 4th that would get the piece lowered again.
 
-**A piece that's already in a build is a "Keep"**, even if on its own it would be "Dismantle" or "Fodder": "Keep —
-it's already in Aer · High Crit". In the game it may sit in your inventory (like in a gear preset), and dismantling it
-would knock it out of the build. Not needed there — remove it on the character card.
+**A piece that's already in a build is a "Keep"**, even if on its own it would be "Dismantle", "Fodder" or "Maybe":
+"Keep — it's already in Aer · High Crit". In the game it may sit in your inventory (like in a gear preset), and
+dismantling it would knock it out of the build. Not needed there — remove it on the character card. A "Stopgap" stays a
+"Stopgap".
 
 **"Dismantle" → "Fodder"** when the same piece
 (armor — same set, slot and grade; weapon or accessory — the same item) is worn below T4 and its Breakthrough is marked.
