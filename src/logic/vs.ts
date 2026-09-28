@@ -10,7 +10,7 @@ import type { Ctx } from './context';
 import { buildKey, MAX_LIT, pieceInput, REFORGES, reforgesDone, samePiece, type GearStore, type Piece } from './gear';
 import { itemMains } from './mains';
 import { scoreBuild, subWeights, type Row } from './score';
-import { dropSubs, type Subs } from './subs';
+import { dropSubs, MAX_SUBS, type Subs } from './subs';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 
 export type VsKind = 'fill' | 'up' | 'eq' | 'down' | 'breaks' | 'worn';
@@ -108,7 +108,8 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
   if (!worn) return base; // пустой слот связку не ломает — только дополняет
   if (samePiece(item, worn)) return { ...base, kind: 'worn' };
   const wi = pieceInput(worn);
-  const X = value(ctx, c, b, item, item.subs, 0);
+  // Epic с 4 сабстатами в форме уже прошла первый Reforge (он дал 4-й) — как у записанной вещи (reforgesDone)
+  const X = value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0);
   const E = value(ctx, c, b, wi, worn.lit, reforgesDone(worn));
   const delta = (X.v - E.v) / Math.max(E.v, 0.01);
   let kind: VsKind = delta >= MARGIN ? 'up' : delta <= -MARGIN ? 'down' : 'eq';

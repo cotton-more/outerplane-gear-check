@@ -87,6 +87,15 @@ describe('сравнение с надетым', () => {
     expect(vs.delta!).toBeLessThan(0);
   });
 
+  it('Epic с 4 сабстатами: новая и надетая с тем же роллом (разный бесполезный 4-й) — на уровне, ровно 0 в обе стороны', () => {
+    const K = buildKey(caren.id, 'Speed');
+    const a = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 2, RES: 1 }, 'rare');
+    const z = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 2, EFF: 1 }, 'rare');
+
+    expect(compare(ctx, equip(EMPTY_GEAR, K, a).store, caren, build('Speed'), z)).toMatchObject({ kind: 'eq', delta: 0 });
+    expect(compare(ctx, equip(EMPTY_GEAR, K, z).store, caren, build('Speed'), a)).toMatchObject({ kind: 'eq', delta: 0 });
+  });
+
   it('у надетой полезных нет — не процент, а «полезных нет»; больше +200% — «×N»', () => {
     const K = buildKey(caren.id, 'Speed');
     const junk = equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { RES: 2, EFF: 2, HP: 1, 'DMG RED%': 1 })).store;
