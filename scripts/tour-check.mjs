@@ -1,6 +1,7 @@
 // Оба тура («Оценка вещи» и «Экипировка») в настоящем браузере на пяти размерах экрана, в светлой и тёмной теме:
 // тур проходится на примере до конца, и на каждом шаге полоса целиком в окне и не закрывает то, на что показывает
-// рамка. Кадры — в build/tour-check/. jsdom раскладку не считает, поэтому это отдельно от тестов. Нужен Chrome (переменная CHROME).
+// рамка. Ещё — полоса «Примерка» с самым длинным «персонаж · билд» из данных не раздвигает страницу вбок.
+// Кадры — в build/tour-check/. jsdom раскладку не считает, поэтому это отдельно от тестов. Нужен Chrome (переменная CHROME).
 // Запуск: task tour:check (страница — свежая сборка приложения с данными из docs/ или из SITE, как у скриншотов).
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -28,6 +29,7 @@ const problems = [];
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
 try {
   for (const tour of ['core', 'gear']) for (const [w, h] of SIZES) for (const theme of ['light', 'dark']) await run(w, h, theme, tour);
+  for (const [w, h] of SIZES) await tryonWidth(w, h);
 } finally {
   await browser.close();
   server.close();
@@ -37,7 +39,7 @@ if (problems.length) {
   for (const p of problems) console.log(`  ${p}`);
   process.exit(1);
 }
-console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах; кадры — build/tour-check/`);
+console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах, полоса «Примерка» влезает; кадры — build/tour-check/`);
 
 async function run(w, h, theme, tour) {
   const tag = `${tour} ${w}×${h} ${theme}`;
@@ -74,6 +76,37 @@ async function run(w, h, theme, tour) {
     const after = (await page.evaluate(inspect)).label;
     // «Дальше» без действия: у главного тура шаг 2 на широком, у «Экипировки» — шаг 3
     if (after === before && !(tour === 'core' && st.step === 2)) problems.push(`${tag}, ${before}: шаг не засчитался после действия`);
+  }
+  await page.close();
+}
+
+// Примерка с самым длинным «персонаж · билд»: страница не шире окна, ✕ примерки — в окне и в колонке формы
+async function tryonWidth(w, h) {
+  const tag = `примерка ${w}×${h}`;
+  const page = await browser.newPage();
+  await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 720, hasTouch: w < 720 });
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  const who = await page.evaluate(() => {
+    const pairs = window.OGC_DATA.chars.flatMap((c) => c.builds.map((b) => ({ charId: c.id, build: b.name, n: `${c.name} · ${b.name}` })));
+    const top = pairs.sort((a, z) => z.n.length - a.n.length)[0];
+    localStorage.clear();
+    localStorage.setItem('ogc.lang', '"en"');
+    localStorage.setItem('ogc.welcomeHidden', 'true');
+    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false }));
+    localStorage.setItem('ogc.tryon', JSON.stringify({ charId: top.charId, build: top.build }));
+    return top.n;
+  });
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  const m = await page.evaluate(() => {
+    const x = document.querySelector('.tryon-x')?.getBoundingClientRect();
+    const form = document.querySelector('#eval-in')?.getBoundingClientRect();
+    return { doc: document.documentElement.scrollWidth, vw: innerWidth, x: x && x.right, form: form && form.right };
+  });
+  await page.screenshot({ path: join(OUT, `tryon-${w}x${h}.png`) });
+  if (m.x == null) problems.push(`${tag}: нет полосы «Примерка» (${who})`);
+  else {
+    if (m.doc > m.vw + 1) problems.push(`${tag}: страница шире окна — ${m.doc} из ${m.vw} (${who})`);
+    if (m.x > Math.min(m.vw, m.form) + 1) problems.push(`${tag}: ✕ примерки за краем (${Math.round(m.x)} при ${Math.round(Math.min(m.vw, m.form))}, ${who})`);
   }
   await page.close();
 }
