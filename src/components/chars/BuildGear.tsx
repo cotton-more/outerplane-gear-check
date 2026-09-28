@@ -22,10 +22,19 @@ import { SubPicker } from '../eval/SubPicker';
 // имя билда по ключу; прежний (его нет в данных) — тоже по имени, без id персонажа
 const buildOf = (c: Char, key: string) => c.builds.find((b) => buildKey(c.id, b.name) === key)?.name ?? key.slice(c.id.length + 1);
 
-function pieceName(ctx: Ctx, p: Piece): string {
-  if (p.setId) return `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`;
-  const it = p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey] : undefined;
-  return [it?.name ?? (p.grade === 'rare' ? 'Epic' : ''), p.main].filter(Boolean).join(' · ');
+// название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
+function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
+  const name = p.setId
+    ? `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`
+    : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
+  const main = p.setId ? null : p.main;
+  return (
+    <>
+      <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>
+      {name && <span className="pn">{name}</span>}
+      {main && <span className="pm">{name ? '· ' : ''}{main}</span>}
+    </>
+  );
 }
 
 export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx: Ctx; gear: GearApi; active: boolean }) {
@@ -84,7 +93,7 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
                 <li key={slot}>
                   <button type="button" className="bgear-row" onClick={() => setOpen(slot)}>
                     <SlotIcon slot={slot} />
-                    <span className="bgear-n"><span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>{pieceName(ctx, p)}</span>
+                    <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
                     <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{rf.done < rf.of && <> · Reforge {rf.done}/{rf.of}</>}</span>
                     <span className="bgear-t">
                       {Object.keys(p.lit).map((k) => {
@@ -117,7 +126,8 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
   const others = usedIn(st, p.id).filter((k) => k !== bkey).map((k) => buildOf(c, k));
   const keys = Object.keys(p.lit);
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
-  const title = t.ui.pieceTitle(t.ui.slotNames[slot], c.name, b.name);
+  // в заголовке — слот и билд: длинное имя персонажа (Kitsune of Eternity Tamamo-no-Mae) отрезало бы билд; имя — в теле
+  const title = t.ui.pieceTitle(t.ui.slotNames[slot], b.name);
   if (swap) {
     const orange = p.lit[swap.from] - p.yellow[swap.from];
     const done = (n: number) => { put(setYellow(replaceStat(p, swap.from, swap.to), swap.to, n)); setSwap(null); };
@@ -147,7 +157,8 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
   return (
     <Sheet title={title} onClose={onClose}>
       <div className="piece">
-        <p className="piece-n"><span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span> {pieceName(ctx, p)}</p>
+        <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
+        <p className="muted small">{c.name}</p>
         {others.length > 0 && <p className="muted small">{t.ui.gearShared(others.join(', '))}</p>}
         <div className="subrows">
           {keys.map((k) => (

@@ -69,7 +69,12 @@ html:not(.sheet) .cd-top { display: none; }
 .bgear-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .bgear-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
 .bgear-row .ico, .bgear-empty .ico { width: 22px; height: 22px; color: var(--ink-2); }
-.bgear-n { min-width: 0; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.bgear-n { min-width: 0; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; white-space: nowrap; }
+.bgear-n .pn, .piece-n .pn { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bgear-n .pm, .piece-n .pm { flex: none; margin-left: -3px; } /* «· DEF%» — вплотную к названию, gap его отодвигал */
+/* узкий экран: Breakthrough и Reforge — второй строкой, названию вещи — вся ширина */
+html.xs .bgear-m { grid-column: 2 / 4; grid-row: 2; }
+html.xs .bgear-t { grid-row: 3; }
 .bgear-m { font: 600 11px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
 .bgear-t { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
 .bgear-t .tok { display: inline-flex; align-items: center; gap: 4px; padding-right: 3px; }
@@ -81,7 +86,7 @@ html:not(.sheet) .cd-top { display: none; }
 .gl.E { background: color-mix(in srgb, var(--epic) 80%, var(--surface)); }
 .piece { display: grid; gap: 10px; }
 .piece p { margin: 0; }
-.piece-n { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.piece-n { display: flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; white-space: nowrap; }
 .roll-b.seg6 button { min-width: 30px; background: transparent; color: var(--ink-2); }
 .roll-b.seg6 button.y { background: var(--seg-y); color: #1b1300; }
 .roll-b.seg6 button.o { background: var(--seg-o); color: #2a1000; }

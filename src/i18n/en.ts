@@ -322,7 +322,7 @@ export const en: Texts = {
     gearTake: (build) => `Take from ${build}`,
     gearOld: (build, n) => `From the former build "${build}": ${n} piece${n === 1 ? '' : 's'}. It's no longer in the outerpedia data — probably renamed.`,
     gearMove: 'Move to this build',
-    pieceTitle: (slot, name, build) => `${slot} · ${name} · ${build}`,
+    pieceTitle: (slot, build) => `${slot} · ${build}`,
     pieceSegHint: 'Yellow comes from the evaluation. Did a Reforge — tap further: orange ones are added. Tap a yellow one to lower their number; to raise it — tap the stat name.',
     pieceReforge: (done, max) => `Reforge: ${done} of ${max} — counted from the orange segments`,
     pieceNoFourth: 'On an Epic the first Reforge adds the 4th substat — "+ 4th substat from Reforge" first, then orange ones.',

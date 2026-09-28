@@ -352,7 +352,7 @@ export const ru = {
     gearTake: (build: string) => `Взять из ${build}`,
     gearOld: (build: string, n: number) => `Из прежнего билда «${build}»: ${n} ${plural(n, 'вещь', 'вещи', 'вещей')}. В данных outerpedia его больше нет — похоже, переименовали.`,
     gearMove: 'Перенести в этот билд',
-    pieceTitle: (slot: string, name: string, build: string) => `${slot} · ${name} · ${build}`,
+    pieceTitle: (slot: string, build: string) => `${slot} · ${build}`,
     pieceSegHint: 'Жёлтые — из оценки. Сделал Reforge — нажми дальше: добавятся оранжевые. Нажми на жёлтую — жёлтых станет меньше; больше — через название стата.',
     pieceReforge: (done: number, max: number) => `Reforge: ${done} из ${max} — считаю по оранжевым сегментам`,
     pieceNoFourth: 'У Epic первый Reforge добавляет 4-й сабстат — сначала «+ 4-й сабстат от Reforge», потом оранжевые.',

@@ -173,6 +173,11 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .equip-row { width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
 .equip-row .muted { flex-basis: 100%; }
 .equip-row:disabled { cursor: default; opacity: .75; } /* «уже надета» — надевать нечего */
+/* до 340px чип («ломает сет», «рекомендованная») — под именем: рядом он сжимал имя и «сейчас: …» в столбик */
+@media (max-width: 339px) {
+  .vs-h, .equip-row { grid-template-columns: 36px minmax(0, 1fr); }
+  .vs-h > .vs, .equip-row > .vs { grid-column: 2; justify-self: start; }
+}
 .gear-toast { white-space: normal; width: min(440px, calc(100vw - 24px)); z-index: 42; } /* надели из подробностей — видно и поверх шторки */
 .gear-toast span { display: grid; gap: 2px; }
 .gear-toast small { font-size: 12px; color: var(--ink-2); }
