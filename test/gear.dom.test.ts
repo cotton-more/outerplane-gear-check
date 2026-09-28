@@ -1,0 +1,100 @@
+// @vitest-environment jsdom
+// Экипировка на телефоне (360px): вещь с формы — «Надеть на…» → в билд, «Отменить»; «Сейчас на персонажах» в
+// подробностях; билд в карточке персонажа; карточка вещи — оранжевые сегменты и Breakthrough.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { act, createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import type { Dataset } from '../src/data/types';
+
+const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
+const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false };
+const caren = D.chars.find((c) => c.name === 'Caren')!;
+const speed = D.sets.find((s) => s.short === 'Speed')!.id;
+const NEW = { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
+let root: Root | null = null;
+
+beforeAll(() => {
+  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+  Element.prototype.scrollIntoView = () => {};
+  window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as never;
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 740 });
+});
+
+afterEach(async () => {
+  await act(async () => root?.unmount());
+  root = null;
+  document.body.innerHTML = '';
+  localStorage.clear();
+});
+
+async function mount(state: Record<string, unknown>, item: Record<string, unknown>, extra: Record<string, unknown> = {}) {
+  const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'eval', ...state }, item, ...extra };
+  for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
+  const { App } = await import('../src/App');
+  const { IndexContext } = await import('../src/components/IndexContext');
+  const { createIndex } = await import('../src/data');
+  const el = document.createElement('div');
+  document.body.append(el);
+  root = createRoot(el);
+  await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
+}
+const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
+const $$ = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)];
+const click = async (el: HTMLElement | null | undefined) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
+const byText = (sel: string, text: string) => $$(sel).find((e) => e.textContent?.includes(text));
+const stored = () => JSON.parse(localStorage.getItem('ogc.gear') ?? 'null');
+
+describe('экипировка', () => {
+  it('«Надеть на…» → Caren · Speed: вещь в билде, сообщение с «Отменить»; «Отменить» — как было', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await click(byText('.equip-row', 'Speed')?.closest('button') as HTMLElement);
+
+    expect($('.gear-toast')?.textContent).toContain('Equipped: Caren · Speed · helmet');
+    const st = stored();
+    expect(Object.values(st.builds)).toHaveLength(1);
+    expect(Object.values(st.pieces)).toMatchObject([{ slot: 'helmet', setId: speed, yellow: NEW.subs, bt: null }]);
+
+    await click($('.gear-toast button'));
+    expect(Object.keys(stored().pieces)).toEqual([]);
+  });
+
+  it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+    await click($('.vcard'));
+    expect($('.v-vs')).toBeNull();
+    expect($('.v-equip')).toBeTruthy();
+  });
+
+  it('на Caren · Speed шлем хуже: «Сейчас на персонажах» — ▲, «Заменить шлем Caren», заменили — старая названа', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+
+    expect($('.v-vs .vs.up')?.textContent).toBe('+25%');
+    expect($('.v-vs .vs-places')?.textContent).toBe('+CHD (3rd) · −SPD (4th)');
+    expect($$('.v-vs .vs-cmp .chain')).toHaveLength(2);
+    await click(byText('.vs-act', "Replace Caren's helmet"));
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · Speed");
+    expect($('.gear-toast small')?.textContent).toContain('Breakthrough material');
+  });
+
+  it('карточка персонажа: билд, вещь с сегментами по цепочке; карточка вещи — оранжевый сегмент и T4', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, EFF: 1 }, lit: { 'DEF%': 2, EFF: 1 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+
+    expect($('.bgear h4')?.textContent).toBe('Equipped · 1 of 6');
+    expect($$('.bgear-row .tok').map((e) => [e.textContent, e.className])).toEqual([['DEF%2', 'tok ok'], ['EFF%1', 'tok']]);
+    expect($('.bgear-m')?.textContent).toBe('T? · Reforge 0/6');
+    await click($('.bgear-row'));
+    await click($$('.piece .seg6')[0].querySelectorAll('button')[2] as HTMLElement); // 3-я клетка DEF% — оранжевая
+    await click(byText('.piece-bt .fbtn', 'T4'));
+
+    expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 2 }, lit: { 'DEF%': 3 }, bt: 4 });
+    expect($('.piece')?.textContent).toContain('Reforge: 1 of 6');
+  });
+});

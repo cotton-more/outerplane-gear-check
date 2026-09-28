@@ -60,3 +60,29 @@ html:not(.sheet) .cd-top { display: none; }
 .tal img, .tal .noimg, .tal .ico { width: 22px; height: 22px; }
 .bnote { font-size: 13px; color: var(--ink-2); white-space: pre-line; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
 .cd-empty { padding: 28px 16px; color: var(--ink-3); text-align: center; }
+/* что надето в билде (BuildGear.tsx) и карточка вещи */
+.bgear { padding: 12px 16px 0; display: grid; gap: 8px; }
+.bgear h4 { margin: 0; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.bgear-set { margin: 0; font-size: 13px; color: var(--ink-2); }
+.bgear-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bgear-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
+.bgear-row .ico, .bgear-empty .ico { width: 22px; height: 22px; color: var(--ink-2); }
+.bgear-n { min-width: 0; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.bgear-m { font: 600 11px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.bgear-t { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
+.bgear-t .tok { display: inline-flex; align-items: center; gap: 4px; padding-right: 3px; }
+.bgear-t .tok i, .piece .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }
+.bgear-empty { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 6px 4px 9px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); color: var(--ink-3); font-size: 13px; }
+.bgear-empty .btn { margin-left: auto; min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.gl { width: 18px; height: 18px; flex: none; border-radius: 4px; font: 700 10.5px/1 var(--font-display); color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+.gl.L { background: color-mix(in srgb, var(--legend) 70%, var(--surface)); }
+.gl.E { background: color-mix(in srgb, var(--epic) 80%, var(--surface)); }
+.piece { display: grid; gap: 10px; }
+.piece p { margin: 0; }
+.piece-n { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.roll-b.seg6 button { min-width: 30px; background: transparent; color: var(--ink-2); }
+.roll-b.seg6 button.y { background: var(--seg-y); color: #1b1300; }
+.roll-b.seg6 button.o { background: var(--seg-o); color: #2a1000; }
+html.xs .roll-b.seg6 button { min-width: 26px; }
+.piece-bt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.piece-act { display: flex; flex-wrap: wrap; gap: 8px; }

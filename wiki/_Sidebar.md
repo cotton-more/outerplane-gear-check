@@ -7,6 +7,7 @@
 - [How verdicts work](How-verdicts-work)
 - [Upgrading](Upgrading)
 - [Characters and guild code](Characters-and-guild-code)
+- [Equipment](Equipment)
 - [Limitations and credits](Limitations-and-credits)
 
 **Русский**
@@ -16,4 +17,5 @@
 - [Как считается вердикт](Как-считается-вердикт)
 - [Прокачка](Прокачка)
 - [Персонажи и код для гильдии](Персонажи-и-код-для-гильдии)
+- [Экипировка](Экипировка)
 - [Ограничения и авторы](Ограничения-и-авторы)

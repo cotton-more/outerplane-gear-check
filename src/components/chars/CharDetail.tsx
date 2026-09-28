@@ -8,15 +8,17 @@ import type { Ctx } from '../../logic/context';
 import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
+import type { GearApi } from '../../state/useGear';
+import { BuildGear } from './BuildGear';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
 import { tour } from '../../tour/anchors';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
 
-interface Props { charId: string | null; ctx: Ctx; rosterApi: RosterApi; sheetOpen: boolean; onClose: () => void }
+interface Props { charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; sheetOpen: boolean; onClose: () => void }
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props) {
+export function CharDetail({ charId, ctx, rosterApi, gear, sheetOpen, onClose }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -62,6 +64,7 @@ export function CharDetail({ charId, ctx, rosterApi, sheetOpen, onClose }: Props
               <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>{x.name}</button>
             ))}
           </div>
+          <BuildGear c={c} b={b} ctx={ctx} gear={gear} />
           <BuildView c={c} b={b} ctx={ctx} />
         </>
       ) : (

@@ -18,6 +18,7 @@ verdict, why, and which of your characters it suits. Builds come from [outerpedi
 | [How verdicts work](How-verdicts-work) | [Как считается вердикт](Как-считается-вердикт) |
 | [Upgrading](Upgrading) | [Прокачка](Прокачка) |
 | [Characters and guild code](Characters-and-guild-code) | [Персонажи и код для гильдии](Персонажи-и-код-для-гильдии) |
+| [Equipment](Equipment) | [Экипировка](Экипировка) |
 | [Limitations and credits](Limitations-and-credits) | [Ограничения и авторы](Ограничения-и-авторы) |
 
 <table>

@@ -14,6 +14,8 @@ a character directly.
 The roster moves to another device with a code: "export / import" on the characters tab. Everything you mark stays in
 your browser only — nothing is sent anywhere.
 
+What each character wears in every build — see [Equipment](Equipment).
+
 ## Item code for your guild
 
 The verdict details have a code, for example `OGC KXRM TPWA`. "Copy" — and paste it into the game chat (8–11 letters,

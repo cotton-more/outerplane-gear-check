@@ -6,13 +6,15 @@ import { charMatches, type CharFilter } from '../../logic/lists';
 import { encodeRoster, parseRoster } from '../../logic/rosterCode';
 import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
+import type { GearApi } from '../../state/useGear';
+import { decodeGear, encodeGear } from '../../logic/gear';
 import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
-interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi }
+interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi }
 
-export function CharList({ s, dispatch, rosterApi }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -56,6 +58,7 @@ export function CharList({ s, dispatch, rosterApi }: Props) {
         {roster.size > 0 && <ClearRoster onClear={rosterApi.clear} />}
       </div>
       {io && <RosterIO rosterApi={rosterApi} />}
+      {io && <GearIO gear={gear} />}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
           <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)}
@@ -136,6 +139,39 @@ function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
         <button type="button" className="btn" onClick={() => apply('replace')}>{t.ui.replace}</button>
         <button type="button" className="btn" onClick={() => apply('add')}>{t.ui.add}</button>
         <span className="small muted" id="io-msg" role="status">{msg}</span>
+      </div>
+    </div>
+  );
+}
+
+// резервная копия экипировки кодом: вещи и билды целиком; «Заменить» — всё, что было, заменяется кодом
+function GearIO({ gear }: { gear: GearApi }) {
+  const idx = useIndex();
+  const t = useT();
+  const code = Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : '';
+  const ta = useRef<HTMLTextAreaElement>(null);
+  const [msg, setMsg] = useState('');
+  const copy = () => {
+    const el = ta.current;
+    if (!el) return;
+    const fallback = () => { el.select(); setMsg(t.ui.rosterSelected); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(() => setMsg(t.ui.copied), fallback);
+    else fallback();
+  };
+  const apply = () => {
+    const st = decodeGear(ta.current?.value || '', idx);
+    if (!st) { setMsg(t.ui.gearBad); return; }
+    gear.set(st);
+    setMsg(t.ui.gearApplied(Object.keys(st.pieces).length));
+  };
+  return (
+    <div className="roster-io">
+      <label className="small muted" htmlFor="gear-code">{t.ui.gearCodeLabel}</label>
+      <textarea key={code} id="gear-code" ref={ta} defaultValue={code} />
+      <div className="filt">
+        <button type="button" className="btn" onClick={copy}>{t.ui.copy}</button>
+        <button type="button" className="btn" onClick={apply}>{t.ui.replace}</button>
+        <span className="small muted" role="status">{msg}</span>
       </div>
     </div>
   );

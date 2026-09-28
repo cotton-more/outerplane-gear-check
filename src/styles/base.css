@@ -30,6 +30,7 @@
   --el-dark: #7048e8;
   --seg-y: #e5a00f;
   --seg-off: #aeb7c4;
+  --seg-o: #e8792a;
   --star-on: #b97c00;
   --radius: 10px;
   --radius-s: 7px;
@@ -70,6 +71,7 @@
     --el-dark: #b197fc;
     --seg-y: #f0b030;
     --seg-off: #3d4757;
+    --seg-o: #ff8a3d;
     --star-on: #f0b030;
   }
 }
@@ -105,6 +107,7 @@
   --el-dark: #b197fc;
   --seg-y: #f0b030;
   --seg-off: #3d4757;
+  --seg-o: #ff8a3d;
   --star-on: #f0b030;
 }
 

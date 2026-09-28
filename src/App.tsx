@@ -5,6 +5,7 @@ import { EvalPanel } from './components/eval/EvalPanel';
 import { CodeInput } from './components/eval/ItemCode';
 import { Help, Welcome, type InstallInfo } from './components/Guide';
 import { VBar, Verdict, VerdictSheet } from './components/eval/Verdict';
+import { EquipSheet } from './components/eval/EquipSheet';
 import { Footer, LangSwitch } from './components/Footer';
 import { Header } from './components/Header';
 import { GameIconsContext } from './components/Img';
@@ -20,12 +21,16 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
+import { buildKey, equip, pieceInput, usedIn, type GearStore } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
+import type { Build, Char } from './data/types';
 import type { ItemInput } from './logic/verdict';
+import { compareAll } from './logic/vs';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
+import { useGear } from './state/useGear';
 import { useRoster } from './state/useRoster';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
@@ -70,6 +75,16 @@ export function App() {
   const later = useDeferredValue(key);
   const full = useMemo(() => evaluate(ctx, JSON.parse(later) as ItemInput), [ctx, later]);
   const verdict = later === key ? full : quick;
+  // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта
+  const gear = useGear(idx, !touring);
+  const vsList = useMemo(() => compareAll(ctx, gear.store, input, verdict), [ctx, gear.store, verdict]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [equipOpen, setEquipOpen] = useState(false);
+  const [gearUndo, setGearUndo] = useState<{ text: string; note: string; prev: GearStore } | null>(null);
+  useEffect(() => {
+    if (!gearUndo) return;
+    const id = setTimeout(() => setGearUndo(null), 8000);
+    return () => clearTimeout(id);
+  }, [gearUndo]);
   const pwa = usePwa();
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -99,6 +114,25 @@ export function App() {
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
+  // надеть вещь с формы в билд; персонаж попадает в ростер; сообщение — что стало со старой вещью, с «Отменить»
+  const doEquip = (c: Char, b: Build) => {
+    const key = buildKey(c.id, b.name);
+    const prev = gear.store;
+    const r = equip(prev, key, input);
+    gear.set(r.store);
+    if (!roster.has(c.id)) rosterApi.add([c.id]);
+    setEquipOpen(false);
+    setUndo(null);
+    const slot = t.ui.slotAcc[input.slot];
+    let note = '';
+    if (r.old) {
+      const same = isArmor(r.old.slot) ? r.old.setId === r.piece.setId && r.old.grade === r.piece.grade : !!r.old.itemKey && r.old.itemKey === r.piece.itemKey;
+      const still = usedIn(r.store, r.old.id).map((k) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k);
+      note = still.length ? t.ui.oldStill(still.join(', '))
+        : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[evaluate(ctx, pieceInput(r.old), { gamble: false }).v]);
+    }
+    setGearUndo({ text: r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, prev });
+  };
   useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
   // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
@@ -161,11 +195,11 @@ export function App() {
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} />}
+            {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={tour.run ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={tour.run ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} />
-            <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi}
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} />
+            <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi} gear={gear}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
           </section>
         </main>
@@ -188,7 +222,14 @@ export function App() {
         )}
         <TipLayer tour={tour} c={tourCtx} enabled={tipsOn} forced={forcedTip} onForced={onForced} />
         <TourLayer tour={tour} c={tourCtx} rosterEmpty={roster.size === 0} onTab={onTab} onRoster={() => onTab('chars')} />
-        {undo && s.tab === 'eval' && !tour.run && (
+        {gearUndo && !tour.run && (
+          <div className="toast gear-toast" role="status">
+            <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
+            <button type="button" onClick={() => { gear.set(gearUndo.prev); setGearUndo(null); }}>{t.ui.undoAction}</button>
+          </div>
+        )}
+        {equipOpen && !tour.run && <EquipSheet ctx={ctx} store={gear.store} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
+        {undo && s.tab === 'eval' && !tour.run && !gearUndo && (
           <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
         {menuOpen && (
@@ -203,7 +244,7 @@ export function App() {
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={startTour} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={tour.run ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={tour.run ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

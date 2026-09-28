@@ -17,9 +17,16 @@ import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
 import { Chain } from './Chain';
 import { DiceChip, GambleBlock, GambleLine, toTarget } from './Gamble';
+import type { Vs } from '../../logic/vs';
+import { Icon } from '../Img';
+import { VsSection } from './VsSection';
 import { ShareCode } from './ItemCode';
 
-interface Props { r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void }
+// vs — «Сейчас на персонажах» (logic/vs); onEquip — надеть в билд из этого раздела; onEquipPick — окно «Кому надеть?»
+interface Props {
+  r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
+  vs?: Vs[]; onEquip?: (vs: Vs) => void; onEquipPick?: () => void;
+}
 
 // Широкий экран: вердикт липкой колонкой справа от формы — во всю высоту до низа окна.
 export function Verdict(props: Props) {
@@ -29,7 +36,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEquipPick }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -52,7 +59,9 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
         </div>
         <p className="v-summary">{r.title}</p>
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
+        {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
+      {onEquip && <VsSection list={vs} slot={t.ui.slotAcc[s.slot]} onEquip={onEquip} onOpenChar={onOpenChar} />}
       {r.gamble && <GambleBlock g={r.gamble} v={r.v} subs={s.subs} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
