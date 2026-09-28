@@ -8,7 +8,7 @@ import { comboText } from '../../logic/builds';
 import type { Row } from '../../logic/score';
 import { useT } from '../../i18n';
 import { fmtGood } from '../../logic/text';
-import type { Section, Verdict as VerdictData } from '../../logic/verdict';
+import { bestRow, type Section, type Verdict as VerdictData } from '../../logic/verdict';
 import { itemInput, type Action, type AppState, type Tab } from '../../state/appState';
 import { tour } from '../../tour/anchors';
 import { GearFrame, Img, SetIcon } from '../Img';
@@ -16,6 +16,7 @@ import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
 import { Chain } from './Chain';
+import { DiceChip, GambleBlock, GambleLine } from './Gamble';
 import { ShareCode } from './ItemCode';
 
 interface Props { r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void }
@@ -41,6 +42,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
         <div className="v-row">
           {r.v !== 'idle' && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}
           {r.badge && <span className="badge">{r.badge}</span>}
+          {r.gamble && <DiceChip g={r.gamble} long />}
           {icon && (
             <span className="v-item">
               <GearFrame grade={s.grade} slot={s.slot} icon={icon} />
@@ -51,6 +53,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar }: Props) {
         <p className="v-summary">{r.title}</p>
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
       </div>
+      {r.gamble && <GambleBlock g={r.gamble} v={r.v} subs={s.subs} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>
@@ -150,21 +153,27 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 
 // Карточка вердикта на форме (телефон): встаёт на место сетки сабстатов, когда вердикт готов.
 // Штамп, коротко — почему, и цепочка лучшего кандидата: что из нужного ему есть на предмете.
+// Кубик Reforge — рядом со штампом; у «Разобрать» и «Спорно» строка карточки — какой 4-й вытянет вещь,
+// у «Временно» — та же цепочка, где нужные ему 4-е сабстаты пунктиром цветом цели.
 export function VerdictCard({ r, onOpen }: { r: VerdictData; onOpen: () => void }) {
   const t = useT();
-  const sec = r.v === 'junk' || r.v === 'idle' ? undefined : r.sections.find((x) => x.rows.length && !x.collapsed && !x.dim);
-  const best = sec?.rows[0];
+  const best = bestRow(r)?.row;
+  const g = r.gamble;
+  const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
   return (
     <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={t.ui.verdictDetails} {...tour('verdict')}>
       <span className="vc-top">
         <span className="stamp">{t.ui.verdictLabel[r.v]}</span>
         {r.badge && <span className="badge">{r.badge}</span>}
-        <span className="vc-more">{t.ui.details} ▸</span>
+        {g && <DiceChip g={g} />}
+        <span className="vc-more"><span className="vc-more-t">{t.ui.details}</span> ▸</span>
       </span>
       <span className="vc-title">{barTitle(r)}</span>
-      {best && best.good != null
-        ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} /></span>
-        : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
+      {g && r.v !== 'temp'
+        ? <GambleLine g={g} v={r.v} />
+        : best && best.good != null
+          ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} lucky={lucky} luckyTemp={g?.target === 'temp'} /></span>
+          : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
     </button>
   );
 }
@@ -211,7 +220,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
           ? !quiet && <span className="vt vt-hint">{hint ?? r.title}</span>
           : evalTab && stampless
             ? <span className="vt vt-more">{t.ui.details}</span>
-            : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
+            : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}{!compact && r.gamble && <DiceChip g={r.gamble} />}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
       {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>}

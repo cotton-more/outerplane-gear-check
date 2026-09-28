@@ -70,3 +70,23 @@ describe('без вердикта карточки нет, нужное поле
     expect($('.mainsw.need')).toBeNull();
   });
 });
+
+describe('кубик Reforge на карточке', () => {
+  const attack = D.sets.find((s) => s.short === 'Attack')!.id;
+
+  it('Epic helmet «Разобрать»: у штампа «3/9», строка — три стата; в окне 4-го — три точки', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'ATK%': 1, CHC: 1, RES: 1 } });
+
+    expect($('.vcard .dice')?.textContent).toBe('3/9');
+    expect([...document.querySelectorAll('.vcard .vc-gamble .pill.lucky')].map((e) => e.textContent)).toEqual(['SPD', 'CHD', 'ATK']);
+    await act(async () => $('.subadd')!.click());
+    expect([...document.querySelectorAll('.subopt .lucky-dot')].map((e) => e.closest('.subopt')!.textContent)).toEqual(['SPD', 'CHD', 'ATK']);
+  });
+
+  it('Legendary — кубика нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: attack, subs: { 'ATK%': 1, CHC: 1, RES: 1, 'DMG RED%': 1 } });
+
+    expect($('.vcard')).toBeTruthy();
+    expect($('.dice')).toBeNull();
+  });
+});

@@ -8,7 +8,7 @@
 | **Stopgap** | wear it until you find better. A weapon or accessory without the needed passive: wear it until a recommended Legendary drops — the verdict names which. That's why an Epic weapon or accessory never goes above "Stopgap", even with a perfect roll, and a good roll is worth Reforge. Epic armor — only one key stat (the verdict names the missing one) |
 | **Fodder** | keep it for Breakthrough: Legendary armor with weak substats, or an item with the needed passive but the wrong main stat |
 | **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster) |
-| **Dismantle** | doesn't suit your characters, or the roll is weak |
+| **Dismantle** | doesn't suit your characters, or the roll is weak. A dashed dice next to it — "3/9": one Reforge may save the piece, that many of the possible stats would ([more](Upgrading#the-dice-one-reforge-for-luck)) |
 
 ## Priority chain
 

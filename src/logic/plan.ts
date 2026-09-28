@@ -7,18 +7,9 @@ import { isArmor, SLOT, subLabel } from '../data';
 import type { GearKind } from '../data/types';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
-import { evalArmor } from './evalArmor';
-import { itemMains } from './mains';
+import type { Gamble } from './gamble';
 import { MAX_SUBS } from './subs';
-import { emptyVerdict, type ItemInput, type Verdict } from './verdict';
-
-// Epic-броня из дропа (3 сабстата): какие 4-е сабстаты от первого Reforge сделали бы её «Оставить» даже
-// с одним жёлтым сегментом. Считает та же оценка — перебором всех статов, которых на вещи нет и которым
-// на этом слоте можно выпасть (HP% шлему не выпадет: это его main).
-function fourthToKeep(ctx: Ctx, s: ItemInput): string[] {
-  const { blocked } = itemMains(ctx.idx, s);
-  return ctx.idx.SUB_LIST.filter((k) => !(k in s.subs) && !blocked.has(k) && evalArmor(ctx, { ...s, subs: { ...s.subs, [k]: 1 } }, emptyVerdict()).v === 'keep');
-}
+import type { ItemInput, Verdict } from './verdict';
 
 export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
   const { idx, t } = ctx;
@@ -31,7 +22,11 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
   // Reforge у Epic: первый добавляет 4-й сабстат. Есть 4-й — одна попытка из 6 уже потрачена (сколько ещё — не знаем)
   const has4th = Object.keys(s.subs).length >= MAX_SUBS;
   const stage = !epic ? null : has4th ? 'started' : 'adds';
-  const gamble = () => (armor && epic && Object.keys(s.subs).length === MAX_SUBS - 1 ? fourthToKeep(ctx, s) : []);
+  // кубик (logic/gamble): какой 4-й от первого Reforge вытянет вещь — строка «сыграть одним Reforge»
+  const g = res.gamble;
+  const keys = (gm: Gamble, v: 'keep' | 'temp') => t.orList(gm.hits.filter((h) => h.v === v).map((h) => subLabel(h.key)), 5);
+  const gambleLine = (gm: Gamble, maybe: boolean) =>
+    P.gambleJunk(keys(gm, gm.target), gm.target, gm.target === 'keep' ? keys(gm, 'temp') : '', gm.hits.length, gm.of, maybe);
 
   switch (res.v) {
     case 'keep': {
@@ -47,8 +42,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       return out;
     }
     case 'temp': {
-      const lucky = gamble();
-      if (lucky.length) return [P.enhance, P.gambleTemp(lucky.map(subLabel))];
+      if (g) return [P.enhance, P.gambleTemp(keys(g, 'keep'), g.hits.length, g.of)];
       // оружие и аксессуар на замену с высоким роллом: Reforge можно — нужную Legendary (пассивка, main и сабстаты
       // сразу) можно ждать долго; Breakthrough — нет. Ролл так и говорит: «высокий, стоит вкладываться в Reforge»
       if (!armor && res.roll === 'high') return [P.enhance, P.reforgeTemp(stage), P.noBreakTemp];
@@ -58,13 +52,13 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       if (set) return [P.fodderArmor(piece, set.short)];
       return item ? [P.fodderGear(item.name)] : [];
     case 'junk': {
+      const out = g ? [gambleLine(g, false)] : [];
       // Epic-броня сета, который носят твои персонажи: пригодится как ступень Breakthrough такой же Epic-вещи
-      if (!set || !epic) return [];
-      const worn = buildsOf(idx, (b) => combosWith(b, set.id).length).some((x) => ctx.inScope(x.c));
-      if (!worn) return [];
-      const lucky = gamble();
-      return [...(lucky.length ? [P.gambleJunk(lucky.map(subLabel))] : []), P.junkEpicArmor(piece, set.short)];
+      if (set && epic && buildsOf(idx, (b) => combosWith(b, set.id).length).some((x) => ctx.inScope(x.c))) out.push(P.junkEpicArmor(piece, set.short));
+      return out;
     }
+    case 'maybe':
+      return g ? [gambleLine(g, true)] : [];
     default:
       return [];
   }

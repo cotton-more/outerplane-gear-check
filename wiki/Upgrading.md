@@ -24,7 +24,8 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 | **Keep** | Enhance to +10 right away; Reforge — first if the roll is good, on a weapon with weak substats — after a reroll; Breakthrough to T4 — a must for a Legendary weapon (the passive grows); on an Epic — no Transistone |
 | **Stopgap** | Enhance right away. A weapon or accessory with a high roll — Reforge is fine, after your "Keep" pieces: the replacement is a Legendary with the right passive, the same main and good substats all at once, and it can take a long time to drop; the verdict names which one. No Breakthrough. With an average or low roll — Enhance only. On Epic armor fresh from a drop — one Reforge for luck, if some 4th substat would make it a "Keep": the block names which |
 | **Fodder** | nothing: it's a Breakthrough tier for the same piece |
-| **Dismantle** on Epic armor | a hint about a lucky Reforge if a 4th substat can save it; and a reminder: if you have an Epic "Keep" of the same set and slot below T4, this is material for it |
+| **Dismantle** on Epic armor | one Reforge for luck if a 4th substat can save it (the dice next to the stamp); and a reminder: if you have an Epic "Keep" of the same set and slot below T4, this is material for it |
+| **Dismantle** on an Epic weapon or accessory | in "Progression" — one Reforge for luck if a 4th substat makes it a "Stopgap" (the dice next to the stamp) |
 
 ## The 4th substat on Epics
 
@@ -33,10 +34,24 @@ segments. So:
 
 - **Reforging a blue piece makes sense** even if the fourth is junk: the remaining attempts still strengthen the substats.
 - **The fourth can pull the piece up**: a "Stopgap" missing a key stat becomes a "Keep" with a fresh CHC or SPD. Which
-  fourths would save the piece, the block works out in advance — with the same evaluation, trying every stat the piece
-  doesn't have, at one yellow segment.
+  fourths would save the piece, the dice works out — see below.
 - **Change Stats (Transistone) opens on an Epic only with a 4th substat** — but per the guide they're not worth
   spending on Epics.
 - **You can mark the 4th** on any Epic piece — armor, weapon or accessory: the "+ 4th substat from Reforge" button
   under the substat rows. The main and the stats already marked are unavailable there: they never roll as the fourth.
 - Once the 4th is there, the "Worth reforging" badge answers whether to put the **remaining** attempts into it.
+
+## The dice: one Reforge for luck
+
+A fresh Epic with three substats can carry a dashed dice next to the stamp — for example **3/9**. The first Reforge adds
+a 4th substat: one of the stats not on the piece and not its main, all equally likely — 9 on armor, 8 on a weapon, 10 on
+an accessory with a PEN%, EFF or RES main. The dice tells how many of them save the piece and names them:
+
+- **green** dashes — the piece becomes a "Keep", **yellow** — a "Stopgap" (Epic weapons and accessories);
+- in the details, the "One Reforge for luck" block shows which stat suits whom, with the chain where it's already in place;
+- in the "+ 4th substat from Reforge" window those stats carry a dot: after the Reforge you see at once whether you got lucky.
+
+It's the same evaluation, with the new stat at one segment. In the game the 4th has come with one yellow segment, but
+it may come with more — and more segments only improve the verdict, so the dice shows an "at least" chance. The stamp
+doesn't change: it's about what happens if you do nothing. No luck — don't put the other Reforges into it. Legendary
+never gets a dice: it has 4 substats from the start, and Reforge adds a segment to a random one of them.

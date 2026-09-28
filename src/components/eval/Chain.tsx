@@ -23,7 +23,9 @@ interface Pill { label: string; cls: string; sep: string; title?: string }
 //   Не зелёный: зелёный в цепочке — «засчитан», а этот стат в счёт не идёт.
 // Сабстаты подписаны, как на вещи (subLabel: EFF%, RES%), строки main — без %: «main EFF / EFF%» у перчаток.
 // Статы предмета, которых в цепочке нет вовсе, идут в конце зачёркнутыми.
-export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
+// Кубик Reforge (logic/gamble): lucky — каких нет на вещи, но 4-й сабстат с ними её вытянет (пунктир цветом цели);
+// fresh — стат, который Reforge добавил бы в этой пробе: сплошная зелёная плашка.
+export function Chain({ m, lucky, luckyTemp, fresh }: { m: Omit<Row, 'alt'>; lucky?: ReadonlySet<string>; luckyTemp?: boolean; fresh?: string }) {
   const { SUB } = useIndex();
   const t = useT();
   const { im } = m;
@@ -48,13 +50,15 @@ export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
       if (!hits.length) {
         // место за статом осталось, а сабстата нет: пунктир того вида, что ещё выпадает (при main рядом через «/»)
         const open = subForms(tok).filter((k) => SUB[k] && !im.blocked.has(k) && !useless.includes(k));
-        if (!on.length) pills.push({ label: flat ? axis + '%' : subLabel(tok), cls: 'miss' + tail, sep });
+        const luck = lucky && (open.find((k) => lucky.has(k) && k.endsWith('%')) ?? open.find((k) => lucky.has(k)));
+        if (luck) pills.push({ label: subLabel(luck), cls: `miss lucky${luckyTemp ? ' t' : ''}` + tail, sep: on.length ? '/' : sep, title: t.ui.chainLucky(subLabel(luck)) });
+        else if (!on.length) pills.push({ label: flat ? axis + '%' : subLabel(tok), cls: 'miss' + tail, sep });
         else if (open.length) pills.push({ label: subLabel(open.includes(axis + '%') ? axis + '%' : open[0]), cls: 'miss' + tail, sep: '/' });
         continue;
       }
       hits.forEach((p, j) => {
         used.add(p.key);
-        pills.push({ label: subLabel(p.key), cls: state(p) + (tail && ' tail on'), sep: j || on.length ? '/' : sep, title: tail ? t.ui.chainTail(subLabel(p.key)) : undefined });
+        pills.push({ label: subLabel(p.key), cls: (p.key === fresh ? 'new' : state(p)) + (tail && ' tail on'), sep: j || on.length ? '/' : sep, title: tail ? t.ui.chainTail(subLabel(p.key)) : undefined });
       });
     }
   });

@@ -2,6 +2,7 @@ import { FLAT, subLabel } from '../../data';
 import { useT } from '../../i18n';
 import { tour, tourItem } from '../../tour/anchors';
 import type { Ctx } from '../../logic/context';
+import type { Gamble } from '../../logic/gamble';
 import type { Subs } from '../../logic/subs';
 import { StatIcon } from '../Img';
 
@@ -12,8 +13,9 @@ import { StatIcon } from '../Img';
 // Раскладка 4 в ряд парами по параметрам, как в сетке на форме: CHC и CHD, ATK% и ATK, DMG UP% и DMG RED%,
 // HP% и HP, DEF% и DEF, EFF% и RES%. null — пустая клетка; сабстат, которого здесь нет, встаёт в конец.
 const LAYOUT: (string | null)[] = ['SPD', null, 'CHC', 'CHD', 'ATK%', 'ATK', 'DMG UP%', 'DMG RED%', 'HP%', 'HP', 'DEF%', 'DEF', 'EFF', 'RES'];
-export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
-  ctx: Ctx; subs: Subs; blocked: Set<string>; editing: string | null; onPick: (key: string) => void; onRemove?: () => void;
+// lucky — окно 4-го сабстата у Epic: с какими статами вещь вытянет кубик Reforge (logic/gamble), точкой цветом цели.
+export function SubPicker({ ctx, subs, blocked, editing, lucky, onPick, onRemove }: {
+  ctx: Ctx; subs: Subs; blocked: Set<string>; editing: string | null; lucky?: Gamble | null; onPick: (key: string) => void; onRemove?: () => void;
 }) {
   const { D, SUB, SUB_LIST } = ctx.idx;
   const t = useT();
@@ -30,15 +32,18 @@ export function SubPicker({ ctx, subs, blocked, editing, onPick, onRemove }: {
           const row = rowOf(k);
           const taken = (blocked.has(k) && k !== editing) || (row > 0 && editing === null);
           const move = row > 0 && editing !== null;
+          const hit = lucky?.hits.find((h) => h.key === k);
           return (
             <button key={k} type="button" className={`subopt${FLAT.has(k) ? ' flat' : ''}`} aria-pressed={k === editing} disabled={taken}
               title={move ? t.ui.subMoveTitle(subLabel(k), row) : title(k)} onClick={() => onPick(k)} {...tourItem(k)}>
               <StatIcon stat={k} /><span>{subLabel(k)}</span>{move && <small className="row-n">{row}</small>}
+              {hit && <i className={`lucky-dot${hit.v === 'temp' ? ' t' : ''}`} aria-label={t.ui.verdictLabel[hit.v]} />}
             </button>
           );
         })}
       </div>
       {editing && onRemove && <button type="button" className="btn subremove" onClick={onRemove}>{t.ui.subRemove(subLabel(editing))}</button>}
+      {lucky && <p className="note-line"><i className="lucky-dot" aria-hidden="true" /> {t.ui.fourthLucky(lucky.hits.length, lucky.of)}</p>}
       {moves && <p className="note-line" {...tour('submove')}>{t.ui.subMoveNote}</p>}
       <p className="note-line">{t.ui.subNote}</p>
     </>

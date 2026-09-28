@@ -114,7 +114,7 @@ describe('Epic: 4-й сабстат от первого Reforge', () => {
 
   it('если никакой 4-й не спасёт — подсказки нет', () => {
     const r = attackHelmet({ RES: 1, EFF: 1, 'DMG RED%': 1 });
-    expect(r.plan.some((l) => l.includes('попытать удачу'))).toBe(false);
+    expect(r.plan.some((l) => l.includes('сыграть одним'))).toBe(false);
   });
 });
 

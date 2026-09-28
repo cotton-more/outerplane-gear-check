@@ -278,7 +278,7 @@ describe('давний игрок', () => {
     await mount();
     // вместо неё теперь «Новое»: давнему игроку подсказки с news — новые
     expect($('.tour-invite')?.textContent).not.toContain(T.invite);
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.move, 0));
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.dice, 1));
   });
 
   it('новичок закрыл карточку «Понятно» — от тура отказался, полосы «Появилось обучение» нет', async () => {
@@ -312,14 +312,14 @@ describe('подсказки по ходу и «Что нового»', () => {
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, since: '2026-01-01' } });
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.move, 0));
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.dice, 1));
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
     expect($('.vb-tab.has-news')).toBeTruthy();
     await click($('.vb-tab'));
     await click($('.menu .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known.move).toBe(1);
+    expect(stored('tour').known).toMatchObject({ move: 1, dice: 1 });
     expect($('.vb-tab.has-news')).toBeNull();
   });
 

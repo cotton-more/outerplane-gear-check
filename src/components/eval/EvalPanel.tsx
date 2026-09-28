@@ -141,7 +141,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       )}
       {open === 'fourth' && (
         <Sheet title={t.ui.fourthSheet} onClose={close}>
-          <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={null}
+          <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={null} lucky={verdict.gamble}
             onPick={(key) => { dispatch({ type: 'sub', key }); close(); }} />
         </Sheet>
       )}

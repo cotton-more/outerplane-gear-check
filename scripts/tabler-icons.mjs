@@ -17,6 +17,8 @@ const NAMES = [
   'arrow-back-up', 'wall', 'heart-plus', 'bomb', 'skull', 'hourglass', 'hammer', 'shield-check', 'wind', 'heart-broken', 'hexagon',
   // стихии и классы
   'flame', 'droplet', 'leaf', 'sun', 'moon', 'axe', 'building-castle', 'target-arrow', 'first-aid-kit', 'wand',
+  // вердикт: кубик Reforge на удачу
+  'dice-3',
 ];
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'icons', 'tabler.ts');

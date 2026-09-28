@@ -1,5 +1,6 @@
 // Результат оценки предмета — что показывает панель вердикта.
 import type { Grade, SlotId } from '../data/types';
+import type { Gamble } from './gamble';
 import type { RollLevel, Row } from './score';
 import type { Subs } from './subs';
 
@@ -24,6 +25,7 @@ export interface Verdict {
   foot: string;
   roll?: RollLevel;        // ролл лучшего кандидата, если вердикт «Оставить» или «Временно»
   plan: string[];          // «Прокачка»: Enhance, Reforge, Breakthrough, Transistone — что вкладывать в эту вещь
+  gamble?: Gamble | null;  // кубик: какой 4-й сабстат от первого Reforge вытянет свежую Epic (logic/gamble)
   // «подходит ли» строка — от этого цвет оценки в списке; null — считать по CFG.keepCount
   qualifies?: ((m: Omit<Row, 'alt'>) => boolean) | null;
 }
@@ -37,6 +39,13 @@ export interface ItemInput {
   main: string | null;
   unlisted?: boolean; // Legendary оружие/аксессуар, которого нет в данных outerpedia
   subs: Subs;
+}
+
+// лучший кандидат вердикта — первая строка первой открытой секции из ростера; у «Разобрать» кандидатов нет
+export function bestRow(r: Verdict): { row: Row; n: number } | null {
+  if (r.v === 'junk' || r.v === 'idle') return null;
+  const sec = r.sections.find((x) => x.rows.length && !x.collapsed && !x.dim);
+  return sec ? { row: sec.rows[0], n: sec.count ?? sec.rows.length } : null;
 }
 
 export const emptyVerdict = (): Verdict => ({ v: 'idle', title: '', lines: [], sections: [], badge: '', foot: '', plan: [] });

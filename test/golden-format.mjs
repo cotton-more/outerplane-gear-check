@@ -40,6 +40,8 @@ export function compactVerdict(res, { text, keepCount }) {
     badge: res.badge || '',
     foot: text(res.foot),
     plan: (res.plan ?? []).map(text),
+    // кубик Reforge (logic/gamble): из скольких статов, и какой 4-й → каким вердиктом, кому лучше всех, скольким
+    ...(res.gamble ? { gm: [res.gamble.of, res.gamble.hits.map((h) => `${h.key}>${h.v}:${h.best?.c.id ?? ''}:${h.n}`).join(' ')] } : {}),
     secs: res.sections.map((s) => ({
       t: s.title,
       n: s.count ?? s.rows.length,
