@@ -77,6 +77,14 @@ describe('примерка', () => {
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · Speed");
   });
 
+  it('в примерке кнопка под карточкой есть и когда на ней лучше; имени в строке нет — оно на полосе', async () => {
+    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
+    expect($('.vcard .vc-title')?.textContent).toBe('Caren already wears better');
+    expect($('.vcard .vc-vs b')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
+  });
+
   it('«Следующий» примерку не сбрасывает, ✕ — снимает', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { tryon: { charId: caren.id, build: 'Speed' } });
     expect($('.tryon')).toBeTruthy();

@@ -186,6 +186,9 @@ export function App() {
   });
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = !tour.run && !gear.newer;
+  // кнопка под карточкой: в примерке — всегда (кроме «уже надета»), без неё — пустой слот или новая лучше
+  const cardVs = vsList[0];
+  const cardEquip = canEquip && !!cardVs && (target ? cardVs.kind !== 'worn' : cardVs.kind === 'fill' || cardVs.kind === 'up');
   const startTour = () => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(); };
   const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
@@ -232,7 +235,7 @@ export function App() {
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
-              tryOn={target} onTryOnEnd={() => tryOn.set(null)}
+              tryOn={target} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c, v.b) : undefined}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>

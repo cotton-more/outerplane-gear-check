@@ -28,14 +28,18 @@ import { SubRows } from './SubRows';
 import { VerdictCard } from './Verdict';
 import { TryOnStrip } from './TryOnStrip';
 import type { Target } from '../../logic/tryon';
+import type { Vs } from '../../logic/vs';
+import { equipLabel } from './VsSection';
+import { Icon } from '../Img';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
-// tryOn — идёт примерка: полоса над слотами, ✕ — onTryOnEnd
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, tryOn, onTryOnEnd }: {
+// tryOn — идёт примерка: полоса над слотами, ✕ — onTryOnEnd. vs — сравнение с надетым для строки карточки;
+// onEquip — кнопка «Надеть на Caren · Speed» / «Заменить шлем Caren» под карточкой (нет — кнопки нет)
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, tryOn, onTryOnEnd, vs, onEquip }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
-  tryOn?: Target | null; onTryOnEnd?: () => void;
+  tryOn?: Target | null; onTryOnEnd?: () => void; vs?: Vs | null; onEquip?: (vs: Vs) => void;
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -104,7 +108,14 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         {weapon && !epic && <div className="formrow">{itemField}</div>}
         <div className="subzone" {...tour('grid')}>
           {cardShown
-            ? <VerdictCard r={verdict} onOpen={onOpenVerdict} />
+            ? <>
+              <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!tryOn} />
+              {vs && onEquip && (
+                <button type="button" className={`btn vc-equip${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
+                  <Icon name={vs.kind === 'fill' || (vs.kind === 'off' && !vs.worn) ? 'check' : 'replace'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot])}
+                </button>
+              )}
+            </>
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
         {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}

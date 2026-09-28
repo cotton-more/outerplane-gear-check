@@ -96,8 +96,32 @@ describe('экипировка', () => {
     expect(byText('.equip-row', 'Caren')).toBeUndefined();
   });
 
+  it('карточка: строка сравнения «▲ +25% Caren · Speed +CHD (3rd) · −SPD (4th)», кнопка под ней — сразу Caren', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+
+    expect($('.vcard .vc-vs')?.textContent).toBe('better than the one on: +25%Caren· Speed+CHD (3rd) · −SPD (4th)');
+    expect($('.vcard')?.getAttribute('aria-label')).toContain('better than what Caren wears');
+    expect($('.vcard .vc-vs')?.closest('.vcard')?.querySelector('.vc-equip')).toBeNull(); // кнопка — не внутри карточки
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · Speed");
+    expect($('.equip')).toBeNull(); // без «Кому надеть?»
+    expect($('.vcard .vc-vs .vs')?.textContent).toBe('already on');
+    expect($('.vc-equip')).toBeNull(); // уже надета — кнопки нет
+  });
+
+  it('карточка: надетая лучше — строка сравнения есть, кнопки нет (без примерки — только пустой слот или ▲)', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    expect($('.vcard .vc-vs .vs.down')).toBeTruthy();
+    expect($('.vc-equip')).toBeNull();
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+    expect($('.vcard .vc-vs')).toBeNull();
+    expect($('.vcard .vc-chain')).toBeTruthy();
+    expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));
     expect($('.v-vs')).toBeNull();
     expect($('.v-equip')).toBeTruthy();

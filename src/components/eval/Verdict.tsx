@@ -19,7 +19,8 @@ import { Chain } from './Chain';
 import { DiceChip, GambleBlock, GambleLine, toTarget } from './Gamble';
 import type { Vs } from '../../logic/vs';
 import { Icon } from '../Img';
-import { VsSection } from './VsSection';
+import { VsChip, VsSection } from './VsSection';
+import { subLabel } from '../../data';
 import { ShareCode } from './ItemCode';
 
 // vs — «Сейчас на персонажах» (logic/vs); onEquip — надеть в билд из этого раздела; onEquipPick — окно «Кому надеть?»
@@ -161,16 +162,22 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 }
 
 // Карточка вердикта на форме (телефон): встаёт на место сетки сабстатов, когда вердикт готов.
-// Штамп, коротко — почему, и цепочка лучшего кандидата: что из нужного ему есть на предмете.
-// Кубик Reforge — рядом со штампом; у «Разобрать» и «Спорно» строка карточки — какой 4-й вытянет вещь,
+// Штамп, коротко — почему, и третья строка — по порядку, что есть: кубик Reforge → сравнение с надетым → цепочка.
+// Кубик — рядом со штампом; у «Разобрать» и «Спорно» строка карточки — какой 4-й вытянет вещь,
 // у «Временно» — та же цепочка, где удачные для него 4-е с точкой; если удачные — у других, строка кубика.
-export function VerdictCard({ r, onOpen }: { r: VerdictData; onOpen: () => void }) {
+// vs — сравнение с тем, что надето (первое из «Сейчас на персонажах» или то, что в примерке): «▲ +25% Caren · Speed
+// +CHD (3-е) · −SPD (4-е)». Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
+// named — назвать, у кого надето; в примерке имя уже на полосе над формой, место — местам цепочки
+export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; onOpen: () => void; vs?: Vs | null; named?: boolean }) {
   const t = useT();
   const best = bestRow(r)?.row;
   const g = r.gamble;
   const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
   // кнопка карточки читается диктором целиком: штамп, кубик и «подробнее»
-  const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]), t.ui.verdictDetails].filter(Boolean).join(' · ');
+  const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
+    vs && t.tryon.clause(vs.kind, vs.c.name, vs.b.name, false), t.ui.verdictDetails].filter(Boolean).join(' · ');
+  const places = vs && (vs.gained.length || vs.lost.length)
+    ? t.ui.vsPlaces(vs.gained.map((x) => ({ ...x, key: subLabel(x.key) })), vs.lost.map((x) => ({ ...x, key: subLabel(x.key) }))) : '';
   return (
     <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={label} {...tour('verdict')}>
       <span className="vc-top">
@@ -182,7 +189,9 @@ export function VerdictCard({ r, onOpen }: { r: VerdictData; onOpen: () => void 
       <span className="vc-title">{barTitle(r)}</span>
       {g && (r.v !== 'temp' || !lucky?.size)
         ? <GambleLine g={g} />
-        : best && best.good != null
+        : vs
+          ? <span className="vc-vs"><VsChip vs={vs} />{named && <><b>{vs.c.name}</b><span className="bn">· {vs.b.name}</span></>}{places && <span className="vc-places">{places}</span>}</span>
+          : best && best.good != null
           ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} lucky={lucky} /></span>
           : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
     </button>
