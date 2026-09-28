@@ -10,7 +10,7 @@ better than what's already on. Nothing is sent anywhere: it all stays in your br
 Only from a verdict: enter the piece as usual, open the details and tap **"Equip on…"**. The list shows the builds the
 piece fits — first the ones you're gearing, then the other builds of your roster (all characters if the roster is
 empty). Each row says what a tap does — "Replace the helmet — the new one is better", "Equip — no helmet
-yet"; typing a name searches all characters, not only the roster. "Show off-build too" lets you record a stopgap: what the character really wears now. The piece goes into the
+yet"; typing a name searches all characters, not only the roster. "Show off-build too" lets you put in a stopgap: what the character really wears now. The piece goes into the
 build as entered — with its yellow segments; a message says what happens to the old piece (for example, "Breakthrough
 material for the new one"), and "Undo" puts the old piece back in that slot — anything else you changed in
 those seconds stays.
@@ -18,7 +18,7 @@ those seconds stays.
 The same piece put into another build of the same character is the same piece there, not a copy: Reforge and
 Breakthrough edits apply in both builds.
 
-To record gear that's already on a character, enter it the same way, from the game's character screen.
+To put in gear that's already on a character, enter it the same way, from the game's character screen.
 
 ## On the character card
 
@@ -39,7 +39,7 @@ Tap a piece to update it after upgrading in the game:
   doesn't give it either;
 - **Remove from build**.
 
-Enhance isn't recorded: everything worn is assumed to be +10.
+Enhance isn't tracked: everything worn is assumed to be +10.
 
 ## "On your characters now" in the verdict
 
@@ -57,10 +57,10 @@ percentage by segments stays on a line below, with the reason.
 Also shown: a 2+2 set the swap would break, the current piece's Breakthrough tier (the new one needs
 that many materials to catch up), and when the new piece is the same as the one on — a tier of its Breakthrough.
 
-The verdict stamp doesn't change because of what's recorded.
+The verdict stamp doesn't change because of what's equipped.
 
 ## Backup
 
 "Export / import" on the characters tab: the **OGC-GEAR1** code holds all equipment. Copy it to keep a backup or to
-move to another device; "Replace" there loads it instead of everything recorded, and "Undo" in the message brings
+move to another device; "Replace" there loads it instead of everything equipped, and "Undo" in the message brings
 the previous equipment back.

@@ -129,7 +129,7 @@ export function App() {
     if (added) rosterApi.add([c.id]);
     setEquipOpen(false);
     setUndo(null);
-    const slot = t.ui.slotAcc[input.slot];
+    const slot = t.ui.slotNom[input.slot]; // «Надето: Caren · Speed · броня» — именительный, не «броню»
     const nameOf = (k: string) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k.slice(c.id.length + 1);
     let note = r.shared ? t.ui.sameAs(nameOf(r.shared)) : '';
     if (r.old) {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Экипировка на телефоне (360px): вещь с формы — «Надеть на…» → в билд, «Отменить»; «Сейчас на персонажах» в
+// Экипировка на телефоне (360px): вещь с формы — «Надеть на…» → в билд, «Вернуть»; «Сейчас на персонажах» в
 // подробностях; билд в карточке персонажа; карточка вещи — оранжевые сегменты и Breakthrough.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -49,7 +49,7 @@ const byText = (sel: string, text: string) => $$(sel).find((e) => e.textContent?
 const stored = () => JSON.parse(localStorage.getItem('ogc.gear') ?? 'null');
 
 describe('экипировка', () => {
-  it('«Надеть на…» → Caren · Speed: вещь в билде, сообщение с «Отменить»; «Отменить» — как было', async () => {
+  it('«Надеть на…» → Caren · Speed: вещь в билде, сообщение с «Вернуть»; «Вернуть» — как было', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
     await click($('.v-equip'));

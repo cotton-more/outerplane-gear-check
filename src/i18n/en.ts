@@ -279,6 +279,7 @@ export const en: Texts = {
     chainTail: (k) => `${k} is on the piece, but beyond 4th place in the priority — it doesn't count`,
     slotNames: { weapon: 'Weapon', accessory: 'Accessory', helmet: 'Helmet', armor: 'Armor', gloves: 'Gloves', shoes: 'Boots' },
     slotAcc: { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' },
+    slotNom: { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' },
     vsTitle: 'On your characters now',
     vsNow: 'now',
     vsNew: 'new',
@@ -473,8 +474,8 @@ export const en: Texts = {
     helpChars: [
       'The star adds a character to your roster; with "only my characters" checked, the evaluation considers only them. "Export / import" moves the roster to another device as a code.',
       'Tap a character to open their builds: sets, weapons, substat priority.',
-      '**Equipment** — what is worn in each build. A piece goes into a build from a verdict: "Equip on…" in the details. Then tap the piece on the character card to mark orange segments after Reforge and the Breakthrough tier; the number of Reforges done is counted for you. Enhance isn\'t recorded: everything worn is assumed to be +10.',
-      '**On your characters now** — in the verdict details: for whom the piece suits, an empty slot in a build you\'re gearing, or whether the new piece is better or worse than the one on — two chains side by side and by how much in useful segments, counting the Reforges ahead. The verdict stamp doesn\'t change. Backup — the OGC-GEAR1 code in "Export / import".',
+      '**Equipment** — what is worn in each build. A piece goes into a build from a verdict: "Equip on…" in the details. Then tap the piece on the character card to mark orange segments after Reforge and the Breakthrough tier; the number of Reforges done is counted for you. Enhance isn\'t tracked: everything worn is assumed to be +10.',
+      '**On your characters now** — in the verdict details: for whom the piece suits, an empty slot in a build you\'re gearing, or whether the new piece is better or worse than the one on — two chains side by side and by how much in useful segments, counting the Reforges ahead; for weapons and accessories, where the passive decides, "recommended" or "stopgap". The verdict stamp doesn\'t change. Backup — the OGC-GEAR1 code in "Export / import".',
     ],
     helpCode: 'Code for your guild',
     helpCodeText: (example) => `The verdict details show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster.`,
