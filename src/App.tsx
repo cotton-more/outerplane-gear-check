@@ -28,6 +28,7 @@ import type { Build, Char, SlotId } from './data/types';
 import type { ItemInput } from './logic/verdict';
 import { compareAll, compareFor } from './logic/vs';
 import { tryOnPreset, tryOnTarget, tryOnTitle } from './logic/tryon';
+import { materialFor, withMaterial } from './logic/material';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -76,9 +77,11 @@ export function App() {
   // кубик Reforge — до 10 пробных оценок (на телефоне заметно): вердикт встаёт сразу, кубик досчитывается следом
   const later = useDeferredValue(key);
   const full = useMemo(() => evaluate(ctx, JSON.parse(later) as ItemInput), [ctx, later]);
-  const verdict = later === key ? full : quick;
-  // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта
+  // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
+  // Вещь — материал Breakthrough для надетой не на T4: «Разобрать» поднимается до «Фоддер» (logic/material)
   const gear = useGear(idx, !touring);
+  const raw = later === key ? full : quick;
+  const verdict = useMemo(() => withMaterial(idx, t, raw, materialFor(gear.store, input)), [idx, t, raw, gear.store]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка (logic/tryon): сравнение только с одним билдом, «Надеть» — сразу в него; на время обучения её нет
   const tryOn = useTryOn(idx, !touring);
   const target = useMemo(() => (touring ? null : tryOnTarget(idx, tryOn.value)), [idx, tryOn.value, touring]);

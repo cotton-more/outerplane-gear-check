@@ -534,6 +534,14 @@ export const ru = {
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',
   },
   // --- обучение (src/tour): кнопки, полосы и шаги главного тура; шаг — функция от StepText (src/tour/types.ts)
+  // --- материал Breakthrough для надетой вещи (logic/material): «Разобрать» → «Фоддер»
+  material: {
+    title: (slotGen: string, who: string) => `Фоддер — материал Breakthrough для ${slotGen} ${who}`,
+    need: (slot: string, who: string, bt: number, left: number) => `${slot} ${who} — T${bt}, ещё ${left} шт. до T4`,
+    line: (list: string) => `**Материал**: такая же вещь надета не на T4 — ${list}. Одна вещь — одна ступень Breakthrough, сабстаты не важны.`,
+    plan: '**Не прокачивай и не разбирай** — отдай в Breakthrough надетой: одна вещь — одна ступень.',
+  },
+
   // --- примерка: оценка для одного персонажа и билда (logic/tryon, components/eval/TryOnStrip)
   tryon: {
     label: 'Примерка',

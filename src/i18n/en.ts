@@ -494,6 +494,12 @@ export const en: Texts = {
     wikiLink: 'Full guide — in the Wiki ↗',
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Getting-started',
   },
+  material: {
+    title: (slot, who) => `Fodder — Breakthrough material for the ${slot} on ${who}`,
+    need: (slot, who, bt, left) => `${slot} on ${who} — T${bt}, ${left} more to T4`,
+    line: (list) => `**Material**: the same piece is worn below T4 — ${list}. One piece is one Breakthrough tier; substats don't matter.`,
+    plan: '**Don\'t upgrade or dismantle it** — feed it to the worn one\'s Breakthrough: one piece is one tier.',
+  },
   tryon: {
     label: 'Try-on',
     end: 'End try-on',
