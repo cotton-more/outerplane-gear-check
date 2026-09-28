@@ -128,7 +128,10 @@ cat "$TMP/new.log" >&2
 close_issue "Сборка снова проходит"
 
 pr=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number // empty')
-if [ -z "$(git status --porcelain -- docs)" ]; then
+# данные те же — снимок прежний (dataChanged в отчёте update.py). docs/ при этом может отличаться кодом: код в main
+# новее опубликованного (публикация кода упала) — такой «PR данных» был бы без данных
+data_changed=$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1])).get("dataChanged", True)).lower())' "$TMP/new.json")
+if [ -z "$(git status --porcelain -- docs)" ] || [ "$data_changed" = false ]; then
   echo "Данные совпадают с опубликованными — предлагать нечего."
   [ -z "$pr" ] || gh pr close "$pr" --delete-branch --comment "Данные совпадают с опубликованными (влиты или outerpedia откатила правку): $RUN_URL" >/dev/null
   exit 0

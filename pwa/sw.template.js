@@ -1,13 +1,18 @@
-// Шаблон docs/sw.js: update.py подставляет __VERSION__ и __FILES__. Эта первая строка в вывод не попадает.
-// Service worker Outerplane Gear Check: офлайн-режим и обновление данных.
+// Шаблон docs/sw.js: update.py подставляет __VERSION__, __DATA__ и __FILES__. Эта первая строка в вывод не попадает.
+// Service worker Outerplane Gear Check: офлайн-режим и обновления.
 // Сгенерирован update.py — не редактируй вручную.
+// VERSION — версия приложения: меняется от любой правки файлов сайта (строку читают task pages:check и
+// scripts/autoupdate.sh). DATA — версия данных: коммит outerpedia снимка, меняется только с новыми данными.
+// Страница спрашивает ждущий worker, что в нём, и решает: новые данные — плашка «Обновить», только правки
+// приложения — строка в подвале, а при следующем запуске оно ставится само (src/hooks/usePwa.ts).
 const VERSION = '__VERSION__';
+const DATA = __DATA__;
 const CACHE = 'ogc-' + VERSION;
 const FONTS = 'ogc-fonts';
 const PRECACHE = __FILES__;
 
 self.addEventListener('install', (event) => {
-  // новая версия ждёт: страница сама предложит обновиться, чтобы не перезагружаться посреди оценки.
+  // новая версия ждёт, пока страница её не включит: посреди оценки не перезагружаемся.
   // cache: 'reload' — мимо HTTP-кэша браузера: иначе под новой версией может лечь старая страница
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.map((url) => new Request(url, { cache: 'reload' })))));
 });
@@ -21,7 +26,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('message', (event) => {
+  // 'skipWaiting' строкой шлют и страницы прежних выпусков — не менять
   if (event.data === 'skipWaiting') self.skipWaiting();
+  // «что в тебе?» (askWorker в src/hooks/usePwa.ts) — ответ в порт MessageChannel
+  else if (event.data?.type === 'ogc:info') event.ports[0]?.postMessage({ version: VERSION, data: DATA });
 });
 
 self.addEventListener('fetch', (event) => {

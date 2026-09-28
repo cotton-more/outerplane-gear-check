@@ -42,7 +42,7 @@ function server_warn() {
 
 // Версия сборки для подвала: последний коммит, который менял само приложение, — не данные в docs/.
 // Не время сборки и не HEAD: иначе каждая публикация (она коммитит данные) меняла бы страницу,
-// и у всех появлялась бы плашка «Обновить» без единой правки.
+// и телефоны качали бы новую версию без единой правки.
 const APP_PATHS = ['src', 'index.html', 'vite.config.ts', 'package.json', 'package-lock.json', 'update.py', 'pwa'];
 function buildInfo(): { hash: string; date: string; dirty: boolean } {
   const git = (...args: string[]) => execFileSync('git', args, { cwd: import.meta.dirname, encoding: 'utf8' }).trim();

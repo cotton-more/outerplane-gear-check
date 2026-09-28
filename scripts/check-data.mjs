@@ -45,6 +45,16 @@ const dataOf = (html) => {
 const withData = (html, other) => html.replace(DATA_RE, () => DATA_RE.exec(other)[0]);
 const readJson = (path) => (path ? JSON.parse(readFileSync(path, 'utf8')) : null);
 
+// набор без меток — как same_content в update.py: снимок (коммит outerpedia, его дата, откуда собран), newIds и img
+// зависят от прошлой страницы, а не от данных. Ключи по порядку: порядок полей зависит от кода, а не от данных
+const STAMP = new Set(['generatedAt', 'source', 'commit', 'commitDate', 'newIds']);
+const canon = (v) => (Array.isArray(v) ? v.map(canon)
+  : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v);
+const contentOf = (D) => {
+  const { img: _img, meta, ...rest } = D;
+  return JSON.stringify(canon({ ...rest, meta: Object.fromEntries(Object.entries(meta).filter(([k]) => !STAMP.has(k))) }));
+};
+
 // --------------------------------------------------------------------------- страница в jsdom
 
 // jsdom не исполняет <script type="module">: вынимаем бандл и запускаем его сами после разбора документа —
@@ -452,6 +462,19 @@ async function main() {
       }
     });
   }
+
+  // 1б. ложное обновление: коммит outerpedia другой, а данные те же — телефоны показали бы «Вышли новые данные» зря
+  // (sw.js отдаёт meta.commit как версию данных). update.py в этом случае оставляет прежний снимок (snapshot_kind),
+  // здесь — страховка. Как «Код закоммичен», в отчёте только когда сработала. При разном коде наборы и так
+  // различаются — тогда она молчит: ловит дубли, а не правки кода
+  await guarded('Ложное обновление данных', () => {
+    const [oc, nc] = [oldD.meta.commit, newD.meta.commit];
+    if (!oc || !nc || oc === nc || contentOf(oldD) !== contentOf(newD)) return;
+    check('Ложное обновление данных', false, [
+      `коммит outerpedia ${oc.slice(0, 7)} → ${nc.slice(0, 7)}, а данные на странице те же: у телефонов была бы плашка «Вышли новые данные» без новых данных`,
+      'снимок должен был остаться прежним — update.py, snapshot_kind()',
+    ]);
+  });
 
   // 2. правдоподобие: ничего заметного не пропало
   let diff = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [], mains: [] };

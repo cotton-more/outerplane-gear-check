@@ -222,16 +222,18 @@ def load_sources(source: Path | None, ref: str) -> tuple[dict, dict]:
 
     sha, date = resolve_ref(ref)
     log(f"Источник: github.com/{REPO} @ {sha[:10] if date else sha}{' (' + date + ')' if date else ''}")
+    return fetch_sources(sha), {"source": f"github.com/{REPO}", "commit": sha if date else None, "commitDate": date}
 
+
+def fetch_sources(ref: str) -> dict:
+    """Наши файлы outerpedia (SOURCE_FILES) с raw.githubusercontent.com по sha или ветке — без GitHub API."""
     def fetch(item: tuple[str, str]) -> tuple[str, object]:
         key, rel = item
-        url = f"https://raw.githubusercontent.com/{REPO}/{sha}/{rel}"
+        url = f"https://raw.githubusercontent.com/{REPO}/{ref}/{rel}"
         return key, parse_json(fetch_retry(url, rel), rel)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-        for key, value in pool.map(fetch, SOURCE_FILES.items()):
-            data[key] = value
-    return data, {"source": f"github.com/{REPO}", "commit": sha if date else None, "commitDate": date}
+        return dict(pool.map(fetch, SOURCE_FILES.items()))
 
 
 def git_info(path: Path) -> tuple[str | None, str | None]:
@@ -1224,7 +1226,10 @@ def build_pwa(site: Path, data: dict, fragment_for, warn: Warnings, refresh: boo
         digest.update(rel.encode())
         digest.update((site / rel).read_bytes())
     version = digest.hexdigest()[:12]
-    sw = sw_template().replace("__VERSION__", version).replace("__FILES__", json.dumps(files, ensure_ascii=False, indent=2))
+    # VERSION — версия приложения: любые файлы. DATA — версия данных: коммит outerpedia снимка (BUILD_STAMP),
+    # по ней страница отличает новые данные от правок кода (src/hooks/usePwa.ts)
+    sw = (sw_template().replace("__VERSION__", version).replace("__DATA__", json.dumps(data["meta"].get("commit")))
+          .replace("__FILES__", json.dumps(files, ensure_ascii=False, indent=2)))
     (site / "sw.js").write_text(sw, encoding="utf-8")
     size = sum((site / rel).stat().st_size for rel in files[1:])
     return {"version": version, "files": len(files), "bytes": size, "page": len(page.encode("utf-8"))}
@@ -1443,16 +1448,57 @@ def report(data: dict, prev: dict | None, warn: Warnings) -> None:
             "Скорее всего, в outerpedia поменялась структура данных — стоит обновить update.py.")
 
 
-# метки сборки, а не данные: сменился только коммит outerpedia (правили не наши файлы) — это не обновление
-BUILD_STAMP = ("generatedAt", "commit", "commitDate")
+# Снимок данных — метки, а не данные: из какого коммита outerpedia и откуда собран набор. У PWA он двигается, только
+# когда новые данные outerpedia меняют то, что строит ТЕКУЩИЙ код (main_pwa): новый коммит, не тронувший наши файлы
+# или тронувший то, чего мы не читаем, — не обновление, и телефоны не покажут «Вышли новые данные» (sw.js отдаёт
+# commit странице как версию данных). source — вместе с коммитом: сборка из локального клона (--source) отличается
+# от GitHub только этой подписью
+BUILD_STAMP = ("generatedAt", "source", "commit", "commitDate")
 
 
 def same_content(a: dict, b: dict) -> bool:
+    """Два набора одинаковы без меток: снимок (BUILD_STAMP), newIds и img зависят от прошлой страницы, а не от данных.
+
+    meta.gameVersion сравнивается: новая версия игры — новые данные."""
     def strip(d: dict) -> str:
-        d = {k: v for k, v in d.items()}
-        d["meta"] = {k: v for k, v in d.get("meta", {}).items() if k not in BUILD_STAMP}
+        d = {k: v for k, v in d.items() if k != "img"}
+        d["meta"] = {k: v for k, v in d.get("meta", {}).items() if k not in BUILD_STAMP and k != "newIds"}
         return json.dumps(d, sort_keys=True, ensure_ascii=False)
     return strip(a) == strip(b)
+
+
+def published_dataset(meta: dict) -> dict:
+    """Опубликованный снимок (meta — со страницы), собранный ТЕКУЩИМ кодом: с ним сравнивается свежий набор.
+
+    Качается сразу по sha: дата у снимка уже есть, GitHub API не нужен. Предупреждения и DROPPED у этой сборки свои —
+    иначе отчёт и описание PR показали бы их дважды."""
+    pub = meta["commit"]
+    log(f"Сверяю с опубликованным снимком {pub[:7]}")
+    dropped = DROPPED[:]
+    try:
+        src = fetch_sources(pub)
+        return build_dataset(src, {"source": f"github.com/{REPO}", "commit": pub, "commitDate": meta.get("commitDate")},
+                             Warnings())
+    except SystemExit as exc:
+        raise SystemExit(f"Не собрался опубликованный снимок {pub[:7]} для сверки ({exc}) — сборку PWA не делаю: "
+                         "без сверки не понять, изменились ли данные, а лучше не собрать, чем выпустить ложное "
+                         "обновление. Повтори позже.") from None
+    finally:
+        DROPPED[:] = dropped
+
+
+def snapshot_kind(data: dict, prev: dict | None, prov: dict) -> str:
+    """Какой снимок у новой страницы: same-commit, same-content — прежний; changed — новый (свежий коммит outerpedia).
+
+    Прежний снимок можно оставить, только когда набор совпадает с тем, что дал бы этот коммит текущим кодом:
+    публикация кода (--ref опубликованного коммита) и --same-data собирают страницу заново из meta.commit, и старый
+    коммит рядом с другими данными молча откатил бы их."""
+    pub = ((prev or {}).get("meta") or {}).get("commit")
+    if not pub:
+        return "changed"  # первая сборка в пустую папку
+    if prov["commit"] == pub:
+        return "same-commit"  # --same-data, публикация кода роботом, task preview
+    return "same-content" if same_content(published_dataset(prev["meta"]), data) else "changed"
 
 
 def carry_new_ids(data: dict, prev: dict | None) -> None:
@@ -1463,33 +1509,43 @@ def carry_new_ids(data: dict, prev: dict | None) -> None:
 
 
 def main_pwa(args) -> None:
+    """PWA в папку: снимок данных двигается, только когда изменились данные (BUILD_STAMP, snapshot_kind).
+
+    Прошлая страница в папке — опубликованная: её meta.commit сравнивается со свежим коммитом outerpedia. Тот же
+    коммит — снимок прежний. Другой — опубликованный коммит собирается ещё раз текущим кодом (published_dataset):
+    тот же набор — снимок прежний, другой — новый. Правки кода при прежнем снимке дают новую версию приложения
+    (VERSION в sw.js), но не версию данных: у телефонов нет плашки «Вышли новые данные»."""
     site = args.pwa.expanduser()
     warn = Warnings()
+    prev = previous_data(site / "index.html")
     if args.same_data:
-        commit = ((previous_data(site / "index.html") or {}).get("meta") or {}).get("commit")
+        commit = ((prev or {}).get("meta") or {}).get("commit")
         if not commit:
             raise SystemExit(f"--same-data: в {site / 'index.html'} нет коммита outerpedia — нечего пересобирать")
         args.ref = commit
     src, prov = load_sources(args.source, args.ref)
     if not prov.get("commit") or not prov.get("commitDate"):
-        # без sha и даты коммита данные нельзя сравнить с прошлой сборкой: сменится generatedAt,
-        # и у всех установленных приложений выскочит ложная плашка «вышли новые данные»
+        # без sha и даты коммита данные нельзя сравнить с опубликованными: снимок сдвинулся бы, и у всех
+        # установленных приложений выскочила бы ложная плашка «вышли новые данные»
         raise SystemExit("Не удалось узнать коммит outerpedia (лимит GitHub API или нет git в --source) — "
                          "сборку PWA не делаю, чтобы не выпустить ложное обновление. Повтори позже.")
     data = build_dataset(src, prov, warn)
     # не время сборки, а дата коммита outerpedia: сайт — функция только кода и коммита. Иначе две сборки одних
     # и тех же новых данных различались бы, и автообновление перепушивало бы ветку PR каждую ночь
     data["meta"]["generatedAt"] = prov["commitDate"]
-    prev = previous_data(site / "index.html")
-    carry_new_ids(data, prev)
-    info = build_pwa(site, data, render_document, warn, args.refresh_images)
-    unchanged = bool(prev) and same_content(prev, data)
-    if unchanged:
-        # данные те же — оставляем прежние метки (дату сборки и коммит outerpedia), чтобы файлы не менялись:
-        # ни лишнего коммита, ни ложной плашки «вышли новые данные» у пользователей
+    kind = snapshot_kind(data, prev, prov)
+    pub = ((prev or {}).get("meta") or {}).get("commit") or ""
+    if kind == "changed":
+        log(f"Снимок данных новый: {prov['commit'][:7]}" + (f" (был {pub[:7]})" if pub else ""))
+    else:
+        # данные те же — прежний снимок, чтобы файлы не менялись: ни лишнего коммита, ни ложной плашки
+        # «вышли новые данные»; страница та же, что собрал бы из meta.commit текущий код
         for key in BUILD_STAMP:
             data["meta"][key] = prev["meta"].get(key, data["meta"][key])
-        info = build_pwa(site, data, render_document, warn, args.refresh_images)
+        log(f"Снимок данных прежний: {pub[:7]}" + (" — тот же коммит outerpedia" if kind == "same-commit" else
+            f" — у outerpedia новый коммит {prov['commit'][:7]}, но то, что строит этот код, не изменилось"))
+    carry_new_ids(data, prev)
+    info = build_pwa(site, data, render_document, warn, args.refresh_images)
     if args.dump_json:
         slim = {k: v for k, v in data.items() if k != "img"}
         args.dump_json.write_text(json.dumps(slim, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -1499,15 +1555,19 @@ def main_pwa(args) -> None:
     log(f"  персонажей {c['characters']} (с билдами {c['withBuilds']}), билдов {c['builds']}")
     report(data, prev, warn)
     if args.report_json:
-        write_report_json(args.report_json, data, prev, prov, warn, unchanged)
+        write_report_json(args.report_json, data, prev, prov, warn, kind)
 
 
-def write_report_json(path: Path, data: dict, prev: dict | None, prov: dict, warn: Warnings, unchanged: bool) -> None:
-    """Итог сборки для проверок (scripts/check-data.mjs) и описания PR автообновления."""
+def write_report_json(path: Path, data: dict, prev: dict | None, prov: dict, warn: Warnings, snapshot: str) -> None:
+    """Итог сборки для проверок (scripts/check-data.mjs), робота (scripts/autoupdate.sh) и описания PR автообновления.
+
+    dataChanged — снимок данных сдвинулся (у страницы другой meta.commit, чем у прошлой): телефоны покажут «Вышли
+    новые данные». snapshot — почему так (snapshot_kind): same-commit, same-content или changed."""
     out = {
         "fetched": {"commit": prov.get("commit"), "commitDate": prov.get("commitDate")},
         "published": {k: (prev or {}).get("meta", {}).get(k) for k in ("commit", "commitDate")},
-        "unchanged": unchanged,
+        "dataChanged": snapshot == "changed",
+        "snapshot": snapshot,
         "counts": data["meta"]["counts"],
         "changes": [line.strip() for line in diff_report(prev, data)],
         "warnings": warn.items,
