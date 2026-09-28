@@ -21,7 +21,7 @@ import { useToastPlace } from './hooks/useToastPlace';
 import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
-import { evaluate } from './logic/evaluate';
+import { evaluate, withPendingDice } from './logic/evaluate';
 import { buildKey, equipOn, gearedChars, moveTo, pieceInput, samePiece, twinElsewhere, undoEquip, undoMove, usedIn, type GearStore, type Piece, type Twin } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
@@ -88,7 +88,8 @@ export function App() {
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
     : realGear), [demo, realGear]);
   const geared = useMemo(() => gearedChars(gear.store), [gear.store]);
-  const raw = later === key ? full : quick;
+  // кубик ещё считается: у той же вещи с другим сегментом — прежний кубик, а не строка без него (logic/evaluate)
+  const raw = useMemo(() => (later === key ? full : withPendingDice(ctx, input, quick, JSON.parse(later) as ItemInput, full)), [ctx, key, later, full, quick]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка (logic/tryon): сравнение только с одним билдом, «Надеть» — сразу в него; на время обучения её нет
   const realTry = useTryOn(idx, !touring);
   const tryOn = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : realTry;

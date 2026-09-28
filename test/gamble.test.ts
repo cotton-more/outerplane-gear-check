@@ -6,7 +6,7 @@ import type { Dataset } from '../src/data/types';
 import { makeCtx, type Settings } from '../src/logic/context';
 import { evalArmor } from '../src/logic/evalArmor';
 import { evalGear } from '../src/logic/evalGear';
-import { evaluate } from '../src/logic/evaluate';
+import { evaluate, withPendingDice } from '../src/logic/evaluate';
 import { fourthPool, reforgeGamble } from '../src/logic/gamble';
 import { emptyVerdict, type ItemInput } from '../src/logic/verdict';
 
@@ -113,5 +113,30 @@ describe('кубик Reforge', () => {
 
   it('никакой 4-й не спасёт — кубика нет', () => {
     expect(evaluate(ctx(), armor('helmet', 'Attack', { RES: 1, EFF: 1, 'DMG RED%': 1 })).gamble).toBeNull();
+  });
+});
+
+// пока кубик досчитывается, на экране вердикт без него: у той же вещи с другим сегментом — прежний кубик
+describe('кубик, пока досчитывается', () => {
+  const c = ctx();
+  const was = armor('helmet', 'Attack', { 'ATK%': 1, CHC: 1, RES: 1 });
+  const now = { ...was, subs: { ...was.subs, 'ATK%': 2 } }; // сегмент ATK% 1 → 2
+  const prev = evaluate(c, was);
+
+  it('сегмент 1 → 2: вердикт новый, кубик прежний, и «Прокачка» с его строкой — как будет, когда досчитается', () => {
+    const quick = evaluate(c, now, { gamble: false });
+    const shown = withPendingDice(c, now, quick, was, prev);
+    expect(shown.gamble).toBe(prev.gamble);
+    expect(shown.lines).toEqual(quick.lines);
+    expect(shown.plan).toEqual(evaluate(c, now).plan);
+  });
+
+  it('другой набор сабстатов или другой вердикт — кубика нет, пока не досчитается', () => {
+    const other = armor('helmet', 'Attack', { 'ATK%': 1, CHC: 1, HP: 1 });
+    const quick = evaluate(c, other, { gamble: false });
+    expect(withPendingDice(c, other, quick, was, prev)).toBe(quick);
+    const kept = { ...prev, v: 'keep' as const };
+    const q2 = evaluate(c, now, { gamble: false });
+    expect(withPendingDice(c, now, q2, was, kept)).toBe(q2);
   });
 });
