@@ -89,6 +89,19 @@ export function equip(st: GearStore, key: string, item: ItemInput, at = today())
   return { store: next, piece, old };
 }
 
+// надеть на персонажа: та же вещь уже стоит в этом слоте другого его билда — ставим ту же запись (одна вещь — одна
+// запись, как «Взять из»: правка Reforge и Breakthrough видна везде), иначе — новую
+export function equipOn(st: GearStore, charId: string, key: string, item: ItemInput, at = today()): { store: GearStore; piece: Piece; old: Piece | null; shared: string | null } {
+  const twin = Object.entries(st.builds).find(([k, b]) => {
+    const p = k !== key && k.startsWith(charId + '/') ? st.pieces[b.slots[item.slot] ?? ''] : undefined;
+    return p && samePiece(item, p);
+  });
+  if (!twin) return { ...equip(st, key, item, at), shared: null };
+  const id = twin[1].slots[item.slot]!;
+  const oldId = st.builds[key]?.slots[item.slot];
+  return { store: share(st, key, item.slot, id, at), piece: st.pieces[id], old: oldId ? st.pieces[oldId] ?? null : null, shared: twin[0] };
+}
+
 // «Вернуть» после «Надеть»: только этот слот этого билда — как было (старую вещь — обратно, даже если её убрал gc).
 // Другие правки за эти секунды остаются; слот успели поменять ещё раз — не трогаем
 export function undoEquip(st: GearStore, key: string, slot: SlotId, piece: Piece, old: Piece | null, at = today()): GearStore {

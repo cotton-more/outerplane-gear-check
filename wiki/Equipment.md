@@ -14,6 +14,9 @@ build as entered — with its yellow segments; a message says what happens to th
 material for the new one"), and "Undo" puts the old piece back in that slot — anything else you changed in
 those seconds stays.
 
+The same piece put into another build of the same character is the same piece there, not a copy: Reforge and
+Breakthrough edits apply in both builds.
+
 To record gear that's already on a character, enter it the same way, from the game's character screen.
 
 ## On the character card

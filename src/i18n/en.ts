@@ -313,6 +313,7 @@ export const en: Texts = {
     oldMaterial: 'The old one is Breakthrough material for the new one: don\'t dismantle it.',
     oldVerdict: (label) => `The old one: "${label}".`,
     oldStill: (builds) => `The old one stays in ${builds}.`,
+    sameAs: (build) => `The same piece as in ${build}: Reforge and Breakthrough edits apply everywhere.`,
     gearTitle: (n) => `Equipped · ${n} of 6`,
     gearNone: 'This build isn\'t geared yet. Equip a piece from a verdict — the "Equip on…" button in the details.',
     gearSet: (set, n, need) => (n >= need ? `${set} ×${need} — complete` : `${set} — ${n} of ${need}`),

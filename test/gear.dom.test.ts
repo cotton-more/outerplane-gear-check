@@ -64,6 +64,19 @@ describe('экипировка', () => {
     expect(Object.keys(stored().pieces)).toEqual([]);
   });
 
+  it('та же вещь во второй билд Caren — одна запись: в карточке «Also in Speed», сообщение говорит об этом', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await click(byText('.equip-row', 'Speed')?.closest('button') as HTMLElement);
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await click(byText('.equip-row', 'Speed/Immu') as HTMLElement);
+
+    expect(Object.keys(stored().pieces)).toHaveLength(1);
+    expect($('.gear-toast small')?.textContent).toContain('The same piece as in Speed');
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));

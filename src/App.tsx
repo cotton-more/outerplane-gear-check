@@ -21,7 +21,7 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { buildKey, equip, pieceInput, samePiece, undoEquip, usedIn, type GearStore } from './logic/gear';
+import { buildKey, equipOn, pieceInput, samePiece, undoEquip, usedIn, type GearStore } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char } from './data/types';
@@ -123,19 +123,20 @@ export function App() {
     // та же вещь уже в этом слоте — ничего не менять: свежая копия потеряла бы отмеченные Reforge и Breakthrough
     const onNow = prev.pieces[prev.builds[key]?.slots[input.slot] ?? ''];
     if (onNow && samePiece(input, onNow)) { setEquipOpen(false); return; }
-    const r = equip(prev, key, input);
+    const r = equipOn(prev, c.id, key, input);
     gear.set(r.store);
     const added = !roster.has(c.id);
     if (added) rosterApi.add([c.id]);
     setEquipOpen(false);
     setUndo(null);
     const slot = t.ui.slotAcc[input.slot];
-    let note = '';
+    const nameOf = (k: string) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k.slice(c.id.length + 1);
+    let note = r.shared ? t.ui.sameAs(nameOf(r.shared)) : '';
     if (r.old) {
       const same = isArmor(r.old.slot) ? r.old.setId === r.piece.setId && r.old.grade === r.piece.grade : !!r.old.itemKey && r.old.itemKey === r.piece.itemKey;
-      const still = usedIn(r.store, r.old.id).map((k) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k);
-      note = still.length ? t.ui.oldStill(still.join(', '))
-        : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[evaluate(ctx, pieceInput(r.old), { gamble: false }).v]);
+      const still = usedIn(r.store, r.old.id).map(nameOf);
+      note = [note, still.length ? t.ui.oldStill(still.join(', '))
+        : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[evaluate(ctx, pieceInput(r.old), { gamble: false }).v])].filter(Boolean).join(' ');
     }
     const item = input.slot;
     setGearUndo({

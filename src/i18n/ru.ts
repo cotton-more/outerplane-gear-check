@@ -343,6 +343,7 @@ export const ru = {
     oldMaterial: 'Старая — материал Breakthrough для новой: не разбирай.',
     oldVerdict: (label: string) => `Старая: «${label}».`,
     oldStill: (builds: string) => `Старая осталась в ${builds}.`,
+    sameAs: (build: string) => `Та же вещь, что в ${build}: Reforge и Breakthrough правятся сразу везде.`,
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
     gearNone: 'Этот билд ещё не собран. Надень вещь из вердикта — кнопка «Надеть на…» в подробностях.',
     gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),

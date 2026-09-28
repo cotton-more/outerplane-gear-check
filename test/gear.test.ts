@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
-  addFourth, buildKey, decodeGear, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
+  addFourth, buildKey, decodeGear, equipOn, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
   tapSegment, undoEquip, unequip, updatePiece, usedIn,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
@@ -51,6 +51,16 @@ describe('экипировка: надеть, заменить, снять', () 
     expect(back.pieces[other.piece.id].bt).toBe(3);
     // слот успели поменять ещё раз — «Вернуть» его не трогает
     expect(undoEquip(unequip(edited, K, 'helmet'), K, 'helmet', b.piece, b.old).builds[K]).toBeUndefined();
+  });
+
+  it('та же вещь во второй билд того же персонажа — одна запись в двух билдах; у другого персонажа — своя', () => {
+    const a = equip(EMPTY_GEAR, K, helmet({ CHC: 2, CHD: 1 }));
+    const b = equipOn(a.store, '2000089', K2, helmet({ CHC: 2, CHD: 1 }));
+
+    expect(b).toMatchObject({ shared: K, piece: { id: a.piece.id } });
+    expect(usedIn(b.store, a.piece.id)).toEqual([K, K2]);
+    expect(equipOn(a.store, '2000077', buildKey('2000077', 'Speed'), helmet({ CHC: 2, CHD: 1 })).shared).toBeNull();
+    expect(equipOn(a.store, '2000089', K2, helmet({ CHC: 3, CHD: 1 })).shared).toBeNull();
   });
 
   it('снять последнюю вещь — билда в хранилище больше нет', () => {
