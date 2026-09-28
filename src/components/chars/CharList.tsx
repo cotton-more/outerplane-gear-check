@@ -12,16 +12,22 @@ import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
-// onGearImport — код экипировки заменил записи: сообщение с «Вернуть» (App)
-interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; onGearImport: (prev: GearStore, text: string) => void }
+// onGearImport — код экипировки заменил записи: сообщение с «Вернуть» (App); geared — у кого сколько надето
+interface Props {
+  s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
+  onGearImport: (prev: GearStore, text: string) => void;
+}
 
-export function CharList({ s, dispatch, rosterApi, gear, onGearImport }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
   const { roster } = rosterApi;
   const [io, setIo] = useState(false);
-  const shown = useMemo(() => D.chars.filter((c) => charMatches(c, s, roster)), [D, s, roster]);
+  const shown = useMemo(() => D.chars.filter((c) => charMatches(c, s, roster, geared)), [D, s, roster, geared]);
+  const nGeared = D.chars.filter((c) => geared.has(c.id)).length;
+  // с фильтром «с экипировкой» — сколько персонажей ростера ещё ничего не собрали
+  const rest = s.cGear ? D.chars.filter((c) => roster.has(c.id) && !geared.has(c.id) && c.builds.length).length : 0;
   const filter = (patch: Partial<CharFilter>) => dispatch({ type: 'charFilter', patch });
   return (
     <div className="panel" id="char-list">
@@ -49,11 +55,12 @@ export function CharList({ s, dispatch, rosterApi, gear, onGearImport }: Props) 
         </div>
         <div className="filt">
           <label className="toggle"><input type="checkbox" id="c-owned" checked={s.cOwned} onChange={(e) => filter({ cOwned: e.target.checked })} /> {t.ui.onlyMine}</label>
+          <label className="toggle"><input type="checkbox" id="c-gear" checked={!!s.cGear} onChange={(e) => filter({ cGear: e.target.checked })} /> {t.ui.withGear}</label>
           <label className="toggle"><input type="checkbox" id="c-all" checked={s.cAll} onChange={(e) => filter({ cAll: e.target.checked })} /> {t.ui.withoutBuilds}</label>
         </div>
       </div>
       <div className="roster-bar">
-        <span>{t.ui.rosterCount} <b>{roster.size}</b></span>
+        <span>{t.ui.rosterCount} <b>{roster.size}</b>{nGeared > 0 && <> · {t.ui.gearCount(nGeared)}</>}</span>
         <button type="button" className="linkbtn" onClick={() => rosterApi.add(shown.map((c) => c.id))}>{t.ui.markShown}</button>
         <button type="button" className="linkbtn" onClick={() => setIo(!io)}>{t.ui.exportImport}</button>
         {roster.size > 0 && <ClearRoster onClear={rosterApi.clear} />}
@@ -62,16 +69,18 @@ export function CharList({ s, dispatch, rosterApi, gear, onGearImport }: Props) 
       {io && <GearIO gear={gear} onImport={onGearImport} />}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
-          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)}
+          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id) ?? 0}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
-        )) : <p className="empty">{t.ui.nobodyFound}</p>}
+        )) : <p className="empty">{s.cGear && !nGeared ? t.ui.gearNobody : t.ui.nobodyFound}</p>}
       </div>
+      {rest > 0 && shown.length > 0 && <p className="muted small cgrid-note">{t.ui.gearRest(rest)}</p>}
     </div>
   );
 }
 
-function CharTile({ c, own, selected, isNew, onSelect, onToggle }: {
-  c: Char; own: boolean; selected: boolean; isNew: boolean; onSelect: () => void; onToggle: () => void;
+// gear — сколько вещей в самом собранном билде: «6/6» на плитке
+function CharTile({ c, own, selected, isNew, gear, onSelect, onToggle }: {
+  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number; onSelect: () => void; onToggle: () => void;
 }) {
   const t = useT();
   const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
@@ -81,6 +90,7 @@ function CharTile({ c, own, selected, isNew, onSelect, onToggle }: {
         title={c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : '')}>
         <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
+        {gear > 0 && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
       </button>
       <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>

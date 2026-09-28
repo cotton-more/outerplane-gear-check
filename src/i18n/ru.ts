@@ -367,6 +367,13 @@ export const ru = {
     gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),
     gearShared: (builds: string) => `Есть и в ${builds} — правка изменит везде.`,
     gearTake: (build: string) => `Взять из ${build}`,
+    // меню ☰ и список персонажей: у кого что надето
+    menuGear: (n: number) => `Экипировка · ${n}`,
+    withGear: 'с экипировкой',
+    gearCount: (n: number) => `билды собраны у ${n}`,
+    gearRest: (n: number) => `У ${personsGen(n)} из ростера ещё ничего не собрано — открой персонажа и нажми «Собрать билд».`,
+    gearNobody: 'Пока ничего не надето. Открой персонажа и нажми «Собрать билд» — или «Надеть» в вердикте.',
+    gearTile: (n: number) => `надето ${n} из 6`,
     // «Слабее всех» — самая слабая вещь брони в билде и что искать ей на замену
     weakest: (slot: string, grade: string, bt: number | null) => `Слабее всех — ${slot} (${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}).`,
     weakestLook: (piece: string, stats: string[]) => `Ищи ${piece} с ${stats.join(' и ')} — в примерке вердикт покажет, лучше ли она надетой.`,

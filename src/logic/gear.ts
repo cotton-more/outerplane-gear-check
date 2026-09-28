@@ -77,6 +77,16 @@ export function samePiece(a: ItemInput, p: Piece): boolean {
 export const usedIn = (st: GearStore, id: string): string[] =>
   Object.entries(st.builds).filter(([, b]) => Object.values(b.slots).includes(id)).map(([k]) => k);
 
+// у кого что-то надето: персонаж → сколько вещей в самом собранном его билде (плитка «6/6», меню «Экипировка · N»)
+export function gearedChars(st: GearStore): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const [k, b] of Object.entries(st.builds)) {
+    const id = k.slice(0, k.indexOf('/')), n = Object.keys(b.slots).length;
+    if (n > (out.get(id) ?? 0)) out.set(id, n);
+  }
+  return out;
+}
+
 // вещи, на которые больше не ссылается ни один билд, из хранилища убираем
 function gc(st: GearStore): GearStore {
   const used = new Set(Object.values(st.builds).flatMap((b) => Object.values(b.slots)));

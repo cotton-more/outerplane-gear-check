@@ -179,6 +179,23 @@ describe('экипировка', () => {
     expect($('.tryon')?.textContent).toContain('Caren · Speed');
   });
 
+  it('меню ☰ «Gear · 1» — список с фильтром «with gear»: только Caren, на плитке «1/6», на вкладке билда тоже', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, {}, { gear, roster: [caren.id, D.chars.find((c) => c.name === 'Kappa')!.id] });
+    await click($('.vb-tab'));
+    await click(byText('.menu-nav button', 'Gear · 1'));
+
+    expect(JSON.parse(localStorage.getItem('ogc.state')!).tab).toBe('chars');
+    expect(($('#c-gear') as HTMLInputElement).checked).toBe(true);
+    expect($$('#cgrid .ctile .cn').map((e) => e.textContent)).toEqual(['Caren']);
+    expect($('#cgrid .gearb')?.textContent).toBe('1 of 6 equipped1/6'); // диктору — словами, на экране — «1/6»
+    expect($('.roster-bar')?.textContent).toContain('builds filled for 1');
+    expect($('.cgrid-note')?.textContent).toContain('1 more in your roster has nothing filled yet');
+
+    await click($('#cgrid .ctile'));
+    expect(byText('.btabs button', 'Speed')?.textContent).toBe('Speed1/6');
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     expect($('.vcard .vc-vs')).toBeNull();

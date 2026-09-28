@@ -120,7 +120,7 @@ export function reducer(s: AppState, a: Action): AppState {
       // персонаж из вердикта: если фильтры списка его прячут — сбрасываем их
       const next: AppState = { ...s, tab: 'chars', charId: a.id };
       if (a.reveal === 'keep') return next;
-      return { ...next, cel: '', ccl: '', cq: '', cOwned: false, ...(a.reveal === 'filters+all' ? { cAll: true } : {}) };
+      return { ...next, cel: '', ccl: '', cq: '', cOwned: false, cGear: false, ...(a.reveal === 'filters+all' ? { cAll: true } : {}) };
     }
     case 'selectChar':
       return { ...s, charId: a.id };
@@ -171,6 +171,7 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
     ccl: oneOf(p.ccl, ['', ...Object.keys(idx.D.classes)], ''),
     cOwned: bool(p.cOwned, false),
     cAll: bool(p.cAll, false),
+    cGear: false,
   };
 }
 

@@ -9,7 +9,7 @@ import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import type { Piece } from '../../logic/gear';
+import { buildKey, type Piece } from '../../logic/gear';
 import { BuildGear } from './BuildGear';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
 import { tour } from '../../tour/anchors';
@@ -42,6 +42,8 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
     );
   }
   const own = rosterApi.roster.has(c.id);
+  // сколько надето в билде — на вкладке «Speed 6/6»
+  const geared = (x: Build) => Object.keys(gear.store.builds[buildKey(c.id, x.name)]?.slots ?? {}).length;
   const b = c.builds[Math.min(bi, c.builds.length - 1)];
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
@@ -67,7 +69,9 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
         <>
           <div className="btabs" role="tablist" aria-label={t.ui.builds} {...(c.builds.length > 1 && tour('btabs'))}>
             {c.builds.map((x, i) => (
-              <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>{x.name}</button>
+              <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>
+                {x.name}{geared(x) > 0 && <span className="bt-n">{geared(x)}/6</span>}
+              </button>
             ))}
           </div>
           <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} onTryOn={onTryOn && ((x, slot, from) => onTryOn(c, x, slot, from))} />

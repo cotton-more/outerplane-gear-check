@@ -21,7 +21,7 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { buildKey, equipOn, moveTo, pieceInput, samePiece, twinElsewhere, undoEquip, undoMove, usedIn, type GearStore, type Piece, type Twin } from './logic/gear';
+import { buildKey, equipOn, gearedChars, moveTo, pieceInput, samePiece, twinElsewhere, undoEquip, undoMove, usedIn, type GearStore, type Piece, type Twin } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char, SlotId } from './data/types';
@@ -44,9 +44,9 @@ import type { Tip, TourCtx } from './tour/types';
 import { hasItem, useTour } from './tour/useTour';
 
 // открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
-function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string): Action {
+function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string, geared?: ReadonlyMap<string, number>): Action {
   const c = idx.CHAR[id];
-  const reveal = !c || charMatches(c, s, roster) ? 'keep' : c.builds.length ? 'filters' : 'filters+all';
+  const reveal = !c || charMatches(c, s, roster, geared) ? 'keep' : c.builds.length ? 'filters' : 'filters+all';
   return { type: 'openChar', id, reveal };
 }
 
@@ -80,6 +80,7 @@ export function App() {
   // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
   // Вещь — материал Breakthrough для надетой не на T4: «Разобрать» поднимается до «Фоддер» (logic/material)
   const gear = useGear(idx, !touring);
+  const geared = useMemo(() => gearedChars(gear.store), [gear.store]);
   const raw = later === key ? full : quick;
   const verdict = useMemo(() => withMaterial(idx, t, raw, materialFor(gear.store, input)), [idx, t, raw, gear.store]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка (logic/tryon): сравнение только с одним билдом, «Надеть» — сразу в него; на время обучения её нет
@@ -117,7 +118,7 @@ export function App() {
   const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
   const hideWelcome = () => { storage.set('welcomeHidden', true); setWelcomeHidden(true); };
 
-  const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id)), [idx, s, roster, dispatch]);
+  const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id, geared)), [idx, s, roster, geared, dispatch]);
   useHashRoute(idx, s.tab, s.charId, openChar);
 
   const onReset = () => {
@@ -256,7 +257,7 @@ export function App() {
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} onGearImport={onGearImport} />
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} geared={geared} onGearImport={onGearImport} />
             <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi} gear={gear} active={s.tab === 'chars'}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined} />
           </section>
@@ -304,6 +305,8 @@ export function App() {
         )}
         {menuOpen && (
           <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
+            gearN={[...geared.keys()].filter((id) => idx.CHAR[id]).length}
+            onGear={() => { dispatch({ type: 'charFilter', patch: { cGear: true } }); dispatch({ type: 'selectChar', id: null }); onTab('chars'); }}
             onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={startTour}
             footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />} />
         )}

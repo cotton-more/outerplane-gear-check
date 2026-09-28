@@ -104,3 +104,7 @@ html.xs .roll-b.seg6 button { min-width: 26px; }
 .bgear-weak { display: grid; gap: 6px; justify-items: start; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); font-size: 13px; }
 .bgear-weak p { margin: 0; color: var(--ink-2); }
 .bgear-weak .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+/* сколько надето: «6/6» на плитке и на вкладке билда */
+.ctile .gearb { position: absolute; top: 58px; left: 8px; font: 700 9.5px/1 var(--font-mono); padding: 2px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.btabs .bt-n { margin-left: 6px; font: 700 10.5px/1 var(--font-mono); opacity: .75; }
+.cgrid-note { margin: -6px 16px 14px; }
