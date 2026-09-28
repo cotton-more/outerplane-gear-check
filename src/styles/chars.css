@@ -70,7 +70,8 @@ html:not(.sheet) .cd-top { display: none; }
 /* тур прокручивает к вещи в карточке во весь экран: не под липкую «← К списку» */
 .bgear-row { scroll-margin-top: 64px; }
 .bgear-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
-.bgear-row .ico, .bgear-empty .ico { width: 22px; height: 22px; color: var(--ink-2); }
+/* свой значок и картинка из игры (переключатель в подвале) — одного размера, как везде: … img, … .noimg, … .ico */
+.bgear-row img, .bgear-row .noimg, .bgear-row .ico, .bgear-empty img, .bgear-empty .noimg, .bgear-empty .ico { flex: none; width: 22px; height: 22px; object-fit: contain; color: var(--ink-2); }
 .bgear-n { min-width: 0; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; white-space: nowrap; }
 .bgear-n .pn, .piece-n .pn { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .bgear-n .pm, .piece-n .pm { flex: none; margin-left: -3px; } /* «· DEF%» — вплотную к названию, gap его отодвигал */

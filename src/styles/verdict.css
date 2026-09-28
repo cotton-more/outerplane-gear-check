@@ -175,7 +175,7 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .equip-row .act { flex-basis: 100%; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .equip-item { display: grid; gap: 6px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
 .equip-item p { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; }
-.equip-item .ico { width: 20px; height: 20px; color: var(--ink-2); }
+.equip-item img, .equip-item .noimg, .equip-item .ico { flex: none; width: 20px; height: 20px; object-fit: contain; color: var(--ink-2); }
 .equip-subs .tok { display: inline-flex; align-items: center; gap: 4px; font: 600 12px var(--font-mono); color: var(--ink-2); }
 .equip-subs .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }
 .equip-row:disabled { cursor: default; opacity: .75; } /* «уже надета» — надевать нечего */
