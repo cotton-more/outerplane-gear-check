@@ -14,8 +14,10 @@ import { StatIcon } from '../Img';
 // HP% и HP, DEF% и DEF, EFF% и RES%. null — пустая клетка; сабстат, которого здесь нет, встаёт в конец.
 const LAYOUT: (string | null)[] = ['SPD', null, 'CHC', 'CHD', 'ATK%', 'ATK', 'DMG UP%', 'DMG RED%', 'HP%', 'HP', 'DEF%', 'DEF', 'EFF', 'RES'];
 // lucky — окно 4-го сабстата у Epic: с какими статами вещь вытянет кубик Reforge (logic/gamble), точкой цветом цели.
-export function SubPicker({ ctx, subs, blocked, editing, lucky, onPick, onRemove }: {
-  ctx: Ctx; subs: Subs; blocked: Set<string>; editing: string | null; lucky?: Gamble | null; onPick: (key: string) => void; onRemove?: () => void;
+// noMove — замена стата на записанной вещи (Transistone): в игре он не даёт стат, который уже есть на вещи, —
+// такие статы недоступны, переезда строк нет.
+export function SubPicker({ ctx, subs, blocked, editing, lucky, noMove, onPick, onRemove }: {
+  ctx: Ctx; subs: Subs; blocked: Set<string>; editing: string | null; lucky?: Gamble | null; noMove?: boolean; onPick: (key: string) => void; onRemove?: () => void;
 }) {
   const { D, SUB, SUB_LIST } = ctx.idx;
   const t = useT();
@@ -23,15 +25,15 @@ export function SubPicker({ ctx, subs, blocked, editing, lucky, onPick, onRemove
   const rows = Object.keys(subs);
   // строка, где стат уже стоит (1…4); 0 — не отмечен или это заменяемый
   const rowOf = (k: string) => (k !== editing ? rows.indexOf(k) + 1 : 0);
-  const moves = editing !== null && rows.length > 1;
+  const moves = editing !== null && rows.length > 1 && !noMove;
   return (
     <>
       <div className="subgrid" {...tour('subpick')}>
         {[...LAYOUT.filter((k) => k === null || SUB[k]), ...SUB_LIST.filter((k) => !LAYOUT.includes(k))].map((k, i) => {
           if (k === null) return <span key={`gap${i}`} aria-hidden="true" />;
           const row = rowOf(k);
-          const taken = (blocked.has(k) && k !== editing) || (row > 0 && editing === null);
-          const move = row > 0 && editing !== null;
+          const taken = (blocked.has(k) && k !== editing) || (row > 0 && (editing === null || !!noMove));
+          const move = row > 0 && editing !== null && !noMove;
           const hit = lucky?.hits.find((h) => h.key === k);
           return (
             <button key={k} type="button" className={`subopt${FLAT.has(k) ? ' flat' : ''}`} aria-pressed={k === editing} disabled={taken}

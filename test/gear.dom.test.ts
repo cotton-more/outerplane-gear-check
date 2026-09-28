@@ -110,6 +110,18 @@ describe('экипировка', () => {
     expect($('.v-vs .vs-row')?.textContent).toMatch(/The one on has nothing useful|× the useful segments|% useful segments/);
   });
 
+  it('замена стата в карточке вещи: статы вещи недоступны, переезда строк нет', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 3, SPD: 1 }, lit: { 'DEF%': 4, CHC: 3, SPD: 1 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+    await click($('.bgear-row'));
+    await click($('.piece .subkey'));
+    const opt = (k: string) => $$('.subopt').find((b) => b.textContent === k) as HTMLButtonElement;
+
+    expect(opt('CHC').disabled).toBe(true);
+    expect(opt('CHD').disabled).toBe(false);
+    expect($('.subopt .row-n')).toBeNull();
+  });
+
   it('«уже надета» в «Кому надеть?» не нажимается: Reforge и Breakthrough записи остаются', async () => {
     const yellow = { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 };
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };

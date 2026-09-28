@@ -109,7 +109,7 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
   if (pick) {
     return (
       <Sheet title={pick === 'fourth' ? t.ui.fourthSheet : t.ui.replaceSub(subLabel(pick))} onClose={() => setPick(null)}>
-        <SubPicker ctx={ctx} subs={p.yellow} blocked={blocked} editing={pick === 'fourth' ? null : pick}
+        <SubPicker ctx={ctx} subs={p.yellow} blocked={blocked} editing={pick === 'fourth' ? null : pick} noMove
           onPick={(k) => { if (pick === 'fourth') put(addFourth(p, k)); else if (k !== pick) put(replaceStat(p, pick, k)); setPick(null); }} />
       </Sheet>
     );

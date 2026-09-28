@@ -72,6 +72,11 @@ describe('сегменты и Reforge', () => {
     expect(replaceStat(p1, 'CHC', 'CHD')).toEqual({ yellow: { 'DEF%': 2, CHD: 1 }, lit: { 'DEF%': 4, CHD: 1 } });
   });
 
+  it('Transistone на стат, который уже есть на вещи, ничего не меняет: сабстат не пропадает', () => {
+    const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } };
+    expect(replaceStat(p1, 'DEF%', 'CHC')).toEqual({ yellow: p1.yellow, lit: p1.lit });
+  });
+
   it('Breakthrough и сегменты — одной записью: правка видна во всех билдах', () => {
     const a = equip(EMPTY_GEAR, K, helmet({ CHC: 1 }));
     const st = updatePiece(share(a.store, K2, 'helmet', a.piece.id), a.piece.id, { bt: 4 });

@@ -108,8 +108,10 @@ export function tapSegment(p: Piece, k: string, n: number): Pick<Piece, 'yellow'
   return { yellow: { ...p.yellow, [k]: n }, lit: { ...p.lit, [k]: Math.min(MAX_LIT, n + l - y) } };
 }
 
-// Transistone сменил стат: новый встаёт на место старого, сегменты (жёлтые и оранжевые) — с ним
+// Transistone сменил стат: новый встаёт на место старого, сегменты (жёлтые и оранжевые) — с ним.
+// Стата, который уже есть на вещи, Transistone не даёт — такая замена ничего не меняет (иначе один сабстат пропал бы)
 export function replaceStat(p: Piece, from: string, to: string): Pick<Piece, 'yellow' | 'lit'> {
+  if (to !== from && to in p.yellow) return { yellow: p.yellow, lit: p.lit };
   const swap = (s: Subs) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k === from ? to : k, v]));
   return { yellow: swap(p.yellow), lit: swap(p.lit) };
 }
