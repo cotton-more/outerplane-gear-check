@@ -1,7 +1,7 @@
 // Что надето в билде персонажа (logic/gear): 6 слотов, у вещи — сабстаты с сегментами, окрашенные по цепочке этого
 // билда, Breakthrough и сколько Reforge сделано. Нажатие на вещь — карточка вещи: оранжевые сегменты после Reforge,
 // Breakthrough, смена стата после Transistone, «Снять». Вещь в билд кладёт только вердикт («Надеть на…»).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SLOTS, isArmor, subLabel } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
@@ -26,9 +26,11 @@ function pieceName(ctx: Ctx, p: Piece): string {
   return [it?.name ?? (p.grade === 'rare' ? 'Epic' : ''), p.main].filter(Boolean).join(' · ');
 }
 
-export function BuildGear({ c, b, ctx, gear }: { c: Char; b: Build; ctx: Ctx; gear: GearApi }) {
+export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx: Ctx; gear: GearApi; active: boolean }) {
   const t = useT();
   const [open, setOpen] = useState<SlotId | null>(null);
+  // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
+  useEffect(() => { if (!active) setOpen(null); }, [active]);
   const st = gear.store;
   const key = buildKey(c.id, b.name);
   const slots = st.builds[key]?.slots ?? {};
@@ -87,7 +89,7 @@ export function BuildGear({ c, b, ctx, gear }: { c: Char; b: Build; ctx: Ctx; ge
           </ul>
         </>
       )}
-      {open && piece && <PieceSheet c={c} b={b} bkey={key} slot={open} p={piece} ctx={ctx} gear={gear} onClose={() => setOpen(null)} />}
+      {active && open && piece && <PieceSheet c={c} b={b} bkey={key} slot={open} p={piece} ctx={ctx} gear={gear} onClose={() => setOpen(null)} />}
     </div>
   );
 }

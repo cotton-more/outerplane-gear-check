@@ -97,4 +97,16 @@ describe('экипировка', () => {
     expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 2 }, lit: { 'DEF%': 3 }, bt: 4 });
     expect($('.piece')?.textContent).toContain('Reforge: 1 of 6');
   });
+
+  // на телефоне карточка персонажа — fixed с z-index: шторка внутри неё уходила под плашку вердикта, «Готово» не нажать
+  it('карточка вещи — шторкой в <body>; ушли на «Оценку» — закрылась, прокрутка не заперта', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+    await click($('.bgear-row'));
+
+    expect($('.piece')?.closest('.drawer-back')?.parentElement).toBe(document.body);
+    await click($('.vbar .vb-tab'));
+    expect($('.piece')).toBeNull();
+    expect(document.body.classList.contains('drawer-lock')).toBe(false);
+  });
 });

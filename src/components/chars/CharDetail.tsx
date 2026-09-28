@@ -15,10 +15,11 @@ import { tour } from '../../tour/anchors';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
 
-interface Props { charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; sheetOpen: boolean; onClose: () => void }
+// active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет
+interface Props { charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void }
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, rosterApi, gear, sheetOpen, onClose }: Props) {
+export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -64,7 +65,7 @@ export function CharDetail({ charId, ctx, rosterApi, gear, sheetOpen, onClose }:
               <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>{x.name}</button>
             ))}
           </div>
-          <BuildGear c={c} b={b} ctx={ctx} gear={gear} />
+          <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} />
           <BuildView c={c} b={b} ctx={ctx} />
         </>
       ) : (
