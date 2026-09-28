@@ -21,7 +21,7 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { buildKey, equip, pieceInput, usedIn, type GearStore } from './logic/gear';
+import { buildKey, equip, pieceInput, samePiece, usedIn, type GearStore } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char } from './data/types';
@@ -118,6 +118,9 @@ export function App() {
   const doEquip = (c: Char, b: Build) => {
     const key = buildKey(c.id, b.name);
     const prev = gear.store;
+    // та же вещь уже в этом слоте — ничего не менять: свежая копия потеряла бы отмеченные Reforge и Breakthrough
+    const onNow = prev.pieces[prev.builds[key]?.slots[input.slot] ?? ''];
+    if (onNow && samePiece(input, onNow)) { setEquipOpen(false); return; }
     const r = equip(prev, key, input);
     gear.set(r.store);
     if (!roster.has(c.id)) rosterApi.add([c.id]);

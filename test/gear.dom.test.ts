@@ -110,6 +110,21 @@ describe('экипировка', () => {
     expect($('.v-vs .vs-row')?.textContent).toMatch(/The one on has nothing useful|× the useful segments|% useful segments/);
   });
 
+  it('«уже надета» в «Кому надеть?» не нажимается: Reforge и Breakthrough записи остаются', async () => {
+    const yellow = { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 };
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: yellow }, { gear });
+    await click($('.vcard'));
+    expect($('.v-vs')?.textContent).not.toContain('Breakthrough T4: the new one needs');
+    await click($('.v-equip'));
+    const row = byText('.equip-row', 'Speed') as HTMLButtonElement;
+
+    expect(row.textContent).toContain('already on');
+    expect(row.disabled).toBe(true);
+    await click(row);
+    expect(stored() ?? gear).toMatchObject({ pieces: { p1: { bt: 4, lit: { 'DEF%': 4 } } } });
+  });
+
   it('другая вкладка записала своё — подхватили, и следующее действие здесь его не стирает', async () => {
     const piece = (id: string, slot: string) => ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' });
     const gear = { v: 1, seq: 1, pieces: { p1: piece('p1', 'helmet') }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };

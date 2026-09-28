@@ -1,6 +1,7 @@
 // Окно «Кому надеть?»: вещь с формы — в билд любого персонажа. Сначала билды, которые собираешь (с тем же
 // сравнением, что в «Сейчас на персонажах»), потом подходящие билды остальных из ростера (или всех, если ростер пуст).
 // «Показать и не по билду» — вещь на замену: в билд можно положить то, что на персонаже сейчас на самом деле.
+// «уже надета» не нажимается: запись заменилась бы свежей копией — без Reforge и Breakthrough.
 import { useMemo, useState } from 'react';
 import type { Build, Char } from '../../data/types';
 import { useT } from '../../i18n';
@@ -42,7 +43,7 @@ export function EquipSheet({ ctx, store, item, onEquip, onClose }: {
           <ul className="equip-list">
             {shown.map(({ c, b, vs }) => (
               <li key={c.id + '/' + b.name}>
-                <button type="button" className="equip-row" onClick={() => onEquip(c, b)}>
+                <button type="button" className="equip-row" disabled={vs?.kind === 'worn'} onClick={() => onEquip(c, b)}>
                   <Img k={'face:' + c.icon} className="face" />
                   <span className="nm"><b>{c.name}</b> <span className="bn">{b.name}</span><span className="muted small">{slotName}: {now(c, b)}</span></span>
                   {vs ? (store.builds[vs.key] ? <VsChip vs={vs} /> : null) : <span className="vs off">{t.ui.equipOffBuild}</span>}

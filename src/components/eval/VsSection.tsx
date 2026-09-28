@@ -61,7 +61,7 @@ export function VsSection({ list, slot, onEquip, onOpenChar }: {
               {fig && vs.kind !== 'breaks' && <p className="muted">{fig.kind === 'empty' ? t.ui.vsEmpty : fig.kind === 'times' ? t.ui.vsTimes(fig.n) : t.ui.vsDelta(fig.n)}</p>}
               {vs.broken && <p className="muted">{t.ui.vsBreaks(SET[vs.broken]?.short ?? vs.broken)}</p>}
               {vs.passive && <p className="muted">{t.ui.vsPassive}</p>}
-              {w && w.bt != null && w.bt > 0 && !vs.material && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
+              {w && w.bt != null && w.bt > 0 && !vs.material && vs.kind !== 'worn' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
               {vs.material && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}
               {vs.kind !== 'worn' && (
                 <button type="button" className={`btn vs-act${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)}>
