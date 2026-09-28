@@ -8,7 +8,7 @@ import { TEXTS } from '../src/i18n';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { buildKey, EMPTY_GEAR, equip, updatePiece, type Bt, type GearStore } from '../src/logic/gear';
-import { materialFor, withMaterial } from '../src/logic/material';
+import { betterThanWorn, materialFor, withMaterial } from '../src/logic/material';
 import type { ItemInput } from '../src/logic/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -72,6 +72,54 @@ describe('материал Breakthrough для надетой', () => {
     expect(res.v).toBe('keep');
     expect(materialFor(wearing(1), good)).toHaveLength(1);
     expect(withMaterial(idx, ru, res, materialFor(wearing(1), good))).toBe(res);
+  });
+
+  // решение владельца: вещь лучше той надетой, для которой она материал, — «надень, старую — ей в Breakthrough»
+  describe('лучше надеть, чем отдать', () => {
+    const judgeAll = (item: ItemInput, st: GearStore, target: string | null = null, c = ctx) => {
+      const needs = materialFor(st, item, idx);
+      return withMaterial(idx, ru, evaluate(c, item), needs, { up: betterThanWorn(c, st, item, needs), target });
+    };
+    const WEAK = helmet({ HP: 1, DEF: 1, ATK: 1 }, 'rare'); // надета на Caren · Speed, T2
+    const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
+
+    it('новая лучше надетой — «надень её», старая ей в Breakthrough; «отдай надетой» нет', () => {
+      const better = helmet({ DEF: 1, CHC: 1, HP: 1 }, 'rare');
+      const r = judgeAll(better, wearing(2, WEAK));
+      expect(r.v).toBe('fodder');
+      expect(r.title).toBe(ru.material.titleWear(ru.ui.slotGen.helmet, 'Caren · Speed'));
+      expect(r.lines[0]).toBe(ru.material.lineWear('шлем Caren · Speed — T2, ещё 2 шт. до T4'));
+      expect(r.plan[0]).toBe(ru.material.planReplace('Caren · Speed'));
+      expect(r.plan).not.toContain(ru.material.plan);
+    });
+
+    it('в примерке у цели слот пуст — «надень её на Caren · Speed/Immu», а не «отдай надетой»', () => {
+      const r = judgeAll(epic, wearing(2, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare')), 'Caren · Speed/Immu');
+      expect(r.plan[0]).toBe(ru.material.planWear('Caren · Speed/Immu'));
+    });
+
+    it('с кубиком Reforge: «не прокачивай (кроме одного Reforge на удачу)», и строка кубика — следом', () => {
+      const r = judgeAll(epic, wearing(2, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare')));
+      expect(r.gamble).toBeTruthy();
+      expect(r.plan).toEqual([ru.material.planGamble, ru.plan.gamble('junk')]);
+    });
+
+    it('настройка «Фоддер» выключена: «Включи — станут «Фоддер»» у поднятого штампа не остаётся', () => {
+      const off = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
+      const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
+      expect(evaluate(off, junk).lines).toContain(ru.armor.enableFodder('Speed'));
+      const r = judgeAll(junk, wearing(2), null, off);
+      expect(r.v).toBe('fodder');
+      expect(r.lines).not.toContain(ru.armor.enableFodder('Speed'));
+    });
+
+    it('вещь в билде персонажа, которого нет в данных, — не материал (её нигде не видно)', () => {
+      const r = equip(EMPTY_GEAR, '999999/Speed', WORN);
+      const st = updatePiece(r.store, r.piece.id, { bt: 2 });
+      const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
+      expect(materialFor(st, junk)).toHaveLength(1);
+      expect(materialFor(st, junk, idx)).toEqual([]);
+    });
   });
 
   it('оружие: тот же предмет — материал; Epic без предмета — никогда', () => {

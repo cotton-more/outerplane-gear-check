@@ -558,6 +558,14 @@ export const ru = {
     need: (slot: string, who: string, bt: number, left: number) => `${slot} ${who} — T${bt}, ещё ${left} шт. до T4`,
     line: (list: string) => `**Материал**: такая же вещь надета не на T4 — ${list}. Одна вещь — одна ступень Breakthrough, сабстаты не важны.`,
     plan: '**Не прокачивай и не разбирай** — отдай в Breakthrough надетой: одна вещь — одна ступень.',
+    // рядом кубик Reforge: один Reforge на удачу — можно
+    planGamble: '**Не прокачивай** (кроме одного Reforge на удачу — кубик рядом) **и не разбирай** — отдай в Breakthrough надетой: одна вещь — одна ступень.',
+    // вещь лучше надетой, для которой она материал: надеть её, старую — ей в Breakthrough
+    titleWear: (slotGen: string, who: string) => `Фоддер — лучше надетого ${slotGen} ${who}: надень её, а старую — ей в Breakthrough`,
+    lineWear: (list: string) => `**Лучше надетой**: такая же вещь надета не на T4, но слабее этой — ${list}. Надень эту, а старую отдай ей в Breakthrough.`,
+    planReplace: (who: string) => `**Надень её** на ${who}: она лучше надетой, а старая — такая же вещь: отдай её новой в Breakthrough, одна вещь — одна ступень.`,
+    // в примерке у цели слот пуст или вещь лучше надетой
+    planWear: (who: string) => `**Надень её** на ${who}, пока нет лучше, — в Breakthrough надетой не отдавай.`,
   },
 
   // --- примерка: оценка для одного персонажа и билда (logic/tryon, components/eval/TryOnStrip)

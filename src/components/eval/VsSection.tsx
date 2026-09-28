@@ -73,8 +73,9 @@ export function VsSection({ list, slot, armor, onEquip, onOpenChar }: {
               {vs.passive && <p className="muted">{t.ui.vsPassive}</p>}
               {vs.kind === 'off' && <p className="muted">{t.tryon.offNote(vs.c.name, armor && vs.b.sets.length ? vs.b.sets.map((cb) => comboText(idx, cb)).join(` ${t.ui.or} `) : null)}</p>}
               {vs.ahead && <p className="muted">{t.ui.vsAhead(subLabel(vs.ahead.key), vs.ahead.worn, vs.ahead.next)}</p>}
-              {w && w.bt != null && w.bt > 0 && !vs.material && vs.kind !== 'worn' && vs.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
-              {vs.material && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}
+              {/* ▲ лучше — надевают новую: важнее, сколько Breakthrough у надетой (старая ей материал — скажет сообщение после «Заменить») */}
+              {w && w.bt != null && w.bt > 0 && (!vs.material || vs.kind === 'up') && vs.kind !== 'worn' && vs.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
+              {vs.material && vs.kind !== 'up' && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}
               {vs.kind !== 'worn' && (
                 <button type="button" className={`btn vs-act${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
                   <Icon name={vs.kind === 'fill' || (vs.kind === 'off' && !vs.worn) ? 'check' : 'replace'} />

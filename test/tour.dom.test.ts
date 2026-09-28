@@ -445,6 +445,9 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
     await click($('.vcard'));
     expect($('.drawer')).toBeTruthy();
+    // ▲ лучше надетого T2-шлема: сколько Breakthrough у надетой, а не «эта — ступень её Breakthrough»
+    expect($('.v-vs')?.textContent).toContain(TEXTS.en.ui.vsBt(2));
+    expect($('.v-vs')?.textContent).not.toContain(TEXTS.en.ui.vsMaterial(2));
     expect(strip()).toContain(T.gearStepOf(3, 5));
     expect(strip()).not.toContain(T.inSheet);
     await click(byText('.tour-strip button', T.next));

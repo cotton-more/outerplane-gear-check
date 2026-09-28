@@ -28,7 +28,7 @@ import type { Build, Char, SlotId } from './data/types';
 import type { ItemInput } from './logic/verdict';
 import { compareAll, compareFor } from './logic/vs';
 import { tryOnPreset, tryOnTarget, tryOnTitle, type TryOn } from './logic/tryon';
-import { materialFor, withMaterial } from './logic/material';
+import { betterThanWorn, materialFor, withMaterial } from './logic/material';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -88,14 +88,22 @@ export function App() {
     : realGear), [demo, realGear]);
   const geared = useMemo(() => gearedChars(gear.store), [gear.store]);
   const raw = later === key ? full : quick;
-  const verdict = useMemo(() => withMaterial(idx, t, raw, materialFor(gear.store, input)), [idx, t, raw, gear.store]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка (logic/tryon): сравнение только с одним билдом, «Надеть» — сразу в него; на время обучения её нет
   const realTry = useTryOn(idx, !touring);
   const tryOn = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : realTry;
   const target = useMemo(() => (demo ? tryOnTarget(idx, demo.tryOn) : touring ? null : tryOnTarget(idx, realTry.value)), [idx, demo, realTry.value, touring]);
-  const vsList = useMemo(() => (target
-    ? (verdict.v === 'idle' ? [] : [compareFor(ctx, gear.store, target.c, target.b, input)])
-    : compareAll(ctx, gear.store, input, verdict)), [ctx, gear.store, verdict, target]); // eslint-disable-line react-hooks/exhaustive-deps
+  const targetVs = useMemo(() => (target ? compareFor(ctx, gear.store, target.c, target.b, input) : null), [ctx, gear.store, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // материал: вещь лучше той надетой, для которой она материал, или в примерке у цели слот пуст / она лучше — «надень»
+  const mat = useMemo(() => {
+    const needs = materialFor(gear.store, input, idx);
+    const up = needs.length ? betterThanWorn(ctx, gear.store, input, needs) : [];
+    const aim = targetVs && (targetVs.kind === 'fill' || targetVs.kind === 'up') ? `${targetVs.c.name} · ${targetVs.b.name}` : null;
+    return { needs, wear: { up, target: aim } };
+  }, [idx, ctx, gear.store, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const verdict = useMemo(() => withMaterial(idx, t, raw, mat.needs, mat.wear), [idx, t, raw, mat]);
+  const vsList = useMemo(() => (targetVs
+    ? (verdict.v === 'idle' ? [] : [targetVs])
+    : compareAll(ctx, gear.store, input, verdict)), [ctx, gear.store, verdict, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
   const shown = useMemo(() => (target && vsList[0] ? { ...verdict, title: tryOnTitle(t, verdict, vsList[0]) } : verdict), [t, verdict, target, vsList]);
   const [equipOpen, setEquipOpen] = useState(false);
@@ -210,7 +218,9 @@ export function App() {
   const tourCtx: TourCtx = {
     s, roster: roster.size, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict: shown, narrow: layout.narrow,
     verdictOpen: verdictOpen && layout.narrow, keys: fineHover(),
-    pieceOpen, tryOn: !!target, gearSeq: gear.store.seq, material: shown.v === 'fodder' && raw.v !== 'fodder',
+    pieceOpen, tryOn: !!target, gearSeq: gear.store.seq,
+    // подсказка «Фоддер, а не разбор: эта пойдёт ей на Breakthrough» — не когда совет «надень её»
+    material: shown.v === 'fodder' && raw.v !== 'fodder' && !mat.wear.up.length && !mat.wear.target,
   };
   // тур «Экипировка» — только если персонаж примера есть в данных
   const tours = useMemo<TourId[]>(() => (gearDemo(idx) ? ['core', 'gear'] : ['core']), [idx]);
