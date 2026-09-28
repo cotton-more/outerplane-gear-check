@@ -9,6 +9,7 @@ import { MARGIN, vsFigure, type Vs, type VsFigure } from '../../logic/vs';
 import { Icon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Chain } from './Chain';
+import { tour } from '../../tour/anchors';
 
 
 const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `×${f.n}` : `${f.n > 0 ? '+' : f.n < 0 ? '−' : '±'}${Math.abs(f.n)}%`);
@@ -38,7 +39,7 @@ export function VsSection({ list, slot, armor, onEquip, onOpenChar }: {
   const { SET } = idx;
   if (!list.length) return null;
   return (
-    <div className="v-vs">
+    <div className="v-vs" {...tour('vs')}>
       <h3>{t.ui.vsTitle}</h3>
       <ul>
         {list.map((vs) => {
@@ -75,7 +76,7 @@ export function VsSection({ list, slot, armor, onEquip, onOpenChar }: {
               {w && w.bt != null && w.bt > 0 && !vs.material && vs.kind !== 'worn' && vs.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
               {vs.material && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}
               {vs.kind !== 'worn' && (
-                <button type="button" className={`btn vs-act${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)}>
+                <button type="button" className={`btn vs-act${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
                   <Icon name={vs.kind === 'fill' || (vs.kind === 'off' && !vs.worn) ? 'check' : 'replace'} />
                   {equipLabel(t, vs, slot)}
                 </button>

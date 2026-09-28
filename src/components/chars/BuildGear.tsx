@@ -18,6 +18,7 @@ import { fits, lookFor, pieceValue } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
+import { tour, tourItem } from '../../tour/anchors';
 import { Sheet } from '../Sheet';
 import { SubPicker } from '../eval/SubPicker';
 
@@ -40,8 +41,10 @@ function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
 }
 
 // onTryOn — примерка для этого билда (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии
-export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
+// onPieceOpen — открыта ли карточка вещи (для тура «Экипировка»)
+export function BuildGear({ c, b, ctx, gear, active, onTryOn, onPieceOpen }: {
   c: Char; b: Build; ctx: Ctx; gear: GearApi; active: boolean; onTryOn?: (b: Build, slot?: SlotId, from?: Piece) => void;
+  onPieceOpen?: (open: boolean) => void;
 }) {
   const t = useT();
   const [open, setOpen] = useState<SlotId | null>(null);
@@ -78,6 +81,9 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
     return null;
   };
   const piece = open ? st.pieces[slots[open] ?? ''] : undefined;
+  const shownPiece = active && !!open && !!piece;
+  useEffect(() => { onPieceOpen?.(shownPiece); }, [shownPiece]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onPieceOpen?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
   // «Слабее всех»: вся броня надета — самая слабая по ценности для билда (как в сравнении) и что ей искать
   const armor = SLOTS.filter((x) => isArmor(x.id)).map((x) => ({ slot: x.id, p: st.pieces[slots[x.id] ?? ''] }));
   const weak = n > 0 && armor.every((x) => x.p)
@@ -88,7 +94,7 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
   const idle = n > 0 ? c.builds.filter((x) => x !== b && !st.builds[buildKey(c.id, x.name)]).map((x) => x.name) : [];
   const orphans = gear.newer ? [] : orphanBuilds(st, c.id, c.builds.map((x) => x.name));
   return (
-    <div className="bgear">
+    <div className="bgear" {...tour('bgear')}>
       <h4>{t.ui.gearTitle(n)}</h4>
       {orphans.map((o) => (
         <p key={o.key} className="bgear-old">
@@ -99,13 +105,13 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
       {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? (
         <div className="bgear-none">
           <p>{t.tryon.empty(b.name, c.name)}</p>
-          {onTryOn && <button type="button" className="btn primary" onClick={() => onTryOn(b)}>{t.tryon.build}</button>}
+          {onTryOn && <button type="button" className="btn primary" onClick={() => onTryOn(b)} {...tour('gtry')}>{t.tryon.build}</button>}
           <p className="muted small">{t.tryon.emptyOr}</p>
         </div>
       ) : (
         <>
           {combo && <p className="bgear-set">{combo.map(setLine).join(' · ')}</p>}
-          <ul className="bgear-list">
+          <ul className="bgear-list" {...tour('gslots')}>
             {SLOTS.map(({ id: slot }) => {
               const p = st.pieces[slots[slot] ?? ''];
               if (!p) {
@@ -115,7 +121,7 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
                     <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
                     <span className="bgear-act">
                       {take && <button type="button" className="btn small" onClick={() => gear.set(share(st, key, slot, take.id))}>{t.ui.gearTake(take.build)}</button>}
-                      {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, slot)}>{t.tryon.slot}</button>}
+                      {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, slot)} {...tour('gtry')}>{t.tryon.slot}</button>}
                     </span>
                   </li>
                 );
@@ -124,7 +130,7 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
               const rf = reforgeScale(p);
               return (
                 <li key={slot}>
-                  <button type="button" className="bgear-row" onClick={() => setOpen(slot)}>
+                  <button type="button" className="bgear-row" onClick={() => setOpen(slot)} {...tourItem(slot)}>
                     <SlotIcon slot={slot} />
                     <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
                     <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{rf.done < rf.of && <> · Reforge {rf.done}/{rf.of}</>}</span>
@@ -200,7 +206,7 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
   }
   return (
     <Sheet title={title} onClose={onClose}>
-      <div className="piece">
+      <div className="piece" {...tour('gpiece')}>
         <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
         <p className="muted small">{c.name}</p>
         {others.length > 0 && <p className="muted small">{t.ui.gearShared(others.join(', '))}</p>}
@@ -234,7 +240,7 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
         <p className="muted small">{t.ui.pieceStatHint}</p>
         <div className="piece-act">
           <button type="button" className="btn primary" onClick={onClose}>{t.ui.pieceDone}</button>
-          {onTry && <button type="button" className="btn" onClick={onTry}>{t.tryon.replace}</button>}
+          {onTry && <button type="button" className="btn" onClick={onTry} {...tourItem('try')}>{t.tryon.replace}</button>}
           <button type="button" className="btn" onClick={() => { gear.set(unequip(st, bkey, slot)); onClose(); }}>{t.ui.pieceRemove}</button>
         </div>
       </div>

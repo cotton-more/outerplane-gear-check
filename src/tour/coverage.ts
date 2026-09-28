@@ -11,18 +11,14 @@ export const COVERAGE: Record<string, Coverage> = {
   'Guide.tsx': 'core',             // карточка первого запуска и Справка — отсюда начинается тур
   'Header.tsx': 'helper',          // вкладки на широком экране
   'Img.tsx': 'helper',             // картинки и значки
-  'Menu.tsx': 'helper',            // меню ☰: те же кнопки, что под формой на ПК
+  'Menu.tsx': 'helper',            // меню ☰: те же кнопки, что под формой на ПК; «Экипировка» называет конец тура gear
   'Notice.tsx': 'helper',          // плашка с одной кнопкой
   'Rich.tsx': 'helper',            // жирный текст в фразах
   'Sheet.tsx': 'helper',           // шторка для окон
-  'chars/BuildGear.tsx': 'todo',  // что надето в билде: подсказки и тур экипировки — этап B2
-  'eval/EquipSheet.tsx': 'todo',  // окно «Кому надеть?» — там же, этап B2
   'eval/EvalPanel.tsx': 'core',    // форма: слот, грейд, сет или main, сетка
   'eval/ItemPicker.tsx': 'core',   // окно выбора Legendary по названию — шаг «сет или предмет»
   'eval/MainButtons.tsx': 'core',  // main оружия кнопками — тот же шаг
   'eval/MainPicker.tsx': 'core',   // окно main — тот же шаг
   'eval/PickField.tsx': 'helper',  // поле, открывающее окно выбора
   'eval/SetPicker.tsx': 'core',    // окно сетов — шаг «сет»
-  'eval/VsSection.tsx': 'todo',    // «Сейчас на персонажах» в вердикте — там же, этап B2
-  'eval/TryOnStrip.tsx': 'todo',   // полоса примерки — там же, этап B2
 };

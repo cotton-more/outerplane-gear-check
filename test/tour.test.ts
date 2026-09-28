@@ -9,6 +9,7 @@ import { CORE, CORE_ANCHORS } from '../src/tour/core';
 import { COVERAGE } from '../src/tour/coverage';
 import { place } from '../src/tour/place';
 import { TIP_COUNTS, TIPS } from '../src/tour/registry';
+import { TOURS } from '../src/tour/tours';
 import { bootTour, markSeen, mergeTour, type TourStore } from '../src/tour/store';
 import { LIMITS, newsOf, nextTip } from '../src/tour/tips';
 import type { StepText, Tip, TourCtx } from '../src/tour/types';
@@ -42,15 +43,22 @@ describe('у каждого компонента — обучение или п�
   });
 });
 
-describe('главный тур', () => {
-  it('до 5 шагов, id и подсказки не повторяются, якоря из списка', () => {
+describe('туры', () => {
+  const ALL = Object.values(TOURS).flatMap((d) => d.steps);
+
+  it('главный — до 5 шагов, «Экипировка» — до 6; id шагов и подсказок не повторяются, якоря из списка', () => {
     expect(CORE.length).toBeLessThanOrEqual(5);
-    const ids = [...CORE.map((s) => s.id), ...TIPS.map((t) => t.id)];
+    expect(TOURS.gear.steps.length).toBeLessThanOrEqual(6);
+    const ids = [...ALL.map((s) => s.id), ...TIPS.map((t) => t.id)];
     expect(new Set(ids).size).toBe(ids.length);
     const ctxs = (['helmet', 'weapon', 'accessory'] as const).flatMap((slot) => (['unique', 'rare'] as const).flatMap((grade) =>
       [null, 'ATK%'].map((main) => ({ narrow: true, s: { slot, grade, main } }) as unknown as TourCtx)));
-    const used = [...CORE_ANCHORS, ...ctxs.flatMap((c) => CORE.flatMap((s) => s.at(c)))];
+    const used = [...CORE_ANCHORS, ...ctxs.flatMap((c) => ALL.flatMap((s) => [...s.at(c), ...(s.pin?.(c) ?? []).map((p) => p.slice(0, p.indexOf(':')) as never)]))];
     expect(used.filter((a) => !ANCHORS.includes(a))).toEqual([]);
+  });
+
+  it('у подсказки с туром — тур из списка, и она в «Что нового»', () => {
+    expect(TIPS.filter((tp) => tp.tour && (!TOURS[tp.tour] || !tp.news)).map((tp) => tp.id)).toEqual([]);
   });
 
   // полоса на телефоне — 3–4 строки: длиннее — закроет полэкрана в разделённом экране
@@ -58,7 +66,7 @@ describe('главный тур', () => {
     const variants: StepText[] = [];
     for (const demo of [true, false]) for (const keys of [true, false]) for (const kind of ['armor', 'weapon', 'accessory'] as const)
       for (const legend of [true, false]) for (const narrow of [true, false]) variants.push({ demo, keys, kind, legend, narrow, n: 4, of: 4 });
-    const long = Object.entries(TEXTS).flatMap(([lang, t]) => CORE.flatMap((s) => variants
+    const long = Object.entries(TEXTS).flatMap(([lang, t]) => ALL.flatMap((s) => variants
       .map((v) => t.tour.steps[s.id](v)).filter((txt) => txt.replace(/\*\*/g, '').length > 200).map((txt) => `${lang}/${s.id}: ${txt}`)));
     expect([...new Set(long)]).toEqual([]);
   });
@@ -90,6 +98,13 @@ describe('хранилище ogc.tour', () => {
       .toEqual({ v: 1, first: 'done', invited: true, seen: { slot: 1 }, known: { slot: 1 }, since: '2026-01-01', tips: false, tipsAt: 0, resetAt: 0 });
     expect(bootTour({ v: 9 }, { roster: 0, welcomeHidden: false }, cur, 'd').first).toBe('new');
     expect(bootTour('junk', { roster: 0, welcomeHidden: false }, cur, 'd').first).toBe('new');
+  });
+
+  it('пройденный тур «Экипировка» (seen tour.gear) не стирает ни старая вкладка, ни «Показать подсказки заново»', () => {
+    const st = markSeen(bootTour(null, { roster: 0, welcomeHidden: false }, cur, 'd'), { 'tour.gear': 1 });
+    const oldTab = { v: 1, first: 'done', invited: true, seen: { slot: 1 }, known: {}, since: 'd', tips: true };
+    expect(mergeTour(st, oldTab, TIPS.map((tp) => tp.id)).seen['tour.gear']).toBe(1);
+    expect(mergeTour({ ...st, resetAt: 5 }, oldTab, TIPS.map((tp) => tp.id)).seen['tour.gear']).toBe(1);
   });
 
   it('пройденное не теряется: берём большую ревизию, «пройден» и «приглашён» из другой вкладки остаются', () => {

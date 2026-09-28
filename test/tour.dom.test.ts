@@ -58,6 +58,8 @@ const frame = () => act(() => new Promise<void>((r) => setTimeout(r, 40)));
 const cell = (label: string) => [...document.querySelectorAll<HTMLElement>('.sg')].find((b) => b.querySelector(':scope > span:not(.ico)')?.textContent === label);
 const strip = () => $('.tour-strip:not(.tour-invite)')?.textContent ?? '';
 const stored = (k: string) => JSON.parse(localStorage.getItem('ogc.' + k) ?? 'null');
+// «Какое обучение?» → главный тур
+const pickCore = () => click(byText('.tour-strip button', 'Checking a piece'));
 const esc = async () => {
   await act(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
   await frame();
@@ -143,6 +145,8 @@ describe('вещь игрока не теряется', () => {
     await click($('.vb-tab'));
     await click(byText('.menu button', 'Tutorial'));
     expect(document.querySelectorAll('.subrow')).toHaveLength(0); // чистый лист
+    expect(strip()).toContain(T.pick);
+    await pickCore();
     await click(byText('.tour-strip button', 'Example'));
     await click($('.slot[aria-label="Armor"]'));
     expect(localStorage.getItem('ogc.item')).toBe(item);
@@ -159,11 +163,12 @@ describe('вещь игрока не теряется', () => {
     await click(cell('ATK'));
     const item = localStorage.getItem('ogc.item'), state = localStorage.getItem('ogc.state');
     await click(byText('.actions button', 'Tutorial'));
+    await pickCore();
     await click(byText('.tour-strip button', 'Example'));
     await click($('.slot[aria-label="Armor"]'));
     await click($('.grade[aria-label="Epic"]'));
     await click(byText('.actions button', 'Tutorial'));
-    expect(strip()).toContain(T.choose);
+    expect(strip()).toContain(T.pick);
     await click($('.tour-x'));
     expect(localStorage.getItem('ogc.item')).toBe(item);
     expect(localStorage.getItem('ogc.state')).toBe(state);
@@ -174,6 +179,7 @@ describe('вещь игрока не теряется', () => {
     await mount({ welcomeHidden: true, tour: DONE, state: { tab: 'chars', slot: 'gloves', grade: 'unique' } });
     const state = localStorage.getItem('ogc.state');
     await click(byText('.actions button', 'Tutorial')); // кнопка под формой есть в DOM и на вкладке персонажей
+    await pickCore();
     await click(byText('.tour-strip button', 'Example'));
     await click($('.slot[aria-label="Armor"]'));
     await click($('.grade[aria-label="Epic"]'));
@@ -186,6 +192,7 @@ describe('вещь игрока не теряется', () => {
     await mount({ welcomeHidden: true, tour: DONE });
     await click(cell('SPD'));
     await click(byText('.actions button', 'Tutorial'));
+    await pickCore();
     await click(byText('.tour-strip button', 'Example'));
     await esc();
     expect($('.tour-strip')).toBeNull();
@@ -196,6 +203,7 @@ describe('вещь игрока не теряется', () => {
   it('Esc при открытом окне закрывает окно, а тур идёт дальше', async () => {
     await mount({ welcomeHidden: true, tour: DONE });
     await click(byText('.actions button', 'Tutorial'));
+    await pickCore();
     await click(byText('.tour-strip button', 'Example'));
     await click($('.slot[aria-label="Armor"]'));
     await click($('.grade[aria-label="Epic"]'));
@@ -209,6 +217,7 @@ describe('вещь игрока не теряется', () => {
   it('на шаге «Следующий» Esc и есть «Следующий»; нечего очищать — закрывает тур', async () => {
     await mount({ welcomeHidden: true, tour: DONE });
     await click(byText('.actions button', 'Tutorial'));
+    await pickCore();
     await click(byText('.tour-strip button', 'My own'));
     for (let i = 0; i < 2; i++) await click(byText('.tour-strip button', T.next));
     await click(cell('SPD'));
@@ -222,6 +231,7 @@ describe('вещь игрока не теряется', () => {
     expect(strip()).toContain("That's it");
     await click(byText('.tour-strip button', 'Done'));
     await click(byText('.actions button', 'Tutorial'));
+    await pickCore();
     await click(byText('.tour-strip button', 'My own'));
     for (let i = 0; i < 4; i++) await click(byText('.tour-strip button', T.next));
     await esc();
@@ -232,6 +242,7 @@ describe('вещь игрока не теряется', () => {
     await mount({ welcomeHidden: true, tour: DONE });
     await click(cell('SPD'));
     await click(byText('.actions button', 'Tutorial'));
+    await pickCore();
     await click(byText('.tour-strip button', 'My own'));
     await click(cell('HP'));
     await click($('.tour-x'));
@@ -249,6 +260,8 @@ describe('низкое окно (полоска разделённого экр�
       expect($('.tour-invite')).toBeNull();
       await click($('.vb-tab'));
       await click(byText('.menu button', 'Tutorial'));
+      expect(strip()).toContain(T.pick);
+      await pickCore();
       expect(strip()).toContain('Use an example');
     } finally {
       Object.defineProperty(window, 'innerHeight', { configurable: true, value: 740 });
@@ -278,7 +291,7 @@ describe('давний игрок', () => {
     await mount();
     // вместо неё теперь «Новое»: давнему игроку подсказки с news — новые
     expect($('.tour-invite')?.textContent).not.toContain(T.invite);
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.dice, 1));
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 2));
   });
 
   it('новичок закрыл карточку «Понятно» — от тура отказался, полосы «Появилось обучение» нет', async () => {
@@ -312,14 +325,14 @@ describe('подсказки по ходу и «Что нового»', () => {
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, since: '2026-01-01' } });
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.dice, 1));
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 2));
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
     expect($('.vb-tab.has-news')).toBeTruthy();
     await click($('.vb-tab'));
     await click($('.menu .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known).toMatchObject({ move: 1, dice: 1 });
+    expect(stored('tour').known).toMatchObject({ move: 1, dice: 1, gear: 1 });
     expect($('.vb-tab.has-news')).toBeNull();
   });
 
@@ -329,5 +342,74 @@ describe('подсказки по ходу и «Что нового»', () => {
     await click(byText('.menu button', 'Help'));
     await click(byText('.tips-help button', T.tipsReset));
     expect(stored('tour').seen).toEqual({ slot: 1 });
+  });
+});
+
+describe('тур «Экипировка» на примере', () => {
+  const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+  const speed = D.sets.find((x) => x.short === 'Speed')!.id;
+  // у игрока своё: на Kappa · Speed — шлем, идёт примерка для Kappa
+  const MINE = {
+    welcomeHidden: true, tour: DONE, roster: [kappa.id], tryon: { charId: kappa.id, build: 'Speed' },
+    gear: { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' } }, builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } },
+    state: { tab: 'eval', slot: 'gloves', grade: 'rare' }, item: { setId: speed, subs: { SPD: 2 } },
+  };
+  const snapshot = () => ['gear', 'roster', 'tryon', 'state', 'item'].map((k) => localStorage.getItem('ogc.' + k));
+
+  it('пять шагов нажатиями; записи игрока побайтно те же; в конце — его вкладка, форма и примерка', async () => {
+    await mount(MINE);
+    const before = snapshot();
+    await click($('.vb-tab'));
+    await click(byText('.menu button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Gear · 1 min'));
+
+    expect(strip()).toContain(T.gearStepOf(1, 5));
+    expect($('.char-detail.open h2')?.textContent).toBe('Caren');
+    expect($('.tryon')).toBeNull(); // примерка Kappa на время тура снята
+    await click($('[data-tour="gslots"] [data-tour-item="helmet"]'));
+
+    expect(strip()).toContain(T.gearStepOf(2, 5));
+    expect($('[data-tour="gpiece"]')).toBeTruthy();
+    await click(byText('.piece-act button', 'Try a replacement'));
+
+    expect(strip()).toContain(T.gearStepOf(3, 5));
+    expect($('.tryon')?.textContent).toContain('Caren · Speed');
+    expect(document.querySelectorAll('.subrow')).toHaveLength(4); // вещь примера на форме
+    expect($('.vcard .vs.up')).toBeTruthy();
+    await click(byText('.tour-strip button', T.next));
+
+    expect(strip()).toContain(T.gearStepOf(4, 5));
+    await click($('.vc-equip'));
+
+    expect(strip()).toContain(T.gearStepOf(5, 5));
+    expect($('.gear-toast')).toBeNull();
+    await click($('.tryon-x'));
+
+    expect(strip()).toContain('That was an example');
+    await click(byText('.tour-strip button', 'Done'));
+    expect($('.tour-strip')).toBeNull();
+    expect(snapshot()).toEqual(before);
+    expect($('.tryon')?.textContent).toContain('Kappa · Speed');
+    expect(document.querySelectorAll('.subrow')).toHaveLength(1);
+    expect(stored('tour').seen['tour.gear']).toBe(1);
+  });
+
+  it('давнему игроку «Что нового» — экипировка; «Показать» запускает тур', async () => {
+    await mount({ welcomeHidden: true, tour: { ...DONE, since: '2026-01-01' } });
+    expect($('.tour-invite')?.textContent).toContain(T.news.gear);
+    await click(byText('.tour-invite button', 'Show'));
+    expect(strip()).toContain(T.gearStepOf(1, 5));
+  });
+
+  it('✕ посреди тура — всё как было: примерки примера нет, форма игрока', async () => {
+    await mount(MINE);
+    const before = snapshot();
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Gear · 1 min'));
+    await click($('[data-tour="gslots"] [data-tour-item="helmet"]'));
+    await click(byText('.piece-act button', 'Try a replacement'));
+    await click($('.tour-x'));
+    expect(snapshot()).toEqual(before);
+    expect($('.tryon')?.textContent).toContain('Kappa · Speed');
   });
 });

@@ -14,6 +14,7 @@ import { equipTargets, type Vs } from '../../logic/vs';
 import { Img, SlotIcon } from '../Img';
 import { Sheet } from '../Sheet';
 import { VsChip } from './VsSection';
+import { tour } from '../../tour/anchors';
 
 export function EquipSheet({ ctx, store, item, onEquip, onClose }: {
   ctx: Ctx; store: GearStore; item: ItemInput; onEquip: (c: Char, b: Build) => void; onClose: () => void;
@@ -54,7 +55,7 @@ export function EquipSheet({ ctx, store, item, onEquip, onClose }: {
           <p className="equip-subs">{Object.entries(item.subs).map(([k, n]) => <span key={k} className="tok">{subLabel(k)}<i>{n}</i></span>)}</p>
         </div>
         <label className="equip-q"><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.ui.equipSearch} aria-label={t.ui.equipSearch} /></label>
-        <label className="toggle"><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> {t.ui.equipAll}</label>
+        <label className="toggle" {...tour('equipall')}><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> {t.ui.equipAll}</label>
         {list.length ? (
           <ul className="equip-list">
             {list.map(({ c, b, vs }) => {

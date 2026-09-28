@@ -59,7 +59,9 @@ export const CORE: Step[] = [
     },
     off: (c) => (!demoItem(c) ? 'item' : !demoSet(c) ? 'set' : extraSub(c) ? 'subs' : null) },
   { id: 'verdict', rev: 1, at: () => ['verdict'], done: (c) => c.narrow && c.verdictOpen },
-  { id: 'next', rev: 1, at: () => ['next'], done: (c, start) => start.nSubs > 0 && c.nSubs === 0 },
+  // Esc на этом шаге — «Следующий», если ему есть что очистить; иначе Esc закрывает тур, как везде
+  { id: 'next', rev: 1, at: () => ['next'], done: (c, start) => start.nSubs > 0 && c.nSubs === 0,
+    esc: (c) => c.s.tab === 'eval' && c.nSubs > 0 },
 ];
 
 export const stepText = (c: TourCtx, demo: boolean): StepText => ({

@@ -1,8 +1,11 @@
-// Типы обучения: шаги главного тура (core.ts) и подсказки, которые модули объявляют в своих *.tour.ts (registry.ts).
+// Типы обучения: туры (tours.ts — главный core.ts и «Экипировка» gear.ts) и подсказки, которые модули объявляют
+// в своих *.tour.ts (registry.ts).
 import type { Texts } from '../i18n';
 import type { Verdict } from '../logic/verdict';
-import type { AppState } from '../state/appState';
+import type { AppState, Tab } from '../state/appState';
 import type { Anchor, Pin } from './anchors';
+
+export type TourId = 'core' | 'gear';
 
 // что шаг видит на странице: из этого считаются якорь, текст и «шаг выполнен»
 export interface TourCtx {
@@ -14,6 +17,11 @@ export interface TourCtx {
   narrow: boolean;      // телефон: вердикт карточкой и плашкой внизу, а не колонкой справа
   verdictOpen: boolean; // открыта шторка вердикта
   keys: boolean;        // есть клавиатура и мышь — в тексте можно назвать горячие клавиши
+  // экипировка
+  pieceOpen: boolean;   // открыта карточка вещи в блоке билда
+  tryOn: boolean;       // идёт примерка
+  gearSeq: number;      // счётчик вещей экипировки: растёт, когда вещь надели (не при переносе)
+  material: boolean;    // «Фоддер», потому что вещь — материал Breakthrough для надетой (logic/material)
 }
 
 // подстановки для текста шага (ru.ts и en.ts, раздел tour.steps)
@@ -39,7 +47,13 @@ export interface Step {
   // на примере — что на форме не так, как в примере: строка-подсказка под текстом шага (tour.off)
   off?: (c: TourCtx) => OffKey | null;
   done?: (now: TourCtx, start: TourCtx, demo: boolean) => boolean; // нет — только кнопкой «Дальше»
+  home?: Tab;              // на какой вкладке шаг (нет — «Оценка»): на другой полоса зовёт вернуться
+  layer?: 'card' | 'sheet'; // шаг — в карточке персонажа или в шторке: полоса не сворачивается в плашку «выбери в окне»
+  esc?: (c: TourCtx) => boolean; // Esc на этом шаге — действие страницы (у «Следующий» — сам «Следующий»), а не конец тура
 }
+
+// Тур: шаги по порядку; demoOnly — только на примере, без выбора «пример или своя вещь»
+export interface TourDef { id: TourId; rev: number; steps: Step[]; demoOnly?: boolean }
 
 // Подсказка модуля — в файле Компонент.tour.ts рядом с компонентом: export default defineTips({...}).
 // Показывается один раз, когда её якорь на экране и when() верно (tips.ts); текст — tour.tips[id] в ru.ts и en.ts.
@@ -51,6 +65,7 @@ export interface Tip {
   since: string;  // дата появления функции, YYYY-MM-DD: новичку не покажем «новым» то, что было до его первого запуска
   when?: (c: TourCtx) => boolean;
   news?: boolean; // попадает в «Что нового»; короткая строка — tour.news[id]
+  tour?: TourId;  // «Показать» в «Что нового» запускает этот тур, а не показывает подсказку
 }
 
 export const defineTips = (...tips: Tip[]): Tip[] => tips;

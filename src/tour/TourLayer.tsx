@@ -9,10 +9,10 @@ import { useT } from '../i18n';
 import type { Tab } from '../state/appState';
 import { pinSelector, type Anchor } from './anchors';
 import { cardOpen, freeBottom, overlayOpen, pad, rect, targets, union, type Geom, type Rect } from './dom';
-import { CORE, stepText } from './core';
+import { stepText } from './core';
 import { place, type Box } from './place';
-import type { TourCtx } from './types';
-import type { TourApi } from './useTour';
+import type { TourCtx, TourId } from './types';
+import { stepsOf, type TourApi } from './useTour';
 
 // На примере всё, кроме нужных кнопок, приглушено: маска с окном на каждую цель (одно общее окно открывало бы и
 // соседние кнопки). Нажатия проходят — слой pointer-events: none
@@ -30,14 +30,16 @@ function Dim({ rings, vw }: { rings: Rect[]; vw: number }) {
   );
 }
 
-export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
-  tour: TourApi; c: TourCtx; rosterEmpty: boolean; onTab: (t: Tab) => void; onRoster: () => void;
+// tours — какие туры предложить в «Какое обучение?»
+export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
+  tour: TourApi; c: TourCtx; rosterEmpty: boolean; tours: TourId[]; onTab: (t: Tab) => void; onRoster: () => void;
 }) {
   const t = useT();
   const run = tour.run;
   const strip = useRef<HTMLDivElement>(null);
   const [g, setG] = useState<Geom>({ rings: [], ring: null, overlay: false, card: false, bottom: 0, h: 0, vw: 0, vh: 0 });
-  const step = run?.phase.kind === 'step' ? CORE[run.phase.i] : null;
+  const steps = run ? stepsOf(run.id) : [];
+  const step = run?.phase.kind === 'step' ? steps[run.phase.i] : null;
   const demo = !!run?.demo;
   // на примере — точные кнопки, которые осталось нажать; иначе весь якорь
   const pins = step && demo ? step.pin?.(c) ?? [] : [];
@@ -74,22 +76,27 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
   const stepNo = run?.phase.kind === 'step' ? run.phase.i : -1;
   useLayoutEffect(() => {
     if (stepNo < 0) return;
-    const el = targets(selsRef.current, false)[0];
+    // цель может быть и в окне (карточка персонажа во весь экран, шторка): класс окна на body ставится чуть позже
+    const el = targets(selsRef.current, true)[0] ?? targets(selsRef.current, false)[0];
     if (!el) return;
     const r = el.getBoundingClientRect();
     const bottom = freeBottom();
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+    // в карточке и шторке (layer) — к верху: низ низкого экрана остаётся полосе (над «← К списку» — scroll-margin)
+    if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: step?.layer ? 'start' : 'center', behavior: still ? 'auto' : 'smooth' });
   }, [stepNo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!run) return null;
   const x = stepText(c, run.demo);
   const off = step && demo ? step.off?.(c) ?? null : null;
-  const away = c.s.tab !== 'eval';
+  // не на вкладке шага (у главного тура — «Оценка») — плашка «← К обучению»; выбор тура — на любой вкладке
+  const home = step?.home ?? 'eval';
+  const away = (run.phase.kind === 'choose' || step !== null) && c.s.tab !== home;
   const box: Box | null = g.ring && { top: g.ring.top, bottom: g.ring.top + g.ring.height };
-  // Вне формы или при открытом окне — узкая плашка: сверху, а над карточкой персонажа во весь экран — снизу (сверху
-  // её кнопка «← К списку»). Цель выше свободного места (вердикт колонкой на ПК) — обычная полоса снизу, поверх низа цели
-  const pill = away || g.overlay;
+  // Вне шага или при открытом окне — узкая плашка: сверху, а над карточкой персонажа во весь экран — снизу (сверху
+  // её кнопка «← К списку»). Шаг в карточке или в шторке (layer) — обычная полоса. Цель выше свободного места (вердикт
+  // колонкой на ПК) — обычная полоса снизу, поверх низа цели
+  const pill = away || (g.overlay && !step?.layer);
   const side = pill ? (g.card ? 'pill-low' : 'pill') : place(box, 0, g.bottom || g.vh, g.h) === 'top' ? 'top' : 'bottom';
   const above = { bottom: Math.max(0, g.vh - (g.bottom || g.vh)) };
   const stripStyle = side === 'bottom' || side === 'pill-low' ? above : side === 'top' ? { top: 0 } : undefined;
@@ -97,8 +104,16 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
   const closeBtn = <button type="button" className="tour-x" aria-label={t.tour.close} onClick={tour.close}>✕</button>;
   let body;
   if (away) {
-    body = <><span>{stepNo < 0 ? t.tour.start : t.tour.stepOf(stepNo + 1, CORE.length)}</span>
-      <button type="button" className="btn" onClick={() => onTab('eval')}>{t.tour.backToEval}</button>{closeBtn}</>;
+    body = <><span>{stepNo < 0 ? t.tour.start : t.tour.stepOf(stepNo + 1, steps.length)}</span>
+      <button type="button" className="btn" onClick={() => onTab(home)}>{t.tour.backToEval}</button>{closeBtn}</>;
+  } else if (run.phase.kind === 'pick') {
+    body = <><p className="tour-t">{t.tour.pick}</p>
+      <div className="tour-b">
+        {tours.map((id) => (
+          <button key={id} type="button" className={id === 'core' ? 'btn primary' : 'btn'} onClick={() => tour.pick(id)}>{t.tour.tours[id]}</button>
+        ))}
+        {closeBtn}
+      </div></>;
   } else if (run.phase.kind === 'choose') {
     body = <><p className="tour-t">{t.tour.choose}</p>
       <div className="tour-b">
@@ -107,7 +122,10 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
         {closeBtn}
       </div></>;
   } else if (run.phase.kind === 'end') {
-    body = run.phase.choice
+    body = run.id === 'gear'
+      ? <><p className="tour-t">{t.tour.gearEnd(c.narrow)}</p>
+        <div className="tour-b"><button type="button" className="btn primary" onClick={tour.close}>{t.tour.done}</button></div></>
+      : run.phase.choice
       ? <><p className="tour-t">{t.tour.choice}</p>
         <div className="tour-b">
           <button type="button" className="btn primary" onClick={() => tour.finish(true)}>{t.tour.keepItem}</button>
@@ -118,12 +136,12 @@ export function TourLayer({ tour, c, rosterEmpty, onTab, onRoster }: {
           {rosterEmpty && <button type="button" className="btn primary" onClick={() => { tour.close(); onRoster(); }}>{t.ui.markChars}</button>}
           <button type="button" className={rosterEmpty ? 'btn' : 'btn primary'} onClick={tour.close}>{t.tour.done}</button>
         </div></>;
-  } else if (g.overlay) {
+  } else if (g.overlay && !step?.layer) {
     // окно выбора открыто: узкая плашка сверху; на примере рамка — на нужной строке окна
     body = <><span>{step!.id === 'next' ? t.tour.closeSheet : t.tour.inSheet}</span>{closeBtn}</>;
   } else {
-    const last = stepNo === CORE.length - 1;
-    body = <><p className="tour-k">{t.tour.stepOf(stepNo + 1, CORE.length)}</p>
+    const last = stepNo === steps.length - 1;
+    body = <><p className="tour-k">{run.id === 'core' ? t.tour.stepOf(stepNo + 1, steps.length) : t.tour.gearStepOf(stepNo + 1, steps.length)}</p>
       <p className="tour-t" aria-live="polite"><Rich text={t.tour.steps[step!.id](x)} /></p>
       {off && <p className="tour-off" role="status">{t.tour.off[off]}</p>}
       <div className="tour-b">

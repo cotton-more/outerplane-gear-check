@@ -21,10 +21,11 @@ const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 
 interface Props {
   charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
   onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece) => void;
+  onPieceOpen?: (open: boolean) => void;
 }
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose, onTryOn }: Props) {
+export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -74,7 +75,7 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
               </button>
             ))}
           </div>
-          <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} onTryOn={onTryOn && ((x, slot, from) => onTryOn(c, x, slot, from))} />
+          <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} onTryOn={onTryOn && ((x, slot, from) => onTryOn(c, x, slot, from))} onPieceOpen={onPieceOpen} />
           <BuildView c={c} b={b} ctx={ctx} />
         </>
       ) : (

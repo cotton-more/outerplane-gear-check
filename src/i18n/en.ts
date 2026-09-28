@@ -556,6 +556,10 @@ export const en: Texts = {
     keepItem: 'Keep this one',
     restoreItem: 'Bring back the old one',
     invite: 'New: a tutorial — enter one piece of gear, about a minute.',
+    pick: 'Which tutorial?',
+    tours: { core: 'Checking a piece · 1 min', gear: 'Gear · 1 min' },
+    gearStepOf: (n, m) => `Gear · ${n} of ${m}`,
+    gearEnd: (narrow) => `Done. That was an example — your gear is untouched. Who wears what: ${narrow ? 'the ☰ menu, “Gear”' : 'Characters, the “with gear” filter'}.`,
     off: {
       item: 'The example needs Epic armor: the shirt icon and E.',
       set: 'The example needs Speed Set — change it in the set field.',
@@ -573,11 +577,20 @@ export const en: Texts = {
       code: 'The item code is for your guild chat: they enter it with “Enter code” and see the check for their roster.',
       temp: '“Temporary” — wear it until you find something better. No rush to dismantle it.',
       prio: 'Substat priority: › is the order, = shares a place, crossed-out ones never roll as substats on 6★ gear. The verdict chain is built from this line.',
-      builds: 'This character has several builds — switch the tabs. The item check counts all of them.',
+      builds: 'This character has several builds, each with its own 6 slots. The check counts all, but only builds you fill ask for pieces.',
+      gear: 'Each build has its own 6 slots. Record what the character wears now, and the verdict compares new pieces with it.',
+      tryOn: '“Try on” checks for this character and build only, with the slot and set already picked. “Equip” goes straight to them.',
+      piece: 'Did a Reforge or Breakthrough in the game? Mark it here, or the comparison treats the piece as un-upgraded.',
+      tryStrip: 'Try-on is on: I compare with this build only, and “Equip” goes straight to it. “Next” keeps it; ✕ checks for everyone again.',
+      vs: '▲ the new piece beats the worn one, ▼ it is worse; I count useful segments, Reforges ahead included. The button equips or replaces.',
+      cardEquip: 'Empty slot, or better than what they wear — equip it with one tap right below the card.',
+      equipAll: 'Wearing something off-build right now? Turn on “show off-build too”, and the comparison uses what they really wear.',
+      material: 'Fodder, not dismantle: the same piece is worn below T4 — this one feeds its Breakthrough.',
     },
     news: {
       dice: 'Reforge dice — which 4th substat saves an Epic',
       move: 'on replace, a stat from another row moves over',
+      gear: 'gear — character builds and comparing with what they wear',
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',
@@ -603,6 +616,13 @@ export const en: Texts = {
       verdict: (x: StepText) => x.narrow
         ? 'The verdict is ready. Tap the card: who it suits, what to upgrade and the code for your guild.'
         : 'On the right is the verdict: who it suits, what to upgrade and the code for your guild. Have a look and press “Continue”.',
+      gBuild: () => "This is Caren's Speed build: what she wears in each slot. An empty slot has “Try on”. Tap the **helmet** to see what's on it.",
+      gPiece: () => 'Upgraded it in the game? Mark the orange segments after Reforge and the Breakthrough here — the comparison counts them. Now tap **Try a replacement**.',
+      gCard: (x: StepText) => `Try-on: the piece on the form is compared with Caren's Speed build only. ${x.narrow
+        ? 'The card shows how much it beats her helmet and which chain places change.'
+        : 'The verdict on the right shows how much it beats her helmet. Have a look and press “Continue”.'}`,
+      gEquip: () => "Better than what Caren wears — tap **Replace Caren's helmet**: the new one goes into the build, and I'll say what to do with the old one.",
+      gNext: () => '“Next” keeps the try-on — enter pieces for Caren one after another. Done? ✕ on the Try-on strip, and the check is for everyone again.',
       next: (x: StepText) => `“Next” goes to a new piece: slot, grade, set and main stay, substats are cleared. Pressed it by accident? “Undo” brings the piece back for a few seconds — except in the tutorial.${
         x.keys ? ' Key: Esc.' : ''}`,
     },

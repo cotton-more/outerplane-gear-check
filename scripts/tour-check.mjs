@@ -1,6 +1,6 @@
-// Главный тур в настоящем браузере на пяти размерах экрана, в светлой и тёмной теме: тур проходится на примере до
-// конца, и на каждом шаге полоса целиком в окне и не закрывает то, на что показывает рамка. Кадры — в
-// build/tour-check/. jsdom раскладку не считает, поэтому это отдельно от тестов. Нужен Chrome (переменная CHROME).
+// Оба тура («Оценка вещи» и «Экипировка») в настоящем браузере на пяти размерах экрана, в светлой и тёмной теме:
+// тур проходится на примере до конца, и на каждом шаге полоса целиком в окне и не закрывает то, на что показывает
+// рамка. Кадры — в build/tour-check/. jsdom раскладку не считает, поэтому это отдельно от тестов. Нужен Chrome (переменная CHROME).
 // Запуск: task tour:check (страница — свежая сборка приложения с данными из docs/ или из SITE, как у скриншотов).
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -27,7 +27,7 @@ mkdirSync(OUT, { recursive: true });
 const problems = [];
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
 try {
-  for (const [w, h] of SIZES) for (const theme of ['light', 'dark']) await run(w, h, theme);
+  for (const tour of ['core', 'gear']) for (const [w, h] of SIZES) for (const theme of ['light', 'dark']) await run(w, h, theme, tour);
 } finally {
   await browser.close();
   server.close();
@@ -37,10 +37,10 @@ if (problems.length) {
   for (const p of problems) console.log(`  ${p}`);
   process.exit(1);
 }
-console.log(`\n✅ Тур проходится на ${SIZES.length} размерах в двух темах; кадры — build/tour-check/`);
+console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах; кадры — build/tour-check/`);
 
-async function run(w, h, theme) {
-  const tag = `${w}×${h} ${theme}`;
+async function run(w, h, theme, tour) {
+  const tag = `${tour} ${w}×${h} ${theme}`;
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]); // анимации включены: шаги ждут дольше, чем длится появление
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 720, hasTouch: w < 720 });
@@ -56,22 +56,24 @@ async function run(w, h, theme) {
   const click = async (fn, ...args) => { await page.evaluate(fn, ...args); await pause(600); };
   const byText = (sel, text) => [...document.querySelectorAll(sel)].find((b) => b.textContent.includes(text))?.click();
 
-  // запуск: на телефоне — из меню ☰, на ПК — кнопкой под формой
+  // запуск: на телефоне — из меню ☰, на ПК — кнопкой под формой; затем «Какое обучение?»
   if (w < 720) { await click(() => document.querySelector('.vb-tab').click()); await click(byText, '.menu button', 'Tutorial'); }
   else await click(byText, '.actions button', 'Tutorial');
-  await click(byText, '.tour-strip button', 'Example');
+  if (tour === 'core') { await click(byText, '.tour-strip button', 'Checking a piece'); await click(byText, '.tour-strip button', 'Example'); }
+  else await click(byText, '.tour-strip button', 'Gear · 1 min');
 
   for (let guard = 0; guard < 12; guard++) {
     const st = await page.evaluate(inspect);
     for (const p of st.problems) problems.push(`${tag}, ${st.label}: ${p}`);
-    await page.screenshot({ path: join(OUT, `${w}x${h}-${theme}-${String(guard).padStart(2, '0')}.png`) });
+    await page.screenshot({ path: join(OUT, `${tour}-${w}x${h}-${theme}-${String(guard).padStart(2, '0')}.png`) });
     if (st.end) { await click(byText, '.tour-strip button', 'Done'); break; }
     if (st.step === 0) { problems.push(`${tag}: не видно шага тура (${st.label})`); break; }
     const before = st.label;
-    await page.evaluate(act, st.step, w < 720);
+    await page.evaluate(tour === 'core' ? act : actGear, st.step, w < 720);
     await pause(700);
     const after = (await page.evaluate(inspect)).label;
-    if (after === before && st.step !== 2) problems.push(`${tag}, ${before}: шаг не засчитался после действия`);
+    // «Дальше» без действия: у главного тура шаг 2 на широком, у «Экипировки» — шаг 3
+    if (after === before && !(tour === 'core' && st.step === 2)) problems.push(`${tag}, ${before}: шаг не засчитался после действия`);
   }
   await page.close();
 }
@@ -80,10 +82,10 @@ async function run(w, h, theme) {
 function inspect() {
   const strip = document.querySelector('.tour-strip:not(.tour-invite)');
   const text = strip?.textContent ?? '';
-  const m = /Step (\d) of 5/.exec(text);
-  // открыто окно — узкая плашка без номера: на шаге 5 это шторка вердикта
+  const m = /(?:Step|Gear ·) (\d) of \d/.exec(text);
+  // открыто окно — узкая плашка без номера: на шаге 5 главного тура это шторка вердикта
   const n = m ? Number(m[1]) : text.includes('Close the window') ? 5 : 0;
-  const out = { label: n ? `шаг ${n}` : text.slice(0, 40), step: n, end: text.includes("That's it"), problems: [] };
+  const out = { label: n ? `шаг ${n}` : text.slice(0, 40), step: n, end: text.includes("That's it") || text.includes('That was an example'), problems: [] };
   if (!strip) { out.problems.push('нет полосы'); return out; }
   const r = strip.getBoundingClientRect();
   if (r.top < -1 || r.left < -1 || r.bottom > innerHeight + 1 || r.right > innerWidth + 1) out.problems.push(`полоса за краем окна (${Math.round(r.top)}…${Math.round(r.bottom)} из ${innerHeight})`);
@@ -111,4 +113,16 @@ function act(step, narrow) {
       (narrow ? $('.vb-reset') : $('.actions .btn.primary')).click();
     }
   })();
+}
+
+// действие шага тура «Экипировка»: шлем → «Примерить замену» → «Дальше» → «Заменить шлем Caren» → ✕ примерки
+function actGear(step, narrow) {
+  const $ = (s) => document.querySelector(s);
+  const byText = (sel, text) => [...document.querySelectorAll(sel)].find((b) => b.textContent.includes(text));
+  const visible = (sel) => [...document.querySelectorAll(sel)].find((e) => e.getClientRects().length > 0);
+  if (step === 1) $('[data-tour="gslots"] [data-tour-item="helmet"]').click();
+  if (step === 2) byText('.piece-act button', 'Try a replacement').click();
+  if (step === 3) byText('.tour-strip button', 'Continue').click();
+  if (step === 4) (narrow ? $('.vc-equip') : visible('[data-tour="gequip"]')).click();
+  if (step === 5) $('.tryon-x').click();
 }
