@@ -244,6 +244,20 @@ describe('экипировка', () => {
     expect($('.bgear h4')?.textContent).toBe('Equipped · 1 of 6');
   });
 
+  it('«Взять из» у оружия — только если этот билд его берёт: Dahlia, ATK% из Speed damage в Speed Tanky (HP%) — нет', async () => {
+    const dahlia = D.chars.find((c) => c.name === 'Dahlia')!;
+    const w = dahlia.builds.find((b) => b.name === 'Speed damage')!.weapons[0];
+    const tanky = dahlia.builds.find((b) => b.name === 'Speed Tanky')!;
+    const helm = { id: 'p2', slot: 'helmet', grade: 'unique', setId: tanky.sets[0][0].set, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' };
+    const gear = { v: 1, seq: 2, pieces: { p1: { id: 'p1', slot: 'weapon', grade: 'unique', setId: null, itemKey: w.key, main: w.mains[0], yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' }, p2: helm }, builds: { [dahlia.id + '/Speed damage']: { slots: { weapon: 'p1' }, at: '' }, [dahlia.id + '/Speed Tanky']: { slots: { helmet: 'p2' }, at: '' } } };
+    await mount({ tab: 'chars', charId: dahlia.id }, {}, { gear, roster: [dahlia.id] });
+    await click(byText('.btabs button', 'Speed Tanky'));
+
+    const weaponRow = $$('.bgear-empty').find((e) => e.textContent?.startsWith('Weapon'));
+    expect(weaponRow).toBeTruthy();
+    expect(weaponRow?.querySelector('button')).toBeNull();
+  });
+
   // на телефоне карточка персонажа — fixed с z-index: шторка внутри неё уходила под плашку вердикта, «Готово» не нажать
   it('карточка вещи — шторкой в <body>; ушли на «Оценку» — закрылась, прокрутка не заперта', async () => {
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };

@@ -12,6 +12,7 @@ import {
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
 import { subWeights } from '../../logic/score';
+import { fits } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
@@ -41,12 +42,13 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
   for (const [slot, id] of Object.entries(slots)) if (isArmor(slot as SlotId) && st.pieces[id]?.setId) count[st.pieces[id].setId!] = (count[st.pieces[id].setId!] ?? 0) + 1;
   const combo = b.sets.find((cb) => cb.every((p) => (count[p.set] ?? 0) >= p.n)) ?? b.sets.find((cb) => cb.some((p) => count[p.set])) ?? null;
   // «Взять из Speed»: этот слот пуст, а в другом собираемом билде персонажа есть вещь, которая этому билду подходит
+  // (сет из его связок; оружие и аксессуар — с main, который этот билд просит)
   const takeFrom = (slot: SlotId) => {
     for (const other of c.builds) {
       if (other === b) continue;
       const id = st.builds[buildKey(c.id, other.name)]?.slots[slot];
       const p = id ? st.pieces[id] : undefined;
-      if (p && (!p.setId || b.sets.some((cb) => cb.some((x) => x.set === p.setId)))) return { id: p.id, build: other.name };
+      if (p && fits(ctx, b, pieceInput(p))) return { id: p.id, build: other.name };
     }
     return null;
   };

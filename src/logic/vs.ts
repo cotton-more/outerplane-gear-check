@@ -75,6 +75,9 @@ function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
   return ctx.settings.stage === 'grow' && item.main != null && slotMains(b, kind).has(item.main) ? 'stopgap' : 'no';
 }
 
+// подходит ли вещь билду хоть как-то — для «Взять из Speed» в карточке персонажа
+export const fits = (ctx: Ctx, b: Build, item: ItemInput): boolean => fit(ctx, b, item) !== 'no';
+
 // 2+2: замена в слоте ломает связку сетов, которая была собрана
 function breaks(st: GearStore, key: string, b: Build, item: ItemInput): string | null {
   if (!isArmor(item.slot)) return null;
