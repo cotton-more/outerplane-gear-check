@@ -70,13 +70,14 @@ function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: nu
 }
 
 // подходит ли вещь этому билду: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с нужным main;
-// остальное (Epic, «нет в списке», другой main) — временная, если main этому билду нужен
+// остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду нужен
 type Fit = 'no' | 'rec' | 'stopgap';
 function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
   if (isArmor(item.slot)) return item.setId && combosWith(b, item.setId).length ? 'rec' : 'no';
   const kind = item.slot as GearKind;
   const g = item.grade === 'unique' && item.itemKey ? gearList(b, kind).find((r) => r.key === item.itemKey) : undefined;
-  if (g) return !g.mains.length || (item.main != null && g.mains.includes(item.main)) ? 'rec' : 'no';
+  if (g && (!g.mains.length || (item.main != null && g.mains.includes(item.main)))) return 'rec';
+  // предмет из списка, но main не тот, — как любая временная: подходит, если этот main в слоте билд просит (как в вердикте)
   return ctx.settings.stage === 'grow' && item.main != null && slotMains(b, kind).has(item.main) ? 'stopgap' : 'no';
 }
 

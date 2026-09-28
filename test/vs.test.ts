@@ -103,6 +103,18 @@ describe('сравнение с надетым', () => {
     expect(compare(ctx, equip(EMPTY_GEAR, K, z).store, caren, build('Speed'), a)).toMatchObject({ kind: 'eq', delta: 0 });
   });
 
+  it('Legendary из списка билда, но с другим main — временная, если этот main в слоте билд просит (Eris, как в вердикте)', () => {
+    const eris = D.chars.find((c) => c.name === 'Eris')!;
+    const attack = eris.builds.find((b) => b.name === 'Attack')!;
+    const gw = D.weapons.find((w) => w.name === "Gorgon's Wrath [Striker]" && w.star === 6)!;
+    const item: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: gw.key, main: 'HP%', subs: { CHC: 2, CHD: 2, SPD: 2, 'ATK%': 1 } };
+    const st = equip(EMPTY_GEAR, buildKey(eris.id, 'Attack'), { ...item, grade: 'rare', itemKey: null, subs: { HP: 1 } }).store;
+
+    expect(attack.weapons.find((w) => w.key === gw.key)?.mains).not.toContain('HP%');
+    expect(compare(ctx, st, eris, attack, item)).toMatchObject({ kind: 'up' });
+    expect(compare({ ...ctx, settings: { ...ctx.settings, stage: 'end' } }, st, eris, attack, item)).toBeNull();
+  });
+
   it('у надетой полезных нет — не процент, а «полезных нет»; больше +200% — «×N»', () => {
     const K = buildKey(caren.id, 'Speed');
     const junk = equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { RES: 2, EFF: 2, HP: 1, 'DMG RED%': 1 })).store;
