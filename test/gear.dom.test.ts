@@ -155,6 +155,17 @@ describe('экипировка', () => {
     expect(document.body.classList.contains('drawer-lock')).toBe(false);
   });
 
+  it('«Заменить» в шторке вердикта: сообщение лежит поверх неё — внизу шторки место (toast-on), «Вернуть» — снимает', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { HP: 1, DEF: 1, ATK: 1, RES: 1 }, lit: { HP: 1, DEF: 1, ATK: 1, RES: 1 }, bt: 0, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    await click(byText('.drawer .vs-act', "Replace Caren's helmet"));
+    expect($('.drawer')).toBeTruthy();
+    expect(document.body.classList.contains('toast-on')).toBe(true);
+    await click($('.gear-toast button'));
+    expect(document.body.classList.contains('toast-on')).toBe(false);
+  });
+
   it('две шторки сразу: Esc закрывает верхнюю, drawer-lock снимается с последней', async () => {
     const { Sheet } = await import('../src/components/Sheet');
     const closed: string[] = [];

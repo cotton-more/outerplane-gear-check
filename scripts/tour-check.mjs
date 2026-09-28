@@ -1,6 +1,7 @@
 // Оба тура («Оценка вещи» и «Экипировка») в настоящем браузере на пяти размерах экрана, в светлой и тёмной теме:
 // тур проходится на примере до конца, и на каждом шаге полоса целиком в окне и не закрывает то, на что показывает
-// рамка. Ещё — полоса «Примерка» с самым длинным «персонаж · билд» из данных не раздвигает страницу вбок.
+// рамка. Ещё — полоса «Примерка» с самым длинным «персонаж · билд» из данных не раздвигает страницу вбок, а на ПК
+// сообщение после «Надеть» не ложится на колонку вердикта.
 // Кадры — в build/tour-check/. jsdom раскладку не считает, поэтому это отдельно от тестов. Нужен Chrome (переменная CHROME).
 // Запуск: task tour:check (страница — свежая сборка приложения с данными из docs/ или из SITE, как у скриншотов).
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
@@ -30,6 +31,7 @@ const browser = await puppeteer.launch({ executablePath: CHROME, headless: true 
 try {
   for (const tour of ['core', 'gear']) for (const [w, h] of SIZES) for (const theme of ['light', 'dark']) await run(w, h, theme, tour);
   for (const [w, h] of SIZES) await tryonWidth(w, h);
+  for (const [w, h] of SIZES.filter(([w]) => w >= 720)) await toastPlace(w, h);
 } finally {
   await browser.close();
   server.close();
@@ -39,7 +41,7 @@ if (problems.length) {
   for (const p of problems) console.log(`  ${p}`);
   process.exit(1);
 }
-console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах, полоса «Примерка» влезает; кадры — build/tour-check/`);
+console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах, полоса «Примерка» влезает, сообщение не на вердикте; кадры — build/tour-check/`);
 
 async function run(w, h, theme, tour) {
   const tag = `${tour} ${w}×${h} ${theme}`;
@@ -108,6 +110,42 @@ async function tryonWidth(w, h) {
     if (m.doc > m.vw + 1) problems.push(`${tag}: страница шире окна — ${m.doc} из ${m.vw} (${who})`);
     if (m.x > Math.min(m.vw, m.form) + 1) problems.push(`${tag}: ✕ примерки за краем (${Math.round(m.x)} при ${Math.round(Math.min(m.vw, m.form))}, ${who})`);
   }
+  await page.close();
+}
+
+// ПК: «Надеть» в «Сейчас на персонажах» — сообщение с «Вернуть» над колонкой формы, а не на колонке вердикта
+async function toastPlace(w, h) {
+  const tag = `сообщение ${w}×${h}`;
+  const page = await browser.newPage();
+  await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  await page.evaluate(() => {
+    const D = window.OGC_DATA;
+    const caren = D.chars.find((c) => c.name === 'Caren');
+    const speed = D.sets.find((s) => s.short === 'Speed').id;
+    const P = (id, slot) => ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { HP: 1, DEF: 1, ATK: 1, RES: 1 }, lit: { HP: 1, DEF: 1, ATK: 1, RES: 1 }, bt: 0, at: '' });
+    localStorage.clear();
+    localStorage.setItem('ogc.lang', '"en"');
+    localStorage.setItem('ogc.welcomeHidden', 'true');
+    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false }));
+    localStorage.setItem('ogc.roster', JSON.stringify([caren.id]));
+    localStorage.setItem('ogc.gear', JSON.stringify({ v: 1, seq: 2, pieces: { p1: P('p1', 'helmet'), p2: P('p2', 'armor') },
+      builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1', armor: 'p2' }, at: '' }, [caren.id + '/Speed/Immu']: { slots: { armor: 'p2' }, at: '' } } }));
+    localStorage.setItem('ogc.state', JSON.stringify({ tab: 'eval', slot: 'helmet', grade: 'unique' }));
+    localStorage.setItem('ogc.item', JSON.stringify({ setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } }));
+  });
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  await new Promise((r) => setTimeout(r, 600));
+  const m = await page.evaluate(async () => {
+    document.querySelector('.v-vs .vs-act')?.click();
+    await new Promise((r) => setTimeout(r, 400));
+    const t = document.querySelector('.gear-toast')?.getBoundingClientRect();
+    const col = document.querySelector('.eval-out')?.getBoundingClientRect();
+    return t && col ? { right: t.right, left: t.left, col: col.left } : null;
+  });
+  await page.screenshot({ path: join(OUT, `toast-${w}x${h}.png`) });
+  if (!m) problems.push(`${tag}: нет сообщения после «Надеть» или колонки вердикта`);
+  else if (m.right > m.col + 1 || m.left < 0) problems.push(`${tag}: сообщение на колонке вердикта (${Math.round(m.left)}…${Math.round(m.right)}, вердикт с ${Math.round(m.col)})`);
   await page.close();
 }
 

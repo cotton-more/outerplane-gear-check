@@ -17,6 +17,7 @@ import { slugFromHash, useHashRoute } from './hooks/useHashRoute';
 import { useHotkeys } from './hooks/useHotkeys';
 import { fineHover, useLayout } from './hooks/useLayout';
 import { usePwa } from './hooks/usePwa';
+import { useToastPlace } from './hooks/useToastPlace';
 import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
@@ -256,6 +257,15 @@ export function App() {
   const startTour = (id?: TourId) => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(id); };
   const openTours = () => startTour();
   const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
+  // сообщения с «Вернуть»: экипировки — на вкладке, где сделано; формы — на «Оценке», если нет первого
+  const gearToast = !!gearUndo && gearUndo.tab === s.tab && !tour.run;
+  const formToast = !!undo && s.tab === 'eval' && !tour.run && !gearToast;
+  const toastAt = useToastPlace((gearToast || formToast) && !layout.narrow, s.tab === 'eval' ? 'eval-in' : 'char-list');
+  // телефон: сообщение экипировки лежит и поверх шторки вердикта — внизу шторки место, чтобы строку под ним прокрутить
+  useEffect(() => {
+    document.body.classList.toggle('toast-on', gearToast && layout.narrow);
+    return () => document.body.classList.remove('toast-on');
+  }, [gearToast, layout.narrow]);
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
   // пока приложение откроют крупнее. Кнопка «Обучение» в меню и Справке работает всегда.
   // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
@@ -334,8 +344,8 @@ export function App() {
         )}
         <TipLayer tour={tour} c={tourCtx} enabled={tipsOn} forced={forcedTip} onForced={onForced} />
         <TourLayer tour={tour} c={tourCtx} rosterEmpty={roster.size === 0} tours={tours} onTab={onTab} onRoster={() => onTab('chars')} />
-        {gearUndo && gearUndo.tab === s.tab && !tour.run && (
-          <div className="toast gear-toast" role="status">
+        {gearUndo && gearToast && (
+          <div className="toast gear-toast" role="status" style={toastAt}>
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
             <button type="button" onClick={() => { gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
           </div>
@@ -353,8 +363,8 @@ export function App() {
           </Sheet>
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} store={gear.store} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
-        {undo && s.tab === 'eval' && !tour.run && !(gearUndo && gearUndo.tab === s.tab) && (
-          <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
+        {formToast && (
+          <div className="toast" role="status" style={toastAt}><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
         {menuOpen && (
           <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
