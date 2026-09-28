@@ -84,7 +84,8 @@ function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
 // подходит ли вещь билду хоть как-то — для «Взять из Speed» в карточке персонажа
 export const fits = (ctx: Ctx, b: Build, item: ItemInput): boolean => fit(ctx, b, item) !== 'no';
 
-// 2+2: замена в слоте ломает связку сетов, которая была собрана
+// 2+2: замена в слоте ломает связку сетов, которая была собрана. Зовётся только при надетой вещи: пустой слот
+// связку не ломает (compare выходит раньше)
 function breaks(st: GearStore, key: string, b: Build, item: ItemInput): string | null {
   if (!isArmor(item.slot)) return null;
   const count = (swap: boolean) => {
@@ -93,7 +94,6 @@ function breaks(st: GearStore, key: string, b: Build, item: ItemInput): string |
       const set = swap && slot === item.slot ? item.setId : st.pieces[id]?.setId;
       if (set && isArmor(slot as ItemInput['slot'])) n[set] = (n[set] ?? 0) + 1;
     }
-    if (swap && !st.builds[key]?.slots[item.slot] && item.setId) n[item.setId] = (n[item.setId] ?? 0) + 1;
     return n;
   };
   const ok = (n: Record<string, number>) => b.sets.filter((combo) => combo.every((p) => (n[p.set] ?? 0) >= p.n));
