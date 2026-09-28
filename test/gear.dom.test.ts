@@ -210,6 +210,18 @@ describe('экипировка', () => {
     expect(byText('.btabs button', 'Speed')?.textContent).toBe('Speed1/6');
   });
 
+  it('меню «Gear · N»: сохранённые «только мои» и стихия сбрасываются — плиток ровно N', async () => {
+    const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+    const pc = (id: string) => ({ id, slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' });
+    // код с другого устройства: на Kappa тоже надето, а в ростере её нет
+    const gear = { v: 1, seq: 2, pieces: { p1: pc('p1'), p2: pc('p2') }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' }, [kappa.id + '/Speed']: { slots: { helmet: 'p2' }, at: '' } } };
+    const other = D.chars.find((c) => c.element !== caren.element)!.element;
+    await mount({ slot: 'helmet', grade: 'unique', cOwned: true, cel: other }, {}, { gear });
+    await click($('.vb-tab'));
+    await click(byText('.menu-nav button', 'Gear · 2'));
+    expect($$('#cgrid .ctile .cn').map((e) => e.textContent).sort()).toEqual(['Caren', 'Kappa']);
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     expect($('.vcard .vc-vs')).toBeNull();

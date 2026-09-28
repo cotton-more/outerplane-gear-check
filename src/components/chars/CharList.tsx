@@ -26,7 +26,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport, t
   const { roster } = rosterApi;
   const [io, setIo] = useState(false);
   const shown = useMemo(() => D.chars.filter((c) => charMatches(c, s, roster, geared)), [D, s, roster, geared]);
-  const nGeared = D.chars.filter((c) => geared.has(c.id)).length;
+  const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // как в меню «Экипировка · N»
   // с фильтром «с экипировкой» — сколько персонажей ростера ещё ничего не собрали
   const rest = s.cGear ? D.chars.filter((c) => roster.has(c.id) && !geared.has(c.id) && c.builds.length).length : 0;
   const filter = (patch: Partial<CharFilter>) => dispatch({ type: 'charFilter', patch });

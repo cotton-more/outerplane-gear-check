@@ -356,8 +356,13 @@ export function App() {
         )}
         {menuOpen && (
           <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
-            gearN={[...geared.keys()].filter((id) => idx.CHAR[id]).length}
-            onGear={() => { dispatch({ type: 'charFilter', patch: { cGear: true } }); dispatch({ type: 'selectChar', id: null }); onTab('chars'); }}
+            gearN={[...geared.keys()].filter((id) => idx.CHAR[id]?.builds.length).length}
+            // список ровно тех, кого считает N: прочие фильтры списка (сохранённые «только мои», стихия, класс) — сбросить
+            onGear={() => {
+              dispatch({ type: 'charFilter', patch: { cGear: true, cq: '', cel: '', ccl: '', cOwned: false } });
+              dispatch({ type: 'selectChar', id: null });
+              onTab('chars');
+            }}
             onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={openTours}
             footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />} />
         )}
