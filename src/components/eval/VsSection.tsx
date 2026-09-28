@@ -4,18 +4,22 @@
 import { subLabel } from '../../data';
 import { useT } from '../../i18n';
 import { reforgesDone } from '../../logic/gear';
-import type { Vs } from '../../logic/vs';
+import { vsFigure, type Vs, type VsFigure } from '../../logic/vs';
 import { Icon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Chain } from './Chain';
 
 const GRADE: Record<string, string> = { unique: 'Legendary', rare: 'Epic' };
 
+const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `×${f.n}` : `${f.n > 0 ? '+' : f.n < 0 ? '−' : '±'}${Math.abs(f.n)}%`);
+
+// «лучше / хуже»: процент (больше +200% — «×N»); решила пассивка — словом; у надетой полезных нет — «лучше»
 export function VsChip({ vs }: { vs: Vs }) {
   const t = useT();
-  const pct = vs.delta == null ? 0 : Math.round(vs.delta * 100);
   if (vs.kind === 'up' || vs.kind === 'down') {
-    return <span className={`vs ${vs.kind}`}><Icon name={vs.kind === 'up' ? 'trending-up' : 'trending-down'} />{pct > 0 ? '+' : '−'}{Math.abs(pct)}%</span>;
+    const f = vsFigure(vs);
+    const text = vs.why ? t.ui.vsKind[vs.why] : !f ? '' : f.kind === 'empty' ? t.ui.vsKind.better : num(f);
+    return <span className={`vs ${vs.kind}`}><Icon name={vs.kind === 'up' ? 'trending-up' : 'trending-down'} /><span className="sr-only">{t.ui.vsSr[vs.kind]}</span>{text}</span>;
   }
   const icon = vs.kind === 'eq' ? 'equal' : vs.kind === 'worn' ? 'check' : null;
   return <span className={`vs ${vs.kind}`}>{icon && <Icon name={icon} />}{t.ui.vsKind[vs.kind]}</span>;
@@ -33,6 +37,7 @@ export function VsSection({ list, slot, onEquip, onOpenChar }: {
       <ul>
         {list.map((vs) => {
           const w = vs.worn;
+          const fig = vsFigure(vs);
           return (
             <li key={vs.key} className={`vs-row vs-${vs.kind}`}>
               <div className="vs-h">
@@ -52,9 +57,9 @@ export function VsSection({ list, slot, onEquip, onOpenChar }: {
               {(vs.gained.length > 0 || vs.lost.length > 0) && (
                 <p className="vs-places">{t.ui.vsPlaces(vs.gained.map((x) => ({ ...x, key: subLabel(x.key) })), vs.lost.map((x) => ({ ...x, key: subLabel(x.key) })))}</p>
               )}
-              {vs.delta != null && vs.kind !== 'breaks' && <p className="muted">{t.ui.vsDelta(Math.round(vs.delta * 100))}</p>}
+              {vs.why && <p className="muted">{t.ui.vsWhy[vs.why]}</p>}
+              {fig && vs.kind !== 'breaks' && <p className="muted">{fig.kind === 'empty' ? t.ui.vsEmpty : fig.kind === 'times' ? t.ui.vsTimes(fig.n) : t.ui.vsDelta(fig.n)}</p>}
               {vs.broken && <p className="muted">{t.ui.vsBreaks(SET[vs.broken]?.short ?? vs.broken)}</p>}
-              {vs.worse && <p className="muted">{t.ui.vsWorse}</p>}
               {vs.passive && <p className="muted">{t.ui.vsPassive}</p>}
               {w && w.bt != null && w.bt > 0 && !vs.material && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
               {vs.material && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}

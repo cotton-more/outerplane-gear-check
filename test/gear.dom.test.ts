@@ -28,6 +28,7 @@ afterEach(async () => {
   root = null;
   document.body.innerHTML = '';
   localStorage.clear();
+  history.replaceState(null, '', location.pathname); // #slug открытого персонажа иначе перейдёт в следующий тест
 });
 
 async function mount(state: Record<string, unknown>, item: Record<string, unknown>, extra: Record<string, unknown> = {}) {
@@ -75,7 +76,7 @@ describe('экипировка', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
     await click($('.vcard'));
 
-    expect($('.v-vs .vs.up')?.textContent).toBe('+25%');
+    expect($('.v-vs .vs.up')?.textContent).toBe('better than the one on: +25%');
     expect($('.v-vs .vs-places')?.textContent).toBe('+CHD (3rd) · −SPD (4th)');
     expect($$('.v-vs .vs-cmp .chain')).toHaveLength(2);
     await click(byText('.vs-act', "Replace Caren's helmet"));
@@ -96,6 +97,17 @@ describe('экипировка', () => {
 
     expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 2 }, lit: { 'DEF%': 3 }, bt: 4 });
     expect($('.piece')?.textContent).toContain('Reforge: 1 of 6');
+  });
+
+  it('оружие: временная против надетой рекомендованной — чип словом, ▼ «stopgap», процент строкой ниже', async () => {
+    const embrace = D.weapons.find((w) => w.name === 'Snow-white Embrace' && w.star === 6)!;
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'weapon', grade: 'unique', setId: null, itemKey: embrace.key, main: 'DEF%', yellow: { HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 }, lit: { HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 }, bt: 2, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { weapon: 'p1' }, at: '' } } };
+    await mount({ slot: 'weapon', grade: 'rare' }, { main: 'DEF%', subs: { CHC: 3, CHD: 3, SPD: 3 } }, { gear });
+    await click($('.vcard'));
+
+    expect($('.v-vs .vs.down')?.textContent).toBe('worse than the one on: stopgap');
+    expect($('.v-vs .vs-row')?.textContent).toContain('the passive matters more than substats');
+    expect($('.v-vs .vs-row')?.textContent).toMatch(/The one on has nothing useful|× the useful segments|% useful segments/);
   });
 
   // на телефоне карточка персонажа — fixed с z-index: шторка внутри неё уходила под плашку вердикта, «Готово» не нажать

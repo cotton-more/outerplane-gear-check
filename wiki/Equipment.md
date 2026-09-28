@@ -38,7 +38,14 @@ For the characters the piece suits, in the builds you're gearing: an **empty slo
 the one on — **+25%**, **on par**, **−14%**. Two chains side by side show which chain places each piece covers, for
 example "+CHD (3rd) · −SPD (4th)": the new piece covers the 3rd place and loses the 4th. The percentage is useful
 segments weighted by chain place, counting the Reforges still ahead — so a fully reforged piece is compared fairly
-with a fresh one. Also shown: a 2+2 set the swap would break, the current piece's Breakthrough tier (the new one needs
+with a fresh one. More than +200% shows as **×3**, **×10**; if the one on has nothing useful for the build at all,
+the chip says **better** and the line below explains it.
+
+For weapons and accessories the passive can outweigh substats: a recommended piece against one that isn't
+recommended for the build shows **recommended** (better) or **stopgap** (worse) instead of a percentage — the
+percentage by segments stays on a line below, with the reason.
+
+Also shown: a 2+2 set the swap would break, the current piece's Breakthrough tier (the new one needs
 that many materials to catch up), and when the new piece is the same as the one on — a tier of its Breakthrough.
 
 The verdict stamp doesn't change because of what's recorded.

@@ -8,7 +8,7 @@ import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { buildKey, EMPTY_GEAR, equip, updatePiece, type GearStore } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
-import { compare, compareAll } from '../src/logic/vs';
+import { compare, compareAll, vsFigure } from '../src/logic/vs';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -73,7 +73,30 @@ describe('сравнение с надетым', () => {
 
     const vs = compare(ctx, st, caren, build('Speed'), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'DEF%', subs: { CHC: 3, CHD: 3, SPD: 3 } })!;
 
-    expect(vs).toMatchObject({ kind: 'down', worse: true });
+    expect(vs).toMatchObject({ kind: 'down', why: 'stopgap' });
+  });
+
+  it('оружие: рекомендованная против надетой временной — лучше словом (why), хотя по сегментам хуже', () => {
+    const embrace = D.weapons.find((w) => w.name === 'Snow-white Embrace' && w.star === 6)!;
+    const K = buildKey(caren.id, 'Speed');
+    const st = equip(EMPTY_GEAR, K, { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'DEF%', subs: { CHC: 3, CHD: 3, SPD: 3 } }).store;
+
+    const vs = compare(ctx, st, caren, build('Speed'), { slot: 'weapon', grade: 'unique', setId: null, itemKey: embrace.key, main: 'DEF%', subs: { HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 } })!;
+
+    expect(vs).toMatchObject({ kind: 'up', why: 'rec' });
+    expect(vs.delta!).toBeLessThan(0);
+  });
+
+  it('у надетой полезных нет — не процент, а «полезных нет»; больше +200% — «×N»', () => {
+    const K = buildKey(caren.id, 'Speed');
+    const junk = equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { RES: 2, EFF: 2, HP: 1, 'DMG RED%': 1 })).store;
+    expect(vsFigure(compare(ctx, junk, caren, build('Speed'), NEW)!)).toEqual({ kind: 'empty' });
+
+    const weak = equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { SPD: 1, RES: 2, EFF: 2, HP: 1 })).store;
+    const vs = compare(ctx, weak, caren, build('Speed'), armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 }))!;
+    expect(vsFigure(vs)).toEqual({ kind: 'times', n: Math.round(vs.delta! + 1) });
+    expect(vs.delta!).toBeGreaterThan(2);
+    expect(vsFigure({ delta: 0.25, wornEmpty: false })).toEqual({ kind: 'pct', n: 25 });
   });
 
   it('раздел вердикта: только собираемые билды тех, кому вещь подходит; ничего не надето — пусто', () => {

@@ -311,14 +311,21 @@ export const ru = {
     vsNow: 'сейчас',
     vsNew: 'новая',
     vsWorn: (grade: string, bt: number | null, done: number) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}, Reforge ${done} из 6`,
-    vsKind: { fill: 'пустой слот', eq: 'на уровне', worn: 'уже надета', breaks: 'ломает сет' } as Record<string, string>,
+    vsKind: { fill: 'пустой слот', eq: 'на уровне', worn: 'уже надета', breaks: 'ломает сет', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
+    vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
     vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
       [...gained.map((x) => `+${x.key} (${x.place}-е)`), ...lost.map((x) => `−${x.key} (${x.place}-е)`)].join(' · '),
     vsDelta: (pct: number) => `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)}% полезных сегментов — с учётом Reforge, которые ещё впереди.`,
+    vsTimes: (n: number) => `Полезных сегментов в ${n} ${plural(n, 'раз', 'раза', 'раз')} больше — с учётом Reforge, которые ещё впереди.`,
+    vsEmpty: 'У надетой полезных нет: ни один её сабстат этому билду не засчитывается.',
+    // оружие и аксессуар: решила пассивка, а не сегменты (logic/vs, Vs.why)
+    vsWhy: {
+      rec: 'Эта вещь — из рекомендованных билду, надетая — нет: пассивка важнее сабстатов.',
+      stopgap: 'Надета рекомендованная, а эта — временная: пассивка важнее сабстатов, менять не нужно.',
+    } as Record<string, string>,
     vsBt: (bt: number) => `Сейчас надетая — на Breakthrough T${bt}: новой до T${bt} нужно ${bt} ${plural(bt, 'материал', 'материала', 'материалов')}.`,
     vsMaterial: (bt: number) => `Та же вещь, что надета (T${bt}): эта — ступень её Breakthrough, T${bt} → T${bt + 1}.`,
     vsPassive: 'Другая пассивка: сравниваю только сабстаты, а какая пассивка лучше — решает билд.',
-    vsWorse: 'Сейчас надета рекомендованная вещь — эта временная ей не нужна.',
     vsBreaks: (set: string) => `Сломает сет ${set} в этом билде: его вещей станет меньше, чем нужно.`,
     equipTo: (name: string, build: string) => `Надеть на ${name} · ${build}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,

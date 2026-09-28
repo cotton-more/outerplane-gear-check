@@ -29,7 +29,19 @@ export interface Vs {
   broken: string | null;         // 2+2: какой сет пропадёт (id)
   material: boolean;             // та же вещь, что надетая не на T4: годится ей на Breakthrough
   passive: boolean;              // оружие/аксессуар: у надетого другая пассивка — решает не только ролл
-  worse: boolean;                // оружие/аксессуар: надет рекомендованный, а новый — временный (или наоборот → up)
+  // оружие/аксессуар: решила пассивка, а не сегменты — rec: новая рекомендованная против нерекомендованной (лучше),
+  // stopgap: новая временная, а надета рекомендованная (хуже). Тогда чип — словом, процент — строкой с причиной
+  why: 'rec' | 'stopgap' | null;
+  wornEmpty: boolean;            // у надетой нет ни одного полезного сегмента: процент бессмыслен (деление на ноль)
+}
+
+// чем показать разницу: процент; «×N», когда больше +200% (иначе «+92250%» у почти пустой надетой); «полезных нет»
+export type VsFigure = { kind: 'pct' | 'times'; n: number } | { kind: 'empty' };
+export function vsFigure(vs: Pick<Vs, 'delta' | 'wornEmpty'>): VsFigure | null {
+  if (vs.wornEmpty) return { kind: 'empty' };
+  if (vs.delta == null) return null;
+  const pct = Math.round(vs.delta * 100);
+  return pct > 200 ? { kind: 'times', n: Math.round(vs.delta + 1) } : { kind: 'pct', n: pct };
 }
 
 export const MARGIN = 0.1;
@@ -92,7 +104,7 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
   const key = buildKey(c.id, b.name);
   const wornId = st.builds[key]?.slots[item.slot];
   const worn = wornId ? st.pieces[wornId] ?? null : null;
-  const base: Vs = { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, worse: false };
+  const base: Vs = { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false };
   if (!worn) return base; // пустой слот связку не ломает — только дополняет
   if (samePiece(item, worn)) return { ...base, kind: 'worn' };
   const wi = pieceInput(worn);
@@ -100,11 +112,11 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
   const E = value(ctx, c, b, wi, worn.lit, reforgesDone(worn));
   const delta = (X.v - E.v) / Math.max(E.v, 0.01);
   let kind: VsKind = delta >= MARGIN ? 'up' : delta <= -MARGIN ? 'down' : 'eq';
-  let worse = false;
+  let why: Vs['why'] = null;
   if (!isArmor(item.slot)) {
     const wf = fit(ctx, b, wi);
-    if (f === 'stopgap' && wf === 'rec') { kind = 'down'; worse = true; }
-    else if (f === 'rec' && wf !== 'rec') kind = 'up';
+    if (f === 'stopgap' && wf === 'rec') { kind = 'down'; why = 'stopgap'; }
+    else if (f === 'rec' && wf !== 'rec') { kind = 'up'; why = 'rec'; }
   }
   const broken = breaks(st, key, b, item);
   if (broken) kind = 'breaks';
@@ -114,7 +126,7 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
     ? worn.setId === item.setId && worn.grade === item.grade
     : !!item.itemKey && worn.itemKey === item.itemKey;
   return {
-    ...base, kind, delta, worse, broken,
+    ...base, kind, delta, why, broken, wornEmpty: E.v === 0 && X.v > 0,
     gained: place(X.cover, E.cover), lost: place(E.cover, X.cover),
     chains: { worn: rowOf(ctx, c, b, wi, worn.lit), next: rowOf(ctx, c, b, item, item.subs) },
     material: sameType && worn.bt !== null && worn.bt < 4,
