@@ -25,10 +25,12 @@ it's the same piece, editing it changes it everywhere.
 
 Tap a piece to update it after upgrading in the game:
 - **segments** — yellow come from the evaluation; tap further to add orange ones after Reforge. Tapping a yellow one
-  fixes their number. How many Reforges are done is counted from the orange segments (on an Epic, the one that added
+  lowers their number; to raise it, tap the stat name, pick the same stat and the yellow count. How many Reforges are done is counted from the orange segments (on an Epic, the one that added
   the 4th substat counts too);
 - **Breakthrough** T0–T4 — "not set" until you mark it;
-- **Transistone** changed a stat — tap its name and pick the new one: the segments stay;
+- **Transistone** changed a stat — tap its name, pick the new one and how many yellow it has now (in the game
+  Transistone rerolls them too): the orange ones stay. A stat that's already on the piece can't be picked — the game
+  doesn't give it either;
 - **Remove from build**.
 
 Enhance isn't recorded: everything worn is assumed to be +10.

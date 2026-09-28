@@ -122,6 +122,19 @@ describe('экипировка', () => {
     expect($('.subopt .row-n')).toBeNull();
   });
 
+  it('жёлтые через название стата: тот же стат → «Сколько жёлтых» → 3; Reforge не прибавился', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 1, CHC: 2 }, lit: { 'DEF%': 3, CHC: 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+    await click($('.bgear-row'));
+    await click($('.piece .subkey'));                                   // DEF%
+    await click($$('.subopt').find((b) => b.textContent?.replace(/^%/, '') === 'DEF%')); // тот же стат — опечатка (у значка % свой «%»)
+    expect($('.drawer-h h3')?.textContent).toBe('How many yellow on DEF%?');
+    await click(byText('.piece-bt .fbtn', '3'));
+
+    expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 5 } });
+    expect($('.piece')?.textContent).toContain('Reforge: 2 of 6');
+  });
+
   it('«уже надета» в «Кому надеть?» не нажимается: Reforge и Breakthrough записи остаются', async () => {
     const yellow = { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 };
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };

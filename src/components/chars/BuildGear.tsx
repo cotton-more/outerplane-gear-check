@@ -1,13 +1,13 @@
 // Что надето в билде персонажа (logic/gear): 6 слотов, у вещи — сабстаты с сегментами, окрашенные по цепочке этого
 // билда, Breakthrough и сколько Reforge сделано. Нажатие на вещь — карточка вещи: оранжевые сегменты после Reforge,
-// Breakthrough, смена стата после Transistone, «Снять». Вещь в билд кладёт только вердикт («Надеть на…»).
+// Breakthrough, смена стата после Transistone (и его жёлтых), «Снять». Вещь в билд кладёт только вердикт («Надеть на…»).
 import { useEffect, useState } from 'react';
 import { SLOTS, isArmor, subLabel } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import {
-  addFourth, buildKey, MAX_LIT, pieceInput, reforgesDone, replaceStat, share, tapSegment, unequip, updatePiece, usedIn,
+  addFourth, buildKey, MAX_LIT, pieceInput, reforgesDone, replaceStat, setYellow, share, tapSegment, unequip, updatePiece, usedIn,
   type Bt, type Piece,
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
@@ -100,17 +100,37 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
 }) {
   const t = useT();
   const [pick, setPick] = useState<string | 'fourth' | null>(null);
+  // Transistone / опечатка: выбран стат (from → to, может быть тот же) — теперь сколько у него жёлтых
+  const [swap, setSwap] = useState<{ from: string; to: string } | null>(null);
   const st = gear.store;
   const put = (patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>) => gear.set(updatePiece(st, p.id, patch));
   const others = usedIn(st, p.id).filter((k) => k !== bkey).map((k) => buildOf(c, k));
   const keys = Object.keys(p.lit);
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
   const title = t.ui.pieceTitle(t.ui.slotNames[slot], c.name, b.name);
+  if (swap) {
+    const orange = p.lit[swap.from] - p.yellow[swap.from];
+    const done = (n: number) => { put(setYellow(replaceStat(p, swap.from, swap.to), swap.to, n)); setSwap(null); };
+    return (
+      <Sheet title={t.ui.yellowSheet(subLabel(swap.to))} onClose={() => setSwap(null)}>
+        <div className="piece">
+          <div className="seg piece-bt" role="group" aria-label={t.ui.yellowSheet(subLabel(swap.to))}>
+            {[1, 2, 3, 4].map((n) => (
+              <button key={n} type="button" className="fbtn" aria-pressed={swap.from === swap.to && p.yellow[swap.from] === n}
+                disabled={n + orange > MAX_LIT} onClick={() => done(n)}>{n}</button>
+            ))}
+          </div>
+          <p className="muted small">{t.ui.yellowNote(orange)}</p>
+          <p className="muted small">{t.ui.yellow4}</p>
+        </div>
+      </Sheet>
+    );
+  }
   if (pick) {
     return (
       <Sheet title={pick === 'fourth' ? t.ui.fourthSheet : t.ui.replaceSub(subLabel(pick))} onClose={() => setPick(null)}>
         <SubPicker ctx={ctx} subs={p.yellow} blocked={blocked} editing={pick === 'fourth' ? null : pick} noMove
-          onPick={(k) => { if (pick === 'fourth') put(addFourth(p, k)); else if (k !== pick) put(replaceStat(p, pick, k)); setPick(null); }} />
+          onPick={(k) => { if (pick === 'fourth') put(addFourth(p, k)); else setSwap({ from: pick, to: k }); setPick(null); }} />
       </Sheet>
     );
   }

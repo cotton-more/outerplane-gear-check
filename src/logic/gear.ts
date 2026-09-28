@@ -124,6 +124,13 @@ export function replaceStat(p: Piece, from: string, to: string): Pick<Piece, 'ye
   return { yellow: swap(p.yellow), lit: swap(p.lit) };
 }
 
+// сколько жёлтых у стата: Transistone перебрасывает стат вместе с его жёлтыми (1–3), а при вводе бывает опечатка.
+// Оранжевые (Reforge) у стата остаются; больше 6 горящих не бывает
+export function setYellow(p: Pick<Piece, 'yellow' | 'lit'>, k: string, n: number): Pick<Piece, 'yellow' | 'lit'> {
+  const orange = (p.lit[k] ?? 0) - (p.yellow[k] ?? 0);
+  return { yellow: { ...p.yellow, [k]: n }, lit: { ...p.lit, [k]: Math.min(MAX_LIT, n + orange) } };
+}
+
 // 4-й сабстат у Epic после первого Reforge: приходит с одним жёлтым сегментом
 export const addFourth = (p: Piece, k: string): Pick<Piece, 'yellow' | 'lit'> => ({ yellow: { ...p.yellow, [k]: 1 }, lit: { ...p.lit, [k]: 1 } });
 

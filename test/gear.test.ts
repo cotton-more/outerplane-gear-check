@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
-  addFourth, buildKey, decodeGear, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
+  addFourth, buildKey, decodeGear, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
   tapSegment, undoEquip, unequip, updatePiece, usedIn,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
@@ -86,6 +86,18 @@ describe('сегменты и Reforge', () => {
   it('Transistone сменил стат — сегменты переезжают к новому', () => {
     const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } };
     expect(replaceStat(p1, 'CHC', 'CHD')).toEqual({ yellow: { 'DEF%': 2, CHD: 1 }, lit: { 'DEF%': 4, CHD: 1 } });
+  });
+
+  it('жёлтые можно поднять (опечатка при вводе) — оранжевые остаются; горящих не больше 6', () => {
+    const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } }; // DEF% 2 жёлтых + 2 оранжевых
+    expect(setYellow(p1, 'DEF%', 3)).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 5 } });
+    expect(setYellow(p1, 'CHC', 3)).toMatchObject({ yellow: { CHC: 3 }, lit: { CHC: 3 } });
+    expect(reforgesDone({ ...p1, ...setYellow(p1, 'CHC', 3) })).toBe(2);
+  });
+
+  it('Transistone: новый стат со своими жёлтыми, оранжевые старого — с ним', () => {
+    const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } };
+    expect(setYellow(replaceStat(p1, 'DEF%', 'CHD'), 'CHD', 1)).toEqual({ yellow: { CHD: 1, CHC: 1 }, lit: { CHD: 3, CHC: 1 } });
   });
 
   it('Transistone на стат, который уже есть на вещи, ничего не меняет: сабстат не пропадает', () => {
