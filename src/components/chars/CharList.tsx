@@ -169,11 +169,11 @@ function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore,
   };
   return (
     <div className="roster-io">
-      <label className="small muted" htmlFor="gear-code">{t.ui.gearCodeLabel}</label>
+      <label className="small muted" htmlFor="gear-code">{gear.newer ? t.ui.gearNewer : t.ui.gearCodeLabel}</label>
       <textarea key={code} id="gear-code" ref={ta} defaultValue={code} />
       <div className="filt">
         <button type="button" className="btn" onClick={copy}>{t.ui.copy}</button>
-        <button type="button" className="btn" onClick={apply}>{t.ui.replace}</button>
+        <button type="button" className="btn" onClick={apply} disabled={gear.newer}>{t.ui.replace}</button>
         <span className="small muted" role="status">{msg}</span>
       </div>
     </div>

@@ -160,6 +160,8 @@ export function App() {
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden },
     onRunning: useCallback((on: boolean) => { setTouring(on); setUndo(null); }, []), onDone: hideWelcome,
   });
+  // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
+  const canEquip = !tour.run && !gear.newer;
   const startTour = () => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(); };
   const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
@@ -207,7 +209,7 @@ export function App() {
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={tour.run ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={tour.run ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
+            {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} onGearImport={onGearImport} />
@@ -256,7 +258,7 @@ export function App() {
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={startTour} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={tour.run ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={tour.run ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

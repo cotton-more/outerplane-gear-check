@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
-  addFourth, buildKey, decodeGear, EMPTY_GEAR, encodeGear, equip, reforgesDone, replaceStat, restoreGear, samePiece, share,
+  addFourth, buildKey, decodeGear, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
   tapSegment, undoEquip, unequip, updatePiece, usedIn,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
@@ -125,9 +125,25 @@ describe('хранилище и резервная копия', () => {
     expect(st.builds[K].slots).toEqual({ helmet: 'p1' });
   });
 
-  it('незнакомая версия — пусто; мусор — пусто', () => {
-    expect(restoreGear({ v: 2, pieces: {} }, idx)).toEqual(EMPTY_GEAR);
+  it('незнакомая версия — пусто и «новее»; мусор — пусто', () => {
+    const v2 = { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, yellow: { CHC: 2 }, lit: { CHC: 2 } } }, builds: { [K]: { slots: { helmet: 'p1' } } } };
+    expect(restoreGear(v2, idx)).toEqual(EMPTY_GEAR);
+    expect(newerGear(v2)).toBe(true);
+    expect(newerGear({ v: 1 })).toBe(false);
     expect(restoreGear('x', idx)).toEqual(EMPTY_GEAR);
+  });
+
+  it('незнакомые поля следующей версии (v: 1) переживают чтение, «Надеть» и резервную копию', () => {
+    const raw = { v: 1, seq: 1, note: 'x', pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2 }, lit: { CHC: 2 }, bt: 1, at: '', enh: 15 } }, builds: { [K]: { slots: { helmet: 'p1' }, at: '', tryon: true } } };
+    const st = equip(restoreGear(raw, idx), K2, helmet({ SPD: 1 })).store;
+    const back = decodeGear(encodeGear(st), idx)!;
+
+    expect(back).toMatchObject({ note: 'x', pieces: { p1: { enh: 15 } }, builds: { [K]: { tryon: true } } });
+  });
+
+  it('не число в сегментах — стат с жёлтыми как есть, без NaN', () => {
+    const raw = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, yellow: { CHC: 2, SPD: 'x' }, lit: { CHC: 'y' }, bt: null, at: '' } }, builds: { [K]: { slots: { helmet: 'p1' } } } };
+    expect(restoreGear(raw, idx).pieces.p1).toMatchObject({ yellow: { CHC: 2 }, lit: { CHC: 2 } });
   });
 
   it('код копии читается обратно; чужой текст — нет', () => {

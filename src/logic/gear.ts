@@ -127,8 +127,14 @@ export function replaceStat(p: Piece, from: string, to: string): Pick<Piece, 'ye
 // 4-й сабстат у Epic после первого Reforge: приходит с одним жёлтым сегментом
 export const addFourth = (p: Piece, k: string): Pick<Piece, 'yellow' | 'lit'> => ({ yellow: { ...p.yellow, [k]: 1 }, lit: { ...p.lit, [k]: 1 } });
 
-// из хранилища: всё непонятное отбрасываем; вещи и билды незнакомых персонажей и сетов оставляем (данные могли
-// временно потерять их при обновлении), просто страница их не покажет
+// экипировку сохранила более новая версия страницы (v > 1): эта её не понимает — только читает пустой и не пишет,
+// иначе первое же «Надеть» стёрло бы всё (PWA может держать старую версию, пока в другой вкладке уже новая)
+export const newerGear = (raw: unknown): boolean =>
+  !!raw && typeof raw === 'object' && typeof (raw as { v?: unknown }).v === 'number' && (raw as { v: number }).v > 1;
+
+// из хранилища: неверные значения отбрасываем; вещи и билды незнакомых персонажей и сетов оставляем (данные могли
+// временно потерять их при обновлении), просто страница их не покажет. Незнакомые поля (их добавит следующая версия
+// той же v: 1) переносим как есть — запись этой страницей их не стирает
 export function restoreGear(raw: unknown, idx: Index): GearStore {
   if (!raw || typeof raw !== 'object') return EMPTY_GEAR;
   const r = raw as Partial<GearStore>;
@@ -139,15 +145,17 @@ export function restoreGear(raw: unknown, idx: Index): GearStore {
     if (typeof id !== 'string' || !SLOTS.some((s) => s.id === p.slot) || !GRADES.includes(p.grade as Grade)) continue;
     const yellow: Subs = {}, lit: Subs = {};
     for (const [k, v] of Object.entries(p.yellow ?? {})) {
-      if (!idx.SUB[k] || typeof v !== 'number') continue;
+      if (!idx.SUB[k] || typeof v !== 'number' || !Number.isFinite(v)) continue;
       const y = Math.max(1, Math.min(4, Math.round(v)));
-      const l = Math.max(y, Math.min(MAX_LIT, Math.round(Number(p.lit?.[k] ?? y))));
+      const raw = Number(p.lit?.[k] ?? y);
+      const l = Math.max(y, Math.min(MAX_LIT, Math.round(Number.isFinite(raw) ? raw : y)));
       yellow[k] = y; lit[k] = l;
       if (Object.keys(yellow).length >= MAX_SUBS) break;
     }
     const bt = typeof p.bt === 'number' && p.bt >= 0 && p.bt <= 4 ? (Math.round(p.bt) as Bt) : null;
     const armor = isArmor(p.slot as SlotId);
     pieces[id] = {
+      ...(x as object),
       id, slot: p.slot as SlotId, grade: p.grade as Grade,
       setId: armor && typeof p.setId === 'string' ? p.setId : null,
       itemKey: !armor && typeof p.itemKey === 'string' ? p.itemKey : null,
@@ -163,10 +171,10 @@ export function restoreGear(raw: unknown, idx: Index): GearStore {
     for (const [slot, id] of Object.entries(b.slots ?? {})) {
       if (typeof id === 'string' && pieces[id]?.slot === slot) slots[slot as SlotId] = id;
     }
-    if (Object.keys(slots).length) builds[key] = { slots, at: typeof b.at === 'string' ? b.at : '' };
+    if (Object.keys(slots).length) builds[key] = { ...(x as object), slots, at: typeof b.at === 'string' ? b.at : '' };
   }
   const seq = Math.max(typeof r.seq === 'number' ? r.seq : 0, ...Object.keys(pieces).map((id) => Number(id.slice(1)) || 0));
-  return gc({ v: 1, seq, pieces, builds });
+  return gc({ ...r, v: 1, seq, pieces, builds });
 }
 
 // резервная копия кодом: браузер могут очистить, а переносить между устройствами иначе нечем

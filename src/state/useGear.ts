@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Index } from '../data';
-import { EMPTY_GEAR, restoreGear, type GearStore } from '../logic/gear';
+import { EMPTY_GEAR, newerGear, restoreGear, type GearStore } from '../logic/gear';
 import { storage } from './storage';
 
 export interface GearApi {
   store: GearStore;
   set: (next: GearStore) => void;
+  newer: boolean; // экипировку сохранила более новая версия страницы: здесь пусто и ничего не пишется — обнови страницу
 }
 
 // Экипировка в 'ogc.gear' (logic/gear). Пишем только после действия игрока: при чтении непонятное отбрасывается,
@@ -15,6 +16,7 @@ export interface GearApi {
 // событию storage и когда страница снова на экране — иначе следующее действие здесь стёрло бы их записи.
 export function useGear(idx: Index, persist: boolean): GearApi {
   const [store, setStore] = useState<GearStore>(() => restoreGear(storage.get<unknown>('gear', null), idx));
+  const [newer, setNewer] = useState(() => newerGear(storage.get<unknown>('gear', null)));
   const pending = useRef(false); // действие во время тура — записать, когда он кончится
   const live = useRef(persist);
   live.current = persist;
@@ -25,7 +27,12 @@ export function useGear(idx: Index, persist: boolean): GearApi {
   }, [store, persist]);
   useEffect(() => {
     if (!storage.available()) return; // без хранилища живём в памяти — перечитывать нечего
-    const reload = () => { if (!pending.current) setStore(restoreGear(storage.get<unknown>('gear', null), idx)); };
+    const reload = () => {
+      if (pending.current) return;
+      const raw = storage.get<unknown>('gear', null);
+      setStore(restoreGear(raw, idx));
+      setNewer(newerGear(raw));
+    };
     const onStorage = (e: StorageEvent) => { if (e.key === null || e.key === storage.key('gear')) reload(); };
     const onVisible = () => { if (document.visibilityState === 'visible') reload(); };
     window.addEventListener('storage', onStorage);
@@ -36,8 +43,9 @@ export function useGear(idx: Index, persist: boolean): GearApi {
     };
   }, [idx]);
   const set = (next: GearStore) => {
+    if (newer) return;
     setStore(next);
     if (live.current) storage.set('gear', next); else pending.current = true;
   };
-  return useMemo(() => ({ store: persist ? store : EMPTY_GEAR, set }), [store, persist]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useMemo(() => ({ store: persist ? store : EMPTY_GEAR, set, newer }), [store, persist, newer]); // eslint-disable-line react-hooks/exhaustive-deps
 }

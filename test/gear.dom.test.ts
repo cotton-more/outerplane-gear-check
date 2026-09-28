@@ -179,6 +179,19 @@ describe('экипировка', () => {
     expect(stored().pieces.p1.bt).toBe(4);
   });
 
+  it('экипировку сохранила более новая версия (v: 2): «Надеть на…» нет, в карточке — «обнови страницу», запись не тронута', async () => {
+    const newer = { v: 2, seq: 1, pieces: { p1: { id: 'p1' } }, builds: {} };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: newer });
+    await click($('.vcard'));
+    expect($('.v-equip')).toBeNull();
+    await click($('.drawer-x'));
+    await click($('#tab-chars'));
+    await click($$('#cgrid .ctile').find((b) => b.textContent?.includes('Caren')));
+
+    expect($('.bgear')?.textContent).toContain('newer version of the page');
+    expect(stored()).toEqual(newer);
+  });
+
   it('другая вкладка записала своё — подхватили, и следующее действие здесь его не стирает', async () => {
     const piece = (id: string, slot: string) => ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' });
     const gear = { v: 1, seq: 1, pieces: { p1: piece('p1', 'helmet') }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };

@@ -328,6 +328,7 @@ export const en: Texts = {
     gearCodeLabel: 'Equipment — a code for backup and moving to another device',
     gearApplied: (n) => `Equipment loaded: ${n} pieces.`,
     gearBad: 'Can\'t read the code — copy all of it, with OGC-GEAR1 at the start.',
+    gearNewer: 'Equipment was saved by a newer version of the page — reload the page to see and change it.',
     chainLucky: (k, label) => `${k} isn't on the piece, but a 4th substat ${k} from Reforge makes it "${label}"`,
     diceTitle: (n, of, label) => `Reforge gamble: ${n} of ${of} stats that can roll as the 4th make the piece "${label}"`,
     diceLong: (n, of, label) => `Reforge: ${n} of ${of} → ${label}`,

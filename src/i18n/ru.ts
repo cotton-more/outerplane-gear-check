@@ -358,6 +358,7 @@ export const ru = {
     gearCodeLabel: 'Экипировка — код для резервной копии и переноса на другое устройство',
     gearApplied: (n: number) => `Экипировка загружена: вещей ${n}.`,
     gearBad: 'Код не читается — скопируй его целиком, с OGC-GEAR1 в начале.',
+    gearNewer: 'Экипировку сохранила более новая версия страницы — обнови страницу, чтобы её видеть и менять.',
     // кубик Reforge у свежей Epic (logic/gamble, components/eval/Gamble)
     chainLucky: (k: string, label: string) => `${k} на вещи нет, но 4-й сабстат ${k} от Reforge сделает её «${label}»`,
     diceTitle: (n: number, of: number, label: string) => `Reforge на удачу: ${n} из ${of} статов, которые могут выпасть 4-м, сделают вещь «${label}»`,

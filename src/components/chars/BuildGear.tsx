@@ -53,7 +53,7 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
   return (
     <div className="bgear">
       <h4>{t.ui.gearTitle(n)}</h4>
-      {!n ? <p className="muted small">{t.ui.gearNone}</p> : (
+      {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? <p className="muted small">{t.ui.gearNone}</p> : (
         <>
           {combo && <p className="bgear-set">{combo.map((p) => t.ui.gearSet(ctx.idx.SET[p.set]?.short ?? p.set, count[p.set] ?? 0, p.n)).join(' · ')}</p>}
           <ul className="bgear-list">
