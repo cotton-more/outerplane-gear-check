@@ -191,6 +191,7 @@ describe('экипировка', () => {
     await click($('.v-equip'));
     await click(byText('.equip-row', 'Kappa') as HTMLElement);
     expect(stored().builds[kappa.id + '/Speed']).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([kappa.id]); // «Надеть» добавило в ростер
 
     await click($('#tab-chars'));
     // персонажи: Caren → шлем → T3
@@ -299,7 +300,7 @@ describe('экипировка', () => {
     await click($('.vcard'));
     const row = (b: string) => $$('.v-vs .vs-row').find((r) => r.querySelector('.bn')?.textContent === b)!;
 
-    expect(row('Speed').querySelector('.vs.down')).toBeTruthy();
+    expect(row('Speed').querySelector('.vs.down')?.textContent).toMatch(/^worse than the one on: −\d+%$/);
     expect(row('Speed').querySelector('.vs-act')).toBeTruthy();
     expect(row('Speed').textContent).toContain('this is a tier of its Breakthrough, T2 → T3');
     expect(row('Speed/Immu').textContent).toContain('Breaks the Immunity set');

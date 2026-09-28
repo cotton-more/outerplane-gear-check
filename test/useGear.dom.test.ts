@@ -55,6 +55,15 @@ describe('useGear', () => {
     expect(JSON.parse(stored()!)).toEqual(next);
   });
 
+  it('экипировку сохранила более новая версия (v: 2): newer, и запись не перезаписывается', async () => {
+    const text = JSON.stringify({ v: 2, seq: 0, pieces: {}, builds: {} });
+    localStorage.setItem('ogc.gear', text);
+    await render(true);
+    expect(api.newer).toBe(true);
+    await act(async () => api.set(equip(EMPTY_GEAR, K, { slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs: { SPD: 1 } }).store));
+    expect(stored()).toBe(text);
+  });
+
   it('действие пишет сразу', async () => {
     await render(true);
     const next = equip(EMPTY_GEAR, K, { slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs: { SPD: 1 } }).store;

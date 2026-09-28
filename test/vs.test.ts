@@ -74,6 +74,8 @@ describe('сравнение с надетым', () => {
 
     expect(vs.kind).toBe('breaks');
     expect(vs.broken).toBe(set('Immunity'));
+    // наоборот: Immunity-ботинки вместо Speed — ломается Speed, хотя в связке он второй
+    expect(compare(ctx, st, caren, build('Speed/Immu'), armor('shoes', 'Immunity', { CHC: 2 }))?.broken).toBe(set('Speed'));
   });
 
   it('оружие: временная (Epic) против надетой рекомендованной — хуже, как бы ни были хороши сабстаты', () => {
