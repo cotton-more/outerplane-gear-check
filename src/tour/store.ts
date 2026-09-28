@@ -2,8 +2,8 @@
 //   first   — главный тур: new (ещё не проходил), done (прошёл), skipped (давний игрок: пришёл до обучения)
 //   invited — полоса «Появилось обучение» уже была (показываем один раз)
 //   seen    — пройденные шаги и подсказки: id → rev
-//   known   — что игрок уже знает: от этого считается «Что нового» (tips.ts newsOf)
-//   since   — дата первого запуска с обучением; '' — давний игрок, пришёл раньше: ему новое всё, чего нет в known
+//   known   — что игрок уже знает: от этого считается «Что нового» (tips.ts newsOf). При первом запуске — всё, что
+//             есть в приложении; давнему игроку — всё, кроме подсказок с news
 //   tips    — подсказки по ходу включены; tipsAt — когда их включили или выключили
 //   resetAt — когда нажали «Показать подсказки заново»
 // Метки времени нужны для двух вкладок: при записи берём то, что поменяли позже, а не то, что в этой вкладке.
@@ -19,7 +19,6 @@ export interface TourStore {
   invited: boolean;
   seen: Revs;
   known: Revs;
-  since: string;
   tips: boolean;
   tipsAt: number;
   resetAt: number;
@@ -37,7 +36,7 @@ const omit = (r: Revs, ids: readonly string[]) => Object.fromEntries(Object.entr
 // Первый запуск с обучением. Давний игрок — отметил персонажей или закрыл карточку «Как пользоваться»: главный тур ему
 // не навязываем, один раз предложим полосой. По ogc.state давнего не узнать: страница пишет его с первого же показа.
 // news — подсказки с news: давнему игроку они новые (он пришёл раньше, чем о них рассказали), новичку — нет.
-export function bootTour(raw: unknown, was: { roster: number; welcomeHidden: boolean }, current: Revs, today: string,
+export function bootTour(raw: unknown, was: { roster: number; welcomeHidden: boolean }, current: Revs,
   news: readonly string[] = []): TourStore {
   const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
   if (r?.v === 1 && (['new', 'done', 'skipped'] as unknown[]).includes(r.first)) {
@@ -47,7 +46,6 @@ export function bootTour(raw: unknown, was: { roster: number; welcomeHidden: boo
       invited: r.invited === true,
       seen: revs(r.seen),
       known: revs(r.known),
-      since: typeof r.since === 'string' ? r.since : today,
       tips: r.tips !== false,
       tipsAt: time(r.tipsAt),
       resetAt: time(r.resetAt),
@@ -56,7 +54,7 @@ export function bootTour(raw: unknown, was: { roster: number; welcomeHidden: boo
   const old = was.roster > 0 || was.welcomeHidden;
   return {
     v: 1, first: old ? 'skipped' : 'new', invited: false, seen: {},
-    known: old ? omit(current, news) : { ...current }, since: old ? '' : today, tips: true, tipsAt: 0, resetAt: 0,
+    known: old ? omit(current, news) : { ...current }, tips: true, tipsAt: 0, resetAt: 0,
   };
 }
 
@@ -74,7 +72,7 @@ export const loadTour = (): unknown => storage.get<unknown>(KEY, null);
 // другой записи не возвращаем.
 export function mergeTour(st: TourStore, raw: unknown, tipIds: readonly string[] = []): TourStore {
   if (!raw) return st;
-  const cur = bootTour(raw, { roster: 0, welcomeHidden: false }, {}, st.since);
+  const cur = bootTour(raw, { roster: 0, welcomeHidden: false }, {});
   const known = { ...cur.known };
   for (const [id, rev] of Object.entries(st.known)) known[id] = Math.max(known[id] ?? 0, rev);
   const mine = st.resetAt >= cur.resetAt ? st : { ...st, seen: omit(st.seen, tipIds) };

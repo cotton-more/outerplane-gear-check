@@ -4,8 +4,8 @@
 import { defineTips } from '../../tour/types';
 
 export default defineTips(
-  { id: 'temp', rev: 1, at: 'verdict', since: '2026-09-27', when: (c) => c.s.tab === 'eval' && c.verdict.v === 'temp' },
-  { id: 'cardEquip', rev: 1, at: 'gequip', since: '2026-09-28', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
-  { id: 'material', rev: 1, at: 'verdict', since: '2026-09-28', when: (c) => c.s.tab === 'eval' && c.material },
-  { id: 'worn', rev: 1, at: 'verdict', since: '2026-09-28', when: (c) => c.s.tab === 'eval' && c.worn },
+  { id: 'temp', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.verdict.v === 'temp' },
+  { id: 'cardEquip', rev: 1, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
+  { id: 'material', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.material },
+  { id: 'worn', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
 );

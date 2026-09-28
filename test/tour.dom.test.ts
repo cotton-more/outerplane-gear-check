@@ -11,10 +11,11 @@ import type { Dataset } from '../src/data/types';
 import { TEXTS } from '../src/i18n';
 import { CORE } from '../src/tour/core';
 import { LIMITS } from '../src/tour/tips';
+import { TIPS } from '../src/tour/registry';
 
 // в jsdom import.meta.url — не file:, берём путь от этого файла
-// обучение пройдено, полоса была, ничего не «новое» (первый запуск в будущем)
-const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: true };
+// обучение пройдено, полоса была; все подсказки знакомы — ничего не «новое»
+const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: true };
 const T = TEXTS.en.tour;
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 let root: Root | null = null;
@@ -325,7 +326,7 @@ describe('подсказки по ходу и «Что нового»', () => {
   }, 10_000);
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
-    await mount({ welcomeHidden: true, tour: { ...done, since: '2026-01-01' } });
+    await mount({ welcomeHidden: true, tour: { ...done, known: {} } }); // вышли после его первого запуска
     expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 2));
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
@@ -396,7 +397,7 @@ describe('тур «Экипировка» на примере', () => {
   });
 
   it('давнему игроку «Что нового» — экипировка; «Показать» запускает тур', async () => {
-    await mount({ welcomeHidden: true, tour: { ...DONE, since: '2026-01-01' } });
+    await mount({ welcomeHidden: true, tour: { ...DONE, known: {} } });
     expect($('.tour-invite')?.textContent).toContain(T.news.gear);
     await click(byText('.tour-invite button', 'Show'));
     expect(strip()).toContain(T.gearStepOf(1, 5));

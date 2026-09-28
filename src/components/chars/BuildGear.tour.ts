@@ -3,7 +3,7 @@
 import { defineTips } from '../../tour/types';
 
 export default defineTips(
-  { id: 'gear', rev: 1, at: 'bgear', since: '2026-09-28', news: true, tour: 'gear', when: (c) => c.s.tab === 'chars' },
-  { id: 'tryOn', rev: 1, at: 'gtry', since: '2026-09-28', when: (c) => c.s.tab === 'chars' },
-  { id: 'piece', rev: 1, at: 'gpiece', since: '2026-09-28', when: (c) => c.pieceOpen },
+  { id: 'gear', rev: 1, at: 'bgear', news: true, tour: 'gear', when: (c) => c.s.tab === 'chars' },
+  { id: 'tryOn', rev: 1, at: 'gtry', when: (c) => c.s.tab === 'chars' },
+  { id: 'piece', rev: 1, at: 'gpiece', when: (c) => c.pieceOpen },
 );

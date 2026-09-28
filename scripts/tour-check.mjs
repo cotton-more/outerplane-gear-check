@@ -8,6 +8,7 @@ import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
+import { doneTour } from './known-tips.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const SITE = join(ROOT, process.env.SITE || 'docs');
@@ -24,6 +25,7 @@ if (!data) throw new Error(`в ${SITE}/index.html нет данных — сна
 const html = readFileSync(app, 'utf8').replace('/*__OGC_DATA__*/null', data);
 const server = createServer((_, res) => { res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(html); }).listen(0);
 const url = `http://localhost:${server.address().port}/`;
+const TOUR = doneTour(); // обучение пройдено, все подсказки знакомы
 
 mkdirSync(OUT, { recursive: true });
 const problems = [];
@@ -49,12 +51,12 @@ async function run(w, h, theme, tour) {
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]); // анимации включены: шаги ждут дольше, чем длится появление
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 720, hasTouch: w < 720 });
   await page.goto(url, { waitUntil: 'networkidle0' });
-  await page.evaluate(() => {
+  await page.evaluate((tour) => {
     localStorage.clear();
     localStorage.setItem('ogc.lang', '"en"');
     localStorage.setItem('ogc.welcomeHidden', 'true');
-    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false }));
-  });
+    localStorage.setItem('ogc.tour', tour);
+  }, TOUR);
   await page.goto(url, { waitUntil: 'networkidle0' });
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));
   const click = async (fn, ...args) => { await page.evaluate(fn, ...args); await pause(600); };
@@ -88,16 +90,16 @@ async function tryonWidth(w, h) {
   const page = await browser.newPage();
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 720, hasTouch: w < 720 });
   await page.goto(url, { waitUntil: 'networkidle0' });
-  const who = await page.evaluate(() => {
+  const who = await page.evaluate((tour) => {
     const pairs = window.OGC_DATA.chars.flatMap((c) => c.builds.map((b) => ({ charId: c.id, build: b.name, n: `${c.name} · ${b.name}` })));
     const top = pairs.sort((a, z) => z.n.length - a.n.length)[0];
     localStorage.clear();
     localStorage.setItem('ogc.lang', '"en"');
     localStorage.setItem('ogc.welcomeHidden', 'true');
-    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false }));
+    localStorage.setItem('ogc.tour', tour);
     localStorage.setItem('ogc.tryon', JSON.stringify({ charId: top.charId, build: top.build }));
     return top.n;
-  });
+  }, TOUR);
   await page.goto(url, { waitUntil: 'networkidle0' });
   const m = await page.evaluate(() => {
     const x = document.querySelector('.tryon-x')?.getBoundingClientRect();
@@ -119,7 +121,7 @@ async function toastPlace(w, h) {
   const page = await browser.newPage();
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
   await page.goto(url, { waitUntil: 'networkidle0' });
-  await page.evaluate(() => {
+  await page.evaluate((tour) => {
     const D = window.OGC_DATA;
     const caren = D.chars.find((c) => c.name === 'Caren');
     const speed = D.sets.find((s) => s.short === 'Speed').id;
@@ -127,13 +129,13 @@ async function toastPlace(w, h) {
     localStorage.clear();
     localStorage.setItem('ogc.lang', '"en"');
     localStorage.setItem('ogc.welcomeHidden', 'true');
-    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false }));
+    localStorage.setItem('ogc.tour', tour);
     localStorage.setItem('ogc.roster', JSON.stringify([caren.id]));
     localStorage.setItem('ogc.gear', JSON.stringify({ v: 1, seq: 2, pieces: { p1: P('p1', 'helmet'), p2: P('p2', 'armor') },
       builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1', armor: 'p2' }, at: '' }, [caren.id + '/Speed/Immu']: { slots: { armor: 'p2' }, at: '' } } }));
     localStorage.setItem('ogc.state', JSON.stringify({ tab: 'eval', slot: 'helmet', grade: 'unique' }));
     localStorage.setItem('ogc.item', JSON.stringify({ setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } }));
-  });
+  }, TOUR);
   await page.goto(url, { waitUntil: 'networkidle0' });
   await new Promise((r) => setTimeout(r, 600));
   const m = await page.evaluate(async () => {

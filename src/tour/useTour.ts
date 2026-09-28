@@ -29,7 +29,6 @@ const stepRevs = (): Revs => Object.fromEntries(Object.values(TOURS).flatMap((d)
 const TIP_IDS = TIPS.map((tp) => tp.id);
 const NEWS_IDS = TIPS.filter((tp) => tp.news).map((tp) => tp.id);
 export const currentRevs = (): Revs => ({ ...stepRevs(), ...Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])) });
-const today = () => new Date().toISOString().slice(0, 10);
 
 export function useTour({ c, dispatch, was, tours, onRunning, onTour, onStep, onDone }: {
   c: TourCtx;
@@ -46,7 +45,7 @@ export function useTour({ c, dispatch, was, tours, onRunning, onTour, onStep, on
   const available = useMemo(() => storage.available(), []);
   // исходную точку пишем сразу: иначе у того, кто обучение не трогает, «Что нового» считалось бы от каждого запуска
   const [store, setStore] = useState<TourStore>(() => {
-    const st = bootTour(loadTour(), was, currentRevs(), today(), NEWS_IDS);
+    const st = bootTour(loadTour(), was, currentRevs(), NEWS_IDS);
     return available ? saveTour(st, TIP_IDS) : st;
   });
   const update = useCallback((f: (st: TourStore) => TourStore) => setStore((st) => {

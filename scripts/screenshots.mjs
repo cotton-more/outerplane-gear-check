@@ -7,6 +7,7 @@ import { readFileSync, existsSync, createReadStream, mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join, extname, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
+import { doneTour } from './known-tips.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const SITE = join(ROOT, process.env.SITE || 'docs');
@@ -50,15 +51,15 @@ async function shoot(lang) {
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
   await page.setViewport({ width: 412, height: 430, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await page.goto(url, { waitUntil: 'networkidle0' });
-  await page.evaluate((names, lang) => {
+  await page.evaluate((names, lang, tour) => {
     localStorage.clear();
     localStorage.setItem('ogc.lang', JSON.stringify(lang));
     localStorage.setItem('ogc.welcomeHidden', 'true');
     localStorage.setItem('ogc.fitnoteHidden', 'true');
-    // обучение пройдено: иначе на каждом кадре была бы полоса «Появилось обучение»
-    localStorage.setItem('ogc.tour', JSON.stringify({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2026-01-01', tips: false }));
+    // обучение пройдено и все подсказки знакомы: иначе на каждом кадре была бы полоса «Появилось обучение» или «Новое»
+    localStorage.setItem('ogc.tour', tour);
     localStorage.setItem('ogc.roster', JSON.stringify(window.OGC_DATA.chars.filter((c) => names.includes(c.name)).map((c) => c.id)));
-  }, ROSTER, lang);
+  }, ROSTER, lang, doneTour());
   await page.goto(url, { waitUntil: 'networkidle0' }); // не reload: адрес мог сохранить #персонажа с прошлого прогона
 
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));

@@ -76,39 +76,40 @@ describe('хранилище ogc.tour', () => {
   const cur = { slot: 1, pick: 1 };
 
   it('новичок: тур ещё не пройден; исходная точка «что было» — всё текущее', () => {
-    expect(bootTour(null, { roster: 0, welcomeHidden: false }, cur, '2026-09-27'))
-      .toEqual({ v: 1, first: 'new', invited: false, seen: {}, known: cur, since: '2026-09-27', tips: true, tipsAt: 0, resetAt: 0 });
+    expect(bootTour(null, { roster: 0, welcomeHidden: false }, cur))
+      .toEqual({ v: 1, first: 'new', invited: false, seen: {}, known: cur, tips: true, tipsAt: 0, resetAt: 0 });
   });
 
   it('давний игрок (есть ростер или закрыл «Как пользоваться») тур не получает — ему один раз полоса', () => {
-    expect(bootTour(null, { roster: 3, welcomeHidden: false }, cur, 'd').first).toBe('skipped');
-    expect(bootTour(null, { roster: 0, welcomeHidden: true }, cur, 'd').first).toBe('skipped');
+    expect(bootTour(null, { roster: 3, welcomeHidden: false }, cur).first).toBe('skipped');
+    expect(bootTour(null, { roster: 0, welcomeHidden: true }, cur).first).toBe('skipped');
   });
 
   it('давний игрок пришёл раньше обучения: подсказки с news для него новые, новичку — нет', () => {
-    const news: Tip = { id: 'move', rev: 1, at: 'submove', since: '2026-09-27', news: true };
+    const news: Tip = { id: 'move', rev: 1, at: 'submove', news: true };
     const now = { slot: 1, move: 1 };
-    expect(newsOf([news], bootTour(null, { roster: 3, welcomeHidden: false }, now, '2026-09-28', ['move']))).toEqual([news]);
-    expect(newsOf([news], bootTour(null, { roster: 0, welcomeHidden: false }, now, '2026-09-28', ['move']))).toEqual([]);
+    expect(newsOf([news], bootTour(null, { roster: 3, welcomeHidden: false }, now, ['move']))).toEqual([news]);
+    expect(newsOf([news], bootTour(null, { roster: 0, welcomeHidden: false }, now, ['move']))).toEqual([]);
   });
 
   it('сохранённое читается как есть; мусор — как первый запуск', () => {
+    // since — дата первого запуска из прежних выпусков: читать не мешает, дальше не хранится
     const saved = { v: 1, first: 'done', invited: true, seen: { slot: 1, bad: 'x' }, known: { slot: 1 }, since: '2026-01-01', tips: false };
-    expect(bootTour(saved, { roster: 0, welcomeHidden: false }, cur, 'd'))
-      .toEqual({ v: 1, first: 'done', invited: true, seen: { slot: 1 }, known: { slot: 1 }, since: '2026-01-01', tips: false, tipsAt: 0, resetAt: 0 });
-    expect(bootTour({ v: 9 }, { roster: 0, welcomeHidden: false }, cur, 'd').first).toBe('new');
-    expect(bootTour('junk', { roster: 0, welcomeHidden: false }, cur, 'd').first).toBe('new');
+    expect(bootTour(saved, { roster: 0, welcomeHidden: false }, cur))
+      .toEqual({ v: 1, first: 'done', invited: true, seen: { slot: 1 }, known: { slot: 1 }, tips: false, tipsAt: 0, resetAt: 0 });
+    expect(bootTour({ v: 9 }, { roster: 0, welcomeHidden: false }, cur).first).toBe('new');
+    expect(bootTour('junk', { roster: 0, welcomeHidden: false }, cur).first).toBe('new');
   });
 
   it('пройденный тур «Экипировка» (seen tour.gear) не стирает ни старая вкладка, ни «Показать подсказки заново»', () => {
-    const st = markSeen(bootTour(null, { roster: 0, welcomeHidden: false }, cur, 'd'), { 'tour.gear': 1 });
-    const oldTab = { v: 1, first: 'done', invited: true, seen: { slot: 1 }, known: {}, since: 'd', tips: true };
+    const st = markSeen(bootTour(null, { roster: 0, welcomeHidden: false }, cur), { 'tour.gear': 1 });
+    const oldTab = { v: 1, first: 'done', invited: true, seen: { slot: 1 }, known: {}, tips: true };
     expect(mergeTour(st, oldTab, TIPS.map((tp) => tp.id)).seen['tour.gear']).toBe(1);
     expect(mergeTour({ ...st, resetAt: 5 }, oldTab, TIPS.map((tp) => tp.id)).seen['tour.gear']).toBe(1);
   });
 
   it('пройденное не теряется: берём большую ревизию, «пройден» и «приглашён» из другой вкладки остаются', () => {
-    const st = bootTour(null, { roster: 0, welcomeHidden: false }, cur, 'd');
+    const st = bootTour(null, { roster: 0, welcomeHidden: false }, cur);
     expect(markSeen(markSeen(st, { slot: 2 }), { slot: 1 }).seen).toEqual({ slot: 2 });
     const other = { ...st, first: 'done', invited: true, seen: { pick: 1 }, known: { slot: 2, tip: 1 } };
     expect(mergeTour(markSeen(st, { slot: 1 }), other))
@@ -118,7 +119,7 @@ describe('хранилище ogc.tour', () => {
   });
 
   it('две вкладки: выключатель подсказок — кто менял позже; «Показать заново» не откатывается увиденным из другой', () => {
-    const st = bootTour(null, { roster: 0, welcomeHidden: false }, cur, 'd');
+    const st = bootTour(null, { roster: 0, welcomeHidden: false }, cur);
     const off = { ...st, tips: false, tipsAt: 200 };
     expect(mergeTour({ ...st, tipsAt: 100 }, off).tips).toBe(false);   // старая вкладка не включает обратно
     expect(mergeTour({ ...st, tips: true, tipsAt: 300 }, off).tips).toBe(true); // включили позже — включено
@@ -153,13 +154,12 @@ describe('подсказки модулей', () => {
       expect(Object.keys(news).filter((id) => !TIPS.some((tp) => tp.id === id && tp.news))).toEqual([]);
     }
     expect(TIPS.filter((tp) => !ANCHORS.includes(tp.at)).map((tp) => tp.id)).toEqual([]);
-    expect(TIPS.filter((tp) => !/^\d{4}-\d{2}-\d{2}$/.test(tp.since)).map((tp) => tp.id)).toEqual([]);
   });
 
   const st = (patch: Partial<TourStore> = {}): TourStore =>
-    ({ v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2026-09-28', tips: true, tipsAt: 0, resetAt: 0, ...patch });
-  const tipA: Tip = { id: 'star', rev: 1, at: 'star', since: '2026-09-27' };
-  const tipB: Tip = { id: 'code', rev: 1, at: 'code', since: '2026-09-27', when: () => false };
+    ({ v: 1, first: 'done', invited: true, seen: {}, known: {}, tips: true, tipsAt: 0, resetAt: 0, ...patch });
+  const tipA: Tip = { id: 'star', rev: 1, at: 'star' };
+  const tipB: Tip = { id: 'code', rev: 1, at: 'code', when: () => false };
   const c = {} as TourCtx;
   const all = () => true;
 
@@ -178,14 +178,17 @@ describe('подсказки модулей', () => {
     expect(nextTip([tipA], st(), c, { shown: 0, lastAt: 0 }, 10_000, 9_000, all)).toBeNull();
   });
 
-  it('«Что нового»: знакомая с rev + 1 и новая после первого запуска; то, что было до него, новичку не новое', () => {
+  // что было при первом запуске, уже в known (bootTour) — дат выпуска не нужно
+  it('«Что нового»: знакомая с rev + 1 и появившаяся после первого запуска; то, что было при нём, — не новое', () => {
     const n = (t: Tip, s: TourStore) => newsOf([{ ...t, news: true }], s).length;
-    expect(n({ ...tipA, since: '2026-10-01' }, st())).toBe(1);
-    expect(n({ ...tipA, since: '2026-09-28' }, st())).toBe(1); // вышла в день первого запуска, но позже — тоже новая
-    expect(n(tipA, st())).toBe(0);
-    expect(n({ ...tipA, rev: 2 }, st({ known: { star: 1 } }))).toBe(1);
+    expect(n(tipA, st())).toBe(1); // в known нет — появилась позже
     expect(n(tipA, st({ known: { star: 1 } }))).toBe(0);
-    expect(newsOf([{ ...tipA, since: '2026-10-01' }], st())).toEqual([]); // без news — не новость
+    expect(n({ ...tipA, rev: 2 }, st({ known: { star: 1 } }))).toBe(1);
+    expect(newsOf([tipA], st())).toEqual([]); // без news — не новость
+    // первый запуск с этой подсказкой — она в known; появилась после него — новая
+    const boot = bootTour(null, { roster: 0, welcomeHidden: false }, { star: 1 });
+    expect(n(tipA, boot)).toBe(0);
+    expect(n({ ...tipA, id: 'code' }, boot)).toBe(1);
   });
 });
 

@@ -7,9 +7,11 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '../src/data/types';
+import { TIPS } from '../src/tour/registry';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
-const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: {}, since: '2099-01-01', tips: false };
+// обучение пройдено, все подсказки знакомы — «Что нового» нет
+const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
 const NEW = { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
