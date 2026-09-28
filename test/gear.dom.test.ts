@@ -117,7 +117,7 @@ describe('экипировка', () => {
     expect($('.vc-equip')).toBeNull();
   });
 
-  it('такая же вещь на Kappa: «Is this Kappa\'s helmet?» — «Move» переносит ту же запись, «Undo» — обратно', async () => {
+  it('такая же вещь на Kappa: «Same piece as Kappa\'s helmet?» — «Move» переносит ту же запись, «Undo» — обратно', async () => {
     const kappa = D.chars.find((c) => c.name === 'Kappa')!;
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: NEW.subs, lit: { ...NEW.subs, CHD: 5 }, bt: 2, at: '' } }, builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
@@ -125,7 +125,7 @@ describe('экипировка', () => {
     await click($('.v-equip'));
     await click(byText('.equip-row', 'Caren Speed')?.closest('button') as HTMLElement);
 
-    expect(byText('.drawer h2, .drawer .sheet-t, .drawer', "Is this Kappa's helmet?")).toBeTruthy();
+    expect(byText('.drawer h2, .drawer .sheet-t, .drawer', "Same piece as Kappa's helmet?")).toBeTruthy();
     expect($('.twin')?.textContent).toContain('Kappa · Speed');
     await click(byText('.twin button', 'Move'));
 
@@ -206,7 +206,7 @@ describe('экипировка', () => {
     await mount({ tab: 'chars', charId: caren.id, slot: 'helmet' }, {}, { gear });
 
     expect($('.bgear-weak p')?.textContent).toBe('The weakest — gloves (Epic, Breakthrough T2). Look for Speed Gloves with CHC and CHD — in try-on the verdict shows whether it beats the one on.');
-    expect(byText('.bgear p', "You don't fill")?.textContent).toBe("You don't fill Pen, Def, Speed/Immu, Def/Immu — the verdict doesn't ask pieces for them.");
+    expect(byText('.bgear p', "You don't fill")?.textContent).toBe("You don't fill Pen, Def, Speed/Immu, Def/Immu, so the verdict doesn't ask for pieces there.");
     await click(byText('.bgear-weak button', 'Try on pieces'));
     expect(JSON.parse(localStorage.getItem('ogc.state')!)).toMatchObject({ tab: 'eval', slot: 'gloves' });
     expect($('.tryon')?.textContent).toContain('Caren · Speed');

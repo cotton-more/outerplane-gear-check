@@ -17,12 +17,13 @@ those seconds stays.
 
 On a phone, once a build has something in it, there's a button right under the verdict card too: **"Equip on Caren ·
 Speed"** when the slot is empty, or **"Replace Caren's helmet"** when the new piece is better. The card's third line is
-the comparison: "▲ +25% Caren · Speed +CHD (3rd) · −SPD (4th)".
+the comparison: "▲ +25% Caren · Speed +CHD (3rd) · −SPD (4th)" (unless a Reforge dice is there — it comes first).
 
 The same piece put into another build of the same character is the same piece there, not a copy: Reforge and
-Breakthrough edits apply in both builds. If the same piece (slot, set or item, main and yellow segments) is already
-recorded on another character, the app asks **"Is this Rin's helmet?"**: "Move" takes that very record, with its
-Reforge and Breakthrough, and frees Rin's slot; "Another one" records it separately.
+Breakthrough edits apply in both builds. If the same piece (slot, grade, set or item, main and yellow segments) is
+already on another character, the app asks **"Same piece as Rin's helmet?"**: "Move" takes that very piece, with its
+Reforge and Breakthrough, and frees Rin's slot; "Another one" is a different piece: it goes into the build separately,
+Rin keeps hers.
 
 To put in gear that's already on a character, enter it the same way, from the game's character screen. Try-on makes it
 easiest.
@@ -32,7 +33,7 @@ easiest.
 A check for one character and build. It starts from the character card:
 - **"Gear up this build"** — on a build with nothing in it yet;
 - **"Try on"** — on an empty slot: the form gets the slot and the set the build is missing (the grade stays);
-- **"Try a replacement"** — on the piece card: the slot and set of the piece that's on;
+- **"Try a replacement"** — on the piece card: the slot and set of the piece that's on (for an off-build piece — the set the build is missing);
 - **"Try on pieces"** — under "The weakest".
 
 Above the form there's a **"Try-on · Caren · Speed ✕"** strip. While it's there:
@@ -41,7 +42,7 @@ Above the form there's a **"Try-on · Caren · Speed ✕"** strip. While it's th
 - **"Next"** keeps the try-on — enter pieces one after another; **✕** checks for everyone again;
 - the stamp stays common — others may want the piece — and the title after " — " speaks about them and about this
   character: "Titia and Kappa need it; Caren already wears better", "Dismantle — but Caren's slot is empty: wear it
-  until something better";
+  until you find better";
 - a piece off this build (another set, a main it doesn't need) — "off-build" and **"Equip anyway"**.
 
 The character is added to the roster, just as after "Equip". A half-entered piece that was on the form comes back with
@@ -51,14 +52,16 @@ The character is added to the roster, just as after "Equip". A half-entered piec
 
 Under the build tabs: **"Equipped · N of 6"** — the six slots with substats colored by this build's chain, the
 Breakthrough tier and how many Reforges are done; the tab shows "Speed 6/6". A build with no pieces doesn't ask for
-any: comparisons only look at builds you're gearing — the card says so: "You don't fill Pen, Def — the verdict doesn't
-ask pieces for them".
+any: comparisons only look at builds you're gearing — the card says so: "You don't fill Pen, Def, so the verdict
+doesn't ask for pieces there".
 
 Set status: "Speed ×4 — complete". **Speed ×2** and **Penetration ×2** give no bonus at all below T4, so for them it's
-"Speed ×2 — complete, but the bonus only works at T4: now T1" (the lowest Breakthrough among its pieces).
+"Speed ×2 — complete, but the bonus only works at T4: now T1" (the lowest Breakthrough among its pieces). The same goes
+for **Immunity ×4**: its 4P (−30% damage taken) is there only at T4, its 2P from T0.
 
 When all armor is on — **"The weakest"**: the weakest piece for this build and what to look for instead, for example
-"Look for Speed Gloves with CHC and CHD", plus a "Try on pieces" button. Weapons and accessories aren't compared here:
+"Look for Speed Gloves with CHC and CHD", plus a "Try on pieces" button. An off-build piece (put on "anyway") is
+always the weakest: look for the build's set instead. Weapons and accessories aren't compared here:
 their passive decides. An empty slot can take a piece from another build of the same character ("Take from Speed") —
 it's the same piece, editing it changes it everywhere. If outerpedia renames a build, its pieces don't get lost: the card shows
 "From the former build "Speed": 6 pieces" with **"Move to this build"** (into its empty slots).
@@ -90,20 +93,24 @@ recommended for the build shows **recommended** (better) or **stopgap** (worse) 
 percentage by segments stays on a line below, with the reason.
 
 Also shown: a 2+2 set the swap would break, the current piece's Breakthrough tier (the new one needs
-that many materials to catch up), and when the new piece is the same as the one on — a tier of its Breakthrough. If
-the one on belongs to Speed ×2 or Penetration ×2 and is already T4, the new one is never above "on par": until it's
-T4, there's no set bonus.
+that many materials to catch up), and when the new piece is the same as the one on but not better — a tier of its
+Breakthrough. If, in the set combo you're gearing, the one on belongs to Speed ×2 or Penetration ×2 and is already T4,
+the new one is never above "on par": until it's T4, there's no set bonus. Pen ×4 isn't affected — its bonus works at
+any Breakthrough.
 
 What's equipped changes the verdict stamp only one way and in one case: **"Dismantle" → "Fodder"**, when the same piece
 (armor — same set, slot and grade; weapon or accessory — the same item) is worn below T4 and its Breakthrough is marked.
 The card says what for: "helmet on Caren · Speed — T2, 2 more to T4". A Breakthrough that's "not set" doesn't count:
-without it we don't know how many more are needed.
+without it we don't know how many more are needed. If the new piece beats that worn one, the advice flips: **wear the
+new one and feed the old one to its Breakthrough**. In try-on, when the character's slot is empty or the new piece is
+better, it's "wear it" too.
 
 ## Who wears what
 
-☰ menu → **"Gear · N"** — the character list with the "with gear" filter (it's in the list itself too). Each tile shows
-"6/6" from its most complete build; above the list — how many have builds filled, below it — how many in your roster
-have nothing yet.
+☰ menu → **"Gear · N"** — the character list with the "with gear" filter (it's in the list itself too; a computer has
+no menu — turn the filter on there). The menu clears the list's other filters, so there are exactly N tiles. Each tile
+shows "6/6" from its most complete build; above the list — how many have builds filled, below it — how many in your
+roster have nothing yet (to gear them up, turn off "with gear").
 
 ## Tutorial
 
@@ -114,4 +121,4 @@ Your own equipment, try-on and roster don't change.
 
 "Export / import" on the characters tab: the **OGC-GEAR1** code holds all equipment. Copy it to keep a backup or to
 move to another device; "Replace" there loads it instead of everything equipped, and "Undo" in the message brings
-the previous equipment back.
+the previous equipment back. During a tutorial there's no code: the page shows an example, not your gear.
