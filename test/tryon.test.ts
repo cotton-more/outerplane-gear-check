@@ -11,6 +11,7 @@ import { buildKey, EMPTY_GEAR, equip, updatePiece } from '../src/logic/gear';
 import { restoreTryOn, tryOnPreset, tryOnTarget, tryOnTitle } from '../src/logic/tryon';
 import type { ItemInput } from '../src/logic/verdict';
 import { compareFor } from '../src/logic/vs';
+import { withWorn } from '../src/logic/worn';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -132,5 +133,16 @@ describe('примерка: заголовок вердикта', () => {
     const res = evaluate(ctx, { ...NEW, subs: {} }, { gamble: false });
     expect(res.v).toBe('idle');
     expect(tryOnTitle(ru, res, compareFor(ctx, EMPTY_GEAR, caren, build('Speed'), NEW))).toBe(res.title);
+  });
+
+  // штамп понизили (logic/worn): всем, кому подходит, уже надето не хуже. Она среди них — заголовок уже про неё;
+  // не среди них — к нему её строка
+  it('«Разобрать», потому что все уже носят лучше: про неё не повторяем, про другую — добавляем', () => {
+    const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
+    const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 })).store;
+    const res = withWorn(mine, st, NEW, evaluate(mine, NEW, { gamble: false }));
+    expect(res.title).toBe('Фоддер — уже лучше у Caren');
+    expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Speed'), NEW))).toBe(res.title);
+    expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Pen'), NEW))).toBe('Фоддер — уже лучше у Caren; Caren · Pen — не по билду');
   });
 });

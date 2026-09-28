@@ -55,6 +55,8 @@ export function tryOnTitle(t: Texts, res: Verdict, vs: Vs, armor = true): string
   const tail = i >= 0 ? res.title.slice(i + 3) : '';
   const name = vs.c.name;
   if (res.v === 'junk' || res.v === 'fodder') {
+    // понизили, потому что всем, кому подходит, уже надето не хуже (logic/worn), и этот билд среди них — заголовок уже про него
+    if (res.worn === 'lower' && res.wornBy?.includes(vs.key)) return res.title;
     if (vs.kind === 'fill' || vs.kind === 'up') return `${head} — ${T.butWear(vs.kind, name)}`;
     const mine = T.clause(vs.kind, name, vs.b.name, false);
     return `${head} — ${tail ? `${tail}; ${mine}` : mine}`;

@@ -80,7 +80,8 @@ describe('примерка', () => {
   it('в примерке кнопка под карточкой есть и когда на ней лучше; имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
-    expect($('.vcard .vc-title')?.textContent).toBe('Caren already wears better');
+    // все, кому подходит (только Caren), уже носят лучше — штамп понижен (logic/worn), заголовок уже про неё
+    expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
     expect($('.vcard .vc-vs b')).toBeNull();
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
   });
@@ -164,5 +165,38 @@ describe('примерка', () => {
     expect($('.v-vs')?.textContent).toContain('Caren needs Speed ×4 in this build.');
     await click(byText('.vs-act', 'Equip anyway'));
     expect(stored('gear').builds[caren.id + '/Speed'].slots.gloves).toBeTruthy();
+  });
+});
+
+// Без примерки (logic/worn): штамп по надетому — всем, кому подходит, уже надето не хуже; вещь уже в билде
+describe('штамп по надетому', () => {
+  // на Caren · Speed — шлем заметно лучше новой, все Reforge сделаны
+  const STRONG = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
+
+  it('Caren носит лучше — Legendary «Фоддер»: у кого лучше, ▼ на карточке, кнопки «Надеть» нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: STRONG });
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
+    expect($('.vcard .vc-vs .vs.down')).toBeTruthy();
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vcard'));
+    expect($('.v-reasons')?.textContent).toContain("Won't improve anyone");
+    expect($$('.v-vs .vs-row.vs-down')).toHaveLength(1);
+  });
+
+  it('«Заменить»: старая сама по себе «Оставить», но Caren теперь носит лучше — в сообщении «Разобрать»', async () => {
+    const old = { 'DEF%': 2, CHC: 2, CHD: 2 };
+    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: old, lit: old, bt: null } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain('The old one: "Dismantle".');
+  });
+
+  it('вещь из билда, сама по себе «в разбор», — «Оставить»: где она', async () => {
+    const junk = { setId: speed, subs: { HP: 1, RES: 1, EFF: 1 } };
+    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: null } } };
+    await mount({ slot: 'helmet', grade: 'rare' }, junk, { gear });
+    expect($('.vcard .stamp')?.textContent).toBe('Keep');
+    expect($('.vcard .vc-title')?.textContent).toBe("it's already in Caren · Speed");
   });
 });

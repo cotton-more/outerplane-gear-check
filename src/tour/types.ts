@@ -22,6 +22,7 @@ export interface TourCtx {
   tryOn: boolean;       // идёт примерка
   gearSeq: number;      // счётчик вещей экипировки: растёт, когда вещь надели (не при переносе)
   material: boolean;    // «Фоддер», потому что вещь — материал Breakthrough для надетой и её отдают (logic/material)
+  worn: boolean;        // «Разобрать», потому что всем, кому вещь подходит, уже надето не хуже (logic/worn)
 }
 
 // подстановки для текста шага (ru.ts и en.ts, раздел tour.steps)

@@ -495,7 +495,7 @@ export const en: Texts = {
       'Tap a character to open their builds: sets, weapons, substat priority.',
       '**Equipment** — what is worn in each build. A piece goes into a build from a verdict: "Equip on…" in the details, and on a phone also the button under the card. Then tap the piece on the character card to mark orange segments after Reforge and the Breakthrough tier; the number of Reforges done is counted for you. Enhance isn\'t tracked: everything worn is assumed to be +10. Who wears what — ☰ → "Gear"; on a computer, the "with gear" filter in Characters. During a tutorial there\'s no gear code: the page shows an example.',
       '**Try-on** — a check for one build: "Gear up this build", "Try on" on an empty slot or "Try a replacement" on a piece in the character card. The comparison is with that build only, "Equip" goes straight to it, "Next" keeps the try-on, ✕ checks for everyone again.',
-      '**On your characters now** — in the verdict details: for whom the piece suits, an empty slot in a build you\'re gearing, or whether the new piece is better or worse than the one on — two chains side by side and by how much in useful segments, counting the Reforges ahead; for weapons and accessories, where the passive decides, "recommended" or "stopgap". The stamp changes only one way: "Dismantle" → "Fodder" when the same piece is worn below T4 with its Breakthrough marked — this one is its material; and if this one beats the worn one, wear it and feed the old one to it. Backup — the OGC-GEAR1 code in "Export / import".',
+      '**On your characters now** — in the verdict details: for whom the piece suits, an empty slot in a build you\'re gearing, or whether the new piece is better or worse than the one on — two chains side by side and by how much in useful segments, counting the Reforges ahead; for weapons and accessories, where the passive decides, "recommended" or "stopgap". What\'s worn changes the stamp like this. "Dismantle" → "Fodder" when the same piece is worn below T4 with its Breakthrough marked — this one is its material; and if this one beats the worn one, wear it and feed the old one to it. "Keep" → "Dismantle" (Legendary — "Fodder") when everyone it suits already wears as good or better in the builds you\'re gearing; a character with nothing recorded counts as wearing nothing, and an empty slot keeps the piece too. A piece that is already in a build is a "Keep". Backup — the OGC-GEAR1 code in "Export / import".',
     ],
     helpCode: 'Code for your guild',
     helpCodeText: (example) => `The verdict details show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster.`,
@@ -518,6 +518,14 @@ export const en: Texts = {
     lineWear: (list) => `**Better than the one on**: the same piece is worn below T4 but is weaker — ${list}. Wear this one and feed the old one to its Breakthrough.`,
     planReplace: (who) => `**Wear it** on ${who}: it beats the one on, and the old one is the same piece — feed it to the new one's Breakthrough, one piece is one tier.`,
     planWear: (who) => `**Wear it** on ${who} until you find better — don't feed it to the worn one's Breakthrough.`,
+  },
+  worn: {
+    title: (v, names, eq) =>
+      `${v === 'fodder' ? 'Fodder' : 'Dismantle'} — already ${eq ? 'as good' : 'better'} on ${names.length > 2 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(' and ')}`,
+    line: '**Won\'t improve anyone**: everyone it fits already wears as good or better. The piece itself isn\'t bad.',
+    stale: 'Changed someone\'s gear in the game? Update it on their card and the verdict follows.',
+    keptTitle: (who) => `Keep — it's already in ${who}`,
+    kept: (who) => `**Already in a build**: ${who}. Not needed there? Remove it on the character card.`,
   },
   tryon: {
     label: 'Try-on',
@@ -593,6 +601,7 @@ export const en: Texts = {
       cardEquip: 'Empty slot, or better than what they wear — equip it with one tap right below the card.',
       equipAll: 'Wearing something off-build right now? Turn on “show off-build too”, and the comparison uses what they really wear.',
       material: 'Fodder, not dismantle: the same piece is worn below T4 — this one feeds its Breakthrough.',
+      worn: 'The piece is decent, but everyone it fits already wears as good or better — hence Dismantle. Changed someone’s gear in the game? Update their card.',
     },
     news: {
       dice: 'Reforge dice — which 4th substat saves an Epic',

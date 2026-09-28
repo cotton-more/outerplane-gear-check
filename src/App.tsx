@@ -30,6 +30,7 @@ import type { ItemInput } from './logic/verdict';
 import { compareAll, compareFor } from './logic/vs';
 import { tryOnPreset, tryOnTarget, tryOnTitle, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, withMaterial } from './logic/material';
+import { withWorn } from './logic/worn';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -102,10 +103,13 @@ export function App() {
     const aim = targetVs && (targetVs.kind === 'fill' || targetVs.kind === 'up') ? `${targetVs.c.name} · ${targetVs.b.name}` : null;
     return { needs, wear: { up, target: aim } };
   }, [idx, ctx, gear.store, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const verdict = useMemo(() => withMaterial(idx, t, raw, mat.needs, mat.wear), [idx, t, raw, mat]);
+  // штамп по надетому (logic/worn): вещь уже в билде — «Оставить»; всем, кому подходит, уже надето не хуже — «Разобрать»
+  const worn = useMemo(() => withWorn(ctx, gear.store, input, raw), [ctx, gear.store, raw]); // eslint-disable-line react-hooks/exhaustive-deps
+  const verdict = useMemo(() => withMaterial(idx, t, worn, mat.needs, mat.wear), [idx, t, worn, mat]);
+  // понизили — сравнение с кандидатами прежнего вердикта: оно и объясняет, почему «Разобрать»
   const vsList = useMemo(() => (targetVs
     ? (verdict.v === 'idle' ? [] : [targetVs])
-    : compareAll(ctx, gear.store, input, verdict)), [ctx, gear.store, verdict, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
+    : compareAll(ctx, gear.store, input, worn.worn === 'lower' ? raw : verdict)), [ctx, gear.store, raw, worn, verdict, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
   const shown = useMemo(() => (target && vsList[0] ? { ...verdict, title: tryOnTitle(t, verdict, vsList[0], isArmor(s.slot)) } : verdict), [t, verdict, target, vsList]);
   const [equipOpen, setEquipOpen] = useState(false);
@@ -182,7 +186,7 @@ export function App() {
       const same = isArmor(r.old.slot) ? r.old.setId === r.piece.setId && r.old.grade === r.piece.grade : !!r.old.itemKey && r.old.itemKey === r.piece.itemKey;
       const still = usedIn(r.store, r.old.id).map(nameOf);
       note = [note, still.length ? t.ui.oldStill(still.join(', '))
-        : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[evaluate(ctx, pieceInput(r.old), { gamble: false }).v])].filter(Boolean).join(' ');
+        : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, r.store, pieceInput(r.old), evaluate(ctx, pieceInput(r.old), { gamble: false })).v])].filter(Boolean).join(' ');
     }
     const item = input.slot;
     const from = twin ? ownerOf(twin.keys[0]) : '';
@@ -224,7 +228,10 @@ export function App() {
     verdictOpen: verdictOpen && layout.narrow, keys: fineHover(),
     pieceOpen, tryOn: !!target, gearSeq: gear.store.seq,
     // подсказка «Фоддер, а не разбор: эта пойдёт ей на Breakthrough» — не когда совет «надень её»
-    material: shown.v === 'fodder' && raw.v !== 'fodder' && !mat.wear.up.length && !mat.wear.target,
+    // («Фоддер» от понижения B3 — не материал: он из withWorn, а не из withMaterial)
+    material: shown.v === 'fodder' && worn.v !== 'fodder' && !mat.wear.up.length && !mat.wear.target,
+    // подсказка «все уже носят не хуже»: её текст — про «Разобрать»
+    worn: verdict.worn === 'lower' && shown.v === 'junk',
   };
   // тур «Экипировка» — только если персонаж примера есть в данных
   const tours = useMemo<TourId[]>(() => (gearDemo(idx) ? ['core', 'gear'] : ['core']), [idx]);

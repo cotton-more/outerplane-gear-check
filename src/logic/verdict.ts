@@ -26,6 +26,9 @@ export interface Verdict {
   roll?: RollLevel;        // ролл лучшего кандидата, если вердикт «Оставить» или «Временно»
   plan: string[];          // «Прокачка»: Enhance, Reforge, Breakthrough, Transistone — что вкладывать в эту вещь
   gamble?: Gamble | null;  // кубик: какой 4-й сабстат от первого Reforge вытянет свежую Epic (logic/gamble)
+  // штамп поменяли записи экипировки (logic/worn): lower — все, кому подходит, уже носят не хуже; home — вещь уже в билде
+  worn?: 'lower' | 'home';
+  wornBy?: string[];       // lower: билды («персонаж/билд»), где уже надето не хуже, — их персонажей называет заголовок
   // «подходит ли» строка — от этого цвет оценки в списке; null — считать по CFG.keepCount
   qualifies?: ((m: Omit<Row, 'alt'>) => boolean) | null;
 }
