@@ -43,3 +43,21 @@ describe('цепочка: main stat предмета', () => {
     for (const h of html) expect(h).toMatch(/<span class="pill main[^"]*"><small>main <\/small>ATK%<\/span><i class="sep">\/<\/i><span class="pill [^"]+">ATK<\/span>/);
   });
 });
+
+describe('цепочка: удачный 4-й от Reforge (кубик)', () => {
+  const titia = D.chars.find((c) => c.name === 'Titia')!;
+  const b = titia.builds.find((x) => x.name === 'Attack')!; // ATK › CHC › CHD › SPD
+  const attack = D.sets.find((s) => s.short === 'Attack')!.id;
+  const item: ItemInput = { slot: 'helmet', grade: 'rare', setId: attack, itemKey: null, main: null, subs: { CHC: 1, CHD: 1, RES: 1 } };
+  const m = evaluate(ctx, item).sections.flatMap((s) => s.rows).find((r) => r.c.id === titia.id && r.b === b)!;
+  const html = (lucky: string[]) => renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(Chain, { m, lucky: new Set(lucky) })));
+
+  it('место ATK пусто, удачны и ATK, и ATK% — пунктиром с точкой ATK% (% не хуже flat)', () => {
+    expect(html(['ATK', 'ATK%'])).toContain('<span class="pill miss lucky" title="');
+    expect(html(['ATK', 'ATK%'])).toMatch(/pill miss lucky"[^>]*>ATK%<i class="lucky-dot"/);
+  });
+
+  it('удачен только flat ATK — он и нарисован', () => {
+    expect(html(['ATK'])).toMatch(/pill miss lucky"[^>]*>ATK<i class="lucky-dot"/);
+  });
+});
