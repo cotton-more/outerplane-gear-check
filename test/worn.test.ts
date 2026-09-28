@@ -112,6 +112,33 @@ describe('что удерживает штамп', () => {
     expect(judge(ctxOf([caren, rin]), both, st)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже лучше у Rin' });
   });
 
+  it('«на уровне» только из-за T4 у надетой (Speed ×2) — держит: по сегментам новая лучше; настоящее «на уровне» — нет', () => {
+    const worn = helmet({ 'DEF%': 2, CHC: 2, CHD: 1, HP: 1 });
+    let st = [
+      worn, piece('armor', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }),
+      piece('gloves', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }), piece('shoes', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }),
+    ].reduce((s, x) => on(s, caren, 'Speed/Immu', x), EMPTY_GEAR);
+    st = updatePiece(st, st.builds[buildKey(caren.id, 'Speed/Immu')].slots.helmet!, { bt: 4 });
+    const immu = caren.builds.find((b) => b.name === 'Speed/Immu')!;
+    const better = helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 });
+    const vs = compare(ctxOf([caren]), st, caren, immu, better)!;
+    expect(vs.kind).toBe('eq');
+    expect(vs.delta!).toBeGreaterThanOrEqual(0.1);
+    expect(judge(ctxOf([caren]), better, st).v).toBe('keep');
+    expect(judge(ctxOf([caren], false), better, st).v).toBe('keep');
+    const same = helmet({ 'DEF%': 2, CHC: 2, CHD: 1, RES: 1 });
+    expect(judge(ctxOf([caren]), same, st)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже не хуже у Caren' });
+  });
+
+  it('оружие с другой рекомендованной пассивкой — держит: сабстаты не решают, какая лучше; тот же предмет — понижаем', () => {
+    const snow = weapon('19', { CHC: 2, CHD: 2, SPD: 1, HP: 1 });
+    const other = on(EMPTY_GEAR, caren, 'Speed', weapon('14', { CHC: 3, CHD: 3, SPD: 2, HP: 1 }));
+    expect(compare(ctxOf([caren]), other, caren, caren.builds[0], snow)).toMatchObject({ kind: 'down', passive: true, why: null });
+    expect(judge(ctxOf([caren]), snow, other).v).toBe('keep');
+    const same = on(EMPTY_GEAR, caren, 'Speed', weapon('19', { CHC: 3, CHD: 3, SPD: 2, HP: 1 }));
+    expect(judge(ctxOf([caren]), snow, same)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже лучше у Caren' });
+  });
+
   it('«Спорно» не понижаем: вещь хороша для тех, кого нет в ростере', () => {
     const atk = helmet({ 'ATK%': 3, ATK: 2, 'HP%': 2, EFF: 1 });
     const res = evaluate(ctxOf([caren]), atk, { gamble: false });
