@@ -145,4 +145,14 @@ describe('примерка: заголовок вердикта', () => {
     expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Speed'), NEW))).toBe(res.title);
     expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Pen'), NEW))).toBe('Фоддер — уже лучше у Caren; Caren · Pen — не по билду');
   });
+
+  // вещь уже в билде (logic/worn): в примерке этого билда заголовок уже про него — «уже на Caren» не повторяем
+  it('вещь из этого же билда: «Оставляй — она уже в билде Caren · Speed», без «; уже на Caren»', () => {
+    const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
+    const junk = armor('helmet', 'Speed', { HP: 1, RES: 1, EFF: 1 }, 'rare');
+    const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), junk).store;
+    const res = withWorn(mine, st, junk, evaluate(mine, junk, { gamble: false }));
+    expect(res.worn).toBe('home');
+    expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Speed'), junk))).toBe('Оставляй — она уже в билде Caren · Speed');
+  });
 });

@@ -202,6 +202,15 @@ describe('штамп по надетому', () => {
     expect($('.statgrid')).toBeTruthy();
   });
 
+  it('примерка пустого билда (Caren · Speed/Immu): его собирают сейчас — пустой слот держит «Keep», без «Won\'t improve anyone»', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 2 } },
+      { gear: STRONG, tryon: { charId: caren.id, build: 'Speed/Immu' } });
+    expect($('.vcard .stamp')?.textContent).toBe('Keep');
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren · Speed/Immu');
+    await click($('.vcard'));
+    expect($('.v-reasons')?.textContent).not.toContain("Won't improve anyone");
+  });
+
   it('вещь из билда, сама по себе «в разбор», — «Оставить»: где она', async () => {
     const junk = { setId: speed, subs: { HP: 1, RES: 1, EFF: 1 } };
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: null } } };

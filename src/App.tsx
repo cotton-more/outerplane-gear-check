@@ -103,8 +103,11 @@ export function App() {
     const aim = targetVs && (targetVs.kind === 'fill' || targetVs.kind === 'up') ? `${targetVs.c.name} · ${targetVs.b.name}` : null;
     return { needs, wear: { up, target: aim } };
   }, [idx, ctx, gear.store, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // штамп по надетому (logic/worn): вещь уже в билде — «Оставить»; всем, кому подходит, уже надето не хуже — «Разобрать»
-  const worn = useMemo(() => withWorn(ctx, gear.store, input, raw), [ctx, gear.store, raw]); // eslint-disable-line react-hooks/exhaustive-deps
+  // штамп по надетому (logic/worn): вещь уже в билде — «Оставить»; всем, кому подходит, уже надето не хуже — «Разобрать».
+  // Билд примерки — собираемый, даже пустой; вещь — материал и лучше надетой у кого-то — не понижаем (совет «надень»)
+  const worn = useMemo(() => withWorn(ctx, gear.store, input, raw, {
+    tryOn: target ? buildKey(target.c.id, target.b.name) : null, hold: mat.wear.up.length > 0,
+  }), [ctx, gear.store, raw, target, mat]); // eslint-disable-line react-hooks/exhaustive-deps
   const verdict = useMemo(() => withMaterial(idx, t, worn, mat.needs, mat.wear), [idx, t, worn, mat]);
   // понизили — сравнение с кандидатами прежнего вердикта: оно и объясняет, почему «Разобрать»
   const vsList = useMemo(() => (targetVs

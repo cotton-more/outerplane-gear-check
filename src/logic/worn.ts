@@ -9,7 +9,8 @@
 //   - Персонаж без записей — как раздетый: вещь ему пригодится.
 //   - Считаются только начатые билды (хоть одна вещь). Персонажа, которого собираешь в Speed, вещь для High Crit
 //     не держит; нужен второй билд — начни его собирать, и его пустые слоты вещь удержат.
-//   - Пустой слот, надетая не по билду и сама эта вещь на ком-то — не понижаем.
+//   - Пустой слот, надетая не по билду и сама эта вещь на ком-то — не понижаем. Билд примерки — начатый, даже пустой.
+//   - Вещь — материал и лучше такой же надетой у кого-то — не понижаем: её надевают (logic/material).
 //   - 2+2 сломается, а по сегментам новая лучше — не понижаем: может, стоит переставить сеты. Так же — «на уровне»
 //     только из-за T4 у надетой и оружие с другой рекомендованной пассивкой.
 // «Спорно» (хороша для тех, кого нет в ростере) не понижаем. Материал Breakthrough поднимет «Разобрать» обратно
@@ -48,9 +49,11 @@ function notBetter(ctx: Ctx, vs: Vs): boolean {
 // сравнения, по которым штамп понижается, или null. Кандидаты — первая открытая секция вердикта (кому вещь подходит).
 // Вещь введена не вся — не понижаем: без остальных сабстатов её ценность занижена, а на телефоне «Разобрать» встаёт
 // карточкой на место сетки, и досчитать было бы нечем (до B3 раннее «Разобрать» было окончательным)
-function lowerBy(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Vs[] | null {
+function lowerBy(ctx: Ctx, gear: GearStore, item: ItemInput, res: Verdict, tryOn?: string | null): Vs[] | null {
   if (res.v !== 'keep' && res.v !== 'temp') return null;
   if (Object.keys(item.subs).length < dropSubs(item.grade)) return null;
+  // билд примерки — начатый, даже пустой: его собирают прямо сейчас, пустой слот в нём держит штамп
+  const st = tryOn && !gear.builds[tryOn] ? { ...gear, builds: { ...gear.builds, [tryOn]: { slots: {}, at: '' } } } : gear;
   const top = bestRow(res);
   const sec = top && res.sections.find((x) => x.rows[0] === top.row);
   if (!sec || uniqChars(sec.rows).some((c) => !inUse(st, c).length)) return null;
@@ -61,12 +64,12 @@ function lowerBy(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Vs[] |
 
 // Кубик (logic/gamble) считает удачные 4-е без надетого. Удачный 4-й, после которого надетое вещь понизило бы, — не
 // удача: «Оставить» снова станет «Разобрать», а Reforge потрачен. Такие из кубика убираем; не осталось — кубика нет
-function withDice(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Verdict {
+function withDice(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict, tryOn?: string | null): Verdict {
   const g = res.gamble;
   if (!g) return res;
   const lowered = (key: string, n: number) => {
     const lucky = { ...item, subs: { ...item.subs, [key]: n } };
-    return !!lowerBy(ctx, st, lucky, evaluate(ctx, lucky, { gamble: false }));
+    return !!lowerBy(ctx, st, lucky, evaluate(ctx, lucky, { gamble: false }), tryOn);
   };
   const hits = g.hits.filter((h) => !lowered(h.key, 1));
   const near = g.near.filter((x) => !lowered(x.key, 2));
@@ -80,7 +83,12 @@ const whoOf = (ctx: Ctx, key: string) => {
   return `${ctx.idx.CHAR[id]?.name ?? id} · ${key.slice(id.length + 1)}`;
 };
 
-export function withWorn(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Verdict {
+// tryOn — билд примерки («персонаж/билд»): он считается начатым, даже пустой (решение владельца).
+// hold — не понижать: вещь — материал Breakthrough для такой же надетой у кого-то и лучше неё (logic/material,
+//   betterThanWorn) — совет «надень её, старую — ей в Breakthrough», а не «никого не улучшит»
+export interface WornOpts { tryOn?: string | null; hold?: boolean }
+
+export function withWorn(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict, opts: WornOpts = {}): Verdict {
   if (res.v === 'idle' || !Object.keys(st.builds).length) return res;
   const W = ctx.t.worn;
   const home = homeOf(ctx, st, item);
@@ -90,8 +98,9 @@ export function withWorn(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict)
     // кубик и «Прокачка» были про вещь «в разбор» — у вещи из билда их нет
     return { ...res, v: 'keep', worn: 'home', badge: '', gamble: null, title: W.keptTitle(who), lines: [W.kept(who)], plan: [] };
   }
-  const vs = lowerBy(ctx, st, item, res);
-  if (!vs) return withDice(ctx, st, item, res);
+  if (opts.hold) return res;
+  const vs = lowerBy(ctx, st, item, res, opts.tryOn);
+  if (!vs) return withDice(ctx, st, item, res, opts.tryOn);
   // «Фоддер» — материал для такой же вещи: у брони, если копишь фоддер, и у предмета из списков билдов. Legendary-оружие
   // «на замену» (его пассивки в билдах ростера нет) — «Разобрать», как evalGear поступает со слабой заменой
   const armor = isArmor(item.slot);

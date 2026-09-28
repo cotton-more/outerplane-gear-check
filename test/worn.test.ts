@@ -8,7 +8,7 @@ import { TEXTS } from '../src/i18n';
 import { makeCtx, type Ctx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { buildKey, EMPTY_GEAR, equip, updatePiece, type GearStore } from '../src/logic/gear';
-import { materialFor, withMaterial } from '../src/logic/material';
+import { betterThanWorn, materialFor, withMaterial } from '../src/logic/material';
 import type { ItemInput } from '../src/logic/verdict';
 import { compare } from '../src/logic/vs';
 import { withWorn } from '../src/logic/worn';
@@ -179,6 +179,31 @@ describe('что удерживает штамп', () => {
       expect(vs.delta!).toBeGreaterThanOrEqual(0.1);
       expect(judge(ctxOf([caren]), strong, st).v).toBe('keep');
     });
+  });
+});
+
+describe('примерка и материал держат штамп', () => {
+  const ctx = ctxOf([caren]);
+  const res = evaluate(ctx, EPIC, { gamble: false });
+
+  it('примерка пустого билда (Caren · Speed/Immu): он собирается сейчас — пустой слот держит штамп', () => {
+    expect(withWorn(ctx, onCaren, EPIC, res, { tryOn: buildKey(caren.id, 'Speed/Immu') }).v).toBe('keep');
+    // примерка начатого билда, где надето лучше, и билда, куда вещь не подходит, — как без примерки
+    expect(withWorn(ctx, onCaren, EPIC, res, { tryOn: buildKey(caren.id, 'Speed') }).v).toBe('junk');
+    expect(withWorn(ctx, onCaren, EPIC, res, { tryOn: buildKey(caren.id, 'Pen') }).v).toBe('junk');
+  });
+
+  it('вещь — материал и лучше такой же надетой у Rin (не кандидат): не «Никого не улучшит», а «надень» (hold)', () => {
+    const both = ctxOf([caren, rin]);
+    const item = helmet({ 'DEF%': 3, CHC: 3, CHD: 2, HP: 1 });
+    let st = on(EMPTY_GEAR, caren, 'Speed', helmet({ 'DEF%': 4, CHC: 3, CHD: 3, SPD: 2 }));
+    st = on(st, rin, 'Speed', helmet({ CHC: 1, HP: 1, RES: 1, EFF: 1 }));
+    st = updatePiece(st, st.builds[buildKey(rin.id, 'Speed')].slots.helmet!, { bt: 2 });
+    const raw = evaluate(both, item, { gamble: false });
+    expect(withWorn(both, st, item, raw).worn).toBe('lower'); // без hold — понизили бы
+    const hold = betterThanWorn(both, st, item, materialFor(st, item, idx)).length > 0;
+    expect(hold).toBe(true);
+    expect(withWorn(both, st, item, raw, { hold })).toBe(raw);
   });
 });
 

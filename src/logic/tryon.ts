@@ -49,6 +49,8 @@ export function tryOnPreset(st: GearStore, key: string, b: Build, slot: SlotId, 
 // armor — броня («нужна»), иначе оружие или аксессуар («нужен»)
 export function tryOnTitle(t: Texts, res: Verdict, vs: Vs, armor = true): string {
   if (res.v === 'idle') return res.title;
+  // вещь уже в этом билде (logic/worn) — заголовок «уже в билде Caren · Speed» уже про него, «уже на Caren» не повторяем
+  if (res.worn === 'home' && vs.kind === 'worn') return res.title;
   const T = t.tryon;
   const i = res.title.indexOf(' — ');
   const head = i >= 0 ? res.title.slice(0, i) : res.title;
