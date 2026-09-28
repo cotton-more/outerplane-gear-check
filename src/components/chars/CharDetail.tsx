@@ -15,6 +15,10 @@ import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Im
 import { tour } from '../../tour/anchors';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
+// оценка outerpedia PvE / PvP (S…E): подпись приглушённая, буква — плашкой цвета оценки (chars.css .tier-*)
+const Tier = ({ k, v }: { k: string; v: string }) => (
+  <span className="tier"><span className="tier-k">{k}</span><b className={`tier-v tier-${v.toLowerCase()}`}>{v}</b></span>
+);
 
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
 // onTryOn — примерка для билда этого персонажа (BuildGear)
@@ -57,8 +61,8 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
             <span><ElementIcon el={c.element} /> {D.elements[c.element] || c.element}</span>
             <span><ClassIcon cls={c.class} /> {D.classes[c.class] || c.class}{c.subClass ? ' · ' + cap(c.subClass) : ''}</span>
             {c.role && <span>{ROLE[c.role] || c.role}</span>}
-            {c.rank && <span>PvE {c.rank}</span>}
-            {c.rankPvp && <span>PvP {c.rankPvp}</span>}
+            {c.rank && <Tier k="PvE" v={c.rank} />}
+            {c.rankPvp && <Tier k="PvP" v={c.rankPvp} />}
           </div>
           {c.nick && c.nick !== c.prefix && <div className="muted small">{c.nick}</div>}
         </div>

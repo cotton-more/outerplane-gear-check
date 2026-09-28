@@ -29,6 +29,19 @@ html:not(.sheet) .cd-top { display: none; }
 .cd-head h2 { margin: 0; font: 700 18px/1.2 var(--font-display); text-wrap: balance; }
 .cd-head .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; font-size: 13px; color: var(--ink-2); align-items: center; }
 .cd-head .meta img, .cd-head .meta .ico { width: 18px; height: 18px; vertical-align: -4px; }
+/* оценки outerpedia PvE / PvP: буква — плашкой цвета оценки. S — золото, A — фиолет, B — синий, C — зелёный;
+   D, E и незнакомые — серые. Цвета — из палитры вердиктов: обе темы работают сами */
+.cd-head .tier { display: inline-flex; align-items: center; gap: 4px; }
+.cd-head .tier-k { font-size: 12px; color: var(--ink-3); }
+.cd-head .tier-v {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 5px;
+  font: 800 12px/1 var(--font-mono); color: var(--tier, var(--ink-2)); background: var(--tier-soft, var(--surface-3));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tier, var(--ink-3)) 35%, transparent);
+}
+.cd-head .tier-s { --tier: var(--temp); --tier-soft: var(--temp-soft); }
+.cd-head .tier-a { --tier: var(--fodder); --tier-soft: var(--fodder-soft); }
+.cd-head .tier-b { --tier: var(--accent); --tier-soft: var(--accent-soft); }
+.cd-head .tier-c { --tier: var(--keep); --tier-soft: var(--keep-soft); }
 .own-row { padding: 0 16px 4px; }
 .own-btn { border: 1px solid var(--line-2); background: var(--surface); padding: 8px 12px; min-height: 40px; border-radius: var(--radius-s); font-weight: 600; font-size: 13.5px; }
 .own-btn[aria-pressed="true"] { border-color: var(--star-on); color: var(--ink); background: color-mix(in srgb, var(--star-on) 14%, var(--surface)); }
