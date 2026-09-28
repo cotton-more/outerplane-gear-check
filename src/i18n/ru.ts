@@ -310,7 +310,7 @@ export const ru = {
     vsTitle: 'Сейчас на персонажах',
     vsNow: 'сейчас',
     vsNew: 'новая',
-    vsWorn: (grade: string, bt: number | null, done: number) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}, Reforge ${done} из 6`,
+    vsWorn: (grade: string, bt: number | null, done: number, max: number) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}, Reforge ${done} из ${max}`,
     vsKind: { fill: 'пустой слот', eq: 'на уровне', worn: 'уже надета', breaks: 'ломает сет', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
     vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
     vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
@@ -353,7 +353,8 @@ export const ru = {
     gearMove: 'Перенести в этот билд',
     pieceTitle: (slot: string, name: string, build: string) => `${slot} · ${name} · ${build}`,
     pieceSegHint: 'Жёлтые — из оценки. Сделал Reforge — нажми дальше: добавятся оранжевые. Нажми на жёлтую — жёлтых станет меньше; больше — через название стата.',
-    pieceReforge: (done: number) => `Reforge: ${done} из 6 — считаю по оранжевым сегментам`,
+    pieceReforge: (done: number, max: number) => `Reforge: ${done} из ${max} — считаю по оранжевым сегментам`,
+    pieceNoFourth: 'У Epic первый Reforge добавляет 4-й сабстат — сначала «+ 4-й сабстат от Reforge», потом оранжевые.',
     pieceBtUnknown: 'не указан',
     pieceStatHint: 'Transistone сменил стат или жёлтые отмечены не так — нажми на название стата: выбери стат и сколько у него жёлтых. Оранжевые останутся.',
     yellowSheet: (k: string) => `Сколько жёлтых у ${k}?`,

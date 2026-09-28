@@ -30,7 +30,8 @@ it's the same piece, editing it changes it everywhere. If outerpedia renames a b
 Tap a piece to update it after upgrading in the game:
 - **segments** — yellow come from the evaluation; tap further to add orange ones after Reforge. Tapping a yellow one
   lowers their number; to raise it, tap the stat name, pick the same stat and the yellow count. How many Reforges are done is counted from the orange segments (on an Epic, the one that added
-  the 4th substat counts too);
+  the 4th substat counts too). There can't be more orange ones than Reforges: 6 on a Legendary, 9 after Singularity;
+  5 on an Epic with its 4th substat, none before it;
 - **Breakthrough** T0–T4 — "not set" until you mark it;
 - **Transistone** changed a stat — tap its name, pick the new one and how many yellow it has now (in the game
   Transistone rerolls them too): the orange ones stay. A stat that's already on the piece can't be picked — the game

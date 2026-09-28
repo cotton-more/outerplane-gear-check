@@ -2,6 +2,7 @@
 // Вещь попадает в билд только из оценки («Надеть» в вердикте): жёлтые сегменты — как отмечены на форме,
 // оранжевые (Reforge) и Breakthrough игрок добавляет потом в карточке персонажа. Enhance не храним: считаем +10.
 // Одна вещь может стоять в нескольких билдах одного персонажа — это ссылка на одну запись, правка меняет все.
+import { CFG } from '../config';
 import { GRADES, SLOTS, isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import { MAX_SUBS, type Subs } from './subs';
@@ -9,7 +10,8 @@ import type { ItemInput } from './verdict';
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
 export const MAX_LIT = 6;     // сегментов у сабстата в игре
-export const REFORGES = 6;    // попыток Reforge у 6★ (Singularity не учитываем)
+export const REFORGES = CFG.reforges; // попыток Reforge у 6★; впереди сравнение считает только их
+export const SINGULARITY = 3; // ещё 3 Reforge у Legendary после Singularity Ascension — их можно отметить
 
 export interface Piece {
   id: string;
@@ -41,11 +43,26 @@ export const today = () => new Date().toISOString().slice(0, 10);
 export const pieceInput = (p: Piece): ItemInput =>
   ({ slot: p.slot, grade: p.grade, setId: p.setId, itemKey: p.itemKey, main: p.main, unlisted: p.unlisted, subs: p.yellow });
 
+const orangeOf = (p: Pick<Piece, 'yellow' | 'lit'>) => Object.keys(p.lit).reduce((n, k) => n + (p.lit[k] - (p.yellow[k] ?? 0)), 0);
+
+// сколько Reforge бывает у вещи: 6, у Legendary с Singularity — 9
+export const maxReforges = (p: Pick<Piece, 'grade'>): number => REFORGES + (p.grade === 'unique' ? SINGULARITY : 0);
+
+// сколько оранжевых можно отметить: у Epic первый Reforge — 4-й сабстат (с жёлтым), оранжевых на один меньше;
+// у Epic без 4-го — ни одного: сначала «+ 4-й»
+export const maxOrange = (p: Pick<Piece, 'grade' | 'lit'>): number =>
+  p.grade === 'rare' ? (Object.keys(p.lit).length >= MAX_SUBS ? REFORGES - 1 : 0) : maxReforges(p);
+
+// «Reforge N из M»: обычно из 6; у Legendary после Singularity (больше 6) — из 9
+export function reforgeScale(p: Piece): { done: number; of: number } {
+  const done = reforgesDone(p);
+  return { done, of: done > REFORGES ? maxReforges(p) : REFORGES };
+}
+
 // сколько Reforge уже сделано: каждый добавляет ровно один сегмент (у Epic первый — 4-й сабстат, его сегмент жёлтый)
 export function reforgesDone(p: Piece): number {
-  const orange = Object.keys(p.lit).reduce((n, k) => n + (p.lit[k] - (p.yellow[k] ?? 0)), 0);
   const fourth = p.grade === 'rare' && Object.keys(p.lit).length >= MAX_SUBS ? 1 : 0;
-  return Math.min(REFORGES, orange + fourth);
+  return Math.min(maxReforges(p), orangeOf(p) + fourth);
 }
 
 // та же вещь: слот, грейд, сет или предмет, main и жёлтые сегменты в игре не меняются без Transistone
@@ -140,11 +157,16 @@ export function updatePiece(st: GearStore, id: string, patch: Partial<Pick<Piece
   return p ? { ...st, pieces: { ...st.pieces, [id]: { ...p, ...patch, at } } } : st;
 }
 
-// сегменты в карточке: нажали клетку n (1…6) у стата k. Выше жёлтых — оранжевые (Reforge); повторное нажатие на
-// последнюю горящую убирает её. На жёлтых — поправка их числа (опечатка при вводе), оранжевые остаются.
+// сегменты в карточке: нажали клетку n (1…6) у стата k. Выше жёлтых — оранжевые (Reforge), но не больше, чем
+// Reforge бывает (maxOrange); повторное нажатие на последнюю горящую убирает её. На жёлтых — жёлтых меньше
+// (опечатка при вводе), оранжевые остаются.
 export function tapSegment(p: Piece, k: string, n: number): Pick<Piece, 'yellow' | 'lit'> {
   const y = p.yellow[k] ?? 1, l = p.lit[k] ?? y;
-  if (n > y) return { yellow: p.yellow, lit: { ...p.lit, [k]: n === l ? n - 1 : n } };
+  if (n > y) {
+    if (n <= l) return { yellow: p.yellow, lit: { ...p.lit, [k]: n === l ? n - 1 : n } };
+    const room = Math.max(0, maxOrange(p) - orangeOf(p)); // сколько оранжевых ещё можно добавить
+    return { yellow: p.yellow, lit: { ...p.lit, [k]: Math.min(n, l + room) } };
+  }
   return { yellow: { ...p.yellow, [k]: n }, lit: { ...p.lit, [k]: Math.min(MAX_LIT, n + l - y) } };
 }
 

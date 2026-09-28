@@ -3,7 +3,7 @@
 // Штамп вердикта от этого не меняется. Кнопка — надеть в пустой слот или заменить надетую.
 import { subLabel } from '../../data';
 import { useT } from '../../i18n';
-import { reforgesDone } from '../../logic/gear';
+import { reforgeScale } from '../../logic/gear';
 import { vsFigure, type Vs, type VsFigure } from '../../logic/vs';
 import { Icon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
@@ -44,7 +44,7 @@ export function VsSection({ list, slot, onEquip, onOpenChar }: {
                 <Img k={'face:' + vs.c.icon} className="face" />
                 <div className="nm">
                   <button type="button" onClick={() => onOpenChar(vs.c.id)}><b>{vs.c.name}</b></button> <span className="bn">{vs.b.name}</span>
-                  {w && <span className="vs-worn">{t.ui.vsWorn(GRADE[w.grade], w.bt, reforgesDone(w))}</span>}
+                  {w && <span className="vs-worn">{t.ui.vsWorn(GRADE[w.grade], w.bt, reforgeScale(w).done, reforgeScale(w).of)}</span>}
                 </div>
                 <VsChip vs={vs} />
               </div>

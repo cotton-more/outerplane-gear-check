@@ -7,7 +7,7 @@ import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import {
-  addFourth, buildKey, MAX_LIT, moveBuild, orphanBuilds, pieceInput, reforgesDone, replaceStat, setYellow, share, tapSegment, unequip, updatePiece, usedIn,
+  addFourth, buildKey, MAX_LIT, moveBuild, orphanBuilds, pieceInput, reforgeScale, replaceStat, setYellow, share, tapSegment, unequip, updatePiece, usedIn,
   type Bt, type Piece,
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
@@ -79,13 +79,13 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
                 );
               }
               const W = subWeights(ctx, b, c, itemMains(ctx.idx, pieceInput(p)));
-              const done = reforgesDone(p);
+              const rf = reforgeScale(p);
               return (
                 <li key={slot}>
                   <button type="button" className="bgear-row" onClick={() => setOpen(slot)}>
                     <SlotIcon slot={slot} />
                     <span className="bgear-n"><span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>{pieceName(ctx, p)}</span>
-                    <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{done < 6 && <> · Reforge {done}/6</>}</span>
+                    <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{rf.done < rf.of && <> · Reforge {rf.done}/{rf.of}</>}</span>
                     <span className="bgear-t">
                       {Object.keys(p.lit).map((k) => {
                         const cr = W.get(k)?.credit ?? 0;
@@ -166,7 +166,8 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
           {p.grade === 'rare' && keys.length === MAX_SUBS - 1 && <button type="button" className="subadd" onClick={() => setPick('fourth')}>+ {t.ui.addFourth}</button>}
         </div>
         <p className="muted small">{t.ui.pieceSegHint}</p>
-        <p className="small">{t.ui.pieceReforge(reforgesDone(p))}</p>
+        {p.grade === 'rare' && keys.length === MAX_SUBS - 1 && <p className="muted small">{t.ui.pieceNoFourth}</p>}
+        <p className="small">{t.ui.pieceReforge(reforgeScale(p).done, reforgeScale(p).of)}</p>
         <div className="seg piece-bt" role="group" aria-label="Breakthrough">
           <span className="muted small">Breakthrough</span>
           {([0, 1, 2, 3, 4] as Bt[]).map((n) => (

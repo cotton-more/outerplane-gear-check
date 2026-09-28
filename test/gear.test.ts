@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
-  addFourth, buildKey, decodeGear, equipOn, moveBuild, orphanBuilds, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
-  tapSegment, undoEquip, unequip, updatePiece, usedIn,
+  addFourth, buildKey, decodeGear, equipOn, reforgeScale, moveBuild, orphanBuilds, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
+  tapSegment, undoEquip, unequip, updatePiece, usedIn, type Piece,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
 
@@ -117,6 +117,21 @@ describe('сегменты и Reforge', () => {
     expect(setYellow(p1, 'DEF%', 3)).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 5 } });
     expect(setYellow(p1, 'CHC', 3)).toMatchObject({ yellow: { CHC: 3 }, lit: { CHC: 3 } });
     expect(reforgesDone({ ...p1, ...setYellow(p1, 'CHC', 3) })).toBe(2);
+  });
+
+  it('оранжевых не больше, чем Reforge бывает: Legendary — 9 (Singularity), Epic с 4-м — 5, Epic без 4-го — 0', () => {
+    const tapAll = (p: Piece) => ['DEF%', 'CHC', 'CHD', 'SPD'].filter((k) => k in p.yellow).reduce((q, k) => ({ ...q, ...tapSegment(q, k, 6) }), p);
+    const leg = tapAll(equip(EMPTY_GEAR, K, helmet({ 'DEF%': 1, CHC: 1, CHD: 1, SPD: 1 })).piece);
+    expect(leg.lit).toEqual({ 'DEF%': 6, CHC: 5, CHD: 1, SPD: 1 });
+    expect(reforgeScale(leg)).toEqual({ done: 9, of: 9 });
+
+    const epic4 = tapAll(equip(EMPTY_GEAR, K, helmet({ 'DEF%': 1, CHC: 1, CHD: 1, SPD: 1 }, 'rare')).piece);
+    expect(reforgeScale(epic4)).toEqual({ done: 6, of: 6 });
+
+    const epic3 = equip(EMPTY_GEAR, K, helmet({ 'DEF%': 1, CHC: 1, CHD: 1 }, 'rare')).piece;
+    expect(tapSegment(epic3, 'DEF%', 3).lit['DEF%']).toBe(1);
+    // убрать оранжевый можно всегда
+    expect(tapSegment(leg, 'CHC', 5).lit.CHC).toBe(4);
   });
 
   it('Transistone: новый стат со своими жёлтыми, оранжевые старого — с ним', () => {
