@@ -9,7 +9,8 @@ better than what's already on. Nothing is sent anywhere: it all stays in your br
 
 Only from a verdict: enter the piece as usual, open the details and tap **"Equip on…"**. The list shows the builds the
 piece fits — first the ones you're gearing, then the other builds of your roster (all characters if the roster is
-empty). "Show off-build too" lets you record a stopgap: what the character really wears now. The piece goes into the
+empty). Each row says what a tap does — "Replace the helmet — the new one is better", "Equip — no helmet
+yet"; typing a name searches all characters, not only the roster. "Show off-build too" lets you record a stopgap: what the character really wears now. The piece goes into the
 build as entered — with its yellow segments; a message says what happens to the old piece (for example, "Breakthrough
 material for the new one"), and "Undo" puts the old piece back in that slot — anything else you changed in
 those seconds stays.

@@ -77,6 +77,25 @@ describe('экипировка', () => {
     expect($('.gear-toast small')?.textContent).toContain('The same piece as in Speed');
   });
 
+  it('«Кому надеть?»: вещь в шапке, в строке — что будет; имя в поиске — среди всех, не только ростера', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+
+    expect($('.equip-item')?.textContent).toContain('Helmet · Speed Set · L');
+    expect($('.equip-subs')?.textContent).toBe('DEF%2CHC2CHD3HP1');
+    expect(byText('.equip-row', 'Caren Speed')?.querySelector('.act')?.textContent).toBe('Replace the helmet — the new one is better');
+    expect(byText('.equip-row', 'Speed/Immu')?.querySelector('.act')?.textContent).toBe('Equip — no helmet yet');
+    expect(byText('.equip-row', 'Kappa')).toBeUndefined();
+
+    const input = $('.equip-q input') as HTMLInputElement;
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(input, 'kap'); input.dispatchEvent(new Event('input', { bubbles: true })); });
+    expect(byText('.equip-row', 'Kappa')).toBeTruthy();
+    expect(byText('.equip-row', 'Caren')).toBeUndefined();
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
