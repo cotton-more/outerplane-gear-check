@@ -42,9 +42,21 @@ describe('все, кому подходит, уже носят не хуже —
     const r = judge(ctx, EPIC, onCaren);
     expect(r).toMatchObject({ v: 'junk', worn: 'lower', wornBy: [buildKey(caren.id, 'Speed')], title: 'Разбирай — уже лучше у Caren', badge: '', gamble: null, roll: undefined });
     expect(r.lines.slice(0, 2)).toEqual([W.line, W.stale]);
-    // кому и чем она хороша — первая строка прежнего вердикта остаётся
-    expect(r.lines[2]).toBe(evaluate(ctx, EPIC, { gamble: false }).lines[0]);
-    expect(r.lines).toHaveLength(3);
+    // нужна и тем, кого нет в ростере (Kappa), — строка, кому (разбор не молча); ниже — кому и чем она хороша,
+    // первая строка прежнего вердикта
+    expect(r.lines[2]).toMatch(/^Для персонажей не из ростера это «Оставить»: .*Kappa/);
+    expect(r.lines[3]).toBe(evaluate(ctx, EPIC, { gamble: false }).lines[0]);
+    expect(r.lines).toHaveLength(4);
+  });
+
+  it('Legendary-оружие «на замену» (предмета нет в билдах) — «Разобрать», а не «Фоддер» с материалом для него', () => {
+    const ctx = ctxOf([caren]);
+    const st = on(EMPTY_GEAR, caren, 'Speed', weapon('19', { CHC: 2, CHD: 2, SPD: 1, HP: 1 }));
+    const winter = weapon('641', { CHC: 3, CHD: 2, SPD: 2, HP: 1 }); // Winter of Hubris — ни в одном билде
+    expect(evaluate(ctx, winter, { gamble: false }).v).toBe('temp');
+    const r = judge(ctx, winter, st);
+    expect(r).toMatchObject({ v: 'junk', worn: 'lower', title: 'Разбирай — уже лучше у Caren', plan: [] });
+    expect(r.lines).toHaveLength(3); // никому вне ростера он не нужен — строки «не из ростера» нет
   });
 
   it('Legendary — «Фоддер»; не копишь фоддер — броня «Разобрать», как любая слабая Legendary', () => {

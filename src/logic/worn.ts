@@ -2,7 +2,8 @@
 //   Вещь уже в билде, а её вердикт «Разобрать», «Фоддер» или «Спорно» — «Оставить»: в игре она может лежать
 //   в инвентаре (как в пресете экипировки), и разбор выбил бы её из собранного билда.
 //   «Оставить» или «Временно», а всем, кому вещь подходит по вердикту, уже надето не хуже (на уровне или ▼), —
-//   «Разобрать», у Legendary — «Фоддер» (у брони — если копишь фоддер): вещь неплохая, но никого не улучшит.
+//   «Разобрать», у Legendary «Оставить» — «Фоддер» (у брони — если копишь фоддер): вещь неплохая, но никого не
+//   улучшит. Нужна она и тем, кого нет в ростере, — строка, кому.
 // Понижаем осторожно: разбор не вернуть (решения владельца).
 //   - Только когда введены все сабстаты.
 //   - Персонаж без записей — как раздетый: вещь ему пригодится.
@@ -19,6 +20,7 @@ import type { Ctx } from './context';
 import { pieceInput, samePiece, usedIn, type GearStore } from './gear';
 import { upgradePlan } from './plan';
 import { dropSubs } from './subs';
+import { namesLine } from './text';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import { compareAll, fits, inUse, MARGIN, type Vs } from './vs';
 
@@ -73,14 +75,22 @@ export function withWorn(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict)
   }
   const vs = lowerBy(ctx, st, item, res);
   if (!vs) return res;
-  const v = item.grade === 'unique' && (!isArmor(item.slot) || ctx.settings.fodder) ? 'fodder' : 'junk';
+  // «Фоддер» — материал для такой же вещи: у брони, если копишь фоддер, и у предмета из списков билдов. Legendary-оружие
+  // «на замену» (его пассивки в билдах ростера нет) — «Разобрать», как evalGear поступает со слабой заменой
+  const armor = isArmor(item.slot);
+  const v = res.v === 'keep' && item.grade === 'unique' && (!armor || ctx.settings.fodder) ? 'fodder' : 'junk';
   // кубик обещал бы «Оставить», которое снова понизится; ролл и «стоит Reforge» — не для вещи в разбор.
+  // Вещь нужна и тем, кого нет в ростере, — сказать, как у «Спорно» (решение владельца: штамп тот же, но не молча).
+  // У «Временно» оружия evalGear уже поставил эту строку первой — она останется ниже.
   // Из прежних строк — первая: кому и чем вещь хороша («сама по себе неплохая»)
   const who = uniqChars(vs);
+  const others = res.othersKeep ?? [];
+  const names = namesLine(others, ctx.t.more, 4);
+  const also = others.length && (armor || res.v === 'keep') ? [armor ? ctx.t.armor.maybeOthers(names) : ctx.t.gear.othersMain(names)] : [];
   const low: Verdict = {
     ...res, v, worn: 'lower', wornBy: vs.map((x) => x.key), badge: '', roll: undefined, gamble: null,
     title: W.title(v, who.map((c) => c.name), vs.some((x) => x.kind !== 'down')),
-    lines: [W.line, W.stale, ...res.lines.slice(0, 1)],
+    lines: [W.line, W.stale, ...also, ...res.lines.slice(0, 1)],
   };
   return { ...low, plan: upgradePlan(ctx, item, low) };
 }
