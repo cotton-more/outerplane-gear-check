@@ -13,7 +13,7 @@ export const SLOTS: SlotInfo[] = [
   { id: 'helmet', name: 'Helmet', game: 'Helmet' },
   { id: 'armor', name: 'Armor', game: 'Chest Armor' },
   { id: 'gloves', name: 'Gloves', game: 'Gloves' },
-  { id: 'shoes', name: 'Shoes', game: 'Boots' },
+  { id: 'shoes', name: 'Boots', game: 'Boots' },
 ];
 export const SLOT = Object.fromEntries(SLOTS.map((s) => [s.id, s])) as Record<SlotId, SlotInfo>;
 const ARMOR: readonly string[] = ['helmet', 'armor', 'gloves', 'shoes'];
