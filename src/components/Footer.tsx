@@ -1,4 +1,4 @@
-// Подвал: откуда данные и их версия, лицензии, версия приложения, установка, язык и значки.
+// Подвал: откуда данные и их версия, лицензии, версия приложения и готовое её обновление, установка, язык и значки.
 // На телефоне он же — внизу меню ☰.
 import { useIndex } from './IndexContext';
 import type { InstallInfo } from './Guide';
@@ -31,8 +31,10 @@ function IconSwitch({ game, onChange }: { game: boolean; onChange: (game: boolea
   );
 }
 
-export function Footer({ install, lang, onLang, gameIcons, onIcons }: {
-  install: InstallInfo; lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void;
+// onAppUpdate — ждёт обновление только приложения (hooks/usePwa): вместо строки про обновления — «Готова новая версия»
+// с кнопкой, для тех, кто хочет сразу. Само оно включится при следующем запуске, а Android может неделями не выгружать PWA
+export function Footer({ install, lang, onLang, gameIcons, onIcons, onAppUpdate }: {
+  install: InstallInfo; lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void; onAppUpdate?: () => void;
 }) {
   const m = useIndex().D.meta;
   const t = useT();
@@ -43,9 +45,11 @@ export function Footer({ install, lang, onLang, gameIcons, onIcons }: {
         {t.ui.footData} <a href="https://github.com/Sevih/outerpedia" target="_blank" rel="noopener">outerpedia</a> (curated gear-reco, © 2026 Sevih, MIT) · {t.ui.footGameVersion} {m.gameVersion || '?'} · {t.ui.footSnapshot} {when}
         {m.commit && <> · <span className="mono">{String(m.commit).slice(0, 7)}</span></>} · {t.ui.footCounts(m.counts.characters, m.counts.withBuilds, m.counts.builds)}
       </span>
+      {onAppUpdate && <span>{t.ui.footUpdateReady} <button type="button" className="btn" onClick={onAppUpdate}>{t.ui.updateAction}</button></span>}
       <span>
-        {window.OGC_PWA ? t.ui.footUpdatePwa : <>{t.ui.footUpdateSingle} <span className="mono">task build:single</span> {t.ui.footUpdateSingleWhere}</>}
-        {' '}{t.ui.footRights}
+        {!window.OGC_PWA ? <>{t.ui.footUpdateSingle} <span className="mono">task build:single</span> {t.ui.footUpdateSingleWhere}{' '}</>
+          : !onAppUpdate && <>{t.ui.footUpdatePwa}{' '}</>}
+        {t.ui.footRights}
       </span>
       <details className="lic">
         <summary>{t.ui.licenses}</summary>

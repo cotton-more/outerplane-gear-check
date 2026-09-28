@@ -219,7 +219,7 @@ export const ru = {
     sections: 'Разделы',
     tabEval: 'Оценка предмета',
     tabChars: 'Персонажи',
-    // плашки
+    // плашки; updateNotice — только когда вышли новые данные, не на каждую правку приложения (hooks/usePwa)
     updateNotice: 'Вышли новые данные outerpedia — обнови, чтобы видеть свежие билды.',
     updateAction: 'Обновить',
     desktopModeNotice: 'Браузер открыл страницу в режиме «Версия для ПК» — я подстроил масштаб. Если что-то выглядит странно, выключи этот режим: меню ⋮ → «Версия для ПК».',
@@ -228,7 +228,9 @@ export const ru = {
     footGameVersion: 'версия игры',
     footSnapshot: 'снимок от',
     footCounts: (chars: number, withBuilds: number, builds: number) => `${persons(chars)}, с билдами ${withBuilds}, билдов ${builds}.`,
-    footUpdatePwa: 'Когда выйдут новые данные, при открытии появится плашка «Обновить».',
+    footUpdatePwa: 'Новые данные outerpedia — плашка «Обновить»; улучшения приложения ставятся сами при следующем запуске.',
+    // пока ждёт обновление только приложения — вместо footUpdatePwa, с кнопкой updateAction
+    footUpdateReady: 'Готова новая версия.',
     footUpdateSingle: 'Обновить данные:',
     footUpdateSingleWhere: 'в папке проекта.',
     footRights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Неофициальный фан-проект: все права на игру принадлежат VA Games Co., Ltd., билды — работа авторов outerpedia. Инструмент не связан ни с издателем, ни с outerpedia.',
@@ -547,7 +549,7 @@ export const ru = {
     helpInstallItems: [
       '**Android (Chrome):** меню ⋮ → «Установить приложение» или «Добавить на главный экран».',
       '**iPhone и iPad:** в Safari «Поделиться» → «На экран „Домой“».',
-      'Установленное приложение работает без сети. Когда выйдут новые данные, появится плашка «Обновить».',
+      'Установленное приложение работает без сети. Когда выйдут новые данные outerpedia, появится плашка «Обновить»; улучшения приложения ставятся сами при следующем запуске.',
     ],
     wikiLink: 'Подробное руководство — в Wiki ↗',
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',

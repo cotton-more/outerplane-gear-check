@@ -15,7 +15,8 @@ works in the browser, installs on a phone as an app, works offline too. Language
 - **iPhone and iPad:** in Safari, "Share" → "Add to Home Screen".
 
 You get an icon: the app opens without the address bar and fits a split screen next to the game.
-When new data comes out, an "Update" banner appears when you open it.
+When new outerpedia data comes out, an "Update" banner appears when you open it; app improvements install by
+themselves on the next launch.
 
 ## Tutorial
 

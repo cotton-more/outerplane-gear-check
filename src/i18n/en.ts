@@ -205,7 +205,8 @@ export const en: Texts = {
     footGameVersion: 'game version',
     footSnapshot: 'snapshot from',
     footCounts: (chars, withBuilds, builds) => `${persons(chars)}, ${withBuilds} with builds, ${builds} builds.`,
-    footUpdatePwa: 'When new data is out, an "Update" banner appears on launch.',
+    footUpdatePwa: 'New outerpedia data brings an "Update" banner; app improvements install by themselves on the next launch.',
+    footUpdateReady: 'A new version is ready.',
     footUpdateSingle: 'Update the data:',
     footUpdateSingleWhere: 'in the project folder.',
     footRights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of the outerpedia authors; the tool is not affiliated with VA Games or with outerpedia.',
@@ -503,7 +504,7 @@ export const en: Texts = {
     helpInstallItems: [
       '**Android (Chrome):** menu ⋮ → "Install app" or "Add to Home screen".',
       '**iPhone and iPad:** in Safari, Share → "Add to Home Screen".',
-      'The installed app works offline. When new data is out, an "Update" banner appears.',
+      'The installed app works offline. When new outerpedia data is out, an "Update" banner appears; app improvements install by themselves on the next launch.',
     ],
     wikiLink: 'Full guide — in the Wiki ↗',
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Getting-started',

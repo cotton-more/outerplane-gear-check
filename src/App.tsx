@@ -121,7 +121,9 @@ export function App() {
     const id = setTimeout(() => setGearUndo(null), 8000);
     return () => clearTimeout(id);
   }, [gearUndo]);
-  const pwa = usePwa();
+  // обновление: новые данные — плашка сверху; только приложение — строка в подвале (hooks/usePwa)
+  const pwa = usePwa(idx.D.meta.commit);
+  const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -311,7 +313,7 @@ export function App() {
     <GameIconsContext.Provider value={gameIcons}>
       <div className="app">
         <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} />
-        {pwa.updateReady && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
+        {pwa.update === 'data' && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
         {layout.desktopModeOnPhone && !fitHidden && (
           <div id="fitnote">
             <Notice text={t.ui.desktopModeNotice}
@@ -333,7 +335,7 @@ export function App() {
               onPieceOpen={setPieceOpen} />
           </section>
         </main>
-        <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
+        <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         {inviteShown && (
@@ -384,7 +386,7 @@ export function App() {
               onTab('chars');
             }}
             onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={openTours}
-            footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />} />
+            footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />} />
         )}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>

@@ -6,7 +6,7 @@
 
 Builds are outerpedia's curated recommendations ([outerpedia](https://github.com/Sevih/outerpedia)): 265 builds for
 95 characters. Fresh outerpedia data is checked every day and reaches the site after the checks; the app shows an
-"Update" banner when you open it.
+"Update" banner when you open it. App improvements install by themselves on the next launch.
 
 ## Limitations
 
