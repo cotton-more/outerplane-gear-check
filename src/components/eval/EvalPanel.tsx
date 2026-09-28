@@ -26,12 +26,16 @@ import { SubPicker } from './SubPicker';
 import { StatGrid } from './StatGrid';
 import { SubRows } from './SubRows';
 import { VerdictCard } from './Verdict';
+import { TryOnStrip } from './TryOnStrip';
+import type { Target } from '../../logic/tryon';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict }: {
+// tryOn — идёт примерка: полоса над слотами, ✕ — onTryOnEnd
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, tryOn, onTryOnEnd }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
+  tryOn?: Target | null; onTryOnEnd?: () => void;
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -72,6 +76,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   return (
     <div className="panel eval-in" id="eval-in">
       <div className="form">
+        {tryOn && onTryOnEnd && <TryOnStrip target={tryOn} onEnd={onTryOnEnd} />}
         <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
             <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}

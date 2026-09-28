@@ -312,7 +312,7 @@ export const ru = {
     vsNow: 'сейчас',
     vsNew: 'новая',
     vsWorn: (grade: string, bt: number | null, done: number, max: number) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}, Reforge ${done} из ${max}`,
-    vsKind: { fill: 'пустой слот', eq: 'на уровне', worn: 'уже надета', breaks: 'ломает сет', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
+    vsKind: { fill: 'пустой слот', eq: 'на уровне', worn: 'уже надета', breaks: 'ломает сет', off: 'не по билду', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
     vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
     vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
       [...gained.map((x) => `+${x.key} (${x.place}-е)`), ...lost.map((x) => `−${x.key} (${x.place}-е)`)].join(' · '),
@@ -354,7 +354,6 @@ export const ru = {
     oldStill: (builds: string) => `Старая осталась в ${builds}.`,
     sameAs: (build: string) => `Та же вещь, что в ${build}: Reforge и Breakthrough правятся сразу везде.`,
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
-    gearNone: 'Этот билд ещё не собран. Надень вещь из вердикта — кнопка «Надеть на…» в подробностях.',
     gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),
     gearShared: (builds: string) => `Есть и в ${builds} — правка изменит везде.`,
     gearTake: (build: string) => `Взять из ${build}`,
@@ -528,6 +527,32 @@ export const ru = {
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',
   },
   // --- обучение (src/tour): кнопки, полосы и шаги главного тура; шаг — функция от StepText (src/tour/types.ts)
+  // --- примерка: оценка для одного персонажа и билда (logic/tryon, components/eval/TryOnStrip)
+  tryon: {
+    label: 'Примерка',
+    end: 'Закончить примерку',
+    // заголовок вердикта после « — »: кому ещё нужна и что с ней у этого персонажа (temp — вердикт «Временно»)
+    others: (names: string[]) => `нужна ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
+    clause: (kind: string, name: string, build: string, temp: boolean): string => ({
+      fill: temp ? `${name}: пустой слот — пока сойдёт` : `у ${name} слот пуст`,
+      up: `лучше, чем на ${name}`,
+      eq: `на ${name} — на уровне`,
+      down: `на ${name} уже лучше`,
+      breaks: `на ${name} сломает сет`,
+      worn: `уже на ${name}`,
+      off: `${name} · ${build} — не по билду`,
+    } as Record<string, string>)[kind] ?? '',
+    // «Разобрать», а ей вещь лучше надетого или слот пуст
+    butWear: (kind: string, name: string) => `но ${kind === 'fill' ? `у ${name} слот пуст` : `лучше, чем на ${name}`}: надень, пока нет лучше`,
+    offNote: (name: string, need: string | null) => (need ? `${name} в этот билд нужен ${need}.` : `${name} в этот билд эта вещь не подходит.`),
+    anyway: 'Надеть всё равно',
+    slot: 'Примерить',
+    replace: 'Примерить замену',
+    build: 'Собрать билд',
+    empty: (build: string, name: string) => `Собери билд ${build}: вводи вещи, которые сейчас на ${name}, — и вердикт начнёт сравнивать новые вещи с ними.`,
+    emptyOr: 'Или жми «Надеть» в вердикте — вещь ляжет в билд сама.',
+  },
+
   tour: {
     start: 'Обучение',
     startLong: 'Пройти обучение',

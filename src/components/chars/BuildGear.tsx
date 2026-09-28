@@ -1,6 +1,7 @@
 // Что надето в билде персонажа (logic/gear): 6 слотов, у вещи — сабстаты с сегментами, окрашенные по цепочке этого
 // билда, Breakthrough и сколько Reforge сделано. Нажатие на вещь — карточка вещи: оранжевые сегменты после Reforge,
-// Breakthrough, смена стата после Transistone (и его жёлтых), «Снять». Вещь в билд кладёт только вердикт («Надеть на…»).
+// Breakthrough, смена стата после Transistone (и его жёлтых), «Снять». Вещь в билд кладёт только вердикт («Надеть на…»);
+// «Собрать билд», «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого билда.
 import { useEffect, useState } from 'react';
 import { SLOTS, isArmor, subLabel } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
@@ -37,7 +38,10 @@ function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
   );
 }
 
-export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx: Ctx; gear: GearApi; active: boolean }) {
+// onTryOn — примерка для этого билда (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии
+export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
+  c: Char; b: Build; ctx: Ctx; gear: GearApi; active: boolean; onTryOn?: (b: Build, slot?: SlotId, from?: Piece) => void;
+}) {
   const t = useT();
   const [open, setOpen] = useState<SlotId | null>(null);
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
@@ -72,7 +76,13 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
           <button type="button" className="btn small" onClick={() => gear.set(moveBuild(st, o.key, key))}>{t.ui.gearMove}</button>
         </p>
       ))}
-      {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? <p className="muted small">{t.ui.gearNone}</p> : (
+      {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? (
+        <div className="bgear-none">
+          <p>{t.tryon.empty(b.name, c.name)}</p>
+          {onTryOn && <button type="button" className="btn primary" onClick={() => onTryOn(b)}>{t.tryon.build}</button>}
+          <p className="muted small">{t.tryon.emptyOr}</p>
+        </div>
+      ) : (
         <>
           {combo && <p className="bgear-set">{combo.map((p) => t.ui.gearSet(ctx.idx.SET[p.set]?.short ?? p.set, count[p.set] ?? 0, p.n)).join(' · ')}</p>}
           <ul className="bgear-list">
@@ -83,7 +93,10 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
                 return (
                   <li key={slot} className="bgear-empty">
                     <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
-                    {take && <button type="button" className="btn small" onClick={() => gear.set(share(st, key, slot, take.id))}>{t.ui.gearTake(take.build)}</button>}
+                    <span className="bgear-act">
+                      {take && <button type="button" className="btn small" onClick={() => gear.set(share(st, key, slot, take.id))}>{t.ui.gearTake(take.build)}</button>}
+                      {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, slot)}>{t.tryon.slot}</button>}
+                    </span>
                   </li>
                 );
               }
@@ -108,14 +121,15 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
           </ul>
         </>
       )}
-      {active && open && piece && <PieceSheet c={c} b={b} bkey={key} slot={open} p={piece} ctx={ctx} gear={gear} onClose={() => setOpen(null)} />}
+      {active && open && piece && <PieceSheet c={c} b={b} bkey={key} slot={open} p={piece} ctx={ctx} gear={gear} onClose={() => setOpen(null)}
+        onTry={onTryOn && (() => { setOpen(null); onTryOn(b, open, piece); })} />}
     </div>
   );
 }
 
 // карточка вещи — одна шторка, окно выбора стата внутри неё (вложенные шторки закрывались бы одним Esc)
-function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
-  c: Char; b: Build; bkey: string; slot: SlotId; p: Piece; ctx: Ctx; gear: GearApi; onClose: () => void;
+function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
+  c: Char; b: Build; bkey: string; slot: SlotId; p: Piece; ctx: Ctx; gear: GearApi; onClose: () => void; onTry?: () => void;
 }) {
   const t = useT();
   const [pick, setPick] = useState<string | 'fourth' | null>(null);
@@ -190,6 +204,7 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
         <p className="muted small">{t.ui.pieceStatHint}</p>
         <div className="piece-act">
           <button type="button" className="btn primary" onClick={onClose}>{t.ui.pieceDone}</button>
+          {onTry && <button type="button" className="btn" onClick={onTry}>{t.tryon.replace}</button>}
           <button type="button" className="btn" onClick={() => { gear.set(unequip(st, bkey, slot)); onClose(); }}>{t.ui.pieceRemove}</button>
         </div>
       </div>

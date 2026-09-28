@@ -13,8 +13,9 @@ import { scoreBuild, subWeights, type Row } from './score';
 import { dropSubs, MAX_SUBS, type Subs } from './subs';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 
-export type VsKind = 'fill' | 'up' | 'eq' | 'down' | 'breaks' | 'worn';
-export const VS_ORDER: VsKind[] = ['fill', 'up', 'eq', 'down', 'breaks', 'worn'];
+// off — только в примерке: вещь её билду не подходит (не тот сет, main не нужен), надеть можно «всё равно»
+export type VsKind = 'fill' | 'up' | 'eq' | 'down' | 'breaks' | 'worn' | 'off';
+export const VS_ORDER: VsKind[] = ['fill', 'up', 'eq', 'down', 'breaks', 'worn', 'off'];
 
 export interface Vs {
   c: Char;
@@ -107,13 +108,19 @@ const rowOf = (ctx: Ctx, c: Char, b: Build, item: ItemInput, subs: Subs): Omit<R
 
 export const inUse = (st: GearStore, c: Char): Build[] => c.builds.filter((b) => st.builds[buildKey(c.id, b.name)]);
 
-export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs | null {
-  const f = fit(ctx, b, item);
-  if (f === 'no') return null;
+// что в этом слоте билда сейчас — и пустое сравнение, от которого считает compare
+function baseVs(st: GearStore, c: Char, b: Build, item: ItemInput): Vs {
   const key = buildKey(c.id, b.name);
   const wornId = st.builds[key]?.slots[item.slot];
   const worn = wornId ? st.pieces[wornId] ?? null : null;
-  const base: Vs = { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false, ahead: null };
+  return { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false, ahead: null };
+}
+
+export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs | null {
+  const f = fit(ctx, b, item);
+  if (f === 'no') return null;
+  const base = baseVs(st, c, b, item);
+  const { key, worn } = base;
   if (!worn) return base; // пустой слот связку не ломает — только дополняет
   if (samePiece(item, worn)) return { ...base, kind: 'worn' };
   const wi = pieceInput(worn);
@@ -148,6 +155,10 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
     passive: !isArmor(item.slot) && !!worn.itemKey && !!item.itemKey && worn.itemKey !== item.itemKey,
   };
 }
+
+// примерка: сравнение с одним билдом всегда есть — не подходит ему вещь, это 'off' («Надеть всё равно»)
+export const compareFor = (ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs =>
+  compare(ctx, st, c, b, item) ?? { ...baseVs(st, c, b, item), kind: 'off' };
 
 // кому сравнивать: тем, кому вещь подходит по вердикту (первая открытая секция из ростера), в собираемых билдах
 export function compareAll(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Vs[] {

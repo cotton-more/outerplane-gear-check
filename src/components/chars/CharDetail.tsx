@@ -2,24 +2,29 @@
 // На узком экране — полноэкранная шторка поверх списка.
 import { Fragment, useEffect, useState } from 'react';
 import { FLAT } from '../../data';
-import type { Build, Char, GearKind, GearRef } from '../../data/types';
+import type { Build, Char, GearKind, GearRef, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
+import type { Piece } from '../../logic/gear';
 import { BuildGear } from './BuildGear';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
 import { tour } from '../../tour/anchors';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
 
-// active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет
-interface Props { charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void }
+// active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
+// onTryOn — примерка для билда этого персонажа (BuildGear)
+interface Props {
+  charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
+  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece) => void;
+}
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose }: Props) {
+export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose, onTryOn }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -65,7 +70,7 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
               <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>{x.name}</button>
             ))}
           </div>
-          <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} />
+          <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} onTryOn={onTryOn && ((x, slot, from) => onTryOn(c, x, slot, from))} />
           <BuildView c={c} b={b} ctx={ctx} />
         </>
       ) : (

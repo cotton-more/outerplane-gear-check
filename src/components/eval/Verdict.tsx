@@ -61,7 +61,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEq
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
         {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
-      {onEquip && <VsSection list={vs} slot={t.ui.slotAcc[s.slot]} onEquip={onEquip} onOpenChar={onOpenChar} />}
+      {onEquip && <VsSection list={vs} slot={t.ui.slotAcc[s.slot]} armor={isArmor(s.slot)} onEquip={onEquip} onOpenChar={onOpenChar} />}
       {r.gamble && <GambleBlock g={r.gamble} v={r.v} subs={s.subs} />}
       {r.plan.length > 0 && (
         <div className="v-plan">

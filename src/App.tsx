@@ -21,24 +21,26 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { buildKey, equipOn, pieceInput, samePiece, undoEquip, usedIn, type GearStore } from './logic/gear';
+import { buildKey, equipOn, pieceInput, samePiece, undoEquip, usedIn, type GearStore, type Piece } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
-import type { Build, Char } from './data/types';
+import type { Build, Char, SlotId } from './data/types';
 import type { ItemInput } from './logic/verdict';
-import { compareAll } from './logic/vs';
+import { compareAll, compareFor } from './logic/vs';
+import { tryOnPreset, tryOnTarget, tryOnTitle } from './logic/tryon';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useGear } from './state/useGear';
 import { useRoster } from './state/useRoster';
+import { useTryOn } from './state/useTryOn';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
 import { TipsHelp } from './tour/TipsHelp';
 import { newsOf } from './tour/tips';
 import { TourLayer } from './tour/TourLayer';
 import type { Tip, TourCtx } from './tour/types';
-import { useTour } from './tour/useTour';
+import { hasItem, useTour } from './tour/useTour';
 
 // открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
 function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string): Action {
@@ -77,7 +79,14 @@ export function App() {
   const verdict = later === key ? full : quick;
   // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта
   const gear = useGear(idx, !touring);
-  const vsList = useMemo(() => compareAll(ctx, gear.store, input, verdict), [ctx, gear.store, verdict]); // eslint-disable-line react-hooks/exhaustive-deps
+  // примерка (logic/tryon): сравнение только с одним билдом, «Надеть» — сразу в него; на время обучения её нет
+  const tryOn = useTryOn(idx, !touring);
+  const target = useMemo(() => (touring ? null : tryOnTarget(idx, tryOn.value)), [idx, tryOn.value, touring]);
+  const vsList = useMemo(() => (target
+    ? (verdict.v === 'idle' ? [] : [compareFor(ctx, gear.store, target.c, target.b, input)])
+    : compareAll(ctx, gear.store, input, verdict)), [ctx, gear.store, verdict, target]); // eslint-disable-line react-hooks/exhaustive-deps
+  // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
+  const shown = useMemo(() => (target && vsList[0] ? { ...verdict, title: tryOnTitle(t, verdict, vsList[0]) } : verdict), [t, verdict, target, vsList]);
   const [equipOpen, setEquipOpen] = useState(false);
   // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
   // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи
@@ -144,6 +153,20 @@ export function App() {
       undo: (st) => undoEquip(st, key, item, r.piece, r.old), after: added ? () => rosterApi.remove([c.id]) : undefined,
     });
   };
+  // примерка из карточки персонажа: персонаж — в ростер (как у «Надеть»), на форму — слот и сет, грейд прежний.
+  // Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся
+  const startTryOn = (c: Char, b: Build, slot?: SlotId, from?: Piece) => {
+    tryOn.set({ charId: c.id, build: b.name });
+    if (!roster.has(c.id)) rosterApi.add([c.id]);
+    setVerdictOpen(false);
+    const p = slot ? tryOnPreset(gear.store, buildKey(c.id, b.name), b, slot, from) : null;
+    if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
+      const cur = itemInput(s);
+      setUndo(hasItem(cur) ? cur : null);
+      dispatch({ type: 'load', item: { slot: p.slot, grade: s.grade, setId: p.setId, itemKey: null, main: s.slot === p.slot ? s.main : null, unlisted: false, subs: {} } });
+    } else dispatch({ type: 'tab', tab: 'eval' });
+    if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
+  };
   // импорт кода экипировки заменил все записи: «Вернуть» — всё, как было до него
   const onGearImport = (prev: GearStore, text: string) => setGearUndo({ text, note: '', tab: 'chars', undo: () => prev });
   useHotkeys(s, dispatch, layout, onReset);
@@ -156,7 +179,7 @@ export function App() {
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
 
-  const tourCtx: TourCtx = { s, roster: roster.size, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
+  const tourCtx: TourCtx = { s, roster: roster.size, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict: shown, narrow: layout.narrow, verdictOpen: verdictOpen && layout.narrow, keys: fineHover() };
   const tour = useTour({
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden },
     onRunning: useCallback((on: boolean) => { setTouring(on); setUndo(null); }, []), onDone: hideWelcome,
@@ -208,18 +231,19 @@ export function App() {
         {welcomeShown && <Welcome install={install} onTour={layout.tall ? startTour : undefined} onRoster={() => onTab('chars')} onClose={hideWelcome} />}
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-            <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={verdict} cardShown={cardShown} hint={layout.narrow ? null : hint}
+            <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
+              tryOn={target} onTryOnEnd={() => tryOn.set(null)}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={startTour} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
+            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} onGearImport={onGearImport} />
             <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi} gear={gear} active={s.tab === 'chars'}
-              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
+              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined} />
           </section>
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} />
-        <VBar r={verdict} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
+        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         {inviteShown && (
           <div className="tour-strip tour-invite" role="status">
@@ -259,7 +283,7 @@ export function App() {
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={startTour} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

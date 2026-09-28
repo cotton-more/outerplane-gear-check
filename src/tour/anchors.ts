@@ -3,6 +3,7 @@
 export const ANCHORS = [
   'slot', 'grade', 'pick', 'item', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', 'dice', // подсказки модулей
+  'tryon', // экипировка
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 

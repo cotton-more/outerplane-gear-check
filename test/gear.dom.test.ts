@@ -276,7 +276,7 @@ describe('экипировка', () => {
 
     const weaponRow = $$('.bgear-empty').find((e) => e.textContent?.startsWith('Weapon'));
     expect(weaponRow).toBeTruthy();
-    expect(weaponRow?.querySelector('button')).toBeNull();
+    expect([...weaponRow!.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Try on']); // «Взять из» нет
   });
 
   it('idle (не все сабстаты) — «Надеть на…» нет', async () => {

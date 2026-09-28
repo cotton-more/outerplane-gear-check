@@ -24,4 +24,5 @@ export const COVERAGE: Record<string, Coverage> = {
   'eval/PickField.tsx': 'helper',  // поле, открывающее окно выбора
   'eval/SetPicker.tsx': 'core',    // окно сетов — шаг «сет»
   'eval/VsSection.tsx': 'todo',    // «Сейчас на персонажах» в вердикте — там же, этап B2
+  'eval/TryOnStrip.tsx': 'todo',   // полоса примерки — там же, этап B2
 };

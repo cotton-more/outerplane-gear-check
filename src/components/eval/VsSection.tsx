@@ -2,6 +2,7 @@
 // или новая лучше, на уровне, хуже надетой (logic/vs). Две цепочки рядом: что закрывает надетая и что — новая.
 // Штамп вердикта от этого не меняется. Кнопка — надеть в пустой слот или заменить надетую.
 import { GRADE_NAME, subLabel } from '../../data';
+import { comboText } from '../../logic/builds';
 import { useT } from '../../i18n';
 import { reforgeScale } from '../../logic/gear';
 import { vsFigure, type Vs, type VsFigure } from '../../logic/vs';
@@ -24,11 +25,17 @@ export function VsChip({ vs }: { vs: Vs }) {
   return <span className={`vs ${vs.kind}`}>{icon && <Icon name={icon} />}{t.ui.vsKind[vs.kind]}</span>;
 }
 
-export function VsSection({ list, slot, onEquip, onOpenChar }: {
-  list: Vs[]; slot: string; onEquip: (vs: Vs) => void; onOpenChar: (id: string) => void;
+// slot — «шлем» для «Заменить шлем Caren»; armor — у брони «не по билду» называет нужный сет
+// что сделает кнопка: надеть в пустой слот, заменить надетую; не по билду — «Надеть всё равно»
+export const equipLabel = (t: ReturnType<typeof useT>, vs: Vs, slot: string) =>
+  vs.kind === 'off' ? t.tryon.anyway : vs.kind === 'fill' ? t.ui.equipTo(vs.c.name, vs.b.name) : t.ui.replaceOn(slot, vs.c.name);
+
+export function VsSection({ list, slot, armor, onEquip, onOpenChar }: {
+  list: Vs[]; slot: string; armor: boolean; onEquip: (vs: Vs) => void; onOpenChar: (id: string) => void;
 }) {
   const t = useT();
-  const { SET } = useIndex();
+  const idx = useIndex();
+  const { SET } = idx;
   if (!list.length) return null;
   return (
     <div className="v-vs">
@@ -60,13 +67,14 @@ export function VsSection({ list, slot, onEquip, onOpenChar }: {
               {fig && vs.kind !== 'breaks' && <p className="muted">{fig.kind === 'empty' ? t.ui.vsEmpty : fig.kind === 'times' ? t.ui.vsTimes(fig.n) : t.ui.vsDelta(fig.n)}</p>}
               {vs.broken && <p className="muted">{t.ui.vsBreaks(SET[vs.broken]?.short ?? vs.broken)}</p>}
               {vs.passive && <p className="muted">{t.ui.vsPassive}</p>}
+              {vs.kind === 'off' && <p className="muted">{t.tryon.offNote(vs.c.name, armor && vs.b.sets.length ? vs.b.sets.map((cb) => comboText(idx, cb)).join(` ${t.ui.or} `) : null)}</p>}
               {vs.ahead && <p className="muted">{t.ui.vsAhead(subLabel(vs.ahead.key), vs.ahead.worn, vs.ahead.next)}</p>}
               {w && w.bt != null && w.bt > 0 && !vs.material && vs.kind !== 'worn' && vs.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
               {vs.material && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}
               {vs.kind !== 'worn' && (
                 <button type="button" className={`btn vs-act${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)}>
-                  <Icon name={vs.kind === 'fill' ? 'check' : 'replace'} />
-                  {vs.kind === 'fill' ? t.ui.equipTo(vs.c.name, vs.b.name) : t.ui.replaceOn(slot, vs.c.name)}
+                  <Icon name={vs.kind === 'fill' || (vs.kind === 'off' && !vs.worn) ? 'check' : 'replace'} />
+                  {equipLabel(t, vs, slot)}
                 </button>
               )}
             </li>
