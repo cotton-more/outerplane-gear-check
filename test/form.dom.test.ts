@@ -80,7 +80,73 @@ describe('кубик Reforge на карточке', () => {
     expect($('.vcard .dice')?.textContent).toBe('3/9');
     expect([...document.querySelectorAll('.vcard .vc-gamble .pill.lucky')].map((e) => e.textContent)).toEqual(['SPD', 'CHD', 'ATK']);
     await act(async () => $('.subadd')!.click());
-    expect([...document.querySelectorAll('.subopt .lucky-dot')].map((e) => e.closest('.subopt')!.textContent)).toEqual(['SPD', 'CHD', 'ATK']);
+    expect([...document.querySelectorAll('.subopt .lucky-dot')].map((e) => e.closest('.subopt')!.querySelector(':scope > span:not([class])')!.textContent)).toEqual(['SPD', 'CHD', 'ATK']);
+  });
+
+  const texts = (sel: string) => [...document.querySelectorAll(sel)].map((e) => e.textContent);
+  const helmet = (set: string, subs: Record<string, number>) => mount({ slot: 'helmet', grade: 'rare' }, { setId: D.sets.find((s) => s.short === set)!.id, subs });
+
+  it('смешанный кубик: число на кубике — только к «Оставить», в строке и «Временно» (жёлтая точка), без «в разбор»', async () => {
+    await helmet('Attack', { 'ATK%': 4, 'DMG UP%': 1, RES: 1 });
+
+    expect($('.vcard .dice')?.textContent).toBe('3/9');
+    expect($('.vcard .dice')?.getAttribute('title')).toContain('3 of 9');
+    expect(texts('.vc-gamble .pill.lucky:has(.lucky-dot:not(.t))')).toEqual(['CHC', 'SPD', 'ATK']);
+    expect(texts('.vc-gamble .pill.lucky:has(.lucky-dot.t)')).toEqual(['CHD', 'EFF%']);
+    expect($('.vc-gamble')?.textContent).not.toMatch(/dismantle/i);
+    expect($('.vcard')?.getAttribute('aria-label')).toMatch(/^Dismantle · Reforge gamble: 3 of 9/);
+  });
+
+  it('«Временно»: удачные этому персонажу — пунктиром с точкой в его цепочке, и второй вид flat-оси тоже', async () => {
+    await helmet('Attack', { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+    expect(texts('.vc-chain .pill.lucky')).toEqual(['CHC', 'SPD']);
+    expect($('.vc-chain .pill.lucky .lucky-dot:not(.t)')).toBeTruthy();
+    await act(async () => root?.unmount());
+    document.body.innerHTML = '';
+
+    await helmet('Counterattack', { CHC: 4, CHD: 2, ATK: 2 });
+    expect(texts('.vc-chain .pill.lucky')).toContain('ATK%');
+  });
+
+  it('«Временно», а удачные — у других персонажей: вместо цепочки строка кубика', async () => {
+    await helmet('Defense', { CHC: 3, CHD: 2, EFF: 1 });
+
+    expect($('.vc-chain')).toBeNull();
+    expect(texts('.vc-gamble .pill.lucky')).toEqual(['SPD', 'DEF%', 'DEF', 'DMG RED%']);
+  });
+
+  it('Epic-оружие: кубик и точки жёлтые (→ «Временно»), в окне 4-го — только жёлтая легенда', async () => {
+    await mount({ slot: 'weapon', grade: 'rare' }, { main: 'ATK%', subs: { CHC: 2, CHD: 1, RES: 1 } });
+
+    expect($('.vcard .dice.t')?.textContent).toBe('4/8');
+    expect(document.querySelectorAll('.vc-gamble .lucky-dot.t')).toHaveLength(4);
+    await act(async () => $('.subadd')!.click());
+    expect(document.querySelectorAll('.subopt .lucky-dot.t')).toHaveLength(4);
+    expect(document.querySelectorAll('.note-line .lucky-dot')).toHaveLength(1);
+    expect($('.note-line .lucky-dot.t')).toBeTruthy();
+  });
+
+  it('подробности: в каждой строке — цель и цепочка, где этот стат уже на месте; «почти»; что не выпадет из-за main', async () => {
+    await helmet('Speed', { CHD: 4, RES: 2, HP: 1 });
+    await act(async () => $('.vcard')!.click());
+
+    const rows = [...document.querySelectorAll('.v-gamble li')];
+    expect(rows.map((li) => li.querySelector('.pill.lucky')!.textContent)).toEqual(['CHC', 'SPD', 'EFF%']);
+    for (const li of rows) expect(li.querySelector('.pill.new')?.textContent).toBe(li.querySelector('.pill.lucky')!.textContent);
+    expect(rows.map((li) => li.querySelector('.stamp')!.className)).toEqual(['stamp s v-keep', 'stamp s v-temp', 'stamp s v-temp']);
+    expect(texts('.v-gamble .g-near .pill.lucky')).toContain('SPD');
+    expect($('.v-gamble')?.textContent).toContain('HP% — the main');
+  });
+
+  it('вкладка «Персонажи» на ширине от 380: кубик на плашке рядом со штампом', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 420 });
+    try {
+      await mount({ slot: 'helmet', grade: 'rare', tab: 'chars' }, { setId: D.sets.find((s) => s.short === 'Attack')!.id, subs: { 'ATK%': 1, CHC: 1, RES: 1 } });
+      expect($('.vbar .stamp')).toBeTruthy();
+      expect($('.vbar .dice')?.textContent).toBe('3/9');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    }
   });
 
   it('Legendary — кубика нет', async () => {

@@ -3,11 +3,10 @@
 // Reforge у 6★ — 6 попыток, у Epic первая добавляет 4-й сабстат; Breakthrough T0→T4 даёт +5% к main stat
 // за ступень и усиливает эффект — пассивку оружия и бонус сета; материал — такая же вещь (тот же грейд, эффект
 // и слот; у брони — тот же сет) или Glunite. Transistone по гайду тратят только на Irregular и красную броню.
-import { isArmor, SLOT, subLabel } from '../data';
+import { isArmor, SLOT } from '../data';
 import type { GearKind } from '../data/types';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
-import type { Gamble } from './gamble';
 import { MAX_SUBS } from './subs';
 import type { ItemInput, Verdict } from './verdict';
 
@@ -23,10 +22,8 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
   const has4th = Object.keys(s.subs).length >= MAX_SUBS;
   const stage = !epic ? null : has4th ? 'started' : 'adds';
   // кубик (logic/gamble): какой 4-й от первого Reforge вытянет вещь — строка «сыграть одним Reforge»
+  // какие статы и кому — в блоке «Один Reforge на удачу» над «Прокачкой»; здесь — только что вложить
   const g = res.gamble;
-  const keys = (gm: Gamble, v: 'keep' | 'temp') => t.orList(gm.hits.filter((h) => h.v === v).map((h) => subLabel(h.key)), 5);
-  const gambleLine = (gm: Gamble, maybe: boolean) =>
-    P.gambleJunk(keys(gm, gm.target), gm.target, gm.target === 'keep' ? keys(gm, 'temp') : '', gm.hits.length, gm.of, maybe);
 
   switch (res.v) {
     case 'keep': {
@@ -42,7 +39,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       return out;
     }
     case 'temp': {
-      if (g) return [P.enhance, P.gambleTemp(keys(g, 'keep'), g.hits.length, g.of)];
+      if (g) return [P.enhance, P.gamble('temp')];
       // оружие и аксессуар на замену с высоким роллом: Reforge можно — нужную Legendary (пассивка, main и сабстаты
       // сразу) можно ждать долго; Breakthrough — нет. Ролл так и говорит: «высокий, стоит вкладываться в Reforge»
       if (!armor && res.roll === 'high') return [P.enhance, P.reforgeTemp(stage), P.noBreakTemp];
@@ -52,13 +49,13 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       if (set) return [P.fodderArmor(piece, set.short)];
       return item ? [P.fodderGear(item.name)] : [];
     case 'junk': {
-      const out = g ? [gambleLine(g, false)] : [];
+      const out = g ? [P.gamble('junk')] : [];
       // Epic-броня сета, который носят твои персонажи: пригодится как ступень Breakthrough такой же Epic-вещи
       if (set && epic && buildsOf(idx, (b) => combosWith(b, set.id).length).some((x) => ctx.inScope(x.c))) out.push(P.junkEpicArmor(piece, set.short));
       return out;
     }
     case 'maybe':
-      return g ? [gambleLine(g, true)] : [];
+      return g ? [P.gamble('maybe')] : [];
     default:
       return [];
   }

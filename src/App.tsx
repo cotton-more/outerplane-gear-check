@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
 import { EvalPanel } from './components/eval/EvalPanel';
@@ -64,7 +64,12 @@ export function App() {
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t), [idx, s.settings, roster, t]);
   // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
-  const verdict = useMemo(() => evaluate(ctx, input), [ctx, ...Object.values(input)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const key = JSON.stringify(input);
+  const quick = useMemo(() => evaluate(ctx, input, { gamble: false }), [ctx, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // кубик Reforge — до 10 пробных оценок (на телефоне заметно): вердикт встаёт сразу, кубик досчитывается следом
+  const later = useDeferredValue(key);
+  const full = useMemo(() => evaluate(ctx, JSON.parse(later) as ItemInput), [ctx, later]);
+  const verdict = later === key ? full : quick;
   const pwa = usePwa();
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);

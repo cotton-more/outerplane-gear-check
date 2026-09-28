@@ -5,9 +5,9 @@
 | Verdict | What to do |
 |---|---|
 | **Keep** | the piece is needed: wear it and upgrade it — what exactly is in the "Upgrading" block ([more](Upgrading)). "Worth reforging" — a good roll, put Reforge here first; "Top roll" — a rare roll on useful stats |
-| **Stopgap** | wear it until you find better. A weapon or accessory without the needed passive: wear it until a recommended Legendary drops — the verdict names which. That's why an Epic weapon or accessory never goes above "Stopgap", even with a perfect roll, and a good roll is worth Reforge. Epic armor — only one key stat (the verdict names the missing one) |
+| **Stopgap** | wear it until you find better. A weapon or accessory without the needed passive: wear it until a recommended Legendary drops — the verdict names which. That's why an Epic weapon or accessory never goes above "Stopgap", even with a perfect roll, and a good roll is worth Reforge. Epic armor — only one key stat (the verdict names the missing one). A dice next to it — one Reforge may make it a "Keep" |
 | **Fodder** | keep it for Breakthrough: Legendary armor with weak substats, or an item with the needed passive but the wrong main stat |
-| **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster) |
+| **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster). A dice next to it — one Reforge may make it useful for your roster |
 | **Dismantle** | doesn't suit your characters, or the roll is weak. A dashed dice next to it — "3/9": one Reforge may save the piece, that many of the possible stats would ([more](Upgrading#the-dice-one-reforge-for-luck)) |
 
 ## Priority chain
@@ -17,7 +17,8 @@ The order of substats a character needs, left is more important: `ATK% › CHC �
 - **green** — the stat is on the piece and counts;
 - **yellow** — counts for ½: 4th place in the chain, or a flat stat that gives the character less than the % one;
 - **grey** — on the piece, but too far down the chain, or a flat stat that gives the character almost nothing;
-- **dashed** — not on the piece;
+- **dashed** — not on the piece; **dashed with a dot** — the Reforge dice: with this 4th substat the piece becomes a
+  "Keep" (green dot) or a "Stopgap" (yellow), see [Upgrading](Upgrading#the-dice-one-reforge-for-luck);
 - **marked main** — the parameter is in the piece's main (on armor and weapons also in the fixed lines: a helmet's
   HP%, a weapon's flat ATK). The main isn't part of the substat score. Flat and % are different stats of one
   parameter: when the other stat of the pair can still roll as a substat — flat ATK with an ATK% main, EFF% with a

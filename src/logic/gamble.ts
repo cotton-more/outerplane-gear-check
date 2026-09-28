@@ -23,6 +23,7 @@ export interface Gamble {
   of: number;                     // сколько статов может выпасть 4-м
   hits: GambleHit[];              // keep раньше temp, потом — кому подойдёт больше
   target: GambleTarget;           // лучшее, чем может стать вещь
+  near: { key: string; v: GambleTarget }[]; // с двумя сегментами — лучше, чем с одним (обычно SPD: правилу SPD нужны 2+)
   main: string[];                 // каких 4-м не будет из-за main (кроме них не будет тех, что уже на вещи)
 }
 
@@ -42,14 +43,25 @@ export function reforgeGamble(ctx: Ctx, s: ItemInput, res: Verdict): Gamble | nu
   const { pool, blocked } = fourthPool(ctx, s);
   // не evaluate(): план и кубик для пробной вещи не нужны
   const judge = isArmor(s.slot) ? evalArmor : evalGear;
+  const up = (key: string, n: number) => {
+    const r = judge(ctx, { ...s, subs: { ...s.subs, [key]: n } }, emptyVerdict());
+    return rank(r.v) > rank(res.v) ? r : null;
+  };
   const hits: GambleHit[] = [];
   for (const key of pool) {
-    const r = judge(ctx, { ...s, subs: { ...s.subs, [key]: 1 } }, emptyVerdict());
-    if (rank(r.v) <= rank(res.v)) continue;
+    const r = up(key, 1);
+    if (!r) continue;
     const top = bestRow(r);
     hits.push({ key, v: r.v as GambleTarget, best: top?.row ?? null, n: top?.n ?? 0 });
   }
   if (!hits.length) return null;
   hits.sort((a, b) => rank(b.v) - rank(a.v) || b.n - a.n);
-  return { of: pool.length, hits, target: hits[0].v, main: ctx.idx.SUB_LIST.filter((k) => blocked.has(k)) };
+  // 4-й может прийти и с двумя сегментами (владелец этого не исключает): где два дают больше одного — строкой «почти»
+  const near: Gamble['near'] = [];
+  for (const key of pool) {
+    const was = rank(hits.find((h) => h.key === key)?.v ?? res.v);
+    const r = up(key, 2);
+    if (r && rank(r.v) > was) near.push({ key, v: r.v as GambleTarget });
+  }
+  return { of: pool.length, hits, target: hits[0].v, near, main: ctx.idx.SUB_LIST.filter((k) => blocked.has(k)) };
 }

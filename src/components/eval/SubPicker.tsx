@@ -37,13 +37,15 @@ export function SubPicker({ ctx, subs, blocked, editing, lucky, onPick, onRemove
             <button key={k} type="button" className={`subopt${FLAT.has(k) ? ' flat' : ''}`} aria-pressed={k === editing} disabled={taken}
               title={move ? t.ui.subMoveTitle(subLabel(k), row) : title(k)} onClick={() => onPick(k)} {...tourItem(k)}>
               <StatIcon stat={k} /><span>{subLabel(k)}</span>{move && <small className="row-n">{row}</small>}
-              {hit && <i className={`lucky-dot${hit.v === 'temp' ? ' t' : ''}`} aria-label={t.ui.verdictLabel[hit.v]} />}
+              {hit && <><i className={`lucky-dot${hit.v === 'temp' ? ' t' : ''}`} aria-hidden="true" /><span className="sr-only"> {t.ui.fourthLucky(t.ui.verdictLabel[hit.v])}</span></>}
             </button>
           );
         })}
       </div>
       {editing && onRemove && <button type="button" className="btn subremove" onClick={onRemove}>{t.ui.subRemove(subLabel(editing))}</button>}
-      {lucky && <p className="note-line"><i className="lucky-dot" aria-hidden="true" /> {t.ui.fourthLucky(lucky.hits.length, lucky.of)}</p>}
+      {lucky && (['keep', 'temp'] as const).filter((v) => lucky.hits.some((h) => h.v === v)).map((v) => (
+        <p key={v} className="note-line"><i className={`lucky-dot${v === 'temp' ? ' t' : ''}`} aria-hidden="true" /> {t.ui.fourthLucky(t.ui.verdictLabel[v])}</p>
+      ))}
       {moves && <p className="note-line" {...tour('submove')}>{t.ui.subMoveNote}</p>}
       <p className="note-line">{t.ui.subNote}</p>
     </>

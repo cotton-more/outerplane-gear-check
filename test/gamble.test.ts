@@ -93,6 +93,24 @@ describe('кубик Reforge', () => {
     expect(evaluate(c, armor('helmet', 'Attack', { 'ATK%': 2, CHC: 2, SPD: 2 })).gamble).toBeNull();
   });
 
+  it('Legendary с тремя сабстатами и «Разобрать» — кубика нет (проверка грейда, а не числа сабстатов)', () => {
+    const c = ctx();
+    const s = armor('helmet', 'Attack', { 'ATK%': 1, CHC: 1, RES: 1 }, 'unique');
+
+    expect(reforgeGamble(c, s, { ...emptyVerdict(), v: 'junk' })).toBeNull();
+  });
+
+  it('«почти»: с двумя сегментами 4-го исход лучше, чем с одним — SPD из «Временно» в «Оставить»', () => {
+    const c = ctx();
+    const s = armor('helmet', 'Speed', { CHD: 4, RES: 2, HP: 1 });
+
+    const g = evaluate(c, s).gamble!;
+
+    expect(g.hits.map((h) => [h.key, h.v])).toEqual([['CHC', 'keep'], ['SPD', 'temp'], ['EFF', 'temp']]);
+    expect(g.near).toContainEqual({ key: 'SPD', v: 'keep' });
+    for (const x of g.near) expect(judge(c, { ...s, subs: { ...s.subs, [x.key]: 2 } }).v).toBe(x.v);
+  });
+
   it('никакой 4-й не спасёт — кубика нет', () => {
     expect(evaluate(ctx(), armor('helmet', 'Attack', { RES: 1, EFF: 1, 'DMG RED%': 1 })).gamble).toBeNull();
   });

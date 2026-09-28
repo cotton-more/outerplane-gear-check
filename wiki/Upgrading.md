@@ -26,6 +26,7 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 | **Fodder** | nothing: it's a Breakthrough tier for the same piece |
 | **Dismantle** on Epic armor | one Reforge for luck if a 4th substat can save it (the dice next to the stamp); and a reminder: if you have an Epic "Keep" of the same set and slot below T4, this is material for it |
 | **Dismantle** on an Epic weapon or accessory | in "Progression" — one Reforge for luck if a 4th substat makes it a "Stopgap" (the dice next to the stamp) |
+| **Maybe** | an Epic with three substats — one Reforge for luck if a 4th substat makes it useful for your roster (the dice next to the stamp) |
 
 ## The 4th substat on Epics
 
@@ -43,15 +44,22 @@ segments. So:
 
 ## The dice: one Reforge for luck
 
-A fresh Epic with three substats can carry a dashed dice next to the stamp — for example **3/9**. The first Reforge adds
-a 4th substat: one of the stats not on the piece and not its main, all equally likely — 9 on armor, 8 on a weapon, 10 on
-an accessory with a PEN%, EFF or RES main. The dice tells how many of them save the piece and names them:
+A fresh Epic with three substats can carry a dice next to the stamp — for example **3/9**. The first Reforge adds a
+4th substat: one of the stats not on the piece and not its main, all equally likely — 9 on armor, 8 on a weapon, 10
+on an accessory with a PEN%, CDMG RED%, EFF or RES main, 9 with the others. The number on the dice is how many of them
+give the best outcome: with a **green** dice the piece becomes a "Keep", with a **yellow** one a "Stopgap" (Epic
+weapons and accessories). The dice shows up on "Dismantle", "Maybe" and "Stopgap":
 
-- **green** dashes — the piece becomes a "Keep", **yellow** — a "Stopgap" (Epic weapons and accessories);
-- in the details, the "One Reforge for luck" block shows which stat suits whom, with the chain where it's already in place;
+- on the card — a line "One Reforge → "Keep": SPD CHD ATK"; stats that lead to a "Stopgap" follow after "·"; on a
+  "Stopgap" the lucky stats are right in the candidate's chain;
+- a lucky stat is drawn like "not on the piece" — grey dashes — with a dot: green — becomes a "Keep", yellow — a
+  "Stopgap";
+- in the details, the "One Reforge for luck" block shows which stat suits whom, with the chain where it's already in
+  place, and which stats give more if the 4th comes with two segments (usually SPD: its rule needs 2+);
 - in the "+ 4th substat from Reforge" window those stats carry a dot: after the Reforge you see at once whether you got lucky.
 
 It's the same evaluation, with the new stat at one segment. In the game the 4th has come with one yellow segment, but
 it may come with more — and more segments only improve the verdict, so the dice shows an "at least" chance. The stamp
-doesn't change: it's about what happens if you do nothing. No luck — don't put the other Reforges into it. Legendary
-never gets a dice: it has 4 substats from the start, and Reforge adds a segment to a random one of them.
+doesn't change: it's about what happens if you do nothing. Got another stat — mark it with its segments as in the
+game: the verdict updates. Legendary never gets a dice: it has 4 substats from the start, and Reforge adds a segment
+to a random one of them.

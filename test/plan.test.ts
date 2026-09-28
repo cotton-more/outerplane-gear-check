@@ -92,8 +92,8 @@ describe('Epic: 4-й сабстат от первого Reforge', () => {
   it('«Временно» без главного стата: подсказка, какой 4-й сделает вещь «Оставить», — и он правда делает', () => {
     const r = attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
     expect(r.v).toBe('temp');
-    const line = r.plan.find((l) => l.startsWith('**Reforge** — один раз'))!;
-    expect(line).toContain('CHC');
+    expect(r.plan).toContain(P.gamble('temp'));
+    expect(r.gamble!.hits.map((h) => h.key)).toContain('CHC');
     expect(attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3, CHC: 1 }).v).toBe('keep');
   });
 
@@ -114,7 +114,7 @@ describe('Epic: 4-й сабстат от первого Reforge', () => {
 
   it('если никакой 4-й не спасёт — подсказки нет', () => {
     const r = attackHelmet({ RES: 1, EFF: 1, 'DMG RED%': 1 });
-    expect(r.plan.some((l) => l.includes('сыграть одним'))).toBe(false);
+    expect(r.plan.some((l) => l.includes('на удачу'))).toBe(false);
   });
 });
 

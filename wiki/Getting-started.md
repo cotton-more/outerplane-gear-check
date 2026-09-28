@@ -77,11 +77,12 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 - **Extra stat** — tap its name → "Remove", or tap that stat in the grid again.
 - **Wrong piece altogether** — "Next", and "Undo" within a few seconds if you need it back.
 
-## 4th substat on Epic armor
+## 4th substat on Epic
 
 Epics drop with three substats; the first Reforge adds a fourth. Did a Reforge — mark the new stat with
-"+ 4th substat from Reforge" under the rows. The fourth can pull the piece up: two good ones, a so-so third and a
-fresh SPD is already a "Keep". Which fourths would save the piece, the "Upgrading" block tells you in advance —
-see [Upgrading](Upgrading). On Epic weapons and accessories the 4th decides nothing, so there's no button there.
+"+ 4th substat from Reforge" under the rows — on armor, weapons and accessories. The fourth can pull the piece up:
+two good ones, a so-so third and a fresh SPD is already a "Keep". Which fourths would save the piece, the dice next to
+the stamp and the "One Reforge for luck" block in the details tell you in advance — see
+[Upgrading](Upgrading#the-dice-one-reforge-for-luck).
 
 Next: [Fast cleanup](Fast-cleanup) · [Reading the verdict](Reading-the-verdict)

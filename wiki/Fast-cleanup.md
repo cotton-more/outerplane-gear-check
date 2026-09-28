@@ -10,13 +10,15 @@
    narrow sets like Attack and Critical Strike this filters out about half the pieces; for Speed, Immunity and
    Swiftness almost everything is bright — enter those.
 4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third.
-5. **"Keep"** — lock it so you don't dismantle it by accident. **"Stopgap"** — wear it until you find better.
-6. **Epic Breakthrough** takes only the same piece: an Epic of the same set and slot, substats don't matter. Have an
+5. **Dice on "Dismantle"** — one Reforge may save the piece. Don't dismantle it right away: set it aside, do the
+   Reforge and mark the 4th substat. No luck — dismantle, invest no more.
+6. **"Keep"** — lock it so you don't dismantle it by accident. **"Stopgap"** — wear it until you find better.
+7. **Epic Breakthrough** takes only the same piece: an Epic of the same set and slot, substats don't matter. Have an
    Epic "Keep" below T4 — set Epics of the same set and slot aside for it instead of dismantling (you need 4);
    the verdict reminds you.
-7. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
+8. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
    faded, no one needs that main — dismantle.
-8. **Legendary** with "I save Legendary armor for Breakthrough" (on by default): the verdict shows which to upgrade
+9. **Legendary** with "I save Legendary armor for Breakthrough" (on by default): the verdict shows which to upgrade
    and which to keep for Breakthrough.
 
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/5-early-junk.png" width="360" alt="Dismantle after just two substats">
