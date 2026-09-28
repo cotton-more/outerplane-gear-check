@@ -621,9 +621,9 @@ export const en: Texts = {
       gBuild: () => "This is Caren's Speed build: what she wears in each slot. An empty slot has “Try on”. Tap the **helmet** to see what's on it.",
       gPiece: () => 'Upgraded it in the game? Mark the orange segments after Reforge and the Breakthrough here — the comparison counts them. Now tap **Try a replacement**.',
       gCard: (x: StepText) => `Try-on: the piece on the form is compared with Caren's Speed build only. ${x.narrow
-        ? 'The card shows how much it beats her helmet and which chain places change.'
+        ? 'The card shows how much it beats her helmet. Have a look and press “Continue”.'
         : 'The verdict on the right shows how much it beats her helmet. Have a look and press “Continue”.'}`,
-      gEquip: () => "Better than what Caren wears — tap **Replace Caren's helmet**: the new one goes into the build, and I'll say what to do with the old one.",
+      gEquip: () => "Better than what Caren wears — tap **Replace Caren's helmet**: the new one goes into the build, and the old one — the same Speed helmet — feeds its Breakthrough.",
       gNext: () => '“Next” keeps the try-on — enter pieces for Caren one after another. Done? ✕ on the Try-on strip, and the check is for everyone again.',
       next: (x: StepText) => `“Next” goes to a new piece: slot, grade, set and main stay, substats are cleared. Pressed it by accident? “Undo” brings the piece back for a few seconds — except in the tutorial.${
         x.keys ? ' Key: Esc.' : ''}`,

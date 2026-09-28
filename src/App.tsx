@@ -158,8 +158,10 @@ export function App() {
     const prev = gear.store;
     const r = twin ? { ...moveTo(prev, twin, key), shared: null } : equipOn(prev, c.id, key, input);
     gear.set(r.store);
-    // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока
+    // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока.
+    // «Заменить» в шторке вердикта — шторку закрыть: следующий шаг тура — ✕ на полосе примерки под ней
     const added = !touring && !roster.has(c.id);
+    if (touring) setVerdictOpen(false);
     if (added) rosterApi.add([c.id]);
     setUndo(null);
     const slot = t.ui.slotNom[input.slot]; // «Надето: Caren · Speed · броня» — именительный, не «броню»
@@ -217,10 +219,16 @@ export function App() {
     setDemo(d ? { store: d.store, tryOn: null } : null);
     if (d) dispatch({ type: 'openChar', id: d.c.id, reveal: 'keep' });
   }, [idx, dispatch]);
-  // шаг «примерка» тура «Экипировка»: на форму — вещь примера (вводить ничего не нужно)
+  // шаги тура «Экипировка». Карточка вещи — снова Caren, если её карточку закрыли. «Примерка» — на форму вещь примера
+  // (вводить ничего не нужно) и примерка примера, если шаги 1–2 прошли «Дальше»: иначе шаги 3–5 говорили бы о том,
+  // чего на экране нет
   const onTourStep = useCallback((id: TourId, step: StepId) => {
-    const d = id === 'gear' && step === 'gCard' ? gearDemo(idx) : null;
-    if (d) dispatch({ type: 'load', item: d.item });
+    const d = id === 'gear' ? gearDemo(idx) : null;
+    if (!d) return;
+    if (step === 'gPiece') dispatch({ type: 'openChar', id: d.c.id, reveal: 'keep' });
+    if (step !== 'gCard') return;
+    setDemo((x) => x && (x.tryOn ? x : { ...x, tryOn: { charId: d.c.id, build: d.b.name } }));
+    dispatch({ type: 'load', item: d.item });
   }, [idx, dispatch]);
   const tour = useTour({
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden }, tours, onTour: onTourRun, onStep: onTourStep,

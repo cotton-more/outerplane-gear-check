@@ -105,7 +105,7 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn, onPieceOpen }: {
       {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? (
         <div className="bgear-none">
           <p>{t.tryon.empty(b.name, c.name)}</p>
-          {onTryOn && <button type="button" className="btn primary" onClick={() => onTryOn(b)} {...tour('gtry')}>{t.tryon.build}</button>}
+          {onTryOn && <button type="button" className="btn primary" onClick={() => onTryOn(b)}>{t.tryon.build}</button>}
           <p className="muted small">{t.tryon.emptyOr}</p>
         </div>
       ) : (

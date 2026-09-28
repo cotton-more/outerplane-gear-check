@@ -414,6 +414,53 @@ describe('тур «Экипировка» на примере', () => {
     expect($('.tryon')?.textContent).toContain('Kappa · Speed');
   });
 
+  it('«Дальше» на каждом шаге: примерку ставит шаг 3, на шаге 4 есть кнопка, шаг 5 не пропускается', async () => {
+    await mount(MINE);
+    const before = snapshot();
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Gear · 1 min'));
+    await click(byText('.tour-strip button', T.next));
+    expect(strip()).toContain(T.gearStepOf(2, 5));
+    await click(byText('.tour-strip button', T.next));
+    expect(strip()).toContain(T.gearStepOf(3, 5));
+    expect($('.tryon')?.textContent).toContain('Caren · Speed');
+    await click(byText('.tour-strip button', T.next));
+    expect(strip()).toContain(T.gearStepOf(4, 5));
+    await frame();
+    expect($('.vc-equip')).toBeTruthy();
+    await click(byText('.tour-strip button', T.next));
+    expect(strip()).toContain(T.gearStepOf(5, 5));
+    await click(byText('.tour-strip button', 'Done'));
+    expect(strip()).toContain('That was an example');
+    await click(byText('.tour-strip button', 'Done'));
+    expect($('.tour-strip')).toBeNull();
+    expect(snapshot()).toEqual(before);
+  });
+
+  it('шаг 3: нажал карточку — шторка вердикта, полоса та же; «Заменить» — в шторке', async () => {
+    await mount(MINE);
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Gear · 1 min'));
+    await click($('[data-tour="gslots"] [data-tour-item="helmet"]'));
+    await click(byText('.piece-act button', 'Try a replacement'));
+    await click($('.vcard'));
+    expect($('.drawer')).toBeTruthy();
+    expect(strip()).toContain(T.gearStepOf(3, 5));
+    expect(strip()).not.toContain(T.inSheet);
+    await click(byText('.tour-strip button', T.next));
+    expect(strip()).toContain(T.gearStepOf(4, 5));
+    await click($('.drawer [data-tour="gequip"]'));
+    expect($('.drawer')).toBeNull(); // шторка закрылась: ✕ примерки был бы под ней
+    expect(strip()).toContain(T.gearStepOf(5, 5));
+  });
+
+  it('у пустого билда подсказка «Примерить» не встаёт на «Собрать билд»: он слот и сет не ставит', async () => {
+    const caren = D.chars.find((c) => c.name === 'Caren')!;
+    await mount({ welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'chars', charId: caren.id } });
+    expect(byText('.bgear-none button', 'Gear up this build')).toBeTruthy();
+    expect($('.bgear-none [data-tour="gtry"]')).toBeNull();
+  });
+
   // на странице во время тура — экипировка тура: у «Экипировки» пример, у главного пусто (useGear persist = false).
   // Код показал бы её как резервную копию игрока, «Заменить» записал бы в неё, а «Вернуть» после тура — поверх его записей
   it.each([

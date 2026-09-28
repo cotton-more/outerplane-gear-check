@@ -39,8 +39,10 @@ export const GEAR: Step[] = [
   // карточка вещи: сегменты и Breakthrough; «Примерить замену» — оценка для Caren (тур кладёт на форму пример)
   // рамка — на кнопке: вокруг всей карточки полоса на низком экране легла бы поверх неё
   { id: 'gPiece', rev: 1, home: 'chars', layer: 'sheet', at: () => ['gpiece'], pin: () => ['gpiece:try'], done: (c) => c.tryOn && c.s.tab === 'eval' },
-  // полоса примерки и карточка вердикта (на широком — колонка вердикта): посмотреть и «Дальше»
-  { id: 'gCard', rev: 1, at: () => ['tryon', 'verdict'] },
-  { id: 'gEquip', rev: 1, at: () => ['gequip'], done: (c, start) => c.gearSeq > start.gearSeq },
+  // полоса примерки и карточка вердикта (на широком — колонка вердикта): посмотреть и «Дальше». Примерку примера
+  // ставит сам шаг (App onStep), если шаги 1–2 прошли «Дальше» без действия.
+  // layer: на телефоне карточку можно нажать — откроется шторка вердикта; шаг и «Заменить» идут и в ней
+  { id: 'gCard', rev: 1, layer: 'sheet', at: () => ['tryon', 'verdict'] },
+  { id: 'gEquip', rev: 1, layer: 'sheet', at: () => ['gequip'], done: (c, start) => c.gearSeq > start.gearSeq },
   { id: 'gNext', rev: 1, at: () => ['tryon'], done: (c) => !c.tryOn },
 ];

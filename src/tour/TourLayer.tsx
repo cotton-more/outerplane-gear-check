@@ -82,8 +82,10 @@ export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
     const r = el.getBoundingClientRect();
     const bottom = freeBottom();
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // в карточке и шторке (layer) — к верху: низ низкого экрана остаётся полосе (над «← К списку» — scroll-margin)
-    if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: step?.layer ? 'start' : 'center', behavior: still ? 'auto' : 'smooth' });
+    // в карточке и шторке (layer) — к верху: низ низкого экрана остаётся полосе (над «← К списку» — scroll-margin);
+    // шаг, который может идти и в шторке, на самой странице прокручивается как обычно
+    const top = step?.layer === 'card' || (step?.layer === 'sheet' && !!el.closest('.drawer'));
+    if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: top ? 'start' : 'center', behavior: still ? 'auto' : 'smooth' });
   }, [stepNo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!run) return null;
