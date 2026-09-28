@@ -5,7 +5,7 @@
 import { isArmor } from '../data';
 import type { Build, Char, GearKind } from '../data/types';
 import { CFG } from '../config';
-import { combosWith, gearList, slotMains } from './builds';
+import { combosWith, gearList, slotMains, t4Part } from './builds';
 import type { Ctx } from './context';
 import { buildKey, MAX_LIT, pieceInput, REFORGES, reforgesDone, samePiece, type GearStore, type Piece } from './gear';
 import { itemMains } from './mains';
@@ -36,6 +36,9 @@ export interface Vs {
   wornEmpty: boolean;            // у надетой нет ни одного полезного сегмента: процент бессмыслен (деление на ноль)
   // «хуже», хотя мест новая не теряет: у надетой больше сегментов — стат, где она впереди сильнее всего
   ahead: { key: string; worn: number; next: number } | null;
+  // броня: в этом билде сет вещи — часть связки с бонусом только на T4 (Speed ×2): сколько штук. Надета такая же
+  // на T4 — «лучше» не выше «на уровне»: пока новая не на T4, бонуса не будет
+  t4: { set: string; n: number } | null;
 }
 
 // чем показать разницу: процент; «×N», когда больше +200% (иначе «+92250%» у почти пустой надетой); «полезных нет»
@@ -113,13 +116,15 @@ function baseVs(st: GearStore, c: Char, b: Build, item: ItemInput): Vs {
   const key = buildKey(c.id, b.name);
   const wornId = st.builds[key]?.slots[item.slot];
   const worn = wornId ? st.pieces[wornId] ?? null : null;
-  return { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false, ahead: null };
+  return { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false, ahead: null, t4: null };
 }
 
 export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs | null {
   const f = fit(ctx, b, item);
   if (f === 'no') return null;
-  const base = baseVs(st, c, b, item);
+  const n4 = isArmor(item.slot) && item.setId ? t4Part(ctx.idx, b, item.setId) : null;
+  const t4 = n4 && item.setId ? { set: item.setId, n: n4 } : null;
+  const base = { ...baseVs(st, c, b, item), t4 };
   const { key, worn } = base;
   if (!worn) return base; // пустой слот связку не ломает — только дополняет
   if (samePiece(item, worn)) return { ...base, kind: 'worn' };
@@ -135,6 +140,7 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
     if (f === 'stopgap' && wf === 'rec') { kind = 'down'; why = 'stopgap'; }
     else if (f === 'rec' && wf !== 'rec') { kind = 'up'; why = 'rec'; }
   }
+  if (t4 && kind === 'up' && worn.setId === item.setId && worn.bt === 4) kind = 'eq';
   const broken = breaks(st, key, b, item);
   if (broken) kind = 'breaks';
   const place = (cover: Map<number, string>, other: Map<number, string>) =>

@@ -299,6 +299,8 @@ export const en: Texts = {
     vsMaterial: (bt) => `The same piece as the one on (T${bt}): this is a tier of its Breakthrough, T${bt} → T${bt + 1}.`,
     vsPassive: 'A different passive: only substats are compared — which passive is better is up to the build.',
     vsBreaks: (set) => `Breaks the ${set} set in this build: fewer of its pieces than needed.`,
+    vsT4: (set, n, capped) => `${set} ×${n} only gives its bonus at T4: until the new one is T4, there is no bonus${capped ? ' — so no higher than "on par"' : ''}.`,
+    gearSetT4: (set, n, bt) => `${set} ×${n} — complete, but the bonus only works at T4: ${bt === null ? 'mark the Breakthrough' : `now T${bt}`}`,
     equipTo: (name, build) => `Equip on ${name} · ${build}`,
     replaceOn: (slot, name) => `Replace ${name}'s ${slot}`,
     equipPick: 'Equip on…',

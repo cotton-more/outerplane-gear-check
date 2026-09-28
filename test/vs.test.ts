@@ -29,6 +29,28 @@ const NEW = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
 const kappa = D.chars.find((c) => c.name === 'Kappa')!;
 const kitsune = D.chars.find((c) => c.name.startsWith('Kitsune'))!;
 
+describe('бонус сета только на T4', () => {
+  // Caren · Speed/Immu: Immunity ×2 + Speed ×2 — у Speed ×2 бонус только на T4
+  const onSpeedImmu = (bt: 0 | 1 | 2 | 3 | 4 | null) => {
+    const { store, piece } = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed/Immu'), armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }));
+    return updatePiece(store, piece.id, { lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt });
+  };
+
+  it('надетый Speed-шлем на T4, новая лучше по сегментам — не выше «на уровне»: пока новая не на T4, бонуса нет', () => {
+    const vs = compare(ctx, onSpeedImmu(4), caren, build('Speed/Immu'), NEW)!;
+    expect(vs.delta!).toBeGreaterThan(0.1);
+    expect(vs).toMatchObject({ kind: 'eq', t4: { set: set('Speed'), n: 2 } });
+  });
+
+  it('надетая не на T4 — бонуса и сейчас нет: «лучше» остаётся, пометка есть', () => {
+    expect(compare(ctx, onSpeedImmu(2), caren, build('Speed/Immu'), NEW)).toMatchObject({ kind: 'up', t4: { n: 2 } });
+  });
+
+  it('Speed ×4 бонус даёт и на T0 — пометки нет', () => {
+    expect(compare(ctx, wearing({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }), caren, build('Speed'), NEW)?.t4).toBeNull();
+  });
+});
+
 describe('сравнение с надетым', () => {
   it('3-е место важнее 4-го: новая закрывает CHD, теряет SPD — лучше на ~25%', () => {
     const st = wearing({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });

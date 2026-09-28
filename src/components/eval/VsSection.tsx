@@ -5,7 +5,7 @@ import { GRADE_NAME, subLabel } from '../../data';
 import { comboText } from '../../logic/builds';
 import { useT } from '../../i18n';
 import { reforgeScale } from '../../logic/gear';
-import { vsFigure, type Vs, type VsFigure } from '../../logic/vs';
+import { MARGIN, vsFigure, type Vs, type VsFigure } from '../../logic/vs';
 import { Icon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { Chain } from './Chain';
@@ -66,6 +66,9 @@ export function VsSection({ list, slot, armor, onEquip, onOpenChar }: {
               {vs.why && <p className="muted">{t.ui.vsWhy[vs.why]}</p>}
               {fig && vs.kind !== 'breaks' && <p className="muted">{fig.kind === 'empty' ? t.ui.vsEmpty : fig.kind === 'times' ? t.ui.vsTimes(fig.n) : t.ui.vsDelta(fig.n)}</p>}
               {vs.broken && <p className="muted">{t.ui.vsBreaks(SET[vs.broken]?.short ?? vs.broken)}</p>}
+              {vs.t4 && (vs.kind === 'fill' || vs.kind === 'up' || vs.kind === 'eq') && (
+                <p className="muted">{t.ui.vsT4(SET[vs.t4.set]?.short ?? vs.t4.set, vs.t4.n, vs.kind === 'eq' && (vs.delta ?? 0) >= MARGIN)}</p>
+              )}
               {vs.passive && <p className="muted">{t.ui.vsPassive}</p>}
               {vs.kind === 'off' && <p className="muted">{t.tryon.offNote(vs.c.name, armor && vs.b.sets.length ? vs.b.sets.map((cb) => comboText(idx, cb)).join(` ${t.ui.or} `) : null)}</p>}
               {vs.ahead && <p className="muted">{t.ui.vsAhead(subLabel(vs.ahead.key), vs.ahead.worn, vs.ahead.next)}</p>}

@@ -12,6 +12,7 @@ import {
   type Bt, type Piece,
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
+import { t4Only } from '../../logic/builds';
 import { subWeights } from '../../logic/score';
 import { fits } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
@@ -54,6 +55,17 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
   const count: Record<string, number> = {};
   for (const [slot, id] of Object.entries(slots)) if (isArmor(slot as SlotId) && st.pieces[id]?.setId) count[st.pieces[id].setId!] = (count[st.pieces[id].setId!] ?? 0) + 1;
   const combo = b.sets.find((cb) => cb.every((p) => (count[p.set] ?? 0) >= p.n)) ?? b.sets.find((cb) => cb.some((p) => count[p.set])) ?? null;
+  // собран Speed ×2 (бонус только на T4) — какой Breakthrough у его вещей: самый низкий, не указан — null
+  const lowBt = (set: string): number | null => {
+    const bts = Object.entries(slots).filter(([sl]) => isArmor(sl as SlotId)).map(([, id]) => st.pieces[id]).filter((p) => p?.setId === set).map((p) => p!.bt);
+    return bts.some((x) => x === null) ? null : Math.min(...(bts as number[]));
+  };
+  const setLine = (p: { set: string; n: number }) => {
+    const name = ctx.idx.SET[p.set]?.short ?? p.set, have = count[p.set] ?? 0;
+    if (have < p.n || !t4Only(ctx.idx.SET[p.set], p.n)) return t.ui.gearSet(name, have, p.n);
+    const bt = lowBt(p.set);
+    return bt === 4 ? t.ui.gearSet(name, have, p.n) : t.ui.gearSetT4(name, p.n, bt);
+  };
   // «Взять из Speed»: этот слот пуст, а в другом собираемом билде персонажа есть вещь, которая этому билду подходит
   // (сет из его связок; оружие и аксессуар — с main, который этот билд просит)
   const takeFrom = (slot: SlotId) => {
@@ -84,7 +96,7 @@ export function BuildGear({ c, b, ctx, gear, active, onTryOn }: {
         </div>
       ) : (
         <>
-          {combo && <p className="bgear-set">{combo.map((p) => t.ui.gearSet(ctx.idx.SET[p.set]?.short ?? p.set, count[p.set] ?? 0, p.n)).join(' · ')}</p>}
+          {combo && <p className="bgear-set">{combo.map(setLine).join(' · ')}</p>}
           <ul className="bgear-list">
             {SLOTS.map(({ id: slot }) => {
               const p = st.pieces[slots[slot] ?? ''];

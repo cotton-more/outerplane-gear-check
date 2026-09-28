@@ -1,6 +1,6 @@
 // Запросы по билдам outerpedia: кто носит сет, кто берёт предмет, какой main просят в слоте.
 import type { Index } from '../data';
-import type { Build, Char, Combo, GearKind, GearRef } from '../data/types';
+import type { Build, Char, Combo, GearKind, GearRef, GearSet } from '../data/types';
 
 export interface BuildRef { c: Char; b: Build; i: number }
 
@@ -11,6 +11,13 @@ export function buildsOf(idx: Index, pred: (b: Build, c: Char) => unknown): Buil
 }
 
 export const combosWith = (b: Build, setId: string): Combo[] => b.sets.filter((combo) => combo.some((p) => p.set === setId));
+// бонус этой части связки (сет ×2 или ×4) есть только на T4: на T0 у ×2 Speed и Penetration его нет вовсе
+// (в игре у них нет строки 2P до T4; ×4 — 25% на T0 против 13 + 12 на T4, то есть на любом уровне)
+export const t4Only = (set: GearSet | undefined, n: number): boolean =>
+  !!set && (n >= 4 ? set.p4base === null && set.p4 !== null : set.p2base === null && set.p2 !== null);
+// в связках билда с этим сетом его часть — только на T4 (Speed ×2 в Immunity ×2 + Speed ×2)
+export const t4Part = (idx: Index, b: Build, setId: string): number | null =>
+  combosWith(b, setId).flatMap((cb) => cb.filter((p) => p.set === setId && t4Only(idx.SET[setId], p.n)))[0]?.n ?? null;
 export const comboText = (idx: Index, combo: Combo): string =>
   combo.map((p) => `${idx.SET[p.set] ? idx.SET[p.set].short : p.set} ×${p.n}`).join(' + ');
 export const gearList = (b: Build, kind: GearKind): GearRef[] => (kind === 'weapon' ? b.weapons : b.amulets);

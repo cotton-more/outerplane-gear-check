@@ -329,6 +329,9 @@ export const ru = {
     vsMaterial: (bt: number) => `Та же вещь, что надета (T${bt}): эта — ступень её Breakthrough, T${bt} → T${bt + 1}.`,
     vsPassive: 'Другая пассивка: сравниваю только сабстаты, а какая пассивка лучше — решает билд.',
     vsBreaks: (set: string) => `Сломает сет ${set} в этом билде: его вещей станет меньше, чем нужно.`,
+    // Speed ×2 и Penetration ×2 дают бонус только на T4 (logic/builds t4Only)
+    vsT4: (set: string, n: number, capped: boolean) => `${set} ×${n} даёт бонус только на T4: пока новая не на T4, бонуса не будет${capped ? ' — поэтому не выше «на уровне»' : ''}.`,
+    gearSetT4: (set: string, n: number, bt: number | null) => `${set} ×${n} — собран, но бонус только на T4: ${bt === null ? 'отметь Breakthrough' : `сейчас T${bt}`}`,
     equipTo: (name: string, build: string) => `Надеть на ${name} · ${build}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,
     equipPick: 'Надеть на…',

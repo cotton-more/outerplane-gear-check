@@ -154,6 +154,16 @@ describe('экипировка', () => {
     expect(st.builds[caren.id + '/Speed'].slots.helmet).not.toBe('p1');
   });
 
+  it('Speed/Immu: Speed ×2 собран, но бонус только на T4 — в статусе сета самый низкий Breakthrough', async () => {
+    const immu = D.sets.find((x) => x.short === 'Immunity')!.id;
+    const pc = (id: string, slot: string, setId: string, bt: number | null) => ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt, at: '' });
+    const gear = { v: 1, seq: 4, pieces: { p1: pc('p1', 'helmet', speed, 4), p2: pc('p2', 'armor', speed, 1), p3: pc('p3', 'gloves', immu, 0), p4: pc('p4', 'shoes', immu, 0) },
+      builds: { [caren.id + '/Speed/Immu']: { slots: { helmet: 'p1', armor: 'p2', gloves: 'p3', shoes: 'p4' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+    await click(byText('.btabs button', 'Speed/Immu'));
+    expect($('.bgear-set')?.textContent).toBe('Immunity ×2 — complete · Speed ×2 — complete, but the bonus only works at T4: now T1');
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     expect($('.vcard .vc-vs')).toBeNull();
