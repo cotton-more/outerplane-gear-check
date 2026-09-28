@@ -349,6 +349,8 @@ export const ru = {
     gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),
     gearShared: (builds: string) => `Есть и в ${builds} — правка изменит везде.`,
     gearTake: (build: string) => `Взять из ${build}`,
+    gearOld: (build: string, n: number) => `Из прежнего билда «${build}»: ${n} ${plural(n, 'вещь', 'вещи', 'вещей')}. В данных outerpedia его больше нет — похоже, переименовали.`,
+    gearMove: 'Перенести в этот билд',
     pieceTitle: (slot: string, name: string, build: string) => `${slot} · ${name} · ${build}`,
     pieceSegHint: 'Жёлтые — из оценки. Сделал Reforge — нажми дальше: добавятся оранжевые. Нажми на жёлтую — жёлтых станет меньше; больше — через название стата.',
     pieceReforge: (done: number) => `Reforge: ${done} из 6 — считаю по оранжевым сегментам`,

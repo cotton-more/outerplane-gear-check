@@ -319,6 +319,8 @@ export const en: Texts = {
     gearSet: (set, n, need) => (n >= need ? `${set} ×${need} — complete` : `${set} — ${n} of ${need}`),
     gearShared: (builds) => `Also in ${builds} — editing changes it everywhere.`,
     gearTake: (build) => `Take from ${build}`,
+    gearOld: (build, n) => `From the former build "${build}": ${n} piece${n === 1 ? '' : 's'}. It's no longer in the outerpedia data — probably renamed.`,
+    gearMove: 'Move to this build',
     pieceTitle: (slot, name, build) => `${slot} · ${name} · ${build}`,
     pieceSegHint: 'Yellow comes from the evaluation. Did a Reforge — tap further: orange ones are added. Tap a yellow one to lower their number; to raise it — tap the stat name.',
     pieceReforge: (done) => `Reforge: ${done} of 6 — counted from the orange segments`,

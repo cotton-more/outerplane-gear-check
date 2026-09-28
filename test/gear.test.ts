@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
-  addFourth, buildKey, decodeGear, equipOn, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
+  addFourth, buildKey, decodeGear, equipOn, moveBuild, orphanBuilds, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
   tapSegment, undoEquip, unequip, updatePiece, usedIn,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
@@ -61,6 +61,20 @@ describe('экипировка: надеть, заменить, снять', () 
     expect(usedIn(b.store, a.piece.id)).toEqual([K, K2]);
     expect(equipOn(a.store, '2000077', buildKey('2000077', 'Speed'), helmet({ CHC: 2, CHD: 1 })).shared).toBeNull();
     expect(equipOn(a.store, '2000089', K2, helmet({ CHC: 3, CHD: 1 })).shared).toBeNull();
+  });
+
+  it('билд переименовали в данных: прежний найден; «Перенести» — в пустые слоты, занятые остаются в прежнем', () => {
+    const OLD = buildKey('2000089', 'Speed (old)');
+    let st = equip(EMPTY_GEAR, OLD, helmet({ CHC: 1 })).store;
+    st = equip(st, OLD, { ...helmet({ SPD: 1 }), slot: 'armor' }).store;
+    st = equip(st, K, { ...helmet({ CHD: 2 }), slot: 'armor' }).store;
+
+    expect(orphanBuilds(st, '2000089', ['Speed', 'Speed/Immu'])).toEqual([{ key: OLD, name: 'Speed (old)', n: 2 }]);
+    const moved = moveBuild(st, OLD, K);
+    expect(Object.keys(moved.builds[K].slots).sort()).toEqual(['armor', 'helmet']);
+    expect(moved.pieces[moved.builds[K].slots.armor!].yellow).toEqual({ CHD: 2 }); // своя броня осталась
+    expect(Object.keys(moved.builds[OLD].slots)).toEqual(['armor']);           // прежняя броня — в прежнем билде
+    expect(orphanBuilds(moveBuild(moved, OLD, K2), '2000089', ['Speed', 'Speed/Immu'])).toEqual([]);
   });
 
   it('снять последнюю вещь — билда в хранилище больше нет', () => {

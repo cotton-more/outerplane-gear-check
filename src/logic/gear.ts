@@ -116,6 +116,25 @@ export const share = (st: GearStore, key: string, slot: SlotId, id: string, at =
 
 export const unequip = (st: GearStore, key: string, slot: SlotId, at = today()): GearStore => setSlot(st, key, slot, null, at);
 
+// билды персонажа, которых больше нет в данных (outerpedia переименовала билд): вещи в них лежат, но страница их не
+// показывает — карточка персонажа предлагает перенести их в один из нынешних билдов
+export const orphanBuilds = (st: GearStore, charId: string, names: readonly string[]): { key: string; name: string; n: number }[] =>
+  Object.entries(st.builds)
+    .filter(([k]) => k.startsWith(charId + '/') && !names.includes(k.slice(charId.length + 1)))
+    .map(([k, b]) => ({ key: k, name: k.slice(charId.length + 1), n: Object.keys(b.slots).length }));
+
+// «Перенести в этот билд»: вещи прежнего билда встают в пустые слоты этого; занятые слоты не трогаем — те вещи
+// остаются в прежнем, и блок покажет, сколько их там ещё
+export function moveBuild(st: GearStore, from: string, to: string, at = today()): GearStore {
+  const src = st.builds[from]?.slots ?? {};
+  const dst = { ...(st.builds[to]?.slots ?? {}) };
+  const rest: BuildGear['slots'] = {};
+  for (const [slot, id] of Object.entries(src) as [SlotId, string][]) {
+    if (dst[slot]) rest[slot] = id; else dst[slot] = id;
+  }
+  return gc({ ...st, builds: { ...st.builds, [to]: { ...st.builds[to], slots: dst, at }, [from]: { ...st.builds[from], slots: rest, at } } });
+}
+
 export function updatePiece(st: GearStore, id: string, patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>, at = today()): GearStore {
   const p = st.pieces[id];
   return p ? { ...st, pieces: { ...st.pieces, [id]: { ...p, ...patch, at } } } : st;

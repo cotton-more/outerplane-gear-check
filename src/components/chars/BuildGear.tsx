@@ -7,7 +7,7 @@ import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import {
-  addFourth, buildKey, MAX_LIT, pieceInput, reforgesDone, replaceStat, setYellow, share, tapSegment, unequip, updatePiece, usedIn,
+  addFourth, buildKey, MAX_LIT, moveBuild, orphanBuilds, pieceInput, reforgesDone, replaceStat, setYellow, share, tapSegment, unequip, updatePiece, usedIn,
   type Bt, type Piece,
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
@@ -18,7 +18,8 @@ import { SlotIcon, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
 import { SubPicker } from '../eval/SubPicker';
 
-const buildOf = (c: Char, key: string) => c.builds.find((b) => buildKey(c.id, b.name) === key)?.name ?? key;
+// имя билда по ключу; прежний (его нет в данных) — тоже по имени, без id персонажа
+const buildOf = (c: Char, key: string) => c.builds.find((b) => buildKey(c.id, b.name) === key)?.name ?? key.slice(c.id.length + 1);
 
 function pieceName(ctx: Ctx, p: Piece): string {
   if (p.setId) return `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`;
@@ -50,9 +51,16 @@ export function BuildGear({ c, b, ctx, gear, active }: { c: Char; b: Build; ctx:
     return null;
   };
   const piece = open ? st.pieces[slots[open] ?? ''] : undefined;
+  const orphans = gear.newer ? [] : orphanBuilds(st, c.id, c.builds.map((x) => x.name));
   return (
     <div className="bgear">
       <h4>{t.ui.gearTitle(n)}</h4>
+      {orphans.map((o) => (
+        <p key={o.key} className="bgear-old">
+          <span>{t.ui.gearOld(o.name, o.n)}</span>
+          <button type="button" className="btn small" onClick={() => gear.set(moveBuild(st, o.key, key))}>{t.ui.gearMove}</button>
+        </p>
+      ))}
       {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? <p className="muted small">{t.ui.gearNone}</p> : (
         <>
           {combo && <p className="bgear-set">{combo.map((p) => t.ui.gearSet(ctx.idx.SET[p.set]?.short ?? p.set, count[p.set] ?? 0, p.n)).join(' · ')}</p>}

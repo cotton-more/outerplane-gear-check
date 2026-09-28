@@ -24,7 +24,8 @@ To record gear that's already on a character, enter it the same way, from the ga
 Under the build tabs: **"Equipped · N of 6"** — the six slots with substats colored by this build's chain, the
 Breakthrough tier and how many Reforges are done. A build with no pieces doesn't ask for any: comparisons only look at
 builds you're gearing. An empty slot can take a piece from another build of the same character ("Take from Speed") —
-it's the same piece, editing it changes it everywhere.
+it's the same piece, editing it changes it everywhere. If outerpedia renames a build, its pieces don't get lost: the card shows
+"From the former build "Speed": 6 pieces" with **"Move to this build"** (into its empty slots).
 
 Tap a piece to update it after upgrading in the game:
 - **segments** — yellow come from the evaluation; tap further to add orange ones after Reforge. Tapping a yellow one

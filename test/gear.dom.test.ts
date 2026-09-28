@@ -233,6 +233,17 @@ describe('экипировка', () => {
     expect(stored().pieces.p1.bt).toBe(4);
   });
 
+  it('билд переименовали в outerpedia: в карточке «Из прежнего билда» и «Перенести в этот билд»', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed Old']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+
+    expect($('.bgear-old')?.textContent).toContain('From the former build "Speed Old": 1 piece.');
+    await click($('.bgear-old button'));
+    expect(stored().builds).toEqual({ [caren.id + '/Speed']: expect.objectContaining({ slots: { helmet: 'p1' } }) });
+    expect($('.bgear-old')).toBeNull();
+    expect($('.bgear h4')?.textContent).toBe('Equipped · 1 of 6');
+  });
+
   // на телефоне карточка персонажа — fixed с z-index: шторка внутри неё уходила под плашку вердикта, «Готово» не нажать
   it('карточка вещи — шторкой в <body>; ушли на «Оценку» — закрылась, прокрутка не заперта', async () => {
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
