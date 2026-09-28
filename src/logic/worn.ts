@@ -4,6 +4,7 @@
 //   «Оставить» или «Временно», а всем, кому вещь подходит по вердикту, уже надето не хуже (на уровне или ▼), —
 //   «Разобрать», у Legendary — «Фоддер» (у брони — если копишь фоддер): вещь неплохая, но никого не улучшит.
 // Понижаем осторожно: разбор не вернуть (решения владельца).
+//   - Только когда введены все сабстаты.
 //   - Персонаж без записей — как раздетый: вещь ему пригодится.
 //   - Считаются только начатые билды (хоть одна вещь). Персонажа, которого собираешь в Speed, вещь для High Crit
 //     не держит; нужен второй билд — начни его собирать, и его пустые слоты вещь удержат.
@@ -16,6 +17,7 @@ import { uniqChars } from './builds';
 import type { Ctx } from './context';
 import { pieceInput, samePiece, usedIn, type GearStore } from './gear';
 import { upgradePlan } from './plan';
+import { dropSubs } from './subs';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import { compareAll, fits, inUse, MARGIN, type Vs } from './vs';
 
@@ -35,9 +37,12 @@ function notBetter(ctx: Ctx, vs: Vs): boolean {
   return vs.kind === 'eq' || vs.kind === 'down' || (vs.kind === 'breaks' && (vs.delta ?? 0) < MARGIN);
 }
 
-// сравнения, по которым штамп понижается, или null. Кандидаты — первая открытая секция вердикта (кому вещь подходит)
+// сравнения, по которым штамп понижается, или null. Кандидаты — первая открытая секция вердикта (кому вещь подходит).
+// Вещь введена не вся — не понижаем: без остальных сабстатов её ценность занижена, а на телефоне «Разобрать» встаёт
+// карточкой на место сетки, и досчитать было бы нечем (до B3 раннее «Разобрать» было окончательным)
 function lowerBy(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Vs[] | null {
   if (res.v !== 'keep' && res.v !== 'temp') return null;
+  if (Object.keys(item.subs).length < dropSubs(item.grade)) return null;
   const top = bestRow(res);
   const sec = top && res.sections.find((x) => x.rows[0] === top.row);
   if (!sec || uniqChars(sec.rows).some((c) => !inUse(st, c).length)) return null;

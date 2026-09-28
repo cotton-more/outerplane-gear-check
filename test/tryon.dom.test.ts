@@ -194,6 +194,14 @@ describe('штамп по надетому', () => {
     expect($('.gear-toast')?.textContent).toContain('The old one: "Dismantle".');
   });
 
+  it('Epic 2 из 3 и Caren носит чуть лучше — штамп не понижен, сетка на месте: третий сабстат можно ввести', async () => {
+    const epic = { 'DEF%': 3, CHC: 2, CHD: 2 };
+    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: epic, lit: epic, bt: null } } };
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 3, CHC: 3 } }, { gear });
+    expect($('.vcard')).toBeNull();
+    expect($('.statgrid')).toBeTruthy();
+  });
+
   it('вещь из билда, сама по себе «в разбор», — «Оставить»: где она', async () => {
     const junk = { setId: speed, subs: { HP: 1, RES: 1, EFF: 1 } };
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: null } } };

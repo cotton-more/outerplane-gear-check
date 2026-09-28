@@ -25,6 +25,9 @@ const ctxOf = (chars: { id: string }[], fodder = true): Ctx =>
 const piece = (slot: ItemInput['slot'], s: string, subs: Record<string, number>, grade: ItemInput['grade'] = 'unique'): ItemInput =>
   ({ slot, grade, setId: set(s), itemKey: null, main: null, subs });
 const helmet = (subs: Record<string, number>, grade: ItemInput['grade'] = 'unique', s = 'Speed') => piece('helmet', s, subs, grade);
+// Legendary-оружие по ключу предмета (19 Snow-white Embrace и 14 Violent Sledgehammer — оба в списке Caren, DEF%)
+const weapon = (key: string, subs: Record<string, number>, main = 'DEF%'): ItemInput =>
+  ({ slot: 'weapon', grade: 'unique', setId: null, itemKey: key, main, subs });
 const on = (st: GearStore, c: { id: string }, build: string, item: ItemInput) => equip(st, buildKey(c.id, build), item).store;
 const judge = (ctx: Ctx, item: ItemInput, st: GearStore) => withWorn(ctx, st, item, evaluate(ctx, item, { gamble: false }));
 
@@ -137,6 +140,39 @@ describe('что удерживает штамп', () => {
       expect(vs.delta!).toBeGreaterThanOrEqual(0.1);
       expect(judge(ctxOf([caren]), strong, st).v).toBe('keep');
     });
+  });
+});
+
+describe('вещь введена не вся — не понижаем', () => {
+  const ctx = ctxOf([caren]);
+  const epicOn = on(EMPTY_GEAR, caren, 'Speed', helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }, 'rare'));
+
+  it('Epic 2 из 3 — «Оставить» по двум главным статам, у Caren чуть лучше: штамп тот же; третий сабстат — лучше надетой', () => {
+    const two = helmet({ 'DEF%': 3, CHC: 3 }, 'rare');
+    expect(evaluate(ctx, two, { gamble: false }).v).toBe('keep');
+    expect(compare(ctx, epicOn, caren, caren.builds[0], two)?.kind).toBe('down');
+    const r = judge(ctx, two, epicOn);
+    expect(r.v).toBe('keep');
+    expect(r.worn).toBeUndefined();
+    expect(compare(ctx, epicOn, caren, caren.builds[0], helmet({ 'DEF%': 3, CHC: 3, CHD: 3 }, 'rare'))?.kind).toBe('up');
+  });
+
+  it('Epic 2 из 3 по правилу SPD — тоже', () => {
+    const spd = helmet({ SPD: 2, CHC: 1 }, 'rare');
+    expect(evaluate(ctx, spd, { gamble: false }).v).toBe('keep');
+    expect(judge(ctx, spd, epicOn).worn).toBeUndefined();
+  });
+
+  it('Legendary 3 из 4 — не «Фоддер» и (без «коплю фоддер») не «Разобрать»', () => {
+    const three = helmet({ 'DEF%': 3, CHC: 3, CHD: 2 });
+    const st = on(EMPTY_GEAR, caren, 'Speed', helmet({ 'DEF%': 3, CHC: 2, CHD: 2, HP: 1 }));
+    expect(judge(ctx, three, st).v).toBe('keep');
+    expect(judge(ctxOf([caren], false), three, st).v).toBe('keep');
+  });
+
+  it('Legendary-оружие без сабстатов — «Оставить» (пассивка и main), а не «Фоддер — уже лучше»', () => {
+    const st = on(EMPTY_GEAR, caren, 'Speed', weapon('19', { CHC: 2, CHD: 2, SPD: 1, HP: 1 }));
+    expect(judge(ctx, weapon('19', {}), st).v).toBe('keep');
   });
 });
 
