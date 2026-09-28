@@ -13,10 +13,11 @@
 //   - 2+2 сломается, а по сегментам новая лучше — не понижаем: может, стоит переставить сеты. Так же — «на уровне»
 //     только из-за T4 у надетой и оружие с другой рекомендованной пассивкой.
 // «Спорно» (хороша для тех, кого нет в ростере) не понижаем. Материал Breakthrough поднимет «Разобрать» обратно
-// до «Фоддер» со строкой, для чего (logic/material).
+// до «Фоддер» со строкой, для чего (logic/material). Кубик не обещает 4-е, после которых вещь понизило бы надетое.
 import { isArmor } from '../data';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
+import { evaluate } from './evaluate';
 import { pieceInput, samePiece, usedIn, type GearStore } from './gear';
 import { upgradePlan } from './plan';
 import { dropSubs } from './subs';
@@ -58,6 +59,22 @@ function lowerBy(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Vs[] |
   return vs.length && vs.every((x) => notBetter(ctx, x)) ? vs : null;
 }
 
+// Кубик (logic/gamble) считает удачные 4-е без надетого. Удачный 4-й, после которого надетое вещь понизило бы, — не
+// удача: «Оставить» снова станет «Разобрать», а Reforge потрачен. Такие из кубика убираем; не осталось — кубика нет
+function withDice(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Verdict {
+  const g = res.gamble;
+  if (!g) return res;
+  const lowered = (key: string, n: number) => {
+    const lucky = { ...item, subs: { ...item.subs, [key]: n } };
+    return !!lowerBy(ctx, st, lucky, evaluate(ctx, lucky, { gamble: false }));
+  };
+  const hits = g.hits.filter((h) => !lowered(h.key, 1));
+  const near = g.near.filter((x) => !lowered(x.key, 2));
+  if (hits.length === g.hits.length && near.length === g.near.length) return res;
+  const out: Verdict = { ...res, gamble: hits.length ? { ...g, hits, near, target: hits[0].v } : null };
+  return { ...out, plan: upgradePlan(ctx, item, out) };
+}
+
 const whoOf = (ctx: Ctx, key: string) => {
   const id = key.slice(0, key.indexOf('/'));
   return `${ctx.idx.CHAR[id]?.name ?? id} · ${key.slice(id.length + 1)}`;
@@ -74,7 +91,7 @@ export function withWorn(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict)
     return { ...res, v: 'keep', worn: 'home', badge: '', gamble: null, title: W.keptTitle(who), lines: [W.kept(who)], plan: [] };
   }
   const vs = lowerBy(ctx, st, item, res);
-  if (!vs) return res;
+  if (!vs) return withDice(ctx, st, item, res);
   // «Фоддер» — материал для такой же вещи: у брони, если копишь фоддер, и у предмета из списков билдов. Legendary-оружие
   // «на замену» (его пассивки в билдах ростера нет) — «Разобрать», как evalGear поступает со слабой заменой
   const armor = isArmor(item.slot);

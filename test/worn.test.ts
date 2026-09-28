@@ -182,6 +182,27 @@ describe('что удерживает штамп', () => {
   });
 });
 
+describe('кубик: удачный 4-й, после которого вещь понизило бы надетое, — не удача', () => {
+  const ctx = ctxOf([caren]);
+  const junk = helmet({ 'DEF%': 1, CHC: 1, HP: 2 }, 'rare'); // «Разобрать», кубик → «Оставить» для Caren
+
+  it('Caren носит лучше любой удачной — кубика нет, и «Прокачка» не зовёт делать Reforge', () => {
+    const res = evaluate(ctx, junk);
+    expect(res.gamble?.target).toBe('keep');
+    const st = on(EMPTY_GEAR, caren, 'Speed', helmet({ 'DEF%': 4, CHC: 3, CHD: 3, SPD: 3 }));
+    const r = withWorn(ctx, st, junk, res);
+    expect(r.v).toBe('junk');
+    expect(r.gamble).toBeNull();
+    expect(r.plan).not.toContain(ru.plan.gamble('junk'));
+  });
+
+  it('у Caren в собираемом билде шлема нет — кубик тот же', () => {
+    const res = evaluate(ctx, junk);
+    const st = on(EMPTY_GEAR, caren, 'Speed', piece('shoes', 'Speed', { CHC: 3, CHD: 3, SPD: 2, 'DEF%': 2 }));
+    expect(withWorn(ctx, st, junk, res)).toBe(res);
+  });
+});
+
 describe('вещь введена не вся — не понижаем', () => {
   const ctx = ctxOf([caren]);
   const epicOn = on(EMPTY_GEAR, caren, 'Speed', helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }, 'rare'));
