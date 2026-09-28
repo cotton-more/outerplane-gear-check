@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
-  addFourth, buildKey, decodeGear, equipOn, reforgeScale, moveBuild, orphanBuilds, setYellow, EMPTY_GEAR, encodeGear, equip, newerGear, reforgesDone, replaceStat, restoreGear, samePiece, share,
-  tapSegment, undoEquip, unequip, updatePiece, usedIn, type Piece,
+  addFourth, buildKey, decodeGear, EMPTY_GEAR, encodeGear, equip, equipOn, moveBuild, newerGear, orphanBuilds, reforgeScale,
+  reforgesDone, replaceStat, restoreGear, samePiece, setYellow, share, tapSegment, undoEquip, unequip, updatePiece, usedIn,
+  type Piece,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
 
@@ -75,6 +76,13 @@ describe('экипировка: надеть, заменить, снять', () 
     expect(moved.pieces[moved.builds[K].slots.armor!].yellow).toEqual({ CHD: 2 }); // своя броня осталась
     expect(Object.keys(moved.builds[OLD].slots)).toEqual(['armor']);           // прежняя броня — в прежнем билде
     expect(orphanBuilds(moveBuild(moved, OLD, K2), '2000089', ['Speed', 'Speed/Immu'])).toEqual([]);
+  });
+
+  it('снять одну из двух вещей — билд остаётся с другой; взять несуществующую вещь — ничего не меняется', () => {
+    const a = equip(EMPTY_GEAR, K, helmet({ CHC: 1 }));
+    const b = equip(a.store, K, { ...helmet({ SPD: 1 }), slot: 'armor' });
+    expect(unequip(b.store, K, 'helmet').builds[K].slots).toEqual({ armor: b.piece.id });
+    expect(share(b.store, K2, 'helmet', 'p99')).toBe(b.store);
   });
 
   it('снять последнюю вещь — билда в хранилище больше нет', () => {
@@ -157,6 +165,7 @@ describe('та же вещь', () => {
     expect(samePiece(helmet({ CHC: 2, CHD: 1 }), p)).toBe(true);
     expect(samePiece(helmet({ CHC: 2, CHD: 2 }), p)).toBe(false);
     expect(samePiece(helmet({ CHC: 2, CHD: 1 }, 'rare'), p)).toBe(false);
+    expect(samePiece({ ...helmet({ CHC: 2, CHD: 1 }), setId: D.sets.find((x) => x.short === 'Attack')!.id }, p)).toBe(false);
   });
 });
 
@@ -197,6 +206,21 @@ describe('хранилище и резервная копия', () => {
     expect(restoreGear(raw, idx).pieces.p1).toMatchObject({ yellow: { CHC: 2 }, lit: { CHC: 2 } });
   });
 
+  it('восстановление: не больше 4 сабстатов, незнакомый сет остаётся, id не повторяется, лишние оранжевые — не больше 9 Reforge', () => {
+    const raw = {
+      v: 1, seq: 1,
+      pieces: {
+        p7: { id: 'p7', slot: 'helmet', grade: 'unique', setId: 'nope', yellow: { CHC: 1, CHD: 1, SPD: 1, 'DEF%': 1, 'ATK%': 1 }, lit: { CHC: 6, CHD: 6, SPD: 6, 'DEF%': 6 }, bt: null, at: '' },
+      },
+      builds: { [K]: { slots: { helmet: 'p7' }, at: '' } },
+    };
+    const st = restoreGear(raw, idx);
+    expect(Object.keys(st.pieces.p7.yellow)).toHaveLength(4);
+    expect(st.pieces.p7.setId).toBe('nope');
+    expect(reforgesDone(st.pieces.p7)).toBe(9);
+    expect(equip(st, K2, helmet({ CHC: 1 })).piece.id).toBe('p8');
+  });
+
   it('код копии читается обратно; чужой текст — нет', () => {
     const { store } = equip(EMPTY_GEAR, K, helmet({ 'DEF%': 2, CHC: 2 }));
     const code = encodeGear(store);
@@ -205,5 +229,6 @@ describe('хранилище и резервная копия', () => {
     expect(decodeGear(code, idx)).toEqual(store);
     expect(decodeGear('OGC-GEAR1 !!!', idx)).toBeNull();
     expect(decodeGear('SPD, CHC', idx)).toBeNull();
+    expect(decodeGear(encodeGear(EMPTY_GEAR), idx)).toBeNull(); // пустая копия не затирает записи
   });
 });

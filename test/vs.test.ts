@@ -8,7 +8,7 @@ import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { buildKey, EMPTY_GEAR, equip, updatePiece, type GearStore } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
-import { compare, compareAll, vsFigure } from '../src/logic/vs';
+import { compare, compareAll, equipTargets, vsFigure } from '../src/logic/vs';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -25,6 +25,9 @@ function wearing(lit: Record<string, number>, yellow: Record<string, number>, na
   return updatePiece(store, piece.id, { lit, bt: 4 });
 }
 const NEW = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
+
+const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+const kitsune = D.chars.find((c) => c.name.startsWith('Kitsune'))!;
 
 describe('сравнение с надетым', () => {
   it('3-е место важнее 4-го: новая закрывает CHD, теряет SPD — лучше на ~25%', () => {
@@ -140,5 +143,57 @@ describe('сравнение с надетым', () => {
     const st = updatePiece(store, piece.id, { bt: 2 });
     expect(compare(ctx, st, caren, build('Speed'), NEW)?.material).toBe(true);
     expect(compare(ctx, updatePiece(st, piece.id, { bt: 4 }), caren, build('Speed'), NEW)?.material).toBe(false);
+  });
+
+  it('Reforge впереди: у Epic с 3 сабстатами первый уйдёт на 4-й — 5 на три известных, у Legendary 6 на четыре', () => {
+    const K = buildKey(caren.id, 'Speed');
+    const st = equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 2, RES: 1 })).store;
+    const vs = compare(ctx, st, caren, build('Speed'), armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 2 }, 'rare'))!;
+    expect(vs.delta!).toBeCloseTo((2 + 5 / 4 - (2 + 6 / 4)) / (2 + 6 / 4), 6);
+  });
+
+  it('больше 6 сегментов у стата не бывает: 6 горящих + Reforge впереди — всё равно 6', () => {
+    const st = wearing({ 'DEF%': 6, CHC: 2, CHD: 3, HP: 1 }, { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 }); // 3 Reforge сделано
+    const vs = compare(ctx, st, caren, build('Speed'), NEW)!;
+    expect(vs.ahead).toMatchObject({ key: 'DEF%', worn: 6 });
+  });
+
+  it('засчитывается слабее — и ценность меньше: flat DEF у Caren против DEF% на том же 1-м месте', () => {
+    const K = buildKey(caren.id, 'Speed');
+    const pct = compare(ctx, equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { RES: 1, EFF: 1, HP: 1, CHC: 1 })).store, caren, build('Speed'), armor('helmet', 'Speed', { 'DEF%': 2, RES: 1, EFF: 1, CHC: 1 }))!;
+    const flat = compare(ctx, equip(EMPTY_GEAR, K, armor('helmet', 'Speed', { RES: 1, EFF: 1, HP: 1, CHC: 1 })).store, caren, build('Speed'), armor('helmet', 'Speed', { DEF: 2, RES: 1, EFF: 1, CHC: 1 }))!;
+    expect(flat.delta!).toBeLessThan(pct.delta!);
+  });
+
+  it('материал — только того же грейда: Epic-шлем не ступень Breakthrough для Legendary', () => {
+    const { store, piece } = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), armor('helmet', 'Speed', { SPD: 1 }, 'rare'));
+    const st = updatePiece(store, piece.id, { bt: 2 });
+    expect(compare(ctx, st, caren, build('Speed'), NEW)?.material).toBe(false);
+  });
+
+  it('оружие: оба из рекомендованных, пассивки разные — пометка «другая пассивка»', () => {
+    const [a, z] = build('Speed').weapons;
+    const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), { slot: 'weapon', grade: 'unique', setId: null, itemKey: a.key, main: 'DEF%', subs: { CHC: 1 } }).store;
+    const vs = compare(ctx, st, caren, build('Speed'), { slot: 'weapon', grade: 'unique', setId: null, itemKey: z.key, main: 'DEF%', subs: { CHC: 2 } })!;
+    expect(vs).toMatchObject({ passive: true, why: null });
+  });
+
+  it('раздел: только первая открытая секция вердикта (Kitsune с этим шлемом «не те сабстаты» — нет); пустой слот первым', () => {
+    let st = wearing({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
+    st = equip(st, buildKey(caren.id, 'Speed/Immu'), armor('armor', 'Immunity', { CHC: 1 })).store;
+    st = equip(st, buildKey(kitsune.id, 'Mix Speed'), armor('helmet', 'Speed', { SPD: 1 })).store;
+    const res = evaluate(ctx, NEW);
+
+    expect(compare(ctx, st, kitsune, kitsune.builds.find((b) => b.name === 'Mix Speed')!, NEW)).not.toBeNull();
+    expect(compareAll(ctx, st, NEW, res).map((v) => [v.b.name, v.kind])).toEqual([['Speed/Immu', 'fill'], ['Speed', 'up']]);
+  });
+
+  it('«Кому надеть?»: собираемые билды первыми, «не по билду» — только с all', () => {
+    const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed/Immu'), armor('armor', 'Immunity', { CHC: 1 })).store;
+    const rows = equipTargets(ctx, st, NEW, [kappa, caren], false);
+
+    expect([rows[0].c.name, rows[0].b.name]).toEqual(['Caren', 'Speed/Immu']);
+    expect(rows.every((r) => r.vs)).toBe(true);
+    expect(equipTargets(ctx, st, NEW, [kappa, caren], true).some((r) => !r.vs)).toBe(true);
   });
 });

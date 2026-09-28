@@ -278,6 +278,82 @@ describe('экипировка', () => {
     expect(weaponRow?.querySelector('button')).toBeNull();
   });
 
+  it('idle (не все сабстаты) — «Надеть на…» нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2 } });
+    await click($('.vbar .vb-main'));
+    expect($('.v-equip')).toBeNull();
+  });
+
+  it('раздел: у «хуже» есть кнопка; строки Breakthrough, «материал» и «ломает сет»', async () => {
+    const piece = (id: string, slot: string, set: string, bt: number | null, lit?: Record<string, number>) => ({ id, slot, grade: 'unique', setId: set, itemKey: null, main: null, yellow: { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 }, lit: lit ?? { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 }, bt, at: '' });
+    const immu = D.sets.find((x) => x.short === 'Immunity')!.id;
+    const gear = {
+      v: 1, seq: 6,
+      pieces: {
+        p1: piece('p1', 'helmet', speed, 2, { 'DEF%': 6, CHC: 4, CHD: 4, HP: 2 }),
+        p2: piece('p2', 'helmet', immu, 4), p3: piece('p3', 'armor', immu, 0), p4: piece('p4', 'gloves', speed, 0), p5: piece('p5', 'shoes', speed, 0),
+      },
+      builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' }, [caren.id + '/Speed/Immu']: { slots: { helmet: 'p2', armor: 'p3', gloves: 'p4', shoes: 'p5' }, at: '' } },
+    };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    const row = (b: string) => $$('.v-vs .vs-row').find((r) => r.querySelector('.bn')?.textContent === b)!;
+
+    expect(row('Speed').querySelector('.vs.down')).toBeTruthy();
+    expect(row('Speed').querySelector('.vs-act')).toBeTruthy();
+    expect(row('Speed').textContent).toContain('this is a tier of its Breakthrough, T2 → T3');
+    expect(row('Speed/Immu').textContent).toContain('Breaks the Immunity set');
+    expect(row('Speed/Immu').textContent).toContain('Breakthrough T4: the new one needs 4 materials');
+  });
+
+  it('«Кому надеть?» с «показать и не по билду» — строки «не по билду»', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect($('.equip-row .vs.off')).toBeNull();
+    await click($('.equip .toggle input'));
+    expect(byText('.equip-row', 'Pen')?.querySelector('.vs.off')?.textContent).toBe('off-build');
+  });
+
+  it('карточка персонажа: «Взять из Speed», «+ 4-й» только у Epic с тремя, Breakthrough снимается, «Снять с билда»', async () => {
+    const helm = { id: 'p1', slot: 'helmet', grade: 'rare', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 1, CHD: 1 }, lit: { 'DEF%': 2, CHC: 1, CHD: 1 }, bt: null, at: '' };
+    const arm = { id: 'p2', slot: 'armor', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 1, CHD: 1, SPD: 1 }, lit: { CHC: 1, CHD: 1, SPD: 1 }, bt: null, at: '' };
+    const gear = { v: 1, seq: 2, pieces: { p1: helm, p2: arm }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' }, [caren.id + '/Speed/Immu']: { slots: { armor: 'p2' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+    await click(byText('.btabs button', 'Speed/Immu'));
+    await click(byText('.bgear-empty button', 'Take from Speed'));
+    expect(stored().builds[caren.id + '/Speed/Immu'].slots.helmet).toBe('p1');
+
+    await click($$('.bgear-row').find((b) => b.textContent?.includes('Speed Set') && b.querySelector('.gl.L')));
+    expect($('.piece .subadd')).toBeNull();               // Legendary с тремя — «+ 4-й» нет
+    await click(byText('.piece-bt .fbtn', 'T3'));
+    await click(byText('.piece-bt .fbtn', 'T3'));          // ещё раз — снова «не указан»
+    expect(stored().pieces.p2.bt).toBeNull();
+    await click(byText('.piece-act .btn', 'Remove from build'));
+    expect(stored().builds[caren.id + '/Speed/Immu'].slots.armor).toBeUndefined();
+
+    await click($$('.bgear-row').find((b) => b.querySelector('.gl.E')));
+    expect($('.piece .subadd')).toBeTruthy();              // Epic с тремя — «+ 4-й»
+  });
+
+  it('замена: старая осталась в другом билде — сообщение так и говорит', async () => {
+    const helm = { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' };
+    const gear = { v: 1, seq: 1, pieces: { p1: helm }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' }, [caren.id + '/Speed/Immu']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    await click($$('.v-vs .vs-row').find((r) => r.querySelector('.bn')?.textContent === 'Speed')?.querySelector('.vs-act'));
+    expect($('.gear-toast small')?.textContent).toContain('The old one stays in Speed/Immu.');
+  });
+
+  it('код копии в «Экспорт / импорт» — вся экипировка', async () => {
+    const helm = { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' };
+    await mount({ tab: 'chars' }, {}, { gear: { v: 1, seq: 1, pieces: { p1: helm }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } } });
+    await click(byText('.roster-bar .linkbtn', 'export'));
+    const { decodeGear } = await import('../src/logic/gear');
+    const { createIndex } = await import('../src/data');
+    expect(decodeGear(($('#gear-code') as HTMLTextAreaElement).value, createIndex(D))?.pieces.p1.yellow).toEqual({ SPD: 1 });
+  });
+
   // на телефоне карточка персонажа — fixed с z-index: шторка внутри неё уходила под плашку вердикта, «Готово» не нажать
   it('карточка вещи — шторкой в <body>; ушли на «Оценку» — закрылась, прокрутка не заперта', async () => {
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
