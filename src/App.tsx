@@ -155,7 +155,8 @@ export function App() {
     setEquipOpen(false);
     if (onNow && samePiece(input, onNow)) return;
     const twin = twinElsewhere(prev, c.id, input);
-    if (twin) setTwinAsk({ c, b, twin }); else putOn(c, b, null);
+    // «Это шлем Rin?» — своё окно: шторку вердикта закрыть, как перед «Кому надеть?» (две шторки — один Esc на обе)
+    if (twin) { setVerdictOpen(false); setTwinAsk({ c, b, twin }); } else putOn(c, b, null);
   };
   // чей билд: ключ «персонаж/билд» → имя персонажа; «Rin · Speed»
   const ownerOf = (k: string) => { const id = k.slice(0, k.indexOf('/')); return idx.CHAR[id]?.name ?? id; };

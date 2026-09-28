@@ -5,13 +5,17 @@ import { useT } from '../i18n';
 // Шторка снизу поверх страницы: окна выбора (сет, предмет, main, сабстат) и подробности вердикта.
 // Закрывается крестиком, нажатием мимо и Esc (Esc не доходит до горячих клавиш страницы).
 // Рисуется в <body>: шторка из карточки персонажа (у неё свой z-index на телефоне) иначе ушла бы под плашку вердикта.
+// Открыты две сразу — Esc закрывает верхнюю, а drawer-lock снимается, когда закрыта последняя.
+const open: object[] = [];
 export function Sheet({ title, onClose, children, className }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const t = useT();
   const close = useRef(onClose);
   close.current = onClose;
   useEffect(() => {
+    const me = {};
+    open.push(me);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || open[open.length - 1] !== me) return;
       e.stopPropagation();
       close.current();
     };
@@ -19,7 +23,8 @@ export function Sheet({ title, onClose, children, className }: { title: string; 
     document.body.classList.add('drawer-lock');
     return () => {
       window.removeEventListener('keydown', onKey, true);
-      document.body.classList.remove('drawer-lock');
+      open.splice(open.indexOf(me), 1);
+      if (!open.length) document.body.classList.remove('drawer-lock');
     };
   }, []);
   return createPortal(

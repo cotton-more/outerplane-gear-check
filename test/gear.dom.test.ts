@@ -140,6 +140,39 @@ describe('экипировка', () => {
     expect(stored().builds[caren.id + '/Speed']).toBeUndefined();
   });
 
+  it('«Заменить» из шторки вердикта, а вещь на Kappa: «Это шлем?» — одно окно, после «Move» окон и drawer-lock нет', async () => {
+    const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+    const pc = (id: string, subs: Record<string, number>) => ({ id, slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: subs, lit: subs, bt: 2, at: '' });
+    const gear = { v: 1, seq: 2, pieces: { p1: pc('p1', NEW.subs), p2: pc('p2', { HP: 1, DEF: 1, ATK: 1, RES: 1 }) },
+      builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' }, [caren.id + '/Speed']: { slots: { helmet: 'p2' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    await click(byText('.v-vs button', "Replace Caren's helmet"));
+    expect($$('.drawer')).toHaveLength(1);
+    expect($('.twin')).toBeTruthy();
+    await click(byText('.twin button', 'Move'));
+    expect($$('.drawer')).toHaveLength(0);
+    expect(document.body.classList.contains('drawer-lock')).toBe(false);
+  });
+
+  it('две шторки сразу: Esc закрывает верхнюю, drawer-lock снимается с последней', async () => {
+    const { Sheet } = await import('../src/components/Sheet');
+    const closed: string[] = [];
+    const el = document.createElement('div');
+    document.body.append(el);
+    root = createRoot(el);
+    const draw = (both: boolean) => act(async () => root!.render(createElement('div', null,
+      createElement(Sheet, { title: 'A', onClose: () => { closed.push('A'); }, children: 'a' }),
+      both && createElement(Sheet, { title: 'B', onClose: () => { closed.push('B'); }, children: 'b' }))));
+    await draw(true);
+    await act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); });
+    expect(closed).toEqual(['B']);
+    await draw(false);
+    expect(document.body.classList.contains('drawer-lock')).toBe(true);
+    await act(async () => root!.render(createElement('div')));
+    expect(document.body.classList.contains('drawer-lock')).toBe(false);
+  });
+
   it('«Другая» — новая запись, у Kappa её вещь остаётся', async () => {
     const kappa = D.chars.find((c) => c.name === 'Kappa')!;
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: NEW.subs, lit: NEW.subs, bt: 2, at: '' } }, builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
