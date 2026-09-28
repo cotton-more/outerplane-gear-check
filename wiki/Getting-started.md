@@ -25,7 +25,7 @@ game. On the example, the frame points at the exact buttons and the rest of the 
 a step counts only when you pick what the example asks for, and a wrong pick gets a hint on how to fix it. Each step
 waits until you do it, "Continue" skips it, ✕ closes the tutorial. Whatever was on the form goes aside and
 comes back at the end. To take it again: ☰ → "Tutorial", or "Tutorial" under the form on a computer, or the top of
-Help. In a low window (a split-screen strip) the tutorial isn't offered by itself — only through the menu. The idea came
+Help; the second tour, **"Gear · 1 min"**, is there too (see [Equipment](Equipment)). In a low window (a split-screen strip) the tutorial isn't offered by itself — only through the menu. The idea came
 from Sevih, who runs outerpedia.
 
 ## Tips and what's new

@@ -38,7 +38,8 @@ The full guide is in the **[Wiki](https://github.com/cotton-more/outerplane-gear
 [Fast cleanup](https://github.com/cotton-more/outerplane-gear-check/wiki/Fast-cleanup) ·
 [Reading the verdict](https://github.com/cotton-more/outerplane-gear-check/wiki/Reading-the-verdict) ·
 [How verdicts work](https://github.com/cotton-more/outerplane-gear-check/wiki/How-verdicts-work) ·
-[Upgrading](https://github.com/cotton-more/outerplane-gear-check/wiki/Upgrading).
+[Upgrading](https://github.com/cotton-more/outerplane-gear-check/wiki/Upgrading) ·
+[Equipment](https://github.com/cotton-more/outerplane-gear-check/wiki/Equipment).
 The app has a short one too: ☰ → Help.
 
 **По-русски:** руководство — в [Wiki](https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы),
