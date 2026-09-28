@@ -121,6 +121,31 @@ describe('примерка', () => {
     expect($('.tryon')).toBeTruthy();
   });
 
+  it('второй «Примерить» подряд: «Вернуть» — всё ещё та вещь, которую вводили', async () => {
+    await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
+    await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
+    await click($('.vb-tab'));
+    await click(byText('.menu button', 'Characters'));
+    await click(byText('.bgear-empty', 'Boots')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
+    expect(stored('state').slot).toBe('shoes');
+
+    await click($('.toast:not(.gear-toast) button'));
+    expect(stored('state').slot).toBe('gloves');
+    expect(stored('item').subs).toEqual({ CHC: 2, SPD: 1 });
+  });
+
+  it('сообщение экипировки на «Персонажах» не прячет «Вернуть» формы на «Оценке»', async () => {
+    const { encodeGear } = await import('../src/logic/gear');
+    await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
+    await click(byText('.roster-bar .linkbtn', 'export / import'));
+    const ta = $('#gear-code') as HTMLTextAreaElement;
+    ta.value = encodeGear(GEAR as never);
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('button')].find((b) => b.textContent === 'Replace'));
+    expect($('.gear-toast')).toBeTruthy();
+    await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
+    expect($('.toast:not(.gear-toast)')?.textContent).toContain('Undo');
+  });
+
   it('пустой билд: «Собрать билд» — примерка без смены вещи на форме', async () => {
     await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: { CHC: 2 } });
     await click(byText('.btabs button', 'Pen'));

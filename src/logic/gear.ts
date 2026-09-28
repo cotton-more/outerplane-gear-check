@@ -153,10 +153,12 @@ export function moveTo(st: GearStore, twin: Twin, key: string, at = today()): { 
   return { store: next, piece: twin.piece, old };
 }
 
-// «Вернуть» после «Перенести»: этот слот — как было, а вещь — обратно туда, откуда её взяли (если там не занято)
+// «Вернуть» после «Перенести»: этот слот — как было, а вещь — обратно туда, откуда её взяли (если там не занято).
+// Там всюду успели занять — не трогаем, как undoEquip: иначе вещь не вернулась бы никуда и gc стёр бы её запись
 export function undoMove(st: GearStore, key: string, twin: Twin, old: Piece | null, at = today()): GearStore {
   const slot = twin.piece.slot;
   if (st.builds[key]?.slots[slot] !== twin.piece.id) return st;
+  if (twin.keys.every((k) => st.builds[k]?.slots[slot])) return st;
   let next = undoEquip(st, key, slot, twin.piece, old, at);
   next = { ...next, pieces: { ...next.pieces, [twin.piece.id]: st.pieces[twin.piece.id] } };
   for (const k of twin.keys) if (!next.builds[k]?.slots[slot]) next = setSlot(next, k, slot, twin.piece.id, at);

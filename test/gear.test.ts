@@ -216,6 +216,17 @@ describe('та же вещь на другом персонаже', () => {
     expect(usedIn(back, id).sort()).toEqual([RIN2, RIN].sort());
     expect(back.pieces[id].bt).toBe(3);
   });
+
+  it('«Вернуть» после «Перенести», а оба слота Rin успели занять — ничего не трогаем: запись вещи цела', () => {
+    const { store, id } = onRin();
+    const twin = twinElsewhere(store, '2000089', item)!;
+    let st = moveTo(store, twin, K).store;
+    st = equip(st, RIN, helmet({ HP: 1 })).store;
+    st = equip(st, RIN2, helmet({ ATK: 1 })).store;
+
+    expect(undoMove(st, K, twin, null)).toBe(st);
+    expect(st.pieces[id].bt).toBe(3);
+  });
 });
 
 describe('хранилище и резервная копия', () => {

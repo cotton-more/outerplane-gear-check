@@ -198,7 +198,8 @@ export function App() {
     const p = slot ? tryOnPreset(gear.store, buildKey(c.id, b.name), b, slot, from) : null;
     if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
       const cur = itemInput(s);
-      setUndo(hasItem(cur) && !touring ? cur : null);
+      // на форме уже пустая заготовка (второй «Примерить» подряд) — прежнее «Вернуть» остаётся
+      setUndo((u) => (touring ? null : hasItem(cur) ? cur : u));
       dispatch({ type: 'load', item: { slot: p.slot, grade: s.grade, setId: p.setId, itemKey: null, main: s.slot === p.slot ? s.main : null, unlisted: false, subs: {} } });
     } else dispatch({ type: 'tab', tab: 'eval' });
     if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
@@ -352,7 +353,7 @@ export function App() {
           </Sheet>
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} store={gear.store} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
-        {undo && s.tab === 'eval' && !tour.run && !gearUndo && (
+        {undo && s.tab === 'eval' && !tour.run && !(gearUndo && gearUndo.tab === s.tab) && (
           <div className="toast" role="status"><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
         {menuOpen && (
