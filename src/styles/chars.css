@@ -97,3 +97,6 @@ html.xs .bgear-t { grid-row: 3; }
 html.xs .roll-b.seg6 button { min-width: 26px; }
 .piece-bt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .piece-act { display: flex; flex-wrap: wrap; gap: 8px; }
+/* «Это шлем Rin?» — перенести ту же вещь или надеть новую */
+.twin { display: grid; gap: 10px; }
+.twin p { margin: 0; font-size: 13.5px; }

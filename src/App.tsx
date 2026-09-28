@@ -21,7 +21,7 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { buildKey, equipOn, pieceInput, samePiece, undoEquip, usedIn, type GearStore, type Piece } from './logic/gear';
+import { buildKey, equipOn, moveTo, pieceInput, samePiece, twinElsewhere, undoEquip, undoMove, usedIn, type GearStore, type Piece, type Twin } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char, SlotId } from './data/types';
@@ -125,18 +125,30 @@ export function App() {
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
-  // надеть вещь с формы в билд; персонаж попадает в ростер; сообщение — что стало со старой вещью, с «Отменить»
+  // надеть вещь с формы в билд; персонаж попадает в ростер; сообщение — что стало со старой вещью, с «Отменить».
+  // Такая же вещь уже на другом персонаже — сначала спросить «это шлем Rin?»: перенести её или надеть новую
+  const [twinAsk, setTwinAsk] = useState<{ c: Char; b: Build; twin: Twin } | null>(null);
   const doEquip = (c: Char, b: Build) => {
     const key = buildKey(c.id, b.name);
     const prev = gear.store;
     // та же вещь уже в этом слоте — ничего не менять: свежая копия потеряла бы отмеченные Reforge и Breakthrough
     const onNow = prev.pieces[prev.builds[key]?.slots[input.slot] ?? ''];
-    if (onNow && samePiece(input, onNow)) { setEquipOpen(false); return; }
-    const r = equipOn(prev, c.id, key, input);
+    setEquipOpen(false);
+    if (onNow && samePiece(input, onNow)) return;
+    const twin = twinElsewhere(prev, c.id, input);
+    if (twin) setTwinAsk({ c, b, twin }); else putOn(c, b, null);
+  };
+  // чей билд: ключ «персонаж/билд» → имя персонажа; «Rin · Speed»
+  const ownerOf = (k: string) => { const id = k.slice(0, k.indexOf('/')); return idx.CHAR[id]?.name ?? id; };
+  const whoOf = (k: string) => `${ownerOf(k)} · ${k.slice(k.indexOf('/') + 1)}`;
+  const putOn = (c: Char, b: Build, twin: Twin | null) => {
+    setTwinAsk(null);
+    const key = buildKey(c.id, b.name);
+    const prev = gear.store;
+    const r = twin ? { ...moveTo(prev, twin, key), shared: null } : equipOn(prev, c.id, key, input);
     gear.set(r.store);
     const added = !roster.has(c.id);
     if (added) rosterApi.add([c.id]);
-    setEquipOpen(false);
     setUndo(null);
     const slot = t.ui.slotNom[input.slot]; // «Надето: Caren · Speed · броня» — именительный, не «броню»
     const nameOf = (k: string) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k.slice(c.id.length + 1);
@@ -148,9 +160,10 @@ export function App() {
         : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[evaluate(ctx, pieceInput(r.old), { gamble: false }).v])].filter(Boolean).join(' ');
     }
     const item = input.slot;
+    const from = twin ? ownerOf(twin.keys[0]) : '';
     setGearUndo({
-      text: r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, tab: 'eval',
-      undo: (st) => undoEquip(st, key, item, r.piece, r.old), after: added ? () => rosterApi.remove([c.id]) : undefined,
+      text: twin ? t.ui.moved(from, c.name, b.name, slot) : r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, tab: 'eval',
+      undo: (st) => (twin ? undoMove(st, key, twin, r.old) : undoEquip(st, key, item, r.piece, r.old)), after: added ? () => rosterApi.remove([c.id]) : undefined,
     });
   };
   // примерка из карточки персонажа: персонаж — в ростер (как у «Надеть»), на форму — слот и сет, грейд прежний.
@@ -269,6 +282,18 @@ export function App() {
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
             <button type="button" onClick={() => { gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
           </div>
+        )}
+        {twinAsk && !tour.run && (
+          <Sheet title={t.ui.twinTitle(t.ui.slotNom[twinAsk.twin.piece.slot], ownerOf(twinAsk.twin.keys[0]))} onClose={() => setTwinAsk(null)}>
+            <div className="twin">
+              <p>{t.ui.twinNote(twinAsk.twin.keys.map(whoOf).join(', '))}</p>
+              <p className="muted small">{t.ui.twinMoveNote}</p>
+              <div className="piece-act">
+                <button type="button" className="btn primary" onClick={() => putOn(twinAsk.c, twinAsk.b, twinAsk.twin)}>{t.ui.twinMove}</button>
+                <button type="button" className="btn" onClick={() => putOn(twinAsk.c, twinAsk.b, null)}>{t.ui.twinOther}</button>
+              </div>
+            </div>
+          </Sheet>
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} store={gear.store} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {undo && s.tab === 'eval' && !tour.run && !gearUndo && (

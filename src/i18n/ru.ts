@@ -353,6 +353,13 @@ export const ru = {
     oldVerdict: (label: string) => `Старая: «${label}».`,
     oldStill: (builds: string) => `Старая осталась в ${builds}.`,
     sameAs: (build: string) => `Та же вещь, что в ${build}: Reforge и Breakthrough правятся сразу везде.`,
+    // та же вещь уже на другом персонаже (logic/gear twinElsewhere): переносим, только если игрок подтвердил
+    twinTitle: (slot: string, name: string) => `Это ${slot} ${name}?`,
+    twinNote: (who: string) => `Такая же вещь уже надета: ${who}. Совпадают слот, сет или предмет, main и жёлтые сегменты. В игре вещь носит один персонаж.`,
+    twinMoveNote: 'Перенести — Reforge и Breakthrough останутся, там слот освободится.',
+    twinMove: 'Перенести',
+    twinOther: 'Другая',
+    moved: (from: string, name: string, build: string, slot: string) => `Перенесено: ${slot} ${from} → ${name} · ${build}`,
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
     gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),
     gearShared: (builds: string) => `Есть и в ${builds} — правка изменит везде.`,

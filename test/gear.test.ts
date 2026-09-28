@@ -5,8 +5,8 @@ import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import {
   addFourth, buildKey, decodeGear, EMPTY_GEAR, encodeGear, equip, equipOn, moveBuild, newerGear, orphanBuilds, reforgeScale,
-  reforgesDone, replaceStat, restoreGear, samePiece, setYellow, share, tapSegment, undoEquip, unequip, updatePiece, usedIn,
-  type Piece,
+  moveTo, reforgesDone, replaceStat, restoreGear, samePiece, setYellow, share, tapSegment, twinElsewhere, undoEquip, undoMove,
+  unequip, updatePiece, usedIn, type Piece,
 } from '../src/logic/gear';
 import type { ItemInput } from '../src/logic/verdict';
 
@@ -166,6 +166,55 @@ describe('та же вещь', () => {
     expect(samePiece(helmet({ CHC: 2, CHD: 2 }), p)).toBe(false);
     expect(samePiece(helmet({ CHC: 2, CHD: 1 }, 'rare'), p)).toBe(false);
     expect(samePiece({ ...helmet({ CHC: 2, CHD: 1 }), setId: D.sets.find((x) => x.short === 'Attack')!.id }, p)).toBe(false);
+  });
+});
+
+describe('та же вещь на другом персонаже', () => {
+  const RIN = buildKey('2000019', 'Speed');
+  const RIN2 = buildKey('2000019', 'Pen');
+  const item = helmet({ 'DEF%': 2, CHC: 1, SPD: 1 });
+  // на Rin · Speed и Rin · Pen — эта вещь, прокачанная: T3 и оранжевые
+  const onRin = () => {
+    const a = equip(EMPTY_GEAR, RIN, item);
+    return { store: updatePiece(share(a.store, RIN2, 'helmet', a.piece.id), a.piece.id, { lit: { 'DEF%': 4, CHC: 1, SPD: 1 }, bt: 3 }), id: a.piece.id };
+  };
+
+  it('на Rin та же вещь — спросить про неё; жёлтые другие — не она', () => {
+    const { store, id } = onRin();
+    expect(twinElsewhere(store, '2000089', item)).toEqual({ piece: store.pieces[id], keys: [RIN, RIN2] });
+    expect(twinElsewhere(store, '2000089', helmet({ 'DEF%': 3, CHC: 1, SPD: 1 }))).toBeNull();
+  });
+
+  it('у самой Caren такая же в другом билде — не спрашиваем (equipOn поставит её же)', () => {
+    const { store } = onRin();
+    const own = equip(store, K2, item).store;
+    expect(twinElsewhere(own, '2000089', item)).toBeNull();
+  });
+
+  it('«Перенести»: та же запись с T3 и оранжевыми — на Caren, у Rin оба слота пусты; старая вещь Caren названа', () => {
+    const { store, id } = onRin();
+    const had = equip(store, K, helmet({ HP: 1 }));
+    const twin = twinElsewhere(had.store, '2000089', item)!;
+
+    const r = moveTo(had.store, twin, K);
+
+    expect(r.store.builds[K].slots.helmet).toBe(id);
+    expect(r.store.pieces[id]).toMatchObject({ bt: 3, lit: { 'DEF%': 4 } });
+    expect(usedIn(r.store, id)).toEqual([K]);
+    expect(r.old?.id).toBe(had.piece.id);
+  });
+
+  it('«Вернуть» после «Перенести»: у Caren — как было, вещь — снова на Rin в обоих билдах', () => {
+    const { store, id } = onRin();
+    const had = equip(store, K, helmet({ HP: 1 }));
+    const twin = twinElsewhere(had.store, '2000089', item)!;
+    const r = moveTo(had.store, twin, K);
+
+    const back = undoMove(r.store, K, twin, r.old);
+
+    expect(back.builds[K].slots.helmet).toBe(had.piece.id);
+    expect(usedIn(back, id).sort()).toEqual([RIN2, RIN].sort());
+    expect(back.pieces[id].bt).toBe(3);
   });
 });
 

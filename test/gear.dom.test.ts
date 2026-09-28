@@ -117,6 +117,43 @@ describe('экипировка', () => {
     expect($('.vc-equip')).toBeNull();
   });
 
+  it('такая же вещь на Kappa: «Is this Kappa\'s helmet?» — «Move» переносит ту же запись, «Undo» — обратно', async () => {
+    const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: NEW.subs, lit: { ...NEW.subs, CHD: 5 }, bt: 2, at: '' } }, builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await click(byText('.equip-row', 'Caren Speed')?.closest('button') as HTMLElement);
+
+    expect(byText('.drawer h2, .drawer .sheet-t, .drawer', "Is this Kappa's helmet?")).toBeTruthy();
+    expect($('.twin')?.textContent).toContain('Kappa · Speed');
+    await click(byText('.twin button', 'Move'));
+
+    const st = stored();
+    expect(st.builds[caren.id + '/Speed'].slots.helmet).toBe('p1');
+    expect(st.builds[kappa.id + '/Speed']).toBeUndefined();
+    expect(st.pieces.p1.bt).toBe(2);
+    expect($('.gear-toast')?.textContent).toContain("Moved: Kappa's helmet → Caren · Speed");
+
+    await click($('.gear-toast button'));
+    expect(stored().builds[kappa.id + '/Speed'].slots.helmet).toBe('p1');
+    expect(stored().builds[caren.id + '/Speed']).toBeUndefined();
+  });
+
+  it('«Другая» — новая запись, у Kappa её вещь остаётся', async () => {
+    const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: NEW.subs, lit: NEW.subs, bt: 2, at: '' } }, builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await click(byText('.equip-row', 'Caren Speed')?.closest('button') as HTMLElement);
+    await click(byText('.twin button', 'Another one'));
+
+    const st = stored();
+    expect(st.builds[kappa.id + '/Speed'].slots.helmet).toBe('p1');
+    expect(st.builds[caren.id + '/Speed'].slots.helmet).not.toBe('p1');
+  });
+
   it('до записей раздела «Сейчас на персонажах» нет — вердикт как раньше', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     expect($('.vcard .vc-vs')).toBeNull();

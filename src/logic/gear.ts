@@ -119,6 +119,40 @@ export function equipOn(st: GearStore, charId: string, key: string, item: ItemIn
   return { store: share(st, key, item.slot, id, at), piece: st.pieces[id], old: oldId ? st.pieces[oldId] ?? null : null, shared: twin[0] };
 }
 
+// Та же вещь уже на другом персонаже: в игре вещь носит один герой, а номера вещи у нас нет — узнаём по тому, что без
+// Transistone не меняется (samePiece). Спрашиваем «это шлем Rin?», молча не переносим: у Epic с тремя сабстатами по
+// одному жёлтому совпадения нередки. Стоит и у этого персонажа (другой билд) — не спрашиваем: equipOn поставит её же.
+export interface Twin { piece: Piece; keys: string[] } // keys — билды другого персонажа, где она стоит
+export function twinElsewhere(st: GearStore, charId: string, item: ItemInput): Twin | null {
+  const same = Object.values(st.pieces).filter((p) => samePiece(item, p));
+  if (same.some((p) => usedIn(st, p.id).some((k) => k.startsWith(charId + '/')))) return null;
+  for (const p of same) {
+    const keys = usedIn(st, p.id).filter((k) => st.builds[k].slots[p.slot] === p.id);
+    if (keys.length) return { piece: p, keys };
+  }
+  return null;
+}
+
+// «Перенести»: та же запись (с Reforge и Breakthrough) — в этот билд, у прежнего персонажа слот освобождается
+export function moveTo(st: GearStore, twin: Twin, key: string, at = today()): { store: GearStore; piece: Piece; old: Piece | null } {
+  const slot = twin.piece.slot;
+  const oldId = st.builds[key]?.slots[slot];
+  const old = oldId && oldId !== twin.piece.id ? st.pieces[oldId] ?? null : null;
+  let next = setSlot(st, key, slot, twin.piece.id, at);
+  for (const k of twin.keys) if (k !== key) next = setSlot(next, k, slot, null, at);
+  return { store: next, piece: twin.piece, old };
+}
+
+// «Вернуть» после «Перенести»: этот слот — как было, а вещь — обратно туда, откуда её взяли (если там не занято)
+export function undoMove(st: GearStore, key: string, twin: Twin, old: Piece | null, at = today()): GearStore {
+  const slot = twin.piece.slot;
+  if (st.builds[key]?.slots[slot] !== twin.piece.id) return st;
+  let next = undoEquip(st, key, slot, twin.piece, old, at);
+  next = { ...next, pieces: { ...next.pieces, [twin.piece.id]: st.pieces[twin.piece.id] } };
+  for (const k of twin.keys) if (!next.builds[k]?.slots[slot]) next = setSlot(next, k, slot, twin.piece.id, at);
+  return gc(next);
+}
+
 // «Вернуть» после «Надеть»: только этот слот этого билда — как было (старую вещь — обратно, даже если её убрал gc).
 // Другие правки за эти секунды остаются; слот успели поменять ещё раз — не трогаем
 export function undoEquip(st: GearStore, key: string, slot: SlotId, piece: Piece, old: Piece | null, at = today()): GearStore {
