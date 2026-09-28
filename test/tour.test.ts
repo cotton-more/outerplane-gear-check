@@ -173,3 +173,13 @@ describe('подсказки модулей', () => {
     expect(newsOf([{ ...tipA, since: '2026-10-01' }], st())).toEqual([]); // без news — не новость
   });
 });
+
+describe('подсказка «Кубик»', () => {
+  const dice = TIPS.find((tp) => tp.id === 'dice')!;
+  const ctx = (tab: 'eval' | 'chars', gamble: boolean) =>
+    ({ s: { tab }, verdict: { gamble: gamble ? { of: 9, hits: [], target: 'keep', near: [], main: [] } : null } }) as unknown as TourCtx;
+
+  it('только на оценке и только когда у вердикта есть кубик', () => {
+    expect([ctx('eval', true), ctx('eval', false), ctx('chars', true)].map((c) => dice.when!(c))).toEqual([true, false, false]);
+  });
+});
