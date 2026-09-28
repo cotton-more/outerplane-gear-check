@@ -129,6 +129,7 @@ describe('экипировка', () => {
 
     expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 2 }, lit: { 'DEF%': 3 }, bt: 4 });
     expect($('.piece')?.textContent).toContain('Reforge: 1 of 6');
+    expect([...$$('.piece .seg6')[0].querySelectorAll('button')].slice(0, 4).map((b) => b.getAttribute('aria-label'))).toEqual(['1, yellow', '2, yellow', '3, Reforge', '4']);
   });
 
   it('оружие: временная против надетой рекомендованной — чип словом, ▼ «stopgap», процент строкой ниже', async () => {

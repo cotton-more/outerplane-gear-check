@@ -365,6 +365,8 @@ export const ru = {
     pieceReforge: (done: number, max: number) => `Reforge: ${done} из ${max} — считаю по оранжевым сегментам`,
     pieceNoFourth: 'У Epic первый Reforge добавляет 4-й сабстат — сначала «+ 4-й сабстат от Reforge», потом оранжевые.',
     pieceBtUnknown: 'не указан',
+    // сегмент в карточке вещи — для диктора: жёлтый от ролла или оранжевый от Reforge (иначе различие только цветом)
+    segLabel: (n: number, kind: string) => (kind === 'y' ? `${n}, жёлтый` : kind === 'o' ? `${n}, Reforge` : String(n)),
     pieceStatHint: 'Transistone сменил стат или жёлтые отмечены не так — нажми на название стата: выбери стат и сколько у него жёлтых. Оранжевые останутся.',
     yellowSheet: (k: string) => `Сколько жёлтых у ${k}?`,
     yellowNote: (orange: number) => orange ? `Как сейчас в игре. Оранжевые (Reforge: ${orange}) останутся.` : 'Как сейчас в игре.',

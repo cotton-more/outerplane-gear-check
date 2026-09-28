@@ -89,7 +89,7 @@ html.xs .bgear-t { grid-row: 3; }
 .piece-n { display: flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; white-space: nowrap; }
 .roll-b.seg6 button { min-width: 30px; background: transparent; color: var(--ink-2); }
 .roll-b.seg6 button.y { background: var(--seg-y); color: #1b1300; }
-.roll-b.seg6 button.o { background: var(--seg-o); color: #2a1000; }
+.roll-b.seg6 button.o { background: var(--seg-o); color: #2a1000; box-shadow: inset 0 -4px 0 rgb(0 0 0 / .28); } /* не только цветом: в тёмной теме жёлтый и оранжевый близки */
 html.xs .roll-b.seg6 button { min-width: 26px; }
 .piece-bt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .piece-act { display: flex; flex-wrap: wrap; gap: 8px; }

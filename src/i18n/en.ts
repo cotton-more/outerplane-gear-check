@@ -334,6 +334,7 @@ export const en: Texts = {
     pieceReforge: (done, max) => `Reforge: ${done} of ${max} — counted from the orange segments`,
     pieceNoFourth: 'On an Epic the first Reforge adds the 4th substat — "+ 4th substat from Reforge" first, then orange ones.',
     pieceBtUnknown: 'not set',
+    segLabel: (n, kind) => (kind === 'y' ? `${n}, yellow` : kind === 'o' ? `${n}, Reforge` : String(n)),
     pieceStatHint: 'Transistone changed a stat, or the yellow count is off — tap the stat name: pick the stat and its yellow count. Orange ones stay.',
     yellowSheet: (k) => `How many yellow on ${k}?`,
     yellowNote: (orange) => (orange ? `As it is in the game now. Orange ones (Reforge: ${orange}) stay.` : 'As it is in the game now.'),

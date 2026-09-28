@@ -169,7 +169,8 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose }: {
               <span className="roll-b seg6" role="group" aria-label={subLabel(k)}>
                 {Array.from({ length: MAX_LIT }, (_, i) => i + 1).map((n) => (
                   <button key={n} type="button" className={n <= p.yellow[k] ? 'y' : n <= p.lit[k] ? 'o' : undefined}
-                    aria-pressed={n <= p.lit[k]} onClick={() => put(tapSegment(p, k, n))}>{n}</button>
+                    aria-pressed={n <= p.lit[k]} aria-label={t.ui.segLabel(n, n <= p.yellow[k] ? 'y' : n <= p.lit[k] ? 'o' : '')}
+                    onClick={() => put(tapSegment(p, k, n))}>{n}</button>
                 ))}
               </span>
             </div>
