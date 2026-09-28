@@ -46,6 +46,34 @@ describe('бонус сета только на T4', () => {
     expect(compare(ctx, onSpeedImmu(2), caren, build('Speed/Immu'), NEW)).toMatchObject({ kind: 'up', t4: { n: 2 } });
   });
 
+  // Heatwave Cop Delta · DPS: Pen ×4 | Atk ×2 + Spd ×2 | Pen ×2 + Atk ×2 — ограничение по собираемой связке
+  describe('несколько связок: смотрим ту, что собирают', () => {
+    const delta = D.chars.find((c) => c.name === 'Heatwave Cop Delta')!;
+    const dps = delta.builds.find((b) => b.name === 'DPS')!;
+    const key = buildKey(delta.id, dps.name);
+    const wear = (sets: Record<string, string>, helmetBt: 0 | 4) => {
+      let st: GearStore = EMPTY_GEAR;
+      for (const [slot, s] of Object.entries(sets)) st = equip(st, key, armor(slot as ItemInput['slot'], s, { HP: 1, DEF: 1, RES: 1, EFF: 1 })).store;
+      const helmet = st.builds[key].slots.helmet!;
+      return updatePiece(st, helmet, { bt: helmetBt });
+    };
+    const pen = armor('helmet', 'Penetration', { 'ATK%': 3, CHC: 2, CHD: 2, SPD: 1 });
+
+    it('четыре Pen — это Pen ×4: новый шлем лучше надетого на T4 остаётся «лучше», пометки нет', () => {
+      const vs = compare(ctx, wear({ helmet: 'Penetration', armor: 'Penetration', gloves: 'Penetration', shoes: 'Penetration' }, 4), delta, dps, pen)!;
+      expect(vs).toMatchObject({ kind: 'up', t4: null });
+    });
+
+    it('два Pen и два Attack — это Pen ×2 + Atk ×2: ограничение и пометка остаются', () => {
+      const vs = compare(ctx, wear({ helmet: 'Penetration', armor: 'Penetration', gloves: 'Attack', shoes: 'Attack' }, 4), delta, dps, pen)!;
+      expect(vs).toMatchObject({ kind: 'eq', t4: { set: set('Penetration'), n: 2 } });
+    });
+
+    it('пустой слот, ничего не собрано: первая связка с Pen — Pen ×4, пометки нет', () => {
+      expect(compare(ctx, EMPTY_GEAR, delta, dps, pen)?.t4).toBeNull();
+    });
+  });
+
   it('Speed ×4 бонус даёт и на T0 — пометки нет', () => {
     expect(compare(ctx, wearing({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }), caren, build('Speed'), NEW)?.t4).toBeNull();
   });

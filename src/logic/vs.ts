@@ -107,16 +107,21 @@ export const fits = (ctx: Ctx, b: Build, item: ItemInput): boolean => fit(ctx, b
 
 // 2+2: замена в слоте ломает связку сетов, которая была собрана. Зовётся только при надетой вещи: пустой слот
 // связку не ломает (compare выходит раньше)
+// броня билда по сетам; swap — с новой вещью в её слоте (пустой слот она тоже занимает)
+function armorSets(st: GearStore, key: string, item: ItemInput, swap: boolean): Record<string, number> {
+  const slots: Record<string, string | null | undefined> = { ...st.builds[key]?.slots };
+  if (swap) slots[item.slot] = null;
+  const n: Record<string, number> = {};
+  for (const [slot, id] of Object.entries(slots)) {
+    const set = swap && slot === item.slot ? item.setId : st.pieces[id ?? '']?.setId;
+    if (set && isArmor(slot as ItemInput['slot'])) n[set] = (n[set] ?? 0) + 1;
+  }
+  return n;
+}
+
 function breaks(st: GearStore, key: string, b: Build, item: ItemInput): string | null {
   if (!isArmor(item.slot)) return null;
-  const count = (swap: boolean) => {
-    const n: Record<string, number> = {};
-    for (const [slot, id] of Object.entries(st.builds[key]?.slots ?? {})) {
-      const set = swap && slot === item.slot ? item.setId : st.pieces[id]?.setId;
-      if (set && isArmor(slot as ItemInput['slot'])) n[set] = (n[set] ?? 0) + 1;
-    }
-    return n;
-  };
+  const count = (swap: boolean) => armorSets(st, key, item, swap);
   const ok = (n: Record<string, number>) => b.sets.filter((combo) => combo.every((p) => (n[p.set] ?? 0) >= p.n));
   const before = ok(count(false)), after = ok(count(true));
   if (!before.length || after.length) return null;
@@ -139,7 +144,7 @@ function baseVs(st: GearStore, c: Char, b: Build, item: ItemInput): Vs {
 export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs | null {
   const f = fit(ctx, b, item);
   if (f === 'no') return null;
-  const n4 = isArmor(item.slot) && item.setId ? t4Part(ctx.idx, b, item.setId) : null;
+  const n4 = isArmor(item.slot) && item.setId ? t4Part(ctx.idx, b, item.setId, armorSets(st, buildKey(c.id, b.name), item, true)) : null;
   const t4 = n4 && item.setId ? { set: item.setId, n: n4 } : null;
   const base = { ...baseVs(st, c, b, item), t4 };
   const { key, worn } = base;

@@ -15,9 +15,16 @@ export const combosWith = (b: Build, setId: string): Combo[] => b.sets.filter((c
 // (в игре у них нет строки 2P до T4; ×4 — 25% на T0 против 13 + 12 на T4, то есть на любом уровне)
 export const t4Only = (set: GearSet | undefined, n: number): boolean =>
   !!set && (n >= 4 ? set.p4base === null && set.p4 !== null : set.p2base === null && set.p2 !== null);
-// в связках билда с этим сетом его часть — только на T4 (Speed ×2 в Immunity ×2 + Speed ×2)
-export const t4Part = (idx: Index, b: Build, setId: string): number | null =>
-  combosWith(b, setId).flatMap((cb) => cb.filter((p) => p.set === setId && t4Only(idx.SET[setId], p.n)))[0]?.n ?? null;
+// в собираемой связке билда часть этого сета — только на T4 (Speed ×2 в Immunity ×2 + Speed ×2): сколько штук.
+// Собираемая — та, что собрана (count — броня билда по сетам, уже с новой вещью), иначе где вещей больше, при равенстве
+// первая. У Pen ×4 | Pen ×2 + Atk ×2 с четырьмя Pen собирают Pen ×4 — там бонус на любом уровне
+export function t4Part(idx: Index, b: Build, setId: string, count: Readonly<Record<string, number>>): number | null {
+  const have = (cb: Combo) => cb.reduce((n, p) => n + Math.min(count[p.set] ?? 0, p.n), 0);
+  const combo = b.sets.find((cb) => cb.every((p) => (count[p.set] ?? 0) >= p.n))
+    ?? b.sets.reduce<Combo | null>((best, cb) => (!best || have(cb) > have(best) ? cb : best), null);
+  const part = combo?.find((p) => p.set === setId);
+  return part && t4Only(idx.SET[setId], part.n) ? part.n : null;
+}
 export const comboText = (idx: Index, combo: Combo): string =>
   combo.map((p) => `${idx.SET[p.set] ? idx.SET[p.set].short : p.set} ×${p.n}`).join(' + ');
 export const gearList = (b: Build, kind: GearKind): GearRef[] => (kind === 'weapon' ? b.weapons : b.amulets);
