@@ -32,6 +32,7 @@ afterEach(async () => {
   root = null;
   document.body.innerHTML = '';
   localStorage.clear();
+  history.replaceState(null, '', location.pathname); // тур «Экипировка» открывает Caren — #caren в адресе открыл бы её снова
 });
 
 async function mount(saved: Record<string, unknown> = {}) {
@@ -411,5 +412,48 @@ describe('тур «Экипировка» на примере', () => {
     await click($('.tour-x'));
     expect(snapshot()).toEqual(before);
     expect($('.tryon')?.textContent).toContain('Kappa · Speed');
+  });
+
+  // на странице во время тура — экипировка тура: у «Экипировки» пример, у главного пусто (useGear persist = false).
+  // Код показал бы её как резервную копию игрока, «Заменить» записал бы в неё, а «Вернуть» после тура — поверх его записей
+  it.each([
+    ['«Экипировка»', 'Gear · 1 min', null],
+    ['главный', 'Checking a piece', 'Example'],
+  ])('тур %s: кода экипировки нет, после тура — снова код игрока', async (_, pick, then) => {
+    await mount(MINE);
+    const before = snapshot();
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', pick));
+    if (then) await click(byText('.tour-strip button', then));
+    // «Персонажи»: у «Экипировки» тур уже там, из главного — через ☰
+    if (($('#view-chars') as HTMLElement).hidden) {
+      await click($('.vb-tab'));
+      await click(byText('.menu button', 'Characters'));
+    }
+    await click(byText('.roster-bar .linkbtn', 'export / import'));
+    expect($('#gear-code')).toBeNull();
+    expect($('#char-list')?.textContent).toContain(TEXTS.en.ui.gearCodeTour);
+    await click($('.tour-x'));
+    expect(snapshot()).toEqual(before);
+    if (($('#view-chars') as HTMLElement).hidden) {
+      await click($('.vb-tab'));
+      await click(byText('.menu button', 'Characters'));
+    }
+    if (!$('#gear-code')) await click(byText('.roster-bar .linkbtn', 'export / import'));
+    const { decodeGear } = await import('../src/logic/gear');
+    const { createIndex } = await import('../src/data');
+    expect(Object.keys(decodeGear(($('#gear-code') as HTMLTextAreaElement).value, createIndex(D))!.builds)).toEqual([kappa.id + '/Speed']);
+  });
+
+  it('«Вернуть» экипировки, начатое до тура, после тура не всплывает', async () => {
+    // примерка Kappa · Speed: шлем с формы — кнопкой под карточкой
+    await mount({ ...MINE, state: { tab: 'eval', slot: 'helmet', grade: 'unique' }, item: { setId: speed, subs: { CHC: 2, CHD: 2, SPD: 1, HP: 1 } } });
+    await frame(); // кубик досчитывается следом (useDeferredValue) — кнопка встаёт после него
+    await click($('.vc-equip'));
+    expect($('.gear-toast')).toBeTruthy();
+    await click(byText('.actions button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Gear · 1 min'));
+    await click($('.tour-x'));
+    expect($('.gear-toast')).toBeNull();
   });
 });

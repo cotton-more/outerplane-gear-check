@@ -12,13 +12,14 @@ import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
-// onGearImport — код экипировки заменил записи: сообщение с «Вернуть» (App); geared — у кого сколько надето
+// onGearImport — код экипировки заменил записи: сообщение с «Вернуть» (App); geared — у кого сколько надето;
+// touring — идёт обучение: на странице экипировка тура (пример или пусто), кода экипировки нет
 interface Props {
   s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
-  onGearImport: (prev: GearStore, text: string) => void;
+  onGearImport: (prev: GearStore, text: string) => void; touring: boolean;
 }
 
-export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport, touring }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -66,7 +67,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport }:
         {roster.size > 0 && <ClearRoster onClear={rosterApi.clear} />}
       </div>
       {io && <RosterIO rosterApi={rosterApi} />}
-      {io && <GearIO gear={gear} onImport={onGearImport} />}
+      {io && (touring ? <p className="roster-io small muted">{t.ui.gearCodeTour}</p> : <GearIO gear={gear} onImport={onGearImport} />)}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
           <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id) ?? 0}

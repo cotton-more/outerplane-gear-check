@@ -358,6 +358,7 @@ export const en: Texts = {
     pieceRemove: 'Remove from build',
     pieceDone: 'Done',
     gearCodeLabel: 'Equipment — a code for backup and moving to another device',
+    gearCodeTour: 'The gear code is here after the tutorial: while it runs, the page shows an example, not your gear.',
     gearApplied: (n) => `Equipment loaded: ${n} pieces.`,
     gearBad: 'Can\'t read the code — copy all of it, with OGC-GEAR1 at the start.',
     gearNewer: 'Equipment was saved by a newer version of the page — reload the page to see and change it.',
