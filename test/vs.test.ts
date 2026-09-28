@@ -43,6 +43,13 @@ describe('сравнение с надетым', () => {
     expect(compare(ctx, st, caren, build('Speed'), NEW)).toMatchObject({ kind: 'down' });
   });
 
+  it('«хуже» без потерянных мест — почему: у надетой больше сегментов на DEF% (6 против 3,5 с Reforge впереди)', () => {
+    const st = wearing({ 'DEF%': 6, CHC: 4, CHD: 4, HP: 2 }, { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 });
+    const vs = compare(ctx, st, caren, build('Speed'), NEW)!;
+
+    expect(vs).toMatchObject({ kind: 'down', lost: [], ahead: { key: 'DEF%', worn: 6, next: 3.5 } });
+  });
+
   it('пустой слот в собираемом билде; эта же вещь — «уже надета»', () => {
     const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), armor('armor', 'Speed', { CHC: 2 })).store;
     expect(compare(ctx, st, caren, build('Speed'), NEW)?.kind).toBe('fill');

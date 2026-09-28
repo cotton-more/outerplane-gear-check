@@ -289,6 +289,7 @@ export const en: Texts = {
     vsDelta: (pct) => `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)}% useful segments, counting the Reforges still ahead.`,
     vsTimes: (n) => `${n}× the useful segments, counting the Reforges still ahead.`,
     vsEmpty: 'The one on has nothing useful: none of its substats count for this build.',
+    vsAhead: (k, worn, next) => `The one on has more segments: ${k} — ${dec(worn)} vs ${dec(next)} on the new one, counting the Reforges ahead.`,
     vsWhy: {
       rec: 'This piece is recommended for the build, the one on isn\'t: the passive matters more than substats.',
       stopgap: 'A recommended piece is on, and this one is a stopgap: the passive matters more than substats — no need to swap.',

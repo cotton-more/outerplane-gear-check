@@ -33,6 +33,8 @@ export interface Vs {
   // stopgap: новая временная, а надета рекомендованная (хуже). Тогда чип — словом, процент — строкой с причиной
   why: 'rec' | 'stopgap' | null;
   wornEmpty: boolean;            // у надетой нет ни одного полезного сегмента: процент бессмыслен (деление на ноль)
+  // «хуже», хотя мест новая не теряет: у надетой больше сегментов — стат, где она впереди сильнее всего
+  ahead: { key: string; worn: number; next: number } | null;
 }
 
 // чем показать разницу: процент; «×N», когда больше +200% (иначе «+92250%» у почти пустой надетой); «полезных нет»
@@ -47,7 +49,8 @@ export function vsFigure(vs: Pick<Vs, 'delta' | 'wornEmpty'>): VsFigure | null {
 export const MARGIN = 0.1;
 
 // полезные сегменты вещи для билда: вес места × засчитывается (1, ½, 0) × сегменты сейчас + доля будущих Reforge
-function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: number): { v: number; cover: Map<number, string> } {
+// segs — сколько сегментов у каждого полезного стата будет с Reforge впереди (для строки «у надетой больше сегментов»)
+function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: number): { v: number; cover: Map<number, string>; segs: Map<string, number> } {
   const W = subWeights(ctx, b, c, itemMains(ctx.idx, item));
   const n = Object.keys(lit).length;
   // у Epic с тремя первый Reforge уйдёт на 4-й: его пока не знаем — считаем бесполезным
@@ -55,13 +58,15 @@ function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: nu
   const share = left / dropSubs('unique');
   let v = 0;
   const cover = new Map<number, string>();
+  const segs = new Map<string, number>();
   for (const [k, seg] of Object.entries(lit)) {
     const w = W.get(k);
     if (!w || !w.credit) continue;
-    v += CFG.tierWeights[Math.min(w.tier, CFG.tierWeights.length - 1)] * w.credit * Math.min(MAX_LIT, seg + share);
+    segs.set(k, Math.min(MAX_LIT, seg + share));
+    v += CFG.tierWeights[Math.min(w.tier, CFG.tierWeights.length - 1)] * w.credit * segs.get(k)!;
     if (!cover.has(w.tier)) cover.set(w.tier, k);
   }
-  return { v, cover };
+  return { v, cover, segs };
 }
 
 // подходит ли вещь этому билду: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с нужным main;
@@ -107,7 +112,7 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
   const key = buildKey(c.id, b.name);
   const wornId = st.builds[key]?.slots[item.slot];
   const worn = wornId ? st.pieces[wornId] ?? null : null;
-  const base: Vs = { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false };
+  const base: Vs = { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false, ahead: null };
   if (!worn) return base; // пустой слот связку не ломает — только дополняет
   if (samePiece(item, worn)) return { ...base, kind: 'worn' };
   const wi = pieceInput(worn);
@@ -129,9 +134,14 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
   const sameType = isArmor(item.slot)
     ? worn.setId === item.setId && worn.grade === item.grade
     : !!item.itemKey && worn.itemKey === item.itemKey;
+  const lost = place(E.cover, X.cover);
+  const ahead = kind === 'down' && !why && !lost.length
+    ? [...E.segs].map(([k, w]) => ({ key: k, worn: w, next: X.segs.get(k) ?? 0 })).filter((x) => x.worn > x.next)
+      .sort((a, z) => z.worn - z.next - (a.worn - a.next))[0] ?? null
+    : null;
   return {
-    ...base, kind, delta, why, broken, wornEmpty: E.v === 0 && X.v > 0,
-    gained: place(X.cover, E.cover), lost: place(E.cover, X.cover),
+    ...base, kind, delta, why, broken, wornEmpty: E.v === 0 && X.v > 0, ahead,
+    gained: place(X.cover, E.cover), lost,
     chains: { worn: rowOf(ctx, c, b, wi, worn.lit), next: rowOf(ctx, c, b, item, item.subs) },
     material: sameType && worn.bt !== null && worn.bt < 4,
     passive: !isArmor(item.slot) && !!worn.itemKey && !!item.itemKey && worn.itemKey !== item.itemKey,
