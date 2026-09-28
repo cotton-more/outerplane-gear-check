@@ -21,7 +21,7 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { buildKey, equip, pieceInput, samePiece, usedIn, type GearStore } from './logic/gear';
+import { buildKey, equip, pieceInput, samePiece, undoEquip, usedIn, type GearStore } from './logic/gear';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char } from './data/types';
@@ -79,7 +79,9 @@ export function App() {
   const gear = useGear(idx, !touring);
   const vsList = useMemo(() => compareAll(ctx, gear.store, input, verdict), [ctx, gear.store, verdict]); // eslint-disable-line react-hooks/exhaustive-deps
   const [equipOpen, setEquipOpen] = useState(false);
-  const [gearUndo, setGearUndo] = useState<{ text: string; note: string; prev: GearStore } | null>(null);
+  // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
+  // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи
+  const [gearUndo, setGearUndo] = useState<{ text: string; note: string; tab: Tab; undo: (st: GearStore) => GearStore; after?: () => void } | null>(null);
   useEffect(() => {
     if (!gearUndo) return;
     const id = setTimeout(() => setGearUndo(null), 8000);
@@ -123,7 +125,8 @@ export function App() {
     if (onNow && samePiece(input, onNow)) { setEquipOpen(false); return; }
     const r = equip(prev, key, input);
     gear.set(r.store);
-    if (!roster.has(c.id)) rosterApi.add([c.id]);
+    const added = !roster.has(c.id);
+    if (added) rosterApi.add([c.id]);
     setEquipOpen(false);
     setUndo(null);
     const slot = t.ui.slotAcc[input.slot];
@@ -134,8 +137,14 @@ export function App() {
       note = still.length ? t.ui.oldStill(still.join(', '))
         : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[evaluate(ctx, pieceInput(r.old), { gamble: false }).v]);
     }
-    setGearUndo({ text: r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, prev });
+    const item = input.slot;
+    setGearUndo({
+      text: r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, tab: 'eval',
+      undo: (st) => undoEquip(st, key, item, r.piece, r.old), after: added ? () => rosterApi.remove([c.id]) : undefined,
+    });
   };
+  // импорт кода экипировки заменил все записи: «Вернуть» — всё, как было до него
+  const onGearImport = (prev: GearStore, text: string) => setGearUndo({ text, note: '', tab: 'chars', undo: () => prev });
   useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
   // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
@@ -201,7 +210,7 @@ export function App() {
             {!layout.narrow && <Verdict r={verdict} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={tour.run ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={tour.run ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} />
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} onGearImport={onGearImport} />
             <CharDetail key={s.charId ?? ''} charId={s.charId} ctx={ctx} rosterApi={rosterApi} gear={gear} active={s.tab === 'chars'}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} />
           </section>
@@ -225,10 +234,10 @@ export function App() {
         )}
         <TipLayer tour={tour} c={tourCtx} enabled={tipsOn} forced={forcedTip} onForced={onForced} />
         <TourLayer tour={tour} c={tourCtx} rosterEmpty={roster.size === 0} onTab={onTab} onRoster={() => onTab('chars')} />
-        {gearUndo && !tour.run && (
+        {gearUndo && gearUndo.tab === s.tab && !tour.run && (
           <div className="toast gear-toast" role="status">
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
-            <button type="button" onClick={() => { gear.set(gearUndo.prev); setGearUndo(null); }}>{t.ui.undoAction}</button>
+            <button type="button" onClick={() => { gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
           </div>
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} store={gear.store} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}

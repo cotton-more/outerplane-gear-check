@@ -89,6 +89,14 @@ export function equip(st: GearStore, key: string, item: ItemInput, at = today())
   return { store: next, piece, old };
 }
 
+// «Вернуть» после «Надеть»: только этот слот этого билда — как было (старую вещь — обратно, даже если её убрал gc).
+// Другие правки за эти секунды остаются; слот успели поменять ещё раз — не трогаем
+export function undoEquip(st: GearStore, key: string, slot: SlotId, piece: Piece, old: Piece | null, at = today()): GearStore {
+  if (st.builds[key]?.slots[slot] !== piece.id) return st;
+  const back = old ? { ...st, pieces: { ...st.pieces, [old.id]: st.pieces[old.id] ?? old } } : st;
+  return setSlot(back, key, slot, old?.id ?? null, at);
+}
+
 // поставить в слот вещь, которая уже стоит в другом билде этого персонажа («Взять из Speed»)
 export const share = (st: GearStore, key: string, slot: SlotId, id: string, at = today()): GearStore =>
   st.pieces[id] ? setSlot(st, key, slot, id, at) : st;

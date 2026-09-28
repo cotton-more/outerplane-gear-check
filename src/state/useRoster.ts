@@ -6,6 +6,7 @@ export interface RosterApi {
   roster: ReadonlySet<string>;           // только персонажи, которые есть в текущих данных
   toggle: (id: string) => void;
   add: (ids: string[]) => void;
+  remove: (ids: string[]) => void;
   replace: (ids: string[]) => void;
   clear: () => void;
 }
@@ -22,7 +23,8 @@ export function useRoster(idx: Index): RosterApi {
 
   const toggle = useCallback((id: string) => setStored((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])), []);
   const add = useCallback((ids: string[]) => setStored((s) => [...s, ...ids.filter((id, i) => !s.includes(id) && ids.indexOf(id) === i)]), []);
+  const remove = useCallback((ids: string[]) => setStored((s) => s.filter((id) => !ids.includes(id))), []);
   const replace = useCallback((ids: string[]) => setStored([...new Set(ids)]), []);
   const clear = useCallback(() => setStored([]), []);
-  return { roster, toggle, add, replace, clear };
+  return { roster, toggle, add, remove, replace, clear };
 }

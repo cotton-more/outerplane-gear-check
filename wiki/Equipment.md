@@ -11,7 +11,8 @@ Only from a verdict: enter the piece as usual, open the details and tap **"Equip
 piece fits — first the ones you're gearing, then the other builds of your roster (all characters if the roster is
 empty). "Show off-build too" lets you record a stopgap: what the character really wears now. The piece goes into the
 build as entered — with its yellow segments; a message says what happens to the old piece (for example, "Breakthrough
-material for the new one"), and "Undo" puts it back.
+material for the new one"), and "Undo" puts the old piece back in that slot — anything else you changed in
+those seconds stays.
 
 To record gear that's already on a character, enter it the same way, from the game's character screen.
 
@@ -53,4 +54,5 @@ The verdict stamp doesn't change because of what's recorded.
 ## Backup
 
 "Export / import" on the characters tab: the **OGC-GEAR1** code holds all equipment. Copy it to keep a backup or to
-move to another device; "Replace" there loads it.
+move to another device; "Replace" there loads it instead of everything recorded, and "Undo" in the message brings
+the previous equipment back.

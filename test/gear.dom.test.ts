@@ -137,6 +137,48 @@ describe('экипировка', () => {
     expect(stored() ?? gear).toMatchObject({ pieces: { p1: { bt: 4, lit: { 'DEF%': 4 } } } });
   });
 
+  it('«Вернуть» откатывает только «Надеть»: правка в карточке за эти секунды остаётся; на «Персонажах» сообщения нет', async () => {
+    const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, roster: [] }); // ростер пуст — в окне все персонажи
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await click(byText('.equip-row', 'Kappa') as HTMLElement);
+    expect(stored().builds[kappa.id + '/Speed']).toBeTruthy();
+
+    await click($('#tab-chars'));
+    // персонажи: Caren → шлем → T3
+    const tile = $$('#cgrid .ctile').find((b) => b.textContent?.includes('Caren'));
+    await click(tile);
+    expect($('.gear-toast')).toBeNull();
+    await click($('.bgear-row'));
+    await click(byText('.piece-bt .fbtn', 'T3'));
+    await click($('.drawer-x'));
+    await click($('.vbar .vb-tab'));
+    await click($('.gear-toast button'));
+
+    expect(stored().builds[kappa.id + '/Speed']).toBeUndefined();
+    expect(stored().pieces.p1.bt).toBe(3);
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]); // Kappa попала в ростер с «Надеть» и ушла с «Вернуть»
+  });
+
+  it('импорт кода «Заменить» — сообщение с «Вернуть», и «Вернуть» возвращает прежние записи', async () => {
+    const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: 4, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars' }, {}, { gear });
+    const { encodeGear } = await import('../src/logic/gear');
+    const code = encodeGear({ v: 1, seq: 1, pieces: { p1: { ...gear.pieces.p1, bt: 0 } as never }, builds: { ['2000077/Speed']: { slots: { helmet: 'p1' }, at: '' } } });
+    await click(byText('.roster-bar .linkbtn', 'export'));
+    const ta = $('#gear-code') as HTMLTextAreaElement;
+    ta.value = code;
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+
+    expect(Object.keys(stored().builds)).toEqual(['2000077/Speed']);
+    expect($('.gear-toast')?.textContent).toContain('Equipment loaded: 1 pieces.');
+    await click($('.gear-toast button'));
+    expect(Object.keys(stored().builds)).toEqual([caren.id + '/Speed']);
+    expect(stored().pieces.p1.bt).toBe(4);
+  });
+
   it('другая вкладка записала своё — подхватили, и следующее действие здесь его не стирает', async () => {
     const piece = (id: string, slot: string) => ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' });
     const gear = { v: 1, seq: 1, pieces: { p1: piece('p1', 'helmet') }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };

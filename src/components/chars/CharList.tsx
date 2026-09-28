@@ -7,14 +7,15 @@ import { encodeRoster, parseRoster } from '../../logic/rosterCode';
 import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import { decodeGear, encodeGear } from '../../logic/gear';
+import { decodeGear, encodeGear, type GearStore } from '../../logic/gear';
 import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
-interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi }
+// onGearImport — код экипировки заменил записи: сообщение с «Вернуть» (App)
+interface Props { s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; onGearImport: (prev: GearStore, text: string) => void }
 
-export function CharList({ s, dispatch, rosterApi, gear }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear, onGearImport }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -58,7 +59,7 @@ export function CharList({ s, dispatch, rosterApi, gear }: Props) {
         {roster.size > 0 && <ClearRoster onClear={rosterApi.clear} />}
       </div>
       {io && <RosterIO rosterApi={rosterApi} />}
-      {io && <GearIO gear={gear} />}
+      {io && <GearIO gear={gear} onImport={onGearImport} />}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
           <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)}
@@ -144,8 +145,8 @@ function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
   );
 }
 
-// резервная копия экипировки кодом: вещи и билды целиком; «Заменить» — всё, что было, заменяется кодом
-function GearIO({ gear }: { gear: GearApi }) {
+// резервная копия экипировки кодом: вещи и билды целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
+function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, text: string) => void }) {
   const idx = useIndex();
   const t = useT();
   const code = Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : '';
@@ -161,8 +162,10 @@ function GearIO({ gear }: { gear: GearApi }) {
   const apply = () => {
     const st = decodeGear(ta.current?.value || '', idx);
     if (!st) { setMsg(t.ui.gearBad); return; }
+    const prev = gear.store;
     gear.set(st);
-    setMsg(t.ui.gearApplied(Object.keys(st.pieces).length));
+    setMsg('');
+    onImport(prev, t.ui.gearApplied(Object.keys(st.pieces).length));
   };
   return (
     <div className="roster-io">
