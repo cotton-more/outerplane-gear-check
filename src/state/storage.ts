@@ -2,6 +2,7 @@
 const PREFIX = 'ogc.';
 
 export const storage = {
+  key: (key: string): string => PREFIX + key, // ключ в localStorage — для событий storage из других вкладок
   get<T>(key: string, fallback: T): T {
     try {
       const v = localStorage.getItem(PREFIX + key);

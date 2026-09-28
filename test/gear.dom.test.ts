@@ -110,6 +110,21 @@ describe('экипировка', () => {
     expect($('.v-vs .vs-row')?.textContent).toMatch(/The one on has nothing useful|× the useful segments|% useful segments/);
   });
 
+  it('другая вкладка записала своё — подхватили, и следующее действие здесь его не стирает', async () => {
+    const piece = (id: string, slot: string) => ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' });
+    const gear = { v: 1, seq: 1, pieces: { p1: piece('p1', 'helmet') }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear });
+    const other = { v: 1, seq: 2, pieces: { p1: piece('p1', 'helmet'), p2: piece('p2', 'armor') }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1', armor: 'p2' }, at: '' } } };
+    localStorage.setItem('ogc.gear', JSON.stringify(other));
+    await act(async () => { window.dispatchEvent(new StorageEvent('storage', { key: 'ogc.gear', newValue: JSON.stringify(other) })); });
+
+    expect($('.bgear h4')?.textContent).toBe('Equipped · 2 of 6');
+    await click($('.bgear-row'));
+    await click(byText('.piece-bt .fbtn', 'T4'));
+    expect(Object.keys(stored().pieces)).toEqual(['p1', 'p2']);
+    expect(stored().pieces.p1.bt).toBe(4);
+  });
+
   // на телефоне карточка персонажа — fixed с z-index: шторка внутри неё уходила под плашку вердикта, «Готово» не нажать
   it('карточка вещи — шторкой в <body>; ушли на «Оценку» — закрылась, прокрутка не заперта', async () => {
     const gear = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2 }, lit: { 'DEF%': 2 }, bt: null, at: '' } }, builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } };
