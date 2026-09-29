@@ -390,6 +390,19 @@ describe('исход вещи с формы: повтор vs.test', () => {
       expect(holds(row([rec(weapon('unique', a.key, { CHC: 3, CHD: 3 }) as never)], weapon('unique', z.key, { CHC: 1 }), 'Speed')!)).toBe(true); // другая пассивка
     });
 
+    it('«прочее» в слоте держит только у оружия: броня не из связки в сборке — обычное дело', () => {
+      // Speed/Immu: в броне — Attack (не из связки); Speed-броня хуже её — «хуже», не держит
+      const pieces = [rec(armor('helmet', 'Immunity', { CHC: 1 })), rec(armor('armor', 'Attack', { 'DEF%': 4, CHC: 4, CHD: 4 })), rec(armor('gloves', 'Speed', { CHC: 1 })), rec(armor('shoes', 'Speed', { CHC: 1 }))];
+      const r = row(pieces, armor('armor', 'Speed', { RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 }), 'Speed/Immu')!;
+      expect(r.worn?.fit).toBe('no');
+      expect(holds(r)).toBe(false);
+      // оружие не из списка билда (временная в «Эндгейме» — «прочее»): рекомендованная, хоть и слабее, — держит
+      const other = D.weapons.find((w) => w.star === 6 && w.grade === 'unique' && !caren.builds[0].weapons.some((x) => x.key === w.key))!;
+      const g = row([rec(weapon('unique', other.key, { 'DEF%': 5, CHC: 5, CHD: 5 }, 'ATK%') as never)], weapon('rare', null, { RES: 1 }), 'Speed')!;
+      expect(g.worn?.fit).toBe('no');
+      expect(holds(g)).toBe(true);
+    });
+
     it('соберёт: вторая Immunity к Speed ×2 — Speed/Immu собран; ближе: третья Speed', () => {
       const pieces = [rec(armor('helmet', 'Immunity', { CHC: 1 })), rec(armor('gloves', 'Speed', { CHC: 1 })), rec(armor('shoes', 'Speed', { CHC: 1 }))];
       expect(row(pieces, armor('armor', 'Immunity', { CHC: 1 }), 'Speed/Immu')).toMatchObject({ kind: 'completes', used: true });
@@ -406,5 +419,33 @@ describe('исход вещи с формы: повтор vs.test', () => {
     const o2 = out(w, armor('armor', 'Immunity', { CHC: 1 }), caren.id, { [buildKey(caren.id, 'Speed')]: 'want' });
     expect(o2.starts.map((v) => v.name).sort()).toEqual(['Def/Immu', 'Speed/Immu']);
     expect(o2.useful).toBe(true);
+  });
+});
+
+// Случаи владельца (прогон 1.4), вещи — свои, не из его кода: персонаж одет не в сеты своих билдов
+describe('«По статам»: случаи владельца', () => {
+  it('Core Fusion Eternal (Speed ×4): три Effectiveness, ни одной Speed — «По статам»; случайный Effectiveness ×2 считается', () => {
+    const cf = char('Core Fusion Eternal');
+    const pieces = [P('helmet', 'Effectiveness', { SPD: 2, CHC: 2 }), P('gloves', 'Effectiveness', { SPD: 1, EFF: 3 }), P('shoes', 'Effectiveness', { CHD: 2, EFF: 1 })];
+    // из переноса v1: Speed отмечен «Собираю» — собирается и он, пустой по сету
+    const p = play(ctx, cf, pieces, { marks: { [buildKey(cf.id, 'Speed')]: 'want' } });
+    expect(p.inPlay.map((v) => (isStats(v) ? '#stats' : v.name))).toEqual(['#stats', 'Speed']);
+    const a = p.asm.get(p.stat!.key)!;
+    expect(a.bonuses.map((r) => [idx.SET[r.set].short, r.n, r.tier, r.unknownBt])).toEqual([['Effectiveness', 2, 'T0', true]]);
+    expect(a.filled).toBe(3);
+    expect(a.total).toBeGreaterThan(pieces.reduce((n, x) => n + entriesFor(ctx, cf, p.stat!, [x])[0].v, 0)); // + бонус EFF
+  });
+
+  it('Demiurge Stella (Counter ×4, Revenge ×4): Attack ×2 (Epic) и Critical Hit ×2 без сабстатов — «По статам», оба бонуса, ценность пустых — 0', () => {
+    const stella = char('Demiurge Stella');
+    const crit = [P('armor', 'Critical Hit', {}), P('gloves', 'Critical Hit', {})];
+    const pieces = [P('helmet', 'Attack', { 'ATK%': 2, CHD: 2 }, null, 'rare'), P('shoes', 'Attack', { CHC: 2, 'ATK%': 1 }, null, 'rare'), ...crit];
+    const p = play(ctx, stella, pieces, { marks: { [buildKey(stella.id, 'Revenge')]: 'want' } });
+    expect(p.stat).not.toBeNull();
+    const a = p.asm.get(p.stat!.key)!;
+    expect(a.bonuses.map((r) => idx.SET[r.set].short).sort()).toEqual(['Attack', 'Critical Hit']);
+    expect(crit.map((x) => entriesFor(ctx, stella, p.stat!, [x])[0].v)).toEqual([0, 0]);
+    expect(a.filled).toBe(4);
+    expect(poolView(ctx, { pieces: Object.fromEntries(pieces.map((x) => [x.id, x])), pools: { [stella.id]: pieces.map((x) => x.id) } }).of(stella.id)!.unused).toEqual([]);
   });
 });

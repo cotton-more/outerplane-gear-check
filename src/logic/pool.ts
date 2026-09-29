@@ -456,10 +456,11 @@ export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInpu
 
 // Держит ли исход штамп (преемник worn.ts, C2): вещь кому-то нужна. «Ломает» и «на уровне из-за T4» — только когда
 // она лучше по сегментам (иначе их не бывает). Другая рекомендованная пассивка — держит: сабстаты не решают.
-// Надетое не по билду (оружие-«прочее») — держит, как в B3. Никогда: «только статы», «на уровне», «хуже»
+// В слоте оружия или аксессуара «прочее» (не по билду) — держит, как в B3; у брони нет: вещь не из связки в сборке —
+// обычное дело (случайный сет, «По статам»). Никогда: «только статы», «на уровне», «хуже»
 export function holds(o: Outcome): boolean {
   if (o.kind === 'completes' || o.kind === 'closer' || o.kind === 'fill' || o.kind === 'up' || o.kind === 'breaks' || o.kind === 'capped') return true;
   if (o.kind === 'stats') return false;
   if (o.pair?.passive && !o.pair.why) return true;
-  return !!o.worn && o.worn.fit === 'no';
+  return !!o.worn && !isArmor(o.worn.slot) && o.worn.fit === 'no';
 }
