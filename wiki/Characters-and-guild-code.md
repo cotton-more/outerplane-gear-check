@@ -9,6 +9,10 @@ accessory with the main stat, substat priority with a flat/% hint, talismans, a 
 roster; with "only my characters" checked, the evaluation considers only them. A link like `…/#demiurge-stella` opens
 a character directly.
 
+Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster holds only one
+of them. Star Core Fusion Eternal and Eternal leaves the roster (a message with "Undo"); Eternal isn't added while
+Core Fusion Eternal is in it. Importing a gear code adds everyone who has gear to the roster.
+
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/6-character.png" width="360" alt="Character card with outerpedia builds">
 
 The roster moves to another device with a code: "export / import" on the characters tab. Everything you mark stays in

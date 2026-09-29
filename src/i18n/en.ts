@@ -496,7 +496,7 @@ export const en: Texts = {
       "**Dismantle** — doesn't suit your characters, the roll is weak, or everyone it suits already wears as good or better (see \"Equipment\"). A dice next to it — a chance one Reforge saves the piece: how many of the possible stats do, it says on the dice.",
     ],
     helpChars: [
-      'The star adds a character to your roster; with "only my characters" checked, the evaluation considers only them. "Export / import" moves the roster to another device as a code.',
+      'The star adds a character to your roster; with "only my characters" checked, the evaluation considers only them. "Export / import" moves the roster to another device as a code. Core Fusion replaces the hero: star Core Fusion Eternal and Eternal leaves the roster. Importing a gear code adds everyone who has gear to the roster.',
       'Tap a character to open their builds: sets, weapons, substat priority.',
       '**Equipment** — what is worn in each build. A piece goes into a build from a verdict: "Equip on…" in the details, and on a phone also the button under the card. Then tap the piece on the character card to mark orange segments after Reforge and the Breakthrough tier; the number of Reforges done is counted for you. Enhance isn\'t tracked: everything worn is assumed to be +10. Who wears what — ☰ → "Gear"; on a computer, the "with gear" filter in Characters. During a tutorial there\'s no gear code: the page shows an example.',
       '**Try-on** — a check for one build: "Gear up this build", "Try on" on an empty slot or "Try a replacement" on a piece in the character card. The comparison is with that build only, "Equip" goes straight to it, "Next" keeps the try-on, ✕ checks for everyone again.',
