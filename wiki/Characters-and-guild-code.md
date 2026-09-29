@@ -18,7 +18,7 @@ Core Fusion Eternal is in it. Importing a gear code adds everyone who has gear t
 The roster moves to another device with a code: "export / import" on the characters tab. Everything you mark stays in
 your browser only — nothing is sent anywhere.
 
-What each character wears in every build — see [Equipment](Equipment).
+A character's pieces and how builds assemble from them — see [Equipment](Equipment).
 
 ## Item code for your guild
 
