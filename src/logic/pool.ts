@@ -1,0 +1,464 @@
+// Пул экипировки (GEARPOOL, этап C1 — только логика, интерфейса и хранилища нет): вещи у персонажа, а билды
+// собираются из них сами. Решения владельца — GEARPOOL.md.
+//   - Вариант билда (logic/variants) собирается из пула лучшей раскладкой: по слоту — одна вещь. Связка сетов —
+//     цель: части с бонусом, который статом не выразить (Penetration, Immunity, …), держатся всегда; сет-стат
+//     (Attack, Speed, …) собирается вещь за вещью, а последнюю вещь его бонус выигрывает только ценностью — сет можно
+//     сломать, если итог выгоднее (бонус в сегментах — logic/setBonus).
+//   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», цель примерки, где собрана хоть
+//     одна часть связки, ближайшие к сборке и «По статам».
+//   - «По статам» — когда ни одна вещь брони в пуле не из сетов билдов персонажа: вещи раскладываются по цепочке.
+//   - Исход вещи с формы для персонажа (outcomeFor): что станет с каждым собираемым вариантом, если её добавить.
+import { isArmor } from '../data';
+import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
+import { t4Only } from './builds';
+import type { Ctx } from './context';
+import { pieceInput, samePiece, type Piece } from './gear';
+import { bonusRows, bonusValue, bonusWeights, convertible, type BonusRow } from './setBonus';
+import type { SubWeight } from './score';
+import type { ItemInput } from './verdict';
+import { variantsOf, type Variant } from './variants';
+import { against, fit, itemValue, MARGIN, pieceValue, type Fit, type Pair } from './vs';
+
+export type Mark = 'want' | 'skip';
+
+// то, что пул берёт из хранилища (v2 — в C2): вещи, пулы персонажей, отметки «Собираю / Не собираю»
+// (ключ — вариант или билд целиком)
+export interface PoolStore {
+  pieces: Readonly<Record<string, Piece>>;
+  pools: Readonly<Record<string, readonly string[]>>;
+  marks?: Readonly<Record<string, Mark>>;
+}
+
+const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
+const GEAR: GearKind[] = ['weapon', 'accessory'];
+const NEWEST = 1e9; // вещь с формы — всегда новее записанных: при равенстве она ничего не вытесняет
+const EPS = 1e-9;
+
+// «По статам»: вариант без связки с цепочкой, которая у большинства билдов персонажа (при равенстве — первого)
+export const STATS = '#stats';
+export const isStats = (v: Variant): boolean => v.key.endsWith('/' + STATS);
+const statMemo = new WeakMap<Char, Variant>();
+export function statVariant(c: Char): Variant | null {
+  if (!c.builds.length) return null;
+  const hit = statMemo.get(c);
+  if (hit) return hit;
+  const count = new Map<string, number>();
+  for (const b of c.builds) count.set(JSON.stringify(b.subs), (count.get(JSON.stringify(b.subs)) ?? 0) + 1);
+  const top = Math.max(...count.values());
+  const parent = c.builds.find((b) => count.get(JSON.stringify(b.subs)) === top)!;
+  const key = `${c.id}/${STATS}`;
+  const v: Variant = { key, name: STATS, parent, parentKey: key, b: { ...parent, name: STATS, sets: [[]] }, sig: null };
+  statMemo.set(c, v);
+  return v;
+}
+
+// --------------------------------------------------------------------------- сборка
+
+// вещь в сборке: записанная (piece) или с формы (piece null, id null)
+export interface Entry {
+  id: string | null;
+  piece: Piece | null;
+  input: ItemInput;
+  slot: SlotId;
+  setId: string | null;
+  bt: number | null;
+  num: number;   // старшинство: номер записи; у вещи с формы — NEWEST
+  v: number;     // ценность для варианта (logic/vs value)
+  fit: Fit;
+}
+
+export type Role = 'set' | 'surplus' | 'filler' | 'rec' | 'stopgap';
+
+export interface Assembly {
+  v: Variant;
+  slots: Partial<Record<SlotId, Entry>>;
+  roles: Partial<Record<SlotId, Role>>;
+  hard: number;         // части связки, которые статом не выразить: Σ min(шт, n)
+  live: number;         // …из них дают бонус (Penetration ×2 — только на T4): вещь не с T4 бонус-эффект не отключит
+  soft: number;         // части-статы: Σ min(шт, n − 1) — собираются вещь за вещью, последняя — ценностью
+  total: number;        // Σ ценности вещей + Σ ценности бонусов (и случайных сетов)
+  filled: number;
+  older: number;        // Σ старшинства: при равенстве остаётся то, что было
+  progress: number;     // Σ min(шт, n) — сколько вещей работает на связку
+  need: number;         // Σ n
+  complete: SetPiece[]; // собранные части связки (по числу вещей)
+  missing: (SetPiece & { have: number })[];
+  bonuses: BonusRow[];  // все активные бонусы (и сетов не из связки)
+}
+
+// кэш на варианте: веса цепочки для бонусов, переводимость частей, бонусы по (сет, шт, шт на T4)
+interface SetInfo { value: number; top: number } // ценность бонусов сета и самая большая активная строка (2, 4; 0 — нет)
+interface VCache { W: Map<string, SubWeight>; conv: Map<string, boolean>; bonus: Map<string, SetInfo> }
+const vcache = new WeakMap<Ctx, WeakMap<Variant, VCache>>();
+function vc(ctx: Ctx, c: Char, v: Variant): VCache {
+  let m = vcache.get(ctx);
+  if (!m) vcache.set(ctx, (m = new WeakMap()));
+  let x = m.get(v);
+  if (!x) m.set(v, (x = { W: bonusWeights(ctx, c, v.b), conv: new Map(), bonus: new Map() }));
+  return x;
+}
+const isConv = (ctx: Ctx, c: Char, x: VCache, set: string) => {
+  let r = x.conv.get(set);
+  if (r === undefined) x.conv.set(set, (r = convertible(ctx, c, set)));
+  return r;
+};
+// бонусы одного сета при n вещах, из них n4 на T4
+function setInfo(ctx: Ctx, c: Char, x: VCache, set: string, n: number, n4: number): SetInfo {
+  const k = `${set}:${n}:${n4}`;
+  let r = x.bonus.get(k);
+  if (r === undefined) {
+    const rows = bonusRows(ctx.idx.SET, Array.from({ length: n }, (_, i) => ({ setId: set, bt: i < n4 ? 4 : 0 })));
+    r = { value: rows.reduce((s, row) => s + bonusValue(ctx, c, x.W, row), 0), top: Math.max(0, ...rows.map((row) => row.n)) };
+    x.bonus.set(k, r);
+  }
+  return r;
+}
+
+// ценность записанной вещи для варианта — один раз на (ctx, вещь, вариант): updatePiece даёт новый объект
+const pvMemo = new WeakMap<Ctx, WeakMap<Piece, Map<string, number>>>();
+function storedValue(ctx: Ctx, c: Char, v: Variant, p: Piece): number {
+  let m = pvMemo.get(ctx);
+  if (!m) pvMemo.set(ctx, (m = new WeakMap()));
+  let byV = m.get(p);
+  if (!byV) m.set(p, (byV = new Map()));
+  let r = byV.get(v.key);
+  if (r === undefined) byV.set(v.key, (r = pieceValue(ctx, c, v.b, p)));
+  return r;
+}
+
+const numOf = (id: string) => Number(id.replace(/^\D+/, '')) || 0;
+export function entriesFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x?: ItemInput | null): Entry[] {
+  const out: Entry[] = pieces.map((p) => ({
+    id: p.id, piece: p, input: pieceInput(p), slot: p.slot, setId: p.setId, bt: p.bt, num: numOf(p.id),
+    v: storedValue(ctx, c, v, p), fit: fit(ctx, v.b, pieceInput(p)),
+  }));
+  if (x) out.push({ id: null, piece: null, input: x, slot: x.slot, setId: x.setId, bt: null, num: NEWEST, v: itemValue(ctx, c, v.b, x), fit: fit(ctx, v.b, x) });
+  return out;
+}
+
+const RANK: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
+const combo = (v: Variant): Combo => v.b.sets[0] ?? [];
+
+interface Score { hard: number; live: number; soft: number; total: number; filled: number; older: number }
+// лучше ли a, чем z: hard, live, soft, total, заполненные слоты, старшинство
+const better = (a: Score, z: Score) =>
+  a.hard !== z.hard ? a.hard > z.hard
+    : a.live !== z.live ? a.live > z.live
+    : a.soft !== z.soft ? a.soft > z.soft
+      : Math.abs(a.total - z.total) > EPS ? a.total > z.total
+        : a.filled !== z.filled ? a.filled > z.filled : a.older < z.older;
+
+// броня: hard, soft и бонусы по сетам четырёх слотов
+function armorScore(ctx: Ctx, c: Char, v: Variant, x: VCache, arm: readonly (Entry | null)[]): Score {
+  const n = new Map<string, number>(), n4 = new Map<string, number>();
+  let total = 0, filled = 0, older = 0;
+  for (const e of arm) {
+    if (!e) continue;
+    total += e.v; filled++; older += e.num;
+    if (e.setId) { n.set(e.setId, (n.get(e.setId) ?? 0) + 1); if (e.bt === 4) n4.set(e.setId, (n4.get(e.setId) ?? 0) + 1); }
+  }
+  const top = new Map<string, number>();
+  for (const [set, k] of n) {
+    if (k < 2) continue;
+    const info = setInfo(ctx, c, x, set, k, n4.get(set) ?? 0);
+    total += info.value;
+    top.set(set, info.top);
+  }
+  let hard = 0, live = 0, soft = 0;
+  for (const p of combo(v)) {
+    const k = n.get(p.set) ?? 0;
+    if (isConv(ctx, c, x, p.set)) soft += Math.min(k, p.n - 1);
+    else { hard += Math.min(k, p.n); if ((top.get(p.set) ?? 0) >= p.n) live++; }
+  }
+  return { hard, live, soft, total, filled, older };
+}
+
+// Лучшая раскладка варианта v из вещей entries. force — эта вещь обязательно в своём слоте (что будет, если надеть).
+// Точная: перебор по слотам брони. Отсечение безопасно — в слоте из вещей одного сета с одним «T4 или нет» остаётся
+// лучшая по ценности (при равенстве старшая): такие вещи одинаково влияют на связку и бонусы (prune: false — для теста)
+export function assemble(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[], opts: { force?: Entry; prune?: boolean } = {}): Assembly {
+  const { force, prune = true } = opts;
+  const x = vc(ctx, c, v);
+  const slots: Partial<Record<SlotId, Entry>> = {};
+  // оружие и аксессуар: сетов нет — каждый слот сам по себе: рекомендованная > временная > прочее, ценность, старшинство
+  let gTotal = 0, gFilled = 0, gOlder = 0;
+  for (const slot of GEAR) {
+    const cands = force?.slot === slot ? [force] : entries.filter((e) => e.slot === slot && (e.piece || e.fit !== 'no'));
+    let best: Entry | null = null;
+    for (const e of cands) {
+      if (!best || RANK[e.fit] > RANK[best.fit] || (RANK[e.fit] === RANK[best.fit] && (e.v > best.v + EPS || (Math.abs(e.v - best.v) <= EPS && e.num < best.num)))) best = e;
+    }
+    if (best) { slots[slot] = best; gTotal += best.v; gFilled++; gOlder += best.num; }
+  }
+  // броня: кандидаты по слоту (+ пусто)
+  const cand = ARMOR.map((slot): (Entry | null)[] => {
+    if (force?.slot === slot) return [force];
+    const all = entries.filter((e) => e.slot === slot);
+    if (!prune) return [null, ...all];
+    const best = new Map<string, Entry>();
+    for (const e of all) {
+      const k = `${e.setId}:${e.bt === 4}`;
+      const b = best.get(k);
+      if (!b || e.v > b.v + EPS || (Math.abs(e.v - b.v) <= EPS && e.num < b.num)) best.set(k, e);
+    }
+    return [null, ...best.values()];
+  });
+  let top: { arm: (Entry | null)[]; s: Score } | null = null;
+  const cur: (Entry | null)[] = [null, null, null, null];
+  const walk = (i: number) => {
+    if (i === ARMOR.length) {
+      const s = armorScore(ctx, c, v, x, cur);
+      if (!top || better(s, top.s)) top = { arm: [...cur], s };
+      return;
+    }
+    for (const e of cand[i]) { cur[i] = e; walk(i + 1); }
+  };
+  walk(0);
+  const best = top as unknown as { arm: (Entry | null)[]; s: Score };
+  best.arm.forEach((e, i) => { if (e) slots[ARMOR[i]] = e; });
+  return report(ctx, v, slots, { ...best.s, total: best.s.total + gTotal, filled: best.s.filled + gFilled, older: best.s.older + gOlder });
+}
+
+function report(ctx: Ctx, v: Variant, slots: Partial<Record<SlotId, Entry>>, s: Score): Assembly {
+  const roles: Partial<Record<SlotId, Role>> = {};
+  const counted = new Map<string, number>();
+  const parts = combo(v);
+  for (const slot of [...GEAR, ...ARMOR] as SlotId[]) {
+    const e = slots[slot];
+    if (!e) continue;
+    if (!isArmor(slot)) { roles[slot] = e.fit === 'no' ? 'filler' : e.fit; continue; }
+    const part = parts.find((p) => p.set === e.setId);
+    if (!part) { roles[slot] = 'filler'; continue; }
+    const k = counted.get(part.set) ?? 0;
+    roles[slot] = k < part.n ? 'set' : 'surplus';
+    counted.set(part.set, k + 1);
+  }
+  const armor = ARMOR.map((slot) => slots[slot]).filter((e): e is Entry => !!e);
+  const cnt = (set: string) => armor.filter((e) => e.setId === set).length;
+  return {
+    v, slots, roles, ...s,
+    progress: parts.reduce((n, p) => n + Math.min(cnt(p.set), p.n), 0),
+    need: parts.reduce((n, p) => n + p.n, 0),
+    complete: parts.filter((p) => cnt(p.set) >= p.n),
+    missing: parts.filter((p) => cnt(p.set) < p.n).map((p) => ({ ...p, have: cnt(p.set) })),
+    bonuses: bonusRows(ctx.idx.SET, armor),
+  };
+}
+
+// --------------------------------------------------------------------------- «собираешь»
+
+export interface PlayOpts {
+  marks?: Readonly<Record<string, Mark>>;
+  tryOn?: string | null; // ключ варианта примерки: он собирается, даже пустой
+}
+
+const markOf = (marks: PlayOpts['marks'], v: Variant): Mark | undefined => marks?.[v.key] ?? marks?.[v.parentKey];
+
+// «По статам» есть, когда у персонажа есть билды, пул не пуст и ни одна вещь брони в нём не из сетов его связок
+function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly Pick<Piece, 'slot' | 'setId'>[]): boolean {
+  if (!c.builds.length || !pieces.length) return false;
+  const sets = new Set(variantsOf(ctx.idx, c).flatMap((v) => combo(v).map((p) => p.set)));
+  return !pieces.some((p) => isArmor(p.slot) && p.setId && sets.has(p.setId));
+}
+
+export interface Play {
+  variants: Variant[];                 // все варианты персонажа (+ «По статам», если есть)
+  stat: Variant | null;
+  asm: Map<string, Assembly>;          // сборка каждого варианта
+  inPlay: Variant[];
+}
+
+export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts = {}, x?: ItemInput | null): Play {
+  const stat = hasStatBuild(ctx, c, x ? [...pieces, x] : pieces) ? statVariant(c) : null;
+  const variants = [...(stat ? [stat] : []), ...variantsOf(ctx.idx, c)];
+  const asm = new Map<string, Assembly>();
+  const fitting = new Set<string>();
+  for (const v of variants) {
+    const es = entriesFor(ctx, c, v, pieces, x);
+    asm.set(v.key, assemble(ctx, c, v, es));
+    if (es.some((e) => e.fit !== 'no')) fitting.add(v.key);
+  }
+  const want = variants.some((v) => markOf(opts.marks, v) === 'want');
+  const open = variants.filter((v) => !isStats(v) && markOf(opts.marks, v) !== 'skip');
+  const top = Math.max(0, ...open.filter((v) => fitting.has(v.key)).map((v) => asm.get(v.key)!.progress));
+  const on = (v: Variant) =>
+    isStats(v) || v.key === opts.tryOn || (markOf(opts.marks, v) !== 'skip' && (
+      markOf(opts.marks, v) === 'want'
+      || asm.get(v.key)!.complete.length > 0
+      || (fitting.has(v.key) && asm.get(v.key)!.progress === top && (top > 0 || !want))));
+  return { variants, stat, asm, inPlay: variants.filter(on) };
+}
+
+// --------------------------------------------------------------------------- вид пула
+
+export interface CharPool extends Play {
+  c: Char;
+  pieces: Piece[];
+  unused: Piece[]; // вещи, которых нет ни в одной собираемой сборке: в пуле им быть незачем (решение владельца)
+}
+
+export interface PoolView {
+  st: PoolStore;
+  opts: PlayOpts;
+  of: (charId: string) => CharPool | null;
+}
+
+// один раз на хранилище: персонажи считаются по запросу и запоминаются
+export function poolView(ctx: Ctx, st: PoolStore, tryOn?: string | null): PoolView {
+  const opts: PlayOpts = { marks: st.marks, tryOn };
+  const memo = new Map<string, CharPool | null>();
+  const of = (id: string): CharPool | null => {
+    if (memo.has(id)) return memo.get(id)!;
+    const c = ctx.idx.CHAR[id];
+    const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
+    const r = c ? { c, pieces, ...play(ctx, c, pieces, opts), unused: [] as Piece[] } : null;
+    if (r) {
+      const used = new Set(r.inPlay.flatMap((v) => Object.values(r.asm.get(v.key)!.slots).map((e) => e?.id)));
+      r.unused = pieces.filter((p) => !used.has(p.id));
+    }
+    memo.set(id, r);
+    return r;
+  };
+  return { st, opts, of };
+}
+
+// --------------------------------------------------------------------------- исход вещи с формы
+
+export type OutcomeKind = 'completes' | 'closer' | 'fill' | 'up' | 'eq' | 'breaks' | 'capped' | 'stats' | 'down';
+export const OUTCOME_ORDER: OutcomeKind[] = ['completes', 'closer', 'up', 'fill', 'capped', 'breaks', 'eq', 'down', 'stats'];
+
+export interface Outcome {
+  v: Variant;
+  kind: OutcomeKind;
+  used: boolean;              // вещь встала в сборку (A1)
+  delta: number | null;       // выигрыш итога к ценности вытесненного; без вещи в сборке — к вещи в её слоте
+  pair: Pair | null;          // против вещи в её слоте (как в сравнении с надетым): места цепочки, материал, пассивка
+  worn: Entry | null;         // что сейчас в её слоте
+  displaced: Entry[];         // что уходит из сборки
+  broken: string | null;      // сет, который распадётся: в «ломает» — поэтому не встала; в «лучше» — распадётся, но выгодно
+  fix: { set: string; slots: ArmorSlot[]; t4: boolean } | null; // «ломает»: ещё одна вещь этого сета в эти слоты — встанет
+  t4: { set: string; n: number } | null; // часть её сета в связке — с бонусом только на T4
+  gainedBonus: BonusRow[];
+  lostBonus: BonusRow[];
+  before: Assembly;
+  after: Assembly;            // с ней (A1) или с ней насильно (Af)
+  entering: boolean;          // вариант не собирается, а с ней начнёт
+}
+
+export interface CharOutcome {
+  c: Char;
+  worn: Piece | null; // такая же вещь уже в пуле персонажа — «уже есть»
+  rows: Outcome[];
+  starts: Variant[];  // с ней начнут собираться
+  useful: boolean;    // встанет в сборку собираемого варианта или начнёт новый: только такую можно надеть
+}
+
+const rowKey = (r: BonusRow) => `${r.set}:${r.n}:${r.tier}`;
+const hs = (a: Pick<Assembly, 'hard' | 'live' | 'soft'>, z: Pick<Assembly, 'hard' | 'live' | 'soft'>) =>
+  a.hard !== z.hard ? a.hard - z.hard : a.live !== z.live ? a.live - z.live : a.soft - z.soft;
+const byDelta = (d: number | null): OutcomeKind => ((d ?? 0) <= -MARGIN ? 'down' : 'eq');
+
+// сет, чья часть убыла (сначала части связки, потом случайные сеты)
+function brokenSet(v: Variant, a: Assembly, z: Assembly): string | null {
+  const cnt = (s: Assembly, set: string) => ARMOR.filter((slot) => s.slots[slot]?.setId === set).length;
+  for (const p of combo(v)) if (Math.min(cnt(z, p.set), p.n) < Math.min(cnt(a, p.set), p.n)) return p.set;
+  for (const r of a.bonuses) if (cnt(z, r.set) < cnt(a, r.set)) return r.set;
+  return null;
+}
+
+// «ломает»: куда ещё одна вещь распавшегося сета вернула бы его (и нужна ли она на T4)
+function fixFor(ctx: Ctx, c: Char, v: Variant, forced: Assembly, was: Assembly, set: string, xSlot: SlotId): Outcome['fix'] {
+  for (const t4 of [false, true]) {
+    const slots = ARMOR.filter((slot) => {
+      if (slot === xSlot) return false;
+      const ghost: Entry = { id: '#fix', piece: null, input: { slot, grade: 'unique', setId: set, itemKey: null, main: null, subs: {} }, slot, setId: set, bt: t4 ? 4 : null, num: NEWEST, v: 0, fit: 'rec' };
+      const arm = ARMOR.map((s) => (s === slot ? ghost : forced.slots[s] ?? null));
+      const s = armorScore(ctx, c, v, vc(ctx, c, v), arm);
+      const rows = bonusRows(ctx.idx.SET, arm.filter((e): e is Entry => !!e)).map(rowKey);
+      return hs(s, was) >= 0 && was.bonuses.filter((r) => r.set === set).every((r) => rows.includes(rowKey(r)));
+    });
+    if (slots.length) return { set, slots, t4 };
+  }
+  return null;
+}
+
+function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, entering: boolean): Outcome | null {
+  const es = entriesFor(ctx, c, v, pieces, x);
+  const X = es[es.length - 1];
+  const worn = before.slots[x.slot] ?? null;
+  const pair = worn?.piece ? against(ctx, c, v.b, x, worn.piece, X.fit) : null;
+  const part = combo(v).find((p) => p.set === x.setId);
+  const t4 = part && t4Only(ctx.idx.SET[part.set], part.n) ? { set: part.set, n: part.n } : null;
+  const offSet = isArmor(x.slot) ? !part : X.fit === 'no';
+  if (!isArmor(x.slot) && X.fit === 'no') return null; // оружие не по билду — не кандидат (как в сравнении с надетым)
+  const after = assemble(ctx, c, v, es);
+  const base = { v, pair, worn, t4, before, entering, fix: null };
+  const bonusDiff = (z: Assembly) => {
+    const a = new Set(before.bonuses.map(rowKey)), b = new Set(z.bonuses.map(rowKey));
+    return { gainedBonus: z.bonuses.filter((r) => !a.has(rowKey(r))), lostBonus: before.bonuses.filter((r) => !b.has(rowKey(r))) };
+  };
+  if (after.slots[x.slot] === X) {
+    const kept = new Set(Object.values(after.slots).map((e) => e?.id));
+    const displaced = Object.values(before.slots).filter((e): e is Entry => !!e && !kept.has(e.id));
+    const bd = bonusDiff(after);
+    const x1 = vc(ctx, c, v);
+    const lostValue = displaced.reduce((s, e) => s + e.v, 0) + bd.lostBonus.reduce((s, r) => s + bonusValue(ctx, c, x1.W, r), 0);
+    const delta = displaced.length || bd.lostBonus.length ? (after.total - before.total) / Math.max(lostValue, 0.01) : null;
+    const done = new Set(before.complete.map((p) => p.set));
+    const broken = before.complete.find((p) => !after.complete.some((q) => q.set === p.set))?.set ?? null;
+    let kind: OutcomeKind;
+    if (after.complete.some((p) => !done.has(p.set))) kind = 'completes';
+    else if (hs(after, before) > 0) kind = 'closer';
+    else if (!worn && !displaced.length) kind = 'fill';
+    else if (pair?.why === 'rec') kind = 'up';
+    else kind = (delta ?? 0) >= MARGIN ? 'up' : byDelta(delta);
+    return { ...base, ...bd, kind, used: true, delta, displaced, broken, after };
+  }
+  // не встала: лучше ли она по сегментам вещи в своём слоте
+  const d = pair?.delta ?? null;
+  const betterBySegs = d !== null && d >= MARGIN;
+  if (offSet) return betterBySegs ? { ...base, ...bonusDiff(before), kind: 'stats', used: false, delta: d, displaced: [], broken: null, after: before } : null;
+  if (!isArmor(x.slot)) return { ...base, ...bonusDiff(before), kind: pair ? (pair.why === 'stopgap' ? 'down' : byDelta(d)) : 'eq', used: false, delta: d, displaced: [], broken: null, after: before };
+  const forced = assemble(ctx, c, v, es, { force: X });
+  const bd = bonusDiff(forced);
+  const broken = brokenSet(v, before, forced);
+  const kept = new Set(Object.values(forced.slots).map((e) => e?.id));
+  const displaced = Object.values(before.slots).filter((e): e is Entry => !!e && !kept.has(e.id));
+  const rest = { ...base, ...bd, used: false, delta: d, displaced, after: forced };
+  if (broken) {
+    if (!betterBySegs) return { ...rest, kind: byDelta(d), broken };
+    return { ...rest, kind: 'breaks', broken, fix: fixFor(ctx, c, v, forced, before, broken, x.slot) };
+  }
+  if (bd.lostBonus.some((r) => r.tier === 'T4')) return { ...rest, kind: betterBySegs ? 'capped' : byDelta(d), broken: null };
+  return { ...rest, kind: byDelta(d), broken: null };
+}
+
+// Исход вещи с формы для персонажа: для каждого собираемого варианта и тех, что с ней начнут собираться
+export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput): CharOutcome | null {
+  const cp = view.of(charId);
+  if (!cp) return null;
+  const { c, pieces } = cp;
+  const twin = pieces.find((p) => samePiece(x, p)) ?? null;
+  if (twin) return { c, worn: twin, rows: [], starts: [], useful: false };
+  const withX = play(ctx, c, pieces, view.opts, x);
+  const was = new Set(cp.inPlay.map((v) => v.key));
+  const starts = withX.inPlay.filter((v) => !was.has(v.key) && !isStats(v));
+  const rows: Outcome[] = [];
+  for (const v of [...cp.inPlay, ...starts]) {
+    const before = cp.asm.get(v.key) ?? assemble(ctx, c, v, entriesFor(ctx, c, v, pieces));
+    const o = outcomeOf(ctx, c, v, pieces, x, before, !was.has(v.key));
+    if (o) rows.push(o);
+  }
+  rows.sort((a, z) => OUTCOME_ORDER.indexOf(a.kind) - OUTCOME_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));
+  return { c, worn: null, rows, starts, useful: rows.some((r) => r.used && !r.entering) || starts.length > 0 };
+}
+
+// Держит ли исход штамп (преемник worn.ts, C2): вещь кому-то нужна. «Ломает» и «на уровне из-за T4» — только когда
+// она лучше по сегментам (иначе их не бывает). Другая рекомендованная пассивка — держит: сабстаты не решают.
+// Надетое не по билду (оружие-«прочее») — держит, как в B3. Никогда: «только статы», «на уровне», «хуже»
+export function holds(o: Outcome): boolean {
+  if (o.kind === 'completes' || o.kind === 'closer' || o.kind === 'fill' || o.kind === 'up' || o.kind === 'breaks' || o.kind === 'capped') return true;
+  if (o.kind === 'stats') return false;
+  if (o.pair?.passive && !o.pair.why) return true;
+  return !!o.worn && o.worn.fit === 'no';
+}

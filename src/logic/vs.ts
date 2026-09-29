@@ -90,10 +90,14 @@ export function lookFor(ctx: Ctx, c: Char, b: Build, p: Piece, max = 2): string[
   return out;
 }
 
+// ценность вещи с формы — как в сравнении: у Epic с 4 сабстатами первый Reforge уже прошёл (он дал 4-й)
+export const itemValue = (ctx: Ctx, c: Char, b: Build, item: ItemInput): number =>
+  value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0).v;
+
 // подходит ли вещь этому билду: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с нужным main;
 // остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду нужен
-type Fit = 'no' | 'rec' | 'stopgap';
-function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
+export type Fit = 'no' | 'rec' | 'stopgap';
+export function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
   if (isArmor(item.slot)) return item.setId && combosWith(b, item.setId).length ? 'rec' : 'no';
   const kind = item.slot as GearKind;
   const g = item.grade === 'unique' && item.itemKey ? gearList(b, kind).find((r) => r.key === item.itemKey) : undefined;
@@ -150,6 +154,19 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
   const { key, worn } = base;
   if (!worn) return base; // пустой слот связку не ломает — только дополняет
   if (samePiece(item, worn)) return { ...base, kind: 'worn' };
+  const pair = against(ctx, c, b, item, worn, f);
+  let kind = pair.kind;
+  if (t4 && kind === 'up' && worn.setId === item.setId && worn.bt === 4) kind = 'eq';
+  const broken = breaks(st, key, b, item);
+  if (broken) kind = 'breaks';
+  return { ...base, ...pair, kind, broken, ahead: broken ? null : pair.ahead };
+}
+
+// Новая против одной вещи в том же слоте билда (без сетов): на сколько лучше по полезным сегментам, какие места
+// цепочки она закрывает и теряет, решила ли пассивка (why), материал ли она надетой. kind — только по этой паре
+// (up / eq / down), ahead — для «хуже». Общая часть compare и сборки из пула (logic/pool)
+export type Pair = Pick<Vs, 'kind' | 'delta' | 'why' | 'gained' | 'lost' | 'chains' | 'material' | 'passive' | 'wornEmpty' | 'ahead'>;
+export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piece, f: Fit = fit(ctx, b, item)): Pair {
   const wi = pieceInput(worn);
   // Epic с 4 сабстатами в форме уже прошла первый Reforge (он дал 4-й) — как у записанной вещи (reforgesDone)
   const X = value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0);
@@ -162,9 +179,6 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
     if (f === 'stopgap' && wf === 'rec') { kind = 'down'; why = 'stopgap'; }
     else if (f === 'rec' && wf !== 'rec') { kind = 'up'; why = 'rec'; }
   }
-  if (t4 && kind === 'up' && worn.setId === item.setId && worn.bt === 4) kind = 'eq';
-  const broken = breaks(st, key, b, item);
-  if (broken) kind = 'breaks';
   const place = (cover: Map<number, string>, other: Map<number, string>) =>
     [...cover].filter(([p]) => !other.has(p)).map(([p, k]) => ({ key: k, place: p + 1 })).sort((a, z) => a.place - z.place);
   const sameType = isArmor(item.slot)
@@ -176,7 +190,7 @@ export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemIn
       .sort((a, z) => z.worn - z.next - (a.worn - a.next))[0] ?? null
     : null;
   return {
-    ...base, kind, delta, why, broken, wornEmpty: E.v === 0 && X.v > 0, ahead,
+    kind, delta, why, wornEmpty: E.v === 0 && X.v > 0, ahead,
     gained: place(X.cover, E.cover), lost,
     chains: { worn: rowOf(ctx, c, b, wi, worn.lit), next: rowOf(ctx, c, b, item, item.subs) },
     material: sameType && worn.bt !== null && worn.bt < 4,
