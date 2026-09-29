@@ -177,8 +177,10 @@ function problems(D) {
   const sets = new Set(D.sets.map((s) => s.id));
   const items = { weapon: new Set(D.weapons.map((i) => i.key)), accessory: new Set(D.amulets.map((i) => i.key)) };
   const subKeys = new Set(D.substats.map((s) => s.key));
+  const ids = new Set(D.chars.map((c) => c.id));
   for (const c of D.chars) {
     if (!c.name || !c.slug) out.add(`у персонажа ${c.id} нет имени или slug`);
+    if (c.fusionOf && !ids.has(c.fusionOf)) out.add(`${c.name}: Core Fusion от персонажа ${c.fusionOf}, которого нет в данных`);
     if (!D.elements[c.element]) out.add(`${c.name}: неизвестная стихия «${c.element}»`);
     if (!D.classes[c.class]) out.add(`${c.name}: неизвестный класс «${c.class}»`);
     for (const b of c.builds) {

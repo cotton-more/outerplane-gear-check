@@ -43,6 +43,7 @@ export interface Char {
   rank: string | null;
   role: string | null;
   free: boolean;
+  fusionOf?: string; // у Core Fusion — id обычного героя: Core Fusion X заменяет X в ростере
   builds: Build[];
   gameSets?: string[];
   rankPvp: string | null;

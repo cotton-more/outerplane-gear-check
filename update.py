@@ -766,6 +766,8 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
             "free": "free" in (cur.get("tags") or []),
             "builds": [],
         }
+        if c.get("originalCharacter"):
+            entry["fusionOf"] = str(c["originalCharacter"])  # Core Fusion X заменяет X: id обычного героя
         names_seen.setdefault(entry["name"].lower(), []).append(entry)
         who = entry["name"] or entry["slug"]
         for b in src["reco"].get(cid, []) or []:
