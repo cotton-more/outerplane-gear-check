@@ -1,11 +1,12 @@
 // Вердикт «Временно» — главный тур его не объясняет: на примере вердикт «Оставить».
 // Кнопка «Надеть» под карточкой (телефон), «Фоддер», потому что вещь — материал для надетой, и «Разобрать»,
-// потому что всем, кому она подходит, уже надето не хуже (logic/worn)
+// потому что всем, кому она подходит, уже надето не хуже (logic/worn). rev 2 у cardEquip и worn — GEARPOOL:
+// «или — Rin», вещь убирают в карточке персонажа
 import { defineTips } from '../../tour/types';
 
 export default defineTips(
   { id: 'temp', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.verdict.v === 'temp' },
-  { id: 'cardEquip', rev: 1, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
+  { id: 'cardEquip', rev: 2, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
   { id: 'material', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.material },
-  { id: 'worn', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
+  { id: 'worn', rev: 2, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
 );

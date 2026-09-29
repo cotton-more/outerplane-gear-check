@@ -334,7 +334,7 @@ describe('подсказки по ходу и «Что нового»', () => {
     await click($('.vb-tab'));
     await click($('.menu .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known).toMatchObject({ move: 1, dice: 1, gear: 1 });
+    expect(stored('tour').known).toMatchObject({ move: 1, dice: 1, gear: 2 }); // gear rev 2 — GEARPOOL
     expect($('.vb-tab.has-news')).toBeNull();
   });
 

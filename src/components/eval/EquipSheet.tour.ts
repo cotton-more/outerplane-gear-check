@@ -1,6 +1,6 @@
-// «Кому надеть?»: на персонаже сейчас вещь не по билду — «показать и не по билду»
+// «Кому надеть?» (rev 2, GEARPOOL): только те, кому вещь встанет в билд — хлам к персонажу не попадает
 import { defineTips } from '../../tour/types';
 
 export default defineTips(
-  { id: 'equipAll', rev: 1, at: 'equipall' },
+  { id: 'equipAll', rev: 2, at: 'equipall' },
 );

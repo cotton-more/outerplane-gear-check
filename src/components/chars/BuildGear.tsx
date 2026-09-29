@@ -173,7 +173,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
         </div>
       )}
       {(missing.length > 0 || (stats && first)) && (
-        <div className="bgear-need">
+        <div className="bgear-need" {...(stats ? tour('stats') : {})}>
           {stats && first ? <p>{t.ui.missingStats(setName(first.set), c.builds[0].name)}</p> : missing.map((m, i) => <p key={i}>{m}</p>)}
           {try_ && !stats && free.length > 0 && <button type="button" className="btn small" onClick={() => try_(free[0])}>{t.tryon.slot}</button>}
         </div>
