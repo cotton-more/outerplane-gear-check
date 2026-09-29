@@ -25,7 +25,8 @@ export function EquipSheet({ ctx, store, item, onEquip, onClose }: {
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   const chars = useMemo(() => {
-    const withBuilds = D.chars.filter((c) => c.builds.length);
+    // X не предлагаем, когда в ростере Core Fusion X: в игре его больше нет
+    const withBuilds = D.chars.filter((c) => c.builds.length && !ctx.roster.has(ctx.idx.FUSED[c.id]));
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);

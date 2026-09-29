@@ -21,15 +21,16 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 );
 
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
-// onTryOn — примерка для билда этого персонажа (BuildGear)
+// onTryOn — примерка для билда этого персонажа (BuildGear); onOpenChar — карточка другого персонажа (его Core Fusion)
 interface Props {
   charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
   onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece) => void;
   onPieceOpen?: (open: boolean) => void;
+  onOpenChar?: (id: string) => void;
 }
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen }: Props) {
+export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -47,6 +48,9 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
     );
   }
   const own = rosterApi.roster.has(c.id);
+  // Core Fusion этого героя в ростере: сам он туда не попадёт (state/useRoster), его вещи пока остаются на нём
+  const fused = ctx.idx.FUSED[c.id];
+  const fusedOwn = fused && rosterApi.roster.has(fused) ? CHAR[fused] : null;
   // сколько надето в билде — на вкладке «Speed 6/6»
   const geared = (x: Build) => Object.keys(gear.store.builds[buildKey(c.id, x.name)]?.slots ?? {}).length;
   const b = c.builds[Math.min(bi, c.builds.length - 1)];
@@ -69,6 +73,9 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
       </div>
       <div className="own-row">
         <button type="button" className="own-btn" aria-pressed={own} onClick={() => rosterApi.toggle(c.id)}>{own ? t.ui.inRosterBtn : t.ui.addToRoster}</button>
+        {fusedOwn && (
+          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedOwn.id)}>{t.ui.fusionInRoster(fusedOwn.name)}</button>
+        )}
       </div>
       {b ? (
         <>

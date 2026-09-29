@@ -400,6 +400,11 @@ export const ru = {
     // во время обучения на странице пример, а не вещи игрока: код показал бы и заменил бы пример
     gearCodeTour: 'Код экипировки — после обучения: пока оно идёт, на странице пример, а не твои вещи.',
     gearApplied: (n: number) => `Экипировка загружена: вещей ${n}.`,
+    gearRosterAdded: (names: string) => `В ростер добавлены: ${names}.`,
+    // Core Fusion X заменяет X в ростере (state/useRoster): в игре после Core Fusion обычного героя нет
+    fusionReplaces: (fusion: string, base: string) => `${fusion} заменяет ${base} в ростере.`,
+    fusionKept: (base: string, fusion: string) => `После Core Fusion героя ${base} в игре больше нет — в ростере остаётся ${fusion}.`,
+    fusionInRoster: (fusion: string) => `В ростере ${fusion}.`,
     gearBad: 'Код не читается — скопируй его целиком, с OGC-GEAR1 в начале.',
     gearNewer: 'Экипировку сохранила более новая версия страницы — обнови страницу, чтобы её видеть и менять.',
     // кубик Reforge у свежей Epic (logic/gamble, components/eval/Gamble)

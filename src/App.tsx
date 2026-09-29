@@ -35,7 +35,7 @@ import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } fr
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useGear, type GearApi } from './state/useGear';
-import { useRoster } from './state/useRoster';
+import { useRoster, type RosterApi, type RosterChange } from './state/useRoster';
 import { useTryOn } from './state/useTryOn';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
@@ -118,7 +118,8 @@ export function App() {
   const [equipOpen, setEquipOpen] = useState(false);
   // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
   // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи
-  const [gearUndo, setGearUndo] = useState<{ text: string; note: string; tab: Tab; undo: (st: GearStore) => GearStore; after?: () => void } | null>(null);
+  // Сообщение о ростере (Core Fusion) — тем же механизмом: undo нет, «Вернуть» — только after; нечего вернуть — без кнопки
+  const [gearUndo, setGearUndo] = useState<{ text: string; note: string; tab: Tab; undo?: (st: GearStore) => GearStore; after?: () => void } | null>(null);
   useEffect(() => {
     if (!gearUndo) return;
     const id = setTimeout(() => setGearUndo(null), 8000);
@@ -127,6 +128,25 @@ export function App() {
   // обновление: новые данные — плашка сверху; только приложение — строка в подвале (hooks/usePwa)
   const pwa = usePwa(idx.D.meta.commit);
   const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
+  // Core Fusion X заменяет X в ростере (state/useRoster): что стало — строкой; в пакетных добавлениях (показанные, код
+  // ростера, импорт экипировки) X, которого не добавили, не упоминаем
+  const charName = (id: string) => idx.CHAR[id]?.name ?? id;
+  const fusionNote = (ch: RosterChange | null, batch = false) => (!ch ? '' : [
+    ...ch.replaced.map((r) => t.ui.fusionReplaces(charName(r.fusion), charName(r.base))),
+    ...(batch ? [] : ch.refused.map((r) => t.ui.fusionKept(charName(r.base), charName(r.fusion)))),
+  ].join(' '));
+  const undoRoster = (ch: RosterChange | null) => (ch && (ch.added.length || ch.replaced.length) ? () => rosterApi.revert(ch) : undefined);
+  const announce = (ch: RosterChange, tab: Tab, batch = false) => {
+    const text = fusionNote(ch, batch);
+    if (text) setGearUndo({ text, note: '', tab, after: ch.replaced.length ? undoRoster(ch) : undefined });
+    return ch;
+  };
+  // список и карточка персонажа: звезда, «Отметить показанных», код ростера — с тем же сообщением
+  const rosterUi: RosterApi = {
+    ...rosterApi,
+    toggle: (id) => announce(rosterApi.toggle(id), 'chars'),
+    add: (ids) => announce(rosterApi.add(ids), 'chars', true),
+  };
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -180,9 +200,8 @@ export function App() {
     gear.set(r.store);
     // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока.
     // «Заменить» в шторке вердикта — шторку закрыть: следующий шаг тура — ✕ на полосе примерки под ней
-    const added = !touring && !roster.has(c.id);
+    const added = !touring && !roster.has(c.id) ? rosterApi.add([c.id]) : null;
     if (touring) setVerdictOpen(false);
-    if (added) rosterApi.add([c.id]);
     setUndo(null);
     const slot = t.ui.slotNom[input.slot]; // «Надето: Caren · Speed · броня» — именительный, не «броню»
     const nameOf = (k: string) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k.slice(c.id.length + 1);
@@ -193,18 +212,19 @@ export function App() {
       note = [note, still.length ? t.ui.oldStill(still.join(', '))
         : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, r.store, pieceInput(r.old), evaluate(ctx, pieceInput(r.old), { gamble: false })).v])].filter(Boolean).join(' ');
     }
+    note = [note, fusionNote(added)].filter(Boolean).join(' ');
     const item = input.slot;
     const from = twin ? ownerOf(twin.keys[0]) : '';
     if (!touring) setGearUndo({
       text: twin ? t.ui.moved(from, c.name, b.name, slot) : r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, tab: 'eval',
-      undo: (st) => (twin ? undoMove(st, key, twin, r.old) : undoEquip(st, key, item, r.piece, r.old)), after: added ? () => rosterApi.remove([c.id]) : undefined,
+      undo: (st) => (twin ? undoMove(st, key, twin, r.old) : undoEquip(st, key, item, r.piece, r.old)), after: undoRoster(added),
     });
   };
   // примерка из карточки персонажа: персонаж — в ростер (как у «Надеть»), на форму — слот и сет, грейд прежний.
   // Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся
   const startTryOn = (c: Char, b: Build, slot?: SlotId, from?: Piece) => {
     tryOn.set({ charId: c.id, build: b.name });
-    if (!touring && !roster.has(c.id)) rosterApi.add([c.id]);
+    if (!touring && !roster.has(c.id)) announce(rosterApi.add([c.id]), 'eval');
     setVerdictOpen(false);
     const p = slot ? tryOnPreset(gear.store, buildKey(c.id, b.name), b, slot, from) : null;
     if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
@@ -215,8 +235,12 @@ export function App() {
     } else dispatch({ type: 'tab', tab: 'eval' });
     if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
   };
-  // импорт кода экипировки заменил все записи: «Вернуть» — всё, как было до него
-  const onGearImport = (prev: GearStore, text: string) => setGearUndo({ text, note: '', tab: 'chars', undo: () => prev });
+  // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер. «Вернуть» — всё, как было до него
+  const onGearImport = (prev: GearStore, st: GearStore, text: string) => {
+    const ch = rosterApi.add([...gearedChars(st).keys()].filter((id) => idx.CHAR[id]));
+    const names = ch.added.map(charName).join(', ');
+    setGearUndo({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: fusionNote(ch, true), tab: 'chars', undo: () => prev, after: undoRoster(ch) });
+  };
   useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
   // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
@@ -332,8 +356,8 @@ export function App() {
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={rosterApi} gear={gear} geared={geared} onGearImport={onGearImport} touring={!!tour.run} />
-            <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} rosterApi={rosterApi} gear={gear} active={s.tab === 'chars'}
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} onGearImport={onGearImport} touring={!!tour.run} />
+            <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} rosterApi={rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined}
               onPieceOpen={setPieceOpen} />
           </section>
@@ -360,7 +384,9 @@ export function App() {
         {gearUndo && gearToast && (
           <div className="toast gear-toast" role="status" style={toastAt}>
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
-            <button type="button" onClick={() => { gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
+            {(gearUndo.undo || gearUndo.after) && (
+              <button type="button" onClick={() => { if (gearUndo.undo) gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
+            )}
           </div>
         )}
         {twinAsk && !tour.run && (

@@ -60,6 +60,8 @@ export function createIndex(D: Dataset) {
     },
     CHAR: Object.fromEntries(D.chars.map((c) => [c.id, c])),
     CHAR_BY_SLUG: Object.fromEntries(D.chars.map((c) => [c.slug, c])),
+    // обычный герой → его Core Fusion (Core Fusion X заменяет X: в ростере не бывает обоих, state/useRoster)
+    FUSED: Object.fromEntries(D.chars.filter((c) => c.fusionOf).map((c) => [c.fusionOf!, c.id])) as Record<string, string>,
     SUB,
     SUB_LIST: SUB_ORDER.filter((k) => SUB[k]).concat(D.substats.map((s) => s.key).filter((k) => !SUB_ORDER.includes(k))),
     TICK,

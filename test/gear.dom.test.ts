@@ -401,6 +401,93 @@ describe('экипировка', () => {
     expect(stored().pieces.p1.bt).toBe(4);
   });
 
+  it('импорт: все, у кого есть вещи, — в ростер (из X и Core Fusion X — Core Fusion); «Вернуть» убирает и их', async () => {
+    const [eternal, cfEternal] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
+    await mount({ tab: 'chars' }, {});
+    const { encodeGear } = await import('../src/logic/gear');
+    const piece = { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { SPD: 2 }, lit: { SPD: 2 }, bt: null, at: '' };
+    const code = encodeGear({ v: 1, seq: 2, pieces: { p1: piece, p2: { ...piece, id: 'p2' } } as never, builds: {
+      [eternal.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' }, [cfEternal.id + '/Speed']: { slots: { helmet: 'p2' }, at: '' },
+    } });
+    await click(byText('.roster-bar .linkbtn', 'export'));
+    const ta = $('#gear-code') as HTMLTextAreaElement;
+    ta.value = code;
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id, cfEternal.id]);
+    expect($('.gear-toast')?.textContent).toContain('Added to the roster: Core Fusion Eternal.');
+    await click($('.gear-toast button'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id]);
+    expect(Object.keys(stored().pieces)).toEqual([]);
+  });
+
+  it('звезда на Core Fusion в списке: X убран, сообщение «replaces» с «Вернуть»', async () => {
+    const [eternal, cfEternal] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
+    await mount({ tab: 'chars' }, {}, { roster: [eternal.id] });
+    const q = $('#char-q') as HTMLInputElement;
+    await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(q, 'eternal'); q.dispatchEvent(new Event('input', { bubbles: true })); });
+    await click(byText('#cgrid .cwrap', 'Core FusionEternal')?.querySelector('.star') as HTMLElement);
+
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([cfEternal.id]);
+    expect($('.gear-toast')?.textContent).toContain('Core Fusion Eternal replaces Eternal in the roster.');
+    await click($('.gear-toast button'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([eternal.id]);
+  });
+
+  it('«Отметить показанных» с X и Core Fusion X — в ростере только Core Fusion, без сообщения', async () => {
+    const cfEternal = D.chars.find((c) => c.name === 'Core Fusion Eternal')!;
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    const q = $('#char-q') as HTMLInputElement;
+    await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(q, 'eternal'); q.dispatchEvent(new Event('input', { bubbles: true })); });
+    await click(byText('.roster-bar .linkbtn', 'mark all shown'));
+
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([cfEternal.id]);
+    expect($('.gear-toast')).toBeNull();
+  });
+
+  it('«Надеть» на Core Fusion, а X в ростере: X убран, строка в сообщении, «Вернуть» — и вещь, и X', async () => {
+    const [eternal, cfEternal] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, eternal.id] });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    const q = $('.equip-q input') as HTMLInputElement;
+    await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(q, 'core fusion eter'); q.dispatchEvent(new Event('input', { bubbles: true })); });
+    await click(byText('.equip-row', 'Core Fusion Eternal') as HTMLElement);
+
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id, cfEternal.id]);
+    expect($('.gear-toast small')?.textContent).toContain('Core Fusion Eternal replaces Eternal in the roster.');
+    await click($('.gear-toast button'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id, eternal.id]);
+    expect(Object.keys(stored().pieces)).toEqual([]);
+  });
+
+  it('карточка X при Core Fusion X в ростере: строка-ссылка на Core Fusion; звезда X — объяснение без «Вернуть»', async () => {
+    const [eternal, cfEternal] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
+    await mount({ tab: 'chars', charId: eternal.id }, {}, { roster: [cfEternal.id] });
+    await click($('.own-btn'));
+
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([cfEternal.id]);
+    expect($('.gear-toast')?.textContent).toBe('After Core Fusion, Eternal is no longer in the game — Core Fusion Eternal stays in the roster.');
+    expect($('.gear-toast button')).toBeNull();
+    await click(byText('.own-row .linkbtn', 'Core Fusion Eternal is in the roster.'));
+    expect($('.cd-head h2')?.textContent).toBe('Core Fusion Eternal');
+  });
+
+  it('«Кому надеть?» при Core Fusion X в ростере: X нет ни в списке, ни в поиске по имени', async () => {
+    const cfEternal = D.chars.find((c) => c.name === 'Core Fusion Eternal')!;
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, cfEternal.id] });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    const names = () => $$('.equip-row .nm b').map((e) => e.textContent);
+
+    expect(names()).toContain('Core Fusion Eternal');
+    expect(names()).not.toContain('Eternal');
+    const input = $('.equip-q input') as HTMLInputElement;
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(input, 'eter'); input.dispatchEvent(new Event('input', { bubbles: true })); });
+    expect(names().filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
+  });
+
   it('экипировку сохранила более новая версия (v: 2): «Надеть на…» нет, в карточке — «обнови страницу», запись не тронута', async () => {
     const newer = { v: 2, seq: 1, pieces: { p1: { id: 'p1' } }, builds: {} };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: newer });

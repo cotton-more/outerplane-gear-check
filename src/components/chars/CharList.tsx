@@ -12,11 +12,11 @@ import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
-// onGearImport — код экипировки заменил записи: сообщение с «Вернуть» (App); geared — у кого сколько надето;
+// onGearImport — код экипировки заменил записи: всех, у кого есть вещи, — в ростер, сообщение с «Вернуть» (App); geared — у кого сколько надето;
 // touring — идёт обучение: на странице экипировка тура (пример или пусто), кода экипировки нет
 interface Props {
   s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
-  onGearImport: (prev: GearStore, text: string) => void; touring: boolean;
+  onGearImport: (prev: GearStore, st: GearStore, text: string) => void; touring: boolean;
 }
 
 export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport, touring }: Props) {
@@ -157,7 +157,7 @@ function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
 }
 
 // резервная копия экипировки кодом: вещи и билды целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
-function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, text: string) => void }) {
+function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, st: GearStore, text: string) => void }) {
   const idx = useIndex();
   const t = useT();
   const code = Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : '';
@@ -176,7 +176,7 @@ function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore,
     const prev = gear.store;
     gear.set(st);
     setMsg('');
-    onImport(prev, t.ui.gearApplied(Object.keys(st.pieces).length));
+    onImport(prev, st, t.ui.gearApplied(Object.keys(st.pieces).length));
   };
   return (
     <div className="roster-io">
