@@ -17,16 +17,19 @@ import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
 import { Chain } from './Chain';
 import { DiceChip, GambleBlock, GambleLine, toTarget } from './Gamble';
-import type { Vs } from '../../logic/vs';
+import type { PoolView } from '../../logic/pool';
+import type { CharVs } from '../../logic/poolVs';
+import { buildOfKey } from '../../logic/variants';
 import { Icon } from '../Img';
 import { VsChip, VsSection } from './VsSection';
 import { subLabel } from '../../data';
 import { ShareCode } from './ItemCode';
 
-// vs — «Сейчас на персонажах» (logic/vs); onEquip — надеть в билд из этого раздела; onEquipPick — окно «Кому надеть?»
+// vs — «Сейчас на персонажах» (logic/poolVs), view — пул; onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
 interface Props {
   r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
-  vs?: Vs[]; onEquip?: (vs: Vs) => void; onEquipPick?: () => void;
+  vs?: CharVs[]; view?: PoolView; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void;
+  offNote?: string | null; // примерка: вещь варианту не подходит — почему
 }
 
 // Широкий экран: вердикт липкой колонкой справа от формы — во всю высоту до низа окна.
@@ -37,7 +40,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEquipPick }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip, onEquipPick, offNote }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -62,7 +65,8 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEq
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
         {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
-      {onEquip && <VsSection list={vs} slot={t.ui.slotAcc[s.slot]} armor={isArmor(s.slot)} onEquip={onEquip} onOpenChar={onOpenChar} />}
+      {offNote && <p className="v-off muted">{offNote}</p>}
+      {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} onEquip={onEquip} onOpenChar={onOpenChar} />}
       {r.gamble && <GambleBlock g={r.gamble} v={r.v} subs={s.subs} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
@@ -165,19 +169,22 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 // Штамп, коротко — почему, и третья строка — по порядку, что есть: кубик Reforge → сравнение с надетым → цепочка.
 // Кубик — рядом со штампом; у «Разобрать» и «Спорно» строка карточки — какой 4-й вытянет вещь,
 // у «Временно» — та же цепочка, где удачные для него 4-е с точкой; если удачные — у других, строка кубика.
-// vs — сравнение с тем, что надето (первое из «Сейчас на персонажах» или то, что в примерке): «▲ +25% Caren · Speed
-// +CHD (3-е) · −SPD (4-е)». Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
-// named — назвать, у кого надето; в примерке имя уже на полосе над формой, место — местам цепочки
-export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; onOpen: () => void; vs?: Vs | null; named?: boolean }) {
+// vs — лучший исход (первый из «Сейчас на персонажах» или в примерке): «▲ сет 3 из 4 Caren · Speed/Immu +1»,
+// «▲ +25% Caren · Speed +CHD (3-е)». Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
+// named — назвать персонажа; в примерке имя уже на полосе над формой, место — местам цепочки
+export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; onOpen: () => void; vs?: CharVs | null; named?: boolean }) {
   const t = useT();
   const best = bestRow(r)?.row;
   const g = r.gamble;
   const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
   // кнопка карточки читается диктором целиком: штамп, кубик и «подробнее»
   const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
-    vs && t.tryon.clause(vs.kind, vs.c.name, vs.b.name, false), t.ui.verdictDetails].filter(Boolean).join(' · ');
-  const places = vs && (vs.gained.length || vs.lost.length)
-    ? t.ui.vsPlaces(vs.gained.map((x) => ({ ...x, key: subLabel(x.key) })), vs.lost.map((x) => ({ ...x, key: subLabel(x.key) }))) : '';
+    vs && `${vs.best ? t.ui.vsKind[vs.best.kind] ?? '' : t.ui.vsKind.worn} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
+  const o = vs?.best ?? null;
+  const p = o?.pair;
+  const places = p && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && (p.gained.length || p.lost.length)
+    ? t.ui.vsPlaces(p.gained.map((x) => ({ ...x, key: subLabel(x.key) })), p.lost.map((x) => ({ ...x, key: subLabel(x.key) }))) : '';
+  const build = o ? buildOfKey(o.v.key, t.ui.byStats) : vs?.starts[0]?.name ?? '';
   return (
     <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={label} {...tour('verdict')}>
       <span className="vc-top">
@@ -190,7 +197,7 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
       {g && (r.v !== 'temp' || !lucky?.size)
         ? <GambleLine g={g} />
         : vs
-          ? <span className="vc-vs"><VsChip vs={vs} />{named && <><b>{vs.c.name}</b><span className="bn">· {vs.b.name}</span></>}{places && <span className="vc-places">{places}</span>}</span>
+          ? <span className="vc-vs"><VsChip o={o} starts={o ? o.entering : !vs.worn} />{named && <><b>{vs.c.name}</b>{build && <span className="bn">· {build}{vs.same > 0 ? ` +${vs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
           : best && best.good != null
           ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} lucky={lucky} /></span>
           : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}

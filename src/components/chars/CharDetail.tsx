@@ -9,8 +9,13 @@ import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import { buildKey, type Piece } from '../../logic/gear';
-import { BuildGear } from './BuildGear';
+import type { GearStore, Piece } from '../../logic/gear';
+import { isStats, play, setMark, type PoolView } from '../../logic/pool';
+import { badgeOf } from '../../logic/poolVs';
+import type { Variant } from '../../logic/variants';
+import { BuildGear, PieceSheet } from './BuildGear';
+import { PoolList } from './PoolList';
+import { VariantChips } from './VariantChips';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
 import { tour } from '../../tour/anchors';
 
@@ -21,20 +26,43 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 );
 
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
-// onTryOn — примерка для билда этого персонажа (BuildGear); onOpenChar — карточка другого персонажа (его Core Fusion)
+// view — пул (logic/pool); onTryOn — примерка варианта этого персонажа (BuildGear); onOpenChar — карточка другого
+// персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»)
 interface Props {
-  charId: string | null; ctx: Ctx; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
-  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece) => void;
+  charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
+  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
+  onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
 }
 
+// ранг варианта для заголовка и выбора: доля сборки, потом итог сборки, потом порядок outerpedia
+const rankOf = (cpAsm: Map<string, { progress: number; need: number; total: number }>, v: Variant) => {
+  const a = cpAsm.get(v.key)!;
+  return [a.need ? a.progress / a.need : 0, a.total];
+};
+const byRank = (asm: Map<string, { progress: number; need: number; total: number }>) => (x: Variant, z: Variant) => {
+  const [a1, a2] = rankOf(asm, x), [z1, z2] = rankOf(asm, z);
+  return z1 - a1 || z2 - a2;
+};
+
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar }: Props) {
+export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
-  const [bi, setBi] = useState(0);
+  const cp = c ? view.of(c.id) : null;
+  // вкладка: 'stats' — «По статам», иначе номер билда; при открытии — билд лучшего варианта
+  const lead = cp ? [...cp.inPlay].filter((v) => !v.dupOf).sort(byRank(cp.asm))[0] ?? null : null;
+  const [tab, setTab] = useState<number | 'stats'>(() => (lead ? (isStats(lead) ? 'stats' : Math.max(0, c!.builds.indexOf(lead.parent))) : 0));
+  const [picked, setPicked] = useState<Record<string, string>>({}); // вкладка → выбранный вариант (чипы)
+  const [pieceId, setPieceId] = useState<string | null>(null);
+  // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
+  useEffect(() => { if (!active) setPieceId(null); }, [active]);
+  const piece = pieceId ? gear.store.pieces[pieceId] : undefined;
+  const shownPiece = active && !!piece && !!cp?.pieces.some((p) => p.id === pieceId);
+  useEffect(() => { onPieceOpen?.(shownPiece); }, [shownPiece]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onPieceOpen?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     document.body.classList.toggle('sheet-open', sheetOpen);
     return () => document.body.classList.remove('sheet-open');
@@ -48,12 +76,43 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
     );
   }
   const own = rosterApi.roster.has(c.id);
-  // Core Fusion этого героя в ростере: сам он туда не попадёт (state/useRoster), его вещи пока остаются на нём
+  // Core Fusion этого героя в ростере: сам он туда не попадёт (state/useRoster), вещи — у Core Fusion
   const fused = ctx.idx.FUSED[c.id];
   const fusedOwn = fused && rosterApi.roster.has(fused) ? CHAR[fused] : null;
-  // сколько надето в билде — на вкладке «Speed 6/6»
-  const geared = (x: Build) => Object.keys(gear.store.builds[buildKey(c.id, x.name)]?.slots ?? {}).length;
-  const b = c.builds[Math.min(bi, c.builds.length - 1)];
+  const asm = cp!.asm;
+  const variantsOfBuild = (b: Build) => cp!.variants.filter((v) => v.parent === b && !isStats(v)).sort(byRank(asm));
+  const has = cp!.pieces.length > 0;
+  // «N/6» на вкладке — у лучшего варианта билда
+  const badge = (b: Build) => (has ? Math.max(0, ...variantsOfBuild(b).map((v) => badgeOf(asm.get(v.key)!))) : 0);
+  const statsTab = tab === 'stats' && cp!.stat;
+  const bi = typeof tab === 'number' ? Math.min(tab, c.builds.length - 1) : 0;
+  const b = statsTab ? cp!.stat!.parent : c.builds[bi];
+  const list = b && !statsTab ? variantsOfBuild(b) : [];
+  const v = statsTab ? cp!.stat! : list.find((x) => x.key === picked[String(tab)]) ?? list[0];
+  // «Собираю»: нажали — противоположная отметка, а если так было бы и без неё — отметку снять
+  const onWant = (x: Variant) => {
+    const on = cp!.inPlay.includes(x);
+    const { [x.key]: _, ...rest } = gear.store.marks ?? {};
+    const auto = play(ctx, c, cp!.pieces, { marks: rest, tryOn: view.opts.tryOn }).inPlay.some((y) => y.key === x.key);
+    gear.set(setMark(gear.store, x.key, !on === auto ? null : !on ? 'want' : 'skip'));
+  };
+  // заголовок: лучше всего собран / ближе всех к сборке; «Собраны ещё»; «По статам», если ничего не начато
+  const shownLead = lead && !isStats(lead) ? lead : null;
+  const done = cp!.inPlay.filter((x) => !isStats(x) && !x.dupOf && asm.get(x.key)!.need && asm.get(x.key)!.progress === asm.get(x.key)!.need);
+  const la = shownLead ? asm.get(shownLead.key)! : null;
+  const headline = !has ? null : cp!.stat && !cp!.inPlay.some((x) => !isStats(x) && asm.get(x.key)!.progress > 0)
+    ? <p className="cd-lead"><span>{t.ui.cdStats(c.name)}</span></p>
+    : la && shownLead && la.progress > 0
+      ? (
+        <p className="cd-lead">
+          <span>{la.progress === la.need ? t.ui.cdBest(shownLead.name, la.progress, la.need) : t.ui.cdClosest(shownLead.name, la.progress, la.need)}</span>
+          {done.filter((x) => x !== shownLead).length > 0 && <span className="muted small">{t.ui.cdAlso(done.filter((x) => x !== shownLead).map((x) => x.name).join(', '))}</span>}
+        </p>
+      )
+      : null;
+  // разовая подсказка после переноса: вариант теперь собирается сам; закрыл — ключ удалён
+  const autoNew = (gear.store.autoNew ?? []).filter((k) => k.startsWith(c.id + '/') && cp!.variants.some((x) => x.key === k));
+  const dismiss = (k: string) => gear.set({ ...gear.store, autoNew: (gear.store.autoNew ?? []).filter((x) => x !== k) });
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
       <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
@@ -74,20 +133,41 @@ export function CharDetail({ charId, ctx, rosterApi, gear, active, sheetOpen, on
       <div className="own-row">
         <button type="button" className="own-btn" aria-pressed={own} onClick={() => rosterApi.toggle(c.id)}>{own ? t.ui.inRosterBtn : t.ui.addToRoster}</button>
         {fusedOwn && (
-          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedOwn.id)}>{t.ui.fusionInRoster(fusedOwn.name)}</button>
+          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedOwn.id)}>{t.ui.fusionInRosterGear(fusedOwn.name)}</button>
         )}
       </div>
-      {b ? (
+      {headline}
+      {autoNew.map((k) => (
+        <p key={k} className="cd-note">
+          <span>{t.ui.autoNew(cp!.variants.find((x) => x.key === k)!.name, c.name)}</span>
+          <button type="button" className="tour-x" aria-label={t.ui.close} onClick={() => dismiss(k)}>✕</button>
+        </p>
+      ))}
+      {b && v ? (
         <>
-          <div className="btabs" role="tablist" aria-label={t.ui.builds} {...(c.builds.length > 1 && tour('btabs'))}>
-            {c.builds.map((x, i) => (
-              <button key={i} type="button" role="tab" aria-selected={x === b} onClick={() => setBi(i)}>
-                {x.name}{geared(x) > 0 && <span className="bt-n">{geared(x)}/6</span>}
+          <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
+            {cp!.stat && (
+              <button type="button" role="tab" aria-selected={!!statsTab} onClick={() => setTab('stats')}>
+                {t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}
               </button>
-            ))}
+            )}
+            {c.builds.map((x, i) => {
+              const one = variantsOfBuild(x);
+              const dup = one.length === 1 && one[0].dupOf ? cp!.variants.find((y) => y.key === one[0].dupOf) : null;
+              return (
+                <button key={i} type="button" role="tab" aria-selected={!statsTab && x === b} onClick={() => setTab(i)}>
+                  {x.name}{dup ? <span className="bt-n">{t.ui.dupOf(dup.name)}</span> : badge(x) > 0 && <span className="bt-n">{badge(x)}/6</span>}
+                </button>
+              );
+            })}
           </div>
-          <BuildGear c={c} b={b} ctx={ctx} gear={gear} active={active} onTryOn={onTryOn && ((x, slot, from) => onTryOn(c, x, slot, from))} onPieceOpen={onPieceOpen} />
-          <BuildView c={c} b={b} ctx={ctx} />
+          {list.length > 1 && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
+          <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
+            onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />
+          <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} />
+          {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast}
+            onTry={onTryOn && !statsTab ? () => { setPieceId(null); onTryOn(c, v.parent, piece.slot, piece, v.sig); } : undefined} />}
+          {!statsTab && <BuildView c={c} b={b} ctx={ctx} />}
         </>
       ) : (
         <div className="cd-empty">

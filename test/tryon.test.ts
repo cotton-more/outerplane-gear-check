@@ -1,16 +1,17 @@
-// Примерка (logic/tryon): что хранится, что подставляется на форму и заголовок вердикта — штамп общий, а строка
-// после « — » говорит и про других, и про того, для кого примеряем.
+// Примерка (logic/tryon, пул GEARPOOL): что хранится, какой вариант, что подставляется на форму и заголовок вердикта —
+// штамп общий, а строка после « — » говорит и про других, и про того, для кого примеряем.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import { TEXTS } from '../src/i18n';
-import { makeCtx } from '../src/logic/context';
+import { makeCtx, type Ctx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
-import { buildKey, EMPTY_GEAR, equip, updatePiece } from '../src/logic/gear';
-import { restoreTryOn, tryOnPreset, tryOnTarget, tryOnTitle } from '../src/logic/tryon';
-import type { ItemInput } from '../src/logic/verdict';
-import { compareFor } from '../src/logic/vs';
+import { EMPTY_GEAR, updatePiece, type GearStore } from '../src/logic/gear';
+import { poolView, putOn } from '../src/logic/pool';
+import { charVs } from '../src/logic/poolVs';
+import { restoreTryOn, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type Target } from '../src/logic/tryon';
+import type { ItemInput, Verdict } from '../src/logic/verdict';
 import { withWorn } from '../src/logic/worn';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -19,15 +20,22 @@ const ru = TEXTS.ru;
 const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const caren = D.chars.find((c) => c.name === 'Caren')!;
-const build = (name: string) => caren.builds.find((b) => b.name === name)!;
 const armor = (slot: ItemInput['slot'], s: string, subs: Record<string, number>, grade: ItemInput['grade'] = 'unique'): ItemInput =>
   ({ slot, grade, setId: set(s), itemKey: null, main: null, subs });
 const NEW = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
 const OLD = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
+const all = (items: ItemInput[], c: Ctx = ctx) => items.reduce<GearStore>((s, x) => putOn(c, s, caren.id, x).st, EMPTY_GEAR);
+const target = (build: string, st: GearStore = EMPTY_GEAR, combo?: string) => tryOnTarget(idx, { charId: caren.id, build, ...(combo ? { combo } : {}) }, poolView(ctx, st))!;
+// заголовок в примерке: исход для варианта цели
+const titleOf = (res: Verdict, st: GearStore, tg: Target, item: ItemInput, c: Ctx = ctx) => {
+  const x = charVs(c, poolView(c, st, tg.v.key), caren.id, item, tg.v.key);
+  return tryOnTitle(ru, res, tg, tryRowOf(idx, x?.best ?? null, !!x?.worn));
+};
 
 describe('примерка: что хранится', () => {
-  it('персонаж и билд из данных — примерка есть', () => {
+  it('персонаж и билд из данных — примерка есть; связка варианта — тоже', () => {
     expect(restoreTryOn({ charId: caren.id, build: 'Pen' }, idx)).toEqual({ charId: caren.id, build: 'Pen' });
+    expect(restoreTryOn({ charId: caren.id, build: 'Pen', combo: '11x4' }, idx)).toEqual({ charId: caren.id, build: 'Pen', combo: '11x4' });
   });
 
   it.each([
@@ -39,42 +47,50 @@ describe('примерка: что хранится', () => {
     expect(restoreTryOn(raw, idx)).toBeNull();
   });
 
-  it('цель — персонаж и его билд', () => {
-    expect(tryOnTarget(idx, { charId: caren.id, build: 'Pen' })).toMatchObject({ c: { name: 'Caren' }, b: { name: 'Pen' } });
+  it('цель — персонаж, билд и вариант', () => {
+    expect(target('Pen')).toMatchObject({ c: { name: 'Caren' }, b: { name: 'Pen' }, v: { key: `${caren.id}/Pen` } });
     expect(tryOnTarget(idx, null)).toBeNull();
+  });
+
+  it('билд с несколькими связками: combo — тот вариант; нет или устарел — самый собранный, при равенстве первый', () => {
+    const anarky = D.chars.find((c) => c.name === 'Anarky')!;
+    const tg = (combo?: string, st: GearStore = EMPTY_GEAR) => tryOnTarget(idx, { charId: anarky.id, build: 'Defense mix', ...(combo ? { combo } : {}) }, poolView(ctx, st))!.v.name;
+    expect(tg()).toBe('Defense mix · Penetration');
+    expect(tg('2x2+19x2')).toBe('Defense mix · Swiftness');
+    expect(tg('9x9')).toBe('Defense mix · Penetration');
+    const immu = putOn(ctx, EMPTY_GEAR, anarky.id, armor('helmet', 'Immunity', { CHC: 1 })).st;
+    expect(tg(undefined, immu)).toBe('Defense mix · Immunity');
   });
 });
 
 describe('примерка: что встаёт на форму', () => {
-  it('пустой слот брони — сет билда', () => {
-    expect(tryOnPreset(EMPTY_GEAR, buildKey(caren.id, 'Speed'), build('Speed'), 'gloves')).toEqual({ slot: 'gloves', setId: set('Speed') });
+  it('пустой слот брони — сет варианта', () => {
+    expect(tryOnPreset(poolView(ctx, EMPTY_GEAR), target('Speed'), 'gloves')).toEqual({ slot: 'gloves', setId: set('Speed') });
   });
 
-  it('2+2: сет, которого не хватает, — в связке уже два Speed, значит Immunity', () => {
-    const key = buildKey(caren.id, 'Speed/Immu');
-    let st = equip(EMPTY_GEAR, key, armor('helmet', 'Speed', { CHC: 1 })).store;
-    st = equip(st, key, armor('armor', 'Speed', { CHC: 1 })).store;
-    expect(tryOnPreset(st, key, build('Speed/Immu'), 'gloves').setId).toBe(set('Immunity'));
+  it('2+2: сет, которого не хватает, — в сборке уже два Speed, значит Immunity', () => {
+    const st = all([armor('helmet', 'Speed', { CHC: 1 }), armor('armor', 'Speed', { CHC: 1 })]);
+    expect(tryOnPreset(poolView(ctx, st), target('Speed/Immu', st), 'gloves').setId).toBe(set('Immunity'));
   });
 
-  it('«Примерить замену» — сет надетой; оружие — без сета', () => {
-    const r = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed/Immu'), armor('helmet', 'Immunity', { CHC: 1 }));
-    expect(tryOnPreset(r.store, buildKey(caren.id, 'Speed/Immu'), build('Speed/Immu'), 'helmet', r.piece).setId).toBe(set('Immunity'));
-    expect(tryOnPreset(EMPTY_GEAR, buildKey(caren.id, 'Speed'), build('Speed'), 'weapon')).toEqual({ slot: 'weapon', setId: null });
+  it('«Примерить замену» — сет той вещи; оружие — без сета', () => {
+    const r = putOn(ctx, EMPTY_GEAR, caren.id, armor('helmet', 'Immunity', { CHC: 1 }));
+    expect(tryOnPreset(poolView(ctx, r.st), target('Speed/Immu', r.st), 'helmet', r.piece).setId).toBe(set('Immunity'));
+    expect(tryOnPreset(poolView(ctx, EMPTY_GEAR), target('Speed'), 'weapon')).toEqual({ slot: 'weapon', setId: null });
   });
 
-  it('«Примерить замену» у вещи не по билду (Defense на Caren · Speed) — сет билда, а не её', () => {
-    const r = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), armor('shoes', 'Defense', { CHC: 1 }));
-    expect(tryOnPreset(r.store, buildKey(caren.id, 'Speed'), build('Speed'), 'shoes', r.piece).setId).toBe(set('Speed'));
+  it('«Примерить замену» у вещи не из связки (Defense в Speed) — сет варианта, а не её', () => {
+    const r = putOn(ctx, EMPTY_GEAR, caren.id, armor('shoes', 'Defense', { CHC: 1 }));
+    expect(tryOnPreset(poolView(ctx, r.st), target('Speed', r.st), 'shoes', r.piece).setId).toBe(set('Speed'));
   });
 });
 
 describe('примерка: заголовок вердикта', () => {
   const on = (item: ItemInput, wornLit?: Record<string, number>) => {
-    const r = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), OLD);
-    const st = wornLit ? updatePiece(r.store, r.piece.id, { lit: wornLit, bt: 4 }) : EMPTY_GEAR;
+    const r = putOn(ctx, EMPTY_GEAR, caren.id, OLD);
+    const st = wornLit ? updatePiece(r.st, r.id, { lit: wornLit, bt: 4 }) : EMPTY_GEAR;
     const res = evaluate(ctx, item, { gamble: false });
-    return { res, title: tryOnTitle(ru, res, compareFor(ctx, st, caren, build('Speed'), item)) };
+    return { res, title: titleOf(res, st, target('Speed', st), item) };
   };
 
   it('«Оставить», ей лучше: слово вердикта то же, дальше — кому ещё нужна и «лучше, чем на Caren»', () => {
@@ -84,18 +100,27 @@ describe('примерка: заголовок вердикта', () => {
     expect(title).not.toMatch(/нужна[^;]*Caren/);
   });
 
-  it('на ней уже лучше — «на Caren уже лучше»', () => {
-    const { title } = on(NEW, { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 });
-    expect(title).toMatch(/; на Caren уже лучше$/);
+  it('у неё лучше — «на Caren уже лучше»', () => {
+    expect(on(NEW, { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 }).title).toMatch(/; на Caren уже лучше$/);
   });
 
-  it('слот пуст — «у Caren слот пуст»', () => {
-    expect(on(NEW).title).toMatch(/; у Caren слот пуст$/);
+  it('иначе: пусто — вещь сета её начнёт: «Caren · Speed: сет 1 из 4»', () => {
+    expect(on(NEW).title).toMatch(/; Caren · Speed: сет 1 из 4$/);
+  });
+
+  it('новые исходы: соберёт, «на уровне: Speed ×2 на T4», сверх собранной части', () => {
+    const three = all([armor('armor', 'Speed', { CHC: 1 }), armor('gloves', 'Speed', { CHC: 1 }), armor('shoes', 'Speed', { CHC: 1 })]);
+    const res = evaluate(ctx, NEW, { gamble: false });
+    expect(titleOf(res, three, target('Speed', three), NEW)).toMatch(/; у Caren соберёт Speed$/);
+    // Speed/Immu: Speed ×2 уже собран — третья Speed-вещь сверх него
+    expect(titleOf(res, three, target('Speed/Immu', three), NEW)).toMatch(/; у Caren — сверх Speed ×2$/);
+    let t4 = all([armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 1, HP: 1 }), armor('armor', 'Speed', { CHC: 1 })]);
+    for (const id of t4.pools[caren.id]) t4 = updatePiece(t4, id, { bt: 4 });
+    expect(titleOf(res, t4, target('Speed/Immu', t4), armor('helmet', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 1, HP: 1 }))).toMatch(/; на Caren — на уровне: Speed ×2 на T4$/);
   });
 
   it('не её сет — «Caren · Speed — не по билду»', () => {
-    const { title } = on(armor('helmet', 'Defense', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 }));
-    expect(title).toMatch(/Caren · Speed — не по билду$/);
+    expect(on(armor('helmet', 'Defense', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 })).title).toMatch(/Caren · Speed — не по билду$/);
   });
 
   it('«Разобрать», а ей слот пуст — «но у Caren слот пуст: надень, пока нет лучше»', () => {
@@ -105,7 +130,7 @@ describe('примерка: заголовок вердикта', () => {
     expect(title).toBe(`${res.title.split(' — ')[0]} — но у Caren слот пуст: надень, пока нет лучше`);
   });
 
-  it('«Разобрать», а на ней лучше — причина вердикта остаётся, к ней — про неё', () => {
+  it('«Разобрать», а у неё лучше — причина вердикта остаётся, к ней — про неё', () => {
     const junk = armor('helmet', 'Speed', { HP: 1, 'DMG RED%': 1, RES: 1, EFF: 1 });
     const { res, title } = on(junk, { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 });
     expect(title).toBe(`${res.title}; на Caren уже лучше`);
@@ -113,13 +138,12 @@ describe('примерка: заголовок вердикта', () => {
 
   it('лучшей строки нет («Спорно») — причина вердикта остаётся, к ней — про неё', () => {
     const res = { ...evaluate(ctx, NEW, { gamble: false }), v: 'maybe' as const, title: 'Спорно — предмета ещё нет в данных outerpedia', sections: [] };
-    const vs = compareFor(ctx, EMPTY_GEAR, caren, build('Speed'), armor('helmet', 'Defense', { CHC: 1 }));
-    expect(tryOnTitle(ru, res, vs)).toBe('Спорно — предмета ещё нет в данных outerpedia; Caren · Speed — не по билду');
+    expect(titleOf(res, EMPTY_GEAR, target('Speed'), armor('helmet', 'Defense', { CHC: 1 }))).toBe('Спорно — предмета ещё нет в данных outerpedia; Caren · Speed — не по билду');
   });
 
   it('в заголовке не было « — » — второго тире нет', () => {
     const res = { ...evaluate(ctx, NEW, { gamble: false }), v: 'maybe' as const, title: 'Твоим не подходит, но предмет хороший', sections: [] };
-    expect(tryOnTitle(ru, res, compareFor(ctx, EMPTY_GEAR, caren, build('Speed'), NEW))).toBe('Твоим не подходит, но предмет хороший; у Caren слот пуст');
+    expect(titleOf(res, EMPTY_GEAR, target('Speed'), NEW)).toBe('Твоим не подходит, но предмет хороший; Caren · Speed: сет 1 из 4');
   });
 
   it('оружие и аксессуар — «нужен», броня — «нужна»; по-английски одному — «needs»', () => {
@@ -132,27 +156,27 @@ describe('примерка: заголовок вердикта', () => {
   it('вердикта ещё нет — заголовок как был', () => {
     const res = evaluate(ctx, { ...NEW, subs: {} }, { gamble: false });
     expect(res.v).toBe('idle');
-    expect(tryOnTitle(ru, res, compareFor(ctx, EMPTY_GEAR, caren, build('Speed'), NEW))).toBe(res.title);
+    expect(titleOf(res, EMPTY_GEAR, target('Speed'), NEW)).toBe(res.title);
   });
 
-  // штамп понизили (logic/worn): всем, кому подходит, уже надето не хуже. Она среди них — заголовок уже про неё;
-  // не среди них — к нему её строка
-  it('«Разобрать», потому что все уже носят лучше: про неё не повторяем, про другую — добавляем', () => {
+  // штамп понизили (logic/worn): всем, кому подходит, она ничего не даёт. Этот вариант среди них — заголовок уже про
+  // него; не среди них — к нему его строка
+  it('«Разобрать», потому что все уже носят лучше: про этот вариант не повторяем, про другой — добавляем', () => {
     const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
-    const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 })).store;
-    const res = withWorn(mine, st, NEW, evaluate(mine, NEW, { gamble: false }));
+    const st = putOn(mine, EMPTY_GEAR, caren.id, armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 })).st;
+    const res = withWorn(mine, poolView(mine, st), NEW, evaluate(mine, NEW, { gamble: false }));
     expect(res.title).toBe('Фоддер — уже лучше у Caren');
-    expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Speed'), NEW))).toBe(res.title);
-    expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Pen'), NEW))).toBe('Фоддер — уже лучше у Caren; Caren · Pen — не по билду');
+    expect(titleOf(res, st, target('Speed', st), NEW, mine)).toBe(res.title);
+    expect(titleOf(res, st, target('Pen', st), NEW, mine)).toBe('Фоддер — уже лучше у Caren; Caren · Pen — не по билду');
   });
 
-  // вещь уже в билде (logic/worn): в примерке этого билда заголовок уже про него — «уже на Caren» не повторяем
-  it('вещь из этого же билда: «Оставляй — она уже в билде Caren · Speed», без «; уже на Caren»', () => {
+  // такая же вещь у персонажа (logic/worn): заголовок уже про неё — «уже у Caren» не повторяем
+  it('такая же вещь у Caren: «Оставляй — она уже у Caren», без «; уже у Caren»', () => {
     const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
     const junk = armor('helmet', 'Speed', { HP: 1, RES: 1, EFF: 1 }, 'rare');
-    const st = equip(EMPTY_GEAR, buildKey(caren.id, 'Speed'), junk).store;
-    const res = withWorn(mine, st, junk, evaluate(mine, junk, { gamble: false }));
+    const st = putOn(mine, EMPTY_GEAR, caren.id, junk).st;
+    const res = withWorn(mine, poolView(mine, st), junk, evaluate(mine, junk, { gamble: false }));
     expect(res.worn).toBe('home');
-    expect(tryOnTitle(ru, res, compareFor(mine, st, caren, build('Speed'), junk))).toBe('Оставляй — она уже в билде Caren · Speed');
+    expect(titleOf(res, st, target('Speed', st), junk, mine)).toBe('Оставляй — она уже у Caren');
   });
 });

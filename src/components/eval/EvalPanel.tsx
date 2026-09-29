@@ -28,18 +28,22 @@ import { SubRows } from './SubRows';
 import { VerdictCard } from './Verdict';
 import { TryOnStrip } from './TryOnStrip';
 import type { Target } from '../../logic/tryon';
-import type { Vs } from '../../logic/vs';
+import type { CharVs } from '../../logic/poolVs';
+import { buildOfKey } from '../../logic/variants';
+import { holds } from '../../logic/pool';
 import { equipLabel } from './VsSection';
 import { Icon } from '../Img';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
-// tryOn — идёт примерка: полоса над слотами, ✕ — onTryOnEnd. vs — сравнение с надетым для строки карточки;
-// onEquip — кнопка «Надеть на Caren · Speed» / «Заменить шлем Caren» под карточкой (нет — кнопки нет)
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, tryOn, onTryOnEnd, vs, onEquip }: {
+// tryOn — идёт примерка: полоса над слотами, ✕ — onTryOnEnd. vs — лучший исход для строки карточки;
+// onEquip — кнопка «Надеть на Caren» / «Заменить шлем Caren» под карточкой (нет — кнопки нет); other и onEquipOther —
+// вторая, «или — Rin · Speed ▸»: сразу Rin
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, tryOn, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
-  tryOn?: Target | null; onTryOnEnd?: () => void; vs?: Vs | null; onEquip?: (vs: Vs) => void;
+  tryOn?: Target | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
+  other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -111,9 +115,12 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             ? <>
               <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!tryOn} />
               {vs && onEquip && (
-                <button type="button" className={`btn vc-equip${vs.kind === 'fill' || vs.kind === 'up' ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
-                  <Icon name={vs.kind === 'fill' || (vs.kind === 'off' && !vs.worn) ? 'check' : 'replace'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot])}
+                <button type="button" className={`btn vc-equip${vs.best && holds(vs.best) ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
+                  <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot])}
                 </button>
+              )}
+              {other?.best && onEquipOther && (
+                <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>{t.ui.orOther(other.c.name, buildOfKey(other.best.v.key, t.ui.byStats))}</button>
               )}
             </>
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}

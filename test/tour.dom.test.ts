@@ -491,9 +491,9 @@ describe('тур «Экипировка» на примере', () => {
       await click(byText('.menu button', 'Characters'));
     }
     if (!$('#gear-code')) await click(byText('.roster-bar .linkbtn', 'export / import'));
-    const { decodeGear } = await import('../src/logic/gear');
+    const { decodeGear } = await import('../src/logic/gearStore');
     const { createIndex } = await import('../src/data');
-    expect(Object.keys(decodeGear(($('#gear-code') as HTMLTextAreaElement).value, createIndex(D))!.builds)).toEqual([kappa.id + '/Speed']);
+    expect(Object.keys((decodeGear(($('#gear-code') as HTMLTextAreaElement).value, createIndex(D)) as { pools: object }).pools)).toEqual([kappa.id]);
   });
 
   it('«Вернуть» экипировки, начатое до тура, после тура не всплывает', async () => {

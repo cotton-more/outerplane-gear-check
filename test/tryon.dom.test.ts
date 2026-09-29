@@ -16,11 +16,11 @@ const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromE
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
 const NEW = { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
-// на Caren · Speed — шлем Speed Set похуже новой
+// у Caren — шлем Speed Set похуже новой, Speed «Собираю»
 const GEAR = {
-  v: 1, seq: 1,
+  v: 2, seq: 1,
   pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } },
-  builds: { [caren.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } },
+  pools: { [caren.id]: ['p1'] }, marks: { [caren.id + '/Speed']: 'want' },
 };
 let root: Root | null = null;
 
@@ -76,16 +76,16 @@ describe('примерка', () => {
     expect($$('.v-vs .vs-row')).toHaveLength(1);
     expect($('.v-equip')).toBeNull(); // «Кому надеть?» в примерке не нужно
     await click(byText('.vs-act', "Replace Caren's helmet"));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · Speed");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
   });
 
-  it('в примерке кнопка под карточкой есть и когда на ней лучше; имени в строке нет — оно на полосе', async () => {
+  it('в примерке у неё лучше — кнопки нет (надеть можно только полезную вещь); имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
     // все, кому подходит (только Caren), уже носят лучше — штамп понижен (logic/worn), заголовок уже про неё
     expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
     expect($('.vcard .vc-vs b')).toBeNull();
-    expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
+    expect($('.vc-equip')).toBeNull();
   });
 
   it('«Следующий» примерку не сбрасывает, ✕ — снимает', async () => {
@@ -138,7 +138,7 @@ describe('примерка', () => {
   });
 
   it('сообщение экипировки на «Персонажах» не прячет «Вернуть» формы на «Оценке»', async () => {
-    const { encodeGear } = await import('../src/logic/gear');
+    const { encodeGear } = await import('../src/logic/gearStore');
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
     await click(byText('.roster-bar .linkbtn', 'export / import'));
     const ta = $('#gear-code') as HTMLTextAreaElement;
@@ -149,8 +149,8 @@ describe('примерка', () => {
     expect($('.toast:not(.gear-toast)')?.textContent).toContain('Undo');
   });
 
-  it('пустой билд: «Собрать билд» — примерка без смены вещи на форме', async () => {
-    await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: { CHC: 2 } });
+  it('вещей нет: «Собрать билд» — примерка без смены вещи на форме', async () => {
+    await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: { CHC: 2 } }, { gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
     await click(byText('.btabs button', 'Pen'));
     await click(byText('.bgear-none button', 'Gear up this build'));
 
@@ -159,14 +159,14 @@ describe('примерка', () => {
     expect(stored('item').subs).toEqual({ CHC: 2 });
   });
 
-  it('не её сет — «не по билду» и «Надеть всё равно»', async () => {
+  it('не её сет — строка «не по билду», надеть нельзя («Надеть всё равно» нет: хлам к персонажу не попадает)', async () => {
     const def = D.sets.find((s) => s.short === 'Defense')!.id;
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: def, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } }, { tryon: { charId: caren.id, build: 'Speed' } });
+    expect($('.vcard .vc-title')?.textContent).toContain('Caren · Speed — off-build');
+    expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));
-    expect($('.v-vs .vs.off')?.textContent).toBe('off-build');
-    expect($('.v-vs')?.textContent).toContain('Caren needs Speed ×4 in this build.');
-    await click(byText('.vs-act', 'Equip anyway'));
-    expect(stored('gear').builds[caren.id + '/Speed'].slots.gloves).toBeTruthy();
+    expect($('.v-off')?.textContent).toBe("Not for Speed: Defense isn't in its combos.");
+    expect($('.vs-act')).toBeNull();
   });
 });
 
@@ -202,13 +202,14 @@ describe('штамп по надетому', () => {
     expect($('.statgrid')).toBeTruthy();
   });
 
-  it('примерка пустого билда (Caren · Speed/Immu): его собирают сейчас — пустой слот держит «Keep», без «Won\'t improve anyone»', async () => {
+  // намеренно иначе (GEARPOOL): Speed-шлем Caren стоит и в Speed/Immu — примерка Speed/Immu не пуста, там он лучше
+  it('примерка Caren · Speed/Immu: её Speed-шлем стоит и там и лучше — «Разобрать», надеть нельзя', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 2 } },
       { gear: STRONG, tryon: { charId: caren.id, build: 'Speed/Immu' } });
-    expect($('.vcard .stamp')?.textContent).toBe('Keep');
-    expect($('.vc-equip')?.textContent).toBe('Equip on Caren · Speed/Immu');
+    expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
+    expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));
-    expect($('.v-reasons')?.textContent).not.toContain("Won't improve anyone");
+    expect($('.v-reasons')?.textContent).toContain("Won't improve anyone");
   });
 
   it('вещь из билда, сама по себе «в разбор», — «Оставить»: где она', async () => {
@@ -216,6 +217,6 @@ describe('штамп по надетому', () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: null } } };
     await mount({ slot: 'helmet', grade: 'rare' }, junk, { gear });
     expect($('.vcard .stamp')?.textContent).toBe('Keep');
-    expect($('.vcard .vc-title')?.textContent).toBe("it's already in Caren · Speed");
+    expect($('.vcard .vc-title')?.textContent).toBe('Caren already has it');
   });
 });

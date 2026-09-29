@@ -1,33 +1,24 @@
-// Сравнение вещи с формы с тем, что уже надето (logic/gear): у кого из тех, кому она подходит, в собираемых билдах
-// этот слот пуст, хуже или лучше. Вердикт (штамп) не меняет — это отдельный раздел «Сейчас на персонажах».
-// Ценность вещи для билда — полезные сегменты с весом места в цепочке, с учётом Reforge, которые ещё впереди:
+// Ценность вещи для билда и сравнение пары вещей в одном слоте — основа сборки из пула (logic/pool) и раздела
+// «Сейчас на персонажах». Ценность вещи для билда — полезные сегменты с весом места в цепочке, с учётом Reforge, которые ещё впереди:
 // каждый добавляет сегмент случайному из четырёх сабстатов. Так прокачанная вещь честно сравнивается со свежей.
 import { isArmor } from '../data';
 import type { Build, Char, GearKind } from '../data/types';
 import { CFG } from '../config';
-import { combosWith, gearList, slotMains, t4Part } from './builds';
+import { combosWith, gearList, slotMains } from './builds';
 import type { Ctx } from './context';
-import { buildKey, MAX_LIT, pieceInput, REFORGES, reforgesDone, samePiece, type GearStore, type Piece } from './gear';
+import { MAX_LIT, pieceInput, REFORGES, reforgesDone, type Piece } from './gear';
 import { itemMains } from './mains';
 import { scoreBuild, subWeights, type Row } from './score';
 import { dropSubs, MAX_SUBS, type Subs } from './subs';
-import { bestRow, type ItemInput, type Verdict } from './verdict';
+import type { ItemInput } from './verdict';
 
-// off — только в примерке: вещь её билду не подходит (не тот сет, main не нужен), надеть можно «всё равно»
-export type VsKind = 'fill' | 'up' | 'eq' | 'down' | 'breaks' | 'worn' | 'off';
-export const VS_ORDER: VsKind[] = ['fill', 'up', 'eq', 'down', 'breaks', 'worn', 'off'];
-
-export interface Vs {
-  c: Char;
-  b: Build;
-  key: string;                   // buildKey
-  kind: VsKind;
-  worn: Piece | null;            // что сейчас в этом слоте билда
+// Вещь против одной вещи в том же слоте (против того, что стоит в сборке, logic/pool)
+export interface Pair {
+  kind: 'up' | 'eq' | 'down';    // только по этой паре
   delta: number | null;          // (новый − надетый) / надетый, по полезным сегментам после Reforge
   gained: { key: string; place: number }[]; // места цепочки, которые новый закрывает, а надетый — нет
   lost: { key: string; place: number }[];
   chains: { worn: Omit<Row, 'alt'>; next: Omit<Row, 'alt'> } | null;
-  broken: string | null;         // 2+2: какой сет пропадёт (id)
   material: boolean;             // та же вещь, что надетая не на T4: годится ей на Breakthrough
   passive: boolean;              // оружие/аксессуар: у надетого другая пассивка — решает не только ролл
   // оружие/аксессуар: решила пассивка, а не сегменты — rec: новая рекомендованная против нерекомендованной (лучше),
@@ -36,14 +27,11 @@ export interface Vs {
   wornEmpty: boolean;            // у надетой нет ни одного полезного сегмента: процент бессмыслен (деление на ноль)
   // «хуже», хотя мест новая не теряет: у надетой больше сегментов — стат, где она впереди сильнее всего
   ahead: { key: string; worn: number; next: number } | null;
-  // броня: в этом билде сет вещи — часть связки с бонусом только на T4 (Speed ×2): сколько штук. Надета такая же
-  // на T4 — «лучше» не выше «на уровне»: пока новая не на T4, бонуса не будет
-  t4: { set: string; n: number } | null;
 }
 
 // чем показать разницу: процент; «×N», когда больше +200% (иначе «+92250%» у почти пустой надетой); «полезных нет»
 export type VsFigure = { kind: 'pct' | 'times'; n: number } | { kind: 'empty' };
-export function vsFigure(vs: Pick<Vs, 'delta' | 'wornEmpty'>): VsFigure | null {
+export function vsFigure(vs: Pick<Pair, 'delta' | 'wornEmpty'>): VsFigure | null {
   if (vs.wornEmpty) return { kind: 'empty' };
   if (vs.delta == null) return null;
   const pct = Math.round(vs.delta * 100);
@@ -109,71 +97,20 @@ export function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
 // подходит ли вещь билду хоть как-то — для «Взять из Speed» в карточке персонажа
 export const fits = (ctx: Ctx, b: Build, item: ItemInput): boolean => fit(ctx, b, item) !== 'no';
 
-// 2+2: замена в слоте ломает связку сетов, которая была собрана. Зовётся только при надетой вещи: пустой слот
-// связку не ломает (compare выходит раньше)
-// броня билда по сетам; swap — с новой вещью в её слоте (пустой слот она тоже занимает)
-function armorSets(st: GearStore, key: string, item: ItemInput, swap: boolean): Record<string, number> {
-  const slots: Record<string, string | null | undefined> = { ...st.builds[key]?.slots };
-  if (swap) slots[item.slot] = null;
-  const n: Record<string, number> = {};
-  for (const [slot, id] of Object.entries(slots)) {
-    const set = swap && slot === item.slot ? item.setId : st.pieces[id ?? '']?.setId;
-    if (set && isArmor(slot as ItemInput['slot'])) n[set] = (n[set] ?? 0) + 1;
-  }
-  return n;
-}
-
-function breaks(st: GearStore, key: string, b: Build, item: ItemInput): string | null {
-  if (!isArmor(item.slot)) return null;
-  const count = (swap: boolean) => armorSets(st, key, item, swap);
-  const ok = (n: Record<string, number>) => b.sets.filter((combo) => combo.every((p) => (n[p.set] ?? 0) >= p.n));
-  const before = ok(count(false)), after = ok(count(true));
-  if (!before.length || after.length) return null;
-  return before[0].find((p) => (count(true)[p.set] ?? 0) < p.n)?.set ?? null;
-}
-
 const rowOf = (ctx: Ctx, c: Char, b: Build, item: ItemInput, subs: Subs): Omit<Row, 'alt'> =>
   ({ c, b, i: c.builds.indexOf(b), ...scoreBuild(ctx, item.grade, c, b, subs, itemMains(ctx.idx, item)) });
 
-export const inUse = (st: GearStore, c: Char): Build[] => c.builds.filter((b) => st.builds[buildKey(c.id, b.name)]);
-
-// что в этом слоте билда сейчас — и пустое сравнение, от которого считает compare
-function baseVs(st: GearStore, c: Char, b: Build, item: ItemInput): Vs {
-  const key = buildKey(c.id, b.name);
-  const wornId = st.builds[key]?.slots[item.slot];
-  const worn = wornId ? st.pieces[wornId] ?? null : null;
-  return { c, b, key, kind: 'fill', worn, delta: null, gained: [], lost: [], chains: null, broken: null, material: false, passive: false, why: null, wornEmpty: false, ahead: null, t4: null };
-}
-
-export function compare(ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs | null {
-  const f = fit(ctx, b, item);
-  if (f === 'no') return null;
-  const n4 = isArmor(item.slot) && item.setId ? t4Part(ctx.idx, b, item.setId, armorSets(st, buildKey(c.id, b.name), item, true)) : null;
-  const t4 = n4 && item.setId ? { set: item.setId, n: n4 } : null;
-  const base = { ...baseVs(st, c, b, item), t4 };
-  const { key, worn } = base;
-  if (!worn) return base; // пустой слот связку не ломает — только дополняет
-  if (samePiece(item, worn)) return { ...base, kind: 'worn' };
-  const pair = against(ctx, c, b, item, worn, f);
-  let kind = pair.kind;
-  if (t4 && kind === 'up' && worn.setId === item.setId && worn.bt === 4) kind = 'eq';
-  const broken = breaks(st, key, b, item);
-  if (broken) kind = 'breaks';
-  return { ...base, ...pair, kind, broken, ahead: broken ? null : pair.ahead };
-}
-
 // Новая против одной вещи в том же слоте билда (без сетов): на сколько лучше по полезным сегментам, какие места
-// цепочки она закрывает и теряет, решила ли пассивка (why), материал ли она надетой. kind — только по этой паре
-// (up / eq / down), ahead — для «хуже». Общая часть compare и сборки из пула (logic/pool)
-export type Pair = Pick<Vs, 'kind' | 'delta' | 'why' | 'gained' | 'lost' | 'chains' | 'material' | 'passive' | 'wornEmpty' | 'ahead'>;
+// цепочки она закрывает и теряет, решила ли пассивка (why), материал ли она надетой. kind — только по этой паре,
+// ahead — для «хуже»
 export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piece, f: Fit = fit(ctx, b, item)): Pair {
   const wi = pieceInput(worn);
   // Epic с 4 сабстатами в форме уже прошла первый Reforge (он дал 4-й) — как у записанной вещи (reforgesDone)
   const X = value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0);
   const E = value(ctx, c, b, wi, worn.lit, reforgesDone(worn));
   const delta = (X.v - E.v) / Math.max(E.v, 0.01);
-  let kind: VsKind = delta >= MARGIN ? 'up' : delta <= -MARGIN ? 'down' : 'eq';
-  let why: Vs['why'] = null;
+  let kind: Pair['kind'] = delta >= MARGIN ? 'up' : delta <= -MARGIN ? 'down' : 'eq';
+  let why: Pair['why'] = null;
   if (!isArmor(item.slot)) {
     const wf = fit(ctx, b, wi);
     if (f === 'stopgap' && wf === 'rec') { kind = 'down'; why = 'stopgap'; }
@@ -197,34 +134,3 @@ export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piec
     passive: !isArmor(item.slot) && !!worn.itemKey && !!item.itemKey && worn.itemKey !== item.itemKey,
   };
 }
-
-// примерка: сравнение с одним билдом всегда есть — не подходит ему вещь, это 'off' («Надеть всё равно»)
-export const compareFor = (ctx: Ctx, st: GearStore, c: Char, b: Build, item: ItemInput): Vs =>
-  compare(ctx, st, c, b, item) ?? { ...baseVs(st, c, b, item), kind: 'off' };
-
-// кому сравнивать: тем, кому вещь подходит по вердикту (первая открытая секция из ростера), в собираемых билдах
-export function compareAll(ctx: Ctx, st: GearStore, item: ItemInput, res: Verdict): Vs[] {
-  if (!Object.keys(st.builds).length || res.v === 'idle') return [];
-  const top = bestRow(res);
-  if (!top) return [];
-  const sec = res.sections.find((x) => x.rows[0] === top.row)!;
-  const out: Vs[] = [];
-  for (const r of sec.rows) for (const b of inUse(st, r.c)) {
-    const vs = compare(ctx, st, r.c, b, item);
-    if (vs) out.push(vs);
-  }
-  return out.sort((a, z) => VS_ORDER.indexOf(a.kind) - VS_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));
-}
-
-// в окне «Надеть на…»: билды, в которые вещь можно надеть. Сначала сравнение (собираемые билды), потом
-// подходящие билды остальных; all — и не по билду (вещь на замену, что реально на персонаже сейчас)
-export function equipTargets(ctx: Ctx, st: GearStore, item: ItemInput, chars: Char[], all: boolean): { c: Char; b: Build; vs: Vs | null }[] {
-  const out: { c: Char; b: Build; vs: Vs | null }[] = [];
-  for (const c of chars) for (const b of c.builds) {
-    const vs = compare(ctx, st, c, b, item);
-    if (vs || all) out.push({ c, b, vs });
-  }
-  const rank = (x: { vs: Vs | null; c: Char; b: Build }) => (x.vs ? (st.builds[x.vs.key] ? 0 : 1) : 2);
-  return out.sort((a, z) => rank(a) - rank(z) || (a.vs && z.vs ? VS_ORDER.indexOf(a.vs.kind) - VS_ORDER.indexOf(z.vs.kind) : 0) || a.c.name.localeCompare(z.c.name));
-}
-

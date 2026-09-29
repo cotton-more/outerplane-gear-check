@@ -4,6 +4,7 @@ export const ANCHORS = [
   'slot', 'grade', 'pick', 'item', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', 'dice', // подсказки модулей
   'tryon', 'gequip', 'gslots', 'gpiece', 'gtry', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
+  'pool', 'variants', 'want', // вещи персонажа, варианты связок, «Собираю» (GEARPOOL)
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 

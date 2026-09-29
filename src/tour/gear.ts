@@ -14,7 +14,7 @@ const DEMO = { char: '2000089', build: 'Speed', set: 'Speed' } as const; // Care
 
 export interface GearDemo { c: Char; b: Build; store: GearStore; item: ItemInput }
 
-// Пример: собрано 3 из 6 — шлем послабее (T2, немного оранжевых), броня на T4 и Epic-перчатки. На форму тур кладёт
+// Пример: у Caren три вещи Speed (Speed «Собираю») — шлем послабее (T2, немного оранжевых), броня на T4 и Epic-перчатки. На форму тур кладёт
 // шлем заметно лучше надетого. Нет Caren или её билда в данных — тура нет (его не предлагаем)
 export function gearDemo(idx: Index): GearDemo | null {
   const c = idx.CHAR[DEMO.char];
@@ -28,7 +28,7 @@ export function gearDemo(idx: Index): GearDemo | null {
     p2: piece('p2', 'armor', 'unique', { CHC: 2, CHD: 2, SPD: 1, 'DEF%': 1 }, { CHC: 4, CHD: 3, SPD: 2, 'DEF%': 2 }, 4),
     p3: piece('p3', 'gloves', 'rare', { 'DEF%': 2, CHC: 1, SPD: 2 }, { 'DEF%': 2, CHC: 1, SPD: 2 }, 1),
   };
-  const store: GearStore = { v: 1, seq: 3, pieces, builds: { [buildKey(c.id, b.name)]: { slots: { helmet: 'p1', armor: 'p2', gloves: 'p3' }, at: '' } } };
+  const store: GearStore = { v: 2, seq: 3, pieces, pools: { [c.id]: ['p1', 'p2', 'p3'] }, marks: { [buildKey(c.id, b.name)]: 'want' } };
   const item: ItemInput = { slot: 'helmet', grade: 'unique', setId: set.id, itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
   return { c, b, store, item };
 }

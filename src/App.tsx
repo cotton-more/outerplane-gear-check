@@ -22,15 +22,19 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate, withPendingDice } from './logic/evaluate';
-import { buildKey, equipOn, gearedChars, moveTo, pieceInput, samePiece, twinElsewhere, undoEquip, undoMove, usedIn, type GearStore, type Piece, type Twin } from './logic/gear';
+import { gearedChars, holdersOf, pieceInput, samePiece, type GearStore, type Piece } from './logic/gear';
+import { fuseChar, unfuseChar } from './logic/gearStore';
+import { holds, poolView, putOn, recipientFor, undoPut } from './logic/pool';
+import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char, SlotId } from './data/types';
+import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
-import { compareAll, compareFor } from './logic/vs';
-import { tryOnPreset, tryOnTarget, tryOnTitle, type TryOn } from './logic/tryon';
+import { offLine, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, withMaterial } from './logic/material';
 import { withWorn } from './logic/worn';
+import { outcomeWord } from './components/eval/VsSection';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -88,38 +92,53 @@ export function App() {
   const gear: GearApi = useMemo(() => (demo
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
     : realGear), [demo, realGear]);
-  const geared = useMemo(() => gearedChars(gear.store), [gear.store]);
   // кубик ещё считается: у той же вещи с другим сегментом — прежний кубик, а не строка без него (logic/evaluate)
   const raw = useMemo(() => (later === key ? full : withPendingDice(ctx, input, quick, JSON.parse(later) as ItemInput, full)), [ctx, key, later, full, quick]); // eslint-disable-line react-hooks/exhaustive-deps
-  // примерка (logic/tryon): сравнение только с одним билдом, «Надеть» — сразу в него; на время обучения её нет
+  // экипировка по пулу (logic/pool): вид — один раз на хранилище; примерка (logic/tryon) — сравнение только с одним
+  // вариантом, «Надеть» — этому персонажу; на время обучения её нет
+  const baseView = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
   const realTry = useTryOn(idx, !touring);
   const tryOn = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : realTry;
-  const target = useMemo(() => (demo ? tryOnTarget(idx, demo.tryOn) : touring ? null : tryOnTarget(idx, realTry.value)), [idx, demo, realTry.value, touring]);
-  const targetVs = useMemo(() => (target ? compareFor(ctx, gear.store, target.c, target.b, input) : null), [ctx, gear.store, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // материал: вещь лучше той надетой, для которой она материал, или в примерке у цели слот пуст / она лучше — «надень»
+  const target = useMemo(() => (demo ? tryOnTarget(idx, demo.tryOn, baseView) : touring ? null : tryOnTarget(idx, realTry.value, baseView)), [idx, demo, realTry.value, touring, baseView]);
+  // вариант примерки собирается, даже пустой
+  const view = useMemo(() => (target ? poolView(ctx, gear.store, target.v.key) : baseView), [ctx, gear.store, target, baseView]);
+  // у кого есть вещи: персонаж → лучший «N/6» (плитки, меню, фильтр «с экипировкой»)
+  const geared = useMemo(() => gearBadges(view), [view]);
+  const targetVs = useMemo(() => (target ? charVs(ctx, view, target.c.id, input, target.v.key) : null), [ctx, view, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // материал: вещь лучше той, для которой она материал, или в примерке она встаёт в вариант цели — «надень»
   const mat = useMemo(() => {
-    const needs = materialFor(gear.store, input, idx);
-    const up = needs.length ? betterThanWorn(ctx, gear.store, input, needs) : [];
-    const aim = targetVs && (targetVs.kind === 'fill' || targetVs.kind === 'up') ? `${targetVs.c.name} · ${targetVs.b.name}` : null;
+    const needs = materialFor(view, input);
+    const up = needs.length ? betterThanWorn(ctx, view, input, needs) : [];
+    const k = targetVs?.best?.used ? targetVs.best.kind : null;
+    const aim = target && (k === 'fill' || k === 'up' || k === 'closer' || k === 'completes') ? `${target.c.name} · ${target.b.name}` : null;
     return { needs, wear: { up, target: aim } };
-  }, [idx, ctx, gear.store, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // штамп по надетому (logic/worn): вещь уже в билде — «Оставить»; всем, кому подходит, уже надето не хуже — «Разобрать».
-  // Билд примерки — собираемый, даже пустой; вещь — материал и лучше надетой у кого-то — не понижаем (совет «надень»)
-  const worn = useMemo(() => withWorn(ctx, gear.store, input, raw, {
-    tryOn: target ? buildKey(target.c.id, target.b.name) : null, hold: mat.wear.up.length > 0,
-  }), [ctx, gear.store, raw, target, mat]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, view, targetVs, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // штамп по вещам персонажей (logic/worn): такая же у кого-то — «Оставить»; всем, кому подходит, она ничего не даёт —
+  // «Разобрать». Вещь — материал и лучше такой же у кого-то — не понижаем (совет «надень»)
+  const worn = useMemo(() => withWorn(ctx, view, input, raw, { hold: mat.wear.up.length > 0 }), [ctx, view, raw, mat]); // eslint-disable-line react-hooks/exhaustive-deps
   const verdict = useMemo(() => withMaterial(idx, t, worn, mat.needs, mat.wear), [idx, t, worn, mat]);
-  // понизили — сравнение с кандидатами прежнего вердикта: оно и объясняет, почему «Разобрать»
-  const vsList = useMemo(() => (targetVs
-    ? (verdict.v === 'idle' ? [] : [targetVs])
-    : compareAll(ctx, gear.store, input, worn.worn === 'lower' ? raw : verdict)), [ctx, gear.store, raw, worn, verdict, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
+  // «Сейчас на персонажах»: кандидаты вердикта, у кого есть вещи (понизили — прежнего вердикта: они и объясняют,
+  // почему «Разобрать»); в примерке — только цель
+  const vsList = useMemo((): CharVs[] => {
+    if (verdict.v === 'idle') return [];
+    if (target) return targetVs ? [targetVs] : [];
+    const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length);
+    return charsVs(ctx, view, input, chars);
+  }, [ctx, view, raw, worn, verdict, target, targetVs, gear.store]); // eslint-disable-line react-hooks/exhaustive-deps
+  // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя)
+  const offNote = target && !targetVs && verdict.v !== 'idle' && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
-  const shown = useMemo(() => (target && vsList[0] ? { ...verdict, title: tryOnTitle(t, verdict, vsList[0], isArmor(s.slot)) } : verdict), [t, verdict, target, vsList]);
+  const shown = useMemo(() => (target
+    ? { ...verdict, title: tryOnTitle(t, verdict, target, tryRowOf(idx, targetVs?.best ?? null, !!targetVs?.worn), isArmor(s.slot)) }
+    : verdict), [t, idx, verdict, target, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
   const [equipOpen, setEquipOpen] = useState(false);
   // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
   // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи
   // Сообщение о ростере (Core Fusion) — тем же механизмом: undo нет, «Вернуть» — только after; нечего вернуть — без кнопки
-  const [gearUndo, setGearUndo] = useState<{ text: string; note: string; tab: Tab; undo?: (st: GearStore) => GearStore; after?: () => void } | null>(null);
+  // action — вторая кнопка («Отдать Rin»)
+  const [gearUndo, setGearUndo] = useState<{
+    text: string; note: string; tab: Tab; undo?: (st: GearStore) => GearStore; after?: () => void; action?: { label: string; run: () => void };
+  } | null>(null);
   useEffect(() => {
     if (!gearUndo) return;
     const id = setTimeout(() => setGearUndo(null), 8000);
@@ -136,9 +155,29 @@ export function App() {
     ...(batch ? [] : ch.refused.map((r) => t.ui.fusionKept(charName(r.base), charName(r.fusion)))),
   ].join(' '));
   const undoRoster = (ch: RosterChange | null) => (ch && (ch.added.length || ch.replaced.length) ? () => rosterApi.revert(ch) : undefined);
+  // Core Fusion X в ростере, а у X есть вещи, — они переходят к Core Fusion X (и когда X в ростер не пустили)
+  type Fused = { base: string; fusion: string; r: { moved: string[]; had: string[] } };
+  const fuseAll = (st: GearStore, ch: RosterChange): { st: GearStore; fused: Fused[] } => {
+    const fused: Fused[] = [];
+    for (const { base, fusion } of [...ch.replaced, ...ch.refused]) {
+      const f = fuseChar(st, base, fusion);
+      if (f.moved.length) { st = f.st; fused.push({ base, fusion, r: f }); }
+    }
+    return { st, fused };
+  };
+  const fusedNote = (fused: Fused[]) => fused.map((f) => t.ui.fusionGear(charName(f.base), charName(f.fusion))).join(' ');
+  const unfuse = (fused: Fused[]) => (st: GearStore) => fused.reduceRight((x, f) => unfuseChar(x, f.base, f.fusion, f.r), st);
+  // в ростер — с правилом Core Fusion; st — хранилище, в котором перейдут вещи
+  const joinRoster = (st: GearStore, ids: string[], batch = false) => {
+    const ch = rosterApi.add(ids);
+    const { st: next, fused } = fuseAll(st, ch);
+    return { st: next, ch, fused, note: [fusionNote(ch, batch), fusedNote(fused)].filter(Boolean).join(' ') };
+  };
   const announce = (ch: RosterChange, tab: Tab, batch = false) => {
-    const text = fusionNote(ch, batch);
-    if (text) setGearUndo({ text, note: '', tab, after: ch.replaced.length ? undoRoster(ch) : undefined });
+    const { st, fused } = touring ? { st: gear.store, fused: [] } : fuseAll(gear.store, ch);
+    if (fused.length) gear.set(st);
+    const text = [fusionNote(ch, batch), fusedNote(fused)].filter(Boolean).join(' ');
+    if (text) setGearUndo({ text, note: '', tab, undo: fused.length ? unfuse(fused) : undefined, after: ch.replaced.length ? undoRoster(ch) : undefined });
     return ch;
   };
   // список и карточка персонажа: звезда, «Отметить показанных», код ростера — с тем же сообщением
@@ -175,58 +214,86 @@ export function App() {
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
-  // надеть вещь с формы в билд; персонаж попадает в ростер; сообщение — что стало со старой вещью, с «Отменить».
-  // Такая же вещь уже на другом персонаже — сначала спросить «это шлем Rin?»: перенести её или надеть новую
-  const [twinAsk, setTwinAsk] = useState<{ c: Char; b: Build; twin: Twin } | null>(null);
-  const doEquip = (c: Char, b: Build) => {
-    const key = buildKey(c.id, b.name);
-    const prev = gear.store;
-    // та же вещь уже в этом слоте — ничего не менять: свежая копия потеряла бы отмеченные Reforge и Breakthrough
-    const onNow = prev.pieces[prev.builds[key]?.slots[input.slot] ?? ''];
+  // надеть вещь с формы на персонажа (logic/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
+  // стало с вытесненной, с «Вернуть». Такая же вещь уже у другого персонажа — сначала «Это шлем Rin?»: та же запись
+  // («Она же — и у Caren») или своя. У самого персонажа такая уже есть — ничего (кнопка «Уже есть» не нажимается)
+  const [twinAsk, setTwinAsk] = useState<{ c: Char; piece: Piece; owner: string } | null>(null);
+  const buildName = (key: string) => buildOfKey(key, t.ui.byStats);
+  // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
+  const usedFor = (st: GearStore, charId: string, id: string) =>
+    [...new Set(whereUsed(poolView(ctx, st, target?.c.id === charId ? target.v.key : null), charId, id).map((v) => buildName(v.key)))];
+  const doEquip = (c: Char) => {
     setEquipOpen(false);
-    if (onNow && samePiece(input, onNow)) return;
-    const twin = twinElsewhere(prev, c.id, input);
+    const st = gear.store;
+    const has = (id: string) => (st.pools[id] ?? []).map((pid) => st.pieces[pid]).find((p) => p && samePiece(input, p));
+    if (has(c.id)) return;
+    const owner = Object.keys(st.pools).find((id) => id !== c.id && idx.CHAR[id] && has(id));
     // «Это шлем Rin?» — своё окно: шторку вердикта закрыть, как перед «Кому надеть?» (две шторки — один Esc на обе)
-    if (twin) { setVerdictOpen(false); setTwinAsk({ c, b, twin }); } else putOn(c, b, null);
+    if (owner && !touring) { setVerdictOpen(false); setTwinAsk({ c, piece: has(owner)!, owner }); } else equipOn(c, null);
   };
-  // чей билд: ключ «персонаж/билд» → имя персонажа; «Rin · Speed»
-  const ownerOf = (k: string) => { const id = k.slice(0, k.indexOf('/')); return idx.CHAR[id]?.name ?? id; };
-  const whoOf = (k: string) => `${ownerOf(k)} · ${k.slice(k.indexOf('/') + 1)}`;
-  const putOn = (c: Char, b: Build, twin: Twin | null) => {
+  const equipOn = (c: Char, record: Piece | null) => {
     setTwinAsk(null);
-    const key = buildKey(c.id, b.name);
-    const prev = gear.store;
-    const r = twin ? { ...moveTo(prev, twin, key), shared: null } : equipOn(prev, c.id, key, input);
-    gear.set(r.store);
+    const r = putOn(ctx, gear.store, c.id, input, { record: record ?? undefined, tryOn: target?.c.id === c.id ? target.v.key : null });
+    if (!r.added) return;
     // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока.
     // «Заменить» в шторке вердикта — шторку закрыть: следующий шаг тура — ✕ на полосе примерки под ней
-    const added = !touring && !roster.has(c.id) ? rosterApi.add([c.id]) : null;
+    const joined = !touring && !roster.has(c.id) ? joinRoster(r.st, [c.id]) : null;
+    const st = joined?.st ?? r.st;
+    gear.set(st);
     if (touring) setVerdictOpen(false);
     setUndo(null);
-    const slot = t.ui.slotNom[input.slot]; // «Надето: Caren · Speed · броня» — именительный, не «броню»
-    const nameOf = (k: string) => c.builds.find((x) => buildKey(c.id, x.name) === k)?.name ?? k.slice(c.id.length + 1);
-    let note = r.shared ? t.ui.sameAs(nameOf(r.shared)) : '';
-    if (r.old) {
-      const same = isArmor(r.old.slot) ? r.old.setId === r.piece.setId && r.old.grade === r.piece.grade : !!r.old.itemKey && r.old.itemKey === r.piece.itemKey;
-      const still = usedIn(r.store, r.old.id).map(nameOf);
-      note = [note, still.length ? t.ui.oldStill(still.join(', '))
-        : same ? t.ui.oldMaterial : t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, r.store, pieceInput(r.old), evaluate(ctx, pieceInput(r.old), { gamble: false })).v])].filter(Boolean).join(' ');
+    if (touring) return;
+    const old = r.removed[0] ?? null;
+    const used = usedFor(st, c.id, r.id);
+    const text = old ? t.ui.replaced(c.name, input.slot) : [t.ui.equipped(c.name, input.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+    const notes: string[] = [];
+    if (r.marks.length) notes.push(t.ui.startedFilling([...new Set(r.marks.map(buildName))].join(', ')));
+    if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
+    let action: { label: string; run: () => void } | undefined;
+    if (old) {
+      const still = holdersOf(st, old.id).filter((id) => id !== c.id);
+      const same = isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey;
+      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats));
+      else {
+        const oi = pieceInput(old);
+        const rec = recipientFor(ctx, poolView(ctx, st), oi, sectionChars(evaluate(ctx, oi, { gamble: false })), c.id);
+        if (rec) {
+          notes.push(t.ui.giveOld(old.slot, rec.c.name, buildName(rec.row.v.key), outcomeWord(t, rec.row)));
+          action = { label: t.ui.giveTo(rec.c.name), run: () => giveTo(rec.c, old) };
+        } else if (!same) notes.push(t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, poolView(ctx, st), oi, evaluate(ctx, oi, { gamble: false })).v]));
+        if (same) notes.push(t.ui.oldMaterial(old.slot));
+      }
     }
-    note = [note, fusionNote(added)].filter(Boolean).join(' ');
-    const item = input.slot;
-    const from = twin ? ownerOf(twin.keys[0]) : '';
-    if (!touring) setGearUndo({
-      text: twin ? t.ui.moved(from, c.name, b.name, slot) : r.old ? t.ui.replaced(c.name, b.name, slot) : t.ui.equipped(c.name, b.name, slot), note, tab: 'eval',
-      undo: (st) => (twin ? undoMove(st, key, twin, r.old) : undoEquip(st, key, item, r.piece, r.old)), after: undoRoster(added),
+    if (joined?.note) notes.push(joined.note);
+    setGearUndo({
+      text, note: notes.join(' '), tab: 'eval', action,
+      undo: (x) => (joined ? unfuse(joined.fused)(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: undoRoster(joined?.ch ?? null),
     });
   };
+  // «Отдать Rin»: вещь, которую сняли, — та же запись — в пул другого (с Reforge и Breakthrough)
+  const giveTo = (c: Char, old: Piece) => {
+    const r = putOn(ctx, gear.store, c.id, pieceInput(old), { record: old });
+    if (!r.added) return;
+    const joined = !roster.has(c.id) ? joinRoster(r.st, [c.id]) : null;
+    gear.set(joined?.st ?? r.st);
+    const used = usedFor(joined?.st ?? r.st, c.id, r.id);
+    setGearUndo({
+      text: [t.ui.equipped(c.name, old.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' '),
+      note: joined?.note ?? '', tab: s.tab,
+      undo: (x) => (joined ? unfuse(joined.fused)(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: undoRoster(joined?.ch ?? null),
+    });
+  };
+  // «Убрать у Caren» и «Разобрал — убрать у всех» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
+  const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
   // примерка из карточки персонажа: персонаж — в ростер (как у «Надеть»), на форму — слот и сет, грейд прежний.
   // Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся
-  const startTryOn = (c: Char, b: Build, slot?: SlotId, from?: Piece) => {
-    tryOn.set({ charId: c.id, build: b.name });
+  const startTryOn = (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => {
+    const next = { charId: c.id, build: b.name, ...(combo ? { combo } : {}) };
+    tryOn.set(next);
     if (!touring && !roster.has(c.id)) announce(rosterApi.add([c.id]), 'eval');
     setVerdictOpen(false);
-    const p = slot ? tryOnPreset(gear.store, buildKey(c.id, b.name), b, slot, from) : null;
+    const tg = tryOnTarget(idx, next, baseView);
+    const p = slot && tg ? tryOnPreset(poolView(ctx, gear.store, tg.v.key), tg, slot, from) : null;
     if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
       const cur = itemInput(s);
       // на форме уже пустая заготовка (второй «Примерить» подряд) — прежнее «Вернуть» остаётся
@@ -237,9 +304,10 @@ export function App() {
   };
   // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер. «Вернуть» — всё, как было до него
   const onGearImport = (prev: GearStore, st: GearStore, text: string) => {
-    const ch = rosterApi.add([...gearedChars(st).keys()].filter((id) => idx.CHAR[id]));
-    const names = ch.added.map(charName).join(', ');
-    setGearUndo({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: fusionNote(ch, true), tab: 'chars', undo: () => prev, after: undoRoster(ch) });
+    const j = joinRoster(st, [...gearedChars(st).keys()].filter((id) => idx.CHAR[id]), true);
+    if (j.st !== st) gear.set(j.st);
+    const names = j.ch.added.map(charName).join(', ');
+    setGearUndo({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: j.note, tab: 'chars', undo: () => prev, after: undoRoster(j.ch) });
   };
   useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
@@ -287,9 +355,11 @@ export function App() {
   });
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
-  // кнопка под карточкой: в примерке — всегда (кроме «уже надета»), без неё — пустой слот или новая лучше
+  // кнопка под карточкой — только для полезной вещи (решение владельца: хлам к персонажу не попадает): без примерки —
+  // когда исход держит; вторая — «или — Rin · Speed ▸», если держащий исход есть и у другого
   const cardVs = vsList[0];
-  const cardEquip = canEquip && !!cardVs && (target ? cardVs.kind !== 'worn' : cardVs.kind === 'fill' || cardVs.kind === 'up');
+  const cardEquip = canEquip && !!cardVs?.best && cardVs.useful && (!!target || holds(cardVs.best));
+  const cardOther = cardEquip && !target ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
   // id не задан — «Какое обучение?» (туров несколько); новичку из карточки и из «Появилось обучение» — главный
   const startTour = (id?: TourId) => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(id); };
   const openTours = () => startTour();
@@ -351,13 +421,15 @@ export function App() {
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
-              tryOn={target} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c, v.b) : undefined}
+              tryOn={target} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c) : undefined}
+              other={cardOther} onEquipOther={cardOther ? (v) => doEquip(v.c) : undefined}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={openTours} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
+            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={view} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} onGearImport={onGearImport} touring={!!tour.run} />
-            <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} rosterApi={rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
+            <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
+              onGearToast={onGearToast}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined}
               onPieceOpen={setPieceOpen} />
           </section>
@@ -384,24 +456,29 @@ export function App() {
         {gearUndo && gearToast && (
           <div className="toast gear-toast" role="status" style={toastAt}>
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
+            {gearUndo.action && <button type="button" onClick={() => { const a = gearUndo.action!; setGearUndo(null); a.run(); }}>{gearUndo.action.label}</button>}
             {(gearUndo.undo || gearUndo.after) && (
               <button type="button" onClick={() => { if (gearUndo.undo) gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
             )}
           </div>
         )}
         {twinAsk && !tour.run && (
-          <Sheet title={t.ui.twinTitle(t.ui.slotNom[twinAsk.twin.piece.slot], ownerOf(twinAsk.twin.keys[0]))} onClose={() => setTwinAsk(null)}>
+          <Sheet title={t.ui.twinTitle(twinAsk.piece.slot, charName(twinAsk.owner))} onClose={() => setTwinAsk(null)}>
             <div className="twin">
-              <p>{t.ui.twinNote(twinAsk.twin.keys.map(whoOf).join(', '))}</p>
-              <p className="muted small">{t.ui.twinMoveNote}</p>
-              <div className="piece-act">
-                <button type="button" className="btn primary" onClick={() => putOn(twinAsk.c, twinAsk.b, twinAsk.twin)}>{t.ui.twinMove}</button>
-                <button type="button" className="btn" onClick={() => putOn(twinAsk.c, twinAsk.b, null)}>{t.ui.twinOther}</button>
+              <p>{t.ui.twinNote(charName(twinAsk.owner), usedFor(gear.store, twinAsk.owner, twinAsk.piece.id).join(', ') || t.ui.byStats)}</p>
+              <div className="piece-act twin-act">
+                <button type="button" className="btn primary" onClick={() => equipOn(twinAsk.c, twinAsk.piece)}>
+                  {t.ui.twinShare(twinAsk.c.name)}<small>{t.ui.twinShareNote}</small>
+                </button>
+                <button type="button" className="btn" onClick={() => equipOn(twinAsk.c, null)}>
+                  {t.ui.twinOther}<small>{t.ui.twinOtherNote(twinAsk.c.name)}</small>
+                </button>
               </div>
+              <p className="muted small">{t.ui.twinFoot}</p>
             </div>
           </Sheet>
         )}
-        {equipOpen && !tour.run && <EquipSheet ctx={ctx} store={gear.store} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
+        {equipOpen && !tour.run && <EquipSheet ctx={ctx} view={view} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {formToast && (
           <div className="toast" role="status" style={toastAt}><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
@@ -424,7 +501,7 @@ export function App() {
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={openTours} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} onEquip={!canEquip ? undefined : (v) => doEquip(v.c, v.b)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={view} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

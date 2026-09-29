@@ -1,33 +1,36 @@
-// Что надето в билде персонажа (logic/gear): 6 слотов, у вещи — сабстаты с сегментами, окрашенные по цепочке этого
-// билда, Breakthrough и сколько Reforge сделано. Нажатие на вещь — карточка вещи: оранжевые сегменты после Reforge,
-// Breakthrough, смена стата после Transistone (и его жёлтых), «Снять». Вещь в билд кладёт только вердикт («Надеть на…»);
-// «Собрать билд», «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого билда.
-import { useEffect, useState } from 'react';
-import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel } from '../../data';
+// Сборка варианта билда из вещей персонажа (GEARPOOL, logic/pool): 6 слотов, у вещи — сабстаты с сегментами,
+// окрашенные по цепочке этого билда, Breakthrough и сколько Reforge сделано; бонусы сетов с уровнем; «Собираю»;
+// «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet): оранжевые сегменты после Reforge, Breakthrough, смена
+// стата после Transistone, «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать билд»,
+// «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого варианта.
+import { useState } from 'react';
+import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import {
-  addFourth, buildKey, MAX_LIT, moveBuild, orphanBuilds, pieceInput, reforgeScale, replaceStat, setYellow, share, tapSegment, unequip, updatePiece, usedIn,
-  type Bt, type Piece,
+  addFourth, holdersOf, MAX_LIT, pieceInput, reforgeScale, replaceStat, setYellow, tapSegment, updatePiece, type Bt, type GearStore, type Piece,
 } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
-import { combosWith, t4Only } from '../../logic/builds';
+import { t4Only } from '../../logic/builds';
 import { tryOnPreset } from '../../logic/tryon';
 import { subWeights } from '../../logic/score';
-import { fits, lookFor, pieceValue } from '../../logic/vs';
+import { lookFor } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
+import { isStats, removeEverywhere, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
+import { badgeOf, whereUsed } from '../../logic/poolVs';
+import type { BonusRow } from '../../logic/setBonus';
+import { buildOfKey, type Variant } from '../../logic/variants';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
 import { tour, tourItem } from '../../tour/anchors';
 import { Sheet } from '../Sheet';
 import { SubPicker } from '../eval/SubPicker';
 
-// имя билда по ключу; прежний (его нет в данных) — тоже по имени, без id персонажа
-const buildOf = (c: Char, key: string) => c.builds.find((b) => buildKey(c.id, b.name) === key)?.name ?? key.slice(c.id.length + 1);
+const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
-function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
+export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
   const name = p.setId
     ? `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`
     : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
@@ -41,138 +44,149 @@ function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
   );
 }
 
-// onTryOn — примерка для этого билда (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии
-// onPieceOpen — открыта ли карточка вещи (для тура «Экипировка»)
-export function BuildGear({ c, b, ctx, gear, active, onTryOn, onPieceOpen }: {
-  c: Char; b: Build; ctx: Ctx; gear: GearApi; active: boolean; onTryOn?: (b: Build, slot?: SlotId, from?: Piece) => void;
-  onPieceOpen?: (open: boolean) => void;
+// текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base
+export const bonusText = (idx: Index, r: BonusRow): string => {
+  const s = idx.SET[r.set];
+  return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
+};
+
+// Собираю: почему вариант собирается (или нет) — строка рядом с переключателем
+export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st: GearStore, v: Variant): string {
+  if (!cp.inPlay.includes(v)) return t.ui.fillingOff;
+  if (isStats(v)) return '';
+  const a = cp.asm.get(v.key)!;
+  if (a.need && a.progress === a.need) return t.ui.fillingWhy.done;
+  const mark = st.marks?.[v.key] ?? st.marks?.[v.parentKey];
+  if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
+  if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
+  return a.progress ? t.ui.fillingWhy.closest : '';
+}
+
+// onTryOn — примерка этого варианта (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии.
+// onOpenPiece — карточка вещи; onWant — переключатель «Собираю»
+export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onWant }: {
+  c: Char; v: Variant; cp: CharPool; ctx: Ctx; gear: GearApi; view: PoolView;
+  onTryOn?: (b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => void; onOpenPiece: (id: string) => void; onWant: (v: Variant) => void;
 }) {
   const t = useT();
-  const [open, setOpen] = useState<SlotId | null>(null);
-  // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
-  useEffect(() => { if (!active) setOpen(null); }, [active]);
-  const st = gear.store;
-  const key = buildKey(c.id, b.name);
-  const slots = st.builds[key]?.slots ?? {};
-  const n = Object.keys(slots).length;
-  // сколько вещей каждого сета из связок билда
-  const count: Record<string, number> = {};
-  for (const [slot, id] of Object.entries(slots)) if (isArmor(slot as SlotId) && st.pieces[id]?.setId) count[st.pieces[id].setId!] = (count[st.pieces[id].setId!] ?? 0) + 1;
-  const combo = b.sets.find((cb) => cb.every((p) => (count[p.set] ?? 0) >= p.n)) ?? b.sets.find((cb) => cb.some((p) => count[p.set])) ?? null;
-  // собран Speed ×2 (бонус только на T4) — какой Breakthrough у его вещей: самый низкий, не указан — null
-  const lowBt = (set: string): number | null => {
-    const bts = Object.entries(slots).filter(([sl]) => isArmor(sl as SlotId)).map(([, id]) => st.pieces[id]).filter((p) => p?.setId === set).map((p) => p!.bt);
-    return bts.some((x) => x === null) ? null : Math.min(...(bts as number[]));
-  };
-  const setLine = (p: { set: string; n: number }) => {
-    const name = ctx.idx.SET[p.set]?.short ?? p.set, have = count[p.set] ?? 0;
-    if (have < p.n || !t4Only(ctx.idx.SET[p.set], p.n)) return t.ui.gearSet(name, have, p.n);
-    const bt = lowBt(p.set);
-    return bt === 4 ? t.ui.gearSet(name, have, p.n) : t.ui.gearSetT4(name, p.n, bt);
-  };
-  // «Взять из Speed»: этот слот пуст, а в другом собираемом билде персонажа есть вещь, которая этому билду подходит
-  // (сет из его связок; оружие и аксессуар — с main, который этот билд просит)
-  const takeFrom = (slot: SlotId) => {
-    for (const other of c.builds) {
-      if (other === b) continue;
-      const id = st.builds[buildKey(c.id, other.name)]?.slots[slot];
-      const p = id ? st.pieces[id] : undefined;
-      if (p && fits(ctx, b, pieceInput(p))) return { id: p.id, build: other.name };
-    }
-    return null;
-  };
-  const piece = open ? st.pieces[slots[open] ?? ''] : undefined;
-  const shownPiece = active && !!open && !!piece;
-  useEffect(() => { onPieceOpen?.(shownPiece); }, [shownPiece]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => onPieceOpen?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
-  // «Слабее всех»: вся броня надета — самая слабая по ценности для билда (как в сравнении) и что ей искать.
-  // Вещь не по билду (сет не из его связок) слабее любой: для билда это пустой слот. Искать — сет, который билду нужен
-  const armor = SLOTS.filter((x) => isArmor(x.id)).map((x) => ({ slot: x.id, p: st.pieces[slots[x.id] ?? ''] }));
-  const weak = n > 0 && armor.every((x) => x.p)
-    ? armor.map((x) => {
-      const off = !x.p!.setId || !combosWith(b, x.p!.setId).length;
-      return { ...x, off, v: off ? -1 : pieceValue(ctx, c, b, x.p!) };
-    }).reduce((a, z) => (z.v < a.v ? z : a))
+  const { idx } = ctx;
+  const a: Assembly = cp.asm.get(v.key)!;
+  const b = v.b;
+  const stats = isStats(v);
+  const n = badgeOf(a);
+  const on = cp.inPlay.includes(v);
+  const combo = b.sets[0] ?? [];
+  const try_ = onTryOn && ((slot?: SlotId, from?: Piece) => onTryOn(v.parent, slot, from, v.sig));
+  const setName = (id: string) => idx.SET[id]?.short ?? id;
+  // бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
+  const bonusLines = a.bonuses.map((r) => {
+    const tier = r.unknownBt ? 'T?' : r.tier === 'T4' ? 'T4' : 'T0–T3';
+    const own = combo.some((p) => p.set === r.set);
+    return t.ui.bonusRow(setName(r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
+  });
+  // часть связки с бонусом только на T4, а его нет: «Speed — 1 из 2 · бонус ×2 только на T4»
+  const cnt = (set: string) => ARMOR.filter((sl) => a.slots[sl]?.setId === set).length;
+  const t4Lines = combo.filter((p) => t4Only(idx.SET[p.set], p.n) && !a.bonuses.some((r) => r.set === p.set && r.n >= p.n))
+    .map((p) => t.ui.partT4(setName(p.set), Math.min(cnt(p.set), p.n), p.n));
+  // «Слабее всех»: вся броня занята — самая слабая по ценности (вещь не из связки слабее любой) и что ей искать
+  const armor = ARMOR.map((slot) => ({ slot, e: a.slots[slot] }));
+  const weak = !stats && armor.every((x) => x.e?.piece)
+    ? armor.map((x) => ({ ...x, off: a.roles[x.slot] === 'filler', val: a.roles[x.slot] === 'filler' ? -1 : x.e!.v })).reduce((m, z) => (z.val < m.val ? z : m))
     : null;
-  // у вещи не по билду менять всю вещь: что искать — первые места цепочки, как у пустой
-  const look = weak ? lookFor(ctx, c, b, weak.off ? { ...weak.p!, lit: {} } : weak.p!) : [];
-  const lookSet = weak ? tryOnPreset(st, key, b, weak.slot, weak.p).setId : null;
-  // другие билды персонажа, где ничего не надето: вердикт для них вещей не просит
-  const idle = n > 0 ? c.builds.filter((x) => x !== b && !st.builds[buildKey(c.id, x.name)]).map((x) => x.name) : [];
-  const orphans = gear.newer ? [] : orphanBuilds(st, c.id, c.builds.map((x) => x.name));
+  const wp = weak?.e?.piece ?? null;
+  const look = wp ? lookFor(ctx, c, b, weak!.off ? { ...wp, lit: {} } : wp) : [];
+  const lookSet = weak && wp ? tryOnPreset(view, { c, b: v.parent, v }, weak.slot, wp).setId : null;
+  // «Не хватает»: части связки — куда (слоты не под этой связкой) и нужен ли T4
+  const free = ARMOR.filter((sl) => a.roles[sl] !== 'set');
+  const missing = a.missing.map((m) => t.ui.missing(setName(m.set), m.n - m.have, free as string[], t4Only(idx.SET[m.set], m.n)));
+  const first = c.builds[0]?.sets[0]?.[0];
+  const where = (id: string) => {
+    const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStats : x.name));
+    const with_ = holdersOf(gear.store, id).filter((h) => h !== c.id).map((h) => idx.CHAR[h]?.name ?? h);
+    return [others.length ? t.ui.slotAlsoIn(others.join(', ')) : '', with_.length ? t.ui.slotAlsoWith(with_.join(', ')) : ''].filter(Boolean).join(' · ');
+  };
+  if (gear.newer) return <div className="bgear" {...tour('bgear')}><p className="muted small">{t.ui.gearNewer}</p></div>;
+  if (!cp.pieces.length) {
+    return (
+      <div className="bgear" {...tour('bgear')}>
+        <div className="bgear-none">
+          <p>{t.tryon.empty(v.name, c.name)}</p>
+          {try_ && <button type="button" className="btn primary" onClick={() => try_()}>{t.tryon.build}</button>}
+          <p className="muted small">{t.tryon.emptyOr}</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="bgear" {...tour('bgear')}>
       <h4>{t.ui.gearTitle(n)}</h4>
-      {orphans.map((o) => (
-        <p key={o.key} className="bgear-old">
-          <span>{t.ui.gearOld(o.name, o.n)}</span>
-          <button type="button" className="btn small" onClick={() => gear.set(moveBuild(st, o.key, key))}>{t.ui.gearMove}</button>
+      {!stats && (
+        <p className="want-row" {...tour('want')}>
+          <button type="button" className="want-btn" aria-pressed={on} onClick={() => onWant(v)}>{t.ui.filling}</button>
+          <span className="muted small">{wantWhy(t, idx, cp, gear.store, v)}</span>
         </p>
-      ))}
-      {gear.newer ? <p className="muted small">{t.ui.gearNewer}</p> : !n ? (
-        <div className="bgear-none">
-          <p>{t.tryon.empty(b.name, c.name)}</p>
-          {onTryOn && <button type="button" className="btn primary" onClick={() => onTryOn(b)}>{t.tryon.build}</button>}
-          <p className="muted small">{t.tryon.emptyOr}</p>
-        </div>
-      ) : (
-        <>
-          {combo && <p className="bgear-set">{combo.map(setLine).join(' · ')}</p>}
-          <ul className="bgear-list" {...tour('gslots')}>
-            {SLOTS.map(({ id: slot }) => {
-              const p = st.pieces[slots[slot] ?? ''];
-              if (!p) {
-                const take = takeFrom(slot);
-                return (
-                  <li key={slot} className="bgear-empty">
-                    <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
-                    <span className="bgear-act">
-                      {take && <button type="button" className="btn small" onClick={() => gear.set(share(st, key, slot, take.id))}>{t.ui.gearTake(take.build)}</button>}
-                      {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, slot)} {...tour('gtry')}>{t.tryon.slot}</button>}
-                    </span>
-                  </li>
-                );
-              }
-              const W = subWeights(ctx, b, c, itemMains(ctx.idx, pieceInput(p)));
-              const rf = reforgeScale(p);
-              return (
-                <li key={slot}>
-                  <button type="button" className="bgear-row" onClick={() => setOpen(slot)} {...tourItem(slot)}>
-                    <SlotIcon slot={slot} />
-                    <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                    <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{rf.done < rf.of && <> · Reforge {rf.done}/{rf.of}</>}</span>
-                    <span className="bgear-t">
-                      {Object.keys(p.lit).map((k) => {
-                        const cr = W.get(k)?.credit ?? 0;
-                        return <span key={k} className={`tok${cr >= 1 ? ' ok' : cr > 0 ? ' half' : ''}`}>{subLabel(k)}<i>{p.lit[k]}</i></span>;
-                      })}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {weak && (
-            <div className="bgear-weak">
-              <p>
-                {t.ui.weakest(t.ui.slotNom[weak.slot], GRADE_NAME[weak.p!.grade], weak.p!.bt)}
-                {look.length > 0 && lookSet && <> {t.ui.weakestLook(`${ctx.idx.SET[lookSet]?.short ?? ''} ${SLOT[weak.slot].game}`, look.map(subLabel))}</>}
-              </p>
-              {onTryOn && <button type="button" className="btn small" onClick={() => onTryOn(b, weak.slot, weak.p)}>{t.ui.weakestTry}</button>}
-            </div>
-          )}
-          {idle.length > 0 && <p className="muted small">{t.ui.gearIdle(idle.join(', '))}</p>}
-        </>
       )}
-      {active && open && piece && <PieceSheet c={c} b={b} bkey={key} slot={open} p={piece} ctx={ctx} gear={gear} onClose={() => setOpen(null)}
-        onTry={onTryOn && (() => { setOpen(null); onTryOn(b, open, piece); })} />}
+      {(bonusLines.length > 0 || t4Lines.length > 0) && (
+        <div className="bgear-set">{[...bonusLines, ...t4Lines].map((l, i) => <p key={i}>{l}</p>)}</div>
+      )}
+      <ul className="bgear-list" {...tour('gslots')}>
+        {SLOTS.map(({ id: slot }) => {
+          const p = a.slots[slot]?.piece;
+          if (!p) {
+            return (
+              <li key={slot} className="bgear-empty">
+                <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
+                <span className="bgear-act">
+                  {try_ && !stats && <button type="button" className="btn small" onClick={() => try_(slot)} {...tour('gtry')}>{t.tryon.slot}</button>}
+                </span>
+              </li>
+            );
+          }
+          const W = subWeights(ctx, b, c, itemMains(idx, pieceInput(p)));
+          const rf = reforgeScale(p);
+          const mark = [isArmor(slot) && a.roles[slot] === 'filler' && !stats ? t.ui.slotOffSet : '', where(p.id)].filter(Boolean).join(' · ');
+          return (
+            <li key={slot}>
+              <button type="button" className="bgear-row" onClick={() => onOpenPiece(p.id)} {...tourItem(slot)}>
+                <SlotIcon slot={slot} />
+                <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
+                <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{rf.done < rf.of && <> · Reforge {rf.done}/{rf.of}</>}</span>
+                <span className="bgear-t">
+                  {Object.keys(p.lit).map((k) => {
+                    const cr = W.get(k)?.credit ?? 0;
+                    return <span key={k} className={`tok${cr >= 1 ? ' ok' : cr > 0 ? ' half' : ''}`}>{subLabel(k)}<i>{p.lit[k]}</i></span>;
+                  })}
+                </span>
+                {mark && <span className="bgear-mark">{mark}</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {weak && wp && (
+        <div className="bgear-weak">
+          <p>
+            {t.ui.weakest(t.ui.slotNom[weak.slot], GRADE_NAME[wp.grade], wp.bt)}
+            {look.length > 0 && lookSet && <> {t.ui.weakestLook(`${idx.SET[lookSet]?.short ?? ''} ${SLOT[weak.slot].game}`, look.map(subLabel))}</>}
+          </p>
+          {try_ && <button type="button" className="btn small" onClick={() => try_(weak.slot, wp)}>{t.ui.weakestTry}</button>}
+        </div>
+      )}
+      {(missing.length > 0 || (stats && first)) && (
+        <div className="bgear-need">
+          {stats && first ? <p>{t.ui.missingStats(setName(first.set), c.builds[0].name)}</p> : missing.map((m, i) => <p key={i}>{m}</p>)}
+          {try_ && !stats && free.length > 0 && <button type="button" className="btn small" onClick={() => try_(free[0])}>{t.tryon.slot}</button>}
+        </div>
+      )}
     </div>
   );
 }
 
-// карточка вещи — одна шторка, окно выбора стата внутри неё (вложенные шторки закрывались бы одним Esc)
-function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
-  c: Char; b: Build; bkey: string; slot: SlotId; p: Piece; ctx: Ctx; gear: GearApi; onClose: () => void; onTry?: () => void;
+// карточка вещи — одна шторка, окно выбора стата внутри неё (вложенные шторки закрывались бы одним Esc).
+// «Убрать у Caren» — только из её вещей; у общей вещи ещё «Разобрал — убрать у всех». onRemoved — сообщение с «Вернуть»
+export function PieceSheet({ c, p, ctx, gear, view, onClose, onTry, onRemoved }: {
+  c: Char; p: Piece; ctx: Ctx; gear: GearApi; view: PoolView; onClose: () => void; onTry?: () => void;
+  onRemoved?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
 }) {
   const t = useT();
   const [pick, setPick] = useState<string | 'fourth' | null>(null);
@@ -180,11 +194,20 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
   const [swap, setSwap] = useState<{ from: string; to: string } | null>(null);
   const st = gear.store;
   const put = (patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>) => gear.set(updatePiece(st, p.id, patch));
-  const others = usedIn(st, p.id).filter((k) => k !== bkey).map((k) => buildOf(c, k));
   const keys = Object.keys(p.lit);
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
-  // в заголовке — слот и билд: длинное имя персонажа (Kitsune of Eternity Tamamo-no-Mae) отрезало бы билд; имя — в теле
-  const title = t.ui.pieceTitle(t.ui.slotNames[slot], b.name);
+  const holders = holdersOf(st, p.id);
+  const others = holders.filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
+  const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStats)))];
+  const whereText = t.ui.pieceWhere(builds.join(', '), others.join(', '));
+  const remove = (all: boolean) => {
+    gear.set(all ? removeEverywhere(st, p.id) : removeFrom(st, c.id, p.id));
+    onRemoved?.(t.ui.removedFrom(all ? [c.name, ...others].join(', ') : c.name), !all && others.length ? t.ui.stillWith(others.join(', ')) : '',
+      (x) => undoRemove(x, p, all ? holders : [c.id]));
+    onClose();
+  };
+  // в заголовке — слот и персонаж; билды — строкой в теле
+  const title = t.ui.pieceTitle(t.ui.slotNames[p.slot], c.name);
   if (swap) {
     const orange = p.lit[swap.from] - p.yellow[swap.from];
     const done = (n: number) => { put(setYellow(replaceStat(p, swap.from, swap.to), swap.to, n)); setSwap(null); };
@@ -215,8 +238,7 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
     <Sheet title={title} onClose={onClose}>
       <div className="piece" {...tour('gpiece')}>
         <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
-        <p className="muted small">{c.name}</p>
-        {others.length > 0 && <p className="muted small">{t.ui.gearShared(others.join(', '))}</p>}
+        <p className="muted small">{whereText ? t.ui.gearShared(whereText) : t.ui.pieceNowhere}</p>
         <div className="subrows">
           {keys.map((k) => (
             <div key={k} className="subrow">
@@ -248,8 +270,10 @@ function PieceSheet({ c, b, bkey, slot, p, ctx, gear, onClose, onTry }: {
         <div className="piece-act">
           <button type="button" className="btn primary" onClick={onClose}>{t.ui.pieceDone}</button>
           {onTry && <button type="button" className="btn" onClick={onTry} {...tourItem('try')}>{t.tryon.replace}</button>}
-          <button type="button" className="btn" onClick={() => { gear.set(unequip(st, bkey, slot)); onClose(); }}>{t.ui.pieceRemove}</button>
+          <button type="button" className="btn" onClick={() => remove(false)}>{t.ui.pieceRemove(c.name)}</button>
+          {others.length > 0 && <button type="button" className="btn bad" onClick={() => remove(true)}>{t.ui.pieceRemoveAll}</button>}
         </div>
+        <p className="muted small">{t.ui.pieceRemoveNote(c.name)}</p>
       </div>
     </Sheet>
   );

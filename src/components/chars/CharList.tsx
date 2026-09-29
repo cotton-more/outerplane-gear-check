@@ -7,7 +7,8 @@ import { encodeRoster, parseRoster } from '../../logic/rosterCode';
 import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import { decodeGear, encodeGear, type GearStore } from '../../logic/gear';
+import type { GearStore } from '../../logic/gear';
+import { decodeGear, encodeGear } from '../../logic/gearStore';
 import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
@@ -156,7 +157,7 @@ function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
   );
 }
 
-// резервная копия экипировки кодом: вещи и билды целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
+// резервная копия экипировки кодом (OGC-GEAR2): вещи и пулы целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
 function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, st: GearStore, text: string) => void }) {
   const idx = useIndex();
   const t = useT();
@@ -172,7 +173,7 @@ function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore,
   };
   const apply = () => {
     const st = decodeGear(ta.current?.value || '', idx);
-    if (!st) { setMsg(t.ui.gearBad); return; }
+    if (!st || st === 'newer') { setMsg(st ? t.ui.gearNewerCode : t.ui.gearBad); return; }
     const prev = gear.store;
     gear.set(st);
     setMsg('');

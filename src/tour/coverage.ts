@@ -21,4 +21,6 @@ export const COVERAGE: Record<string, Coverage> = {
   'eval/MainPicker.tsx': 'core',   // окно main — тот же шаг
   'eval/PickField.tsx': 'helper',  // поле, открывающее окно выбора
   'eval/SetPicker.tsx': 'core',    // окно сетов — шаг «сет»
+  'chars/PoolList.tsx': 'todo',    // GEARPOOL: pieces of the character — tip in C3
+  'chars/VariantChips.tsx': 'todo', // GEARPOOL: set combos as builds — tip in C3
 };

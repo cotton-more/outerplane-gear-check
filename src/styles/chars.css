@@ -124,3 +124,41 @@ html.xs .roll-b.seg6 button { min-width: 26px; }
 .ctile .gearb { position: absolute; top: 58px; left: 8px; font: 700 9.5px/1 var(--font-mono); padding: 2px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
 .btabs .bt-n { margin-left: 6px; font: 700 10.5px/1 var(--font-mono); opacity: .75; }
 .cgrid-note { margin: -6px 16px 14px; }
+/* GEARPOOL: заголовок карточки «Лучше всего собран», подсказка после переноса */
+.cd-lead { margin: 4px 16px 0; display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--keep-soft); font-size: 13px; }
+.cd-note { margin: 8px 16px 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; }
+.cd-note span { flex: 1; min-width: 0; }
+/* варианты связок: чипы и шторка «ещё N» */
+.vchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 16px 0; }
+.vchip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 3px 10px; border: 1px solid var(--line-2); border-radius: 999px; background: transparent; color: var(--ink-2); font-weight: 600; font-size: 12.5px; line-height: 1.2; max-width: 100%; }
+.vchip[aria-pressed="true"] { border-color: var(--ink-2); background: var(--surface-3); color: var(--ink); }
+.vchip .n, .vrow .n { font: 700 11px/1 var(--font-mono); color: var(--ink-3); }
+.vsheet { display: grid; gap: 10px; }
+.vsheet p { margin: 0; }
+.vlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.vlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.vlist li > .muted { grid-column: 1 / -1; }
+.vrow { border: 0; background: none; padding: 0; text-align: left; color: var(--ink); font: inherit; min-width: 0; }
+.vrow[aria-pressed="true"] b { text-decoration: underline; }
+/* «Собираю» */
+.want-row { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.want-btn { min-height: 32px; padding: 4px 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-weight: 600; font-size: 12.5px; line-height: 1.2; }
+.want-btn[aria-pressed="true"] { background: var(--keep-soft); border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
+.want-btn[aria-pressed="true"]::before { content: '✓ '; }
+.bgear-set { display: grid; gap: 2px; }
+.bgear-set p { margin: 0; }
+.bgear-mark { grid-column: 2 / 4; font-size: 11.5px; color: var(--accent); }
+.bgear-need { display: grid; gap: 6px; justify-items: start; padding: 8px 10px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); font-size: 13px; }
+.bgear-need p { margin: 0; color: var(--ink-2); }
+.bgear-need .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+/* «Вещи Caren · N» */
+.pool { margin: 12px 16px 16px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); }
+.pool summary { padding: 10px 12px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.pool-list { list-style: none; margin: 0; padding: 0 8px 8px; display: grid; gap: 4px; }
+.pool-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 2px 8px; align-items: center; padding: 6px 8px; border: 0; border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
+.pool-row .ico, .pool-row img, .pool-row .noimg { width: 22px; height: 22px; }
+.pool-w { grid-column: 2; font-size: 12px; color: var(--ink-3); }
+.pool-unused { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); font-size: 12.5px; }
+.pool-unused .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.twin-act .btn { display: grid; gap: 2px; text-align: left; justify-items: start; }
+.twin-act .btn small { font-weight: 400; font-size: 11.5px; color: var(--ink-3); }

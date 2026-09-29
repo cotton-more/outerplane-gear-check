@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Index } from '../data';
-import { EMPTY_GEAR, newerGear, restoreGear, type GearStore } from '../logic/gear';
+import { EMPTY_GEAR, type GearStore } from '../logic/gear';
+import { newerGear, restoreGear } from '../logic/gearStore';
 import { storage } from './storage';
 
 export interface GearApi {

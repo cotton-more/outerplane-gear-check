@@ -55,3 +55,10 @@ export function variantsOf(idx: Index, c: Char): Variant[] {
   memo.set(c, out);
   return out;
 }
+
+// имя билда по ключу варианта — родителя, без подписи связки («2000116/Defense mix#2x2+11x2» → «Defense mix»);
+// stats — как назвать «По статам»
+export function buildOfKey(key: string, stats: string): string {
+  const name = key.slice(key.indexOf('/') + 1).split('#')[0];
+  return name || stats;
+}
