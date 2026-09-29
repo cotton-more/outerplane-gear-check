@@ -48,7 +48,14 @@ export interface Char {
   gameSets?: string[];
   rankPvp: string | null;
   flat: { levels: [number, number]; ATK: FlatBase | null; DEF: FlatBase | null; HP: FlatBase | null };
+  spd?: FlatBase | null; // база SPD для бонуса Speed Set (он в % от базы); нет в старых снимках — бонус не переводится в статы
 }
+
+// Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус
+// выражается им (8 сетов-статов); иначе null — в статах не выразить (Penetration, Counterattack, сеты-эффекты; у
+// эффекта value 0). mode: rate — % от базы персонажа (у SPD — от базы SPD), add — прибавка, как у сабстата
+export interface SetBonus { stat: string | null; value: number; mode: 'rate' | 'add' }
+export interface SetBonusRows { p2: SetBonus | null; p4: SetBonus | null }
 
 export interface GearSet {
   id: string;
@@ -60,6 +67,7 @@ export interface GearSet {
   p2base: string | null;
   p4base: string | null;
   pieces: Partial<Record<ArmorSlot, string>>;
+  bonus?: { t0: SetBonusRows; t4: SetBonusRows }; // t0 — строка T0–T3, t4 — T4; нет в старых снимках — бонус не считается
   users: number;
   fixed?: Partial<Record<ArmorSlot, Partial<Record<Grade, string[]>>>>; // строки main брони этого сета (у брони main не выбирают)
 }

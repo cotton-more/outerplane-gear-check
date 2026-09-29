@@ -171,6 +171,15 @@ function reachability(ogc) {
 
 // --------------------------------------------------------------------------- данные
 
+// Бонусы сетов числом (update.py bonus_of) — как на страницах сетов outerpedia (сверено владельцем 2026-09-29):
+// сет → [T4 2P, T4 4P, T0 2P, T0 4P], null — строки нет. Разошлось — сборка билдов из вещей (logic/pool) считает бонус
+// не так, как игра
+const SET_BONUS = {
+  Attack: [35, 25, 30, 20], Defense: [30, 20, 25, 15], Life: [35, 25, 30, 20], 'Critical Hit': [18, 12, 15, 10],
+  Resilience: [22, 16, 18, 12], Effectiveness: [22, 16, 18, 12], Counterattack: [15, 10, 12, 8],
+  Penetration: [11, 9, null, 20], Speed: [13, 12, null, 25], 'Critical Strike': [33, 22, 20, 15], Mitigation: [38, 27, 25, 20],
+};
+
 // «подписи» проблем в записи данных: сверяются старые с новыми, ошибка — только новая подпись
 function problems(D) {
   const out = new Set();
@@ -199,6 +208,16 @@ function problems(D) {
     if (s.users > 0) for (const slot of ['helmet', 'armor', 'gloves', 'shoes']) if (!s.pieces[slot]) out.add(`сет ${s.name}: нет предмета для слота ${slot}`);
   }
   for (const i of [...D.weapons, ...D.amulets]) if (!i.mains.length) out.add(`предмет ${i.name}: нет ни одного main stat`);
+  for (const [name, want] of Object.entries(SET_BONUS)) {
+    const s = D.sets.find((x) => x.short === name);
+    const b = s?.bonus;
+    const got = b ? [b.t4.p2, b.t4.p4, b.t0.p2, b.t0.p4].map((r) => r?.value ?? null) : null;
+    if (!s) continue; // сет пропал — это видно и без этой проверки
+    if (JSON.stringify(got) !== JSON.stringify(want)) out.add(`сет ${name}: бонус числом ${JSON.stringify(got)}, а на outerpedia ${JSON.stringify(want)}`);
+  }
+  for (const s of D.sets) {
+    for (const r of Object.values(s.bonus ?? {}).flatMap((t) => [t.p2, t.p4])) if (r?.stat && !subKeys.has(r.stat)) out.add(`сет ${s.name}: бонус — сабстат ${r.stat}, которого нет`);
+  }
   return out;
 }
 

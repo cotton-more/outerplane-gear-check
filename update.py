@@ -362,7 +362,8 @@ def flat_profile(c: dict, prog: dict) -> dict:
     Порт getSubstatFlatProfile() + whiteStatsAt() из outerpedia (src/lib/data/char-progression.ts):
     %-сабстат шмота умножает только собственную базу персонажа (уровень + эволюции + flat-quirks),
     поэтому один сегмент ATK% стоит база×4%, а flat ATK — ровно +40.
-    Возвращает {"ATK": [база@100, база@макс.LB, quirks], "DEF": [...], "HP": [...]}.
+    Возвращает {"ATK": [база@100, база@макс.LB, quirks], "DEF": [...], "HP": [...], "SPD": [...]}. SPD — та же база
+    для бонуса Speed Set (он в % от базы персонажа); у SPD нет роста по уровню, поэтому проверка базы — только min > 0.
     """
     rarity = str(c.get("rarity"))
     rungs = prog.get("evolutions", {}).get(rarity, [])
@@ -370,7 +371,8 @@ def flat_profile(c: dict, prog: dict) -> dict:
     base_cap = min(x["requireLevel"] for x in lb) if lb else max([1] + [r["level"] for r in rungs if r["level"] <= 100])
     levels = sorted({base_cap, *[x["maxLevel"] for x in lb]})
     rewards = prog.get("evoRewards", {}).get(c["id"], {})
-    at: dict[str, dict[int, int]] = {"ATK": {}, "DEF": {}, "HP": {}}
+    axes = (("ATK", "atk"), ("DEF", "def"), ("HP", "hp"), ("SPD", "speed"))
+    at: dict[str, dict[int, int]] = {ax: {} for ax, _ in axes}
     for level in levels:
         cum: dict[str, int] = {}
         for r in rungs:
@@ -378,28 +380,28 @@ def flat_profile(c: dict, prog: dict) -> dict:
                 for slug, v in rewards.get(str(r["ev"]), {}).items():
                     cum[slug] = cum.get(slug, 0) + v
         modifier = 0 if level <= 100 else next((x.get("statModifier", 0) for x in lb if x["maxLevel"] >= level), 0)
-        for axis, slug in (("ATK", "atk"), ("DEF", "def"), ("HP", "hp")):
+        for axis, slug in axes:
             st = (c.get("stats") or {}).get(slug) or {}
             mn = st.get("min", 0)
             rng = st.get("max", 0) - mn
             growth = (rng * (level - 1)) // 99 if rng > 0 else 0
             above = (rng * (level - 100) * modifier) // 99000 if rng > 0 and level > 100 else 0
             at[axis][level] = mn + growth + above + cum.get(slug, 0)
-    quirk = {"ATK": 0, "DEF": 0, "HP": 0}
+    quirk = {ax: 0 for ax, _ in axes}
     q = prog.get("quirks", {})
     blocks = [q.get("elemental", {}).get(c.get("element")), q.get("class", {}).get(c.get("class")),
               q.get("subclass", {}).get(c.get("subClass")) if c.get("subClass") else None]
     for bl in blocks:
         for b in (bl or {}).get("stat", []):
-            axis = {"atk": "ATK", "def": "DEF", "hp": "HP"}.get(b.get("stat"))
+            axis = {"atk": "ATK", "def": "DEF", "hp": "HP", "speed": "SPD"}.get(b.get("stat"))
             if axis and b.get("applying") != "rate":
                 quirk[axis] += b.get("value", 0)
     lo, hi = levels[0], levels[-1]
     out: dict = {"levels": [lo, hi]}
-    for axis, slug in (("ATK", "atk"), ("DEF", "def"), ("HP", "hp")):
+    for axis, slug in axes:
         st = (c.get("stats") or {}).get(slug) or {}
         # без собственной базы сравнение flat/% бессмысленно (иначе база = одни quirks) — пусть страница берёт средние
-        ok = st.get("max", 0) > st.get("min", 0) > 0
+        ok = st.get("min", 0) > 0 if axis == "SPD" else st.get("max", 0) > st.get("min", 0) > 0
         out[axis] = [at[axis][lo], at[axis][hi], quirk[axis]] if ok else None
     return out
 
@@ -652,6 +654,32 @@ def main_lines(src: dict, pools: dict, substats: list[dict], sets: list[dict], w
 
 # --------------------------------------------------------------------------- сборка
 
+# Бонус сета, который выражается сабстатом (его можно перевести в сегменты): стат игры → ключ сабстата страницы и вид.
+# rate — % от базы персонажа (ATK%, DEF%, HP% — как сабстат; SPD — от базы SPD), add — прибавка в пунктах, как сабстат.
+# Прочие (Penetration, Counterattack, Mitigation, Lifesteal, Bursting, сеты-эффекты) — stat None: в статах не выразить.
+SET_BONUS_STAT = {
+    "atk": ("ATK%", "rate"), "def": ("DEF%", "rate"), "hp": ("HP%", "rate"), "speed": ("SPD", "rate"),
+    "critical_rate": ("CHC", "add"), "critical_dmg_rate": ("CHD", "add"),
+    "buff_chance": ("EFF", "add"), "buff_resist": ("RES", "add"),
+}
+
+
+def bonus_of(e: dict | None) -> dict | None:
+    """Строка бонуса сета числом: {stat, value, mode} в единицах сабстата (Attack 2P T4 → ATK% 35).
+
+    Значения — только у бонусов-статов (у сетов-эффектов в effects[] на T4 лежат значения эффекта 1-го уровня,
+    а не бонус): у эффекта value 0, stat None.
+    """
+    if not e:
+        return None
+    if not e.get("stat"):
+        return {"stat": None, "value": 0, "mode": "add"}
+    m = re.fullmatch(r"\s*(-?\d+(?:\.\d+)?)\s*%?\s*", str(e.get("value", "")))
+    value = float(m.group(1)) if m else 0
+    value = int(value) if value == int(value) else value
+    stat, mode = SET_BONUS_STAT.get(e["stat"], (None, "add"))
+    return {"stat": stat, "value": value, "mode": mode}
+
 
 def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
     gl = src["glossaries"]
@@ -707,12 +735,21 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
             "p2base": eff(tier0.get("2p")),
             "p4base": eff(tier0.get("4p")),
             "pieces": piece_icons,
+            "bonus": {"t0": {"p2": bonus_of(tier0.get("2p")), "p4": bonus_of(tier0.get("4p"))},
+                      "t4": {"p2": bonus_of(tier.get("2p")), "p4": bonus_of(tier.get("4p"))}},
         })
 
     # --- талисманы
     talismans = {}
     for tid, t in src["talisman"].items():
         talismans[tid] = {"name": en(t.get("name")), "icon": t.get("icon"), "mode": t.get("mode")}
+
+    sub_keys = {o["key"] for o in substat_pool(pools)}
+    for s in sets:
+        for row in (r for t in s["bonus"].values() for r in t.values() if r and r["stat"]):
+            if row["stat"] not in sub_keys:
+                warn.add(f"{s['name']}: бонус сета — стат {row['stat']}, которого нет среди сабстатов; считаю его эффектом")
+                row["stat"] = None
 
     item_index = {("weapon", w["key"]): w for w in weapons} | {("accessory", a["key"]): a for a in amulets}
     substats = substat_pool(pools)
@@ -777,6 +814,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
             entry["gameSets"] = [str(x) for x in (c.get("recommendedSets") or [])]
         entry["rankPvp"] = cur.get("rankPvp")
         entry["flat"] = flat_profile({**c, "id": cid}, src["progression"])
+        entry["spd"] = entry["flat"].pop("SPD")  # база SPD для бонуса Speed Set: [lv100, макс. Limit Break, quirks]
         if not all(entry["flat"].get(ax) for ax in ("ATK", "DEF", "HP")):
             warn.add(f"{who}: нет базовых статов — flat/% для него оценивается по средним")
         chars.append(entry)
