@@ -382,7 +382,8 @@ function fixFor(ctx: Ctx, c: Char, v: Variant, forced: Assembly, was: Assembly, 
   return null;
 }
 
-function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, entering: boolean): Outcome | null {
+// with — сборка с ней, если уже есть (play с вещью считает все варианты)
+function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, entering: boolean, with_?: Assembly): Outcome | null {
   const es = entriesFor(ctx, c, v, pieces, x);
   const X = es[es.length - 1];
   const worn = before.slots[x.slot] ?? null;
@@ -391,13 +392,13 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   const t4 = part && t4Only(ctx.idx.SET[part.set], part.n) ? { set: part.set, n: part.n } : null;
   const offSet = isArmor(x.slot) ? !part : X.fit === 'no';
   if (!isArmor(x.slot) && X.fit === 'no') return null; // оружие не по билду — не кандидат (как в сравнении с надетым)
-  const after = assemble(ctx, c, v, es);
+  const after = with_ ?? assemble(ctx, c, v, es);
   const base = { v, pair, worn, t4, before, entering, fix: null };
   const bonusDiff = (z: Assembly) => {
     const a = new Set(before.bonuses.map(rowKey)), b = new Set(z.bonuses.map(rowKey));
     return { gainedBonus: z.bonuses.filter((r) => !a.has(rowKey(r))), lostBonus: before.bonuses.filter((r) => !b.has(rowKey(r))) };
   };
-  if (after.slots[x.slot] === X) {
+  if (after.slots[x.slot]?.id === null) {
     const kept = new Set(Object.values(after.slots).map((e) => e?.id));
     const displaced = Object.values(before.slots).filter((e): e is Entry => !!e && !kept.has(e.id));
     const bd = bonusDiff(after);
@@ -446,7 +447,7 @@ export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInpu
   const rows: Outcome[] = [];
   for (const v of [...cp.inPlay, ...starts]) {
     const before = cp.asm.get(v.key) ?? assemble(ctx, c, v, entriesFor(ctx, c, v, pieces));
-    const o = outcomeOf(ctx, c, v, pieces, x, before, !was.has(v.key));
+    const o = outcomeOf(ctx, c, v, pieces, x, before, !was.has(v.key), withX.asm.get(v.key));
     if (o) rows.push(o);
   }
   rows.sort((a, z) => OUTCOME_ORDER.indexOf(a.kind) - OUTCOME_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));
