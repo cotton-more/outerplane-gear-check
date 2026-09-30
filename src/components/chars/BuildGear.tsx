@@ -63,7 +63,9 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
   if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
   if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
   if ((cp.reach.get(v.key) ?? a) !== a) return '';
-  return a.progress ? t.ui.fillingWhy.closest : '';
+  // начат (Р14), но не ближе всех — строки нет: «ближе всех» было бы неправдой
+  const top = Math.max(0, ...cp.inPlay.filter((x) => !isStats(x)).map((x) => (cp.reach.get(x.key) ?? cp.asm.get(x.key)!).progress));
+  return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
 }
 
 // onTryOn — примерка этого варианта (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии.

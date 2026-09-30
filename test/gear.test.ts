@@ -209,10 +209,10 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
   });
 
   it('начинает билд, который не собирался: «Собираю» для него; «Вернуть» снимает отметку', () => {
-    // у Caren собран Speed ×4 (Speed/Immu — «Не собираю») и Immunity-шлем без дела; вторая Immunity собирает Immunity ×2
-    // в Def/Immu, а в Speed не встаёт — Def/Immu «Собираю»
-    const st0 = four();
-    const st = { ...st0, pieces: { ...st0.pieces, p5: rec('p5', { ...helmet({ RES: 1 }), setId: set('Immunity') }) }, pools: { [CAREN]: ['p1', 'p2', 'p3', 'p4', 'p5'] }, marks: { [K]: 'want' as const, [K2]: 'skip' as const } };
+    // у Caren собран Speed ×4 (Speed/Immu — «Не собираю»); первая Immunity-вещь начинает Def/Immu (Р14), а в Speed не
+    // встаёт — Def/Immu «Собираю». Было (до Р14): Immunity-шлем уже в пуле «без дела», вторая Immunity собирала
+    // Immunity ×2; теперь первая Immunity уже начала Def/Immu, и отметка не нужна
+    const st = { ...four(), marks: { [K]: 'want' as const, [K2]: 'skip' as const } };
     const r = putOn(ctx, st, CAREN, { ...helmet({ RES: 1 }), slot: 'armor', setId: set('Immunity') });
     expect(r.marks).toEqual([buildKey(CAREN, 'Def/Immu')]);
     expect(r.st.marks).toMatchObject({ [buildKey(CAREN, 'Def/Immu')]: 'want' });
@@ -254,9 +254,12 @@ describe('«Надеть»: что уходит из пула (Р7)', () => {
   const SHOES = A('shoes', 'Speed', { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 });
 
   it('вещь другого слота не убирается, даже если стала ненужной: она в пуле и «больше не нужна»', () => {
-    // Immunity-броня и Defense-броня: все билды по одной вещи — собираются все ближайшие. Immunity-ботинки собирают
-    // Immunity ×2 — Def больше не ближе всех, Defense-броне места нет
-    const r = putOn(ctx, pool([rec('p1', A('armor', 'Immunity', JUNK)), rec('p2', A('armor', 'Defense', JUNK))]), CAREN, A('shoes', 'Immunity', JUNK));
+    // Speed-перчатки, Attack-шлем сильнее Critical Hit-шлема — в раскладках шлем Attack. Critical Hit-броня: бонус
+    // Critical Hit ×2 выгоднее, шлем везде Critical Hit, Attack-шлему места нет. (До Р14 пример был «Def больше не
+    // ближе всех»; теперь Defense-броня начала Def и нужна.)
+    const ps = [rec('p1', A('gloves', 'Speed', { HP: 1 })), rec('p2', A('helmet', 'Attack', { 'DEF%': 2, CHC: 1 })), rec('p3', A('helmet', 'Critical Hit', { 'DEF%': 2 }))];
+    expect(poolView(ctx, pool(ps)).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p3']);
+    const r = putOn(ctx, pool(ps), CAREN, A('armor', 'Critical Hit', { CHC: 1 }));
     expect(r.removed).toEqual([]);
     expect(r.st.pools[CAREN]).toContain('p2');
     expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p2']);
@@ -335,18 +338,20 @@ describe('«Надеть»: что уходит из пула (Р7)', () => {
   });
 });
 
-describe('«Надеть»: вариант, где она встала, с ней перестаёт собираться сам', () => {
+describe('«Надеть»: вариант, где она встала, — начат и с ней (Р14)', () => {
   // Gnosis Domine: Def-шлем и Def-ботинки на T4, Immunity- и Patience-перчатки — собраны Def ×2 в Pen Def и Pen Immu.
-  // Pen-ботинки в Pen Def — «сет 3 из 4» вместо Def-ботинок, но Def ×2 там распадается, и ближе всех — Pen Immu
+  // Pen-ботинки в Pen Def — «сет 3 из 4» вместо Def-ботинок, Def ×2 там распадается. Было: ближе всех стал Pen Immu,
+  // Pen Def выпадал, и «Надеть» ставил ему «Собираю»; по Р14 Pen Def начат — собирается сам
   const GNOSIS = '2000112';
   const A = (slot: Piece['slot'], s: string): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs: { CHC: 1 } });
   const ps = [rec('p1', A('helmet', 'Defense'), 4), rec('p2', A('gloves', 'Immunity'), 4), rec('p3', A('gloves', 'Patience')), rec('p4', A('shoes', 'Defense'), 4)];
   const st = v2(ps, { [GNOSIS]: ps.map((p) => p.id) });
   const PEN = { ...A('shoes', 'Penetration'), subs: { HP: 1, CHC: 1, RES: 4, EFF: 3 } };
 
-  // было: отметки нет, Pen Def выпадал из «собираешь», и новые ботинки сразу «больше не нужна»
-  it('Pen Def — «Собираю»', () => {
-    expect(putOn(ctx, st, GNOSIS, PEN).marks).toEqual([buildKey(GNOSIS, 'Pen Def')]);
+  it('Pen Def собирается без отметки: «Собираю» не нужен', () => {
+    const r = putOn(ctx, st, GNOSIS, PEN);
+    expect(r.marks).toEqual([]);
+    expect(poolView(ctx, r.st).of(GNOSIS)!.inPlay.map((v) => v.key)).toContain(buildKey(GNOSIS, 'Pen Def'));
   });
 
   it('новые ботинки не «ненужные»', () => {
@@ -356,18 +361,26 @@ describe('«Надеть»: вариант, где она встала, с не�
 });
 
 describe('«Надеть» в примерке', () => {
-  // у Caren собран Speed ×4; старый Defense-шлем ни в одном билде. Примерка Def — в ней он стоит; новый Defense-шлем лучше
+  // у Caren собран Speed ×4, Defense-вещей нет. Примерка Def; новый Defense-шлем в Speed не встаёт
   const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
   const mid = { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 };
-  const pcs = [...(['helmet', 'armor', 'gloves', 'shoes'] as const).map((sl, i) => rec('p' + (i + 1), A(sl, 'Speed', mid))), rec('p5', A('helmet', 'Defense', { HP: 1, RES: 1 }))];
+  const pcs = (['helmet', 'armor', 'gloves', 'shoes'] as const).map((sl, i) => rec('p' + (i + 1), A(sl, 'Speed', mid)));
   const st = v2(pcs, { [CAREN]: pcs.map((p) => p.id) });
   const DEF = A('helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
   const K3 = buildKey(CAREN, 'Def');
+  const K4 = buildKey(CAREN, 'Def/Immu');
 
-  // было: вещь встала только в цель примерки — «Собираю» не ставилось, и после примерки новый шлем «больше не нужна»
+  // было: вещь встала только в цель примерки — «Собираю» не ставилось, и после примерки новый шлем «больше не нужна».
+  // Она же начинает Def/Immu (Р14) — «Собираю» и ему, как всем, что она начинает, не встав в собираемые
   it('встала только в цель примерки — цель становится «Собираю»', () => {
     const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
-    expect(r.marks).toEqual([K3]);
+    expect(r.marks).toEqual([K3, K4]);
+  });
+
+  it('старый Defense-шлем уже начал Def (Р14): новый в примерке Def заменяет его, отметок нет', () => {
+    const old = rec('p5', A('helmet', 'Defense', { HP: 1, RES: 1 }));
+    const r = putOn(ctx, v2([...pcs, old], { [CAREN]: [...pcs, old].map((p) => p.id) }), CAREN, DEF, { tryOn: K3 });
+    expect({ marks: r.marks, removed: r.removed.map((p) => p.id) }).toEqual({ marks: [], removed: ['p5'] });
   });
 
   it('после конца примерки новый шлем не «ненужный»: Def собирается по отметке', () => {
@@ -381,7 +394,7 @@ describe('«Надеть» в примерке', () => {
     const r = putOn(ctx, skip, CAREN, DEF, { tryOn: K3 });
     const back = undoPut(r.st, CAREN, r);
     // seq не откатывается (как всегда у «Вернуть»): номер вещи не переиспользуется
-    expect({ put: r.st.marks, back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ put: { [K3]: 'want' }, back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
+    expect({ put: r.st.marks, back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ put: { [K3]: 'want', [K4]: 'want' }, back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
   });
 
   it('встала и в собираемый без примерки вариант — отметки нет', () => {

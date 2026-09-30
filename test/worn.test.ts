@@ -154,14 +154,15 @@ describe('что удерживает штамп', () => {
   });
 
   describe('«только статы» — не повод понижать (находка 7)', () => {
-    // Caren собрана Speed ×4; Defense-шлемы — не из связки (Def не начат). Сильный — «только статы», слабый — без исходов
+    // Caren собрана Speed ×4; Defense-шлемы — не из связок Speed и Speed/Immu. Сильный — «только статы», слабый — без
+    // исходов; Def и Def/Immu оба начинают (Р14) — строки «начнёт» штамп не держат и не понижают
     const mid = { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 1 };
     const st = all(caren, (['helmet', 'armor', 'gloves', 'shoes'] as const).map((slot) => piece(slot, 'Speed', mid)));
     const strong = helmet({ CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 }, 'unique', 'Defense');
     const weak = helmet({ CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 }, 'unique', 'Defense');
 
-    it('сильный шлем даёт только «только статы»', () => {
-      const kinds = outcomeFor(ctxOf([caren]), poolView(ctxOf([caren]), st), caren.id, strong)!.rows.map((r) => r.kind);
+    it('сильный шлем в собираемых даёт только «только статы»', () => {
+      const kinds = outcomeFor(ctxOf([caren]), poolView(ctxOf([caren]), st), caren.id, strong)!.rows.filter((r) => !r.entering).map((r) => r.kind);
       expect(kinds.length).toBeGreaterThan(0);
       expect(kinds.every((k) => k === 'stats')).toBe(true);
     });

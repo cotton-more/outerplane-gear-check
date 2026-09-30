@@ -631,6 +631,14 @@ describe('карточка персонажа', () => {
     expect($('.want-row .muted')?.textContent).toBe('');
   });
 
+  it('Р14: Def/Immu начат одной Immunity-вещью — «Собираю» включён, но не «ближе всех к сборке» (ближе Speed ×4)', async () => {
+    const pieces = [...['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { CHC: 1 })), P('p5', 'helmet', set('Immunity'), { CHC: 1 })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
+    await click(byText('.btabs button', 'Def/Immu'));
+    expect($('.want-row .want-btn')?.getAttribute('aria-pressed')).toBe('true');
+    expect($('.want-row .muted')?.textContent).toBe('');
+  });
+
   it('«Вещи Caren · N»: где стоит; ненужная — «больше не нужна» и «Убрать у Caren» с «Вернуть»', async () => {
     const weak = P('p1', 'helmet', speed, { RES: 1 }), strong = P('p2', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 3 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([weak, strong], { [caren.id]: ['p1', 'p2'] }) });
@@ -829,8 +837,10 @@ describe('«По статам» у каждого героя (находка 28)
     const luna = char('Demiurge Luna');
     const pen = set('Penetration');
     const pcs = [P('p1', 'armor', pen, { ATK: 1, RES: 3, DEF: 2, CHC: 2 }), P('p2', 'gloves', pen, { HP: 1, EFF: 2, SPD: 3 })];
+    // Critical Strike ×4 — «Не собираю»: иначе вещь его начала бы (Р14), и главная строка — «начнёт Critical Strike»
+    const marks = { [`${luna.id}/Critical Strike`]: 'skip' };
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: set('Critical Strike'), subs: { EFF: 3, 'DEF%': 1, 'ATK%': 2, CHC: 3 } },
-      { roster: [luna.id], gear: G(pcs, { [luna.id]: ['p1', 'p2'] }) });
+      { roster: [luna.id], gear: G(pcs, { [luna.id]: ['p1', 'p2'] }, { marks }) });
     await click($('.vcard'));
     await click($('.v-equip'));
     await type($('.equip-q input') as HTMLInputElement, 'demiurge luna');
@@ -839,7 +849,7 @@ describe('«По статам» у каждого героя (находка 28)
     expect(row.querySelector('.vs')?.textContent).not.toBe('starts');
     await click(row);
     expect($('.gear-toast')?.textContent).toContain('Counts in By stats.');
-    expect(stored().marks ?? {}).toEqual({});
+    expect(stored().marks ?? {}).toEqual(marks);
   });
 
   it('Caren со Speed-шлемом, Swiftness-ботинки через поиск: тост «Засчитано в By stats», а не в её билдах', async () => {

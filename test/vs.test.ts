@@ -250,7 +250,9 @@ describe('исход вещи с формы: повтор vs.test', () => {
   it('начнёт: у Caren только Speed; Immunity-вещь начнёт Speed/Immu и Def/Immu, в Speed она — «только статы» или ничего', () => {
     const four = (['helmet', 'armor', 'gloves', 'shoes'] as SlotId[]).map((s) => rec(armor(s, 'Speed', { CHC: 1 })));
     const o = out(four.slice(0, 1), armor('armor', 'Immunity', { CHC: 1 }));
-    expect(o.starts.map((v) => v.name)).toEqual([]); // Speed/Immu уже собирается (Speed-шлем): Immunity ему ближе
+    // Speed/Immu уже собирается (Speed-шлем): Immunity ему ближе; Def/Immu она начинает (Р14; было — нет: он не был
+    // ближе всех)
+    expect(o.starts.map((v) => v.name)).toEqual(['Def/Immu']);
     expect(o.rows.find((r) => r.v.name === 'Speed/Immu')).toMatchObject({ kind: 'closer', entering: false });
     const w = [rec(weapon('unique', caren.builds[0].weapons[0].key, { CHC: 1 }) as never)];
     const o2 = out(w, armor('armor', 'Immunity', { CHC: 1 }), caren.id, { [buildKey(caren.id, 'Speed')]: 'want' });
