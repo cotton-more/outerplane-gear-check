@@ -27,10 +27,12 @@ import { dropSubs } from './subs';
 import { namesLine } from './text';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import { buildOfKey } from './variants';
+import { wearable } from './vs';
 
-// у кого из персонажей данных в пуле такая же вещь
+// у кого из персонажей данных в пуле такая же вещь. Оружие не для его класса — не «дом» (f7cc8ba: такую вещь он не
+// носит, пул её не держит); запись могла остаться с версии до проверки класса
 export function homeOf(ctx: Ctx, view: PoolView, item: ItemInput): string[] {
-  return Object.keys(view.st.pools).filter((id) => ctx.idx.CHAR[id] && view.st.pools[id].some((pid) => {
+  return Object.keys(view.st.pools).filter((id) => ctx.idx.CHAR[id] && wearable(ctx, ctx.idx.CHAR[id], item) && view.st.pools[id].some((pid) => {
     const p = view.st.pieces[pid];
     return p && samePiece(item, p);
   }));

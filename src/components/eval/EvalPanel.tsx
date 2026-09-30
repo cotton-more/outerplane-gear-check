@@ -29,9 +29,8 @@ import { VerdictCard } from './Verdict';
 import { TryOnStrip } from './TryOnStrip';
 import type { Target } from '../../logic/tryon';
 import type { CharVs } from '../../logic/poolVs';
-import { buildOfKey } from '../../logic/variants';
 import { holds } from '../../logic/pool';
-import { equipLabel } from './VsSection';
+import { equipLabel, variantName } from './VsSection';
 import { Icon } from '../Img';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
@@ -123,7 +122,12 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
                     </button>
                   )}
                   {other?.best && onEquipOther && (
-                    <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>{t.ui.orOther(other.c.name, buildOfKey(other.best.v.key, t.ui.byStats))}</button>
+                    <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>
+                      {/* подпись = действие (Р7): заменит — «или — заменить шлем Caren · …»; имя — варианта, как на карточке (Р5) */}
+                      {other.replaces
+                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, variantName(t, other.best.v))
+                        : t.ui.orOther(other.c.name, variantName(t, other.best.v))}
+                    </button>
                   )}
                 </div>
               )}

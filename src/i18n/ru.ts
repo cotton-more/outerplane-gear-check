@@ -396,6 +396,8 @@ export const ru = {
     vsStarts: (builds: string) => `Пойдёт и в: ${builds} — начнёт собираться.`,
     vsMore: (list: string) => `Ещё: ${list}`,
     orOther: (name: string, build: string) => `или — ${name} · ${build} ▸`,
+    // вторая кнопка заменяет вещь героя (Р7): slot — в винительном («шлем», «броню», «перчатки»)
+    orReplace: (slot: string, name: string, build: string) => `или — заменить ${slot} ${name} · ${build} ▸`,
     // тосты «Надеть» / «Заменить» / «Убрать»
     countsIn: (builds: string) => `Идёт в ${builds}.`,
     startedFilling: (build: string) => `Начал собирать ${build}.`,

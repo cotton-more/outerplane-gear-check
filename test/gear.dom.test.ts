@@ -93,12 +93,13 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.vc-equip')).toBeNull();
   });
 
-  it('вторая кнопка «или — Caren · Speed ▸»: у другого кандидата тоже держащий исход — сразу ему, с «Вернуть»', async () => {
+  // было: «или — Caren · Speed ▸», хотя кнопка заменяет её шлем (П8: подпись = действие, Р7)
+  it('вторая кнопка «или — заменить шлем Caren · Speed ▸»: у другого кандидата тоже держащий исход — сразу ему, с «Вернуть»', async () => {
     // у Kappa три Speed-вещи — шлем соберёт ей Speed ×4 (первая кнопка); у Caren шлем слабее — новая лучше
     const kap = ['armor', 'gloves', 'shoes'].map((slot, i) => P('k' + (i + 1), slot, speed, { 'DEF%': 1, CHC: 1 }));
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK, ...kap], { [caren.id]: ['p1'], [kappa.id]: ['k1', 'k2', 'k3'] }), roster: [caren.id, kappa.id] });
     expect($('.vc-equip')?.textContent).toBe('Equip on Kappa');
-    expect($('.vc-other')?.textContent).toBe('or — Caren · Speed ▸');
+    expect($('.vc-other')?.textContent).toBe("or — replace Caren's helmet · Speed ▸");
     await click($('.vc-other'));
     expect(stored().pools[caren.id]).toHaveLength(1);
     expect(stored().pools[caren.id]).not.toContain('p1');

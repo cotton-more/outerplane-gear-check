@@ -343,6 +343,7 @@ export const en: Texts = {
     vsStarts: (builds) => `Also counts toward ${builds} — it starts filling.`,
     vsMore: (list) => `More: ${list}`,
     orOther: (name, build) => `or — ${name} · ${build} ▸`,
+    orReplace: (slot, name, build) => `or — replace ${name}'s ${slot} · ${build} ▸`,
     countsIn: (builds) => `Counts in ${builds}.`,
     startedFilling: (build) => `Started filling ${build}.`,
     removedFrom: (name) => `Removed from ${name}.`,

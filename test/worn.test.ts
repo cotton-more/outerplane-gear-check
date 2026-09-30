@@ -350,6 +350,19 @@ describe('такая же вещь у персонажа — «Оставить�
     expect(judge(ctx, fod, st).title).toBe('Оставляй — она уже у Rin и ещё 1'); // по id персонажа
   });
 
+  // повторное ревью, мелочь 5: старая запись Mage-оружия у Aer (Striker) — не «она уже у Aer»: носить её он не может
+  it('оружие не для класса в пуле — не «дом»: штамп не поднимается до «Оставляй — она уже у Aer»', () => {
+    const aer = D.chars.find((c) => c.name === 'Aer')!;
+    const odyssey = weapon('17', { RES: 1, EFF: 1, HP: 1, DEF: 1 }, 'ATK%'); // Thumping Odyssey — только Mage
+    const rec = { id: 'p1', slot: 'weapon' as const, grade: 'unique' as const, setId: null, itemKey: '17', main: 'ATK%', yellow: odyssey.subs, lit: odyssey.subs, bt: null, at: '' };
+    const st: GearStore = { v: 2, seq: 1, pieces: { p1: rec }, pools: { [aer.id]: ['p1'] } };
+    const ctx = ctxOf([aer]);
+
+    const r = judge(ctx, odyssey, st);
+
+    expect(r.worn).not.toBe('home');
+  });
+
   it('«Оставить» у своей вещи не трогаем — и не понижаем', () => {
     const res = evaluate(ctxOf([caren]), STRONG, { gamble: false });
     expect(res.v).toBe('keep');
