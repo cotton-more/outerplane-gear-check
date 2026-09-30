@@ -452,6 +452,10 @@ export const ru = {
     unfuseAskText: (base: string, n: number) => (n ? `Core Fusion ${base} уйдёт из ростера, его вещи (${n}) перейдут к ${base}.` : `Core Fusion ${base} уйдёт из ростера.`),
     unfuseAskYes: (base: string) => `Да, ${base}`,
     cancel: 'Отмена',
+    // сняли звезду с героя, у которого есть вещи (Р16: вещи только у героев ростера), — окно RosterRemoveAsk
+    rosterRemoveTitle: (name: string) => `Убрать ${name} из ростера?`,
+    rosterRemoveText: (name: string, n: number) => `Вещи ${name} (${n}) уберутся из приложения.`,
+    rosterRemoveYes: 'Да, убрать',
     // строка окна «Кому надеть?»: что будет по нажатию
     slotGen: { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' } as Record<string, string>,
     equipRowFill: (build: string) => `Надеть — пустой слот · ${build}`,
@@ -790,6 +794,7 @@ export const ru = {
       want: 'Не собираешь этот билд — выключи «Собираю»: вещи для него перестанут держать вердикт.',
       variants: 'У билда несколько связок сетов — показываю самую собранную. Другие — в чипах, «ещё N» — весь список.',
       stats: '«По статам» — все вещи персонажа по цепочке, без сетов. Вещь не по билду встаёт сюда: «Надеть на…» → поиск по имени или примерка.',
+      fusion: 'Отметишь Core Fusion Eternal — Eternal станет неактивным и встанет за ним, а его вещи перейдут к Core Fusion Eternal. Звезда на Eternal вернёт всё назад.',
     },
     // строка «Что нового» — у подсказок с news
     news: {

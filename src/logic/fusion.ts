@@ -1,7 +1,8 @@
 // Core Fusion (правила владельца 2026-09-30). X — обычный герой, CF — Core Fusion X (fusionOf). «Есть персонаж» — он в
 // ростере или у него есть вещи в пуле. В ростере никогда нет X и CF вместе; есть CF — X неактивен: не кандидат вердикта,
 // не в «Кому надеть?» и примерке, в списке — сразу за CF с пометкой.
-// Нормализация — при загрузке, переносе v1, импорте кода и пакетных добавлениях в ростер: есть оба — остаётся CF.
+// Нормализация — при загрузке, переносе v1, импорте кода и пакетных правках ростера: есть оба — остаётся CF; все, у кого
+// есть вещи, — в ростере (Р16, normalizeStored).
 // Вещи X: у CF пусто — переходят к CF; у CF есть свои — не заменяем и не дополняем, вещи X убраны из его пула (записи,
 // которые есть и у других, остаются у других). «Собираю» не переносится: билды у героев разные.
 import type { Index } from '../data';
@@ -47,6 +48,20 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
   const next = { ...rest, pools, ...(autoNew?.length ? { autoNew } : {}) };
   return { roster: list, st: pools === st.pools && autoNew?.length === st.autoNew?.length ? st : gc(next), fixes };
 }
+
+// Р16: вещи есть только у героев ростера. Загрузка, перенос v1, импорт кода, пакетные правки ростера: каждый, у кого есть
+// вещи, — в ростер, затем правило Core Fusion. Одна чистая функция над {ростер, хранилище}. Core Fusion считается первым:
+// «есть персонаж» у него — в ростере или с вещами, так что итог тот же, что «сначала в ростер», а Core Fusion встаёт на
+// место X. После него у X при Core Fusion вещей нет — добавленные в ростер конфликта не создают. added — кого добавили
+// (только герои из данных: незнакомый id не показать и не убрать звездой — его пул лежит, как лежал)
+export interface Normalized { roster: string[]; st: GearStore; fixes: FusionFix[]; added: string[] }
+export function normalizeStored(idx: Index, roster: readonly string[], st: GearStore): Normalized {
+  const n = normalizeFusion(idx, roster, st);
+  const added = Object.keys(n.st.pools).filter((id) => idx.CHAR[id] && n.st.pools[id].length && !n.roster.includes(id));
+  return { ...n, roster: added.length ? [...n.roster, ...added] : n.roster, added };
+}
+// нормализация что-то поменяла — хранилище пора переписать (Р17)
+export const changed = (n: Pick<Normalized, 'fixes' | 'added'>) => n.fixes.length > 0 || n.added.length > 0;
 
 // окно перехода (звезда, «Надеть», примерка): «Да, Core Fusion X» или «Да, X». to — кого выбрали, from — второй из пары;
 // в ростере — только to (на месте from), вещи from — к to. moved / had — для «Вернуть» (gearStore unfuseChar)

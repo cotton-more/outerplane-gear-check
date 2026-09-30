@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-// Хранение экипировки (state/useGear): при загрузке не переписываем; во время обучения на странице пусто и ничего не
-// пишется — ни во время, ни после (запись из пустого стора тура стёрла бы вещи игрока); действие пишет сразу.
+// Хранение экипировки (state/useGear): при загрузке без исправлений не переписываем (Р17: исправила нормализация —
+// пишем сразу, test/gear.dom.test.ts); во время обучения на странице пусто и ничего не пишется — ни во время, ни после
+// (запись из пустого стора тура стёрла бы вещи игрока); действие пишет сразу.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -14,7 +15,7 @@ import { useGear, type GearApi } from '../src/state/useGear';
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const idx = createIndex(D);
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
-// v1 из прежней версии: читается с переносом, но на загрузке не переписывается
+// v1 из прежней версии: читается с переносом, но на загрузке не переписывается (Caren в ростере — исправлять нечего)
 const RAW = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2 }, lit: { CHC: 2 }, bt: null, at: '', note: 'x' } }, builds: { '2000089/Speed': { slots: { helmet: 'p1' }, at: '' } } };
 // вещь на Caren (v2)
 const withPiece = (subs: Record<string, number>, slot: 'helmet' | 'armor' = 'helmet'): GearStore => {
@@ -32,13 +33,14 @@ function Probe({ persist }: { persist: boolean }) {
   return null;
 }
 async function render(persist: boolean) {
+  if (!localStorage.getItem('ogc.roster')) localStorage.setItem('ogc.roster', JSON.stringify(['2000089']));
   if (!root) root = createRoot(document.createElement('div'));
   await act(async () => root!.render(createElement(Probe, { persist })));
 }
 const stored = () => localStorage.getItem('ogc.gear');
 
 describe('useGear', () => {
-  it('при загрузке хранилище не переписывается (незнакомое поле на месте, строка та же)', async () => {
+  it('при загрузке без исправлений хранилище не переписывается (незнакомое поле на месте, строка та же)', async () => {
     const text = JSON.stringify(RAW);
     localStorage.setItem('ogc.gear', text);
     await render(true);

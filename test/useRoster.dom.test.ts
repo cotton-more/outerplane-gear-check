@@ -54,8 +54,8 @@ describe('useRoster между вкладками', () => {
   });
 });
 
-// Core Fusion (logic/fusion): ростер читается вместе с экипировкой и нормализуется в памяти; окна перехода и пакетные
-// добавления — в App (test/gear.dom.test.ts). Здесь — загрузка и страховка записи
+// Core Fusion и Р16 (logic/fusion normalizeStored): ростер читается вместе с экипировкой; окна перехода и пакетные
+// добавления — в App (test/fusion.dom.test.ts, test/gear.dom.test.ts). Здесь — загрузка и страховка записи
 describe('useRoster: Core Fusion', () => {
   const [ETERNAL, CF_ETERNAL] = [id('Eternal'), id('Core Fusion Eternal')];
   const gear = (pools: Record<string, string[]>) => localStorage.setItem('ogc.gear', JSON.stringify({
@@ -63,13 +63,16 @@ describe('useRoster: Core Fusion', () => {
     pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: D.sets[0].id, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' } },
   }));
 
-  it('в хранилище оба — в ростере только Core Fusion на месте X; хранилище — как было, до первой записи', async () => {
+  // было: хранилище — как было до первой записи; Р17 (2026-09-30) — нормализация что-то исправила — записана сразу
+  it('в хранилище оба — в ростере только Core Fusion на месте X; исправленное записано сразу', async () => {
     await mount([ETERNAL, CAREN, CF_ETERNAL]);
-    expect([...api.roster]).toEqual([CAREN, CF_ETERNAL]);
-    expect(stored()).toEqual([ETERNAL, CAREN, CF_ETERNAL]);
+    expect({ shown: [...api.roster], stored: stored() }).toEqual({ shown: [CAREN, CF_ETERNAL], stored: [CAREN, CF_ETERNAL] });
+  });
 
-    await act(async () => api.add([KAPPA]));
-    expect(stored()).toEqual([CAREN, CF_ETERNAL, KAPPA]);
+  it('Р16: у Kappa вещи, в ростере её нет — в ростере, записано сразу', async () => {
+    gear({ [KAPPA]: ['p1'] });
+    await mount([CAREN]);
+    expect({ shown: [...api.roster], stored: stored() }).toEqual({ shown: [CAREN, KAPPA], stored: [CAREN, KAPPA] });
   });
 
   it('X в ростере, вещи — у Core Fusion: в ростере Core Fusion вместо X', async () => {

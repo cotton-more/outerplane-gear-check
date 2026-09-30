@@ -399,6 +399,9 @@ export const en: Texts = {
     unfuseAskText: (base, n) => (n ? `Core Fusion ${base} leaves the roster; its gear (${n}) moves to ${base}.` : `Core Fusion ${base} leaves the roster.`),
     unfuseAskYes: (base) => `Yes, ${base}`,
     cancel: 'Cancel',
+    rosterRemoveTitle: (name) => `Remove ${name} from the roster?`,
+    rosterRemoveText: (name, n) => `${name}'s gear (${n}) is removed from the app.`,
+    rosterRemoveYes: 'Yes, remove',
     slotGen: { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' },
     equipRowFill: (build) => `Equip — empty slot · ${build}`,
     equipRowReplace: (acc, build) => `Replace ${acc} — the new one is better · ${build}`,
@@ -702,6 +705,7 @@ export const en: Texts = {
       want: 'Not filling this build? Turn off “Filling”: its pieces stop holding the verdict.',
       variants: 'This build has several set combos — the most complete is shown. The others are in the chips; "N more" shows them all.',
       stats: '“By stats” — all the character’s pieces by the chain, no sets. Off-build pieces go here: “Equip on…” → search by name, or a try-on.',
+      fusion: "Mark Core Fusion Eternal and Eternal turns inactive, right after it in the list; Eternal's gear moves to Core Fusion Eternal. The star on Eternal switches back.",
     },
     news: {
       dice: 'Reforge dice — which 4th substat saves an Epic',

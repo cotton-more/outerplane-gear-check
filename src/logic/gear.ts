@@ -100,6 +100,42 @@ export function gc(st: GearStore): GearStore {
   return { ...st, pieces, pools };
 }
 
+// Р16: сняли звезду с героя, у которого есть вещи, и сказали «Да, убрать» — его пул, отметки «Собираю» и подсказки
+// autoNew уходят; записи, которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
+export interface Dropped { charId: string; ids: string[]; pieces: Record<string, Piece>; marks: Record<string, Mark>; autoNew: string[]; at: number }
+const ofChar = (charId: string, key: string) => key.startsWith(charId + '/');
+export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
+  const ids = st.pools[charId] ?? [];
+  const { [charId]: _, ...pools } = st.pools;
+  const marks = Object.fromEntries(Object.entries(st.marks ?? {}).filter(([k]) => !ofChar(charId, k)));
+  const autoNew = (st.autoNew ?? []).filter((k) => !ofChar(charId, k));
+  const { marks: _m, autoNew: _a, ...rest } = st;
+  const next = gc({ ...rest, pools, ...(st.marks ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}) });
+  const dropped: Dropped = {
+    charId, ids,
+    pieces: Object.fromEntries(ids.filter((id) => !next.pieces[id] && st.pieces[id]).map((id) => [id, st.pieces[id]])),
+    marks: Object.fromEntries(Object.entries(st.marks ?? {}).filter(([k]) => ofChar(charId, k))),
+    autoNew: (st.autoNew ?? []).filter((k) => ofChar(charId, k)),
+    at: Object.keys(st.pools).indexOf(charId),
+  };
+  return { st: next, dropped };
+}
+// «Вернуть» после dropChar: записи, пул на прежнем месте, отметки и подсказки — как были. За эти секунды герою успели
+// дать что-то новое — оно остаётся после прежних; отметку успели поставить заново — её не трогаем
+export function undoDrop(st: GearStore, d: Dropped): GearStore {
+  const pieces = { ...d.pieces, ...st.pieces };
+  const pool = [...d.ids.filter((id) => pieces[id]), ...(st.pools[d.charId] ?? []).filter((id) => !d.ids.includes(id))];
+  const entries = Object.entries(st.pools).filter(([c]) => c !== d.charId);
+  if (pool.length) entries.splice(Math.min(Math.max(d.at, 0), entries.length), 0, [d.charId, pool]);
+  const marks = { ...d.marks, ...st.marks };
+  const autoNew = [...(st.autoNew ?? []), ...d.autoNew.filter((k) => !st.autoNew?.includes(k))];
+  const { marks: _m, autoNew: _a, ...rest } = st;
+  return {
+    ...rest, pieces, pools: Object.fromEntries(entries),
+    ...(st.marks || Object.keys(d.marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
+  };
+}
+
 // новая запись вещи с формы: жёлтые — как на форме, Breakthrough не указан
 export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: GearStore; piece: Piece } {
   const id = 'p' + (st.seq + 1);

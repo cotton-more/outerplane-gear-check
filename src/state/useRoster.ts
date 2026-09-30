@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Index } from '../data';
 import { storage } from './storage';
-import { flushFusion, readStored } from './stored';
+import { readStored } from './stored';
 
 export interface RosterApi {
   roster: ReadonlySet<string>;           // только персонажи, которые есть в текущих данных
@@ -15,8 +15,8 @@ export interface RosterApi {
 
 // Ростер в 'ogc.roster' — id персонажей в порядке добавления.
 // Незнакомые id (персонаж на время пропал из данных outerpedia) не стираем, а просто не показываем.
-// Core Fusion (logic/fusion): читается вместе с экипировкой и нормализуется в памяти (state/stored) — в хранилище и X,
-// и Core Fusion X (сохранено до правила) — в ростере только Core Fusion; хранилище меняется при следующей записи.
+// Читается вместе с экипировкой (state/stored): все, у кого есть вещи, — в ростере (Р16); в хранилище и X, и Core Fusion X
+// (сохранено до правила) — только Core Fusion. Нормализация что-то поменяла — записана сразу при чтении (Р17).
 // Сам хук правила перехода не знает — окна и пакетные добавления в App; здесь только страховка: X и Core Fusion X
 // вместе не записываются (остаётся Core Fusion).
 // Другая вкладка или PWA рядом (Android держит её в памяти часами) могли поменять ростер: перечитываем его по событию
@@ -29,7 +29,6 @@ export function useRoster(idx: Index): RosterApi {
   const read = useRef(list); // пришло из хранилища — писать обратно незачем
   useEffect(() => {
     if (list === read.current) return;
-    flushFusion(idx, 'roster');
     storage.set('roster', list);
   }, [list]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {

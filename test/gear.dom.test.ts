@@ -114,12 +114,14 @@ describe('«Надеть» и «Вернуть»', () => {
 
   it('«Вернуть» откатывает только «Надеть»: правка в карточке за эти секунды остаётся; Kappa ушла из ростера', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2 }, { bt: 4 });
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'] }), roster: [] }); // ростер пуст — в окне все
+    // Caren с вещами — в ростере (Р16); Kappa — через поиск по имени
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'] }), roster: [caren.id] });
     await click($('.vcard'));
     await click($('.v-equip'));
+    await type($('.equip-q input') as HTMLInputElement, 'kappa');
     await click(byText('.equip-row', 'Kappa') as HTMLElement);
     expect(stored().pools[kappa.id]).toEqual(['p2']);
-    expect(roster()).toEqual([kappa.id]); // «Надеть» добавило в ростер
+    expect(roster()).toEqual([caren.id, kappa.id]); // «Надеть» добавило в ростер
 
     await click($('#tab-chars'));
     await click($$('#cgrid .ctile').find((b) => b.textContent?.includes('Caren')));
@@ -132,7 +134,7 @@ describe('«Надеть» и «Вернуть»', () => {
 
     expect(stored().pools[kappa.id]).toBeUndefined();
     expect(stored().pieces.p1.bt).toBe(3);
-    expect(roster()).toEqual([]);
+    expect(roster()).toEqual([caren.id]);
   });
 
   it('«Заменить» в шторке вердикта: сообщение лежит поверх неё — внизу шторки место (toast-on), «Вернуть» — снимает', async () => {
@@ -829,10 +831,198 @@ describe('меню, плитки, код копии, другая вкладка
 });
 
 // Core Fusion — test/fusion.dom.test.ts
-describe('вещи вне ростера', () => {
-  it('звезду сняли, а вещи есть: они остаются — «Вещи X · N — X не в ростере»', async () => {
+// Р16 (владелец 2026-09-30): вещи есть только у героев ростера. Было: звезду сняли, а вещи остались — «Вещи X · N — X не
+// в ростере». Теперь: при загрузке такой герой — в ростер; звезда героя с вещами — окно «Убрать X из ростера?»
+describe('вещи только у героев ростера (Р16)', () => {
+  const tileStar = (name: string) => $$('#cgrid .cwrap').find((w) => w.querySelector('.ctile')?.getAttribute('title')?.split(' — ')[0] === name)?.querySelector<HTMLElement>('.star');
+  const ask = () => $('.roster-ask')?.closest<HTMLElement>('.drawer') ?? null;
+  const askBtn = (text: string) => byText('.roster-ask .btn', text);
+  // у Caren две вещи, одна из них — та же запись, что у Rin; отметка «Собираю» у Caren
+  const shared = () => G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [caren.id]: ['p1', 'p2'], [rin.id]: ['p2'] },
+    { marks: { [`${caren.id}/Speed`]: 'want' } });
+
+  it('загрузка: у Caren вещи, в ростере её нет — она в ростере, сообщение «Added to the roster: Caren.»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
-    expect($('.pool summary')?.textContent).toBe("Caren's gear · 1 — Caren isn't in the roster.");
+    expect({ star: $('.own-btn')?.getAttribute('aria-pressed'), pool: $('.pool summary')?.textContent, toast: $('.gear-toast span')?.textContent })
+      .toEqual({ star: 'true', pool: "Caren's gear · 1", toast: 'Added to the roster: Caren.' });
+  });
+
+  it('звезда Caren с вещами — окно «Remove Caren from the roster?» с числом вещей', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
+    await click(tileStar('Caren'));
+    expect({ title: ask()?.getAttribute('aria-label'), text: $('.roster-ask p')?.textContent })
+      .toEqual({ title: 'Remove Caren from the roster?', text: "Caren's gear (2) is removed from the app." });
+  });
+
+  it('«Да, убрать»: Caren не в ростере, её вещи и отметки убраны, общая запись у Rin осталась; сообщение', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
+    await click(tileStar('Caren'));
+    await click(askBtn('Yes, remove'));
+    expect({ roster: roster(), pools: stored().pools, pieces: Object.keys(stored().pieces), marks: stored().marks })
+      .toEqual({ roster: [rin.id, kappa.id], pools: { [rin.id]: ['p2'] }, pieces: ['p2'], marks: {} });
+    expect($('.gear-toast')?.textContent).toContain('Removed from Caren.Rin still has it.');
+  });
+
+  it('«Вернуть» после «Да» — вещи, отметки и место в ростере как были', async () => {
+    const gear = shared();
+    await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
+    await click(tileStar('Caren'));
+    await click(askBtn('Yes, remove'));
+    await click(byText('.gear-toast button', 'Undo'));
+    expect({ roster: roster(), gear: stored() }).toEqual({ roster: [rin.id, caren.id, kappa.id], gear });
+  });
+
+  it('«Отмена» и ✕ ничего не меняют', async () => {
+    const gear = shared();
+    await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
+    await click(tileStar('Caren'));
+    await click(askBtn('Cancel'));
+    await click(tileStar('Caren'));
+    await click($('.drawer-x'));
+    expect({ ask: ask(), roster: roster(), gear: stored(), toast: $('.gear-toast') })
+      .toEqual({ ask: null, roster: [rin.id, caren.id, kappa.id], gear, toast: null });
+  });
+
+  it('без вещей — звезда снимается сразу, без окна', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [caren.id, kappa.id], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
+    await click(tileStar('Kappa'));
+    expect({ ask: ask(), roster: roster() }).toEqual({ ask: null, roster: [caren.id] });
+  });
+
+  it('в карточке персонажа «В ростере» — то же окно', async () => {
+    await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [caren.id], gear: shared() });
+    await click($('.own-btn'));
+    expect(ask()?.getAttribute('aria-label')).toBe('Remove Caren from the roster?');
+  });
+
+  // пакетное: «Очистить ростер» и код ростера «Заменить» героев с вещами не убирают (убрать с вещами — звездой, через окно)
+  it('«Очистить ростер»: герои с вещами остаются на своих местах, вещи на месте', async () => {
+    const gear = shared();
+    await mount({ tab: 'chars' }, {}, { roster: [kappa.id, rin.id, caren.id], gear });
+    await click(byText('.roster-bar .linkbtn', 'clear'));
+    await click(byText('.roster-bar .linkbtn', 'tap again'));
+    expect({ roster: roster(), gear: stored() }).toEqual({ roster: [rin.id, caren.id], gear });
+  });
+
+  it('код ростера «Заменить»: герои с вещами остаются — после героев из кода', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: shared() });
+    await click(byText('.roster-bar .linkbtn', 'export'));
+    const ta = $('#roster-code') as HTMLTextAreaElement;
+    ta.value = 'kappa';
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+    expect(roster()).toEqual([kappa.id, rin.id, caren.id]);
+  });
+
+  it('«Вернуть» после «Да» точен и когда хранилище за время тоста перечитали (вернулись на страницу)', async () => {
+    // у Rin — первая запись, своя у Caren — вторая: смысловое «Вернуть» поставило бы её первой среди записей
+    const gear = G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [rin.id]: ['p1'], [caren.id]: ['p1', 'p2'] },
+      { marks: { [`${caren.id}/Speed`]: 'want' } });
+    await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
+    const { restoreGear } = await import('../src/logic/gearStore');
+    const { createIndex } = await import('../src/data');
+    const before = JSON.stringify(restoreGear(gear, createIndex(D), [rin.id, caren.id, kappa.id]));
+    await click(tileStar('Caren'));
+    await click(askBtn('Yes, remove'));
+    await act(async () => { document.dispatchEvent(new Event('visibilitychange')); });
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(localStorage.getItem('ogc.gear')).toBe(before);
+  });
+
+  // вход опровержения: в туре Eternal с настоящими вещами в ростере; звезда на Core Fusion Eternal ростер писала без
+  // Eternal, а следующая звезда (Kappa) через запись при чтении переносила его вещи к Core Fusion — без окна, в туре
+  describe('в обучении ростер не расходится с настоящими вещами', () => {
+    const eternal = char('Eternal');
+    const mine = () => G([P('p1', 'helmet', speed, { CHC: 1 })], { [eternal.id]: ['p1'] });
+    const toTourChars = async () => {
+      await mount({ tab: 'eval' }, {}, { roster: [caren.id, eternal.id], gear: mine() });
+      await click($('.vb-tab'));
+      await click(byText('.menu button', 'Tutorial'));
+      await click(byText('.tour-strip button', 'Checking a piece'));
+      await click(byText('.tour-strip button', 'Example'));
+      await click($('.vb-tab'));
+      await click(byText('.menu button', 'Characters'));
+    };
+    const text = () => JSON.stringify(mine());
+
+    it('звезда на Core Fusion Eternal — ничего; звезда на Kappa — только ростер, вещи Eternal на месте', async () => {
+      await toTourChars();
+      await click(tileStar('Core Fusion Eternal'));
+      expect(roster()).toEqual([caren.id, eternal.id]);
+      await click(tileStar('Kappa'));
+      expect({ roster: roster(), gear: localStorage.getItem('ogc.gear') }).toEqual({ roster: [caren.id, eternal.id, kappa.id], gear: text() });
+    });
+
+    it('код ростера «Заменить» на Core Fusion Eternal — ничего', async () => {
+      await toTourChars();
+      await click(byText('.roster-bar .linkbtn', 'export'));
+      const ta = $('#roster-code') as HTMLTextAreaElement;
+      ta.value = 'core-fusion-eternal';
+      await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+      expect({ roster: roster(), gear: localStorage.getItem('ogc.gear') }).toEqual({ roster: [caren.id, eternal.id], gear: text() });
+    });
+  });
+
+  it('в обучении: звезда Caren с вещами — ни окна, ни удаления; вещи и ростер на месте', async () => {
+    const gear = shared();
+    await mount({ tab: 'eval' }, {}, { roster: [rin.id, caren.id], gear });
+    await click($('.vb-tab'));
+    await click(byText('.menu button', 'Tutorial'));
+    await click(byText('.tour-strip button', 'Checking a piece'));
+    await click(byText('.tour-strip button', 'Example'));
+    await click($('.vb-tab'));
+    await click(byText('.menu button', 'Characters'));
+    await click(tileStar('Caren'));
+    expect({ ask: ask(), roster: roster(), gear: stored() }).toEqual({ ask: null, roster: [rin.id, caren.id], gear });
+  });
+});
+
+// Р17 (владелец 2026-09-30): нормализация при загрузке что-то исправила — записать сразу оба ключа, сообщение один раз
+describe('запись при загрузке (Р17)', () => {
+  const remount = async () => {
+    await act(async () => root?.unmount());
+    document.body.innerHTML = '';
+    const { App } = await import('../src/App');
+    const { IndexContext } = await import('../src/components/IndexContext');
+    const { createIndex } = await import('../src/data');
+    const el = document.createElement('div');
+    document.body.append(el);
+    root = createRoot(el);
+    await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
+  };
+  const lone = () => G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] });
+
+  it('исправленное (Caren с вещами — в ростер) записано сразу, без действия игрока', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [kappa.id], gear: lone() });
+    expect({ roster: roster(), gear: stored() }).toEqual({ roster: [kappa.id, caren.id], gear: lone() });
+  });
+
+  it('сообщение — один раз: второй запуск без него', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [], gear: lone() });
+    expect($('.gear-toast')).toBeTruthy();
+    await remount();
+    expect($('.gear-toast')).toBeNull();
+  });
+
+  it('экипировку сохранила более новая версия — ничего не пишется, и ростер тоже', async () => {
+    const newer = { v: 3, seq: 0, pieces: {}, pools: {} };
+    const text = JSON.stringify(newer);
+    await mount({ tab: 'chars' }, {}, { roster: [char('Eternal').id, char('Core Fusion Eternal').id], gear: newer });
+    expect({ gear: localStorage.getItem('ogc.gear'), roster: roster() }).toEqual({ gear: text, roster: [char('Eternal').id, char('Core Fusion Eternal').id] });
+  });
+
+  // вход опровержения: запись при загрузке стирала саб не из данных и отметку, которых эта версия не понимает
+  it('чтение что-то отбросило (саб NEWSUB, отметка «maybe») — не пишется, хотя Caren добавлена в ростер в памяти', async () => {
+    const gear = JSON.stringify(G([P('p1', 'helmet', speed, { CHC: 1, NEWSUB: 2 })], { [caren.id]: ['p1'] }, { marks: { [`${caren.id}/Speed`]: 'maybe' } }));
+    await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: JSON.parse(gear) });
+    expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster'), star: $('.own-btn')?.getAttribute('aria-pressed') })
+      .toEqual({ gear, roster: '[]', star: 'true' });
+  });
+
+  it('ничего не исправлено — хранилище не переписано (строки те же)', async () => {
+    const gear = JSON.stringify({ ...lone(), extra: { keep: 1 } });
+    const list = JSON.stringify([caren.id]);
+    await mount({ tab: 'chars' }, {}, { roster: [caren.id], gear: JSON.parse(gear) });
+    expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster') }).toEqual({ gear, roster: list });
   });
 });
 
@@ -941,10 +1131,14 @@ describe('«Сейчас на персонажах»: имена вариант�
     expect($('.vcard .vc-vs .bn')?.textContent).toBe('· Defense mix · Swiftness +1');
   });
 
-  it('Anarky: заголовок строки — варианты с тем же исходом, по именам', async () => {
+  // было: в заголовке все варианты с тем же исходом («Defense mix · Swiftness, Defense mix · Immunity»); решение владельца
+  // 2026-09-30 — только лучший, второй — в «Ещё»
+  it('Anarky: заголовок строки — только лучший вариант, второй с тем же исходом — в «Ещё»', async () => {
     await anarkyHelmet();
     await click($('.vcard'));
-    expect(byText('.v-vs .vs-row', 'Anarky')?.querySelector('.vs-h .bn')?.textContent).toBe('Defense mix · Swiftness, Defense mix · Immunity');
+    const row = byText('.v-vs .vs-row', 'Anarky');
+    expect({ head: row?.querySelector('.vs-h .bn')?.textContent, more: row?.querySelector('.vs-more-btn')?.textContent?.includes('Defense mix · Immunity') })
+      .toEqual({ head: 'Defense mix · Swiftness', more: true });
   });
 
   it('Sigma: в заголовке нет дубля «Support» (тот же вариант, что «Speed»)', async () => {

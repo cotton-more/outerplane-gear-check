@@ -1,11 +1,11 @@
 // Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 → v2 (GEARPOOL), код OGC-GEAR2.
 // Перенос детерминированный: все вещи v1 — в пул персонажа (запись у двух персонажей — в оба пула, без копии),
 // билды v1 с вещами — «Собираю». Ни одна вещь и ни одно поле не теряются (билды v1 как были — в v1builds, не читается),
-// кроме правила Core Fusion (logic/fusion): у X и у Core Fusion X вещи — вещи X убраны.
+// кроме правила Core Fusion (logic/fusion): у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16).
 import { GRADES, SLOTS, isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import { makeCtx } from './context';
-import { normalizeFusion, type FusionFix } from './fusion';
+import { normalizeStored, type Normalized } from './fusion';
 import { buildKey, gc, MAX_LIT, type Bt, type GearStore, type Mark, type Piece } from './gear';
 import { isStats, play } from './pool';
 import { MAX_SUBS, type Subs } from './subs';
@@ -76,7 +76,8 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 // (от них зависит только «временная» у оружия в «Развитии»)
 const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
 
-// перенос v1 → v2. Core Fusion — по ростеру (logic/fusion) до подсказки autoNew: она — по итоговым пулам (находка 16)
+// перенос v1 → v2. Ростер и Core Fusion (logic/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
+// (находка 16)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   const { builds, v: _, ...rest } = v1;
   const pools: Record<string, string[]> = {};
@@ -90,7 +91,7 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
     const c = idx.CHAR[charId];
     if (c?.builds.some((b) => buildKey(c.id, b.name) === k)) marks[k] = 'want';
   }
-  const n = normalizeFusion(idx, roster, gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, v1builds: builds }));
+  const n = normalizeStored(idx, roster, gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, v1builds: builds }));
   const ctx = makeCtx(idx, MIGRATE_SETTINGS, new Set());
   const autoNew: string[] = [];
   for (const [charId, ids] of Object.entries(n.st.pools)) {
@@ -126,12 +127,31 @@ function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
 }
 
 // из хранилища или кода: v1 — проверка v1 и перенос; v2 — проверка; иначе (мусор, более новая версия) — пусто.
-// Затем Core Fusion по ростеру (logic/fusion): roster и fixes — что поменялось (сообщение после загрузки и импорта)
-export interface Loaded { st: GearStore; roster: string[]; fixes: FusionFix[] }
+// Затем ростер и Core Fusion (logic/fusion normalizeStored): все с вещами — в ростер, есть X и Core Fusion X — остаётся
+// Core Fusion; fixes и added — что поменялось (запись и сообщение после загрузки, импорт)
+export type Loaded = Normalized;
 export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): Loaded {
   const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown };
   if (r.v === 1) return migrateV1(restoreV1(r as Partial<GearStoreV1>, idx), idx, roster);
-  return normalizeFusion(idx, roster, r.v === 2 ? restoreV2(r as Partial<GearStore>, idx) : EMPTY);
+  return normalizeStored(idx, roster, r.v === 2 ? restoreV2(r as Partial<GearStore>, idx) : EMPTY);
+}
+// Р17: чтение ничего не отбросило — запись нормализации при загрузке не сотрёт того, что эта версия не поняла (саб не из
+// данных — старая закэшированная PWA с прежним снимком, отметка или поле новой версии). Всё из сырых данных есть в
+// прочитанном как было; дописанное (значения по умолчанию) — не потеря, как и счётчик seq выше и пустые пулы и отметки.
+// v1 — сверка с проверкой v1 (сам перенос ничего не теряет: v1builds). Нет данных — нечего терять; мусор — теряется
+export function readsWhole(raw: unknown, idx: Index): boolean {
+  if (raw == null) return true;
+  const r = (typeof raw === 'object' ? raw : {}) as { v?: unknown; seq?: unknown };
+  const read = r.v === 1 ? restoreV1(r as Partial<GearStoreV1>, idx) : r.v === 2 ? restoreV2(r as Partial<GearStore>, idx) : null;
+  return !!read && covers({ ...r, seq: read.seq }, read);
+}
+const empty = (x: unknown) => (Array.isArray(x) ? !x.length : !!x && typeof x === 'object' && !Object.keys(x).length);
+function covers(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every((x, i) => covers(x, b[i]));
+  if (!a || typeof a !== 'object' || !b || typeof b !== 'object' || Array.isArray(b)) return false;
+  const o = b as Record<string, unknown>;
+  return Object.entries(a).every(([k, v]) => (k in o ? covers(v, o[k]) : empty(v)));
 }
 export const restoreGear = (raw: unknown, idx: Index, roster: readonly string[] = []): GearStore => loadGear(raw, idx, roster).st;
 const EMPTY: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };

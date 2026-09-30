@@ -22,9 +22,9 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate, withPendingDice } from './logic/evaluate';
-import { gearedChars, holdersOf, samePiece, type GearStore, type Piece } from './logic/gear';
+import { dropChar, gearedChars, holdersOf, samePiece, undoDrop, type GearStore, type Piece } from './logic/gear';
 import { loadGear, unfuseChar } from './logic/gearStore';
-import { normalizeFusion, replacedX, switchFusion, type FusionFix } from './logic/fusion';
+import { normalizeStored, replacedX, switchFusion, type FusionFix } from './logic/fusion';
 import { holds, isStats, poolView, putOn, undoPut, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
@@ -40,8 +40,9 @@ import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useGear, type GearApi } from './state/useGear';
 import { useRoster, type RosterApi } from './state/useRoster';
-import { readStored } from './state/stored';
+import { holdStoredWrites, readStored, takeLoadNote } from './state/stored';
 import { FusionAsk } from './components/chars/FusionAsk';
+import { RosterRemoveAsk } from './components/chars/RosterRemoveAsk';
 import { useTryOn } from './state/useTryOn';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
@@ -175,21 +176,39 @@ export function App() {
     : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
   // Core Fusion (logic/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
   const fixesNote = (fixes: FusionFix[]) => fixes.map((f) => t.ui.fusionFixed(charName(f.base), f.kind)).join(' ');
-  // после загрузки: Core Fusion оставлен в ростере — сказать, что стало с X (хранилище — после первого действия игрока)
+  // после загрузки: нормализация что-то поменяла (state/stored — уже записано, Р17) — сказать один раз: кого добавили
+  // в ростер (у них есть вещи, Р16) и что стало с X при Core Fusion X
   useEffect(() => {
-    const { fixes } = readStored(idx);
-    if (fixes.length) setGearUndo({ text: fixesNote(fixes), note: '', tab: s.tab });
+    const n = takeLoadNote(idx);
+    if (!n) return;
+    const names = n.added.map(charName).join(', ');
+    const fx = fixesNote(n.fixes);
+    setGearUndo({ text: names ? t.ui.gearRosterAdded(names) : fx, note: names ? fx : '', tab: s.tab });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // «Вернуть» ростера после перехода, пакетного добавления и импорта — ростер, каким был (тот же порядок)
   const rosterBack = (prev: string[], next: string[]) => (prev.join() === next.join() ? undefined : () => rosterApi.replace(prev));
-  // пакетное (б): «Отметить показанных», код ростера — без окон, есть оба — остаётся Core Fusion, одно сообщение.
-  // X, который уже неактивен, «Отметить показанных» не добавляет
-  const rosterBatch = (next: string[]) => {
-    const prev = rosterApi.list(), st = gear.store;
-    const r = normalizeFusion(idx, next, st);
+  // настоящая экипировка игрока: в обучении на странице пусто или пример (useGear persist, tour/gear), а решать, у кого
+  // есть вещи, надо по его записям — в обучении они не меняются
+  const realStore = () => (touring ? readStored(idx).st : gear.store);
+  // пакетное (б): «Отметить показанных», код ростера, «Очистить ростер» — без окон, есть оба — остаётся Core Fusion,
+  // одно сообщение. X, который уже неактивен, «Отметить показанных» не добавляет. Пакетное не убирает из ростера тех, у
+  // кого есть вещи (Р16: вещи — только у героев ростера; убрать с вещами — звездой, через окно): они остаются на своих
+  // местах.
+  // В обучении экипировка не пишется (на странице — тура): нормализуем по настоящим вещам игрока, и если правка ростера
+  // тронула бы их (переход Core Fusion переносит или убирает вещи) — её нет вовсе, без окна и без записи; иначе пишется
+  // только ростер. Так ростер в туре не расходится с вещами игрока (вещи — только у героев ростера)
+  const rosterBatch = (ids: string[]) => {
+    const prev = rosterApi.list(), st = gear.store, real = realStore();
+    const next = [...ids, ...prev.filter((id) => !ids.includes(id) && real.pools[id]?.length)];
+    if (touring) {
+      const r = normalizeStored(idx, next, real);
+      if (r.st === real) rosterApi.replace(r.roster);
+      return;
+    }
+    const r = normalizeStored(idx, next, st);
     rosterApi.replace(r.roster);
     if (r.st !== st) gear.set(r.st);
-    if (!r.fixes.length || touring) return;
+    if (!r.fixes.length) return;
     // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище
     const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
       : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
@@ -221,18 +240,66 @@ export function App() {
     if (a.then) a.then(done);
     else setGearUndo({ text: note, note: '', tab: s.tab, undo: done.undo, after: done.after });
   };
+  // «Вернуть» сообщения экипировки. Р16: вещи — только у героев ростера; «Вернуть» вернул вещи тому, кого за эти секунды
+  // успели убрать из ростера (без вещей — звезда без окна), — он снова в ростере
+  const onGearUndo = () => {
+    const u = gearUndo;
+    setGearUndo(null);
+    if (!u) return;
+    const st = u.undo ? u.undo(gear.store) : gear.store;
+    if (u.undo) gear.set(st);
+    u.after?.();
+    if (touring) return;
+    const cur = rosterApi.list();
+    const missing = [...gearedChars(st).keys()].filter((id) => idx.CHAR[id] && !cur.includes(id));
+    if (missing.length) rosterApi.add(missing);
+  };
   const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
   // в ростер тем, кого одели или примерили (конфликта Core Fusion уже нет — fusionGate); «Вернуть» — убрать
   const joinRoster = (id: string) => {
     const added = touring ? [] : rosterApi.add([id]);
     return added.length ? () => rosterApi.remove(added) : undefined;
   };
-  // список и карточка персонажа: звезда — с окном перехода; «Отметить показанных», код ростера — пакетные
+  // звезда с героя, у которого есть вещи (Р16), — окно «Убрать X из ростера?»; «Да» — герой из ростера, его вещи — из
+  // его пула (общие записи остаются у других), «Вернуть» — вещи, отметки и место в ростере. В обучении окна нет и вещи
+  // не убираются: звезда такого героя не снимается (на странице — экипировка тура, записи игрока не трогаем)
+  const [removeAsk, setRemoveAsk] = useState<{ id: string; n: number } | null>(null);
+  const unstar = (id: string) => {
+    const n = realStore().pools[id]?.length ?? 0;
+    if (!n) rosterApi.toggle(id);
+    else if (!touring) setRemoveAsk({ id, n });
+  };
+  const doRemove = () => {
+    const a = removeAsk;
+    setRemoveAsk(null);
+    if (!a || !rosterApi.list().includes(a.id)) return;
+    const st = gear.store, prev = rosterApi.list();
+    const r = dropChar(st, a.id);
+    gear.set(r.st);
+    const wrote = storage.raw('gear');
+    rosterApi.remove([a.id]);
+    // «Вернуть»: хранилище с тех пор не менялось (и перечитанное из него — тот же объект по смыслу) — прежний объект
+    // целиком, байт в байт; иначе — только это действие
+    const back = () => {
+      const cur = rosterApi.list();
+      if (cur.includes(a.id)) return;
+      const after = prev.slice(prev.indexOf(a.id) + 1).find((id) => cur.includes(id));
+      const at = after ? cur.indexOf(after) : cur.length;
+      rosterApi.replace([...cur.slice(0, at), a.id, ...cur.slice(at)]);
+    };
+    const others = [...new Set(r.dropped.ids.flatMap((pid) => holdersOf(r.st, pid)))].map(charName);
+    setGearUndo({
+      text: t.ui.removedFrom(charName(a.id)), note: others.length ? t.ui.stillWith(others.join(', ')) : '', tab: 'chars',
+      undo: (x) => (x === r.st || (wrote !== null && storage.raw('gear') === wrote) ? st : undoDrop(x, r.dropped)), after: back,
+    });
+  };
+  // список и карточка персонажа: звезда — с окнами перехода и снятия; «Отметить показанных», код ростера, «Очистить» —
+  // пакетные
   const rosterUi: RosterApi = {
     ...rosterApi,
     toggle: (id) => {
       const cur = rosterApi.list();
-      if (cur.includes(id)) rosterApi.toggle(id);
+      if (cur.includes(id)) unstar(id);
       else if (!fusionGate(id)) rosterBatch([...cur, id]);
     },
     add: (ids) => {
@@ -242,6 +309,7 @@ export function App() {
       return next.filter((id) => !cur.includes(id));
     },
     replace: (ids) => rosterBatch(ids),
+    clear: () => rosterBatch([]),
   };
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -357,14 +425,14 @@ export function App() {
     } else dispatch({ type: 'tab', tab: 'eval' });
     if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
   };
-  // импорт кода экипировки заменил все записи: Core Fusion — по ростеру (logic/fusion), все, у кого есть вещи, — в ростер.
-  // «Вернуть» — всё хранилище, как было до него; ростер — убрать добавленных, вернуть убранных. Вещей нет — false
+  // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер, затем Core Fusion (logic/fusion
+  // normalizeStored). «Вернуть» — всё хранилище, как было до него; ростер — каким был. Вещей нет — false
   const onGearImport = (prev: GearStore, raw: unknown): boolean => {
     const before = rosterApi.list();
     const r = loadGear(raw, idx, before);
     const n = Object.keys(r.st.pieces).length;
     if (!n) return false;
-    const next = [...r.roster, ...[...gearedChars(r.st).keys()].filter((id) => idx.CHAR[id] && !r.roster.includes(id))];
+    const next = r.roster;
     gear.set(r.st);
     rosterApi.replace(next);
     const names = next.filter((id) => !before.includes(id) && idx.CHAR[id]).map(charName).join(', ');
@@ -414,8 +482,10 @@ export function App() {
   const tour = useTour({
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden }, tours, onTour: onTourRun, onStep: onTourStep,
     // «Вернуть» экипировки тоже: после тура оно вернуло бы экипировку тура (пример или пусто) поверх записей игрока
-    onRunning: useCallback((on: boolean) => { setTouring(on); setUndo(null); setGearUndo(null); }, []), onDone: hideWelcome,
+    // в обучении и запись нормализации при чтении хранилища (Р17) не срабатывает — ничего не пишем
+    onRunning: useCallback((on: boolean) => { holdStoredWrites(on); setTouring(on); setUndo(null); setGearUndo(null); }, []), onDone: hideWelcome,
   });
+  useEffect(() => () => holdStoredWrites(false), []); // страницу закрыли посреди обучения
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
   // кнопка под карточкой — только для полезной вещи (решение владельца: хлам к персонажу не попадает; Р4 — исход на
@@ -521,7 +591,7 @@ export function App() {
           <div className="toast gear-toast" role="status" style={toastAt}>
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
             {(gearUndo.undo || gearUndo.after) && (
-              <button type="button" onClick={() => { if (gearUndo.undo) gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
+              <button type="button" onClick={onGearUndo}>{t.ui.undoAction}</button>
             )}
           </div>
         )}
@@ -540,6 +610,9 @@ export function App() {
               <p className="muted small">{t.ui.twinFoot}</p>
             </div>
           </Sheet>
+        )}
+        {removeAsk && !tour.run && (
+          <RosterRemoveAsk name={charName(removeAsk.id)} n={removeAsk.n} onYes={doRemove} onClose={() => setRemoveAsk(null)} />
         )}
         {fusionAsk && (
           <FusionAsk base={charName(idx.CHAR[fusionAsk.to]?.fusionOf ?? fusionAsk.to)} toFusion={!!idx.CHAR[fusionAsk.to]?.fusionOf} n={fusionAsk.n}

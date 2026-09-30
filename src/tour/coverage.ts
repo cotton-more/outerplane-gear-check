@@ -15,7 +15,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'Notice.tsx': 'helper',          // плашка с одной кнопкой
   'Rich.tsx': 'helper',            // жирный текст в фразах
   'Sheet.tsx': 'helper',           // шторка для окон
-  'chars/FusionAsk.tsx': 'todo',  // окно перехода Core Fusion (X → CF и обратно): текст подсказки — у владельца
+  'chars/RosterRemoveAsk.tsx': 'helper', // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'eval/EvalPanel.tsx': 'core',    // форма: слот, грейд, сет или main, сетка
   'eval/ItemPicker.tsx': 'core',   // окно выбора Legendary по названию — шаг «сет или предмет»
   'eval/MainButtons.tsx': 'core',  // main оружия кнопками — тот же шаг

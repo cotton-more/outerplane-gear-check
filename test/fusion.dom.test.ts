@@ -77,14 +77,15 @@ const importCode = async (code: string) => {
 };
 
 describe('обновление: загрузка и перенос v1', () => {
-  it('v2, вещи у обоих, в ростере X: в ростере Core Fusion, вещей X на карточке нет, сообщение; хранилище — до действия', async () => {
+  // было: хранилище — как было до действия игрока; Р17 (2026-09-30) — исправленное записано сразу
+  it('v2, вещи у обоих, в ростере X: в ростере Core Fusion, вещей X на карточке нет, сообщение; записано сразу', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 }), P('p2', 'armor', speed, { SPD: 2 })], { [eternal.id]: ['p1'], [cfEternal.id]: ['p2'] });
     await mount({ tab: 'chars', charId: eternal.id }, {}, { gear, roster: [eternal.id] });
 
     expect($('.gear-toast span')?.textContent).toBe('Core Fusion Eternal kept in the roster: Eternal is replaced, their gear removed.');
     expect($('.pool summary')).toBeNull();
     expect(tile('Core Fusion Eternal')?.querySelector('.star')?.getAttribute('aria-pressed')).toBe('true');
-    expect({ gear: stored(), roster: roster() }).toEqual({ gear, roster: [eternal.id] });
+    expect({ pools: stored().pools, roster: roster() }).toEqual({ pools: { [cfEternal.id]: ['p2'] }, roster: [cfEternal.id] });
   });
 
   // было (a2-app «перенос v1: вещи только у X»): вещи оставались у X, а карточка X говорила «вещи у CF X»
@@ -109,13 +110,13 @@ describe('обновление: загрузка и перенос v1', () => {
   });
 });
 
-// нормализацию видели в сеансе — первое действие игрока, которое пишет один ключ, пишет и второй нормализованным
-describe('первая запись — нормализация целиком', () => {
-  it('первое действие в ростере (снял звезду с Core Fusion): записаны и ростер, и вещи у Core Fusion', async () => {
+// было: нормализация писалась первым действием игрока (flushFusion) — оба ключа сразу. Р17: пишется при загрузке, оба
+// ключа; действие после неё пишет уже нормализованное
+describe('нормализация записана целиком', () => {
+  it('при загрузке, без действия: и ростер без X, и вещи X у Core Fusion', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
     await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id, cfEternal.id] });
-    await click(tile('Core Fusion Eternal')?.querySelector('.star') as HTMLElement);
-    expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [], pools: { [cfEternal.id]: ['p1'] } });
+    expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [cfEternal.id], pools: { [cfEternal.id]: ['p1'] } });
   });
 
   it('первое действие в экипировке («Надеть» на Caren): записаны и вещи, и ростер без X', async () => {
@@ -140,8 +141,8 @@ describe('окна перехода', () => {
     expect(roster()).toEqual([eternal.id, rin.id]);
   });
 
-  // было (a2-app «X с вещами не в ростере, звезда на CF X»): вещи оставались у X
-  it('X с вещами не в ростере, звезда на Core Fusion — окно; «Да» — вещи у Core Fusion, в ростере он; «Вернуть» — как было', async () => {
+  // было (a2-app «X с вещами не в ростере, звезда на CF X»): вещи оставались у X. Р16: X с вещами при загрузке — в ростер
+  it('X с вещами (при загрузке — в ростер), звезда на Core Fusion — окно; «Да» — вещи у Core Fusion, в ростере он; «Вернуть» — как было', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2, CHC: 1 })], { [eps.id]: ['p1'] });
     await mount({ tab: 'chars', charId: cfEps.id }, {}, { gear, roster: [] });
     await click($('.own-btn'));
@@ -151,7 +152,7 @@ describe('окна перехода', () => {
     await click(askBtn('Yes, Core Fusion Epsilon'));
     expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [cfEps.id], pools: { [cfEps.id]: ['p1'] } });
     await click(byText('.gear-toast button', 'Undo'));
-    expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [], pools: { [eps.id]: ['p1'] } });
+    expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [eps.id], pools: { [eps.id]: ['p1'] } });
   });
 
   it('звезда на Core Fusion, X в ростере с вещами — «Отмена» и ✕ ничего не меняют', async () => {
@@ -291,6 +292,7 @@ describe('список и карточка X', () => {
     expect(names[names.indexOf('Core Fusion Eternal') + 1]).toBe('Eternal');
     expect(x.classList.contains('off')).toBe(true);
     expect(x.querySelector('.coff')?.textContent).toBe('replaced by Core Fusion Eternal');
+    expect(x.querySelector('.coff')?.getAttribute('data-tour')).toBe('fusion'); // якорь подсказки окна перехода
   });
 
   it('без Core Fusion X — на своём месте, без пометки', async () => {

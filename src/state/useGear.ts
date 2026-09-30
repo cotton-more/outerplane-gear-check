@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Index } from '../data';
 import { EMPTY_GEAR, type GearStore } from '../logic/gear';
 import { storage } from './storage';
-import { flushFusion, readStored } from './stored';
+import { readStored } from './stored';
 
 export interface GearApi {
   store: GearStore;
@@ -10,9 +10,9 @@ export interface GearApi {
   newer: boolean; // экипировку сохранила более новая версия страницы: здесь пусто и ничего не пишется — обнови страницу
 }
 
-// Экипировка в 'ogc.gear' (logic/gear). Пишем только после действия игрока: при чтении непонятное отбрасывается,
-// и перезапись на загрузке стёрла бы то, что понимает более новая версия страницы. Читается вместе с ростером: Core
-// Fusion нормализуется в памяти (state/stored, logic/fusion).
+// Экипировка в 'ogc.gear' (logic/gear). Читается вместе с ростером (state/stored): нормализация по ростеру и Core Fusion
+// что-то поменяла — записана сразу при чтении (Р17); иначе пишем только после действия игрока — при чтении непонятное
+// отбрасывается, и перезапись на загрузке стёрла бы незнакомые поля.
 // persist = false — идёт обучение: на странице пусто (тур идёт на примере), set ничего не делает и после тура
 // ничего не пишется — действие из пустого стора тура стёрло бы все вещи игрока
 // Другая вкладка или PWA рядом (Android держит её в памяти часами) могли записать своё: перечитываем хранилище по
@@ -42,7 +42,6 @@ export function useGear(idx: Index, persist: boolean): GearApi {
   const set = (next: GearStore) => {
     if (newer || !live.current) return;
     setStore(next);
-    flushFusion(idx, 'gear');
     storage.set('gear', next);
   };
   return useMemo(() => ({ store: persist ? store : EMPTY_GEAR, set, newer }), [store, persist, newer]); // eslint-disable-line react-hooks/exhaustive-deps

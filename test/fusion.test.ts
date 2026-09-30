@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
-import { buildKey, type GearStore, type Piece } from '../src/logic/gear';
-import { normalizeFusion, replacedX, switchFusion } from '../src/logic/fusion';
+import { buildKey, dropChar, undoDrop, type GearStore, type Piece } from '../src/logic/gear';
+import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '../src/logic/fusion';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
-import { encodeGear, loadGear, unfuseChar } from '../src/logic/gearStore';
+import { encodeGear, loadGear, readsWhole, unfuseChar } from '../src/logic/gearStore';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -64,6 +64,7 @@ describe('нормализация: есть X и Core Fusion X — остаёт
     expect(Object.keys(r.st.pieces).sort()).toEqual(['p1', 'p2']);
   });
 
+  // сам normalizeFusion ростер не трогает; Core Fusion в ростер добавит normalizeStored (Р16, ниже)
   it('оба только с вещами, в ростере никого из них — ростер не трогаем', () => {
     const r = normalizeFusion(idx, [CAREN], v2({ [X]: ['p1'], [CF]: ['p2'] }));
     expect(r.roster).toEqual([CAREN]);
@@ -89,6 +90,81 @@ describe('нормализация: есть X и Core Fusion X — остаёт
     const twice = normalizeFusion(idx, once.roster, once.st);
     expect(twice.fixes).toEqual([]);
     expect(twice.st).toBe(once.st);
+  });
+});
+
+// Р16 (владелец 2026-09-30): вещи есть только у героев ростера — каждый с вещами попадает в ростер, потом правило Core Fusion
+describe('normalizeStored: все с вещами — в ростере, затем Core Fusion', () => {
+  it('персонаж с вещами вне ростера — в конец ростера, added', () => {
+    const r = normalizeStored(idx, [CAREN], v2({ [KAPPA]: ['p1'] }));
+    expect({ roster: r.roster, added: r.added }).toEqual({ roster: [CAREN, KAPPA], added: [KAPPA] });
+  });
+
+  it('X и Core Fusion оба с вещами, никого в ростере — в ростере Core Fusion, вещи X убраны', () => {
+    const r = normalizeStored(idx, [CAREN], v2({ [X]: ['p1'], [CF]: ['p2'] }));
+    expect({ roster: r.roster, pools: r.st.pools, pieces: Object.keys(r.st.pieces) }).toEqual({ roster: [CAREN, CF], pools: { [CF]: ['p2'] }, pieces: ['p2'] });
+  });
+
+  it('только X с вещами вне ростера, Core Fusion в ростере без вещей — вещи X к Core Fusion, X в ростер не попадает', () => {
+    const r = normalizeStored(idx, [CF], v2({ [X]: ['p1'] }));
+    expect({ roster: r.roster, pools: r.st.pools, added: r.added }).toEqual({ roster: [CF], pools: { [CF]: ['p1'] }, added: [] });
+  });
+
+  it('незнакомый id с вещами (герой пропал из данных) в ростер не добавляется, его пул на месте', () => {
+    const r = normalizeStored(idx, [CAREN], v2({ gone: ['p1'] }));
+    expect({ roster: r.roster, pools: r.st.pools }).toEqual({ roster: [CAREN], pools: { gone: ['p1'] } });
+  });
+
+  it('все с вещами уже в ростере — ничего не поменялось', () => {
+    const st = v2({ [CAREN]: ['p1'] });
+    const r = normalizeStored(idx, [CAREN, KAPPA], st);
+    expect({ st: r.st === st, roster: r.roster, fixes: r.fixes, added: r.added }).toEqual({ st: true, roster: [CAREN, KAPPA], fixes: [], added: [] });
+  });
+});
+
+// Р16: «Да, убрать» в окне снятия звезды и его «Вернуть»
+describe('dropChar / undoDrop', () => {
+  const st = () => v2({ [KAPPA]: ['p2'], [CAREN]: ['p1', 'p2'] }, { marks: { [buildKey(CAREN, 'Speed')]: 'want', [buildKey(KAPPA, 'Speed')]: 'skip' }, autoNew: [buildKey(CAREN, 'Speed')] });
+
+  it('пул, отметки и autoNew героя уходят; общая запись остаётся у другого', () => {
+    const r = dropChar(st(), CAREN);
+    expect({ pools: r.st.pools, pieces: Object.keys(r.st.pieces), marks: r.st.marks, autoNew: r.st.autoNew })
+      .toEqual({ pools: { [KAPPA]: ['p2'] }, pieces: ['p2'], marks: { [buildKey(KAPPA, 'Speed')]: 'skip' }, autoNew: undefined });
+  });
+
+  it('«Вернуть» — как было, и пул на прежнем месте', () => {
+    const before = st();
+    const r = dropChar(before, CAREN);
+    const back = undoDrop(r.st, r.dropped);
+    expect({ back, order: Object.keys(back.pools) }).toEqual({ back: before, order: [KAPPA, CAREN] });
+  });
+
+  it('«Вернуть», когда герою за эти секунды дали новую вещь — прежние на месте, новая после них', () => {
+    const r = dropChar(st(), CAREN);
+    const later = { ...r.st, seq: 3, pieces: { ...r.st.pieces, p3: P('p3') }, pools: { ...r.st.pools, [CAREN]: ['p3'] } };
+    expect(undoDrop(later, r.dropped).pools[CAREN]).toEqual(['p1', 'p2', 'p3']);
+  });
+});
+
+// Р17: запись при загрузке — только если чтение ничего не отбросило
+describe('readsWhole', () => {
+  it('чистый v2 — да; счётчик seq ниже номеров вещей и незнакомое поле верхнего уровня — не потеря', () => {
+    expect([readsWhole(v2({ [CAREN]: ['p1'] }), idx), readsWhole({ ...v2({ [CAREN]: ['p1'] }), seq: 0, extra: { a: 1 } }, idx)]).toEqual([true, true]);
+  });
+
+  it('саб не из данных, отметка «maybe», пул с чужим id — отброшено', () => {
+    const st = v2({ [CAREN]: ['p1'] });
+    expect([
+      readsWhole({ ...st, pieces: { p1: { ...P('p1'), yellow: { SPD: 1, NEWSUB: 2 } } } }, idx),
+      readsWhole({ ...st, marks: { [buildKey(CAREN, 'Speed')]: 'maybe' } }, idx),
+      readsWhole({ ...st, pools: { [CAREN]: ['p1', 'p9'] } }, idx),
+    ]).toEqual([false, false, false]);
+  });
+
+  it('нет данных — нечего терять; мусор и v1 с вещью не в билде — отброшено; чистый v1 — да', () => {
+    const clean = v1({ [buildKey(CAREN, 'Speed')]: { helmet: 'p1' } });
+    expect([readsWhole(null, idx), readsWhole({ foo: 1 }, idx), readsWhole({ ...clean, pieces: { ...clean.pieces, p7: P('p7') } }, idx), readsWhole(clean, idx)])
+      .toEqual([true, false, false, true]);
   });
 });
 

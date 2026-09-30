@@ -192,14 +192,14 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
           const safe = o && cp ? [...new Set(cp.inPlay.filter((v) => !isStats(v) && !v.dupOf && !x.rows.some((r) => r.v.key === v.key)).map((v) => buildName(t, v.key)))] : [];
           // варианты, в которые она пошла бы, но их не собирают (и она их не начнёт)
           const idle = cp && o?.part ? cp.variants.filter((v) => !isStats(v) && !v.dupOf && !cp.inPlay.includes(v) && !x.starts.includes(v) && v.b.sets[0]?.some((p) => p.set === o.part!.set)).map((v) => v.name) : [];
-          // заголовок — варианты с тем же исходом на экране (Р5: имя варианта, без дублей Sigma «Support» = «Speed»)
-          const names = o ? [...new Set(x.rows.filter((r) => (r === o || !r.v.dupOf) && shownKind(r) === shownKind(o)).map((r) => variantName(t, r.v)))] : [];
+          // заголовок — имя лучшего варианта (Р5: имя варианта, не родителя); остальные, и с тем же исходом, — в «Ещё»
+          const name = o ? variantName(t, o.v) : '';
           return (
             <li key={x.c.id} className={`vs-row vs-${o?.kind ?? (x.worn ? 'worn' : 'starts')}`}>
               <div className="vs-h">
                 <Img k={'face:' + x.c.icon} className="face" />
                 <div className="nm">
-                  <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{names.join(', ')}</span>
+                  <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{name}</span>
                   {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt, reforgeScale(w).done, reforgeScale(w).of)}</span>}
                 </div>
                 <VsChip o={o} starts={o ? o.entering : !x.worn} />

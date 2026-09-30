@@ -109,7 +109,7 @@ function CharTile({ c, own, selected, isNew, gear, off, onSelect, onToggle }: {
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
         {gear > 0 && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
-        {off && <span className="coff">{t.ui.fusionOffMark(c.name)}</span>}
+        {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.name)}</span>}
       </button>
       <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>
         {own ? '★' : '☆'}

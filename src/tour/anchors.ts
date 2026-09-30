@@ -5,6 +5,7 @@ export const ANCHORS = [
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', 'dice', // подсказки модулей
   'tryon', 'gequip', 'gslots', 'gpiece', 'gtry', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
   'pool', 'variants', 'want', 'stats', // вещи персонажа, варианты связок, «Собираю», «По статам» (GEARPOOL)
+  'fusion', // пометка «заменён Core Fusion X» на плитке X
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 
