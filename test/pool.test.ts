@@ -19,6 +19,14 @@ import { evaluate } from '../src/logic/evaluate';
 import { withWorn } from '../src/logic/worn';
 import { fit } from '../src/logic/vs';
 
+// псевдослучайные [0, 1) с сидом (mulberry32): прежний x * 1103515245 + 12345 в числах JS терял точность (произведение
+// больше 2^53) и зацикливался — «1000 пулов» были 190 разными
+const lcg = (seed: number) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32;
+};
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
 const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
@@ -46,7 +54,7 @@ describe('сборка варианта: точная', () => {
   // пулы: сеты связок и чужие, копии роллов (ничьи), Breakthrough от «не указан» до T4, оружие и аксессуар из билда и
   // чужие, вещь с формы (половина пулов), force (каждый пятый). Сверяются раскладка по id, hard/live/soft/total/
   // filled/older и достижимая сборка — с отсечением и без
-  const rnd = (() => { let x = 12345; return () => (x = (x * 1103515245 + 12345) % 2 ** 31) / 2 ** 31; })();
+  const rnd = lcg(12345);
   const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rnd() * xs.length)];
   const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
   const GEAR = ['weapon', 'accessory'] as const;
@@ -137,7 +145,7 @@ describe('сборка варианта: точная', () => {
     expect(a.total).toBeCloseTo(s.total, 9);
   };
 
-  it('выбранная сборка — как эталон, с отсечением и без (300 пулов)', () => {
+  it('выбранная сборка — как эталон, с отсечением и без (1000 пулов)', () => {
     let withX = 0, forced = 0, weapons = 0;
     for (let i = 0; i < 1000; i++) {
       const k = makeCase(i), r = reference(k);
@@ -149,7 +157,7 @@ describe('сборка варианта: точная', () => {
     expect(Math.min(withX, forced, weapons)).toBeGreaterThan(30); // пулы правда разные
   });
 
-  it('достижимая сборка — как эталон, с отсечением и без (300 пулов)', () => {
+  it('достижимая сборка — как эталон, с отсечением и без (1000 пулов)', () => {
     for (let i = 0; i < 1000; i++) {
       const k = { ...makeCase(i), force: undefined }, r = reference(k);
       for (const prune of [true, false]) {
@@ -757,14 +765,14 @@ describe('совет «отметь T4» для любого сета (Р20)', (
     expect(r).toMatchObject({ kind: 'breaks', fix: { set: set('Speed'), slots: ['helmet', 'armor'], t4: true, mark: false } });
   });
 
-  it('перебор (1000 пулов вокруг шага 14): каждый «отметь» / «найди ещё на T4» выполнен — у новой «Надеть» (П2); «отметь» — кратчайший, вещи без Breakthrough не в её слоте', () => {
-    let seed = 7;
-    const rnd = (n: number) => ((seed = (seed * 1103515245 + 12345) % 2147483648), Math.floor(seed / 65536) % n);
+  it('перебор (3000 пулов вокруг шага 14): каждый «отметь» / «найди ещё на T4» выполнен — у новой «Надеть» (П2); «отметь» — кратчайший, вещи без Breakthrough не в её слоте', () => {
+    const r7 = lcg(7);
+    const rnd = (n: number) => Math.floor(r7() * n);
     const BTS: (Bt | null)[] = [null, null, 0, 4];
     const sub = (): Subs => ({ 'DEF%': 1 + rnd(3), CHC: 1 + rnd(2), CHD: rnd(3), SPD: rnd(2) });
     const SLOTS: ArmorSlot[] = ['gloves', 'shoes', 'helmet', 'armor'];
     let marks = 0, finds = 0, dropped = 0;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 3000; i++) {
       const pcs = [
         P('helmet', 'Speed', sub(), 4), P('armor', 'Speed', sub(), 4),
         ...Array.from({ length: 2 + rnd(3) }, () => P(SLOTS[rnd(rnd(2) ? 2 : 4)], 'Speed', sub(), BTS[rnd(4)])),
@@ -796,7 +804,7 @@ describe('совет «отметь T4» для любого сета (Р20)', (
       // «у двух» — только если одной не хватает
       if (r.fix.slots.length === 2) expect(open.some((a) => putsWith([a]))).toBe(false);
     }
-    // вокруг шага 14 советов почти не остаётся (П2): здесь 1 «отметь»; перебор проверяет в основном, что пропали
+    // вокруг шага 14 советов почти не остаётся (П2): на 3000 пулов их единицы; перебор проверяет в основном, что пропали
     expect(marks + finds).toBeGreaterThan(0);
     expect(dropped).toBeGreaterThan(10);
   });
@@ -805,7 +813,7 @@ describe('совет «отметь T4» для любого сета (Р20)', (
 describe('«По статам»', () => {
   // Р12 и Р14 — одно «начат»: «По статам» живой ровно тогда, когда ни один настоящий вариант не начат
   it('живой (hasStatBuild) ⇔ ни один вариант не начат (started): 10 персонажей × 60 пулов, с оружием из списка и чужим, с чужими сетами', () => {
-    const rnd = (() => { let x = 777; return () => (x = (x * 1103515245 + 12345) % 2 ** 31) / 2 ** 31; })();
+    const rnd = lcg(777);
     const pick = <T,>(xs: T[]) => xs[Math.floor(rnd() * xs.length)];
     const who = ['Caren', 'Anarky', 'Demiurge Luna', 'Eternal', 'Core Fusion Eternal', 'Demiurge Stella', 'Heatwave Cop Delta', 'Core Fusion Lisha', 'Iota', 'Demiurge Drakhan'];
     const off: string[] = [];

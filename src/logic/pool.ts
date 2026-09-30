@@ -289,7 +289,7 @@ export interface PlayOpts {
 // когда их было несколько (данные обновились — отметка не пропадает)
 const markOf = (marks: PlayOpts['marks'], v: Variant): Mark | undefined =>
   marks?.[v.key] ?? marks?.[v.parentKey] ?? (v.sig === null && v.b.sets.length === 1 ? marks?.[`${v.parentKey}#${comboSig(v.b.sets[0])}`] : undefined);
-export const markOfVariant = markOf;
+export const markOfVariant = markOf; // BuildGear: почему «Собираю» — с тем же запасным ключом прежней связки
 
 // Оружие или аксессуар начинает билд (Р18, П3) — только из его списка: рекомендованный (fit «rec»). Временный (Epic с
 // main из списка в «Развитии») в сборке стоит (раньше прочих), но билд не начинает. Одно правило на started и hasStatBuild
@@ -542,8 +542,8 @@ function rivalOf(es: readonly Entry[], X: Entry): Entry | null {
   return best;
 }
 
-// with — сборка с ней, если уже есть (play с вещью считает все варианты)
-function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, entering: boolean, with_?: Assembly): Outcome | null {
+// with_ — сборка с ней (play с вещью считает все варианты, «По статам» тоже)
+function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, entering: boolean, with_: Assembly): Outcome | null {
   const es = entriesFor(ctx, c, v, pieces, x);
   const X = es[es.length - 1];
   const worn = before.slots[x.slot] ?? null;
@@ -556,7 +556,7 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   if (stats && X.v <= EPS) return null;
   // оружие не по билду — не кандидат (как в сравнении с надетым); в «По статам» — кандидат (допущение (а))
   if (!isArmor(x.slot) && X.fit === 'no' && !stats) return null;
-  const after = with_ ?? assemble(ctx, c, v, es);
+  const after = with_;
   const base = { v, pair, worn, t4, part: part ?? null, before, entering, quiet: false, fix: null, surplus: false, lostEmpty: false, brokenSegs: null as number | null };
   const segsOf = (rows: BonusRow[], set: string | null) => {
     const r = rows.filter((x) => x.set === set).map((x) => bonusSegments(ctx, c, x.bon));
@@ -663,8 +663,8 @@ function computeOutcome(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   const quiet = opts.explicit && cp.stat && !was.has(cp.stat.key) ? cp.stat : null;
   const rows: Outcome[] = [];
   for (const v of [...cp.inPlay, ...starts, ...(quiet ? [quiet] : [])]) {
-    const before = cp.asm.get(v.key) ?? assemble(ctx, c, v, entriesFor(ctx, c, v, pieces));
-    const o = outcomeOf(ctx, c, v, pieces, x, before, v !== quiet && !was.has(v.key), withX.asm.get(v.key));
+    // play собирает все варианты и «По статам» — сборки есть у всех строк (inPlay, starts, тихая)
+    const o = outcomeOf(ctx, c, v, pieces, x, cp.asm.get(v.key)!, v !== quiet && !was.has(v.key), withX.asm.get(v.key)!);
     if (o) rows.push(v === quiet ? { ...o, quiet: true } : o);
   }
   rows.sort((a, z) => OUTCOME_ORDER.indexOf(a.kind) - OUTCOME_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));

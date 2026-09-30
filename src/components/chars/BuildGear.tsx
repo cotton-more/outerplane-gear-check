@@ -18,7 +18,7 @@ import { tryOnPreset } from '../../logic/tryon';
 import { subWeights } from '../../logic/score';
 import { lookFor } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
-import { isStats, removeEverywhere, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
+import { isStats, markOfVariant, removeEverywhere, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
 import { badgeOf, whereUsed } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
 import { buildOfKey, type Variant } from '../../logic/variants';
@@ -59,7 +59,7 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
   if (isStats(v)) return '';
   const a = cp.asm.get(v.key)!;
   if (a.need && a.progress === a.need) return t.ui.fillingWhy.done;
-  const mark = st.marks?.[v.key] ?? st.marks?.[v.parentKey];
+  const mark = markOfVariant(st.marks, v);
   if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
   if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
   const reach = cp.reach.get(v.key) ?? a;

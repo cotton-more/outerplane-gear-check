@@ -26,7 +26,6 @@ import { holds, outcomeFor, type Outcome, type PoolView } from './pool';
 import { dropSubs } from './subs';
 import { namesLine } from './text';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
-import { buildOfKey } from './variants';
 import { wearable } from './vs';
 
 // у кого из персонажей данных в пуле такая же вещь. Оружие не для его класса — не «дом» (f7cc8ba: такую вещь он не
@@ -75,12 +74,6 @@ function withDice(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict): Verd
   const out: Verdict = { ...res, gamble: hits.length ? { ...g, hits, near, target: hits[0].v } : null };
   return { ...out, plan: upgradePlan(ctx, item, out) };
 }
-
-// «Caren · Speed»: персонаж и билд (родитель варианта)
-export const whoOfKey = (ctx: Ctx, key: string): string => {
-  const id = key.slice(0, key.indexOf('/'));
-  return `${ctx.idx.CHAR[id]?.name ?? id} · ${buildOfKey(key, ctx.t.ui.byStats)}`;
-};
 
 // hold — не понижать: вещь — материал Breakthrough для такой же у кого-то и лучше неё (logic/material, betterThanWorn) —
 // совет «надень её, старую — ей в Breakthrough», а не «никого не улучшит». Примерка — уже в view (poolView tryOn)
