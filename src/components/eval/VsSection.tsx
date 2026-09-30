@@ -11,7 +11,7 @@ import { useT } from '../../i18n';
 import { reforgeScale } from '../../logic/gear';
 import { holds, isStats, shownKind, type Outcome, type PoolView } from '../../logic/pool';
 import type { CharVs } from '../../logic/poolVs';
-import type { BonusRow } from '../../logic/setBonus';
+import { tierLabel, type BonusRow } from '../../logic/setBonus';
 import { buildOfKey } from '../../logic/variants';
 import { vsFigure, type VsFigure } from '../../logic/vs';
 import { Icon, Img } from '../Img';
@@ -106,27 +106,31 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
     }
     if (o.broken && o.worn) {
       const lost = o.lostBonus.filter((r) => r.set === o.broken);
-      if (o.brokenSegs && lost[0]?.bon.stat) out.push(t.ui.vsNetGain(partText(idx, { set: o.broken, n: lost[0].n }), dec(o.brokenSegs), subLabel(lost[0].bon.stat), o.worn.slot));
+      if (o.brokenSegs && lost[0]?.bon.stat) out.push(t.ui.vsNetGain(partText(idx, { set: o.broken, n: lost[0].n }), o.brokenSegs, subLabel(lost[0].bon.stat), o.worn.slot));
     }
   } else if (o.kind === 'breaks' && o.broken && o.worn) {
     // распадается то, чей бонус теряется (Pen ×4 на T0 у Luna, а не часть связки Pen ×2), иначе — часть связки
     const lost = o.lostBonus.filter((r) => r.set === o.broken).sort((a, z) => z.n - a.n)[0];
     const part = lost ? { set: o.broken, n: lost.n } : o.v.b.sets[0]?.find((p) => p.set === o.broken) ?? { set: o.broken, n: 2 };
-    const pct = Math.round((o.pair?.delta ?? 0) * 100);
-    out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pct, partText(idx, part)));
-    // отметить одну вещь (другая уже на T4) — строки пока нет: «у двух» было бы неверно
-    if (o.fix?.mark) { if (o.fix.slots.length === 2) out.push(t.ui.vsBreaksMark(setName(idx, o.fix.set))); }
+    // у вещи в слоте полезных нет — процент бессмыслен («на 150750%»): «полезных нет», как у сравнения пары, а что
+    // распадётся — строкой «Пропадёт: Penetration ×4 (T0–T3) — …»
+    if (o.pair?.wornEmpty) {
+      out.push(t.ui.vsEmpty);
+      for (const r of o.lostBonus) if (r.set === o.broken) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));
+    } else out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pctOf(o), partText(idx, part)));
+    // отметить T4 у двух вещей сета или у одной (другая уже на T4)
+    if (o.fix?.mark) out.push(o.fix.slots.length === 1 ? t.ui.vsBreaksMarkOne(setName(idx, o.fix.set), o.fix.slots[0]) : t.ui.vsBreaksMark(setName(idx, o.fix.set)));
     else if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
     if (lost?.bon.stat && o.brokenSegs) {
-      out.push(t.ui.vsSetCost(partText(idx, part), lost.tier, bonusText(idx, lost), dec(o.brokenSegs), subLabel(lost.bon.stat), o.worn.slot));
+      out.push(t.ui.vsSetCost(partText(idx, part), tierLabel(lost.tier), bonusText(idx, lost), o.brokenSegs, subLabel(lost.bon.stat), o.worn.slot));
     } else dim.push(t.ui.vsNoTrade(setName(idx, o.broken)));
   } else if (o.kind === 'stats' && o.worn) {
-    const pct = Math.round((o.pair?.delta ?? 0) * 100);
     const part = o.v.b.sets[0]?.find((p) => p.set === wornSet);
-    dim.push(t.ui.vsStatsOnly(pct, o.worn.slot, part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStats));
+    if (o.pair?.wornEmpty) dim.push(t.ui.vsEmpty);
+    else dim.push(t.ui.vsStatsOnly(pctOf(o), o.worn.slot, part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStats));
   }
   for (const r of o.gainedBonus) dim.push(t.ui.vsBonusGain(partText(idx, r), bonusText(idx, r)));
-  for (const r of o.lostBonus) if (o.used) dim.push(t.ui.vsBonusLost(partText(idx, r), r.tier, bonusText(idx, r)));
+  for (const r of o.lostBonus) if (o.used) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));
   return (
     <>
       {out.map((x, i) => <p key={'o' + i}>{x}</p>)}
@@ -134,7 +138,8 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
     </>
   );
 }
-const dec = (x: number) => String(Math.round(x * 10) / 10).replace('.', ',');
+// процент невставшей против вещи в её слоте («лучше … на 12%», «только статы: +7%»)
+const pctOf = (o: Outcome) => Math.round((o.pair?.delta ?? 0) * 100);
 
 // строки сравнения с вещью в слоте (как было): цепочки, места, почему, процент, T4, Breakthrough, материал, пассивка
 function PairLines({ o }: { o: Outcome }) {

@@ -39,13 +39,21 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
     return `${what} · ${x.grade === 'unique' ? 'L' : 'E'}`;
   };
   const bn = (key: string) => buildOfKey(key, t.ui.byStats);
-  // что будет по нажатию: «Надеть — соберёт Speed», «Заменить шлем — новая лучше · Speed», «Надеть — начнёт Speed»
+  // что будет по нажатию: «Надеть — соберёт Speed», «Заменить шлем — новая лучше · Speed», «Надеть — начнёт Speed»;
+  // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие
   const action = (x: CharVs) => {
     if (x.worn) return t.ui.equipRowWorn([...new Set(whereUsed(view, x.c.id, x.worn.id).map((v) => bn(v.key)))].join(', ') || t.ui.byStats);
     const o = x.best;
-    if (!o || o.entering || !o.used) return t.ui.equipRowStarts([...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : ''));
-    if (shownKind(o) === 'completes') return t.ui.equipRowCompletes(bn(o.v.key));
-    if (shownKind(o) === 'closer') return t.ui.equipRowCloser(bn(o.v.key), o.after.progress, o.after.need);
+    if (!o || o.entering || !o.used) {
+      const builds = [...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : '');
+      return x.replaces ? t.ui.equipRowReplaceStarts(acc, builds) : t.ui.equipRowStarts(builds);
+    }
+    if (shownKind(o) === 'completes') return x.replaces ? t.ui.equipRowReplaceCompletes(acc, bn(o.v.key)) : t.ui.equipRowCompletes(bn(o.v.key));
+    if (shownKind(o) === 'closer') {
+      return x.replaces
+        ? t.ui.equipRowReplaceCloser(acc, bn(o.v.key), o.after.progress, o.after.need)
+        : t.ui.equipRowCloser(bn(o.v.key), o.after.progress, o.after.need);
+    }
     if (x.replaces) return t.ui.equipRowReplace(acc, bn(o.v.key));
     return o.kind === 'fill' ? t.ui.equipRowFill(bn(o.v.key)) : t.ui.equipRowEq(bn(o.v.key));
   };

@@ -29,7 +29,7 @@ import { holds, isStats, poolView, putOn, undoPut, type PutResult } from './logi
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
-import type { Build, Char, SlotId } from './data/types';
+import type { Build, Char, GearKind, SlotId } from './data/types';
 import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
 import { offLine, targetName, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
@@ -169,6 +169,9 @@ export function App() {
   const pwa = usePwa(idx.D.meta.commit);
   const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
   const charName = (id: string) => idx.CHAR[id]?.name ?? id;
+  // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
+  const pieceLabel = (p: Piece) => (p.setId ? idx.SET[p.setId]?.short ?? p.setId
+    : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
   // Core Fusion (logic/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
   const fixesNote = (fixes: FusionFix[]) => fixes.map((f) => t.ui.fusionFixed(charName(f.base), f.kind)).join(' ');
   // после загрузки: Core Fusion оставлен в ростере — сказать, что стало с X (хранилище — после первого действия игрока)
@@ -303,7 +306,9 @@ export function App() {
     setUndo(null);
     if (touring) return;
     const used = usedFor(st, c.id, r.id);
-    const text = r.removed.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+    // убраны 2+ вещи её слота — назвать каждую: «Заменено: ботинки Caren — убраны прежние: Speed и Immunity.»
+    const text = r.removed.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(r.removed.map(pieceLabel))])
+      : r.removed.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
     const notes: string[] = [];
     if (r.marks.length) notes.push(t.ui.startedFilling([...new Set(r.marks.map(buildName))].join(', ')));
     if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
@@ -316,12 +321,14 @@ export function App() {
   };
   // что стало с убранными из пула (Р7: только вещи слота новой) — каждая своей строкой: осталась у другого или материал
   // новой. Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. st — после «Надеть»
+  // убраны 2+ — в строках имя сета или предмета вместо «Старые» (заголовок replacedMany их уже перечислил)
   const removedNotes = (st: GearStore, c: Char, r: PutResult) => {
     const notes: string[] = [];
+    const many = r.removed.length > 1;
     for (const old of r.removed) {
       const still = holdersOf(st, old.id).filter((id) => id !== c.id);
       const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
-      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats));
+      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats, many ? pieceLabel(old) : undefined));
       else if (same) notes.push(t.ui.oldMaterial(old.slot));
     }
     return notes;

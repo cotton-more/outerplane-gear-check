@@ -20,7 +20,7 @@ import { lookFor } from '../../logic/vs';
 import { MAX_SUBS } from '../../logic/subs';
 import { isStats, removeEverywhere, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
 import { badgeOf, whereUsed } from '../../logic/poolVs';
-import type { BonusRow } from '../../logic/setBonus';
+import { tierLabel, type BonusRow } from '../../logic/setBonus';
 import { buildOfKey, type Variant } from '../../logic/variants';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
@@ -53,7 +53,7 @@ export const bonusText = (idx: Index, r: BonusRow): string => {
 
 // Собираю: почему вариант собирается (или нет) — строка рядом с переключателем. Всё — по показанной раскладке, как чип
 // и слоты. Собирается он потому, что часть связки можно собрать из пула, а раскладка ради статов её не взяла (Р1), —
-// строки нет: «готова» противоречило бы слотам (достижимая больше выбранной, только если собирает часть)
+// «— Speed ×2 собирается из вещей Caren, но сейчас выгоднее без неё»: «готова» противоречило бы слотам
 export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st: GearStore, v: Variant): string {
   if (!cp.inPlay.includes(v)) return t.ui.fillingOff;
   if (isStats(v)) return '';
@@ -62,7 +62,11 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
   const mark = st.marks?.[v.key] ?? st.marks?.[v.parentKey];
   if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
   if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
-  if ((cp.reach.get(v.key) ?? a) !== a) return '';
+  const reach = cp.reach.get(v.key) ?? a;
+  if (reach !== a) {
+    const part = reach.complete.find((p) => !a.complete.some((q) => q.set === p.set));
+    return part ? t.ui.fillingReach(`${idx.SET[part.set]?.short ?? part.set} ×${part.n}`, cp.c.name) : '';
+  }
   // начат (Р14), но не ближе всех — строки нет: «ближе всех» было бы неправдой
   const top = Math.max(0, ...cp.inPlay.filter((x) => !isStats(x)).map((x) => (cp.reach.get(x.key) ?? cp.asm.get(x.key)!).progress));
   return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
@@ -87,7 +91,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const setName = (id: string) => idx.SET[id]?.short ?? id;
   // бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
   const bonusLines = a.bonuses.map((r) => {
-    const tier = r.unknownBt ? 'T?' : r.tier === 'T4' ? 'T4' : 'T0–T3';
+    const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
     const own = combo.some((p) => p.set === r.set);
     return t.ui.bonusRow(setName(r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
   });
@@ -210,7 +214,8 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onTry, onRemoved }:
   const holders = holdersOf(st, p.id);
   const others = holders.filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
   const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStats)))];
-  const whereText = t.ui.pieceWhere(builds.join(', '), others.join(', '));
+  // «Стоит в … — правка изменит везде» — только у общей: в 2+ билдах или и у других; ни в одном — «Ни в одном билде»
+  const whereText = builds.length > 1 || others.length ? t.ui.gearShared(t.ui.pieceWhere(builds.join(', '), others.join(', '))) : builds.length ? '' : t.ui.pieceNowhere;
   const remove = (all: boolean) => {
     gear.set(all ? removeEverywhere(st, p.id) : removeFrom(st, c.id, p.id));
     onRemoved?.(t.ui.removedFrom(all ? [c.name, ...others].join(', ') : c.name), !all && others.length ? t.ui.stillWith(others.join(', ')) : '',
@@ -249,7 +254,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onTry, onRemoved }:
     <Sheet title={title} onClose={onClose}>
       <div className="piece" {...tour('gpiece')}>
         <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
-        <p className="muted small">{whereText ? t.ui.gearShared(whereText) : t.ui.pieceNowhere}</p>
+        {whereText && <p className="muted small">{whereText}</p>}
         <div className="subrows">
           {keys.map((k) => (
             <div key={k} className="subrow">

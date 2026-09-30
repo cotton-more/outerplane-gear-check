@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import { en } from '../src/i18n/en';
+import { TEXTS } from '../src/i18n';
+import { tierLabel } from '../src/logic/setBonus';
 import { makeCtx, type Settings } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import type { Verdict } from '../src/logic/verdict';
@@ -66,5 +68,72 @@ describe('исходники', () => {
       .filter((p) => !ALLOWED.includes(relative(root, p)))
       .flatMap((p) => stripComments(readFileSync(p, 'utf8')).split('\n').filter((l) => CYR.test(l)).map((l) => `${relative(root, p)}: ${l.trim()}`));
     expect(leaks).toEqual([]);
+  });
+});
+
+// строки GEARPOOL: число сегментов форматирует словарь (RU — запятая, EN — точка), «сегмент» склоняется, бонус сета —
+// текстом из данных без лишнего «+», уровень без T4 — «T0–T3», как в карточке персонажа
+describe('строки GEARPOOL', () => {
+  const speed = D.sets.find((s) => s.short === 'Speed')!;
+  const ru = TEXTS.ru.ui, enUi = en.ui;
+
+  it('vsSetCost: «это Speed +13%», не «+Speed +»; RU — «1,5 сегмента», EN — «1.5 SPD segments»', () => {
+    const r = ru.vsSetCost('Speed ×2', 'T4', speed.p2!, 1.5, 'SPD', 'gloves');
+    const e = enUi.vsSetCost('Speed ×2', 'T4', speed.p2!, 1.5, 'SPD', 'gloves');
+    expect(r).toBe('Speed ×2 на T4 — это Speed +13%, около 1,5 сегмента SPD. Перчатки дают меньше.');
+    expect(e).toBe('Speed ×2 at T4 is Speed +13%, about 1.5 SPD segments. The gloves add less.');
+  });
+
+  it('«сегмент» по числу: 1 сегмент, 2–4 сегмента, 5+ и 11–14 сегментов, 21 сегмент, дробное — сегмента', () => {
+    const word = (n: number) => ru.vsNetGain('Speed ×2', n, 'SPD', 'shoes').match(/−(\S+ \S+) SPD/)![1];
+    expect([1, 2, 4, 5, 11, 12, 21, 1.5, 0.96].map(word))
+      .toEqual(['1 сегмент', '2 сегмента', '4 сегмента', '5 сегментов', '11 сегментов', '12 сегментов', '21 сегмент', '1,5 сегмента', '1 сегмент']);
+    expect(enUi.vsNetGain('Speed ×2', 1, 'SPD', 'shoes')).toContain('(−1 SPD segment)');
+    expect(enUi.vsNetGain('Speed ×2', 2.25, 'SPD', 'shoes')).toContain('(−2.3 SPD segments)');
+  });
+
+  it('уровень строки без T4 — «T0–T3»', () => {
+    expect([tierLabel('T0'), tierLabel('T4')]).toEqual(['T0–T3', 'T4']);
+    expect(ru.vsBonusLost('Speed ×4', tierLabel('T0'), speed.p4base!)).toBe('Пропадёт: Speed ×4 (T0–T3) — Speed +25%.');
+  });
+
+  it('совет отметить T4 у одной вещи: слот в родительном падеже / is–are', () => {
+    expect(['helmet', 'armor', 'gloves', 'shoes'].map((sl) => ru.vsBreaksMarkOne('Penetration', sl))).toEqual([
+      'Встанет, если отметить Breakthrough T4 у Penetration-шлема.', 'Встанет, если отметить Breakthrough T4 у Penetration-брони.',
+      'Встанет, если отметить Breakthrough T4 у Penetration-перчаток.', 'Встанет, если отметить Breakthrough T4 у Penetration-ботинок.']);
+    expect(['helmet', 'gloves'].map((sl) => enUi.vsBreaksMarkOne('Penetration', sl)))
+      .toEqual(['Fits once the Penetration helmet is marked Breakthrough T4.', 'Fits once the Penetration gloves are marked Breakthrough T4.']);
+  });
+
+  it('тост двух и трёх убранных; строка про убранную — по имени сета или предмета', () => {
+    expect(ru.replacedMany('Caren', 'shoes', ['Speed', 'Immunity'])).toBe('Заменено: ботинки Caren — убраны прежние: Speed и Immunity.');
+    expect(ru.replacedMany('Caren', 'shoes', ['Speed', 'Attack', 'Immunity'])).toBe('Заменено: ботинки Caren — убраны прежние: Speed, Attack и Immunity.');
+    expect(enUi.replacedMany('Caren', 'shoes', ['Speed', 'Attack', 'Immunity'])).toBe("Replaced: Caren's boots — the old Speed, Attack and Immunity ones are removed.");
+    expect(ru.oldStill('shoes', 'Rin', 'Speed', 'Speed')).toBe('Speed-ботинки остались у Rin (в Speed).');
+    expect(ru.oldStill('armor', 'Rin', 'Speed', 'Speed')).toBe('Speed-броня осталась у Rin (в Speed).');
+    expect(ru.oldStill('weapon', 'Rin', 'Speed', 'Caracal')).toBe('Оружие Caracal осталось у Rin (в Speed).');
+    expect(ru.oldStill('shoes', 'Rin', 'Speed')).toBe('Старые остались у Rin (в Speed).');
+    expect(enUi.oldStill('shoes', 'Rin', 'Speed', 'Speed')).toBe('The Speed boots stay with Rin (in Speed).');
+    expect(enUi.oldStill('helmet', 'Rin', 'Speed')).toBe('The old helmet stays with Rin (in Speed).');
+  });
+
+  it('«Кому надеть?» при замене: «Заменить {шлем/броню/…} — соберёт / сет n из m / начнёт»', () => {
+    expect(ru.equipRowReplaceCompletes(ru.slotAcc.armor, 'Speed')).toBe('Заменить броню — соберёт Speed');
+    expect(ru.equipRowReplaceCloser(ru.slotAcc.gloves, 'Speed', 3, 4)).toBe('Заменить перчатки — Speed: сет 3 из 4');
+    expect(ru.equipRowReplaceStarts(ru.slotAcc.helmet, 'Speed, Speed/Immu')).toBe('Заменить шлем — начнёт Speed, Speed/Immu');
+    expect(enUi.equipRowReplaceCompletes(enUi.slotAcc.shoes, 'Speed')).toBe('Replace boots — completes Speed');
+    expect(enUi.equipRowReplaceStarts(enUi.slotAcc.armor, 'Speed')).toBe('Replace armor — starts Speed');
+  });
+
+  it('EN: «Are these … gloves?» / «Is this … helmet?»; где стоит вещь — «In {builds} and with {chars}»', () => {
+    expect([enUi.twinTitle('gloves', 'Caren'), enUi.twinTitle('shoes', 'Caren'), enUi.twinTitle('helmet', 'Caren')])
+      .toEqual(["Are these Caren's gloves?", "Are these Caren's boots?", "Is this Caren's helmet?"]);
+    expect(enUi.gearShared(enUi.pieceWhere('Speed, Speed/Immu', 'Rin'))).toBe('In Speed, Speed/Immu and with Rin — edits change it everywhere.');
+    expect(enUi.gearShared(enUi.pieceWhere('', 'Rin, Iota'))).toBe('With Rin, Iota — edits change it everywhere.');
+  });
+
+  it('подпись «Собираю», когда часть собирается из пула, а раскладка её не взяла — по имени персонажа', () => {
+    expect(ru.fillingReach('Speed ×4', 'Caren')).toBe('— Speed ×4 собирается из вещей Caren, но сейчас выгоднее без неё');
+    expect(enUi.fillingReach('Speed ×4', 'Caren')).toBe("— Speed ×4 can be made from Caren's pieces, but the layout is better without it");
   });
 });

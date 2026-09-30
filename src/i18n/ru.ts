@@ -21,6 +21,11 @@ const prep = (k: GearKind) => NOUN[k][2];
 const Gear = (k: GearKind) => (k === 'weapon' ? 'Оружие' : 'Аксессуар');
 // дробь для среднего: одна цифра после запятой, без «,0»
 const dec = (x: number) => String(Math.round(x * 10) / 10).replace('.', ',');
+// «сегмент» к числу dec: 1 сегмент, 2–4 сегмента, 5+ сегментов; дробное — «1,5 сегмента»
+const segWord = (x: number) => {
+  const r = Math.round(x * 10) / 10;
+  return Number.isInteger(r) ? plural(r, 'сегмент', 'сегмента', 'сегментов') : 'сегмента';
+};
 // слот в нужной форме (GEARPOOL): шлем — м. р., броня — ж. р., оружие — ср. р., перчатки и ботинки — мн. ч.
 type G = 'm' | 'f' | 'n' | 'p';
 const GENUS: Record<string, G> = { weapon: 'n', accessory: 'm', helmet: 'm', armor: 'f', gloves: 'p', shoes: 'p' };
@@ -30,6 +35,10 @@ const GEN: Record<string, string> = { weapon: 'оружия', accessory: 'акс
 const DAT: Record<string, string> = { weapon: 'оружию', accessory: 'аксессуару', helmet: 'шлему', armor: 'броне', gloves: 'перчаткам', shoes: 'ботинкам' };
 const ACC: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+// «A и B», «A, B и C»
+const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} и ${xs[xs.length - 1]}` : xs.join(''));
+// вещь по имени: броня — «Speed-ботинки», оружие и аксессуар — «Оружие Caracal»
+const named = (slot: string, what: string) => (slot === 'weapon' || slot === 'accessory' ? `${cap(NOM[slot])} ${what}` : `${what}-${NOM[slot]}`);
 // «в броню, перчатки или ботинки»
 const inSlots = (slots: string[]) => (slots.length ? 'в ' + (slots.length > 1 ? `${slots.slice(0, -1).map((x) => ACC[x]).join(', ')} или ${ACC[slots[slots.length - 1]]}` : ACC[slots[0]]) : '');
 const orSlots = (slots: string[]) => (slots.length > 1 ? `${slots.slice(0, -1).map((x) => ACC[x]).join(', ')} или ${ACC[slots[slots.length - 1]]}` : ACC[slots[0]] ?? '');
@@ -370,10 +379,13 @@ export const ru = {
     vsBreaksBy: (set: string, slot: string, pct: number, part: string) => `Лучше ${set}-${GEN[slot]} на ${pct}%, но встанет только вместо ${by(slot, 'него', 'неё', 'него', 'них')} — ${part} распадётся.`,
     vsBreaksFix: (set: string, t4: boolean, slots: string[]) => `Встанет, если найдёшь ещё ${set}-вещь${t4 ? ' на T4' : ''}: ${orSlots(slots)}.`,
     vsBreaksMark: (set: string) => `Встанет, если отметить Breakthrough T4 у двух ${set}-вещей.`,
+    // отметить одну: другая вещь сета уже на T4
+    vsBreaksMarkOne: (set: string, slot: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[slot]}.`,
     vsNoTrade: (set: string) => `Бонус ${set} в статах не выразить — ради статов его не ломаю.`,
-    vsNetGain: (part: string, segs: string, stat: string, slot: string) => `${part} распадётся (−${segs} сегмента ${stat}), но ${NOM[slot]} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} больше — в итоге выгоднее.`,
+    vsNetGain: (part: string, segs: number, stat: string, slot: string) => `${part} распадётся (−${dec(segs)} ${segWord(segs)} ${stat}), но ${NOM[slot]} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} больше — в итоге выгоднее.`,
     vsStatsOnly: (pct: number, slot: string, part: string) => `Только статы: +${pct}% к ${DAT[slot]}, но ${part} сломается — оставь как есть.`,
-    vsSetCost: (part: string, tier: string, bonus: string, segs: string, stat: string, slot: string) => `${part} на ${tier} — это +${bonus}, около ${segs} сегмента ${stat}. ${cap(NOM[slot])} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} меньше.`,
+    // bonus — текст сета из данных («Speed +13%»), segs — числом: запятую ставит dec
+    vsSetCost: (part: string, tier: string, bonus: string, segs: number, stat: string, slot: string) => `${part} на ${tier} — это ${bonus}, около ${dec(segs)} ${segWord(segs)} ${stat}. ${cap(NOM[slot])} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} меньше.`,
     vsBonusGain: (part: string, bonus: string) => `С ней: + ${part} — ${bonus}.`,
     vsBonusLost: (part: string, tier: string, bonus: string) => `Пропадёт: ${part} (${tier}) — ${bonus}.`,
     vsAlso: (builds: string, n: number) => `Пойдёт и в: ${builds} — ${n > 1 ? 'их' : 'его'} ты не собираешь.`,
@@ -414,6 +426,8 @@ export const ru = {
     filling: 'Собираю',
     fillingWhy: { done: '— собран', closest: '— ближе всех к сборке', prev: '— отмечен в прошлой версии', want: '', tryon: '', stats: '' } as Record<string, string>,
     fillingHalf: (part: string) => `— готова ${part}`,
+    // часть собирается из пула (достижимая сборка), а показанная раскладка ради статов её не взяла (Р1)
+    fillingReach: (part: string, name: string) => `— ${part} собирается из вещей ${name}, но сейчас выгоднее без неё`,
     fillingOff: 'не собираю — вещи для него не держат вердикт',
     chipsMore: (n: number) => `ещё ${n} ▾`,
     variantsTitle: (build: string, n: number) => `${build} · ${n} ${plural(n, 'связка', 'связки', 'связок')}`,
@@ -442,12 +456,19 @@ export const ru = {
     slotGen: { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' } as Record<string, string>,
     equipRowFill: (build: string) => `Надеть — пустой слот · ${build}`,
     equipRowReplace: (acc: string, build: string) => `Заменить ${acc} — новая лучше · ${build}`,
+    // «Надеть» заменит вещь её слота (poolVs replaces): подпись — действие
+    equipRowReplaceCompletes: (acc: string, build: string) => `Заменить ${acc} — соберёт ${build}`,
+    equipRowReplaceCloser: (acc: string, build: string, n: number, m: number) => `Заменить ${acc} — ${build}: сет ${n} из ${m}`,
+    equipRowReplaceStarts: (acc: string, builds: string) => `Заменить ${acc} — начнёт ${builds}`,
     equipRowWorn: (build: string) => `Уже есть — та же вещь в ${build}`,
     equipNote: 'Здесь — те, кому вещь встанет в билд. Не по билду — найди персонажа по имени: она встанет в «По статам».',
     equipped: (name: string, slot: string) => `Надето на ${name}: ${NOM[slot]}.`,
     replaced: (name: string, slot: string) => `Заменено: ${NOM[slot]} ${name}.`,
+    // убраны 2+ вещи её слота: olds — имя сета у брони, предмета у оружия и аксессуара
+    replacedMany: (name: string, slot: string, olds: string[]) => `Заменено: ${NOM[slot]} ${name} — убраны прежние: ${andList(olds)}.`,
     oldMaterial: (slot: string) => `Или отдай ${by(slot, 'его', 'её', 'его', 'их')} новой в Breakthrough.`,
-    oldStill: (slot: string, name: string, build: string) => `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${by(slot, 'остался', 'осталась', 'осталось', 'остались')} у ${name} (в ${build}).`,
+    // what — имя сета или предмета, когда убраны 2+ (replacedMany): «Speed-ботинки остались…» вместо «Старые…»
+    oldStill: (slot: string, name: string, build: string, what?: string) => `${what ? named(slot, what) : cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${by(slot, 'остался', 'осталась', 'осталось', 'остались')} у ${name} (в ${build}).`,
     sameAs: (name: string) => `Та же вещь, что у ${name}: Reforge и Breakthrough общие.`,
     // та же вещь уже на другом персонаже (logic/gear twinElsewhere): переносим, только если игрок подтвердил
     twinTitle: (slot: string, name: string) => `Это ${NOM[slot]} ${name}?`,
@@ -765,7 +786,7 @@ export const ru = {
       equipAll: 'Здесь — те, кому вещь встанет в билд. Не по билду, но с полезными статами — найди персонажа по имени: она встанет в его «По статам».',
       material: 'Фоддер, а не разбор: такая же вещь надета не на T4 — эта пойдёт ей на Breakthrough.',
       worn: 'Вещь неплохая, но всем, кому она подходит, уже надето не хуже — поэтому «Разобрать». Разобрал вещь в игре — убери её в карточке персонажа.',
-      pool: 'Все вещи персонажа из инвентаря — на нём, на других или ни на ком. Билды берут из них сами. Разобрал вещь или пустил на Breakthrough — убери её здесь.',
+      pool: 'Все вещи персонажа — надетые на этого персонажа, на других или ни на ком. Билды берут из них сами. Разобрал вещь или пустил на Breakthrough — убери её здесь.',
       want: 'Не собираешь этот билд — выключи «Собираю»: вещи для него перестанут держать вердикт.',
       variants: 'У билда несколько связок сетов — показываю самую собранную. Другие — в чипах, «ещё N» — весь список.',
       stats: '«По статам» — все вещи персонажа по цепочке, без сетов. Вещь не по билду встаёт сюда: «Надеть на…» → поиск по имени или примерка.',

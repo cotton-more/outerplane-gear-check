@@ -246,7 +246,7 @@ describe('«Надеть»: что уходит из пула и что пише
 
   // Def: три Defense-вещи + Attack-ботинки не по связке; Def/Immu: Defense ×2 + слабые Immunity-ботинки. Сильные
   // Immunity-ботинки лучше обеих — в Def вместо Attack, в Def/Immu вместо слабой Immunity
-  it('две вещи её слота ушли — «Заменено: ботинки», обе вне пула; «Вернуть» — обе обратно', async () => {
+  it('две вещи её слота ушли — «Заменено: ботинки — убраны прежние: Attack и Immunity», обе вне пула; «Вернуть» — обе обратно', async () => {
     const def = set('Defense');
     const pcs = [
       P('p1', 'helmet', def, { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', def, { 'DEF%': 2, CHC: 2 }), P('p3', 'gloves', def, { 'DEF%': 2, CHC: 2 }),
@@ -255,7 +255,7 @@ describe('«Надеть»: что уходит из пула и что пише
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's boots");
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed.");
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p6']);
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools[caren.id].sort()).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
@@ -264,6 +264,21 @@ describe('«Надеть»: что уходит из пула и что пише
   // Р1: Speed/Immu — Immunity-шлем и броня + Speed-перчатки и ботинки на T4. Сильные Immunity-ботинки ломают Speed ×2
   // ради статов, но Speed/Immu собирается из вещей Caren — Speed-ботинки остаются
   // было: кнопка «Заменить ботинки» (Speed-ботинки вытеснены в показанной сборке), а тост «Надето» — теперь одно и то же
+  it('две ушли, одна из них — и у Kappa: в строке про неё имя сета, а не «The old»', async () => {
+    const def = set('Defense');
+    const pcs = [
+      P('p1', 'helmet', def, { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', def, { 'DEF%': 2, CHC: 2 }), P('p3', 'gloves', def, { 'DEF%': 2, CHC: 2 }),
+      P('p4', 'shoes', set('Attack'), { 'DEF%': 2, CHC: 2 }), P('p5', 'shoes', set('Immunity'), JUNK),
+    ];
+    const pools = { [caren.id]: pcs.map((p) => p.id as string), [kappa.id]: ['p4'] };
+    await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, pools) });
+    await click($('.vc-equip'));
+    const toast = $('.gear-toast')?.textContent ?? '';
+    expect(toast).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed.");
+    expect(toast).toMatch(/The Attack boots stay with Kappa \(in [^)]+\)\./);
+    expect(toast).not.toContain('The old');
+  });
+
   it('Р1: новая ломает сет-стат ради статов — прежняя вещь её слота остаётся: «Надеть на Caren» → «Надето»', async () => {
     const pcs = [
       P('p1', 'helmet', set('Immunity'), { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', set('Immunity'), { 'DEF%': 2, CHC: 2 }),
@@ -425,7 +440,8 @@ describe('«Сейчас на персонажах»', () => {
   });
 
   // Р2, находка 22: у Luna четыре Pen без отметки Breakthrough — Pen ×4 на T0; Attack-шлем «ломает» именно его
-  it('Luna, 4 Pen без T4 + Attack-перчатки и ботинки: Attack-шлем — «Penetration ×4 falls apart», совет отметить T4, кнопки нет', async () => {
+  // у Pen-шлема полезных нет: процента «лучше на 150750%» нет — «полезных нет», а распадается Pen ×4 — строкой «Lost»
+  it('Luna, 4 Pen без T4 + Attack-перчатки и ботинки: Attack-шлем — Penetration ×4 пропадёт, совет отметить T4, кнопки нет', async () => {
     const luna = char('Demiurge Luna'), pen = set('Penetration'), atk = set('Attack');
     const strong = { 'ATK%': 6, CHC: 6, CHD: 6, SPD: 6 };
     const pcs = [
@@ -436,12 +452,14 @@ describe('«Сейчас на персонажах»', () => {
     await click($('.vcard'));
     const row = byText('.v-vs .vs-row', 'Demiurge Luna')!;
     expect(row.querySelector('.vs')?.textContent).toBe('breaks a set');
-    expect(row.textContent).toContain('Penetration ×4 falls apart');
+    expect(row.textContent).toContain('The one on has nothing useful');
+    expect(row.textContent).not.toMatch(/\d{4,}%/);
+    expect(row.textContent).toContain('Lost: Penetration ×4 (T0–T3) — Penetration +20%.');
     expect(row.textContent).toContain('Fits once two Penetration pieces are marked Breakthrough T4.');
     expect(row.querySelector('.vs-act')).toBeNull();
   });
 
-  it('Luna, одна из четырёх Pen на T4: Attack-шлем — «ломает», строки «у двух» нет (хватает одной вещи)', async () => {
+  it('Luna, одна из четырёх Pen на T4: Attack-шлем — «ломает», совет отметить T4 у одной вещи, не «у двух»', async () => {
     const luna = char('Demiurge Luna'), pen = set('Penetration'), atk = set('Attack');
     const strong = { 'ATK%': 6, CHC: 6, CHD: 6, SPD: 6 };
     const pcs = [
@@ -454,6 +472,7 @@ describe('«Сейчас на персонажах»', () => {
     expect(row.querySelector('.vs')?.textContent).toBe('breaks a set');
     expect(row.textContent).not.toContain('two Penetration pieces');
     expect(row.textContent).not.toContain('Fits once you find');
+    expect(row.textContent).toMatch(/Fits once the Penetration (gloves|boots) are marked Breakthrough T4\./);
   });
 
   it('после переноса v1: Ame собирает DPS speed (Caracal) — Pen-вещь исхода не даёт, только «начнёт собираться»', async () => {
@@ -509,6 +528,25 @@ describe('«Кому надеть?»', () => {
     await click($('.v-equip'));
     expect($$('.equip-row')).toHaveLength(0);
     expect($('.equip .muted')?.textContent).toBe('It gives no build anything. Search a character by name — with useful stats it goes into their "By stats".');
+  });
+
+  // «Надеть» уберёт вещь её слота — подпись = действие: «Заменить ботинки — соберёт Speed», «…— Speed: сет 3 из 4»
+  it('замена, а вещь соберёт билд — «Replace boots — completes Speed»', async () => {
+    const junk = { RES: 1, EFF: 1, HP: 1 }, ok = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
+    const pcs = [P('p1', 'helmet', speed, ok), P('p2', 'armor', speed, ok), P('p3', 'gloves', speed, ok), P('p4', 'shoes', set('Attack'), junk)];
+    await mount({ slot: 'shoes', grade: 'unique' }, { setId: speed, subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace boots — completes Speed');
+  });
+
+  it('замена, а вещь продвинет сет — «Replace gloves — Speed: set 3 of 4»', async () => {
+    const junk = { RES: 1, EFF: 1, HP: 1 }, ok = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
+    const pcs = [P('p1', 'helmet', speed, ok), P('p2', 'armor', speed, ok), P('p3', 'gloves', set('Attack'), junk)];
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: speed, subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace gloves — Speed: set 3 of 4');
   });
 
   it('такая же вещь уже у Caren — строка «Уже есть» не нажимается: Reforge и Breakthrough записи остаются', async () => {
@@ -608,7 +646,7 @@ describe('карточка персонажа', () => {
     expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
   });
 
-  it('Р1: подпись «Собираю» — по показанной раскладке: Speed собирается, но не «готова Speed ×4», пока в перчатках Immunity', async () => {
+  it('Р1: подпись «Собираю» — по показанной раскладке: не «готова Speed ×4», пока в перчатках Immunity, а «собирается из вещей Caren»', async () => {
     const imm = set('Immunity');
     const pieces = [
       P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { bt: 4 }), P('p2', 'armor', speed, { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }, { bt: 4 }),
@@ -618,7 +656,7 @@ describe('карточка персонажа', () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
     await click($$('.btabs button').find((b) => /^Speed\d/.test(b.textContent ?? '')));
     expect($('.want-row .want-btn')?.getAttribute('aria-pressed')).toBe('true');
-    expect($('.want-row .muted')?.textContent).toBe('');
+    expect($('.want-row .muted')?.textContent).toBe("— Speed ×4 can be made from Caren's pieces, but the layout is better without it");
   });
 
   it('Р14: Def/Immu начат одной Immunity-вещью — «Собираю» включён, но не «ближе всех к сборке» (ближе Speed ×4)', async () => {
@@ -646,7 +684,7 @@ describe('карточка персонажа', () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
     await click($('.bgear-row'));
-    expect($('.piece')?.textContent).toContain('In Speed, Speed/Immu, Kappa has it too — edits change it everywhere.');
+    expect($('.piece')?.textContent).toContain('In Speed, Speed/Immu and with Kappa — edits change it everywhere.');
     await click(byText('.piece-act .btn', 'Remove from Caren'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'] });
     expect($('.gear-toast')?.textContent).toContain('Removed from Caren.');
@@ -657,6 +695,16 @@ describe('карточка персонажа', () => {
     await click($('.bgear-row'));
     await click(byText('.piece-act .btn', 'Dismantled — remove everywhere'));
     expect(stored()).toMatchObject({ pools: {}, pieces: {} });
+  });
+
+  it('лист вещи в одном билде, только у Caren: «правка изменит везде» нет — вещь не общая', async () => {
+    const helm = P('p1', 'helmet', set('Penetration'), { 'DEF%': 2, CHC: 1 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
+    expect(byText('.pool-row', 'in Pen')).toBeTruthy();
+    await click($('.bgear-row'));
+    const text = $('.piece')?.textContent ?? '';
+    expect(text).not.toContain('edits change it everywhere');
+    expect(text).not.toContain('In no build');
   });
 
   it('разовая подсказка после переноса: закрыл — ключ удалён', async () => {
