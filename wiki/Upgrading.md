@@ -61,6 +61,6 @@ weapons and accessories). The dice shows up on "Dismantle", "Maybe" and "Stopgap
 It's the same evaluation, with the new stat at one segment. In the game the 4th has come with one yellow segment, but
 it may come with more — and more segments only improve the verdict, so the dice shows an "at least" chance. The stamp
 doesn't change: it's about what happens if you do nothing. If with some 4th the piece still wouldn't improve anyone —
-everyone it suits already wears as good or better ([Equipment](Equipment)) — the dice doesn't count that 4th. Got
+it gives nothing to anyone it suits ([Equipment](Equipment)) — the dice doesn't count that 4th. Got
 another stat — mark it with its segments as in the game: the verdict updates. Legendary never gets a dice: it has 4
 substats from the start, and Reforge adds a segment to a random one of them.

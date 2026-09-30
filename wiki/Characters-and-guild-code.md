@@ -9,9 +9,15 @@ accessory with the main stat, substat priority with a flat/% hint, talismans, a 
 roster; with "only my characters" checked, the evaluation considers only them. A link like `…/#demiurge-stella` opens
 a character directly.
 
-Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster holds only one
-of them. Star Core Fusion Eternal and Eternal leaves the roster (a message with "Undo"); Eternal isn't added while
-Core Fusion Eternal is in it. Importing a gear code adds everyone who has gear to the roster.
+Only roster characters have gear: "Equip" adds the character to the roster, importing a gear code adds everyone who
+has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,
+remove" — a message with "Undo".
+
+Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster never holds
+both. Star Core Fusion Eternal — a window: Eternal's gear moves to Core Fusion Eternal, and Eternal turns inactive.
+Inactive Eternal sits in the list right after Core Fusion Eternal, marked "replaced by Core Fusion Eternal", and the
+verdict doesn't consider Eternal. The star on Eternal switches back — through a window too. After "Yes" — a message
+with "Undo". More — [Equipment](Equipment#core-fusion).
 
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/6-character.png" width="360" alt="Character card with outerpedia builds">
 
