@@ -516,6 +516,7 @@ export const ru = {
     gearCodeTour: 'Код экипировки — после обучения: пока оно идёт, на странице пример, а не твои вещи.',
     gearApplied: (n: number) => `Экипировка загружена: вещей ${n}.`,
     gearRosterAdded: (names: string) => `В ростер добавлены: ${names}.`,
+    rosterKeptGear: (names: string) => `Оставлены в ростере — у них есть вещи: ${names}.`,
     // окно перехода Core Fusion (App): кто кого заменил в ростере; «Вещи … перешли к …» — fusionGear
     fusionReplaces: (fusion: string, base: string) => `${fusion} заменяет ${base} в ростере.`,
     // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (logic/fusion normalizeFusion)

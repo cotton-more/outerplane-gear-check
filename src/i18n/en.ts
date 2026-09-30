@@ -450,6 +450,7 @@ export const en: Texts = {
     gearCodeTour: 'The gear code is here after the tutorial: while it runs, the page shows an example, not your gear.',
     gearApplied: (n) => `Equipment loaded: ${n} pieces.`,
     gearRosterAdded: (names) => `Added to the roster: ${names}.`,
+    rosterKeptGear: (names) => `Kept in the roster — they have gear: ${names}.`,
     fusionReplaces: (fusion, base) => `${fusion} replaces ${base} in the roster.`,
     fusionFixed: (base, how) =>
       `Core Fusion ${base} kept in the roster: ${base} is replaced${how === 'moved' ? `, their gear moved to Core Fusion ${base}` : how === 'removed' ? ', their gear removed' : ''}.`,

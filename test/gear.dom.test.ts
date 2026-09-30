@@ -932,6 +932,42 @@ describe('вещи только у героев ростера (Р16)', () => {
     expect(roster()).toEqual([kappa.id, rin.id, caren.id]);
   });
 
+  // шаг 13б (владелец 2026-09-30): кого оставили из-за вещей — строкой в тосте; никого — тоста нет
+  describe('кого оставили из-за вещей — в тосте', () => {
+    const carenOnly = () => G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] });
+
+    it('«Очистить ростер»: Rin без вещей убрана, Caren с вещами осталась, в тосте строка с Caren', async () => {
+      await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: carenOnly() });
+
+      await click(byText('.roster-bar .linkbtn', 'clear'));
+      await click(byText('.roster-bar .linkbtn', 'tap again'));
+
+      expect({ roster: roster(), toast: $('.gear-toast span')?.textContent, buttons: $$('.gear-toast button').length })
+        .toEqual({ roster: [caren.id], toast: 'Kept in the roster — they have gear: Caren.', buttons: 0 });
+    });
+
+    it('код ростера «Заменить»: Rin убрана, Caren осталась после героев кода, в тосте строка с Caren', async () => {
+      await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: carenOnly() });
+      await click(byText('.roster-bar .linkbtn', 'export'));
+      const ta = $('#roster-code') as HTMLTextAreaElement;
+      ta.value = 'kappa';
+
+      await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+
+      expect({ roster: roster(), toast: $('.gear-toast span')?.textContent })
+        .toEqual({ roster: [kappa.id, caren.id], toast: 'Kept in the roster — they have gear: Caren.' });
+    });
+
+    it('«Очистить ростер» без героев с вещами — тоста нет', async () => {
+      await mount({ tab: 'chars' }, {}, { roster: [rin.id, kappa.id], gear: G([], {}) });
+
+      await click(byText('.roster-bar .linkbtn', 'clear'));
+      await click(byText('.roster-bar .linkbtn', 'tap again'));
+
+      expect({ roster: roster(), toast: $('.gear-toast') }).toEqual({ roster: [], toast: null });
+    });
+  });
+
   it('«Вернуть» после «Да» точен и когда хранилище за время тоста перечитали (вернулись на страницу)', async () => {
     // у Rin — первая запись, своя у Caren — вторая: смысловое «Вернуть» поставило бы её первой среди записей
     const gear = G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [rin.id]: ['p1'], [caren.id]: ['p1', 'p2'] },

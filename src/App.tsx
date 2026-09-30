@@ -199,7 +199,8 @@ export function App() {
   // только ростер. Так ростер в туре не расходится с вещами игрока (вещи — только у героев ростера)
   const rosterBatch = (ids: string[]) => {
     const prev = rosterApi.list(), st = gear.store, real = realStore();
-    const next = [...ids, ...prev.filter((id) => !ids.includes(id) && real.pools[id]?.length)];
+    const held = prev.filter((id) => !ids.includes(id) && real.pools[id]?.length);
+    const next = [...ids, ...held];
     if (touring) {
       const r = normalizeStored(idx, next, real);
       if (r.st === real) rosterApi.replace(r.roster);
@@ -208,11 +209,17 @@ export function App() {
     const r = normalizeStored(idx, next, st);
     rosterApi.replace(r.roster);
     if (r.st !== st) gear.set(r.st);
-    if (!r.fixes.length) return;
+    // «Очистить», «Заменить» кодом: кого оставили из-за вещей — строкой (к сообщению Core Fusion, если оно есть)
+    const kept = held.filter((id) => r.roster.includes(id)).map(charName).join(', ');
+    const keptNote = kept ? t.ui.rosterKeptGear(kept) : '';
+    if (!r.fixes.length) {
+      if (keptNote) setGearUndo({ text: keptNote, note: '', tab: 'chars' });
+      return;
+    }
     // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище
     const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
       : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
-    setGearUndo({ text: fixesNote(r.fixes), note: '', tab: 'chars', undo, after: rosterBack(prev, r.roster) });
+    setGearUndo({ text: fixesNote(r.fixes), note: keptNote, tab: 'chars', undo, after: rosterBack(prev, r.roster) });
   };
   // окна перехода (в): звезда, «Надеть», примерка на CF, когда есть X (или на X, когда есть CF). then — действие после «Да»
   // на хранилище после перехода; нет конфликта — false, действие идёт сразу. В обучении окон нет — как пакетное

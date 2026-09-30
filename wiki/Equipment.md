@@ -111,7 +111,8 @@ Caren"**. The app never deletes anything silently.
 importing a gear code and starting the app add everyone who has gear. Unstar Caren while Caren has gear — a window
 "Remove Caren from the roster? Caren's gear (N) is removed from the app.": "Yes, remove" — the message "Caren is out of
 the roster." with "Undo", "Cancel" — nothing. A shared piece ("Same piece — Caren too") stays with Rin. "Clear roster"
-and "Replace" with a roster code keep characters who have gear.
+and "Replace" with a roster code keep characters who have gear — message "Kept in the roster — they have
+gear: Caren.".
 
 Tap a piece to update it after upgrading in the game:
 - **segments** — yellow from the evaluation; tap further to add orange ones after Reforge. Tapping a yellow one lowers
