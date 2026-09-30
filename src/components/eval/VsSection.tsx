@@ -97,11 +97,14 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
       if (o.brokenSegs && lost[0]?.bon.stat) out.push(t.ui.vsNetGain(partText(idx, { set: o.broken, n: lost[0].n }), dec(o.brokenSegs), subLabel(lost[0].bon.stat), o.worn.slot));
     }
   } else if (o.kind === 'breaks' && o.broken && o.worn) {
-    const part = o.v.b.sets[0]?.find((p) => p.set === o.broken) ?? { set: o.broken, n: 2 };
+    // распадается то, чей бонус теряется (Pen ×4 на T0 у Luna, а не часть связки Pen ×2), иначе — часть связки
+    const lost = o.lostBonus.filter((r) => r.set === o.broken).sort((a, z) => z.n - a.n)[0];
+    const part = lost ? { set: o.broken, n: lost.n } : o.v.b.sets[0]?.find((p) => p.set === o.broken) ?? { set: o.broken, n: 2 };
     const pct = Math.round((o.pair?.delta ?? 0) * 100);
     out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pct, partText(idx, part)));
-    if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
-    const lost = o.lostBonus.find((r) => r.set === o.broken);
+    // отметить одну вещь (другая уже на T4) — строки пока нет: «у двух» было бы неверно
+    if (o.fix?.mark) { if (o.fix.slots.length === 2) out.push(t.ui.vsBreaksMark(setName(idx, o.fix.set))); }
+    else if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
     if (lost?.bon.stat && o.brokenSegs) {
       out.push(t.ui.vsSetCost(partText(idx, part), lost.tier, bonusText(idx, lost), dec(o.brokenSegs), subLabel(lost.bon.stat), o.worn.slot));
     } else dim.push(t.ui.vsNoTrade(setName(idx, o.broken)));

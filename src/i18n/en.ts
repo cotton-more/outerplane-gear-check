@@ -327,6 +327,7 @@ export const en: Texts = {
     vsSafe: (build) => `Leaves ${build} as is.`,
     vsBreaksBy: (set, slot, pct, part) => `${pct}% better than the ${set} ${SLOT_EN[slot]}, but fits only in ${plEn(slot) ? 'their' : 'its'} place — ${part} falls apart.`,
     vsBreaksFix: (set, t4, slots) => `Fits once you find another ${set} piece${t4 ? ' at T4' : ''}: ${orSlotsEn(slots)}.`,
+    vsBreaksMark: (set) => `Fits once two ${set} pieces are marked Breakthrough T4.`,
     vsNoTrade: (set) => `The ${set} bonus isn't a stat — not traded for stats.`,
     vsNetGain: (part, segs, stat, slot) => `${part} falls apart (−${segs} ${stat} segments), but the ${SLOT_EN[slot]} ${plEn(slot) ? 'add' : 'adds'} more — a net gain.`,
     vsStatsOnly: (pct, slot, part) => `Stats only: +${pct}% over the ${SLOT_EN[slot]}, but ${part} breaks — leave it.`,

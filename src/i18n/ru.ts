@@ -368,6 +368,7 @@ export const ru = {
     vsSafe: (build: string) => `${build} она не тронет.`,
     vsBreaksBy: (set: string, slot: string, pct: number, part: string) => `Лучше ${set}-${GEN[slot]} на ${pct}%, но встанет только вместо ${by(slot, 'него', 'неё', 'него', 'них')} — ${part} распадётся.`,
     vsBreaksFix: (set: string, t4: boolean, slots: string[]) => `Встанет, если найдёшь ещё ${set}-вещь${t4 ? ' на T4' : ''}: ${orSlots(slots)}.`,
+    vsBreaksMark: (set: string) => `Встанет, если отметить Breakthrough T4 у двух ${set}-вещей.`,
     vsNoTrade: (set: string) => `Бонус ${set} в статах не выразить — ради статов его не ломаю.`,
     vsNetGain: (part: string, segs: string, stat: string, slot: string) => `${part} распадётся (−${segs} сегмента ${stat}), но ${NOM[slot]} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} больше — в итоге выгоднее.`,
     vsStatsOnly: (pct: number, slot: string, part: string) => `Только статы: +${pct}% к ${DAT[slot]}, но ${part} сломается — оставь как есть.`,

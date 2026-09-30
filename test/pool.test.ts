@@ -7,7 +7,7 @@ import { createIndex } from '../src/data';
 import type { ArmorSlot, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
-import { assemble, assembleReach, entriesFor, isStats, play, poolView, putOn, statVariant, type Assembly, type PoolStore } from '../src/logic/pool';
+import { assemble, assembleReach, entriesFor, isStats, outcomeFor, play, poolView, putOn, statVariant, type Assembly, type PoolStore } from '../src/logic/pool';
 import type { Subs } from '../src/logic/subs';
 import type { ItemInput } from '../src/logic/verdict';
 import { variantsOf, type Variant } from '../src/logic/variants';
@@ -230,6 +230,94 @@ describe('«собираешь» по тому, что можно собрать
     expect(names(cp.inPlay)).toEqual(expect.arrayContaining(['Speed', 'Speed/Immu']));
     expect(cp.unused).toEqual([]);
     expect(cp.pieces.map((p) => p.id)).toEqual(expect.arrayContaining(ids)); // «Надеть» не убрал ни одной Speed-вещи
+  });
+});
+
+// Р2 (находка 4): Pen ×2 без T4 бонуса не даёт, поэтому четыре Pen без отметки Breakthrough — раскладка Pen ×4 (сет-эффект
+// ради статов не ломается). Вещи части, которая собралась бы при двух Pen на T4, пул держит: достижимая сборка (Р1)
+// считает вещи на связку, не глядя на T4. Новая вещь этой части «ломает» — совет отметить T4 у двух Pen
+describe('Pen mix без T4 (Р2)', () => {
+  const luna = char('Demiurge Luna');
+  const pma = variantsOf(idx, luna).find((x) => x.parent.name === 'Pen mix' && x.b.sets[0].some((p) => p.set === set('Attack')))!;
+  const STRONG: Subs = { 'ATK%': 6, CHC: 6, CHD: 6, SPD: 6 };
+  const ARM: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
+  const store = (c: { id: string }, pieces: Piece[]): PoolStore => ({ pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [c.id]: pieces.map((p) => p.id) } });
+  const lunaPool = (bt: Bt | null = null) => {
+    const pen = ARM.map((s) => P(s, 'Penetration', JUNK, bt));
+    const atk = [P('gloves', 'Attack', STRONG), P('shoes', 'Attack', STRONG)];
+    return { pen, atk, pieces: [...pen, ...atk] };
+  };
+  const HELMET: ItemInput = { slot: 'helmet', grade: 'unique', setId: set('Attack'), itemKey: null, main: null, subs: { 'ATK%': 4, CHC: 4, CHD: 3, SPD: 3 } };
+
+  it('раскладка по решению: Pen ×4 на T0 держится; при двух Pen на T4 — Pen, Pen, Attack, Attack', () => {
+    const { pen, atk, pieces } = lunaPool();
+    expect(sets(asm(pma, pieces, luna))).toEqual(['Penetration', 'Penetration', 'Penetration', 'Penetration']);
+    const t4 = pen.map((p, i) => (i < 2 ? { ...p, bt: 4 as Bt } : p));
+    expect(sets(asm(pma, [...t4, ...atk], luna))).toEqual(['Penetration', 'Penetration', 'Attack', 'Attack']);
+  });
+
+  it.each([
+    ['Demiurge Luna', 'Pen mix · Attack', 'Attack'], ['Heatwave Cop Delta', 'DPS · Penetration ×2 + Attack ×2', 'Attack'], ['Core Fusion Lisha', 'Pen combos · Speed', 'Speed'],
+  ])('%s · %s: 4 Pen без отметки Breakthrough + 2 %s — вещи второй половины не ненужные, достижимая собирает связку', (who, vname, other) => {
+    const c = char(who), v = variant(who, vname);
+    const pieces = [...ARM.map((s) => P(s, 'Penetration', JUNK)), P('gloves', other, STRONG), P('shoes', other, STRONG)];
+    const cp = poolView(ctx, store(c, pieces)).of(c.id)!;
+    expect(cp.unused).toEqual([]);
+    expect(cp.reach.get(v.key)!.missing).toEqual([]);
+  });
+
+  it('новая Attack-вещь «ломает» Pen ×4 — совет: отметить T4 у двух Pen не в её слоте; надеть нельзя', () => {
+    const { pieces } = lunaPool();
+    const o = outcomeFor(ctx, poolView(ctx, store(luna, pieces)), luna.id, HELMET)!;
+    const r = o.rows.find((x) => x.v.key === pma.key)!;
+    expect(r).toMatchObject({ kind: 'breaks', used: false, broken: set('Penetration'), fix: { set: set('Penetration'), t4: true, mark: true } });
+    expect(r.fix!.slots).toHaveLength(2);
+    expect(r.fix!.slots).not.toContain('helmet');
+    expect(o.useful).toBe(false);
+  });
+
+  it('совет верный: те две Pen на T4 — и Attack-шлем встаёт', () => {
+    const { pieces } = lunaPool();
+    const r = outcomeFor(ctx, poolView(ctx, store(luna, pieces)), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
+    const marked = pieces.map((p) => (p.setId === set('Penetration') && r.fix!.slots.includes(p.slot as ArmorSlot) ? { ...p, bt: 4 as Bt } : p));
+    const a = assemble(ctx, luna, pma, entriesFor(ctx, luna, pma, marked, HELMET));
+    expect(a.slots.helmet?.id).toBeNull();
+    expect(sets(a)).toEqual(ARM.map((s) => (r.fix!.slots.includes(s as ArmorSlot) ? 'Penetration' : 'Attack')));
+    expect([a.live, a.soft]).toEqual([1, 1]);
+  });
+
+  it('четыре Pen на T0 известно (bt 0) — тоже совет про T4: без него Attack-шлем не встанет', () => {
+    const { pieces } = lunaPool(0);
+    const r = outcomeFor(ctx, poolView(ctx, store(luna, pieces)), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
+    expect(r.fix).toMatchObject({ mark: true });
+  });
+
+  it('одна Pen уже на T4 (броня) — отметить хватает одной вещи: совет называет только её, не ту, что на T4', () => {
+    const { pen, atk } = lunaPool();
+    const pcs = pen.map((p) => (p.slot === 'armor' ? { ...p, bt: 4 as Bt } : p));
+    const r = outcomeFor(ctx, poolView(ctx, store(luna, [...pcs, ...atk])), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
+    expect(r).toMatchObject({ kind: 'breaks', fix: { mark: true } });
+    expect(r.fix!.slots).toHaveLength(1);
+    expect(r.fix!.slots).not.toContain('armor');
+  });
+
+  // совет «отметить» — только для сета-эффекта ×4 (Р2); сет-стат ×2 только на T4 (Speed) — прежний совет «найди ещё»
+  it('Caren · Speed/Immu: Immunity-перчатки ломают Speed ×2 на T4 — прежний совет «ещё Speed-вещь на T4: шлем или броня», не «отметить»', () => {
+    const pcs = [
+      P('helmet', 'Immunity', JUNK), P('armor', 'Immunity', JUNK), P('gloves', 'Speed', { 'DEF%': 2, CHC: 2 }, 4), P('shoes', 'Speed', JUNK, 4),
+      P('helmet', 'Speed', JUNK), P('armor', 'Speed', JUNK, 0),
+    ];
+    const v = variant('Caren', 'Speed/Immu');
+    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Immunity'), itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 2, CHD: 1 } };
+    const r = outcomeFor(ctx, poolView(ctx, store(caren, pcs)), caren.id, x)!.rows.find((y) => y.v.key === v.key)!;
+    expect(r).toMatchObject({ kind: 'breaks', broken: set('Speed'), fix: { set: set('Speed'), slots: ['helmet', 'armor'], t4: true, mark: false } });
+  });
+
+  it('две Pen уже на T4 (шлем и броня) — совета «отметь» нет: Attack-шлем вытеснил бы Pen на T4', () => {
+    const { pen, atk } = lunaPool();
+    const t4 = pen.map((p, i) => (i < 2 ? { ...p, bt: 4 as Bt } : p));
+    const r = outcomeFor(ctx, poolView(ctx, store(luna, [...t4, ...atk])), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
+    expect(r.fix?.mark ?? false).toBe(false);
   });
 });
 

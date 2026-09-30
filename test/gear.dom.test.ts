@@ -328,6 +328,38 @@ describe('«Сейчас на персонажах»', () => {
     expect($('.v-vs .vs-row')?.textContent).toContain('the passive matters more than substats');
   });
 
+  // Р2, находка 22: у Luna четыре Pen без отметки Breakthrough — Pen ×4 на T0; Attack-шлем «ломает» именно его
+  it('Luna, 4 Pen без T4 + Attack-перчатки и ботинки: Attack-шлем — «Penetration ×4 falls apart», совет отметить T4, кнопки нет', async () => {
+    const luna = char('Demiurge Luna'), pen = set('Penetration'), atk = set('Attack');
+    const strong = { 'ATK%': 6, CHC: 6, CHD: 6, SPD: 6 };
+    const pcs = [
+      ...['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('p' + (i + 1), sl, pen, { RES: 1, EFF: 1, HP: 1 })),
+      P('p5', 'gloves', atk, strong), P('p6', 'shoes', atk, strong),
+    ];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: atk, subs: { 'ATK%': 4, CHC: 4, CHD: 3, SPD: 3 } }, { gear: G(pcs, { [luna.id]: pcs.map((p) => p.id as string) }), roster: [luna.id] });
+    await click($('.vcard'));
+    const row = byText('.v-vs .vs-row', 'Demiurge Luna')!;
+    expect(row.querySelector('.vs')?.textContent).toBe('breaks a set');
+    expect(row.textContent).toContain('Penetration ×4 falls apart');
+    expect(row.textContent).toContain('Fits once two Penetration pieces are marked Breakthrough T4.');
+    expect(row.querySelector('.vs-act')).toBeNull();
+  });
+
+  it('Luna, одна из четырёх Pen на T4: Attack-шлем — «ломает», строки «у двух» нет (хватает одной вещи)', async () => {
+    const luna = char('Demiurge Luna'), pen = set('Penetration'), atk = set('Attack');
+    const strong = { 'ATK%': 6, CHC: 6, CHD: 6, SPD: 6 };
+    const pcs = [
+      ...['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('p' + (i + 1), sl, pen, { RES: 1, EFF: 1, HP: 1 }, sl === 'armor' ? { bt: 4 } : {})),
+      P('p5', 'gloves', atk, strong), P('p6', 'shoes', atk, strong),
+    ];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: atk, subs: { 'ATK%': 4, CHC: 4, CHD: 3, SPD: 3 } }, { gear: G(pcs, { [luna.id]: pcs.map((p) => p.id as string) }), roster: [luna.id] });
+    await click($('.vcard'));
+    const row = byText('.v-vs .vs-row', 'Demiurge Luna')!;
+    expect(row.querySelector('.vs')?.textContent).toBe('breaks a set');
+    expect(row.textContent).not.toContain('two Penetration pieces');
+    expect(row.textContent).not.toContain('Fits once you find');
+  });
+
   it('после переноса v1: Ame собирает DPS speed (Caracal) — Pen-вещь исхода не даёт, только «начнёт собираться»', async () => {
     const ame = char('Mystic Sage Ame');
     const caracal = D.weapons.find((w) => w.name.startsWith('Rampaging Caracal') && w.star === 6)!;

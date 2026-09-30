@@ -120,7 +120,7 @@ describe('исход вещи с формы: повтор vs.test', () => {
     it('2+2: Speed-шлем вместо Immunity ломает Immunity ×2 — и где вторая Immunity это исправит', () => {
       const pieces = [['helmet', 'Immunity'], ['armor', 'Immunity'], ['gloves', 'Speed'], ['shoes', 'Speed']].map(([slot, s]) => rec(armor(slot as SlotId, s, { CHC: 1 })));
       const r = row(pieces, NEW, 'Speed/Immu')!;
-      expect(r).toMatchObject({ kind: 'breaks', broken: set('Immunity'), used: false, fix: { set: set('Immunity'), slots: ['gloves', 'shoes'], t4: false } });
+      expect(r).toMatchObject({ kind: 'breaks', broken: set('Immunity'), used: false, fix: { set: set('Immunity'), slots: ['gloves', 'shoes'], t4: false, mark: false } });
       // иначе: Immunity-ботинки вместо Speed — Speed ×2 распадётся, но на T0 у него бонуса нет: итог выгоднее — «лучше»
       expect(row(pieces, armor('shoes', 'Immunity', { CHC: 2 }), 'Speed/Immu')).toMatchObject({ kind: 'up', used: true, broken: set('Speed') });
     });

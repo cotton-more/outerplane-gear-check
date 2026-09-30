@@ -383,7 +383,9 @@ export interface Outcome {
   worn: Entry | null;         // что сейчас в её слоте
   displaced: Entry[];         // что уходит из сборки
   broken: string | null;      // сет, который распадётся: в «ломает» — поэтому не встала; в «лучше» — распадётся, но выгодно
-  fix: { set: string; slots: ArmorSlot[]; t4: boolean } | null; // «ломает»: ещё одна вещь этого сета в эти слоты — встанет
+  // «ломает»: ещё одна вещь этого сета в эти слоты — встанет; mark — не новая вещь, а Breakthrough T4 у вещей сета
+  // из пула (slots — где они, одна или две): Pen mix без T4, Р2
+  fix: { set: string; slots: ArmorSlot[]; t4: boolean; mark: boolean } | null;
   t4: { set: string; n: number } | null; // часть её сета в связке — с бонусом только на T4
   part: SetPiece | null;      // часть связки варианта, в которую идёт её сет (null — сет не из связки, оружие)
   surplus: boolean;           // «пустой слот» сверх собранной части её сета
@@ -428,7 +430,33 @@ function fixFor(ctx: Ctx, c: Char, v: Variant, forced: Assembly, was: Assembly, 
       const rows = bonusRows(ctx.idx.SET, arm.filter((e): e is Entry => !!e)).map(rowKey);
       return hs(s, was) >= 0 && was.bonuses.filter((r) => r.set === set).every((r) => rows.includes(rowKey(r)));
     });
-    if (slots.length) return { set, slots, t4 };
+    if (slots.length) return { set, slots, t4, mark: false };
+  }
+  return null;
+}
+
+// «ломает» из-за части-эффекта ×2, чей бонус только на T4 (Pen mix у Luna, Р2): четыре Pen без двух на T4 — раскладка
+// Pen ×4 (бонус на T0 есть, у Pen ×2 без T4 — нет), и вещь другой части не встаёт. Только сет-эффект (сет-стат ×4 ради
+// статов и так ломается) и только когда прежний совет (fixFor) ничего не дал. Встанет, если отметить T4 у вещей этого
+// сета из пула (не в её слоте, ещё не на T4) — проверяется той же сборкой с отмеченными. slots — самый короткий набор:
+// одна вещь (другая уже на T4) или две
+function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, set: string): Outcome['fix'] {
+  const part = combo(v).find((p) => p.set === set);
+  if (!part || part.n !== 2 || !t4Only(ctx.idx.SET[set], part.n) || isConv(ctx, c, vc(ctx, c, v), set)) return null;
+  const inBefore = ARMOR.map((slot) => before.slots[slot]).filter((e) => e?.setId === set);
+  if (inBefore.length !== 4 || inBefore.filter((e) => e!.bt === 4).length >= 2) return null;
+  const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt !== 4);
+  const fits = (marks: readonly Piece[]) => {
+    const marked = pieces.map((p) => (marks.includes(p) ? { ...p, bt: 4 as const } : p));
+    return assemble(ctx, c, v, entriesFor(ctx, c, v, marked, x)).slots[x.slot]?.id === null;
+  };
+  const one = open.find((a) => fits([a]));
+  if (one) return { set, slots: [one.slot as ArmorSlot], t4: true, mark: true };
+  for (let i = 0; i < open.length; i++) {
+    for (let j = i + 1; j < open.length; j++) {
+      const a = open[i], b = open[j];
+      if (a.slot !== b.slot && fits([a, b])) return { set, slots: [a.slot, b.slot] as ArmorSlot[], t4: true, mark: true };
+    }
   }
   return null;
 }
@@ -489,7 +517,8 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   const rest = { ...base, ...bd, used: false, delta: d, displaced, after: forced };
   if (broken) {
     if (!betterBySegs) return { ...rest, kind: byDelta(d), broken };
-    return { ...rest, kind: 'breaks', broken, fix: fixFor(ctx, c, v, forced, before, broken, x.slot), brokenSegs: segsOf(bd.lostBonus, broken) };
+    const fix = fixFor(ctx, c, v, forced, before, broken, x.slot) ?? markFor(ctx, c, v, pieces, x, before, broken);
+    return { ...rest, kind: 'breaks', broken, fix, brokenSegs: segsOf(bd.lostBonus, broken) };
   }
   if (bd.lostBonus.some((r) => r.tier === 'T4')) return { ...rest, kind: betterBySegs ? 'capped' : byDelta(d), broken: null };
   return { ...rest, kind: byDelta(d), broken: null };
