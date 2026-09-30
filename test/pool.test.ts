@@ -137,7 +137,7 @@ describe('сборка варианта: точная', () => {
 
   it('выбранная сборка — как эталон, с отсечением и без (300 пулов)', () => {
     let withX = 0, forced = 0, weapons = 0;
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 1000; i++) {
       const k = makeCase(i), r = reference(k);
       if (k.es.some((e) => !e.piece)) withX++;
       if (k.force) forced++;
@@ -148,7 +148,7 @@ describe('сборка варианта: точная', () => {
   });
 
   it('достижимая сборка — как эталон, с отсечением и без (300 пулов)', () => {
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 1000; i++) {
       const k = { ...makeCase(i), force: undefined }, r = reference(k);
       for (const prune of [true, false]) {
         const got = assembleReach(ctx, k.c, k.v, k.es, { prune });
@@ -464,23 +464,113 @@ describe('Pen mix без T4 (Р2)', () => {
     expect(r.fix!.slots).not.toContain('armor');
   });
 
-  // совет «отметить» — только для сета-эффекта ×4 (Р2); сет-стат ×2 только на T4 (Speed) — прежний совет «найди ещё»
-  it('Caren · Speed/Immu: Immunity-перчатки ломают Speed ×2 на T4 — прежний совет «ещё Speed-вещь на T4: шлем или броня», не «отметить»', () => {
-    const pcs = [
-      P('helmet', 'Immunity', JUNK), P('armor', 'Immunity', JUNK), P('gloves', 'Speed', { 'DEF%': 2, CHC: 2 }, 4), P('shoes', 'Speed', JUNK, 4),
-      P('helmet', 'Speed', JUNK), P('armor', 'Speed', JUNK, 0),
-    ];
-    const v = variant('Caren', 'Speed/Immu');
-    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Immunity'), itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 2, CHD: 1 } };
-    const r = outcomeFor(ctx, poolView(ctx, store(caren, pcs)), caren.id, x)!.rows.find((y) => y.v.key === v.key)!;
-    expect(r).toMatchObject({ kind: 'breaks', broken: set('Speed'), fix: { set: set('Speed'), slots: ['helmet', 'armor'], t4: true, mark: false } });
-  });
-
   it('две Pen уже на T4 (шлем и броня) — совета «отметь» нет: Attack-шлем вытеснил бы Pen на T4', () => {
     const { pen, atk } = lunaPool();
     const t4 = pen.map((p, i) => (i < 2 ? { ...p, bt: 4 as Bt } : p));
     const r = outcomeFor(ctx, poolView(ctx, store(luna, [...t4, ...atk])), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
     expect(r.fix?.mark ?? false).toBe(false);
+  });
+});
+
+// Р20: совет «отметь T4» — для любого сета. Вещь распавшегося сета в пуле без указанного Breakthrough (bt: null), с
+// отметкой которой (одной, потом двух) новая встаёт, — «отметь»; известный Breakthrough ниже T4 — прежний «найди ещё»
+describe('совет «отметь T4» для любого сета (Р20)', () => {
+  const v = variant('Caren', 'Speed/Immu');
+  const store = (pieces: Piece[]): PoolStore => ({ pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [caren.id]: pieces.map((p) => p.id) } });
+  const X = (slot: SlotId, short: string, subs: Subs): ItemInput => ({ slot, grade: 'unique', setId: set(short), itemKey: null, main: null, subs });
+  const rowOf = (pieces: Piece[], x: ItemInput, vv = v) => outcomeFor(ctx, poolView(ctx, store(pieces)), caren.id, x)!.rows.find((r) => r.v.key === vv.key)!;
+  // совет проверяется встраиванием: отмеченные — на T4, и новая встаёт
+  const fitsMarked = (pieces: Piece[], x: ItemInput, slots: ArmorSlot[], vv = v) => {
+    const marked = pieces.map((p) => (p.setId === set('Speed') && p.bt === null && slots.includes(p.slot as ArmorSlot) ? { ...p, bt: 4 as Bt } : p));
+    return assemble(ctx, caren, vv, entriesFor(ctx, caren, vv, marked, x)).slots[x.slot]?.id === null;
+  };
+
+  // шаг 14 в браузере: Speed ×2 на T4 (шлем и броня) + Immunity-перчатки и -ботинки, Speed-перчатки и -ботинки в пуле
+  // (Breakthrough по вызову); новая — Immunity-броня
+  const step14 = (gb: Bt | null, sb: Bt | null) => [
+    P('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, 4), P('armor', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }, 4),
+    P('gloves', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, gb), P('shoes', 'Speed', { 'DEF%': 1, SPD: 2, RES: 1, HP: 1 }, sb),
+    P('gloves', 'Immunity', { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }), P('shoes', 'Immunity', { 'DEF%': 2, SPD: 2, CHC: 1, CHD: 1 }),
+  ];
+  const ARMOR_X = X('armor', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+
+  it('шаг 14: Immunity-броня ломает Speed ×2, Speed-перчатки и -ботинки без Breakthrough — «отметь T4» у одной из них', () => {
+    const pcs = step14(null, null);
+    const r = rowOf(pcs, ARMOR_X);
+    expect(r).toMatchObject({ kind: 'breaks', broken: set('Speed'), fix: { set: set('Speed'), t4: true, mark: true } });
+    expect(r.fix!.slots).toHaveLength(1);
+    expect(['gloves', 'shoes']).toContain(r.fix!.slots[0]);
+    expect(fitsMarked(pcs, ARMOR_X, r.fix!.slots)).toBe(true);
+  });
+
+  it('то же, Speed-перчатки и -ботинки на T0 (bt 0) — прежний совет «найди ещё Speed-вещь на T4»', () => {
+    const r = rowOf(step14(0, 0), ARMOR_X);
+    expect(r).toMatchObject({ kind: 'breaks', broken: set('Speed'), fix: { set: set('Speed'), t4: true, mark: false } });
+    expect(r.fix!.slots).not.toContain('armor');
+  });
+
+  it('то же, перчатки на T0, ботинки без Breakthrough, но с отметкой ботинок она не встаёт — прежний совет', () => {
+    const pcs = step14(0, null);
+    const r = rowOf(pcs, ARMOR_X);
+    expect(fitsMarked(pcs, ARMOR_X, ['shoes'])).toBe(false);
+    expect(r.fix).toMatchObject({ set: set('Speed'), slots: ['gloves', 'shoes'], t4: true, mark: false });
+  });
+
+  // регресс шага 4: Speed-перчатки и -ботинки уже на T4, лишние Speed-шлем (bt null) и Speed-броня (bt 0); новая —
+  // Immunity-перчатки. Отметить хватает одной вещи — шлема: броня с известным Breakthrough не отмечается
+  const reg = (armorBt: Bt | null) => [
+    P('helmet', 'Immunity', JUNK), P('armor', 'Immunity', JUNK), P('gloves', 'Speed', { 'DEF%': 2, CHC: 2 }, 4), P('shoes', 'Speed', JUNK, 4),
+    P('helmet', 'Speed', JUNK), P('armor', 'Speed', JUNK, armorBt),
+  ];
+  const GLOVES_X = X('gloves', 'Immunity', { 'DEF%': 2, CHC: 2, CHD: 1 });
+
+  it('регресс шага 4 (ботинки уже на T4, лишний Speed-шлем без Breakthrough) — «отметь T4 у Speed-шлема», не «у двух»', () => {
+    const pcs = reg(0);
+    const r = rowOf(pcs, GLOVES_X);
+    expect(r).toMatchObject({ kind: 'breaks', broken: set('Speed'), fix: { set: set('Speed'), slots: ['helmet'], t4: true, mark: true } });
+    expect(fitsMarked(pcs, GLOVES_X, ['helmet'])).toBe(true);
+  });
+
+  it('то же, шлем и броня без Breakthrough — всё равно одна вещь', () => {
+    const r = rowOf(reg(null), GLOVES_X);
+    expect(r.fix).toMatchObject({ mark: true });
+    expect(r.fix!.slots).toHaveLength(1);
+  });
+
+  it('то же, лишние шлем и броня на T0 — прежний совет «ещё Speed-вещь на T4: шлем или броня»', () => {
+    const pcs = reg(0).map((p) => (p.setId === set('Speed') && p.bt === null ? { ...p, bt: 0 as Bt } : p));
+    const r = rowOf(pcs, GLOVES_X);
+    expect(r).toMatchObject({ kind: 'breaks', fix: { set: set('Speed'), slots: ['helmet', 'armor'], t4: true, mark: false } });
+  });
+
+  it('перебор (1000 пулов вокруг шага 14): каждый «отметь» — вещи без Breakthrough не в её слоте, с ними она встаёт, набор кратчайший', () => {
+    let seed = 7;
+    const rnd = (n: number) => ((seed = (seed * 1103515245 + 12345) % 2147483648), Math.floor(seed / 65536) % n);
+    const BTS: (Bt | null)[] = [null, null, 0, 4];
+    const sub = (): Subs => ({ 'DEF%': 1 + rnd(3), CHC: 1 + rnd(2), CHD: rnd(3), SPD: rnd(2) });
+    const SLOTS: ArmorSlot[] = ['gloves', 'shoes', 'helmet', 'armor'];
+    let marks = 0;
+    for (let i = 0; i < 1000; i++) {
+      const pcs = [
+        P('helmet', 'Speed', sub(), 4), P('armor', 'Speed', sub(), 4),
+        ...Array.from({ length: 2 + rnd(3) }, () => P(SLOTS[rnd(rnd(2) ? 2 : 4)], 'Speed', sub(), BTS[rnd(4)])),
+        P('gloves', 'Immunity', sub()), P('shoes', 'Immunity', sub()),
+      ];
+      const base = sub(), x = X(SLOTS[rnd(4)], 'Immunity', { ...base, [(['DEF%', 'CHC', 'CHD'] as const)[rnd(3)]]: 4 });
+      const r = rowOf(pcs, x);
+      if (r?.kind !== 'breaks' || !r.fix?.mark) continue;
+      marks++;
+      const open = pcs.filter((p) => p.setId === r.fix!.set && p.bt === null && p.slot !== x.slot);
+      const fitsWith = (ms: Piece[]) => assemble(ctx, caren, v, entriesFor(ctx, caren, v, pcs.map((p) => (ms.includes(p) ? { ...p, bt: 4 as Bt } : p)), x)).slots[x.slot]?.id === null;
+      expect(r.fix.slots).not.toContain(x.slot);
+      // есть набор вещей без Breakthrough в слотах совета, с которым она встаёт
+      const inSlots = r.fix.slots.map((s) => open.filter((p) => p.slot === s));
+      const sets = inSlots.length === 1 ? inSlots[0].map((a) => [a]) : inSlots[0].flatMap((a) => inSlots[1].map((b) => [a, b]));
+      expect(sets.some(fitsWith)).toBe(true);
+      // «у двух» — только если одной не хватает
+      if (r.fix.slots.length === 2) expect(open.some((a) => fitsWith([a]))).toBe(false);
+    }
+    expect(marks).toBeGreaterThan(10);
   });
 });
 

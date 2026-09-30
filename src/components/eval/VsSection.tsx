@@ -118,7 +118,7 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
       out.push(t.ui.vsEmpty);
       for (const r of o.lostBonus) if (r.set === o.broken) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));
     } else out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pctOf(o), partText(idx, part)));
-    // отметить T4 у двух вещей сета или у одной (другая уже на T4)
+    // отметить T4 у одной или двух вещей сета (Breakthrough не указан, Р20; Pen mix, Р2), иначе — найти ещё вещь сета
     if (o.fix?.mark) out.push(o.fix.slots.length === 1 ? t.ui.vsBreaksMarkOne(setName(idx, o.fix.set), o.fix.slots[0]) : t.ui.vsBreaksMark(setName(idx, o.fix.set)));
     else if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
     if (lost?.bon.stat && o.brokenSegs) {

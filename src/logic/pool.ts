@@ -405,7 +405,7 @@ export interface Outcome {
   displaced: Entry[];         // что уходит из сборки
   broken: string | null;      // сет, который распадётся: в «ломает» — поэтому не встала; в «лучше» — распадётся, но выгодно
   // «ломает»: ещё одна вещь этого сета в эти слоты — встанет; mark — не новая вещь, а Breakthrough T4 у вещей сета
-  // из пула (slots — где они, одна или две): Pen mix без T4, Р2
+  // из пула (slots — где они, одна или две): Breakthrough не указан (Р20) или Pen mix без T4 (Р2)
   fix: { set: string; slots: ArmorSlot[]; t4: boolean; mark: boolean } | null;
   t4: { set: string; n: number } | null; // часть её сета в связке — с бонусом только на T4
   part: SetPiece | null;      // часть связки варианта, в которую идёт её сет (null — сет не из связки, оружие)
@@ -459,17 +459,9 @@ function fixFor(ctx: Ctx, c: Char, v: Variant, forced: Assembly, was: Assembly, 
   return null;
 }
 
-// «ломает» из-за части-эффекта ×2, чей бонус только на T4 (Pen mix у Luna, Р2): четыре Pen без двух на T4 — раскладка
-// Pen ×4 (бонус на T0 есть, у Pen ×2 без T4 — нет), и вещь другой части не встаёт. Только сет-эффект (сет-стат ×4 ради
-// статов и так ломается) и только когда прежний совет (fixFor) ничего не дал. Встанет, если отметить T4 у вещей этого
-// сета из пула (не в её слоте, ещё не на T4) — проверяется той же сборкой с отмеченными. slots — самый короткий набор:
-// одна вещь (другая уже на T4) или две
-function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, set: string): Outcome['fix'] {
-  const part = combo(v).find((p) => p.set === set);
-  if (!part || part.n !== 2 || !t4Only(ctx.idx.SET[set], part.n) || isConv(ctx, c, vc(ctx, c, v), set)) return null;
-  const inBefore = ARMOR.map((slot) => before.slots[slot]).filter((e) => e?.setId === set);
-  if (inBefore.length !== 4 || inBefore.filter((e) => e!.bt === 4).length >= 2) return null;
-  const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt !== 4);
+// Отметка T4 у вещей сета из пула (не в её слоте): самый короткий набор — одна вещь, потом две в разных слотах, — с
+// которым новая вещь встаёт. Проверяется той же сборкой с отмеченными (bt: 4)
+function markSome(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string, open: readonly Piece[]): Outcome['fix'] {
   const fits = (marks: readonly Piece[]) => {
     const marked = pieces.map((p) => (marks.includes(p) ? { ...p, bt: 4 as const } : p));
     return assemble(ctx, c, v, entriesFor(ctx, c, v, marked, x)).slots[x.slot]?.id === null;
@@ -483,6 +475,26 @@ function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: Ite
     }
   }
   return null;
+}
+
+// Р20: у вещей распавшегося сета в пуле Breakthrough не указан (bt: null) — совет «отметь T4», если с отметкой новая
+// встаёт; он впереди «найди ещё». Известный Breakthrough ниже T4 (0–3) не отмечаем — это прокачка, не отметка
+function markUnknown(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string): Outcome['fix'] {
+  const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt === null);
+  return open.length ? markSome(ctx, c, v, pieces, x, set, open) : null;
+}
+
+// «ломает» из-за части-эффекта ×2, чей бонус только на T4 (Pen mix у Luna, Р2): четыре Pen без двух на T4 — раскладка
+// Pen ×4 (бонус на T0 есть, у Pen ×2 без T4 — нет), и вещь другой части не встаёт. Только сет-эффект (сет-стат ×4 ради
+// статов и так ломается) и только когда ни markUnknown, ни прежний совет (fixFor) ничего не дали: здесь отмечаются и
+// вещи с известным Breakthrough ниже T4 (Pen на T0 — отметить = сделать Breakthrough, шаг 4)
+function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, set: string): Outcome['fix'] {
+  const part = combo(v).find((p) => p.set === set);
+  if (!part || part.n !== 2 || !t4Only(ctx.idx.SET[set], part.n) || isConv(ctx, c, vc(ctx, c, v), set)) return null;
+  const inBefore = ARMOR.map((slot) => before.slots[slot]).filter((e) => e?.setId === set);
+  if (inBefore.length !== 4 || inBefore.filter((e) => e!.bt === 4).length >= 2) return null;
+  const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt !== 4);
+  return markSome(ctx, c, v, pieces, x, set, open);
 }
 
 // with — сборка с ней, если уже есть (play с вещью считает все варианты)
@@ -546,7 +558,7 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   const rest = { ...base, ...bd, used: false, delta: d, displaced, after: forced };
   if (broken) {
     if (!betterBySegs) return { ...rest, kind: byDelta(d), broken };
-    const fix = fixFor(ctx, c, v, forced, before, broken, x.slot) ?? markFor(ctx, c, v, pieces, x, before, broken);
+    const fix = markUnknown(ctx, c, v, pieces, x, broken) ?? fixFor(ctx, c, v, forced, before, broken, x.slot) ?? markFor(ctx, c, v, pieces, x, before, broken);
     return { ...rest, kind: 'breaks', broken, fix, brokenSegs: segsOf(bd.lostBonus, broken) };
   }
   if (bd.lostBonus.some((r) => r.tier === 'T4')) return { ...rest, kind: betterBySegs ? 'capped' : byDelta(d), broken: null };

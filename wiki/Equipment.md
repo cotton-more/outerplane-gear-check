@@ -138,7 +138,9 @@ holds the stamp and where the piece goes into the assembly, or when the piece st
   (4th)", the percentage is useful segments weighted by chain place, counting the Reforges ahead;
 - **on par** — including "on par: Speed ×2 at T4", when the new piece, until it's T4, would switch the bonus off;
 - **breaks a set** — better by segments, but it fits only in a set piece's place and the set falls apart; a line says
-  which piece would fix it ("Fits once you find another Penetration piece at T4: helmet or armor"). In a "Pen mix"
+  which piece would fix it ("Fits once you find another Penetration piece at T4: helmet or armor"). If the character
+  already has such a piece with no Breakthrough set, and at T4 the new one would fit, the line says "Fits once the
+  Speed gloves are marked Breakthrough T4" (or "once two Speed pieces are marked…"). In a "Pen mix"
   without T4, four Penetration pieces make Penetration ×4 (×4 has a bonus at T0 too, ×2 only at T4), and a piece of the
   other half doesn't fit — the line says "Fits once two Penetration pieces are marked Breakthrough T4". The other half's
   pieces don't get a "no longer needs it" line meanwhile;
