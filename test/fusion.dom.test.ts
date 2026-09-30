@@ -145,7 +145,7 @@ describe('окна перехода', () => {
   it('X с вещами (при загрузке — в ростер), звезда на Core Fusion — окно; «Да» — вещи у Core Fusion, в ростере он; «Вернуть» — как было', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2, CHC: 1 })], { [eps.id]: ['p1'] });
     await mount({ tab: 'chars', charId: cfEps.id }, {}, { gear, roster: [] });
-    await click($('.own-btn'));
+    await click($('.cd-star'));
 
     expect(ask()?.getAttribute('aria-label')).toBe('Mark Core Fusion Epsilon?');
     expect($('.fusion-ask p')?.textContent).toBe("All of Epsilon's gear (1) moves to Core Fusion Epsilon, and Epsilon becomes inactive: only Core Fusion Epsilon stays in the roster.");
@@ -188,7 +188,7 @@ describe('окна перехода', () => {
   it('«Вернуться к X?» — «Отмена» ничего не меняет', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [cfEternal.id]: ['p1'] });
     await mount({ tab: 'chars', charId: eternal.id }, {}, { gear, roster: [cfEternal.id] });
-    await click($('.own-btn'));
+    await click($('.cd-star'));
     await click(askBtn('Cancel'));
     expect({ gear: stored(), roster: roster() }).toEqual({ gear, roster: [cfEternal.id] });
   });

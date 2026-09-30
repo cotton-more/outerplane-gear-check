@@ -77,6 +77,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     );
   }
   const own = rosterApi.roster.has(c.id);
+  const elName = D.elements[c.element] || c.element;
+  const clsName = D.classes[c.class] || c.class;
   // есть Core Fusion этого героя (logic/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
   const fusedBy = ctx.off.has(c.id) ? CHAR[ctx.off.get(c.id)!] : null;
   const asm = cp!.asm;
@@ -120,25 +122,36 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
       <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
       <div className="cd-head">
-        <Img k={'face:' + c.icon} className="face" />
+        {/* стихия и класс — значками на подложке поверх портрета: названия класса и стихии на экране нет, поэтому aria-label */}
+        <span className="cd-face">
+          <Img k={'face:' + c.icon} className="face" />
+          <span className="cd-badge el" role="img" aria-label={elName} title={elName}><ElementIcon el={c.element} /></span>
+          <span className="cd-badge cls" role="img" aria-label={clsName} title={clsName}><ClassIcon cls={c.class} /></span>
+        </span>
         <div>
-          <h2>{c.name}</h2>
-          <div className="meta">
-            <span><ElementIcon el={c.element} /> {D.elements[c.element] || c.element}</span>
-            <span><ClassIcon cls={c.class} /> {D.classes[c.class] || c.class}{c.subClass ? ' · ' + cap(c.subClass) : ''}</span>
-            {c.role && <span>{ROLE[c.role] || c.role}</span>}
-            {c.rank && <Tier k="PvE" v={c.rank} />}
-            {c.rankPvp && <Tier k="PvP" v={c.rankPvp} />}
+          <div className="cd-name">
+            <h2>{c.name}</h2>
+            <button type="button" className="cd-star" aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={() => rosterApi.toggle(c.id)}>
+              {own ? '★' : '☆'}
+            </button>
           </div>
-          {c.nick && c.nick !== c.prefix && <div className="muted small">{c.nick}</div>}
+          {/* класса текстом нет — его показывает значок; подкласс есть у всех, но без него — название класса */}
+          <div className="meta">{[c.subClass ? cap(c.subClass) : clsName, c.role && (ROLE[c.role] || c.role)].filter(Boolean).join(' · ')}</div>
+        </div>
+        {/* оценки outerpedia, прозвище (режется многоточием) и ссылка на страницу персонажа — без языкового префикса: /ru/ нет */}
+        <div className="cd-foot">
+          {c.rank && <Tier k="PvE" v={c.rank} />}
+          {c.rankPvp && <Tier k="PvP" v={c.rankPvp} />}
+          {c.nick && c.nick !== c.prefix && <span className="cd-nick muted small">{c.nick}</span>}
+          <a className="cd-opedia" href={`https://outerpedia.com/characters/${c.slug}`} target="_blank" rel="noopener noreferrer"
+            aria-label={t.ui.opediaAria(c.name)}>{t.ui.opedia} ↗</a>
         </div>
       </div>
-      <div className="own-row">
-        <button type="button" className="own-btn" aria-pressed={own} onClick={() => rosterApi.toggle(c.id)}>{own ? t.ui.inRosterBtn : t.ui.addToRoster}</button>
-        {fusedBy && (
+      {fusedBy && (
+        <div className="own-row">
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name)}</button>
-        )}
-      </div>
+        </div>
+      )}
       {headline}
       {autoNew.map((k) => (
         <p key={k} className="cd-note">

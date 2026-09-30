@@ -9,6 +9,10 @@ accessory with the main stat, substat priority with a flat/% hint, talismans, a 
 roster; with "only my characters" checked, the evaluation considers only them. A link like `…/#demiurge-stella` opens
 a character directly.
 
+In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
+next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on
+outerpedia in a new tab.
+
 Only roster characters have gear: "Equip" adds the character to the roster, importing a gear code adds everyone who
 has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,
 remove" — a message with "Undo".

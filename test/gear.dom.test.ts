@@ -860,7 +860,7 @@ describe('вещи только у героев ростера (Р16)', () => {
 
   it('загрузка: у Caren вещи, в ростере её нет — она в ростере, сообщение «Added to the roster: Caren.»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
-    expect({ star: $('.own-btn')?.getAttribute('aria-pressed'), pool: $('.pool summary')?.textContent, toast: $('.gear-toast span')?.textContent })
+    expect({ star: $('.cd-star')?.getAttribute('aria-pressed'), pool: $('.pool summary')?.textContent, toast: $('.gear-toast span')?.textContent })
       .toEqual({ star: 'true', pool: "Caren's gear · 1", toast: 'Added to the roster: Caren.' });
   });
 
@@ -908,9 +908,9 @@ describe('вещи только у героев ростера (Р16)', () => {
     expect({ ask: ask(), roster: roster() }).toEqual({ ask: null, roster: [caren.id] });
   });
 
-  it('в карточке персонажа «В ростере» — то же окно', async () => {
+  it('звезда в карточке персонажа — то же окно', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [caren.id], gear: shared() });
-    await click($('.own-btn'));
+    await click($('.cd-star'));
     expect(ask()?.getAttribute('aria-label')).toBe('Remove Caren from the roster?');
   });
 
@@ -1069,7 +1069,7 @@ describe('запись при загрузке (Р17)', () => {
   it('чтение что-то отбросило (саб NEWSUB, отметка «maybe») — не пишется, хотя Caren добавлена в ростер в памяти', async () => {
     const gear = JSON.stringify(G([P('p1', 'helmet', speed, { CHC: 1, NEWSUB: 2 })], { [caren.id]: ['p1'] }, { marks: { [`${caren.id}/Speed`]: 'maybe' } }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: JSON.parse(gear) });
-    expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster'), star: $('.own-btn')?.getAttribute('aria-pressed') })
+    expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster'), star: $('.cd-star')?.getAttribute('aria-pressed') })
       .toEqual({ gear, roster: '[]', star: 'true' });
   });
 
