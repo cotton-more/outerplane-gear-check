@@ -8,7 +8,9 @@ import { createIndex } from '../src/data';
 import type { Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, type Bt, type Piece } from '../src/logic/gear';
+import { evaluate } from '../src/logic/evaluate';
 import { holds, outcomeFor, poolView } from '../src/logic/pool';
+import { charsVs, charVs, sectionChars, type CharVs } from '../src/logic/poolVs';
 import type { Subs } from '../src/logic/subs';
 import { against, vsFigure } from '../src/logic/vs';
 
@@ -258,6 +260,54 @@ describe('исход вещи с формы: повтор vs.test', () => {
     const o2 = out(w, armor('armor', 'Immunity', { CHC: 1 }), caren.id, { [buildKey(caren.id, 'Speed')]: 'want' });
     expect(o2.starts.map((v) => v.name).sort()).toEqual(['Def/Immu', 'Speed/Immu']);
     expect(o2.useful).toBe(true);
+  });
+
+  // три случая b02e947 (compareAll / equipTargets) — на строках пула (logic/poolVs)
+  describe('«Сейчас на персонажах» и «Кому надеть?»: повтор b02e947', () => {
+    const kitsune = D.chars.find((c) => c.name.startsWith('Kitsune'))!;
+    const kappa = char('Kappa');
+    const store = (pools: Record<string, Piece[]>) => ({
+      pieces: Object.fromEntries(Object.values(pools).flat().map((p) => [p.id, p])),
+      pools: Object.fromEntries(Object.entries(pools).map(([c, ps]) => [c, ps.map((p) => p.id)])),
+    });
+    const shown = (xs: CharVs[]) => xs.filter((x) => x.best).map((x) => [x.c.name, x.best!.v.name, x.best!.kind]);
+    const worn = () => helmetT4({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
+
+    it('только первая открытая секция вердикта (Kitsune с этим шлемом «не те сабстаты» — нет); пустой слот первым', () => {
+      const pools = { [caren.id]: [worn(), rec(armor('armor', 'Immunity', { CHC: 1 }))], [kappa.id]: [rec(armor('armor', 'Speed', { CHC: 1 }))],
+        [kitsune.id]: [rec(armor('helmet', 'Speed', { SPD: 1 }))] };
+      const v = poolView(ctx, store(pools));
+      const chars = sectionChars(evaluate(ctx, NEW));
+
+      expect(outcomeFor(ctx, v, kitsune.id, NEW)?.rows.length).toBeGreaterThan(0); // исход у Kitsune есть, но он не в секции
+      expect(chars.map((c) => c.name)).not.toContain(kitsune.name);
+      // иначе: вещи у персонажа — пустой шлем Kappa (Speed ×2 станет ближе) раньше «лучше» у Caren; внутри Caren
+      // Speed/Immu не «пустой слот»: её шлем стоит и там
+      expect(shown(charsVs(ctx, v, NEW, chars))).toEqual([['Kappa', 'Speed', 'closer'], ['Caren', 'Speed', 'up']]);
+    });
+
+    it('только собираемые билды тех, кому вещь подходит; ничего не надето — исходов нет', () => {
+      const chars = sectionChars(evaluate(ctx, NEW));
+
+      expect(shown(charsVs(ctx, poolView(ctx, store({ [caren.id]: [worn()] })), NEW, chars))).toEqual([['Caren', 'Speed', 'up']]);
+      // иначе: пустой пул — не пусто, а «начнёт …» у каждого из секции (строки без исхода); в App — только ростер и те,
+      // у кого есть вещи
+      const empty = charsVs(ctx, poolView(ctx, store({})), NEW, chars);
+      expect(shown(empty)).toEqual([]);
+      expect(empty.every((x) => !x.rows.length && x.starts.length > 0)).toBe(true);
+    });
+
+    it('«Кому надеть?»: собираемые билды первыми; не по сету — только при поиске по имени (explicit)', () => {
+      const v = poolView(ctx, store({ [caren.id]: [rec(armor('armor', 'Immunity', { CHC: 1 }))] }));
+      const rows = charsVs(ctx, v, NEW, [kappa, caren]);
+
+      expect(rows.map((x) => [x.c.name, x.best?.v.name ?? null])).toEqual([['Caren', 'Speed/Immu'], ['Kappa', null]]);
+      expect(rows.every((x) => x.useful)).toBe(true);
+      // иначе: «не по билду» больше нет — у Anarky нет Speed в связках, шлем встанет только в тихую «По статам»
+      const anarky = char('Anarky');
+      expect(charVs(ctx, v, anarky.id, NEW)).toBeNull();
+      expect(charVs(ctx, v, anarky.id, NEW, undefined, { explicit: true })).toMatchObject({ useful: true, best: { quiet: true, kind: 'fill' } });
+    });
   });
 });
 

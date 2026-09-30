@@ -154,8 +154,9 @@ export function App() {
     ? { ...verdict, title: tryOnTitle(t, verdict, target, tryRowOf(idx, targetVs?.best ?? null, !!targetVs?.worn), isArmor(s.slot)) }
     : verdict), [t, idx, verdict, target, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
   const [equipOpen, setEquipOpen] = useState(false);
-  // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
-  // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи
+  // сообщение после «Надеть» и импорта кода. «Вернуть» после «Надеть» — обратная операция только этого действия: другие
+  // правки за эти 8 секунд остаются; после импорта — всё, как было до импорта (Р8). Видно на той вкладке, где сделано:
+  // на «Персонажах» оно легло бы на карточку вещи
   // Сообщение о ростере (Core Fusion) — тем же механизмом: undo нет, «Вернуть» — только after; нечего вернуть — без кнопки
   const [gearUndo, setGearUndo] = useState<{
     text: string; note: string; tab: Tab; undo?: (st: GearStore) => GearStore; after?: () => void;

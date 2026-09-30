@@ -4,10 +4,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
-import type { ArmorSlot, Dataset, SlotId } from '../src/data/types';
+import type { ArmorSlot, Char, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
-import { assemble, assembleReach, entriesFor, hasStatBuild, holds, isStats, outcomeFor, play, poolView, putOn, started, statVariant, STATS, type Assembly, type PoolStore } from '../src/logic/pool';
+import { assemble, assembleReach, entriesFor, hasStatBuild, holds, isStats, outcomeFor, play, poolView, putOn, started, statVariant, STATS, type Assembly, type Entry, type PoolStore } from '../src/logic/pool';
+import { bonusRows, bonusValue, bonusWeights, convertible } from '../src/logic/setBonus';
 import { charVs, whereUsed } from '../src/logic/poolVs';
 import { slotMains } from '../src/logic/builds';
 import { decodeItem, MAINS } from '../src/logic/itemCode';
@@ -37,46 +38,121 @@ const sets = (a: Assembly) => (['helmet', 'armor', 'gloves', 'shoes'] as ArmorSl
 const inPlay = (pieces: Piece[], opts = {}, c = caren) => play(ctx, c, pieces, opts).inPlay.map((v) => (isStats(v) ? '#stats' : v.name));
 
 describe('сборка варианта: точная', () => {
-  // случайные пулы: сеты связок, случайные сеты, T4 и нет, сабстаты — сверка с перебором без отсечения
+  // Независимый эталон (идея build/review-gearpool/test/a1-assemble): полный перебор брони (пусто | любая вещь слота),
+  // счёт по спеке из примитивов setBonus — не armorScore и не отсечение; оружие и аксессуар — по слоту. Случайные
+  // пулы: сеты связок и чужие, копии роллов (ничьи), Breakthrough от «не указан» до T4, оружие и аксессуар из билда и
+  // чужие, вещь с формы (половина пулов), force (каждый пятый). Сверяются раскладка по id, hard/live/soft/total/
+  // filled/older и достижимая сборка — с отсечением и без
   const rnd = (() => { let x = 12345; return () => (x = (x * 1103515245 + 12345) % 2 ** 31) / 2 ** 31; })();
-  const pick = <T,>(xs: T[]) => xs[Math.floor(rnd() * xs.length)];
-  const cases: [string, string][] = [
+  const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rnd() * xs.length)];
+  const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
+  const GEAR = ['weapon', 'accessory'] as const;
+  const EPS = 1e-9;
+  const RANK = { rec: 2, stopgap: 1, no: 0 } as const;
+  const SUBKEYS = D.substats.map((x) => x.key);
+  const heroes = D.chars.filter((c) => c.builds.length);
+  const fixed: [string, string][] = [
     ['Caren', 'Speed'], ['Caren', 'Speed/Immu'], ['Anarky', 'Defense mix · Penetration'], ['Heatwave Cop Delta', 'DPS · Penetration ×4'],
     ['Heatwave Cop Delta', 'DPS · Penetration ×2 + Attack ×2'], ['Core Fusion Lisha', 'Pen combos · Speed'], ['Iota', 'PvE - effi'],
   ];
-  const SETS = ['Speed', 'Immunity', 'Penetration', 'Defense', 'Attack', 'Effectiveness', 'Swiftness', 'Critical Hit'];
-  const STATS = ['DEF%', 'CHC', 'CHD', 'SPD', 'ATK%', 'EFF', 'HP', 'RES'];
-
-  it('с отсечением — то же, что полный перебор (200 пулов на вариант)', () => {
-    for (const [c, vn] of cases) {
-      const ch = char(c), v = variantsOf(idx, ch).find((x) => x.name === vn)!;
-      for (let i = 0; i < 200; i++) {
-        const pieces = Array.from({ length: 3 + Math.floor(rnd() * 9) }, () => {
-          const lit: Subs = {};
-          for (let k = 0; k < 4; k++) lit[pick(STATS)] = 1 + Math.floor(rnd() * 6);
-          return P(pick(['helmet', 'armor', 'gloves', 'shoes'] as ArmorSlot[]), pick(SETS), lit, pick([null, 0, 4] as (Bt | null)[]));
-        });
-        const es = entriesFor(ctx, ch, v, pieces);
-        const a = assemble(ctx, ch, v, es), z = assemble(ctx, ch, v, es, { prune: false });
-        expect([a.hard, a.live, a.soft, a.filled]).toEqual([z.hard, z.live, z.soft, z.filled]);
-        expect(a.total).toBeCloseTo(z.total, 9);
+  const subsOf = (): Subs => { const x: Subs = {}; while (Object.keys(x).length < 4) x[pick(SUBKEYS)] = 1 + Math.floor(rnd() * 4); return x; };
+  const gearOf = (v: Variant, kind: 'weapon' | 'accessory') => {
+    const r = (kind === 'weapon' ? v.b.weapons : v.b.amulets), items = kind === 'weapon' ? D.weapons : D.amulets;
+    const ref = r.length && rnd() < 0.5 ? pick(r) : null;
+    const it = ref ? items.find((x) => x.key === ref.key) ?? pick(items) : pick(items);
+    return { itemKey: it.key, main: pick(ref?.mains.length ? ref.mains : it.mains.length ? it.mains : ['ATK%']) };
+  };
+  interface Case { c: Char; v: Variant; es: Entry[]; force?: Entry }
+  const makeCase = (i: number): Case => {
+    const [cn, vn] = i % 2 ? pick(fixed) : [pick(heroes).name, null];
+    const c = char(cn);
+    const v = vn ? variant(cn, vn) : pick([...variantsOf(idx, c), statVariant(c)!]);
+    const own = variantsOf(idx, c).flatMap((x) => (x.b.sets[0] ?? []).map((q) => q.set));
+    const sets = [...own, ...own, pick(D.sets).id, pick(D.sets).id];
+    const pieces: Piece[] = [];
+    for (let k = Math.floor(rnd() * 11); k > 0; k--) {
+      const twin = pieces.length && rnd() < 0.3 ? pick(pieces) : null; // тот же ролл — равная ценность
+      const lit = twin ? { ...twin.lit } : subsOf();
+      pieces.push({ id: 'p' + ++seq, slot: pick(ARMOR), grade: rnd() < 0.25 ? 'rare' : 'unique', setId: twin?.setId ?? pick(sets), itemKey: null,
+        main: null, yellow: lit, lit, bt: pick([null, 0, 1, 2, 3, 4, 4] as (Bt | null)[]), at: '' });
+    }
+    for (const kind of GEAR) {
+      for (let k = Math.floor(rnd() * 3); k > 0; k--) {
+        const lit = subsOf();
+        pieces.push({ id: 'p' + ++seq, slot: kind, grade: rnd() < 0.3 ? 'rare' : 'unique', setId: null, ...gearOf(v, kind), yellow: lit, lit, bt: null, at: '' });
       }
     }
+    const slot = pick([...ARMOR, ...GEAR] as SlotId[]);
+    const x: ItemInput | null = rnd() < 0.5 ? null : (GEAR as readonly SlotId[]).includes(slot)
+      ? { slot, grade: 'unique', setId: null, ...gearOf(v, slot as 'weapon' | 'accessory'), subs: subsOf() }
+      : { slot, grade: 'unique', setId: pick(sets), itemKey: null, main: null, subs: subsOf() };
+    const es = entriesFor(ctx, c, v, pieces, x);
+    return { c, v, es, force: es.length && rnd() < 0.2 ? (x && rnd() < 0.6 ? es[es.length - 1] : pick(es)) : undefined };
+  };
+  type S = { hard: number; live: number; soft: number; total: number; filled: number; older: number; progress: number };
+  const cmp = (a: S, z: S) => a.hard - z.hard || a.live - z.live || a.soft - z.soft
+    || (Math.abs(a.total - z.total) > EPS ? Math.sign(a.total - z.total) : 0) || a.filled - z.filled || z.older - a.older;
+  function reference({ c, v, es, force }: Case) {
+    const stats = isStats(v), parts = v.b.sets[0] ?? [], W = bonusWeights(ctx, c, v.b);
+    const gear = GEAR.map((slot) => (force?.slot === slot ? [force] : es.filter((e) => e.slot === slot && (e.piece || e.fit !== 'no' || (stats && e.v > EPS))))
+      .reduce<Entry | null>((b, e) => (!b || RANK[e.fit] > RANK[b.fit] || (RANK[e.fit] === RANK[b.fit] && (e.v > b.v + EPS || (Math.abs(e.v - b.v) <= EPS && e.num < b.num))) ? e : b), null));
+    const score = (arm: (Entry | null)[]): S => {
+      const got = [...arm, ...gear].filter((e): e is Entry => !!e), armor = arm.filter((e): e is Entry => !!e);
+      const rows = bonusRows(idx.SET, armor);
+      const cnt = (st: string) => armor.filter((e) => e.setId === st).length;
+      let hard = 0, live = 0, soft = 0, progress = 0;
+      for (const q of parts) {
+        progress += Math.min(cnt(q.set), q.n);
+        if (convertible(ctx, c, q.set)) soft += Math.min(cnt(q.set), q.n - 1);
+        else { hard += Math.min(cnt(q.set), q.n); if (rows.some((r) => r.set === q.set && r.n >= q.n)) live++; }
+      }
+      const total = got.reduce((n, e) => n + e.v, 0) + rows.reduce((n, r) => n + bonusValue(ctx, c, W, r), 0);
+      return { hard, live, soft, total, filled: got.length, older: got.reduce((n, e) => n + e.num, 0), progress };
+    };
+    const all: { arm: (Entry | null)[]; s: S }[] = [];
+    const cur: (Entry | null)[] = [null, null, null, null];
+    const walk = (i: number) => {
+      if (i === 4) { all.push({ arm: [...cur], s: score(cur) }); return; }
+      for (const e of force?.slot === ARMOR[i] ? [force] : [null, ...es.filter((e) => e.slot === ARMOR[i])]) { cur[i] = e; walk(i + 1); }
+    };
+    walk(0);
+    const best = all.reduce((b, a) => (cmp(a.s, b.s) > 0 ? a : b));
+    const near = all.reduce((b, a) => (a.s.progress > b.s.progress || (a.s.progress === b.s.progress && cmp(a.s, b.s) > 0) ? a : b));
+    const lay = (arm: (Entry | null)[]) => [...gear, ...arm].map((e) => (e ? e.id ?? 'X' : '-')).join(',');
+    const tiesOf = (same: (a: typeof best) => boolean) => new Set(all.filter(same).map((a) => lay(a.arm)));
+    const reach = near.s.progress > best.s.progress ? near : best;
+    return {
+      best: best.s, bestLay: tiesOf((a) => cmp(a.s, best.s) === 0),
+      reach: reach.s, reachLay: tiesOf((a) => a.s.progress === reach.s.progress && cmp(a.s, reach.s) === 0),
+    };
+  }
+  const layOf = (a: Assembly) => [...GEAR, ...ARMOR].map((sl) => { const e = a.slots[sl]; return e ? e.id ?? 'X' : '-'; }).join(',');
+  const scoreOf = (a: Assembly): S => ({ hard: a.hard, live: a.live, soft: a.soft, total: a.total, filled: a.filled, older: a.older, progress: a.progress });
+  const same = (a: Assembly, s: S, lays: Set<string>) => {
+    expect(lays).toContain(layOf(a));
+    expect({ ...scoreOf(a), total: 0 }).toEqual({ ...s, total: 0 });
+    expect(a.total).toBeCloseTo(s.total, 9);
+  };
+
+  it('выбранная сборка — как эталон, с отсечением и без (300 пулов)', () => {
+    let withX = 0, forced = 0, weapons = 0;
+    for (let i = 0; i < 300; i++) {
+      const k = makeCase(i), r = reference(k);
+      if (k.es.some((e) => !e.piece)) withX++;
+      if (k.force) forced++;
+      if (k.es.some((e) => e.slot === 'weapon')) weapons++;
+      for (const prune of [true, false]) same(assemble(ctx, k.c, k.v, k.es, { force: k.force, prune }), r.best, r.bestLay);
+    }
+    expect(Math.min(withX, forced, weapons)).toBeGreaterThan(30); // пулы правда разные
   });
 
-  it('достижимая сборка с отсечением — то же, что полный перебор (200 пулов на вариант)', () => {
-    for (const [c, vn] of cases) {
-      const ch = char(c), v = variantsOf(idx, ch).find((x) => x.name === vn)!;
-      for (let i = 0; i < 200; i++) {
-        const pieces = Array.from({ length: 3 + Math.floor(rnd() * 9) }, () => {
-          const lit: Subs = {};
-          for (let k = 0; k < 4; k++) lit[pick(STATS)] = 1 + Math.floor(rnd() * 6);
-          return P(pick(['helmet', 'armor', 'gloves', 'shoes'] as ArmorSlot[]), pick(SETS), lit, pick([null, 0, 4] as (Bt | null)[]));
-        });
-        const es = entriesFor(ctx, ch, v, pieces);
-        const a = assembleReach(ctx, ch, v, es).reach, z = assembleReach(ctx, ch, v, es, { prune: false }).reach;
-        expect([a.progress, a.hard, a.live, a.soft, a.filled]).toEqual([z.progress, z.hard, z.live, z.soft, z.filled]);
-        expect(a.total).toBeCloseTo(z.total, 9);
+  it('достижимая сборка — как эталон, с отсечением и без (300 пулов)', () => {
+    for (let i = 0; i < 300; i++) {
+      const k = { ...makeCase(i), force: undefined }, r = reference(k);
+      for (const prune of [true, false]) {
+        const got = assembleReach(ctx, k.c, k.v, k.es, { prune });
+        same(got.asm, r.best, r.bestLay);
+        same(got.reach, r.reach, r.reachLay);
       }
     }
   });
@@ -423,6 +499,23 @@ describe('вид пула и ненужные вещи', () => {
     expect(cp.unused.map((p) => p.id)).toEqual([weak.id]);
     expect(view.of(caren.id)).toBe(cp);
     expect(view.of('нет-такого')).toBeNull();
+  });
+
+  // находка 27: исход считается один раз на (вид, персонаж, explicit, содержимое входа)
+  it('кэш outcomeFor: тот же вход — тот же результат; другой explicit, изменённый вход или новый вид — пересчёт', () => {
+    const pieces = [P('helmet', 'Speed', JUNK), P('armor', 'Speed', JUNK)];
+    const st: PoolStore = { pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [caren.id]: pieces.map((p) => p.id) } };
+    const view = poolView(ctx, st);
+    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Speed'), itemKey: null, main: null, subs: { 'DEF%': 3, CHC: 2 } };
+    const first = outcomeFor(ctx, view, caren.id, x)!;
+
+    expect(outcomeFor(ctx, view, caren.id, { ...x, subs: { ...x.subs } })).toBe(first); // вход собран заново
+    expect(outcomeFor(ctx, view, caren.id, x, { explicit: true })).not.toBe(first);
+    x.subs.CHD = 3; // форма поменяла вход на месте — ключ по содержимому
+    const changed = outcomeFor(ctx, view, caren.id, x)!;
+    expect(changed).not.toBe(first);
+    expect(changed).toEqual(outcomeFor(ctx, poolView(ctx, st), caren.id, x));
+    expect(outcomeFor(ctx, poolView(ctx, st), caren.id, x)).not.toBe(changed);
   });
 
   it('вещь Speed/Immu-сборки не ненужная, хоть в Speed её место занято', () => {

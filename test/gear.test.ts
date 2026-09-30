@@ -155,6 +155,37 @@ describe('хранилище v2 и код копии', () => {
     expect(decodeGear('SPD, CHC', idx)).toBeNull();
   });
 
+  // находка 23: самодельные и испорченные коды
+  it('ключ билда v1 без «/» — весь ключ персонаж (не обрезан на последнюю цифру)', () => {
+    const st = restoreGear(v1([rec('p1', helmet({ CHC: 1 }))], { [CAREN]: { helmet: 'p1' } }), idx);
+    expect(st.pools).toEqual({ [CAREN]: ['p1'] });
+  });
+
+  it('seq — только конечные числа: id «pInfinity» и seq: Infinity не дают новой вещи затереть старую', () => {
+    const p = rec('pInfinity', helmet({ CHC: 1 })), q = rec('p7', helmet({ CHD: 1 }));
+    const st = restoreGear({ ...v2([p, q], { [CAREN]: ['pInfinity', 'p7'] }), seq: Infinity }, idx);
+    expect(st.seq).toBe(7);
+    const { st: next, piece } = newPiece(st, helmet({ SPD: 1 }));
+    expect(piece.id).toBe('p8');
+    expect(next.pieces.pInfinity).toEqual(p);
+  });
+
+  it('пул не массивом: строка — одна вещь, объект — его значения, прочее — пусто; вещи из других пулов остаются', () => {
+    const a = rec('p1', helmet({ CHC: 1 })), b = rec('p2', helmet({ CHD: 1 })), c = rec('p3', helmet({ SPD: 1 }));
+    const raw = v2([a, b, c], { [CAREN]: 'p1' as never, [KAPPA]: { helmet: 'p2' } as never, x: 5 as never, y: ['p3'] });
+    const st = restoreGear(raw, idx);
+    expect(st.pools).toEqual({ [CAREN]: ['p1'], [KAPPA]: ['p2'], y: ['p3'] });
+    expect(Object.keys(st.pieces)).toEqual(['p1', 'p2', 'p3']);
+  });
+
+  it('OGC-GEAR1 без пробела после префикса — читается, как до v2 (b02e947)', () => {
+    const b64 = (x: unknown) => btoa(JSON.stringify(x)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const raw = v1([rec('p1', helmet({ CHC: 2 }))], { [K]: { helmet: 'p1' } });
+    expect(decodeGear('OGC-GEAR1' + b64(raw), idx)).toMatchObject({ pools: { [CAREN]: ['p1'] } });
+    expect(decodeGear('OGC-GEAR2' + encodeGear(v2([rec('p1', helmet({ CHC: 2 }))], { [CAREN]: ['p1'] })).slice('OGC-GEAR2 '.length), idx))
+      .toMatchObject({ pools: { [CAREN]: ['p1'] } });
+  });
+
   it('gearedChars — по пулам', () => {
     expect([...gearedChars(v2([rec('p1', helmet({ CHC: 1 }))], { [CAREN]: ['p1'] }))]).toEqual([[CAREN, 1]]);
   });

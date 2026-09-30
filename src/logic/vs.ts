@@ -94,9 +94,6 @@ export function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
   return ctx.settings.stage === 'grow' && item.main != null && slotMains(b, kind).has(item.main) ? 'stopgap' : 'no';
 }
 
-// подходит ли вещь билду хоть как-то — для «Взять из Speed» в карточке персонажа
-export const fits = (ctx: Ctx, b: Build, item: ItemInput): boolean => fit(ctx, b, item) !== 'no';
-
 const rowOf = (ctx: Ctx, c: Char, b: Build, item: ItemInput, subs: Subs): Omit<Row, 'alt'> =>
   ({ c, b, i: c.builds.indexOf(b), ...scoreBuild(ctx, item.grade, c, b, subs, itemMains(ctx.idx, item)) });
 

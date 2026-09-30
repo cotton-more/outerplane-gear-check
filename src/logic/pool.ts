@@ -131,7 +131,8 @@ function storedValue(ctx: Ctx, c: Char, v: Variant, p: Piece): number {
   return r;
 }
 
-const numOf = (id: string) => Number(id.replace(/^\D+/, '')) || 0;
+// номер записи из id («p12» → 12); не число или не конечное («p1e400») — 0, как у seqOf хранилища (gearStore)
+const numOf = (id: string) => { const n = Number(id.replace(/^\D+/, '')); return Number.isFinite(n) ? n : 0; };
 export function entriesFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x?: ItemInput | null): Entry[] {
   const out: Entry[] = pieces.map((p) => ({
     id: p.id, piece: p, input: pieceInput(p), slot: p.slot, setId: p.setId, bt: p.bt, num: numOf(p.id),
@@ -344,9 +345,6 @@ export const heldBy = (p: Pick<Play, 'asm' | 'reach'>, v: Variant): Assembly[] =
   const a = p.asm.get(v.key)!, r = p.reach.get(v.key) ?? a;
   return r === a ? [a] : [a, r];
 };
-const inAsm = (a: Assembly, id: string) => Object.values(a.slots).some((e) => e?.id === id);
-// стоит ли запись в сборке варианта, которую пул держит
-export const holdsPiece = (p: Pick<Play, 'asm' | 'reach'>, v: Variant, id: string): boolean => heldBy(p, v).some((a) => inAsm(a, id));
 
 // Записи, которые держит пул (keeps): стоят в выбранной или достижимой сборке хоть одного собираемого варианта или в
 // сборке «По статам» — живой он или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная» и
@@ -558,7 +556,34 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
 // когда он не собирается (не живой, Р12), — тихая (quiet): до и после — его сборки без вещи и с ней. Без explicit
 // тихих строк нет: они нужны только явному выбору (и так дешевле)
 export interface OutcomeOpts { explicit?: boolean }
+
+// Кэш исходов (находка 27): на одно нажатие один персонаж считается несколько раз — понижение (worn), «Сейчас на
+// персонажах» (poolVs), материал (betterThanWorn), быстрый и полный вердикт. Живёт вместе с видом пула: новое хранилище,
+// отметки или примерка — новый вид (poolView), кэш с ним. Ключ — (ctx, персонаж, explicit, JSON входа): вход — объект
+// формы, его могут собрать заново или поменять на месте, поэтому по содержимому, не по ссылке (другой порядок полей —
+// только промах). Результат общий: вызывающие его не меняют (фильтруют и сортируют копии). Последние OUTCOME_MEMO
+// ключей: ввод на форме без «Надеть» не копит исходы
+const OUTCOME_MEMO = 256;
+const outcomeMemo = new WeakMap<PoolView, WeakMap<Ctx, Map<string, CharOutcome | null>>>();
 export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, opts: OutcomeOpts = {}): CharOutcome | null {
+  let byCtx = outcomeMemo.get(view);
+  if (!byCtx) outcomeMemo.set(view, (byCtx = new WeakMap()));
+  let memo = byCtx.get(ctx);
+  if (!memo) byCtx.set(ctx, (memo = new Map()));
+  const key = `${charId}\u0000${opts.explicit ? 1 : 0}\u0000${JSON.stringify(x)}`;
+  if (memo.has(key)) {
+    const hit = memo.get(key)!;
+    memo.delete(key);
+    memo.set(key, hit); // свежий — в конец очереди
+    return hit;
+  }
+  const r = computeOutcome(ctx, view, charId, x, opts);
+  memo.set(key, r);
+  if (memo.size > OUTCOME_MEMO) memo.delete(memo.keys().next().value!);
+  return r;
+}
+
+function computeOutcome(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, opts: OutcomeOpts): CharOutcome | null {
   const cp = view.of(charId);
   if (!cp) return null;
   const { c, pieces } = cp;

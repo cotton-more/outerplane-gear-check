@@ -195,14 +195,14 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .vcard .vc-vs > b, .vcard .vc-vs > .vs { flex: none; }
 .vcard .vc-vs .bn { flex: none; color: var(--ink-2); }
 .vcard .vc-vs .vc-places { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); font-family: var(--font-mono); font-size: 11.5px; }
-.vc-equip { margin-top: 6px; width: 100%; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; }
+.vc-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.vc-equip { flex: 2 1 auto; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; }
 .vc-equip.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
 .vc-equip .ico { width: 16px; height: 16px; }
-/* GEARPOOL: «или — Rin · Speed ▸» под карточкой, «Ещё: …» в строке персонажа, чипы «начнёт», «только статы» */
-.vc-other { margin-top: 6px; width: 100%; min-height: 36px; background: transparent; color: var(--ink-2); font-size: 13px; }
+/* GEARPOOL: «или — Rin · Speed ▸» под карточкой (в ряду с «Надеть», перенесённая — во всю ширину), «Ещё: …» в строке
+   персонажа, чипы «начнёт», «только статы» */
+.vc-other { flex: 1 1 auto; min-height: 36px; background: transparent; color: var(--ink-2); font-size: 13px; }
 .vs-more-btn { justify-self: start; text-align: left; font-size: 12px; color: var(--ink-3); }
 .vs-more { display: grid; gap: 4px; padding-top: 6px; border-top: 1px dashed var(--line); }
 .vs-more-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.vs.completes, .vs.closer { background: var(--keep-soft); color: var(--keep); }
-.vs.stats { background: transparent; color: var(--ink-3); border-color: var(--line-2); }
 .v-off { margin: 0; padding: 0 16px 10px; font-size: 13px; }

@@ -20,14 +20,19 @@ export interface Need { piece: Piece; key: string; left: number } // key — в�
 export function materialFor(view: PoolView, item: ItemInput): Need[] {
   const armor = isArmor(item.slot);
   const out = new Map<string, Need>();
-  for (const id of Object.keys(view.st.pools)) {
+  const can = (p: Piece | null | undefined): p is Piece & { bt: number } =>
+    !!p && p.slot === item.slot && p.grade === item.grade && p.bt !== null && p.bt < 4 && !samePiece(item, p)
+    && (armor ? !!item.setId && p.setId === item.setId : !!item.itemKey && p.itemKey === item.itemKey);
+  for (const [id, ids] of Object.entries(view.st.pools)) {
+    // сборки считаем только у тех, у кого такая вещь вообще есть в пуле (находка 27: иначе первое нажатие после
+    // правки пула собирало бы всех персонажей)
+    if (!ids.some((pid) => can(view.st.pieces[pid]))) continue;
     const cp = view.of(id);
     if (!cp) continue;
     for (const v of cp.inPlay) {
       for (const e of Object.values(cp.asm.get(v.key)!.slots)) {
         const p = e?.piece;
-        if (!p || out.has(p.id) || p.slot !== item.slot || p.grade !== item.grade || p.bt === null || p.bt >= 4 || samePiece(item, p)) continue;
-        if (armor ? !item.setId || p.setId !== item.setId : !item.itemKey || p.itemKey !== item.itemKey) continue;
+        if (!can(p) || out.has(p.id)) continue;
         out.set(p.id, { piece: p, key: v.key, left: 4 - p.bt });
       }
     }

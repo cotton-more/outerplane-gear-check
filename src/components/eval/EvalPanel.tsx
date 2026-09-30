@@ -114,13 +114,18 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           {cardShown
             ? <>
               <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!tryOn} />
-              {vs && onEquip && (
-                <button type="button" className={`btn vc-equip${vs.best && holds(vs.best) ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
-                  <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot])}
-                </button>
-              )}
-              {other?.best && onEquipOther && (
-                <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>{t.ui.orOther(other.c.name, buildOfKey(other.best.v.key, t.ui.byStats))}</button>
+              {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
+              {((vs && onEquip) || (other?.best && onEquipOther)) && (
+                <div className="vc-acts">
+                  {vs && onEquip && (
+                    <button type="button" className={`btn vc-equip${vs.best && holds(vs.best) ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
+                      <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot])}
+                    </button>
+                  )}
+                  {other?.best && onEquipOther && (
+                    <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>{t.ui.orOther(other.c.name, buildOfKey(other.best.v.key, t.ui.byStats))}</button>
+                  )}
+                </div>
               )}
             </>
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}

@@ -49,8 +49,11 @@ function restorePieces(raw: unknown, idx: Index): Record<string, Piece> {
   }
   return pieces;
 }
+// счётчик id: не меньше номера любой вещи. Только конечные числа: id «pInfinity» (или seq: Infinity) дал бы
+// seq = Infinity, и следующая новая вещь получила бы тот же id и затёрла бы эту
+const finite = (n: unknown): number => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
 const seqOf = (r: { seq?: unknown }, pieces: Record<string, Piece>) =>
-  Math.max(typeof r.seq === 'number' ? r.seq : 0, ...Object.keys(pieces).map((id) => Number(id.slice(1)) || 0));
+  Math.max(finite(r.seq), ...Object.keys(pieces).map((id) => finite(Number(id.slice(1)))));
 
 // v1 — прежняя проверка без изменений: слот не тот — вещь из билда долой; вещь ни в одном билде — долой
 function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
@@ -79,7 +82,9 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
   const pools: Record<string, string[]> = {};
   const marks: Record<string, Mark> = {};
   for (const k of Object.keys(builds).sort()) {
-    const charId = k.slice(0, k.indexOf('/'));
+    // ключ v1 — «персонаж/билд»; без «/» весь ключ — персонаж (indexOf −1 обрезал бы у id последнюю цифру)
+    const cut = k.indexOf('/');
+    const charId = cut < 0 ? k : k.slice(0, cut);
     const pool = (pools[charId] ??= []);
     for (const id of Object.values(builds[k].slots)) if (id && !pool.includes(id)) pool.push(id);
     const c = idx.CHAR[charId];
@@ -97,13 +102,17 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
   return { ...n, st: autoNew.length ? { ...n.st, autoNew } : n.st };
 }
 
+// пул в хранилище — массив id. Испорченный пул не выбрасываем целиком: gc стёр бы вещи, которых нет в других пулах.
+// Одна строка — пул из одной вещи; объект (например, слоты v1 { helmet: 'p1' }) — его значения; прочее — пусто
+const poolIds = (x: unknown): unknown[] =>
+  Array.isArray(x) ? x : typeof x === 'string' ? [x] : x && typeof x === 'object' ? Object.values(x) : [];
+
 // v2: пулы — массивы строк, id только существующих вещей, без повторов; отметки — 'want' / 'skip'
 function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
   const pieces = restorePieces(r.pieces, idx);
   const pools: Record<string, string[]> = {};
   for (const [id, x] of Object.entries((r.pools && typeof r.pools === 'object' ? r.pools : {}) as Record<string, unknown>)) {
-    if (!Array.isArray(x)) continue;
-    const ids = [...new Set(x.filter((pid): pid is string => typeof pid === 'string' && !!pieces[pid]))];
+    const ids = [...new Set(poolIds(x).filter((pid): pid is string => typeof pid === 'string' && !!pieces[pid]))];
     if (ids.length) pools[id] = ids;
   }
   const marks = Object.fromEntries(Object.entries((r.marks && typeof r.marks === 'object' ? r.marks : {}) as Record<string, unknown>)
@@ -134,7 +143,8 @@ export const encodeGear = (st: GearStore): string =>
   `${PREFIX}2 ` + btoa(unescape(encodeURIComponent(JSON.stringify(st)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 // код → то, что в нём записано (проверит loadGear); 'newer' — код новее; null — не код
 export function readGearCode(text: string): unknown {
-  const m = /^OGC-GEAR(\d+)\s+([\s\S]+)$/.exec(text.trim());
+  // пробел после префикса не обязателен: «OGC-GEAR1eyJ…» читался и до v2 (код объекта начинается с буквы)
+  const m = /^OGC-GEAR(\d+)\s*([\s\S]+)$/.exec(text.trim());
   if (!m) return null;
   if (Number(m[1]) > 2) return 'newer';
   try {
