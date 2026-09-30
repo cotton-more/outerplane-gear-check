@@ -32,7 +32,6 @@ const GENUS: Record<string, G> = { weapon: 'n', accessory: 'm', helmet: 'm', arm
 const by = (slot: string, m: string, f: string, n: string, p: string) => ({ m, f, n, p })[GENUS[slot] ?? 'm'];
 const NOM: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' };
 const GEN: Record<string, string> = { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' };
-const DAT: Record<string, string> = { weapon: 'оружию', accessory: 'аксессуару', helmet: 'шлему', armor: 'броне', gloves: 'перчаткам', shoes: 'ботинкам' };
 const ACC: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // «A и B», «A, B и C»
@@ -383,7 +382,9 @@ export const ru = {
     vsBreaksMarkOne: (set: string, slot: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[slot]}.`,
     vsNoTrade: (set: string) => `Бонус ${set} в статах не выразить — ради статов его не ломаю.`,
     vsNetGain: (part: string, segs: number, stat: string, slot: string) => `${part} распадётся (−${dec(segs)} ${segWord(segs)} ${stat}), но ${NOM[slot]} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} больше — в итоге выгоднее.`,
-    vsStatsOnly: (pct: number, slot: string, part: string) => `Только статы: +${pct}% к ${DAT[slot]}, но ${part} сломается — оставь как есть.`,
+    vsStatsOnly: (pct: number, slot: string, part: string) => `По статам лучше ${GEN[slot]} на ${pct}%, но сломает ${part} — не надевай.`,
+    // «только статы», а у надетой полезных нет: процента нет — одна строка вместо vsEmpty и vsStatsOnly
+    vsStatsEmpty: (slot: string, part: string) => `По статам лучше: у ${by(slot, 'надетого', 'надетой', 'надетого', 'надетых')} ${GEN[slot]} полезных нет. Но сломает ${part} — не надевай.`,
     // bonus — текст сета из данных («Speed +13%»), segs — числом: запятую ставит dec
     vsSetCost: (part: string, tier: string, bonus: string, segs: number, stat: string, slot: string) => `${part} на ${tier} — это ${bonus}, около ${dec(segs)} ${segWord(segs)} ${stat}. ${cap(NOM[slot])} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} меньше.`,
     vsBonusGain: (part: string, bonus: string) => `С ней: + ${part} — ${bonus}.`,
@@ -456,6 +457,8 @@ export const ru = {
     rosterRemoveTitle: (name: string) => `Убрать ${name} из ростера?`,
     rosterRemoveText: (name: string, n: number) => `Вещи ${name} (${n}) уберутся из приложения.`,
     rosterRemoveYes: 'Да, убрать',
+    // тост после «Да, убрать»: только о герое — вещи, что есть у других, просто не используются здесь
+    rosterRemoved: (name: string) => `${name} — не в ростере.`,
     // строка окна «Кому надеть?»: что будет по нажатию
     slotGen: { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' } as Record<string, string>,
     equipRowFill: (build: string) => `Надеть — пустой слот · ${build}`,
@@ -470,7 +473,8 @@ export const ru = {
     replaced: (name: string, slot: string) => `Заменено: ${NOM[slot]} ${name}.`,
     // убраны 2+ вещи её слота: olds — имя сета у брони, предмета у оружия и аксессуара
     replacedMany: (name: string, slot: string, olds: string[]) => `Заменено: ${NOM[slot]} ${name} — убраны прежние: ${andList(olds)}.`,
-    oldMaterial: (slot: string) => `Или отдай ${by(slot, 'его', 'её', 'его', 'их')} новой в Breakthrough.`,
+    // what — как в oldStill: убраны 2+ — имя вместо «Старые»
+    oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
     // what — имя сета или предмета, когда убраны 2+ (replacedMany): «Speed-ботинки остались…» вместо «Старые…»
     oldStill: (slot: string, name: string, build: string, what?: string) => `${what ? named(slot, what) : cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${by(slot, 'остался', 'осталась', 'осталось', 'остались')} у ${name} (в ${build}).`,
     sameAs: (name: string) => `Та же вещь, что у ${name}: Reforge и Breakthrough общие.`,
@@ -788,7 +792,7 @@ export const ru = {
       vs: '▲ — лучше того, что стоит в билде, ▼ — хуже; «сет 3 из 4» — билд станет ближе к сборке. Кнопка — надеть или заменить.',
       cardEquip: 'Слот пуст, новая лучше или билд станет ближе к сборке — надень одной кнопкой под карточкой. «или — Rin» — отдать другому.',
       equipAll: 'Здесь — те, кому вещь встанет в билд. Не по билду, но с полезными статами — найди персонажа по имени: она встанет в его «По статам».',
-      material: 'Фоддер, а не разбор: такая же вещь надета не на T4 — эта пойдёт ей на Breakthrough.',
+      material: 'Фоддер, а не разбор: такая же вещь стоит в собираемом билде не на T4 — эта пойдёт ей в Breakthrough.',
       worn: 'Вещь неплохая, но всем, кому она подходит, уже надето не хуже — поэтому «Разобрать». Разобрал вещь в игре — убери её в карточке персонажа.',
       pool: 'Все вещи персонажа — надетые на этого персонажа, на других или ни на ком. Билды берут из них сами. Разобрал вещь или пустил на Breakthrough — убери её здесь.',
       want: 'Не собираешь этот билд — выключи «Собираю»: вещи для него перестанут держать вердикт.',

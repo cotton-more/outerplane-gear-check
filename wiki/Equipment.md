@@ -113,7 +113,7 @@ A row per character (among those the piece suits and who have gear) — their be
 - **on par** — including "on par: Speed ×2 at T4", when the new piece, until it's T4, would switch the bonus off;
 - **breaks a set** — better by segments, but it fits only in a set piece's place and the set falls apart; a line says
   which piece would fix it ("Fits once you find another Penetration piece at T4: helmet or armor");
-- **stats only** — the piece is not from the build's sets: better than the slot's piece, but it breaks a set — leave it.
+- **stats only** — the piece is not from the build's sets: better than the slot's piece, but it breaks a set — don't equip.
 
 Below — "More: …" with the character's other builds (tap to expand), "Leaves Speed as is", "Also counts toward … — which
 you don't fill" or "— it starts filling". For weapons and accessories the passive matters more than substats:

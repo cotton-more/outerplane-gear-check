@@ -126,8 +126,9 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
     } else dim.push(t.ui.vsNoTrade(setName(idx, o.broken)));
   } else if (o.kind === 'stats' && o.worn) {
     const part = o.v.b.sets[0]?.find((p) => p.set === wornSet);
-    if (o.pair?.wornEmpty) dim.push(t.ui.vsEmpty);
-    else dim.push(t.ui.vsStatsOnly(pctOf(o), o.worn.slot, part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStats));
+    const what = part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStats;
+    // у надетой полезных нет — процента нет, но что сломается, сказать надо: одна строка
+    dim.push(o.pair?.wornEmpty ? t.ui.vsStatsEmpty(o.worn.slot, what) : t.ui.vsStatsOnly(pctOf(o), o.worn.slot, what));
   }
   for (const r of o.gainedBonus) dim.push(t.ui.vsBonusGain(partText(idx, r), bonusText(idx, r)));
   for (const r of o.lostBonus) if (o.used) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));

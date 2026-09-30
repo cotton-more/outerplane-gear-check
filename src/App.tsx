@@ -287,9 +287,9 @@ export function App() {
       const at = after ? cur.indexOf(after) : cur.length;
       rosterApi.replace([...cur.slice(0, at), a.id, ...cur.slice(at)]);
     };
-    const others = [...new Set(r.dropped.ids.flatMap((pid) => holdersOf(r.st, pid)))].map(charName);
+    // тост — только о герое: у кого ещё остались те же записи, не говорим (они здесь просто не используются)
     setGearUndo({
-      text: t.ui.removedFrom(charName(a.id)), note: others.length ? t.ui.stillWith(others.join(', ')) : '', tab: 'chars',
+      text: t.ui.rosterRemoved(charName(a.id)), note: '', tab: 'chars',
       undo: (x) => (x === r.st || (wrote !== null && storage.raw('gear') === wrote) ? st : undoDrop(x, r.dropped)), after: back,
     });
   };
@@ -399,7 +399,7 @@ export function App() {
       const still = holdersOf(st, old.id).filter((id) => id !== c.id);
       const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
       if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats, many ? pieceLabel(old) : undefined));
-      else if (same) notes.push(t.ui.oldMaterial(old.slot));
+      else if (same) notes.push(t.ui.oldMaterial(old.slot, many ? pieceLabel(old) : undefined));
     }
     return notes;
   };

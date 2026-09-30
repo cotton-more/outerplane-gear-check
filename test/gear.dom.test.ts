@@ -220,7 +220,7 @@ describe('«Заменить»: что со старой', () => {
     await click($('.vc-equip'));
 
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
-    expect($('.gear-toast small')?.textContent).toBe("Or feed it to the new one's Breakthrough.");
+    expect($('.gear-toast small')?.textContent).toBe("The old helmet can feed the new one's Breakthrough.");
     expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
     expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4']);
   });
@@ -460,6 +460,20 @@ describe('«Сейчас на персонажах»', () => {
     expect(row.textContent).toContain('Lost: Penetration ×4 (T0–T3) — Penetration +20%.');
     expect(row.textContent).toContain('Fits once two Penetration pieces are marked Breakthrough T4.');
     expect(row.querySelector('.vs-act')).toBeNull();
+  });
+
+  // Speed/Immu собран, Immunity-шлем без полезных; Defense-шлем в Speed/Immu — «только статы» (Immunity ×2 ради статов
+  // не ломаю): процента нет, но что сломается — есть, одной строкой (было: только «The one on has nothing useful»)
+  it('Caren, Speed/Immu с пустым Immunity-шлемом: Defense-шлем — «только статы» одной строкой «nothing useful… But it breaks»', async () => {
+    const junk = { RES: 1, EFF: 1, HP: 1, ATK: 1 }, immu = set('Immunity');
+    const pcs = [P('p1', 'helmet', immu, junk), P('p2', 'armor', immu, junk), P('p3', 'gloves', speed, junk), P('p4', 'shoes', speed, junk)];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Defense'), subs: { 'DEF%': 2, CHC: 2, CHD: 1, HP: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    await click($('.vcard'));
+    const row = () => byText('.v-vs .vs-row', 'Caren');
+    await click(row()?.querySelector<HTMLElement>('.vs-more-btn'));
+    const stats = [...row()!.querySelectorAll<HTMLElement>('.vs-more')].find((m) => m.querySelector('.vs')?.textContent === 'stats only')!;
+    expect(stats.querySelector('.bn')?.textContent).toBe('Speed/Immu');
+    expect([...stats.querySelectorAll('p')].slice(1).map((p) => p.textContent)).toEqual(["Better on stats — the helmet on has nothing useful. But it breaks Immunity ×2 — don't equip."]);
   });
 
   it('Luna, одна из четырёх Pen на T4: Attack-шлем — «ломает», совет отметить T4 у одной вещи, не «у двух»', async () => {
@@ -857,13 +871,15 @@ describe('вещи только у героев ростера (Р16)', () => {
       .toEqual({ title: 'Remove Caren from the roster?', text: "Caren's gear (2) is removed from the app." });
   });
 
-  it('«Да, убрать»: Caren не в ростере, её вещи и отметки убраны, общая запись у Rin осталась; сообщение', async () => {
+  // сообщение — только о герое: что та же запись осталась у Rin, не говорим (было: «Removed from Caren. Rin still has it.»)
+  it('«Да, убрать»: Caren не в ростере, её вещи и отметки убраны, общая запись у Rin осталась; сообщение только о Caren', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
     await click(tileStar('Caren'));
     await click(askBtn('Yes, remove'));
     expect({ roster: roster(), pools: stored().pools, pieces: Object.keys(stored().pieces), marks: stored().marks })
       .toEqual({ roster: [rin.id, kappa.id], pools: { [rin.id]: ['p2'] }, pieces: ['p2'], marks: {} });
-    expect($('.gear-toast')?.textContent).toContain('Removed from Caren.Rin still has it.');
+    expect({ text: $('.gear-toast span')?.textContent, note: $('.gear-toast small'), buttons: $$('.gear-toast button').map((x) => x.textContent) })
+      .toEqual({ text: 'Caren is out of the roster.', note: null, buttons: ['Undo'] });
   });
 
   it('«Вернуть» после «Да» — вещи, отметки и место в ростере как были', async () => {

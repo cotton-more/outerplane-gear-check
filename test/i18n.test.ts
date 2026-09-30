@@ -117,6 +117,44 @@ describe('строки GEARPOOL', () => {
     expect(enUi.oldStill('helmet', 'Rin', 'Speed')).toBe('The old helmet stays with Rin (in Speed).');
   });
 
+  const ARMOR = ['helmet', 'armor', 'gloves', 'shoes'];
+
+  it('старая той же линии — материал новой: слот склоняется, 2+ убранных — по имени; EN one\'s / ones\'', () => {
+    expect(ARMOR.map((sl) => ru.oldMaterial(sl))).toEqual([
+      'Старый шлем — материал для Breakthrough нового.', 'Старая броня — материал для Breakthrough новой.',
+      'Старые перчатки — материал для Breakthrough новых.', 'Старые ботинки — материал для Breakthrough новых.']);
+    expect([ru.oldMaterial('weapon'), ru.oldMaterial('accessory')])
+      .toEqual(['Старое оружие — материал для Breakthrough нового.', 'Старый аксессуар — материал для Breakthrough нового.']);
+    expect([ru.oldMaterial('shoes', 'Speed'), ru.oldMaterial('weapon', 'Caracal')])
+      .toEqual(['Speed-ботинки — материал для Breakthrough новых.', 'Оружие Caracal — материал для Breakthrough нового.']);
+    expect(ARMOR.map((sl) => enUi.oldMaterial(sl))).toEqual([
+      "The old helmet can feed the new one's Breakthrough.", "The old armor can feed the new one's Breakthrough.",
+      "The old gloves can feed the new ones' Breakthrough.", "The old boots can feed the new ones' Breakthrough."]);
+    expect(enUi.oldMaterial('shoes', 'Speed')).toBe("The Speed boots can feed the new ones' Breakthrough.");
+  });
+
+  it('«только статы»: «По статам лучше {шлема} на N%, но сломает …» — слот в родительном падеже', () => {
+    expect(ARMOR.map((sl) => ru.vsStatsOnly(25, sl, 'Speed ×4'))).toEqual([
+      'По статам лучше шлема на 25%, но сломает Speed ×4 — не надевай.', 'По статам лучше брони на 25%, но сломает Speed ×4 — не надевай.',
+      'По статам лучше перчаток на 25%, но сломает Speed ×4 — не надевай.', 'По статам лучше ботинок на 25%, но сломает Speed ×4 — не надевай.']);
+    expect(ARMOR.map((sl) => enUi.vsStatsOnly(25, sl, 'Speed ×4'))).toEqual([
+      "Beats the helmet by 25% on stats, but breaks Speed ×4 — don't equip.", "Beats the armor by 25% on stats, but breaks Speed ×4 — don't equip.",
+      "Beats the gloves by 25% on stats, but breaks Speed ×4 — don't equip.", "Beats the boots by 25% on stats, but breaks Speed ×4 — don't equip."]);
+  });
+
+  it('«только статы», у надетой полезных нет: одна строка — «у надетого шлема / надетой брони / надетых перчаток»', () => {
+    expect(ARMOR.map((sl) => ru.vsStatsEmpty(sl, 'Speed ×4'))).toEqual([
+      'По статам лучше: у надетого шлема полезных нет. Но сломает Speed ×4 — не надевай.',
+      'По статам лучше: у надетой брони полезных нет. Но сломает Speed ×4 — не надевай.',
+      'По статам лучше: у надетых перчаток полезных нет. Но сломает Speed ×4 — не надевай.',
+      'По статам лучше: у надетых ботинок полезных нет. Но сломает Speed ×4 — не надевай.']);
+    expect(ARMOR.map((sl) => enUi.vsStatsEmpty(sl, 'Speed ×4'))).toEqual([
+      "Better on stats — the helmet on has nothing useful. But it breaks Speed ×4 — don't equip.",
+      "Better on stats — the armor on has nothing useful. But it breaks Speed ×4 — don't equip.",
+      "Better on stats — the gloves on has nothing useful. But it breaks Speed ×4 — don't equip.",
+      "Better on stats — the boots on has nothing useful. But it breaks Speed ×4 — don't equip."]);
+  });
+
   it('«Кому надеть?» при замене: «Заменить {шлем/броню/…} — соберёт / сет n из m / начнёт»', () => {
     expect(ru.equipRowReplaceCompletes(ru.slotAcc.armor, 'Speed')).toBe('Заменить броню — соберёт Speed');
     expect(ru.equipRowReplaceCloser(ru.slotAcc.gloves, 'Speed', 3, 4)).toBe('Заменить перчатки — Speed: сет 3 из 4');
