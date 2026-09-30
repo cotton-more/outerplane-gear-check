@@ -153,6 +153,28 @@ describe('что удерживает штамп', () => {
     expect(judge(ctxOf([caren]), snow, same)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже лучше у Caren' });
   });
 
+  describe('«только статы» — не повод понижать (находка 7)', () => {
+    // Caren собрана Speed ×4; Defense-шлемы — не из связки (Def не начат). Сильный — «только статы», слабый — без исходов
+    const mid = { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 1 };
+    const st = all(caren, (['helmet', 'armor', 'gloves', 'shoes'] as const).map((slot) => piece(slot, 'Speed', mid)));
+    const strong = helmet({ CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 }, 'unique', 'Defense');
+    const weak = helmet({ CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 }, 'unique', 'Defense');
+
+    it('сильный шлем даёт только «только статы»', () => {
+      const kinds = outcomeFor(ctxOf([caren]), poolView(ctxOf([caren]), st), caren.id, strong)!.rows.map((r) => r.kind);
+      expect(kinds.length).toBeGreaterThan(0);
+      expect(kinds.every((k) => k === 'stats')).toBe(true);
+    });
+
+    it('лучше по статам и слабее — один штамп, без понижения', () => {
+      const ctx = ctxOf([caren]);
+      const s = judge(ctx, strong, st), w = judge(ctx, weak, st);
+      expect([s.v, s.worn]).toEqual([w.v, w.worn]);
+      expect(s.v).toBe('keep');
+      expect(s.worn).toBeUndefined();
+    });
+  });
+
   it('«Спорно» не понижаем: вещь хороша для тех, кого нет в ростере', () => {
     const atk = helmet({ 'ATK%': 3, ATK: 2, 'HP%': 2, EFF: 1 });
     const res = evaluate(ctxOf([caren]), atk, { gamble: false });
