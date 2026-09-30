@@ -354,6 +354,7 @@ export const en: Texts = {
     twinOtherNote: (name) => `A second copy in the inventory: ${name} gets a separate piece.`,
     twinFoot: 'In the game one hero wears it at a time. Here you just see that both need it.',
     byStats: 'By stats',
+    byStatsQ: '"By stats"',
     cdBest: (build, n, m) => `Best assembled: ${build} · set ${n} of ${m}`,
     cdClosest: (build, n, m) => `Closest to done: ${build} · set ${n} of ${m}`,
     cdAlso: (list) => `Also assembled: ${list}`,

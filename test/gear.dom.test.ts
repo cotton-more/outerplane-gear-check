@@ -530,6 +530,22 @@ describe('«Кому надеть?»', () => {
     expect(byText('.equip-row', noSpeed.name)?.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
   });
 
+  // Шаг 14 (браузер): Aer (Striker) предлагался Thumping Odyssey — оружие только для Mage, «пустой слот · Speed».
+  // Вещь не для класса героя не предлагается ни без поиска, ни при поиске по имени (и в «По статам» не встаёт)
+  it('оружие только для Mage: Aer (Striker) нет ни в ростере, ни в поиске «aer»; Mage Ame — есть', async () => {
+    // Arrange
+    const aer = char('Aer'), ame = char('Ame');
+    const names = () => $$('.equip-row .nm b').map((b) => b.textContent);
+    await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: '17', main: 'ATK%', subs: { CHC: 2, CHD: 2, SPD: 1, HP: 1 } }, { roster: [aer.id, ame.id] });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect(names()).toEqual([ame.name]);
+    // Act
+    await type($('.equip-q input') as HTMLInputElement, 'aer');
+    // Assert
+    expect(names()).not.toContain(aer.name);
+  });
+
   it('поиск по имени, а вещь ей ничего не даст (полезных статов нет): строки нет, внизу — «никому с таким именем»', async () => {
     const drakhan = char('Demiurge Drakhan'); // цепочка SPD › HP › CHC › CHD › DMG UP% › DEF
     await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Revenge'), subs: { RES: 2, EFF: 2, 'ATK%': 1 } }, { roster: [drakhan.id] });
@@ -1096,7 +1112,7 @@ describe('«По статам» у каждого героя (находка 28)
     expect(row.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
     await click(row);
     expect(stored().pools[drakhan.id]).toHaveLength(1);
-    expect($('.gear-toast')?.textContent).toContain('Counts in By stats.');
+    expect($('.gear-toast')?.textContent).toContain('Counts in "By stats".');
   });
 
   it('карточка Drakhan без вещей: вкладка «By stats» последней, на ней — что туда встаёт и «Собрать билд»', async () => {
@@ -1131,7 +1147,7 @@ describe('«По статам» у каждого героя (находка 28)
     expect(row.querySelector('.act')?.textContent).toBe('Equip — By stats');
     expect(row.querySelector('.vs')?.textContent).not.toBe('starts');
     await click(row);
-    expect($('.gear-toast')?.textContent).toContain('Counts in By stats.');
+    expect($('.gear-toast')?.textContent).toContain('Counts in "By stats".');
     expect(stored().marks ?? {}).toEqual(marks);
   });
 
@@ -1144,7 +1160,7 @@ describe('«По статам» у каждого героя (находка 28)
     const row = byText('.equip-row', 'Caren')!;
     expect(row.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
     await click(row);
-    expect($('.gear-toast')?.textContent).toContain('On Caren: boots. Counts in By stats.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots. Counts in "By stats".');
   });
 
   it('вещь только в «По статам» — в списке вещей «в By stats»; вещь и в Speed — только «в Speed»', async () => {
@@ -1154,7 +1170,7 @@ describe('«По статам» у каждого героя (находка 28)
     await mount({ tab: 'chars', charId: eternal.id }, {}, { roster: [eternal.id], gear: G(pcs, { [eternal.id]: ['p1', 'p2', 'p3'] }) });
     await click($('.pool summary'));
     const where = (id: string) => $$('.pool-list li')[['p1', 'p2', 'p3'].indexOf(id)].querySelector('.pool-w')?.textContent;
-    expect(where('p1')).toBe('in By stats');
+    expect(where('p1')).toBe('in "By stats"');
     expect(where('p2')).toBe('in Speed');
     expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
   });

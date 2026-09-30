@@ -350,7 +350,7 @@ export function App() {
   // стало с вытесненной, с «Вернуть». Такая же вещь уже у другого персонажа — сначала «Это шлем Rin?»: та же запись
   // («Она же — и у Caren») или своя. У самого персонажа такая уже есть — ничего (кнопка «Уже есть» не нажимается)
   const [twinAsk, setTwinAsk] = useState<{ c: Char; piece: Piece; owner: string; sw: Switched | null } | null>(null);
-  const buildName = (key: string) => buildOfKey(key, t.ui.byStats);
+  const buildName = (key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «Идёт в …», «(в …)»
   // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
   const usedFor = (st: GearStore, charId: string, id: string) =>
     [...new Set(whereUsed(poolView(ctx, st, target?.c.id === charId ? target.v.key : null), charId, id).map((v) => buildName(v.key)))];
@@ -405,7 +405,7 @@ export function App() {
     for (const old of r.removed) {
       const still = holdersOf(st, old.id).filter((id) => id !== c.id);
       const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
-      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats, many ? pieceLabel(old) : undefined));
+      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStatsQ, many ? pieceLabel(old) : undefined));
       else if (same) notes.push(t.ui.oldMaterial(old.slot, many ? pieceLabel(old) : undefined));
     }
     return notes;
@@ -606,7 +606,7 @@ export function App() {
         {twinAsk && !tour.run && (
           <Sheet title={t.ui.twinTitle(twinAsk.piece.slot, charName(twinAsk.owner))} onClose={() => { if (twinAsk.sw) switchToast(twinAsk.sw, 'eval'); setTwinAsk(null); }}>
             <div className="twin">
-              <p>{t.ui.twinNote(charName(twinAsk.owner), usedFor(gear.store, twinAsk.owner, twinAsk.piece.id).join(', ') || t.ui.byStats)}</p>
+              <p>{t.ui.twinNote(charName(twinAsk.owner), usedFor(gear.store, twinAsk.owner, twinAsk.piece.id).join(', ') || t.ui.byStatsQ)}</p>
               <div className="piece-act twin-act">
                 <button type="button" className="btn primary" onClick={() => equipOn(twinAsk.c, twinAsk.piece, twinAsk.sw)}>
                   {t.ui.twinShare(twinAsk.c.name)}<small>{t.ui.twinShareNote}</small>

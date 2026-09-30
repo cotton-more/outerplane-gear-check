@@ -114,7 +114,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const missing = reach.missing.map((m) => t.ui.missing(setName(m.set), m.n - m.have, free as string[], t4Only(idx.SET[m.set], m.n)));
   const first = c.builds[0]?.sets[0]?.[0];
   const where = (id: string) => {
-    const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStats : x.name));
+    const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStatsQ : x.name));
     const with_ = holdersOf(gear.store, id).filter((h) => h !== c.id).map((h) => idx.CHAR[h]?.name ?? h);
     return [others.length ? t.ui.slotAlsoIn(others.join(', ')) : '', with_.length ? t.ui.slotAlsoWith(with_.join(', ')) : ''].filter(Boolean).join(' · ');
   };
@@ -213,7 +213,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onTry, onRemoved }:
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
   const holders = holdersOf(st, p.id);
   const others = holders.filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
-  const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStats)))];
+  const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
   // «Стоит в … — правка изменит везде» — только у общей: в 2+ билдах или и у других; ни в одном — «Ни в одном билде»
   const whereText = builds.length > 1 || others.length ? t.ui.gearShared(t.ui.pieceWhere(builds.join(', '), others.join(', '))) : builds.length ? '' : t.ui.pieceNowhere;
   const remove = (all: boolean) => {

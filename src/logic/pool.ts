@@ -21,7 +21,7 @@ import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible, type B
 import type { SubWeight } from './score';
 import type { ItemInput } from './verdict';
 import { comboSig, variantsOf, type Variant } from './variants';
-import { against, fit, itemValue, MARGIN, pieceValue, type Fit, type Pair } from './vs';
+import { against, fit, itemValue, MARGIN, pieceValue, wearable, type Fit, type Pair } from './vs';
 
 export type { Mark };
 
@@ -134,12 +134,13 @@ function storedValue(ctx: Ctx, c: Char, v: Variant, p: Piece): number {
 
 // номер записи из id («p12» → 12); не число или не конечное («p1e400») — 0, как у seqOf хранилища (gearStore)
 const numOf = (id: string) => { const n = Number(id.replace(/^\D+/, '')); return Number.isFinite(n) ? n : 0; };
+// Вещь не для класса персонажа (vs wearable) — не вещь его сборки: её нет среди кандидатов ни одного варианта
 export function entriesFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x?: ItemInput | null): Entry[] {
-  const out: Entry[] = pieces.map((p) => ({
+  const out: Entry[] = pieces.filter((p) => wearable(ctx, c, p)).map((p) => ({
     id: p.id, piece: p, input: pieceInput(p), slot: p.slot, setId: p.setId, bt: p.bt, num: numOf(p.id),
-    v: storedValue(ctx, c, v, p), fit: fit(ctx, v.b, pieceInput(p)),
+    v: storedValue(ctx, c, v, p), fit: fit(ctx, c, v.b, pieceInput(p)),
   }));
-  if (x) out.push({ id: null, piece: null, input: x, slot: x.slot, setId: x.setId, bt: null, num: NEWEST, v: itemValue(ctx, c, v.b, x), fit: fit(ctx, v.b, x) });
+  if (x && wearable(ctx, c, x)) out.push({ id: null, piece: null, input: x, slot: x.slot, setId: x.setId, bt: null, num: NEWEST, v: itemValue(ctx, c, v.b, x), fit: fit(ctx, c, v.b, x) });
   return out;
 }
 
@@ -300,12 +301,12 @@ export const started = (reach: Pick<Assembly, 'progress' | 'slots'>): boolean =>
 // всего вещей на связку), оружие из списка — в свой слот (рекомендованное и временное идут раньше прочих), и только
 // они. «Не собираю» тут не важен: отмеченный так билд всё равно начат. Отдельной функцией — без сборок (сверка —
 // test/pool.test.ts)
-type FitOf = Parameters<typeof fit>[2];
+type FitOf = Parameters<typeof fit>[3];
 export function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly FitOf[]): boolean {
   if (!c.builds.length || !pieces.length) return false;
   const vs = variantsOf(ctx.idx, c);
   const sets = new Set(vs.flatMap((v) => combo(v).map((p) => p.set)));
-  return !pieces.some((p) => (isArmor(p.slot) ? !!p.setId && sets.has(p.setId) : vs.some((v) => fit(ctx, v.b, p) !== 'no')));
+  return !pieces.some((p) => (isArmor(p.slot) ? !!p.setId && sets.has(p.setId) : vs.some((v) => fit(ctx, c, v.b, p) !== 'no')));
 }
 
 export interface Play {
@@ -588,6 +589,8 @@ function computeOutcome(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   const cp = view.of(charId);
   if (!cp) return null;
   const { c, pieces } = cp;
+  // не для его класса (vs wearable) — ему ни к чему: ни строки, ни «По статам» при явном выборе, ни «начнёт»
+  if (!wearable(ctx, c, x)) return null;
   const twin = pieces.find((p) => samePiece(x, p)) ?? null;
   if (twin) return { c, worn: twin, rows: [], starts: [], useful: false };
   const withX = play(ctx, c, pieces, view.opts, x);

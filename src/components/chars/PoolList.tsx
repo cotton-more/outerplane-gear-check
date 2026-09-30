@@ -21,7 +21,7 @@ export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved }: {
   const open = cp.inPlay.filter((v) => !isStats(v) && !v.dupOf);
   const where = (p: Piece) => {
     const used = whereUsed(view, c.id, p.id).filter((v) => !v.dupOf);
-    const names = [...new Set(used.map((v) => buildOfKey(v.key, t.ui.byStats)))];
+    const names = [...new Set(used.map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
     const all = open.length > 1 && open.every((v) => used.includes(v));
     const others = holdersOf(gear.store, p.id).filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
     return [all ? t.ui.poolEverywhere : names.length ? t.ui.poolIn(names.join(', ')) : '', others.length ? t.ui.poolWith(others.join(', ')) : ''].filter(Boolean).join(' · ');

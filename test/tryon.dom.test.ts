@@ -179,7 +179,7 @@ describe('примерка', () => {
       { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
     await click($('.vc-equip'));
     // прочая в пустой слот Speed — не «засчитано в Speed»: кнопка и строка обещали «По статам»
-    expect($('.gear-toast')?.textContent).toContain('On Caren: gloves. Counts in By stats.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: gloves. Counts in "By stats".');
     expect(stored('gear').pools[caren.id]).toHaveLength(1);
     expect(stored('gear').marks ?? {}).toEqual({});
   });

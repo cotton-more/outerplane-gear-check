@@ -82,12 +82,22 @@ export function lookFor(ctx: Ctx, c: Char, b: Build, p: Piece, max = 2): string[
 export const itemValue = (ctx: Ctx, c: Char, b: Build, item: ItemInput): number =>
   value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0).v;
 
-// подходит ли вещь этому билду: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с нужным main;
-// остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду нужен.
-// Сабстаты не нужны — годится и записанная вещь (Piece)
+// может ли персонаж надеть вещь: у оружия и аксессуара из списка бывает класс (classLimits) — как в вердикте (evalGear).
+// Нельзя — вещь ему не кандидат нигде: ни в билде, ни в «По статам», ни в примерке, и билд она не начинает (fit — «нет»,
+// сборка её не видит — pool entriesFor, исхода нет — pool outcomeFor)
+export function wearable(ctx: Ctx, c: Char, item: Pick<ItemInput, 'slot' | 'itemKey'>): boolean {
+  if (isArmor(item.slot) || !item.itemKey) return true;
+  const limits = ctx.idx.ITEM[item.slot as GearKind][item.itemKey]?.classLimits;
+  return !limits?.length || limits.includes(c.class);
+}
+
+// подходит ли вещь этому билду персонажа c: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с
+// нужным main; остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду
+// нужен. Не для класса c (wearable) — «нет». Сабстаты не нужны — годится и записанная вещь (Piece)
 export type Fit = 'no' | 'rec' | 'stopgap';
-export function fit(ctx: Ctx, b: Build, item: Pick<ItemInput, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main'>): Fit {
+export function fit(ctx: Ctx, c: Char, b: Build, item: Pick<ItemInput, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main'>): Fit {
   if (isArmor(item.slot)) return item.setId && combosWith(b, item.setId).length ? 'rec' : 'no';
+  if (!wearable(ctx, c, item)) return 'no';
   const kind = item.slot as GearKind;
   const g = item.grade === 'unique' && item.itemKey ? gearList(b, kind).find((r) => r.key === item.itemKey) : undefined;
   if (g && (!g.mains.length || (item.main != null && g.mains.includes(item.main)))) return 'rec';
@@ -101,7 +111,7 @@ const rowOf = (ctx: Ctx, c: Char, b: Build, item: ItemInput, subs: Subs): Omit<R
 // Новая против одной вещи в том же слоте билда (без сетов): на сколько лучше по полезным сегментам, какие места
 // цепочки она закрывает и теряет, решила ли пассивка (why), материал ли она надетой. kind — только по этой паре,
 // ahead — для «хуже»
-export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piece, f: Fit = fit(ctx, b, item)): Pair {
+export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piece, f: Fit = fit(ctx, c, b, item)): Pair {
   const wi = pieceInput(worn);
   // Epic с 4 сабстатами в форме уже прошла первый Reforge (он дал 4-й) — как у записанной вещи (reforgesDone)
   const X = value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0);
@@ -110,7 +120,7 @@ export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piec
   let kind: Pair['kind'] = delta >= MARGIN ? 'up' : delta <= -MARGIN ? 'down' : 'eq';
   let why: Pair['why'] = null;
   if (!isArmor(item.slot)) {
-    const wf = fit(ctx, b, wi);
+    const wf = fit(ctx, c, b, wi);
     if (f === 'stopgap' && wf === 'rec') { kind = 'down'; why = 'stopgap'; }
     else if (f === 'rec' && wf !== 'rec') { kind = 'up'; why = 'rec'; }
   }

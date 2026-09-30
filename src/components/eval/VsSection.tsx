@@ -70,7 +70,7 @@ const bonusText = (idx: Index, r: BonusRow) => {
   return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
 };
 const ARMOR = ['helmet', 'armor', 'gloves', 'shoes'] as const;
-const buildName = (t: T, key: string) => buildOfKey(key, t.ui.byStats);
+const buildName = (t: T, key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «остаётся в …»
 // имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ
 export const variantName = (t: T, v: Outcome['v']) => (isStats(v) ? t.ui.byStats : v.name);
 
@@ -126,7 +126,7 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
     } else dim.push(t.ui.vsNoTrade(setName(idx, o.broken)));
   } else if (o.kind === 'stats' && o.worn) {
     const part = o.v.b.sets[0]?.find((p) => p.set === wornSet);
-    const what = part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStats;
+    const what = part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStatsQ;
     // у надетой полезных нет — процента нет, но что сломается, сказать надо: одна строка
     dim.push(o.pair?.wornEmpty ? t.ui.vsStatsEmpty(o.worn.slot, what) : t.ui.vsStatsOnly(pctOf(o), o.worn.slot, what));
   }

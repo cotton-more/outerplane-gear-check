@@ -42,7 +42,8 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
   // что будет по нажатию: «Надеть — соберёт Speed», «Заменить шлем — новая лучше · Speed», «Надеть — начнёт Speed»;
   // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие
   const action = (x: CharVs) => {
-    if (x.worn) return t.ui.equipRowWorn([...new Set(whereUsed(view, x.c.id, x.worn.id).map((v) => bn(v.key)))].join(', ') || t.ui.byStats);
+    // «та же вещь в …» — фраза: имя «По статам» в кавычках
+    if (x.worn) return t.ui.equipRowWorn([...new Set(whereUsed(view, x.c.id, x.worn.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))].join(', ') || t.ui.byStatsQ);
     const o = x.best;
     if (!o || o.entering || !o.used) {
       const builds = [...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : '');

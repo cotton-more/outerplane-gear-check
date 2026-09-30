@@ -405,6 +405,8 @@ export const ru = {
     twinFoot: 'В игре вещь носит кто-то один. Здесь — просто видно, что она нужна обоим.',
     // карточка персонажа (GEARPOOL)
     byStats: 'По статам',
+    // то же имя внутри фразы («Идёт в …», «в …») — в кавычках, как в остальных строках
+    byStatsQ: '«По статам»',
     cdBest: (build: string, n: number, m: number) => `Лучше всего собран: ${build} · сет ${n} из ${m}`,
     cdClosest: (build: string, n: number, m: number) => `Ближе всех к сборке: ${build} · сет ${n} из ${m}`,
     cdAlso: (list: string) => `Собраны ещё: ${list}`,

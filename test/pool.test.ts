@@ -260,7 +260,7 @@ describe('«собираешь»', () => {
 
   it('Р18: оружие не из списка (fit «нет») — собирается только «По статам»', () => {
     const w = W(D.weapons.find((x) => !caren.builds.some((b) => b.weapons.some((r) => r.key === x.key)))!.key, GOOD, 'SPD', 'rare');
-    expect(caren.builds.map((b) => fit(ctx, b, w))).toEqual(caren.builds.map(() => 'no'));
+    expect(caren.builds.map((b) => fit(ctx, caren, b, w))).toEqual(caren.builds.map(() => 'no'));
     expect(inPlay([w])).toEqual(['#stats']);
   });
 
@@ -772,5 +772,57 @@ describe('«По статам» у каждого героя (находка 28)
       const view = poolView(ctx, store({ [eternal.id]: [eff, rec(GLUJ), rec(WEAK_SPEED)] }));
       expect(whereUsed(view, eternal.id, eff.id).map(isStats)).toEqual([true]);
     });
+  });
+});
+
+// Шаг 14 (браузер): Aer (Striker) в «Кому надеть?» предлагался Thumping Odyssey — оружие только для Mage («пустой слот ·
+// Speed»). Вещь не для класса героя (vs wearable) — не кандидат нигде: ни в билде, ни в «По статам», ни в примерке
+describe('оружие не для класса героя (classLimits)', () => {
+  const aer = char('Aer');   // Striker; билды просят ATK% в оружии — Mage-оружие с ATK% было бы «временным»
+  const ame = char('Ame');   // Mage; Thumping Odyssey — в списке её билдов
+  const mageOnly = D.weapons.find((w) => w.name === 'Thumping Odyssey')!;
+  const X: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: mageOnly.key, main: 'ATK%', unlisted: false, subs: { ATK: 2, CHC: 2, CHD: 1, SPD: 1 } };
+  const EXPLICIT = { explicit: true };
+  const aerSpeed = buildKey(aer.id, 'Speed');
+
+  it('данные: Thumping Odyssey — только Mage, Aer — Striker, Ame — Mage', () => {
+    expect([mageOnly.classLimits, aer.class, ame.class]).toEqual([['mage'], 'striker', 'mage']);
+  });
+
+  it('Aer, явный выбор (поиск по имени): исхода нет — ни билда, ни «По статам»', () => {
+    // Arrange
+    const view = poolView(ctx, EMPTY_GEAR);
+    // Act
+    const o = outcomeFor(ctx, view, aer.id, X, EXPLICIT);
+    // Assert
+    expect(o).toBeNull();
+    expect(charVs(ctx, view, aer.id, X, undefined, EXPLICIT)).toBeNull();
+  });
+
+  it('Aer, примерка Speed и примерка «По статам»: строки нет', () => {
+    const view = poolView(ctx, EMPTY_GEAR, aerSpeed);
+    expect(charVs(ctx, view, aer.id, X, aerSpeed, EXPLICIT)).toBeNull();
+    expect(charVs(ctx, view, aer.id, X, statVariant(aer)!.key, EXPLICIT)).toBeNull();
+  });
+
+  it('Mage-героиня Ame: исход есть — рекомендованное оружие встаёт в пустой слот', () => {
+    const o = outcomeFor(ctx, poolView(ctx, EMPTY_GEAR), ame.id, X, EXPLICIT);
+    expect(o?.rows.some((r) => r.used && r.kind === 'fill' && !isStats(r.v))).toBe(true);
+  });
+
+  it('fit — «нет» у каждого билда Aer, хотя main ATK% его билдам нужен', () => {
+    expect(aer.builds.map((b) => fit(ctx, aer, b, X))).toEqual(aer.builds.map(() => 'no'));
+    expect(aer.builds.every((b) => slotMains(b, 'weapon').has('ATK%'))).toBe(true);
+  });
+
+  it('записанная в пул Aer (старая запись): не в сборках, билд не начинает, собирается только «По статам»', () => {
+    // Arrange
+    const w = W(mageOnly.key, { ATK: 2, CHC: 2 }, 'ATK%');
+    // Act
+    const p = play(ctx, aer, [w]);
+    // Assert
+    expect(p.variants.every((v) => !p.asm.get(v.key)!.slots.weapon)).toBe(true);
+    expect(p.variants.some((v) => !isStats(v) && started(p.reach.get(v.key)!))).toBe(false);
+    expect(inPlay([w], {}, aer)).toEqual(['#stats']);
   });
 });
