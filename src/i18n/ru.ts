@@ -376,7 +376,6 @@ export const ru = {
     vsSetCost: (part: string, tier: string, bonus: string, segs: string, stat: string, slot: string) => `${part} на ${tier} — это +${bonus}, около ${segs} сегмента ${stat}. ${cap(NOM[slot])} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} меньше.`,
     vsBonusGain: (part: string, bonus: string) => `С ней: + ${part} — ${bonus}.`,
     vsBonusLost: (part: string, tier: string, bonus: string) => `Пропадёт: ${part} (${tier}) — ${bonus}.`,
-    vsGive: (slot: string, name: string, build: string, outcome: string) => `${cap(by(slot, 'снятый', 'снятая', 'снятое', 'снятые'))} ${NOM[slot]} пригодится ${name} · ${build}: ${outcome}.`,
     vsAlso: (builds: string, n: number) => `Пойдёт и в: ${builds} — ${n > 1 ? 'их' : 'его'} ты не собираешь.`,
     vsStarts: (builds: string) => `Пойдёт и в: ${builds} — начнёт собираться.`,
     vsMore: (list: string) => `Ещё: ${list}`,
@@ -384,8 +383,6 @@ export const ru = {
     // тосты «Надеть» / «Заменить» / «Убрать»
     countsIn: (builds: string) => `Идёт в ${builds}.`,
     startedFilling: (build: string) => `Начал собирать ${build}.`,
-    giveOld: (slot: string, name: string, build: string, outcome: string) => `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} — ${name}? ${build}: ${outcome}.`,
-    giveTo: (name: string) => `Отдать ${name}`,
     removedFrom: (name: string) => `Убрано у ${name}.`,
     stillWith: (names: string) => `У ${names} она осталась.`,
     // «Это шлем Caren?»
@@ -450,7 +447,6 @@ export const ru = {
     equipped: (name: string, slot: string) => `Надето на ${name}: ${NOM[slot]}.`,
     replaced: (name: string, slot: string) => `Заменено: ${NOM[slot]} ${name}.`,
     oldMaterial: (slot: string) => `Или отдай ${by(slot, 'его', 'её', 'его', 'их')} новой в Breakthrough.`,
-    oldVerdict: (label: string) => `Старая: «${label}».`,
     oldStill: (slot: string, name: string, build: string) => `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${by(slot, 'остался', 'осталась', 'осталось', 'остались')} у ${name} (в ${build}).`,
     sameAs: (name: string) => `Та же вещь, что у ${name}: Reforge и Breakthrough общие.`,
     // та же вещь уже на другом персонаже (logic/gear twinElsewhere): переносим, только если игрок подтвердил

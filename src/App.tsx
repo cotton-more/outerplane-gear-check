@@ -22,10 +22,10 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate, withPendingDice } from './logic/evaluate';
-import { gearedChars, holdersOf, pieceInput, samePiece, type GearStore, type Piece } from './logic/gear';
+import { gearedChars, holdersOf, samePiece, type GearStore, type Piece } from './logic/gear';
 import { loadGear, unfuseChar } from './logic/gearStore';
 import { normalizeFusion, replacedX, switchFusion, type FusionFix } from './logic/fusion';
-import { holds, isStats, poolView, putOn, recipientFor, undoPut, type PutResult } from './logic/pool';
+import { holds, isStats, poolView, putOn, undoPut, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
@@ -35,7 +35,6 @@ import type { ItemInput } from './logic/verdict';
 import { offLine, targetName, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, withMaterial } from './logic/material';
 import { withWorn } from './logic/worn';
-import { outcomeWord } from './components/eval/VsSection';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
@@ -158,9 +157,8 @@ export function App() {
   // сообщение после «Надеть» и импорта кода. «Вернуть» — обратная операция только этого действия: другие правки за
   // эти 8 секунд остаются. Видно на той вкладке, где сделано: на «Персонажах» оно легло бы на карточку вещи
   // Сообщение о ростере (Core Fusion) — тем же механизмом: undo нет, «Вернуть» — только after; нечего вернуть — без кнопки
-  // action — вторая кнопка («Отдать Rin»)
   const [gearUndo, setGearUndo] = useState<{
-    text: string; note: string; tab: Tab; undo?: (st: GearStore) => GearStore; after?: () => void; action?: { label: string; run: () => void };
+    text: string; note: string; tab: Tab; undo?: (st: GearStore) => GearStore; after?: () => void;
   } | null>(null);
   useEffect(() => {
     if (!gearUndo) return;
@@ -309,50 +307,24 @@ export function App() {
     const notes: string[] = [];
     if (r.marks.length) notes.push(t.ui.startedFilling([...new Set(r.marks.map(buildName))].join(', ')));
     if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
-    const old = removedNotes(st, c, r);
-    notes.push(...old.notes);
-    const { action } = old;
+    notes.push(...removedNotes(st, c, r));
     if (sw) notes.push(sw.note);
     setGearUndo({
-      text, note: notes.join(' '), tab: 'eval', action,
+      text, note: notes.join(' '), tab: 'eval',
       undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: both(joined, sw?.after),
     });
   };
-  // что стало с убранными из пула (Р7: только вещи слота новой) — каждая своей строкой: осталась у другого, кому
-  // отдать (кнопка — первой, кому нужна), вердикт или материал новой. st — хранилище после «Надеть»
+  // что стало с убранными из пула (Р7: только вещи слота новой) — каждая своей строкой: осталась у другого или материал
+  // новой. Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. st — после «Надеть»
   const removedNotes = (st: GearStore, c: Char, r: PutResult) => {
     const notes: string[] = [];
-    let action: { label: string; run: () => void } | undefined;
     for (const old of r.removed) {
       const still = holdersOf(st, old.id).filter((id) => id !== c.id);
       const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
-      if (still.length) { notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats)); continue; }
-      const oi = pieceInput(old);
-      const rec = recipientFor(ctx, poolView(ctx, st), oi, sectionChars(evaluate(ctx, oi, { gamble: false })), c.id);
-      if (rec) {
-        notes.push(t.ui.giveOld(old.slot, rec.c.name, buildName(rec.row.v.key), outcomeWord(t, rec.row)));
-        action ??= { label: t.ui.giveTo(rec.c.name), run: () => giveTo(rec.c, old) };
-      } else if (!same) notes.push(t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, poolView(ctx, st), oi, evaluate(ctx, oi, { gamble: false })).v]));
-      if (same) notes.push(t.ui.oldMaterial(old.slot));
+      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats));
+      else if (same) notes.push(t.ui.oldMaterial(old.slot));
     }
-    return { notes, action };
-  };
-  // «Отдать Rin»: вещь, которую сняли, — та же запись — в пул другого (с Reforge и Breakthrough). Она заменила вещь
-  // Rin — сообщение, как у «Заменить». Rin — Core Fusion, а есть обычный, — сначала окно перехода
-  const giveTo = (c: Char, old: Piece) => { if (!fusionGate(c.id, (sw) => giveOn(c, old, sw))) giveOn(c, old, null); };
-  const giveOn = (c: Char, old: Piece, sw: Switched | null) => {
-    const r = putOn(ctx, sw?.st ?? gear.store, c.id, pieceInput(old), { record: old });
-    if (!r.added) { if (sw) switchToast(sw, s.tab); return; }
-    const joined = joinRoster(c.id);
-    const st = r.st;
-    gear.set(st);
-    const used = usedFor(st, c.id, r.id);
-    const gone = removedNotes(st, c, r);
-    setGearUndo({
-      text: r.removed.length ? t.ui.replaced(c.name, old.slot) : [t.ui.equipped(c.name, old.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' '),
-      note: [...gone.notes, sw?.note ?? ''].filter(Boolean).join(' '), tab: s.tab, action: gone.action,
-      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: both(joined, sw?.after),
-    });
+    return notes;
   };
   // «Убрать у Caren» и «Разобрал — убрать у всех» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
@@ -540,7 +512,6 @@ export function App() {
         {gearUndo && gearToast && (
           <div className="toast gear-toast" role="status" style={toastAt}>
             <span>{gearUndo.text}{gearUndo.note && <small>{gearUndo.note}</small>}</span>
-            {gearUndo.action && <button type="button" onClick={() => { const a = gearUndo.action!; setGearUndo(null); a.run(); }}>{gearUndo.action.label}</button>}
             {(gearUndo.undo || gearUndo.after) && (
               <button type="button" onClick={() => { if (gearUndo.undo) gear.set(gearUndo.undo(gear.store)); gearUndo.after?.(); setGearUndo(null); }}>{t.ui.undoAction}</button>
             )}

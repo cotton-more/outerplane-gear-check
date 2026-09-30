@@ -7,7 +7,7 @@ import { createIndex } from '../src/data';
 import type { ArmorSlot, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
-import { assemble, assembleReach, entriesFor, hasStatBuild, holds, isStats, outcomeFor, play, poolView, putOn, recipientFor, started, statVariant, STATS, type Assembly, type PoolStore } from '../src/logic/pool';
+import { assemble, assembleReach, entriesFor, hasStatBuild, holds, isStats, outcomeFor, play, poolView, putOn, started, statVariant, STATS, type Assembly, type PoolStore } from '../src/logic/pool';
 import { charVs, whereUsed } from '../src/logic/poolVs';
 import { slotMains } from '../src/logic/builds';
 import { decodeItem, MAINS } from '../src/logic/itemCode';
@@ -588,11 +588,6 @@ describe('«По статам» у каждого героя (находка 28)
     it('броня не из сета в пустой слот — у настоящего Speed по-прежнему не исход', () => {
       const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
       expect(outcomeFor(ctx, view, eternal.id, CMPP, EXPLICIT)!.rows.filter((r) => !isStats(r.v))).toEqual([]);
-    });
-
-    it('«Отдать»: строка «По статам» получателя не делает (Р11)', () => {
-      const view = poolView(ctx, store({ [drakhan.id]: [rec(HLMW)] })); // «По статам» живой: Revenge-шлем в нём держит
-      expect(recipientFor(ctx, view, item('helmet', 'Revenge', { SPD: 4, HP: 2, CHC: 1 }), [drakhan], '')).toBeNull();
     });
   });
 

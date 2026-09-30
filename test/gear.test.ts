@@ -192,7 +192,7 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect(undoPut(gone, CAREN, r)).toBe(gone);
   });
 
-  it('та же запись у другого («Она же — и у Kappa», «Отдать Kappa»): id тот же, seq не растёт; Reforge и Breakthrough — общие', () => {
+  it('та же запись у другого («Она же — и у Kappa»): id тот же, seq не растёт; Reforge и Breakthrough — общие', () => {
     const a = putOn(ctx, EMPTY_GEAR, CAREN, helmet({ CHC: 2 }));
     const b = putOn(ctx, a.st, KAPPA, helmet({ CHC: 2 }), { record: a.piece });
     expect(b).toMatchObject({ added: true, id: a.id, shared: [CAREN] });
@@ -202,7 +202,7 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect(putOn(ctx, a.st, KAPPA, helmet({ CHC: 2 })).id).toBe('p2');
   });
 
-  it('«Отдать» записи, которую gc уже стёр, — запись возвращается', () => {
+  it('record, которую gc уже стёр, — запись возвращается', () => {
     const p = rec('p1', helmet({ CHC: 2 }), 3);
     const r = putOn(ctx, EMPTY_GEAR, KAPPA, helmet({ CHC: 2 }), { record: p });
     expect(r.st.pieces.p1).toEqual(p);

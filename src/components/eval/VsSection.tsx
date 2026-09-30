@@ -26,8 +26,8 @@ const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `
 const figOf = (o: Outcome) => vsFigure({ delta: o.delta, wornEmpty: (!!o.pair?.wornEmpty || o.lostEmpty) && o.kind !== 'completes' && o.kind !== 'closer' });
 const upKind = (o: Outcome) => o.kind === 'up' || o.kind === 'completes' || o.kind === 'closer';
 
-// слово исхода: для сообщений («Rin · Speed: соберёт»)
-export function outcomeWord(t: T, o: Outcome): string {
+// слово исхода: значок ▲▼ и строка «Ещё» («Speed — соберёт»)
+function outcomeWord(t: T, o: Outcome): string {
   if (o.kind === 'closer') return t.ui.vsCloser(o.after.progress, o.after.need);
   if (o.kind === 'up' || o.kind === 'down') {
     const f = figOf(o);

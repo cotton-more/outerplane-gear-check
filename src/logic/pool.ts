@@ -650,7 +650,7 @@ export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput):
   return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp);
 }
 
-// Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin», «Отдать Rin»), иначе новая.
+// Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin»), иначе новая.
 // Такая же уже в его пуле — ничего не меняется (свежая копия потеряла бы Reforge и Breakthrough)
 export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { record?: Piece; tryOn?: string | null; at?: string } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
@@ -709,20 +709,4 @@ export function setMark(st: GearStore, key: string, mark: Mark | null): GearStor
   const { [key]: _, ...rest } = st.marks ?? {};
   const marks = mark ? { ...rest, [key]: mark } : rest;
   return { ...st, marks };
-}
-
-// Кому отдать вещь, которая ушла из пула («Заменить»): из candidates (кому она подходит по вердикту) — тот, кому она
-// лучше всего нужна (держащий исход, по порядку исходов и выигрышу); у кого такая уже есть — нет. Строка «По статам»
-// получателя не делает (Р11): сама героя она не приводит
-export function recipientFor(ctx: Ctx, view: PoolView, x: ItemInput, candidates: readonly Char[], except: string): { c: Char; row: Outcome } | null {
-  let best: { c: Char; row: Outcome } | null = null;
-  for (const c of candidates) {
-    if (c.id === except) continue;
-    const o = outcomeFor(ctx, view, c.id, x);
-    const row = o?.rows.find((r) => puts(r) && !isStats(r.v));
-    if (!row) continue;
-    const rank = (r: Outcome) => OUTCOME_ORDER.indexOf(r.kind);
-    if (!best || rank(row) < rank(best.row) || (rank(row) === rank(best.row) && (row.delta ?? 0) > (best.row.delta ?? 0))) best = { c, row };
-  }
-  return best;
 }

@@ -210,12 +210,16 @@ describe('штамп по надетому', () => {
     expect($$('.v-vs .vs-row.vs-down')).toHaveLength(1);
   });
 
-  it('«Заменить»: старая сама по себе «Оставить», но Caren теперь носит лучше — в сообщении «Разобрать»', async () => {
+  // Р15: вердикт снятой («Старая: «Разобрать».») больше не пишем — игрок снимет её в игре и оценит сам
+  it('«Заменить» старую другой линии (Epic): в сообщении ни вердикта старой, ни строки о ней', async () => {
     const old = { 'DEF%': 2, CHC: 2, CHD: 2 };
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: old, lit: old, bt: null } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear });
+
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain('The old one: "Dismantle".');
+
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
+    expect($('.gear-toast small')).toBeNull();
   });
 
   it('Epic 2 из 3 и Caren носит чуть лучше — штамп не понижен, сетка на месте: третий сабстат можно ввести', async () => {

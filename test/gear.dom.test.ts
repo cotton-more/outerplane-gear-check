@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Экипировка на телефоне (360px), пул GEARPOOL: вещь с формы — «Надеть на…» → к персонажу, «Вернуть»; «Это шлем
-// Kappa?»; «Заменить» и «Отдать Rin»; «Сейчас на персонажах» — строка на персонажа и «Ещё»; «Кому надеть?» — только
+// Kappa?»; «Заменить» — что со старой (Р15: кому её отдать, не предлагаем); «Сейчас на персонажах» — строка на персонажа и «Ещё»; «Кому надеть?» — только
 // полезные строки; карточка персонажа — варианты, «Собираю», «Вещи · N», «По статам», лист вещи и «Убрать у…»;
 // код копии. Core Fusion — test/fusion.dom.test.ts.
 import { readFileSync } from 'node:fs';
@@ -202,35 +202,24 @@ describe('«Это шлем Kappa?»', () => {
   });
 });
 
-describe('«Заменить» и «Отдать Rin»', () => {
-  // у Caren слабый Speed-шлем (для Rin он хорош), у Rin — три Speed-вещи: шлем соберёт ей Speed ×4
+// Р15: снятую при «Заменить» другим героям не предлагаем — никогда. Было: строка «Старый — Rin? Speed: соберёт.» и
+// кнопка «Отдать Rin»
+describe('«Заменить»: что со старой', () => {
+  // у Caren слабый Speed-шлем (для Rin он хорош), у Rin — три Speed-вещи: шлем собрал бы ей Speed ×4
   const gear = () => G([
     P('p1', 'helmet', speed, { 'ATK%': 2, CHC: 2, CHD: 1, SPD: 1 }),
     P('p2', 'armor', speed, { 'ATK%': 2, CHC: 2 }), P('p3', 'gloves', speed, { 'ATK%': 2, CHC: 2 }), P('p4', 'shoes', speed, { 'ATK%': 2, CHC: 2 }),
   ], { [caren.id]: ['p1'], [rin.id]: ['p2', 'p3', 'p4'] });
 
-  it('старый шлем — Rin? «Отдать Rin» — та же запись у неё; «Вернуть» — снова без него', async () => {
+  it('старый шлем пригодился бы Rin — ни кнопки «Отдать», ни строки про Rin; та же линия — материал новой', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: gear(), roster: [caren.id, rin.id] });
+
     await click($('.vc-equip'));
+
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
-    expect($('.gear-toast small')?.textContent).toContain('The old helmet — to Rin? Speed: completes.');
-    await click(byText('.gear-toast button', 'Give to Rin'));
-
-    expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4', 'p1']);
-    expect($('.gear-toast')?.textContent).toContain('On Rin: helmet. Counts in Speed.');
-    await click(byText('.gear-toast button', 'Undo'));
+    expect($('.gear-toast small')?.textContent).toBe("Or feed it to the new one's Breakthrough.");
+    expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
     expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4']);
-  });
-
-  it('«Отдать Rin» заменило её шлем — сообщение «Заменено: шлем Rin», её старый ушёл из пула', async () => {
-    const st = gear();
-    const rinHelm = P('p5', 'helmet', speed, { RES: 1, EFF: 1, HP: 1 });
-    const g = G([...Object.values(st.pieces) as Pc[], rinHelm], { ...st.pools, [rin.id]: ['p2', 'p3', 'p4', 'p5'] });
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: g, roster: [caren.id, rin.id] });
-    await click($('.vc-equip'));
-    await click(byText('.gear-toast button', 'Give to Rin'));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Rin's helmet.");
-    expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4', 'p1']);
   });
 
   it('старый у другого персонажа тоже — «остался у…»', async () => {
@@ -238,6 +227,7 @@ describe('«Заменить» и «Отдать Rin»', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
     await click($('.vc-equip'));
     expect($('.gear-toast small')?.textContent).toContain('The old helmet stays with Kappa (in Speed');
+    expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
   });
 });
 
