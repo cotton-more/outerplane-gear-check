@@ -337,6 +337,23 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     expect(byText('.equip-row', 'Caren')).toBeUndefined();
   });
 
+  // было (повторное ревью, a3-lower seed 11): «Fodder · already no worse on Kappa · starts · Kappa · Speed» и под ней
+  // «Equip on Kappa». Вещь, которая кандидату начинает билд, штамп не понижает (П1)
+  it('Kappa: Speed-ботинки начнут Speed — штамп не «Fodder», под карточкой «Equip on Kappa»', async () => {
+    const pcs = [
+      P('k1', 'helmet', set('Counterattack'), { 'ATK%': 4, SPD: 1, 'DEF%': 2 }), P('k2', 'armor', set('Counterattack'), { SPD: 4, HP: 2, CHC: 1 }, { bt: 0 }),
+      P('k3', 'helmet', set('Effectiveness'), { SPD: 1, CHC: 1 }), P('k4', 'armor', set('Mitigation'), { CHD: 4, RES: 2, SPD: 3 }),
+      P('k5', 'gloves', set('Defense'), { HP: 3, 'HP%': 2, CHC: 3, 'DEF%': 3 }, { bt: 4 }), P('k6', 'shoes', set('Defense'), { CHD: 2, RES: 2 }, { bt: 4 }),
+    ];
+    const marks = { [`${kappa.id}/Swift Defense`]: 'want', [`${kappa.id}/Swift Counter`]: 'want' };
+    await mount({ slot: 'shoes', grade: 'unique', rosterOnly: true, fodder: true, stage: 'grow' }, { setId: speed, subs: { 'DMG UP%': 1, 'DEF%': 3, CHD: 1, DEF: 3 } },
+      { gear: G(pcs, { [kappa.id]: pcs.map((p) => p.id as string) }, { marks }), roster: [kappa.id] });
+    expect($('.vcard .vc-vs')?.textContent).toBe('startsKappa· Speed');
+    expect($('.vcard')?.textContent).not.toContain('Fodder');
+    expect($('.vcard')?.textContent).not.toContain('already');
+    expect($('.vc-equip')?.textContent).toBe('Equip on Kappa');
+  });
+
   // было (браузер): у Core Fusion Eternal главная строка «только статы — … оставь как есть» про «По статам», а под ней
   // «Надеть на Core Fusion Eternal» — и её Effectiveness-шлем уходил. «По статам» теперь остаётся и после «Надеть»
   // (находка 28): Effectiveness-шлем сильнее по статам и стоит в нём — «Надеть», не «Заменить», и он остаётся в пуле
@@ -417,6 +434,9 @@ describe('«Сейчас на персонажах»', () => {
     const row = byText('.v-vs .vs-row', 'Caren')!;
     expect(row.querySelector('.vs')?.textContent).toBe('starts');
     expect(row.querySelector('.vs-act')?.textContent).toBe('Equip on Caren');
+    // повторное ревью, мелочь 14: что начнёт — в заголовке строки, без «Also counts toward…» (это единственное, куда она идёт)
+    expect(row.querySelector('.vs-h .bn')?.textContent).toBe('Speed, Speed/Immu');
+    expect(row.textContent).not.toContain('Also counts toward');
     await click($('.drawer-x'));
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');

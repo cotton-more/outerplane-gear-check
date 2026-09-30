@@ -357,7 +357,6 @@ export const ru = {
     vsPassive: 'Другая пассивка: сравниваю только сабстаты, а какая пассивка лучше — решает билд.',
     // Speed ×2 и Penetration ×2 дают бонус только на T4 (logic/builds t4Only)
     vsT4: (set: string, n: number, capped: boolean) => `${set} ×${n} даёт бонус только на T4: пока новая не на T4, бонуса не будет${capped ? ' — поэтому не выше «на уровне»' : ''}.`,
-    gearSetT4: (set: string, n: number, bt: number | null) => `${set} ×${n} — собран, но бонус только на T4: ${bt === null ? 'отметь Breakthrough' : `сейчас T${bt}`}`,
     equipTo: (name: string) => `Надеть на ${name}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,
     equipPick: 'Надеть на…',
@@ -365,7 +364,6 @@ export const ru = {
     equipSearch: 'Имя персонажа',
     equipNone: 'Ни одному билду она ничего не даст. Найди персонажа по имени — с полезными статами она встанет в его «По статам».',
     equipNoneQ: 'Никому с таким именем она ничего не даст.',
-    equipSlotHas: (what: string) => `сейчас: ${what}`,
     // «Кому надеть?» (GEARPOOL): строка на персонажа
     equipRowCompletes: (build: string) => `Надеть — соберёт ${build}`,
     equipRowCloser: (build: string, n: number, m: number) => `Надеть — ${build}: сет ${n} из ${m}`,
@@ -490,7 +488,6 @@ export const ru = {
     twinNote: (name: string, build: string) => `Такая же вещь уже у ${name} (в ${build}): совпадают слот, сет, main и жёлтые сегменты.`,
     twinOther: 'Другая — своя',
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
-    gearSet: (set: string, n: number, need: number) => (n >= need ? `${set} ×${need} — собран` : `${set} — ${n} из ${need}`),
     gearShared: (where: string) => `Стоит ${where} — правка изменит везде.`,
     pieceWhere: (builds: string, names: string) => [builds && `в ${builds}`, names && `и у ${names}`].filter(Boolean).join(' '),
     // меню ☰ и список персонажей: у кого что надето
@@ -505,7 +502,6 @@ export const ru = {
     weakest: (slot: string, grade: string, bt: number | null) => `Слабее всех — ${slot} (${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}).`,
     weakestLook: (piece: string, stats: string[]) => `Ищи ${piece} с ${stats.join(' и ')} — в примерке вердикт покажет, лучше ли она надетой.`,
     weakestTry: 'Примерить вещи',
-    gearIdle: (builds: string) => `${builds} ты не собираешь — вердикт не просит для них вещи.`,
     pieceTitle: (slot: string, name: string) => `${slot} · ${name}`,
     pieceSegHint: 'Жёлтые — из оценки. Сделал Reforge — нажми дальше: добавятся оранжевые. Нажми на жёлтую — жёлтых станет меньше; больше — через название стата.',
     pieceReforge: (done: number, max: number) => `Reforge: ${done} из ${max} — считаю по оранжевым сегментам`,

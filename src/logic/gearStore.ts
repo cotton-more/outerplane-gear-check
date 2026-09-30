@@ -49,9 +49,9 @@ function restorePieces(raw: unknown, idx: Index): Record<string, Piece> {
   }
   return pieces;
 }
-// счётчик id: не меньше номера любой вещи. Только конечные числа: id «pInfinity» (или seq: Infinity) дал бы
-// seq = Infinity, и следующая новая вещь получила бы тот же id и затёрла бы эту
-const finite = (n: unknown): number => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
+// счётчик id: не меньше номера любой вещи. Только целые до 2^53: id «pInfinity» (или seq: Infinity) дал бы
+// seq = Infinity, а seq: 1e16 — seq + 1 === seq: следующие новые вещи получили бы один id и затёрли бы друг друга
+const finite = (n: unknown): number => (typeof n === 'number' && Number.isSafeInteger(n) && n > 0 ? n : 0);
 const seqOf = (r: { seq?: unknown }, pieces: Record<string, Piece>) =>
   Math.max(finite(r.seq), ...Object.keys(pieces).map((id) => finite(Number(id.slice(1)))));
 
@@ -153,6 +153,8 @@ function covers(a: unknown, b: unknown): boolean {
   const o = b as Record<string, unknown>;
   return Object.entries(a).every(([k, v]) => (k in o ? covers(v, o[k]) : empty(v)));
 }
+// хранилище без сообщений нормализации; decodeGear — код копии целиком. Страница берёт loadGear и readGearCode (нужен
+// ростер и что поменяла нормализация), эти два — короткий путь для тестов
 export const restoreGear = (raw: unknown, idx: Index, roster: readonly string[] = []): GearStore => loadGear(raw, idx, roster).st;
 const EMPTY: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };
 
@@ -181,15 +183,7 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
   return Object.keys(st.pieces).length ? st : null;
 }
 
-// вещи base переходят к fusion (и обратно — «Вернуться к X»: base = CF, fusion = X). moved — что перешло (для «Вернуть»)
-export function fuseChar(st: GearStore, base: string, fusion: string): { st: GearStore; moved: string[]; had: string[] } {
-  const moved = st.pools[base] ?? [];
-  if (!moved.length) return { st, moved: [], had: st.pools[fusion] ?? [] };
-  const had = st.pools[fusion] ?? [];
-  const { [base]: _, ...rest } = st.pools;
-  return { st: { ...st, pools: { ...rest, [fusion]: [...had, ...moved.filter((id) => !had.includes(id))] } }, moved, had };
-}
-// «Вернуть»: вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем
+// «Вернуть» перехода (logic/fusion switchFusion): вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем
 export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[] }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;
   const pool = (st.pools[fusion] ?? []).filter((id) => r.had.includes(id) || !r.moved.includes(id));

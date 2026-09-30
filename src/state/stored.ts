@@ -28,7 +28,10 @@ export function readStored(idx: Index): Stored {
   const list = storage.get<unknown>('roster', null);
   const roster = Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [];
   const r = { ...loadGear(raw, idx, roster), newer: newerGear(raw) };
-  const whole = readsWhole(raw, idx) && (list === null || (Array.isArray(list) && list.length === roster.length));
+  // строка есть, а разобрать её не вышло (сбой записи, формат не JSON) — get отдал null, как при пустом ключе: не пишем
+  const unreadable = (key: string, v: unknown) => v === null && storage.raw(key) !== null;
+  const whole = readsWhole(raw, idx) && !unreadable('gear', raw) && !unreadable('roster', list)
+    && (list === null || (Array.isArray(list) && list.length === roster.length));
   if (changed(r) && !r.newer && !held && whole && storage.available()) {
     storage.set('roster', r.roster);
     storage.set('gear', r.st);

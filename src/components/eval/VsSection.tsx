@@ -40,7 +40,11 @@ export function outcomeWord(t: T, o: Outcome): string {
 export function chipLabel(t: T, o: Outcome | null, starts?: boolean): string {
   if (starts || (o?.entering && o.used)) return t.ui.vsKind.starts;
   if (!o) return t.ui.vsKind.worn;
-  if (o.kind === 'up' || o.kind === 'down') return (t.ui.vsSr[o.kind] ?? '') + outcomeWord(t, o);
+  // «лучше надетой: +25%»; без числа (вытесненное ничего не стоило) — просто «лучше», не «лучше надетой: лучше»
+  if (o.kind === 'up' || o.kind === 'down') {
+    const word = outcomeWord(t, o);
+    return /^[+−±×]/.test(word) ? (t.ui.vsSr[o.kind] ?? '') + word : word;
+  }
   if (o.kind === 'completes' || o.kind === 'closer') return outcomeWord(t, o);
   return t.ui.vsKind[o.kind] ?? o.kind;
 }
@@ -193,8 +197,10 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
           const safe = o && cp ? [...new Set(cp.inPlay.filter((v) => !isStats(v) && !v.dupOf && !x.rows.some((r) => r.v.key === v.key)).map((v) => buildName(t, v.key)))] : [];
           // варианты, в которые она пошла бы, но их не собирают (и она их не начнёт)
           const idle = cp && o?.part ? cp.variants.filter((v) => !isStats(v) && !v.dupOf && !cp.inPlay.includes(v) && !x.starts.includes(v) && v.b.sets[0]?.some((p) => p.set === o.part!.set)).map((v) => v.name) : [];
-          // заголовок — имя лучшего варианта (Р5: имя варианта, не родителя); остальные, и с тем же исходом, — в «Ещё»
-          const name = o ? variantName(t, o.v) : '';
+          // заголовок — имя лучшего варианта (Р5: имя варианта, не родителя); остальные, и с тем же исходом, — в «Ещё».
+          // Вещь только начинает билд (главная строка «начнёт») — в заголовке имена того, что она начнёт
+          const startNames = [...new Set(x.starts.map((v) => v.name))];
+          const name = o ? variantName(t, o.v) : startNames.join(', ');
           return (
             <li key={x.c.id} className={`vs-row vs-${o?.kind ?? (x.worn ? 'worn' : 'starts')}`}>
               <div className="vs-h">
@@ -214,7 +220,7 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
                   {equipLabel(t, x, slot)}
                 </button>
               )}
-              {x.starts.length > 0 && <p className="muted small">{t.ui.vsStarts([...new Set(x.starts.map((v) => v.name))].join(', '))}</p>}
+              {o && startNames.length > 0 && <p className="muted small">{t.ui.vsStarts(startNames.join(', '))}</p>}
               {idle.length > 0 && <p className="muted small">{t.ui.vsAlso(idle.join(', '), idle.length)}</p>}
               {others.length > 0 && (open === x.c.id
                 ? others.map((r) => (

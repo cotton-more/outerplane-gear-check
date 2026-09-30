@@ -7,7 +7,7 @@ import { Sheet } from '../Sheet';
 export function RosterRemoveAsk({ name, n, onYes, onClose }: { name: string; n: number; onYes: () => void; onClose: () => void }) {
   const t = useT();
   return (
-    <Sheet title={t.ui.rosterRemoveTitle(name)} onClose={onClose}>
+    <Sheet title={t.ui.rosterRemoveTitle(name)} onClose={onClose} className="ask">
       <div className="twin roster-ask">
         <p>{t.ui.rosterRemoveText(name, n)}</p>
         <div className="piece-act twin-act">

@@ -9,7 +9,7 @@ import {
   addFourth, buildKey, EMPTY_GEAR, gc, gearedChars, newPiece, reforgeScale, reforgesDone, replaceStat, samePiece, setYellow, tapSegment,
   updatePiece, type GearStore, type Piece,
 } from '../src/logic/gear';
-import { decodeGear, encodeGear, fuseChar, newerGear, restoreGear, unfuseChar } from '../src/logic/gearStore';
+import { decodeGear, encodeGear, newerGear, restoreGear } from '../src/logic/gearStore';
 import { planFor, planPut, poolView, putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
 import type { ItemInput } from '../src/logic/verdict';
 
@@ -170,6 +170,15 @@ describe('хранилище v2 и код копии', () => {
     expect(next.pieces.pInfinity).toEqual(p);
   });
 
+  it('seq — только целые до 2^53: при seq: 1e16 и id «p9007199254740993» две новые вещи получают разные id', () => {
+    const p = rec('p9007199254740993', helmet({ CHC: 1 })), q = rec('p7', helmet({ CHD: 1 }));
+    const st = restoreGear({ ...v2([p, q], { [CAREN]: ['p9007199254740993', 'p7'] }), seq: 1e16 }, idx);
+    const a = newPiece(st, helmet({ SPD: 1 }));
+    const b = newPiece(a.st, helmet({ SPD: 2 }));
+    expect([a.piece.id, b.piece.id]).toEqual(['p8', 'p9']);
+    expect(b.st.pieces.p9007199254740993).toEqual(p);
+  });
+
   it('пул не массивом: строка — одна вещь, объект — его значения, прочее — пусто; вещи из других пулов остаются', () => {
     const a = rec('p1', helmet({ CHC: 1 })), b = rec('p2', helmet({ CHD: 1 })), c = rec('p3', helmet({ SPD: 1 }));
     const raw = v2([a, b, c], { [CAREN]: 'p1' as never, [KAPPA]: { helmet: 'p2' } as never, x: 5 as never, y: ['p3'] });
@@ -272,12 +281,6 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect(setMark(st, K, null).marks).toEqual({ [K2]: 'skip' });
   });
 
-  it('Core Fusion попал в ростер — вещи X переходят к нему; «Вернуть» — обратно', () => {
-    const st = v2([rec('p1', helmet({ CHC: 1 })), rec('p2', helmet({ CHD: 1 }))], { '2000043': ['p1'], '2700043': ['p2'] });
-    const f = fuseChar(st, '2000043', '2700043');
-    expect(f.st.pools).toEqual({ '2700043': ['p2', 'p1'] });
-    expect(unfuseChar(f.st, '2000043', '2700043', f).pools).toEqual({ '2700043': ['p2'], '2000043': ['p1'] });
-  });
 });
 
 describe('«Надеть»: что уходит из пула (Р7)', () => {

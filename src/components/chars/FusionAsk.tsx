@@ -9,7 +9,7 @@ export function FusionAsk({ base, toFusion, n, onYes, onClose }: {
 }) {
   const t = useT();
   return (
-    <Sheet title={toFusion ? t.ui.fuseAskTitle(base) : t.ui.unfuseAskTitle(base)} onClose={onClose}>
+    <Sheet title={toFusion ? t.ui.fuseAskTitle(base) : t.ui.unfuseAskTitle(base)} onClose={onClose} className="ask">
       <div className="twin fusion-ask">
         <p>{toFusion ? t.ui.fuseAskText(base, n) : t.ui.unfuseAskText(base, n)}</p>
         <div className="piece-act twin-act">

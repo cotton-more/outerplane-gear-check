@@ -9,7 +9,9 @@ import type { Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, type Bt, type Piece } from '../src/logic/gear';
 import { evaluate } from '../src/logic/evaluate';
-import { holds, outcomeFor, poolView } from '../src/logic/pool';
+import { holds, outcomeFor, poolView, type Outcome } from '../src/logic/pool';
+import { chipLabel } from '../src/components/eval/VsSection';
+import { TEXTS } from '../src/i18n';
 import { charsVs, charVs, sectionChars, type CharVs } from '../src/logic/poolVs';
 import type { Subs } from '../src/logic/subs';
 import { against, vsFigure } from '../src/logic/vs';
@@ -331,5 +333,14 @@ describe('пара вещей в одном слоте (against)', () => {
     expect(vsFigure({ delta: null, wornEmpty: true })).toEqual({ kind: 'empty' });
     expect(vsFigure({ delta: 2.5, wornEmpty: false })).toEqual({ kind: 'times', n: 4 });
     expect(vsFigure({ delta: 0.25, wornEmpty: false })).toEqual({ kind: 'pct', n: 25 });
+  });
+});
+
+// подпись карточки для диктора (VsSection chipLabel): «лучше надетой: +25%», а без числа — просто «лучше»
+describe('chipLabel', () => {
+  const up = (o: Partial<Outcome>) => ({ kind: 'up', entering: false, used: true, delta: 0.25, lostEmpty: false, pair: null, ...o }) as unknown as Outcome;
+
+  it('с числом — «лучше надетой: +25%»; вытесненное ничего не стоило — «лучше», без повтора', () => {
+    expect([chipLabel(TEXTS.ru, up({})), chipLabel(TEXTS.ru, up({ lostEmpty: true }))]).toEqual(['лучше надетой: +25%', 'лучше']);
   });
 });

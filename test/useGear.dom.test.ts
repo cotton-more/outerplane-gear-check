@@ -62,6 +62,25 @@ describe('useGear', () => {
     expect(api.store).toMatchObject({ v: 2, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 } } } });
   });
 
+  // нормализация ростера (X и Core Fusion X) что-то «исправила», но строку экипировки разобрать не вышло — Р17 не пишет:
+  // иначе поверх непрочитанного легло бы пустое хранилище
+  it('ogc.gear не разбирается (оборван) — при загрузке не перезаписывается, даже когда ростер нормализован', async () => {
+    const text = JSON.stringify(RAW).slice(0, 40);
+    localStorage.setItem('ogc.gear', text);
+    localStorage.setItem('ogc.roster', JSON.stringify(['2000043', '2700043']));
+    await render(true);
+
+    expect([stored(), localStorage.getItem('ogc.roster')]).toEqual([text, JSON.stringify(['2000043', '2700043'])]);
+  });
+
+  it('ogc.roster не разбирается — при загрузке не перезаписывается, хотя у Caren есть вещи', async () => {
+    localStorage.setItem('ogc.gear', JSON.stringify(withPiece({ SPD: 1 })));
+    localStorage.setItem('ogc.roster', '["2000089"');
+    await render(true);
+
+    expect(localStorage.getItem('ogc.roster')).toBe('["2000089"');
+  });
+
   it('экипировку сохранила более новая версия (v: 3): newer, и запись не перезаписывается', async () => {
     const text = JSON.stringify({ v: 3, seq: 0, pieces: {}, pools: {} });
     localStorage.setItem('ogc.gear', text);
