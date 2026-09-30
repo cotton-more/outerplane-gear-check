@@ -8,9 +8,9 @@ import { TEXTS } from '../src/i18n';
 import { makeCtx, type Ctx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { EMPTY_GEAR, updatePiece, type GearStore } from '../src/logic/gear';
-import { poolView, putOn } from '../src/logic/pool';
+import { isStats, poolView, putOn, STATS } from '../src/logic/pool';
 import { charVs } from '../src/logic/poolVs';
-import { restoreTryOn, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type Target } from '../src/logic/tryon';
+import { restoreTryOn, targetName, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type Target } from '../src/logic/tryon';
 import type { ItemInput, Verdict } from '../src/logic/verdict';
 import { withWorn } from '../src/logic/worn';
 
@@ -178,5 +178,41 @@ describe('примерка: заголовок вердикта', () => {
     const res = withWorn(mine, poolView(mine, st), junk, evaluate(mine, junk, { gamble: false }));
     expect(res.worn).toBe('home');
     expect(titleOf(res, st, target('Speed', st), junk, mine)).toBe('Оставляй — она уже у Caren');
+  });
+});
+
+// Находка 28: «По статам» — тоже цель примерки (вкладка «По статам» в карточке: «Собрать билд», «Примерить»)
+describe('примерка «По статам»', () => {
+  const stats = (st: GearStore = EMPTY_GEAR) => tryOnTarget(idx, { charId: caren.id, build: STATS }, poolView(ctx, st))!;
+
+  it('восстанавливается из хранилища; вариант — «По статам», имя для показа — «По статам»', () => {
+    const t = restoreTryOn({ charId: caren.id, build: STATS }, idx);
+    expect(t).toEqual({ charId: caren.id, build: STATS });
+    expect(isStats(stats().v)).toBe(true);
+    expect(targetName(ru, stats())).toBe('По статам');
+    expect(targetName(ru, target('Speed'))).toBe('Speed');
+  });
+
+  it('у персонажа без билдов «По статам» нет — примерки нет', () => {
+    const none = D.chars.find((c) => !c.builds.length)!;
+    expect(restoreTryOn({ charId: none.id, build: STATS }, idx)).toBeNull();
+  });
+
+  it('на форму: слот; у брони — сет той вещи или никакого (связки нет)', () => {
+    const r = putOn(ctx, EMPTY_GEAR, caren.id, armor('helmet', 'Immunity', { CHC: 1 }));
+    expect(tryOnPreset(poolView(ctx, r.st), stats(r.st), 'helmet', r.piece)).toEqual({ slot: 'helmet', setId: set('Immunity') });
+    expect(tryOnPreset(poolView(ctx, EMPTY_GEAR), stats(), 'gloves')).toEqual({ slot: 'gloves', setId: null });
+  });
+
+  it('заголовок: вещь встаёт — «у Caren слот пуст»; полезных статов нет — «Caren · По статам — ничего не даст»', () => {
+    const good = armor('helmet', 'Attack', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
+    const junk = armor('helmet', 'Attack', { HP: 1, RES: 1, EFF: 1, ATK: 1 });
+    const title = (x: ItemInput) => {
+      const tg = stats();
+      const v = charVs(ctx, poolView(ctx, EMPTY_GEAR, tg.v.key), caren.id, x, tg.v.key, { explicit: true });
+      return tryOnTitle(ru, evaluate(ctx, x, { gamble: false }), tg, tryRowOf(idx, v?.best ?? null, !!v?.worn));
+    };
+    expect(title(good)).toMatch(/у Caren слот пуст/);
+    expect(title(junk)).toMatch(/Caren · По статам — ничего не даст$/);
   });
 });

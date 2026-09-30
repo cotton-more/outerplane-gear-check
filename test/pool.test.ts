@@ -7,7 +7,10 @@ import { createIndex } from '../src/data';
 import type { ArmorSlot, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
-import { assemble, assembleReach, entriesFor, isStats, outcomeFor, play, poolView, putOn, statVariant, type Assembly, type PoolStore } from '../src/logic/pool';
+import { assemble, assembleReach, entriesFor, holds, isStats, outcomeFor, play, poolView, putOn, recipientFor, statVariant, STATS, type Assembly, type PoolStore } from '../src/logic/pool';
+import { charVs, whereUsed } from '../src/logic/poolVs';
+import { slotMains } from '../src/logic/builds';
+import { decodeItem, MAINS } from '../src/logic/itemCode';
 import type { Subs } from '../src/logic/subs';
 import type { ItemInput } from '../src/logic/verdict';
 import { variantsOf, type Variant } from '../src/logic/variants';
@@ -173,8 +176,10 @@ describe('«собираешь»', () => {
     const p = play(ctx, eternal, atk);
     expect(p.inPlay.map((v) => v.key)).toEqual([`${eternal.id}/#stats`]);
     expect(p.asm.get(p.inPlay[0].key)!.bonuses.map((r) => [r.n, r.tier])).toEqual([[2, 'T0'], [4, 'T0']]);
-    // вещь из сета билда — и «По статам» больше нет
-    expect(play(ctx, eternal, [...atk, P('helmet', 'Speed', JUNK)]).stat).toBeNull();
+    // вещь из сета билда — «По статам» уже не живой: он есть (находка 28), но не собирается сам
+    const withSpeed = play(ctx, eternal, [...atk, P('helmet', 'Speed', JUNK)]);
+    expect(withSpeed.stat).not.toBeNull();
+    expect(withSpeed.inPlay).not.toContain(withSpeed.stat);
   });
 });
 
@@ -382,5 +387,186 @@ describe('«По статам»: случаи владельца', () => {
     expect(crit.map((x) => entriesFor(ctx, stella, p.stat!, [x])[0].v)).toEqual([0, 0]);
     expect(a.filled).toBe(4);
     expect(poolView(ctx, { pieces: Object.fromEntries(pieces.map((x) => [x.id, x])), pools: { [stella.id]: pieces.map((x) => x.id) } }).of(stella.id)!.unused).toEqual([]);
+  });
+});
+
+// Находка 28 (Р11–Р13): «По статам» — отдельный билд у каждого героя с билдами. Живой (держит штамп), пока в пуле нет
+// брони из сетов связок; потом — тихая строка, «Надеть» в него только при явном выборе (поиск по имени, примерка).
+// Хлам для него — вещь без полезных статов. Вещи — коды владельца (OGC …)
+describe('«По статам» у каждого героя (находка 28)', () => {
+  const drakhan = idx.CHAR_BY_SLUG['demiurge-drakhan'];    // Speed ×4, Immunity ×2 + Swiftness ×2; SPD › HP › CHC › CHD › DMG UP% › DEF
+  const eternal = idx.CHAR_BY_SLUG['core-fusion-eternal']; // Speed ×4; SPD › EFF › CHC › ATK › CHD › DMG UP%
+  const code = (c: string): ItemInput => { const r = decodeItem(c); if (!r.ok) throw new Error(c); return r.item; };
+  const HLMW = code('OGC HLMW PCHM'); // броня Revenge, Epic: SPD 3 · HP 1 · HP% 1 — сета нет в билдах Drakhan, статы — её
+  const CMPP = code('OGC CMPP VPVY'); // броня Effectiveness, Epic: SPD 3 · EFF 2 · HP 1 — не сет Eternal
+  const GLUJ = code('OGC GLUJ RXXG'); // перчатки Speed, Epic: SPD 1 · ATK% 3 · EFF 2 — первая вещь Speed у Eternal
+  const item = (slot: SlotId, short: string, subs: Subs): ItemInput => ({ slot, grade: 'rare', setId: set(short), itemKey: null, main: null, unlisted: false, subs });
+  const rec = (x: ItemInput): Piece =>
+    ({ id: 'p' + ++seq, slot: x.slot, grade: x.grade, setId: x.setId ?? null, itemKey: x.itemKey ?? null, main: x.main ?? null, yellow: { ...x.subs }, lit: { ...x.subs }, bt: null, at: '' });
+  const store = (pools: Record<string, Piece[]>): GearStore => ({
+    ...EMPTY_GEAR, seq, pieces: Object.fromEntries(Object.values(pools).flat().map((p) => [p.id, p])),
+    pools: Object.fromEntries(Object.entries(pools).map(([c, ps]) => [c, ps.map((p) => p.id)])),
+  });
+  const EXPLICIT = { explicit: true };
+  const WEAK_SPEED = item('armor', 'Speed', { SPD: 1, HP: 1, RES: 1 });
+
+  describe('Drakhan без вещей: броня Revenge с её статами', () => {
+    it('поиск по имени: строка «По статам — пустой слот», надеть можно', () => {
+      const x = charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW, undefined, EXPLICIT)!;
+      expect(isStats(x.best!.v)).toBe(true);
+      expect(x.best).toMatchObject({ kind: 'fill', used: true });
+      expect(x.useful).toBe(true);
+    });
+
+    it('без поиска (карточка, «Сейчас на персонажах», список без имени) её нет — по сету (Р11)', () => {
+      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW)).toBeNull();
+    });
+
+    it('в примерке Speed сама вещь в Speed не встаёт', () => {
+      const speed = buildKey(drakhan.id, 'Speed');
+      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR, speed), drakhan.id, HLMW, speed, EXPLICIT)).toBeNull();
+    });
+
+    it('в примерке Speed «По статам» подходит — надеть можно', () => {
+      const speed = buildKey(drakhan.id, 'Speed');
+      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR, speed), drakhan.id, HLMW, statVariant(drakhan)!.key, EXPLICIT)?.useful).toBe(true);
+    });
+
+    it('без полезных статов — хлам и при явном выборе (Р13)', () => {
+      const junk = item('armor', 'Revenge', { RES: 2, EFF: 2, 'ATK%': 1 }); // в её цепочке нет ни одного
+      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, junk, undefined, EXPLICIT)).toBeNull();
+    });
+
+    it('оружие не по билду (main ей не нужен) с полезными сабстатами — в «По статам» при явном выборе (допущение (а))', () => {
+      const want = new Set(drakhan.builds.flatMap((b) => [...slotMains(b, 'weapon')]));
+      const main = MAINS.find((m) => !want.has(m) && m !== 'SPD')!;
+      const w: ItemInput = { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main, unlisted: false, subs: { SPD: 3, HP: 2, CHC: 1 } };
+      const x = charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, w, undefined, EXPLICIT)!;
+      expect(isStats(x.best!.v)).toBe(true);
+      expect(x.useful).toBe(true);
+    });
+
+    it('первая Speed-вещь: главная строка — «начнёт Speed», а не тихая «По статам»', () => {
+      const x = charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, item('helmet', 'Speed', { SPD: 3, HP: 2, CHC: 1 }), undefined, EXPLICIT)!;
+      expect(x.best).toBeNull();
+      expect(x.starts.map((v) => v.name)).toContain('Speed');
+    });
+  });
+
+  describe('Drakhan с одной Revenge-бронёй: ни один билд не начат — «По статам» держит (Р12)', () => {
+    const view = poolView(ctx, store({ [drakhan.id]: [rec(HLMW)] }));
+    const helm = item('helmet', 'Revenge', { SPD: 4, HP: 2, CHC: 1 });
+
+    it('«По статам» — единственный собираемый', () => {
+      expect(view.of(drakhan.id)!.inPlay.map(isStats)).toEqual([true]);
+    });
+
+    it('Revenge-шлем в пустой слот: «По статам — пустой слот», строка не тихая, штамп держит', () => {
+      const row = outcomeFor(ctx, view, drakhan.id, helm)!.rows.find((r) => isStats(r.v))!;
+      expect(row).toMatchObject({ kind: 'fill', used: true, quiet: false });
+      expect(holds(row)).toBe(true);
+    });
+
+    it('без поиска Drakhan за одну строку «По статам» не показывается (Р11)', () => {
+      expect(charVs(ctx, view, drakhan.id, helm)).toBeNull();
+    });
+
+    it('первая Speed-вещь: строка «По статам» живая, а главная — «начнёт Speed»', () => {
+      const x = charVs(ctx, view, drakhan.id, item('helmet', 'Speed', { SPD: 3, HP: 2, CHC: 1 }))!;
+      expect(x.best).toBeNull();
+      expect(x.rows.find((r) => isStats(r.v))?.quiet).toBe(false);
+      expect(x.starts.map((v) => v.name)).toContain('Speed');
+    });
+  });
+
+  describe('Eternal: «По статам» рядом с Speed', () => {
+    it('CMPP + GLUJ: собирается Speed, «По статам» есть (не собирается сам) и держит обе вещи', () => {
+      const a = rec(CMPP), b = rec(GLUJ);
+      const p = play(ctx, eternal, [a, b]);
+      expect(p.inPlay.map((v) => (isStats(v) ? STATS : v.name))).toEqual(['Speed']);
+      expect(p.statLive).toBe(false);
+      const s = p.asm.get(p.stat!.key)!;
+      expect([s.slots.armor?.id, s.slots.gloves?.id]).toEqual([a.id, b.id]);
+    });
+
+    it('Effectiveness-броня сильнее по статам, чем Speed-броня, — не «ненужная»: стоит в «По статам»', () => {
+      const eff = rec(CMPP), spd = rec(WEAK_SPEED);
+      expect(poolView(ctx, store({ [eternal.id]: [eff, spd] })).of(eternal.id)!.unused).toEqual([]);
+    });
+
+    it('«Надеть» слабую Speed-броню на Eternal с CMPP: CMPP остаётся — она лучше по статам', () => {
+      const eff = rec(CMPP);
+      const r = putOn(ctx, store({ [eternal.id]: [eff] }), eternal.id, WEAK_SPEED);
+      expect(r.removed).toEqual([]);
+      expect(r.st.pools[eternal.id]).toContain(eff.id);
+    });
+
+    it('есть GLUJ, CMPP через поиск: «По статам — пустой слот», строка тихая (штамп не держит), надеть можно', () => {
+      const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
+      const row = outcomeFor(ctx, view, eternal.id, CMPP, EXPLICIT)!.rows.find((r) => isStats(r.v));
+      expect(row).toMatchObject({ kind: 'fill', used: true, quiet: true });
+      expect(holds(row!)).toBe(false);
+      expect(charVs(ctx, view, eternal.id, CMPP, undefined, EXPLICIT)?.useful).toBe(true);
+    });
+
+    it('то же без поиска — тихих строк нет, Eternal не показывается (Р11)', () => {
+      const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
+      expect(outcomeFor(ctx, view, eternal.id, CMPP)!.rows).toEqual([]);
+      expect(charVs(ctx, view, eternal.id, CMPP)).toBeNull();
+    });
+
+    it('броня не из сета в пустой слот — у настоящего Speed по-прежнему не исход', () => {
+      const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
+      expect(outcomeFor(ctx, view, eternal.id, CMPP, EXPLICIT)!.rows.filter((r) => !isStats(r.v))).toEqual([]);
+    });
+
+    it('«Отдать»: строка «По статам» получателя не делает (Р11)', () => {
+      const view = poolView(ctx, store({ [drakhan.id]: [rec(HLMW)] })); // «По статам» живой: Revenge-шлем в нём держит
+      expect(recipientFor(ctx, view, item('helmet', 'Revenge', { SPD: 4, HP: 2, CHC: 1 }), [drakhan], '')).toBeNull();
+    });
+  });
+
+  it('Luna: главная строка при поиске — тихая «По статам — лучше», а не «ломает», где вещь не встаёт (Р4: подпись = «Надеть»)', () => {
+    const luna = char('Demiurge Luna');
+    const st = store({ [luna.id]: [rec(item('armor', 'Penetration', { ATK: 1, RES: 3, DEF: 2, CHC: 2 })), rec(item('gloves', 'Penetration', { HP: 1, EFF: 2, SPD: 3 }))] });
+    const crit: ItemInput = { ...item('gloves', 'Critical Strike', { EFF: 3, 'DEF%': 1, 'ATK%': 2, CHC: 3 }), grade: 'unique' };
+    const x = charVs(ctx, poolView(ctx, st), luna.id, crit, undefined, EXPLICIT)!;
+    expect(isStats(x.best!.v)).toBe(true);
+    expect(x.best).toMatchObject({ kind: 'up', used: true, quiet: true });
+    expect(x.rows[0]).toBe(x.best);
+    expect(x.rows.some((r) => r.kind === 'breaks')).toBe(true);
+    expect(x.useful).toBe(true);
+  });
+
+  describe('где стоит вещь (whereUsed): «По статам» — только если больше нигде', () => {
+    it('броня не из связки, одна в своём слоте (прочая в пустой слот Speed): «По статам», и пул её держит', () => {
+      const shoes = rec(item('shoes', 'Swiftness', { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }));
+      const view = poolView(ctx, store({ [caren.id]: [rec(item('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1 })), shoes] }));
+      const cp = view.of(caren.id)!;
+      expect(cp.asm.get(variant('Caren', 'Speed').key)!.slots.shoes?.id).toBe(shoes.id); // в раскладке Speed она есть
+      expect(whereUsed(view, caren.id, shoes.id).map(isStats)).toEqual([true]);
+      expect(cp.unused).toEqual([]);
+    });
+
+    it('броня не из связки, вытеснившая вещь своего слота, — засчитана в варианте', () => {
+      const weak = rec(item('shoes', 'Swiftness', { HP: 1, RES: 1, EFF: 1 }));
+      const strong = rec(item('shoes', 'Attack', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }));
+      const view = poolView(ctx, store({ [caren.id]: [rec(item('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1 })), weak, strong] }));
+      expect(whereUsed(view, caren.id, strong.id).map((v) => v.name)).toContain('Speed');
+    });
+
+    it('вещь в Speed и в «По статам» — только Speed', () => {
+      const g = rec(GLUJ);
+      const view = poolView(ctx, store({ [eternal.id]: [rec(CMPP), g] }));
+      expect(view.of(eternal.id)!.asm.get(statVariant(eternal)!.key)!.slots.gloves?.id).toBe(g.id);
+      expect(whereUsed(view, eternal.id, g.id).map((v) => v.name)).toEqual(['Speed']);
+    });
+
+    it('вещь только в «По статам» — «По статам»', () => {
+      // в Speed броня — Speed-вещь (сет идёт вещь за вещью), в «По статам» — CMPP: она сильнее
+      const eff = rec(CMPP);
+      const view = poolView(ctx, store({ [eternal.id]: [eff, rec(GLUJ), rec(WEAK_SPEED)] }));
+      expect(whereUsed(view, eternal.id, eff.id).map(isStats)).toEqual([true]);
+    });
   });
 });

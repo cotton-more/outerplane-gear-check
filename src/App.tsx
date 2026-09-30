@@ -25,14 +25,14 @@ import { evaluate, withPendingDice } from './logic/evaluate';
 import { gearedChars, holdersOf, pieceInput, samePiece, type GearStore, type Piece } from './logic/gear';
 import { loadGear, unfuseChar } from './logic/gearStore';
 import { normalizeFusion, replacedX, switchFusion, type FusionFix } from './logic/fusion';
-import { holds, poolView, putOn, recipientFor, undoPut, type PutResult } from './logic/pool';
+import { holds, isStats, poolView, putOn, recipientFor, undoPut, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char, SlotId } from './data/types';
 import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
-import { offLine, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
+import { offLine, targetName, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, withMaterial } from './logic/material';
 import { withWorn } from './logic/worn';
 import { outcomeWord } from './components/eval/VsSection';
@@ -114,29 +114,42 @@ export function App() {
   const view = useMemo(() => (target ? poolView(ctx, gear.store, target.v.key) : baseView), [ctx, gear.store, target, baseView]);
   // у кого есть вещи: персонаж → лучший «N/6» (плитки, меню, фильтр «с экипировкой»)
   const geared = useMemo(() => gearBadges(view), [view]);
-  const targetVs = useMemo(() => (target ? charVs(ctx, view, target.c.id, input, target.v.key) : null), [ctx, view, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // примерка — явный выбор персонажа: и «По статам», когда он не собирается (Р11)
+  const targetVs = useMemo(() => (target ? charVs(ctx, view, target.c.id, input, target.v.key, { explicit: true }) : null), [ctx, view, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // запасная строка примерки настоящего билда: вещь не по нему (строки нет или «только статы»), а по статам подходит —
+  // «Надеть» положит её в «По статам» (Р11): карточка, строка и кнопка — про «По статам»
+  const statVs = useMemo(() => {
+    if (!target || isStats(target.v) || (targetVs && targetVs.best?.kind !== 'stats')) return null;
+    const stat = view.of(target.c.id)?.stat;
+    const x = stat ? charVs(ctx, view, target.c.id, input, stat.key, { explicit: true }) : null;
+    return x?.useful ? x : null;
+  }, [ctx, view, target, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
   // материал: вещь лучше той, для которой она материал, или в примерке она встаёт в вариант цели — «надень»
   const mat = useMemo(() => {
     const needs = materialFor(view, input);
     const up = needs.length ? betterThanWorn(ctx, view, input, needs) : [];
     const k = targetVs?.best?.used ? targetVs.best.kind : null;
-    const aim = target && (k === 'fill' || k === 'up' || k === 'closer' || k === 'completes') ? `${target.c.name} · ${target.b.name}` : null;
+    const aim = target && (k === 'fill' || k === 'up' || k === 'closer' || k === 'completes') ? `${target.c.name} · ${targetName(t, target)}` : null;
     return { needs, wear: { up, target: aim } };
-  }, [ctx, view, targetVs, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, view, targetVs, target, key, t]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп по вещам персонажей (logic/worn): такая же у кого-то — «Оставить»; всем, кому подходит, она ничего не даёт —
   // «Разобрать». Вещь — материал и лучше такой же у кого-то — не понижаем (совет «надень»)
   const worn = useMemo(() => withWorn(ctx, view, input, raw, { hold: mat.wear.up.length > 0 }), [ctx, view, raw, mat]); // eslint-disable-line react-hooks/exhaustive-deps
   const verdict = useMemo(() => withMaterial(idx, t, worn, mat.needs, mat.wear), [idx, t, worn, mat]);
   // «Сейчас на персонажах»: кандидаты вердикта, у кого есть вещи, и свои без вещей — им вещь начнёт билд (понизили —
-  // прежнего вердикта: они и объясняют, почему «Разобрать»); в примерке — только цель
+  // прежнего вердикта: они и объясняют, почему «Разобрать»); в примерке — только цель (или её «По статам»)
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
-    if (target) return targetVs ? [targetVs] : [];
+    if (target) return statVs ? [statVs] : targetVs ? [targetVs] : [];
     const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length || roster.has(c.id));
     return charsVs(ctx, view, input, chars);
-  }, [ctx, view, raw, worn, verdict, target, targetVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
-  // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя)
-  const offNote = target && !targetVs && verdict.v !== 'idle' && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
+  }, [ctx, view, raw, worn, verdict, target, targetVs, statVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
+  // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя); по
+  // статам подходит — ещё «…«Надеть» положит её в «По статам»». Цель «По статам», а полезных статов нет — так и сказать
+  const offNote = !target || verdict.v === 'idle' ? null
+    : isStats(target.v) ? (targetVs ? null : t.tryon.noStats(target.c.name))
+      : statVs ? [isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : '', t.tryon.offStats(target.c.name)].filter(Boolean).join(' ')
+        : !targetVs && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
   const shown = useMemo(() => (target
     ? { ...verdict, title: tryOnTitle(t, verdict, target, tryRowOf(idx, targetVs?.best ?? null, !!targetVs?.worn), isArmor(s.slot)) }

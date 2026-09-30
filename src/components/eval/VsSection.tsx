@@ -62,6 +62,8 @@ const bonusText = (idx: Index, r: BonusRow) => {
 };
 const ARMOR = ['helmet', 'armor', 'gloves', 'shoes'] as const;
 const buildName = (t: T, key: string) => buildOfKey(key, t.ui.byStats);
+// имя варианта для показа: у «По статам» — «По статам», не его ключ
+const variantName = (t: T, v: Outcome['v']) => (isStats(v) ? t.ui.byStats : v.name);
 
 // строки одного исхода (раздел «Тексты» HANDOFF)
 export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
@@ -201,13 +203,13 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
               {others.length > 0 && (open === x.c.id
                 ? others.map((r) => (
                   <div key={r.v.key} className="vs-more">
-                    <p className="vs-more-h"><span className="bn">{r.v.name}</span> <VsChip o={r} /></p>
+                    <p className="vs-more-h"><span className="bn">{variantName(t, r.v)}</span> <VsChip o={r} /></p>
                     <OutcomeLines o={r} rows={x.rows} />
                   </div>
                 ))
                 : (
                   <button type="button" className="linkbtn vs-more-btn" onClick={() => setOpen(x.c.id)}>
-                    {t.ui.vsMore(others.map((r) => `${r.v.name} — ${outcomeWord(t, r)}`).join(' · '))}
+                    {t.ui.vsMore(others.map((r) => `${variantName(t, r.v)} — ${outcomeWord(t, r)}`).join(' · '))}
                   </button>
                 ))}
             </li>

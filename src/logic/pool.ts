@@ -5,9 +5,11 @@
 //     (Attack, Speed, …) собирается вещь за вещью, а последнюю вещь его бонус выигрывает только ценностью — сет можно
 //     сломать, если итог выгоднее (бонус в сегментах — logic/setBonus).
 //   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», цель примерки, где собрана хоть
-//     одна часть связки, ближайшие к сборке и «По статам». Часть и близость — по тому, что можно собрать из пула
-//     (достижимая сборка, Р1), а карточка показывает выбранную раскладку.
-//   - «По статам» — когда ни одна вещь брони в пуле не из сетов билдов персонажа: вещи раскладываются по цепочке.
+//     одна часть связки, ближайшие к сборке и «По статам», пока он живой. Часть и близость — по тому, что можно
+//     собрать из пула (достижимая сборка, Р1), а карточка показывает выбранную раскладку.
+//   - «По статам» — отдельный билд у каждого персонажа с билдами (находка 28, Р11–Р13): все вещи пула по цепочке. Он
+//     «живой» (собираешь, держит штамп), пока ни одна вещь брони в пуле не из сетов связок; потом его строка тихая —
+//     «Надеть» в него только при явном выборе (поиск по имени, примерка). Вещи его сборки пул держит всегда (usedIn).
 //   - Исход вещи с формы для персонажа (outcomeFor): что станет с каждым собираемым вариантом, если её добавить.
 import { isArmor } from '../data';
 import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
@@ -197,11 +199,13 @@ export function assembleReach(ctx: Ctx, c: Char, v: Variant, entries: readonly E
 function search(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[], opts: { force?: Entry; prune?: boolean }, withReach: boolean): { asm: Assembly; reach: Assembly | null } {
   const { force, prune = true } = opts;
   const x = vc(ctx, c, v);
+  const stats = isStats(v);
   const slots: Partial<Record<SlotId, Entry>> = {};
   // оружие и аксессуар: сетов нет — каждый слот сам по себе: рекомендованная > временная > прочее, ценность, старшинство
   let gTotal = 0, gFilled = 0, gOlder = 0;
   for (const slot of GEAR) {
-    const cands = force?.slot === slot ? [force] : entries.filter((e) => e.slot === slot && (e.piece || e.fit !== 'no'));
+    // вещь с формы не по билду — только в «По статам» и только с полезными ему статами (Р13, допущение (а))
+    const cands = force?.slot === slot ? [force] : entries.filter((e) => e.slot === slot && (e.piece || e.fit !== 'no' || (stats && e.v > EPS)));
     let best: Entry | null = null;
     for (const e of cands) {
       if (!best || RANK[e.fit] > RANK[best.fit] || (RANK[e.fit] === RANK[best.fit] && (e.v > best.v + EPS || (Math.abs(e.v - best.v) <= EPS && e.num < best.num)))) best = e;
@@ -283,16 +287,18 @@ const markOf = (marks: PlayOpts['marks'], v: Variant): Mark | undefined =>
   marks?.[v.key] ?? marks?.[v.parentKey] ?? (v.sig === null && v.b.sets.length === 1 ? marks?.[`${v.parentKey}#${comboSig(v.b.sets[0])}`] : undefined);
 export const markOfVariant = markOf;
 
-// «По статам» есть, когда у персонажа есть билды, пул не пуст и ни одна вещь брони в нём не из сетов его связок
-function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly Pick<Piece, 'slot' | 'setId'>[]): boolean {
+// «По статам» живой, когда у персонажа есть билды, пул не пуст и ни одна вещь брони в нём не из сетов его связок (Р12:
+// ни один настоящий билд не начат). Отдельной функцией: правило «билд начат» ещё может поменяться
+export function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly Pick<Piece, 'slot' | 'setId'>[]): boolean {
   if (!c.builds.length || !pieces.length) return false;
   const sets = new Set(variantsOf(ctx.idx, c).flatMap((v) => combo(v).map((p) => p.set)));
   return !pieces.some((p) => isArmor(p.slot) && p.setId && sets.has(p.setId));
 }
 
 export interface Play {
-  variants: Variant[];                 // все варианты персонажа (+ «По статам», если есть)
-  stat: Variant | null;
+  variants: Variant[];                 // все варианты персонажа и «По статам» (первым), если у него есть билды
+  stat: Variant | null;                // «По статам»; null — у персонажа нет билдов
+  statLive: boolean;                   // «По статам» живой (hasStatBuild): собирается сам и держит штамп
   asm: Map<string, Assembly>;          // сборка каждого варианта — её показывает карточка
   reach: Map<string, Assembly>;        // достижимая сборка (assembleReach): по ней «собираешь»; не отличается — тот же объект
   inPlay: Variant[];
@@ -300,7 +306,9 @@ export interface Play {
 }
 
 export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts = {}, x?: ItemInput | null): Play {
-  const stat = hasStatBuild(ctx, c, x ? [...pieces, x] : pieces) ? statVariant(c) : null;
+  // «По статам» собирается всегда: его вещи пул держит и тогда, когда он не живой (usedIn)
+  const stat = statVariant(c);
+  const statLive = !!stat && hasStatBuild(ctx, c, x ? [...pieces, x] : pieces);
   const variants = [...(stat ? [stat] : []), ...variantsOf(ctx.idx, c)];
   const asm = new Map<string, Assembly>(), reach = new Map<string, Assembly>();
   const fitting = new Set<string>();
@@ -317,11 +325,11 @@ export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts
   const open = variants.filter((v) => !isStats(v) && markOf(opts.marks, v) !== 'skip');
   const top = Math.max(0, ...open.filter((v) => fitting.has(v.key)).map((v) => reach.get(v.key)!.progress));
   const self = (v: Variant) =>
-    isStats(v) || (markOf(opts.marks, v) !== 'skip' && (
+    isStats(v) ? statLive : (markOf(opts.marks, v) !== 'skip' && (
       markOf(opts.marks, v) === 'want'
       || reach.get(v.key)!.complete.length > 0
       || (fitting.has(v.key) && reach.get(v.key)!.progress === top && (top > 0 || !want))));
-  return { variants, stat, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self) };
+  return { variants, stat, statLive, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self) };
 }
 
 // сборки варианта, чьи вещи пул держит: выбранная и достижимая (если другая)
@@ -333,17 +341,21 @@ const inAsm = (a: Assembly, id: string) => Object.values(a.slots).some((e) => e?
 // стоит ли запись в сборке варианта, которую пул держит
 export const holdsPiece = (p: Pick<Play, 'asm' | 'reach'>, v: Variant, id: string): boolean => heldBy(p, v).some((a) => inAsm(a, id));
 
-// Записи, которые держит пул: стоят в выбранной или достижимой сборке хоть одного собираемого варианта. Одно место на
-// «ненужные» (poolView), на то, что уберёт «Надеть» (planPut), и на «где стоит» (poolVs whereUsed)
-export const usedIn = (p: Play): Set<string> =>
-  new Set(p.inPlay.flatMap((v) => heldBy(p, v).flatMap((a) => Object.values(a.slots).map((e) => e?.id))).filter((id): id is string => !!id));
+// Записи, которые держит пул (keeps): стоят в выбранной или достижимой сборке хоть одного собираемого варианта или в
+// сборке «По статам» — живой он или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная» и
+// «Надеть» Speed-брони её не уберёт). Пустой пул — сборка «По статам» пуста. Одно место на «ненужные» (poolView), на
+// то, что уберёт «Надеть» (planPut, подпись «Заменить»), и на «где стоит» (poolVs whereUsed)
+export const usedIn = (p: Play): Set<string> => {
+  const vs = p.stat && !p.inPlay.includes(p.stat) ? [...p.inPlay, p.stat] : p.inPlay;
+  return new Set(vs.flatMap((v) => heldBy(p, v).flatMap((a) => Object.values(a.slots).map((e) => e?.id))).filter((id): id is string => !!id));
+};
 
 // --------------------------------------------------------------------------- вид пула
 
 export interface CharPool extends Play {
   c: Char;
   pieces: Piece[];
-  unused: Piece[]; // вещи, которых нет ни в одной собираемой сборке: в пуле им быть незачем (решение владельца)
+  unused: Piece[]; // вещи, которых нет ни в одной сборке, что держит пул (usedIn): в пуле им быть незачем (решение владельца)
 }
 
 export interface PoolView {
@@ -398,6 +410,8 @@ export interface Outcome {
   before: Assembly;
   after: Assembly;            // с ней (A1) или с ней насильно (Af)
   entering: boolean;          // вариант не собирается, а с ней начнёт
+  quiet: boolean;             // строка «По статам», который не живой (Р12): штамп не держит, в понижении не участвует;
+                              // есть только при явном выборе (outcomeFor explicit)
 }
 
 export interface CharOutcome {
@@ -405,8 +419,8 @@ export interface CharOutcome {
   worn: Piece | null; // такая же вещь уже в пуле персонажа — «уже есть»
   rows: Outcome[];
   starts: Variant[];  // с ней начнут собираться
-  statGone: boolean;  // с ней «По статам» не будет (броня из сета билда): его исход — не про то, что сделает «Надеть»
-  useful: boolean;    // надеть можно (puts): исход держит и она в нём встаёт или начнёт новый билд
+  useful: boolean;    // надеть можно (puts): исход держит и она в нём встаёт или начнёт новый билд; при явном выборе —
+                      // и тихая строка «По статам», где она встаёт с исходом «пустой слот» или «лучше» (Р11)
 }
 
 const rowKey = (r: BonusRow) => `${r.set}:${r.n}:${r.tier}`;
@@ -473,9 +487,13 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   const part = combo(v).find((p) => p.set === x.setId);
   const t4 = part && t4Only(ctx.idx.SET[part.set], part.n) ? { set: part.set, n: part.n } : null;
   const offSet = isArmor(x.slot) ? !part : X.fit === 'no';
-  if (!isArmor(x.slot) && X.fit === 'no') return null; // оружие не по билду — не кандидат (как в сравнении с надетым)
+  const stats = isStats(v);
+  // «По статам»: хлам — вещь без единого полезного ему сабстата (Р13), такая к нему не попадает и при явном выборе
+  if (stats && X.v <= EPS) return null;
+  // оружие не по билду — не кандидат (как в сравнении с надетым); в «По статам» — кандидат (допущение (а))
+  if (!isArmor(x.slot) && X.fit === 'no' && !stats) return null;
   const after = with_ ?? assemble(ctx, c, v, es);
-  const base = { v, pair, worn, t4, part: part ?? null, before, entering, fix: null, surplus: false, lostEmpty: false, brokenSegs: null as number | null };
+  const base = { v, pair, worn, t4, part: part ?? null, before, entering, quiet: false, fix: null, surplus: false, lostEmpty: false, brokenSegs: null as number | null };
   const segsOf = (rows: BonusRow[], set: string | null) => {
     const r = rows.filter((x) => x.set === set).map((x) => bonusSegments(ctx, c, x.bon));
     return r.length && r.every((x) => x !== null) ? r.reduce((n, x) => n + x!, 0) : null;
@@ -502,8 +520,9 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
     else if (pair?.why === 'rec') kind = 'up';
     else kind = (delta ?? 0) >= MARGIN ? 'up' : byDelta(delta);
     // броня не из связки, которая просто займёт пустой слот, — не исход: хлам к персонажу не попадает (решение 3),
-    // в примерке это «не по билду». Встала на место другой с выигрышем — это «лучше»
-    if (offSet && kind === 'fill') return null;
+    // в примерке это «не по билду». Встала на место другой с выигрышем — это «лучше». У «По статам» связки нет — там
+    // хлам только вещь без полезных статов (Р13, выше)
+    if (offSet && kind === 'fill' && !stats) return null;
     const surplus = kind === 'fill' && !!part && before.complete.some((p) => p.set === part.set);
     return { ...base, ...bd, kind, used: true, delta, displaced, broken, after, surplus, lostEmpty, brokenSegs: segsOf(bd.lostBonus, broken) };
   }
@@ -527,33 +546,39 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   return { ...rest, kind: byDelta(d), broken: null };
 }
 
-// Исход вещи с формы для персонажа: для каждого собираемого варианта и тех, что с ней начнут собираться
-export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput): CharOutcome | null {
+// Исход вещи с формы для персонажа: для каждого собираемого варианта и тех, что с ней начнут собираться.
+// explicit — персонажа выбрал пользователь (поиск по имени в «Кому надеть?», примерка): тогда и строка «По статам»,
+// когда он не собирается (не живой, Р12), — тихая (quiet): до и после — его сборки без вещи и с ней. Без explicit
+// тихих строк нет: они нужны только явному выбору (и так дешевле)
+export interface OutcomeOpts { explicit?: boolean }
+export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, opts: OutcomeOpts = {}): CharOutcome | null {
   const cp = view.of(charId);
   if (!cp) return null;
   const { c, pieces } = cp;
   const twin = pieces.find((p) => samePiece(x, p)) ?? null;
-  if (twin) return { c, worn: twin, rows: [], starts: [], statGone: false, useful: false };
+  if (twin) return { c, worn: twin, rows: [], starts: [], useful: false };
   const withX = play(ctx, c, pieces, view.opts, x);
   const was = new Set(cp.inPlay.map((v) => v.key));
   const starts = withX.inPlay.filter((v) => !was.has(v.key) && !isStats(v));
+  const quiet = opts.explicit && cp.stat && !was.has(cp.stat.key) ? cp.stat : null;
   const rows: Outcome[] = [];
-  for (const v of [...cp.inPlay, ...starts]) {
+  for (const v of [...cp.inPlay, ...starts, ...(quiet ? [quiet] : [])]) {
     const before = cp.asm.get(v.key) ?? assemble(ctx, c, v, entriesFor(ctx, c, v, pieces));
-    const o = outcomeOf(ctx, c, v, pieces, x, before, !was.has(v.key), withX.asm.get(v.key));
-    if (o) rows.push(o);
+    const o = outcomeOf(ctx, c, v, pieces, x, before, v !== quiet && !was.has(v.key), withX.asm.get(v.key));
+    if (o) rows.push(v === quiet ? { ...o, quiet: true } : o);
   }
   rows.sort((a, z) => OUTCOME_ORDER.indexOf(a.kind) - OUTCOME_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));
-  const statGone = !!cp.stat && !withX.stat;
-  const useful = rows.some((r) => puts(r) && !r.entering && !(statGone && isStats(r.v))) || starts.length > 0;
-  return { c, worn: null, rows, starts, statGone, useful };
+  const useful = rows.some((r) => (puts(r) && !r.entering) || (r.quiet && r.used && holdsKind(r))) || starts.length > 0;
+  return { c, worn: null, rows, starts, useful };
 }
 
 // Держит ли исход штамп (преемник worn.ts, C2): вещь кому-то нужна. «Ломает» и «на уровне из-за T4» — только когда
 // она лучше по сегментам (иначе их не бывает). Другая рекомендованная пассивка — держит: сабстаты не решают.
 // В слоте оружия или аксессуара «прочее» (не по билду) — держит, как в B3; у брони нет: вещь не из связки в сборке —
-// обычное дело (случайный сет, «По статам»). Никогда: «только статы», «на уровне», «хуже»
-export function holds(o: Outcome): boolean {
+// обычное дело (случайный сет, «По статам»). Никогда: «только статы», «на уровне», «хуже» и тихая строка (Р12)
+export const holds = (o: Outcome): boolean => !o.quiet && holdsKind(o);
+// то же по одному исходу, без «тихая»: у тихой строки «По статам» при явном выборе — есть ли «Надеть» (Р11)
+export function holdsKind(o: Outcome): boolean {
   if (o.kind === 'completes' || o.kind === 'closer' || o.kind === 'fill' || o.kind === 'up' || o.kind === 'breaks' || o.kind === 'capped') return true;
   if (o.kind === 'stats') return false;
   if (o.pair?.passive && !o.pair.why) return true;
@@ -567,7 +592,7 @@ export const puts = (o: Outcome): boolean => holds(o) && o.used;
 // --------------------------------------------------------------------------- операции с пулом
 
 // что сделало «Надеть»: added — вещь добавлена (false — такая же уже есть); removed и marks — как в planPut
-// (removed — вещи её слота, которых с ней нет ни в одной собираемой сборке: «Заменить»); prev — что стояло в этих
+// (removed — вещи её слота, которых с ней нет ни в одной сборке, что держит пул: «Заменить»); prev — что стояло в этих
 // отметках до «Надеть» (null — ничего; «Не собираю» у цели примерки): «Вернуть» кладёт их обратно; shared — у кого ещё
 // эта запись
 export interface PutResult {
@@ -577,9 +602,9 @@ export interface PutResult {
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 
 // Что сделает «Надеть» piece на персонажа — без записи (им же считать подпись «Заменить» / «Надеть»).
-// removed (Р7) — только вещи того слота, куда встала новая: стояли в собираемой сборке, а с ней — ни в одной. Не
-// встала никуда — ничего не убираем. Вещи других слотов, ставшие ненужными, остаются в пуле: на карточке «больше не
-// нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем). marks — варианты, которые без отметки её бы не держали:
+// removed (Р7) — только вещи того слота, куда встала новая: стояли в сборке, что держит пул (usedIn — и «По статам»),
+// а с ней — ни в одной. Не встала никуда — ничего не убираем. Вещи других слотов, ставшие ненужными, остаются в пуле:
+// на карточке «больше не нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем). marks — варианты, которые без отметки её бы не держали:
 // она их начала или они с ней перестали собираться сами. Цель примерки собирается, только пока примерка идёт: встала
 // только в неё — «никуда не встала», и цель становится «Собираю» (иначе после примерки вещь «больше не нужна»).
 // pre — play(mine, po), если уже посчитан (вид пула)
@@ -590,18 +615,19 @@ export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece,
   const removed = now.has(piece.id) ? mine.filter((p) => p.slot === piece.slot && was.has(p.id) && !now.has(p.id)) : [];
   // не встала ни в один вариант, который собирался и собирается с ней дальше, — «Собираю» те, что она начинает (иначе
   // следующая вещь их вытеснит), и те, где она встала, а они с ней сами собираться перестали (её «сет 3 из 4» в Pen Def
-  // отдал половину Def ×2 — ближе всех стал другой). «Прочей» (не из связки) в пустом слоте — не встала: такой исход не
-  // считается (выбранная или достижимая сборка — как usedIn)
+  // отдал половину Def ×2 — ближе всех стал другой). «Прочей» (не из связки) в пустом слоте настоящего варианта — не
+  // встала: такой исход не считается (у «По статам» связки нет — там считается). Выбранная или достижимая сборка — как
+  // usedIn. Начатые — тоже по этому правилу: вещь в «По статам» в примерке Speed не делает Speed «Собираю»
   const counts = (v: Variant) => ([[after.asm, before.asm], [after.reach, before.reach]] as const).some(([am, bm]) => {
     const a = am.get(v.key);
     const slot = a && (Object.keys(a.slots) as SlotId[]).find((sl) => a.slots[sl]?.id === piece.id);
-    return !!slot && !(isArmor(slot) && a!.roles[slot] === 'filler' && !bm.get(v.key)?.slots[slot]);
+    return !!slot && !(isArmor(slot) && !isStats(v) && a!.roles[slot] === 'filler' && !bm.get(v.key)?.slots[slot]);
   });
   const old = new Set(before.own.map((v) => v.key)), still = new Set(after.own.map((v) => v.key));
   const marks = before.own.some((v) => still.has(v.key) && counts(v)) ? []
     : after.variants.filter((v) => !isStats(v) && (old.has(v.key)
       ? !still.has(v.key) && counts(v)
-      : after.inPlay.includes(v) && holdsPiece(after, v, piece.id))).map((v) => v.key);
+      : after.inPlay.includes(v) && counts(v))).map((v) => v.key);
   return { removed, marks };
 }
 
@@ -677,13 +703,14 @@ export function setMark(st: GearStore, key: string, mark: Mark | null): GearStor
 }
 
 // Кому отдать вещь, которая ушла из пула («Заменить»): из candidates (кому она подходит по вердикту) — тот, кому она
-// лучше всего нужна (держащий исход, по порядку исходов и выигрышу); у кого такая уже есть — нет
+// лучше всего нужна (держащий исход, по порядку исходов и выигрышу); у кого такая уже есть — нет. Строка «По статам»
+// получателя не делает (Р11): сама героя она не приводит
 export function recipientFor(ctx: Ctx, view: PoolView, x: ItemInput, candidates: readonly Char[], except: string): { c: Char; row: Outcome } | null {
   let best: { c: Char; row: Outcome } | null = null;
   for (const c of candidates) {
     if (c.id === except) continue;
     const o = outcomeFor(ctx, view, c.id, x);
-    const row = o?.rows.find(puts);
+    const row = o?.rows.find((r) => puts(r) && !isStats(r.v));
     if (!row) continue;
     const rank = (r: Outcome) => OUTCOME_ORDER.indexOf(r.kind);
     if (!best || rank(row) < rank(best.row) || (rank(row) === rank(best.row) && (row.delta ?? 0) > (best.row.delta ?? 0))) best = { c, row };

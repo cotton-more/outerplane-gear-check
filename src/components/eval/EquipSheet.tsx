@@ -1,7 +1,9 @@
 // Окно «Кому надеть?» (GEARPOOL): вещь с формы — в вещи персонажа. Строка на персонажа, без выбора билда: только те,
 // кому вещь встанет в билд (соберёт, сет 3 из 4, пустой слот, новая лучше) или начнёт новый, и неактивная «Уже есть».
-// Хлам к персонажу не попадает (решение владельца). Сначала держащие исходы, потом «начнёт»; имя в поиске ищется
-// среди всех персонажей (без X, когда есть Core Fusion X: logic/fusion). В шапке — сама вещь.
+// Без поиска — по сету, как вердикт (Р11). Поиск по имени — явный выбор: вещь не по билду, но с полезными статами
+// встанет персонажу в «По статам» (находка 28). Вещь без полезных статов не попадает никому (Р13). Сначала держащие
+// исходы, потом «начнёт»; имя ищется среди всех персонажей (без X, когда есть Core Fusion X: logic/fusion). В шапке —
+// сама вещь.
 import { useMemo, useState } from 'react';
 import { subLabel } from '../../data';
 import type { Char } from '../../data/types';
@@ -29,8 +31,8 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);
-  const list = useMemo(() => charsVs(ctx, view, item, chars).filter((x) => x.useful || x.worn)
-    .sort((a, z) => rank(a) - rank(z)), [ctx, view, item, chars]);
+  const list = useMemo(() => charsVs(ctx, view, item, chars, { explicit: !!needle }).filter((x) => x.useful || x.worn)
+    .sort((a, z) => rank(a) - rank(z)), [ctx, view, item, chars, needle]);
   const acc = t.ui.slotAcc[item.slot];
   const nameOf = (x: Pick<ItemInput, 'slot' | 'setId' | 'itemKey' | 'main'> & { grade: string }) => {
     const what = x.setId ? `${SET[x.setId]?.short ?? x.setId} Set` : [x.itemKey ? ITEM[x.slot as 'weapon' | 'accessory'][x.itemKey]?.name : x.grade === 'rare' ? 'Epic' : '', x.main].filter(Boolean).join(' · ');
@@ -70,7 +72,7 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
               </li>
             ))}
           </ul>
-        ) : <p className="muted">{t.ui.equipNone}</p>}
+        ) : <p className="muted">{needle ? t.ui.equipNoneQ : t.ui.equipNone}</p>}
         <p className="muted small">{t.ui.equipNote}</p>
       </div>
     </Sheet>

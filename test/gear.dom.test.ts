@@ -329,21 +329,23 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     expect(byText('.equip-row', 'Caren')).toBeUndefined();
   });
 
-  // было (браузер): у Core Fusion Eternal главная строка «только статы — … оставь как есть» про «По статам», которого
-  // после «Надеть» не будет, а под ней «Надеть на Core Fusion Eternal» — и её Effectiveness-шлем уходил
-  it('Core Fusion Eternal, 4 Effectiveness: Speed-шлем только начнёт Speed — главная строка «начнёт», кнопка «Заменить шлем» = тост', async () => {
+  // было (браузер): у Core Fusion Eternal главная строка «только статы — … оставь как есть» про «По статам», а под ней
+  // «Надеть на Core Fusion Eternal» — и её Effectiveness-шлем уходил. «По статам» теперь остаётся и после «Надеть»
+  // (находка 28): Effectiveness-шлем сильнее по статам и стоит в нём — «Надеть», не «Заменить», и он остаётся в пуле
+  it('Core Fusion Eternal, 4 Effectiveness: Speed-шлем только начнёт Speed — главная строка «начнёт», кнопка «Надеть» = тост, Effectiveness-шлем остаётся', async () => {
     const cf = char('Core Fusion Eternal');
     const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Effectiveness'), { SPD: 2, EFF: 2, CHC: 1, HP: 1 }));
     await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 } },
       { gear: G(pcs, { [cf.id]: ['e1', 'e2', 'e3', 'e4'] }), roster: [cf.id] });
     expect($('.vcard .vc-vs')?.textContent).toBe('startsCore Fusion Eternal· Speed');
-    expect($('.vc-equip')?.textContent).toBe("Replace Core Fusion Eternal's helmet");
+    expect($('.vc-equip')?.textContent).toBe('Equip on Core Fusion Eternal');
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
-    expect(stored().pools[cf.id]).not.toContain('e1');
+    expect($('.gear-toast')?.textContent).toContain('On Core Fusion Eternal: helmet.');
+    expect(stored().pools[cf.id]).toContain('e1');
   });
 
-  it('Core Fusion Eternal: в «Сейчас на персонажах» нет строки «только статы» — ни главной, ни в «Ещё»', async () => {
+  // «По статам» живой (в пуле нет брони из сетов связок) — его «только статы» остаётся в «Ещё», но не главной строкой
+  it('Core Fusion Eternal: «только статы» у «По статам» — не главная строка (главная — «начнёт»), только в «Ещё»', async () => {
     const cf = char('Core Fusion Eternal');
     const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Effectiveness'), { SPD: 2, EFF: 2, CHC: 1, HP: 1 }));
     await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 } },
@@ -351,12 +353,13 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     await click($('.vcard'));
     const row = byText('.v-vs .vs-row', 'Core Fusion Eternal')!;
     expect(row.querySelector('.vs')?.textContent).toBe('starts');
-    expect(row.textContent).not.toContain('stats only');
-    expect(row.querySelector('.vs-act')?.textContent).toBe("Replace Core Fusion Eternal's helmet");
+    expect(row.querySelector('.vs-more-btn')?.textContent).toContain('By stats — stats only');
+    expect(row.querySelector('.vs-act')?.textContent).toBe('Equip on Core Fusion Eternal');
   });
 
-  // было (сценарий «Eternal»): «Кому надеть?» — «Надеть — начнёт Speed», а жмёшь — «Заменено: шлем Eternal»
-  it('Eternal, 4 Attack, слабый Speed-шлем через «Кому надеть?»: вещь начнёт Speed и заменит Attack-шлем — тост «Заменено», «Начал собирать Speed»', async () => {
+  // было (сценарий «Eternal»): «Кому надеть?» — «Надеть — начнёт Speed», а жмёшь — «Заменено: шлем Eternal». Attack-шлем
+  // сильнее по статам и остаётся в «По статам» (находка 28) — «Надето», шлем в пуле
+  it('Eternal, 4 Attack, слабый Speed-шлем через «Кому надеть?»: вещь начнёт Speed, Attack-шлем остаётся — тост «Надето», «Начал собирать Speed»', async () => {
     const eternal = char('Eternal');
     const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Attack'), { SPD: 3, EFF: 2, CHC: 2 }));
     await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 1, HP: 1, RES: 1, DEF: 1 } },
@@ -365,8 +368,9 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     const row = byText('.equip-row', 'Eternal')!;
     expect(row.querySelector('.vs')?.textContent).toBe('starts');
     await click(row);
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Eternal's helmet.");
+    expect($('.gear-toast')?.textContent).toContain('On Eternal: helmet.');
     expect($('.gear-toast small')?.textContent).toContain('Started filling Speed.');
+    expect(stored().pools[eternal.id]).toContain('e1');
   });
 });
 
@@ -485,16 +489,36 @@ describe('«Кому надеть?»', () => {
     expect($('.equip-subs')?.textContent).toBe('DEF%2CHC2CHD3HP1');
     expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace helmet — the new one is better · Speed');
     expect($$('.equip-row')).toHaveLength(1);
-    expect($('.equip')?.textContent).toContain('Only characters whose builds can use this piece.');
+    expect($('.equip')?.textContent).toContain('Here are those whose builds can use the piece. Off-build? Search a character by name: it goes into "By stats".');
     expect($('.equip .toggle')).toBeNull(); // «показать и не по билду» больше нет
 
     const input = $('.equip-q input') as HTMLInputElement;
     await type(input, 'kap');
     expect(byText('.equip-row', 'Kappa')?.querySelector('.act')?.textContent).toBe('Equip — starts Speed');
-    // персонаж, чьим билдам Speed Set не нужен, не появляется и в поиске
+    // персонаж, чьим билдам Speed Set не нужен: без поиска его нет, а поиск по имени — явный выбор, и вещь с полезными
+    // ему статами встанет в его «По статам» (находка 28, Р11)
     const noSpeed = D.chars.find((c) => c.builds.length && !c.builds.some((b) => b.sets.flat().some((p) => p.set === speed)))!;
     await type(input, noSpeed.name.toLowerCase());
-    expect($$('.equip-row .nm b').map((e) => e.textContent)).not.toContain(noSpeed.name);
+    expect(byText('.equip-row', noSpeed.name)?.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
+  });
+
+  it('поиск по имени, а вещь ей ничего не даст (полезных статов нет): строки нет, внизу — «никому с таким именем»', async () => {
+    const drakhan = char('Demiurge Drakhan'); // цепочка SPD › HP › CHC › CHD › DMG UP% › DEF
+    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Revenge'), subs: { RES: 2, EFF: 2, 'ATK%': 1 } }, { roster: [drakhan.id] });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await type($('.equip-q input') as HTMLInputElement, 'demiurge drakhan');
+    expect($$('.equip-row')).toHaveLength(0);
+    expect($('.equip .muted')?.textContent).toBe('It gives no one by that name anything.');
+  });
+
+  it('без поиска вещь не по билду никому: внизу — «найди персонажа по имени»', async () => {
+    const drakhan = char('Demiurge Drakhan');
+    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Revenge'), subs: { SPD: 3, HP: 1, 'HP%': 1 } }, { roster: [drakhan.id] });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect($$('.equip-row')).toHaveLength(0);
+    expect($('.equip .muted')?.textContent).toBe('It gives no build anything. Search a character by name — with useful stats it goes into their "By stats".');
   });
 
   it('такая же вещь уже у Caren — строка «Уже есть» не нажимается: Reforge и Breakthrough записи остаются', async () => {
@@ -569,12 +593,13 @@ describe('карточка персонажа', () => {
     expect($('.vlist .want-btn')).toBeNull();
   });
 
-  it('«По статам» у Eternal: вкладка первой, бонус случайного сета считается, «Не хватает» — вещи сета билда', async () => {
+  it('«По статам» у Eternal: вкладка последней, бонус случайного сета считается, «Не хватает» — вещи сета билда', async () => {
     const cf = char('Core Fusion Eternal');
     const eff = ['helmet', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, set('Effectiveness'), { SPD: 2, EFF: 1 }));
     await mount({ tab: 'chars', charId: cf.id }, {}, { gear: G(eff, { [cf.id]: ['p1', 'p2', 'p3'] }), roster: [cf.id] });
     expect($('.cd-lead')?.textContent).toBe("By stats — no build started yet: pieces are laid out by Core Fusion Eternal's chain.");
-    expect($$('.btabs button').map((b) => b.textContent)[0]).toBe('By stats3/6');
+    expect($$('.btabs button').map((b) => b.textContent).at(-1)).toBe('By stats3/6');
+    expect($('.btabs button[aria-selected="true"]')?.textContent).toBe('By stats3/6'); // открыта на лучшем варианте
     expect($('.bgear-set')?.textContent).toContain("Effectiveness ×2 · T? — Effectiveness +18% · mark Breakthrough · not in Core Fusion Eternal's builds, but the bonus counts");
     expect($('.bgear-need')?.textContent).toContain('Missing: Speed Set pieces — the first one starts Speed');
   });
@@ -762,5 +787,82 @@ describe('вещи вне ростера', () => {
   it('звезду сняли, а вещи есть: они остаются — «Вещи X · N — X не в ростере»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
     expect($('.pool summary')?.textContent).toBe("Caren's gear · 1 — Caren isn't in the roster.");
+  });
+});
+
+// Находка 28 (Р11–Р13): вещь не по билду Demiurge Drakhan — броня Revenge OGC HLMW PCHM (SPD 3 · HP 1 · HP% 1)
+describe('«По статам» у каждого героя (находка 28)', () => {
+  const drakhan = char('Demiurge Drakhan');
+  const revenge = set('Revenge');
+  const HLMW = { setId: revenge, subs: { SPD: 3, HP: 1, 'HP%': 1 } };
+
+  it('«Надеть на…» → поиск по имени: строка Drakhan «Надеть — пустой слот · By stats», нажатие кладёт вещь ей', async () => {
+    await mount({ slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id] });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await type($('.equip-q input') as HTMLInputElement, 'demiurge drakhan');
+    const row = byText('.equip-row', drakhan.name)!;
+    expect(row.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
+    await click(row);
+    expect(stored().pools[drakhan.id]).toHaveLength(1);
+    expect($('.gear-toast')?.textContent).toContain('Counts in By stats.');
+  });
+
+  it('карточка Drakhan без вещей: вкладка «By stats» последней, на ней — что туда встаёт и «Собрать билд»', async () => {
+    await mount({ tab: 'chars', charId: drakhan.id }, {}, { roster: [drakhan.id] });
+    expect($$('.btabs button').map((b) => b.textContent)).toEqual([...drakhan.builds.map((b) => b.name), 'By stats']);
+    expect($('.btabs button[aria-selected="true"]')?.textContent).toBe(drakhan.builds[0].name);
+    await click(byText('.btabs button', 'By stats'));
+    expect($('.bgear-none p')?.textContent).toBe(`"By stats" — ${drakhan.name}'s pieces by the chain, no sets. What ${drakhan.name} wears off-build in the game goes here too: press "Gear up this build" and enter the pieces.`);
+    expect($('.bgear-none')?.getAttribute('data-tour')).toBe('stats');
+  });
+
+  it('Drakhan с HLMW, Revenge-шлем: «Сейчас на персонажах» и карточка её не показывают — строка «По статам» одна героя не приводит (Р11)', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: revenge, subs: { SPD: 4, HP: 2, CHC: 1 } },
+      { roster: [drakhan.id], gear: G([P('p1', 'armor', revenge, HLMW.subs, { grade: 'rare' })], { [drakhan.id]: ['p1'] }) });
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vcard'));
+    expect(byText('.v-vs .vs-row', drakhan.name)).toBeUndefined();
+  });
+
+  it('Luna: поиск — строка про «По статам», а не «начнёт Pen mix», где вещь не встаёт (подпись = что сделает «Надеть»)', async () => {
+    const luna = char('Demiurge Luna');
+    const pen = set('Penetration');
+    const pcs = [P('p1', 'armor', pen, { ATK: 1, RES: 3, DEF: 2, CHC: 2 }), P('p2', 'gloves', pen, { HP: 1, EFF: 2, SPD: 3 })];
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: set('Critical Strike'), subs: { EFF: 3, 'DEF%': 1, 'ATK%': 2, CHC: 3 } },
+      { roster: [luna.id], gear: G(pcs, { [luna.id]: ['p1', 'p2'] }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await type($('.equip-q input') as HTMLInputElement, 'demiurge luna');
+    const row = byText('.equip-row', luna.name)!;
+    expect(row.querySelector('.act')?.textContent).toBe('Equip — By stats');
+    expect(row.querySelector('.vs')?.textContent).not.toBe('starts');
+    await click(row);
+    expect($('.gear-toast')?.textContent).toContain('Counts in By stats.');
+    expect(stored().marks ?? {}).toEqual({});
+  });
+
+  it('Caren со Speed-шлемом, Swiftness-ботинки через поиск: тост «Засчитано в By stats», а не в её билдах', async () => {
+    await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Swiftness'), subs: { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 } },
+      { gear: G([WEAK], { [caren.id]: ['p1'] }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    await type($('.equip-q input') as HTMLInputElement, 'caren');
+    const row = byText('.equip-row', 'Caren')!;
+    expect(row.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
+    await click(row);
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots. Counts in By stats.');
+  });
+
+  it('вещь только в «По статам» — в списке вещей «в By stats»; вещь и в Speed — только «в Speed»', async () => {
+    const eternal = char('Core Fusion Eternal');
+    const pcs = [P('p1', 'armor', set('Effectiveness'), { SPD: 3, EFF: 2, HP: 1 }, { grade: 'rare' }), P('p2', 'gloves', speed, { SPD: 1, 'ATK%': 3, EFF: 2 }, { grade: 'rare' }),
+      P('p3', 'armor', speed, { SPD: 1, HP: 1, RES: 1 }, { grade: 'rare' })];
+    await mount({ tab: 'chars', charId: eternal.id }, {}, { roster: [eternal.id], gear: G(pcs, { [eternal.id]: ['p1', 'p2', 'p3'] }) });
+    await click($('.pool summary'));
+    const where = (id: string) => $$('.pool-list li')[['p1', 'p2', 'p3'].indexOf(id)].querySelector('.pool-w')?.textContent;
+    expect(where('p1')).toBe('in By stats');
+    expect(where('p2')).toBe('in Speed');
+    expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
   });
 });

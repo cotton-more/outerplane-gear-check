@@ -26,7 +26,8 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 );
 
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
-// view — пул (logic/pool); onTryOn — примерка варианта этого персонажа (BuildGear); onOpenChar — карточка другого
+// view — пул (logic/pool); onTryOn — примерка варианта этого персонажа (BuildGear; у «По статам» b — его билд с именем
+// STATS: примерка «По статам», logic/tryon); onOpenChar — карточка другого
 // персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»)
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
@@ -95,11 +96,12 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const auto = play(ctx, c, cp!.pieces, { marks: rest, tryOn: view.opts.tryOn }).inPlay.some((y) => y.key === x.key);
     gear.set(setMark(gear.store, x.key, !on === auto ? null : !on ? 'want' : 'skip'));
   };
-  // заголовок: лучше всего собран / ближе всех к сборке; «Собраны ещё»; «По статам», если ничего не начато
+  // заголовок: лучше всего собран / ближе всех к сборке; «Собраны ещё»; «По статам», если ничего не начато (он живой:
+  // по «есть в пуле броня из сетов связок», а не по «Собираю» — иначе «ни один билд не начат» при «Не собираю»)
   const shownLead = lead && !isStats(lead) ? lead : null;
   const done = cp!.inPlay.filter((x) => !isStats(x) && !x.dupOf && asm.get(x.key)!.need && asm.get(x.key)!.progress === asm.get(x.key)!.need);
   const la = shownLead ? asm.get(shownLead.key)! : null;
-  const headline = !has ? null : cp!.stat && !cp!.inPlay.some((x) => !isStats(x) && asm.get(x.key)!.progress > 0)
+  const headline = !has ? null : cp!.statLive && !cp!.inPlay.some((x) => !isStats(x) && asm.get(x.key)!.progress > 0)
     ? <p className="cd-lead"><span>{t.ui.cdStats(c.name)}</span></p>
     : la && shownLead && la.progress > 0
       ? (
@@ -145,12 +147,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
       ))}
       {b && v ? (
         <>
+          {/* «По статам» — отдельный билд у каждого персонажа с билдами (находка 28): вкладка последней */}
           <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
-            {cp!.stat && (
-              <button type="button" role="tab" aria-selected={!!statsTab} onClick={() => setTab('stats')}>
-                {t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}
-              </button>
-            )}
             {c.builds.map((x, i) => {
               const one = variantsOfBuild(x);
               const dup = one.length === 1 && one[0].dupOf ? cp!.variants.find((y) => y.key === one[0].dupOf) : null;
@@ -160,13 +158,18 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
                 </button>
               );
             })}
+            {cp!.stat && (
+              <button type="button" role="tab" aria-selected={!!statsTab} onClick={() => setTab('stats')}>
+                {t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}
+              </button>
+            )}
           </div>
           {list.length > 1 && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
           <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
             onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />
           <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} />
           {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast}
-            onTry={onTryOn && !statsTab ? () => { setPieceId(null); onTryOn(c, v.parent, piece.slot, piece, v.sig); } : undefined} />}
+            onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, statsTab ? v.b : v.parent, piece.slot, piece, v.sig); } : undefined} />}
           {!statsTab && <BuildView c={c} b={b} ctx={ctx} />}
         </>
       ) : (

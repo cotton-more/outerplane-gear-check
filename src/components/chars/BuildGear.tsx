@@ -2,7 +2,8 @@
 // окрашенные по цепочке этого билда, Breakthrough и сколько Reforge сделано; бонусы сетов с уровнем; «Собираю»;
 // «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet): оранжевые сегменты после Reforge, Breakthrough, смена
 // стата после Transistone, «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать билд»,
-// «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого варианта.
+// «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого варианта; на вкладке
+// «По статам» — примерку «По статам» (туда встаёт то, что герой носит не по билду, находка 28).
 import { useState } from 'react';
 import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
@@ -66,6 +67,7 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
 }
 
 // onTryOn — примерка этого варианта (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии.
+// У «По статам» b — его билд (имя STATS): примерка «По статам», а не родителя.
 // onOpenPiece — карточка вещи; onWant — переключатель «Собираю»
 export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onWant }: {
   c: Char; v: Variant; cp: CharPool; ctx: Ctx; gear: GearApi; view: PoolView;
@@ -79,7 +81,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const n = badgeOf(a);
   const on = cp.inPlay.includes(v);
   const combo = b.sets[0] ?? [];
-  const try_ = onTryOn && ((slot?: SlotId, from?: Piece) => onTryOn(v.parent, slot, from, v.sig));
+  const try_ = onTryOn && ((slot?: SlotId, from?: Piece) => onTryOn(stats ? v.b : v.parent, slot, from, v.sig));
   const setName = (id: string) => idx.SET[id]?.short ?? id;
   // бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
   const bonusLines = a.bonuses.map((r) => {
@@ -114,17 +116,19 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   if (!cp.pieces.length) {
     return (
       <div className="bgear" {...tour('bgear')}>
-        <div className="bgear-none">
-          <p>{t.tryon.empty(v.name, c.name)}</p>
+        <div className="bgear-none" {...(stats ? tour('stats') : {})}>
+          <p>{stats ? t.tryon.emptyStats(c.name) : t.tryon.empty(v.name, c.name)}</p>
           {try_ && <button type="button" className="btn primary" onClick={() => try_()}>{t.tryon.build}</button>}
-          <p className="muted small">{t.tryon.emptyOr}</p>
+          {!stats && <p className="muted small">{t.tryon.emptyOr}</p>}
         </div>
       </div>
     );
   }
+  // «Не хватает: вещи … Set — первая же начнёт билд» — только пока «По статам» живой (ни один билд не начат)
+  const statsNeed = stats && cp.statLive && !!first;
   return (
     <div className="bgear" {...tour('bgear')}>
-      <h4>{t.ui.gearTitle(n)}</h4>
+      <h4 {...(stats ? tour('stats') : {})}>{t.ui.gearTitle(n)}</h4>
       {!stats && (
         <p className="want-row" {...tour('want')}>
           <button type="button" className="want-btn" aria-pressed={on} onClick={() => onWant(v)}>{t.ui.filling}</button>
@@ -142,7 +146,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
               <li key={slot} className="bgear-empty">
                 <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
                 <span className="bgear-act">
-                  {try_ && !stats && <button type="button" className="btn small" onClick={() => try_(slot)} {...tour('gtry')}>{t.tryon.slot}</button>}
+                  {try_ && <button type="button" className="btn small" onClick={() => try_(slot)} {...tour('gtry')}>{t.tryon.slot}</button>}
                 </span>
               </li>
             );
@@ -177,10 +181,10 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
           {try_ && <button type="button" className="btn small" onClick={() => try_(weak.slot, wp)}>{t.ui.weakestTry}</button>}
         </div>
       )}
-      {(missing.length > 0 || (stats && first)) && (
-        <div className="bgear-need" {...(stats ? tour('stats') : {})}>
-          {stats && first ? <p>{t.ui.missingStats(setName(first.set), c.builds[0].name)}</p> : missing.map((m, i) => <p key={i}>{m}</p>)}
-          {try_ && !stats && free.length > 0 && <button type="button" className="btn small" onClick={() => try_(free[0])}>{t.tryon.slot}</button>}
+      {(missing.length > 0 || statsNeed) && (
+        <div className="bgear-need">
+          {statsNeed && first ? <p>{t.ui.missingStats(setName(first.set), c.builds[0].name)}</p> : missing.map((m, i) => <p key={i}>{m}</p>)}
+          {try_ && free.length > 0 && <button type="button" className="btn small" onClick={() => try_(free[0])}>{t.tryon.slot}</button>}
         </div>
       )}
     </div>

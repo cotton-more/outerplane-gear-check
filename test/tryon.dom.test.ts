@@ -159,14 +159,38 @@ describe('примерка', () => {
     expect(stored('item').subs).toEqual({ CHC: 2 });
   });
 
-  it('не её сет — строка «не по билду», надеть нельзя («Надеть всё равно» нет: хлам к персонажу не попадает)', async () => {
+  // «Надеть всё равно» нет, но вещь с полезными статами «Надеть» кладёт в «По статам» (находка 28, Р11)
+  it('не её сет — «не по билду», но по статам подходит: строка про «По статам» и «Надеть на Caren»', async () => {
     const def = D.sets.find((s) => s.short === 'Defense')!.id;
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: def, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } }, { tryon: { charId: caren.id, build: 'Speed' } });
+    expect($('.vcard .vc-title')?.textContent).toContain('Caren · Speed — off-build');
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
+    await click($('.vcard'));
+    expect($('.v-off')?.textContent).toBe(`Not for Speed: Defense isn't in its combos. It fits Caren by stats — "Equip" puts it in "By stats".`);
+    expect($('.vs-act')?.textContent).toBe('Equip on Caren');
+    expect($('.v-vs .bn')?.textContent).toBe('By stats');
+  });
+
+  // сет не из её связок: вещь — в «По статам»; Speed (цель примерки), где она лишь заняла пустой слот, «Собираю» не
+  // становится
+  it('вещей нет, сет не из её билдов, «Надеть на Caren»: вещь у неё, Speed не отмечен «Собираю»', async () => {
+    const atk = D.sets.find((s) => s.short === 'Attack')!.id;
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: atk, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } },
+      { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
+    await click($('.vc-equip'));
+    // прочая в пустой слот Speed — не «засчитано в Speed»: кнопка и строка обещали «По статам»
+    expect($('.gear-toast')?.textContent).toContain('On Caren: gloves. Counts in By stats.');
+    expect(stored('gear').pools[caren.id]).toHaveLength(1);
+    expect(stored('gear').marks ?? {}).toEqual({});
+  });
+
+  it('не её сет и полезных статов нет: «не по билду», кнопки нет', async () => {
+    const def = D.sets.find((s) => s.short === 'Defense')!.id;
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: def, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } }, { tryon: { charId: caren.id, build: 'Speed' } });
     expect($('.vcard .vc-title')?.textContent).toContain('Caren · Speed — off-build');
     expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));
     expect($('.v-off')?.textContent).toBe("Not for Speed: Defense isn't in its combos.");
-    expect($('.vs-act')).toBeNull();
   });
 });
 
@@ -218,5 +242,51 @@ describe('штамп по надетому', () => {
     await mount({ slot: 'helmet', grade: 'rare' }, junk, { gear });
     expect($('.vcard .stamp')?.textContent).toBe('Keep');
     expect($('.vcard .vc-title')?.textContent).toBe('Caren already has it');
+  });
+});
+
+// Находка 28 (Р11): примерка — явный выбор. Вещь не по билду, но с полезными статами — «Надеть» кладёт её в «По статам»;
+// вкладка «По статам» — своя примерка. Demiurge Drakhan: броня Revenge OGC HLMW PCHM (SPD 3 · HP 1 · HP% 1)
+describe('примерка и «По статам» (находка 28)', () => {
+  const drakhan = D.chars.find((c) => c.slug === 'demiurge-drakhan')!;
+  const revenge = D.sets.find((s) => s.short === 'Revenge')!.id;
+  const HLMW = { setId: revenge, subs: { SPD: 3, HP: 1, 'HP%': 1 } };
+  const EMPTY = { v: 2, seq: 0, pieces: {}, pools: {} };
+
+  it('Drakhan · Speed, вещей нет: «не по билду», строка про «По статам» и «Надеть» — вещь у неё', async () => {
+    await mount({ slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear: EMPTY, tryon: { charId: drakhan.id, build: 'Speed' } });
+    expect($('.vcard .vc-title')?.textContent).toContain(`${drakhan.name} · Speed — off-build`);
+    await click($('.vcard'));
+    expect($('.v-off')?.textContent).toBe(`Not for Speed: Revenge isn't in its combos. It fits ${drakhan.name} by stats — "Equip" puts it in "By stats".`);
+    await click($('.vs-act'));
+    expect(stored('gear').pools[drakhan.id]).toHaveLength(1);
+    expect(stored('gear').marks ?? {}).toEqual({});
+  });
+
+  it('вкладка «По статам» → «Собрать билд»: примерка «Drakhan · By stats»', async () => {
+    await mount({ tab: 'chars', charId: drakhan.id }, {}, { roster: [drakhan.id], gear: EMPTY });
+    await click(byText('.btabs button', 'By stats'));
+    await click($('.bgear-none button'));
+    expect($('.tryon')?.textContent).toContain(`${drakhan.name} · By stats`);
+    expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
+  });
+
+  it('вкладка «По статам» → «Примерить» у пустого слота: примерка «По статам», на форме слот без сета', async () => {
+    const gear = { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'armor', grade: 'rare', setId: revenge, itemKey: null, main: null, yellow: HLMW.subs, lit: HLMW.subs, bt: null, at: '' } }, pools: { [drakhan.id]: ['p1'] } };
+    await mount({ tab: 'chars', charId: drakhan.id, slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear });
+    expect($('.btabs button[aria-selected="true"]')?.textContent).toMatch(/^By stats/); // открыта на лучшем варианте
+    await click(byText('.bgear-empty', 'Helmet')?.querySelector<HTMLElement>('.bgear-act button'));
+    expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
+    expect(stored('state')).toMatchObject({ tab: 'eval', slot: 'helmet' });
+    expect(stored('item').setId ?? null).toBeNull();
+  });
+
+  it('примерка «По статам», вещь без полезных статов: «ничего не даст», кнопки нет', async () => {
+    await mount({ slot: 'armor', grade: 'rare' }, { setId: revenge, subs: { RES: 2, EFF: 2, 'ATK%': 1 } },
+      { roster: [drakhan.id], gear: EMPTY, tryon: { charId: drakhan.id, build: '#stats' } });
+    expect($('.vcard .vc-title')?.textContent).toContain(`${drakhan.name} · By stats — gives nothing`);
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vcard'));
+    expect($('.v-off')?.textContent).toBe(`This piece gives ${drakhan.name} nothing: no useful stats.`);
   });
 });
