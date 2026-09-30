@@ -1,5 +1,6 @@
 // Варианты связок билда (GEARPOOL, logic/variants): чипы — лучший вариант и ещё два, «ещё N ▾» — шторка со всеми,
-// их сбором и «Собираю». Чип выбирает, какую раскладку показать (своё состояние карточки).
+// их сбором и «Собираю» (как в блоке билда: нет вещей — нет «Собираю»). Чип выбирает, какую раскладку показать
+// (своё состояние карточки).
 import { useState } from 'react';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
@@ -44,8 +45,12 @@ export function VariantChips({ list, cur, cp, ctx, st, onPick, onWant }: {
                   <button type="button" className="vrow" aria-pressed={v === cur} onClick={() => { onPick(v); setAll(false); }}>
                     <b>{short(v)}</b> <span className="n">{prog(v)}</span>
                   </button>
-                  <button type="button" className="want-btn" aria-pressed={cp.inPlay.includes(v)} onClick={() => onWant(v)}>{t.ui.filling}</button>
-                  <span className="muted small">{wantWhy(t, ctx.idx, cp, st, v)}</span>
+                  {cp.pieces.length > 0 && (
+                    <>
+                      <button type="button" className="want-btn" aria-pressed={cp.inPlay.includes(v)} onClick={() => onWant(v)}>{t.ui.filling}</button>
+                      <span className="muted small">{wantWhy(t, ctx.idx, cp, st, v)}</span>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>

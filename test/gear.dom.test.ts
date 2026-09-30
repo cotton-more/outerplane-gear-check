@@ -373,6 +373,16 @@ describe('карточка персонажа', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
   });
 
+  it('шторка вариантов без вещей: связки со сбором есть, «Собираю» нет — как в блоке билда', async () => {
+    const luna = char('Demiurge Luna');
+    await mount({ tab: 'chars', charId: luna.id }, {}, { roster: [luna.id] });
+    await click(byText('.btabs button', 'Pen mix'));
+    await click(byText('.vchips .vchip', 'more'));
+
+    expect($$('.vlist li')).toHaveLength(5);
+    expect($('.vlist .want-btn')).toBeNull();
+  });
+
   it('«По статам» у Eternal: вкладка первой, бонус случайного сета считается, «Не хватает» — вещи сета билда', async () => {
     const cf = char('Core Fusion Eternal');
     const eff = ['helmet', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, set('Effectiveness'), { SPD: 2, EFF: 1 }));

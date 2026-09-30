@@ -87,11 +87,12 @@ export function App() {
   // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
   // Вещь — материал Breakthrough для надетой не на T4: «Разобрать» поднимается до «Фоддер» (logic/material)
   const realGear = useGear(idx, !touring);
-  // тур «Экипировка» — на примере (src/tour/gear.ts): своя экипировка и своя примерка в памяти, записи игрока не трогаются
+  // тур «Экипировка» — на примере (src/tour/gear.ts): своя экипировка и своя примерка в памяти, записи игрока не трогаются.
+  // Другие туры — на пустой экипировке: запись ничего не делает (она легла бы из пустого стора поверх вещей игрока)
   const [demo, setDemo] = useState<{ store: GearStore; tryOn: TryOn | null } | null>(null);
   const gear: GearApi = useMemo(() => (demo
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
-    : realGear), [demo, realGear]);
+    : touring ? { ...realGear, set: () => {} } : realGear), [demo, realGear, touring]);
   // кубик ещё считается: у той же вещи с другим сегментом — прежний кубик, а не строка без него (logic/evaluate)
   const raw = useMemo(() => (later === key ? full : withPendingDice(ctx, input, quick, JSON.parse(later) as ItemInput, full)), [ctx, key, later, full, quick]); // eslint-disable-line react-hooks/exhaustive-deps
   // экипировка по пулу (logic/pool): вид — один раз на хранилище; примерка (logic/tryon) — сравнение только с одним

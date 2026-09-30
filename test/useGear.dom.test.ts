@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Хранение экипировки (state/useGear): при загрузке не переписываем; во время обучения на странице пусто и ничего не
-// пишется, после него — пишется то, что сделали; действие пишет сразу.
+// пишется — ни во время, ни после (запись из пустого стора тура стёрла бы вещи игрока); действие пишет сразу.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -47,17 +47,17 @@ describe('useGear', () => {
     expect(api.store).toMatchObject({ v: 2, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 } } } });
   });
 
-  it('во время обучения: на странице пусто, запись ждёт конца тура; после — пишется', async () => {
-    localStorage.setItem('ogc.gear', JSON.stringify(RAW));
+  it('во время обучения: на странице пусто, запись ничего не делает; после тура не пишется, на странице — хранилище', async () => {
+    const text = JSON.stringify(RAW);
+    localStorage.setItem('ogc.gear', text);
     await render(false);
     expect(api.store).toEqual(EMPTY_GEAR);
 
-    const next = withPiece({ SPD: 1 }, 'armor');
-    await act(async () => api.set(next));
-    expect(JSON.parse(stored()!)).toEqual(RAW);
-
+    await act(async () => api.set(withPiece({ SPD: 1 }, 'armor')));
     await render(true);
-    expect(JSON.parse(stored()!)).toEqual(next);
+
+    expect(stored()).toBe(text);
+    expect(api.store).toMatchObject({ v: 2, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 } } } });
   });
 
   it('экипировку сохранила более новая версия (v: 3): newer, и запись не перезаписывается', async () => {

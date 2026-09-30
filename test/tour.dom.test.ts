@@ -254,6 +254,57 @@ describe('вещь игрока не теряется', () => {
   });
 });
 
+// Главный тур и «Какое обучение?» идут на пустой экипировке: ничто в них не пишет в ogc.gear — ни во время, ни после.
+// Раньше «Собираю» в шторке вариантов записывал отметку в пустой стор, и после ✕ он ложился поверх всех вещей игрока
+describe('обучение не пишет в экипировку игрока', () => {
+  const caren = D.chars.find((c) => c.name === 'Caren')!, luna = D.chars.find((c) => c.name === 'Demiurge Luna')!;
+  const speed = D.sets.find((x) => x.short === 'Speed')!.id;
+  const MINE = {
+    welcomeHidden: true, tour: DONE, roster: [caren.id, luna.id], state: { tab: 'eval', charId: luna.id },
+    gear: { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2, SPD: 1 }, lit: { CHC: 2, SPD: 1 }, bt: null, at: '' } }, pools: { [caren.id]: ['p1'] } },
+  };
+  // карточка Luna → «Pen mix» → «ещё 2»: шторка со всеми связками
+  const lunaVariants = async () => {
+    await click(byText('.vb-tab', '☰'));
+    await click(byText('.menu button', 'Characters'));
+    expect($('#char-detail h2')?.textContent).toBe(luna.name);
+    await click(byText('.btabs button', 'Pen mix'));
+    await click(byText('.vchips .vchip', 'more'));
+    expect(document.querySelectorAll('.vlist li').length).toBeGreaterThan(0);
+  };
+
+  it('главный тур → Luna → «ещё 2»: «Собираю» нет (на странице пусто); ✕ — ogc.gear байт в байт прежний', async () => {
+    await mount(MINE);
+    const before = localStorage.getItem('ogc.gear');
+    await click(byText('.vb-tab', '☰'));
+    await click(byText('.menu button', 'Tutorial'));
+    await pickCore();
+    await click(byText('.tour-strip button', 'Example'));
+
+    await lunaVariants();
+    expect($('.vlist .want-btn')).toBeNull();
+    await click($('.tour-x'));
+
+    expect($('.tour-strip')).toBeNull();
+    expect(localStorage.getItem('ogc.gear')).toBe(before);
+  });
+
+  it('«Какое обучение?» → Luna → «ещё 2» → ✕: ogc.gear байт в байт прежний', async () => {
+    await mount(MINE);
+    const before = localStorage.getItem('ogc.gear');
+    await click(byText('.vb-tab', '☰'));
+    await click(byText('.menu button', 'Tutorial'));
+    expect(strip()).toContain(T.pick);
+
+    await lunaVariants();
+    expect($('.vlist .want-btn')).toBeNull();
+    await click($('.tour-x'));
+
+    expect($('.tour-strip')).toBeNull();
+    expect(localStorage.getItem('ogc.gear')).toBe(before);
+  });
+});
+
 describe('низкое окно (полоска разделённого экрана)', () => {
   it('обучение само не предлагаем, а кнопка в меню работает', async () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 390 });
