@@ -312,6 +312,122 @@ describe('«собираешь»', () => {
   });
 });
 
+// П3 (повторное ревью, 2026-09-30): билд начинает только оружие / аксессуар из списка — рекомендованное (fit «rec»).
+// Временное (Epic с main из списка в «Развитии») в сборке стоит, но билд не начинает. Было: одно Steel Sword ATK% у
+// Demiurge Luna начинало все 8 вариантов, «Надеть — начнёт …» перечисляло все 8
+describe('П3: временное оружие билд не начинает', () => {
+  const luna = char('Demiurge Luna'); // Mage; в списках всех билдов оружие 17 (ATK%)
+  const end = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'end', lv120: false, quirks: true }, new Set());
+  const steel = D.weapons.find((w) => w.name === 'Steel Sword' && w.star === 6)!; // Epic, main ATK% / DEF% / HP%
+  const sword = () => W(steel.key, { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'ATK%', 'rare');
+  const listed = () => W('17', { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'ATK%');
+  const input = (p: Piece): ItemInput => ({ slot: p.slot, grade: p.grade, setId: null, itemKey: p.itemKey, main: p.main, subs: p.lit });
+  const real = (c: Char) => variantsOf(idx, c).map((v) => v.name);
+  const helm = () => P('helmet', 'Penetration', { 'ATK%': 2, CHC: 2, CHD: 2, SPD: 1 });
+
+  it('Steel Sword ATK% у Luna — временное во всех билдах', () => {
+    expect(luna.builds.map((b) => fit(ctx, luna, b, sword()))).toEqual(luna.builds.map(() => 'stopgap'));
+  });
+
+  it('одно временное оружие в пуле: ни один билд не начат, собирается только «По статам» (живой)', () => {
+    const p = play(ctx, luna, [sword()]);
+
+    expect(p.variants.some((v) => !isStats(v) && started(p.reach.get(v.key)!))).toBe(false);
+    expect({ live: p.statLive, stat: hasStatBuild(ctx, luna, [sword()]), on: inPlay([sword()], {}, luna) }).toEqual({ live: true, stat: true, on: ['#stats'] });
+  });
+
+  it('временное оружие стоит в сборке билда и «По статам» (ранг «временная» — выше прочего)', () => {
+    const w = sword();
+    const p = play(ctx, luna, [w], { marks: { [buildKey(luna.id, 'Penetration')]: 'want' } });
+    const pen = p.variants.find((v) => v.name === 'Penetration')!;
+
+    expect(p.asm.get(pen.key)!.slots.weapon?.id).toBe(w.id);
+    expect(p.asm.get(pen.key)!.roles.weapon).toBe('stopgap');
+    expect(p.asm.get(p.stat!.key)!.slots.weapon?.id).toBe(w.id);
+  });
+
+  it('рекомендованное оружие из списка начинает все билды, где оно есть; «По статам» не живой', () => {
+    const p = play(ctx, luna, [listed()]);
+
+    expect(luna.builds.map((b) => fit(ctx, luna, b, listed()))).toEqual(luna.builds.map(() => 'rec'));
+    expect({ live: p.statLive, on: inPlay([listed()], {}, luna) }).toEqual({ live: false, on: real(luna) });
+  });
+
+  it('временное рядом с рекомендованным в другом слоте: начинает рекомендованное — временное не отменяет', () => {
+    const acc = W('1013', { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'PEN%');
+    const pieces = [sword(), { ...acc, slot: 'accessory' as const }];
+
+    expect(inPlay(pieces, {}, luna)).toEqual(real(luna));
+  });
+
+  it('«Кому надеть?»: Luna без вещей, новое Steel Sword ATK% — строки нет (ничего не начнёт, вставать некуда)', () => {
+    expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), luna.id, input(sword()))).toBeNull();
+  });
+
+  it('«Кому надеть?»: Luna без вещей, рекомендованное оружие — «начнёт» все варианты', () => {
+    const cv = charVs(ctx, poolView(ctx, EMPTY_GEAR), luna.id, input(listed()))!;
+
+    expect({ starts: cv.starts.map((v) => v.name), useful: cv.useful }).toEqual({ starts: real(luna), useful: true });
+  });
+
+  it('«Кому надеть?»: Pen-шлем начал Penetration и Pen mix — временное оружие встаёт в пустой слот, «начнёт» нет', () => {
+    const st: GearStore = { ...EMPTY_GEAR, pieces: {}, pools: { [luna.id]: [] } };
+    const h = helm();
+    st.pieces[h.id] = h; st.pools[luna.id].push(h.id);
+    const view = poolView(ctx, st);
+    const was = view.of(luna.id)!.inPlay.map((v) => v.name);
+    const cv = charVs(ctx, view, luna.id, input(sword()))!;
+
+    expect(was.length).toBeGreaterThan(0);
+    expect(was.length).toBeLessThan(real(luna).length);
+    expect(cv.starts).toEqual([]);
+    expect(cv.rows.every((r) => !r.entering)).toBe(true);
+    expect({ kind: cv.best?.kind, useful: cv.useful }).toEqual({ kind: 'fill', useful: true });
+  });
+
+  it('«Надеть» временного оружия: тост «Начал собирать» пуст, «По статам» живой', () => {
+    const r = putOn(ctx, EMPTY_GEAR, luna.id, input(sword()));
+
+    expect(r.began).toEqual([]);
+    expect(poolView(ctx, r.st).of(luna.id)!.statLive).toBe(true);
+  });
+
+  it('«Надеть» рекомендованного оружия: «Начал собирать» — все билды из его списков', () => {
+    const r = putOn(ctx, EMPTY_GEAR, luna.id, input(listed()));
+
+    expect(r.began.sort()).toEqual(variantsOf(idx, luna).map((v) => v.key).sort());
+  });
+
+  it('«Эндгейм»: Steel Sword у Luna — «нет» (не временное), только «По статам», как до П3', () => {
+    expect(luna.builds.map((b) => fit(end, luna, b, sword()))).toEqual(luna.builds.map(() => 'no'));
+    expect(play(end, luna, [sword()]).inPlay.map((v) => v.key)).toEqual([`${luna.id}/#stats`]);
+  });
+
+  it('«Эндгейм» не меняется: у всех героев оружие и аксессуары из списков и Epic 6★ начинают ровно билды, где fit не «нет»', () => {
+    const epics = [...D.weapons, ...D.amulets].filter((i) => i.grade === 'rare' && i.star === 6);
+    const off: string[] = [];
+    let n = 0;
+    for (const c of D.chars.filter((x) => x.builds.length)) {
+      const refs = c.builds.flatMap((b) => [
+        ...b.weapons.map((r) => ({ slot: 'weapon' as const, key: r.key, mains: r.mains })),
+        ...b.amulets.map((r) => ({ slot: 'accessory' as const, key: r.key, mains: r.mains })),
+      ]);
+      const items = [
+        ...refs.map((r) => ({ ...W(r.key, { CHC: 1 }, r.mains[0] ?? 'ATK%'), slot: r.slot })),
+        ...epics.slice(0, 4).map((e) => ({ ...W(e.key, { CHC: 1 }, e.mains?.[0] ?? 'ATK%', 'rare'), slot: e.kind === 'weapon' ? 'weapon' as const : 'accessory' as const })),
+      ];
+      for (const w of items) {
+        n++;
+        const got = play(end, c, [w]).inPlay.filter((v) => !isStats(v)).map((v) => v.key);
+        const want = variantsOf(idx, c).filter((v) => fit(end, c, v.b, w) !== 'no').map((v) => v.key);
+        if (got.join() !== want.join()) off.push(`${c.name} ${w.slot} ${w.itemKey}`);
+      }
+    }
+    expect(n).toBeGreaterThan(500);
+    expect(off).toEqual([]);
+  });
+});
+
 // Р1: «собрана часть» и «ближе всех» — по тому, что можно собрать из пула; раскладка остаётся честной
 describe('«собираешь» по тому, что можно собрать из пула (Р1)', () => {
   const HELM: Subs = { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }, GLOVES: Subs = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };

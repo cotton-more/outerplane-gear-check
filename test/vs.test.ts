@@ -154,9 +154,11 @@ describe('исход вещи с формы: повтор vs.test', () => {
       const gw = D.weapons.find((w) => w.name === "Gorgon's Wrath [Striker]" && w.star === 6)!;
       const item = weapon('unique', gw.key, { CHC: 2, CHD: 2, SPD: 2, 'ATK%': 1 }, 'HP%');
       const pieces = [rec({ ...item, grade: 'rare', itemKey: null, subs: { HP: 1 } } as never)];
-      expect(row(pieces, item, 'Attack', eris.id)).toMatchObject({ kind: 'up' });
+      // временное оружие билд не начинает (П3) — Attack собирается по «Собираю»
+      const marks = { [buildKey(eris.id, 'Attack')]: 'want' as const };
+      expect(row(pieces, item, 'Attack', eris.id, marks)).toMatchObject({ kind: 'up' });
       const end = { ...ctx, settings: { ...ctx.settings, stage: 'end' as const } };
-      const o = outcomeFor(end, poolView(end, { pieces: { [pieces[0].id]: pieces[0] }, pools: { [eris.id]: [pieces[0].id] } }), eris.id, item)!;
+      const o = outcomeFor(end, poolView(end, { pieces: { [pieces[0].id]: pieces[0] }, pools: { [eris.id]: [pieces[0].id] }, marks }), eris.id, item)!;
       expect(o.rows.find((r) => r.v.name === 'Attack')).toBeUndefined();
     });
 
@@ -239,7 +241,8 @@ describe('исход вещи с формы: повтор vs.test', () => {
       expect(holds(r)).toBe(false);
       // оружие не из списка билда (временная в «Эндгейме» — «прочее»): рекомендованная, хоть и слабее, — держит
       const other = D.weapons.find((w) => w.star === 6 && w.grade === 'unique' && !caren.builds[0].weapons.some((x) => x.key === w.key))!;
-      const g = row([rec(weapon('unique', other.key, { 'DEF%': 5, CHC: 5, CHD: 5 }, 'ATK%') as never)], weapon('rare', null, { RES: 1 }), 'Speed')!;
+      // новая — временная (Epic, DEF%): билд она не начинает (П3), Speed собирается по «Собираю»
+      const g = row([rec(weapon('unique', other.key, { 'DEF%': 5, CHC: 5, CHD: 5 }, 'ATK%') as never)], weapon('rare', null, { RES: 1 }), 'Speed', caren.id, { [buildKey(caren.id, 'Speed')]: 'want' })!;
       expect(g.worn?.fit).toBe('no');
       expect(holds(g)).toBe(true);
     });

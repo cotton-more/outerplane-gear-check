@@ -99,8 +99,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     gear.set(setMark(gear.store, x.key, !on === auto ? null : !on ? 'want' : 'skip'));
   };
   // заголовок: лучше всего собран / ближе всех к сборке; «Собраны ещё»; «По статам», если ничего не начато (он живой:
-  // ни одной вещи из сетов связок и оружия из списков, Р12, Р18, а не по «Собираю» — иначе «ни один билд не начат» при
-  // «Не собираю»)
+  // ни одной вещи из сетов связок и рекомендованного оружия из списков, Р12, Р18, П3, а не по «Собираю» — иначе «ни один
+  // билд не начат» при «Не собираю»)
   const shownLead = lead && !isStats(lead) ? lead : null;
   const done = cp!.inPlay.filter((x) => !isStats(x) && !x.dupOf && asm.get(x.key)!.need && asm.get(x.key)!.progress === asm.get(x.key)!.need);
   const la = shownLead ? asm.get(shownLead.key)! : null;
