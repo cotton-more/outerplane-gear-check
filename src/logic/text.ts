@@ -1,7 +1,9 @@
 // Мелкое форматирование для текстов вердикта и списков — без языка: сами фразы в src/i18n.
 // Строки вердикта — обычный текст; **так** выделяется жирным (см. components/Rich.tsx).
+import { subLabel } from '../data';
 import type { Char, GearSet, Item } from '../data/types';
 import { uniqChars } from './builds';
+import type { Subs } from './subs';
 
 export const fmtGood = (x: number) => (x % 1 ? `${Math.floor(x) || ''}½` : String(x));
 export const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -11,6 +13,9 @@ export const namesLine = (list: { c: Char }[], more: (n: number) => string, max 
   const u = uniqChars(list).map((c) => c.name);
   return u.slice(0, max).join(', ') + (u.length > max ? more(u.length - max) : '');
 };
+
+// сабстаты вещи строкой — как в строке вещи карточки персонажа (BuildGear): «DEF% 2, CHC 2»
+export const subsText = (lit: Subs): string => Object.keys(lit).map((k) => `${subLabel(k)} ${lit[k]}`).join(', ');
 
 // эффект сета на T4 (и на T0, если отличается) — для подсказки на кнопке
 export function setTitle(set: GearSet): string {

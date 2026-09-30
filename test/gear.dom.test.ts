@@ -479,7 +479,24 @@ describe('«Сейчас на персонажах»', () => {
     expect(row.textContent).toContain('The one on has nothing useful');
     expect(row.textContent).not.toMatch(/\d{4,}%/);
     expect(row.textContent).toContain('Lost: Penetration ×4 (T0–T3) — Penetration +20%.');
-    expect(row.textContent).toContain('Fits once two Penetration pieces are marked Breakthrough T4.');
+    expect(row.textContent).toContain('Fits once the Penetration armor and gloves are marked Breakthrough T4.');
+    expect(row.querySelector('.vs-act')).toBeNull();
+  });
+
+  // П5, П6: Breakthrough у Pen известен (T0) — «reach», слоты названы; вторая Pen-перчатка на T0 помогает так же —
+  // сабстатов нет
+  it('Luna, 4 Pen на T0 + вторая Pen-перчатка на T0: совет «armor and gloves reach Breakthrough T4» без сабстатов, кнопки нет', async () => {
+    const luna = char('Demiurge Luna'), pen = set('Penetration'), atk = set('Attack');
+    const strong = { 'ATK%': 6, CHC: 6, CHD: 6, SPD: 6 };
+    const pcs = [
+      ...['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('p' + (i + 1), sl, pen, { RES: 1, EFF: 1, HP: 1 }, { bt: 0 })),
+      P('p5', 'gloves', pen, { RES: 2 }, { bt: 0 }), P('p6', 'gloves', atk, strong), P('p7', 'shoes', atk, strong),
+    ];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: atk, subs: { 'ATK%': 4, CHC: 4, CHD: 3, SPD: 3 } }, { gear: G(pcs, { [luna.id]: pcs.map((p) => p.id as string) }), roster: [luna.id] });
+    await click($('.vcard'));
+    const row = byText('.v-vs .vs-row', 'Demiurge Luna')!;
+    expect(row.querySelector('.vs')?.textContent).toBe('breaks a set');
+    expect(row.textContent).toContain('Fits once the Penetration armor and gloves reach Breakthrough T4.');
     expect(row.querySelector('.vs-act')).toBeNull();
   });
 

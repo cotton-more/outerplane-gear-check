@@ -39,6 +39,7 @@ const NOM: Record<string, string> = { weapon: 'оружие', accessory: 'акс
 const GEN: Record<string, string> = { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' };
 const ACC: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const inBr = (s?: string) => (s ? ` (${s})` : '');
 // «A и B», «A, B и C»
 const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} и ${xs[xs.length - 1]}` : xs.join(''));
 // вещь по имени: броня — «Speed-ботинки», оружие и аксессуар — «Оружие Caracal»
@@ -380,9 +381,12 @@ export const ru = {
     vsSafe: (build: string) => `${build} она не тронет.`,
     vsBreaksBy: (set: string, slot: string, pct: number, part: string) => `Лучше ${set}-${GEN[slot]} на ${pct}%, но встанет только вместо ${by(slot, 'него', 'неё', 'него', 'них')} — ${part} распадётся.`,
     vsBreaksFix: (set: string, t4: boolean, slots: string[]) => `Встанет, если найдёшь ещё ${set}-вещь${t4 ? ' на T4' : ''}: ${orSlots(slots)}.`,
-    vsBreaksMark: (set: string) => `Встанет, если отметить Breakthrough T4 у двух ${set}-вещей.`,
-    // отметить одну: другая вещь сета уже на T4
-    vsBreaksMarkOne: (set: string, slot: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[slot]}.`,
+    // отметить одну: другая вещь сета уже на T4. subs — сабстаты вещи («DEF% 2, CHC 2»), когда в слоте их несколько (П6)
+    vsBreaksMarkOne: (set: string, slot: string, subs?: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[slot]}${inBr(subs)}.`,
+    vsBreaksMarkTwo: (set: string, a: string, b: string, subsA?: string, subsB?: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[a]}${inBr(subsA)} и -${GEN[b]}${inBr(subsB)}.`,
+    // Breakthrough у вещей известен (0–3, Pen mix): «сделать», не «отметить» (П5)
+    vsBreaksMakeOne: (set: string, slot: string, subs?: string) => `Встанет, если сделать Breakthrough T4 у ${set}-${GEN[slot]}${inBr(subs)}.`,
+    vsBreaksMakeTwo: (set: string, a: string, b: string, subsA?: string, subsB?: string) => `Встанет, если сделать Breakthrough T4 у ${set}-${GEN[a]}${inBr(subsA)} и -${GEN[b]}${inBr(subsB)}.`,
     vsNoTrade: (set: string) => `Бонус ${set} в статах не выразить — ради статов его не ломаю.`,
     vsNetGain: (part: string, segs: number, stat: string, slot: string) => `${part} распадётся (−${dec(segs)} ${segWord(segs)} ${stat}), но ${NOM[slot]} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} больше — в итоге выгоднее.`,
     vsStatsOnly: (pct: number, slot: string, part: string) => `По статам лучше ${GEN[slot]} на ${pct}%, но сломает ${part} — не надевай.`,

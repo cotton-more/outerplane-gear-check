@@ -7,6 +7,7 @@ import type { Dataset } from '../src/data/types';
 import { en } from '../src/i18n/en';
 import { TEXTS } from '../src/i18n';
 import { tierLabel } from '../src/logic/setBonus';
+import { subsText } from '../src/logic/text';
 import { makeCtx, type Settings } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import type { Verdict } from '../src/logic/verdict';
@@ -108,6 +109,36 @@ describe('строки GEARPOOL', () => {
       'Встанет, если отметить Breakthrough T4 у Penetration-перчаток.', 'Встанет, если отметить Breakthrough T4 у Penetration-ботинок.']);
     expect(['helmet', 'gloves'].map((sl) => enUi.vsBreaksMarkOne('Penetration', sl)))
       .toEqual(['Fits once the Penetration helmet is marked Breakthrough T4.', 'Fits once the Penetration gloves are marked Breakthrough T4.']);
+  });
+
+  // П6: «у двух» называет слоты (родительный, «-перчаток» без повтора сета); EN — SLOT_EN; сабстаты — в скобках после слота
+  it('совет отметить T4 у двух вещей: слоты по порядку, по 4 слотам, RU/EN', () => {
+    expect([ru.vsBreaksMarkTwo('Penetration', 'helmet', 'armor'), ru.vsBreaksMarkTwo('Penetration', 'gloves', 'shoes')]).toEqual([
+      'Встанет, если отметить Breakthrough T4 у Penetration-шлема и -брони.', 'Встанет, если отметить Breakthrough T4 у Penetration-перчаток и -ботинок.']);
+    expect(ru.vsBreaksMarkTwo('Penetration', 'armor', 'gloves')).toBe('Встанет, если отметить Breakthrough T4 у Penetration-брони и -перчаток.');
+    expect([enUi.vsBreaksMarkTwo('Penetration', 'armor', 'gloves'), enUi.vsBreaksMarkTwo('Penetration', 'helmet', 'shoes')]).toEqual([
+      'Fits once the Penetration armor and gloves are marked Breakthrough T4.', 'Fits once the Penetration helmet and boots are marked Breakthrough T4.']);
+  });
+
+  // П5: Breakthrough у вещей известен (0–3) — «сделать» / "reach"
+  it('совет сделать T4 (Breakthrough известен): у двух и у одной, по 4 слотам, RU/EN', () => {
+    expect(ru.vsBreaksMakeTwo('Penetration', 'armor', 'gloves')).toBe('Встанет, если сделать Breakthrough T4 у Penetration-брони и -перчаток.');
+    expect(enUi.vsBreaksMakeTwo('Penetration', 'armor', 'gloves')).toBe('Fits once the Penetration armor and gloves reach Breakthrough T4.');
+    expect(['helmet', 'armor', 'gloves', 'shoes'].map((sl) => ru.vsBreaksMakeOne('Penetration', sl))).toEqual([
+      'Встанет, если сделать Breakthrough T4 у Penetration-шлема.', 'Встанет, если сделать Breakthrough T4 у Penetration-брони.',
+      'Встанет, если сделать Breakthrough T4 у Penetration-перчаток.', 'Встанет, если сделать Breakthrough T4 у Penetration-ботинок.']);
+    expect(['helmet', 'armor', 'gloves', 'shoes'].map((sl) => enUi.vsBreaksMakeOne('Penetration', sl))).toEqual([
+      'Fits once the Penetration helmet reaches Breakthrough T4.', 'Fits once the Penetration armor reaches Breakthrough T4.',
+      'Fits once the Penetration gloves reach Breakthrough T4.', 'Fits once the Penetration boots reach Breakthrough T4.']);
+  });
+
+  it('несколько вещей сета в слоте — сабстаты нужной в скобках после слота (у одной и у двух), RU/EN', () => {
+    const subs = subsText({ 'DEF%': 2, CHC: 2 });
+    expect(subs).toBe('DEF% 2, CHC 2');
+    expect(ru.vsBreaksMarkOne('Speed', 'gloves', subs)).toBe('Встанет, если отметить Breakthrough T4 у Speed-перчаток (DEF% 2, CHC 2).');
+    expect(enUi.vsBreaksMarkOne('Speed', 'gloves', subs)).toBe('Fits once the Speed gloves (DEF% 2, CHC 2) are marked Breakthrough T4.');
+    expect(ru.vsBreaksMarkTwo('Penetration', 'armor', 'gloves', undefined, subs)).toBe('Встанет, если отметить Breakthrough T4 у Penetration-брони и -перчаток (DEF% 2, CHC 2).');
+    expect(enUi.vsBreaksMakeTwo('Penetration', 'armor', 'gloves', subs, undefined)).toBe('Fits once the Penetration armor (DEF% 2, CHC 2) and gloves reach Breakthrough T4.');
   });
 
   it('тост двух и трёх убранных; строка про убранную — по имени сета или предмета', () => {

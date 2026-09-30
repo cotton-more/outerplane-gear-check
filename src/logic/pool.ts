@@ -411,8 +411,11 @@ export interface Outcome {
   displaced: Entry[];         // что уходит из сборки
   broken: string | null;      // сет, который распадётся: в «ломает» — поэтому не встала; в «лучше» — распадётся, но выгодно
   // «ломает»: ещё одна вещь этого сета в эти слоты — встанет; mark — не новая вещь, а Breakthrough T4 у вещей сета
-  // из пула (slots — где они, одна или две): Breakthrough не указан (Р20) или Pen mix без T4 (Р2)
-  fix: { set: string; slots: ArmorSlot[]; t4: boolean; mark: boolean } | null;
+  // из пула (slots — где они, одна или две, по порядку слотов): Breakthrough не указан (Р20) или Pen mix без T4 (Р2).
+  // Совет даётся, только если после него у новой «Надеть» (П2). make — у отмечаемых известен Breakthrough 0–3:
+  // «сделать», не «отметить» (П5). pieces — что отметить, по slots; which — по slots: вещь, которую назвать
+  // сабстатами, — в её слоте есть другая, которой совет может касаться, и с ней «Надеть» нет (П6); null — не нужно
+  fix: { set: string; slots: ArmorSlot[]; t4: boolean; mark: boolean; make: boolean; pieces: Piece[]; which: (Piece | null)[] } | null;
   t4: { set: string; n: number } | null; // часть её сета в связке — с бонусом только на T4
   part: SetPiece | null;      // часть связки варианта, в которую идёт её сет (null — сет не из связки, оружие)
   surplus: boolean;           // «пустой слот» сверх собранной части её сета
@@ -449,8 +452,21 @@ function brokenSet(v: Variant, a: Assembly, z: Assembly): string | null {
   return null;
 }
 
-// «ломает»: куда ещё одна вещь распавшегося сета вернула бы его (и нужна ли она на T4)
-function fixFor(ctx: Ctx, c: Char, v: Variant, forced: Assembly, was: Assembly, set: string, xSlot: SlotId): Outcome['fix'] {
+// П2: совет ведёт к «Надеть» — на пуле после совета (отмеченные на T4, найденная вещь) исход новой держит штамп и она
+// в нём встаёт (puts; у тихой строки «По статам» «Надеть» — то же: holdsKind и used)
+function putsOn(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput): boolean {
+  const after = assemble(ctx, c, v, entriesFor(ctx, c, v, pieces, x));
+  if (after.slots[x.slot]?.id !== null) return false;
+  const o = outcomeOf(ctx, c, v, pieces, x, assemble(ctx, c, v, entriesFor(ctx, c, v, pieces)), false, after);
+  return !!o && o.used && holdsKind(o);
+}
+
+// «ломает»: куда ещё одна вещь распавшегося сета вернула бы его (и нужна ли она на T4). «Найди ещё … на T4» — только
+// в слоты, где после этого у новой «Надеть» (П2): найденная — та же вещь, что в проверке раскладки (сета, на T4, без
+// сабстатов: «Надеть» даёт даже пустая найденная — заслуга самой новой), — в пул, и исход новой по нему. Своя вещь
+// слота, сделанная T4, не в счёт: текст — «найдёшь ещё»
+function fixFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, forced: Assembly, was: Assembly, set: string): Outcome['fix'] {
+  const xSlot = x.slot;
   for (const t4 of [false, true]) {
     const slots = ARMOR.filter((slot) => {
       if (slot === xSlot) return false;
@@ -458,33 +474,42 @@ function fixFor(ctx: Ctx, c: Char, v: Variant, forced: Assembly, was: Assembly, 
       const arm = ARMOR.map((s) => (s === slot ? ghost : forced.slots[s] ?? null));
       const s = armorScore(ctx, c, v, vc(ctx, c, v), arm);
       const rows = bonusRows(ctx.idx.SET, arm.filter((e): e is Entry => !!e)).map(rowKey);
-      return hs(s, was) >= 0 && was.bonuses.filter((r) => r.set === set).every((r) => rows.includes(rowKey(r)));
+      if (!(hs(s, was) >= 0 && was.bonuses.filter((r) => r.set === set).every((r) => rows.includes(rowKey(r))))) return false;
+      if (!t4) return true;
+      const found: Piece = { id: '#fix', slot, grade: 'unique', setId: set, itemKey: null, main: null, yellow: {}, lit: {}, bt: 4, at: '' };
+      return putsOn(ctx, c, v, [...pieces, found], x);
     });
-    if (slots.length) return { set, slots, t4, mark: false };
+    if (slots.length) return { set, slots, t4, mark: false, make: false, pieces: [], which: [] };
   }
   return null;
 }
 
 // Отметка T4 у вещей сета из пула (не в её слоте): самый короткий набор — одна вещь, потом две в разных слотах, — с
-// которым новая вещь встаёт. Проверяется той же сборкой с отмеченными (bt: 4)
+// которым у новой «Надеть» (П2). Проверяется исходом на пуле с отмеченными (bt: 4)
 function markSome(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string, open: readonly Piece[]): Outcome['fix'] {
-  const fits = (marks: readonly Piece[]) => {
-    const marked = pieces.map((p) => (marks.includes(p) ? { ...p, bt: 4 as const } : p));
-    return assemble(ctx, c, v, entriesFor(ctx, c, v, marked, x)).slots[x.slot]?.id === null;
+  const fits = (marks: readonly Piece[]) => putsOn(ctx, c, v, pieces.map((p) => (marks.includes(p) ? { ...p, bt: 4 as const } : p)), x);
+  // П6: сабстаты — когда в слоте есть другая вещь, которой совет может касаться («отметить» — сета без Breakthrough;
+  // «сделать» — сета не на T4), и с ней вместо названной «Надеть» нет. Помогает любая — скобок не надо
+  const fix = (marks: Piece[]): Outcome['fix'] => {
+    const ms = marks.sort((a, z) => ARMOR.indexOf(a.slot as ArmorSlot) - ARMOR.indexOf(z.slot as ArmorSlot));
+    const make = ms.some((p) => p.bt !== null);
+    const named = (p: Piece) => pieces.some((q) => q !== p && q.setId === set && q.slot === p.slot && (make ? q.bt !== 4 : q.bt === null)
+      && !fits(ms.map((m) => (m === p ? q : m))));
+    return { set, slots: ms.map((p) => p.slot as ArmorSlot), t4: true, mark: true, make, pieces: ms, which: ms.map((p) => (named(p) ? p : null)) };
   };
   const one = open.find((a) => fits([a]));
-  if (one) return { set, slots: [one.slot as ArmorSlot], t4: true, mark: true };
+  if (one) return fix([one]);
   for (let i = 0; i < open.length; i++) {
     for (let j = i + 1; j < open.length; j++) {
       const a = open[i], b = open[j];
-      if (a.slot !== b.slot && fits([a, b])) return { set, slots: [a.slot, b.slot] as ArmorSlot[], t4: true, mark: true };
+      if (a.slot !== b.slot && fits([a, b])) return fix([a, b]);
     }
   }
   return null;
 }
 
-// Р20: у вещей распавшегося сета в пуле Breakthrough не указан (bt: null) — совет «отметь T4», если с отметкой новая
-// встаёт; он впереди «найди ещё». Известный Breakthrough ниже T4 (0–3) не отмечаем — это прокачка, не отметка
+// Р20: у вещей распавшегося сета в пуле Breakthrough не указан (bt: null) — совет «отметь T4», если с отметкой у новой
+// «Надеть» (П2); он впереди «найди ещё». Известный Breakthrough ниже T4 (0–3) не отмечаем — это прокачка, не отметка
 function markUnknown(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string): Outcome['fix'] {
   const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt === null);
   return open.length ? markSome(ctx, c, v, pieces, x, set, open) : null;
@@ -493,7 +518,7 @@ function markUnknown(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x:
 // «ломает» из-за части-эффекта ×2, чей бонус только на T4 (Pen mix у Luna, Р2): четыре Pen без двух на T4 — раскладка
 // Pen ×4 (бонус на T0 есть, у Pen ×2 без T4 — нет), и вещь другой части не встаёт. Только сет-эффект (сет-стат ×4 ради
 // статов и так ломается) и только когда ни markUnknown, ни прежний совет (fixFor) ничего не дали: здесь отмечаются и
-// вещи с известным Breakthrough ниже T4 (Pen на T0 — отметить = сделать Breakthrough, шаг 4)
+// вещи с известным Breakthrough ниже T4 (Pen на T0 — отметить = сделать Breakthrough, шаг 4; текст — «сделать», П5)
 function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, set: string): Outcome['fix'] {
   const part = combo(v).find((p) => p.set === set);
   if (!part || part.n !== 2 || !t4Only(ctx.idx.SET[set], part.n) || isConv(ctx, c, vc(ctx, c, v), set)) return null;
@@ -564,7 +589,7 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   const rest = { ...base, ...bd, used: false, delta: d, displaced, after: forced };
   if (broken) {
     if (!betterBySegs) return { ...rest, kind: byDelta(d), broken };
-    const fix = markUnknown(ctx, c, v, pieces, x, broken) ?? fixFor(ctx, c, v, forced, before, broken, x.slot) ?? markFor(ctx, c, v, pieces, x, before, broken);
+    const fix = markUnknown(ctx, c, v, pieces, x, broken) ?? fixFor(ctx, c, v, pieces, x, forced, before, broken) ?? markFor(ctx, c, v, pieces, x, before, broken);
     return { ...rest, kind: 'breaks', broken, fix, brokenSegs: segsOf(bd.lostBonus, broken) };
   }
   if (bd.lostBonus.some((r) => r.tier === 'T4')) return { ...rest, kind: betterBySegs ? 'capped' : byDelta(d), broken: null };

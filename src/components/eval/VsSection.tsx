@@ -12,6 +12,7 @@ import { reforgeScale } from '../../logic/gear';
 import { holds, isStats, shownKind, type Outcome, type PoolView } from '../../logic/pool';
 import type { CharVs } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
+import { subsText } from '../../logic/text';
 import { buildOfKey } from '../../logic/variants';
 import { vsFigure, type VsFigure } from '../../logic/vs';
 import { Icon, Img } from '../Img';
@@ -122,9 +123,16 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
       out.push(t.ui.vsEmpty);
       for (const r of o.lostBonus) if (r.set === o.broken) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));
     } else out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pctOf(o), partText(idx, part)));
-    // отметить T4 у одной или двух вещей сета (Breakthrough не указан, Р20; Pen mix, Р2), иначе — найти ещё вещь сета
-    if (o.fix?.mark) out.push(o.fix.slots.length === 1 ? t.ui.vsBreaksMarkOne(setName(idx, o.fix.set), o.fix.slots[0]) : t.ui.vsBreaksMark(setName(idx, o.fix.set)));
-    else if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
+    // отметить T4 у одной или двух вещей сета (Breakthrough не указан, Р20; Pen mix, Р2), иначе — найти ещё вещь сета;
+    // совет есть, только если после него у новой «Надеть» (П2, logic/pool)
+    // «сделать», если у отмечаемых известен Breakthrough (П5); слоты — всегда, сабстаты — когда в слоте таких несколько (П6)
+    if (o.fix?.mark) {
+      const f = o.fix, set = setName(idx, f.set);
+      const [sa, sb] = f.which.map((p) => (p ? subsText(p.lit) : undefined));
+      out.push(f.slots.length === 1
+        ? (f.make ? t.ui.vsBreaksMakeOne : t.ui.vsBreaksMarkOne)(set, f.slots[0], sa)
+        : (f.make ? t.ui.vsBreaksMakeTwo : t.ui.vsBreaksMarkTwo)(set, f.slots[0], f.slots[1], sa, sb));
+    } else if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
     if (lost?.bon.stat && o.brokenSegs) {
       out.push(t.ui.vsSetCost(partText(idx, part), tierLabel(lost.tier), bonusText(idx, lost), o.brokenSegs, subLabel(lost.bon.stat), o.worn.slot));
     } else dim.push(t.ui.vsNoTrade(setName(idx, o.broken)));

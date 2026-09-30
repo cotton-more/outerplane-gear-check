@@ -16,6 +16,7 @@ const ord = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'r
 const SLOT_EN: Record<string, string> = { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' };
 const orSlotsEn = (slots: string[]) => (slots.length > 1 ? `${slots.slice(0, -1).map((x) => SLOT_EN[x]).join(', ')} or ${SLOT_EN[slots[slots.length - 1]]}` : SLOT_EN[slots[0]] ?? '');
 const plEn = (slot: string) => slot === 'gloves' || slot === 'shoes';
+const inBr = (s?: string) => (s ? ` (${s})` : '');
 // «segment» to the number dec prints: 1 segment, 1.5 segments
 const segEn = (x: number) => (dec(x) === '1' ? 'segment' : 'segments');
 // «A and B», «A, B and C»
@@ -330,8 +331,10 @@ export const en: Texts = {
     vsSafe: (build) => `Leaves ${build} as is.`,
     vsBreaksBy: (set, slot, pct, part) => `${pct}% better than the ${set} ${SLOT_EN[slot]}, but fits only in ${plEn(slot) ? 'their' : 'its'} place — ${part} falls apart.`,
     vsBreaksFix: (set, t4, slots) => `Fits once you find another ${set} piece${t4 ? ' at T4' : ''}: ${orSlotsEn(slots)}.`,
-    vsBreaksMark: (set) => `Fits once two ${set} pieces are marked Breakthrough T4.`,
-    vsBreaksMarkOne: (set, slot) => `Fits once the ${set} ${SLOT_EN[slot]} ${plEn(slot) ? 'are' : 'is'} marked Breakthrough T4.`,
+    vsBreaksMarkOne: (set, slot, subs) => `Fits once the ${set} ${SLOT_EN[slot]}${inBr(subs)} ${plEn(slot) ? 'are' : 'is'} marked Breakthrough T4.`,
+    vsBreaksMarkTwo: (set, a, b, subsA, subsB) => `Fits once the ${set} ${SLOT_EN[a]}${inBr(subsA)} and ${SLOT_EN[b]}${inBr(subsB)} are marked Breakthrough T4.`,
+    vsBreaksMakeOne: (set, slot, subs) => `Fits once the ${set} ${SLOT_EN[slot]}${inBr(subs)} ${plEn(slot) ? 'reach' : 'reaches'} Breakthrough T4.`,
+    vsBreaksMakeTwo: (set, a, b, subsA, subsB) => `Fits once the ${set} ${SLOT_EN[a]}${inBr(subsA)} and ${SLOT_EN[b]}${inBr(subsB)} reach Breakthrough T4.`,
     vsNoTrade: (set) => `The ${set} bonus isn't a stat — not traded for stats.`,
     vsNetGain: (part, segs, stat, slot) => `${part} falls apart (−${dec(segs)} ${stat} ${segEn(segs)}), but the ${SLOT_EN[slot]} ${plEn(slot) ? 'add' : 'adds'} more — a net gain.`,
     vsStatsOnly: (pct, slot, part) => `Beats the ${SLOT_EN[slot]} by ${pct}% on stats, but breaks ${part} — don't equip.`,
