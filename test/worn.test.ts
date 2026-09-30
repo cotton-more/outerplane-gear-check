@@ -119,11 +119,55 @@ describe('что удерживает штамп', () => {
     expect(judge(ctxOf([caren]), EPIC, st).v).toBe('keep');
   });
 
-  it('варианты, которые вещь только начнёт, не держат: Caren собрана в Pen — Speed-шлем её не держит', () => {
-    const inPen = on(EMPTY_GEAR, caren, helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }, 'unique', 'Penetration'));
+  describe('вещь кому-то из кандидатов начинает билд — не понижаем (П1)', () => {
     const both = helmet({ CHC: 2, CHD: 2, SPD: 2, HP: 1 });
-    const st = on(inPen, rin, helmet({ 'ATK%': 3, CHC: 3, CHD: 3, SPD: 2 }));
-    expect(judge(ctxOf([caren, rin]), both, st)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже лучше у Rin' });
+    const atRin = helmet({ 'ATK%': 3, CHC: 3, CHD: 3, SPD: 2 });
+    const starts = (ctx: Ctx, st: GearStore, c: { id: string }) => outcomeFor(ctx, poolView(ctx, st), c.id, both)!.starts.map((v) => v.name);
+
+    // иначе (было — design-final D.4): «начнёт» держало, лишь если сразу соберёт, — «Фоддер — уже лучше у Rin», а у
+    // Caren тут же «Надеть — начнёт Speed»
+    it('Caren собрана в Pen — Speed-шлем начнёт ей Speed: «Оставить», хотя у Rin лучше', () => {
+      const ctx = ctxOf([caren, rin]);
+      const inPen = on(EMPTY_GEAR, caren, helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }, 'unique', 'Penetration'));
+      const st = on(inPen, rin, atRin);
+      expect(starts(ctx, st, caren)).toContain('Speed');
+      const r = judge(ctx, both, st);
+      expect(r.v).toBe('keep');
+      expect(r.worn).toBeUndefined();
+    });
+
+    it('сторож: никому не начинает — понижаем, как раньше', () => {
+      const ctx = ctxOf([caren, rin]);
+      const st = on(onCaren, rin, atRin);
+      expect([starts(ctx, st, caren), starts(ctx, st, rin)]).toEqual([[], []]);
+      expect(judge(ctx, both, st)).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже лучше у Caren и Rin' });
+    });
+
+    // случай повторного ревью (a3-lower seed 11): у Kappa собираются Swift-связки, Speed-вещей нет. Speed-ботинки там
+    // «на уровне» (Defense ×2 на T4 распадается), а Speed начинают — было «Фоддер — уже не хуже у Kappa» рядом с
+    // «Надеть — начнёт Speed»
+    it('Kappa: первая Speed-вещь — «Оставить», не «Фоддер — уже не хуже»', () => {
+      const kappa = D.chars.find((c) => c.name === 'Kappa')!;
+      const ctx = ctxOf([kappa]);
+      const k = (id: string, slot: ItemInput['slot'], s: string, subs: Record<string, number>, bt: 0 | 4 | null = null) =>
+        ({ id, slot, grade: 'unique' as const, setId: set(s), itemKey: null, main: null, yellow: subs, lit: subs, bt, at: '' });
+      const pcs = [
+        k('k1', 'helmet', 'Counterattack', { 'ATK%': 4, SPD: 1, 'DEF%': 2 }), k('k2', 'armor', 'Counterattack', { SPD: 4, HP: 2, CHC: 1 }, 0),
+        k('k3', 'helmet', 'Effectiveness', { SPD: 1, CHC: 1 }), k('k4', 'armor', 'Mitigation', { CHD: 4, RES: 2, SPD: 3 }),
+        k('k5', 'gloves', 'Defense', { HP: 3, 'HP%': 2, CHC: 3, 'DEF%': 3 }, 4), k('k6', 'shoes', 'Defense', { CHD: 2, RES: 2 }, 4),
+      ];
+      const st: GearStore = {
+        v: 2, seq: pcs.length, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [kappa.id]: pcs.map((p) => p.id) },
+        marks: { [buildKey(kappa.id, 'Swift Defense')]: 'want', [buildKey(kappa.id, 'Swift Counter')]: 'want' },
+      };
+      const boots = piece('shoes', 'Speed', { 'DMG UP%': 1, 'DEF%': 3, CHD: 1, DEF: 3 });
+      const o = outcomeFor(ctx, poolView(ctx, st), kappa.id, boots)!;
+      expect(o.starts.map((v) => v.name)).toEqual(['Speed']);
+      expect(o.rows.filter((r) => !r.entering).map((r) => r.kind)).toEqual(['eq', 'eq']);
+      const r = judge(ctx, boots, st);
+      expect(r.v).toBe('keep');
+      expect(r.worn).toBeUndefined();
+    });
   });
 
   it('«на уровне» только из-за T4 (Speed ×2 на T4 у обеих Speed-вещей) — держит; настоящее «на уровне» — нет', () => {
