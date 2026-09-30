@@ -70,6 +70,11 @@ describe('туры', () => {
       .map((v) => t.tour.steps[s.id](v)).filter((txt) => txt.replace(/\*\*/g, '').length > 200).map((txt) => `${lang}/${s.id}: ${txt}`)));
     expect([...new Set(long)]).toEqual([]);
   });
+
+  // кавычки в английских подсказках — “…”, как в шагах тура (Р9)
+  it('английские подсказки — без прямых кавычек', () => {
+    expect(Object.entries(TEXTS.en.tour.tips).filter(([, txt]) => String(txt).includes('"')).map(([id]) => id)).toEqual([]);
+  });
 });
 
 describe('хранилище ogc.tour', () => {

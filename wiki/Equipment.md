@@ -31,7 +31,7 @@ against the pieces; an incidental set (Effectiveness ×2 on a Speed build) count
 Pieces are asked for only by the builds you're **filling**:
 - marked **"Filling"**;
 - the try-on build — even an empty one;
-- started ones — with at least one piece of the build's sets or a listed weapon, at any Breakthrough (one Speed helmet
+- started ones — with at least one piece of the build's sets or a listed weapon or accessory, at any Breakthrough (one Speed helmet
   starts both Speed and Speed/Immu);
 - **"By stats"**, while no build is started.
 
@@ -46,7 +46,7 @@ holds the piece, the target becomes "Filling", otherwise the piece would be unne
 **"By stats".** Every character with builds has a "By stats" build — the last tab: all the character's pieces by the
 substat chain, no sets, and incidental set bonuses count. While no build is started (Eternal in Effectiveness, Stella in
 Attack and Critical Hit), "By stats" fills itself and holds the stamp. The first piece of a build's set or a listed
-weapon starts that build, and the "By stats" line turns quiet: it neither holds nor lowers the stamp. An off-build piece
+weapon or accessory starts that build, and the "By stats" line turns quiet: it neither holds nor lowers the stamp. An off-build piece
 goes into "By stats" only on purpose — by a name search in "Equip on whom?" or from a try-on.
 
 ## How a piece reaches a character
@@ -162,8 +162,8 @@ you don't fill" or "— it starts filling". For weapons and accessories the pass
   Builds the piece would only start don't hold the stamp — start them ("Equip on whom?" → "Equip — starts …" or
   "Filling"). "Maybe" is never lowered.
 - **"Dismantle" → "Fodder"** when the same piece (armor — the same set, slot and grade; weapons and accessories — the
-  same item and grade) sits in a build a character is filling, below T4 with its Breakthrough marked: "Caren · Speed
-  helmet — T2, 2 more to T4". If the new one beats it, the advice flips: **wear the new one and feed the old one to its
+  same item and grade) sits in a build a character is filling, below T4 with its Breakthrough marked: "helmet on Caren
+  · Speed — T2, 2 more to T4". If the new one beats it, the advice flips: **wear the new one and feed the old one to its
   Breakthrough**.
 
 Dismantled a piece in the game? Remove it on the character card and the verdict follows.

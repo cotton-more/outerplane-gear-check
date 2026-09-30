@@ -92,6 +92,11 @@ describe('строки GEARPOOL', () => {
     expect(enUi.vsNetGain('Speed ×2', 2.25, 'SPD', 'shoes')).toContain('(−2.3 SPD segments)');
   });
 
+  it('«около N сегментов» — родительный: около 1 сегмента, 4 сегментов, 5 сегментов, 21 сегмента, 1,5 сегмента', () => {
+    const word = (n: number) => ru.vsSetCost('Speed ×4', 'T4', speed.p4!, n, 'SPD', 'shoes').match(/около (\S+ \S+) SPD/)![1];
+    expect([1, 4, 5, 21, 1.5].map(word)).toEqual(['1 сегмента', '4 сегментов', '5 сегментов', '21 сегмента', '1,5 сегмента']);
+  });
+
   it('уровень строки без T4 — «T0–T3»', () => {
     expect([tierLabel('T0'), tierLabel('T4')]).toEqual(['T0–T3', 'T4']);
     expect(ru.vsBonusLost('Speed ×4', tierLabel('T0'), speed.p4base!)).toBe('Пропадёт: Speed ×4 (T0–T3) — Speed +25%.');
@@ -151,8 +156,8 @@ describe('строки GEARPOOL', () => {
     expect(ARMOR.map((sl) => enUi.vsStatsEmpty(sl, 'Speed ×4'))).toEqual([
       "Better on stats — the helmet on has nothing useful. But it breaks Speed ×4 — don't equip.",
       "Better on stats — the armor on has nothing useful. But it breaks Speed ×4 — don't equip.",
-      "Better on stats — the gloves on has nothing useful. But it breaks Speed ×4 — don't equip.",
-      "Better on stats — the boots on has nothing useful. But it breaks Speed ×4 — don't equip."]);
+      "Better on stats — the gloves on have nothing useful. But it breaks Speed ×4 — don't equip.",
+      "Better on stats — the boots on have nothing useful. But it breaks Speed ×4 — don't equip."]);
   });
 
   it('«Кому надеть?» при замене: «Заменить {шлем/броню/…} — соберёт / сет n из m / начнёт»', () => {
