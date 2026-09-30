@@ -78,3 +78,15 @@ export function switchFusion(idx: Index, roster: readonly string[], st: GearStor
   const { [from]: _, ...rest } = st.pools;
   return { to, from, roster: list, st: { ...st, pools: { ...rest, [to]: [...had, ...moved.filter((id) => !had.includes(id))] } }, moved, had };
 }
+
+// будет ли окно перехода у героя (звезда, «Надеть», примерка): второй из пары есть — в ростере или с вещами. Его id
+export function gateOf(idx: Index, roster: ReadonlySet<string>, pools: GearStore['pools'], to: string): string | null {
+  const from = idx.CHAR[to]?.fusionOf ?? idx.FUSED[to];
+  return from && exists(roster, pools, from) ? from : null;
+}
+
+// хранилище, на котором «Надеть» на героя сделает putOn: после «Да» в окне перехода — вещи второго уже у него (П9:
+// строка и кнопка — по нему). Окна не будет или вещи не переходят — то же хранилище
+export function storeFor(idx: Index, roster: ReadonlySet<string>, st: GearStore, to: string): GearStore {
+  return gateOf(idx, roster, st.pools, to) ? switchFusion(idx, [...roster], st, to)?.st ?? st : st;
+}

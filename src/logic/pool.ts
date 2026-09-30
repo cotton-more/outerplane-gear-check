@@ -760,6 +760,19 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
   return { st: next, id: piece.id, piece, added: true, removed, marks, began, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId) };
 }
 
+// «Это шлем Rin?» (мелочь 2): «Она же — и у …» кладёт запись другого героя, а строка и кнопка посчитаны по вещи с формы
+// (её Reforge и Breakthrough другие). Предлагаем запись, только если «Надеть» с ней сделает то же, что обещала подпись:
+// запись встаёт (не «больше не нужна» — ни в примерке, ни после неё) и убирает те же вещи её слота, что вещь с формы
+export function shareFits(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, record: Piece, tryOn: string | null = null): boolean {
+  const own = putOn(ctx, st, charId, x, { tryOn });
+  const rec = putOn(ctx, st, charId, x, { record, tryOn });
+  if (!rec.added) return false;
+  const ids = (ps: readonly Piece[]) => ps.map((p) => p.id).sort().join();
+  if (ids(rec.removed) !== ids(own.removed)) return false;
+  const unused = (tr: string | null) => !!poolView(ctx, rec.st, tr).of(charId)?.unused.some((p) => p.id === rec.id);
+  return !unused(tryOn) && !(tryOn && unused(null));
+}
+
 // «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр), отметки — как были до
 // него (prev: «Не собираю» — снова «Не собираю», не было — снять); отметку, которую успели поменять, не трогаем.
 // Её там уже нет (успели убрать) — ничего не трогаем

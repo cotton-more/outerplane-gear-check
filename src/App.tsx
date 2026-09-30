@@ -24,8 +24,8 @@ import { makeCtx } from './logic/context';
 import { evaluate, withPendingDice } from './logic/evaluate';
 import { dropChar, gearedChars, holdersOf, samePiece, undoDrop, type GearStore, type Piece } from './logic/gear';
 import { loadGear, unfuseChar } from './logic/gearStore';
-import { normalizeStored, replacedX, switchFusion, type FusionFix } from './logic/fusion';
-import { holds, isStats, poolView, putOn, undoPut, type PutResult } from './logic/pool';
+import { gateOf, normalizeStored, replacedX, storeFor, switchFusion, type FusionFix } from './logic/fusion';
+import { holds, isStats, poolView, putOn, shareFits, undoPut, type PoolView, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
@@ -113,18 +113,36 @@ export function App() {
   }, [idx, demo, realTry.value, touring, baseView, off]);
   // вариант примерки собирается, даже пустой
   const view = useMemo(() => (target ? poolView(ctx, gear.store, target.v.key) : baseView), [ctx, gear.store, target, baseView]);
+  // П9: «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
+  // «Да» — на хранилище, где вещи X уже у него (logic/fusion storeFor): его строка и кнопка — по этому виду пула. Окна не
+  // будет или вещи не переходят — общий вид. В обучении окон нет (fusionGate)
+  const viewOf = useMemo(() => {
+    const memo = new Map<string, PoolView>();
+    return (id: string): PoolView => {
+      if (touring) return view;
+      let v = memo.get(id);
+      if (!v) {
+        const st = storeFor(idx, roster, gear.store, id);
+        v = st === gear.store ? view : poolView(ctx, st, target?.v.key ?? null);
+        memo.set(id, v);
+      }
+      return v;
+    };
+  }, [idx, ctx, roster, gear.store, view, target, touring]);
+  // вид пула цели примерки (примерка Core Fusion X, а X появился после её начала, — тоже через окно)
+  const tview = target ? viewOf(target.c.id) : view;
   // у кого есть вещи: персонаж → лучший «N/6» (плитки, меню, фильтр «с экипировкой»)
   const geared = useMemo(() => gearBadges(view), [view]);
   // примерка — явный выбор персонажа: и «По статам», когда он не собирается (Р11)
-  const targetVs = useMemo(() => (target ? charVs(ctx, view, target.c.id, input, target.v.key, { explicit: true }) : null), [ctx, view, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const targetVs = useMemo(() => (target ? charVs(ctx, tview, target.c.id, input, target.v.key, { explicit: true }) : null), [ctx, tview, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
   // запасная строка примерки настоящего билда: вещь не по нему (строки нет или «только статы»), а по статам подходит —
   // «Надеть» положит её в «По статам» (Р11): карточка, строка и кнопка — про «По статам»
   const statVs = useMemo(() => {
     if (!target || isStats(target.v) || (targetVs && targetVs.best?.kind !== 'stats')) return null;
-    const stat = view.of(target.c.id)?.stat;
-    const x = stat ? charVs(ctx, view, target.c.id, input, stat.key, { explicit: true }) : null;
+    const stat = tview.of(target.c.id)?.stat;
+    const x = stat ? charVs(ctx, tview, target.c.id, input, stat.key, { explicit: true }) : null;
     return x?.useful ? x : null;
-  }, [ctx, view, target, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, tview, target, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
   // материал: вещь лучше той, для которой она материал, или в примерке она встаёт в вариант цели — «надень»
   const mat = useMemo(() => {
     const needs = materialFor(view, input);
@@ -143,8 +161,8 @@ export function App() {
     if (verdict.v === 'idle') return [];
     if (target) return statVs ? [statVs] : targetVs ? [targetVs] : [];
     const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length || roster.has(c.id));
-    return charsVs(ctx, view, input, chars);
-  }, [ctx, view, raw, worn, verdict, target, targetVs, statVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
+    return charsVs(ctx, viewOf, input, chars);
+  }, [ctx, viewOf, raw, worn, verdict, target, targetVs, statVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя); по
   // статам подходит — ещё «…«Надеть» положит её в «По статам»». Цель «По статам», а полезных статов нет — так и сказать.
   // Оружие или аксессуар не для класса цели — причина в классе, а не в статах или билде
@@ -228,10 +246,9 @@ export function App() {
   // на хранилище после перехода; нет конфликта — false, действие идёт сразу. В обучении окон нет — как пакетное
   type Switched = { st: GearStore; note: string; undo: (st: GearStore) => GearStore; after?: () => void };
   const [fusionAsk, setFusionAsk] = useState<{ to: string; from: string; n: number; then?: (sw: Switched) => void } | null>(null);
-  const counterpart = (id: string) => idx.CHAR[id]?.fusionOf ?? idx.FUSED[id];
   const fusionGate = (id: string, then?: (sw: Switched) => void) => {
-    const from = counterpart(id);
-    if (touring || !from || !(roster.has(from) || gear.store.pools[from]?.length)) return false;
+    const from = gateOf(idx, roster, gear.store.pools, id);
+    if (touring || !from) return false;
     setVerdictOpen(false);
     setEquipOpen(false);
     setFusionAsk({ to: id, from, n: gear.store.pools[from]?.length ?? 0, then });
@@ -357,7 +374,8 @@ export function App() {
   // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
   const usedFor = (st: GearStore, charId: string, id: string) =>
     [...new Set(whereUsed(poolView(ctx, st, target?.c.id === charId ? target.v.key : null), charId, id).map((v) => buildName(v.key)))];
-  // «Надеть на CF», когда есть X, — сначала окно перехода (в); вещи X уже у CF, когда дойдёт до «Это шлем Rin?»
+  // «Надеть на CF», когда есть X, — сначала окно перехода (в); вещи X уже у CF, когда дойдёт до «Это шлем Rin?». Строка
+  // и кнопка CF посчитаны по этому же хранилищу (viewOf, П9)
   const doEquip = (c: Char) => {
     setEquipOpen(false);
     if (!fusionGate(c.id, (sw) => equipCheck(c, sw))) equipCheck(c, null);
@@ -368,8 +386,12 @@ export function App() {
     const has = (id: string) => (st.pools[id] ?? []).map((pid) => st.pieces[pid]).find((p) => p && samePiece(input, p));
     if (has(c.id)) { if (sw) switchToast(sw, 'eval'); return; }
     const owner = Object.keys(st.pools).find((id) => id !== c.id && idx.CHAR[id] && has(id));
+    // «Она же» — только если запись встанет так, как обещала подпись по вещи с формы (logic/pool shareFits); иначе
+    // окна нет — как «Другая — своя»
+    const share = owner ? has(owner)! : null;
+    const fits = !!share && shareFits(ctx, st, c.id, input, share, target?.c.id === c.id ? target.v.key : null);
     // «Это шлем Rin?» — своё окно: шторку вердикта закрыть, как перед «Кому надеть?» (две шторки — один Esc на обе)
-    if (owner && !touring) { setVerdictOpen(false); setTwinAsk({ c, piece: has(owner)!, owner, sw }); } else equipOn(c, null, sw, st);
+    if (owner && fits && !touring) { setVerdictOpen(false); setTwinAsk({ c, piece: share!, owner, sw }); } else equipOn(c, null, sw, st);
   };
   // sw — переход Core Fusion перед этим «Надеть»: его строка — в сообщение, его «Вернуть» — вместе с этим
   const equipOn = (c: Char, record: Piece | null, sw: Switched | null = null, st0: GearStore = gear.store) => {
@@ -569,7 +591,7 @@ export function App() {
               tryOn={target} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c) : undefined}
               other={cardOther} onEquipOther={cardOther ? (v) => doEquip(v.c) : undefined}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={openTours} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={view} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
+            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} off={off} onGearImport={onGearImport} touring={!!tour.run} />
@@ -629,7 +651,7 @@ export function App() {
           <FusionAsk base={charName(idx.CHAR[fusionAsk.to]?.fusionOf ?? fusionAsk.to)} toFusion={!!idx.CHAR[fusionAsk.to]?.fusionOf} n={fusionAsk.n}
             onYes={doSwitch} onClose={() => setFusionAsk(null)} />
         )}
-        {equipOpen && !tour.run && <EquipSheet ctx={ctx} view={view} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
+        {equipOpen && !tour.run && <EquipSheet ctx={ctx} viewOf={viewOf} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {formToast && (
           <div className="toast" role="status" style={toastAt}><span>{t.ui.undoText}</span><button type="button" onClick={onUndo}>{t.ui.undoAction}</button></div>
         )}
@@ -652,7 +674,7 @@ export function App() {
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={openTours} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={view} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

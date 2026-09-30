@@ -204,6 +204,32 @@ describe('«Это шлем Kappa?»', () => {
     await click(byText('.twin button', 'Another copy'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'], [caren.id]: ['p2'] });
   });
+
+  // мелочь 2 повторного ревью: запись Fran слабее вещи с формы для Demiurge Luna (Reforge ушёл в HP и DEF%) — у неё она
+  // сразу «больше не нужна». «Она же» не предлагаем: окна нет, у Luna — своя вещь, как «Другая — своя» (logic/pool
+  // shareFits). Вход — из перебора (label/test/mass, seed 4, #1443)
+  it('запись другого у героя не встанет — окна нет, у героя своя вещь', async () => {
+    const luna = char('Demiurge Luna'), fran = char('Fran');
+    const subs = { CHD: 1, HP: 2, 'ATK%': 2, 'DEF%': 4 };
+    const rec = P('r1', 'shoes', '14', subs, { lit: { CHD: 1, HP: 4, 'ATK%': 2, 'DEF%': 6 } });
+    const mine = [
+      P('p1', 'armor', '13', { 'ATK%': 3, 'HP%': 4, SPD: 4, 'DMG RED%': 2 }, { lit: { 'ATK%': 3, 'HP%': 4, SPD: 6, 'DMG RED%': 2 }, bt: 4 }),
+      P('p2', 'helmet', '13', { 'DMG UP%': 1, CHC: 3, 'ATK%': 1, ATK: 4 }, { lit: { 'DMG UP%': 1, CHC: 3, 'ATK%': 1, ATK: 6 }, bt: 4, grade: 'rare' }),
+      P('p3', 'weapon', null, { 'DMG UP%': 2, 'DEF%': 4, 'DMG RED%': 2, HP: 4 }, { itemKey: '781:mage', main: 'ATK%' }),
+      P('p4', 'gloves', '13', { DEF: 2, CHC: 1, EFF: 3, 'DMG UP%': 3 }, { lit: { DEF: 3, CHC: 3, EFF: 5, 'DMG UP%': 5 } }),
+      P('p5', 'armor', '13', { CHD: 3, 'DEF%': 3, HP: 4, 'DMG UP%': 3 }, { lit: { CHD: 5, 'DEF%': 5, HP: 4, 'DMG UP%': 3 } }),
+      P('p6', 'shoes', '11', { ATK: 3, 'DMG UP%': 3, 'DMG RED%': 1, CHD: 2 }, { lit: { ATK: 3, 'DMG UP%': 4, 'DMG RED%': 3, CHD: 4 } }),
+    ];
+    const gear = { ...G([...mine, rec], { [luna.id]: mine.map((p) => p.id as string), [fran.id]: ['r1'] }), seq: 10 };
+    await mount({ slot: 'shoes', grade: 'unique', rosterOnly: false, fodder: true, stage: 'grow' }, { setId: '14', subs }, { gear, roster: [luna.id, fran.id] });
+    await click($('.vbar .vb-main'));
+    await click($('.v-equip'));
+    await type($('.equip-q input') as HTMLInputElement, 'demiurge luna');
+    await click(byText('.equip-row', 'Demiurge Luna') as HTMLElement);
+
+    expect(byText('.drawer', "Are these Fran's")).toBeUndefined();
+    expect(stored().pools[luna.id]).toEqual([...mine.map((p) => p.id), 'p11']);
+  });
 });
 
 // Р15: снятую при «Заменить» другим героям не предлагаем — никогда. Было: строка «Старый — Rin? Speed: соберёт.» и

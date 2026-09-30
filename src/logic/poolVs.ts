@@ -59,9 +59,11 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   return { c: o.c, best, rows, same, worn: null, starts, useful, replaces };
 }
 
-// строки нескольких персонажей: сначала те, кого вещь держит, потом «уже есть», потом прочие
-export function charsVs(ctx: Ctx, view: PoolView, item: ItemInput, chars: readonly Char[], opts: OutcomeOpts = {}): CharVs[] {
-  const out = chars.map((c) => charVs(ctx, view, c.id, item, undefined, opts)).filter((x): x is CharVs => !!x);
+// строки нескольких персонажей: сначала те, кого вещь держит, потом «уже есть», потом прочие. Вид пула — общий или
+// свой у героя: тот, на котором «Надеть» на него сделает putOn (Core Fusion X при X — после окна перехода, App)
+export function charsVs(ctx: Ctx, view: PoolView | ((charId: string) => PoolView), item: ItemInput, chars: readonly Char[], opts: OutcomeOpts = {}): CharVs[] {
+  const viewOf = typeof view === 'function' ? view : () => view;
+  const out = chars.map((c) => charVs(ctx, viewOf(c.id), c.id, item, undefined, opts)).filter((x): x is CharVs => !!x);
   const key = (x: CharVs) => (x.best ? (holds(x.best) ? 0 : 3) : x.worn ? 1 : 2);
   return out.sort((a, z) => key(a) - key(z) || (a.best && z.best ? byBest(a.best, z.best) : 0));
 }

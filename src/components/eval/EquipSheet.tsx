@@ -18,8 +18,10 @@ import { Sheet } from '../Sheet';
 import { VsChip } from './VsSection';
 import { tour } from '../../tour/anchors';
 
-export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
-  ctx: Ctx; view: PoolView; item: ItemInput; onEquip: (c: Char) => void; onClose: () => void;
+// viewOf — вид пула героя, на котором «Надеть» сделает putOn: у Core Fusion X при X — после окна перехода, вещи X уже
+// у него (П9); у прочих — общий вид
+export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
+  ctx: Ctx; viewOf: (charId: string) => PoolView; item: ItemInput; onEquip: (c: Char) => void; onClose: () => void;
 }) {
   const t = useT();
   const { SET, ITEM, D } = ctx.idx;
@@ -31,8 +33,8 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);
-  const list = useMemo(() => charsVs(ctx, view, item, chars, { explicit: !!needle }).filter((x) => x.useful || x.worn)
-    .sort((a, z) => rank(a) - rank(z)), [ctx, view, item, chars, needle]);
+  const list = useMemo(() => charsVs(ctx, viewOf, item, chars, { explicit: !!needle }).filter((x) => x.useful || x.worn)
+    .sort((a, z) => rank(a) - rank(z)), [ctx, viewOf, item, chars, needle]);
   const acc = t.ui.slotAcc[item.slot];
   const nameOf = (x: Pick<ItemInput, 'slot' | 'setId' | 'itemKey' | 'main'> & { grade: string }) => {
     const what = x.setId ? `${SET[x.setId]?.short ?? x.setId} Set` : [x.itemKey ? ITEM[x.slot as 'weapon' | 'accessory'][x.itemKey]?.name : x.grade === 'rare' ? 'Epic' : '', x.main].filter(Boolean).join(' · ');
@@ -43,7 +45,7 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
   // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие
   const action = (x: CharVs) => {
     // «та же вещь в …» — фраза: имя «По статам» в кавычках
-    if (x.worn) return t.ui.equipRowWorn([...new Set(whereUsed(view, x.c.id, x.worn.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))].join(', ') || t.ui.byStatsQ);
+    if (x.worn) return t.ui.equipRowWorn([...new Set(whereUsed(viewOf(x.c.id), x.c.id, x.worn.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))].join(', ') || t.ui.byStatsQ);
     const o = x.best;
     if (!o || o.entering || !o.used) {
       const builds = [...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : '');
