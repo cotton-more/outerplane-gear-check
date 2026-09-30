@@ -222,11 +222,49 @@ describe('«Заменить» и «Отдать Rin»', () => {
     expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4']);
   });
 
+  it('«Отдать Rin» заменило её шлем — сообщение «Заменено: шлем Rin», её старый ушёл из пула', async () => {
+    const st = gear();
+    const rinHelm = P('p5', 'helmet', speed, { RES: 1, EFF: 1, HP: 1 });
+    const g = G([...Object.values(st.pieces) as Pc[], rinHelm], { ...st.pools, [rin.id]: ['p2', 'p3', 'p4', 'p5'] });
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: g, roster: [caren.id, rin.id] });
+    await click($('.vc-equip'));
+    await click(byText('.gear-toast button', 'Give to Rin'));
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Rin's helmet.");
+    expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4', 'p1']);
+  });
+
   it('старый у другого персонажа тоже — «остался у…»', async () => {
     const helm = P('p1', 'helmet', speed, { SPD: 1 });
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
     await click($('.vc-equip'));
     expect($('.gear-toast small')?.textContent).toContain('The old helmet stays with Kappa (in Speed');
+  });
+});
+
+describe('«Надеть»: что уходит из пула и что пишет сообщение (Р7)', () => {
+  const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 }, STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 };
+
+  it('новая в пустой слот, а стала ненужной вещь другого слота — «Надето», вещь в пуле', async () => {
+    const pcs = [P('p1', 'helmet', speed, JUNK), P('p2', 'helmet', set('Attack'), STRONG), P('p3', 'armor', speed, JUNK), P('p4', 'gloves', speed, JUNK)];
+    await mount({ slot: 'shoes', grade: 'unique' }, { setId: speed, subs: { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 } }, { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4'] }) });
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
+    expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+  });
+
+  // Speed/Immu и Def/Immu: Immunity-ботинки вытесняют и Speed-, и Defense-ботинки (×2 держится одной вещью)
+  it('две вещи её слота ушли — «Заменено: ботинки», обе вне пула; «Вернуть» — обе обратно', async () => {
+    const pcs = [
+      P('p1', 'helmet', set('Immunity'), { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', set('Immunity'), { 'DEF%': 2, CHC: 2 }),
+      P('p3', 'gloves', speed, { 'DEF%': 2, CHC: 2 }, { bt: 4 }), P('p4', 'shoes', speed, JUNK, { bt: 4 }),
+      P('p5', 'gloves', set('Defense'), { 'DEF%': 2, CHC: 2 }), P('p6', 'shoes', set('Defense'), JUNK),
+    ];
+    await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots.");
+    expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p5', 'p7']);
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(stored().pools[caren.id].sort()).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6']);
   });
 });
 

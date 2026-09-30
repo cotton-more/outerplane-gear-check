@@ -10,7 +10,7 @@ import {
   updatePiece, type GearStore, type Piece,
 } from '../src/logic/gear';
 import { decodeGear, encodeGear, fuseChar, newerGear, restoreGear, unfuseChar } from '../src/logic/gearStore';
-import { putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
+import { planPut, poolView, putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
 import type { ItemInput } from '../src/logic/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -237,6 +237,65 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     const f = fuseChar(st, '2000043', '2700043');
     expect(f.st.pools).toEqual({ '2700043': ['p2', 'p1'] });
     expect(unfuseChar(f.st, '2000043', '2700043', f).pools).toEqual({ '2700043': ['p2'], '2000043': ['p1'] });
+  });
+});
+
+describe('«Надеть»: что уходит из пула (Р7)', () => {
+  // Р7: только вещь того слота, куда встала новая, и только если её больше нет ни в одной собираемой сборке.
+  // Остальные ставшие ненужными остаются: на карточке «больше не нужна» и «Убрать у Caren»
+  const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 }, STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 };
+  const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
+  const pool = (ps: Piece[], who = CAREN) => v2(ps, { [who]: ps.map((p) => p.id) });
+  const short = (p: Piece) => `${p.slot}:${idx.SET[p.setId!].short}`;
+  // слабый Speed-шлем, сильный Attack-шлем, Speed-броня и Speed-перчатки: новые Speed-ботинки в пустой слот — сборка
+  // Speed берёт Attack-шлем (Speed ×3 и без него), Speed-шлем ни в одной сборке
+  const helmets = () => [rec('p1', A('helmet', 'Speed', JUNK)), rec('p2', A('helmet', 'Attack', STRONG)), rec('p3', A('armor', 'Speed', JUNK)), rec('p4', A('gloves', 'Speed', JUNK))];
+  const SHOES = A('shoes', 'Speed', { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 });
+
+  it('вещь другого слота не убирается, даже если стала ненужной: она в пуле и «больше не нужна»', () => {
+    const r = putOn(ctx, pool(helmets()), CAREN, SHOES);
+    expect(r.removed).toEqual([]);
+    expect(r.st.pools[CAREN]).toContain('p1');
+    expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p1']);
+  });
+
+  it('убирается только вещь её слота: Attack-ботинки уходят, Speed-шлем остаётся', () => {
+    const r = putOn(ctx, pool([...helmets(), rec('p5', A('shoes', 'Attack', { CHC: 2, HP: 1, EFF: 1, RES: 1 }))]), CAREN, SHOES);
+    expect(r.removed.map(short)).toEqual(['shoes:Attack']);
+    expect(r.st.pools[CAREN]).toEqual(['p1', 'p2', 'p3', 'p4', 'p6']);
+  });
+
+  it('две вещи её слота стояли в разных сборках и больше нигде — уходят обе; «Вернуть» — обе обратно', () => {
+    // Speed/Immu: Immunity-шлем и броня + Speed-перчатки и ботинки на T4; Def/Immu — те же Immunity + Defense-перчатки
+    // и ботинки. Сильные Immunity-ботинки вытесняют и Speed-, и Defense-ботинки: ×2 держится одной вещью (последняя —
+    // ценностью)
+    const ps = [
+      rec('p1', A('helmet', 'Immunity', { 'DEF%': 2, CHC: 2 })), rec('p2', A('armor', 'Immunity', { 'DEF%': 2, CHC: 2 })),
+      rec('p3', A('gloves', 'Speed', { 'DEF%': 2, CHC: 2 }), 4), rec('p4', A('shoes', 'Speed', JUNK), 4),
+      rec('p5', A('gloves', 'Defense', { 'DEF%': 2, CHC: 2 })), rec('p6', A('shoes', 'Defense', JUNK)),
+    ];
+    const st = pool(ps);
+    const r = putOn(ctx, st, CAREN, A('shoes', 'Immunity', STRONG));
+    expect(r.removed.map(short)).toEqual(['shoes:Speed', 'shoes:Defense']);
+    expect(undoPut(r.st, CAREN, r).pools[CAREN].sort()).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6']);
+  });
+
+  it('Pen mix у Luna: 4-я Pen-вещь в ботинки — Attack-ботинки уходят, Attack-перчатки остаются («больше не нужна»)', () => {
+    const luna = D.chars.find((c) => c.name === 'Demiurge Luna')!.id;
+    const good = { 'ATK%': 3, CHC: 3, CHD: 3, SPD: 2 }, meh = { 'ATK%': 2, CHC: 1, CHD: 1, SPD: 1 };
+    const ps = [rec('p1', A('helmet', 'Penetration', meh)), rec('p2', A('armor', 'Penetration', meh)), rec('p3', A('gloves', 'Penetration', meh)),
+      rec('p4', A('gloves', 'Attack', good)), rec('p5', A('shoes', 'Attack', good))];
+    const r = putOn(ctx, pool(ps, luna), luna, A('shoes', 'Penetration', meh));
+    expect(r.removed.map(short)).toEqual(['shoes:Attack']);
+    expect(r.st.pools[luna]).toContain('p4');
+  });
+
+  it('planPut — то же, что уберёт и отметит «Надеть», без записи', () => {
+    const st = pool([...helmets(), rec('p5', A('shoes', 'Attack', { CHC: 2, HP: 1, EFF: 1, RES: 1 }))]);
+    const { piece } = newPiece(st, SHOES, '');
+    const plan = planPut(ctx, idx.CHAR[CAREN], Object.values(st.pieces), piece);
+    const r = putOn(ctx, st, CAREN, SHOES);
+    expect({ removed: plan.removed.map((p) => p.id), marks: plan.marks }).toEqual({ removed: r.removed.map((p) => p.id), marks: r.marks });
   });
 });
 

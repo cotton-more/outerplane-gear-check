@@ -24,7 +24,7 @@ import { makeCtx } from './logic/context';
 import { evaluate, withPendingDice } from './logic/evaluate';
 import { gearedChars, holdersOf, pieceInput, samePiece, type GearStore, type Piece } from './logic/gear';
 import { fuseChar, unfuseChar } from './logic/gearStore';
-import { holds, poolView, putOn, recipientFor, undoPut } from './logic/pool';
+import { holds, poolView, putOn, recipientFor, undoPut, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
@@ -244,43 +244,52 @@ export function App() {
     if (touring) setVerdictOpen(false);
     setUndo(null);
     if (touring) return;
-    const old = r.removed[0] ?? null;
     const used = usedFor(st, c.id, r.id);
-    const text = old ? t.ui.replaced(c.name, input.slot) : [t.ui.equipped(c.name, input.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+    const text = r.removed.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
     const notes: string[] = [];
     if (r.marks.length) notes.push(t.ui.startedFilling([...new Set(r.marks.map(buildName))].join(', ')));
     if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
-    let action: { label: string; run: () => void } | undefined;
-    if (old) {
-      const still = holdersOf(st, old.id).filter((id) => id !== c.id);
-      const same = isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey;
-      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats));
-      else {
-        const oi = pieceInput(old);
-        const rec = recipientFor(ctx, poolView(ctx, st), oi, sectionChars(evaluate(ctx, oi, { gamble: false })), c.id);
-        if (rec) {
-          notes.push(t.ui.giveOld(old.slot, rec.c.name, buildName(rec.row.v.key), outcomeWord(t, rec.row)));
-          action = { label: t.ui.giveTo(rec.c.name), run: () => giveTo(rec.c, old) };
-        } else if (!same) notes.push(t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, poolView(ctx, st), oi, evaluate(ctx, oi, { gamble: false })).v]));
-        if (same) notes.push(t.ui.oldMaterial(old.slot));
-      }
-    }
+    const old = removedNotes(st, c, r);
+    notes.push(...old.notes);
+    const { action } = old;
     if (joined?.note) notes.push(joined.note);
     setGearUndo({
       text, note: notes.join(' '), tab: 'eval', action,
       undo: (x) => (joined ? unfuse(joined.fused)(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: undoRoster(joined?.ch ?? null),
     });
   };
-  // «Отдать Rin»: вещь, которую сняли, — та же запись — в пул другого (с Reforge и Breakthrough)
+  // что стало с убранными из пула (Р7: только вещи слота новой) — каждая своей строкой: осталась у другого, кому
+  // отдать (кнопка — первой, кому нужна), вердикт или материал новой. st — хранилище после «Надеть»
+  const removedNotes = (st: GearStore, c: Char, r: PutResult) => {
+    const notes: string[] = [];
+    let action: { label: string; run: () => void } | undefined;
+    for (const old of r.removed) {
+      const still = holdersOf(st, old.id).filter((id) => id !== c.id);
+      const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
+      if (still.length) { notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStats)); continue; }
+      const oi = pieceInput(old);
+      const rec = recipientFor(ctx, poolView(ctx, st), oi, sectionChars(evaluate(ctx, oi, { gamble: false })), c.id);
+      if (rec) {
+        notes.push(t.ui.giveOld(old.slot, rec.c.name, buildName(rec.row.v.key), outcomeWord(t, rec.row)));
+        action ??= { label: t.ui.giveTo(rec.c.name), run: () => giveTo(rec.c, old) };
+      } else if (!same) notes.push(t.ui.oldVerdict(t.ui.verdictLabel[withWorn(ctx, poolView(ctx, st), oi, evaluate(ctx, oi, { gamble: false })).v]));
+      if (same) notes.push(t.ui.oldMaterial(old.slot));
+    }
+    return { notes, action };
+  };
+  // «Отдать Rin»: вещь, которую сняли, — та же запись — в пул другого (с Reforge и Breakthrough). Она заменила вещь
+  // Rin — сообщение, как у «Заменить»
   const giveTo = (c: Char, old: Piece) => {
     const r = putOn(ctx, gear.store, c.id, pieceInput(old), { record: old });
     if (!r.added) return;
     const joined = !roster.has(c.id) ? joinRoster(r.st, [c.id]) : null;
-    gear.set(joined?.st ?? r.st);
-    const used = usedFor(joined?.st ?? r.st, c.id, r.id);
+    const st = joined?.st ?? r.st;
+    gear.set(st);
+    const used = usedFor(st, c.id, r.id);
+    const gone = removedNotes(st, c, r);
     setGearUndo({
-      text: [t.ui.equipped(c.name, old.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' '),
-      note: joined?.note ?? '', tab: s.tab,
+      text: r.removed.length ? t.ui.replaced(c.name, old.slot) : [t.ui.equipped(c.name, old.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' '),
+      note: [...gone.notes, joined?.note ?? ''].filter(Boolean).join(' '), tab: s.tab, action: gone.action,
       undo: (x) => (joined ? unfuse(joined.fused)(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: undoRoster(joined?.ch ?? null),
     });
   };

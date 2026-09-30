@@ -164,6 +164,21 @@ describe('исход вещи с формы: повтор vs.test', () => {
       expect(weak.delta).toBeCloseTo(weak.pair!.delta!, 9);
     });
 
+    it('встала, а вытесненная ничего не стоила — «полезных нет», а не «×2609» (вещь в её слоте пуста)', () => {
+      // Speed-ботинки в пустой слот: сборка Speed меняет пустой по цепочке Speed-шлем на сильный Attack-шлем
+      const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 };
+      const pieces = [rec(armor('helmet', 'Speed', JUNK)), rec(armor('helmet', 'Attack', { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 })),
+        rec(armor('armor', 'Speed', JUNK)), rec(armor('gloves', 'Speed', JUNK))];
+      const r = row(pieces, armor('shoes', 'Speed', { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 }), 'Speed')!;
+      expect({ used: r.used, worn: r.worn, displaced: r.displaced.map((e) => e.slot), lostEmpty: r.lostEmpty }).toEqual({ used: true, worn: null, displaced: ['helmet'], lostEmpty: true });
+      expect(vsFigure({ delta: r.delta, wornEmpty: r.lostEmpty })).toEqual({ kind: 'empty' });
+    });
+
+    it('вытесненная чего-то стоила — процент, не «полезных нет»', () => {
+      const r = row([rec(armor('helmet', 'Speed', { SPD: 1, RES: 2, EFF: 2, HP: 1 }))], armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 }), 'Speed')!;
+      expect({ used: r.used, lostEmpty: r.lostEmpty }).toEqual({ used: true, lostEmpty: false });
+    });
+
     it('иначе: один Speed-шлем у Caren — исходы и в Speed, и в Speed/Immu (вещи у персонажа, не у билда)', () => {
       const o = out([helmetT4({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW);
       expect(o.rows.map((r) => [r.v.name, r.kind])).toEqual([['Speed', 'up'], ['Speed/Immu', 'up']]);

@@ -20,8 +20,9 @@ import { tour } from '../../tour/anchors';
 
 type T = ReturnType<typeof useT>;
 const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `×${f.n}` : `${f.n > 0 ? '+' : f.n < 0 ? '−' : '±'}${Math.abs(f.n)}%`);
-// разница: у вставшей — выигрыш к вытесненному, у невставшей — против вещи в её слоте
-const figOf = (o: Outcome) => vsFigure({ delta: o.delta, wornEmpty: !!o.pair?.wornEmpty && o.kind !== 'completes' && o.kind !== 'closer' });
+// разница: у вставшей — выигрыш к вытесненному, у невставшей — против вещи в её слоте. Вытесненное ничего не стоило —
+// «полезных нет», а не «×2609»
+const figOf = (o: Outcome) => vsFigure({ delta: o.delta, wornEmpty: (!!o.pair?.wornEmpty || o.lostEmpty) && o.kind !== 'completes' && o.kind !== 'closer' });
 const upKind = (o: Outcome) => o.kind === 'up' || o.kind === 'completes' || o.kind === 'closer';
 
 // слово исхода: для сообщений («Rin · Speed: соберёт»)
