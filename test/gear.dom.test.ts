@@ -244,9 +244,11 @@ describe('«Заменить» и «Отдать Rin»', () => {
 describe('«Надеть»: что уходит из пула и что пишет сообщение (Р7)', () => {
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 }, STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 };
 
-  it('новая в пустой слот, а стала ненужной вещь другого слота — «Надето», вещь в пуле', async () => {
+  // подпись кнопки — то, что сделает «Надеть» (находка 5): ничего не уберёт — «Надеть», а не «Заменить ботинки»
+  it('новая в пустой слот, а стала ненужной вещь другого слота — «Надеть на Caren» → «Надето», вещь в пуле', async () => {
     const pcs = [P('p1', 'helmet', speed, JUNK), P('p2', 'helmet', set('Attack'), STRONG), P('p3', 'armor', speed, JUNK), P('p4', 'gloves', speed, JUNK)];
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: speed, subs: { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 } }, { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4'] }) });
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
@@ -261,6 +263,7 @@ describe('«Надеть»: что уходит из пула и что пише
       P('p4', 'shoes', set('Attack'), { 'DEF%': 2, CHC: 2 }), P('p5', 'shoes', set('Immunity'), JUNK),
     ];
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    expect($('.vc-equip')?.textContent).toBe("Replace Caren's boots");
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots.");
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p6']);
@@ -270,15 +273,100 @@ describe('«Надеть»: что уходит из пула и что пише
 
   // Р1: Speed/Immu — Immunity-шлем и броня + Speed-перчатки и ботинки на T4. Сильные Immunity-ботинки ломают Speed ×2
   // ради статов, но Speed/Immu собирается из вещей Caren — Speed-ботинки остаются
-  it('Р1: новая ломает сет-стат ради статов — прежняя вещь её слота остаётся, «Надето»', async () => {
+  // было: кнопка «Заменить ботинки» (Speed-ботинки вытеснены в показанной сборке), а тост «Надето» — теперь одно и то же
+  it('Р1: новая ломает сет-стат ради статов — прежняя вещь её слота остаётся: «Надеть на Caren» → «Надето»', async () => {
     const pcs = [
       P('p1', 'helmet', set('Immunity'), { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', set('Immunity'), { 'DEF%': 2, CHC: 2 }),
       P('p3', 'gloves', speed, { 'DEF%': 2, CHC: 2 }, { bt: 4 }), P('p4', 'shoes', speed, JUNK, { bt: 4 }),
     ];
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+  });
+});
+
+// Р4, находка 5: кнопка есть только у исхода, который держит штамп и где вещь встаёт, или если вещь начнёт билд; подпись —
+// то, что сделает «Надеть» (тост)
+describe('кнопка = то, что сделает «Надеть»', () => {
+  const mid = { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 1 };
+  const openPick = async () => { await click($('.vcard')); await click($('.v-equip')); };
+
+  // было (сценарий 4): карточка «ломает сет», а кнопка «Надеть на Caren» — от строки «на уровне» в Speed; жмёшь —
+  // Speed-шлем уходил из пула
+  it('лучший исход «ломает сет» (не встаёт): кнопки нет ни под карточкой, ни в «Сейчас на персонажах»', async () => {
+    const pcs = [P('p1', 'helmet', set('Immunity'), { CHC: 1, HP: 1, RES: 1, EFF: 1 }), P('p2', 'gloves', set('Immunity'), mid), P('p3', 'armor', speed, mid),
+      P('p4', 'shoes', speed, mid), P('p5', 'helmet', speed, mid)];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 2 } },
+      { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4', 'p5'] }, { marks: { [`${caren.id}/Speed`]: 'want' } }) });
+    expect($('.vcard .vc-vs .vs')?.textContent).toBe('breaks a set');
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vcard'));
+    expect(byText('.v-vs .vs-row', 'Caren')?.querySelector('.vs-act')).toBeNull();
+  });
+
+  it('лучший исход «ломает сет»: в «Кому надеть?» Caren нет', async () => {
+    const pcs = [P('p1', 'helmet', set('Immunity'), { CHC: 1, HP: 1, RES: 1, EFF: 1 }), P('p2', 'gloves', set('Immunity'), mid), P('p3', 'armor', speed, mid),
+      P('p4', 'shoes', speed, mid), P('p5', 'helmet', speed, mid)];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 2 } },
+      { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4', 'p5'] }, { marks: { [`${caren.id}/Speed`]: 'want' } }) });
+    await openPick();
+    expect(byText('.equip-row', 'Caren')).toBeUndefined();
+  });
+
+  // было (гипотеза b, B1-правило): штамп понижен, а в «Сейчас на персонажах» — «Заменить шлем Caren», в «Кому надеть?» —
+  // строка. Р4 это правило заменил
+  it('«на уровне» (штамп понижен): кнопки нет, строка сравнения есть; в «Кому надеть?» Caren нет', async () => {
+    const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('p' + (i + 1), sl, speed, mid));
+    await mount({ slot: 'helmet', grade: 'unique', rosterOnly: true }, { setId: speed, subs: { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 2 } },
+      { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4'] }) });
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vcard'));
+    expect($('.v-vs .vs-row .vs')?.textContent).toBe('on par');
+    expect($('.v-vs .vs-act')).toBeNull();
+    await click($('.v-equip'));
+    expect(byText('.equip-row', 'Caren')).toBeUndefined();
+  });
+
+  // было (браузер): у Core Fusion Eternal главная строка «только статы — … оставь как есть» про «По статам», которого
+  // после «Надеть» не будет, а под ней «Надеть на Core Fusion Eternal» — и её Effectiveness-шлем уходил
+  it('Core Fusion Eternal, 4 Effectiveness: Speed-шлем только начнёт Speed — главная строка «начнёт», кнопка «Заменить шлем» = тост', async () => {
+    const cf = char('Core Fusion Eternal');
+    const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Effectiveness'), { SPD: 2, EFF: 2, CHC: 1, HP: 1 }));
+    await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 } },
+      { gear: G(pcs, { [cf.id]: ['e1', 'e2', 'e3', 'e4'] }), roster: [cf.id] });
+    expect($('.vcard .vc-vs')?.textContent).toBe('startsCore Fusion Eternal· Speed');
+    expect($('.vc-equip')?.textContent).toBe("Replace Core Fusion Eternal's helmet");
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
+    expect(stored().pools[cf.id]).not.toContain('e1');
+  });
+
+  it('Core Fusion Eternal: в «Сейчас на персонажах» нет строки «только статы» — ни главной, ни в «Ещё»', async () => {
+    const cf = char('Core Fusion Eternal');
+    const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Effectiveness'), { SPD: 2, EFF: 2, CHC: 1, HP: 1 }));
+    await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 } },
+      { gear: G(pcs, { [cf.id]: ['e1', 'e2', 'e3', 'e4'] }), roster: [cf.id] });
+    await click($('.vcard'));
+    const row = byText('.v-vs .vs-row', 'Core Fusion Eternal')!;
+    expect(row.querySelector('.vs')?.textContent).toBe('starts');
+    expect(row.textContent).not.toContain('stats only');
+    expect(row.querySelector('.vs-act')?.textContent).toBe("Replace Core Fusion Eternal's helmet");
+  });
+
+  // было (сценарий «Eternal»): «Кому надеть?» — «Надеть — начнёт Speed», а жмёшь — «Заменено: шлем Eternal»
+  it('Eternal, 4 Attack, слабый Speed-шлем через «Кому надеть?»: вещь начнёт Speed и заменит Attack-шлем — тост «Заменено», «Начал собирать Speed»', async () => {
+    const eternal = char('Eternal');
+    const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Attack'), { SPD: 3, EFF: 2, CHC: 2 }));
+    await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 1, HP: 1, RES: 1, DEF: 1 } },
+      { gear: G(pcs, { [eternal.id]: ['e1', 'e2', 'e3', 'e4'] }), roster: [eternal.id] });
+    await openPick();
+    const row = byText('.equip-row', 'Eternal')!;
+    expect(row.querySelector('.vs')?.textContent).toBe('starts');
+    await click(row);
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Eternal's helmet.");
+    expect($('.gear-toast small')?.textContent).toContain('Started filling Speed.');
   });
 });
 
@@ -298,14 +386,28 @@ describe('«Сейчас на персонажах»', () => {
     expect(rows[0].querySelectorAll('.vs-more').length).toBeGreaterThan(0);
   });
 
-  it('до вещей у кандидатов раздела нет — вердикт как раньше', async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+  it('ни вещей, ни своих среди кандидатов — вердикт как раньше', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [] });
     expect($('.vcard .vc-vs')).toBeNull();
     expect($('.vcard .vc-chain')).toBeTruthy();
     expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));
     expect($('.v-vs')).toBeNull();
     expect($('.v-equip')).toBeTruthy();
+  });
+
+  // находка 21: было — у Caren без вещей ни строки, ни кнопки, надеть только через «Надеть на…»
+  it('у своей Caren вещей нет — на карточке «начнёт», кнопка «Надеть на Caren» → «Надето», строка в «Сейчас на персонажах»', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+    expect($('.vcard .vc-vs')?.textContent).toBe('startsCaren· Speed');
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
+    await click($('.vcard'));
+    const row = byText('.v-vs .vs-row', 'Caren')!;
+    expect(row.querySelector('.vs')?.textContent).toBe('starts');
+    expect(row.querySelector('.vs-act')?.textContent).toBe('Equip on Caren');
+    await click($('.drawer-x'));
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');
   });
 
   it('шлем хуже у Caren в Speed — ▼, цепочки, места; материал её Breakthrough', async () => {

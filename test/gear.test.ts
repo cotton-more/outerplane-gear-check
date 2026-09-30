@@ -10,7 +10,7 @@ import {
   updatePiece, type GearStore, type Piece,
 } from '../src/logic/gear';
 import { decodeGear, encodeGear, fuseChar, newerGear, restoreGear, unfuseChar } from '../src/logic/gearStore';
-import { planPut, poolView, putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
+import { planFor, planPut, poolView, putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
 import type { ItemInput } from '../src/logic/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -313,6 +313,80 @@ describe('«Надеть»: что уходит из пула (Р7)', () => {
     const plan = planPut(ctx, idx.CHAR[CAREN], Object.values(st.pieces), piece);
     const r = putOn(ctx, st, CAREN, SHOES);
     expect({ removed: plan.removed.map((p) => p.id), marks: plan.marks }).toEqual({ removed: r.removed.map((p) => p.id), marks: r.marks });
+  });
+
+  // подпись кнопки (poolVs replaces) — planFor по виду пула; должна совпасть с тем, что сделает putOn (находка 5)
+  const same = (st: GearStore, who: string, x: ItemInput, tryOn: string | null = null) => {
+    const plan = planFor(ctx, poolView(ctx, st, tryOn), who, x)!;
+    const r = putOn(ctx, st, who, x, { tryOn });
+    return [{ removed: plan.removed.map((p) => p.id), marks: plan.marks }, { removed: r.removed.map((p) => p.id), marks: r.marks }];
+  };
+  const eternal = '2000043', cfEternal = '2700043';
+  it.each([
+    ['пустой слот, ненужная вещь другого слота', () => same(pool(helmets()), CAREN, SHOES)],
+    ['две вещи её слота', () => same(pool([...helmets(), rec('p5', A('shoes', 'Attack', { CHC: 2, HP: 1, EFF: 1, RES: 1 }))]), CAREN, SHOES)],
+    ['Eternal, 4 Attack: Speed-шлем начнёт Speed', () => same(pool(['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => rec('e' + i, A(sl as Piece['slot'], 'Attack', { SPD: 3, EFF: 2, CHC: 2 }))), eternal), eternal, A('helmet', 'Speed', { SPD: 1, HP: 1, RES: 1, DEF: 1 }))],
+    ['Core Fusion Eternal, 4 Effectiveness', () => same(pool(['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => rec('e' + i, A(sl as Piece['slot'], 'Effectiveness', { SPD: 2, EFF: 2, CHC: 1, HP: 1 }))), cfEternal), cfEternal, A('helmet', 'Speed', { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 }))],
+    ['в примерке Def', () => same(pool([...['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => rec('s' + i, A(sl as Piece['slot'], 'Speed', { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 }))), rec('d1', A('helmet', 'Defense', { HP: 1, RES: 1 }))]), CAREN, A('helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }), buildKey(CAREN, 'Def'))],
+  ])('planFor — то же, что сделает putOn: %s', (_, run) => {
+    const [plan, put] = run();
+    expect(plan).toEqual(put);
+  });
+});
+
+describe('«Надеть»: вариант, где она встала, с ней перестаёт собираться сам', () => {
+  // Gnosis Domine: Def-шлем и Def-ботинки на T4, Immunity- и Patience-перчатки — собраны Def ×2 в Pen Def и Pen Immu.
+  // Pen-ботинки в Pen Def — «сет 3 из 4» вместо Def-ботинок, но Def ×2 там распадается, и ближе всех — Pen Immu
+  const GNOSIS = '2000112';
+  const A = (slot: Piece['slot'], s: string): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs: { CHC: 1 } });
+  const ps = [rec('p1', A('helmet', 'Defense'), 4), rec('p2', A('gloves', 'Immunity'), 4), rec('p3', A('gloves', 'Patience')), rec('p4', A('shoes', 'Defense'), 4)];
+  const st = v2(ps, { [GNOSIS]: ps.map((p) => p.id) });
+  const PEN = { ...A('shoes', 'Penetration'), subs: { HP: 1, CHC: 1, RES: 4, EFF: 3 } };
+
+  // было: отметки нет, Pen Def выпадал из «собираешь», и новые ботинки сразу «больше не нужна»
+  it('Pen Def — «Собираю»', () => {
+    expect(putOn(ctx, st, GNOSIS, PEN).marks).toEqual([buildKey(GNOSIS, 'Pen Def')]);
+  });
+
+  it('новые ботинки не «ненужные»', () => {
+    const r = putOn(ctx, st, GNOSIS, PEN);
+    expect(poolView(ctx, r.st).of(GNOSIS)!.unused.map((p) => p.id)).not.toContain(r.id);
+  });
+});
+
+describe('«Надеть» в примерке', () => {
+  // у Caren собран Speed ×4; старый Defense-шлем ни в одном билде. Примерка Def — в ней он стоит; новый Defense-шлем лучше
+  const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
+  const mid = { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 };
+  const pcs = [...(['helmet', 'armor', 'gloves', 'shoes'] as const).map((sl, i) => rec('p' + (i + 1), A(sl, 'Speed', mid))), rec('p5', A('helmet', 'Defense', { HP: 1, RES: 1 }))];
+  const st = v2(pcs, { [CAREN]: pcs.map((p) => p.id) });
+  const DEF = A('helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+  const K3 = buildKey(CAREN, 'Def');
+
+  // было: вещь встала только в цель примерки — «Собираю» не ставилось, и после примерки новый шлем «больше не нужна»
+  it('встала только в цель примерки — цель становится «Собираю»', () => {
+    const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
+    expect(r.marks).toEqual([K3]);
+  });
+
+  it('после конца примерки новый шлем не «ненужный»: Def собирается по отметке', () => {
+    const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
+    expect(poolView(ctx, r.st).of(CAREN)!.unused).toEqual([]);
+  });
+
+  // было: «Вернуть» снимало отметку совсем — «Не собираю» пропадало
+  it('у цели «Не собираю»: «Надеть» ставит «Собираю», «Вернуть» — хранилище как до «Надеть», отметки байт в байт', () => {
+    const skip: GearStore = { ...st, marks: { [K3]: 'skip' } };
+    const r = putOn(ctx, skip, CAREN, DEF, { tryOn: K3 });
+    const back = undoPut(r.st, CAREN, r);
+    // seq не откатывается (как всегда у «Вернуть»): номер вещи не переиспользуется
+    expect({ put: r.st.marks, back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ put: { [K3]: 'want' }, back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
+  });
+
+  it('встала и в собираемый без примерки вариант — отметки нет', () => {
+    // Immunity-шлем в примерке Def/Immu встаёт и в Speed/Immu, который собирается сам (Speed ×2 из четырёх Speed)
+    const r = putOn(ctx, st, CAREN, A('helmet', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }), { tryOn: buildKey(CAREN, 'Def/Immu') });
+    expect(r.marks).toEqual([]);
   });
 });
 

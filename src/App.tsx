@@ -118,14 +118,14 @@ export function App() {
   // «Разобрать». Вещь — материал и лучше такой же у кого-то — не понижаем (совет «надень»)
   const worn = useMemo(() => withWorn(ctx, view, input, raw, { hold: mat.wear.up.length > 0 }), [ctx, view, raw, mat]); // eslint-disable-line react-hooks/exhaustive-deps
   const verdict = useMemo(() => withMaterial(idx, t, worn, mat.needs, mat.wear), [idx, t, worn, mat]);
-  // «Сейчас на персонажах»: кандидаты вердикта, у кого есть вещи (понизили — прежнего вердикта: они и объясняют,
-  // почему «Разобрать»); в примерке — только цель
+  // «Сейчас на персонажах»: кандидаты вердикта, у кого есть вещи, и свои без вещей — им вещь начнёт билд (понизили —
+  // прежнего вердикта: они и объясняют, почему «Разобрать»); в примерке — только цель
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
     if (target) return targetVs ? [targetVs] : [];
-    const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length);
+    const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length || roster.has(c.id));
     return charsVs(ctx, view, input, chars);
-  }, [ctx, view, raw, worn, verdict, target, targetVs, gear.store]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, view, raw, worn, verdict, target, targetVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя)
   const offNote = target && !targetVs && verdict.v !== 'idle' && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
@@ -365,10 +365,11 @@ export function App() {
   });
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
-  // кнопка под карточкой — только для полезной вещи (решение владельца: хлам к персонажу не попадает): без примерки —
-  // когда исход держит; вторая — «или — Rin · Speed ▸», если держащий исход есть и у другого
+  // кнопка под карточкой — только для полезной вещи (решение владельца: хлам к персонажу не попадает; Р4 — исход на
+  // карточке держит и вещь в нём встаёт, или она начнёт билд: poolVs useful); вторая — «или — Rin · Speed ▸», если
+  // такой исход есть и у другого
   const cardVs = vsList[0];
-  const cardEquip = canEquip && !!cardVs?.best && cardVs.useful && (!!target || holds(cardVs.best));
+  const cardEquip = canEquip && !!cardVs?.useful;
   const cardOther = cardEquip && !target ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
   // id не задан — «Какое обучение?» (туров несколько); новичку из карточки и из «Появилось обучение» — главный
   const startTour = (id?: TourId) => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(id); };

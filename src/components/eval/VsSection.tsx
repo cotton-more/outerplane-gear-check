@@ -2,7 +2,8 @@
 // строка на персонажа: его лучший исход (logic/pool, logic/poolVs) — соберёт, сет 3 из 4, пустой слот, лучше, на уровне,
 // хуже, ломает сет, только статы. Ниже — тусклая «Ещё: …» с остальными вариантами; по нажатию — они целиком.
 // Две цепочки рядом — что закрывает вещь в слоте и что — новая. Штамп вердикта от этого не меняется. Кнопка — только
-// для полезной вещи: надеть или заменить.
+// для полезной вещи (poolVs useful, Р4): надеть или заменить — то, что сделает «Надеть». Вещь только начнёт билд —
+// строка «начнёт» с кнопкой (и у персонажа без вещей).
 import { useState } from 'react';
 import { GRADE_NAME, subLabel, type Index } from '../../data';
 import type { SetPiece } from '../../data/types';
@@ -49,7 +50,7 @@ export function VsChip({ o, starts }: { o: Outcome | null; starts?: boolean }) {
   return <span className={`vs ${cls}`}>{o.kind === 'eq' || o.kind === 'capped' ? <Icon name="equal" /> : null}{t.ui.vsKind[o.kind]}</span>;
 }
 
-// что сделает кнопка: заменить, если вещь встаёт на место другой, иначе — надеть
+// что сделает кнопка: заменить, если «Надеть» уберёт вещь её слота (poolVs replaces), иначе — надеть
 export const equipLabel = (t: T, x: CharVs, slot: string) =>
   x.replaces ? t.ui.replaceOn(slot, x.c.name) : t.ui.equipTo(x.c.name);
 
@@ -169,7 +170,7 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
         {list.map((x) => {
           const o = x.best;
           const w = o?.worn?.piece ?? null;
-          const others = x.rows.slice(1).filter((r) => !r.v.dupOf);
+          const others = x.rows.filter((r) => r !== o && !r.v.dupOf);
           const cp = view.of(x.c.id);
           // собираемые варианты, которых вещь не касается: «Speed она не тронет»
           const safe = o && cp ? cp.inPlay.filter((v) => !isStats(v) && !v.dupOf && !x.rows.some((r) => r.v.key === v.key)).map((v) => buildName(t, v.key)) : [];
@@ -189,8 +190,8 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
               {o && <OutcomeLines o={o} rows={x.rows} />}
               {o && <PairLines o={o} />}
               {safe.length > 0 && !x.rows.some((r) => r.kind === 'stats') && <p className="muted">{t.ui.vsSafe(safe.join(', '))}</p>}
-              {onEquip && x.useful && o && (
-                <button type="button" className={`btn vs-act${holds(o) ? ' good' : ''}`} onClick={() => onEquip(x)} {...tour('gequip')}>
+              {onEquip && x.useful && (
+                <button type="button" className={`btn vs-act${o && holds(o) ? ' good' : ''}`} onClick={() => onEquip(x)} {...tour('gequip')}>
                   <Icon name={x.replaces ? 'replace' : 'check'} />
                   {equipLabel(t, x, slot)}
                 </button>

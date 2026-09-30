@@ -13,7 +13,7 @@ import { isArmor } from '../data';
 import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
 import { t4Only } from './builds';
 import type { Ctx } from './context';
-import { gc, holdersOf, newPiece, pieceInput, samePiece, today, type GearStore, type Mark, type Piece } from './gear';
+import { EMPTY_GEAR, gc, holdersOf, newPiece, pieceInput, samePiece, today, type GearStore, type Mark, type Piece } from './gear';
 import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible, type BonusRow } from './setBonus';
 import type { SubWeight } from './score';
 import type { ItemInput } from './verdict';
@@ -23,11 +23,12 @@ import { against, fit, itemValue, MARGIN, pieceValue, type Fit, type Pair } from
 export type { Mark };
 
 // то, что пул берёт из хранилища (GearStore v2): вещи, пулы персонажей, отметки «Собираю / Не собираю»
-// (ключ — вариант или билд целиком)
+// (ключ — вариант или билд целиком); seq — счётчик id: по нему номер вещи, которую добавит «Надеть» (planFor)
 export interface PoolStore {
   pieces: Readonly<Record<string, Piece>>;
   pools: Readonly<Record<string, readonly string[]>>;
   marks?: Readonly<Record<string, Mark>>;
+  seq?: number;
 }
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
@@ -295,6 +296,7 @@ export interface Play {
   asm: Map<string, Assembly>;          // сборка каждого варианта — её показывает карточка
   reach: Map<string, Assembly>;        // достижимая сборка (assembleReach): по ней «собираешь»; не отличается — тот же объект
   inPlay: Variant[];
+  own: Variant[];                      // собираемые без примерки: цель примерки собирается, только пока она идёт
 }
 
 export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts = {}, x?: ItemInput | null): Play {
@@ -314,12 +316,12 @@ export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts
   const want = variants.some((v) => markOf(opts.marks, v) === 'want');
   const open = variants.filter((v) => !isStats(v) && markOf(opts.marks, v) !== 'skip');
   const top = Math.max(0, ...open.filter((v) => fitting.has(v.key)).map((v) => reach.get(v.key)!.progress));
-  const on = (v: Variant) =>
-    isStats(v) || v.key === opts.tryOn || (markOf(opts.marks, v) !== 'skip' && (
+  const self = (v: Variant) =>
+    isStats(v) || (markOf(opts.marks, v) !== 'skip' && (
       markOf(opts.marks, v) === 'want'
       || reach.get(v.key)!.complete.length > 0
       || (fitting.has(v.key) && reach.get(v.key)!.progress === top && (top > 0 || !want))));
-  return { variants, stat, asm, reach, inPlay: variants.filter(on) };
+  return { variants, stat, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self) };
 }
 
 // сборки варианта, чьи вещи пул держит: выбранная и достижимая (если другая)
@@ -403,7 +405,8 @@ export interface CharOutcome {
   worn: Piece | null; // такая же вещь уже в пуле персонажа — «уже есть»
   rows: Outcome[];
   starts: Variant[];  // с ней начнут собираться
-  useful: boolean;    // встанет в сборку собираемого варианта или начнёт новый: только такую можно надеть
+  statGone: boolean;  // с ней «По статам» не будет (броня из сета билда): его исход — не про то, что сделает «Надеть»
+  useful: boolean;    // надеть можно (puts): исход держит и она в нём встаёт или начнёт новый билд
 }
 
 const rowKey = (r: BonusRow) => `${r.set}:${r.n}:${r.tier}`;
@@ -530,7 +533,7 @@ export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInpu
   if (!cp) return null;
   const { c, pieces } = cp;
   const twin = pieces.find((p) => samePiece(x, p)) ?? null;
-  if (twin) return { c, worn: twin, rows: [], starts: [], useful: false };
+  if (twin) return { c, worn: twin, rows: [], starts: [], statGone: false, useful: false };
   const withX = play(ctx, c, pieces, view.opts, x);
   const was = new Set(cp.inPlay.map((v) => v.key));
   const starts = withX.inPlay.filter((v) => !was.has(v.key) && !isStats(v));
@@ -541,7 +544,9 @@ export function outcomeFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInpu
     if (o) rows.push(o);
   }
   rows.sort((a, z) => OUTCOME_ORDER.indexOf(a.kind) - OUTCOME_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));
-  return { c, worn: null, rows, starts, useful: rows.some((r) => r.used && !r.entering) || starts.length > 0 };
+  const statGone = !!cp.stat && !withX.stat;
+  const useful = rows.some((r) => puts(r) && !r.entering && !(statGone && isStats(r.v))) || starts.length > 0;
+  return { c, worn: null, rows, starts, statGone, useful };
 }
 
 // Держит ли исход штамп (преемник worn.ts, C2): вещь кому-то нужна. «Ломает» и «на уровне из-за T4» — только когда
@@ -555,36 +560,59 @@ export function holds(o: Outcome): boolean {
   return !!o.worn && !isArmor(o.worn.slot) && o.worn.fit === 'no';
 }
 
+// Р4 и решение 3: у исхода есть «Надеть» / «Заменить» — он держит штамп и вещь в нём встаёт в сборку (ещё — если вещь
+// начнёт новый билд: CharOutcome.useful, poolVs)
+export const puts = (o: Outcome): boolean => holds(o) && o.used;
+
 // --------------------------------------------------------------------------- операции с пулом
 
 // что сделало «Надеть»: added — вещь добавлена (false — такая же уже есть); removed и marks — как в planPut
-// (removed — вещи её слота, которых с ней нет ни в одной собираемой сборке: «Заменить»); shared — у кого ещё эта запись
-export interface PutResult { st: GearStore; id: string; piece: Piece; added: boolean; removed: Piece[]; marks: string[]; shared: string[] }
+// (removed — вещи её слота, которых с ней нет ни в одной собираемой сборке: «Заменить»); prev — что стояло в этих
+// отметках до «Надеть» (null — ничего; «Не собираю» у цели примерки): «Вернуть» кладёт их обратно; shared — у кого ещё
+// эта запись
+export interface PutResult {
+  st: GearStore; id: string; piece: Piece; added: boolean; removed: Piece[]; marks: string[]; prev: Record<string, Mark | null>; shared: string[];
+}
 
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 
 // Что сделает «Надеть» piece на персонажа — без записи (им же считать подпись «Заменить» / «Надеть»).
 // removed (Р7) — только вещи того слота, куда встала новая: стояли в собираемой сборке, а с ней — ни в одной. Не
 // встала никуда — ничего не убираем. Вещи других слотов, ставшие ненужными, остаются в пуле: на карточке «больше не
-// нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем). marks — варианты, которые она начала и которые без
-// отметки не собирались бы
+// нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем). marks — варианты, которые без отметки её бы не держали:
+// она их начала или они с ней перестали собираться сами. Цель примерки собирается, только пока примерка идёт: встала
+// только в неё — «никуда не встала», и цель становится «Собираю» (иначе после примерки вещь «больше не нужна»).
+// pre — play(mine, po), если уже посчитан (вид пула)
 export interface PutPlan { removed: Piece[]; marks: string[] }
-export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}): PutPlan {
-  const before = play(ctx, c, mine, po), after = play(ctx, c, [...mine, piece], po);
+export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play): PutPlan {
+  const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...mine, piece], po);
   const was = usedIn(before), now = usedIn(after);
   const removed = now.has(piece.id) ? mine.filter((p) => p.slot === piece.slot && was.has(p.id) && !now.has(p.id)) : [];
-  // не встала ни в один собираемый вариант, а начинает новые — они «Собираю»: иначе следующая вещь их вытеснит
-  // «прочей» (не из связки) в пустом слоте — не встала: такой исход не считается
-  // (выбранная или достижимая сборка — как usedIn)
+  // не встала ни в один вариант, который собирался и собирается с ней дальше, — «Собираю» те, что она начинает (иначе
+  // следующая вещь их вытеснит), и те, где она встала, а они с ней сами собираться перестали (её «сет 3 из 4» в Pen Def
+  // отдал половину Def ×2 — ближе всех стал другой). «Прочей» (не из связки) в пустом слоте — не встала: такой исход не
+  // считается (выбранная или достижимая сборка — как usedIn)
   const counts = (v: Variant) => ([[after.asm, before.asm], [after.reach, before.reach]] as const).some(([am, bm]) => {
     const a = am.get(v.key);
     const slot = a && (Object.keys(a.slots) as SlotId[]).find((sl) => a.slots[sl]?.id === piece.id);
     return !!slot && !(isArmor(slot) && a!.roles[slot] === 'filler' && !bm.get(v.key)?.slots[slot]);
   });
-  const old = new Set(before.inPlay.map((v) => v.key));
-  const marks = before.inPlay.some(counts) ? []
-    : after.inPlay.filter((v) => !old.has(v.key) && !isStats(v) && holdsPiece(after, v, piece.id)).map((v) => v.key);
+  const old = new Set(before.own.map((v) => v.key)), still = new Set(after.own.map((v) => v.key));
+  const marks = before.own.some((v) => still.has(v.key) && counts(v)) ? []
+    : after.variants.filter((v) => !isStats(v) && (old.has(v.key)
+      ? !still.has(v.key) && counts(v)
+      : after.inPlay.includes(v) && holdsPiece(after, v, piece.id))).map((v) => v.key);
   return { removed, marks };
+}
+
+// Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
+// (poolVs). Та же новая запись, что создаст putOn (номер — следующий за seq), те же отметки и примерка
+const seqOf = (st: PoolStore) => st.seq ?? Math.max(0, ...Object.keys(st.pieces).map(numOf));
+export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput): PutPlan | null {
+  const cp = view.of(charId);
+  if (!cp) return null;
+  const { piece } = newPiece({ ...EMPTY_GEAR, seq: seqOf(view.st) }, x, '');
+  return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp);
 }
 
 // Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin», «Отдать Rin»), иначе новая.
@@ -593,7 +621,7 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const twin = mine.find((p) => samePiece(x, p) || p.id === opts.record?.id);
-  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], shared: holdersOf(st, twin.id).filter((h) => h !== charId) };
+  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId) };
   const made = opts.record
     ? { st: st.pieces[opts.record.id] ? st : { ...st, pieces: { ...st.pieces, [opts.record.id]: opts.record } }, piece: st.pieces[opts.record.id] ?? opts.record }
     : newPiece(st, x, opts.at ?? today());
@@ -605,10 +633,12 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
     ...made.st, pools: { ...made.st.pools, [charId]: pool },
     ...(marks.length ? { marks: { ...made.st.marks, ...Object.fromEntries(marks.map((k) => [k, 'want' as Mark])) } } : {}),
   });
-  return { st: next, id: piece.id, piece, added: true, removed, marks, shared: holdersOf(next, piece.id).filter((h) => h !== charId) };
+  const prev = Object.fromEntries(marks.map((k) => [k, st.marks?.[k] ?? null]));
+  return { st: next, id: piece.id, piece, added: true, removed, marks, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId) };
 }
 
-// «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр), отметки — долой.
+// «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр), отметки — как были до
+// него (prev: «Не собираю» — снова «Не собираю», не было — снять); отметку, которую успели поменять, не трогаем.
 // Её там уже нет (успели убрать) — ничего не трогаем
 export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore {
   if (!r.added || !st.pools[charId]?.includes(r.id)) return st;
@@ -616,7 +646,11 @@ export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore 
   for (const p of r.removed) pieces[p.id] ??= p;
   const pool = [...st.pools[charId].filter((id) => id !== r.id), ...r.removed.map((p) => p.id).filter((id) => !st.pools[charId].includes(id))];
   const marks = { ...st.marks };
-  for (const k of r.marks) if (marks[k] === 'want') delete marks[k];
+  for (const k of r.marks) {
+    if (marks[k] !== 'want') continue;
+    const was = r.prev[k] ?? null;
+    if (was) marks[k] = was; else delete marks[k];
+  }
   return gc({ ...st, pieces, pools: { ...st.pools, [charId]: pool }, marks });
 }
 
@@ -649,7 +683,7 @@ export function recipientFor(ctx: Ctx, view: PoolView, x: ItemInput, candidates:
   for (const c of candidates) {
     if (c.id === except) continue;
     const o = outcomeFor(ctx, view, c.id, x);
-    const row = o?.rows.find((r) => holds(r) && r.used);
+    const row = o?.rows.find(puts);
     if (!row) continue;
     const rank = (r: Outcome) => OUTCOME_ORDER.indexOf(r.kind);
     if (!best || rank(row) < rank(best.row) || (rank(row) === rank(best.row) && (row.delta ?? 0) > (best.row.delta ?? 0))) best = { c, row };

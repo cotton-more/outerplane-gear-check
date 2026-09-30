@@ -179,7 +179,7 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
   const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
   // кнопка карточки читается диктором целиком: штамп, кубик и «подробнее»
   const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
-    vs && `${vs.best ? t.ui.vsKind[vs.best.kind] ?? '' : t.ui.vsKind.worn} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
+    vs && `${vs.best ? t.ui.vsKind[vs.best.kind] ?? '' : vs.worn ? t.ui.vsKind.worn : t.ui.vsKind.starts} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
   const o = vs?.best ?? null;
   const p = o?.pair;
   const places = p && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && (p.gained.length || p.lost.length)
