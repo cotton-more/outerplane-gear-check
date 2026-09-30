@@ -19,9 +19,8 @@ import { Chain } from './Chain';
 import { DiceChip, GambleBlock, GambleLine, toTarget } from './Gamble';
 import type { PoolView } from '../../logic/pool';
 import type { CharVs } from '../../logic/poolVs';
-import { buildOfKey } from '../../logic/variants';
 import { Icon } from '../Img';
-import { VsChip, VsSection } from './VsSection';
+import { chipLabel, variantName, VsChip, VsSection } from './VsSection';
 import { subLabel } from '../../data';
 import { ShareCode } from './ItemCode';
 
@@ -177,14 +176,16 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
   const best = bestRow(r)?.row;
   const g = r.gamble;
   const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
-  // кнопка карточки читается диктором целиком: штамп, кубик и «подробнее»
-  const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
-    vs && `${vs.best ? t.ui.vsKind[vs.best.kind] ?? '' : vs.worn ? t.ui.vsKind.worn : t.ui.vsKind.starts} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
   const o = vs?.best ?? null;
+  const starts = o ? o.entering : !vs?.worn;
+  // кнопка карточки читается диктором целиком: штамп, кубик, исход — тот же, что на чипе, — и «подробнее»
+  const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
+    vs && `${chipLabel(t, o, starts)} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
   const p = o?.pair;
   const places = p && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && (p.gained.length || p.lost.length)
     ? t.ui.vsPlaces(p.gained.map((x) => ({ ...x, key: subLabel(x.key) })), p.lost.map((x) => ({ ...x, key: subLabel(x.key) }))) : '';
-  const build = o ? buildOfKey(o.v.key, t.ui.byStats) : vs?.starts[0]?.name ?? '';
+  // имя варианта (Р5): «Defense mix · Swiftness» — исход из него, а не из соседнего по общей половине
+  const build = o ? variantName(t, o.v) : vs?.starts[0]?.name ?? '';
   return (
     <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={label} {...tour('verdict')}>
       <span className="vc-top">
@@ -197,7 +198,7 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
       {g && (r.v !== 'temp' || !lucky?.size)
         ? <GambleLine g={g} />
         : vs
-          ? <span className="vc-vs"><VsChip o={o} starts={o ? o.entering : !vs.worn} />{named && <><b>{vs.c.name}</b>{build && <span className="bn">· {build}{vs.same > 0 ? ` +${vs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
+          ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b>{vs.c.name}</b>{build && <span className="bn">· {build}{vs.same > 0 ? ` +${vs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
           : best && best.good != null
           ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} lucky={lucky} /></span>
           : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}

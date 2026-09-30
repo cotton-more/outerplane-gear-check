@@ -866,3 +866,85 @@ describe('«По статам» у каждого героя (находка 28)
     expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
   });
 });
+
+// находки 12, 13, 14, 18: имя варианта на карточке и в заголовке строки (Р5), без повторов и дублей; «completes» — только
+// когда полной станет вся связка; диктор слышит тот же исход, что на чипе
+describe('«Сейчас на персонажах»: имена вариантов и чипы', () => {
+  const anarky = char('Anarky'), luna = char('Demiurge Luna'), sigma = char('Sigma');
+  const immu = set('Immunity'), pen = set('Penetration');
+  const MID = { CHC: 2, CHD: 2, 'DEF%': 1, SPD: 1 };
+  // у Anarky собраны Pen ×2 и Def ×2; Defense-шлем лучше Pen-шлема: ▲ в Swiftness и Immunity (Pen там «прочее»),
+  // в Penetration — «ломает сет»
+  const anarkyHelmet = () => {
+    const pcs = [P('a1', 'helmet', pen, MID), P('a2', 'armor', pen, MID), P('a3', 'gloves', set('Defense'), MID), P('a4', 'shoes', set('Defense'), MID)];
+    return mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: set('Defense'), subs: { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 2 } },
+      { gear: G(pcs, { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] }, { marks: { [`${anarky.id}/Defense mix#2x2+11x2`]: 'want' } }), roster: [anarky.id] });
+  };
+  // у Caren четыре Speed и Immunity-шлем; Immunity-перчатки: Speed/Immu станет полной, в Def/Immu — лишь Immunity ×2
+  const carenSecondImmu = () => {
+    const mid = { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 };
+    const pcs = [...['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('p' + (i + 1), sl, speed, mid)), P('p5', 'helmet', immu, { CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 })];
+    return mount({ slot: 'gloves', grade: 'unique' }, { setId: immu, subs: { CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 } },
+      { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }, { marks: { [`${caren.id}/Speed`]: 'want', [`${caren.id}/Speed/Immu`]: 'want' } }) });
+  };
+
+  it('Anarky: на карточке — имя варианта, откуда ▲ («Defense mix · Swiftness»), а не родителя', async () => {
+    await anarkyHelmet();
+    expect($('.vcard .vc-vs .bn')?.textContent).toBe('· Defense mix · Swiftness +1');
+  });
+
+  it('Anarky: заголовок строки — варианты с тем же исходом, по именам', async () => {
+    await anarkyHelmet();
+    await click($('.vcard'));
+    expect(byText('.v-vs .vs-row', 'Anarky')?.querySelector('.vs-h .bn')?.textContent).toBe('Defense mix · Swiftness, Defense mix · Immunity');
+  });
+
+  it('Sigma: в заголовке нет дубля «Support» (тот же вариант, что «Speed»)', async () => {
+    const pcs = [P('s1', 'helmet', speed, { SPD: 2, EFF: 2, CHC: 2, 'ATK%': 1 })];
+    await mount({ slot: 'armor', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 } },
+      { gear: G(pcs, { [sigma.id]: ['s1'] }), roster: [sigma.id] });
+    await click($('.vcard'));
+    expect(byText('.v-vs .vs-row', 'Sigma')?.querySelector('.vs-h .bn')?.textContent).toBe('Speed');
+  });
+
+  it('Luna: «Leaves … as is» — каждое имя один раз, а не «Pen mix» на каждый вариант', async () => {
+    const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('l' + (i + 1), sl, pen, { CHC: 2, CHD: 2, 'ATK%': 2, SPD: 1 }, { bt: 4 }));
+    await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { CHC: 2, CHD: 1, 'ATK%': 1, SPD: 1 } },
+      { gear: G(pcs, { [luna.id]: pcs.map((p) => p.id as string) }), roster: [luna.id] });
+    await click($('.vcard'));
+    expect(byText('.v-vs .vs-row', 'Demiurge Luna')?.textContent).toContain('Leaves Penetration, Pen mix as is.');
+  });
+
+  it('Caren, вторая Immunity: «completes» — у Speed/Immu, ставшей полной; «+1» за Def/Immu, где лишь половина, нет', async () => {
+    await carenSecondImmu();
+    expect($('.vcard .vc-vs')?.textContent).toBe('completesCaren· Speed/Immu');
+  });
+
+  it('Caren, вторая Immunity: в «More» у Def/Immu — «set 2 of 4», а не «completes»', async () => {
+    await carenSecondImmu();
+    await click($('.vcard'));
+    expect(byText('.v-vs .vs-row', 'Caren')?.querySelector('.vs-more-btn')?.textContent).toContain('Def/Immu — set 2 of 4');
+  });
+
+  it('Caren, только Immunity-шлем: Immunity-перчатки собирают лишь половину — чип «set 2 of 4», строка «Completes a half» остаётся', async () => {
+    const pcs = [P('p1', 'helmet', immu, { CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 })];
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: immu, subs: { CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: ['p1'] }) });
+    await click($('.vcard'));
+    const row = byText('.v-vs .vs-row', 'Caren')!;
+    expect(row.querySelector('.vs-h .vs')?.textContent).toBe('set 2 of 4');
+    expect(row.textContent).toContain('Completes a half: Immunity ×2.');
+  });
+
+  it('Caren, только Immunity-шлем: в «Кому надеть?» — «set 2 of 4», а не «completes»', async () => {
+    const pcs = [P('p1', 'helmet', immu, { CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 })];
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: immu, subs: { CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: ['p1'] }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toMatch(/^Equip — [^:]+: set 2 of 4$/);
+  });
+
+  it('подпись карточки для диктора — тот же исход, что на чипе: «better than the one on: +25% Caren»', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }) });
+    expect($('.vcard')?.getAttribute('aria-label')).toContain('better than the one on: +25% Caren');
+  });
+});

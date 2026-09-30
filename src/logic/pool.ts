@@ -592,6 +592,11 @@ export function holdsKind(o: Outcome): boolean {
   return !!o.worn && !isArmor(o.worn.slot) && o.worn.fit === 'no';
 }
 
+// Исход для показа (чип, «Ещё», «+N», «Кому надеть?», примерка): «соберёт» — только когда полной станет вся связка
+// (таблица GEARPOOL). Полной стала лишь часть (вторая Immunity у Caren в Def/Immu, где Def нет) — «сет n из m», как
+// «ближе»; строка «Соберёт половину» остаётся. Штамп, «держит» и порядок исходов — по kind: здесь только слова
+export const shownKind = (o: Outcome): OutcomeKind => (o.kind === 'completes' && o.after.progress < o.after.need ? 'closer' : o.kind);
+
 // Р4 и решение 3: у исхода есть «Надеть» / «Заменить» — он держит штамп и вещь в нём встаёт в сборку (ещё — если вещь
 // начнёт новый билд: CharOutcome.useful, poolVs)
 export const puts = (o: Outcome): boolean => holds(o) && o.used;

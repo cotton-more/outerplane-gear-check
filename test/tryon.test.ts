@@ -119,6 +119,14 @@ describe('примерка: заголовок вердикта', () => {
     expect(titleOf(res, t4, target('Speed/Immu', t4), armor('helmet', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 1, HP: 1 }))).toMatch(/; на Caren — на уровне: Speed ×2 на T4$/);
   });
 
+  // находка 14: «соберёт» — когда полной станет вся связка; полной стала лишь Immunity ×2 — «сет 2 из 4»
+  it('собрана лишь половина связки — «Caren · Speed/Immu: сет 2 из 4», а не «соберёт»', () => {
+    const immu = all([armor('helmet', 'Immunity', { CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 })]);
+    const gloves = armor('gloves', 'Immunity', { CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 });
+    const res = evaluate(ctx, gloves, { gamble: false });
+    expect(titleOf(res, immu, target('Speed/Immu', immu), gloves)).toMatch(/Caren · Speed\/Immu: сет 2 из 4$/);
+  });
+
   it('не её сет — «Caren · Speed — не по билду»', () => {
     expect(on(armor('helmet', 'Defense', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 })).title).toMatch(/Caren · Speed — не по билду$/);
   });

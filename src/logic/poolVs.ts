@@ -5,7 +5,7 @@ import type { Char, SlotId } from '../data/types';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
 import type { Piece } from './gear';
-import { heldBy, holds, holdsKind, isStats, OUTCOME_ORDER, outcomeFor, planFor, puts, type Assembly, type Outcome, type OutcomeOpts, type PoolView } from './pool';
+import { heldBy, holds, holdsKind, isStats, OUTCOME_ORDER, outcomeFor, planFor, puts, shownKind, type Assembly, type Outcome, type OutcomeOpts, type PoolView } from './pool';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import type { Variant } from './variants';
 
@@ -51,7 +51,8 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   const best = lead ?? (starts.length ? null : rows[0]);
   if (best && best !== rows[0]) rows.splice(0, rows.length, best, ...rows.filter((r) => r !== best));
   const top = rows[0];
-  const same = best ? rows.filter((r) => r !== best && r.kind === best.kind && !r.v.dupOf).length : 0;
+  // «+N» — варианты с тем же исходом на экране: «соберёт» у половины связки — это «сет n из m», не «+1» к «соберёт»
+  const same = best ? rows.filter((r) => r !== best && shownKind(r) === shownKind(best) && !r.v.dupOf).length : 0;
   // примерка «По статам» (или запасная строка примерки): встаёт пустым слотом или лучше — «Надеть» и у тихой (Р11)
   const useful = only ? !!top && (isStats(top.v) ? top.used && holdsKind(top) : puts(top)) : o.useful;
   const replaces = useful && !!planFor(ctx, view, charId, item)?.removed.length;

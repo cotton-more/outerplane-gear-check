@@ -8,7 +8,7 @@ import type { Build, Char, SlotId } from '../data/types';
 import type { Texts } from '../i18n';
 import type { Piece } from './gear';
 import { comboText, uniqChars } from './builds';
-import { isStats, statVariant, STATS, type Outcome, type PoolView } from './pool';
+import { isStats, shownKind, statVariant, STATS, type Outcome, type PoolView } from './pool';
 import { bestRow, type Verdict } from './verdict';
 import { variantsOf, type Variant } from './variants';
 
@@ -66,7 +66,7 @@ export function tryRowOf(idx: Index, o: Outcome | null, worn: boolean): TryRow |
   if (worn) return { kind: 'worn' };
   if (!o || o.kind === 'stats') return null;
   const part = (set: string | null | undefined, n?: number) => (set ? `${idx.SET[set]?.short ?? set} ×${n ?? 2}` : undefined);
-  if (o.kind === 'closer') return { kind: 'closer', n: o.after.progress, m: o.after.need, empty: !o.worn };
+  if (shownKind(o) === 'closer') return { kind: 'closer', n: o.after.progress, m: o.after.need, empty: !o.worn };
   if (o.kind === 'capped') return { kind: 'capped', part: part(o.t4?.set, o.t4?.n) };
   if (o.surplus && o.part) return { kind: 'surplus', part: part(o.part.set, o.part.n) };
   return { kind: o.kind, empty: !o.worn };

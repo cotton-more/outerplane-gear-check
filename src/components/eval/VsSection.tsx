@@ -9,7 +9,7 @@ import { GRADE_NAME, subLabel, type Index } from '../../data';
 import type { SetPiece } from '../../data/types';
 import { useT } from '../../i18n';
 import { reforgeScale } from '../../logic/gear';
-import { holds, isStats, type Outcome, type PoolView } from '../../logic/pool';
+import { holds, isStats, shownKind, type Outcome, type PoolView } from '../../logic/pool';
 import type { CharVs } from '../../logic/poolVs';
 import type { BonusRow } from '../../logic/setBonus';
 import { buildOfKey } from '../../logic/variants';
@@ -26,13 +26,22 @@ const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `
 const figOf = (o: Outcome) => vsFigure({ delta: o.delta, wornEmpty: (!!o.pair?.wornEmpty || o.lostEmpty) && o.kind !== 'completes' && o.kind !== 'closer' });
 const upKind = (o: Outcome) => o.kind === 'up' || o.kind === 'completes' || o.kind === 'closer';
 
-// слово исхода: значок ▲▼ и строка «Ещё» («Speed — соберёт»)
-function outcomeWord(t: T, o: Outcome): string {
-  if (o.kind === 'closer') return t.ui.vsCloser(o.after.progress, o.after.need);
+// слово исхода: значок ▲▼ и строка «Ещё» («Speed — соберёт»); «соберёт» — вся связка, половина — «сет n из m» (shownKind)
+export function outcomeWord(t: T, o: Outcome): string {
+  if (shownKind(o) === 'closer') return t.ui.vsCloser(o.after.progress, o.after.need);
   if (o.kind === 'up' || o.kind === 'down') {
     const f = figOf(o);
     return o.pair?.why ? t.ui.vsKind[o.pair.why] : !f ? t.ui.vsKind.better : f.kind === 'empty' ? t.ui.vsKind.better : num(f);
   }
+  return t.ui.vsKind[o.kind] ?? o.kind;
+}
+
+// чип целиком, как его прочтёт диктор (подпись карточки): «начнёт», «уже есть», «лучше надетой: +25%», «сет 3 из 4»
+export function chipLabel(t: T, o: Outcome | null, starts?: boolean): string {
+  if (starts || (o?.entering && o.used)) return t.ui.vsKind.starts;
+  if (!o) return t.ui.vsKind.worn;
+  if (o.kind === 'up' || o.kind === 'down') return (t.ui.vsSr[o.kind] ?? '') + outcomeWord(t, o);
+  if (o.kind === 'completes' || o.kind === 'closer') return outcomeWord(t, o);
   return t.ui.vsKind[o.kind] ?? o.kind;
 }
 
@@ -62,8 +71,8 @@ const bonusText = (idx: Index, r: BonusRow) => {
 };
 const ARMOR = ['helmet', 'armor', 'gloves', 'shoes'] as const;
 const buildName = (t: T, key: string) => buildOfKey(key, t.ui.byStats);
-// имя варианта для показа: у «По статам» — «По статам», не его ключ
-const variantName = (t: T, v: Outcome['v']) => (isStats(v) ? t.ui.byStats : v.name);
+// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ
+export const variantName = (t: T, v: Outcome['v']) => (isStats(v) ? t.ui.byStats : v.name);
 
 // строки одного исхода (раздел «Тексты» HANDOFF)
 export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
@@ -175,16 +184,17 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
           const others = x.rows.filter((r) => r !== o && !r.v.dupOf);
           const cp = view.of(x.c.id);
           // собираемые варианты, которых вещь не касается: «Speed она не тронет»
-          const safe = o && cp ? cp.inPlay.filter((v) => !isStats(v) && !v.dupOf && !x.rows.some((r) => r.v.key === v.key)).map((v) => buildName(t, v.key)) : [];
+          const safe = o && cp ? [...new Set(cp.inPlay.filter((v) => !isStats(v) && !v.dupOf && !x.rows.some((r) => r.v.key === v.key)).map((v) => buildName(t, v.key)))] : [];
           // варианты, в которые она пошла бы, но их не собирают (и она их не начнёт)
           const idle = cp && o?.part ? cp.variants.filter((v) => !isStats(v) && !v.dupOf && !cp.inPlay.includes(v) && !x.starts.includes(v) && v.b.sets[0]?.some((p) => p.set === o.part!.set)).map((v) => v.name) : [];
-          const names = [...new Set(x.rows.filter((r) => r.kind === o?.kind).map((r) => buildName(t, r.v.key)))];
+          // заголовок — варианты с тем же исходом на экране (Р5: имя варианта, без дублей Sigma «Support» = «Speed»)
+          const names = o ? [...new Set(x.rows.filter((r) => (r === o || !r.v.dupOf) && shownKind(r) === shownKind(o)).map((r) => variantName(t, r.v)))] : [];
           return (
             <li key={x.c.id} className={`vs-row vs-${o?.kind ?? (x.worn ? 'worn' : 'starts')}`}>
               <div className="vs-h">
                 <Img k={'face:' + x.c.icon} className="face" />
                 <div className="nm">
-                  <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{o ? names.join(', ') : ''}</span>
+                  <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{names.join(', ')}</span>
                   {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt, reforgeScale(w).done, reforgeScale(w).of)}</span>}
                 </div>
                 <VsChip o={o} starts={o ? o.entering : !x.worn} />
