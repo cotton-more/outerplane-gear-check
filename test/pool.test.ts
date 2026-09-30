@@ -15,6 +15,7 @@ import { decodeItem, MAINS } from '../src/logic/itemCode';
 import type { Subs } from '../src/logic/subs';
 import type { ItemInput } from '../src/logic/verdict';
 import { variantsOf, type Variant } from '../src/logic/variants';
+import { fit } from '../src/logic/vs';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -244,10 +245,35 @@ describe('«собираешь»', () => {
     expect(inPlay([sp('helmet')])).not.toContain('Def');
   });
 
-  it('только оружие: без отметок — все билды, кому оно подходит; с «Собираю» — только отмеченный (и «По статам»)', () => {
+  // было: только оружие — «никто не начат», запасное правило собирало все билды, кому оно подходит, и «По статам»; с
+  // «Собираю» — только отмеченный. Р18: оружие из списка начинает билд, как вещь сета; запасного правила нет
+  it('Р18: оружие из списка начинает только билды, в чьих списках оно есть; «По статам» уже не живой', () => {
+    const sterope = char('Sterope'); // оружие 5 (HP%) — в списках Support-билдов, не SubDPS
+    const w = [W('5', GOOD, 'HP%')];
+    expect(inPlay(w, {}, sterope)).toEqual(['Support Speed', 'Support Swift Immu']);
+  });
+
+  it('Р18: оружие из списка начинает все билды, где оно есть, и с «Собираю» у одного из них', () => {
     const w = [W(caren.builds[0].weapons[0].key, GOOD)];
-    expect(inPlay(w)).toEqual(['#stats', 'Speed', 'Pen', 'Def', 'Speed/Immu', 'Def/Immu']);
-    expect(inPlay(w, { marks: { [buildKey(caren.id, 'Def')]: 'want' } })).toEqual(['#stats', 'Def']);
+    expect(inPlay(w, { marks: { [buildKey(caren.id, 'Def')]: 'want' } })).toEqual(['Speed', 'Pen', 'Def', 'Speed/Immu', 'Def/Immu']);
+  });
+
+  it('Р18: оружие не из списка (fit «нет») — собирается только «По статам»', () => {
+    const w = W(D.weapons.find((x) => !caren.builds.some((b) => b.weapons.some((r) => r.key === x.key)))!.key, GOOD, 'SPD', 'rare');
+    expect(caren.builds.map((b) => fit(ctx, b, w))).toEqual(caren.builds.map(() => 'no'));
+    expect(inPlay([w])).toEqual(['#stats']);
+  });
+
+  // Р18: «Не собираю» исключает всегда — даже когда отмечены так все начатые (было: запасное правило собирало билды по
+  // оружию, 110 состояний у опровергателя 3б; теперь оружие из списка их само начинает)
+  it('Р18: все начатые — «Не собираю»: не собирается ничего, и «По статам» не живой (билды начаты)', () => {
+    const all = Object.fromEntries(caren.builds.map((b) => [buildKey(caren.id, b.name), 'skip' as const]));
+    expect(inPlay([sp('helmet'), W(caren.builds[0].weapons[0].key, GOOD)], { marks: all })).toEqual([]);
+  });
+
+  it('Р18: Speed и Speed/Immu — «Не собираю»: они не собираются, а начатые оружием — да', () => {
+    const skip = { [buildKey(caren.id, 'Speed')]: 'skip' as const, [buildKey(caren.id, 'Speed/Immu')]: 'skip' as const };
+    expect(inPlay([sp('helmet'), W(caren.builds[0].weapons[0].key, GOOD)], { marks: skip })).toEqual(['Pen', 'Def', 'Def/Immu']);
   });
 
   it('«Не собираю» убирает вариант, даже собранный; примерка собирается и пустой', () => {
@@ -274,6 +300,15 @@ describe('«собираешь»', () => {
     const withSpeed = play(ctx, eternal, [...atk, P('helmet', 'Speed', JUNK)]);
     expect(withSpeed.stat).not.toBeNull();
     expect(withSpeed.inPlay).not.toContain(withSpeed.stat);
+  });
+
+  // Р12 + Р18: «начат» одно — оружие из списка тоже начинает билд, и «По статам» становится тихим
+  it('Eternal, четыре Attack и оружие из списка Speed — собирается Speed, «По статам» не живой', () => {
+    const eternal = char('Eternal');
+    const atk = (['helmet', 'armor', 'gloves', 'shoes'] as SlotId[]).map((s) => P(s, 'Attack', { SPD: 3, EFF: 2, CHC: 2 }));
+    const g = eternal.builds[0].weapons[0];
+    const p = play(ctx, eternal, [...atk, W(g.key, { SPD: 2 }, g.mains[0] ?? 'ATK%')]);
+    expect({ live: p.statLive, on: p.inPlay.map((v) => v.name) }).toEqual({ live: false, on: ['Speed'] });
   });
 });
 
@@ -451,7 +486,7 @@ describe('Pen mix без T4 (Р2)', () => {
 
 describe('«По статам»', () => {
   // Р12 и Р14 — одно «начат»: «По статам» живой ровно тогда, когда ни один настоящий вариант не начат
-  it('живой (hasStatBuild) ⇔ ни один вариант не начат (started): 10 персонажей × 60 пулов, с оружием и чужими сетами', () => {
+  it('живой (hasStatBuild) ⇔ ни один вариант не начат (started): 10 персонажей × 60 пулов, с оружием из списка и чужим, с чужими сетами', () => {
     const rnd = (() => { let x = 777; return () => (x = (x * 1103515245 + 12345) % 2 ** 31) / 2 ** 31; })();
     const pick = <T,>(xs: T[]) => xs[Math.floor(rnd() * xs.length)];
     const who = ['Caren', 'Anarky', 'Demiurge Luna', 'Eternal', 'Core Fusion Eternal', 'Demiurge Stella', 'Heatwave Cop Delta', 'Core Fusion Lisha', 'Iota', 'Demiurge Drakhan'];
@@ -461,7 +496,9 @@ describe('«По статам»', () => {
       const own = [...new Set(variantsOf(idx, ch).flatMap((v) => v.b.sets[0].map((p) => p.set)))];
       for (let i = 0; i < 60; i++) {
         const pieces = Array.from({ length: 1 + Math.floor(rnd() * 5) }, () => {
-          if (rnd() < 0.2) return W(pick(ch.builds[0].weapons).key, { CHC: 2 });
+          // оружие: из списка (Р18 — начинает билд) или любое с любым main (часто «нет», в «Развитии» бывает временным)
+          if (rnd() < 0.1) return W(pick(ch.builds[0].weapons).key, { CHC: 2 });
+          if (rnd() < 0.1) return W(pick(D.weapons).key, { CHC: 2 }, pick(['ATK%', 'DEF%', 'HP%', 'CHC', 'CHD', 'SPD', 'EFF']), pick(['unique', 'rare'] as Piece['grade'][]));
           const setId = rnd() < 0.3 ? pick(own) : pick(D.sets).id;
           return { ...P(pick(['helmet', 'armor', 'gloves', 'shoes'] as ArmorSlot[]), null, { CHC: 2 }, pick([null, 0, 4] as (Bt | null)[])), setId };
         });

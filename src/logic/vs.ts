@@ -83,9 +83,10 @@ export const itemValue = (ctx: Ctx, c: Char, b: Build, item: ItemInput): number 
   value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0).v;
 
 // подходит ли вещь этому билду: броня — сет есть в связках; Legendary с пассивкой — предмет из списка с нужным main;
-// остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду нужен
+// остальное (Epic, «нет в списке», предмет из списка с другим main) — временная, если main этому билду нужен.
+// Сабстаты не нужны — годится и записанная вещь (Piece)
 export type Fit = 'no' | 'rec' | 'stopgap';
-export function fit(ctx: Ctx, b: Build, item: ItemInput): Fit {
+export function fit(ctx: Ctx, b: Build, item: Pick<ItemInput, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main'>): Fit {
   if (isArmor(item.slot)) return item.setId && combosWith(b, item.setId).length ? 'rec' : 'no';
   const kind = item.slot as GearKind;
   const g = item.grade === 'unique' && item.itemKey ? gearList(b, kind).find((r) => r.key === item.itemKey) : undefined;

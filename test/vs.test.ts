@@ -256,10 +256,15 @@ describe('исход вещи с формы: повтор vs.test', () => {
     // ближе всех)
     expect(o.starts.map((v) => v.name)).toEqual(['Def/Immu']);
     expect(o.rows.find((r) => r.v.name === 'Speed/Immu')).toMatchObject({ kind: 'closer', entering: false });
+  });
+
+  // было: при одном оружии и «Собираю» у Speed Immunity-вещь «начинала» Speed/Immu и Def/Immu. Р18: оружие из списка
+  // (у Caren оно во всех билдах) их уже начало — она в них «сет 1 из 4», не «начнёт»
+  it('оружие из списка уже начало билды (Р18): Immunity-вещь в Speed/Immu и Def/Immu — ближе, не «начнёт»', () => {
     const w = [rec(weapon('unique', caren.builds[0].weapons[0].key, { CHC: 1 }) as never)];
-    const o2 = out(w, armor('armor', 'Immunity', { CHC: 1 }), caren.id, { [buildKey(caren.id, 'Speed')]: 'want' });
-    expect(o2.starts.map((v) => v.name).sort()).toEqual(['Def/Immu', 'Speed/Immu']);
-    expect(o2.useful).toBe(true);
+    const o = out(w, armor('armor', 'Immunity', { CHC: 1 }), caren.id, { [buildKey(caren.id, 'Speed')]: 'want' });
+    expect({ starts: o.starts, useful: o.useful }).toEqual({ starts: [], useful: true });
+    expect(['Speed/Immu', 'Def/Immu'].map((n) => o.rows.find((r) => r.v.name === n))).toMatchObject([{ kind: 'closer', entering: false }, { kind: 'closer', entering: false }]);
   });
 
   // три случая b02e947 (compareAll / equipTargets) — на строках пула (logic/poolVs)

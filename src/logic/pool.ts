@@ -4,11 +4,12 @@
 //     цель: части с бонусом, который статом не выразить (Penetration, Immunity, …), держатся всегда; сет-стат
 //     (Attack, Speed, …) собирается вещь за вещью, а последнюю вещь его бонус выигрывает только ценностью — сет можно
 //     сломать, если итог выгоднее (бонус в сегментах — logic/setBonus).
-//   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», цель примерки, начатые (Р14: хоть
-//     одна вещь связки встаёт в сборку, при любом T) и «По статам», пока он живой. «Начат» — по тому, что можно
-//     собрать из пула (достижимая сборка, Р1), а карточка показывает выбранную раскладку.
+//   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», цель примерки, начатые (Р14, Р18:
+//     хоть одна вещь связки при любом T или оружие / аксессуар из списка встаёт в сборку) и «По статам», пока он живой.
+//     «Не собираю» исключает всегда. «Начат» — по тому, что можно собрать из пула (достижимая сборка, Р1), а карточка
+//     показывает выбранную раскладку.
 //   - «По статам» — отдельный билд у каждого персонажа с билдами (находка 28, Р11–Р13): все вещи пула по цепочке. Он
-//     «живой» (собираешь, держит штамп), пока ни одна вещь брони в пуле не из сетов связок; потом его строка тихая —
+//     «живой» (собираешь, держит штамп), пока ни один настоящий билд не начат; потом его строка тихая —
 //     «Надеть» в него только при явном выборе (поиск по имени, примерка). Вещи его сборки пул держит всегда (usedIn).
 //   - Исход вещи с формы для персонажа (outcomeFor): что станет с каждым собираемым вариантом, если её добавить.
 import { isArmor } from '../data';
@@ -288,17 +289,23 @@ const markOf = (marks: PlayOpts['marks'], v: Variant): Mark | undefined =>
   marks?.[v.key] ?? marks?.[v.parentKey] ?? (v.sig === null && v.b.sets.length === 1 ? marks?.[`${v.parentKey}#${comboSig(v.b.sets[0])}`] : undefined);
 export const markOfVariant = markOf;
 
-// Билд начат (Р14): хоть одна вещь связки стоит в достижимой сборке варианта
-export const started = (reach: Pick<Assembly, 'progress'>): boolean => reach.progress > 0;
+// Билд начат (Р14, Р18): в достижимой сборке варианта стоит хоть одна вещь его связки (при любом T) или оружие /
+// аксессуар из его списков (fit не «нет»: рекомендованный или временный — в «Развитии»), как вещь его сета
+export const started = (reach: Pick<Assembly, 'progress' | 'slots'>): boolean =>
+  reach.progress > 0 || GEAR.some((slot) => { const e = reach.slots[slot]; return !!e && e.fit !== 'no'; });
 
-// «По статам» живой, когда у персонажа есть билды, пул не пуст и ни одна вещь брони в нём не из сетов его связок (Р12:
-// ни один настоящий билд не начат). Это то же «начат», что в Р14 (started): вещь брони из сета связки всегда встаёт в
-// достижимую сборку своего варианта (она собирает больше всего вещей на связку), и только она. «Не собираю» тут не
-// важен: отмеченный так билд всё равно начат. Отдельной функцией — считается без сборок (сверка — test/pool.test.ts)
-export function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly Pick<Piece, 'slot' | 'setId'>[]): boolean {
+// «По статам» живой, когда у персонажа есть билды, пул не пуст и ни один настоящий билд не начат (Р12 — то же «начат»,
+// что started, Р14 и Р18): ни одна вещь брони в пуле не из сетов его связок и ни одно оружие или аксессуар не из
+// списков его билдов. Вещь брони из сета связки всегда встаёт в достижимую сборку своего варианта (она собирает больше
+// всего вещей на связку), оружие из списка — в свой слот (рекомендованное и временное идут раньше прочих), и только
+// они. «Не собираю» тут не важен: отмеченный так билд всё равно начат. Отдельной функцией — без сборок (сверка —
+// test/pool.test.ts)
+type FitOf = Parameters<typeof fit>[2];
+export function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly FitOf[]): boolean {
   if (!c.builds.length || !pieces.length) return false;
-  const sets = new Set(variantsOf(ctx.idx, c).flatMap((v) => combo(v).map((p) => p.set)));
-  return !pieces.some((p) => isArmor(p.slot) && p.setId && sets.has(p.setId));
+  const vs = variantsOf(ctx.idx, c);
+  const sets = new Set(vs.flatMap((v) => combo(v).map((p) => p.set)));
+  return !pieces.some((p) => (isArmor(p.slot) ? !!p.setId && sets.has(p.setId) : vs.some((v) => fit(ctx, v.b, p) !== 'no')));
 }
 
 export interface Play {
@@ -317,26 +324,20 @@ export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts
   const statLive = !!stat && hasStatBuild(ctx, c, x ? [...pieces, x] : pieces);
   const variants = [...(stat ? [stat] : []), ...variantsOf(ctx.idx, c)];
   const asm = new Map<string, Assembly>(), reach = new Map<string, Assembly>();
-  const fitting = new Set<string>();
   for (const v of variants) {
-    const es = entriesFor(ctx, c, v, pieces, x);
-    const r = assembleReach(ctx, c, v, es);
+    const r = assembleReach(ctx, c, v, entriesFor(ctx, c, v, pieces, x));
     asm.set(v.key, r.asm);
     reach.set(v.key, r.reach);
-    if (es.some((e) => e.fit !== 'no')) fitting.add(v.key);
   }
-  // Р14: билд начат — хоть одна вещь его связки встаёт в его достижимую сборку (Р1), при любом T, — значит собирается.
-  // По достижимой: иначе билд, чей сет-стат раскладка сломала ради статов, выпадал бы, и это зависело бы от порядка
-  // «Надеть». Ни один не начат (у персонажа только оружие и аксессуар, броня не из связок) — собираются те, кому
-  // подходят его вещи (как было: «ближе всех» при нуле), если ничего не отмечено «Собираю»
-  const want = variants.some((v) => markOf(opts.marks, v) === 'want');
-  const open = variants.filter((v) => !isStats(v) && markOf(opts.marks, v) !== 'skip');
-  const none = !open.some((v) => started(reach.get(v.key)!));
-  const self = (v: Variant) =>
-    isStats(v) ? statLive : (markOf(opts.marks, v) !== 'skip' && (
-      markOf(opts.marks, v) === 'want'
-      || started(reach.get(v.key)!)
-      || (none && !want && fitting.has(v.key))));
+  // Р14, Р18: билд начат — хоть одна вещь его связки (при любом T) или оружие / аксессуар из его списков встаёт в его
+  // достижимую сборку (Р1), — значит собирается. По достижимой: иначе билд, чей сет-стат раскладка сломала ради статов,
+  // выпадал бы, и это зависело бы от порядка «Надеть». Запасного правила нет: ни один не начат — собирается только
+  // «По статам» (и отмеченные «Собираю»). «Не собираю» исключает всегда (цель примерки — отдельно, inPlay)
+  const self = (v: Variant) => {
+    if (isStats(v)) return statLive;
+    const m = markOf(opts.marks, v);
+    return m !== 'skip' && (m === 'want' || started(reach.get(v.key)!));
+  };
   return { variants, stat, statLive, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self) };
 }
 
@@ -628,12 +629,12 @@ export const puts = (o: Outcome): boolean => holds(o) && o.used;
 
 // --------------------------------------------------------------------------- операции с пулом
 
-// что сделало «Надеть»: added — вещь добавлена (false — такая же уже есть); removed и marks — как в planPut
-// (removed — вещи её слота, которых с ней нет ни в одной сборке, что держит пул: «Заменить»); prev — что стояло в этих
-// отметках до «Надеть» (null — ничего; «Не собираю» у цели примерки): «Вернуть» кладёт их обратно; shared — у кого ещё
-// эта запись
+// что сделало «Надеть»: added — вещь добавлена (false — такая же уже есть); removed, marks и began — как в planPut
+// (removed — вещи её слота, которых с ней нет ни в одной сборке, что держит пул: «Заменить»; marks — только цель
+// примерки); prev — что стояло в этих отметках до «Надеть» (null — ничего; «Не собираю» у цели примерки): «Вернуть»
+// кладёт их обратно; shared — у кого ещё эта запись
 export interface PutResult {
-  st: GearStore; id: string; piece: Piece; added: boolean; removed: Piece[]; marks: string[]; prev: Record<string, Mark | null>; shared: string[];
+  st: GearStore; id: string; piece: Piece; added: boolean; removed: Piece[]; marks: string[]; began: string[]; prev: Record<string, Mark | null>; shared: string[];
 }
 
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
@@ -641,33 +642,23 @@ const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).m
 // Что сделает «Надеть» piece на персонажа — без записи (им же считать подпись «Заменить» / «Надеть»).
 // removed (Р7) — только вещи того слота, куда встала новая: стояли в сборке, что держит пул (usedIn — и «По статам»),
 // а с ней — ни в одной. Не встала никуда — ничего не убираем. Вещи других слотов, ставшие ненужными, остаются в пуле:
-// на карточке «больше не нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем). marks — варианты, которые без отметки её бы не держали:
-// она их начала или они с ней перестали собираться сами. Цель примерки собирается, только пока примерка идёт: встала
-// только в неё — «никуда не встала», и цель становится «Собираю» (иначе после примерки вещь «больше не нужна»).
-// pre — play(mine, po), если уже посчитан (вид пула)
-export interface PutPlan { removed: Piece[]; marks: string[] }
+// на карточке «больше не нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем).
+// marks (Р19): «Надеть» отметок не ставит — «Собираю» переключает только игрок. Исключение — примерка: цель собирается,
+// только пока примерка идёт; вещь стоит в её сборке, а без примерки её не держит ни одна сборка (не начала цель —
+// «прочая» на месте другой; цель — «Не собираю») — цель становится «Собираю», иначе после примерки вещь «больше не
+// нужна». began — тост «Начал собирать …»: варианты, которые собираются и без примерки и с ней начаты, а до неё — нет
+// (начало по вещам, Р14, Р18), и отмеченная цель примерки. pre — play(mine, po), если уже посчитан (вид пула)
+export interface PutPlan { removed: Piece[]; marks: string[]; began: string[] }
 export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play): PutPlan {
   const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...mine, piece], po);
   const was = usedIn(before), now = usedIn(after);
   const removed = now.has(piece.id) ? mine.filter((p) => p.slot === piece.slot && was.has(p.id) && !now.has(p.id)) : [];
-  // не встала ни в один вариант, который собирался и собирается с ней дальше, — «Собираю» те, что она начинает (иначе
-  // следующая вещь их вытеснит), и те, где она встала, а они с ней сами собираться перестали. После Р14 начатый вариант
-  // от новой вещи не перестаёт собираться (достижимая сборка только растёт), так что это — только те, что собирались,
-  // пока ни один не был начат; а отметка начатых её вариантов — запас на «Убрать» (без неё билд выпал бы). «Прочей»
-  // (не из связки) в пустом слоте настоящего варианта — не встала: такой исход не считается (у «По статам» связки нет —
-  // там считается). Выбранная или достижимая сборка — как usedIn. Начатые — тоже по этому правилу: вещь в «По статам»
-  // в примерке Speed не делает Speed «Собираю»
-  const counts = (v: Variant) => ([[after.asm, before.asm], [after.reach, before.reach]] as const).some(([am, bm]) => {
-    const a = am.get(v.key);
-    const slot = a && (Object.keys(a.slots) as SlotId[]).find((sl) => a.slots[sl]?.id === piece.id);
-    return !!slot && !(isArmor(slot) && !isStats(v) && a!.roles[slot] === 'filler' && !bm.get(v.key)?.slots[slot]);
-  });
-  const old = new Set(before.own.map((v) => v.key)), still = new Set(after.own.map((v) => v.key));
-  const marks = before.own.some((v) => still.has(v.key) && counts(v)) ? []
-    : after.variants.filter((v) => !isStats(v) && (old.has(v.key)
-      ? !still.has(v.key) && counts(v)
-      : after.inPlay.includes(v) && counts(v))).map((v) => v.key);
-  return { removed, marks };
+  const target = po.tryOn ? after.variants.find((v) => v.key === po.tryOn && !isStats(v)) : undefined;
+  const marks = target && !after.own.includes(target)
+    && heldBy(after, target).some((a) => Object.values(a.slots).some((e) => e?.id === piece.id))
+    && !usedIn({ ...after, inPlay: after.own }).has(piece.id) ? [target.key] : [];
+  const began = after.own.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
+  return { removed, marks, began: [...new Set([...began, ...marks])] };
 }
 
 // Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
@@ -686,12 +677,12 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const twin = mine.find((p) => samePiece(x, p) || p.id === opts.record?.id);
-  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId) };
+  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], began: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId) };
   const made = opts.record
     ? { st: st.pieces[opts.record.id] ? st : { ...st, pieces: { ...st.pieces, [opts.record.id]: opts.record } }, piece: st.pieces[opts.record.id] ?? opts.record }
     : newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed, marks } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }) : { removed: [], marks: [] };
+  const { removed, marks, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }) : { removed: [], marks: [], began: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...(st.pools[charId] ?? []).filter((id) => !gone.has(id)), piece.id];
   const next = gc({
@@ -699,7 +690,7 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
     ...(marks.length ? { marks: { ...made.st.marks, ...Object.fromEntries(marks.map((k) => [k, 'want' as Mark])) } } : {}),
   });
   const prev = Object.fromEntries(marks.map((k) => [k, st.marks?.[k] ?? null]));
-  return { st: next, id: piece.id, piece, added: true, removed, marks, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId) };
+  return { st: next, id: piece.id, piece, added: true, removed, marks, began, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId) };
 }
 
 // «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр), отметки — как были до

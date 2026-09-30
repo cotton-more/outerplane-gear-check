@@ -691,7 +691,7 @@ export const en: Texts = {
       code: 'The item code is for your guild chat: they enter it with “Enter code” and see the check for their roster.',
       temp: '“Temporary” — wear it until you find something better. No rush to dismantle it.',
       prio: 'Substat priority: › is the order, = shares a place, crossed-out ones never roll as substats on 6★ gear. The verdict chain is built from this line.',
-      builds: 'All builds assemble themselves from the character\'s gear. Pieces are asked for by builds closest to done, with a finished half, or marked “Filling”.',
+      builds: 'Builds assemble themselves from the character\'s gear. Pieces go to every started build (one set piece or listed weapon starts it) and to “Filling” ones.',
       gear: 'Pieces belong to the character, and builds assemble themselves: one Speed helmet counts in both Speed and Speed/Immu.',
       tryOn: '“Try on” checks for this character and build only, with the slot and set already picked. “Equip” goes straight to them.',
       piece: 'Did a Reforge or Breakthrough in the game? Mark it here, or the comparison treats the piece as un-upgraded.',

@@ -379,7 +379,8 @@ export function App() {
     const text = r.removed.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(r.removed.map(pieceLabel))])
       : r.removed.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
     const notes: string[] = [];
-    if (r.marks.length) notes.push(t.ui.startedFilling([...new Set(r.marks.map(buildName))].join(', ')));
+    // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке; и цель примерки, ставшая «Собираю»)
+    if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
     if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
     notes.push(...removedNotes(st, c, r));
     if (sw) notes.push(sw.note);

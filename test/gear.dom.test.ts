@@ -67,7 +67,7 @@ const type = async (el: HTMLInputElement, v: string) => {
 };
 
 describe('«Надеть» и «Вернуть»', () => {
-  it('«Надеть на…» → Caren (вещей нет): вещь у неё, «Начал собирать», «Вернуть» — как было', async () => {
+  it('«Надеть на…» → Caren (вещей нет): вещь у неё, «Начал собирать» без отметок (Р19), «Вернуть» — как было', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
     await click($('.v-equip'));
@@ -77,6 +77,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.gear-toast')?.textContent).toContain('On Caren: helmet. Counts in Speed, Speed/Immu.');
     expect($('.gear-toast small')?.textContent).toContain('Started filling Speed, Speed/Immu.');
     expect(stored()).toMatchObject({ v: 2, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: null } } });
+    expect(stored().marks ?? {}).toEqual({});
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored()).toMatchObject({ pieces: {}, pools: {}, marks: {} });
   });
@@ -477,16 +478,18 @@ describe('«Сейчас на персонажах»', () => {
     expect(row.textContent).toMatch(/Fits once the Penetration (gloves|boots) are marked Breakthrough T4\./);
   });
 
-  it('после переноса v1: Ame собирает DPS speed (Caracal) — Pen-вещь исхода не даёт, только «начнёт собираться»', async () => {
+  // было: Caracal начинал только отмеченный переносом DPS speed, Pen-шлем — «начнёт». Р18: оружие из списка начинает
+  // билд, а Caracal — в списке всех билдов Ame: все начаты, Pen-шлем в DPS pen — «сет 1 из 4», остальные не трогает
+  it('после переноса v1: Caracal у Ame из списка всех билдов (Р18) — Pen-вещь в DPS pen «сет 1 из 4», не «начнёт»', async () => {
     const ame = char('Mystic Sage Ame');
     const caracal = D.weapons.find((w) => w.name.startsWith('Rampaging Caracal') && w.star === 6)!;
     const v1 = { v: 1, seq: 1, pieces: { p1: P('p1', 'weapon', null, { CHC: 1 }, { itemKey: caracal.key, main: 'ATK%' }) }, builds: { [ame.id + '/DPS speed']: { slots: { weapon: 'p1' }, at: '' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Penetration'), subs: { 'ATK%': 3, CHC: 3, CHD: 2, SPD: 2 } }, { gear: v1, roster: [ame.id] });
     await click($('.vcard'));
     const row = byText('.v-vs .vs-row', 'Mystic Sage Ame')!;
-    expect(row.querySelector('.vs')?.textContent).toBe('starts');
-    expect(row.querySelector('.vs-cmp')).toBeNull();
-    expect(row.textContent).toContain('it starts filling');
+    expect(row.querySelector('.vs')?.textContent).toBe('set 1 of 4');
+    expect(row.textContent).toContain('Leaves DPS speed, DPS revenge, DPS attack, Sub-DPS, Immu as is.');
+    expect(row.textContent).not.toContain('it starts filling');
   });
 });
 

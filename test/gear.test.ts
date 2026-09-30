@@ -239,15 +239,23 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect(r.st.pieces.p1).toEqual(p);
   });
 
-  it('начинает билд, который не собирался: «Собираю» для него; «Вернуть» снимает отметку', () => {
-    // у Caren собран Speed ×4 (Speed/Immu — «Не собираю»); первая Immunity-вещь начинает Def/Immu (Р14), а в Speed не
-    // встаёт — Def/Immu «Собираю». Было (до Р14): Immunity-шлем уже в пуле «без дела», вторая Immunity собирала
-    // Immunity ×2; теперь первая Immunity уже начала Def/Immu, и отметка не нужна
+  // было: Def/Immu получал «Собираю». Р19: «Надеть» отметок не ставит — Def/Immu начат вещью и собирается сам
+  it('начинает билд, который не собирался: отметок нет (Р19), он собирается сам и назван в began', () => {
+    // у Caren собран Speed ×4 (Speed/Immu — «Не собираю»); первая Immunity-вещь начинает Def/Immu (Р14), в Speed не встаёт
     const st = { ...four(), marks: { [K]: 'want' as const, [K2]: 'skip' as const } };
     const r = putOn(ctx, st, CAREN, { ...helmet({ RES: 1 }), slot: 'armor', setId: set('Immunity') });
-    expect(r.marks).toEqual([buildKey(CAREN, 'Def/Immu')]);
-    expect(r.st.marks).toMatchObject({ [buildKey(CAREN, 'Def/Immu')]: 'want' });
-    expect(undoPut(r.st, CAREN, r).marks).toEqual({ [K]: 'want', [K2]: 'skip' });
+    expect({ marks: r.marks, stored: r.st.marks, began: r.began }).toEqual({ marks: [], stored: { [K]: 'want', [K2]: 'skip' }, began: [buildKey(CAREN, 'Def/Immu')] });
+    expect(poolView(ctx, r.st).of(CAREN)!.inPlay.map((v) => v.key)).toContain(buildKey(CAREN, 'Def/Immu'));
+  });
+
+  it('Р19: первая Speed-вещь — отметок нет, began — Speed и Speed/Immu (тост «Начал собирать»)', () => {
+    const r = putOn(ctx, EMPTY_GEAR, CAREN, helmet({ CHC: 2 }));
+    expect({ marks: r.marks, stored: r.st.marks ?? {}, began: r.began }).toEqual({ marks: [], stored: {}, began: [K, K2] });
+  });
+
+  it('Р19: «Не собираю» у начатого вещью билда остаётся — он не собирается и не в began', () => {
+    const r = putOn(ctx, { ...EMPTY_GEAR, marks: { [K2]: 'skip' } }, CAREN, helmet({ CHC: 2 }));
+    expect({ stored: r.st.marks, began: r.began }).toEqual({ stored: { [K2]: 'skip' }, began: [K] });
   });
 
   it('«Убрать у Caren» — только у неё; «Разобрал — убрать у всех» — у всех; «Вернуть» — обратно', () => {
@@ -401,11 +409,10 @@ describe('«Надеть» в примерке', () => {
   const K3 = buildKey(CAREN, 'Def');
   const K4 = buildKey(CAREN, 'Def/Immu');
 
-  // было: вещь встала только в цель примерки — «Собираю» не ставилось, и после примерки новый шлем «больше не нужна».
-  // Она же начинает Def/Immu (Р14) — «Собираю» и ему, как всем, что она начинает, не встав в собираемые
-  it('встала только в цель примерки — цель становится «Собираю»', () => {
+  // было: отметки [Def, Def/Immu]. Р19: Defense-шлем сам начинает цель (и Def/Immu) — «Собираю» не нужен
+  it('начинает цель примерки — отметок нет, began — Def и Def/Immu', () => {
     const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
-    expect(r.marks).toEqual([K3, K4]);
+    expect({ marks: r.marks, began: r.began }).toEqual({ marks: [], began: [K3, K4] });
   });
 
   it('старый Defense-шлем уже начал Def (Р14): новый в примерке Def заменяет его, отметок нет', () => {
@@ -414,18 +421,35 @@ describe('«Надеть» в примерке', () => {
     expect({ marks: r.marks, removed: r.removed.map((p) => p.id) }).toEqual({ marks: [], removed: ['p5'] });
   });
 
-  it('после конца примерки новый шлем не «ненужный»: Def собирается по отметке', () => {
+  it('после конца примерки новый шлем не «ненужный»: Def начат им и собирается сам', () => {
     const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
     expect(poolView(ctx, r.st).of(CAREN)!.unused).toEqual([]);
   });
 
+  // было: цель «Не собираю» становилась «Собираю» (и Def/Immu). Р18, Р19: шлем держит Def/Immu, который собирается сам, —
+  // вещь не только в цели, «Не собираю» у Def остаётся
+  it('у цели «Не собираю», вещь стоит и в собираемом Def/Immu — отметки нет, «Не собираю» остаётся', () => {
+    const r = putOn(ctx, { ...st, marks: { [K3]: 'skip' } }, CAREN, DEF, { tryOn: K3 });
+    expect({ marks: r.marks, stored: r.st.marks }).toEqual({ marks: [], stored: { [K3]: 'skip' } });
+  });
+
+  // Р19, исключение: Pen-шлем со слабыми статами встаёт только в Pen (цель, «Не собираю»): ни в Speed-вариантах, ни в
+  // «По статам» (там Speed-шлем лучше) его нет — без отметки после примерки он «больше не нужна»
+  const PEN = buildKey(CAREN, 'Pen');
+  const PENH = A('helmet', 'Penetration', { RES: 1, EFF: 1 });
+  it('встала только в цель примерки («Не собираю») — цель «Собираю», began — она', () => {
+    const r = putOn(ctx, { ...st, marks: { [PEN]: 'skip' } }, CAREN, PENH, { tryOn: PEN });
+    expect({ marks: r.marks, stored: r.st.marks, began: r.began }).toEqual({ marks: [PEN], stored: { [PEN]: 'want' }, began: [PEN] });
+    expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).not.toContain(r.id);
+  });
+
   // было: «Вернуть» снимало отметку совсем — «Не собираю» пропадало
-  it('у цели «Не собираю»: «Надеть» ставит «Собираю», «Вернуть» — хранилище как до «Надеть», отметки байт в байт', () => {
-    const skip: GearStore = { ...st, marks: { [K3]: 'skip' } };
-    const r = putOn(ctx, skip, CAREN, DEF, { tryOn: K3 });
+  it('«Вернуть» после отметки цели — хранилище как до «Надеть», «Не собираю» байт в байт', () => {
+    const skip: GearStore = { ...st, marks: { [PEN]: 'skip' } };
+    const r = putOn(ctx, skip, CAREN, PENH, { tryOn: PEN });
     const back = undoPut(r.st, CAREN, r);
     // seq не откатывается (как всегда у «Вернуть»): номер вещи не переиспользуется
-    expect({ put: r.st.marks, back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ put: { [K3]: 'want', [K4]: 'want' }, back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
+    expect({ back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
   });
 
   it('встала и в собираемый без примерки вариант — отметки нет', () => {
