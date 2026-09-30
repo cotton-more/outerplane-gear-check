@@ -645,6 +645,7 @@ export const en: Texts = {
     offBuild: (build, set, combos) => (set ? `Not for ${build}: ${set} isn't in its combos.` : `Not for ${build}: it needs ${combos}.`),
     offStats: (name) => `It fits ${name} by stats — "Equip" puts it in "By stats".`,
     noStats: (name) => `This piece gives ${name} nothing: no useful stats.`,
+    noClass: (name) => `${name} can't wear this item: it's for another class.`,
     slot: 'Try on',
     replace: 'Try a replacement',
     build: 'Gear up this build',

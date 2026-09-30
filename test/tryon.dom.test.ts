@@ -293,4 +293,15 @@ describe('примерка и «По статам» (находка 28)', () => 
     await click($('.vcard'));
     expect($('.v-off')?.textContent).toBe(`This piece gives ${drakhan.name} nothing: no useful stats.`);
   });
+
+  // повторное ревью, мелочь 6: Mage-оружие у Aer (Striker) — было «полезных статов нет» (цель «По статам») или ничего
+  // (цель — билд); причина — класс
+  const aer = D.chars.find((c) => c.name === 'Aer')!;
+  const ODYSSEY = { itemKey: '17', main: 'ATK%', subs: { 'DMG UP%': 2, CHC: 2, CHD: 1, SPD: 1 } }; // Thumping Odyssey — только Mage
+  it.each([['#stats'], ['Speed']])('примерка Aer (%s), оружие не для класса: «не носит этот предмет», кнопки нет', async (build) => {
+    await mount({ slot: 'weapon', grade: 'unique' }, ODYSSEY, { roster: [aer.id], gear: EMPTY, tryon: { charId: aer.id, build } });
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vcard'));
+    expect($('.v-off')?.textContent).toBe("Aer can't wear this item: it's for another class.");
+  });
 });

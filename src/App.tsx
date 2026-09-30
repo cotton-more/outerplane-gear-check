@@ -34,6 +34,7 @@ import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
 import { offLine, targetName, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, withMaterial } from './logic/material';
+import { wearable } from './logic/vs';
 import { withWorn } from './logic/worn';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
@@ -145,8 +146,10 @@ export function App() {
     return charsVs(ctx, view, input, chars);
   }, [ctx, view, raw, worn, verdict, target, targetVs, statVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя); по
-  // статам подходит — ещё «…«Надеть» положит её в «По статам»». Цель «По статам», а полезных статов нет — так и сказать
+  // статам подходит — ещё «…«Надеть» положит её в «По статам»». Цель «По статам», а полезных статов нет — так и сказать.
+  // Оружие или аксессуар не для класса цели — причина в классе, а не в статах или билде
   const offNote = !target || verdict.v === 'idle' ? null
+    : !wearable(ctx, target.c, input) ? t.tryon.noClass(target.c.name)
     : isStats(target.v) ? (targetVs ? null : t.tryon.noStats(target.c.name))
       : statVs ? [isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : '', t.tryon.offStats(target.c.name)].filter(Boolean).join(' ')
         : !targetVs && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
