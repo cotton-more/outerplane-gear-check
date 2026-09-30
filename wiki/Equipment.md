@@ -76,7 +76,8 @@ stays with Rin (in Speed).") or it can feed the new one's Breakthrough. Two remo
 characters: take it off in the game and check it like a new one. "Undo" puts things back.
 
 **"Is this Rin's helmet?"** — when the same piece (slot, set, main and yellow segments) is already with another
-character:
+character and Rin's record would fit Caren the same way as the piece on the form (otherwise there's no window — Caren
+gets a separate piece):
 - **"Same piece — Caren too"** — one piece for both: Reforge and Breakthrough are shared, edits show for both. In the game
   one hero wears it at a time — here you just see that both need it;
 - **"Another copy"** — a second copy in the inventory: Caren gets a separate piece.
@@ -135,8 +136,9 @@ holds the stamp and where the piece goes into the assembly, or when the piece st
 
 - **completes** — the combo gets complete; **set 3 of 4** — the build gets closer to done;
 - **empty slot** — takes a free slot (e.g. "beyond Speed ×2");
-- **▲ +25%** / **▼ −14%** — better or worse than what's in the build: two chains side by side, places "+CHD (3rd) · −SPD
-  (4th)", the percentage is useful segments weighted by chain place, counting the Reforges ahead;
+- **▲ +25%** / **▼ −14%** — better or worse than what's in the build (or the character's piece of its set in that slot —
+  then it's not "breaks a set"): two chains side by side, places "+CHD (3rd) · −SPD (4th)", the percentage is useful
+  segments weighted by chain place, counting the Reforges ahead;
 - **on par** — including "on par: Speed ×2 at T4", when the new piece, until it's T4, would switch the bonus off;
 - **breaks a set** — better by segments, but it fits only in a set piece's place and the set falls apart. A line says
   which piece would fix it — only if the new one would then really get "Equip": "Fits once you find another Penetration
