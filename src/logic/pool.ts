@@ -406,8 +406,9 @@ export interface Outcome {
   kind: OutcomeKind;
   used: boolean;              // вещь встала в сборку (A1)
   delta: number | null;       // выигрыш итога к ценности вытесненного; без вещи в сборке — к вещи в её слоте
-  pair: Pair | null;          // против вещи в её слоте (как в сравнении с надетым): места цепочки, материал, пассивка
-  worn: Entry | null;         // что сейчас в её слоте
+  pair: Pair | null;          // против вещи в её слоте (как в сравнении с надетым): места цепочки, материал, пассивка;
+                              // П7 — против вещи пула её сета и слота не хуже (rivalOf)
+  worn: Entry | null;         // что сейчас в её слоте; П7 — та вещь пула
   displaced: Entry[];         // что уходит из сборки
   broken: string | null;      // сет, который распадётся: в «ломает» — поэтому не встала; в «лучше» — распадётся, но выгодно
   // «ломает»: ещё одна вещь этого сета в эти слоты — встанет; mark — не новая вещь, а Breakthrough T4 у вещей сета
@@ -528,6 +529,19 @@ function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: Ite
   return markSome(ctx, c, v, pieces, x, set, open);
 }
 
+// П7: вещь пула её сета и её слота, с которой новая не встанет ни при каких отметках, — лучшая по ценности, не
+// дешевле новой. Замена новой на неё в любой раскладке счёт не ухудшает: сет и слот те же, ценность не меньше,
+// старшинство выше (при равенстве остаётся старшая, NEWEST), а T4 у неё (или отметка T4) бонус сета только добавляет
+// (bonusRows: строки T4 вместо T0 или сверху; бонус T4 в данных не меньше T0). У новой bt всегда null — не T4
+function rivalOf(es: readonly Entry[], X: Entry): Entry | null {
+  let best: Entry | null = null;
+  for (const e of es) {
+    if (!e.piece || e.slot !== X.slot || e.setId !== X.setId || e.v < X.v - EPS) continue;
+    if (!best || e.v > best.v + EPS || (Math.abs(e.v - best.v) <= EPS && e.num < best.num)) best = e;
+  }
+  return best;
+}
+
 // with — сборка с ней, если уже есть (play с вещью считает все варианты)
 function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, entering: boolean, with_?: Assembly): Outcome | null {
   const es = entriesFor(ctx, c, v, pieces, x);
@@ -589,6 +603,13 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
   const rest = { ...base, ...bd, used: false, delta: d, displaced, after: forced };
   if (broken) {
     if (!betterBySegs) return { ...rest, kind: byDelta(d), broken };
+    // П7: в пуле уже есть вещь её сета в её слоте не хуже — исход по ней («на уровне» / «хуже»), не «ломает»: совет
+    // ложный, штамп держать незачем
+    const rival = rivalOf(es, X);
+    if (rival) {
+      const p = against(ctx, c, v.b, x, rival.piece!, X.fit);
+      return { ...rest, kind: byDelta(p.delta), pair: p, worn: rival, delta: p.delta, broken };
+    }
     const fix = markUnknown(ctx, c, v, pieces, x, broken) ?? fixFor(ctx, c, v, pieces, x, forced, before, broken) ?? markFor(ctx, c, v, pieces, x, before, broken);
     return { ...rest, kind: 'breaks', broken, fix, brokenSegs: segsOf(bd.lostBonus, broken) };
   }

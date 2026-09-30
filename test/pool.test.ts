@@ -15,6 +15,8 @@ import { decodeItem, MAINS } from '../src/logic/itemCode';
 import type { Subs } from '../src/logic/subs';
 import type { ItemInput } from '../src/logic/verdict';
 import { variantsOf, type Variant } from '../src/logic/variants';
+import { evaluate } from '../src/logic/evaluate';
+import { withWorn } from '../src/logic/worn';
 import { fit } from '../src/logic/vs';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -636,6 +638,49 @@ describe('Pen mix без T4 (Р2)', () => {
     const t4 = pen.map((p, i) => (i < 2 ? { ...p, bt: 4 as Bt } : p));
     const r = outcomeFor(ctx, poolView(ctx, store(luna, [...t4, ...atk])), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
     expect(r.fix?.mark ?? false).toBe(false);
+  });
+
+  // П7 (находка «Ломает» при вещи пула не хуже, refute-a3): в пуле уже есть Attack-шлем сильнее новой — новая не встанет
+  // ни при каких отметках (встанет он): исход по нему, «хуже», а не «ломает» с ложным советом
+  describe('П7: в пуле уже есть вещь её сета в её слоте не хуже', () => {
+    const rosterCtx = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([luna.id]));
+    const withHelmet = (subs: Subs, bt: Bt | null = null) => {
+      const { pieces } = lunaPool();
+      const helmet = P('helmet', 'Attack', subs, bt);
+      return { helmet, pieces: [...pieces, helmet] };
+    };
+    const rowOf = (pieces: Piece[], c = ctx) => outcomeFor(c, poolView(c, store(luna, pieces)), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!;
+
+    it('Attack-шлем пула сильнее новой — «хуже» против него, не держит, совета нет', () => {
+      const { helmet, pieces } = withHelmet(STRONG);
+      const r = rowOf(pieces);
+      expect(r).toMatchObject({ kind: 'down', used: false, fix: null, worn: { id: helmet.id } });
+      expect(holds(r)).toBe(false);
+    });
+
+    it('тот же пул: штамп понижен (ростер — Luna), а не «Оставить» из-за «ломает»', () => {
+      const { pieces } = withHelmet(STRONG);
+      const w = withWorn(rosterCtx, poolView(rosterCtx, store(luna, pieces)), HELMET, evaluate(rosterCtx, HELMET));
+      expect(w.worn).toBe('lower');
+    });
+
+    it('Attack-шлем пула на T4 и сильнее — тоже не «ломает»: T4 у него бонус сета только добавляет', () => {
+      const { pieces } = withHelmet(STRONG, 4);
+      expect(rowOf(pieces)).toMatchObject({ kind: 'down', fix: null });
+    });
+
+    it('сторож: Attack-шлем пула слабее новой — исход прежний: «ломает», совет «отметить у двух»', () => {
+      const { pieces } = withHelmet({ 'ATK%': 2, RES: 2 });
+      const was = rowOf(lunaPool().pieces);
+      const r = rowOf(pieces);
+      expect(r).toMatchObject({ kind: 'breaks', fix: { mark: true, slots: ['armor', 'gloves'] } });
+      expect(r.fix!.slots).toEqual(was.fix!.slots);
+    });
+
+    it('сторож: сильный шлем пула другого сета — «ломает» остаётся (сравниваются вещи её сета)', () => {
+      const { pieces } = lunaPool();
+      expect(rowOf([...pieces, P('helmet', 'Critical Strike', STRONG)]).kind).toBe('breaks');
+    });
   });
 });
 

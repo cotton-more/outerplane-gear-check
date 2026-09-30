@@ -71,6 +71,23 @@ describe('ценность бонуса', () => {
     expect(D.sets.find((s) => s.short === 'Critical Strike')!.bonus).toMatchObject({ t4: { p2: { stat: 'CHD', value: 33 }, p4: { value: 22 } }, t0: { p2: { value: 20 }, p4: { value: 15 } } });
   });
 
+  // на этом стоит П7 (logic/pool rivalOf): вещь сета в том же слоте на T4 не хуже такой же не на T4
+  it('ещё одна вещь на T4 бонус сета не уменьшает: сумма по стату и самая большая строка (2P/4P) не меньше', () => {
+    const bad: string[] = [];
+    for (const s of D.sets) {
+      for (let n = 2; n <= 4; n++) {
+        for (let n4 = 0; n4 < n; n4++) {
+          const at = (k: number) => bonusRows(idx.SET, Array.from({ length: n }, (_, i) => ({ setId: s.id, bt: i < k ? 4 : 0 })));
+          const by = (rows: ReturnType<typeof bonusRows>) => rows.reduce((m, r) => m.set(r.bon.stat, (m.get(r.bon.stat) ?? 0) + r.bon.value), new Map<string | null, number>());
+          const was = at(n4), now = at(n4 + 1), a = by(was), z = by(now);
+          const top = (rows: typeof was) => Math.max(0, ...rows.map((r) => r.n));
+          if (top(now) < top(was) || [...a].some(([k, v]) => (z.get(k) ?? 0) < v)) bad.push(`${s.short} ${n} шт., T4 ${n4} → ${n4 + 1}`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
   it('старый снимок без bonus: строки по тексту, без чисел', () => {
     const { bonus: _, ...old } = idx.SET[set('Attack')];
     expect(bonusRows({ [old.id]: old }, pieces('Attack', 0, 0)).map((r) => r.bon)).toEqual([{ stat: null, value: 0, mode: 'add' }]);
