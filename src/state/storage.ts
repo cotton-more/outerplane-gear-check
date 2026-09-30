@@ -11,6 +11,14 @@ export const storage = {
       return fallback;
     }
   },
+  // строка как есть (null — нет или хранилища нет): узнать, поменялось ли записанное
+  raw(key: string): string | null {
+    try {
+      return localStorage.getItem(PREFIX + key);
+    } catch {
+      return null;
+    }
+  },
   set(key: string, value: unknown): void {
     try {
       localStorage.setItem(PREFIX + key, JSON.stringify(value));

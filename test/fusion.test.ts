@@ -1,0 +1,180 @@
+// Core Fusion (logic/fusion, правила владельца 2026-09-30): нормализация {ростер, хранилище} — есть X и Core Fusion X,
+// остаётся CF; вещи X переходят к CF, если у CF пусто, иначе убраны (общие записи остаются у других); окно перехода
+// в обе стороны и его «Вернуть»; загрузка v1 и v2 и код копии — через ту же нормализацию.
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { createIndex } from '../src/data';
+import type { Dataset } from '../src/data/types';
+import { buildKey, type GearStore, type Piece } from '../src/logic/gear';
+import { normalizeFusion, replacedX, switchFusion } from '../src/logic/fusion';
+import { makeCtx } from '../src/logic/context';
+import { evaluate } from '../src/logic/evaluate';
+import { encodeGear, loadGear, unfuseChar } from '../src/logic/gearStore';
+
+const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
+const idx = createIndex(D);
+const id = (name: string) => D.chars.find((c) => c.name === name)!.id;
+const [X, CF, CAREN, KAPPA] = [id('Eternal'), id('Core Fusion Eternal'), id('Caren'), id('Kappa')];
+const speed = D.sets.find((s) => s.short === 'Speed')!.id;
+const P = (pid: string, slot: Piece['slot'] = 'helmet'): Piece =>
+  ({ id: pid, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' });
+const v2 = (pools: Record<string, string[]>, extra: Partial<GearStore> = {}): GearStore => {
+  const ids = [...new Set(Object.values(pools).flat())];
+  return { v: 2, seq: ids.length, pieces: Object.fromEntries(ids.map((pid) => [pid, P(pid)])), pools, ...extra };
+};
+const v1 = (builds: Record<string, Record<string, string>>) => {
+  const slots = new Map(Object.values(builds).flatMap((b) => Object.entries(b).map(([slot, pid]) => [pid, slot as Piece['slot']] as const)));
+  return {
+    v: 1, seq: slots.size, pieces: Object.fromEntries([...slots].map(([pid, slot]) => [pid, P(pid, slot)])),
+    builds: Object.fromEntries(Object.entries(builds).map(([k, b]) => [k, { slots: b, at: '' }])),
+  };
+};
+
+describe('нормализация: есть X и Core Fusion X — остаётся Core Fusion', () => {
+  it('оба в ростере, вещей нет — в ростере Core Fusion на месте X', () => {
+    const r = normalizeFusion(idx, [CAREN, X, KAPPA, CF], v2({}));
+    expect(r.roster).toEqual([CAREN, KAPPA, CF]);
+    expect(r.fixes).toEqual([{ base: X, fusion: CF, kind: 'none', ids: [] }]);
+  });
+
+  it('X в ростере, у Core Fusion вещи, его в ростере нет — Core Fusion встаёт на место X', () => {
+    const r = normalizeFusion(idx, [CAREN, X], v2({ [CF]: ['p1'] }));
+    expect(r.roster).toEqual([CAREN, CF]);
+  });
+
+  it('вещи у обоих — у Core Fusion свои как были, вещи X убраны из его пула и стёрты', () => {
+    const r = normalizeFusion(idx, [CF], v2({ [X]: ['p1', 'p2'], [CF]: ['p3'] }));
+    expect(r.st.pools).toEqual({ [CF]: ['p3'] });
+    expect(Object.keys(r.st.pieces)).toEqual(['p3']);
+    expect(r.fixes).toEqual([{ base: X, fusion: CF, kind: 'removed', ids: ['p1', 'p2'] }]);
+  });
+
+  it('вещи только у X, Core Fusion в ростере — вещи переходят к Core Fusion, записи те же', () => {
+    const st = v2({ [X]: ['p1', 'p2'] });
+    const r = normalizeFusion(idx, [X, CF], st);
+    expect(r.st.pools).toEqual({ [CF]: ['p1', 'p2'] });
+    expect(r.st.pieces).toEqual(st.pieces);
+    expect(r.roster).toEqual([CF]);
+    expect(r.fixes[0].kind).toBe('moved');
+  });
+
+  it('общая запись: вещь X, которая есть и у Core Fusion или у другого, остаётся у них; только своя X — стёрта', () => {
+    const r = normalizeFusion(idx, [CF], v2({ [X]: ['p1', 'p2', 'p3'], [CF]: ['p1'], [KAPPA]: ['p2'] }));
+    expect(r.st.pools).toEqual({ [CF]: ['p1'], [KAPPA]: ['p2'] });
+    expect(Object.keys(r.st.pieces).sort()).toEqual(['p1', 'p2']);
+  });
+
+  it('оба только с вещами, в ростере никого из них — ростер не трогаем', () => {
+    const r = normalizeFusion(idx, [CAREN], v2({ [X]: ['p1'], [CF]: ['p2'] }));
+    expect(r.roster).toEqual([CAREN]);
+  });
+
+  it('отметки «Собираю» X не переносятся к Core Fusion, подсказка autoNew X убрана', () => {
+    const st = v2({ [X]: ['p1'] }, { marks: { [buildKey(X, 'Speed')]: 'want' }, autoNew: [buildKey(X, 'Speed'), buildKey(CAREN, 'Speed')] });
+    const r = normalizeFusion(idx, [CF], st);
+    expect(Object.keys(r.st.marks ?? {}).filter((k) => k.startsWith(CF + '/'))).toEqual([]);
+    expect(r.st.autoNew).toEqual([buildKey(CAREN, 'Speed')]);
+  });
+
+  it('конфликта нет — то же хранилище (без записи), тот же ростер', () => {
+    const st = v2({ [CF]: ['p1'], [CAREN]: ['p2'] });
+    const r = normalizeFusion(idx, [CF, CAREN], st);
+    expect(r.st).toBe(st);
+    expect(r.roster).toEqual([CF, CAREN]);
+    expect(r.fixes).toEqual([]);
+  });
+
+  it('повторная нормализация ничего не меняет', () => {
+    const once = normalizeFusion(idx, [X, CF], v2({ [X]: ['p1'], [CF]: ['p2'] }));
+    const twice = normalizeFusion(idx, once.roster, once.st);
+    expect(twice.fixes).toEqual([]);
+    expect(twice.st).toBe(once.st);
+  });
+});
+
+describe('кто неактивен', () => {
+  it('Core Fusion в ростере или с вещами — X неактивен; нет Core Fusion — все активны', () => {
+    expect([...replacedX(idx, [CF], {})]).toEqual([[X, CF]]);
+    expect([...replacedX(idx, [], { [CF]: ['p1'] })]).toEqual([[X, CF]]);
+    expect([...replacedX(idx, [X], { [X]: ['p1'] })]).toEqual([]);
+  });
+});
+
+describe('неактивный X — не кандидат вердикта', () => {
+  const settings = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
+  const item = { slot: 'helmet' as const, grade: 'unique' as const, setId: speed, itemKey: null, main: null, subs: { SPD: 2, CHC: 2, CHD: 2 } };
+  const rowsOf = (off: Map<string, string>, roster: string[], rosterOnly: boolean) =>
+    evaluate(makeCtx(idx, { ...settings, rosterOnly }, new Set(roster), undefined, off), item, { gamble: false }).sections.flatMap((x) => x.rows.map((r) => r.c.id));
+
+  it('без «только мои»: X нет ни в одном разделе, Core Fusion — есть', () => {
+    const ids = rowsOf(new Map([[X, CF]]), [CF], false);
+    expect({ x: ids.includes(X), cf: ids.includes(CF) }).toEqual({ x: false, cf: true });
+  });
+
+  it('с «только мои»: X нет и среди «не в ростере»', () => {
+    expect(rowsOf(new Map([[X, CF]]), [CF, CAREN], true)).not.toContain(X);
+  });
+
+  it('нет Core Fusion — X кандидат, как раньше', () => {
+    expect(rowsOf(new Map(), [], false)).toContain(X);
+  });
+});
+
+describe('окно перехода', () => {
+  it('«Да, Core Fusion X»: Core Fusion на месте X, вещи X — у него; «Вернуть» — как было', () => {
+    const st = v2({ [X]: ['p1'], [CAREN]: ['p2'] });
+    const sw = switchFusion(idx, [CAREN, X], st, CF)!;
+    expect(sw.roster).toEqual([CAREN, CF]);
+    expect(sw.st.pools).toEqual({ [CAREN]: ['p2'], [CF]: ['p1'] });
+    expect(unfuseChar(sw.st, sw.from, sw.to, sw).pools).toEqual(st.pools);
+  });
+
+  it('«Да, X»: X в ростере, Core Fusion нет, вещи Core Fusion — у X; «Вернуть» — как было', () => {
+    const st = v2({ [CF]: ['p1', 'p2'] });
+    const sw = switchFusion(idx, [CF, KAPPA], st, X)!;
+    expect(sw.roster).toEqual([X, KAPPA]);
+    expect(sw.st.pools).toEqual({ [X]: ['p1', 'p2'] });
+    expect(unfuseChar(sw.st, sw.from, sw.to, sw).pools).toEqual(st.pools);
+  });
+
+  it('X только с вещами, не в ростере: Core Fusion добавлен в конец ростера', () => {
+    const sw = switchFusion(idx, [CAREN], v2({ [X]: ['p1'] }), CF)!;
+    expect(sw.roster).toEqual([CAREN, CF]);
+  });
+
+});
+
+describe('загрузка и код: та же нормализация', () => {
+  it('перенос v1: вещи только у X, в ростере X и Core Fusion — вещи у Core Fusion, в ростере он один', () => {
+    const r = loadGear(v1({ [buildKey(X, 'Speed')]: { helmet: 'p1' } }), idx, [X, CF]);
+    expect(r.st.pools).toEqual({ [CF]: ['p1'] });
+    expect(r.roster).toEqual([CF]);
+  });
+
+  it('перенос v1: вещи у обоих — у Core Fusion его вещи, вещи X убраны', () => {
+    const r = loadGear(v1({ [buildKey(X, 'Speed')]: { helmet: 'p1' }, [buildKey(CF, 'Speed')]: { helmet: 'p2' } }), idx, []);
+    expect(r.st.pools).toEqual({ [CF]: ['p2'] });
+    expect(Object.keys(r.st.pieces)).toEqual(['p2']);
+  });
+
+  it('перенос v1: autoNew — по итоговым пулам: у X без вещей его нет, у Core Fusion — по перешедшим вещам', () => {
+    const [eps, cfEps] = [id('Epsilon'), id('Core Fusion Epsilon')];
+    const r = loadGear(v1({ [buildKey(eps, 'Speed')]: { helmet: 'p1', armor: 'p2' } }), idx, [cfEps]);
+    const autoNew = r.st.autoNew ?? [];
+    expect(autoNew.filter((k) => k.startsWith(eps + '/'))).toEqual([]);
+    expect(autoNew.some((k) => k.startsWith(cfEps + '/'))).toBe(true);
+  });
+
+  it('перенос v1: одна запись в билдах X и Core Fusion — остаётся у Core Fusion', () => {
+    const r = loadGear(v1({ [buildKey(X, 'Speed')]: { helmet: 'p1', armor: 'p2' }, [buildKey(CF, 'Speed')]: { helmet: 'p1' } }), idx, [CF]);
+    expect({ pools: r.st.pools, pieces: Object.keys(r.st.pieces) }).toEqual({ pools: { [CF]: ['p1'] }, pieces: ['p1'] });
+  });
+
+  it('v2 с обоими — вещи X убраны; тот же код копии — тот же итог', () => {
+    const raw = v2({ [X]: ['p1'], [CF]: ['p2'] });
+    const r = loadGear(raw, idx, [X]);
+    expect({ pools: r.st.pools, roster: r.roster }).toEqual({ pools: { [CF]: ['p2'] }, roster: [CF] });
+    expect(loadGear(JSON.parse(JSON.stringify(raw)), idx, [X]).st).toEqual(r.st);
+    expect(encodeGear(r.st).startsWith('OGC-GEAR2 ')).toBe(true);
+  });
+});

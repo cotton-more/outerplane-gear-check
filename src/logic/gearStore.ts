@@ -1,9 +1,11 @@
 // Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 → v2 (GEARPOOL), код OGC-GEAR2.
 // Перенос детерминированный: все вещи v1 — в пул персонажа (запись у двух персонажей — в оба пула, без копии),
-// билды v1 с вещами — «Собираю». Ни одна вещь и ни одно поле не теряются: билды v1 как были — в v1builds (не читается).
+// билды v1 с вещами — «Собираю». Ни одна вещь и ни одно поле не теряются (билды v1 как были — в v1builds, не читается),
+// кроме правила Core Fusion (logic/fusion): у X и у Core Fusion X вещи — вещи X убраны.
 import { GRADES, SLOTS, isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import { makeCtx } from './context';
+import { normalizeFusion, type FusionFix } from './fusion';
 import { buildKey, gc, MAX_LIT, type Bt, type GearStore, type Mark, type Piece } from './gear';
 import { isStats, play } from './pool';
 import { MAX_SUBS, type Subs } from './subs';
@@ -71,8 +73,8 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 // (от них зависит только «временная» у оружия в «Развитии»)
 const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
 
-// перенос v1 → v2
-export function migrateV1(v1: GearStoreV1, idx: Index): GearStore {
+// перенос v1 → v2. Core Fusion — по ростеру (logic/fusion) до подсказки autoNew: она — по итоговым пулам (находка 16)
+function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   const { builds, v: _, ...rest } = v1;
   const pools: Record<string, string[]> = {};
   const marks: Record<string, Mark> = {};
@@ -83,15 +85,16 @@ export function migrateV1(v1: GearStoreV1, idx: Index): GearStore {
     const c = idx.CHAR[charId];
     if (c?.builds.some((b) => buildKey(c.id, b.name) === k)) marks[k] = 'want';
   }
+  const n = normalizeFusion(idx, roster, gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, v1builds: builds }));
   const ctx = makeCtx(idx, MIGRATE_SETTINGS, new Set());
   const autoNew: string[] = [];
-  for (const [charId, ids] of Object.entries(pools)) {
+  for (const [charId, ids] of Object.entries(n.st.pools)) {
     const c = idx.CHAR[charId];
     if (!c) continue;
-    const p = play(ctx, c, ids.map((id) => v1.pieces[id]), { marks });
+    const p = play(ctx, c, ids.map((id) => n.st.pieces[id]), { marks });
     for (const v of p.inPlay) if (!isStats(v) && !builds[v.parentKey]) autoNew.push(v.key);
   }
-  return gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, ...(autoNew.length ? { autoNew } : {}), v1builds: builds });
+  return { ...n, st: autoNew.length ? { ...n.st, autoNew } : n.st };
 }
 
 // v2: пулы — массивы строк, id только существующих вещей, без повторов; отметки — 'want' / 'skip'
@@ -113,26 +116,15 @@ function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
   });
 }
 
-// Core Fusion X заменяет X (решение владельца): вещи есть у обоих (перенос v1, импорт кода, старая запись) —
-// вещи X переходят к Core Fusion X (те же записи), пул X убран. «Собираю» X не переносим: билды другие
-export function mergeFused(st: GearStore, idx: Index): GearStore {
-  let pools = st.pools;
-  for (const [base, fusion] of Object.entries(idx.FUSED)) {
-    if (!pools[base]?.length || !pools[fusion]?.length) continue;
-    const { [base]: moved, ...rest } = pools;
-    pools = { ...rest, [fusion]: [...pools[fusion], ...moved.filter((id) => !pools[fusion].includes(id))] };
-  }
-  return pools === st.pools ? st : { ...st, pools };
+// из хранилища или кода: v1 — проверка v1 и перенос; v2 — проверка; иначе (мусор, более новая версия) — пусто.
+// Затем Core Fusion по ростеру (logic/fusion): roster и fixes — что поменялось (сообщение после загрузки и импорта)
+export interface Loaded { st: GearStore; roster: string[]; fixes: FusionFix[] }
+export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): Loaded {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown };
+  if (r.v === 1) return migrateV1(restoreV1(r as Partial<GearStoreV1>, idx), idx, roster);
+  return normalizeFusion(idx, roster, r.v === 2 ? restoreV2(r as Partial<GearStore>, idx) : EMPTY);
 }
-
-// из хранилища: v1 — проверка v1 и перенос; v2 — проверка; иначе (мусор, более новая версия) — пусто
-export function restoreGear(raw: unknown, idx: Index): GearStore {
-  if (!raw || typeof raw !== 'object') return EMPTY;
-  const r = raw as { v?: unknown };
-  if (r.v === 1) return mergeFused(migrateV1(restoreV1(raw as Partial<GearStoreV1>, idx), idx), idx);
-  if (r.v === 2) return mergeFused(restoreV2(raw as Partial<GearStore>, idx), idx);
-  return EMPTY;
-}
+export const restoreGear = (raw: unknown, idx: Index, roster: readonly string[] = []): GearStore => loadGear(raw, idx, roster).st;
 const EMPTY: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };
 
 // резервная копия кодом: браузер могут очистить, а переносить между устройствами иначе нечем.
@@ -140,21 +132,26 @@ const EMPTY: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };
 const PREFIX = 'OGC-GEAR';
 export const encodeGear = (st: GearStore): string =>
   `${PREFIX}2 ` + btoa(unescape(encodeURIComponent(JSON.stringify(st)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null {
+// код → то, что в нём записано (проверит loadGear); 'newer' — код новее; null — не код
+export function readGearCode(text: string): unknown {
   const m = /^OGC-GEAR(\d+)\s+([\s\S]+)$/.exec(text.trim());
   if (!m) return null;
   if (Number(m[1]) > 2) return 'newer';
   try {
-    const raw = JSON.parse(decodeURIComponent(escape(atob(m[2].replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/')))));
-    if (newerGear(raw)) return 'newer';
-    const st = restoreGear(raw, idx);
-    return Object.keys(st.pieces).length ? st : null;
+    const raw: unknown = JSON.parse(decodeURIComponent(escape(atob(m[2].replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/')))));
+    return newerGear(raw) ? 'newer' : raw ?? null;
   } catch {
     return null;
   }
 }
+export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null {
+  const raw = readGearCode(text);
+  if (raw === null || raw === 'newer') return raw;
+  const st = restoreGear(raw, idx);
+  return Object.keys(st.pieces).length ? st : null;
+}
 
-// Core Fusion X попал в ростер, а у X есть вещи: они переходят к Core Fusion X. moved — что перешло (для «Вернуть»)
+// вещи base переходят к fusion (и обратно — «Вернуться к X»: base = CF, fusion = X). moved — что перешло (для «Вернуть»)
 export function fuseChar(st: GearStore, base: string, fusion: string): { st: GearStore; moved: string[]; had: string[] } {
   const moved = st.pools[base] ?? [];
   if (!moved.length) return { st, moved: [], had: st.pools[fusion] ?? [] };
@@ -162,7 +159,7 @@ export function fuseChar(st: GearStore, base: string, fusion: string): { st: Gea
   const { [base]: _, ...rest } = st.pools;
   return { st: { ...st, pools: { ...rest, [fusion]: [...had, ...moved.filter((id) => !had.includes(id))] } }, moved, had };
 }
-// «Вернуть»: вещи — снова у X, у Core Fusion X — то, что было; X успели дать что-то своё — не трогаем
+// «Вернуть»: вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем
 export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[] }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;
   const pool = (st.pools[fusion] ?? []).filter((id) => r.had.includes(id) || !r.moved.includes(id));

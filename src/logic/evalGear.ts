@@ -134,7 +134,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     return res;
   }
   const noMainChoice = !item.mains.length && !item.extraMains.length;
-  const all = buildsOf(idx, (b) => gearList(b, kind).some((g) => g.key === item.key));
+  const all = buildsOf(idx, (b) => gearList(b, kind).some((g) => g.key === item.key)).filter((x) => !ctx.off.has(x.c.id)); // без X при Core Fusion X
   const scopedAll = all.filter((x) => ctx.inScope(x.c));
   const wanted = [...new Set(scopedAll.flatMap((x) => gearRef(x.b, kind, item.key).mains))];
   if (!s.main && !noMainChoice) {
@@ -147,7 +147,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const extra = (x: BuildRef) => ({ mains: gearRef(x.b, kind, item.key).mains, mainOk: mainOkFor(x) });
   const rank = (r: Scored) => (r.mainOk ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0);
   const scoped = dedupe(rows(ctx, s.grade, scopedAll, subs, im, extra), rank);
-  const others = dedupe(rows(ctx, s.grade, all.filter((x) => !ctx.inScope(x.c)), subs, im, extra), rank);
+  const others = dedupe(rows(ctx, s.grade, all.filter((x) => ctx.outScope(x.c)), subs, im, extra), rank);
   res.othersKeep = others.filter((r) => r.mainOk); // берут с этим main — строка у понижённой (logic/worn)
   const ok = scoped.filter((r) => r.mainOk);
   const temp = s.main && settings.stage === 'grow'
@@ -183,7 +183,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.v = 'junk';
     res.title = all.length ? G.junkRosterTitle : G.junkNobodyTitle;
     res.lines.push(all.length
-      ? G.onlyOthers(names(all.filter((x) => !ctx.inScope(x.c))))
+      ? G.onlyOthers(names(all.filter((x) => ctx.outScope(x.c))))
       : G.nobody(item.name, settings.stage === 'grow' && s.main ? s.main : null));
     if (settings.stage === 'end' && s.main) res.lines.push(G.endNoTemp);
   }

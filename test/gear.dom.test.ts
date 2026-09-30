@@ -2,7 +2,7 @@
 // Экипировка на телефоне (360px), пул GEARPOOL: вещь с формы — «Надеть на…» → к персонажу, «Вернуть»; «Это шлем
 // Kappa?»; «Заменить» и «Отдать Rin»; «Сейчас на персонажах» — строка на персонажа и «Ещё»; «Кому надеть?» — только
 // полезные строки; карточка персонажа — варианты, «Собираю», «Вещи · N», «По статам», лист вещи и «Убрать у…»;
-// Core Fusion; код копии.
+// код копии. Core Fusion — test/fusion.dom.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -757,81 +757,8 @@ describe('меню, плитки, код копии, другая вкладка
   });
 });
 
-describe('Core Fusion', () => {
-  const [eternal, cfEternal] = ['Eternal', 'Core Fusion Eternal'].map(char);
-
-  it('импорт: все, у кого есть вещи, — в ростер; вещи Eternal и Core Fusion Eternal — у Core Fusion; «Вернуть» убирает и их', async () => {
-    await mount({ tab: 'chars' }, {});
-    const { encodeGear } = await import('../src/logic/gearStore');
-    const code = encodeGear(G([P('p1', 'helmet', speed, { SPD: 2 }), P('p2', 'armor', speed, { SPD: 2 })], { [eternal.id]: ['p1'], [cfEternal.id]: ['p2'] }) as never);
-    await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#gear-code') as HTMLTextAreaElement;
-    ta.value = code;
-    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
-
-    expect(stored().pools).toEqual({ [cfEternal.id]: ['p2', 'p1'] });
-    expect(roster()).toEqual([caren.id, cfEternal.id]);
-    expect($('.gear-toast')?.textContent).toContain('Added to the roster: Core Fusion Eternal.');
-    await click(byText('.gear-toast button', 'Undo'));
-    expect(roster()).toEqual([caren.id]);
-    expect(Object.keys(stored().pieces)).toEqual([]);
-  });
-
-  it('звезда на Core Fusion: X убран, его вещи переходят к Core Fusion; «Вернуть» — и ростер, и вещи', async () => {
-    await mount({ tab: 'chars' }, {}, { roster: [eternal.id], gear: G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] }) });
-    await type($('#char-q') as HTMLInputElement, 'eternal');
-    await click(byText('#cgrid .cwrap', 'Core FusionEternal')?.querySelector('.star') as HTMLElement);
-
-    expect(roster()).toEqual([cfEternal.id]);
-    expect(stored().pools).toEqual({ [cfEternal.id]: ['p1'] });
-    expect($('.gear-toast')?.textContent).toContain("Core Fusion Eternal replaces Eternal in the roster. Eternal's gear moved to Core Fusion Eternal.");
-    await click(byText('.gear-toast button', 'Undo'));
-    expect(roster()).toEqual([eternal.id]);
-    expect(stored().pools).toEqual({ [eternal.id]: ['p1'] });
-  });
-
-  it('«Отметить показанных» с X и Core Fusion X — в ростере только Core Fusion, без сообщения', async () => {
-    await mount({ tab: 'chars' }, {}, { roster: [] });
-    await type($('#char-q') as HTMLInputElement, 'eternal');
-    await click(byText('.roster-bar .linkbtn', 'mark all shown'));
-    expect(roster()).toEqual([cfEternal.id]);
-    expect($('.gear-toast')).toBeNull();
-  });
-
-  it('«Надеть» на Core Fusion, а X в ростере: X убран, строка в сообщении, «Вернуть» — и вещь, и X', async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, eternal.id] });
-    await click($('.vcard'));
-    await click($('.v-equip'));
-    await type($('.equip-q input') as HTMLInputElement, 'core fusion eter');
-    await click(byText('.equip-row', 'Core Fusion Eternal') as HTMLElement);
-    expect(roster()).toEqual([caren.id, cfEternal.id]);
-    expect($('.gear-toast small')?.textContent).toContain('Core Fusion Eternal replaces Eternal in the roster.');
-    await click(byText('.gear-toast button', 'Undo'));
-    expect(roster()).toEqual([caren.id, eternal.id]);
-    expect(Object.keys(stored().pieces)).toEqual([]);
-  });
-
-  it('карточка X при Core Fusion X в ростере: «вещи у Core Fusion» со ссылкой; звезда X — объяснение без «Вернуть»', async () => {
-    await mount({ tab: 'chars', charId: eternal.id }, {}, { roster: [cfEternal.id] });
-    await click($('.own-btn'));
-    expect(roster()).toEqual([cfEternal.id]);
-    expect($('.gear-toast')?.textContent).toBe('After Core Fusion, Eternal is no longer in the game — Core Fusion Eternal stays in the roster.');
-    expect($('.gear-toast button')).toBeNull();
-    await click(byText('.own-row .linkbtn', 'Core Fusion Eternal is in the roster — the gear is with Core Fusion Eternal.'));
-    expect($('.cd-head h2')?.textContent).toBe('Core Fusion Eternal');
-  });
-
-  it('«Кому надеть?» при Core Fusion X в ростере: X нет ни в списке, ни в поиске по имени', async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, cfEternal.id] });
-    await click($('.vcard'));
-    await click($('.v-equip'));
-    const names = () => $$('.equip-row .nm b').map((e) => e.textContent);
-    expect(names()).toContain('Core Fusion Eternal');
-    expect(names()).not.toContain('Eternal');
-    await type($('.equip-q input') as HTMLInputElement, 'eter');
-    expect(names().filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
-  });
-
+// Core Fusion — test/fusion.dom.test.ts
+describe('вещи вне ростера', () => {
   it('звезду сняли, а вещи есть: они остаются — «Вещи X · N — X не в ростере»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
     expect($('.pool summary')?.textContent).toBe("Caren's gear · 1 — Caren isn't in the roster.");

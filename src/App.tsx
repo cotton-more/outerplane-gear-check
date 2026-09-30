@@ -23,7 +23,8 @@ import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate, withPendingDice } from './logic/evaluate';
 import { gearedChars, holdersOf, pieceInput, samePiece, type GearStore, type Piece } from './logic/gear';
-import { fuseChar, unfuseChar } from './logic/gearStore';
+import { loadGear, unfuseChar } from './logic/gearStore';
+import { normalizeFusion, replacedX, switchFusion, type FusionFix } from './logic/fusion';
 import { holds, poolView, putOn, recipientFor, undoPut, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
@@ -39,7 +40,9 @@ import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } fr
 import { storage } from './state/storage';
 import { useAppState } from './state/useAppState';
 import { useGear, type GearApi } from './state/useGear';
-import { useRoster, type RosterApi, type RosterChange } from './state/useRoster';
+import { useRoster, type RosterApi } from './state/useRoster';
+import { readStored } from './state/stored';
+import { FusionAsk } from './components/chars/FusionAsk';
 import { useTryOn } from './state/useTryOn';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
@@ -76,14 +79,6 @@ export function App() {
   // значки из игры вместо своих — только для сравнения, пока свои не утверждены
   const [gameIcons, setGameIcons] = useState(() => storage.get('gameIcons', false));
   const changeIcons = (game: boolean) => { storage.set('gameIcons', game); setGameIcons(game); };
-  const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t), [idx, s.settings, roster, t]);
-  // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
-  const input = itemInput(s);
-  const key = JSON.stringify(input);
-  const quick = useMemo(() => evaluate(ctx, input, { gamble: false }), [ctx, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // кубик Reforge — до 10 пробных оценок (на телефоне заметно): вердикт встаёт сразу, кубик досчитывается следом
-  const later = useDeferredValue(key);
-  const full = useMemo(() => evaluate(ctx, JSON.parse(later) as ItemInput), [ctx, later]);
   // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
   // Вещь — материал Breakthrough для надетой не на T4: «Разобрать» поднимается до «Фоддер» (logic/material)
   const realGear = useGear(idx, !touring);
@@ -93,6 +88,16 @@ export function App() {
   const gear: GearApi = useMemo(() => (demo
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
     : touring ? { ...realGear, set: () => {} } : realGear), [demo, realGear, touring]);
+  // Core Fusion (logic/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и примерке
+  const off = useMemo(() => replacedX(idx, roster, gear.store.pools), [idx, roster, gear.store.pools]);
+  const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off), [idx, s.settings, roster, t, off]);
+  // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
+  const input = itemInput(s);
+  const key = JSON.stringify(input);
+  const quick = useMemo(() => evaluate(ctx, input, { gamble: false }), [ctx, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // кубик Reforge — до 10 пробных оценок (на телефоне заметно): вердикт встаёт сразу, кубик досчитывается следом
+  const later = useDeferredValue(key);
+  const full = useMemo(() => evaluate(ctx, JSON.parse(later) as ItemInput), [ctx, later]);
   // кубик ещё считается: у той же вещи с другим сегментом — прежний кубик, а не строка без него (logic/evaluate)
   const raw = useMemo(() => (later === key ? full : withPendingDice(ctx, input, quick, JSON.parse(later) as ItemInput, full)), [ctx, key, later, full, quick]); // eslint-disable-line react-hooks/exhaustive-deps
   // экипировка по пулу (logic/pool): вид — один раз на хранилище; примерка (logic/tryon) — сравнение только с одним
@@ -100,7 +105,11 @@ export function App() {
   const baseView = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
   const realTry = useTryOn(idx, !touring);
   const tryOn = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : realTry;
-  const target = useMemo(() => (demo ? tryOnTarget(idx, demo.tryOn, baseView) : touring ? null : tryOnTarget(idx, realTry.value, baseView)), [idx, demo, realTry.value, touring, baseView]);
+  // X при Core Fusion X не примеряем (logic/fusion)
+  const target = useMemo(() => {
+    const tg = demo ? tryOnTarget(idx, demo.tryOn, baseView) : touring ? null : tryOnTarget(idx, realTry.value, baseView);
+    return tg && off.has(tg.c.id) ? null : tg;
+  }, [idx, demo, realTry.value, touring, baseView, off]);
   // вариант примерки собирается, даже пустой
   const view = useMemo(() => (target ? poolView(ctx, gear.store, target.v.key) : baseView), [ctx, gear.store, target, baseView]);
   // у кого есть вещи: персонаж → лучший «N/6» (плитки, меню, фильтр «с экипировкой»)
@@ -148,44 +157,76 @@ export function App() {
   // обновление: новые данные — плашка сверху; только приложение — строка в подвале (hooks/usePwa)
   const pwa = usePwa(idx.D.meta.commit);
   const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
-  // Core Fusion X заменяет X в ростере (state/useRoster): что стало — строкой; в пакетных добавлениях (показанные, код
-  // ростера, импорт экипировки) X, которого не добавили, не упоминаем
   const charName = (id: string) => idx.CHAR[id]?.name ?? id;
-  const fusionNote = (ch: RosterChange | null, batch = false) => (!ch ? '' : [
-    ...ch.replaced.map((r) => t.ui.fusionReplaces(charName(r.fusion), charName(r.base))),
-    ...(batch ? [] : ch.refused.map((r) => t.ui.fusionKept(charName(r.base), charName(r.fusion)))),
-  ].join(' '));
-  const undoRoster = (ch: RosterChange | null) => (ch && (ch.added.length || ch.replaced.length) ? () => rosterApi.revert(ch) : undefined);
-  // Core Fusion X в ростере, а у X есть вещи, — они переходят к Core Fusion X (и когда X в ростер не пустили)
-  type Fused = { base: string; fusion: string; r: { moved: string[]; had: string[] } };
-  const fuseAll = (st: GearStore, ch: RosterChange): { st: GearStore; fused: Fused[] } => {
-    const fused: Fused[] = [];
-    for (const { base, fusion } of [...ch.replaced, ...ch.refused]) {
-      const f = fuseChar(st, base, fusion);
-      if (f.moved.length) { st = f.st; fused.push({ base, fusion, r: f }); }
-    }
-    return { st, fused };
+  // Core Fusion (logic/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
+  const fixesNote = (fixes: FusionFix[]) => fixes.map((f) => t.ui.fusionFixed(charName(f.base), f.kind)).join(' ');
+  // после загрузки: Core Fusion оставлен в ростере — сказать, что стало с X (хранилище — после первого действия игрока)
+  useEffect(() => {
+    const { fixes } = readStored(idx);
+    if (fixes.length) setGearUndo({ text: fixesNote(fixes), note: '', tab: s.tab });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // «Вернуть» ростера после перехода, пакетного добавления и импорта — ростер, каким был (тот же порядок)
+  const rosterBack = (prev: string[], next: string[]) => (prev.join() === next.join() ? undefined : () => rosterApi.replace(prev));
+  // пакетное (б): «Отметить показанных», код ростера — без окон, есть оба — остаётся Core Fusion, одно сообщение.
+  // X, который уже неактивен, «Отметить показанных» не добавляет
+  const rosterBatch = (next: string[]) => {
+    const prev = rosterApi.list(), st = gear.store;
+    const r = normalizeFusion(idx, next, st);
+    rosterApi.replace(r.roster);
+    if (r.st !== st) gear.set(r.st);
+    if (!r.fixes.length || touring) return;
+    // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище
+    const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
+      : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
+    setGearUndo({ text: fixesNote(r.fixes), note: '', tab: 'chars', undo, after: rosterBack(prev, r.roster) });
   };
-  const fusedNote = (fused: Fused[]) => fused.map((f) => t.ui.fusionGear(charName(f.base), charName(f.fusion))).join(' ');
-  const unfuse = (fused: Fused[]) => (st: GearStore) => fused.reduceRight((x, f) => unfuseChar(x, f.base, f.fusion, f.r), st);
-  // в ростер — с правилом Core Fusion; st — хранилище, в котором перейдут вещи
-  const joinRoster = (st: GearStore, ids: string[], batch = false) => {
-    const ch = rosterApi.add(ids);
-    const { st: next, fused } = fuseAll(st, ch);
-    return { st: next, ch, fused, note: [fusionNote(ch, batch), fusedNote(fused)].filter(Boolean).join(' ') };
+  // окна перехода (в): звезда, «Надеть», примерка на CF, когда есть X (или на X, когда есть CF). then — действие после «Да»
+  // на хранилище после перехода; нет конфликта — false, действие идёт сразу. В обучении окон нет — как пакетное
+  type Switched = { st: GearStore; note: string; undo: (st: GearStore) => GearStore; after?: () => void };
+  const [fusionAsk, setFusionAsk] = useState<{ to: string; from: string; n: number; then?: (sw: Switched) => void } | null>(null);
+  const counterpart = (id: string) => idx.CHAR[id]?.fusionOf ?? idx.FUSED[id];
+  const fusionGate = (id: string, then?: (sw: Switched) => void) => {
+    const from = counterpart(id);
+    if (touring || !from || !(roster.has(from) || gear.store.pools[from]?.length)) return false;
+    setVerdictOpen(false);
+    setEquipOpen(false);
+    setFusionAsk({ to: id, from, n: gear.store.pools[from]?.length ?? 0, then });
+    return true;
   };
-  const announce = (ch: RosterChange, tab: Tab, batch = false) => {
-    const { st, fused } = touring ? { st: gear.store, fused: [] } : fuseAll(gear.store, ch);
-    if (fused.length) gear.set(st);
-    const text = [fusionNote(ch, batch), fusedNote(fused)].filter(Boolean).join(' ');
-    if (text) setGearUndo({ text, note: '', tab, undo: fused.length ? unfuse(fused) : undefined, after: ch.replaced.length ? undoRoster(ch) : undefined });
-    return ch;
+  const doSwitch = () => {
+    const a = fusionAsk;
+    setFusionAsk(null);
+    const prev = rosterApi.list();
+    const sw = a && switchFusion(idx, prev, gear.store, a.to);
+    if (!a || !sw) return;
+    gear.set(sw.st);
+    rosterApi.replace(sw.roster);
+    const note = [t.ui.fusionReplaces(charName(sw.to), charName(sw.from)), sw.moved.length ? t.ui.fusionGear(charName(sw.from), charName(sw.to)) : ''].filter(Boolean).join(' ');
+    const done: Switched = { st: sw.st, note, undo: (x) => unfuseChar(x, sw.from, sw.to, sw), after: rosterBack(prev, sw.roster) };
+    if (a.then) a.then(done);
+    else setGearUndo({ text: note, note: '', tab: s.tab, undo: done.undo, after: done.after });
   };
-  // список и карточка персонажа: звезда, «Отметить показанных», код ростера — с тем же сообщением
+  const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
+  // в ростер тем, кого одели или примерили (конфликта Core Fusion уже нет — fusionGate); «Вернуть» — убрать
+  const joinRoster = (id: string) => {
+    const added = touring ? [] : rosterApi.add([id]);
+    return added.length ? () => rosterApi.remove(added) : undefined;
+  };
+  // список и карточка персонажа: звезда — с окном перехода; «Отметить показанных», код ростера — пакетные
   const rosterUi: RosterApi = {
     ...rosterApi,
-    toggle: (id) => announce(rosterApi.toggle(id), 'chars'),
-    add: (ids) => announce(rosterApi.add(ids), 'chars', true),
+    toggle: (id) => {
+      const cur = rosterApi.list();
+      if (cur.includes(id)) rosterApi.toggle(id);
+      else if (!fusionGate(id)) rosterBatch([...cur, id]);
+    },
+    add: (ids) => {
+      const cur = rosterApi.list();
+      const next = [...cur, ...ids.filter((id) => !cur.includes(id) && !off.has(id))];
+      rosterBatch(next);
+      return next.filter((id) => !cur.includes(id));
+    },
+    replace: (ids) => rosterBatch(ids),
   };
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -218,28 +259,34 @@ export function App() {
   // надеть вещь с формы на персонажа (logic/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
   // стало с вытесненной, с «Вернуть». Такая же вещь уже у другого персонажа — сначала «Это шлем Rin?»: та же запись
   // («Она же — и у Caren») или своя. У самого персонажа такая уже есть — ничего (кнопка «Уже есть» не нажимается)
-  const [twinAsk, setTwinAsk] = useState<{ c: Char; piece: Piece; owner: string } | null>(null);
+  const [twinAsk, setTwinAsk] = useState<{ c: Char; piece: Piece; owner: string; sw: Switched | null } | null>(null);
   const buildName = (key: string) => buildOfKey(key, t.ui.byStats);
   // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
   const usedFor = (st: GearStore, charId: string, id: string) =>
     [...new Set(whereUsed(poolView(ctx, st, target?.c.id === charId ? target.v.key : null), charId, id).map((v) => buildName(v.key)))];
+  // «Надеть на CF», когда есть X, — сначала окно перехода (в); вещи X уже у CF, когда дойдёт до «Это шлем Rin?»
   const doEquip = (c: Char) => {
     setEquipOpen(false);
-    const st = gear.store;
+    if (!fusionGate(c.id, (sw) => equipCheck(c, sw))) equipCheck(c, null);
+  };
+  const switchToast = (sw: Switched, tab: Tab) => setGearUndo({ text: sw.note, note: '', tab, undo: sw.undo, after: sw.after });
+  const equipCheck = (c: Char, sw: Switched | null) => {
+    const st = sw?.st ?? gear.store;
     const has = (id: string) => (st.pools[id] ?? []).map((pid) => st.pieces[pid]).find((p) => p && samePiece(input, p));
-    if (has(c.id)) return;
+    if (has(c.id)) { if (sw) switchToast(sw, 'eval'); return; }
     const owner = Object.keys(st.pools).find((id) => id !== c.id && idx.CHAR[id] && has(id));
     // «Это шлем Rin?» — своё окно: шторку вердикта закрыть, как перед «Кому надеть?» (две шторки — один Esc на обе)
-    if (owner && !touring) { setVerdictOpen(false); setTwinAsk({ c, piece: has(owner)!, owner }); } else equipOn(c, null);
+    if (owner && !touring) { setVerdictOpen(false); setTwinAsk({ c, piece: has(owner)!, owner, sw }); } else equipOn(c, null, sw, st);
   };
-  const equipOn = (c: Char, record: Piece | null) => {
+  // sw — переход Core Fusion перед этим «Надеть»: его строка — в сообщение, его «Вернуть» — вместе с этим
+  const equipOn = (c: Char, record: Piece | null, sw: Switched | null = null, st0: GearStore = gear.store) => {
     setTwinAsk(null);
-    const r = putOn(ctx, gear.store, c.id, input, { record: record ?? undefined, tryOn: target?.c.id === c.id ? target.v.key : null });
-    if (!r.added) return;
+    const r = putOn(ctx, st0, c.id, input, { record: record ?? undefined, tryOn: target?.c.id === c.id ? target.v.key : null });
+    if (!r.added) { if (sw) switchToast(sw, 'eval'); return; }
     // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока.
     // «Заменить» в шторке вердикта — шторку закрыть: следующий шаг тура — ✕ на полосе примерки под ней
-    const joined = !touring && !roster.has(c.id) ? joinRoster(r.st, [c.id]) : null;
-    const st = joined?.st ?? r.st;
+    const joined = joinRoster(c.id);
+    const st = r.st;
     gear.set(st);
     if (touring) setVerdictOpen(false);
     setUndo(null);
@@ -252,10 +299,10 @@ export function App() {
     const old = removedNotes(st, c, r);
     notes.push(...old.notes);
     const { action } = old;
-    if (joined?.note) notes.push(joined.note);
+    if (sw) notes.push(sw.note);
     setGearUndo({
       text, note: notes.join(' '), tab: 'eval', action,
-      undo: (x) => (joined ? unfuse(joined.fused)(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: undoRoster(joined?.ch ?? null),
+      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: both(joined, sw?.after),
     });
   };
   // что стало с убранными из пула (Р7: только вещи слота новой) — каждая своей строкой: осталась у другого, кому
@@ -278,32 +325,37 @@ export function App() {
     return { notes, action };
   };
   // «Отдать Rin»: вещь, которую сняли, — та же запись — в пул другого (с Reforge и Breakthrough). Она заменила вещь
-  // Rin — сообщение, как у «Заменить»
-  const giveTo = (c: Char, old: Piece) => {
-    const r = putOn(ctx, gear.store, c.id, pieceInput(old), { record: old });
-    if (!r.added) return;
-    const joined = !roster.has(c.id) ? joinRoster(r.st, [c.id]) : null;
-    const st = joined?.st ?? r.st;
+  // Rin — сообщение, как у «Заменить». Rin — Core Fusion, а есть обычный, — сначала окно перехода
+  const giveTo = (c: Char, old: Piece) => { if (!fusionGate(c.id, (sw) => giveOn(c, old, sw))) giveOn(c, old, null); };
+  const giveOn = (c: Char, old: Piece, sw: Switched | null) => {
+    const r = putOn(ctx, sw?.st ?? gear.store, c.id, pieceInput(old), { record: old });
+    if (!r.added) { if (sw) switchToast(sw, s.tab); return; }
+    const joined = joinRoster(c.id);
+    const st = r.st;
     gear.set(st);
     const used = usedFor(st, c.id, r.id);
     const gone = removedNotes(st, c, r);
     setGearUndo({
       text: r.removed.length ? t.ui.replaced(c.name, old.slot) : [t.ui.equipped(c.name, old.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' '),
-      note: [...gone.notes, joined?.note ?? ''].filter(Boolean).join(' '), tab: s.tab, action: gone.action,
-      undo: (x) => (joined ? unfuse(joined.fused)(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: undoRoster(joined?.ch ?? null),
+      note: [...gone.notes, sw?.note ?? ''].filter(Boolean).join(' '), tab: s.tab, action: gone.action,
+      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: both(joined, sw?.after),
     });
   };
   // «Убрать у Caren» и «Разобрал — убрать у всех» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
   // примерка из карточки персонажа: персонаж — в ростер (как у «Надеть»), на форму — слот и сет, грейд прежний.
   // Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся
+  // Примерка CF, когда есть X (или X, когда есть CF), — сначала окно перехода (в)
   const startTryOn = (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => {
+    if (!fusionGate(c.id, (sw) => { tryOnGo(c, b, sw.st, slot, from, combo); switchToast(sw, 'eval'); })) tryOnGo(c, b, gear.store, slot, from, combo);
+  };
+  const tryOnGo = (c: Char, b: Build, st: GearStore, slot?: SlotId, from?: Piece, combo?: string | null) => {
     const next = { charId: c.id, build: b.name, ...(combo ? { combo } : {}) };
     tryOn.set(next);
-    if (!touring && !roster.has(c.id)) announce(rosterApi.add([c.id]), 'eval');
+    joinRoster(c.id);
     setVerdictOpen(false);
-    const tg = tryOnTarget(idx, next, baseView);
-    const p = slot && tg ? tryOnPreset(poolView(ctx, gear.store, tg.v.key), tg, slot, from) : null;
+    const tg = tryOnTarget(idx, next, st === gear.store ? baseView : poolView(ctx, st));
+    const p = slot && tg ? tryOnPreset(poolView(ctx, st, tg.v.key), tg, slot, from) : null;
     if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
       const cur = itemInput(s);
       // на форме уже пустая заготовка (второй «Примерить» подряд) — прежнее «Вернуть» остаётся
@@ -312,12 +364,20 @@ export function App() {
     } else dispatch({ type: 'tab', tab: 'eval' });
     if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
   };
-  // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер. «Вернуть» — всё, как было до него
-  const onGearImport = (prev: GearStore, st: GearStore, text: string) => {
-    const j = joinRoster(st, [...gearedChars(st).keys()].filter((id) => idx.CHAR[id]), true);
-    if (j.st !== st) gear.set(j.st);
-    const names = j.ch.added.map(charName).join(', ');
-    setGearUndo({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: j.note, tab: 'chars', undo: () => prev, after: undoRoster(j.ch) });
+  // импорт кода экипировки заменил все записи: Core Fusion — по ростеру (logic/fusion), все, у кого есть вещи, — в ростер.
+  // «Вернуть» — всё хранилище, как было до него; ростер — убрать добавленных, вернуть убранных. Вещей нет — false
+  const onGearImport = (prev: GearStore, raw: unknown): boolean => {
+    const before = rosterApi.list();
+    const r = loadGear(raw, idx, before);
+    const n = Object.keys(r.st.pieces).length;
+    if (!n) return false;
+    const next = [...r.roster, ...[...gearedChars(r.st).keys()].filter((id) => idx.CHAR[id] && !r.roster.includes(id))];
+    gear.set(r.st);
+    rosterApi.replace(next);
+    const names = next.filter((id) => !before.includes(id) && idx.CHAR[id]).map(charName).join(', ');
+    const text = t.ui.gearApplied(n);
+    setGearUndo({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: fixesNote(r.fixes), tab: 'chars', undo: () => prev, after: rosterBack(before, next) });
+    return true;
   };
   useHotkeys(s, dispatch, layout, onReset);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
@@ -438,7 +498,7 @@ export function App() {
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={view} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} onGearImport={onGearImport} touring={!!tour.run} />
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} off={off} onGearImport={onGearImport} touring={!!tour.run} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined}
@@ -474,20 +534,24 @@ export function App() {
           </div>
         )}
         {twinAsk && !tour.run && (
-          <Sheet title={t.ui.twinTitle(twinAsk.piece.slot, charName(twinAsk.owner))} onClose={() => setTwinAsk(null)}>
+          <Sheet title={t.ui.twinTitle(twinAsk.piece.slot, charName(twinAsk.owner))} onClose={() => { if (twinAsk.sw) switchToast(twinAsk.sw, 'eval'); setTwinAsk(null); }}>
             <div className="twin">
               <p>{t.ui.twinNote(charName(twinAsk.owner), usedFor(gear.store, twinAsk.owner, twinAsk.piece.id).join(', ') || t.ui.byStats)}</p>
               <div className="piece-act twin-act">
-                <button type="button" className="btn primary" onClick={() => equipOn(twinAsk.c, twinAsk.piece)}>
+                <button type="button" className="btn primary" onClick={() => equipOn(twinAsk.c, twinAsk.piece, twinAsk.sw)}>
                   {t.ui.twinShare(twinAsk.c.name)}<small>{t.ui.twinShareNote}</small>
                 </button>
-                <button type="button" className="btn" onClick={() => equipOn(twinAsk.c, null)}>
+                <button type="button" className="btn" onClick={() => equipOn(twinAsk.c, null, twinAsk.sw)}>
                   {t.ui.twinOther}<small>{t.ui.twinOtherNote(twinAsk.c.name)}</small>
                 </button>
               </div>
               <p className="muted small">{t.ui.twinFoot}</p>
             </div>
           </Sheet>
+        )}
+        {fusionAsk && (
+          <FusionAsk base={charName(idx.CHAR[fusionAsk.to]?.fusionOf ?? fusionAsk.to)} toFusion={!!idx.CHAR[fusionAsk.to]?.fusionOf} n={fusionAsk.n}
+            onYes={doSwitch} onClose={() => setFusionAsk(null)} />
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} view={view} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {formToast && (

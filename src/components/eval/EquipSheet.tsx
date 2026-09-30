@@ -1,7 +1,7 @@
 // Окно «Кому надеть?» (GEARPOOL): вещь с формы — в вещи персонажа. Строка на персонажа, без выбора билда: только те,
 // кому вещь встанет в билд (соберёт, сет 3 из 4, пустой слот, новая лучше) или начнёт новый, и неактивная «Уже есть».
 // Хлам к персонажу не попадает (решение владельца). Сначала держащие исходы, потом «начнёт»; имя в поиске ищется
-// среди всех персонажей (без X, когда в ростере Core Fusion X). В шапке — сама вещь.
+// среди всех персонажей (без X, когда есть Core Fusion X: logic/fusion). В шапке — сама вещь.
 import { useMemo, useState } from 'react';
 import { subLabel } from '../../data';
 import type { Char } from '../../data/types';
@@ -24,8 +24,8 @@ export function EquipSheet({ ctx, view, item, onEquip, onClose }: {
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   const chars = useMemo(() => {
-    // X не предлагаем, когда в ростере Core Fusion X: в игре его больше нет
-    const withBuilds = D.chars.filter((c) => c.builds.length && !ctx.roster.has(ctx.idx.FUSED[c.id]));
+    // X не предлагаем, когда есть Core Fusion X: в игре его больше нет. Core Fusion X при X — окно перехода (App)
+    const withBuilds = D.chars.filter((c) => c.builds.length && !ctx.off.has(c.id));
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);

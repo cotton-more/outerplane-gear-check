@@ -76,9 +76,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     );
   }
   const own = rosterApi.roster.has(c.id);
-  // Core Fusion этого героя в ростере: сам он туда не попадёт (state/useRoster), вещи — у Core Fusion
-  const fused = ctx.idx.FUSED[c.id];
-  const fusedOwn = fused && rosterApi.roster.has(fused) ? CHAR[fused] : null;
+  // есть Core Fusion этого героя (logic/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
+  const fusedBy = ctx.off.has(c.id) ? CHAR[ctx.off.get(c.id)!] : null;
   const asm = cp!.asm;
   const variantsOfBuild = (b: Build) => cp!.variants.filter((v) => v.parent === b && !isStats(v)).sort(byRank(asm));
   const has = cp!.pieces.length > 0;
@@ -110,8 +109,9 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         </p>
       )
       : null;
-  // разовая подсказка после переноса: вариант теперь собирается сам; закрыл — ключ удалён
-  const autoNew = (gear.store.autoNew ?? []).filter((k) => k.startsWith(c.id + '/') && cp!.variants.some((x) => x.key === k));
+  // разовая подсказка после переноса: вариант теперь собирается сам; закрыл — ключ удалён. Вещей нет (ушли к Core Fusion
+  // или от него) — не о чем
+  const autoNew = has ? (gear.store.autoNew ?? []).filter((k) => k.startsWith(c.id + '/') && cp!.variants.some((x) => x.key === k)) : [];
   const dismiss = (k: string) => gear.set({ ...gear.store, autoNew: (gear.store.autoNew ?? []).filter((x) => x !== k) });
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
@@ -132,8 +132,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
       </div>
       <div className="own-row">
         <button type="button" className="own-btn" aria-pressed={own} onClick={() => rosterApi.toggle(c.id)}>{own ? t.ui.inRosterBtn : t.ui.addToRoster}</button>
-        {fusedOwn && (
-          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedOwn.id)}>{t.ui.fusionInRosterGear(fusedOwn.name)}</button>
+        {fusedBy && (
+          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name)}</button>
         )}
       </div>
       {headline}

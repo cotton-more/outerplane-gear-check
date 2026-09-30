@@ -8,25 +8,40 @@ import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
 import type { GearStore } from '../../logic/gear';
-import { decodeGear, encodeGear } from '../../logic/gearStore';
+import { encodeGear, readGearCode } from '../../logic/gearStore';
 import { ClassIcon, ElementIcon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
-// onGearImport — код экипировки заменил записи: всех, у кого есть вещи, — в ростер, сообщение с «Вернуть» (App); geared — у кого сколько надето;
+// onGearImport — код экипировки заменил записи: всех, у кого есть вещи, — в ростер, сообщение с «Вернуть» (App; вещей
+// в коде нет — false); geared — у кого сколько надето; off — X, которого заменил Core Fusion X (logic/fusion): в списке
+// сразу за ним, с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
 // touring — идёт обучение: на странице экипировка тура (пример или пусто), кода экипировки нет
 interface Props {
   s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
-  onGearImport: (prev: GearStore, st: GearStore, text: string) => void; touring: boolean;
+  off: ReadonlyMap<string, string>; onGearImport: (prev: GearStore, raw: unknown) => boolean; touring: boolean;
 }
 
-export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport, touring }: Props) {
+// X — сразу за своим Core Fusion, если тот тоже в списке
+function fusionOrder(list: Char[], off: ReadonlyMap<string, string>, char: (id: string) => Char | undefined): Char[] {
+  const ids = new Set(list.map((c) => c.id));
+  const out: Char[] = [];
+  for (const c of list) {
+    if (off.has(c.id) && ids.has(off.get(c.id)!)) continue;
+    out.push(c);
+    const x = c.fusionOf && off.get(c.fusionOf) === c.id && ids.has(c.fusionOf) ? char(c.fusionOf) : undefined;
+    if (x) out.push(x);
+  }
+  return out;
+}
+
+export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImport, touring }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
   const { roster } = rosterApi;
   const [io, setIo] = useState(false);
-  const shown = useMemo(() => D.chars.filter((c) => charMatches(c, s, roster, geared)), [D, s, roster, geared]);
+  const shown = useMemo(() => fusionOrder(D.chars.filter((c) => charMatches(c, s, roster, geared)), off, (id) => idx.CHAR[id]), [D, s, roster, geared, off, idx]);
   const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // как в меню «Экипировка · N»
   // с фильтром «с экипировкой» — сколько персонажей ростера ещё ничего не собрали
   const rest = s.cGear ? D.chars.filter((c) => roster.has(c.id) && !geared.has(c.id) && c.builds.length).length : 0;
@@ -71,7 +86,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport, t
       {io && (touring ? <p className="roster-io small muted">{t.ui.gearCodeTour}</p> : <GearIO gear={gear} onImport={onGearImport} />)}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
-          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id) ?? 0}
+          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id) ?? 0} off={off.has(c.id)}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
         )) : <p className="empty">{s.cGear && !nGeared ? t.ui.gearNobody : t.ui.nobodyFound}</p>}
       </div>
@@ -80,20 +95,21 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, onGearImport, t
   );
 }
 
-// gear — сколько вещей в самом собранном билде: «6/6» на плитке
-function CharTile({ c, own, selected, isNew, gear, onSelect, onToggle }: {
-  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number; onSelect: () => void; onToggle: () => void;
+// gear — сколько вещей в самом собранном билде: «6/6» на плитке; off — заменён Core Fusion: пометка, приглушён
+function CharTile({ c, own, selected, isNew, gear, off, onSelect, onToggle }: {
+  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number; off: boolean; onSelect: () => void; onToggle: () => void;
 }) {
   const t = useT();
   const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
   return (
     <div className="cwrap">
-      <button type="button" className={`ctile${c.builds.length ? '' : ' nob'}`} aria-pressed={selected} onClick={onSelect}
+      <button type="button" className={`ctile${c.builds.length ? '' : ' nob'}${off ? ' off' : ''}`} aria-pressed={selected} onClick={onSelect}
         title={c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : '')}>
         <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
         {gear > 0 && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
+        {off && <span className="coff">{t.ui.fusionOffMark(c.name)}</span>}
       </button>
       <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>
         {own ? '★' : '☆'}
@@ -158,8 +174,7 @@ function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
 }
 
 // резервная копия экипировки кодом (OGC-GEAR2): вещи и пулы целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
-function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, st: GearStore, text: string) => void }) {
-  const idx = useIndex();
+function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, raw: unknown) => boolean }) {
   const t = useT();
   const code = Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : '';
   const ta = useRef<HTMLTextAreaElement>(null);
@@ -172,12 +187,9 @@ function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore,
     else fallback();
   };
   const apply = () => {
-    const st = decodeGear(ta.current?.value || '', idx);
-    if (!st || st === 'newer') { setMsg(st ? t.ui.gearNewerCode : t.ui.gearBad); return; }
-    const prev = gear.store;
-    gear.set(st);
-    setMsg('');
-    onImport(prev, st, t.ui.gearApplied(Object.keys(st.pieces).length));
+    const raw = readGearCode(ta.current?.value || '');
+    if (raw === 'newer') { setMsg(t.ui.gearNewerCode); return; }
+    setMsg(raw !== null && onImport(gear.store, raw) ? '' : t.ui.gearBad);
   };
   return (
     <div className="roster-io">

@@ -428,7 +428,18 @@ export const ru = {
     pieceNowhere: 'Ни в одном билде: в каждом стоит лучше.',
     gearNewerCode: 'Код сохранила более новая версия страницы — обнови страницу.',
     fusionGear: (base: string, fusion: string) => `Вещи ${base} перешли к ${fusion}.`,
-    fusionInRosterGear: (fusion: string) => `В ростере ${fusion} — вещи у ${fusion}.`,
+    // Core Fusion X заменил X (logic/fusion): пометка в списке, строка карточки X, окна перехода
+    fusionOffMark: (base: string) => `заменён Core Fusion ${base}`,
+    fusionOffCard: (base: string) => `${base} заменён Core Fusion ${base}: в ростере и с вещами — Core Fusion ${base}.`,
+    fuseAskTitle: (base: string) => `Отметить Core Fusion ${base}?`,
+    fuseAskText: (base: string, n: number) => (n
+      ? `Все вещи ${base} (${n}) перейдут к Core Fusion ${base}, а ${base} станет неактивным: в ростере — только Core Fusion ${base}.`
+      : `${base} станет неактивным: в ростере — только Core Fusion ${base}.`),
+    fuseAskYes: (base: string) => `Да, Core Fusion ${base}`,
+    unfuseAskTitle: (base: string) => `Вернуться к ${base}?`,
+    unfuseAskText: (base: string, n: number) => (n ? `Core Fusion ${base} уйдёт из ростера, его вещи (${n}) перейдут к ${base}.` : `Core Fusion ${base} уйдёт из ростера.`),
+    unfuseAskYes: (base: string) => `Да, ${base}`,
+    cancel: 'Отмена',
     // строка окна «Кому надеть?»: что будет по нажатию
     slotGen: { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' } as Record<string, string>,
     equipRowFill: (build: string) => `Надеть — пустой слот · ${build}`,
@@ -479,10 +490,11 @@ export const ru = {
     gearCodeTour: 'Код экипировки — после обучения: пока оно идёт, на странице пример, а не твои вещи.',
     gearApplied: (n: number) => `Экипировка загружена: вещей ${n}.`,
     gearRosterAdded: (names: string) => `В ростер добавлены: ${names}.`,
-    // Core Fusion X заменяет X в ростере (state/useRoster): в игре после Core Fusion обычного героя нет
+    // окно перехода Core Fusion (App): кто кого заменил в ростере; «Вещи … перешли к …» — fusionGear
     fusionReplaces: (fusion: string, base: string) => `${fusion} заменяет ${base} в ростере.`,
-    fusionKept: (base: string, fusion: string) => `После Core Fusion героя ${base} в игре больше нет — в ростере остаётся ${fusion}.`,
-    fusionInRoster: (fusion: string) => `В ростере ${fusion}.`,
+    // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (logic/fusion normalizeFusion)
+    fusionFixed: (base: string, how: 'moved' | 'removed' | 'none') =>
+      `В ростере оставлен Core Fusion ${base}: ${base} заменён${how === 'moved' ? `, его вещи перешли к Core Fusion ${base}` : how === 'removed' ? ', его вещи убраны' : ''}.`,
     gearBad: 'Код не читается — скопируй его целиком, с OGC-GEAR в начале.',
     gearNewer: 'Экипировку сохранила более новая версия страницы — обнови страницу, чтобы её видеть и менять.',
     // кубик Reforge у свежей Epic (logic/gamble, components/eval/Gamble)

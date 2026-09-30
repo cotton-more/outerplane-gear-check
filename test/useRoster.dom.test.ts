@@ -54,54 +54,39 @@ describe('useRoster между вкладками', () => {
   });
 });
 
-// Core Fusion X заменяет X (решение владельца): в ростере не бывает обоих
+// Core Fusion (logic/fusion): ростер читается вместе с экипировкой и нормализуется в памяти; окна перехода и пакетные
+// добавления — в App (test/gear.dom.test.ts). Здесь — загрузка и страховка записи
 describe('useRoster: Core Fusion', () => {
-  const [ETERNAL, CF_ETERNAL, CF_SNOW, SNOW] = [id('Eternal'), id('Core Fusion Eternal'), id('Core Fusion Snow'), id('Snow')];
+  const [ETERNAL, CF_ETERNAL] = [id('Eternal'), id('Core Fusion Eternal')];
+  const gear = (pools: Record<string, string[]>) => localStorage.setItem('ogc.gear', JSON.stringify({
+    v: 2, seq: 1, pools,
+    pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: D.sets[0].id, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' } },
+  }));
 
-  it('звезда на Core Fusion убирает X; «Вернуть» — X обратно, Core Fusion убран', async () => {
-    await mount([CAREN, ETERNAL]);
-    let ch!: ReturnType<RosterApi['toggle']>;
-    await act(async () => { ch = api.toggle(CF_ETERNAL); });
-
+  it('в хранилище оба — в ростере только Core Fusion на месте X; хранилище — как было, до первой записи', async () => {
+    await mount([ETERNAL, CAREN, CF_ETERNAL]);
     expect([...api.roster]).toEqual([CAREN, CF_ETERNAL]);
-    expect(ch.replaced).toEqual([{ fusion: CF_ETERNAL, base: ETERNAL }]);
-    await act(async () => api.revert(ch));
-    expect(stored()).toEqual([CAREN, ETERNAL]);
-  });
-
-  it('X при Core Fusion X в ростере не добавляется — ни звездой, ни набором', async () => {
-    await mount([CF_ETERNAL]);
-    let ch!: ReturnType<RosterApi['toggle']>;
-    await act(async () => { ch = api.toggle(ETERNAL); });
-
-    expect(ch.refused).toEqual([{ base: ETERNAL, fusion: CF_ETERNAL }]);
-    expect(ch.added).toEqual([]);
-    await act(async () => api.add([ETERNAL, KAPPA]));
-    expect(stored()).toEqual([CF_ETERNAL, KAPPA]);
-  });
-
-  it('в хранилище оба — в ростере только Core Fusion; следующая запись чистит хранилище', async () => {
-    await mount([ETERNAL, CF_ETERNAL, CAREN]);
-    expect([...api.roster]).toEqual([CF_ETERNAL, CAREN]);
-    expect(stored()).toEqual([ETERNAL, CF_ETERNAL, CAREN]);
+    expect(stored()).toEqual([ETERNAL, CAREN, CF_ETERNAL]);
 
     await act(async () => api.add([KAPPA]));
-    expect(stored()).toEqual([CF_ETERNAL, CAREN, KAPPA]);
+    expect(stored()).toEqual([CAREN, CF_ETERNAL, KAPPA]);
   });
 
-  it('набор с обоими («Отметить показанных», код ростера) — остаётся Core Fusion, в любом порядке', async () => {
-    await mount([]);
-    await act(async () => api.add([ETERNAL, CF_ETERNAL, SNOW]));
-    await act(async () => api.add([CF_SNOW]));
-    expect(stored()).toEqual([CF_ETERNAL, CF_SNOW]);
-
-    await act(async () => api.replace([CAREN, ETERNAL, CF_ETERNAL]));
-    expect(stored()).toEqual([CAREN, CF_ETERNAL]);
+  it('X в ростере, вещи — у Core Fusion: в ростере Core Fusion вместо X', async () => {
+    gear({ [CF_ETERNAL]: ['p1'] });
+    await mount([ETERNAL, CAREN]);
+    expect([...api.roster]).toEqual([CF_ETERNAL, CAREN]);
   });
 
-  it('звезда на X, который спрятан Core Fusion из хранилища, — X не появляется', async () => {
-    await mount([ETERNAL, CF_ETERNAL]);
-    await act(async () => { api.toggle(ETERNAL); });
+  it('вещи у X, Core Fusion в ростере — ростер тот же (вещи переходят к Core Fusion — useGear)', async () => {
+    gear({ [ETERNAL]: ['p1'] });
+    await mount([CF_ETERNAL]);
     expect([...api.roster]).toEqual([CF_ETERNAL]);
+  });
+
+  it('запись с X и Core Fusion вместе — остаётся Core Fusion', async () => {
+    await mount([]);
+    await act(async () => api.replace([ETERNAL, CAREN, CF_ETERNAL]));
+    expect(stored()).toEqual([CAREN, CF_ETERNAL]);
   });
 });

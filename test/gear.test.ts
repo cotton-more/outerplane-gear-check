@@ -115,10 +115,11 @@ describe('перенос v1 → v2 (design-final §F)', () => {
     expect(st.autoNew).toEqual([K2]); // Speed ×2 собран — Speed/Immu собирается сам
   });
 
-  it('Core Fusion: вещи у X и у Core Fusion X — вещи X переходят к Core Fusion X, отметки X не переносятся', () => {
+  // правило владельца 2026-09-30 (было: вещи X сливались к Core Fusion X): у Core Fusion свои вещи — вещи X убраны
+  it('Core Fusion: вещи у X и у Core Fusion X — у Core Fusion его вещи, вещи X убраны (logic/fusion)', () => {
     const [eternal, cf] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
     const st = restoreGear(v1([rec('p1', helmet({ CHC: 1 })), rec('p2', helmet({ CHD: 1 }))], { [`${eternal.id}/Speed`]: { helmet: 'p1' }, [`${cf.id}/Speed`]: { helmet: 'p2' } }), idx);
-    expect(st.pools).toEqual({ [cf.id]: ['p2', 'p1'] });
+    expect(st.pools).toEqual({ [cf.id]: ['p2'] });
   });
 });
 
