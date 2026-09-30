@@ -5,7 +5,8 @@
 //     (Attack, Speed, …) собирается вещь за вещью, а последнюю вещь его бонус выигрывает только ценностью — сет можно
 //     сломать, если итог выгоднее (бонус в сегментах — logic/setBonus).
 //   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», цель примерки, где собрана хоть
-//     одна часть связки, ближайшие к сборке и «По статам».
+//     одна часть связки, ближайшие к сборке и «По статам». Часть и близость — по тому, что можно собрать из пула
+//     (достижимая сборка, Р1), а карточка показывает выбранную раскладку.
 //   - «По статам» — когда ни одна вещь брони в пуле не из сетов билдов персонажа: вещи раскладываются по цепочке.
 //   - Исход вещи с формы для персонажа (outcomeFor): что станет с каждым собираемым вариантом, если её добавить.
 import { isArmor } from '../data';
@@ -140,7 +141,7 @@ export function entriesFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece
 const RANK: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
 const combo = (v: Variant): Combo => v.b.sets[0] ?? [];
 
-interface Score { hard: number; live: number; soft: number; total: number; filled: number; older: number }
+interface Score { hard: number; live: number; soft: number; total: number; filled: number; older: number; progress: number }
 // лучше ли a, чем z: hard, live, soft, total, заполненные слоты, старшинство
 const better = (a: Score, z: Score) =>
   a.hard !== z.hard ? a.hard > z.hard
@@ -148,6 +149,8 @@ const better = (a: Score, z: Score) =>
     : a.soft !== z.soft ? a.soft > z.soft
       : Math.abs(a.total - z.total) > EPS ? a.total > z.total
         : a.filled !== z.filled ? a.filled > z.filled : a.older < z.older;
+// достижимая сборка (Р1): больше вещей на связку (Σ min(шт, n)), потом как better
+const nearer = (a: Score, z: Score) => (a.progress !== z.progress ? a.progress > z.progress : better(a, z));
 
 // броня: hard, soft и бонусы по сетам четырёх слотов
 function armorScore(ctx: Ctx, c: Char, v: Variant, x: VCache, arm: readonly (Entry | null)[]): Score {
@@ -165,19 +168,32 @@ function armorScore(ctx: Ctx, c: Char, v: Variant, x: VCache, arm: readonly (Ent
     total += info.value;
     top.set(set, info.top);
   }
-  let hard = 0, live = 0, soft = 0;
+  let hard = 0, live = 0, soft = 0, progress = 0;
   for (const p of combo(v)) {
     const k = n.get(p.set) ?? 0;
+    progress += Math.min(k, p.n);
     if (isConv(ctx, c, x, p.set)) soft += Math.min(k, p.n - 1);
     else { hard += Math.min(k, p.n); if ((top.get(p.set) ?? 0) >= p.n) live++; }
   }
-  return { hard, live, soft, total, filled, older };
+  return { hard, live, soft, total, filled, older, progress };
 }
 
 // Лучшая раскладка варианта v из вещей entries. force — эта вещь обязательно в своём слоте (что будет, если надеть).
 // Точная: перебор по слотам брони. Отсечение безопасно — в слоте из вещей одного сета с одним «T4 или нет» остаётся
 // лучшая по ценности (при равенстве старшая): такие вещи одинаково влияют на связку и бонусы (prune: false — для теста)
 export function assemble(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[], opts: { force?: Entry; prune?: boolean } = {}): Assembly {
+  return search(ctx, c, v, entries, opts, false).asm;
+}
+
+// Выбранная раскладка и достижимая (Р1): та, где на связку работает больше всего вещей пула — последняя вещь сета-стата
+// тоже в счёт, даже если выбранная ради статов её не взяла (Speed ×4 у Caren отдаёт слот Immunity-вещи). По ней —
+// «собрана часть» и «ближе всех» (play), её вещи пул держит (usedIn). Прогресс не больше, чем у выбранной, — это она же
+export function assembleReach(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[], opts: { prune?: boolean } = {}): { asm: Assembly; reach: Assembly } {
+  const r = search(ctx, c, v, entries, opts, true);
+  return { asm: r.asm, reach: r.reach ?? r.asm };
+}
+
+function search(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[], opts: { force?: Entry; prune?: boolean }, withReach: boolean): { asm: Assembly; reach: Assembly | null } {
   const { force, prune = true } = opts;
   const x = vc(ctx, c, v);
   const slots: Partial<Record<SlotId, Entry>> = {};
@@ -204,20 +220,27 @@ export function assemble(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[
     }
     return [null, ...best.values()];
   });
-  let top: { arm: (Entry | null)[]; s: Score } | null = null;
+  type Top = { arm: (Entry | null)[]; s: Score };
+  let top: Top | null = null, near: Top | null = null;
   const cur: (Entry | null)[] = [null, null, null, null];
   const walk = (i: number) => {
     if (i === ARMOR.length) {
       const s = armorScore(ctx, c, v, x, cur);
       if (!top || better(s, top.s)) top = { arm: [...cur], s };
+      if (withReach && (!near || nearer(s, near.s))) near = { arm: [...cur], s };
       return;
     }
     for (const e of cand[i]) { cur[i] = e; walk(i + 1); }
   };
   walk(0);
-  const best = top as unknown as { arm: (Entry | null)[]; s: Score };
-  best.arm.forEach((e, i) => { if (e) slots[ARMOR[i]] = e; });
-  return report(ctx, v, slots, { ...best.s, total: best.s.total + gTotal, filled: best.s.filled + gFilled, older: best.s.older + gOlder });
+  const out = (t: Top) => {
+    const all = { ...slots };
+    t.arm.forEach((e, i) => { if (e) all[ARMOR[i]] = e; });
+    return report(ctx, v, all, { ...t.s, total: t.s.total + gTotal, filled: t.s.filled + gFilled, older: t.s.older + gOlder });
+  };
+  const best = top as unknown as Top, reach = near as Top | null;
+  const asm = out(best);
+  return { asm, reach: reach && reach.s.progress > best.s.progress ? out(reach) : null };
 }
 
 function report(ctx: Ctx, v: Variant, slots: Partial<Record<SlotId, Entry>>, s: Score): Assembly {
@@ -269,35 +292,49 @@ function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly Pick<Piece, 'slot' | '
 export interface Play {
   variants: Variant[];                 // все варианты персонажа (+ «По статам», если есть)
   stat: Variant | null;
-  asm: Map<string, Assembly>;          // сборка каждого варианта
+  asm: Map<string, Assembly>;          // сборка каждого варианта — её показывает карточка
+  reach: Map<string, Assembly>;        // достижимая сборка (assembleReach): по ней «собираешь»; не отличается — тот же объект
   inPlay: Variant[];
 }
 
 export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts = {}, x?: ItemInput | null): Play {
   const stat = hasStatBuild(ctx, c, x ? [...pieces, x] : pieces) ? statVariant(c) : null;
   const variants = [...(stat ? [stat] : []), ...variantsOf(ctx.idx, c)];
-  const asm = new Map<string, Assembly>();
+  const asm = new Map<string, Assembly>(), reach = new Map<string, Assembly>();
   const fitting = new Set<string>();
   for (const v of variants) {
     const es = entriesFor(ctx, c, v, pieces, x);
-    asm.set(v.key, assemble(ctx, c, v, es));
+    const r = assembleReach(ctx, c, v, es);
+    asm.set(v.key, r.asm);
+    reach.set(v.key, r.reach);
     if (es.some((e) => e.fit !== 'no')) fitting.add(v.key);
   }
+  // «собрана часть» и «ближе всех» — по тому, что можно собрать из пула (Р1): иначе билд, чей сет-стат раскладка
+  // сломала ради статов, выпадал бы, и это зависело бы от порядка «Надеть»
   const want = variants.some((v) => markOf(opts.marks, v) === 'want');
   const open = variants.filter((v) => !isStats(v) && markOf(opts.marks, v) !== 'skip');
-  const top = Math.max(0, ...open.filter((v) => fitting.has(v.key)).map((v) => asm.get(v.key)!.progress));
+  const top = Math.max(0, ...open.filter((v) => fitting.has(v.key)).map((v) => reach.get(v.key)!.progress));
   const on = (v: Variant) =>
     isStats(v) || v.key === opts.tryOn || (markOf(opts.marks, v) !== 'skip' && (
       markOf(opts.marks, v) === 'want'
-      || asm.get(v.key)!.complete.length > 0
-      || (fitting.has(v.key) && asm.get(v.key)!.progress === top && (top > 0 || !want))));
-  return { variants, stat, asm, inPlay: variants.filter(on) };
+      || reach.get(v.key)!.complete.length > 0
+      || (fitting.has(v.key) && reach.get(v.key)!.progress === top && (top > 0 || !want))));
+  return { variants, stat, asm, reach, inPlay: variants.filter(on) };
 }
 
-// записи, которые держит пул: стоят в сборке хоть одного собираемого варианта. Одно место на «ненужные» (poolView) и
-// на то, что уберёт «Надеть» (planPut)
+// сборки варианта, чьи вещи пул держит: выбранная и достижимая (если другая)
+export const heldBy = (p: Pick<Play, 'asm' | 'reach'>, v: Variant): Assembly[] => {
+  const a = p.asm.get(v.key)!, r = p.reach.get(v.key) ?? a;
+  return r === a ? [a] : [a, r];
+};
+const inAsm = (a: Assembly, id: string) => Object.values(a.slots).some((e) => e?.id === id);
+// стоит ли запись в сборке варианта, которую пул держит
+export const holdsPiece = (p: Pick<Play, 'asm' | 'reach'>, v: Variant, id: string): boolean => heldBy(p, v).some((a) => inAsm(a, id));
+
+// Записи, которые держит пул: стоят в выбранной или достижимой сборке хоть одного собираемого варианта. Одно место на
+// «ненужные» (poolView), на то, что уберёт «Надеть» (planPut), и на «где стоит» (poolVs whereUsed)
 export const usedIn = (p: Play): Set<string> =>
-  new Set(p.inPlay.flatMap((v) => Object.values(p.asm.get(v.key)!.slots).map((e) => e?.id)).filter((id): id is string => !!id));
+  new Set(p.inPlay.flatMap((v) => heldBy(p, v).flatMap((a) => Object.values(a.slots).map((e) => e?.id))).filter((id): id is string => !!id));
 
 // --------------------------------------------------------------------------- вид пула
 
@@ -509,14 +546,15 @@ export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece,
   const removed = now.has(piece.id) ? mine.filter((p) => p.slot === piece.slot && was.has(p.id) && !now.has(p.id)) : [];
   // не встала ни в один собираемый вариант, а начинает новые — они «Собираю»: иначе следующая вещь их вытеснит
   // «прочей» (не из связки) в пустом слоте — не встала: такой исход не считается
-  const counts = (v: Variant) => {
-    const a = after.asm.get(v.key);
+  // (выбранная или достижимая сборка — как usedIn)
+  const counts = (v: Variant) => ([[after.asm, before.asm], [after.reach, before.reach]] as const).some(([am, bm]) => {
+    const a = am.get(v.key);
     const slot = a && (Object.keys(a.slots) as SlotId[]).find((sl) => a.slots[sl]?.id === piece.id);
-    return !!slot && !(isArmor(slot) && a!.roles[slot] === 'filler' && !before.asm.get(v.key)?.slots[slot]);
-  };
+    return !!slot && !(isArmor(slot) && a!.roles[slot] === 'filler' && !bm.get(v.key)?.slots[slot]);
+  });
   const old = new Set(before.inPlay.map((v) => v.key));
   const marks = before.inPlay.some(counts) ? []
-    : after.inPlay.filter((v) => !old.has(v.key) && !isStats(v) && Object.values(after.asm.get(v.key)!.slots).some((e) => e?.id === piece.id)).map((v) => v.key);
+    : after.inPlay.filter((v) => !old.has(v.key) && !isStats(v) && holdsPiece(after, v, piece.id)).map((v) => v.key);
   return { removed, marks };
 }
 

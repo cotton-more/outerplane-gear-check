@@ -30,6 +30,27 @@ const mat = (st: GearStore, item: ItemInput) => materialFor(poolView(ctx, st), i
 const judge = (item: ItemInput, st: GearStore) => withMaterial(idx, ru, evaluate(ctx, item, { gamble: false }), mat(st, item));
 
 describe('материал Breakthrough для надетой', () => {
+  // Р1: Speed-перчатки T0 (ценность 0) раскладка Speed отдала Immunity-перчаткам — их держит только достижимая сборка.
+  // Они не надеты: новые Speed-перчатки лучше, это не материал для них
+  it('вещь, которую держит только достижимая сборка, — не «надета»: материала для неё нет', () => {
+    const imm = D.sets.find((x) => x.short === 'Immunity')!.id;
+    const A = (slot: ItemInput['slot'], setId: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId, itemKey: null, main: null, subs });
+    let st: GearStore = { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } };
+    const put = (x: ItemInput, bt: Bt | null = null) => { const r = putOn(ctx, st, caren.id, x); st = bt === null ? r.st : updatePiece(r.st, r.id, { bt }); return r.id; };
+    put(A('helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }), 4);
+    put(A('armor', speed, { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }), 4);
+    const gloves = put(A('gloves', speed, { RES: 1, EFF: 1, HP: 1, ATK: 1 }), 0);
+    put(A('shoes', speed, { 'DEF%': 1, SPD: 2, RES: 1, HP: 1 }));
+    put(A('helmet', imm, { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }));
+    put(A('gloves', imm, { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }));
+    const cp = poolView(ctx, st).of(caren.id)!;
+    const v = cp.variants.find((x) => x.name === 'Speed')!;
+    expect([cp.asm.get(v.key)!.slots.gloves?.id === gloves, cp.reach.get(v.key)!.slots.gloves?.id === gloves]).toEqual([false, true]);
+
+    const item = A('gloves', speed, { 'HP%': 2, CHD: 2, 'DEF%': 3, 'ATK%': 3 });
+    expect(mat(st, item)).toEqual([]);
+  });
+
   it('пример из хендоффа: Legendary с мусорными сабстатами — «Фоддер», и сказано, для какого шлема и сколько ещё', () => {
     const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
     const r = judge(junk, wearing(2));

@@ -4,7 +4,7 @@ import type { Char } from '../data/types';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
 import type { Piece } from './gear';
-import { holds, isStats, OUTCOME_ORDER, outcomeFor, type Assembly, type Outcome, type PoolView } from './pool';
+import { holds, holdsPiece, isStats, OUTCOME_ORDER, outcomeFor, type Assembly, type Outcome, type PoolView } from './pool';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import type { Variant } from './variants';
 
@@ -76,8 +76,8 @@ export function gearBadges(view: PoolView): Map<string, number> {
   return out;
 }
 
-// где у персонажа стоит запись: собираемые варианты, в сборке которых она есть
+// где у персонажа стоит запись: собираемые варианты, в выбранной или достижимой сборке которых она есть (как usedIn)
 export function whereUsed(view: PoolView, charId: string, id: string): Variant[] {
   const cp = view.of(charId);
-  return cp ? cp.inPlay.filter((v) => Object.values(cp.asm.get(v.key)!.slots).some((e) => e?.id === id)) : [];
+  return cp ? cp.inPlay.filter((v) => holdsPiece(cp, v, id)) : [];
 }

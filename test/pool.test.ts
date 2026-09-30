@@ -6,9 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { ArmorSlot, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
-import { buildKey, type Bt, type Piece } from '../src/logic/gear';
-import { assemble, entriesFor, isStats, play, poolView, statVariant, type Assembly, type PoolStore } from '../src/logic/pool';
+import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
+import { assemble, assembleReach, entriesFor, isStats, play, poolView, putOn, statVariant, type Assembly, type PoolStore } from '../src/logic/pool';
 import type { Subs } from '../src/logic/subs';
+import type { ItemInput } from '../src/logic/verdict';
 import { variantsOf, type Variant } from '../src/logic/variants';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -55,6 +56,23 @@ describe('сборка варианта: точная', () => {
         const es = entriesFor(ctx, ch, v, pieces);
         const a = assemble(ctx, ch, v, es), z = assemble(ctx, ch, v, es, { prune: false });
         expect([a.hard, a.live, a.soft, a.filled]).toEqual([z.hard, z.live, z.soft, z.filled]);
+        expect(a.total).toBeCloseTo(z.total, 9);
+      }
+    }
+  });
+
+  it('достижимая сборка с отсечением — то же, что полный перебор (200 пулов на вариант)', () => {
+    for (const [c, vn] of cases) {
+      const ch = char(c), v = variantsOf(idx, ch).find((x) => x.name === vn)!;
+      for (let i = 0; i < 200; i++) {
+        const pieces = Array.from({ length: 3 + Math.floor(rnd() * 9) }, () => {
+          const lit: Subs = {};
+          for (let k = 0; k < 4; k++) lit[pick(STATS)] = 1 + Math.floor(rnd() * 6);
+          return P(pick(['helmet', 'armor', 'gloves', 'shoes'] as ArmorSlot[]), pick(SETS), lit, pick([null, 0, 4] as (Bt | null)[]));
+        });
+        const es = entriesFor(ctx, ch, v, pieces);
+        const a = assembleReach(ctx, ch, v, es).reach, z = assembleReach(ctx, ch, v, es, { prune: false }).reach;
+        expect([a.progress, a.hard, a.live, a.soft, a.filled]).toEqual([z.progress, z.hard, z.live, z.soft, z.filled]);
         expect(a.total).toBeCloseTo(z.total, 9);
       }
     }
@@ -157,6 +175,61 @@ describe('«собираешь»', () => {
     expect(p.asm.get(p.inPlay[0].key)!.bonuses.map((r) => [r.n, r.tier])).toEqual([[2, 'T0'], [4, 'T0']]);
     // вещь из сета билда — и «По статам» больше нет
     expect(play(ctx, eternal, [...atk, P('helmet', 'Speed', JUNK)]).stat).toBeNull();
+  });
+});
+
+// Р1: «собрана часть» и «ближе всех» — по тому, что можно собрать из пула; раскладка остаётся честной
+describe('«собираешь» по тому, что можно собрать из пула (Р1)', () => {
+  const HELM: Subs = { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }, GLOVES: Subs = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
+  // 4 Speed: шлем и броня на T4, перчатки и ботинки — Breakthrough не указан
+  const SPEED: [SlotId, Subs, Bt | null][] = [
+    ['helmet', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, 4], ['armor', { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }, 4],
+    ['gloves', { CHC: 2, CHD: 2, SPD: 1, ATK: 1 }, null], ['shoes', { 'DEF%': 1, SPD: 2, RES: 1, HP: 1 }, null],
+  ];
+  const speed = () => SPEED.map(([slot, lit, bt]) => P(slot, 'Speed', lit, bt));
+  const X = (slot: SlotId, short: string, subs: Subs): ItemInput => ({ slot, grade: 'unique', setId: set(short), itemKey: null, main: null, subs });
+  const view = (st: PoolStore) => poolView(ctx, st).of(caren.id)!;
+  const store = (pieces: Piece[]): PoolStore => ({ pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [caren.id]: pieces.map((p) => p.id) } });
+  const names = (vs: Variant[]) => vs.map((v) => (isStats(v) ? '#stats' : v.name));
+
+  it('4 Speed + 2 Immunity без отметок: раскладка Speed отдаёт перчатки Immunity-вещи, но Speed собирается — ничего не лишнее', () => {
+    const cp = view(store([...speed(), P('helmet', 'Immunity', HELM), P('gloves', 'Immunity', GLOVES)]));
+    expect(names(cp.inPlay)).toEqual(expect.arrayContaining(['Speed', 'Speed/Immu']));
+    expect(cp.unused).toEqual([]);
+  });
+
+  it('раскладка честная: карточка Speed — 3 из 4 с Immunity-перчатками, достижимая — Speed ×4', () => {
+    const cp = view(store([...speed(), P('helmet', 'Immunity', HELM), P('gloves', 'Immunity', GLOVES)]));
+    const v = variant('Caren', 'Speed');
+    expect(sets(cp.asm.get(v.key)!)).toEqual(['Speed', 'Speed', 'Immunity', 'Speed']);
+    expect(sets(cp.reach.get(v.key)!)).toEqual(['Speed', 'Speed', 'Speed', 'Speed']);
+    expect(cp.reach.get(v.key)!.missing).toEqual([]);
+  });
+
+  it('раскладка уже собирает всё, что можно, — достижимая та же', () => {
+    const cp = view(store(speed()));
+    const v = variant('Caren', 'Speed');
+    expect(cp.reach.get(v.key)).toBe(cp.asm.get(v.key));
+  });
+
+  // «Надеть» по одной, Breakthrough — потом, в листе вещи (как в приложении). Первая Immunity-вещь в ботинки: Speed-вещи
+  // встают в уже собираемые варианты и отметку «Собираю» не получают — держит только то, что можно собрать
+  it.each([
+    ['T4 T4 T? T?', [4, 4, null, null]],
+    ['без Breakthrough', [null, null, null, null]],
+    ['все на T4', [4, 4, 4, 4]],
+  ] as [string, (Bt | null)[]][])('порядок «Immunity-ботинки → 4 Speed → Immunity-шлем → Immunity-перчатки» (%s): Speed и Speed/Immu собираются, ничего не лишнее', (_, bts) => {
+    let st: GearStore = { ...EMPTY_GEAR };
+    const put = (x: ItemInput) => { const r = putOn(ctx, st, caren.id, x); st = r.st; return r.id; };
+    put(X('shoes', 'Immunity', { 'DEF%': 2, SPD: 2, CHC: 1, CHD: 1 }));
+    const ids = SPEED.map(([slot, subs]) => put(X(slot, 'Speed', subs)));
+    ids.forEach((id, i) => { if (bts[i] !== null) st = updatePiece(st, id, { bt: bts[i]! }); });
+    put(X('helmet', 'Immunity', HELM));
+    put(X('gloves', 'Immunity', GLOVES));
+    const cp = view(st);
+    expect(names(cp.inPlay)).toEqual(expect.arrayContaining(['Speed', 'Speed/Immu']));
+    expect(cp.unused).toEqual([]);
+    expect(cp.pieces.map((p) => p.id)).toEqual(expect.arrayContaining(ids)); // «Надеть» не убрал ни одной Speed-вещи
   });
 });
 

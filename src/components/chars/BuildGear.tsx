@@ -50,7 +50,9 @@ export const bonusText = (idx: Index, r: BonusRow): string => {
   return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
 };
 
-// Собираю: почему вариант собирается (или нет) — строка рядом с переключателем
+// Собираю: почему вариант собирается (или нет) — строка рядом с переключателем. Всё — по показанной раскладке, как чип
+// и слоты. Собирается он потому, что часть связки можно собрать из пула, а раскладка ради статов её не взяла (Р1), —
+// строки нет: «готова» противоречило бы слотам (достижимая больше выбранной, только если собирает часть)
 export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st: GearStore, v: Variant): string {
   if (!cp.inPlay.includes(v)) return t.ui.fillingOff;
   if (isStats(v)) return '';
@@ -59,6 +61,7 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
   const mark = st.marks?.[v.key] ?? st.marks?.[v.parentKey];
   if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
   if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
+  if ((cp.reach.get(v.key) ?? a) !== a) return '';
   return a.progress ? t.ui.fillingWhy.closest : '';
 }
 
@@ -96,9 +99,11 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const wp = weak?.e?.piece ?? null;
   const look = wp ? lookFor(ctx, c, b, weak!.off ? { ...wp, lit: {} } : wp) : [];
   const lookSet = weak && wp ? tryOnPreset(view, { c, b: v.parent, v }, weak.slot, wp).setId : null;
-  // «Не хватает»: части связки — куда (слоты не под этой связкой) и нужен ли T4
-  const free = ARMOR.filter((sl) => a.roles[sl] !== 'set');
-  const missing = a.missing.map((m) => t.ui.missing(setName(m.set), m.n - m.have, free as string[], t4Only(idx.SET[m.set], m.n)));
+  // «Не хватает»: части связки — куда (слоты не под этой связкой) и нужен ли T4. По достижимой сборке: того, что уже
+  // есть в пуле, не просим, даже если раскладка ради статов его не взяла (Speed ×4 отдал слот Immunity-вещи)
+  const reach = cp.reach.get(v.key) ?? a;
+  const free = ARMOR.filter((sl) => reach.roles[sl] !== 'set');
+  const missing = reach.missing.map((m) => t.ui.missing(setName(m.set), m.n - m.have, free as string[], t4Only(idx.SET[m.set], m.n)));
   const first = c.builds[0]?.sets[0]?.[0];
   const where = (id: string) => {
     const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStats : x.name));

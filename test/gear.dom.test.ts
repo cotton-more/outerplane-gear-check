@@ -252,19 +252,33 @@ describe('«Надеть»: что уходит из пула и что пише
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
   });
 
-  // Speed/Immu и Def/Immu: Immunity-ботинки вытесняют и Speed-, и Defense-ботинки (×2 держится одной вещью)
+  // Def: три Defense-вещи + Attack-ботинки не по связке; Def/Immu: Defense ×2 + слабые Immunity-ботинки. Сильные
+  // Immunity-ботинки лучше обеих — в Def вместо Attack, в Def/Immu вместо слабой Immunity
   it('две вещи её слота ушли — «Заменено: ботинки», обе вне пула; «Вернуть» — обе обратно', async () => {
+    const def = set('Defense');
     const pcs = [
-      P('p1', 'helmet', set('Immunity'), { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', set('Immunity'), { 'DEF%': 2, CHC: 2 }),
-      P('p3', 'gloves', speed, { 'DEF%': 2, CHC: 2 }, { bt: 4 }), P('p4', 'shoes', speed, JUNK, { bt: 4 }),
-      P('p5', 'gloves', set('Defense'), { 'DEF%': 2, CHC: 2 }), P('p6', 'shoes', set('Defense'), JUNK),
+      P('p1', 'helmet', def, { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', def, { 'DEF%': 2, CHC: 2 }), P('p3', 'gloves', def, { 'DEF%': 2, CHC: 2 }),
+      P('p4', 'shoes', set('Attack'), { 'DEF%': 2, CHC: 2 }), P('p5', 'shoes', set('Immunity'), JUNK),
     ];
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots.");
-    expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p5', 'p7']);
+    expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p6']);
     await click(byText('.gear-toast button', 'Undo'));
-    expect(stored().pools[caren.id].sort()).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6']);
+    expect(stored().pools[caren.id].sort()).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+  });
+
+  // Р1: Speed/Immu — Immunity-шлем и броня + Speed-перчатки и ботинки на T4. Сильные Immunity-ботинки ломают Speed ×2
+  // ради статов, но Speed/Immu собирается из вещей Caren — Speed-ботинки остаются
+  it('Р1: новая ломает сет-стат ради статов — прежняя вещь её слота остаётся, «Надето»', async () => {
+    const pcs = [
+      P('p1', 'helmet', set('Immunity'), { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', set('Immunity'), { 'DEF%': 2, CHC: 2 }),
+      P('p3', 'gloves', speed, { 'DEF%': 2, CHC: 2 }, { bt: 4 }), P('p4', 'shoes', speed, JUNK, { bt: 4 }),
+    ];
+    await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
+    await click($('.vc-equip'));
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
+    expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
   });
 });
 
@@ -429,6 +443,33 @@ describe('карточка персонажа', () => {
     expect($$('.btabs button').map((b) => b.textContent)[0]).toBe('By stats3/6');
     expect($('.bgear-set')?.textContent).toContain("Effectiveness ×2 · T? — Effectiveness +18% · mark Breakthrough · not in Core Fusion Eternal's builds, but the bonus counts");
     expect($('.bgear-need')?.textContent).toContain('Missing: Speed Set pieces — the first one starts Speed');
+  });
+
+  it('Р1: раскладка Speed отдала перчатки Immunity-вещи — карточка честная (3 Speed), но «Не хватает» не просит Speed-вещь, которая уже есть', async () => {
+    const imm = set('Immunity');
+    const pieces = [
+      P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { bt: 4 }), P('p2', 'armor', speed, { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }, { bt: 4 }),
+      P('p3', 'gloves', speed, { CHC: 2, CHD: 2, SPD: 1, ATK: 1 }), P('p4', 'shoes', speed, { 'DEF%': 1, SPD: 2, RES: 1, HP: 1 }),
+      P('p5', 'helmet', imm, { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }), P('p6', 'gloves', imm, { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
+    ];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
+    await click($$('.btabs button').find((b) => /^Speed\d/.test(b.textContent ?? '')));
+    expect($$('.bgear-list li').filter((li) => li.textContent?.includes('Speed Set'))).toHaveLength(3);
+    expect($('.bgear-need')).toBeNull();
+    expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
+  });
+
+  it('Р1: подпись «Собираю» — по показанной раскладке: Speed собирается, но не «готова Speed ×4», пока в перчатках Immunity', async () => {
+    const imm = set('Immunity');
+    const pieces = [
+      P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { bt: 4 }), P('p2', 'armor', speed, { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }, { bt: 4 }),
+      P('p3', 'gloves', speed, { CHC: 2, CHD: 2, SPD: 1, ATK: 1 }), P('p4', 'shoes', speed, { 'DEF%': 1, SPD: 2, RES: 1, HP: 1 }),
+      P('p5', 'helmet', imm, { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }), P('p6', 'gloves', imm, { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
+    ];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
+    await click($$('.btabs button').find((b) => /^Speed\d/.test(b.textContent ?? '')));
+    expect($('.want-row .want-btn')?.getAttribute('aria-pressed')).toBe('true');
+    expect($('.want-row .muted')?.textContent).toBe('');
   });
 
   it('«Вещи Caren · N»: где стоит; ненужная — «больше не нужна» и «Убрать у Caren» с «Вернуть»', async () => {
