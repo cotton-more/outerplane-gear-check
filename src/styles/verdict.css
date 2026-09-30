@@ -193,9 +193,10 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 /* строка сравнения на карточке: «▲ +25% Caren · Speed +CHD (3-е) · −SPD (4-е)»; кнопка «Надеть» — под карточкой */
 .vcard .vc-vs { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; }
 .vcard .vc-vs > b, .vcard .vc-vs > .vs { flex: none; }
-/* имя билда сжимается с многоточием: «Demiurge Luna · Penetration +5» на 280 иначе обрезалось бы без следа */
+/* имя билда сжимается с многоточием: «Demiurge Luna · Penetration +5» на 280 иначе обрезалось бы без следа; места
+   цепочки («+CHC (3-е) · …») сжимаются первыми — имя билда важнее */
 .vcard .vc-vs .bn { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); }
-.vcard .vc-vs .vc-places { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); font-family: var(--font-mono); font-size: 11.5px; }
+.vcard .vc-vs .vc-places { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); font-family: var(--font-mono); font-size: 11.5px; }
 .vc-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .vc-equip { flex: 2 1 auto; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; }
 .vc-equip.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
