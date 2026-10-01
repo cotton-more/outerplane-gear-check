@@ -8,7 +8,6 @@ import { useState } from 'react';
 import { GRADE_NAME, subLabel, type Index } from '../../data';
 import type { SetPiece } from '../../data/types';
 import { useT } from '../../i18n';
-import { reforgeScale } from '../../logic/gear';
 import { holds, isStats, shownKind, type Outcome, type PoolView } from '../../logic/pool';
 import type { CharVs } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
@@ -213,7 +212,7 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
                 <Img k={'face:' + x.c.icon} className="face" />
                 <div className="nm">
                   <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{name}</span>
-                  {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt, reforgeScale(w).done, reforgeScale(w).of)}</span>}
+                  {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt)}</span>}
                 </div>
                 <VsChip o={o} starts={o ? o.entering : true} />
               </div>

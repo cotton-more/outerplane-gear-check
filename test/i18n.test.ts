@@ -217,4 +217,12 @@ describe('строки GEARPOOL', () => {
     expect(ru.fillingReach('Speed ×4', 'Caren')).toBe('— Speed ×4 собирается из вещей Caren, но сейчас выгоднее без неё');
     expect(enUi.fillingReach('Speed ×4', 'Caren')).toBe("— Speed ×4 can be made from Caren's pieces, but the layout is better without it");
   });
+
+  it('«сейчас» у надетой: bt 0 — «ниже T4», bt 1–3 и 4 — как есть, null — «не указан»', () => {
+    expect(ru.vsWorn('Legendary', 0)).toBe('сейчас: Legendary, Breakthrough T0–T3');
+    expect(ru.vsWorn('Legendary', 2)).toBe('сейчас: Legendary, Breakthrough T2');
+    expect(ru.vsWorn('Legendary', null)).toBe('сейчас: Legendary, Breakthrough не указан');
+    expect(enUi.vsWorn('Legendary', 0)).toBe('now: Legendary, Breakthrough T0–T3');
+    expect(enUi.vsWorn('Legendary', 4)).toBe('now: Legendary, Breakthrough T4');
+  });
 });

@@ -304,6 +304,8 @@ export const ru = {
     subMoveNote: 'Цифра у стата — строка, где он уже стоит: выберешь его — переедет сюда, а та строка освободится.',
     subYellow: (k: string) => `Жёлтые сегменты ${k}`,
     yellow4: '4 жёлтых — только из спецмагазинов и Dimensional Supply',
+    segAfter: '5–6 — после Reforge',
+    segCap: (max: number) => `Больше ${max} сегментов на вещи не бывает — проверь сабстаты.`,
     subRemove: (k: string) => `Убрать ${k}`,
     chainTail: (k: string) => `${k} есть на вещи, но в приоритете дальше четвёртого места — в счёт не идёт`,
     // экипировка: что надето в билдах (logic/gear, logic/vs; components/eval/VsSection, EquipSheet, chars/BuildGear)
@@ -313,7 +315,7 @@ export const ru = {
     vsTitle: 'Сейчас на персонажах',
     vsNow: 'сейчас',
     vsNew: 'новая',
-    vsWorn: (grade: string, bt: number | null, done: number, max: number) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}, Reforge ${done} из ${max}`,
+    vsWorn: (grade: string, bt: number | null) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : bt === 0 ? 'T0–T3' : 'T' + bt}`,
     vsKind: { fill: 'пустой слот', eq: 'на уровне', capped: 'на уровне', worn: 'уже есть', breaks: 'ломает сет', completes: 'соберёт', stats: 'только статы', starts: 'начнёт', off: 'не по билду', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
     vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
     vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
@@ -329,6 +331,7 @@ export const ru = {
     } as Record<string, string>,
     vsBt: (bt: number) => `Сейчас надетая — на Breakthrough T${bt}: новой до T${bt} нужно ${bt} ${plural(bt, 'материал', 'материала', 'материалов')}.`,
     vsMaterial: (bt: number) => `Та же вещь, что надета (T${bt}): эта — ступень её Breakthrough, T${bt} → T${bt + 1}.`,
+    vsMaterialBelow: 'Та же вещь, что надета (ниже T4): эта — ступень её Breakthrough.',
     vsPassive: 'Другая пассивка: сравниваю только сабстаты, а какая пассивка лучше — решает билд.',
     // Speed ×2 и Penetration ×2 дают бонус только на T4 (logic/builds t4Only)
     vsT4: (set: string, n: number, capped: boolean) => `${set} ×${n} даёт бонус только на T4: пока новая не на T4, бонуса не будет${capped ? ' — поэтому не выше «на уровне»' : ''}.`,
@@ -490,6 +493,12 @@ export const ru = {
     pieceReforge: (done: number, max: number) => `Reforge: ${done} из ${max} — считаю по оранжевым сегментам`,
     pieceNoFourth: 'У Epic первый Reforge добавляет 4-й сабстат — сначала «+ 4-й сабстат от Reforge», потом оранжевые.',
     pieceBtUnknown: 'не указан',
+    btChip: 'T4',
+    btAria: 'Вещь на Breakthrough T4',
+    btTitle: 'Вещь уже на T4 — бонус сета посчитается как у T4',
+    btBelow: 'T0–T3',
+    withT4: ' · T4',
+    pieceEditNote: (name: string) => `Сделал в игре Reforge или Breakthrough — поправь сегменты и «T4»: билды соберутся заново. Transistone сменил стат — введи вещь заново и «Надеть», а эту — «Убрать у ${name}».`,
     // сегмент в карточке вещи — для диктора: жёлтый от ролла или оранжевый от Reforge (иначе различие только цветом)
     segLabel: (n: number, kind: string) => (kind === 'y' ? `${n}, жёлтый` : kind === 'o' ? `${n}, Reforge` : String(n)),
     pieceStatHint: 'Transistone сменил стат или жёлтые отмечены не так — нажми на название стата: выбери стат и сколько у него жёлтых. Оранжевые останутся.',
@@ -654,6 +663,7 @@ export const ru = {
   material: {
     title: (slotGen: string, who: string) => `Фоддер — материал Breakthrough для ${slotGen} ${who}`,
     need: (slot: string, who: string, bt: number, left: number) => `${slot} ${who} — T${bt}, ещё ${left} шт. до T4`,
+    needBelow: (slot: string, who: string) => `${slot} ${who} — ниже T4`,
     line: (list: string) => `**Материал**: такая же вещь надета не на T4 — ${list}. Одна вещь — одна ступень Breakthrough, сабстаты не важны.`,
     plan: '**Не прокачивай и не разбирай** — отдай в Breakthrough надетой: одна вещь — одна ступень.',
     // вещь лучше надетой, для которой она материал: надеть её, старую — ей в Breakthrough. Штамп — про неё: «Оставляй»
@@ -682,8 +692,9 @@ export const ru = {
 
   // --- примерка: оценка для одного персонажа и билда (logic/tryon, components/eval/TryOnStrip)
   tryon: {
-    label: 'Примерка',
-    end: 'Закончить примерку',
+    label: 'Только для',
+    end: 'Оценивать для всех',
+    rateFor: (name: string) => `Оценить вещь для ${name}`,
     // заголовок вердикта после « — »: кому ещё нужна и что с ней у этого персонажа (temp — вердикт «Временно»)
     others: (names: string[], armor = true) => `${armor ? 'нужна' : 'нужен'} ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
     clause: (kind: string, name: string, build: string, temp: boolean, x: { n?: number; m?: number; part?: string } = {}): string => ({
