@@ -31,6 +31,21 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .pick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
 .pick.empty { border-style: dashed; background: transparent; color: var(--ink-3); font-weight: 500; }
+/* «T4» рядом с сетом брони: нажата — заливка, как у выбранных кнопок формы; ужимается поле сета (имя — многоточием),
+   «T4» — нет. На узком экране без « Set» в имени: «Speed» видно целиком */
+.btchip { flex: none; min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 13px/1 var(--font-mono); color: var(--ink-2); }
+.btchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--ink); }
+html.xs .btchip { min-width: 40px; padding: 0 6px; }
+html.xs .pick-sfx { display: none; }
+/* строка уже 250px (280px: 222px): грейды уже, у поля без ▾ и значок поменьше — имени сета остаётся ≈ 50px («Speed») */
+.formrow { container-type: inline-size; }
+@container (max-width: 250px) {
+  .grade { width: 38px; }
+  html .formrow .pick { padding: 4px 6px; gap: 4px; }
+  .pick-v { gap: 4px; }
+  .pick-v > img, .pick-v > .noimg, .pick-v > .ico { width: 22px; height: 22px; }
+  .pick-c { display: none; }
+}
 /* main оружия — три кнопки рядом с грейдом; на узком экране без иконок */
 .mainsw { flex: 1; min-width: 0; display: flex; gap: 4px; }
 .msw { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; padding: 0 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 13px/1 var(--font-mono); color: var(--ink); white-space: nowrap; overflow: hidden; }
@@ -52,11 +67,25 @@ html.xs .msw { padding: 0 2px; font-size: 12px; }
 .subkey.flat .lab { font-weight: 500; color: var(--ink-2); }
 .subrow .roll-b { flex: none; }
 .subrow .roll-b button { min-width: 36px; height: 42px; }
-.subrow .roll-b button.r4 { min-width: 28px; font-size: 12px; }
+.subrow .roll-b button.after { min-width: 26px; font-size: 12px; }
 html.xs .subrow .roll-b button { min-width: 30px; }
-/* узкое окно рядом с игрой: место — названию стата («DMG RED%» целиком), кнопки сегментов чуть уже, «4» — редкая */
+/* узкое окно рядом с игрой: место — названию стата («DMG RED%» целиком), кнопки сегментов чуть уже, 5–6 (после Reforge)
+   — узкие */
 html.xs .subrow .subkey { padding: 4px 6px; gap: 5px; }
-html.xs .subrow .roll-b button.r4 { min-width: 26px; }
+html.xs .subrow .roll-b button.after { min-width: 26px; }
+/* строка уже 250px (разделённый экран 280px: строка 222px): шесть кнопок и «DMG RED%» целиком — кнопки 25/22px,
+   у поля стата нет значка и метки Reforge (4-й у Epic), шрифт чуть мельче. Запас: 222 − 6 − (4×25 + 2×22 + 2) = 70,
+   «DMG RED%» 12px ≈ 58 + рамка и отступы 10. Селекторы с html — чтобы перебить html.xs выше */
+.subrow { container-type: inline-size; }
+@container (max-width: 250px) {
+  html .subrows .subrow .roll-b button { min-width: 25px; }
+  html .subrows .subrow .roll-b button.after { min-width: 22px; }
+  html .subrows .subrow .subkey { padding: 4px; gap: 4px; }
+  .subkey .lab { font-size: 12px; }
+  .subkey img, .subkey .noimg, .subkey .ico, .subkey .subtag { display: none; }
+}
+/* нажатие сверх предела суммы сегментов: строка под строками сабстатов, без анимации (ввод) */
+.seg-cap { margin: 0; font-size: 12.5px; color: var(--ink-2); }
 .subremove { margin-top: 10px; width: 100%; }
 /* окна выбора */
 .codein { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -122,7 +151,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
 .roll-b { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface); }
 .roll-b button { min-width: 42px; height: 40px; border: 0; border-left: 1px solid var(--line); background: transparent; font: 700 14px/1 var(--font-mono); color: var(--ink-2); }
 .roll-b button:first-child { border-left: 0; }
-.roll-b button.r4 { color: var(--ink-3); }
+.roll-b button.after { color: var(--ink-3); }
 .roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: #1b1300; }
 .roll-b button[aria-pressed="true"] { background: var(--seg-y); color: #1b1300; }
 
@@ -145,7 +174,7 @@ html.xs .subrow .roll-b button.r4 { min-width: 26px; }
   .form { padding: 6px 10px 8px; gap: 6px; }
   .slot { min-height: 40px; }
   .slot img, .slot .noimg, .slot .ico { width: 28px; height: 28px; }
-  .grade, .pick, .msw { min-height: 40px; }
+  .grade, .pick, .msw, .btchip { min-height: 40px; }
   .grade { width: 40px; }
   .subrows { gap: 4px; }
   .subrow .roll-b button { height: 38px; }
@@ -213,7 +242,7 @@ html.narrow .app > footer.foot { display: none; }
   .form { padding: 4px 8px 6px; gap: 4px; }
   .slot { min-height: 38px; }
   .slot img, .slot .noimg, .slot .ico { width: 26px; height: 26px; }
-  .grade, .pick, .msw { min-height: 38px; }
+  .grade, .pick, .msw, .btchip { min-height: 38px; }
   .grade { width: 38px; }
   .subzone { min-height: 76px; }
   .sg { min-height: 36px; }

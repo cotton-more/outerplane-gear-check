@@ -1,12 +1,14 @@
 import { useEffect, useRef, type Dispatch } from 'react';
-import { SLOTS } from '../data';
+import { SLOTS, isArmor } from '../data';
 import type { Action, AppState } from '../state/appState';
 import type { Layout } from './useLayout';
 
 const LEGEND = ['l', 'L', 'д', 'Д'];
 const EPIC = ['e', 'E', 'у', 'У'];
+const T4 = ['t', 'T', 'е', 'Е']; // Е — та же клавиша на русской раскладке
 
-// 1–6 — слот, L/E (и Д/У на русской раскладке) — грейд, Esc — «Следующий» (открытое окно выбора закрывается раньше).
+// 1–6 — слот, L/E (и Д/У на русской раскладке) — грейд, T (Е) — «T4» у брони, Esc — «Следующий» (открытое окно
+// выбора закрывается раньше).
 // На вкладке персонажей — только Esc, который закрывает шторку билдов на узком экране.
 export function useHotkeys(state: AppState, dispatch: Dispatch<Action>, layout: Layout, onNext: () => void) {
   const ref = useRef({ state, layout, onNext });
@@ -24,6 +26,7 @@ export function useHotkeys(state: AppState, dispatch: Dispatch<Action>, layout: 
       if (/^[1-6]$/.test(e.key)) dispatch({ type: 'slot', slot: SLOTS[Number(e.key) - 1].id });
       else if (LEGEND.includes(e.key)) dispatch({ type: 'grade', grade: 'unique' });
       else if (EPIC.includes(e.key)) dispatch({ type: 'grade', grade: 'rare' });
+      else if (T4.includes(e.key) && isArmor(s.slot)) dispatch({ type: 't4' });
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);

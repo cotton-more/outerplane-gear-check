@@ -1,5 +1,5 @@
 // Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
-// слот → грейд + сет/предмет/main → сетка сабстатов → строки с жёлтыми сегментами.
+// слот → грейд + сет/предмет/main (у брони — и «T4») → сетка сабстатов → строки с сегментами.
 // Сет и предмет выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием. Main тоже без окна:
 // у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main).
 // На телефоне, когда вердикт готов, на месте сетки встаёт карточка вердикта.
@@ -17,6 +17,7 @@ import type { Action, AppState } from '../../state/appState';
 import { tour, tourItem } from '../../tour/anchors';
 import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '../Img';
 import { Sheet } from '../Sheet';
+import { BtChip } from './BtChip';
 import { ItemPicker } from './ItemPicker';
 import { MainButtons } from './MainButtons';
 import { MainPicker } from './MainPicker';
@@ -102,7 +103,10 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             ))}
           </div>
           {armor
-            ? <PickField value={set && <><SetIcon set={set} />{set.short} Set</>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
+            ? <>
+              <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
+              <BtChip on={s.t4} onToggle={() => dispatch({ type: 't4' })} />
+            </>
             : weapon
               ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} />
               : epic ? mainField() : itemField}
@@ -135,7 +139,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>
         {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
-        <SubRows subs={s.subs} epic={epic} fourth={epic} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
+        <SubRows subs={s.subs} grade={s.grade} epic={epic} fourth={epic} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
       </div>
 
       <div className="actions">

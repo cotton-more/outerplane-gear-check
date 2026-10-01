@@ -687,10 +687,12 @@ export const en: Texts = {
       variants: 'This build has several set combos — the most complete is shown. The others are in the chips; “N more” shows them all.',
       stats: '“By stats” — all the character’s pieces by the chain, no sets. Off-build pieces go here: “Equip on…” → search by name, or a try-on.',
       fusion: "Mark Core Fusion Eternal and Eternal turns inactive, right after it in the list; Eternal's gear moves to Core Fusion Eternal. The star on Eternal switches back.",
+      bt: 'Already at Breakthrough T4? Tap “T4” and its set bonus counts as in the game. A fresh drop is T0 — leave it off.',
     },
     news: {
       move: 'on replace, a stat from another row moves over',
       gear: 'character gear — builds assemble themselves',
+      bt: '“T4” on the form',
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',
