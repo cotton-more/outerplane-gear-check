@@ -1,8 +1,11 @@
-// «Вещи Caren · 7» (GEARPOOL): все вещи персонажа — где каждая стоит («в Speed, Speed/Immu», «во всех билдах»,
-// «и у Rin»); ненужная — строка «Caren больше не нужна» и «Убрать у Caren». Свёрнуто; нажатие — карточка вещи.
+// «Вещи Caren · 7» (GEARPOOL): все вещи персонажа по слотам («Шлем · 2»; пустых слотов нет), внутри слота — в порядке
+// добавления; у вещи — где стоит («в Speed, Speed/Immu», «во всех билдах»). Пулы героев независимы (В9): про других
+// героев строк нет. Ненужная — строка «Caren больше не нужна» и «Убрать у Caren». Свёрнуто; нажатие — карточка вещи.
+// onRateFor — «Оценить вещь для Caren» (режим «для героя»): справа от заголовка, на 280 — своей строкой (chars.css)
+import { SLOTS } from '../../data';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
-import { holdersOf, type GearStore, type Piece } from '../../logic/gear';
+import type { GearStore, Piece } from '../../logic/gear';
 import { isStats, removeFrom, undoRemove, type CharPool, type PoolView } from '../../logic/pool';
 import { whereUsed } from '../../logic/poolVs';
 import { buildOfKey } from '../../logic/variants';
@@ -11,9 +14,10 @@ import { SlotIcon } from '../Img';
 import { tour } from '../../tour/anchors';
 import { PieceName } from './BuildGear';
 
-export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved }: {
+export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onRateFor }: {
   cp: CharPool; ctx: Ctx; gear: GearApi; view: PoolView; own: boolean; onOpenPiece: (id: string) => void;
   onRemoved?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
+  onRateFor?: () => void;
 }) {
   const t = useT();
   const { c, pieces } = cp;
@@ -23,35 +27,42 @@ export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved }: {
     const used = whereUsed(view, c.id, p.id).filter((v) => !v.dupOf);
     const names = [...new Set(used.map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
     const all = open.length > 1 && open.every((v) => used.includes(v));
-    const others = holdersOf(gear.store, p.id).filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
-    return [all ? t.ui.poolEverywhere : names.length ? t.ui.poolIn(names.join(', ')) : '', others.length ? t.ui.poolWith(others.join(', ')) : ''].filter(Boolean).join(' · ');
+    return all ? t.ui.poolEverywhere : names.length ? t.ui.poolIn(names.join(', ')) : '';
   };
   const unused = new Set(cp.unused.map((p) => p.id));
   const remove = (p: Piece) => {
     gear.set(removeFrom(gear.store, c.id, p.id));
-    const others = holdersOf(gear.store, p.id).filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
-    onRemoved?.(t.ui.removedFrom(c.name), others.length ? t.ui.stillWith(others.join(', ')) : '', (x) => undoRemove(x, p, [c.id]));
+    onRemoved?.(t.ui.removedFrom(c.name), '', (x) => undoRemove(x, p, [c.id]));
   };
+  const groups = SLOTS.map(({ id }) => ({ slot: id, list: pieces.filter((p) => p.slot === id) })).filter((g) => g.list.length);
   return (
-    <details className="pool" {...tour('pool')}>
-      <summary>{own ? t.ui.poolTitle(c.name, pieces.length) : t.ui.poolNotInRoster(c.name, pieces.length)}</summary>
-      <ul className="pool-list">
-        {pieces.map((p) => (
-          <li key={p.id} className={unused.has(p.id) ? 'unused' : undefined}>
-            <button type="button" className="pool-row" onClick={() => onOpenPiece(p.id)}>
-              <SlotIcon slot={p.slot} />
-              <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-              <span className="pool-w">{where(p)}</span>
-            </button>
-            {unused.has(p.id) && !gear.newer && (
-              <p className="pool-unused">
-                <span>{t.ui.poolUnused(c.name)}</span>
-                <button type="button" className="btn small" onClick={() => remove(p)}>{t.ui.pieceRemove(c.name)}</button>
-              </p>
-            )}
-          </li>
+    <div className="pool" {...tour('pool')}>
+      {onRateFor && !gear.newer && <button type="button" className="btn small pool-rate" onClick={onRateFor}>{t.tryon.rateFor(c.name)}</button>}
+      <details>
+        <summary>{own ? t.ui.poolTitle(c.name, pieces.length) : t.ui.poolNotInRoster(c.name, pieces.length)}</summary>
+        {groups.map(({ slot, list }) => (
+          <section key={slot} className="pool-g">
+            <h5 className="pool-gh">{t.ui.slotNames[slot]} · {list.length}</h5>
+            <ul className="pool-list">
+              {list.map((p) => (
+                <li key={p.id} className={unused.has(p.id) ? 'unused' : undefined}>
+                  <button type="button" className="pool-row" onClick={() => onOpenPiece(p.id)}>
+                    <SlotIcon slot={p.slot} />
+                    <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
+                    <span className="pool-w">{where(p)}</span>
+                  </button>
+                  {unused.has(p.id) && !gear.newer && (
+                    <p className="pool-unused">
+                      <span>{t.ui.poolUnused(c.name)}</span>
+                      <button type="button" className="btn small" onClick={() => remove(p)}>{t.ui.pieceRemove(c.name)}</button>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
-    </details>
+      </details>
+    </div>
   );
 }

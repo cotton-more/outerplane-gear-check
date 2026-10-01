@@ -143,7 +143,10 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.vc-equip')).toBeNull();
   });
 
-  it('«Вернуть» откатывает только «Надеть»: правка в карточке за эти секунды остаётся; Kappa ушла из ростера', async () => {
+  // шаг 9 (решение оркестратора по REFUTE-5): было — «Вернуть» откатывало только «Надеть», правка в карточке за эти
+  // секунды оставалась. Теперь правка в карточке вещи снимает висящее «Вернуть»: откаты возвращают записи по id, а их
+  // за эти секунды поправили или скопировали. Kappa и её вещь остаются
+  it('правка в карточке вещи снимает «Вернуть» прежнего «Надеть»: Kappa с вещью остаётся, правка — тоже', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2 }, { bt: 4 });
     // Caren с вещами — в ростере (Р16); Kappa — через поиск по имени
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'] }), roster: [caren.id] });
@@ -158,14 +161,14 @@ describe('«Надеть» и «Вернуть»', () => {
     await click($$('#cgrid .ctile').find((b) => b.textContent?.includes('Caren')));
     expect($('.gear-toast')).toBeNull(); // сообщение — на вкладке, где сделано
     await click($('.bgear-row'));
-    await click(byText('.piece-bt .fbtn', 'T3'));
+    await click($('.piece .btchip')); // «T4» снята — ниже T4
     await click($('.drawer-x'));
     await click($('.vbar .vb-tab'));
-    await click(byText('.gear-toast button', 'Undo'));
 
-    expect(stored().pools[kappa.id]).toBeUndefined();
-    expect(stored().pieces.p1.bt).toBe(3);
-    expect(roster()).toEqual([caren.id]);
+    expect($('.gear-toast')).toBeNull();
+    expect(stored().pools[kappa.id]).toEqual(['p2']);
+    expect(stored().pieces.p1.bt).toBe(0);
+    expect(roster()).toEqual([caren.id, kappa.id]);
   });
 
   it('«Заменить» в шторке вердикта: сообщение лежит поверх неё — внизу шторки место (toast-on), «Вернуть» — снимает', async () => {
@@ -702,7 +705,9 @@ describe('«Кому надеть?»', () => {
 });
 
 describe('карточка персонажа', () => {
-  it('заголовок, «Собираю», бонусы с уровнем; вещь с сегментами по цепочке; карточка вещи — оранжевый и T4', async () => {
+  // шаг 9 (Н1): было — «T? · Reforge 0/6», в карточке 3-я клетка — оранжевая (yellow 2, lit 3), Breakthrough T0–T4,
+  // «Reforge: 1 of 6». Теперь уровень один (yellow = lit, до 4), «T4» — одна кнопка, «Reforge N из M» нет
+  it('заголовок, «Собираю», бонусы с уровнем; вещь с сегментами по цепочке; карточка вещи — уровень и «T4»', async () => {
     const four = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { 'DEF%': 2, EFF: 1 }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(four, { [caren.id]: four.map((p) => p.id as string) }) });
 
@@ -713,12 +718,13 @@ describe('карточка персонажа', () => {
     expect($('.bgear-set')?.textContent).toContain('Speed ×4 · T? — ');
     expect($('.bgear-set')?.textContent).toContain('mark Breakthrough');
     expect($$('.bgear-row')[0].querySelectorAll('.tok')[0].className).toBe('tok ok');
-    expect($('.bgear-m')?.textContent).toBe('T? · Reforge 0/6');
+    expect($('.bgear-m')?.textContent).toBe('T?');
     await click($('.bgear-row'));
-    await click($$('.piece .seg6')[0].querySelectorAll('button')[2] as HTMLElement); // 3-я клетка DEF% — оранжевая
-    await click(byText('.piece-bt .fbtn', 'T4'));
-    expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 2 }, lit: { 'DEF%': 3 }, bt: 4 });
-    expect($('.piece')?.textContent).toContain('Reforge: 1 of 6');
+    await click($$('.piece .roll-b')[0].querySelectorAll('button')[2] as HTMLElement); // DEF% — уровень 3
+    await click($('.piece .btchip'));
+    expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 3 }, bt: 4 });
+    expect($('.piece .btchip')?.getAttribute('aria-pressed')).toBe('true');
+    expect($('.piece')?.textContent).not.toContain('Reforge:');
   });
 
   it('«Собираю» выключить — «Не собираю» у варианта; включить обратно — отметки нет (собирается сам)', async () => {
@@ -819,29 +825,39 @@ describe('карточка персонажа', () => {
     expect(stored().pools[caren.id].sort()).toEqual(['p1', 'p2']);
   });
 
-  it('лист общей вещи: где стоит и у кого; «Убрать у Caren» — у Kappa остаётся; «Разобрал — убрать у всех»', async () => {
+  // шаг 9 (В9, пулы независимы): было — «В Speed, Speed/Immu и у Kappa — правка изменит везде», в сообщении «Kappa still
+  // has it.», кнопка «Разобрал — убрать у всех». Теперь про Kappa ни строки, ни кнопки
+  it('«Вещи Caren · N» по слотам: «Helmet · 2», «Gloves · 1» — пустых нет, порядок слотов; без «и у Rin»', async () => {
+    const ps = [P('p1', 'gloves', speed, { CHC: 1 }), P('p2', 'helmet', speed, { 'DEF%': 2 }), P('p3', 'helmet', set('Immunity'), { CHC: 2 })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2', 'p3'], [rin.id]: ['p2'] }), roster: [caren.id, rin.id] });
+    expect($$('.pool-gh').map((h) => h.textContent)).toEqual(['Helmet · 2', 'Gloves · 1']);
+    expect($$('.pool-g')[0].querySelectorAll('.pool-row')).toHaveLength(2);
+    expect($('.pool')?.textContent).not.toContain('Rin');
+  });
+
+  it('лист общей вещи: где стоит — без «и у Kappa»; «Убрать у Caren» — у Kappa остаётся; «убрать у всех» нет', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
     await click($('.bgear-row'));
-    expect($('.piece')?.textContent).toContain('In Speed, Speed/Immu and with Kappa — edits change it everywhere.');
+    expect($('.piece')?.textContent).toContain('in Speed, Speed/Immu');
+    expect($('.piece')?.textContent).not.toContain('Kappa');
+    expect(byText('.piece-act .btn', 'remove everywhere')).toBeUndefined();
     await click(byText('.piece-act .btn', 'Remove from Caren'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'] });
     expect($('.gear-toast')?.textContent).toContain('Removed from Caren.');
-    expect($('.gear-toast small')?.textContent).toBe('Kappa still has it.');
+    expect($('.gear-toast small')).toBeNull();
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'], [caren.id]: ['p1'] });
-
-    await click($('.bgear-row'));
-    await click(byText('.piece-act .btn', 'Dismantled — remove everywhere'));
-    expect(stored()).toMatchObject({ pools: {}, pieces: {} });
   });
 
-  it('лист вещи в одном билде, только у Caren: «правка изменит везде» нет — вещь не общая', async () => {
+  // шаг 9: было — у вещи одного билда строки «где стоит» в карточке не было; теперь она есть всегда (макет, раздел 5)
+  it('лист вещи в одном билде: «in Pen», «правка изменит везде» нет', async () => {
     const helm = P('p1', 'helmet', set('Penetration'), { 'DEF%': 2, CHC: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
     expect(byText('.pool-row', 'in Pen')).toBeTruthy();
     await click($('.bgear-row'));
     const text = $('.piece')?.textContent ?? '';
+    expect(text).toContain('in Pen');
     expect(text).not.toContain('edits change it everywhere');
     expect(text).not.toContain('In no build');
   });
@@ -856,27 +872,106 @@ describe('карточка персонажа', () => {
     expect($('.cd-note')).toBeNull();
   });
 
-  it('замена стата в карточке вещи: статы вещи недоступны, переезда строк нет', async () => {
+  // шаг 9 (Н1, В-А2): было — нажатие на стат открывало замену (Transistone), «Сколько жёлтых», оранжевые сегменты.
+  // Теперь стат не меняется (вещь вводят заново), уровень один — без жёлтых и оранжевых
+  it('узкая правка: название стата — не кнопка, окна смены стата нет; клеток жёлтых и оранжевых нет', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 3, SPD: 1 }, { lit: { 'DEF%': 4, CHC: 3, SPD: 1 } });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
     await click($('.bgear-row'));
-    await click($('.piece .subkey'));
-    const opt = (k: string) => $$('.subopt').find((b) => b.textContent === k) as HTMLButtonElement;
-    expect(opt('CHC').disabled).toBe(true);
-    expect(opt('CHD').disabled).toBe(false);
-    expect($('.subopt .row-n')).toBeNull();
+    expect($('.piece .subkey')?.tagName).toBe('SPAN');
+    expect($('.piece button.subkey')).toBeNull();
+    expect($('.piece .roll-b button.y, .piece .roll-b button.o')).toBeNull();
+    expect($$('.piece .roll-b')[0].querySelector('[aria-pressed="true"]')?.textContent).toBe('4'); // уровень = lit
+    expect($('.piece')?.textContent).toContain('Transistone changed a stat? Enter the piece again');
   });
 
-  it('жёлтые через название стата: тот же стат → «Сколько жёлтых» → 3; Reforge не прибавился', async () => {
-    const helm = P('p1', 'helmet', speed, { 'DEF%': 1, CHC: 2 }, { lit: { 'DEF%': 3, CHC: 2 } });
+  it('нажатие ставит уровень; на текущий — на один меньше, но не ниже 1', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 1, CHC: 2 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
     await click($('.bgear-row'));
-    await click($('.piece .subkey'));
-    await click($$('.subopt').find((b) => b.textContent?.replace(/^%/, '') === 'DEF%'));
-    expect($('.drawer-h h3')?.textContent).toBe('How many yellow on DEF%?');
-    await click(byText('.piece-bt .fbtn', '3'));
-    expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 5 } });
-    expect($('.piece')?.textContent).toContain('Reforge: 2 of 6');
+    const cell = (row: number, n: number) => $$('.piece .roll-b')[row].querySelectorAll<HTMLElement>('button')[n - 1];
+    await click(cell(1, 6));
+    expect(stored().pieces.p1.lit).toEqual({ 'DEF%': 1, CHC: 6 });
+    await click(cell(1, 6));
+    expect(stored().pieces.p1.lit.CHC).toBe(5);
+    await click(cell(0, 1));
+    expect(stored().pieces.p1.lit['DEF%']).toBe(1);
+  });
+
+  it('предел суммы: Legendary 6/6/6/4 — 5 у четвёртого не срабатывает, строка «больше 22 не бывает»; снять можно', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 }, { lit: { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 4 } });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
+    await click($('.bgear-row'));
+    const cell = (row: number, n: number) => $$('.piece .roll-b')[row].querySelectorAll<HTMLElement>('button')[n - 1];
+    await click(cell(3, 5));
+    expect(stored().pieces.p1.lit.SPD).toBe(4);
+    expect($('.piece .seg-cap')?.textContent).toBe("A piece can't have more than 22 segments — check the substats.");
+    await click(cell(0, 5));
+    expect(stored().pieces.p1.lit['DEF%']).toBe(5);
+    expect($('.piece .seg-cap')).toBeNull();
+  });
+
+  it('старая запись выше предела (6/6/6/6): уменьшить и «T4» можно', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 }, { lit: { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 } });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
+    await click($('.bgear-row'));
+    await click($$('.piece .roll-b')[0].querySelectorAll<HTMLElement>('button')[4]);
+    await click($('.piece .btchip'));
+    expect(stored().pieces.p1).toMatchObject({ lit: { 'DEF%': 5, CHC: 6, CHD: 6, SPD: 6 }, bt: 4 });
+  });
+
+  it('Epic с тремя сабстатами — «+ 4th substat»: статы вещи недоступны, выбранный встаёт с уровнем 1', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1, SPD: 1 }, { grade: 'rare' });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
+    await click($('.bgear-row'));
+    await click($('.piece .subadd'));
+    const opt = (k: string) => $$('.subopt').find((b) => b.textContent === k) as HTMLButtonElement;
+    expect(opt('CHC').disabled).toBe(true);
+    await click(opt('CHD'));
+    expect(stored().pieces.p1.lit).toEqual({ 'DEF%': 2, CHC: 1, SPD: 1, CHD: 1 });
+    expect($('.piece .subadd')).toBeNull();
+  });
+
+  it('оружие — без «T4»; у брони «T4» снята — ниже T4: в строке билда «T0–T3»', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 }, { bt: 4 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
+    expect($('.bgear-m')?.textContent).toBe('T4');
+    await click($('.bgear-row'));
+    await click($('.piece .btchip'));
+    expect(stored().pieces.p1.bt).toBe(0);
+    expect($('.bgear-m')?.textContent).toBe('T0–T3');
+  });
+
+  // В9: общая запись делится при правке (copy-on-write) — у Rin прежняя; шторка идёт за новым id (REFUTE2 1.3)
+  it('правка общей записи у Caren: у Rin прежняя, у Caren копия; шторка открыта, второе нажатие — по той же копии', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [rin.id]: ['p1'] }), roster: [caren.id, rin.id] });
+    await click($('.bgear-row'));
+    await click($$('.piece .roll-b')[1].querySelectorAll<HTMLElement>('button')[2]); // CHC 1 → 3
+
+    expect($('.piece')).toBeTruthy();
+    expect(stored().pools).toEqual({ [caren.id]: ['p2'], [rin.id]: ['p1'] });
+    expect(stored().pieces.p1.lit).toEqual({ 'DEF%': 2, CHC: 1 });
+    await click($('.piece .btchip'));
+    expect(Object.keys(stored().pieces).sort()).toEqual(['p1', 'p2']);
+    expect(stored().pieces.p2).toMatchObject({ lit: { 'DEF%': 2, CHC: 3 }, bt: 4 });
+  });
+
+  // решение оркестратора (REFUTE-5): «Вернуть» после «Убрать у Caren» вернул бы ей запись, которую потом поправили у Rin
+  it('«Убрать у Caren» → правка у Rin → «Вернуть» больше нет', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [rin.id]: ['p1'] }), roster: [caren.id, rin.id] });
+    await click($('.bgear-row'));
+    await click(byText('.piece-act .btn', 'Remove from Caren'));
+    expect(byText('.gear-toast button', 'Undo')).toBeTruthy();
+    await click($('.cd-top .btn'));
+    await click($$('#cgrid .ctile').find((b) => b.querySelector('.cn')?.textContent === 'Rin'));
+    await click($('.bgear-row'));
+    expect(byText('.gear-toast button', 'Undo')).toBeTruthy(); // висит и у Rin
+    await click($$('.piece .roll-b')[1].querySelectorAll<HTMLElement>('button')[2]);
+
+    expect($('.gear-toast')).toBeNull();
+    expect(stored().pools).toEqual({ [rin.id]: ['p1'] });
   });
 
   it('«Слабее всех» — перчатки Epic: что искать, «Примерить вещи» — примерка перчаток', async () => {
@@ -961,7 +1056,7 @@ describe('меню, плитки, код копии, другая вкладка
     await act(async () => { window.dispatchEvent(new StorageEvent('storage', { key: 'ogc.gear', newValue: JSON.stringify(other) })); });
     expect($('.bgear h4')?.textContent).toBe('Equipped · 2 of 6');
     await click($('.bgear-row'));
-    await click(byText('.piece-bt .fbtn', 'T4'));
+    await click($('.piece .btchip'));
     expect(Object.keys(stored().pieces)).toEqual(['p1', 'p2']);
     expect(stored().pieces.p1.bt).toBe(4);
   });

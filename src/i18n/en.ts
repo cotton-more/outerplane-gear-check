@@ -427,7 +427,7 @@ export const en: Texts = {
     btBelow: 'T0–T3',
     withT4: ' · T4',
     pieceEditNote: (name) => `Did a Reforge or Breakthrough in the game? Fix the segments and “T4”: builds reassemble. Transistone changed a stat? Enter the piece again and “Equip”, and “Remove from ${name}” this one.`,
-    segLabel: (n, kind) => (kind === 'y' ? `${n}, yellow` : kind === 'o' ? `${n}, Reforge` : String(n)),
+    segLabel: (n) => `${n} ${n === 1 ? 'segment' : 'segments'}`,
     pieceStatHint: 'Transistone changed a stat, or the yellow count is off — tap the stat name: pick the stat and its yellow count. Orange ones stay.',
     yellowSheet: (k) => `How many yellow on ${k}?`,
     yellowNote: (orange) => (orange ? `As it is in the game now. Orange ones (Reforge: ${orange}) stay.` : 'As it is in the game now.'),

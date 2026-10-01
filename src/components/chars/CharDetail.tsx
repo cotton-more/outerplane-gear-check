@@ -9,7 +9,7 @@ import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import type { GearStore, Piece } from '../../logic/gear';
+import { updateIn, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
 import { isStats, play, setMark, type PoolView } from '../../logic/pool';
 import { badgeOf } from '../../logic/poolVs';
 import type { Variant } from '../../logic/variants';
@@ -28,13 +28,18 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
 // view — пул (logic/pool); onTryOn — примерка варианта этого персонажа (BuildGear; у «По статам» b — его билд с именем
 // STATS: примерка «По статам», logic/tryon); onOpenChar — карточка другого
-// персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»)
+// персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»).
+// onPieceEdit — правка в карточке вещи: висящее «Вернуть» прежнего действия (одно на все, В3) App снимает — откаты
+// возвращают запись по id, а её поправили или скопировали (gear updateIn). onRateFor — «Оценить вещь для Caren» (режим
+// «для героя»). «Примерить замену» — onTryOn с from: запись, которую заменяем (её id — TryOn.replace)
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
   onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
+  onPieceEdit?: () => void;
+  onRateFor?: (c: Char) => void;
 }
 
 // ранг варианта для заголовка и выбора: доля сборки, потом итог сборки, потом порядок outerpedia
@@ -48,7 +53,7 @@ const byRank = (asm: Map<string, { progress: number; need: number; total: number
 };
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast }: Props) {
+export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -118,6 +123,18 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // или от него) — не о чем
   const autoNew = has ? (gear.store.autoNew ?? []).filter((k) => k.startsWith(c.id + '/') && cp!.variants.some((x) => x.key === k)) : [];
   const dismiss = (k: string) => gear.set({ ...gear.store, autoNew: (gear.store.autoNew ?? []).filter((x) => x !== k) });
+  // правка в карточке вещи — только у этого героя: общая запись делится, и шторка идёт за новым id (иначе закрылась бы
+  // на первом нажатии); ничего не поменялось — ни записи, ни снятого «Вернуть»
+  const editPiece = (patch: PieceEdit) => {
+    if (!pieceId) return;
+    const r = updateIn(ctx.idx, gear.store, c.id, pieceId, patch);
+    if (r.st === gear.store) return;
+    gear.set(r.st);
+    setPieceId(r.id);
+    onPieceEdit?.();
+  };
+  // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
+  const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
       <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
@@ -152,6 +169,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name)}</button>
         </div>
       )}
+      {rateFor && !has && <div className="cd-rate"><button type="button" className="btn small" onClick={rateFor}>{t.tryon.rateFor(c.name)}</button></div>}
       {headline}
       {autoNew.map((k) => (
         <p key={k} className="cd-note">
@@ -181,8 +199,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {list.length > 1 && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
           <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
             onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />
-          <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} />
-          {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast}
+          <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />
+          {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
             onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, statsTab ? v.b : v.parent, piece.slot, piece, v.sig); } : undefined} />}
           {!statsTab && <BuildView c={c} b={b} ctx={ctx} />}
         </>

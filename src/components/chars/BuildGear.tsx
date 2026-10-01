@@ -1,24 +1,22 @@
 // Сборка варианта билда из вещей персонажа (GEARPOOL, logic/pool): 6 слотов, у вещи — сабстаты с сегментами,
-// окрашенные по цепочке этого билда, Breakthrough и сколько Reforge сделано; бонусы сетов с уровнем; «Собираю»;
-// «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet): оранжевые сегменты после Reforge, Breakthrough, смена
-// стата после Transistone, «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать билд»,
-// «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого варианта; на вкладке
-// «По статам» — примерку «По статам» (туда встаёт то, что герой носит не по билду, находка 28).
+// окрашенные по цепочке этого билда, и Breakthrough («T4», «T0–T3», «T?» — не указан); бонусы сетов с уровнем;
+// «Собираю»; «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet): узкая правка (Н1) — сегменты 1–6, «T4» у
+// брони, 4-й сабстат у Epic с тремя; «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать
+// билд», «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого варианта; на
+// вкладке «По статам» — примерку «По статам» (туда встаёт то, что герой носит не по билду, находка 28).
 import { useState } from 'react';
 import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
-import {
-  addFourth, holdersOf, MAX_LIT, pieceInput, reforgeScale, replaceStat, setYellow, tapSegment, updatePiece, type Bt, type GearStore, type Piece,
-} from '../../logic/gear';
+import { MAX_LIT, pieceInput, type Bt, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
 import { t4Only } from '../../logic/builds';
 import { tryOnPreset } from '../../logic/tryon';
 import { subWeights } from '../../logic/score';
 import { lookFor } from '../../logic/vs';
-import { MAX_SUBS } from '../../logic/subs';
-import { isStats, markOfVariant, removeEverywhere, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
+import { DROP_LEVEL, MAX_SUBS, levelCap, withinCap, type Subs } from '../../logic/subs';
+import { isStats, markOfVariant, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
 import { badgeOf, whereUsed } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
 import { buildOfKey, type Variant } from '../../logic/variants';
@@ -27,6 +25,7 @@ import { SlotIcon, StatIcon } from '../Img';
 import { tour, tourItem } from '../../tour/anchors';
 import { Sheet } from '../Sheet';
 import { SubPicker } from '../eval/SubPicker';
+import { BtChip } from '../eval/BtChip';
 
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
@@ -44,6 +43,9 @@ export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
     </>
   );
 }
+
+// Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма брони без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
+const btText = (t: ReturnType<typeof useT>, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
 
 // текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base
 export const bonusText = (idx: Index, r: BonusRow): string => {
@@ -115,8 +117,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const first = c.builds[0]?.sets[0]?.[0];
   const where = (id: string) => {
     const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStatsQ : x.name));
-    const with_ = holdersOf(gear.store, id).filter((h) => h !== c.id).map((h) => idx.CHAR[h]?.name ?? h);
-    return [others.length ? t.ui.slotAlsoIn(others.join(', ')) : '', with_.length ? t.ui.slotAlsoWith(with_.join(', ')) : ''].filter(Boolean).join(' · ');
+    return others.length ? t.ui.slotAlsoIn(others.join(', ')) : '';
   };
   if (gear.newer) return <div className="bgear" {...tour('bgear')}><p className="muted small">{t.ui.gearNewer}</p></div>;
   if (!cp.pieces.length) {
@@ -158,14 +159,13 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
             );
           }
           const W = subWeights(ctx, b, c, itemMains(idx, pieceInput(p)));
-          const rf = reforgeScale(p);
           const mark = [isArmor(slot) && a.roles[slot] === 'filler' && !stats ? t.ui.slotOffSet : '', where(p.id)].filter(Boolean).join(' · ');
           return (
             <li key={slot}>
               <button type="button" className="bgear-row" onClick={() => onOpenPiece(p.id)} {...tourItem(slot)}>
                 <SlotIcon slot={slot} />
                 <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                <span className="bgear-m">{p.bt === null ? 'T?' : 'T' + p.bt}{rf.done < rf.of && <> · Reforge {rf.done}/{rf.of}</>}</span>
+                <span className="bgear-m">{btText(t, p.bt)}</span>
                 <span className="bgear-t">
                   {Object.keys(p.lit).map((k) => {
                     const cr = W.get(k)?.credit ?? 0;
@@ -197,100 +197,79 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   );
 }
 
-// карточка вещи — одна шторка, окно выбора стата внутри неё (вложенные шторки закрывались бы одним Esc).
-// «Убрать у Caren» — только из её вещей; у общей вещи ещё «Разобрал — убрать у всех». onRemoved — сообщение с «Вернуть»
-export function PieceSheet({ c, p, ctx, gear, view, onClose, onTry, onRemoved }: {
-  c: Char; p: Piece; ctx: Ctx; gear: GearApi; view: PoolView; onClose: () => void; onTry?: () => void;
+// Карточка вещи — узкая правка (Н1): сегменты сабстатов 1–6 одним цветом (нажатие ставит уровень, на текущий — на
+// один меньше, не ниже 1), «T4» у брони, «+ 4-й сабстат» у Epic с тремя (уровень 1, В-А2). Стат не меняется:
+// Transistone — ввести вещь заново (pieceEditNote). Нажатие, с которым сумма уровней ушла бы выше предела грейда
+// (logic/subs levelCap), не срабатывает — строка «больше N не бывает», как на форме (SubRows); уходит со следующей
+// правкой. Правку делает onEdit (CharDetail: gear updateIn — у этого героя, общая запись делится, шторка идёт за новым
+// id). Кнопки уровня — как на форме: 5–6 (после Reforge) узкие. Окно выбора 4-го — внутри этой же шторки (вложенные
+// закрывались бы одним Esc). «Убрать у Caren» — только из её вещей (пулы независимы, В9); onRemoved — сообщение с «Вернуть»
+export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRemoved }: {
+  c: Char; p: Piece; ctx: Ctx; gear: GearApi; view: PoolView; onClose: () => void; onEdit: (patch: PieceEdit) => void; onTry?: () => void;
   onRemoved?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
 }) {
   const t = useT();
-  const [pick, setPick] = useState<string | 'fourth' | null>(null);
-  // Transistone / опечатка: выбран стат (from → to, может быть тот же) — теперь сколько у него жёлтых
-  const [swap, setSwap] = useState<{ from: string; to: string } | null>(null);
-  const st = gear.store;
-  const put = (patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>) => gear.set(updatePiece(st, p.id, patch));
+  const [fourth, setFourth] = useState(false);
+  const [capAt, setCapAt] = useState<Subs | null>(null); // на каких уровнях нажатие упёрлось в предел
   const keys = Object.keys(p.lit);
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
-  const holders = holdersOf(st, p.id);
-  const others = holders.filter((h) => h !== c.id).map((h) => ctx.idx.CHAR[h]?.name ?? h);
   const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
-  // «Стоит в … — правка изменит везде» — только у общей: в 2+ билдах или и у других; ни в одном — «Ни в одном билде»
-  const whereText = builds.length > 1 || others.length ? t.ui.gearShared(t.ui.pieceWhere(builds.join(', '), others.join(', '))) : builds.length ? '' : t.ui.pieceNowhere;
-  const remove = (all: boolean) => {
-    gear.set(all ? removeEverywhere(st, p.id) : removeFrom(st, c.id, p.id));
-    onRemoved?.(t.ui.removedFrom(all ? [c.name, ...others].join(', ') : c.name), !all && others.length ? t.ui.stillWith(others.join(', ')) : '',
-      (x) => undoRemove(x, p, all ? holders : [c.id]));
+  const edit = (lit: Subs, patch: PieceEdit) => {
+    if (!withinCap(p.grade, p.lit, lit)) { setCapAt(p.lit); return; }
+    onEdit(patch);
+  };
+  const tap = (k: string, n: number) => {
+    const to = n === p.lit[k] ? Math.max(1, n - 1) : n;
+    if (to !== p.lit[k]) edit({ ...p.lit, [k]: to }, { lit: { [k]: to } });
+  };
+  const remove = () => {
+    gear.set(removeFrom(gear.store, c.id, p.id));
+    onRemoved?.(t.ui.removedFrom(c.name), '', (x) => undoRemove(x, p, [c.id]));
     onClose();
   };
+  const canFourth = p.grade === 'rare' && keys.length === MAX_SUBS - 1;
   // в заголовке — слот и персонаж; билды — строкой в теле
   const title = t.ui.pieceTitle(t.ui.slotNames[p.slot], c.name);
-  if (swap) {
-    const orange = p.lit[swap.from] - p.yellow[swap.from];
-    const done = (n: number) => { put(setYellow(replaceStat(p, swap.from, swap.to), swap.to, n)); setSwap(null); };
+  if (fourth) {
     return (
-      <Sheet title={t.ui.yellowSheet(subLabel(swap.to))} onClose={() => setSwap(null)}>
-        <div className="piece">
-          <div className="seg piece-bt" role="group" aria-label={t.ui.yellowSheet(subLabel(swap.to))}>
-            {[1, 2, 3, 4].map((n) => (
-              <button key={n} type="button" className="fbtn" aria-pressed={swap.from === swap.to && p.yellow[swap.from] === n}
-                disabled={n + orange > MAX_LIT} onClick={() => done(n)}>{n}</button>
-            ))}
-          </div>
-          <p className="muted small">{t.ui.yellowNote(orange)}</p>
-          <p className="muted small">{t.ui.yellow4}</p>
-        </div>
-      </Sheet>
-    );
-  }
-  if (pick) {
-    return (
-      <Sheet title={pick === 'fourth' ? t.ui.fourthSheet : t.ui.replaceSub(subLabel(pick))} onClose={() => setPick(null)}>
-        <SubPicker ctx={ctx} subs={p.yellow} blocked={blocked} editing={pick === 'fourth' ? null : pick} noMove
-          onPick={(k) => { if (pick === 'fourth') put(addFourth(p, k)); else setSwap({ from: pick, to: k }); setPick(null); }} />
+      <Sheet title={t.ui.fourthSheet} onClose={() => setFourth(false)}>
+        <SubPicker ctx={ctx} subs={p.lit} blocked={blocked} editing={null}
+          onPick={(k) => { edit({ ...p.lit, [k]: 1 }, { add: k }); setFourth(false); }} />
       </Sheet>
     );
   }
   return (
     <Sheet title={title} onClose={onClose}>
       <div className="piece" {...tour('gpiece')}>
-        <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
-        {whereText && <p className="muted small">{whereText}</p>}
+        <div className="piece-top">
+          <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
+          {isArmor(p.slot) && <BtChip anchor={false} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />}
+        </div>
+        <p className="muted small">{builds.length ? t.ui.poolIn(builds.join(', ')) : t.ui.pieceNowhere}</p>
         <div className="subrows">
           {keys.map((k) => (
             <div key={k} className="subrow">
-              <button type="button" className="pick subkey" onClick={() => setPick(k)} aria-label={t.ui.subReplace(subLabel(k))}>
-                <StatIcon stat={k} /><span className="lab">{subLabel(k)}</span>
-              </button>
-              <span className="roll-b seg6" role="group" aria-label={subLabel(k)}>
+              <span className="subkey"><StatIcon stat={k} /><span className="lab">{subLabel(k)}</span></span>
+              <span className="roll-b" role="group" aria-label={subLabel(k)}>
                 {Array.from({ length: MAX_LIT }, (_, i) => i + 1).map((n) => (
-                  <button key={n} type="button" className={n <= p.yellow[k] ? 'y' : n <= p.lit[k] ? 'o' : undefined}
-                    aria-pressed={n <= p.lit[k]} aria-label={t.ui.segLabel(n, n <= p.yellow[k] ? 'y' : n <= p.lit[k] ? 'o' : '')}
-                    onClick={() => put(tapSegment(p, k, n))}>{n}</button>
+                  <button key={n} type="button" aria-pressed={p.lit[k] === n} className={[n < p.lit[k] && 'lit', n > DROP_LEVEL && 'after'].filter(Boolean).join(' ') || undefined}
+                    aria-label={t.ui.segLabel(n)} title={n > DROP_LEVEL ? t.ui.segAfter : undefined} onClick={() => tap(k, n)}>{n}</button>
                 ))}
               </span>
             </div>
           ))}
-          {p.grade === 'rare' && keys.length === MAX_SUBS - 1 && <button type="button" className="subadd" onClick={() => setPick('fourth')}>+ {t.ui.addFourth}</button>}
+          {canFourth && <button type="button" className="subadd" onClick={() => setFourth(true)}>+ {t.ui.addFourth}</button>}
+          {capAt === p.lit && <p className="seg-cap" role="status">{t.ui.segCap(levelCap(p.grade))}</p>}
         </div>
-        <p className="muted small">{t.ui.pieceSegHint}</p>
-        {p.grade === 'rare' && keys.length === MAX_SUBS - 1 && <p className="muted small">{t.ui.pieceNoFourth}</p>}
-        <p className="small">{t.ui.pieceReforge(reforgeScale(p).done, reforgeScale(p).of)}</p>
-        <div className="seg piece-bt" role="group" aria-label="Breakthrough">
-          <span className="muted small">Breakthrough</span>
-          {([0, 1, 2, 3, 4] as Bt[]).map((n) => (
-            <button key={n} type="button" className="fbtn" aria-pressed={p.bt === n} onClick={() => put({ bt: p.bt === n ? null : n })}>T{n}</button>
-          ))}
-          {p.bt === null && <span className="muted small">{t.ui.pieceBtUnknown}</span>}
-        </div>
-        <p className="muted small">{t.ui.pieceStatHint}</p>
+        <p className="muted small">{t.ui.pieceEditNote(c.name)}</p>
         <div className="piece-act">
           <button type="button" className="btn primary" onClick={onClose}>{t.ui.pieceDone}</button>
           {onTry && <button type="button" className="btn" onClick={onTry} {...tourItem('try')}>{t.tryon.replace}</button>}
-          <button type="button" className="btn" onClick={() => remove(false)}>{t.ui.pieceRemove(c.name)}</button>
-          {others.length > 0 && <button type="button" className="btn bad" onClick={() => remove(true)}>{t.ui.pieceRemoveAll}</button>}
+          <button type="button" className="btn" onClick={remove}>{t.ui.pieceRemove(c.name)}</button>
         </div>
         <p className="muted small">{t.ui.pieceRemoveNote(c.name)}</p>
       </div>
     </Sheet>
   );
 }
+

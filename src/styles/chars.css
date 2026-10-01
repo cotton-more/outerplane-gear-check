@@ -135,10 +135,18 @@ html.xs .bgear-t { grid-row: 3; }
 .piece { display: grid; gap: 10px; }
 .piece p { margin: 0; }
 .piece-n { display: flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; white-space: nowrap; }
-.roll-b.seg6 button { min-width: 30px; background: transparent; color: var(--ink-2); }
-.roll-b.seg6 button.y { background: var(--seg-y); color: #1b1300; }
-.roll-b.seg6 button.o { background: var(--seg-o); color: #2a1000; box-shadow: inset 0 -4px 0 rgb(0 0 0 / .28); } /* не только цветом: в тёмной теме жёлтый и оранжевый близки */
-html.xs .roll-b.seg6 button { min-width: 26px; }
+/* узкая правка (Н1): название вещи и «T4» — одной строкой; строки сабстатов — как на форме (eval.css .subrow, .roll-b),
+   один цвет; название стата — не кнопка (стат не меняется) */
+.piece-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.piece-top .piece-n { flex: 1; }
+.piece .subkey { display: flex; align-items: center; min-width: 0; min-height: 36px; }
+/* шторка на 280px: строка ≈ 252px — чуть шире, чем у формы (eval.css, 250px), и «DMG RED%» со значком не влезает
+   рядом с шестью кнопками: без значка, шрифт мельче; кнопки — прежние 30/26px (название стата не кнопка — места хватает) */
+@container (max-width: 262px) {
+  .piece .subkey { padding: 4px; }
+  .piece .subkey .lab { font-size: 12px; }
+  .piece .subkey img, .piece .subkey .noimg, .piece .subkey .ico { display: none; }
+}
 .piece-bt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .piece-act { display: flex; flex-wrap: wrap; gap: 8px; }
 /* окна-вопросы (Core Fusion, снятие звезды): заголовок — вопрос с именем, на 280 не режем многоточием, а переносим */
@@ -156,6 +164,8 @@ html.xs .roll-b.seg6 button { min-width: 26px; }
 .cgrid-note { margin: -6px 16px 14px; }
 /* GEARPOOL: заголовок карточки «Лучше всего собран», подсказка после переноса */
 .cd-lead { margin: 4px 16px 0; display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--keep-soft); font-size: 13px; }
+.cd-rate { margin: 8px 16px 0; }
+.cd-rate .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 .cd-note { margin: 8px 16px 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; }
 .cd-note span { flex: 1; min-width: 0; }
 /* варианты связок: чипы и шторка «ещё N» */
@@ -182,9 +192,17 @@ html.xs .roll-b.seg6 button { min-width: 26px; }
 .bgear-need p { margin: 0; color: var(--ink-2); }
 .bgear-need .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 /* «Вещи Caren · N» */
-.pool { margin: 12px 16px 16px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); }
+.pool { margin: 12px 16px 16px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); container-type: inline-size; }
 .pool summary { padding: 10px 12px; font-weight: 700; font-size: 13px; cursor: pointer; }
-.pool-list { list-style: none; margin: 0; padding: 0 8px 8px; display: grid; gap: 4px; }
+/* «Оценить вещь для Caren» — справа от заголовка; где рядом с ним не помещается (280–360px), — своей строкой над ним */
+.pool-rate { float: right; margin: 5px 6px 0 8px; min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+@container (max-width: 380px) {
+  .pool-rate { float: none; display: block; margin: 8px 8px 0; }
+}
+/* группы по слотам: «Шлем · 2» */
+.pool-g { padding: 0 8px 8px; }
+.pool-gh { margin: 2px 4px 4px; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.pool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .pool-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 2px 8px; align-items: center; padding: 6px 8px; border: 0; border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
 .pool-row .ico, .pool-row img, .pool-row .noimg { width: 22px; height: 22px; }
 .pool-w { grid-column: 2; font-size: 12px; color: var(--ink-3); }
