@@ -394,6 +394,7 @@ export const en: Texts = {
     equipped: (name, slot) => `On ${name}: ${SLOT_EN[slot]}.`,
     replaced: (name, slot) => `Replaced: ${name}'s ${SLOT_EN[slot]}.`,
     replacedMany: (name, slot, olds) => `Replaced: ${name}'s ${SLOT_EN[slot]} — the old ${andEn(olds)} ones are removed.`,
+    prunedNote: (olds) => `Removed — not in any build: ${olds.map((o) => `${o.what} ${SLOT_EN[o.slot]}`).join(', ')}.`,
     oldMaterial: (slot, what) => `The ${what ?? 'old'} ${SLOT_EN[slot]} can feed the new ${plEn(slot) ? "ones'" : "one's"} Breakthrough.`,
     oldStill: (slot, name, build, what) => `The ${what ?? 'old'} ${SLOT_EN[slot]} ${plEn(slot) ? 'stay' : 'stays'} with ${name} (in ${build}).`,
     sameAs: (name) => `Same piece as ${name}'s: Reforge and Breakthrough are shared.`,

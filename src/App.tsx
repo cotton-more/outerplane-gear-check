@@ -405,27 +405,33 @@ export function App() {
     setUndo(null);
     if (touring) return;
     const used = usedFor(st, c.id, r.id);
-    // убраны 2+ вещи её слота — назвать каждую: «Заменено: ботинки Caren — убраны прежние: Speed и Immunity.»
-    const text = r.removed.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(r.removed.map(pieceLabel))])
-      : r.removed.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+    // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote.
+    // Убраны 2+ вещи её слота — назвать каждую: «Заменено: ботинки Caren — убраны прежние: Speed и Immunity.»
+    const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
+    const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))])
+      : mine.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
     const notes: string[] = [];
-    // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке; и цель примерки, ставшая «Собираю»)
+    // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке)
     if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
     if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
-    notes.push(...removedNotes(st, c, r));
+    notes.push(...removedNotes(st, c, r, mine));
+    // «Убраны — не вошли ни в один билд: Speed-перчатки, Immunity-ботинки.» — одно имя на сет и слот
+    const names = [...new Map(pruned.map((p) => [`${p.slot}\u0000${pieceLabel(p)}`, { slot: p.slot, what: pieceLabel(p) }])).values()];
+    if (names.length) notes.push(t.ui.prunedNote(names));
     if (sw) notes.push(sw.note);
     setGearUndo({
       text, note: notes.join(' '), tab: 'eval',
       undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: both(joined, sw?.after),
     });
   };
-  // что стало с убранными из пула (Р7: только вещи слота новой) — каждая своей строкой: осталась у другого или материал
-  // новой. Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. st — после «Надеть»
-  // убраны 2+ — в строках имя сета или предмета вместо «Старые» (заголовок replacedMany их уже перечислил)
-  const removedNotes = (st: GearStore, c: Char, r: PutResult) => {
+  // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote) — каждая своей строкой: осталась у
+  // другого или материал новой. Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам.
+  // st — после «Надеть». Убраны 2+ — в строках имя сета или предмета вместо «Старые» (заголовок replacedMany их уже
+  // перечислил)
+  const removedNotes = (st: GearStore, c: Char, r: PutResult, mine: readonly Piece[]) => {
     const notes: string[] = [];
-    const many = r.removed.length > 1;
-    for (const old of r.removed) {
+    const many = mine.length > 1;
+    for (const old of mine) {
       const still = holdersOf(st, old.id).filter((id) => id !== c.id);
       const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
       if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStatsQ, many ? pieceLabel(old) : undefined));

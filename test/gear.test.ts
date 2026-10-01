@@ -284,9 +284,10 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
 
 });
 
-describe('«Надеть»: что уходит из пула (Р7)', () => {
-  // Р7: только вещь того слота, куда встала новая, и только если её больше нет ни в одной собираемой сборке.
-  // Остальные ставшие ненужными остаются: на карточке «больше не нужна» и «Убрать у Caren»
+describe('«Надеть»: что уходит из пула (В1)', () => {
+  // В1 (было Р7 — только вещь её слота): всё, что вытеснило это «Надеть», в любом слоте — стояло в сборке, что держит
+  // пул (все варианты и «По статам»), а с новой — ни в одной. Ставшее ненужным раньше остаётся: на карточке «больше не
+  // нужна» и «Убрать у Caren»
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 }, STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 };
   const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
   const pool = (ps: Piece[], who = CAREN) => v2(ps, { [who]: ps.map((p) => p.id) });
@@ -296,16 +297,36 @@ describe('«Надеть»: что уходит из пула (Р7)', () => {
   const helmets = () => [rec('p1', A('helmet', 'Speed', JUNK)), rec('p2', A('helmet', 'Attack', STRONG)), rec('p3', A('armor', 'Speed', JUNK)), rec('p4', A('gloves', 'Speed', JUNK))];
   const SHOES = A('shoes', 'Speed', { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 });
 
-  it('вещь другого слота не убирается, даже если стала ненужной: она в пуле и «больше не нужна»', () => {
+  // было (Р7): Attack-шлем другого слота оставался в пуле со строкой «больше не нужна». В1: его вытеснило это «Надеть» —
+  // убран, назван в сообщении (prunedNote), «Вернуть» ставит его на место
+  it('вещь другого слота, которую вытеснило это «Надеть», убирается; «Вернуть» — на прежнее место', () => {
     // Speed-перчатки, Attack-шлем сильнее Critical Hit-шлема — в раскладках шлем Attack. Critical Hit-броня: бонус
-    // Critical Hit ×2 выгоднее, шлем везде Critical Hit, Attack-шлему места нет. (До Р14 пример был «Def больше не
-    // ближе всех»; теперь Defense-броня начала Def и нужна.)
+    // Critical Hit ×2 выгоднее, шлем везде Critical Hit, Attack-шлему места нет
     const ps = [rec('p1', A('gloves', 'Speed', { HP: 1 })), rec('p2', A('helmet', 'Attack', { 'DEF%': 2, CHC: 1 })), rec('p3', A('helmet', 'Critical Hit', { 'DEF%': 2 }))];
     expect(poolView(ctx, pool(ps)).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p3']);
     const r = putOn(ctx, pool(ps), CAREN, A('armor', 'Critical Hit', { CHC: 1 }));
+    expect(r.removed.map((p) => p.id)).toEqual(['p2']);
+    expect(r.st.pools[CAREN]).toEqual(['p1', 'p3', 'p4']);
+    expect(poolView(ctx, r.st).of(CAREN)!.unused).toEqual([]);
+    expect(undoPut(r.st, CAREN, r).pools[CAREN]).toEqual(['p1', 'p2', 'p3']);
+  });
+
+  it('ненужная до «Надеть» остаётся: «Надеть» убирает только то, что вытеснило само', () => {
+    // слабый Speed-шлем «больше не нужна» (сильный лучше во всех раскладках); новые Speed-перчатки его не касаются
+    const ps = [rec('p1', A('helmet', 'Speed', JUNK)), rec('p2', A('helmet', 'Speed', STRONG))];
+    expect(poolView(ctx, pool(ps)).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p1']);
+    const r = putOn(ctx, pool(ps), CAREN, A('gloves', 'Speed', { CHC: 3, CHD: 2 }));
     expect(r.removed).toEqual([]);
-    expect(r.st.pools[CAREN]).toContain('p2');
-    expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p2']);
+    expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p1']);
+  });
+
+  it('новая не встала ни в одну сборку — ничего не убрано, даже ненужные', () => {
+    // слабый Speed-шлем ненужный; новый шлем чужого сета без полезных Caren статов не встаёт никуда
+    const ps = [rec('p1', A('helmet', 'Speed', JUNK)), rec('p2', A('helmet', 'Speed', STRONG))];
+    const { piece } = newPiece(pool(ps), A('helmet', 'Life', { RES: 1, EFF: 1 }), '');
+    const plan = planPut(ctx, idx.CHAR[CAREN], ps, piece);
+    expect(plan.removed).toEqual([]);
+    expect(poolView(ctx, putOn(ctx, pool(ps), CAREN, A('helmet', 'Life', { RES: 1, EFF: 1 })).st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p1', 'p3']);
   });
 
   it('Р1: слабый Speed-шлем, который раскладка Speed отдала сильному Attack-шлему, — в пуле нужен: Speed ×4 собирается из пула', () => {
@@ -437,18 +458,19 @@ describe('«Надеть» в примерке', () => {
     expect({ marks: r.marks, stored: r.st.marks }).toEqual({ marks: [], stored: { [K3]: 'skip' } });
   });
 
-  // Р19, исключение: Pen-шлем со слабыми статами встаёт только в Pen (цель, «Не собираю»): ни в Speed-вариантах, ни в
-  // «По статам» (там Speed-шлем лучше) его нет — без отметки после примерки он «больше не нужна»
+  // Pen-шлем со слабыми статами встаёт только в Pen (цель, «Не собираю»): ни в Speed-вариантах, ни в «По статам» (там
+  // Speed-шлем лучше) его нет. Было (Р19, исключение): цель становилась «Собираю», иначе после примерки шлем «больше не
+  // нужна». Теперь пул держит сборку каждого варианта и с «Не собираю» (В2, «что держит пул» — (а)) — отметка не нужна
   const PEN = buildKey(CAREN, 'Pen');
   const PENH = A('helmet', 'Penetration', { RES: 1, EFF: 1 });
-  it('встала только в цель примерки («Не собираю») — цель «Собираю», began — она', () => {
+  it('встала только в цель примерки («Не собираю») — отметок нет, «Не собираю» остаётся, после примерки шлем нужен', () => {
     const r = putOn(ctx, { ...st, marks: { [PEN]: 'skip' } }, CAREN, PENH, { tryOn: PEN });
-    expect({ marks: r.marks, stored: r.st.marks, began: r.began }).toEqual({ marks: [PEN], stored: { [PEN]: 'want' }, began: [PEN] });
+    expect({ marks: r.marks, stored: r.st.marks, began: r.began }).toEqual({ marks: [], stored: { [PEN]: 'skip' }, began: [] });
     expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).not.toContain(r.id);
   });
 
   // было: «Вернуть» снимало отметку совсем — «Не собираю» пропадало
-  it('«Вернуть» после отметки цели — хранилище как до «Надеть», «Не собираю» байт в байт', () => {
+  it('«Вернуть» в примерке цели с «Не собираю» — хранилище как до «Надеть», «Не собираю» байт в байт', () => {
     const skip: GearStore = { ...st, marks: { [PEN]: 'skip' } };
     const r = putOn(ctx, skip, CAREN, PENH, { tryOn: PEN });
     const back = undoPut(r.st, CAREN, r);

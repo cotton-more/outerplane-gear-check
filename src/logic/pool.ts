@@ -11,7 +11,9 @@
 //     показывает выбранную раскладку.
 //   - «По статам» — отдельный билд у каждого персонажа с билдами (находка 28, Р11–Р13): все вещи пула по цепочке. Он
 //     «живой» (собираешь, держит штамп), пока ни один настоящий билд не начат; потом его строка тихая —
-//     «Надеть» в него только при явном выборе (поиск по имени, примерка). Вещи его сборки пул держит всегда (usedIn).
+//     «Надеть» в него только при явном выборе (поиск по имени, примерка).
+//   - Что держит пул (held) — шире «собираешь»: лучшие раскладки всех вариантов (собирается он или нет, «Не собираю»
+//     тоже — В2) и «По статам». «Надеть» убирает то, что это «Надеть» вытеснило из них, в любом слоте (В1).
 //   - Исход вещи с формы для персонажа (outcomeFor): что станет с каждым собираемым вариантом, если её добавить.
 import { isArmor } from '../data';
 import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
@@ -322,6 +324,7 @@ export interface Play {
   reach: Map<string, Assembly>;        // достижимая сборка (assembleReach): по ней «собираешь»; не отличается — тот же объект
   inPlay: Variant[];
   own: Variant[];                      // собираемые без примерки: цель примерки собирается, только пока она идёт
+  held: Set<string>;                   // записи, которые держит пул (heldOf): от него usedIn, «ненужные», чистка «Надеть»
 }
 
 export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts = {}, x?: ItemInput | null): Play {
@@ -345,7 +348,7 @@ export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts
     const m = markOf(opts.marks, v);
     return m !== 'skip' && (m === 'want' || started(reach.get(v.key)!));
   };
-  return { variants, stat, statLive, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self) };
+  return { variants, stat, statLive, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self), held: heldOf({ variants, asm, reach }) };
 }
 
 // сборки варианта, чьи вещи пул держит: выбранная и достижимая (если другая)
@@ -354,14 +357,22 @@ export const heldBy = (p: Pick<Play, 'asm' | 'reach'>, v: Variant): Assembly[] =
   return r === a ? [a] : [a, r];
 };
 
-// Записи, которые держит пул (keeps): стоят в выбранной или достижимой сборке хоть одного собираемого варианта или в
-// сборке «По статам» — живой он или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная» и
-// «Надеть» Speed-брони её не уберёт). Пустой пул — сборка «По статам» пуста. Одно место на «ненужные» (poolView), на
-// то, что уберёт «Надеть» (planPut, подпись «Заменить»), и на «где стоит» (poolVs whereUsed)
-export const usedIn = (p: Play): Set<string> => {
-  const vs = p.stat && !p.inPlay.includes(p.stat) ? [...p.inPlay, p.stat] : p.inPlay;
-  return new Set(vs.flatMap((v) => heldBy(p, v).flatMap((a) => Object.values(a.slots).map((e) => e?.id))).filter((id): id is string => !!id));
-};
+// Что держит пул (решение владельца 2026-10-01, «что держит пул» — (а)): лучшую раскладку — выбранную и достижимую —
+// КАЖДОГО варианта героя, есть в пуле вещи его сета или нет (шлем DEF% 4 / HP% 3 — лучший для Def/Immu у героя без
+// Defense- и Immunity-вещей), с «Не собираю» тоже (В2: отметка — только про штамп и исходы), и «По статам» — живой он
+// или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная»). Отметки и примерка не влияют:
+// play собирает все варианты всегда. Источники — одним объединением: «Надето» (своя фича после eval-only) добавится
+// сюда ещё одной строкой
+function heldOf(p: Pick<Play, 'variants' | 'asm' | 'reach'>): Set<string> {
+  const ids = (as: readonly Assembly[]) => as.flatMap((a) => Object.values(a.slots).map((e) => e?.id));
+  return new Set([
+    ...p.variants.flatMap((v) => ids(heldBy(p, v))), // все варианты и «По статам» (он среди variants)
+  ].filter((id): id is string => !!id));
+}
+
+// Записи, которые держит пул (Play.held). Одно место на «ненужные» (poolView) и на то, что уберёт «Надеть» (planPut,
+// подпись «Заменить»); «где стоит» (poolVs whereUsed) — уже: только собираемые варианты. Пустой пул — пусто
+export const usedIn = (p: Pick<Play, 'held'>): Set<string> => p.held;
 
 // --------------------------------------------------------------------------- вид пула
 
@@ -701,35 +712,33 @@ export const puts = (o: Outcome): boolean => holds(o) && o.used;
 // --------------------------------------------------------------------------- операции с пулом
 
 // что сделало «Надеть»: added — вещь добавлена (false — такая же уже есть); removed, marks и began — как в planPut
-// (removed — вещи её слота, которых с ней нет ни в одной сборке, что держит пул: «Заменить»; marks — только цель
-// примерки); prev — что стояло в этих отметках до «Надеть» (null — ничего; «Не собираю» у цели примерки): «Вернуть»
-// кладёт их обратно; shared — у кого ещё эта запись
+// (removed — вещи любого слота, которые стояли в сборке, что держит пул, а с ней — ни в одной: её слота — «Заменить»,
+// других — строка «Убраны — не вошли ни в один билд»; marks — отметки, которые поставило «Надеть»); prev — что стояло в
+// этих отметках до «Надеть» (null — ничего): «Вернуть» кладёт их обратно; shared — у кого ещё эта запись; was — пул
+// персонажа до «Надеть»: «Вернуть» ставит убранные на их прежние места
 export interface PutResult {
   st: GearStore; id: string; piece: Piece; added: boolean; removed: Piece[]; marks: string[]; began: string[]; prev: Record<string, Mark | null>; shared: string[];
+  was: readonly string[];
 }
 
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 
 // Что сделает «Надеть» piece на персонажа — без записи (им же считать подпись «Заменить» / «Надеть»).
-// removed (Р7) — только вещи того слота, куда встала новая: стояли в сборке, что держит пул (usedIn — и «По статам»),
-// а с ней — ни в одной. Не встала никуда — ничего не убираем. Вещи других слотов, ставшие ненужными, остаются в пуле:
-// на карточке «больше не нужна» и «Убрать у X» (решение 3 — молча ничего не удаляем).
-// marks (Р19): «Надеть» отметок не ставит — «Собираю» переключает только игрок. Исключение — примерка: цель собирается,
-// только пока примерка идёт; вещь стоит в её сборке, а без примерки её не держит ни одна сборка (не начала цель —
-// «прочая» на месте другой; цель — «Не собираю») — цель становится «Собираю», иначе после примерки вещь «больше не
-// нужна». began — тост «Начал собирать …»: варианты, которые собираются и без примерки и с ней начаты, а до неё — нет
-// (начало по вещам, Р14, Р18), и отмеченная цель примерки. pre — play(mine, po), если уже посчитан (вид пула)
+// removed (В1, вместо Р7) — всё, что вытеснило ЭТО «Надеть», в любом слоте: запись стояла в сборке, что держит пул
+// (usedIn — все варианты и «По статам»), а с новой — ни в одной. Только если новая встала (её держит пул); не встала —
+// ничего не убираем. Ставшее ненужным раньше (новые данные, «Развитие»/«Эндгейм», ручное «Убрать», правка) не трогаем:
+// строка «больше не нужна» и «Убрать у X». Каждая убранная названа в сообщении, «Вернуть» — всё обратно (undoPut).
+// marks — пусто: исключение Р19 (цель примерки — «Собираю», иначе после примерки вещь «больше не нужна») больше не нужно
+// — цель держит свою сборку и без примерки (held — все варианты); поле уходит вместе с примеркой билда (шаг 10).
+// began — тост «Начал собирать …»: варианты, которые собираются и без примерки и с ней начаты, а до неё — нет (начало
+// по вещам, Р14, Р18). pre — play(mine, po), если уже посчитан (вид пула)
 export interface PutPlan { removed: Piece[]; marks: string[]; began: string[] }
 export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play): PutPlan {
   const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...mine, piece], po);
   const was = usedIn(before), now = usedIn(after);
-  const removed = now.has(piece.id) ? mine.filter((p) => p.slot === piece.slot && was.has(p.id) && !now.has(p.id)) : [];
-  const target = po.tryOn ? after.variants.find((v) => v.key === po.tryOn && !isStats(v)) : undefined;
-  const marks = target && !after.own.includes(target)
-    && heldBy(after, target).some((a) => Object.values(a.slots).some((e) => e?.id === piece.id))
-    && !usedIn({ ...after, inPlay: after.own }).has(piece.id) ? [target.key] : [];
+  const removed = now.has(piece.id) ? mine.filter((p) => was.has(p.id) && !now.has(p.id)) : [];
   const began = after.own.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
-  return { removed, marks, began: [...new Set([...began, ...marks])] };
+  return { removed, marks: [], began };
 }
 
 // Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
@@ -749,20 +758,21 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const twin = mine.find((p) => p.id === opts.record?.id);
-  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], began: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId) };
+  const was = st.pools[charId] ?? [];
+  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], began: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId), was };
   const made = opts.record
     ? { st: st.pieces[opts.record.id] ? st : { ...st, pieces: { ...st.pieces, [opts.record.id]: opts.record } }, piece: st.pieces[opts.record.id] ?? opts.record }
     : newPiece(st, x, opts.at ?? today());
   const { piece } = made;
   const { removed, marks, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }) : { removed: [], marks: [], began: [] };
   const gone = new Set(removed.map((p) => p.id));
-  const pool = [...(st.pools[charId] ?? []).filter((id) => !gone.has(id)), piece.id];
+  const pool = [...was.filter((id) => !gone.has(id)), piece.id];
   const next = gc({
     ...made.st, pools: { ...made.st.pools, [charId]: pool },
     ...(marks.length ? { marks: { ...made.st.marks, ...Object.fromEntries(marks.map((k) => [k, 'want' as Mark])) } } : {}),
   });
   const prev = Object.fromEntries(marks.map((k) => [k, st.marks?.[k] ?? null]));
-  return { st: next, id: piece.id, piece, added: true, removed, marks, began, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId) };
+  return { st: next, id: piece.id, piece, added: true, removed, marks, began, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId), was };
 }
 
 // «Это шлем Rin?» (мелочь 2): «Она же — и у …» кладёт запись другого героя, а строка и кнопка посчитаны по вещи с формы
@@ -778,14 +788,22 @@ export function shareFits(ctx: Ctx, st: GearStore, charId: string, x: ItemInput,
   return !unused(tryOn) && !(tryOn && unused(null));
 }
 
-// «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр), отметки — как были до
-// него (prev: «Не собираю» — снова «Не собираю», не было — снять); отметку, которую успели поменять, не трогаем.
-// Её там уже нет (успели убрать) — ничего не трогаем
+// «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр) и на прежние места (за
+// той вещью, за которой стояли до «Надеть», — ничего не трогали между ними, пул байт в байт как был), отметки — как
+// были до него (prev: «Не собираю» — снова «Не собираю», не было — снять); отметку, которую успели поменять, не
+// трогаем. Её там уже нет (успели убрать) — ничего не трогаем
 export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore {
   if (!r.added || !st.pools[charId]?.includes(r.id)) return st;
   const pieces = { ...st.pieces };
   for (const p of r.removed) pieces[p.id] ??= p;
-  const pool = [...st.pools[charId].filter((id) => id !== r.id), ...r.removed.map((p) => p.id).filter((id) => !st.pools[charId].includes(id))];
+  const pool = st.pools[charId].filter((id) => id !== r.id);
+  const back = new Set(r.removed.map((p) => p.id).filter((id) => !pool.includes(id)));
+  for (const id of r.was.filter((x) => back.has(x))) {
+    const i = r.was.indexOf(id);
+    const after = r.was.slice(0, i).reverse().find((x) => pool.includes(x));
+    pool.splice(after === undefined ? 0 : pool.indexOf(after) + 1, 0, id);
+  }
+  if (!r.marks.length) return gc({ ...st, pieces, pools: { ...st.pools, [charId]: pool } });
   const marks = { ...st.marks };
   for (const k of r.marks) {
     if (marks[k] !== 'want') continue;

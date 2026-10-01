@@ -458,6 +458,9 @@ export const ru = {
     replaced: (name: string, slot: string) => `Заменено: ${NOM[slot]} ${name}.`,
     // убраны 2+ вещи её слота: olds — имя сета у брони, предмета у оружия и аксессуара
     replacedMany: (name: string, slot: string, olds: string[]) => `Заменено: ${NOM[slot]} ${name} — убраны прежние: ${andList(olds)}.`,
+    // «Надеть» убрало и вещи других слотов — их вытеснила новая из всех билдов (В1): what — имя сета у брони, предмета
+    // у оружия и аксессуара
+    prunedNote: (olds: { slot: string; what: string }[]) => `Убраны — не вошли ни в один билд: ${olds.map((o) => named(o.slot, o.what)).join(', ')}.`,
     // what — как в oldStill: убраны 2+ — имя вместо «Старые»
     oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
     // what — имя сета или предмета, когда убраны 2+ (replacedMany): «Speed-ботинки остались…» вместо «Старые…»

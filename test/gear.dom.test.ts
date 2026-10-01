@@ -80,7 +80,9 @@ describe('«Надеть» и «Вернуть»', () => {
     expect(stored()).toMatchObject({ v: 2, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: 0 } } });
     expect(stored().marks ?? {}).toEqual({});
     await click(byText('.gear-toast button', 'Undo'));
-    expect(stored()).toMatchObject({ pieces: {}, pools: {}, marks: {} });
+    // «Вернуть» без отметок пустых marks не дописывает (шаг 4): хранилище как до «Надеть»
+    expect(stored()).toMatchObject({ pieces: {}, pools: {} });
+    expect(stored().marks ?? {}).toEqual({});
   });
 
   // после: такая же уже у Caren — сравнение с ней как есть, «уже есть» нет (решение владельца 2026-10-01)
@@ -93,6 +95,31 @@ describe('«Надеть» и «Вернуть»', () => {
     expect(stored().pools[caren.id]).toEqual(['p2']);
     expect($('.vcard .vc-vs .vs')?.textContent).toBe('on par');
     expect($('.vc-equip')).toBeNull();
+  });
+
+  // шаг 4 (В1): «Надеть» убрало вещь другого слота — заголовок про её слот («On … : gloves»), убранная — строкой
+  // prunedNote; «Вернуть» — пул как был, в том же порядке. Bell Cranel, Augm Attack: Augmentation-перчатки
+  // переставляют сет в шлем и перчатки, Augmentation-ботинки (Epic) не входят ни в один билд
+  it('«Надеть» Augmentation-перчаток Bell Cranel: тост «Removed — not in any build: Augmentation boots.», «Вернуть» — всё назад', async () => {
+    const bell = char('Bell Cranel');
+    const ps = [
+      P('p1', 'gloves', speed, { HP: 3, ATK: 1, CHC: 2, CHD: 2 }), P('p2', 'helmet', set('Augmentation'), { EFF: 2, CHD: 3, HP: 2, 'DMG RED%': 1 }),
+      P('p3', 'shoes', set('Augmentation'), { ATK: 2, EFF: 1, 'DMG UP%': 1 }, { grade: 'rare' }), P('p4', 'armor', set('Attack'), { SPD: 2, RES: 2, 'DEF%': 2, CHD: 2 }),
+      P('p5', 'shoes', set('Effectiveness'), { CHC: 2, CHD: 2, 'ATK%': 1, 'DMG UP%': 2 }),
+    ];
+    const pool = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: set('Augmentation'), subs: { 'DMG RED%': 1, HP: 3, ATK: 1, 'ATK%': 3 } }, { roster: [bell.id], gear: G(ps, { [bell.id]: pool }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect(byText('.equip-row', 'Bell Cranel')?.querySelector('.act')?.textContent).toMatch(/^Equip/);
+    await click(byText('.equip-row', 'Bell Cranel') as HTMLElement);
+
+    expect($('.gear-toast')?.textContent).toContain('On Bell Cranel: gloves.');
+    expect($('.gear-toast small')?.textContent).toContain('Removed — not in any build: Augmentation boots.');
+    expect(stored().pools[bell.id]).toEqual(['p1', 'p2', 'p4', 'p5', 'p6']);
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(stored().pools[bell.id]).toEqual(pool);
+    expect(stored().pieces.p3).toEqual(ps[2]);
   });
 
   // было: «или — Caren · Speed ▸», хотя кнопка заменяет её шлем (П8: подпись = действие, Р7)
