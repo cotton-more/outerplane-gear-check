@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Core Fusion на живой странице 360px (правила владельца 2026-09-30, logic/fusion): загрузка и перенос v1 — остаётся
-// Core Fusion, сообщение; окна перехода (звезда, «Надеть», примерка) в обе стороны и «Отмена»; пакетные добавления без
+// Core Fusion, сообщение; окна перехода (звезда, «Надеть», режим героя) в обе стороны и «Отмена»; пакетные добавления без
 // окон; импорт кода v1 и v2 с обоими; список — X сразу за Core Fusion, с пометкой; карточка X.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -218,7 +218,7 @@ describe('окна перехода', () => {
     expect({ gear: stored(), roster: roster() }).toEqual({ gear: null, roster: [caren.id, eternal.id] });
   });
 
-  it('примерка Core Fusion, X в ростере — окно; «Да» — примерка Core Fusion, в ростере он', async () => {
+  it('режим героя Core Fusion, X в ростере — окно; «Да» — режим героя Core Fusion, в ростере он', async () => {
     await mount({ tab: 'chars', charId: cfEternal.id }, {}, { roster: [eternal.id] });
     await click(byText('.bgear-none .btn', 'Gear up this build'));
     await click(askBtn('Yes, Core Fusion Eternal'));
@@ -260,7 +260,7 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect(row).toBeUndefined();
   });
 
-  it('примерка Core Fusion, X с вещами появился после её начала: кнопка под карточкой — по пулу после перехода', async () => {
+  it('режим героя Core Fusion, X с вещами появился после его начала: кнопка под карточкой — по пулу после перехода', async () => {
     const gear = G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 })], { [eternal.id]: ['e1'] });
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id], tryon: { charId: cfEternal.id, build: 'Speed' } });
     const btn = $('.vc-equip')?.textContent;

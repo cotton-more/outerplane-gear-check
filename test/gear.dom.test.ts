@@ -67,7 +67,7 @@ const type = async (el: HTMLInputElement, v: string) => {
 };
 
 describe('«Надеть» и «Вернуть»', () => {
-  it('«Надеть на…» → Caren (вещей нет): вещь у неё, «Начал собирать» без отметок (Р19), «Вернуть» — как было', async () => {
+  it('«Надеть на…» → Caren (вещей нет): вещь у неё, «Начал собирать» без отметок, «Вернуть» — как было', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
     await click($('.v-equip'));
@@ -324,7 +324,7 @@ describe('«Заменить»: что со старой', () => {
   });
 });
 
-describe('«Надеть»: что уходит из пула и что пишет сообщение (Р7)', () => {
+describe('«Надеть»: что уходит из пула и что пишет сообщение (В1)', () => {
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 }, STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 };
 
   // подпись кнопки — то, что сделает «Надеть» (находка 5): ничего не уберёт — «Надеть», а не «Заменить ботинки»
@@ -743,7 +743,7 @@ describe('«Кому надеть?»', () => {
 
 describe('карточка персонажа', () => {
   // шаг 9 (Н1): было — «T? · Reforge 0/6», в карточке 3-я клетка — оранжевая (yellow 2, lit 3), Breakthrough T0–T4,
-  // «Reforge: 1 of 6». Теперь уровень один (yellow = lit, до 4), «T4» — одна кнопка, «Reforge N из M» нет
+  // «Reforge: 1 of 6». Теперь уровень один (yellow = lit, 1–6), «T4» — одна кнопка, «Reforge N из M» нет
   it('заголовок, «Собираю», бонусы с уровнем; вещь с сегментами по цепочке; карточка вещи — уровень и «T4»', async () => {
     const four = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { 'DEF%': 2, EFF: 1 }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(four, { [caren.id]: four.map((p) => p.id as string) }) });
@@ -872,6 +872,32 @@ describe('карточка персонажа', () => {
     expect($('.pool')?.textContent).not.toContain('Rin');
   });
 
+  // внутри слота — в порядке добавления (PoolList): p2 добавлен раньше p3
+  it('«Вещи Caren · N»: внутри слота вещи в порядке добавления', async () => {
+    const ps = [P('p1', 'helmet', speed, { 'DEF%': 2 }), P('p2', 'helmet', set('Immunity'), { CHC: 2 }), P('p3', 'helmet', set('Defense'), { CHC: 1 })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2', 'p3'] }) });
+
+    const names = [...$$('.pool-g')[0].querySelectorAll('.pool-row .bgear-n')].map((n) => n.textContent);
+
+    expect(names.map((n) => n?.match(/Speed|Immunity|Defense/)?.[0])).toEqual(['Speed', 'Immunity', 'Defense']);
+  });
+
+  // на 280 ширину в jsdom не проверить (@container в chars.css); проверяем разметку: кнопка — до заголовка, своим блоком
+  it('на 280: «Rate a piece for Caren» — над «Вещи Caren · N», группы по слотам те же', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 280 });
+    try {
+      const ps = [P('p1', 'gloves', speed, { CHC: 1 }), P('p2', 'helmet', speed, { 'DEF%': 2 })];
+      await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2'] }) });
+
+      const kids = [...$('.pool')!.children].map((e) => e.className || e.tagName);
+
+      expect(kids).toEqual(['btn small pool-rate', 'DETAILS']);
+      expect($$('.pool-gh').map((h) => h.textContent)).toEqual(['Helmet · 1', 'Gloves · 1']);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    }
+  });
+
   it('лист общей вещи: где стоит — без «и у Kappa»; «Убрать у Caren» — у Kappa остаётся; «убрать у всех» нет', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
@@ -910,14 +936,16 @@ describe('карточка персонажа', () => {
   });
 
   // шаг 9 (Н1, В-А2): было — нажатие на стат открывало замену (Transistone), «Сколько жёлтых», оранжевые сегменты.
-  // Теперь стат не меняется (вещь вводят заново), уровень один — без жёлтых и оранжевых
-  it('узкая правка: название стата — не кнопка, окна смены стата нет; клеток жёлтых и оранжевых нет', async () => {
+  // Теперь стат не меняется (вещь вводят заново), уровень один — без жёлтых и оранжевых.
+  // Шаг 11: было — проверка «нет button.y / button.o»; таких классов в src больше нет, проверка проходила всегда.
+  // Теперь — классы клеток старой записи (yellow 2, lit 4): до уровня — одна «lit», 5–6 — «after»
+  it('узкая правка: название стата — не кнопка, окна смены стата нет; клетки одного цвета до уровня', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 3, SPD: 1 }, { lit: { 'DEF%': 4, CHC: 3, SPD: 1 } });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
     await click($('.bgear-row'));
     expect($('.piece .subkey')?.tagName).toBe('SPAN');
     expect($('.piece button.subkey')).toBeNull();
-    expect($('.piece .roll-b button.y, .piece .roll-b button.o')).toBeNull();
+    expect([...$$('.piece .roll-b')[0].querySelectorAll('button')].map((b) => b.className)).toEqual(['lit', 'lit', 'lit', '', 'after', 'after']);
     expect($$('.piece .roll-b')[0].querySelector('[aria-pressed="true"]')?.textContent).toBe('4'); // уровень = lit
     expect($('.piece')?.textContent).toContain('Transistone changed a stat? Enter the piece again');
   });
@@ -994,6 +1022,24 @@ describe('карточка персонажа', () => {
     expect(stored().pieces.p2).toMatchObject({ lit: { 'DEF%': 2, CHC: 3 }, bt: 4 });
   });
 
+  // В-А3: правка в шторке пересобирает билды, но пул не чистит. Два Speed-шлема: слабый не нужен ни одному билду;
+  // подняли ему уровни выше сильного — он в раскладке, сильный — «больше не нужна», в пуле оба
+  it('правка уровня в шторке → пересборка: поправленная встаёт в билд, прежняя — «больше не нужна», в пуле обе', async () => {
+    const weak = P('p1', 'helmet', speed, { 'DEF%': 1, CHC: 1, CHD: 1 }), strong = P('p2', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 3 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([weak, strong], { [caren.id]: ['p1', 'p2'] }) });
+    const unused = () => $$('.pool-list li').map((li) => li.classList.contains('unused'));
+    const worn = () => [...$$('.bgear-row')[0].querySelectorAll('.tok i')].map((i) => i.textContent);
+    expect({ unused: unused(), worn: worn() }).toEqual({ unused: [true, false], worn: ['3', '3', '3'] });
+    await click($$('.pool-row')[0]);
+    const cell = (row: number, n: number) => $$('.piece .roll-b')[row].querySelectorAll<HTMLElement>('button')[n - 1];
+
+    for (const row of [0, 1, 2]) await click(cell(row, 6));
+    await click($('.drawer-x'));
+
+    expect({ unused: unused(), worn: worn(), pool: stored().pools[caren.id] }).toEqual({ unused: [false, true], worn: ['6', '6', '6'], pool: ['p1', 'p2'] });
+    expect(byText('.pool-list li.unused', 'no longer needs it')).toBeTruthy();
+  });
+
   // решение оркестратора (REFUTE-5): «Вернуть» после «Убрать у Caren» вернул бы ей запись, которую потом поправили у Rin
   it('«Убрать у Caren» → правка у Rin → «Вернуть» больше нет', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 });
@@ -1011,7 +1057,7 @@ describe('карточка персонажа', () => {
     expect(stored().pools).toEqual({ [rin.id]: ['p1'] });
   });
 
-  it('«Слабее всех» — перчатки Epic: что искать, «Примерить вещи» — примерка перчаток', async () => {
+  it('«Слабее всех» — перчатки Epic: что искать, «Примерить вещи» — режим героя на перчатках', async () => {
     const pc = (id: string, slot: string, grade: string, lit: Record<string, number>, bt: number) => P(id, slot, speed, lit, { grade, bt });
     const gear = G([
       pc('p1', 'helmet', 'unique', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 1 }, 4), pc('p2', 'armor', 'unique', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 4),

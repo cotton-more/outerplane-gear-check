@@ -72,17 +72,18 @@ describe('режим «для героя»', () => {
     expect(stored('state').tab).toBe('eval');
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
     expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+    expect(stored('item').subs).toEqual(NEW.subs);
     // в ростере только Caren — другим вещь не нужна: после « — » только про неё
     expect($('.vcard .vc-title')?.textContent).toBe('better than what Caren wears');
 
     await click($('.vcard'));
     expect($$('.v-vs .vs-row')).toHaveLength(1);
-    expect($('.v-equip')).toBeNull(); // «Кому надеть?» в примерке не нужно
+    expect($('.v-equip')).toBeNull(); // «Кому надеть?» в режиме героя не нужно
     await click(byText('.vs-act', "Replace Caren's helmet"));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
   });
 
-  it('в примерке у неё лучше — кнопки нет (надеть можно только полезную вещь); имени в строке нет — оно на полосе', async () => {
+  it('в режиме героя у неё лучше — кнопки нет (надеть можно только полезную вещь); имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
     // все, кому подходит (только Caren), уже носят лучше — штамп понижен (logic/worn), заголовок уже про неё
@@ -91,7 +92,7 @@ describe('режим «для героя»', () => {
     expect($('.vc-equip')).toBeNull();
   });
 
-  it('«Следующий» примерку не сбрасывает, ✕ — снимает', async () => {
+  it('«Следующий» режим героя не сбрасывает, ✕ — снимает', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { tryon: { charId: caren.id, build: 'Speed' } });
     expect($('.tryon')).toBeTruthy();
     await click($('.vb-reset'));
@@ -158,7 +159,7 @@ describe('режим «для героя»', () => {
     expect($('.toast:not(.gear-toast)')?.textContent).toContain('Undo');
   });
 
-  it('вещей нет: «Собрать билд» — примерка без смены вещи на форме', async () => {
+  it('вещей нет: «Собрать билд» — режим героя без смены вещи на форме', async () => {
     await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: { CHC: 2 } }, { gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
     await click(byText('.btabs button', 'Pen'));
     await click(byText('.bgear-none button', 'Gear up this build'));
@@ -183,7 +184,7 @@ describe('режим «для героя»', () => {
     expect($('.v-vs .bn')?.textContent).toBe('By stats');
   });
 
-  // сет не из её связок: вещь — в «По статам»; Speed (цель примерки), где она лишь заняла пустой слот, «Собираю» не
+  // сет не из её связок: вещь — в «По статам»; Speed (предустановка), где она лишь заняла пустой слот, «Собираю» не
   // становится
   it('вещей нет, сет не из её билдов, «Надеть на Caren»: вещь у неё, Speed не отмечен «Собираю»', async () => {
     const atk = D.sets.find((s) => s.short === 'Attack')!.id;
@@ -306,9 +307,9 @@ describe('режим «для героя»: вход, одна строка, з�
   });
 });
 
-// Без примерки (logic/worn): штамп по надетому — всем, кому подходит, уже надето не хуже; вещь уже в билде
+// Без режима героя (logic/worn): штамп по надетому — всем, кому подходит, уже надето не хуже; вещь уже в билде
 describe('штамп по надетому', () => {
-  // на Caren · Speed — шлем заметно лучше новой, все Reforge сделаны
+  // на Caren · Speed — шлем заметно лучше новой (сравнение — как есть, по уровням)
   const STRONG = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
 
   it('Caren носит лучше — Legendary «Фоддер»: у кого лучше, ▼ на карточке, кнопки «Надеть» нет', async () => {
@@ -342,8 +343,8 @@ describe('штамп по надетому', () => {
     expect($('.statgrid')).toBeTruthy();
   });
 
-  // намеренно иначе (GEARPOOL): Speed-шлем Caren стоит и в Speed/Immu — примерка Speed/Immu не пуста, там он лучше
-  it('примерка Caren · Speed/Immu: её Speed-шлем стоит и там и лучше — «Разобрать», надеть нельзя', async () => {
+  // режим героя (В10): предустановка Speed/Immu исход не сужает — Speed-шлем Caren лучше новой во всех её билдах
+  it('режим героя Caren (предустановка Speed/Immu): её Speed-шлем лучше — «Разобрать», надеть нельзя', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 2 } },
       { gear: STRONG, tryon: { charId: caren.id, build: 'Speed/Immu' } });
     expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
@@ -362,9 +363,9 @@ describe('штамп по надетому', () => {
   });
 });
 
-// Находка 28 (Р11): примерка — явный выбор. Вещь не по билду, но с полезными статами — «Надеть» кладёт её в «По статам»;
-// вкладка «По статам» — своя примерка. Demiurge Drakhan: броня Revenge OGC HLMW PCHM (SPD 3 · HP 1 · HP% 1)
-describe('примерка и «По статам» (находка 28)', () => {
+// Находка 28 (Р11): режим героя — явный выбор. Вещь не по билду, но с полезными статами — «Надеть» кладёт её в «По статам»;
+// вкладка «По статам» — режим героя с предустановкой «По статам». Demiurge Drakhan: броня Revenge OGC HLMW PCHM (SPD 3 · HP 1 · HP% 1)
+describe('режим героя и «По статам» (находка 28)', () => {
   const drakhan = D.chars.find((c) => c.slug === 'demiurge-drakhan')!;
   const revenge = D.sets.find((s) => s.short === 'Revenge')!.id;
   const HLMW = { setId: revenge, subs: { SPD: 3, HP: 1, 'HP%': 1 } };
@@ -389,7 +390,7 @@ describe('примерка и «По статам» (находка 28)', () => 
     expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
   });
 
-  it('вкладка «По статам» → «Примерить» у пустого слота: примерка «По статам», на форме слот без сета', async () => {
+  it('вкладка «По статам» → «Примерить» у пустого слота: режим героя с «По статам», на форме слот без сета', async () => {
     const gear = { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'armor', grade: 'rare', setId: revenge, itemKey: null, main: null, yellow: HLMW.subs, lit: HLMW.subs, bt: null, at: '' } }, pools: { [drakhan.id]: ['p1'] } };
     await mount({ tab: 'chars', charId: drakhan.id, slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear });
     expect($('.btabs button[aria-selected="true"]')?.textContent).toMatch(/^By stats/); // открыта на лучшем варианте
@@ -412,7 +413,7 @@ describe('примерка и «По статам» (находка 28)', () => 
   // (цель — билд); причина — класс
   const aer = D.chars.find((c) => c.name === 'Aer')!;
   const ODYSSEY = { itemKey: '17', main: 'ATK%', subs: { 'DMG UP%': 2, CHC: 2, CHD: 1, SPD: 1 } }; // Thumping Odyssey — только Mage
-  it.each([['#stats'], ['Speed']])('примерка Aer (%s), оружие не для класса: «не носит этот предмет», кнопки нет', async (build) => {
+  it.each([['#stats'], ['Speed']])('режим героя Aer (%s), оружие не для класса: «не носит этот предмет», кнопки нет', async (build) => {
     await mount({ slot: 'weapon', grade: 'unique' }, ODYSSEY, { roster: [aer.id], gear: EMPTY, tryon: { charId: aer.id, build } });
     expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));

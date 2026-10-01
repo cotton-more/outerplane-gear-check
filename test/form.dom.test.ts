@@ -73,41 +73,38 @@ describe('без вердикта карточки нет, нужное поле
   });
 });
 
-// кубика Reforge нет (решение владельца 2026-10-01): вердикт — по вещи как есть, без «какой 4-й вытянет»
-describe('свежая Epic с тремя сабстатами — без кубика', () => {
+// кубика Reforge нет (решение владельца 2026-10-01): вердикт — по вещи как есть, без «какой 4-й вытянет».
+// Шаг 11: было — ещё проверки «нет .dice / .lucky-dot / .v-gamble»; этих классов в src больше нет, проверки проходили
+// всегда — убраны. Остались те, что смотрят на текст вердикта. Тест «на плашке штамп без кубика» (ширина 420) убран:
+// без .dice в нём оставалось только «штамп на плашке есть»
+describe('свежая Epic с тремя сабстатами — без Reforge в вердикте', () => {
   const attack = D.sets.find((s) => s.short === 'Attack')!.id;
 
-  it('«Разобрать»: у штампа нет кубика, строка карточки — причина; в окне 4-го — без точек', async () => {
+  it('«Разобрать»: строка карточки — причина, в подписи для диктора Reforge нет', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'ATK%': 1, CHC: 1, RES: 1 } });
 
     expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
-    expect($('.vcard .dice')).toBeNull();
     expect($('.vcard .vc-line')).toBeTruthy();
     expect($('.vcard')?.getAttribute('aria-label')).not.toMatch(/Reforge/);
-    await act(async () => $('.subadd')!.click());
-    expect(document.querySelectorAll('.subopt')).not.toHaveLength(0);
-    expect($('.lucky-dot')).toBeNull();
   });
 
-  it('«Временно», подробности: блока «Один Reforge на удачу» нет, в «Прокачке» — Enhance и «не вкладывай»', async () => {
+  // было (в тесте выше): «в окне 4-го — без точек» удачных статов кубика; точек нет вовсе — проверяем само окно
+  it('«+ 4-й сабстат» на форме: статы вещи недоступны, остальные — да', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'ATK%': 1, CHC: 1, RES: 1 } });
+
+    await act(async () => $('.subadd')!.click());
+
+    const opt = (k: string) => document.querySelector<HTMLButtonElement>(`.subopt[data-tour-item="${k}"]`);
+    expect(['ATK%', 'CHC', 'RES', 'CHD'].map((k) => opt(k)?.disabled)).toEqual([true, true, true, false]);
+  });
+
+  it('«Временно», подробности: в «Прокачке» — Enhance и «не вкладывай», строк Reforge нет', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 } });
     await act(async () => $('.vcard')!.click());
 
     expect($('.vcard .stamp')?.textContent).toBe('Stopgap');
-    expect($('.v-gamble')).toBeNull();
     const plan = [...document.querySelectorAll('.v-plan li')].map((li) => li.textContent);
     expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', "Breakthrough — don't invest: it's a stopgap until the right piece drops."]);
-  });
-
-  it('вкладка «Персонажи» на ширине от 380: на плашке штамп без кубика', async () => {
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 420 });
-    try {
-      await mount({ slot: 'helmet', grade: 'rare', tab: 'chars' }, { setId: attack, subs: { 'ATK%': 1, CHC: 1, RES: 1 } });
-      expect($('.vbar .stamp')).toBeTruthy();
-      expect($('.vbar .dice')).toBeNull();
-    } finally {
-      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
-    }
   });
 });
 
