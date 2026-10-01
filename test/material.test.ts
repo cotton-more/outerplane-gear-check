@@ -83,6 +83,17 @@ describe('материал Breakthrough для надетой', () => {
     expect(mat(r0.st, epic)).toMatchObject([{ piece: { id: r0.id }, left: 4 }]);
   });
 
+  // шаг 14, находка 5: «надета не на T4 — шлем Caren · Speed — ниже T4» говорило «не на T4» дважды
+  it('строка «Материал» у записи bt 0 — только имя, без «— ниже T4»; у bt 1–3 — «T2, ещё 2 шт. до T4»', () => {
+    const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
+    const worn = (bt: number) => putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'), bt: bt as 0 });
+
+    const line = (bt: number) => withMaterial(idx, ru, evaluate(ctx, epic), mat(worn(bt).st, epic)).lines[0];
+
+    expect(line(0)).toMatch(/^\*\*Материал\*\*: такая же вещь надета не на T4 — шлем Caren · Speed\. Одна вещь/);
+    expect(line(2)).toContain('надета не на T4 — шлем Caren · Speed — T2, ещё 2 шт. до T4.');
+  });
+
   it('запись с формы с «T4» (bt 4) — не материал', () => {
     const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
     const r0 = putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'), bt: 4 });
@@ -220,8 +231,9 @@ describe('материал Breakthrough для надетой', () => {
       const r = judgeBt(4);
 
       expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её' });
-      // шаг 10: надетая bt 0 (форма без «T4») — «ниже T4» без счёта ступеней (11.2 material.needBelow); было «T0, ещё 4 шт.»
-      expect(r.lines[0]).toBe('**Лучше надетой**: такая же вещь надета не на T4 и слабее этой — броня Anarky · Defense mix — ниже T4. Надень эту.');
+      // шаг 10: надетая bt 0 (форма без «T4») — без счёта ступеней (11.2 material.needBelow); было «T0, ещё 4 шт.»;
+      // шаг 14: «ниже T4» в хвосте записи не повторяем — оно уже в «надета не на T4»
+      expect(r.lines[0]).toBe('**Лучше надетой**: такая же вещь надета не на T4 и слабее этой — броня Anarky · Defense mix. Надень эту.');
       expect(r.plan).toEqual([ru.material.planWear('Anarky · Defense mix')]);
     });
 
@@ -229,7 +241,7 @@ describe('материал Breakthrough для надетой', () => {
       const r = judgeBt(0);
 
       expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её, а старую — ей в Breakthrough' });
-      expect(r.lines[0]).toBe(ru.material.lineWear('броня Anarky · Defense mix — ниже T4'));
+      expect(r.lines[0]).toBe(ru.material.lineWear('броня Anarky · Defense mix'));
       expect(r.plan).toEqual([ru.material.planReplace('Anarky · Defense mix')]);
     });
 

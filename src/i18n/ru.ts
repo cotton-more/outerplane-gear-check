@@ -637,7 +637,7 @@ export const ru = {
   material: {
     title: (slotGen: string, who: string) => `Фоддер — материал Breakthrough для ${slotGen} ${who}`,
     need: (slot: string, who: string, bt: number, left: number) => `${slot} ${who} — T${bt}, ещё ${left} шт. до T4`,
-    needBelow: (slot: string, who: string) => `${slot} ${who} — ниже T4`,
+    needBelow: (slot: string, who: string) => `${slot} ${who}`, // «ниже T4» уже в самой строке (line, lineWear)
     line: (list: string) => `**Материал**: такая же вещь надета не на T4 — ${list}. Одна вещь — одна ступень Breakthrough, сабстаты не важны.`,
     plan: '**Не прокачивай и не разбирай** — отдай в Breakthrough надетой: одна вещь — одна ступень.',
     // вещь лучше надетой, для которой она материал: надеть её, старую — ей в Breakthrough. Штамп — про неё: «Оставляй»

@@ -563,6 +563,23 @@ describe('«Сейчас на персонажах»', () => {
     expect(row.querySelector('.vs-act')).toBeNull(); // хуже — надеть нельзя
   });
 
+  // шаг 14, находка 1: «Сейчас надетая — на Breakthrough T4: новой до T4 нужно 4 материала» — про новую не на T4
+  it.each([
+    [false, true],
+    [true, false],
+  ])('Speed-шлем хуже надетого T4 (T4 с формы: %s) — строка «до T4 нужно N материалов» есть: %s', async (t4, shown) => {
+    const pcs = [P('p1', 'helmet', speed, { SPD: 6, CHC: 3, CHD: 3, DEF: 2 }, { bt: 4 }),
+      ...['armor', 'gloves', 'shoes'].map((sl, i) => P('p' + (i + 2), sl, speed, { SPD: 3, CHC: 3, CHD: 3, DEF: 2 }, { bt: 4 }))];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { SPD: 3, CHC: 3, CHD: 3, DEF: 2 }, ...(t4 ? { t4: true } : {}) },
+      { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4'] }) });
+    await click($('.vcard'));
+
+    const row = $('.v-vs .vs-row')!;
+
+    expect(row.querySelector('.vs.down')).toBeTruthy(); // сравнение с надетой есть: хуже
+    expect(row.textContent?.includes('4 materials')).toBe(shown);
+  });
+
   it('оружие: временная против рекомендованной — чип словом, ▼ «stopgap»', async () => {
     const embrace = D.weapons.find((w) => w.name === 'Snow-white Embrace' && w.star === 6)!;
     const w = P('p1', 'weapon', null, { HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 }, { itemKey: embrace.key, main: 'DEF%', bt: 2 });

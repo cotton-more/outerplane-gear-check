@@ -178,8 +178,8 @@ you don't fill" or "— it starts filling". For weapons and accessories the pass
   for weapons and accessories an off-build piece in the slot, Breakthrough material that beats its piece. "Stats only"
   and the quiet "By stats" line decide nothing either way. "Maybe" is never lowered.
 - **"Dismantle" → "Fodder"** when the same piece (armor — the same set, slot and grade; weapons and accessories — the
-  same item and grade) sits below T4 in a build a character is filling: "Helmet on Caren — below T4" (an old record at
-  T1–T3 — "T2, 2 more to T4"). If the new one beats it — **"Keep — better than the helmet on Caren: wear it and feed the
+  same item and grade) sits below T4 in a build a character is filling: "…worn below T4 — helmet on Caren · Speed" (an old record at
+  T1–T3 — "helmet on Caren · Speed — T2, 2 more to T4"). If the new one beats it — **"Keep — better than the helmet on Caren: wear it and feed the
   old one to it"**; the new one already at T4 — "…: wear it". An exact copy of the worn one: that one below T4 —
   "Fodder", at T4 — "Dismantle — already as good".
 

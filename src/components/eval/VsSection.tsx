@@ -178,8 +178,9 @@ function PairLines({ o, t4 }: { o: Outcome; t4: boolean }) {
       )}
       {p?.passive && <p className="muted">{t.ui.vsPassive}</p>}
       {p?.ahead && <p className="muted">{t.ui.vsAhead(subLabel(p.ahead.key), p.ahead.worn, p.ahead.next)}</p>}
-      {/* ▲ лучше — надевают новую: важнее, сколько Breakthrough у той (старая ей материал — скажет сообщение после «Заменить») */}
-      {w && w.bt != null && w.bt > 0 && (!p?.material || upKind(o)) && p?.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
+      {/* ▲ лучше — надевают новую: важнее, сколько Breakthrough у той (старая ей материал — скажет сообщение после «Заменить»).
+          Новая на T4 (на форме нажата «T4») — «новой до T4 нужно N материалов» неправда: строки нет */}
+      {!t4 && w && w.bt != null && w.bt > 0 && (!p?.material || upKind(o)) && p?.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
       {/* надетая ниже T4 (bt 0, форма без «T4») — без счёта ступеней */}
       {p?.material && !upKind(o) && w && <p className="muted">{w.bt ? t.ui.vsMaterial(w.bt) : t.ui.vsMaterialBelow}</p>}
     </>
