@@ -806,6 +806,32 @@ describe('карточка персонажа', () => {
     expect($('.piece')?.textContent).not.toContain('Reforge:');
   });
 
+  // вопрос 7 (б) ревью eval-only: было — «T4» в карточке только у брони. У Legendary оружия — тоже (материал такого же
+  // предмета), подсказка — без бонуса сета; у Epic оружия — нет (предмета нет)
+  it('карточка Legendary оружия: «T4» правится, метка в слоте — «T0–T3» → «T4»; у Epic оружия «T4» нет', async () => {
+    const w = caren.builds[0].weapons[0];
+    const ps = [P('p1', 'weapon', null, { CHC: 2, SPD: 1 }, { itemKey: w.key, main: w.mains[0], bt: 0 })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1'] }) });
+    expect($('.bgear-m')?.textContent).toBe('T0–T3');
+
+    await click($('.bgear-row'));
+    expect($('.piece .btchip')?.getAttribute('title')).toBe('Already at T4 — no more copies needed for its Breakthrough');
+    await click($('.piece .btchip'));
+
+    expect(stored().pieces.p1.bt).toBe(4);
+    expect($('.piece .btchip')?.getAttribute('aria-pressed')).toBe('true');
+    expect($('.bgear-m')?.textContent).toBe('T4');
+  });
+
+  it('карточка Epic оружия: «T4» нет, метки Breakthrough в слоте нет', async () => {
+    const ps = [P('p1', 'weapon', null, { CHC: 2, SPD: 1 }, { grade: 'rare', main: caren.builds[0].weapons[0].mains[0] })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1'] }) });
+    expect($$('.bgear-row')).toHaveLength(1); // Epic с main из списка — в слоте билда («Развитие»)
+    await click($('.bgear-row'));
+
+    expect([$('.piece') !== null, $('.piece .btchip'), $('.bgear-m')]).toEqual([true, null, null]);
+  });
+
   it('«Собираю» выключить — «Не собираю» у варианта; включить обратно — отметки нет (собирается сам)', async () => {
     const four = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { CHC: 1 }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(four, { [caren.id]: four.map((p) => p.id as string) }) });
@@ -924,15 +950,17 @@ describe('карточка персонажа', () => {
     expect(names.map((n) => n?.match(/Speed|Immunity|Defense/)?.[0])).toEqual(['Speed', 'Immunity', 'Defense']);
   });
 
-  // находка 6: было — в строке только название и «где стоит», какая из двух одинаковых на T4 — только в шторке
-  it('«Вещи Caren · N»: у брони Breakthrough — «T0–T3» / «T4», как в слоте билда; у оружия метки нет', async () => {
+  // находка 6: было — в строке только название и «где стоит», какая из двух одинаковых на T4 — только в шторке.
+  // Вопрос 7 (б): было — у оружия метки нет; теперь у Legendary оружия и аксессуара — тоже, у Epic — нет (Breakthrough не ведём)
+  it('«Вещи Caren · N»: Breakthrough — «T0–T3» / «T4», как в слоте билда, и у Legendary оружия; у Epic оружия метки нет', async () => {
     const ps = [P('p1', 'helmet', speed, { 'DEF%': 2 }, { bt: 0 }), P('p2', 'helmet', speed, { CHC: 2 }, { bt: 4 }),
-      P('p3', 'weapon', null, { CHC: 1 }, { main: 'ATK%', bt: 0 })];
-    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2', 'p3'] }) });
+      P('p3', 'weapon', null, { CHC: 1 }, { main: 'ATK%', bt: 0 }), P('p4', 'weapon', null, { CHC: 2 }, { main: 'HP%', bt: 4 }),
+      P('p5', 'weapon', null, { CHC: 1 }, { grade: 'rare', main: 'DEF%', bt: null })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2', 'p3', 'p4', 'p5'] }) });
 
     const names = $$('.pool-row .bgear-n').map((n) => n.textContent);
 
-    expect(names).toEqual(['LATK%', 'LSpeed Set· T0–T3', 'LSpeed Set· T4']);
+    expect(names).toEqual(['LATK%· T0–T3', 'LHP%· T4', 'EEpic· DEF%', 'LSpeed Set· T0–T3', 'LSpeed Set· T4']);
   });
 
   // на 280 ширину в jsdom не проверить (@container в chars.css); проверяем разметку: кнопка — до заголовка, своим блоком

@@ -376,6 +376,21 @@ describe('подсказки по ходу и «Что нового»', () => {
     }
   }, 10_000);
 
+  // вопрос 7 (б) ревью eval-only: «T4» и у Legendary оружия — подсказка bt (одна на все вещи) встаёт у его кнопки
+  it('первая вещь — Legendary оружие: подсказка «T4» у кнопки в строке предмета', async () => {
+    const orig = Element.prototype.getClientRects;
+    Element.prototype.getClientRects = function () { return [{}] as unknown as DOMRectList; };
+    try {
+      const seen = Object.fromEntries(TIPS.filter((tp) => tp.id !== 'bt').map((tp) => [tp.id, tp.rev]));
+      await mount({ welcomeHidden: true, tour: { ...done, seen }, state: { tab: 'eval', slot: 'weapon', grade: 'unique' } });
+      await wait(LIMITS.idleMs + 700);
+      expect($('.tour-tip')?.textContent).toContain(T.tips.bt);
+      expect($('[data-tour="bt"]')?.closest('.formrow')?.querySelector('[data-tour="item"]')).toBeTruthy();
+    } finally {
+      Element.prototype.getClientRects = orig;
+    }
+  }, 10_000);
+
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, known: {} } }); // вышли после его первого запуска
     expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 2)); // и ещё move, bt

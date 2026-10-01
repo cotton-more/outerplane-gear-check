@@ -40,8 +40,9 @@ export interface ItemInput {
   main: string | null;
   unlisted?: boolean; // Legendary оружие/аксессуар, которого нет в данных outerpedia
   subs: Subs;
-  // Breakthrough брони с формы: 4 — «T4», 0 — ниже T4 (T0–T3). Поля нет или null — не указан (старые входы, эталон).
-  // Вердикт evaluate его не читает — только пул (сборка, исходы, понижение)
+  // Breakthrough с формы (броня, Legendary оружие и аксессуар — gear hasBt): 4 — «T4», 0 — ниже T4 (T0–T3). Поля нет или
+  // null — не указан (старые входы, эталон, Epic оружие и аксессуар). Вердикт evaluate его не читает — только пул
+  // (сборка и исходы — у брони, материал — у всех)
   bt?: 0 | 4 | null;
 }
 

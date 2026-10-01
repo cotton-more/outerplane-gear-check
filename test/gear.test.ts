@@ -530,8 +530,17 @@ describe('правка в шторке (updateIn)', () => {
     expect(updateIn(idx, on.st, CAREN, 'p2', { bt: 0 }, AT).st.pieces.p2.bt).toBe(0);
   });
 
-  it('«T4» у оружия — не применяется: Breakthrough отмечают только у брони', () => {
-    const w = rec('p1', { slot: 'weapon', grade: 'unique', setId: null, itemKey: 'x', main: 'ATK%', subs: { CHC: 2 } });
+  // было (В4): у оружия не применялась. Вопрос 7 (б) ревью eval-only: «T4» у Legendary оружия и аксессуара — материал
+  // такого же предмета
+  it.each(['weapon', 'accessory'] as const)('«T4» у Legendary %s → 4 и обратно → 0; не указан тоже становится 4', (slot) => {
+    const w = rec('p1', { slot, grade: 'unique', setId: null, itemKey: 'x', main: 'ATK%', subs: { CHC: 2 } });
+    const on = updateIn(idx, v2([w], { [CAREN]: ['p1'] }), CAREN, 'p1', { bt: 4 }, AT);
+    expect(on.st.pieces.p1.bt).toBe(4);
+    expect(updateIn(idx, on.st, CAREN, 'p1', { bt: 0 }, AT).st.pieces.p1.bt).toBe(0);
+  });
+
+  it('«T4» у Epic оружия — не применяется: предмета нет, такую же вещь не найти', () => {
+    const w = rec('p1', { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { CHC: 2 } });
     const st = v2([w], { [CAREN]: ['p1'] });
     expect(updateIn(idx, st, CAREN, 'p1', { bt: 4 }, AT).st).toBe(st);
   });

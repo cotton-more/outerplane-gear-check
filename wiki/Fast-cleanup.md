@@ -10,7 +10,7 @@
    narrow sets like Attack and Critical Strike this filters out about half the pieces; for Speed, Immunity and
    Swiftness almost everything is bright — enter those.
 4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third.
-5. **"T4"** next to the set — only if the piece is already at Breakthrough T4; a fresh drop is T0, leave it off.
+5. **"T4"** next to the set or item — only if the piece is already at Breakthrough T4; a fresh drop is T0, leave it off.
    **"Fodder"** on the same piece a character wears below T4 — it's material for that one: feed it to its
    Breakthrough. Better than the worn one — "Keep": wear it.
 6. **"Keep"** — lock it so you don't dismantle it by accident. **"Stopgap"** — wear it until you find better.

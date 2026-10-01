@@ -44,9 +44,9 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 2. **Split the screen:** the game in one half, Gear Check in the other.
 3. **Enter the piece:**
    - the slot (row of icons) and grade: `L` — Legendary (Etheric), `E` — Epic (Steel);
-   - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set); a piece already at
-     Breakthrough T4 — tap **"T4"** next to the set (a fresh drop is T0, leave it off);
+   - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set);
      **Legendary weapon and accessory** — find the item and mark the main stat; **Epic weapon and accessory** — just the main stat;
+     a piece already at Breakthrough T4 — tap **"T4"** next to the set or item (a fresh drop is T0, leave it off);
    - **main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the
      grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Faded —
      no one needs that main;

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Форма на телефоне (360px): без вердикта (нет сета, main или предмета) карточка вердикта не встаёт на место сетки,
-// а то, чего не хватает, выделено; как только выбрано — карточка появляется. «T4» у брони и сегменты 1–6.
+// а то, чего не хватает, выделено; как только выбрано — карточка появляется. «T4» (у брони и Legendary оружия и
+// аксессуара) и сегменты 1–6.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -108,7 +109,8 @@ describe('свежая Epic с тремя сабстатами — без Reforg
   });
 });
 
-// «T4» рядом с сетом (шаг 8): только броня; бонус сета считается по Breakthrough — у каждой вещи свой
+// «T4» рядом с сетом (шаг 8): бонус сета считается по Breakthrough — у каждой вещи свой. Вопрос 7 (б) ревью eval-only:
+// и рядом с предметом Legendary оружия и аксессуара — материал такого же предмета
 describe('«T4» на форме', () => {
   const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
   const chip = () => $('.formrow .btchip');
@@ -124,9 +126,37 @@ describe('«T4» на форме', () => {
     expect(chip()?.getAttribute('title')).toBe('Already at T4 — its set bonus counts at T4');
   });
 
-  it.each(['weapon', 'accessory'])('%s: «T4» нет', async (slot) => {
+  // было (В4): у оружия и аксессуара «T4» нет. Теперь у Legendary — в строке предмета, подсказка без бонуса сета
+  it.each(['weapon', 'accessory'])('Legendary %s: «T4» в строке предмета, не нажата; подсказка — про Breakthrough, не про сет', async (slot) => {
     await mount({ slot, grade: 'unique' }, {});
+    expect(pressed()).toBe('false');
+    expect(chip()?.closest('.formrow')?.querySelector('[data-tour="item"]')).toBeTruthy();
+    expect(chip()?.getAttribute('title')).toBe('Already at T4 — no more copies needed for its Breakthrough');
+  });
+
+  // у Epic предмета на форме нет — такую же вещь не найти, «T4» ни на что бы не влияла
+  it.each(['weapon', 'accessory'])('Epic %s: «T4» нет', async (slot) => {
+    await mount({ slot, grade: 'rare' }, {});
     expect($('.btchip')).toBeNull();
+  });
+
+  it('Legendary аксессуар: main — рядом с грейдом, предмет и «T4» — второй строкой, как у оружия', async () => {
+    await mount({ slot: 'accessory', grade: 'unique' }, {});
+    const rows = [...document.querySelectorAll('.form .formrow')];
+    expect(rows.map((r) => [...r.children].map((c) => c.getAttribute('data-tour') ?? c.className.split(' ')[0]))).toEqual([['grade', 'pick'], ['item', 'bt']]);
+  });
+
+  it('оружие: другой предмет снимает «T4», клавиша T — нажимает', async () => {
+    const [a, b] = D.weapons.filter((i) => i.grade === 'unique' && i.star === 6);
+    await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: a.key, main: a.mains[0], t4: true });
+    expect(pressed()).toBe('true');
+
+    await click($('[data-tour="item"]'));
+    await click([...document.querySelectorAll<HTMLElement>('.drawer .item')].find((el) => el.textContent?.includes(b.name)));
+    expect(pressed()).toBe('false');
+
+    await key('t');
+    expect(pressed()).toBe('true');
   });
 
   // Anarky · Defense mix: Pen-броня Epic T0 на ней; новая Pen-броня Epic лучше. Без «T4» новую надевают и кормят ей

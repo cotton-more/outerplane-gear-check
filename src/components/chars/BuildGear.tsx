@@ -1,16 +1,16 @@
 // Сборка варианта билда из вещей персонажа (GEARPOOL, logic/pool): 6 слотов, у вещи — сабстаты с сегментами,
-// окрашенные по цепочке этого билда, и Breakthrough («T4», «T0–T3», «T?» — не указан); бонусы сетов с уровнем;
-// «Собираю»; «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet): узкая правка (Н1) — сегменты 1–6, «T4» у
-// брони, 4-й сабстат у Epic с тремя; «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать
-// билд», «Примерить» (пустой слот), «Слабее всех» и «Примерить замену» (вещь) открывают оценку в режиме «для героя» —
-// слот и сет этого варианта на форме; на вкладке «По статам» — без сета (туда встаёт то, что герой носит не по билду,
-// находка 28).
+// окрашенные по цепочке этого билда, и Breakthrough («T4», «T0–T3», «T?» — не указан; у Epic оружия и аксессуара его
+// нет — gear hasBt); бонусы сетов с уровнем; «Собираю»; «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet):
+// узкая правка (Н1) — сегменты 1–6, «T4» (у брони и Legendary оружия и аксессуара), 4-й сабстат у Epic с тремя;
+// «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать билд», «Примерить» (пустой слот),
+// «Слабее всех» и «Примерить замену» (вещь) открывают оценку в режиме «для героя» — слот и сет этого варианта на форме;
+// на вкладке «По статам» — без сета (туда встаёт то, что герой носит не по билду, находка 28).
 import { useEffect, useRef, useState } from 'react';
 import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
-import { MAX_LIT, pieceInput, type Bt, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
+import { MAX_LIT, hasBt, pieceInput, type Bt, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
 import { t4Only } from '../../logic/builds';
 import { tryOnPreset } from '../../logic/tryon';
@@ -45,7 +45,7 @@ export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
   );
 }
 
-// Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма брони без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
+// Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
 export const btText = (t: ReturnType<typeof useT>, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
 
 // текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base
@@ -166,7 +166,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
               <button type="button" className="bgear-row" onClick={() => onOpenPiece(p.id)} {...tourItem(slot)}>
                 <SlotIcon slot={slot} />
                 <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                <span className="bgear-m">{btText(t, p.bt)}</span>
+                {hasBt(p.slot, p.grade) && <span className="bgear-m">{btText(t, p.bt)}</span>}
                 <span className="bgear-t">
                   {Object.keys(p.lit).map((k) => {
                     const cr = W.get(k)?.credit ?? 0;
@@ -199,7 +199,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
 }
 
 // Карточка вещи — узкая правка (Н1): сегменты сабстатов 1–6 одним цветом (нажатие ставит уровень, на текущий — на
-// один меньше, не ниже 1), «T4» у брони, «+ 4-й сабстат» у Epic с тремя (уровень 1, В-А2). Стат не меняется:
+// один меньше, не ниже 1), «T4» (hasBt), «+ 4-й сабстат» у Epic с тремя (уровень 1, В-А2). Стат не меняется:
 // Transistone — ввести вещь заново (pieceEditNote). Нажатие, с которым сумма уровней ушла бы выше предела грейда
 // (logic/subs levelCap), не срабатывает — строка «больше N не бывает», как на форме (SubRows); уходит со следующей
 // правкой. Правку делает onEdit (CharDetail: gear updateIn — у этого героя, общая запись делится, шторка идёт за новым
@@ -248,7 +248,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
       <div className="piece" {...tour('gpiece')}>
         <div className="piece-top">
           <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
-          {isArmor(p.slot) && <BtChip anchor={false} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />}
+          {hasBt(p.slot, p.grade) && <BtChip anchor={false} armor={isArmor(p.slot)} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />}
         </div>
         <p className="muted small">{builds.length ? t.ui.poolIn(builds.join(', ')) : t.ui.pieceNowhere}</p>
         <div className="subrows">

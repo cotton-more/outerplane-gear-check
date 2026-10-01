@@ -1,12 +1,12 @@
 // «Вещи Caren · 7» (GEARPOOL): все вещи персонажа по слотам («Шлем · 2»; пустых слотов нет), внутри слота — в порядке
-// добавления; у вещи — где стоит («в Speed, Speed/Immu», «во всех билдах»), у брони — Breakthrough («· T4», «· T0–T3»,
-// как в слоте билда). Пулы героев независимы (В9): про других героев строк нет. Ненужная — строка «Caren больше не
+// добавления; у вещи — где стоит («в Speed, Speed/Immu», «во всех билдах») и Breakthrough («· T4», «· T0–T3», как в
+// слоте билда; у Epic оружия и аксессуара его нет — gear hasBt). Пулы героев независимы (В9): про других героев строк нет. Ненужная — строка «Caren больше не
 // нужна» и «Убрать у Caren». Свёрнуто; нажатие — карточка вещи.
 // onRateFor — «Оценить вещь для Caren» (режим «для героя»): справа от заголовка, на 280 — своей строкой (chars.css)
-import { SLOTS, isArmor } from '../../data';
+import { SLOTS } from '../../data';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
-import type { GearStore, Piece } from '../../logic/gear';
+import { hasBt, type GearStore, type Piece } from '../../logic/gear';
 import { isStats, removeFrom, undoRemove, type CharPool, type PoolView } from '../../logic/pool';
 import { whereUsed } from '../../logic/poolVs';
 import { buildOfKey } from '../../logic/variants';
@@ -49,7 +49,7 @@ export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onR
                 <li key={p.id} className={unused.has(p.id) ? 'unused' : undefined}>
                   <button type="button" className="pool-row" onClick={() => onOpenPiece(p.id)}>
                     <SlotIcon slot={p.slot} />
-                    <span className="bgear-n"><PieceName ctx={ctx} p={p} />{isArmor(p.slot) && <span className="pm">· {btText(t, p.bt)}</span>}</span>
+                    <span className="bgear-n"><PieceName ctx={ctx} p={p} />{hasBt(p.slot, p.grade) && <span className="pm">· {btText(t, p.bt)}</span>}</span>
                     <span className="pool-w">{where(p)}</span>
                   </button>
                   {unused.has(p.id) && !gear.newer && (

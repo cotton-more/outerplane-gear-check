@@ -10,6 +10,7 @@ import { evaluate } from '../src/logic/evaluate';
 import { EMPTY_GEAR, updatePiece, type Bt, type GearStore } from '../src/logic/gear';
 import { poolView, putOn } from '../src/logic/pool';
 import { betterThanWorn, materialFor, withMaterial } from '../src/logic/material';
+import { withWorn } from '../src/logic/worn';
 import type { ItemInput } from '../src/logic/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -305,6 +306,65 @@ describe('материал Breakthrough для надетой', () => {
 
   it('RU «Лучше надетой» кончается точкой, как EN и «на T4»', () => {
     expect([ru.material.lineWear('x'), ru.material.lineWearT4('x'), TEXTS.en.material.lineWear('x')].map((l) => l.at(-1))).toEqual(['.', '.', '.']);
+  });
+
+  // вопрос 7 (б) ревью eval-only: «T4» у Legendary оружия и аксессуара — записи с формы теперь с Breakthrough 0/4, и
+  // материал такого же предмета срабатывает (было: bt null — никогда). Весь путь, как в App: материал, понижение по
+  // надетому (worn, hold), материал поверх. Caren · Speed носит такой же предмет
+  describe.each([['weapon', 'weapons', 'оружие', 'оружия'], ['accessory', 'amulets', 'аксессуар', 'аксессуара']] as const)('%s', (slot, list, nom, gen) => {
+    const ref = caren.builds[0][list][0];
+    const X = (subs: Record<string, number>, bt: 0 | 4 = 0): ItemInput => ({ slot, grade: 'unique', setId: null, itemKey: ref.key, main: ref.mains[0], subs, bt });
+    const OLD = X({ CHC: 2, CHD: 2, SPD: 2, 'ATK%': 2 });
+    const BETTER = { CHC: 4, CHD: 4, SPD: 4, 'ATK%': 4 };
+    const app = (roster: string[], wornBt: 0 | 4, item: ItemInput) => {
+      const c = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster), ru);
+      const r = putOn(c, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...OLD, bt: wornBt });
+      const view = poolView(c, r.st), needs = materialFor(view, item), up = needs.length ? betterThanWorn(c, view, item, needs) : [];
+      const worn = withWorn(c, view, item, evaluate(c, item), { hold: up.length > 0 });
+      return withMaterial(idx, ru, worn, needs, { up, target: null, t4: item.bt === 4 });
+    };
+    const MAT = /^\*\*Материал\*\*/;
+
+    it(`копия надетой ниже T4 — «Фоддер» и строка «Материал: … ${nom} Caren · Speed»`, () => {
+      const r = app([caren.id], 0, OLD);
+
+      expect(r.v).toBe('fodder');
+      expect(r.lines[0]).toBe(ru.material.line(`${nom} Caren · Speed`));
+    });
+
+    // Legendary не разбирают: «Оставить», которое никого не улучшит, — «Фоддер — уже не хуже» (logic/worn), а не «Разбирай»
+    it('копия надетой на T4 — материала нет: «Фоддер — уже не хуже у Caren» без строки «Материал»', () => {
+      const r = app([caren.id], 4, OLD);
+
+      expect(r).toMatchObject({ v: 'fodder', title: ru.worn.title('fodder', ['Caren'], true) });
+      expect(r.lines.some((l) => MAT.test(l))).toBe(false);
+    });
+
+    // сырой «Спорно» (в ростере — только Bryn, Caren в нём нет): лучше надетой такой же ниже T4 — «Оставляй», вердикт про
+    // оцениваемую вещь
+    const bryn = D.chars.find((c) => c.name === 'Bryn')!.id;
+    it(`новая лучше надетой ниже T4 — «Оставляй — лучше надетого ${gen} Caren · Speed: надень её, а старую — ей в Breakthrough»`, () => {
+      const r = app([bryn], 0, X(BETTER));
+
+      expect(r).toMatchObject({ v: 'keep', title: `Оставляй — лучше надетого ${gen} Caren · Speed: надень её, а старую — ей в Breakthrough` });
+      expect(r.lines[0]).toBe(ru.material.lineWear(`${nom} Caren · Speed`));
+    });
+
+    it('новая с «T4» лучше надетой ниже T4 — «…: надень её», без «старую — ей в Breakthrough»', () => {
+      const r = app([bryn], 0, X(BETTER, 4));
+
+      expect(r).toMatchObject({ v: 'keep', title: `Оставляй — лучше надетого ${gen} Caren · Speed: надень её` });
+      expect([r.lines[0], r.plan]).toEqual([ru.material.lineWearT4(`${nom} Caren · Speed`), [ru.material.planWear('Caren · Speed')]]);
+    });
+
+    // «Оставить» и «Временно» материал не трогает (как у брони): сырой «Оставляй» остаётся, понижения нет (hold)
+    it('сырой «Оставляй» и лучше надетой — штамп как есть, не понижен', () => {
+      const raw = evaluate(makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru), X(BETTER));
+
+      const r = app([caren.id], 0, X(BETTER));
+
+      expect([raw.v, r.v, r.title, r.worn]).toEqual(['keep', 'keep', raw.title, undefined]);
+    });
   });
 
   it('оружие: тот же предмет — материал; Epic без предмета — никогда', () => {

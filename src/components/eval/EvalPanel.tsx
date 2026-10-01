@@ -1,7 +1,10 @@
 // Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
-// слот → грейд + сет/предмет/main (у брони — и «T4») → сетка сабстатов → строки с сегментами.
+// слот → грейд + сет или main (у брони — и «T4») → у Legendary оружия и аксессуара строка предмета с «T4» → сетка
+// сабстатов → строки с сегментами.
 // Сет и предмет выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием. Main тоже без окна:
-// у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main).
+// у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main рядом с
+// грейдом). «T4» — в конце строки сета или предмета (вопрос 7 ревью eval-only): у Legendary аксессуара предмет поэтому
+// своей строкой, как у оружия, — в одной строке с грейдом, main и «T4» на 280px имени не оставалось бы.
 // На телефоне, когда вердикт готов, на месте сетки встаёт карточка вердикта.
 import { useMemo, useState, type Dispatch } from 'react';
 import { GRADE_NAME, GRADES, SLOTS, isArmor, subLabel } from '../../data';
@@ -9,6 +12,7 @@ import type { GearKind } from '../../data/types';
 import { fineHover } from '../../hooks/useLayout';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
+import { hasBt } from '../../logic/gear';
 import { MAX_SUBS, withinCap } from '../../logic/subs';
 import { mainOptions, setSubDemand } from '../../logic/lists';
 import { blocksOf, itemMains as mainLines } from '../../logic/mains';
@@ -59,7 +63,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
     dispatch({ type: 'sub', key });
   };
   const armor = isArmor(s.slot);
-  const t4 = armor && s.t4 ? t.ui.withT4 : '';
+  const bt = hasBt(s.slot, s.grade);
+  const t4 = bt && s.t4 ? t.ui.withT4 : '';
   // строки main: у брони фиксированы сетом, у оружия — flat ATK и выбранный; сабстатов, которые они запрещают, в сетке нет
   const im = useMemo(() => mainLines(ctx.idx, { slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main }),
     [ctx.idx, s.slot, s.grade, s.setId, s.itemKey, s.main]);
@@ -71,7 +76,6 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const item = !armor && !epic && s.itemKey ? ITEM[kind][s.itemKey] : undefined;
   const itemMains = (key: string) => { const it = ITEM[kind][key]; return it ? [...it.mains, ...it.extraMains] : []; };
   const weapon = s.slot === 'weapon';
-  const mainRow = !armor && !epic && !weapon && (s.unlisted || !!s.main || (!!s.itemKey && itemMains(s.itemKey).length > 0));
   const mainValue = s.main ? <><StatIcon stat={s.main} main />{s.main}</> : undefined;
   const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
   const allMains = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic) : []), [ctx, weapon, kind, epic]);
@@ -89,7 +93,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
     <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
       placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="item" need={need === 'item'} />
   );
-  const mainField = (cls?: string) => <PickField className={cls} value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" need={need === 'main'} />;
+  const mainField = <PickField value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" need={need === 'main'} />;
+  const btChip = <BtChip on={s.t4} armor={armor} onToggle={() => dispatch({ type: 't4' })} />;
 
   return (
     <div className="panel eval-in" id="eval-in">
@@ -115,14 +120,13 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           {armor
             ? <>
               <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
-              <BtChip on={s.t4} onToggle={() => dispatch({ type: 't4' })} />
+              {btChip}
             </>
             : weapon
               ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} />
-              : epic ? mainField() : itemField}
-          {mainRow && mainField('main')}
+              : mainField}
         </div>
-        {weapon && !epic && <div className="formrow">{itemField}</div>}
+        {!armor && !epic && <div className="formrow">{itemField}{btChip}</div>}
         <div className="subzone" {...tour('grid')}>
           {cardShown
             ? <>

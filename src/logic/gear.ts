@@ -12,6 +12,12 @@ import type { ItemInput } from './verdict';
 export type Bt = 0 | 1 | 2 | 3 | 4;
 export const MAX_LIT = 6;     // сегментов у сабстата в игре
 
+// Breakthrough вещи ведём («T4» на форме и в шторке, метка в пуле и в слоте): у брони — бонус сета и материал такой же
+// вещи, у Legendary оружия и аксессуара — материал такого же предмета (вопрос 7 (б) ревью eval-only, отменяет В4
+// «только у брони»). У Epic оружия и аксессуара предмета на форме нет — такую же вещь не найти (logic/material), и
+// Breakthrough ни на что не влияет: кнопки нет, Breakthrough не указан, как раньше
+export const hasBt = (slot: SlotId, grade: Grade): boolean => isArmor(slot) || grade === 'unique';
+
 export interface Piece {
   id: string;
   slot: SlotId;
@@ -122,7 +128,7 @@ export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: Ge
 }
 
 // Правка в шторке вещи (Н1): уровни сабстатов 1…6 (lit — новые уровни её статов; стат не меняется — Transistone не
-// правка, В-А2), «T4» у брони (4 / 0), 4-й сабстат у Epic с тремя — с уровнем 1 (add, В-А2). Сумма уровней не растёт
+// правка, В-А2), «T4» (4 / 0; у брони и Legendary оружия и аксессуара — hasBt), 4-й сабстат у Epic с тремя — с уровнем 1 (add, В-А2). Сумма уровней не растёт
 // выше предела (levelCap): такой патч не применяется; уменьшение и «T4» — всегда (старые записи бывают выше предела).
 // После правки уровень один: yellow = min(lit, 4), как у newPiece. Правка — только у этого героя (В9): запись есть и у
 // других (старая общая) — ему копия (copy-on-write): новая запись (seq + 1) на том же месте его пула, у других —
@@ -144,7 +150,7 @@ export function updateIn(idx: Index, st: GearStore, charId: string, id: string, 
     lit[patch.add] = 1;
   }
   if (!withinCap(p.grade, p.lit, lit)) return same;
-  const bt = patch.bt !== undefined && isArmor(p.slot) && (patch.bt === 0 || patch.bt === 4) ? patch.bt : p.bt;
+  const bt = patch.bt !== undefined && hasBt(p.slot, p.grade) && (patch.bt === 0 || patch.bt === 4) ? patch.bt : p.bt;
   const keys = Object.keys(lit);
   if (bt === p.bt && keys.length === Object.keys(p.lit).length && keys.every((k) => lit[k] === p.lit[k])) return same;
   const edited: Piece = { ...p, yellow: yellowOf(lit), lit, bt, at };

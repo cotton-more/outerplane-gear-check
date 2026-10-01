@@ -31,8 +31,9 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .pick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
 .pick.empty { border-style: dashed; background: transparent; color: var(--ink-3); font-weight: 500; }
-/* «T4» рядом с сетом брони: нажата — заливка, как у выбранных кнопок формы; ужимается поле сета (имя — многоточием),
-   «T4» — нет. На узком экране без « Set» в имени: «Speed» видно целиком */
+/* «T4» рядом с сетом брони или предметом Legendary оружия и аксессуара: нажата — заливка, как у выбранных кнопок формы;
+   ужимается поле сета или предмета (имя — многоточием), «T4» — нет. На узком экране без « Set» в имени: «Speed» видно
+   целиком */
 .btchip { flex: none; min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 13px/1 var(--font-mono); color: var(--ink-2); }
 .btchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--ink); }
 html.xs .btchip { min-width: 40px; padding: 0 6px; }
@@ -215,7 +216,6 @@ html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-botto
 @media (max-height: 560px) { html.narrow body.has-vbar .toast { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); } }
 
 /* сетка сабстатов на форме: 7×2, пары по параметру одна над другой (%-статы над flat); ярче — нужны билдам выбранного сета */
-.formrow .pick.main { flex: 0 0 auto; max-width: 40%; }
 .subzone { display: grid; min-height: 84px; }
 .statgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; align-content: start; container-type: inline-size; }
 /* пять знаков в клетке ~24 px (разделённый экран 280 px) не влезают: шрифт по ширине сетки, не крупнее обычного */

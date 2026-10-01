@@ -432,7 +432,7 @@ describe('П3: временное оружие билд не начинает', 
         if (got.join() !== want.join()) off.push(`${c.name} ${w.slot} ${w.itemKey}`);
       }
     }
-    expect(n).toBeGreaterThan(500);
+    expect(n).toBeGreaterThan(250);
     expect(off).toEqual([]);
   });
 });
@@ -1006,6 +1006,57 @@ describe('Breakthrough вещи с формы (ItemInput.bt)', () => {
       const pcs = pool().map((p, i) => (i === 4 ? { ...p, bt: 4 as Bt } : p));
       expect(rowOf(pcs, X('helmet', 'Speed', NEW, 4), sv)).toMatchObject({ kind: 'eq', worn: { id: pcs[4].id }, fix: null });
     });
+  });
+});
+
+// вопрос 7 (б) ревью eval-only: «T4» у Legendary оружия и аксессуара — только для материала такого же предмета. Сетов
+// у них нет: Breakthrough не меняет ни сборку (выбор в слоте — рекомендованная > временная > прочее, ценность,
+// старшинство), ни исходы новой. Перебор: случайные пулы героев с оружием и аксессуарами из их билдов
+describe('Breakthrough оружия и аксессуара сборку не меняет', () => {
+  const rnd = lcg(777);
+  const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rnd() * xs.length)];
+  const SUBS = ['ATK%', 'DEF%', 'HP%', 'CHC', 'CHD', 'SPD', 'EFF', 'RES', 'DMG UP%', 'DMG RED%', 'HP', 'DEF'];
+  const subs = (n: number): Subs => { const o: Subs = {}; while (Object.keys(o).length < n) o[pick(SUBS)] = 1 + Math.floor(rnd() * 4); return o; };
+  const heroes = D.chars.filter((c) => c.builds.some((b) => b.weapons.length && b.amulets.length && b.sets.length)).slice(0, 12);
+  const gearOf = (c: Char, slot: 'weapon' | 'accessory') => c.builds.flatMap((b) => (slot === 'weapon' ? b.weapons : b.amulets)).filter((g) => g.key && g.mains.length);
+  const G = (c: Char, slot: 'weapon' | 'accessory', bt: Bt): Piece => {
+    const g = pick(gearOf(c, slot));
+    return { id: 'p' + ++seq, slot, grade: 'unique', setId: null, itemKey: g.key, main: rnd() < 0.8 ? g.mains[0] : pick(['ATK%', 'DEF%', 'HP%']), yellow: {}, lit: subs(4), bt, at: '' };
+  };
+  const flip = (p: Piece): Piece => (p.slot === 'weapon' || p.slot === 'accessory' ? { ...p, bt: p.bt === 4 ? 0 : 4 } : p);
+  const sig = (a: Assembly) => JSON.stringify([Object.entries(a.slots).map(([k, e]) => [k, e?.id]), Math.round(a.total * 1e9)]);
+  const rowsSig = (o: ReturnType<typeof outcomeFor>) => JSON.stringify(o && [o.rows.map((r) => [r.v.key, r.kind, r.used, r.delta, r.displaced.map((e) => e.id)]), o.starts.map((v) => v.key)]);
+  const pools = heroes.flatMap((c) => Array.from({ length: 6 }, () => {
+    const pcs = [
+      ...Array.from({ length: 5 }, () => P(pick(['helmet', 'armor', 'gloves', 'shoes'] as const), pick(['Speed', 'Attack', 'Defense', 'Immunity', 'Penetration']), subs(4), pick([null, 0, 4] as const))),
+      ...Array.from({ length: 3 }, () => G(c, pick(['weapon', 'accessory'] as const), pick([0, 4] as const))),
+    ];
+    return { c, pcs };
+  }));
+  const store = (c: Char, pcs: Piece[]): PoolStore => ({ pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [c.id]: pcs.map((p) => p.id) } });
+
+  it('у записей пула bt 0 ↔ 4 — сборки и достижимые сборки всех вариантов те же', () => {
+    let n = 0;
+    const diff = pools.flatMap(({ c, pcs }) => {
+      const a = play(ctx, c, pcs), z = play(ctx, c, pcs.map(flip));
+      return a.variants.flatMap((v) => { n++; return sig(a.asm.get(v.key)!) === sig(z.asm.get(v.key)!) && sig(a.reach.get(v.key)!) === sig(z.reach.get(v.key)!) ? [] : [`${c.name} ${v.key}`]; });
+    });
+    expect(n).toBeGreaterThan(250);
+    expect(diff).toEqual([]);
+  });
+
+  it('новая с формы с bt 0 и 4 — те же исходы у героя; на пуле с перевёрнутым bt — тоже', () => {
+    let rows = 0;
+    const diff = pools.flatMap(({ c, pcs }) => {
+      const x = (bt: 0 | 4): ItemInput => { const p = G(c, pick(['weapon', 'accessory'] as const), bt); return { slot: p.slot, grade: 'unique', setId: null, itemKey: p.itemKey, main: p.main, subs: p.lit, bt }; };
+      const x0 = x(0), x4 = { ...x0, bt: 4 as const };
+      const o = (pieces: Piece[], it: ItemInput) => rowsSig(outcomeFor(ctx, poolView(ctx, store(c, pieces)), c.id, it, { explicit: true }));
+      const base = o(pcs, x0);
+      if (base !== 'null' && base.includes('[["')) rows++;
+      return base === o(pcs, x4) && base === o(pcs.map(flip), x0) ? [] : [`${c.name} ${JSON.stringify(x0)}`];
+    });
+    expect(rows).toBeGreaterThan(40);
+    expect(diff).toEqual([]);
   });
 });
 

@@ -403,6 +403,7 @@ export const en: Texts = {
     btChip: 'T4',
     btAria: 'Piece at Breakthrough T4',
     btTitle: 'Already at T4 — its set bonus counts at T4',
+    btTitleItem: 'Already at T4 — no more copies needed for its Breakthrough',
     btBelow: 'T0–T3',
     withT4: ' · T4',
     pieceEditNote: (name) => `Did a Reforge or Breakthrough in the game? Fix the segments and “T4”: builds reassemble. Transistone changed a stat? Enter the piece again and “Equip”, and “Remove from ${name}” this one.`,
@@ -508,7 +509,7 @@ export const en: Texts = {
     helpInput: 'Entering an item',
     helpInputItems: [
       '**Armor** — the set: it\'s in the name after "of" (Etheric Gloves of Speed → Speed Set).',
-      '**T4** next to the set — the piece is already at Breakthrough T4: its set bonus (Speed ×2 and others) counts at T4. A fresh drop is T0 — leave it off.',
+      '**T4** next to the set or item — the piece is already at Breakthrough T4. For armor its set bonus (Speed ×2 and others) counts at T4; for any piece, no more copies are needed for its Breakthrough. A fresh drop is T0 — leave it off.',
       '**Legendary weapon and accessory** — find the item and mark the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
@@ -658,7 +659,7 @@ export const en: Texts = {
       variants: 'This build has several set combos — the most complete is shown. The others are in the chips; “N more” shows them all.',
       stats: '“By stats” — all the character’s pieces by the chain, no sets. Off-build pieces go here: “Equip on…” → search by name, or “Rate a piece for …”.',
       fusion: "Mark Core Fusion Eternal and Eternal turns inactive, right after it in the list; Eternal's gear moves to Core Fusion Eternal. The star on Eternal switches back.",
-      bt: 'Already at Breakthrough T4? Tap “T4” and its set bonus counts as in the game. A fresh drop is T0 — leave it off.',
+      bt: 'Already at Breakthrough T4? Tap “T4” — set bonus and Breakthrough material count as in the game. A fresh drop is T0 — leave it off.',
     },
     news: {
       move: 'on replace, a stat from another row moves over',

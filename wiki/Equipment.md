@@ -25,8 +25,10 @@ T0–T3; ×4 at T4 when all four are T4, otherwise ×4 T0–T3. Speed, Penetrati
 ×4 T0–T3 is the whole bonus. Examples: Speed T4 T4 → +13%; Speed T4 T4 T0 → +13%; Speed T4 T4 T0 T0 → +25%; Speed T4 ×4
 → 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A stat set's bonus converts into that stat's segments and is weighed
 against the pieces; an incidental set (Effectiveness ×2 on a Speed build) counts too. A piece's Breakthrough is the
-**"T4"** button next to the set on the form and on the piece card: on — T4, off — T0–T3. "T?" and "mark Breakthrough"
-show only on old records with no Breakthrough set.
+**"T4"** button next to the set (on a Legendary weapon or accessory — next to the item) on the form and on the piece
+card: on — T4, off — T0–T3. Weapons and accessories have no set — there "T4" is only about material: no more copies are
+needed for its Breakthrough. An Epic weapon or accessory has no item on the form, so no "T4" either. "T?" and "mark
+Breakthrough" show only on old records with no Breakthrough set.
 
 ## "Filling"
 
@@ -115,7 +117,7 @@ The slots show how the variant is assembled: substats colored by its chain, Brea
 and what to look for. **"Missing: Immunity — 1 more, armor, gloves or boots."** — with "Try on".
 
 **"Caren's gear · N"** — a collapsed list of all her pieces by slot ("Helmet · 2", "Armor · 1"…) and where each one
-sits: "in Speed, Speed/Immu", "in every build". A piece she no longer needs (the builds use better ones) gets a line and
+sits: "in Speed, Speed/Immu", "in every build"; each piece also shows its Breakthrough ("T4", "T0–T3"). A piece she no longer needs (the builds use better ones) gets a line and
 **"Remove from Caren"**. Such a piece isn't removed by itself; only the "Equip" that pushed it out removes it — with a
 message.
 
@@ -129,7 +131,7 @@ gear: Caren.".
 Tap a piece to fix it after upgrading in the game. The edit is narrow — only what upgrading changes:
 - **segments** — how many are lit on the substat in the game, 1–6, with no yellow/orange split. A tap sets the number,
   tapping it again lowers it by one. A piece's segments add up to at most 22 on a Legendary and 17 on an Epic;
-- **"T4"** on armor — you did Breakthrough T4; off — T0–T3;
+- **"T4"** — you did Breakthrough T4; off — T0–T3 (an Epic weapon or accessory has none);
 - **"+ 4th substat from Reforge"** on an Epic with three — the first Reforge added a fourth;
 - **Transistone** changed a stat — that's not an edit: enter the piece again and "Equip", and "Remove from Caren" this
   one;
