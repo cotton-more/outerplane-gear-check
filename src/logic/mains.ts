@@ -44,6 +44,11 @@ export function itemMains(idx: Index, s: Pick<ItemInput, 'slot' | 'grade' | 'set
   return { lines, blocked, subKeys: new Set(Object.keys(idx.SUB)) };
 }
 
+// стат может быть сабстатом этого предмета (те же правила, что у формы, appState restoreItem и сетка): есть среди
+// сабстатов данных (PEN%, CDMG RED%, flat EFF и RES — нет) и не запрещён строкой main
+export const subAllowed = (idx: Index, s: Pick<ItemInput, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main'>, k: string): boolean =>
+  !!idx.SUB[k] && !itemMains(idx, s).blocked.has(k);
+
 const axisOf = (k: string) => k.trim().replace(/%$/, '');
 
 // сабстаты, которыми закрывается токен цепочки: у ATK/DEF/HP — и flat, и %, у остальных — сам стат

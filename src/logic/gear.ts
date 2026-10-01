@@ -2,10 +2,13 @@
 // из пула сами (logic/pool), операции «Надеть», «Убрать» — там же. Вещь попадает в пул только из оценки («Надеть» в
 // вердикте): жёлтые сегменты и Breakthrough — как отмечены на форме, оранжевые (Reforge) игрок добавляет потом в
 // карточке персонажа, там же правит Breakthrough. Enhance не храним: считаем +10. Одна запись может быть в пулах
-// нескольких героев — это одна вещь в инвентаре, правка Reforge и Breakthrough видна у всех.
+// нескольких героев — это одна вещь в инвентаре, правка Reforge и Breakthrough видна у всех; правка в шторке (updateIn)
+// — только у одного героя: общая запись делится (В9).
 import { CFG } from '../config';
+import { isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
-import { DROP_LEVEL, MAX_SUBS, type Subs } from './subs';
+import { subAllowed } from './mains';
+import { DROP_LEVEL, MAX_SUBS, withinCap, type Subs } from './subs';
 import type { ItemInput } from './verdict';
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
@@ -146,15 +149,51 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
 // новая запись вещи с формы: уровень (lit) и Breakthrough — как на форме (поля нет — не указан). yellow — тот же
 // уровень, но не выше четырёх: хранилище читает жёлтые только 1…4 (gearStore restorePieces), а старая вкладка читает
 // yellow и lit
+const yellowOf = (lit: Subs): Subs => Object.fromEntries(Object.entries(lit).map(([k, n]) => [k, Math.min(n, DROP_LEVEL)]));
 export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: GearStore; piece: Piece } {
   const id = 'p' + (st.seq + 1);
   const lit = { ...item.subs };
-  const yellow = Object.fromEntries(Object.entries(lit).map(([k, n]) => [k, Math.min(n, DROP_LEVEL)]));
+  const yellow = yellowOf(lit);
   const piece: Piece = {
     id, slot: item.slot, grade: item.grade, setId: item.setId ?? null, itemKey: item.itemKey ?? null, main: item.main ?? null,
     ...(item.unlisted ? { unlisted: true } : {}), yellow, lit, bt: item.bt ?? null, at,
   };
   return { st: { ...st, seq: st.seq + 1, pieces: { ...st.pieces, [id]: piece } }, piece };
+}
+
+// Правка в шторке вещи (Н1): уровни сабстатов 1…6 (lit — новые уровни её статов; стат не меняется — Transistone не
+// правка, В-А2), «T4» у брони (4 / 0), 4-й сабстат у Epic с тремя — с уровнем 1 (add, В-А2). Сумма уровней не растёт
+// выше предела (levelCap): такой патч не применяется; уменьшение и «T4» — всегда (старые записи бывают выше предела).
+// После правки уровень один: yellow = min(lit, 4), как у newPiece. Правка — только у этого героя (В9): запись есть и у
+// других (старая общая) — ему копия (copy-on-write): новая запись (seq + 1) на том же месте его пула, у других —
+// прежняя. Пул не чистит (В-А3): ставшее ненужным — «больше не нужна» и «Убрать у X»; «Вернуть» нет — нажатие
+// обратимо тем же нажатием. id — запись после правки: шторка идёт за ним. Ничего не поменялось — то же хранилище.
+// 4-й сабстат — только допустимый на этом предмете (mains subAllowed, как на форме) и новый.
+// UI ОБЯЗАН снять висящее «Вернуть» соседнего действия при правке (В3: одно на все): undoRemove / undoDrop / undoPut /
+// unfuseChar возвращают запись по id, а её поправили или скопировали
+export interface PieceEdit { lit?: Subs; bt?: 0 | 4; add?: string }
+export function updateIn(idx: Index, st: GearStore, charId: string, id: string, patch: PieceEdit, at = today()): { st: GearStore; id: string } {
+  const same = { st, id };
+  const p = st.pieces[id];
+  if (!p || !st.pools[charId]?.includes(id)) return same;
+  const levels = Object.entries(patch.lit ?? {});
+  if (levels.some(([k, n]) => !Object.hasOwn(p.lit, k) || !Number.isInteger(n) || n < 1 || n > MAX_LIT)) return same;
+  const lit: Subs = { ...p.lit, ...patch.lit };
+  if (patch.add !== undefined) {
+    if (p.grade !== 'rare' || Object.keys(lit).length !== MAX_SUBS - 1 || Object.hasOwn(lit, patch.add) || !subAllowed(idx, pieceInput(p), patch.add)) return same;
+    lit[patch.add] = 1;
+  }
+  if (!withinCap(p.grade, p.lit, lit)) return same;
+  const bt = patch.bt !== undefined && isArmor(p.slot) && (patch.bt === 0 || patch.bt === 4) ? patch.bt : p.bt;
+  const keys = Object.keys(lit);
+  if (bt === p.bt && keys.length === Object.keys(p.lit).length && keys.every((k) => lit[k] === p.lit[k])) return same;
+  const edited: Piece = { ...p, yellow: yellowOf(lit), lit, bt, at };
+  if (holdersOf(st, id).length < 2) return { st: { ...st, pieces: { ...st.pieces, [id]: edited } }, id };
+  // копия: номер — следующий за seq; только безопасное целое и свободный id (gearStore seqOf), иначе копия затёрла бы вещь
+  const seq = st.seq + 1, nid = 'p' + seq;
+  if (!Number.isSafeInteger(seq) || st.pieces[nid]) return same;
+  const pool = st.pools[charId].map((x) => (x === id ? nid : x));
+  return { st: { ...st, seq, pieces: { ...st.pieces, [nid]: { ...edited, id: nid } }, pools: { ...st.pools, [charId]: pool } }, id: nid };
 }
 
 export function updatePiece(st: GearStore, id: string, patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>, at = today()): GearStore {

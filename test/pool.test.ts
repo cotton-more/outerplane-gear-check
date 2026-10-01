@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { ArmorSlot, Char, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
-import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
+import { buildKey, EMPTY_GEAR, updateIn, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
 import { assemble, assembleReach, entriesFor, hasStatBuild, heldBy, holds, isStats, outcomeFor, play, poolView, putOn, puts, started, statVariant, STATS, undoPut, type Assembly, type Entry, type Play, type PoolStore } from '../src/logic/pool';
 import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '../src/logic/setBonus';
 import { charVs, whereUsed } from '../src/logic/poolVs';
@@ -1179,6 +1179,46 @@ describe('что держит пул и что убирает «Надеть» (
         removed: r.removed.map((x) => x.id), kept: r.st.pools[caren.id].includes(ps[0].id),
       }).toEqual({ speed: r.id, stats: ps[0].id, removed: [], kept: true });
     });
+  });
+});
+
+// Шаг 5 «Оценка — единственный ввод»: правка в шторке (updateIn) пересобирает билды, но пул не чистит (В-А3) — ставшая
+// ненужной вещь остаётся со строкой «больше не нужна» и «Убрать у Caren»
+describe('правка в шторке пересобирает, но не чистит (В-А3)', () => {
+  const held = (p: Play, id: string) => p.variants.filter((v) => heldBy(p, v).some((a) => Object.values(a.slots).some((e) => e?.id === id))).map((v) => (isStats(v) ? STATS : v.name));
+  const JUNK2 = { HP: 1, RES: 1 }, STRONG4 = { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 2 };
+  // Caren: два Speed-шлема — A (T0, SPD 4) и B (T4). В Speed ×4 (броня и перчатки на T4, ботинки на T0) T4 шлема бонуса
+  // не меняет — встаёт A, он сильнее; в «По статам» (Speed-шлем и -броня, Attack-перчатки и -ботинки) B на T4 даёт
+  // Speed ×2 T4 — встаёт B. У Pen, Def и Immu — шлемы своих сетов. SPD у A 4 → 6: A сильнее B и с бонусом
+  const pieces = () => [
+    P('helmet', 'Speed', { 'DEF%': 4, 'HP%': 4, CHC: 2, SPD: 4 }, 0), P('helmet', 'Speed', { RES: 3, CHC: 1, 'DEF%': 3, SPD: 4 }, 4),
+    P('armor', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 2 }, 4), P('gloves', 'Speed', JUNK2, 4), P('shoes', 'Speed', { HP: 1, ATK: 1 }, 0),
+    P('helmet', 'Penetration', JUNK2), P('helmet', 'Defense', JUNK2), P('helmet', 'Immunity', JUNK2),
+    P('gloves', 'Attack', STRONG4), P('shoes', 'Attack', STRONG4),
+  ];
+  const store = (ps: Piece[]): GearStore =>
+    ({ ...EMPTY_GEAR, seq: seq + 1, pieces: Object.fromEntries(ps.map((p) => [p.id, p])), pools: { [caren.id]: ps.map((p) => p.id) } });
+
+  it('до правки: A — только в Speed, B — только в «По статам», ненужных нет', () => {
+    const ps = pieces(), [a, b] = ps;
+    const cp = poolView(ctx, store(ps)).of(caren.id)!;
+    expect({ a: held(cp, a.id), b: held(cp, b.id), unused: cp.unused }).toEqual({ a: ['Speed'], b: [STATS], unused: [] });
+  });
+
+  it('SPD у A 4 → 6: «По статам» пересобран — шлем A вместо B', () => {
+    const ps = pieces(), [a, b] = ps;
+    const st = store(ps);
+    const stats = (x: GearStore) => { const cp = poolView(ctx, x).of(caren.id)!; return cp.asm.get(cp.stat!.key)!.slots.helmet?.id; };
+    const r = updateIn(idx, st, caren.id, a.id, { lit: { SPD: 6 } }, '');
+    expect([stats(st), stats(r.st)]).toEqual([b.id, a.id]);
+  });
+
+  it('B больше ни в одном билде — «больше не нужна», но из пула не ушёл', () => {
+    const ps = pieces(), [a, b] = ps;
+    const r = updateIn(idx, store(ps), caren.id, a.id, { lit: { SPD: 6 } }, '');
+    const cp = poolView(ctx, r.st).of(caren.id)!;
+    expect({ b: held(cp, b.id), unused: cp.unused.map((p) => p.id), pool: r.st.pools[caren.id], kept: r.st.pieces[b.id] })
+      .toEqual({ b: [], unused: [b.id], pool: ps.map((p) => p.id), kept: b });
   });
 });
 

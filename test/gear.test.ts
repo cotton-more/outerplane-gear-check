@@ -6,10 +6,11 @@ import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import {
-  addFourth, buildKey, EMPTY_GEAR, gc, gearedChars, newPiece, reforgeScale, reforgesDone, replaceStat, samePiece, setYellow, tapSegment,
-  updatePiece, type GearStore, type Piece,
+  addFourth, buildKey, EMPTY_GEAR, gc, gearedChars, holdersOf, newPiece, reforgeScale, reforgesDone, replaceStat, samePiece, setYellow, tapSegment,
+  updateIn, updatePiece, type GearStore, type Piece,
 } from '../src/logic/gear';
-import { decodeGear, encodeGear, newerGear, restoreGear } from '../src/logic/gearStore';
+import { normalizeFusion, switchFusion } from '../src/logic/fusion';
+import { decodeGear, encodeGear, newerGear, readsWhole, restoreGear } from '../src/logic/gearStore';
 import { planFor, planPut, poolView, putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
 import type { ItemInput } from '../src/logic/verdict';
 
@@ -561,5 +562,130 @@ describe('та же вещь', () => {
 
   it('samePiece Breakthrough не сравнивает: T4 на форме и запись ниже T4 — та же вещь', () => {
     expect(samePiece({ ...helmet({ CHC: 4, CHD: 1 }), bt: 4 }, { ...upg, bt: 0 })).toBe(true);
+  });
+});
+
+// Шаг 5 «Оценка — единственный ввод»: правка в шторке вещи (Н1) — уровни 1–6, «T4» у брони, 4-й сабстат у Epic (В-А2);
+// предел суммы (В-А5); только у этого героя — старая общая запись делится (В9, copy-on-write)
+describe('правка в шторке (updateIn)', () => {
+  const RIN = '2000019';
+  const AT = '2026-10-01';
+  const L = helmet({ 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 });
+  const solo = () => v2([rec('p1', helmet({ RES: 1 })), rec('p2', L), rec('p3', helmet({ HP: 1 }))], { [CAREN]: ['p1', 'p2', 'p3'] });
+  const shared = () => v2([rec('p1', helmet({ RES: 1 })), rec('p2', L), rec('p3', helmet({ HP: 1 }))], { [RIN]: ['p2', 'p3'], [CAREN]: ['p1', 'p2', 'p3'] });
+
+  it('запись только у этого героя — тот же id и то же место, seq не растёт; уровень и дата — новые', () => {
+    const st = solo();
+    const r = updateIn(idx, st, CAREN, 'p2', { lit: { SPD: 4 } }, AT);
+    expect({ id: r.id, pool: r.st.pools[CAREN], seq: r.st.seq }).toEqual({ id: 'p2', pool: ['p1', 'p2', 'p3'], seq: 3 });
+    expect(r.st.pieces.p2).toMatchObject({ lit: { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 4 }, at: AT });
+  });
+
+  it('общая запись: у Rin прежняя, у Caren новая (seq + 1) на том же месте; возвращает новый id', () => {
+    const st = shared();
+    const r = updateIn(idx, st, CAREN, 'p2', { lit: { SPD: 4 } }, AT);
+    expect({ id: r.id, seq: r.st.seq, caren: r.st.pools[CAREN], rin: r.st.pools[RIN] }).toEqual({ id: 'p4', seq: 4, caren: ['p1', 'p4', 'p3'], rin: ['p2', 'p3'] });
+    expect(r.st.pieces.p2).toBe(st.pieces.p2);
+    expect(r.st.pieces.p4).toMatchObject({ id: 'p4', setId: speed, lit: { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 4 }, at: AT });
+    expect([holdersOf(r.st, 'p2'), holdersOf(r.st, 'p4')]).toEqual([[RIN], [CAREN]]);
+  });
+
+  it('после деления запись Caren — уже её одной: следующая правка — тот же id', () => {
+    const once = updateIn(idx, shared(), CAREN, 'p2', { lit: { SPD: 4 } }, AT);
+    const twice = updateIn(idx, once.st, CAREN, once.id, { lit: { SPD: 5 } }, AT);
+    expect({ id: twice.id, seq: twice.st.seq, caren: twice.st.pools[CAREN] }).toEqual({ id: 'p4', seq: 4, caren: ['p1', 'p4', 'p3'] });
+  });
+
+  it('уровень 6 — да; 7, 0 и дробный — не применяется', () => {
+    const st = solo();
+    expect(updateIn(idx, st, CAREN, 'p2', { lit: { SPD: 6 } }, AT).st.pieces.p2.lit.SPD).toBe(6);
+    for (const n of [7, 0, 2.5]) expect(updateIn(idx, st, CAREN, 'p2', { lit: { SPD: n } }, AT)).toEqual({ st, id: 'p2' });
+  });
+
+  it('смены стата нет (Transistone — не правка): стат, которого у вещи нет, — не применяется', () => {
+    const st = solo();
+    expect(updateIn(idx, st, CAREN, 'p2', { lit: { ATK: 2 } }, AT)).toEqual({ st, id: 'p2' });
+  });
+
+  it('«T4» → 4 и обратно → 0; Breakthrough не указан тоже становится 4', () => {
+    const on = updateIn(idx, solo(), CAREN, 'p2', { bt: 4 }, AT);
+    expect(on.st.pieces.p2.bt).toBe(4);
+    expect(updateIn(idx, on.st, CAREN, 'p2', { bt: 0 }, AT).st.pieces.p2.bt).toBe(0);
+  });
+
+  it('«T4» у оружия — не применяется: Breakthrough отмечают только у брони', () => {
+    const w = rec('p1', { slot: 'weapon', grade: 'unique', setId: null, itemKey: 'x', main: 'ATK%', subs: { CHC: 2 } });
+    const st = v2([w], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, st, CAREN, 'p1', { bt: 4 }, AT).st).toBe(st);
+  });
+
+  it('4-й сабстат у Epic с тремя — с уровнем 1; у Legendary, у Epic с четырьмя и тот же стат — нет', () => {
+    const epic = v2([rec('p1', helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }, 'rare'))], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, epic, CAREN, 'p1', { add: 'SPD' }, AT).st.pieces.p1).toMatchObject({ yellow: { SPD: 1 }, lit: { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 } });
+    const legend = v2([rec('p1', helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }))], { [CAREN]: ['p1'] });
+    const epic4 = v2([rec('p1', helmet({ 'DEF%': 3, CHC: 2, CHD: 2, HP: 1 }, 'rare'))], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, legend, CAREN, 'p1', { add: 'SPD' }, AT).st).toBe(legend);
+    expect(updateIn(idx, epic4, CAREN, 'p1', { add: 'SPD' }, AT).st).toBe(epic4);
+    expect(updateIn(idx, epic, CAREN, 'p1', { add: 'CHC' }, AT).st).toBe(epic);
+  });
+
+  it('4-й сабстат — только допустимый на предмете, как на форме: PEN% и HP% у шлема (main HP%) — нет', () => {
+    const epic = v2([rec('p1', helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }, 'rare'))], { [CAREN]: ['p1'] });
+    for (const k of ['PEN%', 'CDMG RED%', 'HP%', 'нет-такого', '']) expect(updateIn(idx, epic, CAREN, 'p1', { add: k }, AT).st).toBe(epic);
+    expect(updateIn(idx, epic, CAREN, 'p1', { add: 'HP' }, AT).st.pieces.p1.lit.HP).toBe(1);
+  });
+
+  it('после правки хранилище читается целиком: restoreGear — та же запись, readsWhole', () => {
+    const epic = v2([rec('p1', helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }, 'rare'))], { [CAREN]: ['p1'] });
+    const raw = JSON.parse(JSON.stringify(updateIn(idx, epic, CAREN, 'p1', { add: 'SPD', lit: { CHC: 5 } }, AT).st));
+    expect({ whole: readsWhole(raw, idx), piece: restoreGear(raw, idx).pieces.p1 }).toEqual({ whole: true, piece: raw.pieces.p1 });
+  });
+
+  it('старая запись с оранжевыми после правки — один уровень: yellow = min(lit, 4)', () => {
+    // жёлтые CHC 2 / CHD 3, горит 5 / 3; правка только Breakthrough
+    const st = v2([rec('p1', helmet({ CHC: 2, CHD: 3 }), null, { CHC: 5, CHD: 3 })], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, st, CAREN, 'p1', { bt: 4 }, AT).st.pieces.p1).toMatchObject({ yellow: { CHC: 4, CHD: 3 }, lit: { CHC: 5, CHD: 3 }, bt: 4 });
+  });
+
+  it('предел суммы: рост выше 22 у Legendary и 17 у Epic — не применяется; до предела — да', () => {
+    const legend = v2([rec('p1', helmet({ 'DEF%': 6, CHC: 6, CHD: 6, SPD: 3 }))], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, legend, CAREN, 'p1', { lit: { SPD: 4 } }, AT).st.pieces.p1.lit.SPD).toBe(4);
+    expect(updateIn(idx, legend, CAREN, 'p1', { lit: { SPD: 5 } }, AT).st).toBe(legend);
+    const epic = v2([rec('p1', helmet({ 'DEF%': 6, CHC: 6, CHD: 4 }, 'rare'))], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, epic, CAREN, 'p1', { lit: { CHD: 5 } }, AT).st.pieces.p1.lit.CHD).toBe(5);
+    expect(updateIn(idx, epic, CAREN, 'p1', { lit: { CHD: 6 } }, AT).st).toBe(epic);
+    // 4-й сабстат — тоже рост суммы: у Epic 6/6/5 (17) его не добавить
+    const full = updateIn(idx, epic, CAREN, 'p1', { lit: { CHD: 5 } }, AT).st;
+    expect(updateIn(idx, full, CAREN, 'p1', { add: 'SPD' }, AT).st).toBe(full);
+  });
+
+  it('старая Legendary 6/6/6/6 (сумма 24): снять сегмент и «T4» — можно, поднять — нет', () => {
+    const st = v2([rec('p1', helmet({ 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 }), null, { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 })], { [CAREN]: ['p1'] });
+    expect(updateIn(idx, st, CAREN, 'p1', { lit: { SPD: 5 } }, AT).st.pieces.p1.lit).toEqual({ 'DEF%': 6, CHC: 6, CHD: 6, SPD: 5 });
+    expect(updateIn(idx, st, CAREN, 'p1', { bt: 4 }, AT).st.pieces.p1).toMatchObject({ bt: 4, lit: { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 } });
+    // переставить сегмент (сумма та же) — тоже можно: сумма не растёт
+    const minus = updateIn(idx, st, CAREN, 'p1', { lit: { SPD: 5 } }, AT).st;
+    expect(updateIn(idx, minus, CAREN, 'p1', { lit: { SPD: 6 } }, AT).st).toBe(minus);
+  });
+
+  it('ничего не поменялось, вещи нет в пуле героя или записи нет — то же хранилище', () => {
+    const st = shared();
+    expect(updateIn(idx, st, CAREN, 'p2', { lit: { SPD: 1 }, bt: undefined }, AT)).toEqual({ st, id: 'p2' });
+    expect(updateIn(idx, st, RIN, 'p1', { lit: { RES: 2 } }, AT)).toEqual({ st, id: 'p1' });
+    expect(updateIn(idx, st, CAREN, 'p9', { lit: { RES: 2 } }, AT)).toEqual({ st, id: 'p9' });
+  });
+
+  it('копия не оставляет висячих id: gc, «Убрать у Rin», переход Core Fusion и правило Core Fusion', () => {
+    const [eternal, cf] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!.id);
+    const st = v2([rec('p1', L), rec('p2', helmet({ HP: 1 }))], { [RIN]: ['p1'], [eternal]: ['p1'], [cf]: ['p2'] });
+    const r = updateIn(idx, st, eternal, 'p1', { bt: 4 }, AT);
+    const dangling = (x: GearStore) => Object.values(x.pools).flat().filter((id) => !x.pieces[id]);
+    expect(dangling(gc(r.st))).toEqual([]);
+    expect(Object.keys(gc(r.st).pieces).sort()).toEqual(['p1', 'p2', 'p3']);
+    expect(gc({ ...r.st, pools: { ...r.st.pools, [RIN]: [] } }).pieces.p1).toBeUndefined();
+    const n = normalizeFusion(idx, [eternal, cf, RIN], r.st);
+    expect({ dangling: dangling(n.st), pieces: Object.keys(n.st.pieces).sort() }).toEqual({ dangling: [], pieces: ['p1', 'p2'] });
+    const sw = switchFusion(idx, [eternal, RIN], r.st, cf)!;
+    expect({ dangling: dangling(sw.st), cf: sw.st.pools[cf], rin: sw.st.pools[RIN] }).toEqual({ dangling: [], cf: ['p2', 'p3'], rin: ['p1'] });
   });
 });
