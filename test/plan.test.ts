@@ -23,7 +23,7 @@ describe('«Прокачка»: броня', () => {
   it('Epic «Оставить»: Enhance, Breakthrough такой же Epic-вещью, без Transistone — строки Reforge нет', () => {
     const r = helmet('rare', { SPD: 3, CHC: 2, CHD: 2 });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.btArmorEpic('Helmet', 'Speed'), P.noTransistone(false)]);
+    expect(r.plan).toEqual([P.enhance, P.btArmorEpic('Helmet', 'Speed'), P.noTransistone]);
   });
 
   it('Legendary «Оставить»: Breakthrough фоддером того же сета и слота, Transistone не запрещён — строки Reforge нет', () => {
@@ -88,7 +88,7 @@ describe('Epic: 4-й сабстат от первого Reforge', () => {
   it('у Epic с 4-м сабстатом смена статов уже открыта; ни строки «Ролл», ни строки Reforge', () => {
     const r = attackHelmet({ CHC: 3, 'ATK%': 3, CHD: 2, SPD: 2 });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.btArmorEpic('Helmet', 'Attack'), P.noTransistone(true)]);
+    expect(r.plan).toEqual([P.enhance, P.btArmorEpic('Helmet', 'Attack'), P.noTransistone]);
     expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
   });
 });

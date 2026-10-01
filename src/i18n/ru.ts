@@ -77,9 +77,8 @@ export const ru = {
       `**Breakthrough** до T4: +5% к main stat за ступень и сильнее бонус сета. Материал — такая же вещь: Epic ${piece} ${set} Set (сабстаты не важны) или Glunite. Пока эта не на T4, такие Epic из разбора не выбрасывай — нужно 4 штуки.`,
     btGear: (name: string) =>
       `**Breakthrough** до T4 — обязательно: к T4 усиливается пассивка, и +20% к main stat. Материал — копии ${name} (годятся и с другим main stat) или Refined Glunite.`,
-    noTransistone: (has4th: boolean) =>
-      `**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.${has4th ? '' : ' Да и смена статов у Epic откроется, только когда первый Reforge добавит 4-й сабстат.'}`,
-    tempNoInvest: '**Reforge** и **Breakthrough** — не вкладывай: вещь на замену, её сменит нужная.',
+    noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.',
+    tempNoInvest: '**Breakthrough** — не вкладывай: вещь на замену, её сменит нужная.',
     fodderArmor: (piece: string, set: string) =>
       `**Не прокачивай** — это материал: одна вещь — одна ступень Breakthrough для Legendary ${piece} ${set} Set, которую оставляешь. Исключение — если перебросишь ей сабстаты Transistone (Total).`,
     fodderGear: (name: string) =>
@@ -91,7 +90,7 @@ export const ru = {
   // --- вердикт: броня
   armor: {
     foot: (keep: number, spdKeep: number, spdRoll: number) =>
-      `Броня: полезный сабстат — из 1–3 ступени приоритета билда (4-я — за ½, SPD — на любой; слабый flat — за ½ или не считается). Оставить — ${keep}+ полезных под лучший билд или ${spdKeep} с SPD от ${spdRoll} жёлтых сегментов.`,
+      `Броня: полезный сабстат — из 1–3 ступени приоритета билда (4-я — за ½, SPD — на любой; слабый flat — за ½ или не считается). Оставить — ${keep}+ полезных под лучший билд или ${spdKeep} с SPD от ${spdRoll} сегментов.`,
     pickSet: 'Выбери сет',
     pickSetHint: (prefix: string, piece: string, grade: string) => `Сет написан в названии после «of»: **${prefix} ${piece} of Speed** → ${grade}, Speed Set.`,
     deadTitle: (set: string) => `Скорее разбирай — ${set} Set нет ни в одном билде`,
@@ -114,20 +113,19 @@ export const ru = {
     markSubs: 'Отметь сабстаты предмета — посчитаю, кому он подходит.',
     keepTitle: (n: number) => `Оставляй — подходит ${personsDat(n)}`,
     best: (who: string, good: string, n: number, list: string) => `Лучше всего: ${who}. Полезны ${good} из ${n}: ${list}.`,
-    spdCarries: (good: string, roll: number) => `Полезных всего ${good}, но SPD с ${roll} жёлтыми сегментами вытягивает.`,
+    spdCarries: (good: string, roll: number) => `Полезных всего ${good}, но SPD с ${roll} сегментами вытягивает.`,
     twoMainCarries: (keys: string[], yellow: number) =>
-      `Полезных меньше трёх, но оба главных стата — ${keys.join(' и ')} — с ${yellow} жёлтыми сегментами из 6: такой Epic стоит держать.`,
+      `Полезных меньше трёх, но оба главных стата — ${keys.join(' и ')} — с ${yellow} сегментами из 6: такой Epic стоит держать.`,
     tempTitle: (n: number) => `Временно — пойдёт ${personsDat(n)}, пока нет лучше`,
     tempWhy: (who: string, has: string[], missing: string[]) =>
       `Лучше всего: ${who}. Главный стат есть (${has.join(', ')}), ${missing.length ? `но нет ${missing.join(' / ')}: носи, пока не выпадет вещь с ${missing.join(' / ')}` : 'но второго главного нет: носи, пока не выпадет вещь лучше'}.`,
     tempFew: 'Держи 1–2 такие вещи на сет и слот, остальные — в разбор.',
-    eventQuality: 'Все 4 сабстата с 3 жёлтыми сегментами (3×4) — ивентовое качество.',
     rerollOne: (key: string) =>
       `Лишний сабстат — ${key}: его одного можно перебросить Transistone (Individual), остальные три закрепятся. По гайду outerpedia Transistone тратят на Irregular-предметы и красную броню.`,
     weakEpicTitle: 'Разбирай — полезные, но слабые',
     weakEpic: (who: string, n: number, top: string[], yellow: number, max: number) =>
-      `Все ${n} сабстата полезны для ${who}, но это нижние ступени приоритета: главного (${top.join(', ')}) нет, жёлтых сегментов — ${yellow} из ${max}. Вкладываться в такой Epic невыгодно: Transistone на Epic не тратят (гайд outerpedia), а в Breakthrough для Legendary он не годится.`,
-    weakEpicKeepIf: (top: string[], yellow: number) => `Оставить стоило бы с ${top.join(' или ')} либо с ${yellow}+ жёлтыми сегментами на полезных статах.`,
+      `Все ${n} сабстата полезны для ${who}, но это нижние ступени приоритета: главного (${top.join(', ')}) нет, сегментов — ${yellow} из ${max}. Вкладываться в такой Epic невыгодно: Transistone на Epic не тратят (гайд outerpedia), а в Breakthrough для Legendary он не годится.`,
+    weakEpicKeepIf: (top: string[], yellow: number) => `Оставить стоило бы с ${top.join(' или ')} либо с ${yellow}+ сегментами на полезных статах.`,
     wrongSubs: (set: string) => `Носят ${set} Set, но сабстаты не те`,
     fodderTitle: 'Фоддер — сабстаты не дотянули',
     fodderBest: (who: string, good: string, list: string) => `Лучший вариант: ${who}, полезны только ${good}: ${list}.`,
@@ -139,7 +137,7 @@ export const ru = {
     junkBest: (who: string, good: string, list: string) => `Даже лучшему варианту (${who}) полезны только ${good}: ${list}.`,
     epicTwo: 'Для Epic двух полезных мало, если это не два главных стата с хорошим роллом: Transistone на Epic не тратят, а в Breakthrough для Legendary он не годится.',
     enableFodder: (set: string) => `Копишь фоддер для T4 ${set} Set? Включи это в «Настройках оценки» — такие предметы станут «Фоддер».`,
-    checkSpd: (roll: number) => `Проверь SPD: если у него ${roll}+ жёлтых сегмента — отметь, это уже «Оставить».`,
+    checkSpd: (roll: number) => `Проверь SPD: если у него ${roll}+ сегмента — отметь, это уже «Оставить».`,
     maybeTitle: 'Твоим не подходит, но предмет хороший',
     maybeOthers: (names: string) => `Для персонажей не из ростера это «Оставить»: ${names}. Если планируешь их качать — не разбирай.`,
   },
@@ -147,10 +145,10 @@ export const ru = {
   // --- вердикт: оружие и аксессуары
   gear: {
     foot: (good: number, good2: number, yellow: number) =>
-      `Оружие и аксессуары: ценность Legendary — в уникальной пассивке и правильном main stat; сабстаты правят Precise Craft и Transistone. Временная замена (без нужной пассивки) стоит места, только если ролл хороший: ${good} полезных сабстата или ${good2} полезных с ${yellow}+ жёлтыми сегментами на них.`,
+      `Оружие и аксессуары: ценность Legendary — в уникальной пассивке и правильном main stat; сабстаты правят Precise Craft и Transistone. Временная замена (без нужной пассивки) стоит места, только если ролл хороший: ${good} полезных сабстата или ${good2} полезных с ${yellow}+ сегментами на них.`,
     stopgapMarkTitle: (n: number) => `Как временная замена подойдёт ${personsDat(n)} — отметь сабстаты`,
     stopgapMarkLine: (what: string, good: number, good2: number, yellow: number) =>
-      `${what} Держать стоит только с хорошим роллом: ${good} полезных сабстата или ${good2} полезных с ${yellow}+ жёлтыми сегментами на них.`,
+      `${what} Держать стоит только с хорошим роллом: ${good} полезных сабстата или ${good2} полезных с ${yellow}+ сегментами на них.`,
     byMain: 'Кому подошёл бы по main stat',
     tempTitle: (n: number) => `Временно — хороший ролл для ${personsGen(n)}`,
     tempBest: (what: string, who: string) => `${what} Лучше всего: ${who}.`,
@@ -160,7 +158,7 @@ export const ru = {
     weakTitle: 'Разбирай — слабый ролл',
     weakLine: (main: string, n: number, who: string, good: string) =>
       `Main ${main} подошёл бы ${personsDat(n)}, но сабстаты слабые: даже лучшему варианту (${who}) полезны только ${good}.`,
-    markYellow: (yellow: number) => `Отметь жёлтые сегменты, если их больше одного: при ${yellow}+ на полезных статах такой предмет стоит оставить.`,
+    markYellow: (yellow: number) => `Отметь сегменты, если их больше одного: при ${yellow}+ на полезных статах такой предмет стоит оставить.`,
     epicWhichMain: (k: GearKind) => `Epic ${nom(k)}: какой main stat?`,
     epicNoPassive: (k: GearKind) =>
       `У Epic ${gen(k)} нет уникальной пассивки: это временная замена, пока нет Legendary. Решают main stat (ярче — тот, что кому-то нужен в этом слоте) и ролл сабстатов.`,

@@ -107,7 +107,6 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.title = A.keepTitle(keepers.length);
     res.lines.push(A.best(who, fmtGood(bestGood), nSubs, okList));
     if (bestGood < CFG.keepCount) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => subLabel(p.key)), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
-    if (legend && nSubs === 4 && Object.values(subs).every((r) => r >= 3)) res.lines.push(A.eventQuality);
     // Legendary с одним лишним сабстатом: Transistone (Individual) меняет только его, остальные закрепляются
     const extra = best.parts.filter((p) => !p.ok);
     if (legend && nSubs === 4 && extra.length === 1) res.lines.push(A.rerollOne(subLabel(extra[0].key)));

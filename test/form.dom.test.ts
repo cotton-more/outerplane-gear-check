@@ -96,7 +96,7 @@ describe('свежая Epic с тремя сабстатами — без куб
     expect($('.vcard .stamp')?.textContent).toBe('Stopgap');
     expect($('.v-gamble')).toBeNull();
     const plan = [...document.querySelectorAll('.v-plan li')].map((li) => li.textContent);
-    expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', "Reforge and Breakthrough — don't invest: it's a stopgap until the right piece drops."]);
+    expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', "Breakthrough — don't invest: it's a stopgap until the right piece drops."]);
   });
 
   it('вкладка «Персонажи» на ширине от 380: на плашке штамп без кубика', async () => {

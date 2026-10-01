@@ -47,9 +47,8 @@ export const en: Texts = {
       `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — the same piece: Epic ${piece} ${set} Set (substats don't matter) or Glunite. Until this one is T4, don't dismantle such Epics — you need 4.`,
     btGear: (name) =>
       `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
-    noTransistone: (has4th) =>
-      `**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.${has4th ? '' : ' Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.'}`,
-    tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
+    noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.",
+    tempNoInvest: "**Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
     fodderArmor: (piece, set) =>
       `**Don't upgrade** — it's material: one piece is one Breakthrough tier for the Legendary ${piece} ${set} Set you keep. Unless you reroll its substats with Transistone (Total).`,
     fodderGear: (name) =>
@@ -60,7 +59,7 @@ export const en: Texts = {
 
   armor: {
     foot: (keep, spdKeep, spdRoll) =>
-      `Armor: a useful substat is in tiers 1–3 of the build's priority (tier 4 counts as ½, SPD at any tier; weak flat counts as ½ or not at all). Keep: ${keep}+ useful for the best build, or ${spdKeep} with SPD at ${spdRoll}+ yellow segments.`,
+      `Armor: a useful substat is in tiers 1–3 of the build's priority (tier 4 counts as ½, SPD at any tier; weak flat counts as ½ or not at all). Keep: ${keep}+ useful for the best build, or ${spdKeep} with SPD at ${spdRoll}+ segments.`,
     pickSet: 'Pick the set',
     pickSetHint: (prefix, piece, grade) => `The set is in the name after "of": **${prefix} ${piece} of Speed** → ${grade}, Speed Set.`,
     deadTitle: (set) => `Likely dismantle — ${set} Set isn't in any build`,
@@ -82,20 +81,19 @@ export const en: Texts = {
     markSubs: "Mark the item's substats — I'll work out who it suits.",
     keepTitle: (n) => `Keep — fits ${persons(n)}`,
     best: (who, good, n, list) => `Best for: ${who}. Useful ${good} of ${n}: ${list}.`,
-    spdCarries: (good, roll) => `Only ${good} useful, but SPD with ${roll} yellow segments carries it.`,
+    spdCarries: (good, roll) => `Only ${good} useful, but SPD with ${roll} segments carries it.`,
     twoMainCarries: (keys, yellow) =>
-      `Fewer than three useful, but both key stats — ${keys.join(' and ')} — have ${yellow} of 6 yellow segments: an Epic like this is worth keeping.`,
+      `Fewer than three useful, but both key stats — ${keys.join(' and ')} — have ${yellow} of 6 segments: an Epic like this is worth keeping.`,
     tempTitle: (n) => `Stopgap — works for ${persons(n)} until something better`,
     tempWhy: (who, has, missing) =>
       `Best for: ${who}. It has a key stat (${has.join(', ')}), ${missing.length ? `but no ${missing.join(' / ')}: wear it until a piece with ${missing.join(' / ')} drops` : 'but not a second one: wear it until something better drops'}.`,
     tempFew: 'Keep 1–2 of these per set and slot; dismantle the rest.',
-    eventQuality: 'All 4 substats with 3 yellow segments (3×4) — event quality.',
     rerollOne: (key) =>
       `The odd one out is ${key}: a Transistone (Individual) rerolls just it and locks the other three. outerpedia's guide spends Transistones on Irregular gear and red armor.`,
     weakEpicTitle: 'Dismantle — useful but weak',
     weakEpic: (who, n, top, yellow, max) =>
-      `All ${n} substats are useful for ${who}, but they're the lower tiers of the priority: none of the key stats (${top.join(', ')}), and ${yellow} of ${max} yellow segments. Not worth investing in such an Epic: Transistones aren't spent on Epics (outerpedia's guide), and it can't be Breakthrough fodder for a Legendary.`,
-    weakEpicKeepIf: (top, yellow) => `It would be worth keeping with ${top.join(' or ')}, or with ${yellow}+ yellow segments on useful stats.`,
+      `All ${n} substats are useful for ${who}, but they're the lower tiers of the priority: none of the key stats (${top.join(', ')}), and ${yellow} of ${max} segments. Not worth investing in such an Epic: Transistones aren't spent on Epics (outerpedia's guide), and it can't be Breakthrough fodder for a Legendary.`,
+    weakEpicKeepIf: (top, yellow) => `It would be worth keeping with ${top.join(' or ')}, or with ${yellow}+ segments on useful stats.`,
     wrongSubs: (set) => `Wear ${set} Set, but the substats don't fit`,
     fodderTitle: 'Fodder — the substats fall short',
     fodderBest: (who, good, list) => `Best option: ${who}, only ${good} useful: ${list}.`,
@@ -107,17 +105,17 @@ export const en: Texts = {
     junkBest: (who, good, list) => `Even the best option (${who}) gets only ${good} useful: ${list}.`,
     epicTwo: "Two useful substats aren't enough for an Epic unless they're both key stats with a good roll: Transistone isn't spent on Epics, and an Epic can't be Breakthrough fodder for a Legendary.",
     enableFodder: (set) => `Saving fodder for T4 ${set} Set? Turn it on in "Evaluation settings" — such pieces will become "Fodder".`,
-    checkSpd: (roll) => `Check SPD: if it has ${roll}+ yellow segments, mark them — that's already a "Keep".`,
+    checkSpd: (roll) => `Check SPD: if it has ${roll}+ segments, mark them — that's already a "Keep".`,
     maybeTitle: "Doesn't fit your characters, but a good piece",
     maybeOthers: (names) => `For characters outside your roster this is a "Keep": ${names}. If you plan to build them, don't dismantle it.`,
   },
 
   gear: {
     foot: (good, good2, yellow) =>
-      `Weapons and accessories: a Legendary's value is its unique passive and the right main stat; substats are fixed with Precise Craft and Transistone. A stopgap (without the needed passive) is worth the space only with a good roll: ${good} useful substats, or ${good2} useful with ${yellow}+ yellow segments on them.`,
+      `Weapons and accessories: a Legendary's value is its unique passive and the right main stat; substats are fixed with Precise Craft and Transistone. A stopgap (without the needed passive) is worth the space only with a good roll: ${good} useful substats, or ${good2} useful with ${yellow}+ segments on them.`,
     stopgapMarkTitle: (n) => `Fits ${persons(n)} as a stopgap — mark the substats`,
     stopgapMarkLine: (what, good, good2, yellow) =>
-      `${what} Worth keeping only with a good roll: ${good} useful substats, or ${good2} useful with ${yellow}+ yellow segments on them.`,
+      `${what} Worth keeping only with a good roll: ${good} useful substats, or ${good2} useful with ${yellow}+ segments on them.`,
     byMain: 'Who it would suit by main stat',
     tempTitle: (n) => `Stopgap — good roll for ${persons(n)}`,
     tempBest: (what, who) => `${what} Best for: ${who}.`,
@@ -127,7 +125,7 @@ export const en: Texts = {
     weakTitle: 'Dismantle — weak roll',
     weakLine: (main, n, who, good) =>
       `${main} main would suit ${persons(n)}, but the substats are weak: even the best option (${who}) gets only ${good} useful.`,
-    markYellow: (yellow) => `Mark the yellow segments if there's more than one: with ${yellow}+ on useful stats this piece is worth keeping.`,
+    markYellow: (yellow) => `Mark the segments if there's more than one: with ${yellow}+ on useful stats this piece is worth keeping.`,
     epicWhichMain: (k) => `Epic ${noun(k)}: which main stat?`,
     epicNoPassive: (k) =>
       `Epic ${nouns(k)} have no unique passive: this is a stopgap until you have a Legendary. What matters is the main stat (brighter — someone needs it in this slot) and the substat roll.`,
