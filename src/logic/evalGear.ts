@@ -6,7 +6,7 @@ import type { GearKind } from '../data/types';
 import { buildsOf, gearList, gearRef, slotMains, uniqChars, type BuildRef } from './builds';
 import type { Ctx } from './context';
 import { itemMains } from './mains';
-import { dedupe, flatMisses, rollInfo, rows, type Row } from './score';
+import { dedupe, flatMisses, rows, type Row } from './score';
 import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
@@ -53,13 +53,11 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     const good = cands.filter(tempOk);
     const best = good[0] || cands[0];
     const bestGood = best.good ?? 0;
-    const roll = rollInfo(t, best, nSubs, s.grade);
     const who = `**${best.c.name}** — ${best.b.name}`;
     if (good.length) {
       res.v = 'temp';
       res.title = G.tempTitle(good.length);
       res.lines.push(G.tempBest(what, who));
-      if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
       res.lines.push(G.tempAdvice(s.main ?? '', best.c.name, replacements(best)));
       res.sections.push({ title: t.verdict.tempFor, rows: good, limit: 12, count: good.length, mainNote: s.main });
       const rest = cands.filter((m) => !tempOk(m));
@@ -72,7 +70,6 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
       res.v = 'junk';
       res.title = G.weakTitle;
       res.lines.push(G.weakLine(s.main ?? '', cands.length, who, fmtGood(bestGood)));
-      if (roll) res.lines.push(roll.text);
       if (bestGood >= tempNeed) res.lines.push(G.markYellow(CFG.tempYellow));
       for (const k of flatMisses(best)) res.lines.push(t.verdict.flatHint(k));
       res.sections.push({ title: G.byMain, rows: cands, collapsed: true, mainNote: s.main });
@@ -160,13 +157,8 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.title = noMainChoice ? G.keepNeeded(ok.length) : G.keepMain(main, ok.length);
     res.lines.push(G.keepLine(nSubs > 0));
     if (item.irregular) res.lines.push(G.irregular);
-    const roll = nSubs ? rollInfo(t, ok[0], nSubs, s.grade) : null;
-    if (roll) {
-      res.lines.push(roll.text);
-      res.roll = roll.level;
-      if (roll.level === 'high') res.badge = t.verdict.worthReforge;
-      else if ((ok[0].good ?? 0) < 2) res.lines.push(G.weakReroll);
-    }
+    // слабые сабстаты — кандидат на реролл (Precise Craft, Transistone)
+    if (nSubs && ok[0].good != null && ok[0].good < 2) res.lines.push(G.weakReroll);
     res.sections.push({ title: t.verdict.suits, rows: ok, limit: 12, count: ok.length });
     const wrong = scoped.filter((r) => !r.mainOk);
     if (wrong.length) res.sections.push({ title: G.otherMain, rows: wrong, collapsed: true });

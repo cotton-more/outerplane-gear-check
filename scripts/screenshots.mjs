@@ -87,7 +87,7 @@ async function shoot(lang) {
     for (const row of document.querySelectorAll('.subrow')) await tap(row.querySelectorAll('.roll-b button')[2]);
   });
   await shot('2-verdict');
-  // 3. подробности: блок «Прокачка» — Enhance, Reforge, Breakthrough, Transistone
+  // 3. подробности: блок «Прокачка» — Enhance, Breakthrough, Transistone
   await step(async ({ tap, wait }) => {
     await tap(document.querySelector('.vcard'));
     await wait(200);

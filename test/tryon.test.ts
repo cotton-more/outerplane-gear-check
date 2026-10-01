@@ -89,7 +89,7 @@ describe('примерка: заголовок вердикта', () => {
   const on = (item: ItemInput, wornLit?: Record<string, number>) => {
     const r = putOn(ctx, EMPTY_GEAR, caren.id, OLD);
     const st = wornLit ? updatePiece(r.st, r.id, { lit: wornLit, bt: 4 }) : EMPTY_GEAR;
-    const res = evaluate(ctx, item, { gamble: false });
+    const res = evaluate(ctx, item);
     return { res, title: titleOf(res, st, target('Speed', st), item) };
   };
 
@@ -110,7 +110,7 @@ describe('примерка: заголовок вердикта', () => {
 
   it('новые исходы: соберёт, «на уровне: Speed ×2 на T4», сверх собранной части', () => {
     const three = all([armor('armor', 'Speed', { CHC: 1 }), armor('gloves', 'Speed', { CHC: 1 }), armor('shoes', 'Speed', { CHC: 1 })]);
-    const res = evaluate(ctx, NEW, { gamble: false });
+    const res = evaluate(ctx, NEW);
     expect(titleOf(res, three, target('Speed', three), NEW)).toMatch(/; у Caren соберёт Speed$/);
     // Speed/Immu: Speed ×2 уже собран — третья Speed-вещь сверх него
     expect(titleOf(res, three, target('Speed/Immu', three), NEW)).toMatch(/; у Caren — сверх Speed ×2$/);
@@ -123,7 +123,7 @@ describe('примерка: заголовок вердикта', () => {
   it('собрана лишь половина связки — «Caren · Speed/Immu: сет 2 из 4», а не «соберёт»', () => {
     const immu = all([armor('helmet', 'Immunity', { CHC: 3, CHD: 3, 'DEF%': 2, SPD: 1 })]);
     const gloves = armor('gloves', 'Immunity', { CHC: 3, CHD: 2, 'DEF%': 2, SPD: 1 });
-    const res = evaluate(ctx, gloves, { gamble: false });
+    const res = evaluate(ctx, gloves);
     expect(titleOf(res, immu, target('Speed/Immu', immu), gloves)).toMatch(/Caren · Speed\/Immu: сет 2 из 4$/);
   });
 
@@ -145,12 +145,12 @@ describe('примерка: заголовок вердикта', () => {
   });
 
   it('лучшей строки нет («Спорно») — причина вердикта остаётся, к ней — про неё', () => {
-    const res = { ...evaluate(ctx, NEW, { gamble: false }), v: 'maybe' as const, title: 'Спорно — предмета ещё нет в данных outerpedia', sections: [] };
+    const res = { ...evaluate(ctx, NEW), v: 'maybe' as const, title: 'Спорно — предмета ещё нет в данных outerpedia', sections: [] };
     expect(titleOf(res, EMPTY_GEAR, target('Speed'), armor('helmet', 'Defense', { CHC: 1 }))).toBe('Спорно — предмета ещё нет в данных outerpedia; Caren · Speed — не по билду');
   });
 
   it('в заголовке не было « — » — второго тире нет', () => {
-    const res = { ...evaluate(ctx, NEW, { gamble: false }), v: 'maybe' as const, title: 'Твоим не подходит, но предмет хороший', sections: [] };
+    const res = { ...evaluate(ctx, NEW), v: 'maybe' as const, title: 'Твоим не подходит, но предмет хороший', sections: [] };
     expect(titleOf(res, EMPTY_GEAR, target('Speed'), NEW)).toBe('Твоим не подходит, но предмет хороший; Caren · Speed: сет 1 из 4');
   });
 
@@ -162,7 +162,7 @@ describe('примерка: заголовок вердикта', () => {
   });
 
   it('вердикта ещё нет — заголовок как был', () => {
-    const res = evaluate(ctx, { ...NEW, subs: {} }, { gamble: false });
+    const res = evaluate(ctx, { ...NEW, subs: {} });
     expect(res.v).toBe('idle');
     expect(titleOf(res, EMPTY_GEAR, target('Speed'), NEW)).toBe(res.title);
   });
@@ -172,7 +172,7 @@ describe('примерка: заголовок вердикта', () => {
   it('«Разобрать», потому что все уже носят лучше: про этот вариант не повторяем, про другой — добавляем', () => {
     const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
     const st = putOn(mine, EMPTY_GEAR, caren.id, armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 })).st;
-    const res = withWorn(mine, poolView(mine, st), NEW, evaluate(mine, NEW, { gamble: false }));
+    const res = withWorn(mine, poolView(mine, st), NEW, evaluate(mine, NEW));
     expect(res.title).toBe('Фоддер — уже лучше у Caren');
     expect(titleOf(res, st, target('Speed', st), NEW, mine)).toBe(res.title);
     expect(titleOf(res, st, target('Pen', st), NEW, mine)).toBe('Фоддер — уже лучше у Caren; Caren · Pen — не по билду');
@@ -209,7 +209,7 @@ describe('примерка «По статам»', () => {
     const title = (x: ItemInput) => {
       const tg = stats();
       const v = charVs(ctx, poolView(ctx, EMPTY_GEAR, tg.v.key), caren.id, x, tg.v.key, { explicit: true });
-      return tryOnTitle(ru, evaluate(ctx, x, { gamble: false }), tg, tryRowOf(idx, v?.best ?? null));
+      return tryOnTitle(ru, evaluate(ctx, x), tg, tryRowOf(idx, v?.best ?? null));
     };
     expect(title(good)).toMatch(/у Caren слот пуст/);
     expect(title(junk)).toMatch(/Caren · По статам — ничего не даст$/);

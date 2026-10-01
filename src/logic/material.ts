@@ -74,18 +74,15 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
   // «Копишь фоддер? Включи — станут «Фоддер»» не нужна: штамп уже «Фоддер»
   const set = needs[0].piece.setId ? idx.SET[needs[0].piece.setId]?.short : undefined;
   const own = set ? res.lines.filter((l) => l !== t.armor.enableFodder(set)) : res.lines;
-  // кубик — как был
-  const gamble = res.gamble ? [t.plan.gamble('junk')] : [];
   if (wear.up.length) {
     const who = whoOf(idx, wear.up[0].key, t);
     // Из прежних строк — первая: кому и чем вещь хороша (как у понижения, logic/worn), и «Проверь HP: flat». Прочие —
     // почему «Разобрать» или «Фоддер» и как поднять до «Оставить» — не про этот штамп; у оружия и аксессуара первая
-    // строка «Фоддер» и объясняет — её тоже нет. «Прокачка»: надеть, старая — ей в Breakthrough; новой на T4 — надеть.
-    // Кубика нет: он про то, какой 4-й сабстат поднимет штамп до «Оставить», а штамп уже «Оставляй»
+    // строка «Фоддер» и объясняет — её тоже нет. «Прокачка»: надеть, старая — ей в Breakthrough; новой на T4 — надеть
     const first = res.v === 'fodder' && !set ? -1 : 0;
     const flat = new Set([...FLAT].map((k) => t.verdict.flatHint(k)));
     return {
-      ...res, v: 'keep', badge: '', roll: undefined, gamble: null,
+      ...res, v: 'keep', badge: '',
       title: wear.t4 ? M.titleWearT4(slot, who) : M.titleWear(slot, who),
       lines: [(wear.t4 ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...own.filter((l, i) => i === first || flat.has(l))],
       plan: [wear.t4 ? M.planWear(who) : M.planReplace(who)],
@@ -94,11 +91,11 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
   const lines = [...fed, ...own];
   // «Прокачка»: надеть в примерке, иначе не прокачивать
   const wearPlan = wear.target ? M.planWear(wear.target) : null;
-  if (res.v === 'fodder') return { ...res, lines, ...(wearPlan ? { plan: [wearPlan, ...gamble] } : {}) };
+  if (res.v === 'fodder') return { ...res, lines, ...(wearPlan ? { plan: [wearPlan] } : {}) };
   return {
     ...res, v: 'fodder', badge: '',
     title: M.title(t.ui.slotGen[slot], whoOf(idx, needs[0].key, t)),
     lines,
-    plan: [wearPlan ?? (res.gamble ? M.planGamble : M.plan), ...gamble],
+    plan: [wearPlan ?? M.plan],
   };
 }

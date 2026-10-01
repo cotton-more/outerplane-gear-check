@@ -344,7 +344,7 @@ describe('давний игрок', () => {
     await mount();
     // вместо неё теперь «Новое»: давнему игроку подсказки с news — новые
     expect($('.tour-invite')?.textContent).not.toContain(T.invite);
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 2));
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 1));
   });
 
   it('новичок закрыл карточку «Понятно» — от тура отказался, полосы «Появилось обучение» нет', async () => {
@@ -378,14 +378,14 @@ describe('подсказки по ходу и «Что нового»', () => {
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, known: {} } }); // вышли после его первого запуска
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 2));
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.gear, 1));
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
     expect($('.vb-tab.has-news')).toBeTruthy();
     await click($('.vb-tab'));
     await click($('.menu .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known).toMatchObject({ move: 1, dice: 1, gear: 2 }); // gear rev 2 — GEARPOOL
+    expect(stored('tour').known).toMatchObject({ move: 1, gear: 2 }); // gear rev 2 — GEARPOOL
     expect($('.vb-tab.has-news')).toBeNull();
   });
 
@@ -550,7 +550,6 @@ describe('тур «Экипировка» на примере', () => {
   it('«Вернуть» экипировки, начатое до тура, после тура не всплывает', async () => {
     // примерка Kappa · Speed: шлем с формы — кнопкой под карточкой
     await mount({ ...MINE, state: { tab: 'eval', slot: 'helmet', grade: 'unique' }, item: { setId: speed, subs: { CHC: 2, CHD: 2, SPD: 1, HP: 1 } } });
-    await frame(); // кубик досчитывается следом (useDeferredValue) — кнопка встаёт после него
     await click($('.vc-equip'));
     expect($('.gear-toast')).toBeTruthy();
     await click(byText('.actions button', 'Tutorial'));

@@ -1,7 +1,6 @@
 // Результат оценки предмета — что показывает панель вердикта.
 import type { Grade, SlotId } from '../data/types';
-import type { Gamble } from './gamble';
-import type { RollLevel, Row } from './score';
+import type { Row } from './score';
 import type { Subs } from './subs';
 
 export type VerdictKind = 'idle' | 'keep' | 'temp' | 'maybe' | 'fodder' | 'junk';
@@ -23,9 +22,7 @@ export interface Verdict {
   sections: Section[];
   badge: string;
   foot: string;
-  roll?: RollLevel;        // ролл лучшего кандидата, если вердикт «Оставить» или «Временно»
-  plan: string[];          // «Прокачка»: Enhance, Reforge, Breakthrough, Transistone — что вкладывать в эту вещь
-  gamble?: Gamble | null;  // кубик: какой 4-й сабстат от первого Reforge вытянет свежую Epic (logic/gamble)
+  plan: string[];          // «Прокачка»: Enhance, Breakthrough, Transistone — что вкладывать в эту вещь
   // штамп поменяли записи экипировки (logic/worn): lower — все, кому подходит, уже носят не хуже; home — вещь уже в билде
   worn?: 'lower';
   wornBy?: string[];       // lower: билды («персонаж/билд»), где уже надето не хуже, — их персонажей называет заголовок

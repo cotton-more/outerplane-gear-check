@@ -6,8 +6,6 @@ import type { BuildRef } from './builds';
 import type { Ctx } from './context';
 import { NO_MAINS, takenByMain, type ItemMains } from './mains';
 import { dropSubs, type Subs } from './subs';
-import { fmtGood } from './text';
-import type { Texts } from '../i18n/ru';
 
 export interface Part { key: string; ok: boolean; half: boolean; tier: number | null }
 
@@ -164,27 +162,4 @@ export function flatMisses(m: Omit<Row, 'alt'>): string[] {
   const place = tierPlaces(m.b, m.im, m.useless);
   const wanted = (axis: string) => m.b.subs.some((tier, i) => (CFG.tierCredit[place[i]] ?? 0) > 0 && tier.some((tok) => tok.trim().replace(/%$/, '') === axis));
   return m.parts.filter((p) => FLAT.has(p.key) && !p.ok && !marked.has(p.key + '%') && !m.im.blocked.has(p.key + '%') && wanted(p.key)).map((p) => p.key);
-}
-
-export type RollLevel = 'high' | 'mid' | 'low';
-export interface RollInfo { level: RollLevel; orange: number; segments: number; text: string }
-
-// сегментов, которые добавит Reforge: у Epic (3 сабстата) первая попытка уходит на 4-й сабстат
-export const reforgeSegments = (grade: Grade): number => CFG.reforges - (4 - dropSubs(grade));
-
-// «Ролл» предмета: сколько сабстатов полезны лучшему кандидату, сколько на них жёлтых сегментов и сколько
-// оранжевых в среднем добавит Reforge. Reforge усиливает один сабстат из четырёх, поэтому вещь с 3 полезными
-// из 4 получит в полезные ~¾ всех попыток, а с 2 из 4 — половину: вкладываться выгоднее в первую.
-// Неотмеченные сабстаты и 4-й сабстат, который Epic получит от первого Reforge, считаем бесполезными.
-export function rollInfo(t: Texts, m: Row | undefined, n: number, grade: Grade): RollInfo | null {
-  if (!m || m.good == null || !n) return null;
-  const segments = reforgeSegments(grade);
-  const orange = (segments * m.good) / 4;
-  // идеал — по сабстатам из дропа: иначе бесполезный 4-й от Reforge у Epic снимал бы плашку, хотя шансы вещи те же
-  const ideal = 3 * dropSubs(grade) + segments;
-  const total = m.yellow + orange;
-  const level = total >= CFG.rollHigh * ideal ? 'high' : total >= CFG.rollMid * ideal ? 'mid' : 'low';
-  // Epic с 4-м сабстатом уже в Reforge: считаем только жёлтые и прогноз «до 5» — сколько попыток сделано, не знаем
-  const started = grade === 'rare' && n >= 4;
-  return { level, orange, segments, text: t.verdict.roll(fmtGood(m.good), n, m.yellow, 3 * n, orange, segments, level, started) };
 }

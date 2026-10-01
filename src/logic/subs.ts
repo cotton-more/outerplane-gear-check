@@ -12,11 +12,6 @@ export const MAX_SUBS = 4;
 // Сегментов у сабстата без Reforge: у свежей вещи — до четырёх (жёлтые); выше — только от Reforge
 export const DROP_LEVEL = 4;
 
-// Вещь прокачана Reforge (В-А4): уровень сабстата выше четырёх или Epic с четырьмя сабстатами (4-й у Epic бывает
-// только от Reforge). Советы Reforge (кубик, «Стоит Reforge», «Прокачка») — только у непрокачанной
-export const upgraded = (item: { grade: Grade; subs: Subs }): boolean =>
-  Object.values(item.subs).some((n) => n > DROP_LEVEL) || (item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS);
-
 // Предел суммы уровней (В-А5): у Legendary 22 (после всех Reforge 18, с Singularity 21, с Rico Lv4 22), у Epic 17
 // (на один Reforge меньше Legendary, FAQ outerpedia). Ввод не даёт сумме вырасти выше: опечатка 6/6/6/6 «как есть»
 // обогнала бы любую вещь слота. Старые записи бывают и выше (жёлтые до 4 у каждого плюс оранжевые) — уменьшать

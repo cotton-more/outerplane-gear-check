@@ -16,7 +16,6 @@ import { useIndex } from '../IndexContext';
 import { Rich } from '../Rich';
 import { Sheet } from '../Sheet';
 import { Chain } from './Chain';
-import { DiceChip, GambleBlock, GambleLine, toTarget } from './Gamble';
 import type { PoolView } from '../../logic/pool';
 import type { CharVs } from '../../logic/poolVs';
 import { Icon } from '../Img';
@@ -52,7 +51,6 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
         <div className="v-row">
           {r.v !== 'idle' && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}
           {r.badge && <span className="badge">{r.badge}</span>}
-          {r.gamble && <DiceChip g={r.gamble} long />}
           {icon && (
             <span className="v-item">
               <GearFrame grade={s.grade} slot={s.slot} icon={icon} />
@@ -66,7 +64,6 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
       {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} onEquip={onEquip} onOpenChar={onOpenChar} />}
-      {r.gamble && <GambleBlock g={r.gamble} v={r.v} subs={s.subs} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>
@@ -165,22 +162,17 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 }
 
 // Карточка вердикта на форме (телефон): встаёт на место сетки сабстатов, когда вердикт готов.
-// Штамп, коротко — почему, и третья строка — по порядку, что есть: кубик Reforge → сравнение с надетым → цепочка.
-// Кубик — рядом со штампом; у «Разобрать» и «Спорно» строка карточки — какой 4-й вытянет вещь,
-// у «Временно» — та же цепочка, где удачные для него 4-е с точкой; если удачные — у других, строка кубика.
+// Штамп, коротко — почему, и третья строка — по порядку, что есть: сравнение с надетым → цепочка → первая причина.
 // vs — лучший исход (первый из «Сейчас на персонажах» или в примерке): «▲ сет 3 из 4 Caren · Speed/Immu +1»,
 // «▲ +25% Caren · Speed +CHD (3-е)». Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
 // named — назвать персонажа; в примерке имя уже на полосе над формой, место — местам цепочки
 export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; onOpen: () => void; vs?: CharVs | null; named?: boolean }) {
   const t = useT();
   const best = bestRow(r)?.row;
-  const g = r.gamble;
-  const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
   const o = vs?.best ?? null;
   const starts = o ? o.entering : true;
-  // кнопка карточки читается диктором целиком: штамп, кубик, исход — тот же, что на чипе, — и «подробнее»
-  const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
-    vs && `${chipLabel(t, o, starts)} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
+  // кнопка карточки читается диктором целиком: штамп, исход — тот же, что на чипе, — и «подробнее»
+  const label = [t.ui.verdictLabel[r.v], vs && `${chipLabel(t, o, starts)} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
   const p = o?.pair;
   const places = p && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && (p.gained.length || p.lost.length)
     ? t.ui.vsPlaces(p.gained.map((x) => ({ ...x, key: subLabel(x.key) })), p.lost.map((x) => ({ ...x, key: subLabel(x.key) }))) : '';
@@ -191,17 +183,14 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
       <span className="vc-top">
         <span className="stamp">{t.ui.verdictLabel[r.v]}</span>
         {r.badge && <span className="badge">{r.badge}</span>}
-        {g && <DiceChip g={g} />}
         <span className="vc-more"><span className="vc-more-t">{t.ui.details}</span> ▸</span>
       </span>
       <span className="vc-title">{barTitle(r)}</span>
-      {g && (r.v !== 'temp' || !lucky?.size)
-        ? <GambleLine g={g} />
-        : vs
-          ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b>{vs.c.name}</b>{build && <span className="bn">· {build}{vs.same > 0 ? ` +${vs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
-          : best && best.good != null
-          ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} lucky={lucky} /></span>
-          : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
+      {vs
+        ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b>{vs.c.name}</b>{build && <span className="bn">· {build}{vs.same > 0 ? ` +${vs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
+        : best && best.good != null
+        ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} /></span>
+        : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
     </button>
   );
 }
@@ -248,7 +237,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
           ? !quiet && <span className="vt vt-hint">{hint ?? r.title}</span>
           : evalTab && stampless
             ? <span className="vt vt-more">{t.ui.details}</span>
-            : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}{!compact && r.gamble && <DiceChip g={r.gamble} />}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
+            : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
       {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>}

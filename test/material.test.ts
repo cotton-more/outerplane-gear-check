@@ -27,7 +27,7 @@ const wearing = (bt: Bt | null, item = WORN, who = caren.id): GearStore => {
   return updatePiece(r.st, r.id, { bt });
 };
 const mat = (st: GearStore, item: ItemInput) => materialFor(poolView(ctx, st), item);
-const judge = (item: ItemInput, st: GearStore) => withMaterial(idx, ru, evaluate(ctx, item, { gamble: false }), mat(st, item));
+const judge = (item: ItemInput, st: GearStore) => withMaterial(idx, ru, evaluate(ctx, item), mat(st, item));
 
 describe('материал Breakthrough для надетой', () => {
   // Р1: Speed-перчатки T0 (ценность 0) раскладка Speed отдала Immunity-перчаткам — их держит только достижимая сборка.
@@ -60,7 +60,7 @@ describe('материал Breakthrough для надетой', () => {
 
   it('Epic «Разобрать» — поднимается до «Фоддер»: заголовок и «Прокачка» про материал', () => {
     const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
-    const before = evaluate(ctx, epic, { gamble: false });
+    const before = evaluate(ctx, epic);
     expect(before.v).toBe('junk');
 
     const r = judge(epic, wearing(1, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare')));
@@ -75,7 +75,7 @@ describe('материал Breakthrough для надетой', () => {
     const epic: ItemInput = { ...helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare'), bt: 0 };
     const r0 = putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'), bt: 0 });
     expect(r0.piece.bt).toBe(0);
-    expect(evaluate(ctx, epic, { gamble: false }).v).toBe('junk');
+    expect(evaluate(ctx, epic).v).toBe('junk');
 
     const r = judge(epic, r0.st);
 
@@ -96,7 +96,7 @@ describe('материал Breakthrough для надетой', () => {
     const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
     const st = wearing(bt, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'));
     expect(mat(st, epic)).toEqual([]);
-    const res = evaluate(ctx, epic, { gamble: false });
+    const res = evaluate(ctx, epic);
     expect(withMaterial(idx, ru, res, mat(st, epic))).toBe(res);
   });
 
@@ -112,7 +112,7 @@ describe('материал Breakthrough для надетой', () => {
 
   it('«Оставить» не трогаем — там это пометка в «Сейчас на персонажах»', () => {
     const good = helmet({ 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
-    const res = evaluate(ctx, good, { gamble: false });
+    const res = evaluate(ctx, good);
     expect(res.v).toBe('keep');
     expect(mat(wearing(1), good)).toHaveLength(1);
     expect(withMaterial(idx, ru, res, mat(wearing(1), good))).toBe(res);
@@ -172,10 +172,10 @@ describe('материал Breakthrough для надетой', () => {
       expect(r.plan[0]).toBe(ru.material.planWear('Caren · Speed/Immu'));
     });
 
-    it('с кубиком Reforge: «не прокачивай (кроме одного Reforge на удачу)», и строка кубика — следом', () => {
+    it('свежая Epic с тремя сабстатами: «не прокачивай и не разбирай» — без Reforge на удачу', () => {
       const r = judgeAll(epic, wearing(2, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare')));
-      expect(r.gamble).toBeTruthy();
-      expect(r.plan).toEqual([ru.material.planGamble, ru.plan.gamble('junk')]);
+      expect(r.v).toBe('fodder');
+      expect(r.plan).toEqual([ru.material.plan]);
     });
 
     it('настройка «Фоддер» выключена: «Включи — станут «Фоддер»» у поднятого штампа не остаётся', () => {
@@ -230,12 +230,6 @@ describe('материал Breakthrough для надетой', () => {
       expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её, а старую — ей в Breakthrough' });
       expect(r.lines[0]).toBe(ru.material.lineWear('броня Anarky · Defense mix — T0, ещё 4 шт. до T4'));
       expect(r.plan).toEqual([ru.material.planReplace('Anarky · Defense mix')]);
-    });
-
-    it('у «Оставляй» кубика нет: он поднял бы до «Оставить», а штамп уже такой', () => {
-      expect(evaluate(ctx, { ...NEW, bt: 4 }).gamble).toBeTruthy();
-
-      expect(judgeBt(4).gamble).toBeNull();
     });
 
     it('у «Оставляй» из прежних строк — кому вещь хороша и «Проверь HP: flat», а «Для Epic двух полезных мало» нет', () => {

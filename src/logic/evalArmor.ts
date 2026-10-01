@@ -4,7 +4,7 @@ import { GRADE_NAME, GRADE_PREFIX, SLOT, subLabel } from '../data';
 import { buildsOf, combosWith } from './builds';
 import type { Ctx } from './context';
 import { itemMains, subForms } from './mains';
-import { dedupe, flatMisses, rollInfo, rows, topTokens, type Part, type Row } from './score';
+import { dedupe, flatMisses, rows, topTokens, type Part, type Row } from './score';
 import { dropSubs } from './subs';
 import { fmtGood, namesLine } from './text';
 import type { ItemInput, Verdict } from './verdict';
@@ -107,10 +107,6 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.title = A.keepTitle(keepers.length);
     res.lines.push(A.best(who, fmtGood(bestGood), nSubs, okList));
     if (bestGood < CFG.keepCount) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => subLabel(p.key)), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
-    const roll = rollInfo(t, best, nSubs, s.grade);
-    if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
-    if (best.yellow >= CFG.godYellow || (best.spd && spdRoll >= 3)) res.badge = t.verdict.topRoll;
-    else if (roll && roll.level === 'high') res.badge = t.verdict.worthReforge;
     if (legend && nSubs === 4 && Object.values(subs).every((r) => r >= 3)) res.lines.push(A.eventQuality);
     // Legendary с одним лишним сабстатом: Transistone (Individual) меняет только его, остальные закрепляются
     const extra = best.parts.filter((p) => !p.ok);
@@ -136,8 +132,6 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.qualifies = tempOk;
     res.title = A.tempTitle(tempers.length);
     res.lines.push(A.tempWhy(`**${tb.c.name}** — ${tb.b.name}`, mains(tb).map((p) => subLabel(p.key)), missingMains(tb).map(subLabel)));
-    const roll = rollInfo(t, tb, nSubs, s.grade);
-    if (roll) { res.lines.push(roll.text); res.roll = roll.level; }
     res.lines.push(A.tempFew);
     for (const k of flatMisses(tb)) res.lines.push(t.verdict.flatHint(k));
     res.sections.push({ title: t.verdict.tempFor, rows: tempers, limit: 12, count: tempers.length });

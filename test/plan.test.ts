@@ -1,4 +1,6 @@
-// Ролл с учётом Reforge (плашка «Стоит Reforge») и блок «Прокачка»: что вкладывать в вещь после вердикта.
+// Блок «Прокачка»: что вкладывать в вещь после вердикта. Прогноза Reforge нет (решение владельца 2026-10-01): ни
+// кубика, ни «Стоит Reforge», ни строки «Ролл», ни советов, когда делать Reforge — вердикт по вещи как есть;
+// бейджа «Топ-ролл» тоже нет.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
@@ -6,46 +8,11 @@ import type { Dataset, Grade } from '../src/data/types';
 import { ru } from '../src/i18n/ru';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
-import { reforgeSegments, rollInfo, type Row } from '../src/logic/score';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
 const ctx = (fodder = false) => makeCtx(idx, { rosterOnly: false, fodder, stage: 'grow', lv120: false, quirks: true }, new Set());
-const row = (good: number, yellow: number) => ({ good, yellow }) as Row;
 const P = ru.plan;
-
-describe('ролл: жёлтые плюс оранжевые, которые Reforge в среднем отдаст полезным', () => {
-  it('Reforge добавляет 6 сегментов Legendary и 5 Epic — первая попытка Epic уходит на 4-й сабстат', () => {
-    expect([reforgeSegments('unique'), reforgeSegments('rare')]).toEqual([6, 5]);
-  });
-
-  it('полезным достаётся доля попыток по доле полезных сабстатов из четырёх', () => {
-    expect(rollInfo(ru, row(3, 7), 4, 'unique')!.orange).toBe(4.5);
-    expect(rollInfo(ru, row(2, 7), 4, 'unique')!.orange).toBe(3);
-  });
-
-  it('Legendary: 3 полезных из 4 с 7 жёлтыми — высокий, с 6 — средний', () => {
-    expect(rollInfo(ru, row(3, 7), 4, 'unique')!.level).toBe('high');
-    expect(rollInfo(ru, row(3, 6), 4, 'unique')!.level).toBe('mid');
-  });
-
-  it('Legendary: все 4 полезны — высокий даже при 6 жёлтых: все 6 Reforge уйдут в дело', () => {
-    expect(rollInfo(ru, row(4, 6), 4, 'unique')!.level).toBe('high');
-  });
-
-  it('один полезный стат не делает ролл высоким, сколько бы на нём ни было жёлтых', () => {
-    expect(rollInfo(ru, row(1, 3), 4, 'unique')!.level).toBe('low');
-  });
-
-  it('Epic: 3 полезных из 3 с 5 жёлтыми — высокий, с 4 — средний', () => {
-    expect(rollInfo(ru, row(3, 5), 3, 'rare')!.level).toBe('high');
-    expect(rollInfo(ru, row(3, 4), 3, 'rare')!.level).toBe('mid');
-  });
-
-  it('Epic: бесполезный 4-й сабстат от Reforge ролл не портит — прогноз тот же', () => {
-    expect(rollInfo(ru, row(3, 6), 4, 'rare')!.level).toBe(rollInfo(ru, row(3, 6), 3, 'rare')!.level);
-  });
-});
 
 // Speed Set — самый частый; SPD на любой ступени полезен, поэтому «Оставить» получить легко
 const speed = D.sets.find((s) => s.short === 'Speed')!;
@@ -53,16 +20,22 @@ const helmet = (grade: Grade, subs: Record<string, number>, fodder = false) =>
   evaluate(ctx(fodder), { slot: 'helmet', grade, setId: speed.id, itemKey: null, main: null, subs });
 
 describe('«Прокачка»: броня', () => {
-  it('Epic «Оставить» с хорошим роллом: Enhance, Reforge в первую очередь, Breakthrough такой же Epic-вещью, без Transistone', () => {
+  it('Epic «Оставить»: Enhance, Breakthrough такой же Epic-вещью, без Transistone — строки Reforge нет', () => {
     const r = helmet('rare', { SPD: 3, CHC: 2, CHD: 2 });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.reforgeFirst('adds'), P.btArmorEpic('Helmet', 'Speed'), P.noTransistone(false)]);
+    expect(r.plan).toEqual([P.enhance, P.btArmorEpic('Helmet', 'Speed'), P.noTransistone(false)]);
   });
 
-  it('Legendary «Оставить»: Breakthrough фоддером того же сета и слота, Transistone не запрещён', () => {
+  it('Legendary «Оставить»: Breakthrough фоддером того же сета и слота, Transistone не запрещён — строки Reforge нет', () => {
     const r = helmet('unique', { SPD: 3, CHC: 3, CHD: 3, 'ATK%': 3 });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.reforgeFirst(null), P.btArmorLegend('Helmet', 'Speed')]);
+    expect(r.plan).toEqual([P.enhance, P.btArmorLegend('Helmet', 'Speed')]);
+  });
+
+  it('Legendary с SPD 6: «Оставить» без бейджа — ни «Топ-ролл», ни «Стоит Reforge», ни строки «Ролл»', () => {
+    const r = helmet('unique', { SPD: 6, CHC: 3, CHD: 3, 'ATK%': 2 });
+    expect([r.v, r.badge]).toEqual(['keep', '']);
+    expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
   });
 
   it('фоддер: не прокачивать — это ступень Breakthrough для такой же вещи', () => {
@@ -89,11 +62,21 @@ const attack = D.sets.find((s) => s.short === 'Attack')!;
 const attackHelmet = (subs: Record<string, number>) => evaluate(ctx(), { slot: 'helmet', grade: 'rare', setId: attack.id, itemKey: null, main: null, subs });
 
 describe('Epic: 4-й сабстат от первого Reforge', () => {
-  it('«Временно» без главного стата: подсказка, какой 4-й сделает вещь «Оставить», — и он правда делает', () => {
+  it('свежая Epic с тремя сабстатами, «Временно»: без кубика и без строк Reforge — Enhance и «не вкладывай»', () => {
     const r = attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
     expect(r.v).toBe('temp');
-    expect(r.plan).toContain(P.gamble('temp'));
-    expect(r.gamble!.hits.map((h) => h.key)).toContain('CHC');
+    expect('gamble' in r).toBe(false);
+    expect(r.plan).toEqual([P.enhance, P.tempNoInvest]);
+  });
+
+  it('свежая Epic с тремя сабстатами, «Разобрать»: без кубика — в «Прокачке» только напоминание про материал', () => {
+    const r = attackHelmet({ CHC: 2, 'ATK%': 2, RES: 1 });
+    expect(r.v).toBe('junk');
+    expect('gamble' in r).toBe(false);
+    expect(r.plan).toEqual([P.junkEpicArmor('Helmet', 'Attack')]);
+  });
+
+  it('введённый 4-й сабстат считается как есть: CHC к «Временно» делает вещь «Оставить»', () => {
     expect(attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3, CHC: 1 }).v).toBe('keep');
   });
 
@@ -102,19 +85,11 @@ describe('Epic: 4-й сабстат от первого Reforge', () => {
     expect(attackHelmet({ CHC: 2, 'ATK%': 2, RES: 1, SPD: 1 }).v).toBe('keep');
   });
 
-  it('у Epic с 4-м сабстатом Reforge уже начат: «оставшиеся попытки», смена статов уже открыта, ролл — только по жёлтым', () => {
+  it('у Epic с 4-м сабстатом смена статов уже открыта; ни строки «Ролл», ни строки Reforge', () => {
     const r = attackHelmet({ CHC: 3, 'ATK%': 3, CHD: 2, SPD: 2 });
     expect(r.v).toBe('keep');
-    expect(r.plan[1]).toBe(P.reforgeFirst('started'));
-    expect(r.plan.at(-1)).toBe(P.noTransistone(true));
-    const roll = r.lines.find((l) => l.startsWith('Ролл:'))!;
-    expect(roll).toContain('оранжевые');
-    expect(roll).toContain('оставшиеся Reforge — до 5');
-  });
-
-  it('если никакой 4-й не спасёт — подсказки нет', () => {
-    const r = attackHelmet({ RES: 1, EFF: 1, 'DMG RED%': 1 });
-    expect(r.plan.some((l) => l.includes('на удачу'))).toBe(false);
+    expect(r.plan).toEqual([P.enhance, P.btArmorEpic('Helmet', 'Attack'), P.noTransistone(true)]);
+    expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
   });
 });
 
@@ -130,12 +105,21 @@ describe('«Прокачка»: оружие', () => {
   it('Legendary с нужной пассивкой и main: Breakthrough до T4 обязателен — растёт пассивка', () => {
     const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: {} });
     expect(r.v).toBe('keep');
-    expect(r.plan).toEqual([P.enhance, P.reforgeUnknown, P.btGear(weapon.name)]);
+    expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
   });
 
-  it('со слабыми сабстатами Reforge — только после реролла', () => {
+  it('со слабыми сабстатами — строкой «кандидат на реролл», а «Прокачка» без Reforge', () => {
     const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { EFF: 1, RES: 1, 'DMG RED%': 1, DEF: 1 } });
-    expect(r.plan[1]).toBe(P.reforgeAfterReroll);
+    expect(r.lines).toContain(ru.gear.weakReroll);
+    expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
+  });
+
+  it('Legendary с SPD 6: без «Стоит Reforge» и строки «Ролл» — как есть', () => {
+    const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { SPD: 6, CHC: 4, CHD: 4, 'ATK%': 4 } });
+    expect(r.v).toBe('keep');
+    expect(r.badge).toBe('');
+    expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
+    expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
   });
 
   it('с ненужным main stat — фоддер: копия для Breakthrough экземпляра с нужным main', () => {
@@ -145,15 +129,8 @@ describe('«Прокачка»: оружие', () => {
     expect(r.plan).toEqual([P.fodderGear(weapon.name)]);
   });
 
-  it('временная замена с высоким роллом: Reforge можно (нужную Legendary ждать долго), Breakthrough — нет', () => {
-    const r = evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: 3, CHC: 3, CHD: 3 } });
-    expect([r.v, r.roll]).toEqual(['temp', 'high']);
-    expect([r.plan, r.badge]).toEqual([[P.enhance, P.reforgeTemp('adds'), P.noBreakTemp], '']);
-  });
-
-  it('временная замена со средним роллом: только Enhance — Reforge и Breakthrough не вкладывать', () => {
-    const r = evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: 1, CHC: 1, CHD: 1 } });
-    expect([r.v, r.roll]).toEqual(['temp', 'mid']);
-    expect([r.plan, r.badge]).toEqual([[P.enhance, P.tempNoInvest], '']);
+  it('временная замена — только Enhance, Reforge и Breakthrough не вкладывать, сколько бы ни было сегментов', () => {
+    const plan = (n: number) => evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: n, CHC: n, CHD: n } });
+    expect([1, 3].map((n) => [plan(n).v, plan(n).plan, plan(n).badge])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.tempNoInvest], '']));
   });
 });

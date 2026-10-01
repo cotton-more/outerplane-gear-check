@@ -9,7 +9,7 @@ import { tour } from '../../tour/anchors';
 
 const axisOf = (k: string) => k.trim().replace(/%$/, '');
 
-interface Pill { label: string; cls: string; sep: string; title?: string; dot?: boolean }
+interface Pill { label: string; cls: string; sep: string; title?: string }
 
 // Цепочка приоритета сабстатов билда («ATK › CHC › SPD › CHD › DMG UP%») с отметками, что из неё есть на предмете:
 //   ok — есть и засчитан, half — за ½, low — есть, но далеко в цепочке (или слабый flat), miss — нет на предмете;
@@ -23,11 +23,7 @@ interface Pill { label: string; cls: string; sep: string; title?: string; dot?: 
 //   Не зелёный: зелёный в цепочке — «засчитан», а этот стат в счёт не идёт.
 // Сабстаты подписаны, как на вещи (subLabel: EFF%, RES%), строки main — без %: «main EFF / EFF%» у перчаток.
 // Статы предмета, которых в цепочке нет вовсе, идут в конце зачёркнутыми.
-// Кубик Reforge (logic/gamble): lucky — каких нет на вещи, но 4-й сабстат с ними сделает её «Оставить»: серый
-// пунктир, как «нет на вещи», с зелёной точкой (у карточки «Временно» — других целей нет); у flat-оси (ATK, DEF, HP)
-// удачный может быть вторым видом — тогда он рядом через «/». fresh — стат, который Reforge добавил бы в этой
-// пробе: на вещи и засчитан, поэтому сплошная зелёная плашка.
-export function Chain({ m, lucky, fresh }: { m: Omit<Row, 'alt'>; lucky?: ReadonlySet<string>; fresh?: string }) {
+export function Chain({ m }: { m: Omit<Row, 'alt'> }) {
   const { SUB } = useIndex();
   const t = useT();
   const { im } = m;
@@ -50,29 +46,23 @@ export function Chain({ m, lucky, fresh }: { m: Omit<Row, 'alt'>; lucky?: Readon
       if (on.length) pills.push({ label: on.join('/'), cls: 'main' + tail, sep });
       const hits = m.parts.filter((p) => !used.has(p.key) && (flat ? axisOf(p.key) === axis : p.key === tok));
       const open = subForms(tok).filter((k) => SUB[k] && !im.blocked.has(k) && !useless.includes(k));
-      // удачный вид этого места, которого на вещи нет (при % — сначала %)
-      const luck = lucky && (open.find((k) => lucky.has(k) && k.endsWith('%') && !hits.some((p) => p.key === k))
-        ?? open.find((k) => lucky.has(k) && !hits.some((p) => p.key === k)));
-      const luckPill = (sep: string): Pill => ({ label: subLabel(luck!), cls: 'miss lucky' + tail, sep, title: t.ui.chainLucky(subLabel(luck!), t.ui.verdictLabel.keep), dot: true });
       if (!hits.length) {
         // место за статом осталось, а сабстата нет: пунктир того вида, что ещё выпадает (при main рядом через «/»)
-        if (luck) pills.push(luckPill(on.length ? '/' : sep));
-        else if (!on.length) pills.push({ label: flat ? axis + '%' : subLabel(tok), cls: 'miss' + tail, sep });
+        if (!on.length) pills.push({ label: flat ? axis + '%' : subLabel(tok), cls: 'miss' + tail, sep });
         else if (open.length) pills.push({ label: subLabel(open.includes(axis + '%') ? axis + '%' : open[0]), cls: 'miss' + tail, sep: '/' });
         continue;
       }
       hits.forEach((p, j) => {
         used.add(p.key);
-        pills.push({ label: subLabel(p.key), cls: (p.key === fresh ? 'new' : state(p)) + (tail && ' tail on'), sep: j || on.length ? '/' : sep, title: tail ? t.ui.chainTail(subLabel(p.key)) : undefined });
+        pills.push({ label: subLabel(p.key), cls: state(p) + (tail && ' tail on'), sep: j || on.length ? '/' : sep, title: tail ? t.ui.chainTail(subLabel(p.key)) : undefined });
       });
-      if (luck) pills.push(luckPill('/'));
     }
   });
   const extra = m.parts.filter((p) => !used.has(p.key));
   return (
     <span className="chain" {...tour('chain')}>
       {pills.map((p, i) => (
-        <Fragment key={i}>{p.sep && <i className="sep">{p.sep}</i>}<span className={`pill ${p.cls}`} title={p.title}>{p.cls.startsWith('main') && <small>main </small>}{p.label}{p.dot && <i className="lucky-dot" aria-hidden="true" />}</span></Fragment>
+        <Fragment key={i}>{p.sep && <i className="sep">{p.sep}</i>}<span className={`pill ${p.cls}`} title={p.title}>{p.cls.startsWith('main') && <small>main </small>}{p.label}</span></Fragment>
       ))}
       {extra.length > 0 && <i className="sep">·</i>}
       {extra.map((p) => <span key={p.key} className="pill no">{subLabel(p.key)}</span>)}

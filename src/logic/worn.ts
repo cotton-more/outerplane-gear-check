@@ -17,11 +17,10 @@
 //     как B3, который вещь не из связки не сравнивал (находка 7). Тихая строка «По статам» (он не живой, Р12) — тоже.
 //   - Вещь — материал и лучше такой же у кого-то — не понижаем: её надевают (logic/material).
 // «Спорно» (хороша для тех, кого нет в ростере) не понижаем. Материал Breakthrough поднимет «Разобрать» обратно
-// до «Фоддер» со строкой, для чего (logic/material). Кубик не обещает 4-е, после которых вещь понизило бы.
+// до «Фоддер» со строкой, для чего (logic/material).
 import { isArmor } from '../data';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
-import { evaluate } from './evaluate';
 import { upgradePlan } from './plan';
 import { holds, outcomeFor, type Outcome, type PoolView } from './pool';
 import { dropSubs } from './subs';
@@ -50,22 +49,6 @@ function lowerBy(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict): Outco
   return rows.length && !rows.some(holds) ? rows : null;
 }
 
-// Кубик (logic/gamble) считает удачные 4-е без пула. Удачный 4-й, после которого вещь понизило бы, — не удача:
-// «Оставить» снова станет «Разобрать», а Reforge потрачен. Такие из кубика убираем; не осталось — кубика нет
-function withDice(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict): Verdict {
-  const g = res.gamble;
-  if (!g) return res;
-  const lowered = (key: string, n: number) => {
-    const lucky = { ...item, subs: { ...item.subs, [key]: n } };
-    return !!lowerBy(ctx, view, lucky, evaluate(ctx, lucky, { gamble: false }));
-  };
-  const hits = g.hits.filter((h) => !lowered(h.key, 1));
-  const near = g.near.filter((x) => !lowered(x.key, 2));
-  if (hits.length === g.hits.length && near.length === g.near.length) return res;
-  const out: Verdict = { ...res, gamble: hits.length ? { ...g, hits, near, target: hits[0].v } : null };
-  return { ...out, plan: upgradePlan(ctx, item, out) };
-}
-
 // hold — не понижать: вещь — материал Breakthrough для такой же у кого-то и лучше неё (logic/material, betterThanWorn) —
 // совет «надень её, старую — ей в Breakthrough», а не «никого не улучшит». Примерка — уже в view (poolView tryOn)
 export interface WornOpts { hold?: boolean }
@@ -75,7 +58,7 @@ export function withWorn(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict
   const W = ctx.t.worn;
   if (opts.hold) return res;
   const rows = lowerBy(ctx, view, item, res);
-  if (!rows) return withDice(ctx, view, item, res);
+  if (!rows) return res;
   // «Фоддер» — материал для такой же вещи: у брони, если копишь фоддер, и у предмета из списков билдов. Legendary-оружие
   // «на замену» (его пассивки в билдах ростера нет) — «Разобрать», как evalGear поступает со слабой заменой
   const armor = isArmor(item.slot);
@@ -87,7 +70,7 @@ export function withWorn(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict
   const names = namesLine(others, ctx.t.more, 4);
   const also = others.length && (armor || res.v === 'keep') ? [armor ? ctx.t.armor.maybeOthers(names) : ctx.t.gear.othersMain(names)] : [];
   const low: Verdict = {
-    ...res, v, worn: 'lower', wornBy: rows.map((r) => r.v.key), badge: '', roll: undefined, gamble: null,
+    ...res, v, worn: 'lower', wornBy: rows.map((r) => r.v.key), badge: '',
     title: W.title(v, who.map((c) => c.name), rows.some((r) => r.kind !== 'down')),
     lines: [W.line, W.stale, ...also, ...res.lines.slice(0, 1)],
   };

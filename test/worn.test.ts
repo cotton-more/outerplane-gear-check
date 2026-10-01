@@ -32,7 +32,7 @@ const weapon = (key: string, subs: Record<string, number>, main = 'DEF%'): ItemI
 // вещь — в пул персонажа (как «Надеть»); вещь того же слота, что уже есть, может вытеснить ту
 const on = (st: GearStore, c: { id: string }, item: ItemInput) => putOn(ctxOf([]), st, c.id, item).st;
 const all = (c: { id: string }, items: ItemInput[]) => items.reduce((s, x) => on(s, c, x), EMPTY_GEAR);
-const judge = (ctx: Ctx, item: ItemInput, st: GearStore, tryOn?: string) => withWorn(ctx, poolView(ctx, st, tryOn), item, evaluate(ctx, item, { gamble: false }));
+const judge = (ctx: Ctx, item: ItemInput, st: GearStore, tryOn?: string) => withWorn(ctx, poolView(ctx, st, tryOn), item, evaluate(ctx, item));
 const rowOf = (ctx: Ctx, st: GearStore, c: { id: string }, item: ItemInput, v: string) =>
   outcomeFor(ctx, poolView(ctx, st), c.id, item)!.rows.find((r) => r.v.name === v);
 
@@ -41,16 +41,16 @@ const EPIC = helmet({ 'DEF%': 2, CHC: 2, CHD: 2 }, 'rare');  // сама по с
 const onCaren = on(EMPTY_GEAR, caren, STRONG);
 
 describe('всем, кому подходит, она ничего не даёт — штамп понижается', () => {
-  it('Epic, у Caren лучше, — «Разобрать»: у кого лучше, почему, и без кубика, ролла и значка', () => {
+  it('Epic, у Caren лучше, — «Разобрать»: у кого лучше, почему, и без значка', () => {
     const ctx = ctxOf([caren]);
-    expect(evaluate(ctx, EPIC, { gamble: false }).v).toBe('keep');
+    expect(evaluate(ctx, EPIC).v).toBe('keep');
     const r = judge(ctx, EPIC, onCaren);
     // иначе: Speed-шлем Caren стоит и в Speed, и в Speed/Immu — оба варианта «хуже»
-    expect(r).toMatchObject({ v: 'junk', worn: 'lower', wornBy: [buildKey(caren.id, 'Speed'), buildKey(caren.id, 'Speed/Immu')], title: 'Разбирай — уже лучше у Caren', badge: '', gamble: null, roll: undefined });
+    expect(r).toMatchObject({ v: 'junk', worn: 'lower', wornBy: [buildKey(caren.id, 'Speed'), buildKey(caren.id, 'Speed/Immu')], title: 'Разбирай — уже лучше у Caren', badge: '' });
     expect(r.lines.slice(0, 2)).toEqual([W.line, W.stale]);
     // нужна и тем, кого нет в ростере (Kappa), — строка, кому (разбор не молча); ниже — кому и чем она хороша
     expect(r.lines[2]).toMatch(/^Для персонажей не из ростера это «Оставить»: .*Kappa/);
-    expect(r.lines[3]).toBe(evaluate(ctx, EPIC, { gamble: false }).lines[0]);
+    expect(r.lines[3]).toBe(evaluate(ctx, EPIC).lines[0]);
     expect(r.lines).toHaveLength(4);
   });
 
@@ -58,7 +58,7 @@ describe('всем, кому подходит, она ничего не даёт
     const ctx = ctxOf([caren]);
     const st = on(EMPTY_GEAR, caren, weapon('19', { CHC: 2, CHD: 2, SPD: 1, HP: 1 }));
     const winter = weapon('641', { CHC: 3, CHD: 2, SPD: 2, HP: 1 }); // Winter of Hubris — ни в одном билде
-    expect(evaluate(ctx, winter, { gamble: false }).v).toBe('temp');
+    expect(evaluate(ctx, winter).v).toBe('temp');
     const r = judge(ctx, winter, st);
     expect(r).toMatchObject({ v: 'junk', worn: 'lower', title: 'Разбирай — уже лучше у Caren', plan: [] });
     expect(r.lines).toHaveLength(3);
@@ -98,7 +98,7 @@ describe('всем, кому подходит, она ничего не даёт
 describe('что удерживает штамп', () => {
   it('персонаж без вещей — как раздетый: вещь ему пригодится', () => {
     const both = helmet({ CHC: 2, CHD: 2, SPD: 2, HP: 1 });
-    expect(evaluate(ctxOf([caren, rin]), both, { gamble: false }).v).toBe('keep');
+    expect(evaluate(ctxOf([caren, rin]), both).v).toBe('keep');
     const r = judge(ctxOf([caren, rin]), both, onCaren);
     expect(r.v).toBe('keep');
     expect(r.worn).toBeUndefined();
@@ -226,7 +226,7 @@ describe('что удерживает штамп', () => {
 
   it('«Спорно» не понижаем: вещь хороша для тех, кого нет в ростере', () => {
     const atk = helmet({ 'ATK%': 3, ATK: 2, 'HP%': 2, EFF: 1 });
-    const res = evaluate(ctxOf([caren]), atk, { gamble: false });
+    const res = evaluate(ctxOf([caren]), atk);
     expect(res.v).toBe('maybe');
     expect(withWorn(ctxOf([caren]), poolView(ctxOf([caren]), onCaren), atk, res)).toBe(res);
   });
@@ -264,7 +264,7 @@ describe('понижение — как есть', () => {
   it('свежая против прокачанной надетой (DEF% 6): та — как есть, новая хуже — «Фоддер — уже лучше у Caren» (было «уже не хуже»: новой 6 Reforge впереди, надетой 1)', () => {
     const st = rec({ 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { 'DEF%': 6, CHC: 3, CHD: 3, SPD: 2 });
     const x = helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 });
-    expect(evaluate(ctx, x, { gamble: false }).v).toBe('keep');
+    expect(evaluate(ctx, x).v).toBe('keep');
 
     const r = judge(ctx, x, st);
 
@@ -277,7 +277,7 @@ describe('понижение — как есть', () => {
     // было «Оставить»: Reforge впереди доставался каждому полезному, у новой их четыре, у Caren два — новая «лучше»
     const st = rec({ 'DEF%': 4, CHC: 4, RES: 1, EFF: 1 });
     const x = helmet({ 'DEF%': 3, CHC: 2, CHD: 2, SPD: 2 });
-    expect(evaluate(ctx, x, { gamble: false }).v).toBe('keep');
+    expect(evaluate(ctx, x).v).toBe('keep');
 
     expect(rowOf(ctx, st, caren, x, 'Speed')?.kind).toBe('eq');
     expect(judge(ctx, x, st)).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже не хуже у Caren' });
@@ -360,7 +360,7 @@ it('Charlotte: Speed-шлем с формы на T4 — «Оставляй», к
 
 describe('примерка и материал держат штамп', () => {
   const ctx = ctxOf([caren]);
-  const res = evaluate(ctx, EPIC, { gamble: false });
+  const res = evaluate(ctx, EPIC);
   const judgeTry = (tryOn: string | null) => withWorn(ctx, poolView(ctx, onCaren, tryOn), EPIC, res);
 
   it('примерка: вариант примерки собирается, даже пустой', () => {
@@ -380,33 +380,12 @@ describe('примерка и материал держат штамп', () => {
     let st = on(EMPTY_GEAR, caren, helmet({ 'DEF%': 4, CHC: 3, CHD: 3, SPD: 2 }));
     const r = putOn(both, st, rin.id, helmet({ CHC: 1, HP: 1, RES: 1, EFF: 1 }));
     st = updatePiece(r.st, r.id, { bt: 2 });
-    const raw = evaluate(both, item, { gamble: false });
+    const raw = evaluate(both, item);
     const view = poolView(both, st);
     expect(withWorn(both, view, item, raw).worn).toBe('lower'); // без hold — понизили бы
     const hold = betterThanWorn(both, view, item, materialFor(view, item)).length > 0;
     expect(hold).toBe(true);
     expect(withWorn(both, view, item, raw, { hold })).toBe(raw);
-  });
-});
-
-describe('кубик: удачный 4-й, после которого вещь понизило бы, — не удача', () => {
-  const ctx = ctxOf([caren]);
-  const junk = helmet({ 'DEF%': 1, CHC: 1, HP: 2 }, 'rare'); // «Разобрать», кубик → «Оставить» для Caren
-
-  it('у Caren лучше любой удачной — кубика нет, и «Прокачка» не зовёт делать Reforge', () => {
-    const res = evaluate(ctx, junk);
-    expect(res.gamble?.target).toBe('keep');
-    const st = on(EMPTY_GEAR, caren, helmet({ 'DEF%': 4, CHC: 3, CHD: 3, SPD: 3 }));
-    const r = withWorn(ctx, poolView(ctx, st), junk, res);
-    expect(r.v).toBe('junk');
-    expect(r.gamble).toBeNull();
-    expect(r.plan).not.toContain(ru.plan.gamble('junk'));
-  });
-
-  it('у Caren шлема нет — кубик тот же', () => {
-    const res = evaluate(ctx, junk);
-    const st = on(EMPTY_GEAR, caren, piece('shoes', 'Speed', { CHC: 3, CHD: 3, SPD: 2, 'DEF%': 2 }));
-    expect(withWorn(ctx, poolView(ctx, st), junk, res)).toBe(res);
   });
 });
 
@@ -416,7 +395,7 @@ describe('вещь введена не вся — не понижаем', () => 
 
   it('Epic 2 из 3 — «Оставить» по двум главным статам, у Caren не хуже: штамп тот же', () => {
     const two = helmet({ 'DEF%': 3, CHC: 3 }, 'rare');
-    expect(evaluate(ctx, two, { gamble: false }).v).toBe('keep');
+    expect(evaluate(ctx, two).v).toBe('keep');
     // иначе («как есть», Н3): было «хуже» — у Caren три сабстата, и Reforge впереди доставался трём; как есть 3/3
     // против 3/2/2 — «на уровне» (−8%), штамп так же не держит
     expect(rowOf(ctx, epicOn, caren, two, 'Speed')?.kind).toBe('eq');
@@ -428,7 +407,7 @@ describe('вещь введена не вся — не понижаем', () => 
 
   it('Epic 2 из 3 по правилу SPD — тоже', () => {
     const spd = helmet({ SPD: 2, CHC: 1 }, 'rare');
-    expect(evaluate(ctx, spd, { gamble: false }).v).toBe('keep');
+    expect(evaluate(ctx, spd).v).toBe('keep');
     expect(judge(ctx, spd, epicOn).worn).toBeUndefined();
   });
 
@@ -480,6 +459,6 @@ describe('такая же вещь у персонажа — сравнивае�
 });
 
 it('без вещей у кого-либо вердикт тот же объект', () => {
-  const res = evaluate(ctxOf([caren]), EPIC, { gamble: false });
+  const res = evaluate(ctxOf([caren]), EPIC);
   expect(withWorn(ctxOf([caren]), poolView(ctxOf([caren]), EMPTY_GEAR), EPIC, res)).toBe(res);
 });

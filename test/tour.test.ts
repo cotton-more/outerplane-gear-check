@@ -197,16 +197,6 @@ describe('подсказки модулей', () => {
   });
 });
 
-describe('подсказка «Кубик»', () => {
-  const dice = TIPS.find((tp) => tp.id === 'dice')!;
-  const ctx = (tab: 'eval' | 'chars', gamble: boolean) =>
-    ({ s: { tab }, verdict: { gamble: gamble ? { of: 9, hits: [], target: 'keep', near: [], main: [] } : null } }) as unknown as TourCtx;
-
-  it('только на оценке и только когда у вердикта есть кубик', () => {
-    expect([ctx('eval', true), ctx('eval', false), ctx('chars', true)].map((c) => dice.when!(c))).toEqual([true, false, false]);
-  });
-});
-
 describe('подсказка «Все уже носят не хуже»', () => {
   const worn = TIPS.find((tp) => tp.id === 'worn')!;
   const ctx = (tab: 'eval' | 'chars', lowered: boolean) => ({ s: { tab }, worn: lowered }) as unknown as TourCtx;

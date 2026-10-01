@@ -180,7 +180,7 @@ describe('неактивный X — не кандидат вердикта', ()
   const settings = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
   const item = { slot: 'helmet' as const, grade: 'unique' as const, setId: speed, itemKey: null, main: null, subs: { SPD: 2, CHC: 2, CHD: 2 } };
   const rowsOf = (off: Map<string, string>, roster: string[], rosterOnly: boolean) =>
-    evaluate(makeCtx(idx, { ...settings, rosterOnly }, new Set(roster), undefined, off), item, { gamble: false }).sections.flatMap((x) => x.rows.map((r) => r.c.id));
+    evaluate(makeCtx(idx, { ...settings, rosterOnly }, new Set(roster), undefined, off), item).sections.flatMap((x) => x.rows.map((r) => r.c.id));
 
   it('без «только мои»: X нет ни в одном разделе, Core Fusion — есть', () => {
     const ids = rowsOf(new Map([[X, CF]]), [CF], false);

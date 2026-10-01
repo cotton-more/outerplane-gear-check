@@ -1,7 +1,7 @@
 // Скорость пула экипировки (logic/pool, GEARPOOL): не в CI — цифры для решения, считать ли на телефоне сразу.
 //   node scripts/bench-pool.mjs
 // Ростер 60 персонажей с билдами, у каждого пул по 1–3 вещи на слот (броня — в основном сеты его связок);
-// замеры: один вердикт (исходы у всех 60), путь кубика (ещё 10 вердиктов), «Кому надеть?» по всем 95 с билдами.
+// замеры: один вердикт (исходы у всех 60), «Кому надеть?» по всем 95 с билдами.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'vite';
 
@@ -58,6 +58,5 @@ console.log(`ростер ${roster.length}, вещей ${seq}, варианто�
 // новый вид пула на каждый вердикт — как после любой правки хранилища; ценности вещей запоминаются на ctx
 time('вид пула: все 60 персонажей', () => { const v = poolView(ctx, { pieces, pools }); for (const c of roster) v.of(c.id); });
 time('один вердикт: исходы у всех 60', () => { const v = poolView(ctx, { pieces, pools }); for (const c of roster) outcomeFor(ctx, v, c.id, item(0)); });
-time('кубик: ещё 10 вердиктов', () => { const v = poolView(ctx, { pieces, pools }); for (let i = 1; i <= 10; i++) for (const c of roster) outcomeFor(ctx, v, c.id, item(i)); }, 3);
 time(`«Кому надеть?»: все ${withBuilds.length} с билдами`, () => { const v = poolView(ctx, { pieces, pools }); for (const c of withBuilds) outcomeFor(ctx, v, c.id, item(0)); });
 await server.close();

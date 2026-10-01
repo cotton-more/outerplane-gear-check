@@ -113,35 +113,8 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .match .chains { grid-column: 2 / 4; display: grid; gap: 4px; }
 .match .chain-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; }
 .match-div { list-style: none; margin: 6px 8px 0; padding: 8px 0 2px; border-top: 1px dashed var(--line-2); font-size: 12px; color: var(--ink-3); }
-/* кубик Reforge (Gamble.tsx): кубик цветом цели — зелёный «станет Оставить», жёлтый «станет Временно»;
-   удачный стат — серый пунктир («на вещи нет») с точкой цветом цели */
-.dice { display: inline-flex; align-items: center; gap: 3px; flex: none; font: 700 11px/1 var(--font-mono); padding: 3px 6px; border-radius: 5px; border: 1px dashed var(--keep); color: var(--keep); background: var(--surface); white-space: nowrap; }
-.dice.t { border-color: var(--temp); color: var(--temp); }
-.dice .ico { width: 14px; height: 14px; }
-.pill.lucky { display: inline-flex; align-items: center; gap: 3px; }
-.pill .lucky-dot { width: 6px; height: 6px; }
-.pill.new { background: var(--keep); color: var(--surface); border-color: var(--keep); }
-.stamp.s { font-size: 10.5px; padding: 3px 5px 2px; border-width: 1.5px; box-shadow: none; }
-.vcard .vc-gamble .pill { font-size: 11px; padding: 2px 4px; margin-right: 3px; }
-/* строка кубика — до трёх строк: на 280px смешанный кубик («Оставить» и «Временно») иначе обрезается */
-.vcard .vc-gamble { -webkit-line-clamp: 3; }
-/* до 320px рядом со штампом и кубиком или плашкой «подробнее» не влезает — остаётся стрелка */
-@media (max-width: 319px) { .vcard .dice ~ .vc-more .vc-more-t, .vcard .badge ~ .vc-more .vc-more-t { display: none; } }
-.vbar .dice { margin-left: -2px; }
-.v-gamble { padding: 12px 16px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
-.v-gamble h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
-.v-gamble > p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
-.v-gamble > p.muted { font-size: 12.5px; color: var(--ink-3); }
-.v-gamble ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.v-gamble li { display: grid; gap: 5px; padding: 7px 9px; border-radius: var(--radius-s); background: var(--surface-2); }
-.v-gamble .g-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; }
-.v-gamble .g-head .sep { color: var(--ink-3); }
-.v-gamble .bn { font-size: 12px; color: var(--ink-3); }
-/* окно 4-го сабстата: точка у статов, с которыми кубик вытянет вещь */
-.lucky-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--keep); flex: none; }
-.lucky-dot.t { background: var(--temp); }
-
-.subopt .lucky-dot { position: absolute; top: 4px; right: 4px; }
+/* до 320px рядом со штампом и плашкой «подробнее» не влезает — остаётся стрелка */
+@media (max-width: 319px) { .vcard .badge ~ .vc-more .vc-more-t { display: none; } }
 /* экипировка в вердикте (VsSection, EquipSheet): «Сейчас на персонажах» и «Кому надеть?» */
 .v-equip { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 5px 12px; font-size: 13px; }
 .v-equip .ico, .vs-act .ico, .vs .ico { width: 15px; height: 15px; }

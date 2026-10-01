@@ -35,26 +35,12 @@ export const en: Texts = {
     tempFor: 'Who can use it for now',
     markRest: (n, of) => `${n} of ${of} marked — add the rest`,
     soFar: (good, who) => `Useful so far: ${good}. Best candidate: ${who}.`,
-    topRoll: 'Top roll',
-    worthReforge: 'Worth reforging',
     flatHint: (key) => `Check ${key}: without a % sign it's flat, but builds want ${key}% — flat gives them almost nothing. If the item has ${key}%, pick ${key}% instead.`,
-    roll: (good, n, yellow, max, orange, segments, level, started) =>
-      `Roll: ${good} of ${n} useful, ${yellow} of ${max} yellow segments on them${started ? " (don't mark orange ones — they come from Reforges already done)" : ''}; ${started ? `the remaining Reforges — up to ${segments} — add` : 'Reforge adds'} ~${dec(orange)}${started ? '' : ` of ${segments}`} orange segments to useful ones on average — ${{ high: 'high, worth investing Reforge', mid: 'average', low: 'low' }[level]}.`,
   },
 
   plan: {
     title: 'Upgrading',
     enhance: '**Enhance** to +10 right away: it raises the main stat.',
-    reforgeFirst: (stage) =>
-      stage === 'started'
-        ? '**Reforge** — the remaining attempts, first in line: a good roll. One of the 6 already went to the 4th substat.'
-        : `**Reforge** — all 6 attempts, first in line: a good roll${stage === 'adds' ? '. The first one adds a 4th substat, the rest add segments' : ''}.`,
-    reforgeLater: (stage) =>
-      stage === 'started'
-        ? '**Reforge** — the remaining attempts — after pieces with a good roll: fewer segments will land on useful stats.'
-        : `**Reforge** — after pieces with a good roll: fewer segments will land on useful stats${stage === 'adds' ? '. The first attempt adds a 4th substat' : ''}.`,
-    reforgeAfterReroll: '**Reforge** — after rerolling the substats (Precise Craft or Transistone): right now segments would land on unneeded stats.',
-    reforgeUnknown: '**Reforge** — depends on the substats: mark them and the verdict will tell.',
     btArmorLegend: (piece, set) =>
       `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — any Legendary ${piece} ${set} Set (that very fodder) or Armor Glunite; one piece per tier.`,
     btArmorEpic: (piece, set) =>
@@ -64,14 +50,6 @@ export const en: Texts = {
     noTransistone: (has4th) =>
       `**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.${has4th ? '' : ' Besides, Change Stats opens on an Epic only once the first Reforge adds a 4th substat.'}`,
     tempNoInvest: "**Reforge** and **Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
-    reforgeTemp: (stage) =>
-      `**Reforge** — fine, but after your "Keep" pieces: the roll is high, and the replacement — a Legendary with the right passive, the same main and good substats all at once — can take a long time to drop${stage === 'adds' ? '. The first attempt adds a 4th substat' : stage === 'started' ? '. One attempt already went into the 4th substat' : ''}.`,
-    noBreakTemp: "**Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
-    gamble: (v) => ({
-      temp: '**Reforge** — one, for luck: which 4th substat makes it a "Keep" is in the block above. Got another — mark it with its segments as in the game: the verdict updates; if it stays a "Stopgap", put no more Reforge or **Breakthrough** into it.',
-      junk: '**Reforge** — one, for luck: which 4th substat saves the piece is in the block above. Got another — mark it with its segments as in the game: the verdict updates.',
-      maybe: '**Reforge** — one, for luck: which 4th substat makes it useful for your roster is in the block above. Got another — mark it with its segments as in the game: the verdict updates.',
-    })[v],
     fodderArmor: (piece, set) =>
       `**Don't upgrade** — it's material: one piece is one Breakthrough tier for the Legendary ${piece} ${set} Set you keep. Unless you reroll its substats with Transistone (Total).`,
     fodderGear: (name) =>
@@ -457,19 +435,6 @@ export const en: Texts = {
       `Core Fusion ${base} kept in the roster: ${base} is replaced${how === 'moved' ? `, their gear moved to Core Fusion ${base}` : how === 'removed' ? ', their gear removed' : ''}.`,
     gearBad: 'Can\'t read the code — copy all of it, starting with OGC-GEAR.',
     gearNewer: 'Equipment was saved by a newer version of the page — reload the page to see and change it.',
-    chainLucky: (k, label) => `${k} isn't on the piece, but a 4th substat ${k} from Reforge makes it "${label}"`,
-    diceTitle: (n, of, label) => `Reforge gamble: ${n} of ${of} stats that can roll as the 4th make the piece "${label}"`,
-    diceLong: (n, of, label) => `Reforge: ${n} of ${of} → ${label}`,
-    gambleCard: (label) => `One Reforge → "${label}":`,
-    gambleCardAlso: (label) => `"${label}":`,
-    gambleTitle: 'One Reforge for luck',
-    gambleLead: (of, n) => `The first Reforge adds a 4th substat — one of the ${of} stats not on the piece, all equally likely. ${n} of them save it, even with one segment:`,
-    gambleMore: (n) => `and ${n} more`,
-    gambleNear: 'With two segments on the 4th — even better:',
-    gambleAfter: (v) =>
-      `Got the right one — mark it with "+ 4th substat from Reforge". Got another — mark it too, with its segments as in the game: the verdict updates${v === 'temp' ? '; if it stays a "Stopgap", put no more Reforge or Breakthrough into it' : ''}.`,
-    gambleCant: (main, on) => `Can't roll: ${main.length ? `${main.join(', ')} — the main; ` : ''}${on.join(', ')} — already on the piece.`,
-    fourthLucky: (label) => `— becomes "${label}"`,
     addSub: 'Add a substat',
     mainGroup: 'Main stat',
     mainInGrid: 'Main ↓',
@@ -493,7 +458,7 @@ export const en: Texts = {
     codeHint: "A code from guild chat. Case, spaces and dashes don't matter. It replaces the current item; the verdict uses your roster and settings.",
     verdictLabel: { keep: 'Keep', temp: 'Stopgap', maybe: 'Maybe', fodder: 'Fodder', junk: 'Dismantle', idle: '…' },
     verdict: 'Verdict',
-    tierLegend: 'The chain is the build substat priority, left is more important. Green — on the item and counted, yellow — counts as ½, grey — on the item but far down the chain (places from 5th on don\'t count, except SPD) or a flat stat that gives the character almost nothing, dashed — not on the item. Flat and % are different stats of one parameter: % counts in full, flat by its value for the character, never above %. Marked main — the parameter is in the item\'s main (grows with Enhance, not Reforge); if the other stat of the pair can still roll as a substat (flat ATK with an ATK% main, EFF% with a flat EFF), it sits next to it after «/», dashed if it isn\'t there: only the substat counts. Crossed out — the build does not need it. Dashed with a dot — the Reforge dice: with this 4th substat the piece becomes a "Keep" (green dot) or a "Stopgap" (yellow).',
+    tierLegend: 'The chain is the build substat priority, left is more important. Green — on the item and counted, yellow — counts as ½, grey — on the item but far down the chain (places from 5th on don\'t count, except SPD) or a flat stat that gives the character almost nothing, dashed — not on the item. Flat and % are different stats of one parameter: % counts in full, flat by its value for the character, never above %. Marked main — the parameter is in the item\'s main (grows with Enhance, not Reforge); if the other stat of the pair can still roll as a substat (flat ATK with an ATK% main, EFF% with a flat EFF), it sits next to it after «/», dashed if it isn\'t there: only the substat counts. Crossed out — the build does not need it.',
     altGroup: 'Below — the set is only in an alternative combo of the build',
     showAll: (n) => `show all (${n})`,
     scoreTitle: (good, n, pct) => `Useful substats: ${good} of ${n}; weighted by priority — ${pct}%`,
@@ -609,7 +574,6 @@ export const en: Texts = {
     need: (slot, who, bt, left) => `${slot} on ${who} — T${bt}, ${left} more to T4`,
     line: (list) => `**Material**: the same piece is worn below T4 — ${list}. One piece is one Breakthrough tier; substats don't matter.`,
     plan: '**Don\'t upgrade or dismantle it** — feed it to the worn one\'s Breakthrough: one piece is one tier.',
-    planGamble: '**Don\'t upgrade it** (except one Reforge for luck — the dice is next to it) **or dismantle it** — feed it to the worn one\'s Breakthrough: one piece is one tier.',
     titleWear: (slot, who) => `Keep — better than the ${SLOT_EN[slot]} on ${who}: wear it and feed the old one to it`,
     lineWear: (list) => `**Better than the one on**: the same piece is worn below T4 but is weaker — ${list}. Wear this one and feed the old one to its Breakthrough.`,
     titleWearT4: (slot, who) => `Keep — better than the ${SLOT_EN[slot]} on ${who}: wear it`,
@@ -687,7 +651,6 @@ export const en: Texts = {
       subs: 'The example needs only SPD, CHC and CHD: tap the extra stat in its row and replace or remove it.',
     },
     tips: {
-      dice: 'The dice: an Epic\'s first Reforge adds a random 4th substat. “3/9” — how many of the possible stats save the piece. No luck — invest no more.',
       star: 'Star your characters — the check will use them instead of every hero in the game.',
       accMain: 'For an accessory, the first tap in the grid is the main stat, as at the top of the piece in the game. Then come the substats.',
       mainCell: 'A “main” cell is a stat in the main line: it never rolls as a substat.',
@@ -715,7 +678,6 @@ export const en: Texts = {
       fusion: "Mark Core Fusion Eternal and Eternal turns inactive, right after it in the list; Eternal's gear moves to Core Fusion Eternal. The star on Eternal switches back.",
     },
     news: {
-      dice: 'Reforge dice — which 4th substat saves an Epic',
       move: 'on replace, a stat from another row moves over',
       gear: 'character gear — builds assemble themselves',
     },
