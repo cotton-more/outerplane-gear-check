@@ -37,7 +37,6 @@ export function compactVerdict(res, { text, keepCount }) {
     v: res.v,
     title: text(res.title),
     lines: res.lines.map(text),
-    badge: res.badge || '',
     foot: text(res.foot),
     plan: (res.plan ?? []).map(text),
     secs: res.sections.map((s) => ({

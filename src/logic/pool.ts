@@ -4,7 +4,7 @@
 //     цель: части с бонусом, который статом не выразить (Penetration, Immunity, …), держатся всегда; сет-стат
 //     (Attack, Speed, …) собирается вещь за вещью, а последнюю вещь его бонус выигрывает только ценностью — сет можно
 //     сломать, если итог выгоднее (бонус в сегментах — logic/setBonus).
-//   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», цель примерки, начатые (Р14, Р18,
+//   - «Собираешь» — варианты, для которых вещи держат вердикт: отмеченные «Собираю», начатые (Р14, Р18,
 //     П3: хоть одна вещь связки при любом T или рекомендованное оружие / аксессуар из списка встаёт в сборку; временное
 //     не начинает) и «По статам», пока он живой.
 //     «Не собираю» исключает всегда. «Начат» — по тому, что можно собрать из пула (достижимая сборка, Р1), а карточка
@@ -291,7 +291,6 @@ function report(ctx: Ctx, v: Variant, slots: Partial<Record<SlotId, Entry>>, s: 
 
 export interface PlayOpts {
   marks?: Readonly<Record<string, Mark>>;
-  tryOn?: string | null; // ключ варианта-цели: собирается, даже пустой (была примерка билда; App не передаёт)
 }
 
 // отметка варианта: на нём самом, на билде целиком; у билда, где связка одна, — и та, что стояла на этой связке,
@@ -330,7 +329,6 @@ export interface Play {
   asm: Map<string, Assembly>;          // сборка каждого варианта — её показывает карточка
   reach: Map<string, Assembly>;        // достижимая сборка (assembleReach): по ней «собираешь»; не отличается — тот же объект
   inPlay: Variant[];
-  own: Variant[];                      // собираемые без примерки: цель примерки собирается, только пока она идёт
   held: Set<string>;                   // записи, которые держит пул (heldOf): от него usedIn, «ненужные», чистка «Надеть»
 }
 
@@ -348,14 +346,13 @@ export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts
   // Р14, Р18, П3: билд начат (started) — хоть одна вещь его связки (при любом T) или рекомендованное оружие / аксессуар
   // из его списков встаёт в его достижимую сборку (Р1), — значит собирается. По достижимой: иначе билд, чей сет-стат
   // раскладка сломала ради статов, выпадал бы, и это зависело бы от порядка «Надеть». Запасного правила нет: ни один не
-  // начат — собирается только «По статам» (и отмеченные «Собираю»). «Не собираю» исключает всегда (цель примерки —
-  // отдельно, inPlay)
+  // начат — собирается только «По статам» (и отмеченные «Собираю»). «Не собираю» исключает всегда
   const self = (v: Variant) => {
     if (isStats(v)) return statLive;
     const m = markOf(opts.marks, v);
     return m !== 'skip' && (m === 'want' || started(reach.get(v.key)!));
   };
-  return { variants, stat, statLive, asm, reach, inPlay: variants.filter((v) => v.key === opts.tryOn || self(v)), own: variants.filter(self), held: heldOf({ variants, asm, reach }) };
+  return { variants, stat, statLive, asm, reach, inPlay: variants.filter(self), held: heldOf({ variants, asm, reach }) };
 }
 
 // сборки варианта, чьи вещи пул держит: выбранная и достижимая (если другая)
@@ -367,7 +364,7 @@ export const heldBy = (p: Pick<Play, 'asm' | 'reach'>, v: Variant): Assembly[] =
 // Что держит пул (решение владельца 2026-10-01, «что держит пул» — (а)): лучшую раскладку — выбранную и достижимую —
 // КАЖДОГО варианта героя, есть в пуле вещи его сета или нет (шлем DEF% 4 / HP% 3 — лучший для Def/Immu у героя без
 // Defense- и Immunity-вещей), с «Не собираю» тоже (В2: отметка — только про штамп и исходы), и «По статам» — живой он
-// или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная»). Отметки и примерка не влияют:
+// или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная»). Отметки не влияют:
 // play собирает все варианты всегда. Источники — одним объединением: «Надето» (своя фича после eval-only) добавится
 // сюда ещё одной строкой
 function heldOf(p: Pick<Play, 'variants' | 'asm' | 'reach'>): Set<string> {
@@ -397,8 +394,8 @@ export interface PoolView {
 }
 
 // один раз на хранилище: персонажи считаются по запросу и запоминаются
-export function poolView(ctx: Ctx, st: PoolStore, tryOn?: string | null): PoolView {
-  const opts: PlayOpts = { marks: st.marks, tryOn };
+export function poolView(ctx: Ctx, st: PoolStore): PoolView {
+  const opts: PlayOpts = { marks: st.marks };
   const memo = new Map<string, CharPool | null>();
   const of = (id: string): CharPool | null => {
     if (memo.has(id)) return memo.get(id)!;
@@ -609,7 +606,7 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
     else if (pair?.why === 'rec') kind = 'up';
     else kind = (delta ?? 0) >= MARGIN ? 'up' : byDelta(delta);
     // броня не из связки, которая просто займёт пустой слот, — не исход: хлам к персонажу не попадает (решение 3),
-    // в примерке это «не по билду». Встала на место другой с выигрышем — это «лучше». У «По статам» связки нет — там
+    // в режиме героя это «не по билду». Встала на место другой с выигрышем — это «лучше». У «По статам» связки нет — там
     // хлам только вещь без полезных статов (Р13, выше)
     if (offSet && kind === 'fill' && !stats) return null;
     const surplus = kind === 'fill' && !!part && before.complete.some((p) => p.set === part.set);
@@ -650,7 +647,7 @@ export interface OutcomeOpts { explicit?: boolean }
 
 // Кэш исходов (находка 27): на одно нажатие один персонаж считается несколько раз — понижение (worn), «Сейчас на
 // персонажах» (poolVs), материал (betterThanWorn), быстрый и полный вердикт. Живёт вместе с видом пула: новое хранилище,
-// отметки или примерка — новый вид (poolView), кэш с ним. Ключ — (ctx, персонаж, explicit, JSON входа): вход — объект
+// отметки — новый вид (poolView), кэш с ним. Ключ — (ctx, персонаж, explicit, JSON входа): вход — объект
 // формы, его могут собрать заново или поменять на месте, поэтому по содержимому, не по ссылке (другой порядок полей —
 // только промах). Результат общий: вызывающие его не меняют (фильтруют и сортируют копии). Последние OUTCOME_MEMO
 // ключей: ввод на форме без «Надеть» не копит исходы
@@ -736,8 +733,8 @@ export const replaceOf = (mine: readonly Piece[], slot: SlotId, replace?: string
 // (usedIn — все варианты и «По статам»), а с новой — ни в одной. Только если новая встала (её держит пул); не встала —
 // ничего не убираем. Ставшее ненужным раньше (новые данные, «Развитие»/«Эндгейм», ручное «Убрать», правка) не трогаем:
 // строка «больше не нужна» и «Убрать у X». Каждая убранная названа в сообщении, «Вернуть» — всё обратно (undoPut).
-// Отметок не ставит: исключения Р19 (цель примерки — «Собираю») больше нет — пул держит сборки всех вариантов (held).
-// began — тост «Начал собирать …»: варианты, которые собираются и без примерки и с ней начаты, а до неё — нет (начало
+// Отметок не ставит: исключения Р19 (цель режима героя — «Собираю») больше нет — пул держит сборки всех вариантов (held).
+// began — тост «Начал собирать …»: варианты, которые собираются и с этой вещью начаты, а до неё — нет (начало
 // по вещам, Р14, Р18). pre — play(mine, po), если уже посчитан (вид пула).
 // replace — id записи из «Примерить замену» (режим «для героя», TryOn.replace; решение владельца «заменить в любом
 // случае» — (а)): она уходит всегда, лучше новая или хуже, остальное — по В1 с пулом уже без неё. Записи нет в его пуле
@@ -750,12 +747,12 @@ export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece,
   const was = usedIn(before), now = usedIn(after);
   const placed = now.has(piece.id);
   const removed = mine.filter((p) => p === out || (placed && was.has(p.id) && !now.has(p.id)));
-  const began = after.own.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
+  const began = after.inPlay.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
   return { removed, began };
 }
 
 // Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
-// (poolVs). Та же новая запись, что создаст putOn (номер — следующий за seq), те же отметки и примерка
+// (poolVs). Та же новая запись, что создаст putOn (номер — следующий за seq), те же отметки
 const seqOf = (st: PoolStore) => st.seq ?? Math.max(0, ...Object.keys(st.pieces).map(numOf));
 export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, replace?: string | null): PutPlan | null {
   const cp = view.of(charId);
@@ -767,13 +764,13 @@ export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
 // Надеть вещь на персонажа: всегда новая запись, даже если у него (или у другого) такая же — в Оценку вводят новую
 // вещь из инвентаря (решение владельца 2026-10-01), пулы независимы (В9); лишнюю вытеснит planPut. replace —
 // «Примерить замену» (planPut): эта запись уходит всегда
-export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { tryOn?: string | null; at?: string; replace?: string | null } = {}): PutResult {
+export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { at?: string; replace?: string | null } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const was = st.pools[charId] ?? [];
   const made = newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }, undefined, opts.replace) : { removed: [], began: [] };
+  const { removed, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks }, undefined, opts.replace) : { removed: [], began: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...was.filter((id) => !gone.has(id)), piece.id];
   const next = gc({ ...made.st, pools: { ...made.st.pools, [charId]: pool } });

@@ -379,9 +379,9 @@ describe('«Надеть»: что уходит из пула (В1)', () => {
   });
 
   // подпись кнопки (poolVs replaces) — planFor по виду пула; должна совпасть с тем, что сделает putOn (находка 5)
-  const same = (st: GearStore, who: string, x: ItemInput, tryOn: string | null = null) => {
-    const plan = planFor(ctx, poolView(ctx, st, tryOn), who, x)!;
-    const r = putOn(ctx, st, who, x, { tryOn });
+  const same = (st: GearStore, who: string, x: ItemInput) => {
+    const plan = planFor(ctx, poolView(ctx, st), who, x)!;
+    const r = putOn(ctx, st, who, x);
     return [{ removed: plan.removed.map((p) => p.id), began: plan.began }, { removed: r.removed.map((p) => p.id), began: r.began }];
   };
   const eternal = '2000043', cfEternal = '2700043';
@@ -390,7 +390,6 @@ describe('«Надеть»: что уходит из пула (В1)', () => {
     ['две вещи её слота', () => same(pool([...helmets(), rec('p5', A('shoes', 'Attack', { CHC: 2, HP: 1, EFF: 1, RES: 1 }))]), CAREN, SHOES)],
     ['Eternal, 4 Attack: Speed-шлем начнёт Speed', () => same(pool(['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => rec('e' + i, A(sl as Piece['slot'], 'Attack', { SPD: 3, EFF: 2, CHC: 2 }))), eternal), eternal, A('helmet', 'Speed', { SPD: 1, HP: 1, RES: 1, DEF: 1 }))],
     ['Core Fusion Eternal, 4 Effectiveness', () => same(pool(['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => rec('e' + i, A(sl as Piece['slot'], 'Effectiveness', { SPD: 2, EFF: 2, CHC: 1, HP: 1 }))), cfEternal), cfEternal, A('helmet', 'Speed', { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 }))],
-    ['в примерке Def', () => same(pool([...['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => rec('s' + i, A(sl as Piece['slot'], 'Speed', { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 }))), rec('d1', A('helmet', 'Defense', { HP: 1, RES: 1 }))]), CAREN, A('helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }), buildKey(CAREN, 'Def'))],
   ])('planFor — то же, что сделает putOn: %s', (_, run) => {
     const [plan, put] = run();
     expect(plan).toEqual(put);
@@ -419,8 +418,8 @@ describe('«Надеть»: вариант, где она встала, — на
   });
 });
 
-describe('«Надеть» в примерке', () => {
-  // у Caren собран Speed ×4, Defense-вещей нет. Примерка Def; новый Defense-шлем в Speed не встаёт
+describe('«Надеть»: отметки и начало сборки', () => {
+  // у Caren собран Speed ×4, Defense-вещей нет; новый Defense-шлем в Speed не встаёт
   const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
   const mid = { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 };
   const pcs = (['helmet', 'armor', 'gloves', 'shoes'] as const).map((sl, i) => rec('p' + (i + 1), A(sl, 'Speed', mid)));
@@ -430,26 +429,26 @@ describe('«Надеть» в примерке', () => {
   const K4 = buildKey(CAREN, 'Def/Immu');
 
   // было: отметки [Def, Def/Immu]. Р19: Defense-шлем сам начинает цель (и Def/Immu) — «Собираю» не нужен
-  it('начинает цель примерки — отметок нет, began — Def и Def/Immu', () => {
-    const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
+  it('Defense-шлем начинает Def и Def/Immu — отметок нет, began — оба', () => {
+    const r = putOn(ctx, st, CAREN, DEF);
     expect({ marks: r.st.marks ?? {}, began: r.began }).toEqual({ marks: {}, began: [K3, K4] });
   });
 
-  it('старый Defense-шлем уже начал Def (Р14): новый в примерке Def заменяет его, отметок нет', () => {
+  it('старый Defense-шлем уже начал Def (Р14): новый его заменяет, отметок нет', () => {
     const old = rec('p5', A('helmet', 'Defense', { HP: 1, RES: 1 }));
-    const r = putOn(ctx, v2([...pcs, old], { [CAREN]: [...pcs, old].map((p) => p.id) }), CAREN, DEF, { tryOn: K3 });
+    const r = putOn(ctx, v2([...pcs, old], { [CAREN]: [...pcs, old].map((p) => p.id) }), CAREN, DEF);
     expect({ marks: r.st.marks ?? {}, removed: r.removed.map((p) => p.id) }).toEqual({ marks: {}, removed: ['p5'] });
   });
 
-  it('после конца примерки новый шлем не «ненужный»: Def начат им и собирается сам', () => {
-    const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
+  it('новый шлем не «ненужный»: Def начат им и собирается сам', () => {
+    const r = putOn(ctx, st, CAREN, DEF);
     expect(poolView(ctx, r.st).of(CAREN)!.unused).toEqual([]);
   });
 
   // было: цель «Не собираю» становилась «Собираю» (и Def/Immu). Р18, Р19: шлем держит Def/Immu, который собирается сам, —
   // вещь не только в цели, «Не собираю» у Def остаётся
-  it('у цели «Не собираю», вещь стоит и в собираемом Def/Immu — отметки нет, «Не собираю» остаётся', () => {
-    const r = putOn(ctx, { ...st, marks: { [K3]: 'skip' } }, CAREN, DEF, { tryOn: K3 });
+  it('у Def «Не собираю», вещь стоит и в собираемом Def/Immu — отметки нет, «Не собираю» остаётся', () => {
+    const r = putOn(ctx, { ...st, marks: { [K3]: 'skip' } }, CAREN, DEF);
     expect(r.st.marks).toEqual({ [K3]: 'skip' });
   });
 
@@ -458,24 +457,24 @@ describe('«Надеть» в примерке', () => {
   // нужна». Теперь пул держит сборку каждого варианта и с «Не собираю» (В2, «что держит пул» — (а)) — отметка не нужна
   const PEN = buildKey(CAREN, 'Pen');
   const PENH = A('helmet', 'Penetration', { RES: 1, EFF: 1 });
-  it('встала только в цель примерки («Не собираю») — отметок нет, «Не собираю» остаётся, после примерки шлем нужен', () => {
-    const r = putOn(ctx, { ...st, marks: { [PEN]: 'skip' } }, CAREN, PENH, { tryOn: PEN });
+  it('встала только в Pen («Не собираю») — отметок нет, «Не собираю» остаётся, шлем нужен', () => {
+    const r = putOn(ctx, { ...st, marks: { [PEN]: 'skip' } }, CAREN, PENH);
     expect({ stored: r.st.marks, began: r.began }).toEqual({ stored: { [PEN]: 'skip' }, began: [] });
     expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).not.toContain(r.id);
   });
 
   // было: «Вернуть» снимало отметку совсем — «Не собираю» пропадало
-  it('«Вернуть» в примерке цели с «Не собираю» — хранилище как до «Надеть», «Не собираю» байт в байт', () => {
+  it('«Вернуть» при «Не собираю» у Pen — хранилище как до «Надеть», «Не собираю» байт в байт', () => {
     const skip: GearStore = { ...st, marks: { [PEN]: 'skip' } };
-    const r = putOn(ctx, skip, CAREN, PENH, { tryOn: PEN });
+    const r = putOn(ctx, skip, CAREN, PENH);
     const back = undoPut(r.st, CAREN, r);
     // seq не откатывается (как всегда у «Вернуть»): номер вещи не переиспользуется
     expect({ back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
   });
 
-  it('встала и в собираемый без примерки вариант — отметки нет', () => {
-    // Immunity-шлем в примерке Def/Immu встаёт и в Speed/Immu, который собирается сам (Speed ×2 из четырёх Speed)
-    const r = putOn(ctx, st, CAREN, A('helmet', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }), { tryOn: buildKey(CAREN, 'Def/Immu') });
+  it('встала и в собираемый вариант — отметки нет', () => {
+    // Immunity-шлем встаёт в Speed/Immu, который собирается сам (Speed ×2 из четырёх Speed)
+    const r = putOn(ctx, st, CAREN, A('helmet', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }));
     expect(r.st.marks ?? {}).toEqual({});
   });
 });

@@ -50,7 +50,7 @@ function lowerBy(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict): Outco
 }
 
 // hold — не понижать: вещь — материал Breakthrough для такой же у кого-то и лучше неё (logic/material, betterThanWorn) —
-// совет «надень её, старую — ей в Breakthrough», а не «никого не улучшит». Цель варианта, если есть, — уже в view (poolView tryOn)
+// совет «надень её, старую — ей в Breakthrough», а не «никого не улучшит».
 export interface WornOpts { hold?: boolean }
 
 export function withWorn(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict, opts: WornOpts = {}): Verdict {
@@ -70,7 +70,7 @@ export function withWorn(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict
   const names = namesLine(others, ctx.t.more, 4);
   const also = others.length && (armor || res.v === 'keep') ? [armor ? ctx.t.armor.maybeOthers(names) : ctx.t.gear.othersMain(names)] : [];
   const low: Verdict = {
-    ...res, v, worn: 'lower', wornBy: rows.map((r) => r.v.key), badge: '',
+    ...res, v, worn: 'lower', wornBy: rows.map((r) => r.v.key),
     title: W.title(v, who.map((c) => c.name), rows.some((r) => r.kind !== 'down')),
     lines: [W.line, W.stale, ...also, ...res.lines.slice(0, 1)],
   };

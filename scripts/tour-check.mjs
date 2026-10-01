@@ -1,6 +1,6 @@
 // Оба тура («Оценка вещи» и «Экипировка») в настоящем браузере на пяти размерах экрана, в светлой и тёмной теме:
 // тур проходится на примере до конца, и на каждом шаге полоса целиком в окне и не закрывает то, на что показывает
-// рамка. Ещё — полоса «Примерка» с самым длинным «персонаж · билд» из данных не раздвигает страницу вбок, а на ПК
+// рамка. Ещё — полоса «Только для» с самым длинным именем героя из данных не раздвигает страницу вбок, а на ПК
 // сообщение после «Надеть» не ложится на колонку вердикта.
 // Кадры — в build/tour-check/. jsdom раскладку не считает, поэтому это отдельно от тестов. Нужен Chrome (переменная CHROME).
 // Запуск: task tour:check (страница — свежая сборка приложения с данными из docs/ или из SITE, как у скриншотов).
@@ -43,7 +43,7 @@ if (problems.length) {
   for (const p of problems) console.log(`  ${p}`);
   process.exit(1);
 }
-console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах, полоса «Примерка» влезает, сообщение не на вердикте; кадры — build/tour-check/`);
+console.log(`\n✅ Оба тура проходятся на ${SIZES.length} размерах в двух темах, полоса «Только для» влезает, сообщение не на вердикте; кадры — build/tour-check/`);
 
 async function run(w, h, theme, tour) {
   const tag = `${tour} ${w}×${h} ${theme}`;
@@ -84,21 +84,21 @@ async function run(w, h, theme, tour) {
   await page.close();
 }
 
-// Примерка с самым длинным «персонаж · билд»: страница не шире окна, ✕ примерки — в окне и в колонке формы
+// Режим героя с самым длинным именем из данных: страница не шире окна, ✕ полосы — в окне и в колонке формы
 async function tryonWidth(w, h) {
-  const tag = `примерка ${w}×${h}`;
+  const tag = `«Только для» ${w}×${h}`;
   const page = await browser.newPage();
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 720, hasTouch: w < 720 });
   await page.goto(url, { waitUntil: 'networkidle0' });
   const who = await page.evaluate((tour) => {
-    const pairs = window.OGC_DATA.chars.flatMap((c) => c.builds.map((b) => ({ charId: c.id, build: b.name, n: `${c.name} · ${b.name}` })));
-    const top = pairs.sort((a, z) => z.n.length - a.n.length)[0];
+    // герой без билдов в режим не входит (heroTarget), поэтому берём только тех, у кого они есть
+    const top = window.OGC_DATA.chars.filter((c) => c.builds.length).sort((a, z) => z.name.length - a.name.length)[0];
     localStorage.clear();
     localStorage.setItem('ogc.lang', '"en"');
     localStorage.setItem('ogc.welcomeHidden', 'true');
     localStorage.setItem('ogc.tour', tour);
-    localStorage.setItem('ogc.tryon', JSON.stringify({ charId: top.charId, build: top.build }));
-    return top.n;
+    localStorage.setItem('ogc.tryon', JSON.stringify({ charId: top.id }));
+    return top.name;
   }, TOUR);
   await page.goto(url, { waitUntil: 'networkidle0' });
   const m = await page.evaluate(() => {
@@ -107,10 +107,10 @@ async function tryonWidth(w, h) {
     return { doc: document.documentElement.scrollWidth, vw: innerWidth, x: x && x.right, form: form && form.right };
   });
   await page.screenshot({ path: join(OUT, `tryon-${w}x${h}.png`) });
-  if (m.x == null) problems.push(`${tag}: нет полосы «Примерка» (${who})`);
+  if (m.x == null) problems.push(`${tag}: нет полосы «Только для» (${who})`);
   else {
     if (m.doc > m.vw + 1) problems.push(`${tag}: страница шире окна — ${m.doc} из ${m.vw} (${who})`);
-    if (m.x > Math.min(m.vw, m.form) + 1) problems.push(`${tag}: ✕ примерки за краем (${Math.round(m.x)} при ${Math.round(Math.min(m.vw, m.form))}, ${who})`);
+    if (m.x > Math.min(m.vw, m.form) + 1) problems.push(`${tag}: ✕ полосы за краем (${Math.round(m.x)} при ${Math.round(Math.min(m.vw, m.form))}, ${who})`);
   }
   await page.close();
 }
@@ -188,7 +188,7 @@ function act(step, narrow) {
   })();
 }
 
-// действие шага тура «Экипировка»: шлем → «Примерить замену» → «Дальше» → «Заменить шлем Caren» → ✕ примерки
+// действие шага тура «Экипировка»: шлем → «Примерить замену» → «Дальше» → «Заменить шлем Caren» → ✕ полосы «Только для»
 function actGear(step, narrow) {
   const $ = (s) => document.querySelector(s);
   const byText = (sel, text) => [...document.querySelectorAll(sel)].find((b) => b.textContent.includes(text));

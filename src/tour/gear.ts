@@ -46,5 +46,5 @@ export const GEAR: Step[] = [
   // layer: на телефоне карточку можно нажать — откроется шторка вердикта; шаг и «Заменить» идут и в ней
   { id: 'gCard', rev: 2, layer: 'sheet', at: () => ['tryon', 'verdict'] },
   { id: 'gEquip', rev: 1, layer: 'sheet', at: () => ['gequip'], done: (c, start) => c.gearSeq > start.gearSeq },
-  { id: 'gNext', rev: 1, at: () => ['tryon'], done: (c) => !c.tryOn },
+  { id: 'gNext', rev: 2, at: () => ['tryon'], done: (c) => !c.tryOn },
 ];

@@ -694,7 +694,7 @@ export const en: Texts = {
         ? 'The card shows how much it beats her helmet. Have a look and press “Continue”.'
         : 'The verdict on the right shows how much it beats her helmet. Have a look and press “Continue”.'}`,
       gEquip: () => "Better than what Caren wears — tap **Replace Caren's helmet**: the new one goes into the build, and the old one — the same Speed helmet — feeds its Breakthrough.",
-      gNext: () => '“Next” keeps the try-on — enter pieces for Caren one after another. Done? ✕ on the Try-on strip, and the check is for everyone again.',
+      gNext: () => '“Next” keeps rating for Caren — enter pieces for Caren one after another. Done? ✕ on the “Only for” strip, and rating is for everyone again.',
       next: (x: StepText) => `“Next” goes to a new piece: slot, grade, set and main stay, substats are cleared. Pressed it by accident? “Undo” brings the piece back for a few seconds — except in the tutorial.${
         x.keys ? ' Key: Esc.' : ''}`,
     },

@@ -17,7 +17,7 @@ const golden = JSON.parse(readFileSync(new URL('./golden.json', import.meta.url)
 const idx = createIndex(D);
 const CYR = /[А-Яа-яЁё]/;
 
-const verdictText = (r: Verdict) => [r.title, r.badge, r.foot, ...r.lines, ...r.sections.map((s) => s.title)].join('\n');
+const verdictText = (r: Verdict) => [r.title, r.foot, ...r.lines, ...r.sections.map((s) => s.title)].join('\n');
 
 describe('английские вердикты', () => {
   it('все случаи эталона считаются на английском без единой русской буквы', () => {

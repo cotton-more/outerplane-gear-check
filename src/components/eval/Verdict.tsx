@@ -51,7 +51,6 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
       <div className={`v-head v-${r.v}`}>
         <div className="v-row">
           {r.v !== 'idle' && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}
-          {r.badge && <span className="badge">{r.badge}</span>}
           {icon && (
             <span className="v-item">
               <GearFrame grade={s.grade} slot={s.slot} icon={icon} />
@@ -187,7 +186,6 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
     <button type="button" className={`vcard v-${r.v}`} onClick={onOpen} aria-label={label} {...tour('verdict')}>
       <span className="vc-top">
         <span className="stamp">{t.ui.verdictLabel[r.v]}</span>
-        {r.badge && <span className="badge">{r.badge}</span>}
         <span className="vc-more"><span className="vc-more-t">{t.ui.details}</span> ▸</span>
       </span>
       <span className="vc-title">{barTitle(r)}</span>

@@ -32,7 +32,7 @@ const weapon = (key: string, subs: Record<string, number>, main = 'DEF%'): ItemI
 // вещь — в пул персонажа (как «Надеть»); вещь того же слота, что уже есть, может вытеснить ту
 const on = (st: GearStore, c: { id: string }, item: ItemInput) => putOn(ctxOf([]), st, c.id, item).st;
 const all = (c: { id: string }, items: ItemInput[]) => items.reduce((s, x) => on(s, c, x), EMPTY_GEAR);
-const judge = (ctx: Ctx, item: ItemInput, st: GearStore, tryOn?: string) => withWorn(ctx, poolView(ctx, st, tryOn), item, evaluate(ctx, item));
+const judge = (ctx: Ctx, item: ItemInput, st: GearStore) => withWorn(ctx, poolView(ctx, st), item, evaluate(ctx, item));
 const rowOf = (ctx: Ctx, st: GearStore, c: { id: string }, item: ItemInput, v: string) =>
   outcomeFor(ctx, poolView(ctx, st), c.id, item)!.rows.find((r) => r.v.name === v);
 
@@ -46,7 +46,7 @@ describe('всем, кому подходит, она ничего не даёт
     expect(evaluate(ctx, EPIC).v).toBe('keep');
     const r = judge(ctx, EPIC, onCaren);
     // иначе: Speed-шлем Caren стоит и в Speed, и в Speed/Immu — оба варианта «хуже»
-    expect(r).toMatchObject({ v: 'junk', worn: 'lower', wornBy: [buildKey(caren.id, 'Speed'), buildKey(caren.id, 'Speed/Immu')], title: 'Разбирай — уже лучше у Caren', badge: '' });
+    expect(r).toMatchObject({ v: 'junk', worn: 'lower', wornBy: [buildKey(caren.id, 'Speed'), buildKey(caren.id, 'Speed/Immu')], title: 'Разбирай — уже лучше у Caren' });
     expect(r.lines.slice(0, 2)).toEqual([W.line, W.stale]);
     // нужна и тем, кого нет в ростере (Kappa), — строка, кому (разбор не молча); ниже — кому и чем она хороша
     expect(r.lines[2]).toMatch(/^Для персонажей не из ростера это «Оставить»: .*Kappa/);
@@ -358,22 +358,7 @@ it('Charlotte: Speed-шлем с формы на T4 — «Оставляй», к
   expect(r4.delta!).toBeCloseTo(r0.delta!, 9);
 });
 
-describe('примерка и материал держат штамп', () => {
-  const ctx = ctxOf([caren]);
-  const res = evaluate(ctx, EPIC);
-  const judgeTry = (tryOn: string | null) => withWorn(ctx, poolView(ctx, onCaren, tryOn), EPIC, res);
-
-  it('примерка: вариант примерки собирается, даже пустой', () => {
-    // иначе: Speed/Immu уже собирается — Speed-шлем Caren стоит и в нём, и там он лучше: «Разобрать»
-    expect(judgeTry(buildKey(caren.id, 'Speed/Immu')).v).toBe('junk');
-    expect(judgeTry(buildKey(caren.id, 'Speed')).v).toBe('junk');
-    // Pen: вещь не из его связки, шлем Caren там «прочий» и лучше — не держит
-    expect(judgeTry(buildKey(caren.id, 'Pen')).v).toBe('junk');
-    // пустой слот в варианте примерки держит: у Caren только Immunity-ботинки, в сборке Def/Immu шлема нет
-    const shoes = on(EMPTY_GEAR, caren, piece('shoes', 'Immunity', { CHC: 1 }));
-    expect(withWorn(ctx, poolView(ctx, shoes, buildKey(caren.id, 'Def/Immu')), EPIC, res).v).toBe('keep');
-  });
-
+describe('материал держит штамп', () => {
   it('вещь — материал и лучше такой же у Rin (не кандидат): не «Никого не улучшит», а «надень» (hold)', () => {
     const both = ctxOf([caren, rin]);
     const item = helmet({ 'DEF%': 3, CHC: 3, CHD: 2, HP: 1 });

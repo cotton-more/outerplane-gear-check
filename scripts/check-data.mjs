@@ -114,7 +114,7 @@ function runCases(ogc) {
     try {
       const res = evaluate(makeCtx(idx, settingsOf(inp), roster), { slot: inp.slot, grade: inp.grade, setId: inp.setId, itemKey: inp.itemKey, main: inp.main, unlisted: false, subs: Object.fromEntries(inp.subs) });
       const best = res.sections[0]?.rows[0];
-      out.push({ i, v: res.v, title: res.title, badge: res.badge || '', best: best ? `${best.c.name} / ${best.b.name}` : '' });
+      out.push({ i, v: res.v, title: res.title, best: best ? `${best.c.name} / ${best.b.name}` : '' });
     } catch (e) {
       out.push({ i, error: `${describeCase(inp, D)}: ${e.message}` });
     }
@@ -122,9 +122,9 @@ function runCases(ogc) {
   return out;
 }
 
-// разница двух прогонов одних и тех же входов: сменился вердикт, лучший кандидат или плашка
+// разница двух прогонов одних и тех же входов: сменился вердикт, лучший кандидат
 function diffCases(was, now, D) {
-  const show = (x) => `${x.v}${x.badge ? ' «' + x.badge + '»' : ''}${x.best ? ' · ' + x.best : ''}`;
+  const show = (x) => `${x.v}${x.best ? ' · ' + x.best : ''}`;
   const changed = [];
   let skipped = 0;
   let total = 0;
@@ -132,11 +132,11 @@ function diffCases(was, now, D) {
     const y = was[k];
     if (x.skip || y.skip || x.error || y.error) { skipped += x.skip || y.skip ? 1 : 0; continue; }
     total++;
-    if (x.v !== y.v || x.best !== y.best || x.badge !== y.badge) {
+    if (x.v !== y.v || x.best !== y.best) {
       changed.push({ item: describeCase(golden.cases[k].in, D), was: show(y), now: show(x), flip: x.v !== y.v });
     }
   }
-  changed.sort((p, q) => q.flip - p.flip); // сначала сменившие вердикт, потом лучшего кандидата или плашку
+  changed.sort((p, q) => q.flip - p.flip); // сначала сменившие вердикт, потом лучшего кандидата
   return { total, skipped, changed };
 }
 

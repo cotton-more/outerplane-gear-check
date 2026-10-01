@@ -20,7 +20,6 @@ export interface Verdict {
   title: string;
   lines: string[];         // текст; **так** — жирным
   sections: Section[];
-  badge: string;
   foot: string;
   plan: string[];          // «Прокачка»: Enhance, Breakthrough, Transistone — что вкладывать в эту вещь
   // штамп поменяли записи экипировки (logic/worn): lower — все, кому подходит, уже носят не хуже; home — вещь уже в билде
@@ -53,4 +52,4 @@ export function bestRow(r: Verdict): { row: Row; n: number } | null {
   return sec ? { row: sec.rows[0], n: sec.count ?? sec.rows.length } : null;
 }
 
-export const emptyVerdict = (): Verdict => ({ v: 'idle', title: '', lines: [], sections: [], badge: '', foot: '', plan: [] });
+export const emptyVerdict = (): Verdict => ({ v: 'idle', title: '', lines: [], sections: [], foot: '', plan: [] });

@@ -101,7 +101,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   const onWant = (x: Variant) => {
     const on = cp!.inPlay.includes(x);
     const { [x.key]: _, ...rest } = gear.store.marks ?? {};
-    const auto = play(ctx, c, cp!.pieces, { marks: rest, tryOn: view.opts.tryOn }).inPlay.some((y) => y.key === x.key);
+    const auto = play(ctx, c, cp!.pieces, { marks: rest }).inPlay.some((y) => y.key === x.key);
     gear.set(setMark(gear.store, x.key, !on === auto ? null : !on ? 'want' : 'skip'));
   };
   // заголовок: лучше всего собран / ближе всех к сборке; «Собраны ещё»; «По статам», если ничего не начато (он живой:

@@ -84,7 +84,7 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
     const first = res.v === 'fodder' && !set ? -1 : 0;
     const flat = new Set([...FLAT].map((k) => t.verdict.flatHint(k)));
     return {
-      ...res, v: 'keep', badge: '',
+      ...res, v: 'keep',
       title: wear.t4 ? M.titleWearT4(slot, who) : M.titleWear(slot, who),
       lines: [(wear.t4 ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...own.filter((l, i) => i === first || flat.has(l))],
       plan: [wear.t4 ? M.planWear(who) : M.planReplace(who)],
@@ -95,7 +95,7 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
   const wearPlan = wear.target ? M.planWear(wear.target) : null;
   if (res.v === 'fodder') return { ...res, lines, ...(wearPlan ? { plan: [wearPlan] } : {}) };
   return {
-    ...res, v: 'fodder', badge: '',
+    ...res, v: 'fodder',
     title: M.title(t.ui.slotGen[slot], whoOf(idx, needs[0].key, t)),
     lines,
     plan: [wearPlan ?? M.plan],

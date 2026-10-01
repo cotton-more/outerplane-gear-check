@@ -286,10 +286,9 @@ describe('«собираешь»', () => {
     expect(inPlay([sp('helmet'), W(caren.builds[0].weapons[0].key, GOOD)], { marks: skip })).toEqual(['Pen', 'Def', 'Def/Immu']);
   });
 
-  it('«Не собираю» убирает вариант, даже собранный; примерка собирается и пустой', () => {
+  it('«Не собираю» убирает вариант, даже собранный', () => {
     const four = (['helmet', 'armor', 'gloves', 'shoes'] as SlotId[]).map(sp);
     expect(inPlay(four, { marks: { [buildKey(caren.id, 'Speed/Immu')]: 'skip' } })).toEqual(['Speed']);
-    expect(inPlay(four, { tryOn: buildKey(caren.id, 'Pen') })).toEqual(['Speed', 'Pen', 'Speed/Immu']);
   });
 
   it('Demiurge Luna, четыре Penetration — собираются все 5 вариантов «Pen mix» (Pen ×2 собран в каждом)', () => {
@@ -1358,14 +1357,13 @@ describe('«По статам» у каждого героя (находка 28)
       expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW)).toBeNull();
     });
 
-    it('в примерке Speed сама вещь в Speed не встаёт', () => {
+    it('с целью Speed сама вещь в Speed не встаёт', () => {
       const speed = buildKey(drakhan.id, 'Speed');
-      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR, speed), drakhan.id, HLMW, speed, EXPLICIT)).toBeNull();
+      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW, speed, EXPLICIT)).toBeNull();
     });
 
-    it('в примерке Speed «По статам» подходит — надеть можно', () => {
-      const speed = buildKey(drakhan.id, 'Speed');
-      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR, speed), drakhan.id, HLMW, statVariant(drakhan)!.key, EXPLICIT)?.useful).toBe(true);
+    it('«По статам» как цель подходит — надеть можно', () => {
+      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW, statVariant(drakhan)!.key, EXPLICIT)?.useful).toBe(true);
     });
 
     it('без полезных статов — хлам и при явном выборе (Р13)', () => {
@@ -1535,8 +1533,8 @@ describe('оружие не для класса героя (classLimits)', () =>
     expect(charVs(ctx, view, aer.id, X, undefined, EXPLICIT)).toBeNull();
   });
 
-  it('Aer, примерка Speed и примерка «По статам»: строки нет', () => {
-    const view = poolView(ctx, EMPTY_GEAR, aerSpeed);
+  it('Aer, цель Speed и цель «По статам»: строки нет', () => {
+    const view = poolView(ctx, EMPTY_GEAR);
     expect(charVs(ctx, view, aer.id, X, aerSpeed, EXPLICIT)).toBeNull();
     expect(charVs(ctx, view, aer.id, X, statVariant(aer)!.key, EXPLICIT)).toBeNull();
   });

@@ -34,7 +34,7 @@ describe('«Прокачка»: броня', () => {
 
   it('Legendary с SPD 6: «Оставить» без бейджа — ни «Топ-ролл», ни «Стоит Reforge», ни строки «Ролл»', () => {
     const r = helmet('unique', { SPD: 6, CHC: 3, CHD: 3, 'ATK%': 2 });
-    expect([r.v, r.badge]).toEqual(['keep', '']);
+    expect(r.v).toBe('keep');
     expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
   });
 
@@ -117,7 +117,6 @@ describe('«Прокачка»: оружие', () => {
   it('Legendary с SPD 6: без «Стоит Reforge» и строки «Ролл» — как есть', () => {
     const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { SPD: 6, CHC: 4, CHD: 4, 'ATK%': 4 } });
     expect(r.v).toBe('keep');
-    expect(r.badge).toBe('');
     expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
     expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
   });
@@ -131,6 +130,6 @@ describe('«Прокачка»: оружие', () => {
 
   it('временная замена — только Enhance, Reforge и Breakthrough не вкладывать, сколько бы ни было сегментов', () => {
     const plan = (n: number) => evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: n, CHC: n, CHD: n } });
-    expect([1, 3].map((n) => [plan(n).v, plan(n).plan, plan(n).badge])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.tempNoInvest], '']));
+    expect([1, 3].map((n) => [plan(n).v, plan(n).plan])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.tempNoInvest]]));
   });
 });
