@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CharDetail } from './components/chars/CharDetail';
 import { CharList } from './components/chars/CharList';
 import { EvalPanel } from './components/eval/EvalPanel';
@@ -32,7 +32,7 @@ import { dropSubs } from './logic/subs';
 import type { Build, Char, GearKind, SlotId } from './data/types';
 import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
-import { heroNote, heroOutcome, heroTarget, heroTitle, tryOnPreset, type TryOn } from './logic/tryon';
+import { heroNote, heroOutcome, heroTarget, heroTitle, noReplace, tryOnPreset, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, wearLead, withMaterial } from './logic/material';
 import { withWorn } from './logic/worn';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
@@ -109,6 +109,17 @@ export function App() {
   // «Примерить замену»: запись, которую «Надеть» заменит в любом случае (logic/pool planPut); её уже нет в пуле или она
   // другого слота — как без неё
   const replace = hero ? tryOn.value?.replace ?? null : null;
+  // replace — на одну введённую вещь (вопрос 1 (б) ревью eval-only): снимают «Следующий», load другой вещи (код,
+  // «Вернуть» формы), смена слота на форме (ниже) и «Надеть»; режим героя остаётся. tryOn.set пишет и ogc.tryon — иначе
+  // после перезапуска замена вернулась бы. Режима героя нет (обучение, X при Core Fusion) — не трогаем
+  const dropReplace = () => { if (replace && tryOn.value) tryOn.set(noReplace(tryOn.value)); };
+  // слот на форме сменили (цифры, сетка слотов, load) — это уже не та вещь: снимаем, и на прежнем слоте замены нет.
+  // Грейд, сет, сабстаты — ввод той же вещи, не снимают
+  const repSlot = replace ? gear.store.pieces[replace]?.slot : undefined;
+  useEffect(() => { if (repSlot && repSlot !== s.slot) dropReplace(); }, [repSlot, s.slot]); // eslint-disable-line react-hooks/exhaustive-deps
+  // режим героя сейчас — для «Вернуть» после «Заменить» (его колбэк создан раньше)
+  const tryNow = useRef(tryOn.value);
+  useEffect(() => { tryNow.current = tryOn.value; });
   // П9: «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
   // «Да» — на хранилище, где вещи X уже у него (logic/fusion storeFor): его строка и кнопка — по этому виду пула. Окна не
   // будет или вещи не переходят — общий вид. В обучении окон нет (fusionGate)
@@ -354,10 +365,11 @@ export function App() {
     const cur = itemInput(s);
     setVerdictOpen(false);
     dispatch({ type: 'reset' });
+    dropReplace();
     setUndo(Object.keys(cur.subs).length || cur.itemKey || cur.unlisted ? cur : null); // main и сет «Следующий» не трогает
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
   };
-  const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
+  const onUndo = () => { if (undo) { dispatch({ type: 'load', item: undo }); dropReplace(); } setUndo(null); };
   // надеть вещь с формы на персонажа (logic/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
   // стало с вытесненной, с «Вернуть». Всегда новая запись — и при такой же у него или у другого: в Оценку вводят новую
   // вещь из инвентаря, пулы независимы (В9; окна «Это шлем Rin?» нет)
@@ -387,6 +399,7 @@ export function App() {
     const was = input;
     setVerdictOpen(false);
     dispatch({ type: 'reset' });
+    dropReplace(); // записи уже нет, форма пуста — замена сделана
     setUndo(null);
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
     if (touring) return;
@@ -409,7 +422,7 @@ export function App() {
     setGearUndo({
       text, note: notes.join(' '), tab: 'eval',
       undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)),
-      after: both(both(joined, sw?.after), () => dispatch({ type: 'load', item: was })),
+      after: both(both(joined, sw?.after), () => { dispatch({ type: 'load', item: was }); backReplace(c.id, rep); }),
     });
   };
   // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote): та же линия — материал новой.
@@ -423,11 +436,22 @@ export function App() {
     return mine.filter((old) => old.id !== rep && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey))
       .map((old) => t.ui.oldMaterial(old.slot, many ? pieceLabel(old) : undefined));
   };
+  // «Вернуть» после «Заменить» из «Примерить замену» откатывает и снятие replace: запись снова в пуле, та же вещь на
+  // форме — та же кнопка «Заменить». Режим за эти секунды сменили (другой герой, своя замена, ✕) — не трогаем
+  const backReplace = (charId: string, rep: string | null) => {
+    const cur = tryNow.current;
+    if (rep && cur?.charId === charId && !cur.replace) tryOn.set({ ...cur, replace: rep });
+  };
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
   // правка в карточке вещи снимает висящее «Вернуть» любого прежнего действия (В3: одно на все): откаты возвращают
-  // запись по id, а её за эти секунды поправили или скопировали (gear updateIn, REFUTE-5)
-  const onPieceEdit = () => setGearUndo(null);
+  // запись по id, а её за эти секунды поправили или скопировали (gear updateIn, REFUTE-5). Общую запись скопировали
+  // (новый id у этого героя), а это запись replace его режима — replace идёт за копией (иначе «Заменить» пропадёт)
+  const onPieceEdit = (charId: string, was: string, now: string) => {
+    setGearUndo(null);
+    const v = tryOn.value;
+    if (now !== was && v?.charId === charId && v.replace === was) tryOn.set({ ...v, replace: now });
+  };
   // режим «для героя» из карточки персонажа (В10): «Оценить вещь для Caren» — только режим; «Собрать билд»,
   // «Примерить» (пустой слот), «Слабее всех» — ещё слот и сет на форму (build/combo — предустановка); «Примерить
   // замену» (replacing) — ещё запись from: «Надеть» заменит её в любом случае. Персонаж — в ростер (как у «Надеть»),
@@ -651,7 +675,7 @@ export function App() {
         )}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>
-            <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); setCodeOpen(false); }} />
+            <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); dropReplace(); setCodeOpen(false); }} />
           </Sheet>
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={openTours} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}

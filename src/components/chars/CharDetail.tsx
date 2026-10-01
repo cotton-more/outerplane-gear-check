@@ -29,8 +29,9 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 // view — пул (logic/pool); onTryOn — режим «для героя» с предустановкой формы по варианту этого персонажа (BuildGear; у
 // «По статам» b — его билд с именем STATS, logic/tryon); onOpenChar — карточка другого
 // персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»).
-// onPieceEdit — правка в карточке вещи: висящее «Вернуть» прежнего действия (одно на все, В3) App снимает — откаты
-// возвращают запись по id, а её поправили или скопировали (gear updateIn). onRateFor — «Оценить вещь для Caren» (режим
+// onPieceEdit — правка в карточке вещи (герой, прежний id, id после правки): висящее «Вернуть» прежнего действия (одно
+// на все, В3) App снимает — откаты возвращают запись по id, а её поправили или скопировали (gear updateIn); копия — и
+// replace режима героя переходит на неё. onRateFor — «Оценить вещь для Caren» (режим
 // «для героя» без предустановки). «Примерить замену» — onTryOn с from и replacing: «Надеть» заменит эту запись в любом
 // случае (её id — TryOn.replace); «Слабее всех» тоже отдаёт from, но только для сета на форме
 interface Props {
@@ -39,7 +40,7 @@ interface Props {
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
-  onPieceEdit?: () => void;
+  onPieceEdit?: (charId: string, was: string, now: string) => void;
   onRateFor?: (c: Char) => void;
 }
 
@@ -132,7 +133,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     if (r.st === gear.store) return;
     gear.set(r.st);
     setPieceId(r.id);
-    onPieceEdit?.();
+    onPieceEdit?.(c.id, pieceId, r.id);
   };
   // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
   const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;

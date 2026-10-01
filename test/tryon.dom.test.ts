@@ -420,3 +420,132 @@ describe('режим героя и «По статам» (находка 28)', (
     expect($('.v-off')?.textContent).toBe("Aer can't wear this item: it's for another class.");
   });
 });
+
+// Ревью eval-only, находки 2 и 3 (вопрос 1 — (б)): replace из «Примерить замену» — на одну введённую вещь. Снимают
+// «Следующий», load другой вещи, смена слота и «Надеть»; режим героя остаётся. Ввод той же вещи (сабстаты, грейд, сет)
+// не снимает. Правка общей записи в шторке (copy-on-write) — replace идёт за копией
+describe('replace — на одну введённую вещь', () => {
+  const rin = D.chars.find((c) => c.name === 'Rin')!;
+  const def = D.sets.find((s) => s.short === 'Defense')!.id;
+  type Pc = Record<string, unknown>;
+  const P = (id: string, setId: string, lit: Record<string, number>, o: Pc = {}): Pc =>
+    ({ id, slot: 'helmet', grade: 'unique', setId, itemKey: null, main: null, yellow: lit, lit, bt: 4, at: '', ...o });
+  const G = (pieces: Pc[], pools: Record<string, string[]>) =>
+    ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools });
+  const strong = P('p1', speed, { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 });
+  const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 };
+  const MID = { setId: speed, subs: { 'DEF%': 3, CHC: 3, RES: 2, HP: 1 } }; // хуже p1 — «Заменить» только из replace
+  const REPLACE = "Replace Caren's helmet";
+  // ввод сабстатов сеткой и сегментами, как игрок
+  const enter = async (subs: Record<string, number>) => {
+    for (const [k, n] of Object.entries(subs)) {
+      if (!$('.statgrid')) break; // карточка сменила сетку (хлам — сразу)
+      await click($(`.statgrid button[data-tour-item="${k}"]`));
+      const row = $$('.subrow').find((r) => r.querySelector('.subkey')?.getAttribute('data-tour-item') === k);
+      await click(row?.querySelectorAll<HTMLElement>('.roll-b button')[n - 1]);
+    }
+  };
+  const tryReplace = async () => {
+    await click(byText('.bgear-row', 'Speed Set'));
+    await click(byText('.piece-act button', 'Try a replacement'));
+  };
+
+  it('«Следующий» снимает replace: слабый шлем — без «Заменить», режим «Только для · Caren» остался', async () => {
+    await mount(onCard, MID, { gear: G([strong], { [caren.id]: ['p1'] }) });
+    await tryReplace();
+    expect($('.vc-equip')?.textContent).toBe(REPLACE);
+
+    await click($('.vb-reset'));
+    await enter(JUNK);
+
+    expect($('.vc-equip')).toBeNull();
+    expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+  });
+
+  it('«Следующий», хороший шлем другого билда: «Надеть» убирает только вытесненный, p1 из прежнего replace на месте', async () => {
+    const weakDef = P('p0', def, { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 2 }, { bt: 0 });
+    await mount(onCard, MID, { gear: G([weakDef, strong], { [caren.id]: ['p0', 'p1'] }) });
+    await tryReplace();
+    await click($('.vb-reset'));
+    await click(byText('.pick', 'Set'));
+    await click($('.set[data-tour-item="Defense"]'));
+    await enter({ 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 });
+
+    await click($('.vc-equip'));
+
+    expect(stored('gear').pools[caren.id]).toEqual(['p1', 'p3']);
+  });
+
+  it('смена слота снимает replace: на перчатках и снова на шлеме замены нет', async () => {
+    await mount(onCard, MID, { gear: G([strong], { [caren.id]: ['p1'] }) });
+    await tryReplace();
+
+    await click($('.slot[aria-label="Gloves"]'));
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+    await click($('.slot[aria-label="Helmet"]'));
+    await enter(MID.subs);
+
+    expect($('.vc-equip')).toBeNull();
+    expect($('.tryon')).toBeTruthy();
+  });
+
+  it('сабстаты, грейд и сет той же вещи replace не снимают', async () => {
+    await mount(onCard, MID, { gear: G([strong], { [caren.id]: ['p1'] }) });
+    await tryReplace();
+
+    const row = $$('.subrow').find((r) => r.querySelector('.subkey')?.getAttribute('data-tour-item') === 'HP');
+    await click(row?.querySelectorAll<HTMLElement>('.roll-b button')[1]);
+    await click($('.grade.rare'));
+    await click(byText('.pick', 'Set'));
+    await click($('.set[data-tour-item="Defense"]'));
+
+    expect(stored('item').subs.HP).toBe(2);
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+  });
+
+  it('«Вернуть» формы (вещь, которую вводили до «Примерить замену») снимает replace', async () => {
+    await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: JUNK }, { gear: G([strong], { [caren.id]: ['p1'] }) });
+    await tryReplace();
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+
+    await click($('.toast:not(.gear-toast) button'));
+
+    expect(stored('state').slot).toBe('gloves');
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+  });
+
+  it('«Заменить» снимает replace; «Вернуть» — p1 на месте и та же кнопка «Заменить»', async () => {
+    await mount(onCard, MID, { gear: G([strong], { [caren.id]: ['p1'] }) });
+    await tryReplace();
+
+    await click($('.vc-equip'));
+    expect(stored('gear').pools[caren.id]).toEqual(['p2']);
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(stored('gear').pools[caren.id]).toEqual(['p1']);
+    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+    expect($('.vc-equip')?.textContent).toBe(REPLACE);
+  });
+
+  it('общая запись (Caren и Rin): «T4» у p1 в шторке Caren — replace на её копию, «Заменить» убирает копию, у Rin p1', async () => {
+    const shared = P('p1', speed, { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }, { bt: 0 });
+    await mount(onCard, { setId: speed, subs: JUNK },
+      { gear: G([shared], { [caren.id]: ['p1'], [rin.id]: ['p1'] }), roster: [caren.id, rin.id] });
+    await tryReplace();
+    await click($('#tab-chars'));
+    await click(byText('.bgear-row', 'Speed Set'));
+
+    await click($('.piece .btchip'));
+    expect(stored('gear').pools).toEqual({ [caren.id]: ['p2'], [rin.id]: ['p1'] });
+    expect(stored('tryon')).toMatchObject({ charId: caren.id, replace: 'p2' });
+    await click($('.drawer-x'));
+    await click($('.vbar .vb-tab'));
+    expect($('.vc-equip')?.textContent).toBe(REPLACE);
+
+    await click($('.vc-equip'));
+    expect(stored('gear').pools[caren.id]).not.toContain('p2');
+    expect(stored('gear').pools[rin.id]).toEqual(['p1']);
+  });
+});

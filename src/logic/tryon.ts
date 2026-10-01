@@ -3,7 +3,9 @@
 // героя, чтобы штамп и строка не спорили. Входы — в карточке персонажа: «Оценить вещь для …», «Собрать билд»,
 // «Примерить» (пустой слот), «Слабее всех», «Примерить замену» (вещь) — они только ставят слот и сет на форму
 // (build/combo — предустановка) и включают режим героя; «Следующий» его не сбрасывает. «Примерить замену» ещё
-// запоминает запись (replace): «Надеть» заменит её в любом случае (решение владельца (а), logic/pool planPut).
+// запоминает запись (replace): «Надеть» заменит её в любом случае (решение владельца (а), logic/pool planPut). replace —
+// на одну введённую вещь (вопрос 1 (б) ревью eval-only): его снимают «Следующий», load другой вещи, смена слота и
+// «Надеть» (App), режим героя остаётся.
 import { isArmor, type Index } from '../data';
 import type { Char, SlotId } from '../data/types';
 import type { Texts } from '../i18n';
@@ -21,6 +23,11 @@ import { variantsOf, type Variant } from './variants';
 // replace — id записи его пула из «Примерить замену»; есть ли она ещё в пуле, проверяет тот, кто её использует
 // (planPut, charVs: replaceOf) — запись могли убрать и после чтения из хранилища
 export interface TryOn { charId: string; build?: string; combo?: string; replace?: string }
+// тот же режим без replace (на одну вещь — App снимает его)
+export function noReplace(t: TryOn): TryOn {
+  const { replace, ...rest } = t;
+  return rest;
+}
 // герой режима и вариант предустановки формы (heroTarget); v нет — предустановки нет
 export interface Hero { c: Char; v?: Variant }
 
