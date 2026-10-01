@@ -75,8 +75,8 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
   return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
 }
 
-// onTryOn — примерка этого варианта (App): слот и сет подставятся на форму; нет — во время обучения и у новой версии.
-// У «По статам» b — его билд (имя STATS): примерка «По статам», а не родителя.
+// onTryOn — «Примерить» у этого варианта (App): режим героя, слот и сет подставятся на форму; нет — во время обучения и у новой версии.
+// У «По статам» b — его билд (имя STATS): предустановка «По статам», а не родителя.
 // onOpenPiece — карточка вещи; onWant — переключатель «Собираю»
 export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onWant }: {
   c: Char; v: Variant; cp: CharPool; ctx: Ctx; gear: GearApi; view: PoolView;

@@ -148,16 +148,10 @@ describe('строки GEARPOOL', () => {
     expect(enUi.vsBreaksMakeTwo('Penetration', 'armor', 'gloves', subs, undefined)).toBe('Fits once the Penetration armor (DEF% 2, CHC 2) and gloves reach Breakthrough T4.');
   });
 
-  it('тост двух и трёх убранных; строка про убранную — по имени сета или предмета', () => {
+  it('тост двух и трёх убранных — по имени сета или предмета', () => {
     expect(ru.replacedMany('Caren', 'shoes', ['Speed', 'Immunity'])).toBe('Заменено: ботинки Caren — убраны прежние: Speed и Immunity.');
     expect(ru.replacedMany('Caren', 'shoes', ['Speed', 'Attack', 'Immunity'])).toBe('Заменено: ботинки Caren — убраны прежние: Speed, Attack и Immunity.');
     expect(enUi.replacedMany('Caren', 'shoes', ['Speed', 'Attack', 'Immunity'])).toBe("Replaced: Caren's boots — the old Speed, Attack and Immunity ones are removed.");
-    expect(ru.oldStill('shoes', 'Rin', 'Speed', 'Speed')).toBe('Speed-ботинки остались у Rin (в Speed).');
-    expect(ru.oldStill('armor', 'Rin', 'Speed', 'Speed')).toBe('Speed-броня осталась у Rin (в Speed).');
-    expect(ru.oldStill('weapon', 'Rin', 'Speed', 'Caracal')).toBe('Оружие Caracal осталось у Rin (в Speed).');
-    expect(ru.oldStill('shoes', 'Rin', 'Speed')).toBe('Старые остались у Rin (в Speed).');
-    expect(enUi.oldStill('shoes', 'Rin', 'Speed', 'Speed')).toBe('The Speed boots stay with Rin (in Speed).');
-    expect(enUi.oldStill('helmet', 'Rin', 'Speed')).toBe('The old helmet stays with Rin (in Speed).');
   });
 
   const ARMOR = ['helmet', 'armor', 'gloves', 'shoes'];
@@ -204,13 +198,6 @@ describe('строки GEARPOOL', () => {
     expect(ru.equipRowReplaceStarts(ru.slotAcc.helmet, 'Speed, Speed/Immu')).toBe('Заменить шлем — начнёт Speed, Speed/Immu');
     expect(enUi.equipRowReplaceCompletes(enUi.slotAcc.shoes, 'Speed')).toBe('Replace boots — completes Speed');
     expect(enUi.equipRowReplaceStarts(enUi.slotAcc.armor, 'Speed')).toBe('Replace armor — starts Speed');
-  });
-
-  it('EN: «Are these … gloves?» / «Is this … helmet?»; где стоит вещь — «In {builds} and with {chars}»', () => {
-    expect([enUi.twinTitle('gloves', 'Caren'), enUi.twinTitle('shoes', 'Caren'), enUi.twinTitle('helmet', 'Caren')])
-      .toEqual(["Are these Caren's gloves?", "Are these Caren's boots?", "Is this Caren's helmet?"]);
-    expect(enUi.gearShared(enUi.pieceWhere('Speed, Speed/Immu', 'Rin'))).toBe('In Speed, Speed/Immu and with Rin — edits change it everywhere.');
-    expect(enUi.gearShared(enUi.pieceWhere('', 'Rin, Iota'))).toBe('With Rin, Iota — edits change it everywhere.');
   });
 
   it('подпись «Собираю», когда часть собирается из пула, а раскладка её не взяла — по имени персонажа', () => {

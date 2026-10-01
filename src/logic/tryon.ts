@@ -78,7 +78,7 @@ export function tryOnPreset(view: PoolView | null, hero: Hero, slot: SlotId, fro
   return { slot, setId: part?.set ?? null };
 }
 
-// то, что говорит о варианте примерки заголовок: исход, сбор, часть связки. null — вещь варианту не подходит
+// то, что говорит об исходе героя заголовок: исход, сбор, часть связки. null — вещь варианту не подходит
 export interface TryRow { kind: string; n?: number; m?: number; part?: string; empty?: boolean } // empty — её слот пуст
 export function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
   if (!o || o.kind === 'stats') return null;
@@ -128,7 +128,7 @@ function titleWith(t: Texts, res: Verdict, c: Char, row: TryRow | null, clause: 
 
 // Исход героя для заголовка (В7, В10): главный по всем его билдам (vs — charVs(…, { explicit: true }) без only).
 // Вещь только начнёт билд (главного нет, есть «начнёт …») — лучшая строка того, что она начнёт: «Caren · Speed: сет 1
-// из 4», как прежде в примерке пустого билда
+// из 4»
 export function heroOutcome(ctx: Ctx, view: PoolView, item: ItemInput, vs: CharVs | null): Outcome | null {
   if (!vs) return null;
   if (vs.best || !vs.starts.length) return vs.best;

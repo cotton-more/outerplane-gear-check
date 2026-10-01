@@ -1,6 +1,6 @@
 // Core Fusion (правила владельца 2026-09-30). X — обычный герой, CF — Core Fusion X (fusionOf). «Есть персонаж» — он в
 // ростере или у него есть вещи в пуле. В ростере никогда нет X и CF вместе; есть CF — X неактивен: не кандидат вердикта,
-// не в «Кому надеть?» и примерке, в списке — сразу за CF с пометкой.
+// не в «Кому надеть?» и не герой режима «для героя», в списке — сразу за CF с пометкой.
 // Нормализация — при загрузке, переносе v1, импорте кода и пакетных правках ростера: есть оба — остаётся CF; все, у кого
 // есть вещи, — в ростере (Р16, normalizeStored).
 // Вещи X: у CF пусто — переходят к CF; у CF есть свои — не заменяем и не дополняем, вещи X убраны из его пула (записи,
@@ -63,7 +63,7 @@ export function normalizeStored(idx: Index, roster: readonly string[], st: GearS
 // нормализация что-то поменяла — хранилище пора переписать (Р17)
 export const changed = (n: Pick<Normalized, 'fixes' | 'added'>) => n.fixes.length > 0 || n.added.length > 0;
 
-// окно перехода (звезда, «Надеть», примерка): «Да, Core Fusion X» или «Да, X». to — кого выбрали, from — второй из пары;
+// окно перехода (звезда, «Надеть», оценка для героя): «Да, Core Fusion X» или «Да, X». to — кого выбрали, from — второй из пары;
 // в ростере — только to (на месте from), вещи from — к to. moved / had — для «Вернуть» (gearStore unfuseChar)
 export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[] }
 export function switchFusion(idx: Index, roster: readonly string[], st: GearStore, to: string): Switch | null {
@@ -79,7 +79,7 @@ export function switchFusion(idx: Index, roster: readonly string[], st: GearStor
   return { to, from, roster: list, st: { ...st, pools: { ...rest, [to]: [...had, ...moved.filter((id) => !had.includes(id))] } }, moved, had };
 }
 
-// будет ли окно перехода у героя (звезда, «Надеть», примерка): второй из пары есть — в ростере или с вещами. Его id
+// будет ли окно перехода у героя (звезда, «Надеть», оценка для героя): второй из пары есть — в ростере или с вещами. Его id
 export function gateOf(idx: Index, roster: ReadonlySet<string>, pools: GearStore['pools'], to: string): string | null {
   const from = idx.CHAR[to]?.fusionOf ?? idx.FUSED[to];
   return from && exists(roster, pools, from) ? from : null;

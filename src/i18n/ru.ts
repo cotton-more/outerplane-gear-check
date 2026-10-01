@@ -302,8 +302,7 @@ export const ru = {
     subReplace: (k: string) => `${k} — заменить`,
     subMoveTitle: (k: string, row: number) => `${k} стоит в строке ${row}: переедет сюда, а та строка освободится`,
     subMoveNote: 'Цифра у стата — строка, где он уже стоит: выберешь его — переедет сюда, а та строка освободится.',
-    subYellow: (k: string) => `Жёлтые сегменты ${k}`,
-    yellow4: '4 жёлтых — только из спецмагазинов и Dimensional Supply',
+    subYellow: (k: string) => `Сегменты ${k}`,
     segAfter: '5–6 — после Reforge',
     segCap: (max: number) => `Больше ${max} сегментов на вещи не бывает — проверь сабстаты.`,
     subRemove: (k: string) => `Убрать ${k}`,
@@ -316,7 +315,7 @@ export const ru = {
     vsNow: 'сейчас',
     vsNew: 'новая',
     vsWorn: (grade: string, bt: number | null) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : bt === 0 ? 'T0–T3' : 'T' + bt}`,
-    vsKind: { fill: 'пустой слот', eq: 'на уровне', capped: 'на уровне', worn: 'уже есть', breaks: 'ломает сет', completes: 'соберёт', stats: 'только статы', starts: 'начнёт', off: 'не по билду', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
+    vsKind: { fill: 'пустой слот', eq: 'на уровне', capped: 'на уровне', breaks: 'ломает сет', completes: 'соберёт', stats: 'только статы', starts: 'начнёт', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
     vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
     vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
       [...gained.map((x) => `+${x.key} (${x.place}-е)`), ...lost.map((x) => `−${x.key} (${x.place}-е)`)].join(' · '),
@@ -383,12 +382,6 @@ export const ru = {
     countsIn: (builds: string) => `Идёт в ${builds}.`,
     startedFilling: (build: string) => `Начал собирать ${build}.`,
     removedFrom: (name: string) => `Убрано у ${name}.`,
-    stillWith: (names: string) => `У ${names} она осталась.`,
-    // «Это шлем Caren?»
-    twinShare: (name: string) => `Она же — и у ${name}`,
-    twinShareNote: 'Одна вещь: Reforge и Breakthrough — общие, правка видна у обоих.',
-    twinOtherNote: (name: string) => `Вторая копия в инвентаре: у ${name} будет отдельная вещь.`,
-    twinFoot: 'В игре вещь носит кто-то один. Здесь — просто видно, что она нужна обоим.',
     // карточка персонажа (GEARPOOL)
     byStats: 'По статам',
     // то же имя внутри фразы («Идёт в …», «в …») — в кавычках, как в остальных строках
@@ -399,7 +392,6 @@ export const ru = {
     cdStats: (name: string) => `По статам — ни один билд пока не начат: вещи разложены по цепочке ${name}.`,
     slotOffSet: 'не из сетов билда',
     slotAlsoIn: (builds: string) => `и в ${builds}`,
-    slotAlsoWith: (names: string) => `и у ${names}`,
     incidental: (name: string) => `этого сета нет в билдах ${name}, но бонус считается`,
     bonusRow: (set: string, n: number, tier: string, bonus: string) => `${set} ×${n} · ${tier} — ${bonus}`,
     markBt: ' · отметь Breakthrough',
@@ -410,7 +402,6 @@ export const ru = {
     poolNotInRoster: (name: string, n: number) => `Вещи ${name} · ${n} — ${name} не в ростере.`,
     poolIn: (builds: string) => `в ${builds}`,
     poolEverywhere: 'во всех билдах',
-    poolWith: (names: string) => `и у ${names}`,
     poolUnused: (name: string) => `${name} больше не нужна: в билдах стоят лучше.`,
     filling: 'Собираю',
     fillingWhy: { done: '— собран', closest: '— ближе всех к сборке', prev: '— отмечен в прошлой версии', want: '', tryon: '', stats: '' } as Record<string, string>,
@@ -424,7 +415,6 @@ export const ru = {
     variantsNoteAny: 'Каждая связка собирается как отдельный билд.',
     dupOf: (build: string) => `= ${build}`,
     autoNew: (build: string, name: string) => `${build} теперь собирается сам из вещей ${name}. Не собираешь его — выключи «Собираю».`,
-    pieceRemoveAll: 'Разобрал — убрать у всех',
     pieceRemoveNote: (name: string) => `Разобрал её, пустил на Breakthrough или она не нужна ${name} — убери: билды соберутся заново.`,
     pieceNowhere: 'Ни в одном билде: в каждом стоит лучше.',
     gearNewerCode: 'Код сохранила более новая версия страницы — обнови страницу.',
@@ -455,7 +445,6 @@ export const ru = {
     equipRowReplaceCompletes: (acc: string, build: string) => `Заменить ${acc} — соберёт ${build}`,
     equipRowReplaceCloser: (acc: string, build: string, n: number, m: number) => `Заменить ${acc} — ${build}: сет ${n} из ${m}`,
     equipRowReplaceStarts: (acc: string, builds: string) => `Заменить ${acc} — начнёт ${builds}`,
-    equipRowWorn: (build: string) => `Уже есть — та же вещь в ${build}`,
     equipNote: 'Здесь — те, кому вещь встанет в билд. Не по билду — найди персонажа по имени: она встанет в «По статам».',
     equipped: (name: string, slot: string, t4 = '') => `Надето на ${name}: ${NOM[slot]}${t4}.`,
     replaced: (name: string, slot: string, t4 = '') => `Заменено: ${NOM[slot]} ${name}${t4}.`,
@@ -464,18 +453,9 @@ export const ru = {
     // «Надеть» убрало и вещи других слотов — их вытеснила новая из всех билдов (В1): what — имя сета у брони, предмета
     // у оружия и аксессуара
     prunedNote: (olds: { slot: string; what: string }[]) => `Убраны — не вошли ни в один билд: ${olds.map((o) => named(o.slot, o.what)).join(', ')}.`,
-    // what — как в oldStill: убраны 2+ — имя вместо «Старые»
+    // what — имя сета или предмета, когда убраны 2+ (replacedMany): вместо «Старые»
     oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
-    // what — имя сета или предмета, когда убраны 2+ (replacedMany): «Speed-ботинки остались…» вместо «Старые…»
-    oldStill: (slot: string, name: string, build: string, what?: string) => `${what ? named(slot, what) : cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${by(slot, 'остался', 'осталась', 'осталось', 'остались')} у ${name} (в ${build}).`,
-    sameAs: (name: string) => `Та же вещь, что у ${name}: Reforge и Breakthrough общие.`,
-    // та же вещь уже на другом персонаже (logic/gear twinElsewhere): переносим, только если игрок подтвердил
-    twinTitle: (slot: string, name: string) => `Это ${NOM[slot]} ${name}?`,
-    twinNote: (name: string, build: string) => `Такая же вещь уже у ${name} (в ${build}): совпадают слот, сет, main и жёлтые сегменты.`,
-    twinOther: 'Другая — своя',
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
-    gearShared: (where: string) => `Стоит ${where} — правка изменит везде.`,
-    pieceWhere: (builds: string, names: string) => [builds && `в ${builds}`, names && `и у ${names}`].filter(Boolean).join(' '),
     // меню ☰ и список персонажей: у кого что надето
     menuGear: (n: number) => `Экипировка · ${n}`,
     withGear: 'с экипировкой',
@@ -489,10 +469,6 @@ export const ru = {
     weakestLook: (piece: string, stats: string[]) => `Ищи ${piece} с ${stats.join(' и ')} — в примерке вердикт покажет, лучше ли она надетой.`,
     weakestTry: 'Примерить вещи',
     pieceTitle: (slot: string, name: string) => `${slot} · ${name}`,
-    pieceSegHint: 'Жёлтые — из оценки. Сделал Reforge — нажми дальше: добавятся оранжевые. Нажми на жёлтую — жёлтых станет меньше; больше — через название стата.',
-    pieceReforge: (done: number, max: number) => `Reforge: ${done} из ${max} — считаю по оранжевым сегментам`,
-    pieceNoFourth: 'У Epic первый Reforge добавляет 4-й сабстат — сначала «+ 4-й сабстат от Reforge», потом оранжевые.',
-    pieceBtUnknown: 'не указан',
     btChip: 'T4',
     btAria: 'Вещь на Breakthrough T4',
     btTitle: 'Вещь уже на T4 — бонус сета посчитается как у T4',
@@ -501,9 +477,6 @@ export const ru = {
     pieceEditNote: (name: string) => `Сделал в игре Reforge или Breakthrough — поправь сегменты и «T4»: билды соберутся заново. Transistone сменил стат — введи вещь заново и «Надеть», а эту — «Убрать у ${name}».`,
     // кнопка уровня в карточке вещи — для диктора: «5 сегментов» (жёлтых и оранжевых больше нет, Н1)
     segLabel: (n: number) => `${n} ${plural(n, 'сегмент', 'сегмента', 'сегментов')}`,
-    pieceStatHint: 'Transistone сменил стат или жёлтые отмечены не так — нажми на название стата: выбери стат и сколько у него жёлтых. Оранжевые останутся.',
-    yellowSheet: (k: string) => `Сколько жёлтых у ${k}?`,
-    yellowNote: (orange: number) => orange ? `Как сейчас в игре. Оранжевые (Reforge: ${orange}) останутся.` : 'Как сейчас в игре.',
     pieceRemove: (name: string) => `Убрать у ${name}`,
     pieceDone: 'Готово',
     gearCodeLabel: 'Экипировка — код для резервной копии и переноса на другое устройство',
@@ -686,8 +659,6 @@ export const ru = {
       `${v === 'fodder' ? 'Фоддер' : 'Разбирай'} — уже ${eq ? 'не хуже' : 'лучше'} у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
     line: '**Никого не улучшит**: всем, кому она подходит, уже надето не хуже. Сама по себе вещь неплохая.',
     stale: 'Разобрал вещь в игре — убери её в карточке персонажа, и вердикт пересчитается.',
-    keptTitle: (who: string) => `Оставляй — она уже у ${who}`,
-    kept: (who: string) => `**Уже есть**: у ${who}. Не нужна — убери её в карточке персонажа.`,
   },
 
   // --- примерка: оценка для одного персонажа и билда (logic/tryon, components/eval/TryOnStrip)
@@ -703,17 +674,13 @@ export const ru = {
       eq: `на ${name} — на уровне`,
       down: `на ${name} уже лучше`,
       breaks: `на ${name} сломает сет`,
-      worn: `уже у ${name}`,
-      off: `${name} · ${build} — не по билду`,
       completes: `у ${name} соберёт ${build}`,
       closer: `${name} · ${build}: сет ${x.n} из ${x.m}`,
       capped: `на ${name} — на уровне: ${x.part} на T4`,
       surplus: `у ${name} — сверх ${x.part}`,
-      nothing: `${name} · ${build} — ничего не даст`,
     } as Record<string, string>)[kind] ?? '',
     // «Разобрать», а ей вещь лучше надетого или слот пуст
     butWear: (kind: string, name: string) => `но ${kind === 'fill' ? `у ${name} слот пуст` : `лучше, чем на ${name}`}: надень, пока нет лучше`,
-    offBuild: (build: string, set: string | null, combos: string) => (set ? `Не по билду ${build}: ${set} в его связках нет.` : `Не по билду ${build}: ему нужны ${combos}.`),
     // оценка для героя (logic/tryon heroNote): сета вещи нет ни в одном билде героя, по статам не подходит
     offHero: (name: string, set: string) => `${name} она не нужна: ${set} нет в билдах ${name}.`,
     // примерка настоящего билда, а вещь не по нему, но с полезными статами — «Надеть» положит её в «По статам» (Р11)
@@ -775,15 +742,15 @@ export const ru = {
       prio: 'Приоритет сабстатов: › — по порядку, = — одно место, зачёркнутые на 6★ сабстатом не выпадают. По этой строке считается цепочка в вердикте.',
       builds: 'Билды собираются из вещей персонажа сами. Вещи идут во все начатые (начинает одна вещь сета или оружие из списка) и в отмеченные «Собираю».',
       gear: 'Вещи — у персонажа, а билды собираются из них сами: один Speed-шлем идёт и в Speed, и в Speed/Immu.',
-      tryOn: '«Примерить» — оценка только для этого персонажа и билда, слот и сет уже выбраны. «Надеть» — сразу ему.',
-      piece: 'Сделал в игре Reforge или Breakthrough — отметь здесь, иначе сравнение считает вещь непрокачанной.',
-      tryStrip: 'Идёт примерка: сравниваю только с этим билдом, «Надеть» — сразу ему. «Следующий» её не сбрасывает, ✕ — снова для всех.',
+      tryOn: '«Примерить» — оценка только для этого персонажа, слот и сет уже на форме. «Надеть» — сразу ему.',
+      piece: 'Сделал в игре Reforge или Breakthrough — поправь здесь сегменты и «T4», как на вещи в игре: сравнение идёт по тому, что есть.',
+      tryStrip: 'Оценка только для этого персонажа: строка карточки и «Надеть» — про него, штамп — общий. ✕ — снова для всех.',
       vs: '▲ — лучше того, что стоит в билде, ▼ — хуже; «сет 3 из 4» — билд станет ближе к сборке. Кнопка — надеть или заменить.',
-      cardEquip: 'Слот пуст, новая лучше или билд станет ближе к сборке — надень одной кнопкой под карточкой. «или — Rin» — отдать другому.',
+      cardEquip: 'Надень одной кнопкой под карточкой. Что после этого не вошло ни в один билд, уйдёт из вещей персонажа — сообщение скажет, что именно.',
       equipAll: 'Здесь — те, кому вещь встанет в билд. Не по билду, но с полезными статами — найди персонажа по имени: она встанет в его «По статам».',
       material: 'Фоддер, а не разбор: такая же вещь стоит в собираемом билде не на T4 — эта пойдёт ей в Breakthrough.',
       worn: 'Вещь неплохая, но всем, кому она подходит, уже надето не хуже — поэтому «Разобрать». Разобрал вещь в игре — убери её в карточке персонажа.',
-      pool: 'Все вещи персонажа — надетые на этого персонажа, на других или ни на ком. Билды берут из них сами. Разобрал вещь или пустил на Breakthrough — убери её здесь.',
+      pool: 'Все вещи персонажа по слотам. Разобрал вещь или пустил на Breakthrough — нажми на неё и «Убрать»: билды соберутся заново.',
       want: 'Не собираешь этот билд — выключи «Собираю»: вещи для него перестанут держать вердикт.',
       variants: 'У билда несколько связок сетов — показываю самую собранную. Другие — в чипах, «ещё N» — весь список.',
       stats: '«По статам» — все вещи персонажа по цепочке, без сетов. Вещь не по билду встаёт сюда: «Надеть на…» → поиск по имени или примерка.',
@@ -823,8 +790,8 @@ export const ru = {
         : 'Справа — вердикт: кому вещь подходит, что качать и код для гильдии. Посмотри и нажми «Дальше».',
       // тур «Экипировка» (gear.ts): на примере — Caren · Speed
       gBuild: (): string => 'Это Caren · Speed: билд собран из вещей Caren сам. У пустого слота — «Примерить». Нажми на **шлем**.',
-      gPiece: (): string => 'Прокачал вещь в игре — отметь здесь оранжевые сегменты после Reforge и Breakthrough: сравнение их учтёт. Теперь нажми **Примерить замену**.',
-      gCard: (x: StepText): string => `Идёт примерка: вещь с формы сравнивается только с Caren · Speed. ${x.narrow
+      gPiece: (): string => 'Прокачал вещь в игре — поправь сегменты и «T4» здесь. А новую на её место ищут так: нажми **Примерить замену**.',
+      gCard: (x: StepText): string => `Оценка только для Caren: карточка сравнивает вещь с формы с билдами Caren. ${x.narrow
         ? 'На карточке — насколько она лучше надетого шлема. Посмотри и нажми «Дальше».'
         : 'В вердикте справа — насколько она лучше надетого шлема. Посмотри и нажми «Дальше».'}`,
       gEquip: (): string => 'Лучше, чем на Caren, — нажми **Заменить шлем Caren**: новый встанет в билд, а старый — такой же Speed-шлем — пойдёт ему на Breakthrough.',

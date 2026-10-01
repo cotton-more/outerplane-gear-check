@@ -20,8 +20,8 @@ export interface Piece {
   itemKey: string | null;
   main: string | null;
   unlisted?: boolean;
-  yellow: Subs;       // жёлтые сегменты — из оценки, 1…4
-  lit: Subs;          // горит всего, жёлтые и оранжевые: yellow…6
+  yellow: Subs;       // тот же уровень, но не выше 4 (newPiece, updateIn): для хранилища и старой вкладки; сравнение не читает
+  lit: Subs;          // уровень сабстата 1…6 — сколько горит в игре (жёлтые и оранжевые вместе); по нему сравнение
   bt: Bt | null;      // Breakthrough; null — не указан (запись тех пор, когда форма его не знала, — в игре может быть любым)
   at: string;         // когда надета или изменена, YYYY-MM-DD
 }

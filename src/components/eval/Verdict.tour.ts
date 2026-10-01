@@ -3,12 +3,13 @@
 // потому что всем, кому она подходит, уже надето не хуже (logic/worn). rev 2 у cardEquip и worn — GEARPOOL:
 // «или — Rin», вещь убирают в карточке персонажа; rev 3 у cardEquip — кнопка только у держащего исхода, где вещь
 // встаёт, или «начнёт», а «Заменить» — только когда «Надеть» уберёт вещь её слота (Р4, Р7); rev 2 у material — «Фоддер» по вещи
-// в собираемом билде, а не «надетой»
+// в собираемом билде, а не «надетой»; rev 4 у cardEquip — «Оценка — единственный ввод»: после «Надеть» что не вошло ни в
+// один билд, уходит из вещей персонажа (В1), сообщение называет
 import { defineTips } from '../../tour/types';
 
 export default defineTips(
   { id: 'temp', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.verdict.v === 'temp' },
-  { id: 'cardEquip', rev: 3, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
+  { id: 'cardEquip', rev: 4, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
   { id: 'material', rev: 2, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.material },
   { id: 'worn', rev: 2, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
 );

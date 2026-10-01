@@ -82,13 +82,13 @@ export function App() {
   // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
   // Вещь — материал Breakthrough для надетой не на T4: «Разобрать» поднимается до «Фоддер» (logic/material)
   const realGear = useGear(idx, !touring);
-  // тур «Экипировка» — на примере (src/tour/gear.ts): своя экипировка и своя примерка в памяти, записи игрока не трогаются.
+  // тур «Экипировка» — на примере (src/tour/gear.ts): своя экипировка и свой режим героя в памяти, записи игрока не трогаются.
   // Другие туры — на пустой экипировке: запись ничего не делает (она легла бы из пустого стора поверх вещей игрока)
   const [demo, setDemo] = useState<{ store: GearStore; tryOn: TryOn | null } | null>(null);
   const gear: GearApi = useMemo(() => (demo
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
     : touring ? { ...realGear, set: () => {} } : realGear), [demo, realGear, touring]);
-  // Core Fusion (logic/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и примерке
+  // Core Fusion (logic/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и не герой режима «для героя»
   const off = useMemo(() => replacedX(idx, roster, gear.store.pools), [idx, roster, gear.store.pools]);
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off), [idx, s.settings, roster, t, off]);
   // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
@@ -230,7 +230,7 @@ export function App() {
       : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
     setGearUndo({ text: fixesNote(r.fixes), note: keptNote, tab: 'chars', undo, after: rosterBack(prev, r.roster) });
   };
-  // окна перехода (в): звезда, «Надеть», примерка на CF, когда есть X (или на X, когда есть CF). then — действие после «Да»
+  // окна перехода (в): звезда, «Надеть», «Оценить вещь для» CF, когда есть X (или на X, когда есть CF). then — действие после «Да»
   // на хранилище после перехода; нет конфликта — false, действие идёт сразу. В обучении окон нет — как пакетное
   type Switched = { st: GearStore; note: string; undo: (st: GearStore) => GearStore; after?: () => void };
   const [fusionAsk, setFusionAsk] = useState<{ to: string; from: string; n: number; then?: (sw: Switched) => void } | null>(null);
@@ -494,8 +494,8 @@ export function App() {
     setDemo(d ? { store: d.store, tryOn: null } : null);
     if (d) dispatch({ type: 'openChar', id: d.c.id, reveal: 'keep' });
   }, [idx, dispatch]);
-  // шаги тура «Экипировка». Карточка вещи — снова Caren, если её карточку закрыли. «Примерка» — на форму вещь примера
-  // (вводить ничего не нужно) и примерка примера, если шаги 1–2 прошли «Дальше»: иначе шаги 3–5 говорили бы о том,
+  // шаги тура «Экипировка». Карточка вещи — снова Caren, если её карточку закрыли. «Оценка для Caren» — на форму вещь
+  // примера (вводить ничего не нужно) и режим героя примера, если шаги 1–2 прошли «Дальше»: иначе шаги 3–5 говорили бы о том,
   // чего на экране нет
   const onTourStep = useCallback((id: TourId, step: StepId) => {
     const d = id === 'gear' ? gearDemo(idx) : null;

@@ -79,7 +79,7 @@ export function lookFor(ctx: Ctx, c: Char, b: Build, p: Piece, max = 2): string[
 export const itemValue = (ctx: Ctx, c: Char, b: Build, item: ItemInput): number => value(ctx, c, b, item).v;
 
 // может ли персонаж надеть вещь: у оружия и аксессуара из списка бывает класс (classLimits) — как в вердикте (evalGear).
-// Нельзя — вещь ему не кандидат нигде: ни в билде, ни в «По статам», ни в примерке, и билд она не начинает (fit — «нет»,
+// Нельзя — вещь ему не кандидат нигде: ни в билде, ни в «По статам», ни в режиме героя, и билд она не начинает (fit — «нет»,
 // сборка её не видит — pool entriesFor, исхода нет — pool outcomeFor)
 export function wearable(ctx: Ctx, c: Char, item: Pick<ItemInput, 'slot' | 'itemKey'>): boolean {
   if (isArmor(item.slot) || !item.itemKey) return true;
