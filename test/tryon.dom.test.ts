@@ -175,7 +175,7 @@ describe('режим «для героя»', () => {
   it('сета нет в её билдах, а по статам подходит: строка про «По статам» под карточкой и «Надеть на Caren»', async () => {
     const atk = D.sets.find((s) => s.short === 'Attack')!.id;
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: atk, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } }, { tryon: { charId: caren.id, build: 'Speed' } });
-    const fits = `It fits Caren by stats — "Equip" puts it in "By stats".`;
+    const fits = `It fits Caren by stats — it goes into "By stats".`;
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
     expect($('.vc-note')?.textContent).toBe(fits);
     await click($('.vcard'));
@@ -376,7 +376,7 @@ describe('режим героя и «По статам» (находка 28)', (
     await mount({ slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear: EMPTY, tryon: { charId: drakhan.id, build: 'Speed' } });
     expect($('.vcard .vc-title')?.textContent).toContain(`${drakhan.name}'s slot is empty`);
     await click($('.vcard'));
-    expect($('.v-off')?.textContent).toBe(`It fits ${drakhan.name} by stats — "Equip" puts it in "By stats".`);
+    expect($('.v-off')?.textContent).toBe(`It fits ${drakhan.name} by stats — it goes into "By stats".`);
     await click($('.vs-act'));
     expect(stored('gear').pools[drakhan.id]).toHaveLength(1);
     expect(stored('gear').marks ?? {}).toEqual({});

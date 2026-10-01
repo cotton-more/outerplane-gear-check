@@ -309,6 +309,16 @@ describe('режим «для героя»: строка под карточко
     expect(noteOf(good)).toBe(ru.tryon.offStats('Caren'));
   });
 
+  // находка 5 ревью eval-only (вопрос 8): под строкой бывает и «Заменить {слот} X» — название кнопки в ней не нужно
+  it('строка «По статам» не называет кнопку: без «Надеть» и «Equip»', () => {
+    const good = armor('helmet', 'Attack', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
+
+    const notes = [noteOf(good), noteOf(good, EMPTY_GEAR, TEXTS.en)];
+
+    expect(notes).toEqual([ru.tryon.offStats('Caren'), TEXTS.en.tryon.offStats('Caren')]);
+    expect(notes.filter((n) => /Надеть|Equip/.test(n ?? ''))).toEqual([]);
+  });
+
   it('вещь её сета — строки нет: что с ней, говорит заголовок', () => {
     expect(noteOf(NEW)).toBeNull();
   });

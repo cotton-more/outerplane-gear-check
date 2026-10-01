@@ -125,9 +125,9 @@ describe('«Надеть» и «Вернуть»', () => {
   });
 
   // шаг 4 (В1): «Надеть» убрало вещь другого слота — заголовок про её слот («On … : gloves»), убранная — строкой
-  // prunedNote; «Вернуть» — пул как был, в том же порядке. Bell Cranel, Augm Attack: Augmentation-перчатки
+  // prunedNote (без перечня, вопрос 6); «Вернуть» — пул как был, в том же порядке. Bell Cranel, Augm Attack: Augmentation-перчатки
   // переставляют сет в шлем и перчатки, Augmentation-ботинки (Epic) не входят ни в один билд
-  it('«Надеть» Augmentation-перчаток Bell Cranel: тост «Removed — not in any build: Augmentation boots.», «Вернуть» — всё назад', async () => {
+  it('«Надеть» Augmentation-перчаток Bell Cranel: тост «Extras removed — not in any build.», «Вернуть» — всё назад', async () => {
     const bell = char('Bell Cranel');
     const ps = [
       P('p1', 'gloves', speed, { HP: 3, ATK: 1, CHC: 2, CHD: 2 }), P('p2', 'helmet', set('Augmentation'), { EFF: 2, CHD: 3, HP: 2, 'DMG RED%': 1 }),
@@ -142,7 +142,7 @@ describe('«Надеть» и «Вернуть»', () => {
     await click(byText('.equip-row', 'Bell Cranel') as HTMLElement);
 
     expect($('.gear-toast')?.textContent).toContain('On Bell Cranel: gloves.');
-    expect($('.gear-toast small')?.textContent).toContain('Removed — not in any build: Augmentation boots.');
+    expect($('.gear-toast small')?.textContent).toContain('Extras removed — not in any build.');
     expect(stored().pools[bell.id]).toEqual(['p1', 'p2', 'p4', 'p5', 'p6']);
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools[bell.id]).toEqual(pool);
@@ -150,7 +150,7 @@ describe('«Надеть» и «Вернуть»', () => {
   });
 
   // шаг 10 (В4): нажата «T4» — «· T4» в подписи кнопки («Кому надеть?» тоже) и в сообщении; чистка (В1) — как без неё
-  it('«Надеть» Augmentation-перчаток Bell Cranel с «T4»: «· T4» в подписи и сообщении, «Removed — …», «Вернуть»', async () => {
+  it('«Надеть» Augmentation-перчаток Bell Cranel с «T4»: «· T4» в подписи и сообщении, «Extras removed — …», «Вернуть»', async () => {
     const bell = char('Bell Cranel');
     const ps = [
       P('p1', 'gloves', speed, { HP: 3, ATK: 1, CHC: 2, CHD: 2 }), P('p2', 'helmet', set('Augmentation'), { EFF: 2, CHD: 3, HP: 2, 'DMG RED%': 1 }),
@@ -165,7 +165,7 @@ describe('«Надеть» и «Вернуть»', () => {
     await click(byText('.equip-row', 'Bell Cranel') as HTMLElement);
 
     expect($('.gear-toast')?.textContent).toContain('On Bell Cranel: gloves · T4.');
-    expect($('.gear-toast small')?.textContent).toContain('Removed — not in any build: Augmentation boots.');
+    expect($('.gear-toast small')?.textContent).toContain('Extras removed — not in any build.');
     expect(stored().pieces.p6.bt).toBe(4);
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools[bell.id]).toEqual(pool);

@@ -47,6 +47,16 @@ describe('Epic-броня: решают главные статы (1–2 сту�
     expect(attackHelmet('rare', { CHC: 3, 'ATK%': 2, RES: 1 }).v).toBe('keep');
   });
 
+  // находка 8 ревью eval-only (вопрос 10): «из 6» врало при 7+ сегментах — число без предела
+  it('строка «оба главных стата» — число сегментов без «из 6»', () => {
+    const r = attackHelmet('rare', { CHC: 3, 'ATK%': 3, RES: 1 });
+
+    const line = r.lines.find((l) => l.includes('оба главных стата'));
+
+    expect(line).toBeDefined();
+    expect(line).not.toContain('из 6');
+  });
+
   it('два главных стата со слабым роллом и ненужный третий — в разбор', () => {
     expect(attackHelmet('rare', { CHC: 2, 'ATK%': 2, RES: 1 }).v).toBe('junk');
   });

@@ -76,9 +76,9 @@ assembly before "Equip" and in none after it, "By stats" included. If the piece 
 on the card they get a "no longer needs it" line and "Remove from Caren".
 
 After "Equip" the message says where the piece went ("Counts in Speed, Speed/Immu") and which build it started
-("Started filling Speed"); after "Replace" — that the old one can feed the new one's Breakthrough. Every removed piece
-is named: "Replaced: Caren's boots — the old Speed and Immunity ones are removed.", "Removed — not in any build: Speed
-gloves.". After "Equip" the form clears as on "Next": slot, grade and set stay. "Undo" (8 seconds) puts everything back,
+("Started filling Speed"); after "Replace" — that the old one can feed the new one's Breakthrough. What was removed —
+there too: "Replaced: Caren's boots — the old Speed and Immunity ones are removed.", "Extras removed — not in any
+build.". After "Equip" the form clears as on "Next": slot, grade and set stay. "Undo" (8 seconds) puts everything back,
 the piece onto the form too. The app never offers the removed piece to other characters: take it off in the game and
 check it like a new one.
 
@@ -98,11 +98,11 @@ Above the form — the **"Only for · Caren ✕"** strip. While it's there: the 
 mode; ✕ — everyone again. The title after " — " talks about others and about this character: "completes Speed/Immu on
 Caren", "Caren · Speed/Immu: set 3 of 4", "on Caren — on par: Speed ×2 at T4". The piece's set is in none of Caren's
 builds — the line "Caren doesn't need it: Attack isn't in Caren's builds.". With useful stats — "It fits Caren by stats
-— "Equip" puts it in "By stats"." and the "Equip on Caren" button; without them — "This piece gives Caren nothing: no
+— it goes into "By stats"." and the "Equip on Caren" button; without them — "This piece gives Caren nothing: no
 useful stats." and it can't be equipped.
 
 **"Try a replacement"** on a piece — the "Replace" button is always there and removes exactly that piece, whether the new
-one is better or worse.
+one is better or worse — for the piece you enter next; "Next" drops the replacement.
 
 ## On the character card
 
@@ -181,7 +181,8 @@ you don't fill" or "— it starts filling". For weapons and accessories the pass
   same item and grade) sits below T4 in a build a character is filling: "…worn below T4 — helmet on Caren · Speed" (an old record at
   T1–T3 — "helmet on Caren · Speed — T2, 2 more to T4"). If the new one beats it — **"Keep — better than the helmet on Caren: wear it and feed the
   old one to it"**; the new one already at T4 — "…: wear it". An exact copy of the worn one: that one below T4 —
-  "Fodder", at T4 — "Dismantle — already as good".
+  "Fodder", at T4 — "Dismantle — already as good". "Maybe" with the same piece worn below T4: the new one beats it —
+  also "Keep — better than the…", otherwise the stamp stays, with a "Material: …" line.
 
 Dismantled a piece in the game? Remove it on the character card and the verdict follows.
 

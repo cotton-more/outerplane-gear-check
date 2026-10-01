@@ -406,7 +406,8 @@ export function App() {
     const used = usedFor(st, c.id, r.id);
     // «· T4» — нажата «T4» на форме (В4): с каким Breakthrough вещь легла в пул
     const t4 = input.bt === 4 ? t.ui.withT4 : '';
-    // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote.
+    // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote (без
+    // перечня, вопрос 6).
     // Убраны 2+ вещи её слота — назвать каждую: «Заменено: ботинки Caren — убраны прежние: Speed и Immunity.»
     const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
     const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
@@ -415,9 +416,8 @@ export function App() {
     // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке)
     if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
     notes.push(...removedNotes(r, mine, rep));
-    // «Убраны — не вошли ни в один билд: Speed-перчатки, Immunity-ботинки.» — одно имя на сет и слот
-    const names = [...new Map(pruned.map((p) => [`${p.slot}\u0000${pieceLabel(p)}`, { slot: p.slot, what: pieceLabel(p) }])).values()];
-    if (names.length) notes.push(t.ui.prunedNote(names));
+    // вопрос 6: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
+    if (pruned.length) notes.push(t.ui.prunedNote);
     if (sw) notes.push(sw.note);
     setGearUndo({
       text, note: notes.join(' '), tab: 'eval',
