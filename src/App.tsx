@@ -33,7 +33,7 @@ import type { Build, Char, GearKind, SlotId } from './data/types';
 import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
 import { heroNote, heroOutcome, heroTarget, heroTitle, tryOnPreset, type TryOn } from './logic/tryon';
-import { betterThanWorn, materialFor, withMaterial } from './logic/material';
+import { betterThanWorn, materialFor, wearLead, withMaterial } from './logic/material';
 import { withWorn } from './logic/worn';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
@@ -154,7 +154,11 @@ export function App() {
     // «Оставляй — лучше надетой такой же» (logic/material): её владельцы — тоже, даже не кандидаты вердикта (сырой —
     // «Разобрать», секций нет): совет «надень её» — с кнопкой
     const wearers = mat.wear.up.map((n) => idx.CHAR[n.key.slice(0, n.key.indexOf('/'))]).filter((c) => c && !chars.includes(c));
-    return charsVs(ctx, viewOf, input, [...new Set(wearers), ...chars]);
+    const list = charsVs(ctx, viewOf, input, [...new Set(wearers), ...chars]);
+    // герой из заголовка «Оставляй — лучше надетой … X» — первой карточкой: кнопка под ней — про него; прочие — как были
+    const lead = wearLead(worn, mat.wear);
+    const i = lead ? list.findIndex((x) => x.c.id === lead) : -1;
+    return i > 0 ? [list[i], ...list.filter((_, j) => j !== i)] : list;
   }, [ctx, viewOf, raw, worn, verdict, hero, heroVs, gear.store, roster, mat, idx]); // eslint-disable-line react-hooks/exhaustive-deps
   // режим героя: строка про героя (logic/tryon heroNote) — не носит, не нужна («Attack нет в билдах Caren»), «По статам»
   // с «Надеть», ничего не даст (и тогда, когда есть только кнопка «Заменить» из «Примерить замену»)

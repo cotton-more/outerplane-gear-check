@@ -433,6 +433,31 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     expect($('.vc-equip')?.textContent).toBe(`Replace Anarky's armor${t4 ? ' · T4' : ''}`);
   });
 
+  // находка 1 ревью eval-only: сырой «Спорно» (Gnosis Viella не из ростера) — было «Maybe — Not for yours…» над
+  // карточкой Bryn ▲ с «Заменить»; Bryn носит в Speed Epic-перчатки ниже T4, новые лучше
+  it('«Спорно» и новая лучше надетой такой же ниже T4 — штамп «Keep» над карточкой Bryn с «Заменить»', async () => {
+    const bryn = char('Bryn');
+    const pcs = [P('b1', 'gloves', speed, { 'DMG RED%': 3, 'DEF%': 2, SPD: 1 }, { grade: 'rare', bt: 0 })];
+    await mount({ slot: 'gloves', grade: 'rare', rosterOnly: true }, { setId: speed, subs: { 'HP%': 4, 'DMG UP%': 3, CHC: 1 } },
+      { gear: G(pcs, { [bryn.id]: ['b1'] }, { marks: { [`${bryn.id}/Speed`]: 'want' } }), roster: [bryn.id] });
+    expect($('.vcard .stamp')?.textContent).toBe('Keep');
+    expect($('.vcard .vc-title')?.textContent).toBe('better than the gloves on Bryn · Speed: wear it and feed the old one to it');
+    expect($('.vc-equip')?.textContent).toBe("Replace Bryn's gloves");
+  });
+
+  // находка 4 ревью eval-only: заголовок называет первого из тех, кто носит слабее такую же (больше ступеней до T4 —
+  // Ais, T1), а «Сейчас на персонажах» сортирует по выигрышу — первой была Ame (T2). Теперь первая карточка — герой заголовка
+  it('двое носят слабее такие же ниже T4 — имя в заголовке = имя на первой карточке и в её кнопке', async () => {
+    const ais = char('Ais Wallenstein'), ame = char('Ame'), pen = set('Penetration');
+    const pcs = [P('s1', 'shoes', pen, { 'HP%': 3, 'DEF%': 1, CHD: 3 }, { grade: 'rare', bt: 1 }),
+      P('s2', 'shoes', pen, { DEF: 1, EFF: 4, 'DEF%': 3 }, { grade: 'rare', bt: 2 })];
+    await mount({ slot: 'shoes', grade: 'rare', rosterOnly: true }, { setId: pen, subs: { ATK: 2, CHD: 2, EFF: 1 }, t4: true },
+      { gear: G(pcs, { [ais.id]: ['s1'], [ame.id]: ['s2'] }, { marks: { [`${ais.id}/Penetration`]: 'want', [`${ame.id}/Penetration`]: 'want' } }), roster: [ais.id, ame.id] });
+    expect($('.vcard .vc-title')?.textContent).toBe('better than the boots on Ais Wallenstein · Penetration: wear it');
+    expect($('.vcard .vc-vs')?.textContent).toContain('Ais Wallenstein');
+    expect($('.vc-equip')?.textContent).toBe("Replace Ais Wallenstein's boots · T4");
+  });
+
   // было (гипотеза b, B1-правило): штамп понижен, а в «Сейчас на персонажах» — «Заменить шлем Caren», в «Кому надеть?» —
   // строка. Р4 это правило заменил
   it('«на уровне» (штамп понижен): кнопки нет, строка сравнения есть; в «Кому надеть?» Caren нет', async () => {

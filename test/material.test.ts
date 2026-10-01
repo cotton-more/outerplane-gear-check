@@ -253,6 +253,60 @@ describe('материал Breakthrough для надетой', () => {
     });
   });
 
+  // находка 1 ревью eval-only: сырой «Спорно» у брони — «Разобрать» для ростера, поднятый ради тех, кого в нём нет.
+  // Bryn (ростер — только она) носит в Speed Epic-перчатки ниже T4 (с формы без «T4», bt 0)
+  describe('«Спорно»: лучше надетой — «Оставляй», материал — строка, штамп тот же', () => {
+    const bryn = D.chars.find((c) => c.name === 'Bryn')!;
+    const only = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([bryn.id]), ru);
+    const gloves = (subs: Record<string, number>, bt: 0 | 4 = 0): ItemInput => ({ slot: 'gloves', grade: 'rare', setId: speed, itemKey: null, main: null, subs, bt });
+    const OLD = gloves({ 'DMG RED%': 3, 'DEF%': 2, SPD: 1 });
+    const st = putOn(only, { ...EMPTY_GEAR, marks: { [`${bryn.id}/Speed`]: 'want' } }, bryn.id, OLD).st;
+    const judgeMaybe = (item: ItemInput) => {
+      const view = poolView(only, st), needs = materialFor(view, item);
+      return withMaterial(idx, ru, evaluate(only, item), needs, { up: betterThanWorn(only, view, item, needs), target: null, t4: item.bt === 4 });
+    };
+    const BETTER = { 'HP%': 4, 'DMG UP%': 3, CHC: 1 };
+
+    it('новая лучше надетой без «T4» — «Оставляй — лучше надетых перчаток Bryn · Speed: надень её, а старую — ей в Breakthrough»', () => {
+      expect(evaluate(only, gloves(BETTER)).v).toBe('maybe');
+
+      const r = judgeMaybe(gloves(BETTER));
+
+      expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетых перчаток Bryn · Speed: надень её, а старую — ей в Breakthrough' });
+      expect(r.lines[0]).toBe(ru.material.lineWear('перчатки Bryn · Speed'));
+      expect(r.plan).toEqual([ru.material.planReplace('Bryn · Speed')]);
+    });
+
+    it('новая на T4 — «Оставляй — … надень её» без хвоста про Breakthrough', () => {
+      const r = judgeMaybe(gloves(BETTER, 4));
+
+      expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетых перчаток Bryn · Speed: надень её' });
+      expect(r.lines[0]).toBe(ru.material.lineWearT4('перчатки Bryn · Speed'));
+      expect(r.plan).toEqual([ru.material.planWear('Bryn · Speed')]);
+    });
+
+    it('первая строка «Спорно» (кому из тех, кого нет в ростере, она «Оставить») — сразу после «Лучше надетой»', () => {
+      const raw = evaluate(only, gloves(BETTER));
+      expect(raw.lines[0]).toMatch(/^Для персонажей не из ростера это «Оставить»/);
+
+      expect(judgeMaybe(gloves(BETTER)).lines.slice(1)).toEqual([raw.lines[0]]);
+    });
+
+    it('копия надетой (не лучше) — штамп и заголовок «Спорно» те же, вторая строка — «Материал»', () => {
+      const raw = evaluate(only, OLD);
+      expect(raw.v).toBe('maybe');
+
+      const r = judgeMaybe(OLD);
+
+      expect(r).toMatchObject({ v: 'maybe', title: raw.title, plan: raw.plan });
+      expect(r.lines).toEqual([raw.lines[0], ru.material.line('перчатки Bryn · Speed'), ...raw.lines.slice(1)]);
+    });
+  });
+
+  it('RU «Лучше надетой» кончается точкой, как EN и «на T4»', () => {
+    expect([ru.material.lineWear('x'), ru.material.lineWearT4('x'), TEXTS.en.material.lineWear('x')].map((l) => l.at(-1))).toEqual(['.', '.', '.']);
+  });
+
   it('оружие: тот же предмет — материал; Epic без предмета — никогда', () => {
     const w = caren.builds[0].weapons[0];
     const weapon: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: w.key, main: w.mains[0], subs: { HP: 1 } };
