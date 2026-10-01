@@ -29,7 +29,8 @@ export function gearDemo(idx: Index): GearDemo | null {
     p3: piece('p3', 'gloves', 'rare', { 'DEF%': 2, CHC: 1, SPD: 2 }, { 'DEF%': 2, CHC: 1, SPD: 2 }, 1),
   };
   const store: GearStore = { v: 2, seq: 3, pieces, pools: { [c.id]: ['p1', 'p2', 'p3'] }, marks: { [buildKey(c.id, b.name)]: 'want' } };
-  const item: ItemInput = { slot: 'helmet', grade: 'unique', setId: set.id, itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
+  // сравнение — как есть (уровень надетой — lit): новый лучше на ~31%
+  const item: ItemInput = { slot: 'helmet', grade: 'unique', setId: set.id, itemKey: null, main: null, subs: { 'DEF%': 3, CHC: 3, CHD: 3, HP: 1 } };
   return { c, b, store, item };
 }
 

@@ -160,7 +160,11 @@ describe('что удерживает штамп', () => {
         v: 2, seq: pcs.length, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [kappa.id]: pcs.map((p) => p.id) },
         marks: { [buildKey(kappa.id, 'Swift Defense')]: 'want', [buildKey(kappa.id, 'Swift Counter')]: 'want' },
       };
-      const boots = piece('shoes', 'Speed', { 'DMG UP%': 1, 'DEF%': 3, CHD: 1, DEF: 3 });
+      // иначе («как есть», Н3): прежние ботинки DMG UP% 1 / DEF% 3 / CHD 1 / DEF 3 стали «только статы» — их понижение
+      // пропускает само; эти дают «на уровне», как прежние до «как есть». Строка «начнёт Speed» («ближе», вещь встаёт)
+      // держит штамп и без П1 — так было и на 8108e0c: вещь сета связки, которая начинает вариант, всегда встаёт в его
+      // сборку (hard или soft растёт), и её исход держит. Тест сторожит итог, а не одно правило П1
+      const boots = piece('shoes', 'Speed', { CHC: 2, CHD: 3, DEF: 3, 'DEF%': 3 });
       const o = outcomeFor(ctx, poolView(ctx, st), kappa.id, boots)!;
       expect(o.starts.map((v) => v.name)).toEqual(['Speed']);
       expect(o.rows.filter((r) => !r.entering).map((r) => r.kind)).toEqual(['eq', 'eq']);
@@ -248,6 +252,47 @@ describe('что удерживает штамп', () => {
   });
 });
 
+// Понижение — как есть (Н3, решение владельца 2026-10-01: В-А1 (г) отменён): Reforge впереди не закладываем ни у
+// новой, ни у вещей героя — Reforge делают в игре, а сегменты записи правят в приложении
+describe('понижение — как есть', () => {
+  const ctx = ctxOf([caren]);
+  const rec = (yellow: Record<string, number>, lit = yellow): GearStore => {
+    const p = { id: 'p1', slot: 'helmet' as const, grade: 'unique' as const, setId: set('Speed'), itemKey: null, main: null, yellow, lit, bt: null, at: '' };
+    return { v: 2, seq: 1, pieces: { p1: p }, pools: { [caren.id]: ['p1'] } };
+  };
+
+  it('свежая против прокачанной надетой (DEF% 6): та — как есть, новая хуже — «Фоддер — уже лучше у Caren» (было «уже не хуже»: новой 6 Reforge впереди, надетой 1)', () => {
+    // жёлтые записи другие, чем у новой: иначе это «она же» (samePiece по жёлтым — до шага 3)
+    const st = rec({ 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { 'DEF%': 6, CHC: 3, CHD: 3, SPD: 2 });
+    const x = helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 });
+    expect(evaluate(ctx, x, { gamble: false }).v).toBe('keep');
+
+    const r = judge(ctx, x, st);
+
+    const worn = 6 + 3 * 0.8 + 3 * 0.65 + 2 * 0.5, next = 3 + 3 * 0.8 + 3 * 0.65 + 2 * 0.5; // веса цепочки Caren
+    expect(rowOf(ctx, st, caren, x, 'Speed')?.pair?.delta).toBeCloseTo(next / worn - 1, 6);
+    expect(r).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже лучше у Caren' });
+  });
+
+  it('свежая против свежей: по сегментам как есть — два сильных стата у Caren весят больше четырёх средних', () => {
+    // было «Оставить»: Reforge впереди доставался каждому полезному, у новой их четыре, у Caren два — новая «лучше»
+    const st = rec({ 'DEF%': 4, CHC: 4, RES: 1, EFF: 1 });
+    const x = helmet({ 'DEF%': 3, CHC: 2, CHD: 2, SPD: 2 });
+    expect(evaluate(ctx, x, { gamble: false }).v).toBe('keep');
+
+    expect(rowOf(ctx, st, caren, x, 'Speed')?.kind).toBe('eq');
+    expect(judge(ctx, x, st)).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже не хуже у Caren' });
+  });
+
+  it('свежая против свежей, новая лучше как есть — «Оставить»', () => {
+    const st = rec({ 'DEF%': 2, CHC: 2, RES: 1, EFF: 1 });
+    const x = helmet({ 'DEF%': 3, CHC: 2, CHD: 2, SPD: 2 });
+
+    expect(rowOf(ctx, st, caren, x, 'Speed')?.kind).toBe('up');
+    expect(judge(ctx, x, st).v).toBe('keep');
+  });
+});
+
 describe('примерка и материал держат штамп', () => {
   const ctx = ctxOf([caren]);
   const res = evaluate(ctx, EPIC, { gamble: false });
@@ -304,10 +349,12 @@ describe('вещь введена не вся — не понижаем', () => 
   const ctx = ctxOf([caren]);
   const epicOn = on(EMPTY_GEAR, caren, helmet({ 'DEF%': 3, CHC: 2, CHD: 2 }, 'rare'));
 
-  it('Epic 2 из 3 — «Оставить» по двум главным статам, у Caren чуть лучше: штамп тот же', () => {
+  it('Epic 2 из 3 — «Оставить» по двум главным статам, у Caren не хуже: штамп тот же', () => {
     const two = helmet({ 'DEF%': 3, CHC: 3 }, 'rare');
     expect(evaluate(ctx, two, { gamble: false }).v).toBe('keep');
-    expect(rowOf(ctx, epicOn, caren, two, 'Speed')?.kind).toBe('down');
+    // иначе («как есть», Н3): было «хуже» — у Caren три сабстата, и Reforge впереди доставался трём; как есть 3/3
+    // против 3/2/2 — «на уровне» (−8%), штамп так же не держит
+    expect(rowOf(ctx, epicOn, caren, two, 'Speed')?.kind).toBe('eq');
     const r = judge(ctx, two, epicOn);
     expect(r.v).toBe('keep');
     expect(r.worn).toBeUndefined();

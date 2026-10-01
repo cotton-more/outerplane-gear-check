@@ -1,21 +1,22 @@
 // Ценность вещи для билда и сравнение пары вещей в одном слоте — основа сборки из пула (logic/pool) и раздела
-// «Сейчас на персонажах». Ценность вещи для билда — полезные сегменты с весом места в цепочке, с учётом Reforge, которые ещё впереди:
-// каждый добавляет сегмент случайному из четырёх сабстатов. Так прокачанная вещь честно сравнивается со свежей.
+// «Сейчас на персонажах», штампа по вещам персонажей (logic/worn). Ценность вещи для билда — полезные сегменты с весом
+// места в цепочке, как есть (Н3): вещи сравниваются такими, какие они сейчас, Reforge впереди нигде не считаем —
+// его делают в игре, а сегменты записи правят в приложении. Уровень записи — сколько горит (gear pieceInput, lit).
 import { isArmor } from '../data';
 import type { Build, Char, GearKind } from '../data/types';
 import { CFG } from '../config';
 import { combosWith, gearList, slotMains } from './builds';
 import type { Ctx } from './context';
-import { MAX_LIT, pieceInput, REFORGES, reforgesDone, type Piece } from './gear';
+import { MAX_LIT, pieceInput, type Piece } from './gear';
 import { itemMains } from './mains';
 import { scoreBuild, subWeights, type Row } from './score';
-import { dropSubs, MAX_SUBS, type Subs } from './subs';
+import type { Subs } from './subs';
 import type { ItemInput } from './verdict';
 
 // Вещь против одной вещи в том же слоте (против того, что стоит в сборке, logic/pool)
 export interface Pair {
   kind: 'up' | 'eq' | 'down';    // только по этой паре
-  delta: number | null;          // (новый − надетый) / надетый, по полезным сегментам после Reforge
+  delta: number | null;          // (новый − надетый) / надетый, по полезным сегментам
   gained: { key: string; place: number }[]; // места цепочки, которые новый закрывает, а надетый — нет
   lost: { key: string; place: number }[];
   chains: { worn: Omit<Row, 'alt'>; next: Omit<Row, 'alt'> } | null;
@@ -40,21 +41,17 @@ export function vsFigure(vs: Pick<Pair, 'delta' | 'wornEmpty'>): VsFigure | null
 
 export const MARGIN = 0.1;
 
-// полезные сегменты вещи для билда: вес места × засчитывается (1, ½, 0) × сегменты сейчас + доля будущих Reforge
-// segs — сколько сегментов у каждого полезного стата будет с Reforge впереди (для строки «у надетой больше сегментов»)
-function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: number): { v: number; cover: Map<number, string>; segs: Map<string, number> } {
+// полезные сегменты вещи для билда: вес места × засчитывается (1, ½, 0) × уровень сабстата (как есть).
+// segs — сколько сегментов у каждого полезного стата (для строки «у надетой больше сегментов»)
+function value(ctx: Ctx, c: Char, b: Build, item: ItemInput): { v: number; cover: Map<number, string>; segs: Map<string, number> } {
   const W = subWeights(ctx, b, c, itemMains(ctx.idx, item));
-  const n = Object.keys(lit).length;
-  // у Epic с тремя первый Reforge уйдёт на 4-й: его пока не знаем — считаем бесполезным
-  const left = Math.max(0, REFORGES - done - (item.grade === 'rare' && n < dropSubs('unique') ? 1 : 0));
-  const share = left / dropSubs('unique');
   let v = 0;
   const cover = new Map<number, string>();
   const segs = new Map<string, number>();
-  for (const [k, seg] of Object.entries(lit)) {
+  for (const [k, seg] of Object.entries(item.subs)) {
     const w = W.get(k);
     if (!w || !w.credit) continue;
-    segs.set(k, Math.min(MAX_LIT, seg + share));
+    segs.set(k, Math.min(MAX_LIT, seg));
     v += CFG.tierWeights[Math.min(w.tier, CFG.tierWeights.length - 1)] * w.credit * segs.get(k)!;
     if (!cover.has(w.tier)) cover.set(w.tier, k);
   }
@@ -63,7 +60,7 @@ function value(ctx: Ctx, c: Char, b: Build, item: ItemInput, lit: Subs, done: nu
 
 // «Слабее всех» в блоке билда: ценность надетой вещи (как в сравнении) и каких статов на ней не хватает — первые места
 // цепочки, которые засчитываются целиком и которых на вещи нет (DEF и DEF% — из пары берём %)
-export const pieceValue = (ctx: Ctx, c: Char, b: Build, p: Piece): number => value(ctx, c, b, pieceInput(p), p.lit, reforgesDone(p)).v;
+export const pieceValue = (ctx: Ctx, c: Char, b: Build, p: Piece): number => value(ctx, c, b, pieceInput(p)).v;
 export function lookFor(ctx: Ctx, c: Char, b: Build, p: Piece, max = 2): string[] {
   const W = subWeights(ctx, b, c, itemMains(ctx.idx, pieceInput(p)));
   const have = new Set(Object.keys(p.lit));
@@ -78,9 +75,8 @@ export function lookFor(ctx: Ctx, c: Char, b: Build, p: Piece, max = 2): string[
   return out;
 }
 
-// ценность вещи с формы — как в сравнении: у Epic с 4 сабстатами первый Reforge уже прошёл (он дал 4-й)
-export const itemValue = (ctx: Ctx, c: Char, b: Build, item: ItemInput): number =>
-  value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0).v;
+// ценность вещи с формы — как в сравнении
+export const itemValue = (ctx: Ctx, c: Char, b: Build, item: ItemInput): number => value(ctx, c, b, item).v;
 
 // может ли персонаж надеть вещь: у оружия и аксессуара из списка бывает класс (classLimits) — как в вердикте (evalGear).
 // Нельзя — вещь ему не кандидат нигде: ни в билде, ни в «По статам», ни в примерке, и билд она не начинает (fit — «нет»,
@@ -113,9 +109,8 @@ const rowOf = (ctx: Ctx, c: Char, b: Build, item: ItemInput, subs: Subs): Omit<R
 // ahead — для «хуже»
 export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piece, f: Fit = fit(ctx, c, b, item)): Pair {
   const wi = pieceInput(worn);
-  // Epic с 4 сабстатами в форме уже прошла первый Reforge (он дал 4-й) — как у записанной вещи (reforgesDone)
-  const X = value(ctx, c, b, item, item.subs, item.grade === 'rare' && Object.keys(item.subs).length >= MAX_SUBS ? 1 : 0);
-  const E = value(ctx, c, b, wi, worn.lit, reforgesDone(worn));
+  const X = value(ctx, c, b, item);
+  const E = value(ctx, c, b, wi);
   const delta = (X.v - E.v) / Math.max(E.v, 0.01);
   let kind: Pair['kind'] = delta >= MARGIN ? 'up' : delta <= -MARGIN ? 'down' : 'eq';
   let why: Pair['why'] = null;
@@ -137,7 +132,7 @@ export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piec
   return {
     kind, delta, why, wornEmpty: E.v === 0 && X.v > 0, ahead,
     gained: place(X.cover, E.cover), lost,
-    chains: { worn: rowOf(ctx, c, b, wi, worn.lit), next: rowOf(ctx, c, b, item, item.subs) },
+    chains: { worn: rowOf(ctx, c, b, wi, wi.subs), next: rowOf(ctx, c, b, item, item.subs) },
     material: sameType && worn.bt !== null && worn.bt < 4,
     passive: !isArmor(item.slot) && !!worn.itemKey && !!item.itemKey && worn.itemKey !== item.itemKey,
   };

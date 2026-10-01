@@ -94,7 +94,7 @@ describe('примерка: заголовок вердикта', () => {
   };
 
   it('«Оставить», ей лучше: слово вердикта то же, дальше — кому ещё нужна и «лучше, чем на Caren»', () => {
-    const { res, title } = on(NEW, { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 });
+    const { res, title } = on(NEW, { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }); // как есть: надетая 4/3/2/3 уже лучше новой
     expect(res.v).toBe('keep');
     expect(title).toMatch(/^Оставляй — нужна .+; лучше, чем на Caren$/);
     expect(title).not.toMatch(/нужна[^;]*Caren/);

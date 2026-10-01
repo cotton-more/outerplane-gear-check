@@ -344,10 +344,10 @@ export const ru = {
     vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
     vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
       [...gained.map((x) => `+${x.key} (${x.place}-е)`), ...lost.map((x) => `−${x.key} (${x.place}-е)`)].join(' · '),
-    vsDelta: (pct: number) => `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)}% полезных сегментов — с учётом Reforge, которые ещё впереди.`,
-    vsTimes: (n: number) => `Полезных сегментов в ${n} ${plural(n, 'раз', 'раза', 'раз')} больше — с учётом Reforge, которые ещё впереди.`,
+    vsDelta: (pct: number) => `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)}% полезных сегментов.`,
+    vsTimes: (n: number) => `Полезных сегментов в ${n} ${plural(n, 'раз', 'раза', 'раз')} больше.`,
     vsEmpty: 'У надетой полезных нет: ни один её сабстат этому билду не засчитывается.',
-    vsAhead: (k: string, worn: number, next: number) => `На надетой больше сегментов: ${k} — ${dec(worn)} против ${dec(next)} у новой, с учётом Reforge впереди.`,
+    vsAhead: (k: string, worn: number, next: number) => `На надетой больше сегментов: ${k} — ${dec(worn)} против ${dec(next)} у новой.`,
     // оружие и аксессуар: решила пассивка, а не сегменты (logic/vs, Vs.why)
     vsWhy: {
       rec: 'Эта вещь — из рекомендованных билду, надетая — нет: пассивка важнее сабстатов.',

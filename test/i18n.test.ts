@@ -98,6 +98,13 @@ describe('строки GEARPOOL', () => {
     expect([1, 4, 5, 21, 1.5].map(word)).toEqual(['1 сегмента', '4 сегментов', '5 сегментов', '21 сегмента', '1,5 сегмента']);
   });
 
+  it('сравнение «как есть» (Н3): процент, «в N раз» и «у надетой больше» — без хвоста про Reforge впереди, RU/EN', () => {
+    expect([ru.vsDelta(21), ru.vsDelta(-8), ru.vsTimes(3), ru.vsAhead('DEF%', 6, 2)]).toEqual([
+      '+21% полезных сегментов.', '−8% полезных сегментов.', 'Полезных сегментов в 3 раза больше.', 'На надетой больше сегментов: DEF% — 6 против 2 у новой.']);
+    expect([enUi.vsDelta(21), enUi.vsTimes(3), enUi.vsAhead('DEF%', 6, 2)]).toEqual([
+      '+21% useful segments.', '3× the useful segments.', 'The one on has more segments: DEF% — 6 vs 2 on the new one.']);
+  });
+
   it('уровень строки без T4 — «T0–T3»', () => {
     expect([tierLabel('T0'), tierLabel('T4')]).toEqual(['T0–T3', 'T4']);
     expect(ru.vsBonusLost('Speed ×4', tierLabel('T0'), speed.p4base!)).toBe('Пропадёт: Speed ×4 (T0–T3) — Speed +25%.');

@@ -5,12 +5,12 @@
 // вещь в инвентаре, правка Reforge и Breakthrough видна у всех.
 import { CFG } from '../config';
 import type { Grade, SlotId } from '../data/types';
-import { MAX_SUBS, type Subs } from './subs';
+import { DROP_LEVEL, MAX_SUBS, type Subs } from './subs';
 import type { ItemInput } from './verdict';
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
 export const MAX_LIT = 6;     // сегментов у сабстата в игре
-export const REFORGES = CFG.reforges; // попыток Reforge у 6★; впереди сравнение считает только их
+export const REFORGES = CFG.reforges; // попыток Reforge у 6★ (сравнение их не считает — вещи как есть, logic/vs)
 export const SINGULARITY = 3; // ещё 3 Reforge у Legendary после Singularity Ascension — их можно отметить
 
 export interface Piece {
@@ -49,8 +49,9 @@ export const EMPTY_GEAR: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };
 export const buildKey = (charId: string, build: string) => `${charId}/${build}`;
 export const today = () => new Date().toISOString().slice(0, 10);
 
+// запись как вход сравнения: уровень сабстата — сколько горит (lit), жёлтые и оранжевые вместе (один уровень)
 export const pieceInput = (p: Piece): ItemInput =>
-  ({ slot: p.slot, grade: p.grade, setId: p.setId, itemKey: p.itemKey, main: p.main, unlisted: p.unlisted, subs: p.yellow });
+  ({ slot: p.slot, grade: p.grade, setId: p.setId, itemKey: p.itemKey, main: p.main, unlisted: p.unlisted, subs: p.lit });
 
 const orangeOf = (p: Pick<Piece, 'yellow' | 'lit'>) => Object.keys(p.lit).reduce((n, k) => n + (p.lit[k] - (p.yellow[k] ?? 0)), 0);
 
@@ -136,13 +137,15 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   };
 }
 
-// новая запись вещи с формы: жёлтые — как на форме, Breakthrough не указан
+// новая запись вещи с формы: уровень (lit) — как на форме, Breakthrough не указан. yellow — тот же уровень, но не выше
+// четырёх: хранилище читает жёлтые только 1…4 (gearStore restorePieces), а старая вкладка читает yellow и lit
 export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: GearStore; piece: Piece } {
   const id = 'p' + (st.seq + 1);
-  const subs = { ...item.subs };
+  const lit = { ...item.subs };
+  const yellow = Object.fromEntries(Object.entries(lit).map(([k, n]) => [k, Math.min(n, DROP_LEVEL)]));
   const piece: Piece = {
     id, slot: item.slot, grade: item.grade, setId: item.setId ?? null, itemKey: item.itemKey ?? null, main: item.main ?? null,
-    ...(item.unlisted ? { unlisted: true } : {}), yellow: subs, lit: { ...subs }, bt: null, at,
+    ...(item.unlisted ? { unlisted: true } : {}), yellow, lit, bt: null, at,
   };
   return { st: { ...st, seq: st.seq + 1, pieces: { ...st.pieces, [id]: piece } }, piece };
 }

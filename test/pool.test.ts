@@ -440,7 +440,7 @@ describe('П3: временное оружие билд не начинает', 
 
 // Р1: «собрана часть» и «ближе всех» — по тому, что можно собрать из пула; раскладка остаётся честной
 describe('«собираешь» по тому, что можно собрать из пула (Р1)', () => {
-  const HELM: Subs = { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }, GLOVES: Subs = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
+  const HELM: Subs = { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }, GLOVES: Subs = { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 };
   // 4 Speed: шлем и броня на T4, перчатки и ботинки — Breakthrough не указан
   const SPEED: [SlotId, Subs, Bt | null][] = [
     ['helmet', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, 4], ['armor', { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }, 4],
@@ -613,7 +613,7 @@ describe('Pen mix без T4 (Р2)', () => {
     const a2 = P('armor', 'Penetration', { CHC: 1, ATK: 3, DEF: 3, 'HP%': 2 }, 2);
     const pcs = [
       P('gloves', 'Penetration', { 'DEF%': 3, ATK: 3, CHC: 2, DEF: 3 }, 4), a3, helm, P('shoes', 'Penetration', { 'ATK%': 3, SPD: 2, 'HP%': 3, ATK: 2 }, 1), a0, a2,
-      P('shoes', 'Speed', { 'HP%': 3, ATK: 3, EFF: 3, RES: 3 }, 2), P('armor', 'Speed', { 'DMG UP%': 3, 'ATK%': 3, CHC: 4, 'DEF%': 2 }, 4), P('gloves', 'Speed', { CHC: 3, 'DEF%': 3, RES: 3, CHD: 4 }, 4),
+      P('shoes', 'Speed', { 'HP%': 3, ATK: 3, EFF: 3, RES: 3 }, 2), P('armor', 'Speed', { 'DMG UP%': 3, 'ATK%': 3, CHC: 4, 'DEF%': 2 }, 4), P('gloves', 'Speed', { CHC: 3, 'DEF%': 3, RES: 3, CHD: 2 }, 4),
     ];
     const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Speed'), itemKey: null, main: null, subs: { 'DEF%': 3, ATK: 3, CHC: 2, DEF: 3, SPD: 2, CHD: 1 } };
     const o = outcomeFor(ctx, poolView(ctx, store(luna, pcs)), luna.id, x)!;

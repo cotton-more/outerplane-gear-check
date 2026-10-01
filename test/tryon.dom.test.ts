@@ -19,7 +19,7 @@ const NEW = { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
 // у Caren — шлем Speed Set похуже новой, Speed «Собираю»
 const GEAR = {
   v: 2, seq: 1,
-  pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt: 4, at: '' } },
+  pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4, at: '' } },
   pools: { [caren.id]: ['p1'] }, marks: { [caren.id + '/Speed']: 'want' },
 };
 let root: Root | null = null;

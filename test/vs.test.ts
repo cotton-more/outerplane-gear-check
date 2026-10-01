@@ -2,6 +2,8 @@
 // пустой слот, лучше, хуже, та же вещь, 2+2, временная против рекомендованной, T4. Пример владельца: у Caren в
 // цепочке пусто 3-е место — новая его закрывает, теряя 4-е. Ожидания те же, кроме помеченных «иначе»: новые правила
 // владельца (GEARPOOL). Пара вещей в одном слоте (against, vsFigure) — внизу.
+// Сравнение — как есть (Н3, «Оценка — единственный ввод», шаг 1): уровень записи — сколько горит (lit), Reforge впереди
+// не считаем. Надетая с оранжевыми в примерах — 2/2/2/3 (было 4/3/2/3: тогда свежей засчитывались 6 Reforge впереди)
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
@@ -14,7 +16,7 @@ import { chipLabel } from '../src/components/eval/VsSection';
 import { TEXTS } from '../src/i18n';
 import { charsVs, charVs, sectionChars, type CharVs } from '../src/logic/poolVs';
 import type { Subs } from '../src/logic/subs';
-import { against, vsFigure } from '../src/logic/vs';
+import { against, itemValue, pieceValue, vsFigure } from '../src/logic/vs';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -42,7 +44,7 @@ describe('исход вещи с формы: повтор vs.test', () => {
   const weapon = (grade: Piece['grade'], itemKey: string | null, subs: Subs, main = 'DEF%') => ({ slot: 'weapon' as const, grade, setId: null, itemKey, main, subs });
 
   describe('бонус сета только на T4', () => {
-    const speedHelm = (bt: Bt | null) => rec(armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }), { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, bt);
+    const speedHelm = (bt: Bt | null) => rec(armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }), { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt);
 
     it('Speed-шлем на T4 и второй Speed на T4 (бонус ×2 есть): новая лучше по сегментам — «на уровне из-за T4»', () => {
       const r = row([speedHelm(4), rec(armor('gloves', 'Speed', { CHC: 1 }), { CHC: 1 }, 4)], NEW, 'Speed/Immu')!;
@@ -84,15 +86,15 @@ describe('исход вещи с формы: повтор vs.test', () => {
     });
 
     it('Speed ×4 бонус даёт и на T0 — пометки нет', () => {
-      expect(row([helmetT4({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW, 'Speed')?.t4).toBeNull();
+      expect(row([helmetT4({ 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW, 'Speed')?.t4).toBeNull();
     });
   });
 
   describe('сравнение с тем, что в сборке', () => {
-    it('3-е место важнее 4-го: закрывает CHD, теряет SPD — лучше на ~25%', () => {
-      const r = row([helmetT4({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW, 'Speed')!;
+    it('3-е место важнее 4-го: закрывает CHD, теряет SPD — лучше на ~21%', () => {
+      const r = row([helmetT4({ 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW, 'Speed')!;
       expect(r.kind).toBe('up');
-      expect(r.delta).toBeCloseTo(0.247, 2);
+      expect(r.delta).toBeCloseTo(0.207, 2); // как есть: (2 + 2·0,8 + 3·0,65) / (2 + 2·0,8 + 2·0,5) − 1
       expect(r.pair).toMatchObject({ gained: [{ key: 'CHD', place: 3 }], lost: [{ key: 'SPD', place: 4 }] });
     });
 
@@ -100,9 +102,9 @@ describe('исход вещи с формы: повтор vs.test', () => {
       expect(row([helmetT4({ 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 }, { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 })], NEW, 'Speed')).toMatchObject({ kind: 'down', used: false });
     });
 
-    it('«хуже» без потерянных мест — у той больше сегментов DEF% (6 против 3,5)', () => {
+    it('«хуже» без потерянных мест — у той больше сегментов DEF% (6 против 2: как есть, без Reforge впереди)', () => {
       const r = row([helmetT4({ 'DEF%': 6, CHC: 4, CHD: 4, HP: 2 }, { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 })], NEW, 'Speed')!;
-      expect(r).toMatchObject({ kind: 'down', pair: { lost: [], ahead: { key: 'DEF%', worn: 6, next: 3.5 } } });
+      expect(r).toMatchObject({ kind: 'down', pair: { lost: [], ahead: { key: 'DEF%', worn: 6, next: 2 } } });
     });
 
     it('иначе: пустой слот вещью сета — «сет 2 из 4» (ближе), лишней вещью сета — «пустой слот»; такая же — «уже есть»', () => {
@@ -186,7 +188,7 @@ describe('исход вещи с формы: повтор vs.test', () => {
     });
 
     it('иначе: один Speed-шлем у Caren — исходы и в Speed, и в Speed/Immu (вещи у персонажа, не у билда)', () => {
-      const o = out([helmetT4({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW);
+      const o = out([helmetT4({ 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 })], NEW);
       expect(o.rows.map((r) => [r.v.name, r.kind])).toEqual([['Speed', 'up'], ['Speed/Immu', 'up']]);
       expect(o.useful).toBe(true);
     });
@@ -198,9 +200,9 @@ describe('исход вещи с формы: повтор vs.test', () => {
       expect(row([rec(armor('helmet', 'Speed', { SPD: 1 }, 'rare'), undefined, 2)], NEW, 'Speed')?.pair?.material).toBe(false);
     });
 
-    it('Reforge впереди: Epic с 3 — 5 на три, Legendary 6 на четыре', () => {
+    it('иначе: Reforge впереди не считаем — Epic с 3 и Legendary с теми же полезными на уровне, ровно 0 (было: Epic 5 на три, Legendary 6 на четыре — Epic хуже)', () => {
       const r = row([rec(armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 2, RES: 1 }))], armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 2 }, 'rare'), 'Speed')!;
-      expect(r.delta!).toBeCloseTo((2 + 5 / 4 - (2 + 6 / 4)) / (2 + 6 / 4), 6);
+      expect(r).toMatchObject({ kind: 'eq', delta: 0 });
     });
 
     it('больше 6 сегментов не бывает', () => {
@@ -281,7 +283,7 @@ describe('исход вещи с формы: повтор vs.test', () => {
       pools: Object.fromEntries(Object.entries(pools).map(([c, ps]) => [c, ps.map((p) => p.id)])),
     });
     const shown = (xs: CharVs[]) => xs.filter((x) => x.best).map((x) => [x.c.name, x.best!.v.name, x.best!.kind]);
-    const worn = () => helmetT4({ 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
+    const worn = () => helmetT4({ 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
 
     it('только первая открытая секция вердикта (Kitsune с этим шлемом «не те сабстаты» — нет); пустой слот первым', () => {
       const pools = { [caren.id]: [worn(), rec(armor('armor', 'Immunity', { CHC: 1 }))], [kappa.id]: [rec(armor('armor', 'Speed', { CHC: 1 }))],
@@ -326,16 +328,53 @@ describe('пара вещей в одном слоте (against)', () => {
   const armor = (s: string, subs: Subs) => ({ slot: 'helmet' as const, grade: 'unique' as const, setId: set(s), itemKey: null, main: null, subs });
   const worn = (subs: Subs, lit: Subs, bt: Bt | null = 4): Piece => ({ id: 'w', slot: 'helmet', grade: 'unique', setId: set('Speed'), itemKey: null, main: null, yellow: subs, lit, bt, at: '' });
 
-  it('3-е место важнее 4-го: +CHD (3-е), −SPD (4-е), ~+25%', () => {
-    const p = against(ctx, caren, caren.builds[0], armor('Speed', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 }), worn({ 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { 'DEF%': 4, CHC: 3, SPD: 2, EFF: 3 }));
+  const b = caren.builds[0];
+  const NEW = armor('Speed', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
+
+  it('3-е место важнее 4-го: +CHD (3-е), −SPD (4-е), ~+21%', () => {
+    const p = against(ctx, caren, b, NEW, worn({ 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }));
     expect(p).toMatchObject({ kind: 'up', gained: [{ key: 'CHD', place: 3 }], lost: [{ key: 'SPD', place: 4 }] });
-    expect(p.delta).toBeCloseTo(0.247, 2);
+    expect(p.delta).toBeCloseTo(0.207, 2);
   });
 
   it('«полезных нет» и «×N»', () => {
     expect(vsFigure({ delta: null, wornEmpty: true })).toEqual({ kind: 'empty' });
     expect(vsFigure({ delta: 2.5, wornEmpty: false })).toEqual({ kind: 'times', n: 4 });
     expect(vsFigure({ delta: 0.25, wornEmpty: false })).toEqual({ kind: 'pct', n: 25 });
+  });
+
+  it('«×N» по паре как есть: у надетой полезен один SPD 1 (0,5), у новой — 8,35 → «×17»', () => {
+    const p = against(ctx, caren, b, armor('Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 }), worn({ SPD: 1, RES: 2, EFF: 2, HP: 1 }, { SPD: 1, RES: 2, EFF: 2, HP: 1 }));
+    expect(vsFigure(p)).toEqual({ kind: 'times', n: 17 });
+  });
+
+  describe('как есть (Н3): уровень — сколько горит, Reforge впереди не считаем', () => {
+    const FRESH = { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 };
+
+    it('прокачанная надетая (DEF% 6 — три Reforge) против свежей с тем же роллом — свежая хуже (было «на уровне»: ей засчитывались 6 Reforge впереди, надетой — 3)', () => {
+      const up = worn(FRESH, { ...FRESH, 'DEF%': 6 });
+
+      const now = against(ctx, caren, b, armor('Speed', FRESH), up);
+
+      expect(now.kind).toBe('down');
+      expect(now.delta).toBeCloseTo(3 * 2.95 / (6 + 3 * 1.95) - 1, 6); // веса цепочки 1 · 0,8 · 0,65 · 0,5
+    });
+
+    it('две свежие — порядок как раньше (с Reforge впереди у обеих было так же: +22% и −31%)', () => {
+      const weak = worn({ 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
+      const strong = worn(FRESH, FRESH);
+
+      expect(against(ctx, caren, b, NEW, weak).kind).toBe('up');
+      expect(against(ctx, caren, b, NEW, strong).kind).toBe('down');
+    });
+
+    it('запись с оранжевыми (yellow 2, lit 5) — в сравнении уровень 5', () => {
+      const p = worn({ 'DEF%': 2, CHC: 2, CHD: 2, SPD: 2 }, { 'DEF%': 5, CHC: 2, CHD: 2, SPD: 2 });
+      const same = armor('Speed', { 'DEF%': 5, CHC: 2, CHD: 2, SPD: 2 });
+
+      expect(pieceValue(ctx, caren, b, p)).toBeCloseTo(itemValue(ctx, caren, b, same), 9);
+      expect(against(ctx, caren, b, same, p)).toMatchObject({ kind: 'eq', delta: 0 });
+    });
   });
 });
 

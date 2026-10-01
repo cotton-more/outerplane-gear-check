@@ -118,6 +118,19 @@ describe('материал Breakthrough для надетой', () => {
       expect(r.plan).not.toContain(ru.material.plan);
     });
 
+    // Н3: «надень» — по вещам как есть. Было: у свежей 6 Reforge впереди, у надетой (4 оранжевых) — 2, и новая «лучше»
+    it('как есть: надетая с оранжевыми лучше новой — «надень» нет, только материал', () => {
+      const r = putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, helmet({ 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }));
+      const st = updatePiece(r.st, r.id, { bt: 2, lit: { 'DEF%': 4, CHC: 3, CHD: 3, SPD: 1 } });
+      const item = helmet({ 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 });
+      const view = poolView(ctx, st);
+
+      const needs = materialFor(view, item);
+
+      expect(needs).toHaveLength(1);
+      expect(betterThanWorn(ctx, view, item, needs)).toEqual([]);
+    });
+
     it('в примерке у цели слот пуст — «надень её на Caren · Speed/Immu», а не «отдай надетой»', () => {
       const r = judgeAll(epic, wearing(2, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare')), 'Caren · Speed/Immu');
       expect(r.plan[0]).toBe(ru.material.planWear('Caren · Speed/Immu'));
