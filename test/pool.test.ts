@@ -8,7 +8,7 @@ import type { ArmorSlot, Char, Dataset, SlotId } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
 import { assemble, assembleReach, entriesFor, hasStatBuild, holds, isStats, outcomeFor, play, poolView, putOn, puts, started, statVariant, STATS, type Assembly, type Entry, type PoolStore } from '../src/logic/pool';
-import { bonusRows, bonusValue, bonusWeights, convertible } from '../src/logic/setBonus';
+import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '../src/logic/setBonus';
 import { charVs, whereUsed } from '../src/logic/poolVs';
 import { slotMains } from '../src/logic/builds';
 import { decodeItem, MAINS } from '../src/logic/itemCode';
@@ -692,8 +692,8 @@ describe('Pen mix без T4 (Р2)', () => {
   });
 });
 
-// Р20: совет «отметь T4» — для любого сета. Вещь распавшегося сета в пуле без указанного Breakthrough (bt: null), с
-// отметкой которой (одной, потом двух) новая встаёт, — «отметь»; известный Breakthrough ниже T4 — прежний «найди ещё»
+// Р20: совет «отметь T4» — для любого сета. Вещь распавшегося сета в пуле не на T4, с T4 у которой (одной, потом двух)
+// у новой «Надеть», — без указанного Breakthrough (bt: null) «отметь», с известным ниже T4 (0–3) «сделать» (Р20 (б))
 describe('совет «отметь T4» для любого сета (Р20)', () => {
   const v = variant('Caren', 'Speed/Immu');
   const store = (pieces: Piece[]): PoolStore => ({ pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [caren.id]: pieces.map((p) => p.id) } });
@@ -725,7 +725,7 @@ describe('совет «отметь T4» для любого сета (Р20)', (
     expect(fitsMarked(pcs, ARMOR_X, ['gloves'])).toBe(true);
   });
 
-  it('то же, Speed-перчатки и -ботинки на T0 (bt 0) — «найди ещё Speed-вещь на T4» нет: перчатки на T4 — «на уровне» (П2)', () => {
+  it('то же, Speed-перчатки и -ботинки на T0 (bt 0) — ни «сделать T4», ни «найди ещё Speed-вещь на T4»: перчатки на T4 — «на уровне» (П2)', () => {
     const r = rowOf(step14(0, 0), ARMOR_X);
     expect(r).toMatchObject({ kind: 'breaks', broken: set('Speed'), fix: null });
     expect(rowOf(step14(4, 0), ARMOR_X)).toMatchObject({ kind: 'eq', used: true });
@@ -739,7 +739,7 @@ describe('совет «отметь T4» для любого сета (Р20)', (
   });
 
   // регресс шага 4: Speed-перчатки и -ботинки уже на T4, лишние Speed-шлем (bt null) и Speed-броня (bt 0); новая —
-  // Immunity-перчатки. Отметить хватает одной вещи — шлема: броня с известным Breakthrough не отмечается
+  // Immunity-перчатки. Отметить хватает одной вещи — шлема: при равной длине совета вещь без Breakthrough — первой
   const reg = (armorBt: Bt | null) => [
     P('helmet', 'Immunity', JUNK), P('armor', 'Immunity', JUNK), P('gloves', 'Speed', { 'DEF%': 2, CHC: 2 }, 4), P('shoes', 'Speed', JUNK, 4),
     P('helmet', 'Speed', JUNK), P('armor', 'Speed', JUNK, armorBt),
@@ -759,10 +759,31 @@ describe('совет «отметь T4» для любого сета (Р20)', (
     expect(r.fix!.slots).toHaveLength(1);
   });
 
-  it('то же, лишние шлем и броня на T0 — прежний совет «ещё Speed-вещь на T4: шлем или броня»', () => {
+  // Р20 (б), владелец 2026-10-01: было «найди ещё Speed-вещь на T4: шлем или броня» — у своей вещи на T0 совет прокачки
+  it('то же, лишние шлем и броня на T0 — «сделать Breakthrough T4 у Speed-шлема» (Р20 (б)), а не «найди ещё»', () => {
     const pcs = reg(0).map((p) => (p.setId === set('Speed') && p.bt === null ? { ...p, bt: 0 as Bt } : p));
     const r = rowOf(pcs, GLOVES_X);
-    expect(r).toMatchObject({ kind: 'breaks', fix: { set: set('Speed'), slots: ['helmet', 'armor'], t4: true, mark: false } });
+    expect(r).toMatchObject({ kind: 'breaks', fix: { set: set('Speed'), slots: ['helmet'], t4: true, mark: true, make: true } });
+  });
+
+  // Р20 (б), владелец 2026-10-01: что в пуле — то и в игре. Известный Breakthrough ниже T4 — совет прокачки «сделать»,
+  // не указан — «отметить», на T4 — совета T4 нет; совет — только если после него у новой «Надеть» (П2)
+  const speedAt = (bt: Bt | null) => reg(0).map((p) => (p.setId === set('Speed') && p.bt === null ? { ...p, bt } : p));
+
+  it('Р20 (б): лишний Speed-шлем на T0 — «сделать Breakthrough T4 у Speed-шлема», и с T4 у новой «Надеть» (П2)', () => {
+    const pcs = speedAt(0);
+    const r = rowOf(pcs, GLOVES_X);
+    expect(r.fix).toMatchObject({ slots: ['helmet'], mark: true, make: true });
+    const done = pcs.map((p) => (r.fix!.pieces.includes(p) ? { ...p, bt: 4 as Bt } : p));
+    expect(puts(rowOf(done, GLOVES_X))).toBe(true);
+  });
+
+  it('Р20: тот же шлем без Breakthrough — «отметить», как было', () => {
+    expect(rowOf(speedAt(null), GLOVES_X).fix).toMatchObject({ slots: ['helmet'], mark: true, make: false });
+  });
+
+  it('Р20: тот же шлем на T4 — совета про T4 нет', () => {
+    expect(rowOf(speedAt(4), GLOVES_X).fix?.mark ?? false).toBe(false);
   });
 
   // шаг 10 (владелец 2026-10-01): «найди ещё {set}-вещь» без T4 — то же правило П2: слот в совете, только если с пустой
@@ -789,13 +810,13 @@ describe('совет «отметь T4» для любого сета (Р20)', (
     for (const sl of r.fix!.slots) expect(puts(rowOf([...pcs, P(sl, 'Immunity', {})], HELMET_X))).toBe(true);
   });
 
-  it('перебор (3000 пулов вокруг шага 14): каждый «отметь» / «найди ещё на T4» выполнен — у новой «Надеть» (П2); «отметь» — кратчайший, вещи без Breakthrough не в её слоте', () => {
+  it('перебор (3000 пулов вокруг шага 14): каждый «отметь» / «сделать» / «найди ещё на T4» выполнен — у новой «Надеть» (П2); совет T4 — кратчайший, вещи не на T4 не в её слоте', () => {
     const r7 = lcg(7);
     const rnd = (n: number) => Math.floor(r7() * n);
     const BTS: (Bt | null)[] = [null, null, 0, 4];
     const sub = (): Subs => ({ 'DEF%': 1 + rnd(3), CHC: 1 + rnd(2), CHD: rnd(3), SPD: rnd(2) });
     const SLOTS: ArmorSlot[] = ['gloves', 'shoes', 'helmet', 'armor'];
-    let marks = 0, finds = 0, dropped = 0;
+    let marks = 0, makes = 0, finds = 0, dropped = 0;
     for (let i = 0; i < 3000; i++) {
       const pcs = [
         P('helmet', 'Speed', sub(), 4), P('armor', 'Speed', sub(), 4),
@@ -806,11 +827,11 @@ describe('совет «отметь T4» для любого сета (Р20)', (
       const r = rowOf(pcs, x);
       if (r?.kind !== 'breaks') continue;
       const withT4 = (ms: Piece[]) => pcs.map((p) => (ms.includes(p) ? { ...p, bt: 4 as Bt } : p));
-      const open = pcs.filter((p) => p.setId === set('Speed') && p.bt === null && p.slot !== x.slot);
+      const open = pcs.filter((p) => p.setId === set('Speed') && p.bt !== 4 && p.slot !== x.slot);
       const stands = (ms: Piece[]) => assemble(ctx, caren, v, entriesFor(ctx, caren, v, withT4(ms), x)).slots[x.slot]?.id === null;
       const putsWith = (ms: Piece[]) => puts(rowOf(withT4(ms), x));
       if (!r.fix?.mark) {
-        // «отметь» нет — ни одна вещь без Breakthrough (и пара) не даёт «Надеть»; встаёт, но без «Надеть» — совет пропал по П2
+        // «отметь» / «сделать» нет — ни одна вещь не на T4 (и пара) не даёт «Надеть»; встаёт, но без «Надеть» — совет пропал по П2
         expect(open.some((a) => putsWith([a]))).toBe(false);
         if (open.some((a) => stands([a]))) dropped++;
         if (r.fix?.t4) {
@@ -820,17 +841,148 @@ describe('совет «отметь T4» для любого сета (Р20)', (
         }
         continue;
       }
-      marks++;
+      if (r.fix.make) makes++; else marks++;
       expect(r.fix.slots).not.toContain(x.slot);
       expect(r.fix.pieces.every((p, j) => open.includes(p) && p.slot === r.fix!.slots[j])).toBe(true);
+      // «сделать» — у отмечаемых известен Breakthrough (Р20 (б)); у одной вещи «сделать» — только если без Breakthrough
+      // ни одной не хватает
+      expect(r.fix.make).toBe(r.fix.pieces.some((p) => p.bt !== null));
+      if (r.fix.slots.length === 1 && r.fix.make) expect(open.some((a) => a.bt === null && putsWith([a]))).toBe(false);
       // выполнить: отметить названные — у новой «Надеть»
       expect(putsWith(r.fix.pieces)).toBe(true);
       // «у двух» — только если одной не хватает
       if (r.fix.slots.length === 2) expect(open.some((a) => putsWith([a]))).toBe(false);
     }
     // вокруг шага 14 советов почти не остаётся (П2): на 3000 пулов их единицы; перебор проверяет в основном, что пропали
-    expect(marks + finds).toBeGreaterThan(0);
+    expect(marks + makes + finds).toBeGreaterThan(0);
     expect(dropped).toBeGreaterThan(10);
+  });
+});
+
+// Цена замены — чистая убыль бонусов по сету (шаг 2, доработка 2): Speed ×4 → ×3 при двух T4 — 4P T0 (25% SPD)
+// сменяется на 2P T4 (13%), потеря — разница. Раньше в знаменателе была вся строка 4P T0: «на уровне» (+9,7%)
+describe('цена замены: чистая убыль бонусов по сету', () => {
+  const sv = variant('Caren', 'Speed');
+  const pcs = [
+    P('helmet', 'Speed', { HP: 3, CHD: 3, 'DMG UP%': 2, CHC: 3 }, 4), P('armor', 'Speed', { 'DMG UP%': 1, ATK: 2, 'DEF%': 2, RES: 1 }, 4),
+    P('gloves', 'Speed', { 'DMG UP%': 3, SPD: 3, 'DEF%': 1, ATK: 2 }, 0), P('shoes', 'Speed', { ATK: 2, SPD: 1, 'DMG UP%': 1, RES: 3 }, 0),
+  ];
+  const st: PoolStore = { pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [caren.id]: pcs.map((p) => p.id) } };
+  const x: ItemInput = { slot: 'shoes', grade: 'unique', setId: set('Immunity'), itemKey: null, main: null, subs: { HP: 1, 'DMG UP%': 2, 'DEF%': 3, ATK: 2 } };
+  const row = () => outcomeFor(ctx, poolView(ctx, st), caren.id, x)!.rows.find((r) => r.v.key === sv.key)!;
+
+  it('Speed ×4 → ×3 при двух T4: 4P T0 сменяется на 2P T4 — потеря только разница, исход «лучше»', () => {
+    const r = row();
+    const W = bonusWeights(ctx, caren, sv.b), val = (short: string, n: number, tier: string) =>
+      bonusValue(ctx, caren, W, [...r.lostBonus, ...r.gainedBonus].find((b) => b.set === set(short) && b.n === n && b.tier === tier)!);
+    expect(r.lostBonus.map((b) => `${b.n}${b.tier}`)).toEqual(['4T0']);
+    expect(r.gainedBonus.map((b) => `${b.n}${b.tier}`)).toEqual(['2T4']);
+    const cost = r.displaced.reduce((n, e) => n + e.v, 0) + val('Speed', 4, 'T0') - val('Speed', 2, 'T4');
+    expect(r.delta!).toBeCloseTo((r.after.total - r.before.total) / cost, 9);
+    expect(r).toMatchObject({ kind: 'up', used: true });
+  });
+
+  it('то же: исход держит и с ней — «Надеть»', () => {
+    expect(puts(row())).toBe(true);
+  });
+});
+
+// Breakthrough вещи с формы (eval-only, шаг 2): ItemInput.bt — 4 («T4»), 0 (ниже T4), нет поля — не указан, как
+// раньше. В сборке вещь с формы — на своём Breakthrough; сеты зависят только от «T4 или нет»
+describe('Breakthrough вещи с формы (ItemInput.bt)', () => {
+  const sv = variant('Caren', 'Speed/Immu'), dv = variant('Caren', 'Def/Immu');
+  const store = (pieces: Piece[]): PoolStore => ({ pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [caren.id]: pieces.map((p) => p.id) } });
+  const X = (slot: SlotId, short: string, subs: Subs, bt?: 0 | 4 | null): ItemInput =>
+    ({ slot, grade: 'unique', setId: set(short), itemKey: null, main: null, subs, ...(bt === undefined ? {} : { bt }) });
+  const rowOf = (pieces: Piece[], x: ItemInput, vv: Variant) => outcomeFor(ctx, poolView(ctx, store(pieces)), caren.id, x)!.rows.find((r) => r.v.key === vv.key)!;
+  const HELM: Subs = { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 };
+  const immu = () => [P('gloves', 'Immunity', { 'DEF%': 2, CHC: 2, CHD: 1 }), P('shoes', 'Immunity', { 'DEF%': 2, CHC: 1, SPD: 1 })];
+  const bonusOf = (a: Assembly, short: string) => a.bonuses.filter((b) => b.set === set(short)).map((b) => `${b.n}${b.tier}`);
+
+  it('Speed-шлем с формы на T4 + Speed-броня пула на T4 — Speed ×2 на T4, исход держит', () => {
+    const pcs = [P('armor', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, 4), ...immu()];
+    const r = rowOf(pcs, X('helmet', 'Speed', HELM, 4), sv);
+    expect(r).toMatchObject({ used: true });
+    expect(bonusOf(r.after, 'Speed')).toEqual(['2T4']);
+    expect(holds(r)).toBe(true);
+  });
+
+  it('тот же шлем без «T4» (bt 0) — Speed ×2 бонуса не даёт: на T0–T3 строки 2P у Speed нет', () => {
+    const pcs = [P('armor', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, 4), ...immu()];
+    expect(bonusOf(rowOf(pcs, X('helmet', 'Speed', HELM, 0), sv).after, 'Speed')).toEqual([]);
+  });
+
+  it('Defense-шлем с формы с bt 0 + Defense-броня пула на T4 — Defense ×2 T0–T3; с «T4» — T4', () => {
+    const pcs = [P('armor', 'Defense', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, 4), ...immu()];
+    const tierOf = (bt: 0 | 4) => rowOf(pcs, X('helmet', 'Defense', HELM, bt), dv).after.bonuses.find((b) => b.set === set('Defense'))!;
+    expect(tierLabel(tierOf(0).tier)).toBe('T0–T3');
+    expect(tierLabel(tierOf(4).tier)).toBe('T4');
+  });
+
+  it('bt 0 — Breakthrough известен: у бонуса нет «отметь Breakthrough» (unknownBt); у вещи пула без него — есть', () => {
+    const known = [P('armor', 'Defense', { 'DEF%': 2, CHC: 2 }, 0), ...immu()];
+    const unknown = [P('armor', 'Defense', { 'DEF%': 2, CHC: 2 }), ...immu()];
+    const def = (pcs: Piece[]) => rowOf(pcs, X('helmet', 'Defense', HELM, 0), dv).after.bonuses.find((b) => b.set === set('Defense'))!;
+    expect([def(known).unknownBt, def(unknown).unknownBt]).toEqual([false, true]);
+  });
+
+  it('без поля bt — как bt: null: та же сборка и тот же исход', () => {
+    const pcs = [P('armor', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, 4), ...immu()];
+    const a = rowOf(pcs, X('helmet', 'Speed', HELM), sv), b = rowOf(pcs, X('helmet', 'Speed', HELM, null), sv);
+    expect([a.kind, a.used, a.delta, a.after.bonuses]).toEqual([b.kind, b.used, b.delta, b.after.bonuses]);
+    expect(a.after.slots.helmet!.bt).toBeNull();
+  });
+
+  // опровержение шага 2 (refute-2, aer-stamp): с T4 раскладка другая — Bursting-шлем вместо Speed-шлема, Speed ×4 → ×3
+  // с двумя T4: 4P T0 → 2P T4. В знаменателе «лучше» была вся строка 4P T0 — «на уровне» и без «Надеть»; убыль бонуса
+  // у новой на T4 — чистая по сету (13% SPD из 25%)
+  it('Aer: Speed-перчатки на T4 — «лучше» и «Надеть», как те же на T0', () => {
+    const aer = char('Aer');
+    const sv4 = variant('Aer', 'Speed');
+    const Q = (slot: SlotId, short: string, lit: Subs, bt: Bt | null) => P(slot, short, lit, bt, Object.keys(lit).length === 4 ? 'unique' : 'rare');
+    const pcs = [
+      Q('armor', 'Speed', { 'DEF%': 4, 'DMG UP%': 4, 'ATK%': 2 }, 1), Q('gloves', 'Speed', { 'DMG RED%': 3, 'DEF%': 2, CHD: 1, 'ATK%': 1 }, 2),
+      Q('armor', 'Penetration', { RES: 3, CHC: 4, HP: 2 }, 4), Q('shoes', 'Critical Strike', { DEF: 2, 'HP%': 4, HP: 3 }, 4),
+      Q('armor', 'Critical Strike', { 'DMG RED%': 4, HP: 2, SPD: 1, DEF: 3 }, null), Q('shoes', 'Penetration', { EFF: 4, 'DMG UP%': 3, 'DMG RED%': 1 }, 3),
+      Q('gloves', 'Penetration', { 'DEF%': 1, DEF: 3, CHD: 3 }, 4), Q('helmet', 'Speed', { 'ATK%': 2, RES: 2, 'DEF%': 1 }, 4),
+      Q('helmet', 'Bursting', { CHC: 3, SPD: 2, CHD: 3, 'DMG UP%': 4 }, 2), Q('helmet', 'Penetration', { EFF: 4, 'DMG RED%': 1, SPD: 2 }, null),
+      Q('shoes', 'Speed', { ATK: 1, HP: 2, SPD: 3, RES: 4 }, 4),
+    ];
+    const st: PoolStore = { pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [aer.id]: pcs.map((p) => p.id) } };
+    const row = (bt: 0 | 4) => outcomeFor(ctx, poolView(ctx, st), aer.id, X('gloves', 'Speed', { EFF: 1, DEF: 1, CHD: 3, RES: 2 }, bt))!.rows.find((r) => r.v.key === sv4.key)!;
+    expect([row(0), row(4)].map((r) => [r.kind, puts(r)])).toEqual([['up', true], ['up', true]]);
+    expect(row(4).lostBonus.map((b) => `${b.n}${b.tier}`)).toEqual(['4T0']);
+  });
+
+  // П7 (rivalOf) опирался на «у новой bt всегда null». Пул: Immunity-шлем и -перчатки (Immu ×2), Speed-броня на T4 и
+  // Speed-ботинки на T0, лишний Speed-шлем на T0 — по ценности такой же, как новый (EFF и RES Caren не нужны). Новый
+  // Speed-шлем на T4 с Speed-бронёй дал бы Speed ×2 T4, а тот — нет: он не соперник
+  describe('П7: соперник новой на T4 — только вещь пула на T4', () => {
+    const pool = () => [
+      P('helmet', 'Immunity', { 'DEF%': 1, CHC: 1 }), P('gloves', 'Immunity', { 'DEF%': 2, CHC: 2 }),
+      P('armor', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 1 }, 4), P('shoes', 'Speed', { 'DEF%': 2, CHC: 1 }, 0),
+      P('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, EFF: 1 }, 0),
+    ];
+    const NEW = { 'DEF%': 3, CHC: 3, CHD: 2, RES: 1 };
+
+    it('новый Speed-шлем на T4 против такого же по ценности шлема пула на T0 — «ломает» с советом, а не «на уровне» против него', () => {
+      const pcs = pool();
+      const r = rowOf(pcs, X('helmet', 'Speed', NEW, 4), sv);
+      expect(r).toMatchObject({ kind: 'breaks', used: false, broken: set('Immunity'), worn: { id: pcs[0].id }, fix: { set: set('Immunity'), slots: ['shoes'] } });
+      expect(holds(r)).toBe(true);
+    });
+
+    it('сторож: тот же шлем без «T4» — исход по сопернику, «на уровне», не держит', () => {
+      const pcs = pool();
+      const r = rowOf(pcs, X('helmet', 'Speed', NEW), sv);
+      expect(r).toMatchObject({ kind: 'eq', worn: { id: pcs[4].id }, fix: null });
+      expect(holds(r)).toBe(false);
+    });
+
+    it('сторож: шлем пула тоже на T4 — соперник, исход по нему', () => {
+      const pcs = pool().map((p, i) => (i === 4 ? { ...p, bt: 4 as Bt } : p));
+      expect(rowOf(pcs, X('helmet', 'Speed', NEW, 4), sv)).toMatchObject({ kind: 'eq', worn: { id: pcs[4].id }, fix: null });
+    });
   });
 });
 

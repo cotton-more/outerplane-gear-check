@@ -1,8 +1,8 @@
 // Экипировка: вещи персонажа (пул, GEARPOOL). Чистые данные и операции — без React и хранилища; билды собираются
 // из пула сами (logic/pool), операции «Надеть», «Убрать» — там же. Вещь попадает в пул только из оценки («Надеть» в
-// вердикте): жёлтые сегменты — как отмечены на форме, оранжевые (Reforge) и Breakthrough игрок добавляет потом в
-// карточке персонажа. Enhance не храним: считаем +10. Одна запись может быть в пулах нескольких героев — это одна
-// вещь в инвентаре, правка Reforge и Breakthrough видна у всех.
+// вердикте): жёлтые сегменты и Breakthrough — как отмечены на форме, оранжевые (Reforge) игрок добавляет потом в
+// карточке персонажа, там же правит Breakthrough. Enhance не храним: считаем +10. Одна запись может быть в пулах
+// нескольких героев — это одна вещь в инвентаре, правка Reforge и Breakthrough видна у всех.
 import { CFG } from '../config';
 import type { Grade, SlotId } from '../data/types';
 import { DROP_LEVEL, MAX_SUBS, type Subs } from './subs';
@@ -23,7 +23,7 @@ export interface Piece {
   unlisted?: boolean;
   yellow: Subs;       // жёлтые сегменты — из оценки, 1…4
   lit: Subs;          // горит всего, жёлтые и оранжевые: yellow…6
-  bt: Bt | null;      // Breakthrough; null — не указан (вещь надета из оценки, а в игре она может быть уже прокачана)
+  bt: Bt | null;      // Breakthrough; null — не указан (запись тех пор, когда форма его не знала, — в игре может быть любым)
   at: string;         // когда надета или изменена, YYYY-MM-DD
 }
 
@@ -137,15 +137,16 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   };
 }
 
-// новая запись вещи с формы: уровень (lit) — как на форме, Breakthrough не указан. yellow — тот же уровень, но не выше
-// четырёх: хранилище читает жёлтые только 1…4 (gearStore restorePieces), а старая вкладка читает yellow и lit
+// новая запись вещи с формы: уровень (lit) и Breakthrough — как на форме (поля нет — не указан). yellow — тот же
+// уровень, но не выше четырёх: хранилище читает жёлтые только 1…4 (gearStore restorePieces), а старая вкладка читает
+// yellow и lit
 export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: GearStore; piece: Piece } {
   const id = 'p' + (st.seq + 1);
   const lit = { ...item.subs };
   const yellow = Object.fromEntries(Object.entries(lit).map(([k, n]) => [k, Math.min(n, DROP_LEVEL)]));
   const piece: Piece = {
     id, slot: item.slot, grade: item.grade, setId: item.setId ?? null, itemKey: item.itemKey ?? null, main: item.main ?? null,
-    ...(item.unlisted ? { unlisted: true } : {}), yellow, lit, bt: null, at,
+    ...(item.unlisted ? { unlisted: true } : {}), yellow, lit, bt: item.bt ?? null, at,
   };
   return { st: { ...st, seq: st.seq + 1, pieces: { ...st.pieces, [id]: piece } }, piece };
 }

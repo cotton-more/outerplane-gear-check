@@ -293,6 +293,72 @@ describe('понижение — как есть', () => {
   });
 });
 
+// build/strategy/STRATEGY.md §2, пробы G и H (дыра 3): у Caren всё на T4 — Speed-шлем и -ботинки, Defense-шлем и -ботинки,
+// Immunity-броня и -перчатки. Новые Speed-ботинки лучше старых T4, свежий дроп — ниже T4 (на форме без «T4», bt 0).
+// Фиксируем «как есть»: исход считается на её Breakthrough, потенциал после Breakthrough не считаем — это задача
+// .x/bt-potential.md, она эти ожидания поменяет. На 8108e0c было «Фоддер» / «Разобрать»; со сравнения «как есть»
+// (шаг 1) штамп держится и так: Legendary — «лучше» с потерей Speed ×2 T4, Epic — «на уровне из-за T4»
+describe('свежая Speed-вещь ниже T4 против старой на T4 — как есть (STRATEGY §2 G/H)', () => {
+  const ctx = ctxOf([caren]);
+  const st = (() => {
+    let s: GearStore = EMPTY_GEAR;
+    for (const x of [
+      helmet({ 'DEF%': 2, CHC: 2, SPD: 1, HP: 1 }), piece('shoes', 'Speed', { 'DEF%': 2, CHC: 1, CHD: 1, SPD: 2 }),
+      helmet({ 'DEF%': 2, CHC: 1, CHD: 2, ATK: 1 }, 'unique', 'Defense'), piece('shoes', 'Defense', { 'DEF%': 1, CHC: 2, CHD: 1, SPD: 1 }),
+      piece('armor', 'Immunity', { 'DEF%': 3, CHC: 2, CHD: 1, SPD: 1 }), piece('gloves', 'Immunity', { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
+    ]) {
+      const r = putOn(ctx, s, caren.id, x);
+      s = updatePiece(r.st, r.id, { bt: 4 });
+    }
+    return { ...s, marks: {} };
+  })();
+  const boots = (grade: ItemInput['grade'], bt: 0 | 4): ItemInput =>
+    ({ ...piece('shoes', 'Speed', grade === 'unique' ? { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 } : { 'DEF%': 3, CHC: 3, SPD: 2 }, grade), bt });
+  const speedT4Lost = (x: ItemInput) => rowOf(ctx, st, caren, x, 'Speed/Immu')!.lostBonus.some((b) => b.set === set('Speed') && b.tier === 'T4');
+
+  it('G, Legendary на T0–T3: встаёт «лучше», но Speed ×2 T4 теряет — потенциал после Breakthrough не считается', () => {
+    const r = rowOf(ctx, st, caren, boots('unique', 0), 'Speed/Immu')!;
+    expect(r).toMatchObject({ kind: 'up', used: true });
+    expect(speedT4Lost(boots('unique', 0))).toBe(true);
+    expect(r.delta!).toBeLessThan(rowOf(ctx, st, caren, boots('unique', 4), 'Speed/Immu')!.delta!);
+  });
+
+  it('G, Epic на T0–T3: не встаёт — «на уровне из-за T4»', () => {
+    expect(rowOf(ctx, st, caren, boots('rare', 0), 'Speed/Immu')).toMatchObject({ kind: 'capped', used: false });
+  });
+
+  it('G: штамп у обеих — «Оставить», не понижен', () => {
+    expect([judge(ctx, boots('unique', 0), st), judge(ctx, boots('rare', 0), st)].map((r) => [r.v, r.worn])).toEqual([['keep', undefined], ['keep', undefined]]);
+  });
+
+  it('H: те же ботинки с «T4» на форме — встают, Speed ×2 T4 цел', () => {
+    for (const grade of ['unique', 'rare'] as const) {
+      expect(rowOf(ctx, st, caren, boots(grade, 4), 'Speed/Immu')).toMatchObject({ kind: 'up', used: true });
+      expect(speedT4Lost(boots(grade, 4))).toBe(false);
+    }
+  });
+});
+
+// опровержение шага 2 (refute-2, charlotte): та же вещь на T4 встаёт так же, итог тот же, но Speed 4P T0 сменяется на
+// 2P T4 + 4P T4 той же ценности. Строка 4P T0 в знаменателе «лучше» давала «на уровне» и «Разбирай — уже не хуже»
+it('Charlotte: Speed-шлем с формы на T4 — «Оставляй», как тот же на T0: смена 4P T0 на T4 — не потеря', () => {
+  const ch = D.chars.find((c) => c.name === 'Charlotte')!;
+  const ctx = ctxOf([ch]);
+  const P = (id: string, slot: ItemInput['slot'], grade: ItemInput['grade'], s: string, bt: 0 | 1 | 4, lit: Record<string, number>) =>
+    ({ id, slot, grade, setId: set(s), itemKey: null, main: null, yellow: lit, lit, bt, at: '' });
+  const pieces = [
+    P('p1', 'armor', 'unique', 'Speed', 4, { 'ATK%': 2, DEF: 1, 'DMG UP%': 4, 'DMG RED%': 4 }), P('p2', 'shoes', 'unique', 'Attack', 1, { 'DMG UP%': 1, SPD: 1, HP: 3, CHD: 1 }),
+    P('p3', 'shoes', 'unique', 'Speed', 4, { 'DEF%': 1, CHD: 1, CHC: 4, 'ATK%': 3 }), P('p4', 'shoes', 'rare', 'Speed', 0, { 'DMG RED%': 4, 'HP%': 4, HP: 3 }),
+    P('p5', 'gloves', 'unique', 'Speed', 4, { CHD: 1, ATK: 4, 'DMG UP%': 2, RES: 1 }), P('p6', 'helmet', 'unique', 'Speed', 0, { CHD: 3, 'DMG RED%': 3, EFF: 2, SPD: 3 }),
+  ];
+  const st: GearStore = { ...EMPTY_GEAR, seq: 6, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [ch.id]: pieces.map((p) => p.id) } };
+  const x = (bt: 0 | 4): ItemInput => ({ ...helmet({ ATK: 2, 'ATK%': 4, RES: 2 }, 'rare'), bt });
+  expect([0, 4].map((bt) => judge(ctx, x(bt as 0 | 4), st)).map((r) => [r.v, r.worn])).toEqual([['keep', undefined], ['keep', undefined]]);
+  const [r0, r4] = [rowOf(ctx, st, ch, x(0), 'Speed')!, rowOf(ctx, st, ch, x(4), 'Speed')!];
+  expect(r4.kind).toBe('up');
+  expect(r4.delta!).toBeCloseTo(r0.delta!, 9);
+});
+
 describe('примерка и материал держат штамп', () => {
   const ctx = ctxOf([caren]);
   const res = evaluate(ctx, EPIC, { gamble: false });

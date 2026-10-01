@@ -70,6 +70,25 @@ describe('материал Breakthrough для надетой', () => {
     expect(r.plan).toEqual([ru.material.plan]);
   });
 
+  // eval-only, шаг 2: запись с формы без «T4» — bt 0 (ниже T4, В4), материал Breakthrough по решению 12
+  it('запись с формы без «T4» (bt 0) — такая же Epic «Разобрать» поднимается до «Фоддер»', () => {
+    const epic: ItemInput = { ...helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare'), bt: 0 };
+    const r0 = putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'), bt: 0 });
+    expect(r0.piece.bt).toBe(0);
+    expect(evaluate(ctx, epic, { gamble: false }).v).toBe('junk');
+
+    const r = judge(epic, r0.st);
+
+    expect(r).toMatchObject({ v: 'fodder', title: 'Фоддер — материал Breakthrough для шлема Caren · Speed' });
+    expect(mat(r0.st, epic)).toMatchObject([{ piece: { id: r0.id }, left: 4 }]);
+  });
+
+  it('запись с формы с «T4» (bt 4) — не материал', () => {
+    const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
+    const r0 = putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'), bt: 4 });
+    expect(mat(r0.st, epic)).toEqual([]);
+  });
+
   it.each([
     ['Breakthrough не указан', null],
     ['надетая уже на T4', 4],

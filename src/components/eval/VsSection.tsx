@@ -123,7 +123,7 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
       out.push(t.ui.vsEmpty);
       for (const r of o.lostBonus) if (r.set === o.broken) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));
     } else out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pctOf(o), partText(idx, part)));
-    // отметить T4 у одной или двух вещей сета (Breakthrough не указан, Р20; Pen mix, Р2), иначе — найти ещё вещь сета;
+    // T4 у одной или двух вещей сета не на T4 (Р20; Pen mix, Р2), иначе — найти ещё вещь сета;
     // совет есть, только если после него у новой «Надеть» (П2, logic/pool)
     // «сделать», если у отмечаемых известен Breakthrough (П5); слоты — всегда, сабстаты — когда в слоте таких несколько (П6)
     if (o.fix?.mark) {

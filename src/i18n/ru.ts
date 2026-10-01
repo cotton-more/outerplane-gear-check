@@ -384,7 +384,7 @@ export const ru = {
     // отметить одну: другая вещь сета уже на T4. subs — сабстаты вещи («DEF% 2, CHC 2»), когда в слоте их несколько (П6)
     vsBreaksMarkOne: (set: string, slot: string, subs?: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[slot]}${inBr(subs)}.`,
     vsBreaksMarkTwo: (set: string, a: string, b: string, subsA?: string, subsB?: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[a]}${inBr(subsA)} и -${GEN[b]}${inBr(subsB)}.`,
-    // Breakthrough у вещей известен (0–3, Pen mix): «сделать», не «отметить» (П5)
+    // Breakthrough у вещей известен (0–3; любой сет — Р20 (б), Pen mix — П5): «сделать», не «отметить»
     vsBreaksMakeOne: (set: string, slot: string, subs?: string) => `Встанет, если сделать Breakthrough T4 у ${set}-${GEN[slot]}${inBr(subs)}.`,
     vsBreaksMakeTwo: (set: string, a: string, b: string, subsA?: string, subsB?: string) => `Встанет, если сделать Breakthrough T4 у ${set}-${GEN[a]}${inBr(subsA)} и -${GEN[b]}${inBr(subsB)}.`,
     vsNoTrade: (set: string) => `Бонус ${set} в статах не выразить — ради статов его не ломаю.`,

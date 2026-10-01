@@ -61,7 +61,7 @@ export function statVariant(c: Char): Variant | null {
 
 // --------------------------------------------------------------------------- сборка
 
-// вещь в сборке: записанная (piece) или с формы (piece null, id null)
+// вещь в сборке: записанная (piece) или с формы (piece null, id null; Breakthrough — как на форме, ItemInput.bt)
 export interface Entry {
   id: string | null;
   piece: Piece | null;
@@ -141,7 +141,7 @@ export function entriesFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece
     id: p.id, piece: p, input: pieceInput(p), slot: p.slot, setId: p.setId, bt: p.bt, num: numOf(p.id),
     v: storedValue(ctx, c, v, p), fit: fit(ctx, c, v.b, pieceInput(p)),
   }));
-  if (x && wearable(ctx, c, x)) out.push({ id: null, piece: null, input: x, slot: x.slot, setId: x.setId, bt: null, num: NEWEST, v: itemValue(ctx, c, v.b, x), fit: fit(ctx, c, v.b, x) });
+  if (x && wearable(ctx, c, x)) out.push({ id: null, piece: null, input: x, slot: x.slot, setId: x.setId, bt: x.bt ?? null, num: NEWEST, v: itemValue(ctx, c, v.b, x), fit: fit(ctx, c, v.b, x) });
   return out;
 }
 
@@ -412,9 +412,9 @@ export interface Outcome {
   displaced: Entry[];         // что уходит из сборки
   broken: string | null;      // сет, который распадётся: в «ломает» — поэтому не встала; в «лучше» — распадётся, но выгодно
   // «ломает»: ещё одна вещь этого сета в эти слоты — встанет; mark — не новая вещь, а Breakthrough T4 у вещей сета
-  // из пула (slots — где они, одна или две, по порядку слотов): Breakthrough не указан (Р20) или Pen mix без T4 (Р2).
+  // из пула не на T4 (slots — где они, одна или две, по порядку слотов; Р20, Pen mix — Р2).
   // Совет даётся, только если после него у новой «Надеть» (П2). make — у отмечаемых известен Breakthrough 0–3:
-  // «сделать», не «отметить» (П5). pieces — что отметить, по slots; which — по slots: вещь, которую назвать
+  // «сделать», не «отметить» (П5, Р20 (б)). pieces — что отметить, по slots; which — по slots: вещь, которую назвать
   // сабстатами, — в её слоте есть другая, которой совет может касаться, и с ней «Надеть» нет (П6); null — не нужно
   fix: { set: string; slots: ArmorSlot[]; t4: boolean; mark: boolean; make: boolean; pieces: Piece[]; which: (Piece | null)[] } | null;
   t4: { set: string; n: number } | null; // часть её сета в связке — с бонусом только на T4
@@ -465,7 +465,7 @@ function putsOn(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: Item
 // «ломает»: куда ещё одна вещь распавшегося сета вернула бы его (и нужна ли она на T4). «Найди ещё …» (и «… на T4») —
 // только в слоты, где после этого у новой «Надеть» (П2; без T4 — решение владельца 2026-10-01): найденная — та же вещь,
 // что в проверке раскладки (сета, без сабстатов: «Надеть» даёт даже пустая найденная — заслуга самой новой; Breakthrough
-// — T4 или, как у вещи с формы, не указан), — в пул, и исход новой по нему. Нет слотов без T4 — пробуем на T4. Своя
+// — T4 или не указан, то есть не T4), — в пул, и исход новой по нему. Нет слотов без T4 — пробуем на T4. Своя
 // вещь слота, сделанная T4, не в счёт: текст — «найдёшь ещё»
 function fixFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, forced: Assembly, was: Assembly, set: string): Outcome['fix'] {
   const xSlot = x.slot;
@@ -509,37 +509,43 @@ function markSome(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: It
   return null;
 }
 
-// Р20: у вещей распавшегося сета в пуле Breakthrough не указан (bt: null) — совет «отметь T4», если с отметкой у новой
-// «Надеть» (П2); он впереди «найди ещё». Известный Breakthrough ниже T4 (0–3) не отмечаем — это прокачка, не отметка
-function markUnknown(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string): Outcome['fix'] {
-  const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt === null);
-  return open.length ? markSome(ctx, c, v, pieces, x, set, open) : null;
-}
-
-// «ломает» из-за части-эффекта ×2, чей бонус только на T4 (Pen mix у Luna, Р2): четыре Pen без двух на T4 — раскладка
-// Pen ×4 (бонус на T0 есть, у Pen ×2 без T4 — нет), и вещь другой части не встаёт. Только сет-эффект (сет-стат ×4 ради
-// статов и так ломается) и только когда ни markUnknown, ни прежний совет (fixFor) ничего не дали: здесь отмечаются и
-// вещи с известным Breakthrough ниже T4 (Pen на T0 — отметить = сделать Breakthrough, шаг 4; текст — «сделать», П5)
-function markFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, before: Assembly, set: string): Outcome['fix'] {
-  const part = combo(v).find((p) => p.set === set);
-  if (!part || part.n !== 2 || !t4Only(ctx.idx.SET[set], part.n) || isConv(ctx, c, vc(ctx, c, v), set)) return null;
-  const inBefore = ARMOR.map((slot) => before.slots[slot]).filter((e) => e?.setId === set);
-  if (inBefore.length !== 4 || inBefore.filter((e) => e!.bt === 4).length >= 2) return null;
+// Р20: Breakthrough T4 у вещей распавшегося сета в пуле, которые не на T4 (не в её слоте), — если с ним у новой
+// «Надеть» (П2); совет впереди «найди ещё». Не указан (bt: null, старая запись) — «отметь T4»; известен ниже T4 (0–3) —
+// «сделать» (Р20 (б), как Pen mix — П5): что в пуле, то и в игре, это совет прокачки, а не «проверь, не забыл ли». При
+// равной длине совета первыми — вещи без Breakthrough: «отметь» дешевле, чем «сделай». Pen mix без двух T4 (Р2) — тот
+// же совет: четыре Pen держат Pen ×4 на T0, и вещь другой части встаёт, только когда две Pen на T4. До Р20 (б) его
+// давал отдельный markFor (после «найди ещё»; в переборе опровергателя — 565 советов из 1812 «ломает»); его набор вещей
+// (сета, не на T4) входит в набор здесь, а успех markSome от порядка не зависит — он удалён, советы те же по длине
+function markT4(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string): Outcome['fix'] {
   const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt !== 4);
-  return markSome(ctx, c, v, pieces, x, set, open);
+  const unknownFirst = [...open.filter((p) => p.bt === null), ...open.filter((p) => p.bt !== null)];
+  return open.length ? markSome(ctx, c, v, pieces, x, set, unknownFirst) : null;
 }
 
 // П7: вещь пула её сета и её слота, с которой новая не встанет ни при каких отметках, — лучшая по ценности, не
 // дешевле новой. Замена новой на неё в любой раскладке счёт не ухудшает: сет и слот те же, ценность не меньше,
 // старшинство выше (при равенстве остаётся старшая, NEWEST), а T4 у неё (или отметка T4) бонус сета только добавляет
-// (bonusRows: строки T4 вместо T0 или сверху; бонус T4 в данных не меньше T0). У новой bt всегда null — не T4
+// (bonusRows: строки T4 вместо T0 или сверху; бонус T4 в данных не меньше T0). Новая на T4 (с формы, ItemInput.bt) —
+// соперник тоже только на T4: вещь не на T4 вместо неё бонус T4 сета теряет
 function rivalOf(es: readonly Entry[], X: Entry): Entry | null {
   let best: Entry | null = null;
   for (const e of es) {
-    if (!e.piece || e.slot !== X.slot || e.setId !== X.setId || e.v < X.v - EPS) continue;
+    if (!e.piece || e.slot !== X.slot || e.setId !== X.setId || e.v < X.v - EPS || (X.bt === 4 && e.bt !== 4)) continue;
     if (!best || e.v > best.v + EPS || (Math.abs(e.v - best.v) <= EPS && e.num < best.num)) best = e;
   }
   return best;
+}
+
+// Ценность бонусов, что пропали при «Надеть», — чистая убыль по сетам: ценность бонусов сета до минус после, если она
+// убыла. Строки сета меняются, не пропадая целиком: Speed ×4 → ×3 при двух T4 — 4P T0 → 2P T4, потеря лишь разница;
+// T4 новой — 4P T0 → 2P T4 + 4P T4 той же ценности, потери нет. Полные строки в знаменателе завышали цену замены (вещь
+// «на уровне», где она «лучше», — ложное понижение). Вид исхода с T4 и на T0 может разойтись, когда раскладки разные
+// (с T4 «на уровне» по паре или при двух вытесненных) — так и есть: штамп и «Надеть» от T4 не хуже (перебор шага 2)
+function lostBonusValue(ctx: Ctx, c: Char, W: VCache['W'], lostBonus: readonly BonusRow[], gainedBonus: readonly BonusRow[]): number {
+  const by = new Map<string, number>();
+  for (const r of lostBonus) by.set(r.set, (by.get(r.set) ?? 0) + bonusValue(ctx, c, W, r));
+  for (const r of gainedBonus) by.set(r.set, (by.get(r.set) ?? 0) - bonusValue(ctx, c, W, r));
+  return [...by.values()].reduce((s, d) => s + Math.max(0, d), 0);
 }
 
 // with_ — сборка с ней (play с вещью считает все варианты, «По статам» тоже)
@@ -571,7 +577,8 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
     const displaced = Object.values(before.slots).filter((e): e is Entry => !!e && !kept.has(e.id));
     const bd = bonusDiff(after);
     const x1 = vc(ctx, c, v);
-    const lostValue = displaced.reduce((s, e) => s + e.v, 0) + bd.lostBonus.reduce((s, r) => s + bonusValue(ctx, c, x1.W, r), 0);
+    // знаменатель — ценность вытесненного: вещи и чистая убыль бонусов по сетам
+    const lostValue = displaced.reduce((s, e) => s + e.v, 0) + lostBonusValue(ctx, c, x1.W, bd.lostBonus, bd.gainedBonus);
     const lost = displaced.length > 0 || bd.lostBonus.length > 0;
     const delta = lost ? (after.total - before.total) / Math.max(lostValue, LOST_MIN) : null;
     const lostEmpty = lost && lostValue < LOST_MIN && after.total - before.total > EPS;
@@ -610,7 +617,7 @@ function outcomeOf(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: I
       const p = against(ctx, c, v.b, x, rival.piece!, X.fit);
       return { ...rest, kind: byDelta(p.delta), pair: p, worn: rival, delta: p.delta, broken };
     }
-    const fix = markUnknown(ctx, c, v, pieces, x, broken) ?? fixFor(ctx, c, v, pieces, x, forced, before, broken) ?? markFor(ctx, c, v, pieces, x, before, broken);
+    const fix = markT4(ctx, c, v, pieces, x, broken) ?? fixFor(ctx, c, v, pieces, x, forced, before, broken);
     return { ...rest, kind: 'breaks', broken, fix, brokenSegs: segsOf(bd.lostBonus, broken) };
   }
   if (bd.lostBonus.some((r) => r.tier === 'T4')) return { ...rest, kind: betterBySegs ? 'capped' : byDelta(d), broken: null };
