@@ -12,7 +12,7 @@ export function TryOnStrip({ c, onEnd }: { c: Char; onEnd: () => void }) {
       <span className="tryon-k">{t.tryon.label}</span>
       <span className="tryon-d" aria-hidden="true">·</span>
       <Img k={'face:' + c.icon} className="face" />
-      <span className="tryon-n"><b>{c.name}</b></span>
+      <span className="tryon-n" title={c.name}><b>{c.name}</b></span>
       <button type="button" className="tryon-x" aria-label={t.tryon.end} title={t.tryon.end} onClick={onEnd}>✕</button>
     </div>
   );

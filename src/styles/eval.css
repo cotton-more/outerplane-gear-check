@@ -37,9 +37,10 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .btchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--ink); }
 html.xs .btchip { min-width: 40px; padding: 0 6px; }
 html.xs .pick-sfx { display: none; }
-/* строка уже 250px (280px: 222px): грейды уже, у поля без ▾ и значок поменьше — имени сета остаётся ≈ 50px («Speed») */
+/* строка уже 260px (280px: 222px; 310px: 252px): грейды уже, у поля без ▾ и значок поменьше — имени сета остаётся
+   ≈ 50px («Speed»); на 251–259 без этого «Speed» уже резался до «Sp…» */
 .formrow { container-type: inline-size; }
-@container (max-width: 250px) {
+@container (max-width: 260px) {
   .grade { width: 38px; }
   html .formrow .pick { padding: 4px 6px; gap: 4px; }
   .pick-v { gap: 4px; }
@@ -73,19 +74,28 @@ html.xs .subrow .roll-b button { min-width: 30px; }
    — узкие */
 html.xs .subrow .subkey { padding: 4px 6px; gap: 5px; }
 html.xs .subrow .roll-b button.after { min-width: 26px; }
-/* строка уже 250px (разделённый экран 280px: строка 222px): шесть кнопок и «DMG RED%» целиком — кнопки 25/22px,
-   у поля стата нет значка и метки Reforge (4-й у Epic), шрифт чуть мельче. Запас: 222 − 6 − (4×25 + 2×22 + 2) = 70,
-   «DMG RED%» 12px ≈ 58 + рамка и отступы 10. Селекторы с html — чтобы перебить html.xs выше */
+/* шесть кнопок и «DMG RED%» целиком (замеры build/review-eval-only/fix-5). Строка уже 280px (окно ≤ 338px): у поля стата
+   нет значка, шрифт чуть мельче — со значком «DMG RED%» на 252–272px вылезал за рамку. Уже 250px (разделённый экран
+   280px: строка 222px) — ещё и кнопки 25/22px: 222 − 6 − (4×25 + 2×22 + 2) = 70, «DMG RED%» 12px ≈ 58 + рамка и
+   отступы 10. Метка Reforge (4-й у Epic) рядом с «DMG RED%» помещается только от 342px — уже её нет (на 300–390 она
+   уходила под кнопки). Селекторы с html — чтобы перебить html.xs выше */
 .subrow { container-type: inline-size; }
+@container (max-width: 341px) {
+  .subkey .subtag { display: none; }
+}
+@container (max-width: 280px) {
+  html .subrows .subrow .subkey { padding: 4px; gap: 4px; }
+  .subkey .lab { font-size: 12px; }
+  .subkey img, .subkey .noimg, .subkey .ico { display: none; }
+}
 @container (max-width: 250px) {
   html .subrows .subrow .roll-b button { min-width: 25px; }
   html .subrows .subrow .roll-b button.after { min-width: 22px; }
-  html .subrows .subrow .subkey { padding: 4px; gap: 4px; }
-  .subkey .lab { font-size: 12px; }
-  .subkey img, .subkey .noimg, .subkey .ico, .subkey .subtag { display: none; }
 }
-/* нажатие сверх предела суммы сегментов: строка под строками сабстатов, без анимации (ввод) */
+/* нажатие сверх предела суммы сегментов: строка под строками сабстатов, без анимации (ввод). Появилась — SubRows
+   прокручивает к ней (block: nearest); на телефоне — так, чтобы её не закрывала нижняя плашка (--vbar-h, verdict.css) */
 .seg-cap { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.form .seg-cap { scroll-margin-bottom: calc(var(--vbar-h, 0px) + env(safe-area-inset-bottom, 0px)); }
 .subremove { margin-top: 10px; width: 100%; }
 /* окна выбора */
 .codein { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -152,7 +162,7 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .roll-b button { min-width: 42px; height: 40px; border: 0; border-left: 1px solid var(--line); background: transparent; font: 700 14px/1 var(--font-mono); color: var(--ink-2); }
 .roll-b button:first-child { border-left: 0; }
 .roll-b button.after { color: var(--ink-3); }
-.roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: #1b1300; }
+.roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: var(--seg-lit-ink); }
 .roll-b button[aria-pressed="true"] { background: var(--seg-y); color: #1b1300; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); }

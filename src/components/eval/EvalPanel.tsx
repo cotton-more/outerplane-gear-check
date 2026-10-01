@@ -9,7 +9,7 @@ import type { GearKind } from '../../data/types';
 import { fineHover } from '../../hooks/useLayout';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
-import { MAX_SUBS } from '../../logic/subs';
+import { MAX_SUBS, withinCap } from '../../logic/subs';
 import { mainOptions, setSubDemand } from '../../logic/lists';
 import { blocksOf, itemMains as mainLines } from '../../logic/mains';
 import type { Verdict as VerdictData } from '../../logic/verdict';
@@ -25,7 +25,7 @@ import { PickField } from './PickField';
 import { SetPicker } from './SetPicker';
 import { SubPicker } from './SubPicker';
 import { StatGrid } from './StatGrid';
-import { SubRows } from './SubRows';
+import { SubRows, type CapAt } from './SubRows';
 import { VerdictCard } from './Verdict';
 import { TryOnStrip } from './TryOnStrip';
 import type { Char } from '../../data/types';
@@ -50,6 +50,14 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const t = useT();
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
+  // новый сабстат (сетка, «+ 4-й») с суммой уровней выше предела не добавляется — строка segCap под строками, как у
+  // нажатия сегмента (SubRows); снять стат можно всегда
+  const [cap, setCap] = useState<CapAt | null>(null);
+  const addSub = (key: string) => {
+    const adds = !(key in s.subs) && Object.keys(s.subs).length < MAX_SUBS;
+    if (adds && !withinCap(s.grade, s.subs, { ...s.subs, [key]: 1 })) { setCap({ subs: s.subs, grade: s.grade }); return; }
+    dispatch({ type: 'sub', key });
+  };
   const armor = isArmor(s.slot);
   const t4 = armor && s.t4 ? t.ui.withT4 : '';
   // строки main: у брони фиксированы сетом, у оружия — flat ATK и выбранный; сабстатов, которые они запрещают, в сетке нет
@@ -139,10 +147,10 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
               )}
               {heroNote && <p className="vc-note">{heroNote}</p>}
             </>
-            : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
+            : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={addSub} />}
         </div>
         {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
-        <SubRows subs={s.subs} grade={s.grade} epic={epic} fourth={epic} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
+        <SubRows subs={s.subs} grade={s.grade} epic={epic} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
       </div>
 
       <div className="actions">
@@ -181,7 +189,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       {open === 'fourth' && (
         <Sheet title={t.ui.fourthSheet} onClose={close}>
           <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={null}
-            onPick={(key) => { dispatch({ type: 'sub', key }); close(); }} />
+            onPick={(key) => { addSub(key); close(); }} />
         </Sheet>
       )}
       {open !== null && typeof open === 'object' && (

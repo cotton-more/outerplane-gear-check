@@ -924,6 +924,17 @@ describe('карточка персонажа', () => {
     expect(names.map((n) => n?.match(/Speed|Immunity|Defense/)?.[0])).toEqual(['Speed', 'Immunity', 'Defense']);
   });
 
+  // находка 6: было — в строке только название и «где стоит», какая из двух одинаковых на T4 — только в шторке
+  it('«Вещи Caren · N»: у брони Breakthrough — «T0–T3» / «T4», как в слоте билда; у оружия метки нет', async () => {
+    const ps = [P('p1', 'helmet', speed, { 'DEF%': 2 }, { bt: 0 }), P('p2', 'helmet', speed, { CHC: 2 }, { bt: 4 }),
+      P('p3', 'weapon', null, { CHC: 1 }, { main: 'ATK%', bt: 0 })];
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2', 'p3'] }) });
+
+    const names = $$('.pool-row .bgear-n').map((n) => n.textContent);
+
+    expect(names).toEqual(['LATK%', 'LSpeed Set· T0–T3', 'LSpeed Set· T4']);
+  });
+
   // на 280 ширину в jsdom не проверить (@container в chars.css); проверяем разметку: кнопка — до заголовка, своим блоком
   it('на 280: «Rate a piece for Caren» — над «Вещи Caren · N», группы по слотам те же', async () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 280 });

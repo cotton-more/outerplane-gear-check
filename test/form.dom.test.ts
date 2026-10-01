@@ -242,4 +242,28 @@ describe('сегменты 1–6', () => {
     expect(level(3)).toBe('5');
     expect($('.seg-cap')?.textContent).toBe("A piece can't have more than 17 segments — check the substats.");
   });
+  // находка 9: было — 4-й сабстат сверх предела не добавлялся молча (окно закрылось, строки нет)
+  it('«+ 4-й сабстат» сверх предела (Epic 6/6/5 = 17): сабстатов 3, строка «больше 17 не бывает»', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed(), subs: { SPD: 6, CHC: 6, CHD: 5 } });
+    await click($('.subadd'));
+    const atk = $('.subopt[data-tour-item="ATK%"]') as HTMLButtonElement | null; // HP% у шлема — main
+    expect(atk?.disabled).toBe(false);
+
+    await click(atk);
+
+    expect(document.querySelectorAll('.subrow')).toHaveLength(3);
+    expect($('.seg-cap')?.textContent).toContain('17');
+  });
+
+  it('сетка сверх предела (Epic 6/6/5 без сета): сабстат не добавлен, та же строка; снять стат сеткой можно', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { subs: { SPD: 6, CHC: 6, CHD: 5 } });
+
+    await click($('.statgrid .sg[data-tour-item="ATK%"]'));
+
+    expect(document.querySelectorAll('.subrow')).toHaveLength(3);
+    expect($('.seg-cap')?.textContent).toContain('17');
+    await click($('.statgrid .sg[data-tour-item="CHD"]'));
+    expect(document.querySelectorAll('.subrow')).toHaveLength(2);
+    expect($('.seg-cap')).toBeNull();
+  });
 });

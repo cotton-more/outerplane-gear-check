@@ -29,8 +29,8 @@
   --el-light: #b07d00;
   --el-dark: #7048e8;
   --seg-y: #e5a00f;
+  --seg-lit-ink: #1b1300; /* цифра на горящем сегменте (eval.css .roll-b .lit); в тёмной теме — светлая: 5.8:1, тёмная была 2.6:1 */
   --seg-off: #aeb7c4;
-  --seg-o: #e8792a;
   --star-on: #b97c00;
   --radius: 10px;
   --radius-s: 7px;
@@ -70,8 +70,8 @@
     --el-light: #f5c542;
     --el-dark: #b197fc;
     --seg-y: #f0b030;
+    --seg-lit-ink: #e7ebf1;
     --seg-off: #3d4757;
-    --seg-o: #ff8a3d;
     --star-on: #f0b030;
   }
 }
@@ -106,8 +106,8 @@
   --el-light: #f5c542;
   --el-dark: #b197fc;
   --seg-y: #f0b030;
+  --seg-lit-ink: #e7ebf1;
   --seg-off: #3d4757;
-  --seg-o: #ff8a3d;
   --star-on: #f0b030;
 }
 

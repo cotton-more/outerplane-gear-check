@@ -1,4 +1,4 @@
-import { useState, type Dispatch } from 'react';
+import { useEffect, useRef, type Dispatch } from 'react';
 import { FLAT, subLabel } from '../../data';
 import type { Grade } from '../../data/types';
 import { useT } from '../../i18n';
@@ -16,15 +16,22 @@ const ROLLS = [1, 2, 3, 4, 5, 6];
 // Добавляют сабстаты сеткой над строками: строки растут вниз, и сетка при вводе не сдвигается.
 // У Epic-брони с тремя — кнопка 4-го сабстата от Reforge: на телефоне сетку к этому времени уже сменила карточка.
 // Нажатие, с которым сумма уровней ушла бы выше предела грейда (logic/subs levelCap), не срабатывает — под строками
-// строка «больше N не бывает»; уходит со следующей правкой сабстатов (новый объект subs) или сменой грейда
-export function SubRows({ subs, grade, epic, fourth, dispatch, onPick, onAddFourth }: {
-  subs: Subs; grade: Grade; epic: boolean; fourth: boolean; dispatch: Dispatch<Action>; onPick: (editing: string) => void; onAddFourth: () => void;
+// строка «больше N не бывает»; уходит со следующей правкой сабстатов (новый объект subs) или сменой грейда. То же —
+// у добавления сабстата сеткой и «+ 4-й» (EvalPanel), поэтому «упёрлось» хранит EvalPanel: cap и onCap. Строка
+// появилась — прокрутка к ней ровно настолько, чтобы её было видно (на форме — над нижней плашкой, eval.css), без анимации
+export type CapAt = { subs: Subs; grade: Grade }; // на чём нажатие упёрлось в предел
+
+export function SubRows({ subs, grade, epic, fourth, cap, onCap, dispatch, onPick, onAddFourth }: {
+  subs: Subs; grade: Grade; epic: boolean; fourth: boolean; cap: CapAt | null; onCap: (at: CapAt) => void;
+  dispatch: Dispatch<Action>; onPick: (editing: string) => void; onAddFourth: () => void;
 }) {
   const t = useT();
   const keys = Object.keys(subs);
-  const [capAt, setCapAt] = useState<{ subs: Subs; grade: Grade } | null>(null); // на чём нажатие упёрлось в предел
+  const capped = cap?.subs === subs && cap.grade === grade;
+  const capRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => { if (capped) capRef.current?.scrollIntoView?.({ block: 'nearest' }); }, [capped, cap]);
   const roll = (key: string, n: number) => {
-    if (!withinCap(grade, subs, { ...subs, [key]: n })) { setCapAt({ subs, grade }); return; }
+    if (!withinCap(grade, subs, { ...subs, [key]: n })) { onCap({ subs, grade }); return; }
     dispatch({ type: 'roll', key, n });
   };
   return (
@@ -50,7 +57,7 @@ export function SubRows({ subs, grade, epic, fourth, dispatch, onPick, onAddFour
       {fourth && keys.length === MAX_SUBS - 1 && (
         <button type="button" className="subadd" onClick={onAddFourth} {...tour('fourth')}>+ {t.ui.addFourth}</button>
       )}
-      {capAt?.subs === subs && capAt.grade === grade && <p className="seg-cap" role="status">{t.ui.segCap(levelCap(grade))}</p>}
+      {capped && <p ref={capRef} className="seg-cap" role="status">{t.ui.segCap(levelCap(grade))}</p>}
     </div>
   );
 }

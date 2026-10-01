@@ -5,7 +5,7 @@
 // билд», «Примерить» (пустой слот), «Слабее всех» и «Примерить замену» (вещь) открывают оценку в режиме «для героя» —
 // слот и сет этого варианта на форме; на вкладке «По статам» — без сета (туда встаёт то, что герой носит не по билду,
 // находка 28).
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
@@ -46,7 +46,7 @@ export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
 }
 
 // Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма брони без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
-const btText = (t: ReturnType<typeof useT>, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
+export const btText = (t: ReturnType<typeof useT>, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
 
 // текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base
 export const bonusText = (idx: Index, r: BonusRow): string => {
@@ -211,12 +211,16 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
 }) {
   const t = useT();
   const [fourth, setFourth] = useState(false);
-  const [capAt, setCapAt] = useState<Subs | null>(null); // на каких уровнях нажатие упёрлось в предел
+  // на каких уровнях нажатие упёрлось в предел; новый объект на каждое — строка снова прокручивается в видимую часть
+  const [capAt, setCapAt] = useState<{ lit: Subs } | null>(null);
+  const capped = capAt?.lit === p.lit;
+  const capRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => { if (capped) capRef.current?.scrollIntoView?.({ block: 'nearest' }); }, [capped, capAt]);
   const keys = Object.keys(p.lit);
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
   const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
   const edit = (lit: Subs, patch: PieceEdit) => {
-    if (!withinCap(p.grade, p.lit, lit)) { setCapAt(p.lit); return; }
+    if (!withinCap(p.grade, p.lit, lit)) { setCapAt({ lit: p.lit }); return; }
     onEdit(patch);
   };
   const tap = (k: string, n: number) => {
@@ -260,7 +264,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
             </div>
           ))}
           {canFourth && <button type="button" className="subadd" onClick={() => setFourth(true)}>+ {t.ui.addFourth}</button>}
-          {capAt === p.lit && <p className="seg-cap" role="status">{t.ui.segCap(levelCap(p.grade))}</p>}
+          {capped && <p ref={capRef} className="seg-cap" role="status">{t.ui.segCap(levelCap(p.grade))}</p>}
         </div>
         <p className="muted small">{t.ui.pieceEditNote(c.name)}</p>
         <div className="piece-act">

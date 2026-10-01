@@ -140,14 +140,13 @@ html.xs .bgear-t { grid-row: 3; }
 .piece-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .piece-top .piece-n { flex: 1; }
 .piece .subkey { display: flex; align-items: center; min-width: 0; min-height: 36px; }
-/* шторка на 280px: строка ≈ 252px — чуть шире, чем у формы (eval.css, 250px), и «DMG RED%» со значком не влезает
-   рядом с шестью кнопками: без значка, шрифт мельче; кнопки — прежние 30/26px (название стата не кнопка — места хватает) */
-@container (max-width: 262px) {
+/* шторка: строка уже 280px (окно ≤ 308px; на 280 — 252px) — «DMG RED%» со значком не влезает рядом с шестью кнопками
+   (на 300 вылезал на 5px): без значка, шрифт мельче; кнопки — прежние 30/26px (название стата не кнопка — места хватает) */
+@container (max-width: 280px) {
   .piece .subkey { padding: 4px; }
   .piece .subkey .lab { font-size: 12px; }
   .piece .subkey img, .piece .subkey .noimg, .piece .subkey .ico { display: none; }
 }
-.piece-bt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .piece-act { display: flex; flex-wrap: wrap; gap: 8px; }
 /* окна-вопросы (Core Fusion, снятие звезды): заголовок — вопрос с именем, на 280 не режем многоточием, а переносим */
 .drawer.ask .drawer-h h3 { white-space: normal; text-wrap: balance; }
