@@ -6,7 +6,8 @@
 // которую держит только достижимая, не надета, и «надень, она лучше» (betterThanWorn) о ней не скажет.
 // Штамп только поднимается: «Оставить» и «Временно» не трогаем, там это пометка в «Сейчас на персонажах».
 // Вещь лучше той надетой, для которой она материал (или в примерке у цели слот пуст), — совет «надень», а не «отдай».
-import { isArmor, type Index } from '../data';
+// Лучше надетой такой же — штамп «Оставляй»: вердикт всегда про ту вещь, которую оцениваем (решение владельца).
+import { FLAT, isArmor, type Index } from '../data';
 import type { Texts } from '../i18n';
 import type { Ctx } from './context';
 import type { Piece } from './gear';
@@ -56,10 +57,12 @@ const whoOf = (idx: Index, key: string, t: Texts) => {
 };
 
 // Когда вещь лучше надеть, чем отдать в Breakthrough: up — надетые слабее её (betterThanWorn); target — в примерке
-// у цели этот слот пуст или вещь лучше надетой («Caren · Speed»)
-export interface Wear { up: Need[]; target: string | null }
+// у цели этот слот пуст или вещь лучше надетой («Caren · Speed»); t4 — она сама на T4 (форма): старую ей в
+// Breakthrough не отдать, только надеть
+export interface Wear { up: Need[]; target: string | null; t4?: boolean }
 
-// «Разобрать» → «Фоддер»; у «Фоддер» — строка, для какой надетой вещи он материал, или что её лучше надеть
+// «Разобрать» → «Фоддер»; у «Фоддер» — строка, для какой надетой вещи он материал, или что её лучше надеть.
+// Лучше надетой такой же (up) — «Оставляй» и из «Разобрать», и из «Фоддер»
 export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], wear: Wear = { up: [], target: null }): Verdict {
   if (!needs.length || (res.v !== 'junk' && res.v !== 'fodder')) return res;
   const M = t.material;
@@ -67,20 +70,34 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
   const list = (ns: Need[]) => ns.slice(0, 2).map((n) => M.need(t.ui.slotNom[slot], whoOf(idx, n.key, t), n.piece.bt!, n.left)).join('; ')
     + (ns.length > 2 ? t.more(ns.length - 2) : '');
   const feed = needs.filter((n) => !wear.up.includes(n));
+  const fed = feed.length ? [M.line(list(feed))] : [];
   // «Копишь фоддер? Включи — станут «Фоддер»» не нужна: штамп уже «Фоддер»
   const set = needs[0].piece.setId ? idx.SET[needs[0].piece.setId]?.short : undefined;
-  const lines = [
-    ...(wear.up.length ? [M.lineWear(list(wear.up))] : []),
-    ...(feed.length ? [M.line(list(feed))] : []),
-    ...(set ? res.lines.filter((l) => l !== t.armor.enableFodder(set)) : res.lines),
-  ];
-  // «Прокачка»: надеть (старая — ей в Breakthrough), надеть в примерке, иначе не прокачивать; кубик — как был
+  const own = set ? res.lines.filter((l) => l !== t.armor.enableFodder(set)) : res.lines;
+  // кубик — как был
   const gamble = res.gamble ? [t.plan.gamble('junk')] : [];
-  const wearPlan = wear.up.length ? M.planReplace(whoOf(idx, wear.up[0].key, t)) : wear.target ? M.planWear(wear.target) : null;
+  if (wear.up.length) {
+    const who = whoOf(idx, wear.up[0].key, t);
+    // Из прежних строк — первая: кому и чем вещь хороша (как у понижения, logic/worn), и «Проверь HP: flat». Прочие —
+    // почему «Разобрать» или «Фоддер» и как поднять до «Оставить» — не про этот штамп; у оружия и аксессуара первая
+    // строка «Фоддер» и объясняет — её тоже нет. «Прокачка»: надеть, старая — ей в Breakthrough; новой на T4 — надеть.
+    // Кубика нет: он про то, какой 4-й сабстат поднимет штамп до «Оставить», а штамп уже «Оставляй»
+    const first = res.v === 'fodder' && !set ? -1 : 0;
+    const flat = new Set([...FLAT].map((k) => t.verdict.flatHint(k)));
+    return {
+      ...res, v: 'keep', badge: '', roll: undefined, gamble: null,
+      title: wear.t4 ? M.titleWearT4(slot, who) : M.titleWear(slot, who),
+      lines: [(wear.t4 ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...own.filter((l, i) => i === first || flat.has(l))],
+      plan: [wear.t4 ? M.planWear(who) : M.planReplace(who)],
+    };
+  }
+  const lines = [...fed, ...own];
+  // «Прокачка»: надеть в примерке, иначе не прокачивать
+  const wearPlan = wear.target ? M.planWear(wear.target) : null;
   if (res.v === 'fodder') return { ...res, lines, ...(wearPlan ? { plan: [wearPlan, ...gamble] } : {}) };
   return {
     ...res, v: 'fodder', badge: '',
-    title: wear.up.length ? M.titleWear(t.ui.slotGen[slot], whoOf(idx, wear.up[0].key, t)) : M.title(t.ui.slotGen[slot], whoOf(idx, needs[0].key, t)),
+    title: M.title(t.ui.slotGen[slot], whoOf(idx, needs[0].key, t)),
     lines,
     plan: [wearPlan ?? (res.gamble ? M.planGamble : M.plan), ...gamble],
   };

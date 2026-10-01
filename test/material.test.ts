@@ -128,17 +128,33 @@ describe('материал Breakthrough для надетой', () => {
     const WEAK = helmet({ HP: 1, DEF: 1, ATK: 1 }, 'rare'); // надета на Caren · Speed, T2
     const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
 
-    it('новая лучше надетой — «надень её», старая ей в Breakthrough; «отдай надетой» нет', () => {
+    // шаг 3б (решение владельца): вердикт — про оцениваемую вещь; её надо надеть — «Оставляй», а не «Фоддер»
+    it('новая лучше надетой — «Оставляй»: «надень её», старая ей в Breakthrough; «отдай надетой» нет', () => {
       const better = helmet({ DEF: 1, CHC: 1, HP: 1 }, 'rare');
       const r = judgeAll(better, wearing(2, WEAK));
-      expect(r.v).toBe('fodder');
-      expect(r.title).toBe(ru.material.titleWear(ru.ui.slotGen.helmet, 'Caren · Speed'));
+      expect(r.v).toBe('keep');
+      expect(r.title).toBe('Оставляй — лучше надетого шлема Caren · Speed: надень её, а старую — ей в Breakthrough');
       expect(r.lines[0]).toBe(ru.material.lineWear('шлем Caren · Speed — T2, ещё 2 шт. до T4'));
       expect(r.plan[0]).toBe(ru.material.planReplace('Caren · Speed'));
       expect(r.plan).not.toContain(ru.material.plan);
     });
 
     // Н3: «надень» — по вещам как есть. Было: у свежей 6 Reforge впереди, у надетой (4 оранжевых) — 2, и новая «лучше»
+    it('«Фоддер» сырым вердиктом (Legendary, «Копишь фоддер») и лучше надетой — тоже «Оставляй», строки «Фоддер» нет', () => {
+      const r = judgeAll(helmet({ CHC: 1, RES: 1, HP: 1, EFF: 1 }), wearing(2, helmet({ HP: 1, DEF: 1, ATK: 1, RES: 1 })));
+      expect(r.v).toBe('keep');
+      expect(r.title).toBe(ru.material.titleWear('helmet', 'Caren · Speed'));
+      expect(r.lines.join('\n')).not.toContain('Держи не больше 4');
+      expect(r.plan[0]).toBe(ru.material.planReplace('Caren · Speed'));
+    });
+
+    it('род слота в заголовке: надетого шлема, надетой брони, надетых перчаток, надетого оружия', () => {
+      expect(['helmet', 'armor', 'gloves', 'weapon'].map((sl) => ru.material.titleWearT4(sl, 'X'))).toEqual([
+        'Оставляй — лучше надетого шлема X: надень её', 'Оставляй — лучше надетой брони X: надень её',
+        'Оставляй — лучше надетых перчаток X: надень её', 'Оставляй — лучше надетого оружия X: надень её',
+      ]);
+    });
+
     it('как есть: надетая с оранжевыми лучше новой — «надень» нет, только материал', () => {
       const r = putOn(ctx, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, helmet({ 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }));
       const st = updatePiece(r.st, r.id, { bt: 2, lit: { 'DEF%': 4, CHC: 3, CHD: 3, SPD: 1 } });
@@ -175,6 +191,58 @@ describe('материал Breakthrough для надетой', () => {
       const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
       expect(mat(wearing(2, WORN, '999999'), junk)).toEqual([]);
       expect(mat(wearing(2), junk)).toHaveLength(1);
+    });
+  });
+
+  // шаг 3б: Pen-броня Epic с мусорными сабстатами у Anarky · Defense mix (Defense-шлем и перчатки, Pen-ботинки на T4,
+  // Pen-броня T0) лучше надетой такой же: на T4 — держит Penetration ×2 T4, на T0 — тоже лучше по сабстатам
+  describe('Anarky: новая лучше надетой такой же T0', () => {
+    const anarky = D.chars.find((c) => c.name === 'Anarky')!;
+    const set = (short: string) => D.sets.find((x) => x.short === short)!.id;
+    const A = (slot: ItemInput['slot'], short: string, subs: Record<string, number>, grade: ItemInput['grade'] = 'rare'): ItemInput =>
+      ({ slot, grade, setId: set(short), itemKey: null, main: null, subs });
+    const GOOD = { DEF: 2, CHC: 2, CHD: 2, SPD: 1 };
+    let st: GearStore = { ...EMPTY_GEAR, marks: { [`${anarky.id}/Defense mix`]: 'want' } };
+    for (const [x, bt] of [[A('helmet', 'Defense', GOOD, 'unique'), 4], [A('gloves', 'Defense', GOOD, 'unique'), 4],
+      [A('shoes', 'Penetration', GOOD, 'unique'), 4], [A('armor', 'Penetration', { HP: 1, 'DMG RED%': 1, RES: 1 }), 0]] as const) {
+      const r = putOn(ctx, st, anarky.id, x);
+      st = updatePiece(r.st, r.id, { bt });
+    }
+    const NEW = A('armor', 'Penetration', { CHC: 1, CHD: 1, HP: 1 });
+    const judgeBt = (bt: 0 | 4) => {
+      const item = { ...NEW, bt }, view = poolView(ctx, st), needs = materialFor(view, item);
+      return withMaterial(idx, ru, evaluate(ctx, item), needs, { up: betterThanWorn(ctx, view, item, needs), target: null, t4: bt === 4 });
+    };
+
+    it('на T4 — «Оставляй — … надень её», старую ей в Breakthrough не отдать', () => {
+      expect(evaluate(ctx, { ...NEW, bt: 4 }).v).toBe('junk');
+
+      const r = judgeBt(4);
+
+      expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её' });
+      expect(r.lines[0]).toBe('**Лучше надетой**: такая же вещь надета не на T4 и слабее этой — броня Anarky · Defense mix — T0, ещё 4 шт. до T4. Надень эту.');
+      expect(r.plan).toEqual([ru.material.planWear('Anarky · Defense mix')]);
+    });
+
+    it('на T0 — «Оставляй — … надень её, а старую — ей в Breakthrough»', () => {
+      const r = judgeBt(0);
+
+      expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её, а старую — ей в Breakthrough' });
+      expect(r.lines[0]).toBe(ru.material.lineWear('броня Anarky · Defense mix — T0, ещё 4 шт. до T4'));
+      expect(r.plan).toEqual([ru.material.planReplace('Anarky · Defense mix')]);
+    });
+
+    it('у «Оставляй» кубика нет: он поднял бы до «Оставить», а штамп уже такой', () => {
+      expect(evaluate(ctx, { ...NEW, bt: 4 }).gamble).toBeTruthy();
+
+      expect(judgeBt(4).gamble).toBeNull();
+    });
+
+    it('у «Оставляй» из прежних строк — кому вещь хороша и «Проверь HP: flat», а «Для Epic двух полезных мало» нет', () => {
+      const raw = evaluate(ctx, { ...NEW, bt: 4 }).lines;
+      expect(raw).toContain(ru.armor.epicTwo);
+
+      expect(judgeBt(4).lines.slice(1)).toEqual([raw[0], ru.verdict.flatHint('HP')]);
     });
   });
 

@@ -149,7 +149,7 @@ export function App() {
     const up = needs.length ? betterThanWorn(ctx, view, input, needs) : [];
     const k = targetVs?.best?.used ? targetVs.best.kind : null;
     const aim = target && (k === 'fill' || k === 'up' || k === 'closer' || k === 'completes') ? `${target.c.name} · ${targetName(t, target)}` : null;
-    return { needs, wear: { up, target: aim } };
+    return { needs, wear: { up, target: aim, t4: input.bt === 4 } };
   }, [ctx, view, targetVs, target, key, t]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп по вещам персонажей (logic/worn): такая же у кого-то — «Оставить»; всем, кому подходит, она ничего не даёт —
   // «Разобрать». Вещь — материал и лучше такой же у кого-то — не понижаем (совет «надень»)
@@ -161,8 +161,11 @@ export function App() {
     if (verdict.v === 'idle') return [];
     if (target) return statVs ? [statVs] : targetVs ? [targetVs] : [];
     const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length || roster.has(c.id));
-    return charsVs(ctx, viewOf, input, chars);
-  }, [ctx, viewOf, raw, worn, verdict, target, targetVs, statVs, gear.store, roster]); // eslint-disable-line react-hooks/exhaustive-deps
+    // «Оставляй — лучше надетой такой же» (logic/material): её владельцы — тоже, даже не кандидаты вердикта (сырой —
+    // «Разобрать», секций нет): совет «надень её» — с кнопкой
+    const wearers = mat.wear.up.map((n) => idx.CHAR[n.key.slice(0, n.key.indexOf('/'))]).filter((c) => c && !chars.includes(c));
+    return charsVs(ctx, viewOf, input, [...new Set(wearers), ...chars]);
+  }, [ctx, viewOf, raw, worn, verdict, target, targetVs, statVs, gear.store, roster, mat, idx]); // eslint-disable-line react-hooks/exhaustive-deps
   // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя); по
   // статам подходит — ещё «…«Надеть» положит её в «По статам»». Цель «По статам», а полезных статов нет — так и сказать.
   // Оружие или аксессуар не для класса цели — причина в классе, а не в статах или билде

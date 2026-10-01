@@ -348,6 +348,24 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     expect(byText('.equip-row', 'Caren')).toBeUndefined();
   });
 
+  // шаг 3б: новая лучше надетой такой же ниже T4 — штамп про неё «Keep» (было «Fodder»), под карточкой — «Заменить»
+  // (было: сырой вердикт «Разобрать», секций нет — Anarky не было ни на карточке, ни в «Сейчас на персонажах»).
+  // Anarky · Defense mix: Defense-шлем и перчатки, Pen-ботинки на T4, Pen-броня Epic T0; новая Pen-броня Epic
+  it.each([
+    [true, 'Keep — better than the armor on Anarky · Defense mix: wear it'],
+    [false, 'Keep — better than the armor on Anarky · Defense mix: wear it and feed the old one to it'],
+  ])('Anarky: Pen-броня Epic лучше надетой T0 (T4 с формы: %s) — «%s», кнопка «Заменить»', async (t4, title) => {
+    const anarky = char('Anarky');
+    const good = { DEF: 2, CHC: 2, CHD: 2, SPD: 1 };
+    const pcs = [P('a1', 'helmet', set('Defense'), good, { bt: 4 }), P('a2', 'gloves', set('Defense'), good, { bt: 4 }),
+      P('a3', 'shoes', set('Penetration'), good, { bt: 4 }), P('a4', 'armor', set('Penetration'), { HP: 1, 'DMG RED%': 1, RES: 1 }, { grade: 'rare', bt: 0 })];
+    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Penetration'), subs: { CHC: 1, CHD: 1, HP: 1 }, ...(t4 ? { t4: true } : {}) },
+      { gear: G(pcs, { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] }, { marks: { [`${anarky.id}/Defense mix`]: 'want' } }), roster: [anarky.id] });
+    expect($('.vcard .stamp')?.textContent).toBe('Keep');
+    expect($('.vcard .vc-title')?.textContent).toBe(title.slice(title.indexOf(' — ') + 3));
+    expect($('.vc-equip')?.textContent).toBe("Replace Anarky's armor");
+  });
+
   // было (гипотеза b, B1-правило): штамп понижен, а в «Сейчас на персонажах» — «Заменить шлем Caren», в «Кому надеть?» —
   // строка. Р4 это правило заменил
   it('«на уровне» (штамп понижен): кнопки нет, строка сравнения есть; в «Кому надеть?» Caren нет', async () => {
