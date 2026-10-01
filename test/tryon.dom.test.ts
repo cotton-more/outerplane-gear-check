@@ -240,12 +240,13 @@ describe('штамп по надетому', () => {
     expect($('.v-reasons')?.textContent).toContain("Won't improve anyone");
   });
 
-  it('вещь из билда, сама по себе «в разбор», — «Оставить»: где она', async () => {
+  // «дома» нет (решение владельца 2026-10-01): копия вещи из билда — новая вещь из инвентаря; у записи ниже T4 — материал
+  it('копия вещи из билда, сама по себе «в разбор», — не «Оставить»: у записи T0 — «Фоддер», материал для неё', async () => {
     const junk = { setId: speed, subs: { HP: 1, RES: 1, EFF: 1 } };
-    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: null } } };
+    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: 0 } } };
     await mount({ slot: 'helmet', grade: 'rare' }, junk, { gear });
-    expect($('.vcard .stamp')?.textContent).toBe('Keep');
-    expect($('.vcard .vc-title')?.textContent).toBe('Caren already has it');
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vcard .vc-title')?.textContent).toContain('Breakthrough material for the helmet on Caren');
   });
 });
 

@@ -9,7 +9,7 @@
 import { isArmor, type Index } from '../data';
 import type { Texts } from '../i18n';
 import type { Ctx } from './context';
-import { samePiece, type Piece } from './gear';
+import type { Piece } from './gear';
 import { outcomeFor, type PoolView } from './pool';
 import { buildOfKey } from './variants';
 import type { ItemInput, Verdict } from './verdict';
@@ -21,7 +21,7 @@ export function materialFor(view: PoolView, item: ItemInput): Need[] {
   const armor = isArmor(item.slot);
   const out = new Map<string, Need>();
   const can = (p: Piece | null | undefined): p is Piece & { bt: number } =>
-    !!p && p.slot === item.slot && p.grade === item.grade && p.bt !== null && p.bt < 4 && !samePiece(item, p)
+    !!p && p.slot === item.slot && p.grade === item.grade && p.bt !== null && p.bt < 4
     && (armor ? !!item.setId && p.setId === item.setId : !!item.itemKey && p.itemKey === item.itemKey);
   for (const [id, ids] of Object.entries(view.st.pools)) {
     // сборки считаем только у тех, у кого такая вещь вообще есть в пуле (находка 27: иначе первое нажатие после

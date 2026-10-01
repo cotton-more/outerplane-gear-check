@@ -252,11 +252,12 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect(stored().pools[cfEternal.id]).not.toContain('e1');
   });
 
-  it('у X та же вещь: строка «Already has» (не нажимается) — после перехода надевать нечего', async () => {
+  // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — на уровне, строки Core Fusion X нет
+  it('у X та же вещь: строки «Already has» нет — после перехода она ему ничего не даёт', async () => {
     const gear = G([P('e1', 'helmet', speed, HIT.subs)], { [eternal.id]: ['e1'] });
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
     const row = await pick();
-    expect((row as HTMLButtonElement).disabled).toBe(true);
+    expect(row).toBeUndefined();
   });
 
   it('примерка Core Fusion, X с вещами появился после её начала: кнопка под карточкой — по пулу после перехода', async () => {

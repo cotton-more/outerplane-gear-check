@@ -29,7 +29,7 @@ const target = (build: string, st: GearStore = EMPTY_GEAR, combo?: string) => tr
 // заголовок в примерке: исход для варианта цели
 const titleOf = (res: Verdict, st: GearStore, tg: Target, item: ItemInput, c: Ctx = ctx) => {
   const x = charVs(c, poolView(c, st, tg.v.key), caren.id, item, tg.v.key);
-  return tryOnTitle(ru, res, tg, tryRowOf(idx, x?.best ?? null, !!x?.worn));
+  return tryOnTitle(ru, res, tg, tryRowOf(idx, x?.best ?? null));
 };
 
 describe('примерка: что хранится', () => {
@@ -178,15 +178,6 @@ describe('примерка: заголовок вердикта', () => {
     expect(titleOf(res, st, target('Pen', st), NEW, mine)).toBe('Фоддер — уже лучше у Caren; Caren · Pen — не по билду');
   });
 
-  // такая же вещь у персонажа (logic/worn): заголовок уже про неё — «уже у Caren» не повторяем
-  it('такая же вещь у Caren: «Оставляй — она уже у Caren», без «; уже у Caren»', () => {
-    const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
-    const junk = armor('helmet', 'Speed', { HP: 1, RES: 1, EFF: 1 }, 'rare');
-    const st = putOn(mine, EMPTY_GEAR, caren.id, junk).st;
-    const res = withWorn(mine, poolView(mine, st), junk, evaluate(mine, junk, { gamble: false }));
-    expect(res.worn).toBe('home');
-    expect(titleOf(res, st, target('Speed', st), junk, mine)).toBe('Оставляй — она уже у Caren');
-  });
 });
 
 // Находка 28: «По статам» — тоже цель примерки (вкладка «По статам» в карточке: «Собрать билд», «Примерить»)
@@ -218,7 +209,7 @@ describe('примерка «По статам»', () => {
     const title = (x: ItemInput) => {
       const tg = stats();
       const v = charVs(ctx, poolView(ctx, EMPTY_GEAR, tg.v.key), caren.id, x, tg.v.key, { explicit: true });
-      return tryOnTitle(ru, evaluate(ctx, x, { gamble: false }), tg, tryRowOf(idx, v?.best ?? null, !!v?.worn));
+      return tryOnTitle(ru, evaluate(ctx, x, { gamble: false }), tg, tryRowOf(idx, v?.best ?? null));
     };
     expect(title(good)).toMatch(/у Caren слот пуст/);
     expect(title(junk)).toMatch(/Caren · По статам — ничего не даст$/);

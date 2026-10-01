@@ -17,7 +17,7 @@ import { isArmor } from '../data';
 import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
 import { t4Only } from './builds';
 import type { Ctx } from './context';
-import { EMPTY_GEAR, gc, holdersOf, newPiece, pieceInput, samePiece, today, type GearStore, type Mark, type Piece } from './gear';
+import { EMPTY_GEAR, gc, holdersOf, newPiece, pieceInput, today, type GearStore, type Mark, type Piece } from './gear';
 import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible, type BonusRow } from './setBonus';
 import type { SubWeight } from './score';
 import type { ItemInput } from './verdict';
@@ -433,7 +433,6 @@ export interface Outcome {
 
 export interface CharOutcome {
   c: Char;
-  worn: Piece | null; // такая же вещь уже в пуле персонажа — «уже есть»
   rows: Outcome[];
   starts: Variant[];  // с ней начнут собираться
   useful: boolean;    // надеть можно (puts): исход держит и она в нём встаёт или начнёт новый билд; при явном выборе —
@@ -662,8 +661,6 @@ function computeOutcome(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   const { c, pieces } = cp;
   // не для его класса (vs wearable) — ему ни к чему: ни строки, ни «По статам» при явном выборе, ни «начнёт»
   if (!wearable(ctx, c, x)) return null;
-  const twin = pieces.find((p) => samePiece(x, p)) ?? null;
-  if (twin) return { c, worn: twin, rows: [], starts: [], useful: false };
   const withX = play(ctx, c, pieces, view.opts, x);
   const was = new Set(cp.inPlay.map((v) => v.key));
   const starts = withX.inPlay.filter((v) => !was.has(v.key) && !isStats(v));
@@ -676,7 +673,7 @@ function computeOutcome(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   }
   rows.sort((a, z) => OUTCOME_ORDER.indexOf(a.kind) - OUTCOME_ORDER.indexOf(z.kind) || (z.delta ?? 0) - (a.delta ?? 0));
   const useful = rows.some((r) => (puts(r) && !r.entering) || (r.quiet && r.used && holdsKind(r))) || starts.length > 0;
-  return { c, worn: null, rows, starts, useful };
+  return { c, rows, starts, useful };
 }
 
 // Держит ли исход штамп (преемник worn.ts, C2): вещь кому-то нужна. «Ломает» и «на уровне из-за T4» — только когда
@@ -745,12 +742,13 @@ export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput):
   return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp);
 }
 
-// Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin»), иначе новая.
-// Такая же уже в его пуле — ничего не меняется (свежая копия потеряла бы Reforge и Breakthrough)
+// Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin»), иначе новая — всегда, даже если
+// у него такая же: в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01), лишнюю вытеснит planPut.
+// Запись record уже в его пуле — ничего не меняется
 export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { record?: Piece; tryOn?: string | null; at?: string } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
-  const twin = mine.find((p) => samePiece(x, p) || p.id === opts.record?.id);
+  const twin = mine.find((p) => p.id === opts.record?.id);
   if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], began: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId) };
   const made = opts.record
     ? { st: st.pieces[opts.record.id] ? st : { ...st, pieces: { ...st.pieces, [opts.record.id]: opts.record } }, piece: st.pieces[opts.record.id] ?? opts.record }

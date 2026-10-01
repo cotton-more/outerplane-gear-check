@@ -8,7 +8,7 @@ import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import { MAX_SUBS, dropSubs } from '../src/logic/subs';
-import { fromPersisted, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '../src/state/appState';
+import { fromPersisted, itemInput, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '../src/state/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -62,6 +62,123 @@ describe('reducer: сабстаты', () => {
     const s = reducer(fresh({ slot: 'weapon', grade: 'rare', subs: subsOf('ATK%', 'SPD') }), { type: 'main', main: 'ATK%' });
     expect(s.main).toBe('ATK%');
     expect(Object.keys(s.subs)).toEqual(['SPD']);
+  });
+});
+
+describe('reducer: уровень сабстата 1–6 (шаг 3)', () => {
+  const roll = (n: number): Action => ({ type: 'roll', key: 'SPD', n });
+
+  it('уровни 5 и 6 принимаются — вещь после Reforge вводят всеми сегментами', () => {
+    const s = fresh({ subs: { SPD: 4 } });
+    expect([reducer(s, roll(5)).subs, reducer(s, roll(6)).subs]).toEqual([{ SPD: 5 }, { SPD: 6 }]);
+  });
+
+  it('7, 0 и дробное — без изменений', () => {
+    const s = fresh({ subs: { SPD: 4 } });
+    for (const n of [7, 0, -1, 2.5]) expect(reducer(s, roll(n))).toBe(s);
+  });
+});
+
+describe('reducer: предел суммы уровней (Legendary 22, Epic 17)', () => {
+  const roll = (key: string, n: number): Action => ({ type: 'roll', key, n });
+
+  it('Legendary 6/6/5/5 → 6/6/6/5 (23) — не срабатывает', () => {
+    const s = fresh({ grade: 'unique', subs: { SPD: 6, CHC: 6, CHD: 5, 'ATK%': 5 } });
+    expect(reducer(s, roll('CHD', 6))).toBe(s);
+  });
+
+  it('Legendary 6/6/5/4 → 6/6/5/5 (22) — срабатывает', () => {
+    const s = fresh({ grade: 'unique', subs: { SPD: 6, CHC: 6, CHD: 5, 'ATK%': 4 } });
+    expect(reducer(s, roll('ATK%', 5)).subs).toEqual({ SPD: 6, CHC: 6, CHD: 5, 'ATK%': 5 });
+  });
+
+  it('Epic — по 17: 6/6/4 → 6/6/5 да, 6/6/5 → 6/6/6 нет', () => {
+    const s = fresh({ grade: 'rare', subs: { SPD: 6, CHC: 6, CHD: 4 } });
+    const at17 = reducer(s, roll('CHD', 5));
+    expect(at17.subs).toEqual({ SPD: 6, CHC: 6, CHD: 5 });
+    expect(reducer(at17, roll('CHD', 6))).toBe(at17);
+  });
+
+  it('новый сабстат (+1) сверх предела — не срабатывает, в пределе — да', () => {
+    const full = fresh({ grade: 'rare', subs: { SPD: 6, CHC: 6, CHD: 5 } });
+    expect(reducer(full, { type: 'sub', key: 'HP%' })).toBe(full);
+    const room = fresh({ grade: 'rare', subs: { SPD: 6, CHC: 6, CHD: 4 } });
+    expect(reducer(room, { type: 'sub', key: 'HP%' }).subs).toEqual({ SPD: 6, CHC: 6, CHD: 4, 'HP%': 1 });
+  });
+
+  it('сумма уже выше предела (старая запись 6/6/6/6) — уменьшение и снятие стата срабатывают, рост — нет', () => {
+    const s = fresh({ grade: 'unique', subs: { SPD: 6, CHC: 6, CHD: 6, 'ATK%': 6 } });
+    expect(reducer(s, roll('SPD', 5)).subs).toEqual({ SPD: 5, CHC: 6, CHD: 6, 'ATK%': 6 });
+    expect(reducer(s, { type: 'sub', key: 'SPD' }).subs).toEqual({ CHC: 6, CHD: 6, 'ATK%': 6 });
+    const over = fresh({ grade: 'unique', subs: { SPD: 6, CHC: 6, CHD: 6, 'ATK%': 5 } });
+    expect(reducer(over, roll('ATK%', 6))).toBe(over);
+  });
+
+  it('Legendary → Epic с суммой выше 17 — сабстаты остаются: смена грейда сумму не растит', () => {
+    const subs = { SPD: 6, CHC: 6, CHD: 5, 'ATK%': 5 };
+    expect(reducer(fresh({ grade: 'unique', subs }), { type: 'grade', grade: 'rare' }).subs).toBe(subs);
+  });
+});
+
+describe('reducer: «T4» (Breakthrough брони, В4)', () => {
+  const t4 = (patch: Partial<AppState> = {}) => reducer(fresh({ slot: 'helmet', grade: 'unique', setId: '13', subs: { SPD: 2 }, ...patch }), { type: 't4' });
+
+  it('у брони нажатие включает и снимает «T4»', () => {
+    const on = t4();
+    expect(on.t4).toBe(true);
+    expect(reducer(on, { type: 't4' }).t4).toBe(false);
+  });
+
+  it('у оружия и аксессуара не срабатывает', () => {
+    for (const slot of ['weapon', 'accessory'] as const) {
+      const s = fresh({ slot });
+      expect(reducer(s, { type: 't4' })).toBe(s);
+    }
+  });
+
+  it('сбрасывают «Следующий», смена слота, грейда и сета', () => {
+    const on = t4();
+    expect(reducer(on, { type: 'reset' }).t4).toBe(false);
+    expect(reducer(on, { type: 'slot', slot: 'shoes' }).t4).toBe(false);
+    expect(reducer(on, { type: 'grade', grade: 'rare' }).t4).toBe(false);
+    expect(reducer(on, { type: 'set', setId: '21' }).t4).toBe(false);
+    expect(reducer(on, { type: 'set', setId: null }).t4).toBe(false);
+  });
+
+  it('тот же слот, грейд или сет ещё раз — «T4» остаётся', () => {
+    const on = t4();
+    expect(run(on, { type: 'slot', slot: 'helmet' }, { type: 'grade', grade: 'unique' }, { type: 'set', setId: '13' }).t4).toBe(true);
+  });
+
+  it('правка сабстатов «T4» не трогает', () => {
+    const on = t4({ subs: { SPD: 2, CHC: 1 } });
+    const after = run(on, { type: 'sub', key: 'CHD' }, { type: 'roll', key: 'SPD', n: 3 }, { type: 'replaceSub', from: 'CHC', to: 'HP%' },
+      { type: 'sub', key: 'CHD' }, { type: 'clearSubs' });
+    expect(after.t4).toBe(true);
+  });
+
+  it('load — другая вещь: «T4» по её Breakthrough (bt 4), само поле bt в состояние не попадает', () => {
+    const item = { slot: 'shoes' as const, grade: 'unique' as const, setId: '13', itemKey: null, main: null, unlisted: false, subs: { SPD: 2 } };
+    const on = t4();
+    expect(reducer(on, { type: 'load', item }).t4).toBe(false);
+    expect(reducer(on, { type: 'load', item: { ...item, bt: 0 } }).t4).toBe(false);
+    const t = reducer(fresh(), { type: 'load', item: { ...item, bt: 4 } });
+    expect(t.t4).toBe(true);
+    expect(t).not.toHaveProperty('bt');
+    expect(reducer(fresh(), { type: 'load', item: { ...item, slot: 'weapon', setId: null, bt: 4 } }).t4).toBe(false);
+  });
+
+  it('itemInput: броня — bt 4 с «T4», 0 без неё; оружие и аксессуар — без bt', () => {
+    expect(itemInput(t4()).bt).toBe(4);
+    expect(itemInput(fresh({ slot: 'helmet' })).bt).toBe(0);
+    expect(itemInput(fresh({ slot: 'weapon' }))).not.toHaveProperty('bt');
+    expect(itemInput(fresh({ slot: 'accessory' }))).not.toHaveProperty('bt');
+  });
+
+  it('«Вернуть» после «Следующий» (load прежней) возвращает и «T4»', () => {
+    const on = t4();
+    const back = reducer(reducer(on, { type: 'reset' }), { type: 'load', item: itemInput(on) });
+    expect(back.t4).toBe(true);
   });
 });
 
@@ -177,6 +294,36 @@ describe('недовведённый предмет переживает пер�
     expect(toPersistedItem(s)).toEqual({ setId: '13', itemKey: null, main: null, unlisted: false, subs: {} });
     const w = reducer(fresh({ slot: 'weapon', main: 'HP%', subs: { SPD: 1 } }), { type: 'reset' });
     expect(toPersistedItem(w)).toEqual({ setId: null, itemKey: null, main: 'HP%', unlisted: false, subs: {} });
+  });
+
+  it('уровни 5–6 и «T4» брони восстанавливаются', () => {
+    const s = run(fresh({ slot: 'gloves', grade: 'unique', setId: '13', subs: { SPD: 6, CHC: 5 } }), { type: 't4' });
+    const saved = JSON.parse(JSON.stringify(toPersistedItem(s)));
+    expect(saved.t4).toBe(true);
+    const back = restoreItem(fresh({ slot: 'gloves', grade: 'unique' }), saved, idx);
+    expect([back.subs, back.t4]).toEqual([{ SPD: 6, CHC: 5 }, true]);
+  });
+
+  it('«T4» сохраняется только нажатая и только у брони', () => {
+    expect(toPersistedItem(fresh({ slot: 'gloves' }))).not.toHaveProperty('t4');
+    expect(toPersistedItem(fresh({ slot: 'weapon', t4: true }))).not.toHaveProperty('t4');
+    expect(restoreItem(fresh({ slot: 'weapon', grade: 'unique' }), { t4: true }, idx).t4).toBe(false);
+    expect(restoreItem(fresh({ slot: 'gloves' }), { t4: 'yes' }, idx).t4).toBe(false);
+  });
+
+  it('уровень 7 — битый сабстат: отброшен', () => {
+    const back = restoreItem(fresh({ slot: 'gloves', grade: 'unique' }), { subs: { SPD: 7, CHC: 2 } }, idx);
+    expect(back.subs).toEqual({ CHC: 2 });
+  });
+
+  it('сумма выше 22 — битая запись: сабстаты отброшены целиком (не обрезаны), сет остаётся', () => {
+    const back = restoreItem(fresh({ slot: 'gloves', grade: 'unique' }), { setId: '13', subs: { SPD: 6, CHC: 6, CHD: 6, 'ATK%': 5 } }, idx);
+    expect([back.setId, back.subs]).toEqual(['13', {}]);
+  });
+
+  it('Epic с суммой до 22 (набрана у Legendary, грейд сменили) — возвращается как была', () => {
+    const subs = { SPD: 6, CHC: 6, CHD: 5, 'ATK%': 5 };
+    expect(restoreItem(fresh({ slot: 'gloves', grade: 'rare' }), { subs }, idx).subs).toEqual(subs);
   });
 
   it('мусор в хранилище не роняет запуск', () => {

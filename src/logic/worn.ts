@@ -1,6 +1,6 @@
 // Штамп по вещам персонажей (пул, GEARPOOL; сравнение — logic/pool).
-//   Такая же вещь уже в пуле кого-то из данных, а её вердикт «Разобрать», «Фоддер» или «Спорно» — «Оставить»: в игре
-//   она лежит в инвентаре, и разбор выбил бы её у персонажа.
+//   В Оценку вводят новую вещь из инвентаря, надетое в игре не оценивают (решение владельца 2026-10-01): «дома» нет —
+//   такая же вещь, как запись, — новый дроп или снятая с героя (убрать её из пула — дело игрока) и сравнивается как есть.
 //   «Оставить» или «Временно», а всем, кому вещь подходит по вердикту, она ничего не даёт (исходы «на уровне»,
 //   «хуже»), — «Разобрать», у Legendary «Оставить» — «Фоддер» (у брони — если копишь фоддер): вещь неплохая, но никого
 //   не улучшит. Нужна она и тем, кого нет в ростере, — строка, кому.
@@ -22,22 +22,11 @@ import { isArmor } from '../data';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
 import { evaluate } from './evaluate';
-import { samePiece } from './gear';
 import { upgradePlan } from './plan';
 import { holds, outcomeFor, type Outcome, type PoolView } from './pool';
 import { dropSubs } from './subs';
 import { namesLine } from './text';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
-import { wearable } from './vs';
-
-// у кого из персонажей данных в пуле такая же вещь. Оружие не для его класса — не «дом» (f7cc8ba: такую вещь он не
-// носит, пул её не держит); запись могла остаться с версии до проверки класса
-export function homeOf(ctx: Ctx, view: PoolView, item: ItemInput): string[] {
-  return Object.keys(view.st.pools).filter((id) => ctx.idx.CHAR[id] && wearable(ctx, ctx.idx.CHAR[id], item) && view.st.pools[id].some((pid) => {
-    const p = view.st.pieces[pid];
-    return p && samePiece(item, p);
-  }));
-}
 
 // исходы, по которым штамп понижается, или null. Кандидаты — первая открытая секция вердикта (кому вещь подходит).
 // Вещь введена не вся — не понижаем: без остальных сабстатов её ценность занижена
@@ -84,13 +73,6 @@ export interface WornOpts { hold?: boolean }
 export function withWorn(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict, opts: WornOpts = {}): Verdict {
   if (res.v === 'idle' || !Object.keys(view.st.pools).length) return res;
   const W = ctx.t.worn;
-  const home = homeOf(ctx, view, item);
-  if (home.length) {
-    if (res.v !== 'junk' && res.v !== 'fodder' && res.v !== 'maybe') return res;
-    const who = ctx.idx.CHAR[home[0]].name + (home.length > 1 ? ctx.t.more(home.length - 1) : '');
-    // кубик и «Прокачка» были про вещь «в разбор» — у вещи персонажа их нет
-    return { ...res, v: 'keep', worn: 'home', badge: '', gamble: null, title: W.keptTitle(who), lines: [W.kept(who)], plan: [] };
-  }
   if (opts.hold) return res;
   const rows = lowerBy(ctx, view, item, res);
   if (!rows) return withDice(ctx, view, item, res);

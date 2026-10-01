@@ -27,7 +27,7 @@ export interface Verdict {
   plan: string[];          // «Прокачка»: Enhance, Reforge, Breakthrough, Transistone — что вкладывать в эту вещь
   gamble?: Gamble | null;  // кубик: какой 4-й сабстат от первого Reforge вытянет свежую Epic (logic/gamble)
   // штамп поменяли записи экипировки (logic/worn): lower — все, кому подходит, уже носят не хуже; home — вещь уже в билде
-  worn?: 'lower' | 'home';
+  worn?: 'lower';
   wornBy?: string[];       // lower: билды («персонаж/билд»), где уже надето не хуже, — их персонажей называет заголовок
   // не из ростера: кому броня — «Оставить», кто берёт предмет с этим main. У понижённой — строкой: разбор не молча
   othersKeep?: Row[];

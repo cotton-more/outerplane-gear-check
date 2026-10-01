@@ -107,14 +107,15 @@ describe('исход вещи с формы: повтор vs.test', () => {
       expect(r).toMatchObject({ kind: 'down', pair: { lost: [], ahead: { key: 'DEF%', worn: 6, next: 2 } } });
     });
 
-    it('иначе: пустой слот вещью сета — «сет 2 из 4» (ближе), лишней вещью сета — «пустой слот»; такая же — «уже есть»', () => {
+    it('иначе: пустой слот вещью сета — «сет 2 из 4» (ближе), лишней вещью сета — «пустой слот»; такая же — сравнение как есть, «уже есть» нет', () => {
       const body = rec(armor('armor', 'Speed', { CHC: 2 }));
       expect(row([body], NEW, 'Speed')).toMatchObject({ kind: 'closer', used: true });
       const immu = [rec(armor('armor', 'Immunity', { CHC: 1 })), rec(armor('gloves', 'Speed', { CHC: 1 })), rec(armor('shoes', 'Speed', { CHC: 1 }))];
       expect(row(immu, NEW, 'Speed/Immu')).toMatchObject({ kind: 'fill', used: true }); // Speed ×2 уже собран — сверх него
+      // такая же в пуле — другая вещь из инвентаря (решение владельца 2026-10-01): на уровне с ней, «Надеть» нет
       const o = out([body, rec(NEW)], NEW);
-      expect(o.worn).toBeTruthy();
-      expect(o).toMatchObject({ rows: [], useful: false });
+      expect(o.rows.length && o.rows.every((r) => r.kind === 'eq')).toBe(true);
+      expect(o.useful).toBe(false);
     });
 
     it('иначе: не тот сет, а лучше по сегментам — «только статы» (было: сравнения нет); хуже — исхода нет', () => {

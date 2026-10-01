@@ -76,20 +76,22 @@ describe('«Надеть» и «Вернуть»', () => {
 
     expect($('.gear-toast')?.textContent).toContain('On Caren: helmet. Counts in Speed, Speed/Immu.');
     expect($('.gear-toast small')?.textContent).toContain('Started filling Speed, Speed/Immu.');
-    expect(stored()).toMatchObject({ v: 2, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: null } } });
+    // bt 0: форма брони без «T4» — ниже T4 (В4, шаг 3; было null — форма Breakthrough не знала)
+    expect(stored()).toMatchObject({ v: 2, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: 0 } } });
     expect(stored().marks ?? {}).toEqual({});
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored()).toMatchObject({ pieces: {}, pools: {}, marks: {} });
   });
 
-  it('карточка: «▲ +21% Caren · Speed +1», кнопка под ней — «Заменить шлем Caren»; после — «уже есть», кнопки нет', async () => {
+  // после: такая же уже у Caren — сравнение с ней как есть, «уже есть» нет (решение владельца 2026-10-01)
+  it('карточка: «▲ +21% Caren · Speed +1», кнопка под ней — «Заменить шлем Caren»; после — «на уровне», кнопки нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }) });
     // Speed-шлем Caren стоит и в Speed, и в Speed/Immu — новая лучше в обоих: «+1»
     expect($('.vcard .vc-vs')?.textContent).toBe('better than the one on: +21%Caren· Speed +1+CHD (3rd) · −SPD (4th)');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
     expect(stored().pools[caren.id]).toEqual(['p2']);
-    expect($('.vcard .vc-vs .vs')?.textContent).toBe('already has it');
+    expect($('.vcard .vc-vs .vs')?.textContent).toBe('on par');
     expect($('.vc-equip')).toBeNull();
   });
 
@@ -176,9 +178,11 @@ describe('«Надеть» и «Вернуть»', () => {
 });
 
 describe('«Это шлем Kappa?»', () => {
-  const same = () => G([P('p1', 'helmet', speed, NEW.subs, { lit: { ...NEW.subs, CHD: 5 }, bt: 2 })], { [kappa.id]: ['p1'] });
+  // на форме — все сегменты записи (CHD 5): та же вещь — по уровню, как у записи (samePiece по lit, шаг 3)
+  const lit = { ...NEW.subs, CHD: 5 };
+  const same = () => G([P('p1', 'helmet', speed, NEW.subs, { lit, bt: 2 })], { [kappa.id]: ['p1'] });
   const ask = async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: same() });
+    await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, subs: lit }, { gear: same() });
     await click($('.vcard'));
     await click($('.v-equip'));
     await click(byText('.equip-row', 'Caren') as HTMLElement);
@@ -642,16 +646,13 @@ describe('«Кому надеть?»', () => {
     expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace gloves — Speed: set 3 of 4');
   });
 
-  it('такая же вещь уже у Caren — строка «Уже есть» не нажимается: Reforge и Breakthrough записи остаются', async () => {
-    const yellow = { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 };
-    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: yellow }, { gear: G([WEAK], { [caren.id]: ['p1'] }) });
+  // «Уже есть» нет (решение владельца 2026-10-01): точная копия — другая вещь из инвентаря, сравнивается как есть
+  it('точная копия записи Caren — строки «Уже есть» нет: на уровне, Caren в «Кому надеть?» нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: WEAK.lit }, { gear: G([WEAK], { [caren.id]: ['p1'] }), roster: [caren.id, kappa.id] });
     await click($('.vcard'));
     await click($('.v-equip'));
-    const row = byText('.equip-row', 'Caren') as HTMLButtonElement;
-    expect(row.textContent).toContain('Already has it — the same piece in Speed');
-    expect(row.disabled).toBe(true);
-    await click(row);
-    expect(stored() ?? {}).not.toHaveProperty('pieces.p2');
+    expect(byText('.equip-row', 'Caren')).toBeUndefined();
+    expect($$('.equip-row').some((r) => r.textContent?.includes('Already has'))).toBe(false);
   });
 });
 

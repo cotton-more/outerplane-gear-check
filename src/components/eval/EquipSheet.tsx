@@ -10,7 +10,7 @@ import type { Char } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { holds, shownKind, type PoolView } from '../../logic/pool';
-import { charsVs, whereUsed, type CharVs } from '../../logic/poolVs';
+import { charsVs, type CharVs } from '../../logic/poolVs';
 import { buildOfKey } from '../../logic/variants';
 import type { ItemInput } from '../../logic/verdict';
 import { Img, SlotIcon } from '../Img';
@@ -33,7 +33,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);
-  const list = useMemo(() => charsVs(ctx, viewOf, item, chars, { explicit: !!needle }).filter((x) => x.useful || x.worn)
+  const list = useMemo(() => charsVs(ctx, viewOf, item, chars, { explicit: !!needle }).filter((x) => x.useful)
     .sort((a, z) => rank(a) - rank(z)), [ctx, viewOf, item, chars, needle]);
   const acc = t.ui.slotAcc[item.slot];
   const nameOf = (x: Pick<ItemInput, 'slot' | 'setId' | 'itemKey' | 'main'> & { grade: string }) => {
@@ -44,8 +44,6 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   // что будет по нажатию: «Надеть — соберёт Speed», «Заменить шлем — новая лучше · Speed», «Надеть — начнёт Speed»;
   // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие
   const action = (x: CharVs) => {
-    // «та же вещь в …» — фраза: имя «По статам» в кавычках
-    if (x.worn) return t.ui.equipRowWorn([...new Set(whereUsed(viewOf(x.c.id), x.c.id, x.worn.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))].join(', ') || t.ui.byStatsQ);
     const o = x.best;
     if (!o || o.entering || !o.used) {
       const builds = [...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : '');
@@ -72,13 +70,13 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
           <ul className="equip-list" {...tour('equipall')}>
             {list.map((x) => (
               <li key={x.c.id}>
-                <button type="button" className="equip-row" disabled={!!x.worn} onClick={() => onEquip(x.c)}>
+                <button type="button" className="equip-row" onClick={() => onEquip(x.c)}>
                   <Img k={'face:' + x.c.icon} className="face" />
                   <span className="nm">
                     <b>{x.c.name}</b>
                     <span className="act">{action(x)}</span>
                   </span>
-                  <VsChip o={x.best} starts={!x.worn && (!x.best || x.best.entering || !x.best.used)} />
+                  <VsChip o={x.best} starts={!x.best || x.best.entering || !x.best.used} />
                 </button>
               </li>
             ))}
@@ -90,5 +88,5 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   );
 }
 
-// держащие исходы на собираемых вариантах, потом «начнёт», потом «уже есть»
-const rank = (x: CharVs) => (x.worn ? 2 : x.best && holds(x.best) && x.best.used && !x.best.entering ? 0 : 1);
+// держащие исходы на собираемых вариантах, потом «начнёт»
+const rank = (x: CharVs) => (x.best && holds(x.best) && x.best.used && !x.best.entering ? 0 : 1);

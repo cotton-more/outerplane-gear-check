@@ -4,18 +4,16 @@ import { isArmor } from '../data';
 import type { Char, SlotId } from '../data/types';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
-import type { Piece } from './gear';
 import { heldBy, holds, holdsKind, isStats, OUTCOME_ORDER, outcomeFor, planFor, puts, shownKind, type Assembly, type Outcome, type OutcomeOpts, type PoolView } from './pool';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import type { Variant } from './variants';
 
 export interface CharVs {
   c: Char;
-  best: Outcome | null; // главный исход: держащий, где она встаёт, потом по порядку исходов и выигрышу; null — «уже
-                        // есть» или она только начнёт билд (главная строка — «начнёт …»)
+  best: Outcome | null; // главный исход: держащий, где она встаёт, потом по порядку исходов и выигрышу; null — она
+                        // только начнёт билд (главная строка — «начнёт …»)
   rows: Outcome[];      // все исходы персонажа (главный — первый, если есть)
   same: number;         // сколько ещё вариантов с тем же исходом («+N» на карточке)
-  worn: Piece | null;   // такая же вещь уже у персонажа
   starts: Variant[];    // с ней начнут собираться
   useful: boolean;      // кнопка «Надеть» / «Заменить» (Р4): главный исход держит и она в нём встаёт, или начнёт билд;
                         // при явном выборе — и тихая «По статам», где она встаёт пустым слотом или лучше (Р11)
@@ -36,7 +34,6 @@ export const byBest = (a: Outcome, z: Outcome) => rank(a) - rank(z) || (z.delta 
 export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput, only?: string, opts: OutcomeOpts = {}): CharVs | null {
   const o = outcomeFor(ctx, view, charId, item, opts);
   if (!o) return null;
-  if (o.worn) return { c: o.c, best: null, rows: [], same: 0, worn: o.worn, starts: [], useful: false, replaces: false };
   // вариант, который вещь только начнёт (не соберёт), — не исход, а строка «начнёт собираться» (design-final D.1)
   const all = opts.explicit ? o.rows : o.rows.filter((r) => !r.quiet);
   const rows = (only ? all.filter((r) => r.v.key === only) : all.filter((r) => !r.entering || r.kind === 'completes')).sort(byBest);
@@ -56,15 +53,15 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   // примерка «По статам» (или запасная строка примерки): встаёт пустым слотом или лучше — «Надеть» и у тихой (Р11)
   const useful = only ? !!top && (isStats(top.v) ? top.used && holdsKind(top) : puts(top)) : o.useful;
   const replaces = useful && !!planFor(ctx, view, charId, item)?.removed.length;
-  return { c: o.c, best, rows, same, worn: null, starts, useful, replaces };
+  return { c: o.c, best, rows, same, starts, useful, replaces };
 }
 
-// строки нескольких персонажей: сначала те, кого вещь держит, потом «уже есть», потом прочие. Вид пула — общий или
+// строки нескольких персонажей: сначала те, кого вещь держит, потом прочие. Вид пула — общий или
 // свой у героя: тот, на котором «Надеть» на него сделает putOn (Core Fusion X при X — после окна перехода, App)
 export function charsVs(ctx: Ctx, view: PoolView | ((charId: string) => PoolView), item: ItemInput, chars: readonly Char[], opts: OutcomeOpts = {}): CharVs[] {
   const viewOf = typeof view === 'function' ? view : () => view;
   const out = chars.map((c) => charVs(ctx, viewOf(c.id), c.id, item, undefined, opts)).filter((x): x is CharVs => !!x);
-  const key = (x: CharVs) => (x.best ? (holds(x.best) ? 0 : 3) : x.worn ? 1 : 2);
+  const key = (x: CharVs) => (x.best ? (holds(x.best) ? 0 : 3) : 2);
   return out.sort((a, z) => key(a) - key(z) || (a.best && z.best ? byBest(a.best, z.best) : 0));
 }
 

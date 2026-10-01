@@ -75,12 +75,18 @@ export function reforgesDone(p: Piece): number {
   return Math.min(maxReforges(p), orangeOf(p) + fourth);
 }
 
-// та же вещь: слот, грейд, сет или предмет, main и жёлтые сегменты в игре не меняются без Transistone
+// одна и та же основа: слот, грейд, сет или предмет, main (в игре не меняются)
+const sameBase = (a: ItemInput, p: Piece): boolean =>
+  a.slot === p.slot && a.grade === p.grade && a.main === p.main
+  && (a.setId ?? null) === p.setId && (a.itemKey ?? null) === p.itemKey && !!a.unlisted === !!p.unlisted;
+
+// та же вещь: та же основа, те же статы и уровни ровно как у записи (lit — один уровень, жёлтые и оранжевые вместе).
+// Breakthrough не сравниваем. Зовёт только окно «Это шлем Rin?» (App, уходит в шаге 10): «Уже есть» и «дома» нет —
+// в Оценку вводят новую вещь из инвентаря, точная копия записи — другая вещь (решение владельца 2026-10-01)
 export function samePiece(a: ItemInput, p: Piece): boolean {
-  if (a.slot !== p.slot || a.grade !== p.grade || a.main !== p.main) return false;
-  if ((a.setId ?? null) !== p.setId || (a.itemKey ?? null) !== p.itemKey || !!a.unlisted !== !!p.unlisted) return false;
-  const ka = Object.keys(a.subs), kp = Object.keys(p.yellow);
-  return ka.length === kp.length && ka.every((k) => a.subs[k] === p.yellow[k]);
+  if (!sameBase(a, p)) return false;
+  const ka = Object.keys(a.subs), kp = Object.keys(p.lit);
+  return ka.length === kp.length && ka.every((k) => a.subs[k] === p.lit[k]);
 }
 
 // у кого есть вещи: персонаж → сколько вещей в пуле (фильтр «с экипировкой», меню «Экипировка · N»)

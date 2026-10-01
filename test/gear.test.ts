@@ -206,11 +206,12 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     return v2(ps, { [CAREN]: ps.map((p) => p.id) });
   };
 
-  it('новая запись: жёлтые из оценки, Breakthrough не указан, seq + 1; такая же уже есть — ничего', () => {
+  it('новая запись: жёлтые из оценки, Breakthrough не указан, seq + 1; такая же уже есть — всё равно новая', () => {
     const r = putOn(ctx, EMPTY_GEAR, CAREN, helmet({ 'DEF%': 2, CHC: 2 }), { at: '2026-09-28' });
     expect(r).toMatchObject({ added: true, id: 'p1', removed: [], piece: { yellow: { 'DEF%': 2, CHC: 2 }, lit: { 'DEF%': 2, CHC: 2 }, bt: null, at: '2026-09-28' } });
     expect(r.st).toMatchObject({ seq: 1, pools: { [CAREN]: ['p1'] } });
-    expect(putOn(ctx, r.st, CAREN, helmet({ 'DEF%': 2, CHC: 2 }))).toMatchObject({ added: false, id: 'p1' });
+    // в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01): «Уже есть» нет
+    expect(putOn(ctx, r.st, CAREN, helmet({ 'DEF%': 2, CHC: 2 }))).toMatchObject({ added: true, id: 'p2' });
   });
 
   it('«Заменить»: вытесненная из всех сборок уходит из пула; «Вернуть» — как было (запись снова есть)', () => {
@@ -516,12 +517,27 @@ describe('сегменты и Reforge', () => {
   });
 });
 
+// samePiece зовёт только окно «Это шлем Rin?» (уходит в шаге 10); «Уже есть» и «дома» нет (решение владельца 2026-10-01)
 describe('та же вещь', () => {
-  it('по слоту, грейду, сету, main и жёлтым сегментам', () => {
+  // запись с оранжевыми: жёлтые CHC 2, горит 4
+  const upg = { ...newPiece(EMPTY_GEAR, helmet({ CHC: 2, CHD: 1 })).piece, lit: { CHC: 4, CHD: 1 } };
+
+  it('по слоту, грейду, сету, main и уровням', () => {
     const p = newPiece(EMPTY_GEAR, helmet({ CHC: 2, CHD: 1 })).piece;
     expect(samePiece(helmet({ CHC: 2, CHD: 1 }), p)).toBe(true);
     expect(samePiece(helmet({ CHC: 2, CHD: 2 }), p)).toBe(false);
     expect(samePiece(helmet({ CHC: 2, CHD: 1 }, 'rare'), p)).toBe(false);
     expect(samePiece({ ...helmet({ CHC: 2, CHD: 1 }), setId: set('Attack') }, p)).toBe(false);
+  });
+
+  it('samePiece — только точное совпадение с уровнями записи (lit): по жёлтым — уже не она', () => {
+    expect(samePiece(helmet({ CHC: 4, CHD: 1 }), upg)).toBe(true);
+    expect(samePiece(helmet({ CHC: 2, CHD: 1 }), upg)).toBe(false);
+    expect(samePiece(helmet({ CHC: 4 }), upg)).toBe(false);
+    expect(samePiece(helmet({ CHC: 4, CHD: 1, SPD: 1 }), upg)).toBe(false);
+  });
+
+  it('samePiece Breakthrough не сравнивает: T4 на форме и запись ниже T4 — та же вещь', () => {
+    expect(samePiece({ ...helmet({ CHC: 4, CHD: 1 }), bt: 4 }, { ...upg, bt: 0 })).toBe(true);
   });
 });

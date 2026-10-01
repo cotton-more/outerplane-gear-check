@@ -173,7 +173,7 @@ export function App() {
         : !targetVs && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
   // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
   const shown = useMemo(() => (target
-    ? { ...verdict, title: tryOnTitle(t, verdict, target, tryRowOf(idx, targetVs?.best ?? null, !!targetVs?.worn), isArmor(s.slot)) }
+    ? { ...verdict, title: tryOnTitle(t, verdict, target, tryRowOf(idx, targetVs?.best ?? null), isArmor(s.slot)) }
     : verdict), [t, idx, verdict, target, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
   const [equipOpen, setEquipOpen] = useState(false);
   // сообщение после «Надеть» и импорта кода. «Вернуть» после «Надеть» — обратная операция только этого действия: другие
@@ -368,7 +368,8 @@ export function App() {
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
   // надеть вещь с формы на персонажа (logic/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
   // стало с вытесненной, с «Вернуть». Такая же вещь уже у другого персонажа — сначала «Это шлем Rin?»: та же запись
-  // («Она же — и у Caren») или своя. У самого персонажа такая уже есть — ничего (кнопка «Уже есть» не нажимается)
+  // («Она же — и у Caren») или своя (окно уходит в шаге 10). У самого персонажа такая же — всё равно новая запись: в
+  // Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01)
   const [twinAsk, setTwinAsk] = useState<{ c: Char; piece: Piece; owner: string; sw: Switched | null } | null>(null);
   const buildName = (key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «Идёт в …», «(в …)»
   // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
@@ -384,7 +385,6 @@ export function App() {
   const equipCheck = (c: Char, sw: Switched | null) => {
     const st = sw?.st ?? gear.store;
     const has = (id: string) => (st.pools[id] ?? []).map((pid) => st.pieces[pid]).find((p) => p && samePiece(input, p));
-    if (has(c.id)) { if (sw) switchToast(sw, 'eval'); return; }
     const owner = Object.keys(st.pools).find((id) => id !== c.id && idx.CHAR[id] && has(id));
     // «Она же» — только если запись встанет так, как обещала подпись по вещи с формы (logic/pool shareFits); иначе
     // окна нет — как «Другая — своя»

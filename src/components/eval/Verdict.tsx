@@ -177,7 +177,7 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
   const g = r.gamble;
   const lucky = g && best ? new Set(g.hits.filter((h) => h.best?.c.id === best.c.id).map((h) => h.key)) : undefined;
   const o = vs?.best ?? null;
-  const starts = o ? o.entering : !vs?.worn;
+  const starts = o ? o.entering : true;
   // кнопка карточки читается диктором целиком: штамп, кубик, исход — тот же, что на чипе, — и «подробнее»
   const label = [t.ui.verdictLabel[r.v], g && t.ui.diceTitle(toTarget(g).length, g.of, t.ui.verdictLabel[g.target]),
     vs && `${chipLabel(t, o, starts)} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');

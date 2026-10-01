@@ -62,8 +62,7 @@ export function tryOnPreset(view: PoolView | null, target: Target, slot: SlotId,
 
 // то, что говорит о варианте примерки заголовок: исход, сбор, часть связки. null — вещь варианту не подходит
 export interface TryRow { kind: string; n?: number; m?: number; part?: string; empty?: boolean } // empty — её слот пуст
-export function tryRowOf(idx: Index, o: Outcome | null, worn: boolean): TryRow | null {
-  if (worn) return { kind: 'worn' };
+export function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
   if (!o || o.kind === 'stats') return null;
   const part = (set: string | null | undefined, n?: number) => (set ? `${idx.SET[set]?.short ?? set} ×${n ?? 2}` : undefined);
   if (shownKind(o) === 'closer') return { kind: 'closer', n: o.after.progress, m: o.after.need, empty: !o.worn };
@@ -85,8 +84,6 @@ export const offLine = (t: Texts, idx: Index, target: Target, setId: string | nu
 // нет, Р13) — «ничего не даст», а не «не по билду»
 export function tryOnTitle(t: Texts, res: Verdict, target: Target, row: TryRow | null, armor = true): string {
   if (res.v === 'idle') return res.title;
-  // вещь уже у персонажа (logic/worn) — заголовок «уже у Caren» уже про неё, «уже на Caren» не повторяем
-  if (res.worn === 'home' && row?.kind === 'worn') return res.title;
   const T = t.tryon;
   const i = res.title.indexOf(' — ');
   const head = i >= 0 ? res.title.slice(0, i) : res.title;

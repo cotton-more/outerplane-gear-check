@@ -37,10 +37,9 @@ export function outcomeWord(t: T, o: Outcome): string {
   return t.ui.vsKind[o.kind] ?? o.kind;
 }
 
-// чип целиком, как его прочтёт диктор (подпись карточки): «начнёт», «уже есть», «лучше надетой: +25%», «сет 3 из 4»
+// чип целиком, как его прочтёт диктор (подпись карточки): «начнёт», «лучше надетой: +25%», «сет 3 из 4»
 export function chipLabel(t: T, o: Outcome | null, starts?: boolean): string {
-  if (starts || (o?.entering && o.used)) return t.ui.vsKind.starts;
-  if (!o) return t.ui.vsKind.worn;
+  if (starts || !o || (o.entering && o.used)) return t.ui.vsKind.starts;
   // «лучше надетой: +25%»; без числа (вытесненное ничего не стоило) — просто «лучше», не «лучше надетой: лучше»
   if (o.kind === 'up' || o.kind === 'down') {
     const word = outcomeWord(t, o);
@@ -50,11 +49,10 @@ export function chipLabel(t: T, o: Outcome | null, starts?: boolean): string {
   return t.ui.vsKind[o.kind] ?? o.kind;
 }
 
-// чип исхода; o null — «уже есть»
+// чип исхода; o null — вещь только начнёт билд
 export function VsChip({ o, starts }: { o: Outcome | null; starts?: boolean }) {
   const t = useT();
-  if (starts || (o?.entering && o.used)) return <span className="vs fill">{t.ui.vsKind.starts}</span>;
-  if (!o) return <span className="vs worn"><Icon name="check" />{t.ui.vsKind.worn}</span>;
+  if (starts || !o || (o.entering && o.used)) return <span className="vs fill">{t.ui.vsKind.starts}</span>;
   if (o.kind === 'up' || o.kind === 'down' || o.kind === 'completes' || o.kind === 'closer') {
     const up = o.kind !== 'down';
     const sr = o.kind === 'up' || o.kind === 'down' ? t.ui.vsSr[o.kind] : '';
@@ -210,14 +208,14 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
           const startNames = [...new Set(x.starts.map((v) => v.name))];
           const name = o ? variantName(t, o.v) : startNames.join(', ');
           return (
-            <li key={x.c.id} className={`vs-row vs-${o?.kind ?? (x.worn ? 'worn' : 'starts')}`}>
+            <li key={x.c.id} className={`vs-row vs-${o?.kind ?? 'starts'}`}>
               <div className="vs-h">
                 <Img k={'face:' + x.c.icon} className="face" />
                 <div className="nm">
                   <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{name}</span>
                   {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt, reforgeScale(w).done, reforgeScale(w).of)}</span>}
                 </div>
-                <VsChip o={o} starts={o ? o.entering : !x.worn} />
+                <VsChip o={o} starts={o ? o.entering : true} />
               </div>
               {o && <OutcomeLines o={o} rows={x.rows} />}
               {o && <PairLines o={o} />}

@@ -262,7 +262,6 @@ describe('понижение — как есть', () => {
   };
 
   it('свежая против прокачанной надетой (DEF% 6): та — как есть, новая хуже — «Фоддер — уже лучше у Caren» (было «уже не хуже»: новой 6 Reforge впереди, надетой 1)', () => {
-    // жёлтые записи другие, чем у новой: иначе это «она же» (samePiece по жёлтым — до шага 3)
     const st = rec({ 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { 'DEF%': 6, CHC: 3, CHD: 3, SPD: 2 });
     const x = helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 });
     expect(evaluate(ctx, x, { gamble: false }).v).toBe('keep');
@@ -446,40 +445,37 @@ describe('вещь введена не вся — не понижаем', () => 
   });
 });
 
-describe('такая же вещь у персонажа — «Оставить»', () => {
-  it('«Разобрать» у вещи Caren — «Оставить»: у кого она, и без кубика и «Прокачки»', () => {
-    const junk = helmet({ HP: 1, RES: 1, EFF: 1 }, 'rare');
-    const ctx = ctxOf([caren]);
-    expect(evaluate(ctx, junk, { gamble: false }).v).toBe('junk');
-    const r = judge(ctx, junk, on(EMPTY_GEAR, caren, junk));
-    expect(r).toMatchObject({ v: 'keep', worn: 'home', title: 'Оставляй — она уже у Caren', lines: [W.kept('Caren')], plan: [], gamble: null, badge: '' });
+// «Дома» нет (решение владельца 2026-10-01): в Оценку вводят новую вещь из инвентаря, надетое в игре не оценивают.
+// Такая же, как запись, — новый дроп или снятая с героя: сравнивается как есть, у записи ниже T4 — материал
+describe('такая же вещь у персонажа — сравнивается как есть', () => {
+  const ctx = ctxOf([caren]);
+  const withBt = (bt: 0 | 4) => { const r0 = putOn(ctx, EMPTY_GEAR, caren.id, EPIC); return updatePiece(r0.st, r0.id, { bt }); };
+  const full = (st: GearStore) => withMaterial(idx, ru, judge(ctx, EPIC, st), materialFor(poolView(ctx, st), EPIC));
+
+  it('точная копия Speed-шлема Caren ниже T4 — «Фоддер» материалом для шлема Caren', () => {
+    const r = full(withBt(0));
+
+    expect(r).toMatchObject({ v: 'fodder', title: 'Фоддер — материал Breakthrough для шлема Caren · Speed' });
+    expect(r.lines[0]).toMatch(/^\*\*Материал\*\*/);
   });
 
-  it('«Фоддер» — тоже; у нескольких — первый и «и ещё N»', () => {
-    const fod = helmet({ HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 });
-    const ctx = ctxOf([caren]);
-    expect(evaluate(ctx, fod, { gamble: false }).v).toBe('fodder');
-    const st = on(on(EMPTY_GEAR, caren, fod), rin, fod);
-    expect(judge(ctx, fod, st).title).toBe('Оставляй — она уже у Rin и ещё 1'); // по id персонажа
+  it('точная копия записи на T4 — не материал: «Разбирай — уже не хуже у Caren»', () => {
+    const st = withBt(4);
+
+    const r = full(st);
+
+    expect(materialFor(poolView(ctx, st), EPIC)).toEqual([]);
+    expect(r).toMatchObject({ v: 'junk', worn: 'lower', title: 'Разбирай — уже не хуже у Caren' });
   });
 
-  // повторное ревью, мелочь 5: старая запись Mage-оружия у Aer (Striker) — не «она уже у Aer»: носить её он не может
-  it('оружие не для класса в пуле — не «дом»: штамп не поднимается до «Оставляй — она уже у Aer»', () => {
-    const aer = D.chars.find((c) => c.name === 'Aer')!;
-    const odyssey = weapon('17', { RES: 1, EFF: 1, HP: 1, DEF: 1 }, 'ATK%'); // Thumping Odyssey — только Mage
-    const rec = { id: 'p1', slot: 'weapon' as const, grade: 'unique' as const, setId: null, itemKey: '17', main: 'ATK%', yellow: odyssey.subs, lit: odyssey.subs, bt: null, at: '' };
-    const st: GearStore = { v: 2, seq: 1, pieces: { p1: rec }, pools: { [aer.id]: ['p1'] } };
-    const ctx = ctxOf([aer]);
+  it('«Надеть» точной копии кладёт новую запись', () => {
+    const st = withBt(0);
 
-    const r = judge(ctx, odyssey, st);
+    const r = putOn(ctx, st, caren.id, EPIC);
 
-    expect(r.worn).not.toBe('home');
-  });
-
-  it('«Оставить» у своей вещи не трогаем — и не понижаем', () => {
-    const res = evaluate(ctxOf([caren]), STRONG, { gamble: false });
-    expect(res.v).toBe('keep');
-    expect(withWorn(ctxOf([caren]), poolView(ctxOf([caren]), onCaren), STRONG, res)).toBe(res);
+    expect(r.added).toBe(true);
+    expect(r.id).not.toBe(st.pools[caren.id][0]);
+    expect(r.st.pieces[r.id]).toMatchObject({ lit: EPIC.subs });
   });
 });
 

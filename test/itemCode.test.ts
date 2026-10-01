@@ -111,6 +111,17 @@ describe('код предмета', () => {
     }
   });
 
+  // формат тот же (уровни 1–4): вещь с уровнем 5–6 (после Reforge) кода не получает — «Поделиться» нет
+  it('уровень 5 или 6 — кода нет (null)', () => {
+    expect(encodeItem(item({ setId: '13', subs: { SPD: 5, CHC: 1 } }))).toBeNull();
+    expect(encodeItem(item({ setId: '13', subs: { SPD: 4, CHC: 6 } }))).toBeNull();
+  });
+
+  it('Breakthrough в код не попадает: T4 и ниже T4 — один и тот же код', () => {
+    const x = item({ setId: '13', subs: { SPD: 2, CHC: 1 } });
+    expect(encodeItem({ ...x, bt: 4 })).toBe(encodeItem({ ...x, bt: 0 }));
+  });
+
   it('пустой ввод и чужие символы (цифры, I, O) — отдельные ошибки', () => {
     expect(decodeItem('  ')).toEqual({ ok: false, error: 'empty' });
     for (const bad of ['KXRM 7PWA', 'KXRM IPWA', 'KXRM OPWA']) expect(decodeItem(bad)).toEqual({ ok: false, error: 'chars' });
@@ -122,6 +133,10 @@ describe('код предмета и текущие данные', () => {
 
   it('предмет из данных подходит', () => {
     expect(fitsData(s, item({ setId: '13', subs: { SPD: 2 } }), idx)).toBe(true);
+  });
+
+  it('Breakthrough входа fitsData не сравнивает', () => {
+    expect(fitsData(s, item({ setId: '13', subs: { SPD: 2 }, bt: 4 }), idx)).toBe(true);
   });
 
   it('сет или предмет из более новых данных — не подходит', () => {
