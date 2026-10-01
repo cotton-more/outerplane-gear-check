@@ -14,8 +14,8 @@ Builds are outerpedia's curated recommendations ([outerpedia](https://github.com
 - You enter the piece by hand: the app can't see the game's inventory.
 - The number of substats on an Epic (3, the fourth from the first Reforge) and how many copies T4 takes come from
   guides and in-game checks — the game data doesn't have them.
-- Orange segments (from Reforge) aren't entered — only yellow: the piece is judged as dropped, plus the 4th substat
-  on an Epic.
+- Yellow and orange segments (from Reforge) aren't told apart: you enter all that are lit, 1–6, and the piece is rated
+  as it is. Future Reforges don't count in the verdict.
 - The class versions of Briareos/Gorgon have the same name: the class shows in the icon and the passive's suffix.
 - The effect of EFF% and RES% substats isn't fully clear from the game data, so they're judged by build priorities only.
 

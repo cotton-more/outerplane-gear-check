@@ -26,12 +26,12 @@ game). So:
   So on helmets, boots and HP%-main pieces the HP place of such characters is taken by the main: for Delta
   (`HP › CHC › CHD › SPD`) a helmet's substats are `CHC › CHD › SPD`.
 
-- **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ yellow segments.
+- **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ segments.
 - **Epic is stricter:** Transistones aren't spent on Epics (outerpedia guide), and an Epic can't be Breakthrough fodder
   for a Legendary, so the key stats — the first two places of the chain — and their roll decide:
-  - "Keep" — three useful, if one of them is SPD or a key stat, or 5+ yellow on useful ones; or two key stats with
-    5+ yellow on them — then the third can be anything;
-  - "Stopgap" — a key stat with 2+ yellow plus another useful one, 5+ together: wear it until a piece with the
+  - "Keep" — three useful, if one of them is SPD or a key stat, or 5+ segments on useful ones; or two key stats
+    with 5+ segments on them — then the third can be anything;
+  - "Stopgap" — a key stat with 2+ segments plus another useful one, 5+ together: wear it until a piece with the
     missing key stat drops; 1–2 of those per set and slot are worth keeping;
   - otherwise — "Dismantle".
 - **The "all about attack" trap:** DMG UP% gives +2% per segment against +4% for ATK% and CHD, flat ATK (+40) is weaker
@@ -64,19 +64,14 @@ Quirks are in the settings (☰ menu).
 - **A Legendary with a passive from the builds and the right main stat** — keep.
 - **Same passive, wrong main stat** — fodder for Breakthrough (the main stat can't be rerolled).
 - **Stopgap:** an item without the needed passive (any Epic, a Legendary not in the builds, or "not in the list") with
-  a main stat characters want in that slot, **and a good roll**: for an Epic — 3 useful, or 2 useful with 5+ yellow;
+  a main stat characters want in that slot, **and a good roll**: for an Epic — 3 useful, or 2 useful with 5+ segments;
   for a Legendary — 3 useful. Otherwise — "Dismantle". Keep the best 1–2 per needed main stat.
 - The **"Endgame"** stage in the settings turns stopgaps off: everything not recommended goes to dismantle. The
   exception is a brand-new Legendary "not in the list": until it's in the outerpedia data, it gets "Maybe".
 
-## Roll
+## Segments — as they are
 
-"N of M useful, X of 3·M yellow segments on them" — and how many orange segments Reforge adds to useful stats on
-average. Reforge strengthens one substat out of four, so a piece with 3 useful out of 4 gets ~¾ of its 6 attempts
-into useful stats, and with 2 out of 4 — half. On an Epic the first attempt adds a 4th substat, leaving 5 segments.
-
-If the yellow and the expected orange on useful stats together reach 60%+ of the ideal (all substats useful, 3 yellow
-each, every Reforge into them), the **"Worth reforging"** badge appears.
-
-Mark only the **yellow** segments: the piece is judged as dropped (plus the 4th substat on an Epic). Don't count the
-orange ones from Reforges already done — the roll would come out inflated.
+Segments are how many are lit on the substat in the game, 1–6: yellow and orange together. A fresh drop has up to 4;
+after Reforge there can be more. The verdict and the comparison with your characters' pieces take the piece as it is:
+Reforges still ahead don't count, and the verdict doesn't guess "what if it rolls". Did a Reforge? Fix the piece or
+enter it again ([Upgrading](Upgrading#reforge)).

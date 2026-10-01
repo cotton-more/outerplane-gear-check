@@ -18,11 +18,11 @@ works in the browser, installs on a phone as an app, works offline. English and 
 </tr>
 <tr>
 <td><img src="screenshots/en/4-who-fits.png" alt="Who it suits: characters' priority chains"></td>
-<td><img src="screenshots/en/3-upgrade.png" alt="Upgrading: Enhance, Reforge, Breakthrough, Transistone"></td>
+<td><img src="screenshots/en/3-upgrade.png" alt="Upgrading: Enhance, Breakthrough, Transistone"></td>
 </tr>
 <tr>
 <td>Who it suits: each character's substat priority chain and what of it matched.</td>
-<td>Upgrading: what to invest in this piece — Enhance, Reforge, Breakthrough, Transistone.</td>
+<td>Upgrading: what to invest in this piece — Enhance, Breakthrough, Transistone (shot from the previous version).</td>
 </tr>
 </table>
 

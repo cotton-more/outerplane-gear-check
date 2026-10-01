@@ -1064,7 +1064,7 @@ describe('карточка персонажа', () => {
       pc('p3', 'gloves', 'rare', { 'DEF%': 1, SPD: 2, EFF: 1 }, 2), pc('p4', 'shoes', 'unique', { 'DEF%': 2, CHC: 3, CHD: 3, SPD: 2 }, 4),
     ], { [caren.id]: ['p1', 'p2', 'p3', 'p4'] });
     await mount({ tab: 'chars', charId: caren.id, slot: 'helmet' }, {}, { gear });
-    expect($('.bgear-weak p')?.textContent).toBe('The weakest — gloves (Epic, Breakthrough T2). Look for Speed Gloves with CHC and CHD — in try-on the verdict shows whether it beats the one on.');
+    expect($('.bgear-weak p')?.textContent).toBe('The weakest — gloves (Epic, Breakthrough T2). Look for Speed Gloves with CHC and CHD: "Try on pieces" — and the verdict shows whether it beats the one on.');
     await click(byText('.bgear-weak button', 'Try on pieces'));
     expect(JSON.parse(localStorage.getItem('ogc.state')!)).toMatchObject({ tab: 'eval', slot: 'gloves' });
     // режим героя с предустановкой (В10): на полосе — только имя; запись не заменяется в любом случае (это — только

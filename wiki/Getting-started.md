@@ -44,12 +44,14 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 2. **Split the screen:** the game in one half, Gear Check in the other.
 3. **Enter the piece:**
    - the slot (row of icons) and grade: `L` — Legendary (Etheric), `E` — Epic (Steel);
-   - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set);
+   - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set); a piece already at
+     Breakthrough T4 — tap **"T4"** next to the set (a fresh drop is T0, leave it off);
      **Legendary weapon and accessory** — find the item and mark the main stat; **Epic weapon and accessory** — just the main stat;
    - **main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the
      grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Faded —
      no one needs that main;
-   - **substats** — tap them in the grid in order, as in the game; yellow segments — buttons 1–4 in the stat's row.
+   - **substats** — tap them in the grid in order, as in the game; segments — buttons 1–6 in the stat's row: all that
+     are lit in the game (a fresh drop has up to 4).
      Stats sit in pairs by parameter, one above the other: ATK% over ATK, HP% over HP, DEF% over DEF, CHC over CHD,
      DMG UP% over DMG RED%, EFF% over RES%; SPD and attack on the left, defense on the right. The grid has all 13
      substats in the game: EFF% and RES% carry a % on the piece too, while flat EFF, flat RES, PEN% and CDMG RED% only
@@ -72,7 +74,7 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 
 ## Made a mistake
 
-- **Wrong stat** — tap its name in the row and pick another: the yellow segments stay. You can also pick a stat that
+- **Wrong stat** — tap its name in the row and pick another: the segments stay. You can also pick a stat that
   already sits in another row (the window shows its row number): it moves here and that row is freed. Handy for
   entering the next piece over the last one.
 - **Extra stat** — tap its name → "Remove", or tap that stat in the grid again.
@@ -81,9 +83,7 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 ## 4th substat on Epic
 
 Epics drop with three substats; the first Reforge adds a fourth. Did a Reforge — mark the new stat with
-"+ 4th substat from Reforge" under the rows — on armor, weapons and accessories. The fourth can pull the piece up:
-two good ones, a so-so third and a fresh SPD is already a "Keep". Which fourths would save the piece, the dice next to
-the stamp and the "One Reforge for luck" block in the details tell you in advance — see
-[Upgrading](Upgrading#the-dice-one-reforge-for-luck).
+"+ 4th substat from Reforge" under the rows — on armor, weapons and accessories. The verdict takes the piece as it
+is: it doesn't guess what a Reforge will roll — see [Upgrading](Upgrading#reforge).
 
 Next: [Fast cleanup](Fast-cleanup) · [Reading the verdict](Reading-the-verdict)

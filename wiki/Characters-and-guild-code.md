@@ -35,4 +35,4 @@ A character's pieces and how builds assemble from them — see [Equipment](Equip
 The verdict details have a code, for example `OGC KXRM TPWA`. "Copy" — and paste it into the game chat (8–11 letters,
 the chat limit is 50 characters). Whoever gets it opens ☰ → "Enter code" and types it in: the code has only letters,
 case and spaces don't matter, and a check letter catches typos. Everyone gets the evaluation for their own roster and
-settings.
+settings. A piece with 5–6 segments has no code; "T4" isn't part of the code.

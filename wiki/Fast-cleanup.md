@@ -10,8 +10,9 @@
    narrow sets like Attack and Critical Strike this filters out about half the pieces; for Speed, Immunity and
    Swiftness almost everything is bright — enter those.
 4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third.
-5. **Dice on "Dismantle"** — one Reforge may save the piece. Don't dismantle it right away: set it aside, do the
-   Reforge and mark the 4th substat. No luck — dismantle, invest no more.
+5. **"T4"** next to the set — only if the piece is already at Breakthrough T4; a fresh drop is T0, leave it off.
+   **"Fodder"** on the same piece a character wears below T4 — it's material for that one: feed it to its
+   Breakthrough. Better than the worn one — "Keep": wear it.
 6. **"Keep"** — lock it so you don't dismantle it by accident. **"Stopgap"** — wear it until you find better.
 7. **Epic Breakthrough** takes only the same piece: an Epic of the same set and slot, substats don't matter. Have an
    Epic "Keep" below T4 — set Epics of the same set and slot aside for it instead of dismantling (you need 4);
