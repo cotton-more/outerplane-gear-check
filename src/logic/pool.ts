@@ -130,7 +130,7 @@ function setInfo(ctx: Ctx, c: Char, x: VCache, set: string, n: number, n4: numbe
   return r;
 }
 
-// ценность записанной вещи для варианта — один раз на (ctx, вещь, вариант): updatePiece даёт новый объект
+// ценность записанной вещи для варианта — один раз на (ctx, вещь, вариант): правка (updateIn) даёт новый объект
 const pvMemo = new WeakMap<Ctx, WeakMap<Piece, Map<string, number>>>();
 function storedValue(ctx: Ctx, c: Char, v: Variant, p: Piece): number {
   let m = pvMemo.get(ctx);
@@ -515,11 +515,16 @@ function markSome(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: It
   };
   const one = open.find((a) => fits([a]));
   if (one) return fix([one]);
+  // вопрос 5 (б), владелец 2026-10-01: пара одного вида — обе без Breakthrough («отметь»), потом обе 0–3 («сделай»);
+  // смешанная («сделай» и у вещи без Breakthrough) — только если пары одного вида нет
+  const kind = (a: Piece, b: Piece) => ((a.bt === null) === (b.bt === null) ? (a.bt === null ? 0 : 1) : 2);
+  const pairs: [Piece, Piece][] = [];
   for (let i = 0; i < open.length; i++) {
-    for (let j = i + 1; j < open.length; j++) {
-      const a = open[i], b = open[j];
-      if (a.slot !== b.slot && fits([a, b])) return fix([a, b]);
-    }
+    for (let j = i + 1; j < open.length; j++) if (open[i].slot !== open[j].slot) pairs.push([open[i], open[j]]);
+  }
+  for (const k of [0, 1, 2]) {
+    const ab = pairs.find(([a, b]) => kind(a, b) === k && fits([a, b]));
+    if (ab) return fix([...ab]);
   }
   return null;
 }
@@ -527,10 +532,11 @@ function markSome(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: It
 // Р20: Breakthrough T4 у вещей распавшегося сета в пуле, которые не на T4 (не в её слоте), — если с ним у новой
 // «Надеть» (П2); совет впереди «найди ещё». Не указан (bt: null, старая запись) — «отметь T4»; известен ниже T4 (0–3) —
 // «сделать» (Р20 (б), как Pen mix — П5): что в пуле, то и в игре, это совет прокачки, а не «проверь, не забыл ли». При
-// равной длине совета первыми — вещи без Breakthrough: «отметь» дешевле, чем «сделай». Pen mix без двух T4 (Р2) — тот
-// же совет: четыре Pen держат Pen ×4 на T0, и вещь другой части встаёт, только когда две Pen на T4. До Р20 (б) его
-// давал отдельный markFor (после «найди ещё»; в переборе опровергателя — 565 советов из 1812 «ломает»); его набор вещей
-// (сета, не на T4) входит в набор здесь, а успех markSome от порядка не зависит — он удалён, советы те же по длине
+// равной длине совета первыми — вещи без Breakthrough: «отметь» дешевле, чем «сделай»; пара — одного вида, смешанная
+// — только если другой нет (вопрос 5 (б), markSome). Pen mix без двух T4 (Р2) — тот же совет: четыре Pen держат
+// Pen ×4 на T0, и вещь другой части встаёт, только когда две Pen на T4. До Р20 (б) его давал отдельный markFor (после
+// «найди ещё»; в переборе опровергателя — 565 советов из 1812 «ломает»); его набор вещей (сета, не на T4) входит в набор
+// здесь, а успех markSome от порядка не зависит — он удалён, советы те же по длине
 function markT4(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, set: string): Outcome['fix'] {
   const open = pieces.filter((p) => p.setId === set && isArmor(p.slot) && p.slot !== x.slot && p.bt !== 4);
   const unknownFirst = [...open.filter((p) => p.bt === null), ...open.filter((p) => p.bt !== null)];

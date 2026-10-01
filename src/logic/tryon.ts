@@ -86,8 +86,8 @@ export function tryOnPreset(view: PoolView | null, hero: Hero, slot: SlotId, fro
 }
 
 // то, что говорит об исходе героя заголовок: исход, сбор, часть связки. null — вещь варианту не подходит
-export interface TryRow { kind: string; n?: number; m?: number; part?: string; empty?: boolean } // empty — её слот пуст
-export function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
+interface TryRow { kind: string; n?: number; m?: number; part?: string; empty?: boolean } // empty — её слот пуст
+function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
   if (!o || o.kind === 'stats') return null;
   const part = (set: string | null | undefined, n?: number) => (set ? `${idx.SET[set]?.short ?? set} ×${n ?? 2}` : undefined);
   if (shownKind(o) === 'closer') return { kind: 'closer', n: o.after.progress, m: o.after.need, empty: !o.worn };

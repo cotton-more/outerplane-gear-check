@@ -48,7 +48,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const strong = (m: Scored) => legend || topTier(m) || m.yellow >= CFG.epicYellow;
   const twoMain = (m: Scored) => !legend && mains(m).length >= 2 && yellowOf(mains(m)) >= CFG.epicYellow;
   const qualifies = (m: Scored) => m.good != null && ((m.good >= CFG.keepCount && strong(m)) || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll) || twoMain(m));
-  // «Временно» у Epic: главный стат с хорошим роллом и ещё полезный, вместе 5+ жёлтых — носить, пока не выпадет вещь с недостающим
+  // «Временно» у Epic: главный стат с хорошим роллом и ещё полезный, вместе 5+ сегментов — носить, пока не выпадет вещь с недостающим
   const tempOk = (m: Scored) => !legend && mains(m).some((p) => (subs[p.key] || 1) >= CFG.epicTempRoll) && full(m).length >= 2 && yellowOf(full(m)) >= CFG.tempYellow;
   res.qualifies = qualifies;
   // сет основной, если он в первой связке билда, — дальше идут запасные варианты

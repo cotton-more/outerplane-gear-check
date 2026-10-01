@@ -36,7 +36,7 @@ const caren = char('Caren'); // DEF › CHC › CHD › SPD › DMG UP%
 const variant = (name: string, v: string) => variantsOf(idx, char(name)).find((x) => x.name === v)!;
 
 let seq = 0;
-// вещь брони: lit — горит всего (жёлтые = горящим, Reforge впереди все 6)
+// вещь брони: lit — уровень сабстатов (сколько горит), yellow — тот же
 const P = (slot: SlotId, short: string | null, lit: Subs, bt: Bt | null = null, grade: Piece['grade'] = 'unique'): Piece =>
   ({ id: 'p' + ++seq, slot, grade, setId: short ? set(short) : null, itemKey: null, main: null, yellow: lit, lit, bt, at: '' });
 const W = (itemKey: string, lit: Subs, main = 'DEF%', grade: Piece['grade'] = 'unique'): Piece =>
@@ -647,6 +647,25 @@ describe('Pen mix без T4 (Р2)', () => {
     expect(r.fix?.mark ?? false).toBe(false);
   });
 
+  // вопрос 5 (б), владелец 2026-10-01: в совете «у двух» — пара одного вида; было «сделать … у Penetration-брони и
+  // -перчаток» (броня без Breakthrough, перчатки T0)
+  const mixPool = (bts: (Bt | null)[]) => [...ARM.map((s, i) => P(s, 'Penetration', JUNK, bts[i])), P('gloves', 'Attack', STRONG), P('shoes', 'Attack', STRONG)];
+  const fixOf = (pieces: Piece[]) => outcomeFor(ctx, poolView(ctx, store(luna, pieces)), luna.id, HELMET)!.rows.find((x) => x.v.key === pma.key)!.fix;
+
+  it('вопрос 5 (б): Pen-броня без Breakthrough, прочие Pen на T0 — «сделать» у двух на T0 (перчатки и ботинки), броня не названа', () => {
+    const pcs = mixPool([0, null, 0, 0]);
+    const f = fixOf(pcs);
+    expect(f).toMatchObject({ slots: ['gloves', 'shoes'], mark: true, make: true });
+    expect(f!.pieces.map((p) => p.bt)).toEqual([0, 0]);
+  });
+
+  it('вопрос 5 (б): две Pen без Breakthrough и одна на T0 (не в её слоте) — «отметить» у двух без Breakthrough', () => {
+    const pcs = mixPool([0, null, 0, null]);
+    const f = fixOf(pcs);
+    expect(f).toMatchObject({ slots: ['armor', 'shoes'], mark: true, make: false });
+    expect(f!.pieces.map((p) => p.bt)).toEqual([null, null]);
+  });
+
   // П7 (находка «Ломает» при вещи пула не хуже, refute-a3): в пуле уже есть Attack-шлем сильнее новой — новая не встанет
   // ни при каких отметках (встанет он): исход по нему, «хуже», а не «ломает» с ложным советом
   describe('П7: в пуле уже есть вещь её сета в её слоте не хуже', () => {
@@ -847,6 +866,11 @@ describe('совет «отметь T4» для любого сета (Р20)', (
       // ни одной не хватает
       expect(r.fix.make).toBe(r.fix.pieces.some((p) => p.bt !== null));
       if (r.fix.slots.length === 1 && r.fix.make) expect(open.some((a) => a.bt === null && putsWith([a]))).toBe(false);
+      // вопрос 5 (б): смешанная пара — только если пары одного вида нет
+      const same = (a: Piece, b: Piece) => a.slot !== b.slot && (a.bt === null) === (b.bt === null);
+      if (r.fix.pieces.length === 2 && !same(r.fix.pieces[0], r.fix.pieces[1])) {
+        expect(open.some((a, i) => open.slice(i + 1).some((b) => same(a, b) && putsWith([a, b])))).toBe(false);
+      }
       // выполнить: отметить названные — у новой «Надеть»
       expect(putsWith(r.fix.pieces)).toBe(true);
       // «у двух» — только если одной не хватает
@@ -1326,7 +1350,7 @@ describe('«По статам»: случаи владельца', () => {
 });
 
 // Находка 28 (Р11–Р13): «По статам» — отдельный билд у каждого героя с билдами. Живой (держит штамп), пока в пуле нет
-// брони из сетов связок; потом — тихая строка, «Надеть» в него только при явном выборе (поиск по имени, примерка).
+// брони из сетов связок; потом — тихая строка, «Надеть» в него только при явном выборе (поиск по имени, режим героя).
 // Хлам для него — вещь без полезных статов. Вещи — коды владельца (OGC …)
 describe('«По статам» у каждого героя (находка 28)', () => {
   const drakhan = idx.CHAR_BY_SLUG['demiurge-drakhan'];    // Speed ×4, Immunity ×2 + Swiftness ×2; SPD › HP › CHC › CHD › DMG UP% › DEF
@@ -1510,7 +1534,7 @@ describe('«По статам» у каждого героя (находка 28)
 });
 
 // Шаг 14 (браузер): Aer (Striker) в «Кому надеть?» предлагался Thumping Odyssey — оружие только для Mage («пустой слот ·
-// Speed»). Вещь не для класса героя (vs wearable) — не кандидат нигде: ни в билде, ни в «По статам», ни в примерке
+// Speed»). Вещь не для класса героя (vs wearable) — не кандидат нигде: ни в билде, ни в «По статам», ни в режиме героя
 describe('оружие не для класса героя (classLimits)', () => {
   const aer = char('Aer');   // Striker; билды просят ATK% в оружии — Mage-оружие с ATK% было бы «временным»
   const ame = char('Ame');   // Mage; Thumping Odyssey — в списке её билдов

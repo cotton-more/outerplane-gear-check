@@ -12,7 +12,7 @@ export interface Part { key: string; ok: boolean; half: boolean; tier: number | 
 export interface Score {
   ratio: number | null;  // взвешенно по приоритету, 0…1+ (для сортировки и процента)
   good: number | null;   // полезных сабстатов: 1, ½ или 0 за каждый
-  yellow: number;        // жёлтых сегментов на полезных
+  yellow: number;        // сегментов на полезных
   spd: boolean;          // SPD отмечен и нужен билду
   parts: Part[];
   im: ItemMains;         // строки main предмета, под которые считали места цепочки (см. tierPlaces)

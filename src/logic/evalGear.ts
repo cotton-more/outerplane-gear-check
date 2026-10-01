@@ -28,7 +28,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   // кто взял бы предмет с таким main как временный: класс подходит, и билд просит этот main в этом слоте
   const stopgapFor = (main: string, classLimits: string[]) =>
     buildsOf(idx, (b, c) => (!classLimits.length || classLimits.includes(c.class)) && slotMains(b, kind).has(main));
-  // «2 полезных + много жёлтых» — только для 3 сабстатов (Epic); Legendary с 4 сабстатами нужно 3 полезных.
+  // «2 полезных + много сегментов» — только для 3 сабстатов (Epic); Legendary с 4 сабстатами нужно 3 полезных.
   // Считаем по грейду, а не по числу отмеченных: иначе недовведённый Legendary проходил бы по правилу Epic.
   const tempNeed = Math.max(CFG.tempGood2, expected - 1);
   const tempOk = (m: Scored) => m.good != null && (m.good >= CFG.tempGood || (m.good >= tempNeed && m.yellow >= CFG.tempYellow));

@@ -156,6 +156,7 @@ export function updateIn(idx: Index, st: GearStore, charId: string, id: string, 
   return { st: { ...st, seq, pieces: { ...st.pieces, [nid]: { ...edited, id: nid } }, pools: { ...st.pools, [charId]: pool } }, id: nid };
 }
 
+// только для тестов: записи прежней правки (bt 1–3, оранжевые) и прямые патчи; в приложении правка — updateIn
 export function updatePiece(st: GearStore, id: string, patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>, at = today()): GearStore {
   const p = st.pieces[id];
   return p ? { ...st, pieces: { ...st.pieces, [id]: { ...p, ...patch, at } } } : st;

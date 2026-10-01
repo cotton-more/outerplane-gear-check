@@ -401,7 +401,7 @@ describe('подсказки по ходу и «Что нового»', () => {
 describe('тур «Экипировка» на примере', () => {
   const kappa = D.chars.find((c) => c.name === 'Kappa')!;
   const speed = D.sets.find((x) => x.short === 'Speed')!.id;
-  // у игрока своё: на Kappa · Speed — шлем, идёт примерка для Kappa
+  // у игрока своё: на Kappa · Speed — шлем, идёт оценка для Kappa (режим героя)
   const MINE = {
     welcomeHidden: true, tour: DONE, roster: [kappa.id], tryon: { charId: kappa.id, build: 'Speed' },
     gear: { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 1 }, lit: { CHC: 1 }, bt: null, at: '' } }, builds: { [kappa.id + '/Speed']: { slots: { helmet: 'p1' }, at: '' } } },
@@ -418,7 +418,7 @@ describe('тур «Экипировка» на примере', () => {
 
     expect(strip()).toContain(T.gearStepOf(1, 5));
     expect($('.char-detail.open h2')?.textContent).toBe('Caren');
-    expect($('.tryon')).toBeNull(); // примерка Kappa на время тура снята
+    expect($('.tryon')).toBeNull(); // режим героя Kappa на время тура снят
     await click($('[data-tour="gslots"] [data-tour-item="helmet"]'));
 
     expect(strip()).toContain(T.gearStepOf(2, 5));
@@ -505,7 +505,7 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.tour-strip button', T.next));
     expect(strip()).toContain(T.gearStepOf(4, 5));
     await click($('.drawer [data-tour="gequip"]'));
-    expect($('.drawer')).toBeNull(); // шторка закрылась: ✕ примерки был бы под ней
+    expect($('.drawer')).toBeNull(); // шторка закрылась: ✕ режима героя был бы под ней
     expect(strip()).toContain(T.gearStepOf(5, 5));
   });
 
@@ -548,7 +548,7 @@ describe('тур «Экипировка» на примере', () => {
   });
 
   it('«Вернуть» экипировки, начатое до тура, после тура не всплывает', async () => {
-    // примерка Kappa · Speed: шлем с формы — кнопкой под карточкой
+    // режим героя Kappa · Speed: шлем с формы — кнопкой под карточкой
     await mount({ ...MINE, state: { tab: 'eval', slot: 'helmet', grade: 'unique' }, item: { setId: speed, subs: { CHC: 2, CHD: 2, SPD: 1, HP: 1 } } });
     await click($('.vc-equip'));
     expect($('.gear-toast')).toBeTruthy();
