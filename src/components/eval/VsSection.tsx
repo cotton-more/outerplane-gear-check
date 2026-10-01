@@ -61,9 +61,10 @@ export function VsChip({ o, starts }: { o: Outcome | null; starts?: boolean }) {
   return <span className={`vs ${cls}`}>{o.kind === 'eq' || o.kind === 'capped' ? <Icon name="equal" /> : null}{t.ui.vsKind[o.kind]}</span>;
 }
 
-// что сделает кнопка: заменить, если «Надеть» уберёт вещь её слота (poolVs replaces), иначе — надеть
-export const equipLabel = (t: T, x: CharVs, slot: string) =>
-  x.replaces ? t.ui.replaceOn(slot, x.c.name) : t.ui.equipTo(x.c.name);
+// что сделает кнопка: заменить, если «Надеть» уберёт вещь её слота (poolVs replaces), иначе — надеть; на форме нажата
+// «T4» — «· T4» в конце (В4: видно, с каким Breakthrough вещь ляжет в пул)
+export const equipLabel = (t: T, x: CharVs, slot: string, t4 = false) =>
+  (x.replaces ? t.ui.replaceOn(slot, x.c.name) : t.ui.equipTo(x.c.name)) + (t4 ? t.ui.withT4 : '');
 
 const setName = (idx: Index, set: string | null | undefined) => (set ? idx.SET[set]?.short ?? set : '');
 const partText = (idx: Index, p: Pick<SetPiece, 'set' | 'n'>) => `${setName(idx, p.set)} ×${p.n}`;
@@ -151,8 +152,9 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
 // процент невставшей против вещи в её слоте («лучше … на 12%», «только статы: +7%»)
 const pctOf = (o: Outcome) => Math.round((o.pair?.delta ?? 0) * 100);
 
-// строки сравнения с вещью в слоте (как было): цепочки, места, почему, процент, T4, Breakthrough, материал, пассивка
-function PairLines({ o }: { o: Outcome }) {
+// строки сравнения с вещью в слоте (как было): цепочки, места, почему, процент, T4, Breakthrough, материал, пассивка.
+// t4 — на форме нажата «T4»: «бонус только на T4, пока новая не на T4» про неё неправда — строки нет
+function PairLines({ o, t4 }: { o: Outcome; t4: boolean }) {
   const t = useT();
   const idx = useIndex();
   const p = o.pair;
@@ -171,20 +173,22 @@ function PairLines({ o }: { o: Outcome }) {
       )}
       {p?.why && <p className="muted">{t.ui.vsWhy[p.why]}</p>}
       {fig && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && <p className="muted">{fig.kind === 'empty' ? t.ui.vsEmpty : fig.kind === 'times' ? t.ui.vsTimes(fig.n) : t.ui.vsDelta(fig.n)}</p>}
-      {o.t4 && (o.kind === 'fill' || o.kind === 'up' || o.kind === 'capped' || o.kind === 'closer') && (
+      {o.t4 && !t4 && (o.kind === 'fill' || o.kind === 'up' || o.kind === 'capped' || o.kind === 'closer') && (
         <p className="muted">{t.ui.vsT4(setName(idx, o.t4.set), o.t4.n, o.kind === 'capped')}</p>
       )}
       {p?.passive && <p className="muted">{t.ui.vsPassive}</p>}
       {p?.ahead && <p className="muted">{t.ui.vsAhead(subLabel(p.ahead.key), p.ahead.worn, p.ahead.next)}</p>}
       {/* ▲ лучше — надевают новую: важнее, сколько Breakthrough у той (старая ей материал — скажет сообщение после «Заменить») */}
       {w && w.bt != null && w.bt > 0 && (!p?.material || upKind(o)) && p?.why !== 'stopgap' && <p className="muted">{t.ui.vsBt(w.bt)}</p>}
-      {p?.material && !upKind(o) && w && <p className="muted">{t.ui.vsMaterial(w.bt ?? 0)}</p>}
+      {/* надетая ниже T4 (bt 0, форма без «T4») — без счёта ступеней */}
+      {p?.material && !upKind(o) && w && <p className="muted">{w.bt ? t.ui.vsMaterial(w.bt) : t.ui.vsMaterialBelow}</p>}
     </>
   );
 }
 
-export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
-  list: CharVs[]; view: PoolView; slot: string; onEquip?: (x: CharVs) => void; onOpenChar: (id: string) => void;
+// t4 — на форме нажата «T4»: «· T4» в подписи кнопки, без строки «бонус только на T4»
+export function VsSection({ list, view, slot, t4 = false, onEquip, onOpenChar }: {
+  list: CharVs[]; view: PoolView; slot: string; t4?: boolean; onEquip?: (x: CharVs) => void; onOpenChar: (id: string) => void;
 }) {
   const t = useT();
   const [open, setOpen] = useState<string | null>(null);
@@ -206,6 +210,9 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
           // Вещь только начинает билд (главная строка «начнёт») — в заголовке имена того, что она начнёт
           const startNames = [...new Set(x.starts.map((v) => v.name))];
           const name = o ? variantName(t, o.v) : startNames.join(', ');
+          // ни исхода, ни «начнёт» — строка только ради кнопки «Заменить» из «Примерить замену» (режим героя): чипа нет,
+          // почему — строка над разделом (heroNote)
+          const bare = !o && !startNames.length;
           return (
             <li key={x.c.id} className={`vs-row vs-${o?.kind ?? 'starts'}`}>
               <div className="vs-h">
@@ -214,15 +221,15 @@ export function VsSection({ list, view, slot, onEquip, onOpenChar }: {
                   <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{name}</span>
                   {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt)}</span>}
                 </div>
-                <VsChip o={o} starts={o ? o.entering : true} />
+                {!bare && <VsChip o={o} starts={o ? o.entering : true} />}
               </div>
               {o && <OutcomeLines o={o} rows={x.rows} />}
-              {o && <PairLines o={o} />}
+              {o && <PairLines o={o} t4={t4} />}
               {safe.length > 0 && !x.rows.some((r) => r.kind === 'stats') && <p className="muted">{t.ui.vsSafe(safe.join(', '))}</p>}
               {onEquip && x.useful && (
                 <button type="button" className={`btn vs-act${o && holds(o) ? ' good' : ''}`} onClick={() => onEquip(x)} {...tour('gequip')}>
                   <Icon name={x.replaces ? 'replace' : 'check'} />
-                  {equipLabel(t, x, slot)}
+                  {equipLabel(t, x, slot, t4)}
                 </button>
               )}
               {o && startNames.length > 0 && <p className="muted small">{t.ui.vsStarts(startNames.join(', '))}</p>}

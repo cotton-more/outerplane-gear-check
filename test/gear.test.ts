@@ -6,12 +6,11 @@ import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
 import { makeCtx } from '../src/logic/context';
 import {
-  addFourth, buildKey, EMPTY_GEAR, gc, gearedChars, holdersOf, newPiece, reforgeScale, reforgesDone, replaceStat, samePiece, setYellow, tapSegment,
-  updateIn, updatePiece, type GearStore, type Piece,
+  buildKey, EMPTY_GEAR, gc, gearedChars, holdersOf, newPiece, updateIn, updatePiece, type GearStore, type Piece,
 } from '../src/logic/gear';
 import { normalizeFusion, switchFusion } from '../src/logic/fusion';
 import { decodeGear, encodeGear, newerGear, readsWhole, restoreGear } from '../src/logic/gearStore';
-import { planFor, planPut, poolView, putOn, removeEverywhere, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
+import { planFor, planPut, poolView, putOn, removeFrom, setMark, undoPut, undoRemove } from '../src/logic/pool';
 import type { ItemInput } from '../src/logic/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -209,10 +208,10 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
 
   it('новая запись: жёлтые из оценки, Breakthrough не указан, seq + 1; такая же уже есть — всё равно новая', () => {
     const r = putOn(ctx, EMPTY_GEAR, CAREN, helmet({ 'DEF%': 2, CHC: 2 }), { at: '2026-09-28' });
-    expect(r).toMatchObject({ added: true, id: 'p1', removed: [], piece: { yellow: { 'DEF%': 2, CHC: 2 }, lit: { 'DEF%': 2, CHC: 2 }, bt: null, at: '2026-09-28' } });
+    expect(r).toMatchObject({ id: 'p1', removed: [], piece: { yellow: { 'DEF%': 2, CHC: 2 }, lit: { 'DEF%': 2, CHC: 2 }, bt: null, at: '2026-09-28' } });
     expect(r.st).toMatchObject({ seq: 1, pools: { [CAREN]: ['p1'] } });
     // в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01): «Уже есть» нет
-    expect(putOn(ctx, r.st, CAREN, helmet({ 'DEF%': 2, CHC: 2 }))).toMatchObject({ added: true, id: 'p2' });
+    expect(putOn(ctx, r.st, CAREN, helmet({ 'DEF%': 2, CHC: 2 }))).toMatchObject({ id: 'p2' });
   });
 
   it('«Заменить»: вытесненная из всех сборок уходит из пула; «Вернуть» — как было (запись снова есть)', () => {
@@ -234,20 +233,13 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect(undoPut(gone, CAREN, r)).toBe(gone);
   });
 
-  it('та же запись у другого («Она же — и у Kappa»): id тот же, seq не растёт; Reforge и Breakthrough — общие', () => {
-    const a = putOn(ctx, EMPTY_GEAR, CAREN, helmet({ CHC: 2 }));
-    const b = putOn(ctx, a.st, KAPPA, helmet({ CHC: 2 }), { record: a.piece });
-    expect(b).toMatchObject({ added: true, id: a.id, shared: [CAREN] });
-    expect(b.st.seq).toBe(1);
-    expect(updatePiece(b.st, a.id, { bt: 4 }).pieces[a.id].bt).toBe(4);
-    // «Другая — своя» — новая запись
-    expect(putOn(ctx, a.st, KAPPA, helmet({ CHC: 2 })).id).toBe('p2');
-  });
-
-  it('record, которую gc уже стёр, — запись возвращается', () => {
-    const p = rec('p1', helmet({ CHC: 2 }), 3);
-    const r = putOn(ctx, EMPTY_GEAR, KAPPA, helmet({ CHC: 2 }), { record: p });
-    expect(r.st.pieces.p1).toEqual(p);
+  // шаг 10 (В9): было — «Она же — и у Kappa» (putOn record: та же запись в двух пулах). Пулы независимы: «Надеть» такой
+  // же вещи, как у другого, — всегда своя запись; правка у одного другого не трогает
+  it('такая же вещь, как у Kappa, — у Caren своя запись; Breakthrough у Kappa — только у неё', () => {
+    const a = putOn(ctx, EMPTY_GEAR, KAPPA, helmet({ CHC: 2 }));
+    const b = putOn(ctx, a.st, CAREN, helmet({ CHC: 2 }));
+    expect({ id: b.id, seq: b.st.seq, kappa: b.st.pools[KAPPA], caren: b.st.pools[CAREN] }).toEqual({ id: 'p2', seq: 2, kappa: ['p1'], caren: ['p2'] });
+    expect(updatePiece(b.st, a.id, { bt: 4 }).pieces[b.id].bt).toBe(null);
   });
 
   // было: Def/Immu получал «Собираю». Р19: «Надеть» отметок не ставит — Def/Immu начат вещью и собирается сам
@@ -255,13 +247,13 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     // у Caren собран Speed ×4 (Speed/Immu — «Не собираю»); первая Immunity-вещь начинает Def/Immu (Р14), в Speed не встаёт
     const st = { ...four(), marks: { [K]: 'want' as const, [K2]: 'skip' as const } };
     const r = putOn(ctx, st, CAREN, { ...helmet({ RES: 1 }), slot: 'armor', setId: set('Immunity') });
-    expect({ marks: r.marks, stored: r.st.marks, began: r.began }).toEqual({ marks: [], stored: { [K]: 'want', [K2]: 'skip' }, began: [buildKey(CAREN, 'Def/Immu')] });
+    expect({ stored: r.st.marks, began: r.began }).toEqual({ stored: { [K]: 'want', [K2]: 'skip' }, began: [buildKey(CAREN, 'Def/Immu')] });
     expect(poolView(ctx, r.st).of(CAREN)!.inPlay.map((v) => v.key)).toContain(buildKey(CAREN, 'Def/Immu'));
   });
 
   it('Р19: первая Speed-вещь — отметок нет, began — Speed и Speed/Immu (тост «Начал собирать»)', () => {
     const r = putOn(ctx, EMPTY_GEAR, CAREN, helmet({ CHC: 2 }));
-    expect({ marks: r.marks, stored: r.st.marks ?? {}, began: r.began }).toEqual({ marks: [], stored: {}, began: [K, K2] });
+    expect({ stored: r.st.marks ?? {}, began: r.began }).toEqual({ stored: {}, began: [K, K2] });
   });
 
   it('Р19: «Не собираю» у начатого вещью билда остаётся — он не собирается и не в began', () => {
@@ -269,12 +261,14 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect({ stored: r.st.marks, began: r.began }).toEqual({ stored: { [K2]: 'skip' }, began: [K] });
   });
 
-  it('«Убрать у Caren» — только у неё; «Разобрал — убрать у всех» — у всех; «Вернуть» — обратно', () => {
+  // шаг 10: «Разобрал — убрать у всех» (removeEverywhere) ушло вместе с общими записями (В9)
+  it('«Убрать у Caren» — только у неё (старая общая запись у Kappa остаётся); «Вернуть» — обратно', () => {
     const st = v2([rec('p1', helmet({ CHC: 2 }))], { [CAREN]: ['p1'], [KAPPA]: ['p1'] });
-    expect(removeFrom(st, CAREN, 'p1').pools).toEqual({ [KAPPA]: ['p1'] });
-    const all = removeEverywhere(st, 'p1');
-    expect(all).toMatchObject({ pools: {}, pieces: {} });
-    expect(undoRemove(all, st.pieces.p1, [CAREN, KAPPA])).toMatchObject({ pools: { [CAREN]: ['p1'], [KAPPA]: ['p1'] }, pieces: { p1: st.pieces.p1 } });
+    const gone = removeFrom(st, CAREN, 'p1');
+    expect(gone.pools).toEqual({ [KAPPA]: ['p1'] });
+    const solo = removeFrom(gone, KAPPA, 'p1');
+    expect(solo).toMatchObject({ pools: {}, pieces: {} });
+    expect(undoRemove(solo, st.pieces.p1, [CAREN, KAPPA])).toMatchObject({ pools: { [CAREN]: ['p1'], [KAPPA]: ['p1'] }, pieces: { p1: st.pieces.p1 } });
   });
 
   it('отметка: поставить, заменить, снять', () => {
@@ -381,14 +375,14 @@ describe('«Надеть»: что уходит из пула (В1)', () => {
     const { piece } = newPiece(st, SHOES, '');
     const plan = planPut(ctx, idx.CHAR[CAREN], Object.values(st.pieces), piece);
     const r = putOn(ctx, st, CAREN, SHOES);
-    expect({ removed: plan.removed.map((p) => p.id), marks: plan.marks }).toEqual({ removed: r.removed.map((p) => p.id), marks: r.marks });
+    expect({ removed: plan.removed.map((p) => p.id), began: plan.began }).toEqual({ removed: r.removed.map((p) => p.id), began: r.began });
   });
 
   // подпись кнопки (poolVs replaces) — planFor по виду пула; должна совпасть с тем, что сделает putOn (находка 5)
   const same = (st: GearStore, who: string, x: ItemInput, tryOn: string | null = null) => {
     const plan = planFor(ctx, poolView(ctx, st, tryOn), who, x)!;
     const r = putOn(ctx, st, who, x, { tryOn });
-    return [{ removed: plan.removed.map((p) => p.id), marks: plan.marks }, { removed: r.removed.map((p) => p.id), marks: r.marks }];
+    return [{ removed: plan.removed.map((p) => p.id), began: plan.began }, { removed: r.removed.map((p) => p.id), began: r.began }];
   };
   const eternal = '2000043', cfEternal = '2700043';
   it.each([
@@ -415,7 +409,7 @@ describe('«Надеть»: вариант, где она встала, — на
 
   it('Pen Def собирается без отметки: «Собираю» не нужен', () => {
     const r = putOn(ctx, st, GNOSIS, PEN);
-    expect(r.marks).toEqual([]);
+    expect(r.st.marks ?? {}).toEqual({});
     expect(poolView(ctx, r.st).of(GNOSIS)!.inPlay.map((v) => v.key)).toContain(buildKey(GNOSIS, 'Pen Def'));
   });
 
@@ -438,13 +432,13 @@ describe('«Надеть» в примерке', () => {
   // было: отметки [Def, Def/Immu]. Р19: Defense-шлем сам начинает цель (и Def/Immu) — «Собираю» не нужен
   it('начинает цель примерки — отметок нет, began — Def и Def/Immu', () => {
     const r = putOn(ctx, st, CAREN, DEF, { tryOn: K3 });
-    expect({ marks: r.marks, began: r.began }).toEqual({ marks: [], began: [K3, K4] });
+    expect({ marks: r.st.marks ?? {}, began: r.began }).toEqual({ marks: {}, began: [K3, K4] });
   });
 
   it('старый Defense-шлем уже начал Def (Р14): новый в примерке Def заменяет его, отметок нет', () => {
     const old = rec('p5', A('helmet', 'Defense', { HP: 1, RES: 1 }));
     const r = putOn(ctx, v2([...pcs, old], { [CAREN]: [...pcs, old].map((p) => p.id) }), CAREN, DEF, { tryOn: K3 });
-    expect({ marks: r.marks, removed: r.removed.map((p) => p.id) }).toEqual({ marks: [], removed: ['p5'] });
+    expect({ marks: r.st.marks ?? {}, removed: r.removed.map((p) => p.id) }).toEqual({ marks: {}, removed: ['p5'] });
   });
 
   it('после конца примерки новый шлем не «ненужный»: Def начат им и собирается сам', () => {
@@ -456,7 +450,7 @@ describe('«Надеть» в примерке', () => {
   // вещь не только в цели, «Не собираю» у Def остаётся
   it('у цели «Не собираю», вещь стоит и в собираемом Def/Immu — отметки нет, «Не собираю» остаётся', () => {
     const r = putOn(ctx, { ...st, marks: { [K3]: 'skip' } }, CAREN, DEF, { tryOn: K3 });
-    expect({ marks: r.marks, stored: r.st.marks }).toEqual({ marks: [], stored: { [K3]: 'skip' } });
+    expect(r.st.marks).toEqual({ [K3]: 'skip' });
   });
 
   // Pen-шлем со слабыми статами встаёт только в Pen (цель, «Не собираю»): ни в Speed-вариантах, ни в «По статам» (там
@@ -466,7 +460,7 @@ describe('«Надеть» в примерке', () => {
   const PENH = A('helmet', 'Penetration', { RES: 1, EFF: 1 });
   it('встала только в цель примерки («Не собираю») — отметок нет, «Не собираю» остаётся, после примерки шлем нужен', () => {
     const r = putOn(ctx, { ...st, marks: { [PEN]: 'skip' } }, CAREN, PENH, { tryOn: PEN });
-    expect({ marks: r.marks, stored: r.st.marks, began: r.began }).toEqual({ marks: [], stored: { [PEN]: 'skip' }, began: [] });
+    expect({ stored: r.st.marks, began: r.began }).toEqual({ stored: { [PEN]: 'skip' }, began: [] });
     expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).not.toContain(r.id);
   });
 
@@ -482,88 +476,12 @@ describe('«Надеть» в примерке', () => {
   it('встала и в собираемый без примерки вариант — отметки нет', () => {
     // Immunity-шлем в примерке Def/Immu встаёт и в Speed/Immu, который собирается сам (Speed ×2 из четырёх Speed)
     const r = putOn(ctx, st, CAREN, A('helmet', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }), { tryOn: buildKey(CAREN, 'Def/Immu') });
-    expect(r.marks).toEqual([]);
+    expect(r.st.marks ?? {}).toEqual({});
   });
 });
 
-describe('сегменты и Reforge', () => {
-  const base = newPiece(EMPTY_GEAR, helmet({ 'DEF%': 2, CHC: 1 })).piece;
-
-  it('нажатие выше жёлтых добавляет оранжевые, повторное на последней — убирает', () => {
-    const p1 = { ...base, ...tapSegment(base, 'DEF%', 4) };
-    expect(p1.lit['DEF%']).toBe(4);
-    expect({ ...p1, ...tapSegment(p1, 'DEF%', 4) }.lit['DEF%']).toBe(3);
-  });
-
-  it('нажатие на жёлтых поправляет их число, оранжевые остаются', () => {
-    const p1 = { ...base, ...tapSegment(base, 'DEF%', 4) }; // 2 жёлтых + 2 оранжевых
-    expect(tapSegment(p1, 'DEF%', 1)).toMatchObject({ yellow: { 'DEF%': 1 }, lit: { 'DEF%': 3 } });
-  });
-
-  it('сделано Reforge — по оранжевым; у Epic с 4-м сабстатом — ещё один (он пришёл первым Reforge)', () => {
-    const leg = { ...base, lit: { 'DEF%': 4, CHC: 2 } };
-    expect(reforgesDone(leg)).toBe(3);
-    const epic = newPiece(EMPTY_GEAR, helmet({ ATK: 1, SPD: 3, 'DMG RED%': 3 }, 'rare')).piece;
-    const reforged = { ...epic, ...addFourth(epic, 'DEF%') };
-    expect(reforgesDone(reforged)).toBe(1);
-    expect(reforgesDone({ ...reforged, lit: { ATK: 3, SPD: 4, 'DMG RED%': 3, 'DEF%': 3 } })).toBe(6);
-  });
-
-  it('Transistone сменил стат — сегменты переезжают к новому', () => {
-    const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } };
-    expect(replaceStat(p1, 'CHC', 'CHD')).toEqual({ yellow: { 'DEF%': 2, CHD: 1 }, lit: { 'DEF%': 4, CHD: 1 } });
-  });
-
-  it('жёлтые можно поднять (опечатка при вводе) — оранжевые остаются; горящих не больше 6', () => {
-    const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } };
-    expect(setYellow(p1, 'DEF%', 3)).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 5 } });
-    expect(setYellow(p1, 'CHC', 3)).toMatchObject({ yellow: { CHC: 3 }, lit: { CHC: 3 } });
-    expect(reforgesDone({ ...p1, ...setYellow(p1, 'CHC', 3) })).toBe(2);
-  });
-
-  it('оранжевых не больше, чем Reforge бывает: Legendary — 9 (Singularity), Epic с 4-м — 5, Epic без 4-го — 0', () => {
-    const tapAll = (p: Piece) => ['DEF%', 'CHC', 'CHD', 'SPD'].filter((k) => k in p.yellow).reduce((q, k) => ({ ...q, ...tapSegment(q, k, 6) }), p);
-    const leg = tapAll(newPiece(EMPTY_GEAR, helmet({ 'DEF%': 1, CHC: 1, CHD: 1, SPD: 1 })).piece);
-    expect(leg.lit).toEqual({ 'DEF%': 6, CHC: 5, CHD: 1, SPD: 1 });
-    expect(reforgeScale(leg)).toEqual({ done: 9, of: 9 });
-    const epic4 = tapAll(newPiece(EMPTY_GEAR, helmet({ 'DEF%': 1, CHC: 1, CHD: 1, SPD: 1 }, 'rare')).piece);
-    expect(reforgeScale(epic4)).toEqual({ done: 6, of: 6 });
-    const epic3 = newPiece(EMPTY_GEAR, helmet({ 'DEF%': 1, CHC: 1, CHD: 1 }, 'rare')).piece;
-    expect(tapSegment(epic3, 'DEF%', 3).lit['DEF%']).toBe(1);
-    expect(tapSegment(leg, 'CHC', 5).lit.CHC).toBe(4);
-  });
-
-  it('Transistone: новый стат со своими жёлтыми, оранжевые старого — с ним; на стат, который уже есть, — ничего', () => {
-    const p1 = { ...base, lit: { 'DEF%': 4, CHC: 1 } };
-    expect(setYellow(replaceStat(p1, 'DEF%', 'CHD'), 'CHD', 1)).toEqual({ yellow: { CHD: 1, CHC: 1 }, lit: { CHD: 3, CHC: 1 } });
-    expect(replaceStat(p1, 'DEF%', 'CHC')).toEqual({ yellow: p1.yellow, lit: p1.lit });
-  });
-});
-
-// samePiece зовёт только окно «Это шлем Rin?» (уходит в шаге 10); «Уже есть» и «дома» нет (решение владельца 2026-10-01)
-describe('та же вещь', () => {
-  // запись с оранжевыми: жёлтые CHC 2, горит 4
-  const upg = { ...newPiece(EMPTY_GEAR, helmet({ CHC: 2, CHD: 1 })).piece, lit: { CHC: 4, CHD: 1 } };
-
-  it('по слоту, грейду, сету, main и уровням', () => {
-    const p = newPiece(EMPTY_GEAR, helmet({ CHC: 2, CHD: 1 })).piece;
-    expect(samePiece(helmet({ CHC: 2, CHD: 1 }), p)).toBe(true);
-    expect(samePiece(helmet({ CHC: 2, CHD: 2 }), p)).toBe(false);
-    expect(samePiece(helmet({ CHC: 2, CHD: 1 }, 'rare'), p)).toBe(false);
-    expect(samePiece({ ...helmet({ CHC: 2, CHD: 1 }), setId: set('Attack') }, p)).toBe(false);
-  });
-
-  it('samePiece — только точное совпадение с уровнями записи (lit): по жёлтым — уже не она', () => {
-    expect(samePiece(helmet({ CHC: 4, CHD: 1 }), upg)).toBe(true);
-    expect(samePiece(helmet({ CHC: 2, CHD: 1 }), upg)).toBe(false);
-    expect(samePiece(helmet({ CHC: 4 }), upg)).toBe(false);
-    expect(samePiece(helmet({ CHC: 4, CHD: 1, SPD: 1 }), upg)).toBe(false);
-  });
-
-  it('samePiece Breakthrough не сравнивает: T4 на форме и запись ниже T4 — та же вещь', () => {
-    expect(samePiece({ ...helmet({ CHC: 4, CHD: 1 }), bt: 4 }, { ...upg, bt: 0 })).toBe(true);
-  });
-});
+// шаг 10: блоки «сегменты и Reforge» (tapSegment, setYellow, replaceStat, addFourth, reforgesDone, reforgeScale) и «та
+// же вещь» (samePiece) ушли вместе с функциями: правка в шторке — updateIn (ниже), окна «Это шлем Rin?» нет (В9)
 
 // Шаг 5 «Оценка — единственный ввод»: правка в шторке вещи (Н1) — уровни 1–6, «T4» у брони, 4-й сабстат у Epic (В-А2);
 // предел суммы (В-А5); только у этого героя — старая общая запись делится (В9, copy-on-write)

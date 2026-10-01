@@ -5,7 +5,7 @@
 // вещь подходит по вердикту. «Надета» — стоит в выбранной раскладке (её показывает карточка), не в достижимой: вещь,
 // которую держит только достижимая, не надета, и «надень, она лучше» (betterThanWorn) о ней не скажет.
 // Штамп только поднимается: «Оставить» и «Временно» не трогаем, там это пометка в «Сейчас на персонажах».
-// Вещь лучше той надетой, для которой она материал (или в примерке у цели слот пуст), — совет «надень», а не «отдай».
+// Вещь лучше той надетой, для которой она материал (или в режиме героя у него слот пуст), — совет «надень», а не «отдай».
 // Лучше надетой такой же — штамп «Оставляй»: вердикт всегда про ту вещь, которую оцениваем (решение владельца).
 import { FLAT, isArmor, type Index } from '../data';
 import type { Texts } from '../i18n';
@@ -56,7 +56,7 @@ const whoOf = (idx: Index, key: string, t: Texts) => {
   return `${idx.CHAR[id]?.name ?? id} · ${buildOfKey(key, t.ui.byStats)}`;
 };
 
-// Когда вещь лучше надеть, чем отдать в Breakthrough: up — надетые слабее её (betterThanWorn); target — в примерке
+// Когда вещь лучше надеть, чем отдать в Breakthrough: up — надетые слабее её (betterThanWorn); target — в режиме героя
 // у цели этот слот пуст или вещь лучше надетой («Caren · Speed»); t4 — она сама на T4 (форма): старую ей в
 // Breakthrough не отдать, только надеть
 export interface Wear { up: Need[]; target: string | null; t4?: boolean }
@@ -67,7 +67,9 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
   if (!needs.length || (res.v !== 'junk' && res.v !== 'fodder')) return res;
   const M = t.material;
   const slot = needs[0].piece.slot;
-  const list = (ns: Need[]) => ns.slice(0, 2).map((n) => M.need(t.ui.slotNom[slot], whoOf(idx, n.key, t), n.piece.bt!, n.left)).join('; ')
+  // надетая ниже T4 (bt 0 — форма без «T4», В4) — без счёта ступеней; 1–3 (прежняя правка) — «T2, ещё 2 шт. до T4»
+  const need = (n: Need) => (n.piece.bt ? M.need(t.ui.slotNom[slot], whoOf(idx, n.key, t), n.piece.bt, n.left) : M.needBelow(t.ui.slotNom[slot], whoOf(idx, n.key, t)));
+  const list = (ns: Need[]) => ns.slice(0, 2).map(need).join('; ')
     + (ns.length > 2 ? t.more(ns.length - 2) : '');
   const feed = needs.filter((n) => !wear.up.includes(n));
   const fed = feed.length ? [M.line(list(feed))] : [];
@@ -89,7 +91,7 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
     };
   }
   const lines = [...fed, ...own];
-  // «Прокачка»: надеть в примерке, иначе не прокачивать
+  // «Прокачка»: надеть в режиме героя, иначе не прокачивать
   const wearPlan = wear.target ? M.planWear(wear.target) : null;
   if (res.v === 'fodder') return { ...res, lines, ...(wearPlan ? { plan: [wearPlan] } : {}) };
   return {

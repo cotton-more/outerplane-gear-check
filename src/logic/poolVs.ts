@@ -97,11 +97,12 @@ export function gearBadges(view: PoolView): Map<string, number> {
   return out;
 }
 
-// где у персонажа стоит запись: собираемые варианты, в выбранной или достижимой сборке которых она есть (пул держит
-// шире — все варианты, usedIn: вещь варианта с «Не собираю» или не начатого здесь не названа, но и не «ненужная»).
+// где у персонажа стоит запись: собираемые варианты, в выбранной или достижимой сборке которых она есть.
 // В настоящем варианте броня не из связки, которой больше некого вытеснять (других вещей её слота в пуле нет), — не
-// «засчитано»: прочая в пустой слот — не исход. «По статам» — только если больше нигде: не
-// повторять его у каждой вещи, но и вещь только в нём — не бездомная. Что пул держит (usedIn), это не меняет
+// «засчитано»: прочая в пустой слот — не исход. «По статам» — только если больше нигде: не повторять его у каждой
+// вещи, но и вещь только в нём — не бездомная. Нет и там — варианты, которые не собираются («Не собираю» или не
+// начат), а пул их сборки держит (held, решение владельца «что держит пул» — (а)): вещь, которую держит только такой
+// вариант, — тоже «в нём», а не без строки. Что пул держит (usedIn), это не меняет
 export function whereUsed(view: PoolView, charId: string, id: string): Variant[] {
   const cp = view.of(charId);
   if (!cp) return [];
@@ -111,5 +112,7 @@ export function whereUsed(view: PoolView, charId: string, id: string): Variant[]
     return !!slot && !(isArmor(slot) && a.roles[slot] === 'filler' && alone(slot));
   });
   const real = cp.inPlay.filter((v) => !isStats(v) && counts(v));
-  return real.length ? real : cp.stat && heldBy(cp, cp.stat).some((a) => Object.values(a.slots).some((e) => e?.id === id)) ? [cp.stat] : [];
+  if (real.length) return real;
+  if (cp.stat && heldBy(cp, cp.stat).some((a) => Object.values(a.slots).some((e) => e?.id === id))) return [cp.stat];
+  return cp.variants.filter((v) => !isStats(v) && !cp.inPlay.includes(v) && counts(v));
 }

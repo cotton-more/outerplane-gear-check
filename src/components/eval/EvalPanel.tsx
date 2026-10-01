@@ -28,7 +28,7 @@ import { StatGrid } from './StatGrid';
 import { SubRows } from './SubRows';
 import { VerdictCard } from './Verdict';
 import { TryOnStrip } from './TryOnStrip';
-import type { Target } from '../../logic/tryon';
+import type { Char } from '../../data/types';
 import type { CharVs } from '../../logic/poolVs';
 import { holds } from '../../logic/pool';
 import { equipLabel, variantName } from './VsSection';
@@ -36,13 +36,14 @@ import { Icon } from '../Img';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
-// tryOn — идёт примерка: полоса над слотами, ✕ — onTryOnEnd. vs — лучший исход для строки карточки;
+// hero — режим «для героя»: полоса над слотами, ✕ — onTryOnEnd; heroNote — строка про героя под карточкой (logic/tryon
+// heroNote: не носит, не нужна, «По статам», ничего не даст). vs — лучший исход для строки карточки;
 // onEquip — кнопка «Надеть на Caren» / «Заменить шлем Caren» под карточкой (нет — кнопки нет); other и onEquipOther —
-// вторая, «или — Rin · Speed ▸»: сразу Rin
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, tryOn, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
+// вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
-  tryOn?: Target | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
+  hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
 }) {
   const { SET, ITEM } = ctx.idx;
@@ -50,6 +51,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
   const armor = isArmor(s.slot);
+  const t4 = armor && s.t4 ? t.ui.withT4 : '';
   // строки main: у брони фиксированы сетом, у оружия — flat ATK и выбранный; сабстатов, которые они запрещают, в сетке нет
   const im = useMemo(() => mainLines(ctx.idx, { slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main }),
     [ctx.idx, s.slot, s.grade, s.setId, s.itemKey, s.main]);
@@ -84,7 +86,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   return (
     <div className="panel eval-in" id="eval-in">
       <div className="form">
-        {tryOn && onTryOnEnd && <TryOnStrip target={tryOn} onEnd={onTryOnEnd} />}
+        {hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />}
         <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
             <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
@@ -116,25 +118,26 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         <div className="subzone" {...tour('grid')}>
           {cardShown
             ? <>
-              <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!tryOn} />
+              <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!hero} />
               {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
               {((vs && onEquip) || (other?.best && onEquipOther)) && (
                 <div className="vc-acts">
                   {vs && onEquip && (
                     <button type="button" className={`btn vc-equip${vs.best && holds(vs.best) ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
-                      <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot])}
+                      <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot], !!t4)}
                     </button>
                   )}
                   {other?.best && onEquipOther && (
                     <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>
                       {/* подпись = действие (Р7): заменит — «или — заменить шлем Caren · …»; имя — варианта, как на карточке (Р5) */}
                       {other.replaces
-                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, variantName(t, other.best.v))
-                        : t.ui.orOther(other.c.name, variantName(t, other.best.v))}
+                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, variantName(t, other.best.v) + t4)
+                        : t.ui.orOther(other.c.name, variantName(t, other.best.v) + t4)}
                     </button>
                   )}
                 </div>
               )}
+              {heroNote && <p className="vc-note">{heroNote}</p>}
             </>
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={(key) => dispatch({ type: 'sub', key })} />}
         </div>

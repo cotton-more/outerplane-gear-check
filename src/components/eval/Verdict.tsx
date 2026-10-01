@@ -27,7 +27,7 @@ import { ShareCode } from './ItemCode';
 interface Props {
   r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
   vs?: CharVs[]; view?: PoolView; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void;
-  offNote?: string | null; // примерка: вещь варианту не подходит — почему
+  offNote?: string | null; // режим «для героя»: строка про героя (logic/tryon heroNote) — не носит, не нужна, «По статам»
 }
 
 // Широкий экран: вердикт липкой колонкой справа от формы — во всю высоту до низа окна.
@@ -45,6 +45,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
   const set = isArmor(s.slot) && s.setId ? idx.SET[s.setId] : undefined;
   const icon = item && s.grade === 'unique' ? item.icon : set ? (isArmor(s.slot) && set.pieces[s.slot]) || set.icon : null;
   const nSubs = Object.keys(s.subs).length;
+  const input = itemInput(s);
   return (
     <>
       <div className={`v-head v-${r.v}`}>
@@ -63,14 +64,14 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
         {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
-      {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} onEquip={onEquip} onOpenChar={onOpenChar} />}
+      {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} onEquip={onEquip} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>
           <ul>{r.plan.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>
         </div>
       )}
-      {r.v !== 'idle' && <ShareCode item={itemInput(s)} />}
+      {r.v !== 'idle' && <ShareCode item={input} />}
       {r.sections.filter((sec) => sec.rows.length).map((sec) => (
         <VerdictSection key={sec.title} sec={sec} r={r} expand={s.expand} nSubs={nSubs} setId={set?.id ?? null} dispatch={dispatch} onOpenChar={onOpenChar} />
       ))}
@@ -165,14 +166,18 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
 // Штамп, коротко — почему, и третья строка — по порядку, что есть: сравнение с надетым → цепочка → первая причина.
 // vs — лучший исход (первый из «Сейчас на персонажах» или в примерке): «▲ сет 3 из 4 Caren · Speed/Immu +1»,
 // «▲ +25% Caren · Speed +CHD (3-е)». Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
-// named — назвать персонажа; в примерке имя уже на полосе над формой, место — местам цепочки
+// named — назвать персонажа; в режиме героя (named false) имя уже на полосе над формой, место — местам цепочки, а строки
+// героя нет — третьей строки нет: про героя — строка под карточкой (heroNote), чужие цепочки здесь не показываем
 export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; onOpen: () => void; vs?: CharVs | null; named?: boolean }) {
   const t = useT();
   const best = bestRow(r)?.row;
   const o = vs?.best ?? null;
   const starts = o ? o.entering : true;
+  // ни исхода, ни «начнёт» — строка героя только ради кнопки «Заменить» (режим героя, «Примерить замену»): чипа нет,
+  // третья строка — как без строки героя
+  const shownVs = vs && (o || vs.starts.length) ? vs : null;
   // кнопка карточки читается диктором целиком: штамп, исход — тот же, что на чипе, — и «подробнее»
-  const label = [t.ui.verdictLabel[r.v], vs && `${chipLabel(t, o, starts)} ${vs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
+  const label = [t.ui.verdictLabel[r.v], shownVs && `${chipLabel(t, o, starts)} ${shownVs.c.name}`, t.ui.verdictDetails].filter(Boolean).join(' · ');
   const p = o?.pair;
   const places = p && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && (p.gained.length || p.lost.length)
     ? t.ui.vsPlaces(p.gained.map((x) => ({ ...x, key: subLabel(x.key) })), p.lost.map((x) => ({ ...x, key: subLabel(x.key) }))) : '';
@@ -186,8 +191,9 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
         <span className="vc-more"><span className="vc-more-t">{t.ui.details}</span> ▸</span>
       </span>
       <span className="vc-title">{barTitle(r)}</span>
-      {vs
-        ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b>{vs.c.name}</b>{build && <span className="bn">· {build}{vs.same > 0 ? ` +${vs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
+      {shownVs
+        ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b>{shownVs.c.name}</b>{build && <span className="bn">· {build}{shownVs.same > 0 ? ` +${shownVs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
+        : !named ? null
         : best && best.good != null
         ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} /></span>
         : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}

@@ -1131,6 +1131,14 @@ describe('что держит пул и что убирает «Надеть» (
       const skipped = poolView(ctx, store(caren, ps, skip)).of(caren.id)!.unused;
       expect({ without, skipped }).toEqual({ without: [], skipped: [] });
     });
+
+    // шаг 10 (заметка шага 4): было — у вещи, которую держит только вариант с «Не собираю», строки «в …» не было
+    it('где стоит: Immunity-шлем держит только Speed/Immu с «Не собираю» — «в Speed/Immu», как у остальных', () => {
+      const ps = pieces();
+      const view = poolView(ctx, store(caren, ps, skip));
+      expect(whereUsed(view, caren.id, ps[5].id).map((v) => v.name)).toContain('Speed/Immu');
+      expect(whereUsed(view, caren.id, ps[0].id).map((v) => v.name)).toEqual(['Speed']); // собираемый — как раньше
+    });
   });
 
   // Mystic Sage Ame: DPS pen (цепочка SPD › ATK › CHC — как «По статам») начат Penetration-шлемом; у DPS attack
@@ -1149,6 +1157,12 @@ describe('что держит пул и что убирает «Надеть» (
     it('X не «больше не нужна»', () => {
       const ps = pieces();
       expect(poolView(ctx, store(ame, ps)).of(ame.id)!.unused).toEqual([]);
+    });
+
+    // шаг 10 (заметка шага 4): было — без «в …»; вариант не начат, а пул держит его сборку
+    it('где стоит: X — «в DPS attack» (вариант не начат)', () => {
+      const ps = pieces();
+      expect(whereUsed(poolView(ctx, store(ame, ps)), ame.id, ps[0].id).map((v) => v.name)).toEqual(['DPS attack']);
     });
   });
 

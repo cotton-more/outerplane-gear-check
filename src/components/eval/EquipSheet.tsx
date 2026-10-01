@@ -42,8 +42,11 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   };
   const bn = (key: string) => buildOfKey(key, t.ui.byStats);
   // что будет по нажатию: «Надеть — соберёт Speed», «Заменить шлем — новая лучше · Speed», «Надеть — начнёт Speed»;
-  // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие
-  const action = (x: CharVs) => {
+  // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие.
+  // Нажата «T4» — «· T4» в конце (В4)
+  const t4 = item.bt === 4 ? t.ui.withT4 : '';
+  const action = (x: CharVs) => what(x) + t4;
+  const what = (x: CharVs) => {
     const o = x.best;
     if (!o || o.entering || !o.used) {
       const builds = [...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : '');

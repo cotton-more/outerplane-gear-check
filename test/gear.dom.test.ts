@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Экипировка на телефоне (360px), пул GEARPOOL: вещь с формы — «Надеть на…» → к персонажу, «Вернуть»; «Это шлем
-// Kappa?»; «Заменить» — что со старой (Р15: кому её отдать, не предлагаем); «Сейчас на персонажах» — строка на персонажа и «Ещё»; «Кому надеть?» — только
+// Экипировка на телефоне (360px), пул GEARPOOL: вещь с формы — «Надеть на…» → к персонажу, «Вернуть»; такая же у
+// другого — своя запись (окна «Это шлем Kappa?» нет, В9); «Заменить» — что со старой (Р15: кому её отдать, не предлагаем); «Сейчас на персонажах» — строка на персонажа и «Ещё»; «Кому надеть?» — только
 // полезные строки; карточка персонажа — варианты, «Собираю», «Вещи · N», «По статам», лист вещи и «Убрать у…»;
 // код копии. Core Fusion — test/fusion.dom.test.ts.
 import { readFileSync } from 'node:fs';
@@ -85,16 +85,43 @@ describe('«Надеть» и «Вернуть»', () => {
     expect(stored().marks ?? {}).toEqual({});
   });
 
-  // после: такая же уже у Caren — сравнение с ней как есть, «уже есть» нет (решение владельца 2026-10-01)
-  it('карточка: «▲ +21% Caren · Speed +1», кнопка под ней — «Заменить шлем Caren»; после — «на уровне», кнопки нет', async () => {
+  // доработка 2 шага 10 (решение владельца, refute-10 п. 6): было — после «Заменить» вещь оставалась на форме и
+  // сравнивалась со своей записью («на уровне», кнопки нет). Теперь форма — как после «Следующий»
+  it('карточка: «▲ +21% Caren · Speed +1», кнопка под ней — «Заменить шлем Caren»; после — форма пуста (как «Следующий»)', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }) });
     // Speed-шлем Caren стоит и в Speed, и в Speed/Immu — новая лучше в обоих: «+1»
     expect($('.vcard .vc-vs')?.textContent).toBe('better than the one on: +21%Caren· Speed +1+CHD (3rd) · −SPD (4th)');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
     expect(stored().pools[caren.id]).toEqual(['p2']);
-    expect($('.vcard .vc-vs .vs')?.textContent).toBe('on par');
+    expect($('.vcard')).toBeNull();
     expect($('.vc-equip')).toBeNull();
+  });
+
+  it('после «Надеть» с «T4»: сабстаты пусты, слот, грейд и сет те же, «T4» снята; «Вернуть» — пул как был и та же вещь на форме', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, t4: true }, { gear: G([WEAK], { [caren.id]: ['p1'] }) });
+    await click($('.vc-equip'));
+
+    const st = JSON.parse(localStorage.getItem('ogc.state')!), item = JSON.parse(localStorage.getItem('ogc.item')!);
+    expect({ slot: st.slot, grade: st.grade, setId: item.setId, subs: item.subs, t4: item.t4 ?? false }).toEqual({ slot: 'helmet', grade: 'unique', setId: speed, subs: {}, t4: false });
+    expect($('.btchip')?.getAttribute('aria-pressed')).toBe('false');
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(stored().pools[caren.id]).toEqual(['p1']);
+    expect(JSON.parse(localStorage.getItem('ogc.item')!)).toMatchObject({ setId: speed, subs: NEW.subs, t4: true });
+    expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet · T4");
+  });
+
+  // было (refute-10 п. 6): один шлем за три нажатия — у Kappa, Rin и Caren (три записи). После первого «Надеть» на
+  // форме пусто — второго нет
+  it('один шлем: после первого «Надеть» на форме пусто — ко второму герою он не попадает', async () => {
+    const kap = ['armor', 'gloves', 'shoes'].map((slot, i) => P('k' + (i + 1), slot, speed, { 'DEF%': 1, CHC: 1 }));
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK, ...kap], { [caren.id]: ['p1'], [kappa.id]: ['k1', 'k2', 'k3'] }), roster: [caren.id, kappa.id] });
+    expect($('.vc-other')).toBeTruthy();
+    await click($('.vc-equip'));
+    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-other')).toBeNull();
+    const pools = stored().pools;
+    expect(Object.values(pools).flat().filter((id) => (stored().pieces[id as string].lit as Record<string, number>).CHD === 3)).toHaveLength(1);
   });
 
   // шаг 4 (В1): «Надеть» убрало вещь другого слота — заголовок про её слот («On … : gloves»), убранная — строкой
@@ -120,6 +147,28 @@ describe('«Надеть» и «Вернуть»', () => {
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools[bell.id]).toEqual(pool);
     expect(stored().pieces.p3).toEqual(ps[2]);
+  });
+
+  // шаг 10 (В4): нажата «T4» — «· T4» в подписи кнопки («Кому надеть?» тоже) и в сообщении; чистка (В1) — как без неё
+  it('«Надеть» Augmentation-перчаток Bell Cranel с «T4»: «· T4» в подписи и сообщении, «Removed — …», «Вернуть»', async () => {
+    const bell = char('Bell Cranel');
+    const ps = [
+      P('p1', 'gloves', speed, { HP: 3, ATK: 1, CHC: 2, CHD: 2 }), P('p2', 'helmet', set('Augmentation'), { EFF: 2, CHD: 3, HP: 2, 'DMG RED%': 1 }),
+      P('p3', 'shoes', set('Augmentation'), { ATK: 2, EFF: 1, 'DMG UP%': 1 }, { grade: 'rare' }), P('p4', 'armor', set('Attack'), { SPD: 2, RES: 2, 'DEF%': 2, CHD: 2 }),
+      P('p5', 'shoes', set('Effectiveness'), { CHC: 2, CHD: 2, 'ATK%': 1, 'DMG UP%': 2 }),
+    ];
+    const pool = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    await mount({ slot: 'gloves', grade: 'unique' }, { setId: set('Augmentation'), subs: { 'DMG RED%': 1, HP: 3, ATK: 1, 'ATK%': 3 }, t4: true }, { roster: [bell.id], gear: G(ps, { [bell.id]: pool }) });
+    await click($('.vcard'));
+    await click($('.v-equip'));
+    expect(byText('.equip-row', 'Bell Cranel')?.querySelector('.act')?.textContent).toMatch(/^Equip.* · T4$/);
+    await click(byText('.equip-row', 'Bell Cranel') as HTMLElement);
+
+    expect($('.gear-toast')?.textContent).toContain('On Bell Cranel: gloves · T4.');
+    expect($('.gear-toast small')?.textContent).toContain('Removed — not in any build: Augmentation boots.');
+    expect(stored().pieces.p6.bt).toBe(4);
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(stored().pools[bell.id]).toEqual(pool);
   });
 
   // было: «или — Caren · Speed ▸», хотя кнопка заменяет её шлем (П8: подпись = действие, Р7)
@@ -171,12 +220,14 @@ describe('«Надеть» и «Вернуть»', () => {
     expect(roster()).toEqual([caren.id, kappa.id]);
   });
 
-  it('«Заменить» в шторке вердикта: сообщение лежит поверх неё — внизу шторки место (toast-on), «Вернуть» — снимает', async () => {
+  // доработка 2 шага 10: было — шторка вердикта оставалась открытой под сообщением; теперь «Заменить» сбрасывает форму,
+  // как «Следующий», и шторку закрывает. Сообщение на телефоне — с местом внизу (toast-on)
+  it('«Заменить» в шторке вердикта: шторка закрывается, сообщение с местом внизу (toast-on), «Вернуть» — снимает', async () => {
     const junk = P('p1', 'helmet', speed, { HP: 1, DEF: 1, ATK: 1, RES: 1 }, { bt: 0 });
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([junk], { [caren.id]: ['p1'] }) });
     await click($('.vcard'));
     await click(byText('.drawer .vs-act', "Replace Caren's helmet"));
-    expect($('.drawer')).toBeTruthy();
+    expect($('.drawer')).toBeNull();
     expect(document.body.classList.contains('toast-on')).toBe(true);
     await click(byText('.gear-toast button', 'Undo'));
     expect(document.body.classList.contains('toast-on')).toBe(false);
@@ -207,56 +258,25 @@ describe('«Надеть» и «Вернуть»', () => {
   });
 });
 
-describe('«Это шлем Kappa?»', () => {
-  // на форме — все сегменты записи (CHD 5): та же вещь — по уровню, как у записи (samePiece по lit, шаг 3)
+// шаг 10 (В9): было — окно «Это шлем Kappa?» («Она же — и у Caren» — та же запись в двух пулах, «Другая — своя»). Пулы
+// независимы: такая же вещь, как у другого, — у героя своя запись, окна нет
+describe('такая же вещь у другого (окна «Это шлем Kappa?» нет)', () => {
   const lit = { ...NEW.subs, CHD: 5 };
   const same = () => G([P('p1', 'helmet', speed, NEW.subs, { lit, bt: 2 })], { [kappa.id]: ['p1'] });
-  const ask = async () => {
+
+  it('«Надеть» на Caren точной копии вещи Kappa — окна нет, у Caren своя запись, у Kappa её — без изменений', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, subs: lit }, { gear: same() });
     await click($('.vcard'));
     await click($('.v-equip'));
     await click(byText('.equip-row', 'Caren') as HTMLElement);
-  };
 
-  it('«Она же — и у Caren»: та же запись в пуле Caren (seq тот же), Reforge и Breakthrough общие; «Вернуть» — только у Kappa', async () => {
-    await ask();
-    expect(byText('.drawer', "Is this Kappa's helmet?")).toBeTruthy();
-    expect($('.twin')?.textContent).toContain('Kappa already has the same piece (in Speed');
-    expect($$('.drawer')).toHaveLength(1);
-    await click(byText('.twin button', 'Same piece — Caren too'));
-
-    expect(stored()).toMatchObject({ seq: 1, pools: { [kappa.id]: ['p1'], [caren.id]: ['p1'] }, pieces: { p1: { bt: 2 } } });
-    expect($('.gear-toast small')?.textContent).toContain("Same piece as Kappa's: Reforge and Breakthrough are shared.");
-    expect($$('.drawer')).toHaveLength(0);
-    expect(document.body.classList.contains('drawer-lock')).toBe(false);
+    expect($('.twin')).toBeNull();
+    expect(byText('.drawer', "Is this Kappa's helmet?")).toBeUndefined();
+    expect(stored()).toMatchObject({ seq: 2, pools: { [kappa.id]: ['p1'], [caren.id]: ['p2'] }, pieces: { p1: { bt: 2 }, p2: { bt: 0, lit } } });
+    expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');
+    expect($('.gear-toast')?.textContent).not.toContain('Kappa');
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'] });
-  });
-
-  it('«Другая — своя» — новая запись у Caren, у Kappa её вещь остаётся', async () => {
-    await ask();
-    await click(byText('.twin button', 'Another copy'));
-    expect(stored().pools).toEqual({ [kappa.id]: ['p1'], [caren.id]: ['p2'] });
-  });
-
-  // мелочь 2 повторного ревью: «Она же» не предлагаем, если запись встанет у героя не так, как вещь с формы (logic/pool
-  // shareFits) — окна нет, у героя своя вещь, как «Другая — своя». Иначе (шаг 1 «Оценки — единственный ввод»): было —
-  // запись Fran слабее вещи с формы (Reforge впереди у формы); как есть запись с теми же жёлтыми не слабее никогда, а
-  // сильнее — бывает: запись Kappa (Reforge в полезные) обгоняет и Attack-шлем Caren в «По статам» — «Заменить» с ней
-  // убрал бы ещё и его
-  it('запись другого у героя не встанет — окна нет, у героя своя вещь', async () => {
-    const subs = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 2 };
-    const rec = P('r1', 'helmet', speed, subs, { lit: { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 } });
-    const weak = P('p1', 'helmet', speed, { RES: 1, EFF: 1, HP: 1, CHC: 1 });
-    const atk = P('p2', 'helmet', set('Attack'), { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }); // не из связок Caren — только «По статам»
-    const gear = { ...G([weak, atk, rec], { [caren.id]: ['p1', 'p2'], [kappa.id]: ['r1'] }), seq: 10 };
-    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs }, { gear, roster: [caren.id, kappa.id] });
-    await click($('.vcard'));
-    await click($('.v-equip'));
-    await click(byText('.equip-row', 'Caren') as HTMLElement);
-
-    expect(byText('.drawer', "Is this Kappa's helmet?")).toBeUndefined();
-    expect(stored().pools[caren.id]).toEqual(['p2', 'p11']);
   });
 });
 
@@ -280,11 +300,26 @@ describe('«Заменить»: что со старой', () => {
     expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4']);
   });
 
-  it('старый у другого персонажа тоже — «остался у…»', async () => {
+  // доработка шага 10 (refute-10 п. 3): новая на T4 — Breakthrough уже полный, «старый — материал для нового» неправда
+  // (как вердикт: titleWearT4 — только «надень»)
+  it('«Заменить» с нажатой «T4»: «Заменено: шлем Caren · T4.», строки про материал нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, t4: true }, { gear: gear(), roster: [caren.id, rin.id] });
+
+    await click($('.vc-equip'));
+
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · T4.");
+    expect($('.gear-toast small')).toBeNull();
+  });
+
+  // шаг 10 (В9, Р15): было — строка «Старый остался у Kappa (в Speed)» (oldStill). Пулы независимы — про других ни слова;
+  // старая общая запись у Kappa остаётся
+  it('старая общая запись, она и у Kappa: про Kappa ни слова, у неё запись остаётся', async () => {
     const helm = P('p1', 'helmet', speed, { SPD: 1 });
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
     await click($('.vc-equip'));
-    expect($('.gear-toast small')?.textContent).toContain('The old helmet stays with Kappa (in Speed');
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
+    expect($('.gear-toast')?.textContent).not.toContain('Kappa');
+    expect(stored().pools[kappa.id]).toEqual(['p1']);
     expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
   });
 });
@@ -322,7 +357,8 @@ describe('«Надеть»: что уходит из пула и что пише
   // Р1: Speed/Immu — Immunity-шлем и броня + Speed-перчатки и ботинки на T4. Сильные Immunity-ботинки ломают Speed ×2
   // ради статов, но Speed/Immu собирается из вещей Caren — Speed-ботинки остаются
   // было: кнопка «Заменить ботинки» (Speed-ботинки вытеснены в показанной сборке), а тост «Надето» — теперь одно и то же
-  it('две ушли, одна из них — и у Kappa: в строке про неё имя сета, а не «The old»', async () => {
+  // шаг 10 (В9): было — строка «Attack-ботинки остались у Kappa (в …)»; про других героев сообщение не говорит
+  it('две ушли, одна из них — и у Kappa: про Kappa ни слова, у неё запись остаётся', async () => {
     const def = set('Defense');
     const pcs = [
       P('p1', 'helmet', def, { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', def, { 'DEF%': 2, CHC: 2 }), P('p3', 'gloves', def, { 'DEF%': 2, CHC: 2 }),
@@ -333,8 +369,8 @@ describe('«Надеть»: что уходит из пула и что пише
     await click($('.vc-equip'));
     const toast = $('.gear-toast')?.textContent ?? '';
     expect(toast).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed.");
-    expect(toast).toMatch(/The Attack boots stay with Kappa \(in [^)]+\)\./);
-    expect(toast).not.toContain('The old');
+    expect(toast).not.toContain('Kappa');
+    expect(stored().pools[kappa.id]).toEqual(['p4']);
   });
 
   it('Р1: новая ломает сет-стат ради статов — прежняя вещь её слота остаётся: «Надеть на Caren» → «Надето»', async () => {
@@ -393,7 +429,8 @@ describe('кнопка = то, что сделает «Надеть»', () => {
       { gear: G(pcs, { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] }, { marks: { [`${anarky.id}/Defense mix`]: 'want' } }), roster: [anarky.id] });
     expect($('.vcard .stamp')?.textContent).toBe('Keep');
     expect($('.vcard .vc-title')?.textContent).toBe(title.slice(title.indexOf(' — ') + 3));
-    expect($('.vc-equip')?.textContent).toBe("Replace Anarky's armor");
+    // шаг 10 (В4): нажатая «T4» — в подписи кнопки
+    expect($('.vc-equip')?.textContent).toBe(`Replace Anarky's armor${t4 ? ' · T4' : ''}`);
   });
 
   // было (гипотеза b, B1-правило): штамп понижен, а в «Сейчас на персонажах» — «Заменить шлем Caren», в «Кому надеть?» —
@@ -984,7 +1021,10 @@ describe('карточка персонажа', () => {
     expect($('.bgear-weak p')?.textContent).toBe('The weakest — gloves (Epic, Breakthrough T2). Look for Speed Gloves with CHC and CHD — in try-on the verdict shows whether it beats the one on.');
     await click(byText('.bgear-weak button', 'Try on pieces'));
     expect(JSON.parse(localStorage.getItem('ogc.state')!)).toMatchObject({ tab: 'eval', slot: 'gloves' });
-    expect($('.tryon')?.textContent).toContain('Caren · Speed');
+    // режим героя с предустановкой (В10): на полосе — только имя; запись не заменяется в любом случае (это — только
+    // «Примерить замену»)
+    expect($('.tryon .tryon-n')?.textContent).toBe('Caren');
+    expect(JSON.parse(localStorage.getItem('ogc.tryon')!)).toEqual({ charId: caren.id, build: 'Speed' });
   });
 
   it('карточка вещи — шторкой в <body>; ушли на «Оценку» — закрылась, прокрутка не заперта', async () => {

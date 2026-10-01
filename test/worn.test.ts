@@ -452,7 +452,6 @@ describe('такая же вещь у персонажа — сравнивае�
 
     const r = putOn(ctx, st, caren.id, EPIC);
 
-    expect(r.added).toBe(true);
     expect(r.id).not.toBe(st.pools[caren.id][0]);
     expect(r.st.pieces[r.id]).toMatchObject({ lit: EPIC.subs });
   });

@@ -23,6 +23,5 @@ export const CFG = {
   tempGood: 3,       // 3 полезных сабстата…
   tempGood2: 2,      // …или 2 полезных
   tempYellow: 5,     // …с 5+ жёлтыми сегментами на них
-  reforges: 6,       // попыток Reforge у 6★ (у Epic первая добавляет 4-й сабстат) — «Reforge N из M» у вещи (logic/gear)
   flatFallback: { ATK: 0.88, DEF: 1.05, HP: 0.57 } as Record<string, number>, // медианы по 3★ (lv100 + quirks), если нет данных
 };

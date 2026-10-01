@@ -22,19 +22,18 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
-import { dropChar, gearedChars, holdersOf, samePiece, undoDrop, type GearStore, type Piece } from './logic/gear';
+import { dropChar, gearedChars, undoDrop, type GearStore, type Piece } from './logic/gear';
 import { loadGear, unfuseChar } from './logic/gearStore';
 import { gateOf, normalizeStored, replacedX, storeFor, switchFusion, type FusionFix } from './logic/fusion';
-import { holds, isStats, poolView, putOn, shareFits, undoPut, type PoolView, type PutResult } from './logic/pool';
+import { holds, isStats, poolView, putOn, undoPut, type PoolView, type PutResult } from './logic/pool';
 import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char, GearKind, SlotId } from './data/types';
 import { buildOfKey } from './logic/variants';
 import type { ItemInput } from './logic/verdict';
-import { offLine, targetName, tryOnPreset, tryOnTarget, tryOnTitle, tryRowOf, type TryOn } from './logic/tryon';
+import { heroNote, heroOutcome, heroTarget, heroTitle, tryOnPreset, type TryOn } from './logic/tryon';
 import { betterThanWorn, materialFor, withMaterial } from './logic/material';
-import { wearable } from './logic/vs';
 import { withWorn } from './logic/worn';
 import { fitsData, itemInput, reducer, type Action, type AppState, type Tab } from './state/appState';
 import { storage } from './state/storage';
@@ -96,18 +95,20 @@ export function App() {
   const input = itemInput(s);
   const key = JSON.stringify(input);
   const raw = useMemo(() => evaluate(ctx, input), [ctx, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // экипировка по пулу (logic/pool): вид — один раз на хранилище; примерка (logic/tryon) — сравнение только с одним
-  // вариантом, «Надеть» — этому персонажу; на время обучения её нет
-  const baseView = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
+  // экипировка по пулу (logic/pool): вид — один раз на хранилище. Режим «для героя» (logic/tryon): строка карточки,
+  // «Сейчас на персонажах» и «Надеть» — только про героя, по всем его билдам; штамп общий. Цель не собирается
+  // принудительно — вид тот же. На время обучения режима нет (кроме примера тура «Экипировка»)
+  const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
   const realTry = useTryOn(idx, !touring);
   const tryOn = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : realTry;
-  // X при Core Fusion X не примеряем (logic/fusion)
-  const target = useMemo(() => {
-    const tg = demo ? tryOnTarget(idx, demo.tryOn, baseView) : touring ? null : tryOnTarget(idx, realTry.value, baseView);
-    return tg && off.has(tg.c.id) ? null : tg;
-  }, [idx, demo, realTry.value, touring, baseView, off]);
-  // вариант примерки собирается, даже пустой
-  const view = useMemo(() => (target ? poolView(ctx, gear.store, target.v.key) : baseView), [ctx, gear.store, target, baseView]);
+  // X при Core Fusion X — не герой режима (logic/fusion). Вариант предустановки здесь не нужен — он только для формы
+  const hero = useMemo(() => {
+    const h = demo ? heroTarget(idx, demo.tryOn) : touring ? null : heroTarget(idx, realTry.value);
+    return h && off.has(h.c.id) ? null : h;
+  }, [idx, demo, realTry.value, touring, off]);
+  // «Примерить замену»: запись, которую «Надеть» заменит в любом случае (logic/pool planPut); её уже нет в пуле или она
+  // другого слота — как без неё
+  const replace = hero ? tryOn.value?.replace ?? null : null;
   // П9: «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
   // «Да» — на хранилище, где вещи X уже у него (logic/fusion storeFor): его строка и кнопка — по этому виду пула. Окна не
   // будет или вещи не переходят — общий вид. В обучении окон нет (fusionGate)
@@ -118,61 +119,50 @@ export function App() {
       let v = memo.get(id);
       if (!v) {
         const st = storeFor(idx, roster, gear.store, id);
-        v = st === gear.store ? view : poolView(ctx, st, target?.v.key ?? null);
+        v = st === gear.store ? view : poolView(ctx, st);
         memo.set(id, v);
       }
       return v;
     };
-  }, [idx, ctx, roster, gear.store, view, target, touring]);
-  // вид пула цели примерки (примерка Core Fusion X, а X появился после её начала, — тоже через окно)
-  const tview = target ? viewOf(target.c.id) : view;
+  }, [idx, ctx, roster, gear.store, view, touring]);
+  // вид пула героя (режим героя на Core Fusion X, а X появился после его начала, — тоже через окно)
+  const tview = hero ? viewOf(hero.c.id) : view;
   // у кого есть вещи: персонаж → лучший «N/6» (плитки, меню, фильтр «с экипировкой»)
   const geared = useMemo(() => gearBadges(view), [view]);
-  // примерка — явный выбор персонажа: и «По статам», когда он не собирается (Р11)
-  const targetVs = useMemo(() => (target ? charVs(ctx, tview, target.c.id, input, target.v.key, { explicit: true }) : null), [ctx, tview, target, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // запасная строка примерки настоящего билда: вещь не по нему (строки нет или «только статы»), а по статам подходит —
-  // «Надеть» положит её в «По статам» (Р11): карточка, строка и кнопка — про «По статам»
-  const statVs = useMemo(() => {
-    if (!target || isStats(target.v) || (targetVs && targetVs.best?.kind !== 'stats')) return null;
-    const stat = tview.of(target.c.id)?.stat;
-    const x = stat ? charVs(ctx, tview, target.c.id, input, stat.key, { explicit: true }) : null;
-    return x?.useful ? x : null;
-  }, [ctx, tview, target, targetVs, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // материал: вещь лучше той, для которой она материал, или в примерке она встаёт в вариант цели — «надень»
+  // строка героя: явный выбор — все его билды и «По статам» (Р11), без only (заметка шага 2: исход по одному варианту
+  // прятал «Надеть»); с replace — кнопка «Заменить» есть всегда
+  const heroVs = useMemo(() => (hero ? charVs(ctx, tview, hero.c.id, input, undefined, { explicit: true, replace }) : null), [ctx, tview, hero, key, replace]); // eslint-disable-line react-hooks/exhaustive-deps
+  // материал: вещь лучше той, для которой она материал, или в режиме героя она встаёт в его билд — «надень»
   const mat = useMemo(() => {
     const needs = materialFor(view, input);
     const up = needs.length ? betterThanWorn(ctx, view, input, needs) : [];
-    const k = targetVs?.best?.used ? targetVs.best.kind : null;
-    const aim = target && (k === 'fill' || k === 'up' || k === 'closer' || k === 'completes') ? `${target.c.name} · ${targetName(t, target)}` : null;
+    const o = heroVs?.best?.used ? heroVs.best : null;
+    const aim = hero && o && (o.kind === 'fill' || o.kind === 'up' || o.kind === 'closer' || o.kind === 'completes')
+      ? `${hero.c.name} · ${isStats(o.v) ? t.ui.byStats : o.v.parent.name}` : null;
     return { needs, wear: { up, target: aim, t4: input.bt === 4 } };
-  }, [ctx, view, targetVs, target, key, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, view, heroVs, hero, key, t]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп по вещам персонажей (logic/worn): такая же у кого-то — «Оставить»; всем, кому подходит, она ничего не даёт —
   // «Разобрать». Вещь — материал и лучше такой же у кого-то — не понижаем (совет «надень»)
   const worn = useMemo(() => withWorn(ctx, view, input, raw, { hold: mat.wear.up.length > 0 }), [ctx, view, raw, mat]); // eslint-disable-line react-hooks/exhaustive-deps
   const verdict = useMemo(() => withMaterial(idx, t, worn, mat.needs, mat.wear), [idx, t, worn, mat]);
   // «Сейчас на персонажах»: кандидаты вердикта, у кого есть вещи, и свои без вещей — им вещь начнёт билд (понизили —
-  // прежнего вердикта: они и объясняют, почему «Разобрать»); в примерке — только цель (или её «По статам»)
+  // прежнего вердикта: они и объясняют, почему «Разобрать»); в режиме героя — одна строка героя
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
-    if (target) return statVs ? [statVs] : targetVs ? [targetVs] : [];
+    if (hero) return heroVs ? [heroVs] : [];
     const chars = sectionChars(worn.worn === 'lower' ? raw : verdict).filter((c) => gear.store.pools[c.id]?.length || roster.has(c.id));
     // «Оставляй — лучше надетой такой же» (logic/material): её владельцы — тоже, даже не кандидаты вердикта (сырой —
     // «Разобрать», секций нет): совет «надень её» — с кнопкой
     const wearers = mat.wear.up.map((n) => idx.CHAR[n.key.slice(0, n.key.indexOf('/'))]).filter((c) => c && !chars.includes(c));
     return charsVs(ctx, viewOf, input, [...new Set(wearers), ...chars]);
-  }, [ctx, viewOf, raw, worn, verdict, target, targetVs, statVs, gear.store, roster, mat, idx]); // eslint-disable-line react-hooks/exhaustive-deps
-  // примерка, а вещь варианту не подходит: строка «Не по билду Speed: Attack в его связках нет» (надеть нельзя); по
-  // статам подходит — ещё «…«Надеть» положит её в «По статам»». Цель «По статам», а полезных статов нет — так и сказать.
-  // Оружие или аксессуар не для класса цели — причина в классе, а не в статах или билде
-  const offNote = !target || verdict.v === 'idle' ? null
-    : !wearable(ctx, target.c, input) ? t.tryon.noClass(target.c.name)
-    : isStats(target.v) ? (targetVs ? null : t.tryon.noStats(target.c.name))
-      : statVs ? [isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : '', t.tryon.offStats(target.c.name)].filter(Boolean).join(' ')
-        : !targetVs && isArmor(s.slot) ? offLine(t, idx, target, s.setId ?? null) : null;
-  // штамп общий, а заголовок после « — » в примерке — и про других, и про неё
-  const shown = useMemo(() => (target
-    ? { ...verdict, title: tryOnTitle(t, verdict, target, tryRowOf(idx, targetVs?.best ?? null), isArmor(s.slot)) }
-    : verdict), [t, idx, verdict, target, targetVs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, viewOf, raw, worn, verdict, hero, heroVs, gear.store, roster, mat, idx]); // eslint-disable-line react-hooks/exhaustive-deps
+  // режим героя: строка про героя (logic/tryon heroNote) — не носит, не нужна («Attack нет в билдах Caren»), «По статам»
+  // с «Надеть», ничего не даст (и тогда, когда есть только кнопка «Заменить» из «Примерить замену»)
+  const offNote = !hero || verdict.v === 'idle' ? null : heroNote(t, ctx, hero.c, input, heroVs);
+  // штамп общий, а заголовок после « — » в режиме героя — и про других, и про него
+  const shown = useMemo(() => (hero
+    ? { ...verdict, title: heroTitle(t, idx, verdict, hero.c, heroOutcome(ctx, tview, input, heroVs), isArmor(s.slot)) }
+    : verdict), [t, idx, ctx, tview, verdict, hero, heroVs]); // eslint-disable-line react-hooks/exhaustive-deps
   const [equipOpen, setEquipOpen] = useState(false);
   // сообщение после «Надеть» и импорта кода. «Вернуть» после «Надеть» — обратная операция только этого действия: другие
   // правки за эти 8 секунд остаются; после импорта — всё, как было до импорта (Р8). Видно на той вкладке, где сделано:
@@ -365,98 +355,94 @@ export function App() {
   };
   const onUndo = () => { if (undo) dispatch({ type: 'load', item: undo }); setUndo(null); };
   // надеть вещь с формы на персонажа (logic/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
-  // стало с вытесненной, с «Вернуть». Такая же вещь уже у другого персонажа — сначала «Это шлем Rin?»: та же запись
-  // («Она же — и у Caren») или своя (окно уходит в шаге 10). У самого персонажа такая же — всё равно новая запись: в
-  // Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01)
-  const [twinAsk, setTwinAsk] = useState<{ c: Char; piece: Piece; owner: string; sw: Switched | null } | null>(null);
+  // стало с вытесненной, с «Вернуть». Всегда новая запись — и при такой же у него или у другого: в Оценку вводят новую
+  // вещь из инвентаря, пулы независимы (В9; окна «Это шлем Rin?» нет)
   const buildName = (key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «Идёт в …», «(в …)»
   // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
   const usedFor = (st: GearStore, charId: string, id: string) =>
-    [...new Set(whereUsed(poolView(ctx, st, target?.c.id === charId ? target.v.key : null), charId, id).map((v) => buildName(v.key)))];
-  // «Надеть на CF», когда есть X, — сначала окно перехода (в); вещи X уже у CF, когда дойдёт до «Это шлем Rin?». Строка
-  // и кнопка CF посчитаны по этому же хранилищу (viewOf, П9)
+    [...new Set(whereUsed(poolView(ctx, st), charId, id).map((v) => buildName(v.key)))];
+  // «Надеть на CF», когда есть X, — сначала окно перехода (в). Строка и кнопка CF посчитаны по этому же хранилищу
+  // (viewOf, П9)
   const doEquip = (c: Char) => {
     setEquipOpen(false);
-    if (!fusionGate(c.id, (sw) => equipCheck(c, sw))) equipCheck(c, null);
+    if (!fusionGate(c.id, (sw) => equipOn(c, sw))) equipOn(c, null);
   };
   const switchToast = (sw: Switched, tab: Tab) => setGearUndo({ text: sw.note, note: '', tab, undo: sw.undo, after: sw.after });
-  const equipCheck = (c: Char, sw: Switched | null) => {
-    const st = sw?.st ?? gear.store;
-    const has = (id: string) => (st.pools[id] ?? []).map((pid) => st.pieces[pid]).find((p) => p && samePiece(input, p));
-    const owner = Object.keys(st.pools).find((id) => id !== c.id && idx.CHAR[id] && has(id));
-    // «Она же» — только если запись встанет так, как обещала подпись по вещи с формы (logic/pool shareFits); иначе
-    // окна нет — как «Другая — своя»
-    const share = owner ? has(owner)! : null;
-    const fits = !!share && shareFits(ctx, st, c.id, input, share, target?.c.id === c.id ? target.v.key : null);
-    // «Это шлем Rin?» — своё окно: шторку вердикта закрыть, как перед «Кому надеть?» (две шторки — один Esc на обе)
-    if (owner && fits && !touring) { setVerdictOpen(false); setTwinAsk({ c, piece: share!, owner, sw }); } else equipOn(c, null, sw, st);
-  };
-  // sw — переход Core Fusion перед этим «Надеть»: его строка — в сообщение, его «Вернуть» — вместе с этим
-  const equipOn = (c: Char, record: Piece | null, sw: Switched | null = null, st0: GearStore = gear.store) => {
-    setTwinAsk(null);
-    const r = putOn(ctx, st0, c.id, input, { record: record ?? undefined, tryOn: target?.c.id === c.id ? target.v.key : null });
-    if (!r.added) { if (sw) switchToast(sw, 'eval'); return; }
-    // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока.
-    // «Заменить» в шторке вердикта — шторку закрыть: следующий шаг тура — ✕ на полосе примерки под ней
+  // sw — переход Core Fusion перед этим «Надеть»: его строка — в сообщение, его «Вернуть» — вместе с этим. В режиме
+  // героя из «Примерить замену» запись replace уходит в любом случае (logic/pool planPut)
+  const equipOn = (c: Char, sw: Switched | null) => {
+    const rep = hero?.c.id === c.id ? replace : null;
+    const r = putOn(ctx, sw?.st ?? gear.store, c.id, input, { replace: rep });
+    // после «Надеть» форма — как после «Следующий» (решение владельца, refute-10 п. 6): иначе та же вещь на форме
+    // сравнивается со своей записью («на уровне», штамп ниже) и «Надеть» на другого клал бы её вторым героям. Шторку
+    // вердикта закрыть, как «Следующий»; режим героя остаётся. «Вернуть» — и пул, и вещь на форму (с «T4»)
+    // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока
     const joined = joinRoster(c.id);
     const st = r.st;
     gear.set(st);
-    if (touring) setVerdictOpen(false);
+    const was = input;
+    setVerdictOpen(false);
+    dispatch({ type: 'reset' });
     setUndo(null);
+    if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
     if (touring) return;
     const used = usedFor(st, c.id, r.id);
+    // «· T4» — нажата «T4» на форме (В4): с каким Breakthrough вещь легла в пул
+    const t4 = input.bt === 4 ? t.ui.withT4 : '';
     // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote.
     // Убраны 2+ вещи её слота — назвать каждую: «Заменено: ботинки Caren — убраны прежние: Speed и Immunity.»
     const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
-    const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))])
-      : mine.length ? t.ui.replaced(c.name, r.piece.slot) : [t.ui.equipped(c.name, r.piece.slot), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+    const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
+      : mine.length ? t.ui.replaced(c.name, r.piece.slot, t4) : [t.ui.equipped(c.name, r.piece.slot, t4), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
     const notes: string[] = [];
     // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке)
     if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
-    if (r.shared.length) notes.push(t.ui.sameAs(r.shared.map(charName).join(', ')));
-    notes.push(...removedNotes(st, c, r, mine));
+    notes.push(...removedNotes(r, mine, rep));
     // «Убраны — не вошли ни в один билд: Speed-перчатки, Immunity-ботинки.» — одно имя на сет и слот
     const names = [...new Map(pruned.map((p) => [`${p.slot}\u0000${pieceLabel(p)}`, { slot: p.slot, what: pieceLabel(p) }])).values()];
     if (names.length) notes.push(t.ui.prunedNote(names));
     if (sw) notes.push(sw.note);
     setGearUndo({
       text, note: notes.join(' '), tab: 'eval',
-      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)), after: both(joined, sw?.after),
+      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)),
+      after: both(both(joined, sw?.after), () => dispatch({ type: 'load', item: was })),
     });
   };
-  // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote) — каждая своей строкой: осталась у
-  // другого или материал новой. Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам.
-  // st — после «Надеть». Убраны 2+ — в строках имя сета или предмета вместо «Старые» (заголовок replacedMany их уже
-  // перечислил)
-  const removedNotes = (st: GearStore, c: Char, r: PutResult, mine: readonly Piece[]) => {
-    const notes: string[] = [];
+  // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote): та же линия — материал новой.
+  // Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. Запись из «Примерить
+  // замену» (rep) — та же вещь в игре, введённая заново (Reforge, Transistone): не материал. Новая на T4 — материал ей не
+  // нужен (как в вердикте, logic/material titleWearT4). Убраны 2+ — в строках имя сета или предмета вместо «Старые»
+  // (заголовок replacedMany их уже перечислил)
+  const removedNotes = (r: PutResult, mine: readonly Piece[], rep: string | null) => {
+    if (r.piece.bt === 4) return [];
     const many = mine.length > 1;
-    for (const old of mine) {
-      const still = holdersOf(st, old.id).filter((id) => id !== c.id);
-      const same = old.slot === r.piece.slot && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey);
-      if (still.length) notes.push(t.ui.oldStill(old.slot, charName(still[0]), usedFor(st, still[0], old.id).join(', ') || t.ui.byStatsQ, many ? pieceLabel(old) : undefined));
-      else if (same) notes.push(t.ui.oldMaterial(old.slot, many ? pieceLabel(old) : undefined));
-    }
-    return notes;
+    return mine.filter((old) => old.id !== rep && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey))
+      .map((old) => t.ui.oldMaterial(old.slot, many ? pieceLabel(old) : undefined));
   };
-  // «Убрать у Caren» и «Разобрал — убрать у всех» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
+  // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
   // правка в карточке вещи снимает висящее «Вернуть» любого прежнего действия (В3: одно на все): откаты возвращают
   // запись по id, а её за эти секунды поправили или скопировали (gear updateIn, REFUTE-5)
   const onPieceEdit = () => setGearUndo(null);
-  // примерка из карточки персонажа: персонаж — в ростер (как у «Надеть»), на форму — слот и сет, грейд прежний.
-  // Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся
-  // Примерка CF, когда есть X (или X, когда есть CF), — сначала окно перехода (в)
-  const startTryOn = (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => {
-    if (!fusionGate(c.id, (sw) => { tryOnGo(c, b, sw.st, slot, from, combo); switchToast(sw, 'eval'); })) tryOnGo(c, b, gear.store, slot, from, combo);
+  // режим «для героя» из карточки персонажа (В10): «Оценить вещь для Caren» — только режим; «Собрать билд»,
+  // «Примерить» (пустой слот), «Слабее всех» — ещё слот и сет на форму (build/combo — предустановка); «Примерить
+  // замену» (replacing) — ещё запись from: «Надеть» заменит её в любом случае. Персонаж — в ростер (как у «Надеть»),
+  // грейд прежний. Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся.
+  // Режим героя на CF, когда есть X (или на X, когда есть CF), — сначала окно перехода (в)
+  const startTryOn = (c: Char, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing = false) => {
+    const go = (st: GearStore) => tryOnGo(c, st, b, slot, from, combo, replacing);
+    if (!fusionGate(c.id, (sw) => { go(sw.st); switchToast(sw, 'eval'); })) go(gear.store);
   };
-  const tryOnGo = (c: Char, b: Build, st: GearStore, slot?: SlotId, from?: Piece, combo?: string | null) => {
-    const next = { charId: c.id, build: b.name, ...(combo ? { combo } : {}) };
+  const tryOnGo = (c: Char, st: GearStore, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing = false) => {
+    const next: TryOn = {
+      charId: c.id, ...(b ? { build: b.name } : {}), ...(b && combo ? { combo } : {}), ...(replacing && from ? { replace: from.id } : {}),
+    };
     tryOn.set(next);
     joinRoster(c.id);
     setVerdictOpen(false);
-    const tg = tryOnTarget(idx, next, st === gear.store ? baseView : poolView(ctx, st));
-    const p = slot && tg ? tryOnPreset(poolView(ctx, st, tg.v.key), tg, slot, from) : null;
+    const sv = st === gear.store ? view : poolView(ctx, st);
+    const h = slot ? heroTarget(idx, next, sv) : null;
+    const p = slot && h ? tryOnPreset(sv, h, slot, from) : null;
     if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
       const cur = itemInput(s);
       // на форме уже пустая заготовка (второй «Примерить» подряд) — прежнее «Вернуть» остаётся
@@ -494,7 +480,7 @@ export function App() {
   const tourCtx: TourCtx = {
     s, roster: roster.size, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict: shown, narrow: layout.narrow,
     verdictOpen: verdictOpen && layout.narrow, keys: fineHover(),
-    pieceOpen, tryOn: !!target, gearSeq: gear.store.seq,
+    pieceOpen, tryOn: !!hero, gearSeq: gear.store.seq,
     // подсказка «Фоддер, а не разбор: эта пойдёт ей на Breakthrough» — не когда совет «надень её»
     // («Фоддер» от понижения B3 — не материал: он из withWorn, а не из withMaterial)
     material: shown.v === 'fodder' && worn.v !== 'fodder' && !mat.wear.up.length && !mat.wear.target,
@@ -529,11 +515,11 @@ export function App() {
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
   // кнопка под карточкой — только для полезной вещи (решение владельца: хлам к персонажу не попадает; Р4 — исход на
-  // карточке держит и вещь в нём встаёт, или она начнёт билд: poolVs useful); вторая — «или — Rin · Speed ▸», если
-  // такой исход есть и у другого
+  // карточке держит и вещь в нём встаёт, или она начнёт билд: poolVs useful; в режиме героя из «Примерить замену» —
+  // «Заменить» всегда); вторая — «или — Rin · Speed ▸», если такой исход есть и у другого (в режиме героя других нет)
   const cardVs = vsList[0];
   const cardEquip = canEquip && !!cardVs?.useful;
-  const cardOther = cardEquip && !target ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
+  const cardOther = cardEquip && !hero ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
   // id не задан — «Какое обучение?» (туров несколько); новичку из карточки и из «Появилось обучение» — главный
   const startTour = (id?: TourId) => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(id); };
   const openTours = () => startTour();
@@ -595,16 +581,17 @@ export function App() {
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
-              tryOn={target} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c) : undefined}
+              hero={hero} heroNote={offNote} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c) : undefined}
               other={cardOther} onEquipOther={cardOther ? (v) => doEquip(v.c) : undefined}
               onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={openTours} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
+            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || hero ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} off={off} onGearImport={onGearImport} touring={!!tour.run} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined}
+              onRateFor={canEquip ? (c) => startTryOn(c) : undefined}
               onPieceOpen={setPieceOpen} />
           </section>
         </main>
@@ -634,22 +621,6 @@ export function App() {
               <button type="button" onClick={onGearUndo}>{t.ui.undoAction}</button>
             )}
           </div>
-        )}
-        {twinAsk && !tour.run && (
-          <Sheet title={t.ui.twinTitle(twinAsk.piece.slot, charName(twinAsk.owner))} onClose={() => { if (twinAsk.sw) switchToast(twinAsk.sw, 'eval'); setTwinAsk(null); }}>
-            <div className="twin">
-              <p>{t.ui.twinNote(charName(twinAsk.owner), usedFor(gear.store, twinAsk.owner, twinAsk.piece.id).join(', ') || t.ui.byStatsQ)}</p>
-              <div className="piece-act twin-act">
-                <button type="button" className="btn primary" onClick={() => equipOn(twinAsk.c, twinAsk.piece, twinAsk.sw)}>
-                  {t.ui.twinShare(twinAsk.c.name)}<small>{t.ui.twinShareNote}</small>
-                </button>
-                <button type="button" className="btn" onClick={() => equipOn(twinAsk.c, null, twinAsk.sw)}>
-                  {t.ui.twinOther}<small>{t.ui.twinOtherNote(twinAsk.c.name)}</small>
-                </button>
-              </div>
-              <p className="muted small">{t.ui.twinFoot}</p>
-            </div>
-          </Sheet>
         )}
         {removeAsk && !tour.run && (
           <RosterRemoveAsk name={charName(removeAsk.id)} n={removeAsk.n} onYes={doRemove} onClose={() => setRemoveAsk(null)} />
@@ -681,7 +652,7 @@ export function App() {
         )}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); setHelpNews([]); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={openTours} tips={<TipsHelp tour={tour} news={helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || target ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || hero ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

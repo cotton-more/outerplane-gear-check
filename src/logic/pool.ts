@@ -19,7 +19,7 @@ import { isArmor } from '../data';
 import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
 import { t4Only } from './builds';
 import type { Ctx } from './context';
-import { EMPTY_GEAR, gc, holdersOf, newPiece, pieceInput, today, type GearStore, type Mark, type Piece } from './gear';
+import { EMPTY_GEAR, gc, newPiece, pieceInput, today, type GearStore, type Mark, type Piece } from './gear';
 import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible, type BonusRow } from './setBonus';
 import type { SubWeight } from './score';
 import type { ItemInput } from './verdict';
@@ -47,6 +47,13 @@ const LOST_MIN = 0.01; // вытесненное дешевле — «ничег
 export const STATS = '#stats';
 export const isStats = (v: Variant): boolean => v.key.endsWith('/' + STATS);
 const statMemo = new WeakMap<Char, Variant>();
+// Р13: у вещи есть полезные герою статы — она чего-то стоит в его «По статам» (иначе её там нет и при явном выборе).
+// Не для его класса — нет
+export function statsUseful(ctx: Ctx, c: Char, x: ItemInput): boolean {
+  const v = statVariant(c);
+  return !!v && wearable(ctx, c, x) && itemValue(ctx, c, v.b, x) > EPS;
+}
+
 export function statVariant(c: Char): Variant | null {
   if (!c.builds.length) return null;
   const hit = statMemo.get(c);
@@ -371,7 +378,8 @@ function heldOf(p: Pick<Play, 'variants' | 'asm' | 'reach'>): Set<string> {
 }
 
 // Записи, которые держит пул (Play.held). Одно место на «ненужные» (poolView) и на то, что уберёт «Надеть» (planPut,
-// подпись «Заменить»); «где стоит» (poolVs whereUsed) — уже: только собираемые варианты. Пустой пул — пусто
+// подпись «Заменить»); «где стоит» (poolVs whereUsed) — сначала собираемые варианты, остальные — если больше нигде.
+// Пустой пул — пусто
 export const usedIn = (p: Pick<Play, 'held'>): Set<string> => p.held;
 
 // --------------------------------------------------------------------------- вид пула
@@ -711,15 +719,11 @@ export const puts = (o: Outcome): boolean => holds(o) && o.used;
 
 // --------------------------------------------------------------------------- операции с пулом
 
-// что сделало «Надеть»: added — вещь добавлена (false — такая же уже есть); removed, marks и began — как в planPut
-// (removed — вещи любого слота, которые стояли в сборке, что держит пул, а с ней — ни в одной: её слота — «Заменить»,
-// других — строка «Убраны — не вошли ни в один билд»; marks — отметки, которые поставило «Надеть»); prev — что стояло в
-// этих отметках до «Надеть» (null — ничего): «Вернуть» кладёт их обратно; shared — у кого ещё эта запись; was — пул
-// персонажа до «Надеть»: «Вернуть» ставит убранные на их прежние места
-export interface PutResult {
-  st: GearStore; id: string; piece: Piece; added: boolean; removed: Piece[]; marks: string[]; began: string[]; prev: Record<string, Mark | null>; shared: string[];
-  was: readonly string[];
-}
+// что сделало «Надеть»: новая запись (id, piece); removed и began — как в planPut (removed — вещи любого слота, которые
+// стояли в сборке, что держит пул, а с ней — ни в одной: её слота — «Заменить», других — строка «Убраны — не вошли ни
+// в один билд»); was — пул персонажа до «Надеть»: «Вернуть» ставит убранные на их прежние места. Отметок «Надеть» не
+// ставит (Р19 ушло, В10)
+export interface PutResult { st: GearStore; id: string; piece: Piece; removed: Piece[]; began: string[]; was: readonly string[] }
 
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 
@@ -732,14 +736,13 @@ export const replaceOf = (mine: readonly Piece[], slot: SlotId, replace?: string
 // (usedIn — все варианты и «По статам»), а с новой — ни в одной. Только если новая встала (её держит пул); не встала —
 // ничего не убираем. Ставшее ненужным раньше (новые данные, «Развитие»/«Эндгейм», ручное «Убрать», правка) не трогаем:
 // строка «больше не нужна» и «Убрать у X». Каждая убранная названа в сообщении, «Вернуть» — всё обратно (undoPut).
-// marks — пусто: исключение Р19 (цель примерки — «Собираю», иначе после примерки вещь «больше не нужна») больше не нужно
-// — цель держит свою сборку и без примерки (held — все варианты); поле уходит вместе с примеркой билда (шаг 10).
+// Отметок не ставит: исключения Р19 (цель примерки — «Собираю») больше нет — пул держит сборки всех вариантов (held).
 // began — тост «Начал собирать …»: варианты, которые собираются и без примерки и с ней начаты, а до неё — нет (начало
 // по вещам, Р14, Р18). pre — play(mine, po), если уже посчитан (вид пула).
 // replace — id записи из «Примерить замену» (режим «для героя», TryOn.replace; решение владельца «заменить в любом
 // случае» — (а)): она уходит всегда, лучше новая или хуже, остальное — по В1 с пулом уже без неё. Записи нет в его пуле
 // (чужая, уже убранная) или она другого слота (слот на форме сменили) — как без replace
-export interface PutPlan { removed: Piece[]; marks: string[]; began: string[] }
+export interface PutPlan { removed: Piece[]; began: string[] }
 export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play, replace?: string | null): PutPlan {
   const out = replaceOf(mine, piece.slot, replace);
   const rest = out ? mine.filter((p) => p !== out) : mine;
@@ -748,7 +751,7 @@ export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece,
   const placed = now.has(piece.id);
   const removed = mine.filter((p) => p === out || (placed && was.has(p.id) && !now.has(p.id)));
   const began = after.own.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
-  return { removed, marks: [], began };
+  return { removed, began };
 }
 
 // Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
@@ -761,49 +764,27 @@ export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp, replace);
 }
 
-// Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin»), иначе новая — всегда, даже если
-// у него такая же: в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01), лишнюю вытеснит planPut.
-// Запись record уже в его пуле — ничего не меняется. replace — «Примерить замену» (planPut): эта запись уходит всегда
-export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { record?: Piece; tryOn?: string | null; at?: string; replace?: string | null } = {}): PutResult {
+// Надеть вещь на персонажа: всегда новая запись, даже если у него (или у другого) такая же — в Оценку вводят новую
+// вещь из инвентаря (решение владельца 2026-10-01), пулы независимы (В9); лишнюю вытеснит planPut. replace —
+// «Примерить замену» (planPut): эта запись уходит всегда
+export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { tryOn?: string | null; at?: string; replace?: string | null } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
-  const twin = mine.find((p) => p.id === opts.record?.id);
   const was = st.pools[charId] ?? [];
-  if (twin) return { st, id: twin.id, piece: twin, added: false, removed: [], marks: [], began: [], prev: {}, shared: holdersOf(st, twin.id).filter((h) => h !== charId), was };
-  const made = opts.record
-    ? { st: st.pieces[opts.record.id] ? st : { ...st, pieces: { ...st.pieces, [opts.record.id]: opts.record } }, piece: st.pieces[opts.record.id] ?? opts.record }
-    : newPiece(st, x, opts.at ?? today());
+  const made = newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed, marks, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }, undefined, opts.replace) : { removed: [], marks: [], began: [] };
+  const { removed, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }, undefined, opts.replace) : { removed: [], began: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...was.filter((id) => !gone.has(id)), piece.id];
-  const next = gc({
-    ...made.st, pools: { ...made.st.pools, [charId]: pool },
-    ...(marks.length ? { marks: { ...made.st.marks, ...Object.fromEntries(marks.map((k) => [k, 'want' as Mark])) } } : {}),
-  });
-  const prev = Object.fromEntries(marks.map((k) => [k, st.marks?.[k] ?? null]));
-  return { st: next, id: piece.id, piece, added: true, removed, marks, began, prev, shared: holdersOf(next, piece.id).filter((h) => h !== charId), was };
-}
-
-// «Это шлем Rin?» (мелочь 2): «Она же — и у …» кладёт запись другого героя, а строка и кнопка посчитаны по вещи с формы
-// (её Reforge и Breakthrough другие). Предлагаем запись, только если «Надеть» с ней сделает то же, что обещала подпись:
-// запись встаёт (не «больше не нужна» — ни в примерке, ни после неё) и убирает те же вещи её слота, что вещь с формы
-export function shareFits(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, record: Piece, tryOn: string | null = null): boolean {
-  const own = putOn(ctx, st, charId, x, { tryOn });
-  const rec = putOn(ctx, st, charId, x, { record, tryOn });
-  if (!rec.added) return false;
-  const ids = (ps: readonly Piece[]) => ps.map((p) => p.id).sort().join();
-  if (ids(rec.removed) !== ids(own.removed)) return false;
-  const unused = (tr: string | null) => !!poolView(ctx, rec.st, tr).of(charId)?.unused.some((p) => p.id === rec.id);
-  return !unused(tryOn) && !(tryOn && unused(null));
+  const next = gc({ ...made.st, pools: { ...made.st.pools, [charId]: pool } });
+  return { st: next, id: piece.id, piece, removed, began, was };
 }
 
 // «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр) и на прежние места (за
-// той вещью, за которой стояли до «Надеть», — ничего не трогали между ними, пул байт в байт как был), отметки — как
-// были до него (prev: «Не собираю» — снова «Не собираю», не было — снять); отметку, которую успели поменять, не
-// трогаем. Её там уже нет (успели убрать) — ничего не трогаем
+// той вещью, за которой стояли до «Надеть», — ничего не трогали между ними, пул байт в байт как был). Её там уже нет
+// (успели убрать) — ничего не трогаем
 export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore {
-  if (!r.added || !st.pools[charId]?.includes(r.id)) return st;
+  if (!st.pools[charId]?.includes(r.id)) return st;
   const pieces = { ...st.pieces };
   for (const p of r.removed) pieces[p.id] ??= p;
   const pool = st.pools[charId].filter((id) => id !== r.id);
@@ -813,14 +794,7 @@ export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore 
     const after = r.was.slice(0, i).reverse().find((x) => pool.includes(x));
     pool.splice(after === undefined ? 0 : pool.indexOf(after) + 1, 0, id);
   }
-  if (!r.marks.length) return gc({ ...st, pieces, pools: { ...st.pools, [charId]: pool } });
-  const marks = { ...st.marks };
-  for (const k of r.marks) {
-    if (marks[k] !== 'want') continue;
-    const was = r.prev[k] ?? null;
-    if (was) marks[k] = was; else delete marks[k];
-  }
-  return gc({ ...st, pieces, pools: { ...st.pools, [charId]: pool }, marks });
+  return gc({ ...st, pieces, pools: { ...st.pools, [charId]: pool } });
 }
 
 // «Убрать у Caren»: только из её пула; у других запись остаётся. undo — «Вернуть»
@@ -828,9 +802,6 @@ export function removeFrom(st: GearStore, charId: string, id: string): GearStore
   if (!st.pools[charId]?.includes(id)) return st;
   return gc({ ...st, pools: { ...st.pools, [charId]: st.pools[charId].filter((x) => x !== id) } });
 }
-// «Разобрал — убрать у всех»
-export const removeEverywhere = (st: GearStore, id: string): GearStore =>
-  gc({ ...st, pools: Object.fromEntries(Object.entries(st.pools).map(([c, ids]) => [c, ids.filter((x) => x !== id)])) });
 // «Вернуть» после «Убрать»: запись и её место в пулах этих персонажей — обратно (кто уже снова её держит — не трогаем)
 export function undoRemove(st: GearStore, piece: Piece, holders: readonly string[]): GearStore {
   const pools = { ...st.pools };

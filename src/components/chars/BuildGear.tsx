@@ -2,8 +2,9 @@
 // окрашенные по цепочке этого билда, и Breakthrough («T4», «T0–T3», «T?» — не указан); бонусы сетов с уровнем;
 // «Собираю»; «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet): узкая правка (Н1) — сегменты 1–6, «T4» у
 // брони, 4-й сабстат у Epic с тремя; «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать
-// билд», «Примерить» (пустой слот) и «Примерить замену» (вещь) открывают оценку в примерке для этого варианта; на
-// вкладке «По статам» — примерку «По статам» (туда встаёт то, что герой носит не по билду, находка 28).
+// билд», «Примерить» (пустой слот), «Слабее всех» и «Примерить замену» (вещь) открывают оценку в режиме «для героя» —
+// слот и сет этого варианта на форме; на вкладке «По статам» — без сета (туда встаёт то, что герой носит не по билду,
+// находка 28).
 import { useState } from 'react';
 import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '../../data';
 import type { Build, Char, GearKind, SlotId } from '../../data/types';
@@ -108,7 +109,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
     : null;
   const wp = weak?.e?.piece ?? null;
   const look = wp ? lookFor(ctx, c, b, weak!.off ? { ...wp, lit: {} } : wp) : [];
-  const lookSet = weak && wp ? tryOnPreset(view, { c, b: v.parent, v }, weak.slot, wp).setId : null;
+  const lookSet = weak && wp ? tryOnPreset(view, { c, v }, weak.slot, wp).setId : null;
   // «Не хватает»: части связки — куда (слоты не под этой связкой) и нужен ли T4. По достижимой сборке: того, что уже
   // есть в пуле, не просим, даже если раскладка ради статов его не взяла (Speed ×4 отдал слот Immunity-вещи)
   const reach = cp.reach.get(v.key) ?? a;

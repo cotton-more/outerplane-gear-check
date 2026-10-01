@@ -4,14 +4,13 @@
 // «Примерить» (пустой слот), «Слабее всех», «Примерить замену» (вещь) — они только ставят слот и сет на форму
 // (build/combo — предустановка) и включают режим героя; «Следующий» его не сбрасывает. «Примерить замену» ещё
 // запоминает запись (replace): «Надеть» заменит её в любом случае (решение владельца (а), logic/pool planPut).
-// Прежняя примерка билда (tryOnTarget, Target, tryOnTitle, offLine) — до шага 10: её зовёт App.
 import { isArmor, type Index } from '../data';
-import type { Build, Char, SlotId } from '../data/types';
+import type { Char, SlotId } from '../data/types';
 import type { Texts } from '../i18n';
 import type { Ctx } from './context';
 import type { Piece } from './gear';
-import { comboText, uniqChars } from './builds';
-import { isStats, outcomeFor, shownKind, statVariant, STATS, type Outcome, type PoolView } from './pool';
+import { uniqChars } from './builds';
+import { holds, isStats, outcomeFor, shownKind, statsUseful, statVariant, STATS, type Outcome, type PoolView } from './pool';
 import { byBest, type CharVs } from './poolVs';
 import { bestRow, type ItemInput, type Verdict } from './verdict';
 import { wearable } from './vs';
@@ -22,8 +21,8 @@ import { variantsOf, type Variant } from './variants';
 // replace — id записи его пула из «Примерить замену»; есть ли она ещё в пуле, проверяет тот, кто её использует
 // (planPut, charVs: replaceOf) — запись могли убрать и после чтения из хранилища
 export interface TryOn { charId: string; build?: string; combo?: string; replace?: string }
-// b — у «По статам» его билд (имя STATS, без связки): имя для показа — targetName
-export interface Target { c: Char; b: Build; v: Variant }
+// герой режима и вариант предустановки формы (heroTarget); v нет — предустановки нет
+export interface Hero { c: Char; v?: Variant }
 
 // из хранилища: персонажа в данных больше нет (или это не запись) — режима героя нет. Билда больше нет — режим героя
 // без предустановки (build и combo отбрасываем); старое { charId, build } — режим героя с предустановкой. replace —
@@ -45,40 +44,35 @@ export function restoreTryOn(raw: unknown, idx: Index): TryOn | null {
 }
 
 // цель режима героя: герой и вариант предустановки (только для формы, tryOnPreset; сравнение — по всем билдам).
-// Вариант — как в tryOnTarget: из combo, иначе самый собранный по view; build нет или устарел — без варианта
-export function heroTarget(idx: Index, t: TryOn | null, view?: PoolView | null): { c: Char; v?: Variant } | null {
+// Вариант: STATS — «По статам»; билд — вариант из combo, его нет в данных (или combo нет) — собранный больше других
+// (view), при равенстве первый; build нет или устарел — без варианта. Герой без билдов (его так не включить, а в
+// хранилище бывает от старых данных) — режима героя нет
+export function heroTarget(idx: Index, t: TryOn | null, view?: PoolView | null): Hero | null {
   const c = t ? idx.CHAR[t.charId] : undefined;
-  if (!c) return null;
-  const v = t!.build ? tryOnTarget(idx, t, view)?.v : undefined;
+  if (!c?.builds.length) return null; // без билдов сравнивать не с чем (ни билдов, ни «По статам»)
+  const v = t!.build === STATS ? statVariant(c) ?? undefined : t!.build ? presetOf(idx, c, t!, view) : undefined;
   return v ? { c, v } : { c };
 }
 
-// вариант примерки: тот, что в combo; его нет в данных (или combo нет) — вариант, собранный больше других (view),
-// при равенстве первый
-export function tryOnTarget(idx: Index, t: TryOn | null, view?: PoolView | null): Target | null {
-  const c = t ? idx.CHAR[t.charId] : undefined;
-  if (c && t!.build === STATS) {
-    const stat = statVariant(c);
-    return stat ? { c, b: stat.b, v: stat } : null;
-  }
-  const b = c?.builds.find((x) => x.name === t!.build);
-  if (!c || !b) return null;
+function presetOf(idx: Index, c: Char, t: TryOn, view?: PoolView | null): Variant | undefined {
+  const b = c.builds.find((x) => x.name === t.build);
+  if (!b) return undefined;
   const vs = variantsOf(idx, c).filter((v) => v.parent === b);
-  const exact = t!.combo ? vs.find((v) => v.sig === t!.combo) : undefined;
+  const exact = t.combo ? vs.find((v) => v.sig === t.combo) : undefined;
   const asm = view?.of(c.id)?.asm;
-  const v = exact ?? vs.reduce((best, x) => ((asm?.get(x.key)?.progress ?? 0) > (asm?.get(best.key)?.progress ?? 0) ? x : best), vs[0]);
-  return { c, b, v };
+  return exact ?? vs.reduce((best, x) => ((asm?.get(x.key)?.progress ?? 0) > (asm?.get(best.key)?.progress ?? 0) ? x : best), vs[0]);
 }
 
 // что поставить на форму: слот; у брони — сет, которого варианту не хватает (у «Примерить замену» — сет той вещи,
 // если он варианту нужен: вещь не по билду меняют на свою); в связке — первый сет, которого меньше, чем нужно.
-// У «По статам» связки нет — сет той вещи или никакого. Грейд не трогаем.
-export function tryOnPreset(view: PoolView | null, target: Target, slot: SlotId, from?: Piece | null): { slot: SlotId; setId: string | null } {
+// У «По статам» связки нет, варианта нет — сет той вещи или никакого. Грейд не трогаем.
+export function tryOnPreset(view: PoolView | null, hero: Hero, slot: SlotId, from?: Piece | null): { slot: SlotId; setId: string | null } {
   if (!isArmor(slot)) return { slot, setId: null };
-  if (isStats(target.v)) return { slot, setId: from?.setId ?? null };
-  const combo = target.v.b.sets[0] ?? [];
+  const v = hero.v;
+  if (!v || isStats(v)) return { slot, setId: from?.setId ?? null };
+  const combo = v.b.sets[0] ?? [];
   if (from?.setId && combo.some((p) => p.set === from.setId)) return { slot, setId: from.setId };
-  const a = view?.of(target.c.id)?.asm.get(target.v.key);
+  const a = view?.of(hero.c.id)?.asm.get(v.key);
   const count = (set: string) => (['helmet', 'armor', 'gloves', 'shoes'] as SlotId[]).filter((sl) => a?.slots[sl]?.setId === set).length;
   const part = combo.find((p) => count(p.set) < p.n) ?? combo[0];
   return { slot, setId: part?.set ?? null };
@@ -95,23 +89,6 @@ export function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
   return { kind: o.kind, empty: !o.worn };
 }
 
-// имя цели для показа: «По статам» или билд
-export const targetName = (t: Texts, target: Target): string => (isStats(target.v) ? t.ui.byStats : target.b.name);
-
-// «Не по билду Speed: Attack в его связках нет.»
-export const offLine = (t: Texts, idx: Index, target: Target, setId: string | null): string =>
-  t.tryon.offBuild(target.b.name, setId ? idx.SET[setId]?.short ?? setId : null, target.b.sets.map((cb) => comboText(idx, cb)).join(` ${t.ui.or} `));
-
-// Заголовок в примерке: то, что было до « — » (слово вердикта), и дальше — кому ещё нужна и что с ней.
-//   «Оставляй — нужна Titia и Kappa; у Caren соберёт Speed/Immu», «Разбирай — но у Caren слот пуст: надень, пока нет лучше»
-// armor — броня («нужна»), иначе оружие или аксессуар («нужен»). Цель «По статам», а строки нет (полезных статов
-// нет, Р13) — «ничего не даст», а не «не по билду»
-export function tryOnTitle(t: Texts, res: Verdict, target: Target, row: TryRow | null, armor = true): string {
-  const kind = row?.kind ?? (isStats(target.v) ? 'nothing' : 'off');
-  const clause = (temp: boolean) => t.tryon.clause(kind, target.c.name, targetName(t, target), temp, row ?? {});
-  return titleWith(t, res, target.c, row, clause, !!res.wornBy?.includes(target.v.key), armor);
-}
-
 // Заголовок в режиме героя (В7, В10): штамп общий, после « — » — кому ещё нужна и лучший исход героя по всем его
 // билдам (o — heroOutcome): «Оставляй — у Caren соберёт Speed/Immu». Исхода нет (вещь ему ни к чему, или «только
 // статы») — про героя ничего: строку под карточкой даёт heroNote
@@ -122,7 +99,7 @@ export function heroTitle(t: Texts, idx: Index, res: Verdict, c: Char, o: Outcom
   return titleWith(t, res, c, row, clause, !!o && !!res.wornBy?.includes(o.v.key), armor);
 }
 
-// общее у заголовков примерки и героя. lowered — штамп понизили (logic/worn: всем, кому подходит, она ничего не
+// заголовок героя. lowered — штамп понизили (logic/worn: всем, кому подходит, она ничего не
 // даёт), и этот исход среди них — заголовок уже про него. Пустая фраза про героя — не добавляем
 function titleWith(t: Texts, res: Verdict, c: Char, row: TryRow | null, clause: (temp: boolean) => string, lowered: boolean, armor: boolean): string {
   if (res.v === 'idle') return res.title;
@@ -159,13 +136,18 @@ export function heroOutcome(ctx: Ctx, view: PoolView, item: ItemInput, vs: CharV
   return rows.filter((r) => r.entering && vs.starts.includes(r.v)).sort(byBest)[0] ?? null;
 }
 
-// строка под карточкой в режиме героя (как offNote примерки в App): не для его класса — «не носит»; главное — «По
-// статам» с «Надеть» (вещь не по билду, а по статам подходит, Р11) — «положит её в «По статам»»; сета брони нет ни в
-// одном его билде — offHero «Caren она не нужна: Attack нет в билдах Caren». Иначе строки нет: что с вещью — в заголовке
+// строка под карточкой в режиме героя: не для его класса — «не носит»; главное — «По статам» с «Надеть» (вещь не по
+// билду, а по статам подходит, Р11) — «положит её в «По статам»»; сета брони нет ни в одном его билде (и встать с
+// выигрышем ей некуда) — offHero «Caren она не нужна: Attack нет в билдах Caren»; ни исхода, ни «начнёт» и полезных
+// ему статов у вещи правда нет (Р13: в «По статам» она ничего не стоит; vs нет или есть только кнопка «Заменить» из
+// «Примерить замену») — «ничего не даст: полезных статов нет». Иначе строки нет: исходов нет, потому что в пуле не
+// хуже, — это скажут чип и заголовок (решение оркестратора, refute-10 п. 5: иначе «полезных статов нет» у вещи с ними)
 export function heroNote(t: Texts, ctx: Ctx, c: Char, item: ItemInput, vs: CharVs | null): string | null {
   if (!wearable(ctx, c, item)) return t.tryon.noClass(c.name);
   if (vs?.useful && vs.best && isStats(vs.best.v)) return t.tryon.offStats(c.name);
   const set = item.setId;
-  if (!isArmor(item.slot) || !set || c.builds.some((b) => b.sets.some((cb) => cb.some((p) => p.set === set)))) return null;
-  return t.tryon.offHero(c.name, ctx.idx.SET[set]?.short ?? set);
+  if (isArmor(item.slot) && set && !(vs?.best && holds(vs.best)) && !c.builds.some((b) => b.sets.some((cb) => cb.some((p) => p.set === set)))) {
+    return t.tryon.offHero(c.name, ctx.idx.SET[set]?.short ?? set);
+  }
+  return !vs?.best && !vs?.starts.length && !statsUseful(ctx, c, item) ? t.tryon.noStats(c.name) : null;
 }

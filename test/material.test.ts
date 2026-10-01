@@ -220,7 +220,8 @@ describe('материал Breakthrough для надетой', () => {
       const r = judgeBt(4);
 
       expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её' });
-      expect(r.lines[0]).toBe('**Лучше надетой**: такая же вещь надета не на T4 и слабее этой — броня Anarky · Defense mix — T0, ещё 4 шт. до T4. Надень эту.');
+      // шаг 10: надетая bt 0 (форма без «T4») — «ниже T4» без счёта ступеней (11.2 material.needBelow); было «T0, ещё 4 шт.»
+      expect(r.lines[0]).toBe('**Лучше надетой**: такая же вещь надета не на T4 и слабее этой — броня Anarky · Defense mix — ниже T4. Надень эту.');
       expect(r.plan).toEqual([ru.material.planWear('Anarky · Defense mix')]);
     });
 
@@ -228,7 +229,7 @@ describe('материал Breakthrough для надетой', () => {
       const r = judgeBt(0);
 
       expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетой брони Anarky · Defense mix: надень её, а старую — ей в Breakthrough' });
-      expect(r.lines[0]).toBe(ru.material.lineWear('броня Anarky · Defense mix — T0, ещё 4 шт. до T4'));
+      expect(r.lines[0]).toBe(ru.material.lineWear('броня Anarky · Defense mix — ниже T4'));
       expect(r.plan).toEqual([ru.material.planReplace('Anarky · Defense mix')]);
     });
 

@@ -1,10 +1,8 @@
 // Экипировка: вещи персонажа (пул, GEARPOOL). Чистые данные и операции — без React и хранилища; билды собираются
 // из пула сами (logic/pool), операции «Надеть», «Убрать» — там же. Вещь попадает в пул только из оценки («Надеть» в
-// вердикте): жёлтые сегменты и Breakthrough — как отмечены на форме, оранжевые (Reforge) игрок добавляет потом в
-// карточке персонажа, там же правит Breakthrough. Enhance не храним: считаем +10. Одна запись может быть в пулах
-// нескольких героев — это одна вещь в инвентаре, правка Reforge и Breakthrough видна у всех; правка в шторке (updateIn)
-// — только у одного героя: общая запись делится (В9).
-import { CFG } from '../config';
+// вердикте): сегменты (1–6, один уровень) и «T4» — как на форме; сделал в игре Reforge или Breakthrough — правка в
+// шторке вещи (updateIn). Enhance не храним: считаем +10. Пулы независимы (В9): «Надеть» всегда кладёт новую запись;
+// старая общая запись (из прежних версий) делится, когда её правят у одного героя.
 import { isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import { subAllowed } from './mains';
@@ -13,8 +11,6 @@ import type { ItemInput } from './verdict';
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
 export const MAX_LIT = 6;     // сегментов у сабстата в игре
-export const REFORGES = CFG.reforges; // попыток Reforge у 6★ (сравнение их не считает — вещи как есть, logic/vs)
-export const SINGULARITY = 3; // ещё 3 Reforge у Legendary после Singularity Ascension — их можно отметить
 
 export interface Piece {
   id: string;
@@ -32,8 +28,8 @@ export interface Piece {
 
 export type Mark = 'want' | 'skip'; // «Собираю» / «Не собираю»
 
-// Хранилище v2 (GEARPOOL): вещи — у персонажа. pools — id вещей персонажа в порядке добавления; одна запись может
-// быть в пулах нескольких героев (та же вещь в игре). marks — «Собираю» / «Не собираю»: ключ — билд целиком
+// Хранилище v2 (GEARPOOL): вещи — у персонажа. pools — id вещей персонажа в порядке добавления; пулы независимы (В9),
+// но старая запись (из прежних версий) может быть в пулах нескольких героев — делится при правке (updateIn). marks — «Собираю» / «Не собираю»: ключ — билд целиком
 // (buildKey) или вариант связки (buildKey#подпись, logic/variants). autoNew — варианты, которые после переноса v1
 // собираются сами, а в v1 начаты не были: разовая подсказка в карточке. Незнакомые поля (v1builds — билды v1 как
 // были, следующая версия) переносятся как есть
@@ -55,42 +51,6 @@ export const today = () => new Date().toISOString().slice(0, 10);
 // запись как вход сравнения: уровень сабстата — сколько горит (lit), жёлтые и оранжевые вместе (один уровень)
 export const pieceInput = (p: Piece): ItemInput =>
   ({ slot: p.slot, grade: p.grade, setId: p.setId, itemKey: p.itemKey, main: p.main, unlisted: p.unlisted, subs: p.lit });
-
-const orangeOf = (p: Pick<Piece, 'yellow' | 'lit'>) => Object.keys(p.lit).reduce((n, k) => n + (p.lit[k] - (p.yellow[k] ?? 0)), 0);
-
-// сколько Reforge бывает у вещи: 6, у Legendary с Singularity — 9
-export const maxReforges = (p: Pick<Piece, 'grade'>): number => REFORGES + (p.grade === 'unique' ? SINGULARITY : 0);
-
-// сколько оранжевых можно отметить: у Epic первый Reforge — 4-й сабстат (с жёлтым), оранжевых на один меньше;
-// у Epic без 4-го — ни одного: сначала «+ 4-й»
-export const maxOrange = (p: Pick<Piece, 'grade' | 'lit'>): number =>
-  p.grade === 'rare' ? (Object.keys(p.lit).length >= MAX_SUBS ? REFORGES - 1 : 0) : maxReforges(p);
-
-// «Reforge N из M»: обычно из 6; у Legendary после Singularity (больше 6) — из 9
-export function reforgeScale(p: Piece): { done: number; of: number } {
-  const done = reforgesDone(p);
-  return { done, of: done > REFORGES ? maxReforges(p) : REFORGES };
-}
-
-// сколько Reforge уже сделано: каждый добавляет ровно один сегмент (у Epic первый — 4-й сабстат, его сегмент жёлтый)
-export function reforgesDone(p: Piece): number {
-  const fourth = p.grade === 'rare' && Object.keys(p.lit).length >= MAX_SUBS ? 1 : 0;
-  return Math.min(maxReforges(p), orangeOf(p) + fourth);
-}
-
-// одна и та же основа: слот, грейд, сет или предмет, main (в игре не меняются)
-const sameBase = (a: ItemInput, p: Piece): boolean =>
-  a.slot === p.slot && a.grade === p.grade && a.main === p.main
-  && (a.setId ?? null) === p.setId && (a.itemKey ?? null) === p.itemKey && !!a.unlisted === !!p.unlisted;
-
-// та же вещь: та же основа, те же статы и уровни ровно как у записи (lit — один уровень, жёлтые и оранжевые вместе).
-// Breakthrough не сравниваем. Зовёт только окно «Это шлем Rin?» (App, уходит в шаге 10): «Уже есть» и «дома» нет —
-// в Оценку вводят новую вещь из инвентаря, точная копия записи — другая вещь (решение владельца 2026-10-01)
-export function samePiece(a: ItemInput, p: Piece): boolean {
-  if (!sameBase(a, p)) return false;
-  const ka = Object.keys(a.subs), kp = Object.keys(p.lit);
-  return ka.length === kp.length && ka.every((k) => a.subs[k] === p.lit[k]);
-}
 
 // у кого есть вещи: персонаж → сколько вещей в пуле (фильтр «с экипировкой», меню «Экипировка · N»)
 export function gearedChars(st: GearStore): Map<string, number> {
@@ -200,34 +160,3 @@ export function updatePiece(st: GearStore, id: string, patch: Partial<Pick<Piece
   const p = st.pieces[id];
   return p ? { ...st, pieces: { ...st.pieces, [id]: { ...p, ...patch, at } } } : st;
 }
-
-// сегменты в карточке: нажали клетку n (1…6) у стата k. Выше жёлтых — оранжевые (Reforge), но не больше, чем
-// Reforge бывает (maxOrange); повторное нажатие на последнюю горящую убирает её. На жёлтых — жёлтых меньше
-// (опечатка при вводе), оранжевые остаются.
-export function tapSegment(p: Piece, k: string, n: number): Pick<Piece, 'yellow' | 'lit'> {
-  const y = p.yellow[k] ?? 1, l = p.lit[k] ?? y;
-  if (n > y) {
-    if (n <= l) return { yellow: p.yellow, lit: { ...p.lit, [k]: n === l ? n - 1 : n } };
-    const room = Math.max(0, maxOrange(p) - orangeOf(p)); // сколько оранжевых ещё можно добавить
-    return { yellow: p.yellow, lit: { ...p.lit, [k]: Math.min(n, l + room) } };
-  }
-  return { yellow: { ...p.yellow, [k]: n }, lit: { ...p.lit, [k]: Math.min(MAX_LIT, n + l - y) } };
-}
-
-// Transistone сменил стат: новый встаёт на место старого, сегменты (жёлтые и оранжевые) — с ним.
-// Стата, который уже есть на вещи, Transistone не даёт — такая замена ничего не меняет (иначе один сабстат пропал бы)
-export function replaceStat(p: Piece, from: string, to: string): Pick<Piece, 'yellow' | 'lit'> {
-  if (to !== from && to in p.yellow) return { yellow: p.yellow, lit: p.lit };
-  const swap = (s: Subs) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k === from ? to : k, v]));
-  return { yellow: swap(p.yellow), lit: swap(p.lit) };
-}
-
-// сколько жёлтых у стата: Transistone перебрасывает стат вместе с его жёлтыми (1–3), а при вводе бывает опечатка.
-// Оранжевые (Reforge) у стата остаются; больше 6 горящих не бывает
-export function setYellow(p: Pick<Piece, 'yellow' | 'lit'>, k: string, n: number): Pick<Piece, 'yellow' | 'lit'> {
-  const orange = (p.lit[k] ?? 0) - (p.yellow[k] ?? 0);
-  return { yellow: { ...p.yellow, [k]: n }, lit: { ...p.lit, [k]: Math.min(MAX_LIT, n + orange) } };
-}
-
-// 4-й сабстат у Epic после первого Reforge: приходит с одним жёлтым сегментом
-export const addFourth = (p: Piece, k: string): Pick<Piece, 'yellow' | 'lit'> => ({ yellow: { ...p.yellow, [k]: 1 }, lit: { ...p.lit, [k]: 1 } });

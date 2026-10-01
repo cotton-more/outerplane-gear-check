@@ -26,15 +26,16 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 );
 
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
-// view — пул (logic/pool); onTryOn — примерка варианта этого персонажа (BuildGear; у «По статам» b — его билд с именем
-// STATS: примерка «По статам», logic/tryon); onOpenChar — карточка другого
+// view — пул (logic/pool); onTryOn — режим «для героя» с предустановкой формы по варианту этого персонажа (BuildGear; у
+// «По статам» b — его билд с именем STATS, logic/tryon); onOpenChar — карточка другого
 // персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»).
 // onPieceEdit — правка в карточке вещи: висящее «Вернуть» прежнего действия (одно на все, В3) App снимает — откаты
 // возвращают запись по id, а её поправили или скопировали (gear updateIn). onRateFor — «Оценить вещь для Caren» (режим
-// «для героя»). «Примерить замену» — onTryOn с from: запись, которую заменяем (её id — TryOn.replace)
+// «для героя» без предустановки). «Примерить замену» — onTryOn с from и replacing: «Надеть» заменит эту запись в любом
+// случае (её id — TryOn.replace); «Слабее всех» тоже отдаёт from, но только для сета на форме
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
-  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null) => void;
+  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing?: boolean) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
@@ -201,7 +202,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
             onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />
           <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />
           {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
-            onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, statsTab ? v.b : v.parent, piece.slot, piece, v.sig); } : undefined} />}
+            onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, statsTab ? v.b : v.parent, piece.slot, piece, v.sig, true); } : undefined} />}
           {!statsTab && <BuildView c={c} b={b} ctx={ctx} />}
         </>
       ) : (

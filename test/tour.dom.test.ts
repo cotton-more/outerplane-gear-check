@@ -426,7 +426,7 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
 
     expect(strip()).toContain(T.gearStepOf(3, 5));
-    expect($('.tryon')?.textContent).toContain('Caren · Speed');
+    expect($('.tryon .tryon-n')?.textContent).toBe('Caren'); // режим героя (шаг 10): на полосе только имя
     expect(document.querySelectorAll('.subrow')).toHaveLength(4); // вещь примера на форме
     expect($('.vcard .vs.up')).toBeTruthy();
     await click(byText('.tour-strip button', T.next));
@@ -442,7 +442,7 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.tour-strip button', 'Done'));
     expect($('.tour-strip')).toBeNull();
     expect(snapshot()).toEqual(before);
-    expect($('.tryon')?.textContent).toContain('Kappa · Speed');
+    expect($('.tryon .tryon-n')?.textContent).toBe('Kappa');
     expect(document.querySelectorAll('.subrow')).toHaveLength(1);
     expect(stored('tour').seen['tour.gear']).toBe(1);
   });
@@ -463,7 +463,7 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
     await click($('.tour-x'));
     expect(snapshot()).toEqual(before);
-    expect($('.tryon')?.textContent).toContain('Kappa · Speed');
+    expect($('.tryon .tryon-n')?.textContent).toBe('Kappa');
   });
 
   it('«Дальше» на каждом шаге: примерку ставит шаг 3, на шаге 4 есть кнопка, шаг 5 не пропускается', async () => {
@@ -475,7 +475,7 @@ describe('тур «Экипировка» на примере', () => {
     expect(strip()).toContain(T.gearStepOf(2, 5));
     await click(byText('.tour-strip button', T.next));
     expect(strip()).toContain(T.gearStepOf(3, 5));
-    expect($('.tryon')?.textContent).toContain('Caren · Speed');
+    expect($('.tryon .tryon-n')?.textContent).toBe('Caren'); // режим героя (шаг 10): на полосе только имя
     await click(byText('.tour-strip button', T.next));
     expect(strip()).toContain(T.gearStepOf(4, 5));
     await frame();

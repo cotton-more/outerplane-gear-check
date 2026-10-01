@@ -457,10 +457,10 @@ export const ru = {
     equipRowReplaceStarts: (acc: string, builds: string) => `Заменить ${acc} — начнёт ${builds}`,
     equipRowWorn: (build: string) => `Уже есть — та же вещь в ${build}`,
     equipNote: 'Здесь — те, кому вещь встанет в билд. Не по билду — найди персонажа по имени: она встанет в «По статам».',
-    equipped: (name: string, slot: string) => `Надето на ${name}: ${NOM[slot]}.`,
-    replaced: (name: string, slot: string) => `Заменено: ${NOM[slot]} ${name}.`,
+    equipped: (name: string, slot: string, t4 = '') => `Надето на ${name}: ${NOM[slot]}${t4}.`,
+    replaced: (name: string, slot: string, t4 = '') => `Заменено: ${NOM[slot]} ${name}${t4}.`,
     // убраны 2+ вещи её слота: olds — имя сета у брони, предмета у оружия и аксессуара
-    replacedMany: (name: string, slot: string, olds: string[]) => `Заменено: ${NOM[slot]} ${name} — убраны прежние: ${andList(olds)}.`,
+    replacedMany: (name: string, slot: string, olds: string[], t4 = '') => `Заменено: ${NOM[slot]} ${name}${t4} — убраны прежние: ${andList(olds)}.`,
     // «Надеть» убрало и вещи других слотов — их вытеснила новая из всех билдов (В1): what — имя сета у брони, предмета
     // у оружия и аксессуара
     prunedNote: (olds: { slot: string; what: string }[]) => `Убраны — не вошли ни в один билд: ${olds.map((o) => named(o.slot, o.what)).join(', ')}.`,
@@ -485,7 +485,7 @@ export const ru = {
     gearNobody: 'Пока ни у кого нет вещей. Сними «с экипировкой», открой персонажа и нажми «Собрать билд» — или «Надеть» в вердикте.',
     gearTile: (n: number) => `надето ${n} из 6`,
     // «Слабее всех» — самая слабая вещь брони в билде и что искать ей на замену
-    weakest: (slot: string, grade: string, bt: number | null) => `Слабее всех — ${slot} (${grade}, Breakthrough ${bt === null ? 'не указан' : 'T' + bt}).`,
+    weakest: (slot: string, grade: string, bt: number | null) => `Слабее всех — ${slot} (${grade}, Breakthrough ${bt === null ? 'не указан' : bt === 0 ? 'T0–T3' : 'T' + bt}).`,
     weakestLook: (piece: string, stats: string[]) => `Ищи ${piece} с ${stats.join(' и ')} — в примерке вердикт покажет, лучше ли она надетой.`,
     weakestTry: 'Примерить вещи',
     pieceTitle: (slot: string, name: string) => `${slot} · ${name}`,

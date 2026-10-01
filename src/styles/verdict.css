@@ -181,3 +181,5 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .vs-more { display: grid; gap: 4px; padding-top: 6px; border-top: 1px dashed var(--line); }
 .vs-more-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .v-off { margin: 0; padding: 0 16px 10px; font-size: 13px; }
+/* режим «для героя»: строка про героя под карточкой (не носит, не нужна, «По статам») */
+.vc-note { margin: 6px 0 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
