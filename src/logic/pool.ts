@@ -723,6 +723,10 @@ export interface PutResult {
 
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 
+// запись, которую заменяет «Надеть» в режиме героя (planPut replace): есть в его пуле и того же слота, иначе нет
+export const replaceOf = (mine: readonly Piece[], slot: SlotId, replace?: string | null): Piece | undefined =>
+  replace ? mine.find((p) => p.id === replace && p.slot === slot) : undefined;
+
 // Что сделает «Надеть» piece на персонажа — без записи (им же считать подпись «Заменить» / «Надеть»).
 // removed (В1, вместо Р7) — всё, что вытеснило ЭТО «Надеть», в любом слоте: запись стояла в сборке, что держит пул
 // (usedIn — все варианты и «По статам»), а с новой — ни в одной. Только если новая встала (её держит пул); не встала —
@@ -731,12 +735,18 @@ const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).m
 // marks — пусто: исключение Р19 (цель примерки — «Собираю», иначе после примерки вещь «больше не нужна») больше не нужно
 // — цель держит свою сборку и без примерки (held — все варианты); поле уходит вместе с примеркой билда (шаг 10).
 // began — тост «Начал собирать …»: варианты, которые собираются и без примерки и с ней начаты, а до неё — нет (начало
-// по вещам, Р14, Р18). pre — play(mine, po), если уже посчитан (вид пула)
+// по вещам, Р14, Р18). pre — play(mine, po), если уже посчитан (вид пула).
+// replace — id записи из «Примерить замену» (режим «для героя», TryOn.replace; решение владельца «заменить в любом
+// случае» — (а)): она уходит всегда, лучше новая или хуже, остальное — по В1 с пулом уже без неё. Записи нет в его пуле
+// (чужая, уже убранная) или она другого слота (слот на форме сменили) — как без replace
 export interface PutPlan { removed: Piece[]; marks: string[]; began: string[] }
-export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play): PutPlan {
-  const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...mine, piece], po);
+export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play, replace?: string | null): PutPlan {
+  const out = replaceOf(mine, piece.slot, replace);
+  const rest = out ? mine.filter((p) => p !== out) : mine;
+  const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...rest, piece], po);
   const was = usedIn(before), now = usedIn(after);
-  const removed = now.has(piece.id) ? mine.filter((p) => was.has(p.id) && !now.has(p.id)) : [];
+  const placed = now.has(piece.id);
+  const removed = mine.filter((p) => p === out || (placed && was.has(p.id) && !now.has(p.id)));
   const began = after.own.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
   return { removed, marks: [], began };
 }
@@ -744,17 +754,17 @@ export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece,
 // Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
 // (poolVs). Та же новая запись, что создаст putOn (номер — следующий за seq), те же отметки и примерка
 const seqOf = (st: PoolStore) => st.seq ?? Math.max(0, ...Object.keys(st.pieces).map(numOf));
-export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput): PutPlan | null {
+export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, replace?: string | null): PutPlan | null {
   const cp = view.of(charId);
   if (!cp) return null;
   const { piece } = newPiece({ ...EMPTY_GEAR, seq: seqOf(view.st) }, x, '');
-  return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp);
+  return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp, replace);
 }
 
 // Надеть вещь на персонажа: record — та же запись, что у другого («Она же — и у Rin»), иначе новая — всегда, даже если
 // у него такая же: в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01), лишнюю вытеснит planPut.
-// Запись record уже в его пуле — ничего не меняется
-export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { record?: Piece; tryOn?: string | null; at?: string } = {}): PutResult {
+// Запись record уже в его пуле — ничего не меняется. replace — «Примерить замену» (planPut): эта запись уходит всегда
+export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { record?: Piece; tryOn?: string | null; at?: string; replace?: string | null } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const twin = mine.find((p) => p.id === opts.record?.id);
@@ -764,7 +774,7 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
     ? { st: st.pieces[opts.record.id] ? st : { ...st, pieces: { ...st.pieces, [opts.record.id]: opts.record } }, piece: st.pieces[opts.record.id] ?? opts.record }
     : newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed, marks, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }) : { removed: [], marks: [], began: [] };
+  const { removed, marks, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks, tryOn: opts.tryOn }, undefined, opts.replace) : { removed: [], marks: [], began: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...was.filter((id) => !gone.has(id)), piece.id];
   const next = gc({

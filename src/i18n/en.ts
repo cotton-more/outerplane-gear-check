@@ -608,6 +608,7 @@ export const en: Texts = {
     } as Record<string, string>)[kind] ?? '',
     butWear: (kind, name) => `but ${kind === 'fill' ? `${name}'s slot is empty` : `better than what ${name} wears`}: wear it until you find better`,
     offBuild: (build, set, combos) => (set ? `Not for ${build}: ${set} isn't in its combos.` : `Not for ${build}: it needs ${combos}.`),
+    offHero: (name, set) => `${name} doesn't need it: ${set} isn't in ${name}'s builds.`,
     offStats: (name) => `It fits ${name} by stats — "Equip" puts it in "By stats".`,
     noStats: (name) => `This piece gives ${name} nothing: no useful stats.`,
     noClass: (name) => `${name} can't wear this item: it's for another class.`,

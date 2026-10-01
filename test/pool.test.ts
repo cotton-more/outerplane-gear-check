@@ -1223,6 +1223,68 @@ describe('правка в шторке пересобирает, но не чи�
 });
 
 // Случаи владельца (прогон 1.4), вещи — свои, не из его кода: персонаж одет не в сеты своих билдов
+// Шаг 6 «Оценка — единственный ввод»: «Примерить замену» → режим героя с TryOn.replace (решение владельца «заменить
+// в любом случае» — (а)): кнопка «Заменить» всегда, «Надеть» убирает эту запись, лучше новая или хуже
+describe('режим героя с replace: «Надеть» заменяет эту запись', () => {
+  const store = (pieces: Piece[]): GearStore =>
+    ({ ...EMPTY_GEAR, seq: pieces.length + 100, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [caren.id]: pieces.map((p) => p.id) } });
+  // Transistone: у Caren Speed-шлем A (EFF) на T4; в игре EFF перебросили в CHC — A′ введён заново, слабее A
+  const pieces = () => [
+    P('helmet', 'Speed', { 'DEF%': 4, CHD: 3, SPD: 2, EFF: 2 }, 4), P('armor', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 2 }, 4),
+    P('gloves', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 2 }, 4),
+  ];
+  const A2: ItemInput = { slot: 'helmet', grade: 'unique', setId: set('Speed'), itemKey: null, main: null, subs: { 'DEF%': 2, CHD: 2, SPD: 1, CHC: 1 }, bt: 0 };
+  const vsOf = (st: GearStore, replace?: string) => charVs(ctx, poolView(ctx, st), caren.id, A2, undefined, { explicit: true, replace })!;
+
+  it('без replace A′ хуже A: кнопки нет', () => {
+    expect(vsOf(store(pieces())).useful).toBe(false);
+  });
+
+  it('с replace = A — кнопка «Заменить» есть (Р4 не действует)', () => {
+    const ps = pieces();
+    const cv = vsOf(store(ps), ps[0].id);
+    expect({ useful: cv.useful, replaces: cv.replaces }).toEqual({ useful: true, replaces: true });
+  });
+
+  it('«Надеть» с replace — A убран, A′ в пуле', () => {
+    const ps = pieces();
+    const r = putOn(ctx, store(ps), caren.id, A2, { replace: ps[0].id });
+    expect({ removed: r.removed.map((p) => p.id), pool: r.st.pools[caren.id] }).toEqual({ removed: [ps[0].id], pool: [ps[1].id, ps[2].id, r.id] });
+  });
+
+  it('«Вернуть» — хранилище как до «Надеть»: A на прежнем месте, запись та же', () => {
+    const st = store(pieces());
+    const r = putOn(ctx, st, caren.id, A2, { replace: st.pools[caren.id][0] });
+    const back = undoPut(r.st, caren.id, r);
+    expect({ pools: back.pools, pieces: back.pieces }).toEqual({ pools: st.pools, pieces: st.pieces });
+  });
+
+  it.each([
+    ['чужой id (запись другого героя)', (_ps: Piece[], st: GearStore) => {
+      const rin = char('Rin');
+      const other = P('helmet', 'Speed', GOOD);
+      return { st: { ...st, pieces: { ...st.pieces, [other.id]: other }, pools: { ...st.pools, [rin.id]: [other.id] } }, id: other.id };
+    }],
+    ['уже убранный id', (ps: Piece[], st: GearStore) => ({ st: { ...st, pools: { [caren.id]: st.pools[caren.id].filter((x) => x !== ps[0].id) } }, id: ps[0].id })],
+    ['запись другого слота', (ps: Piece[], st: GearStore) => ({ st, id: ps[1].id })],
+  ])('replace — %s: как без replace', (_, make) => {
+    const ps = pieces();
+    const { st, id } = make(ps, store(ps));
+    const plain = vsOf(st), rep = vsOf(st, id);
+    expect({ useful: rep.useful, replaces: rep.replaces }).toEqual({ useful: plain.useful, replaces: plain.replaces });
+    expect(putOn(ctx, st, caren.id, A2, { replace: id }).removed).toEqual(putOn(ctx, st, caren.id, A2).removed);
+  });
+
+  it('A′ лучше A: с replace убирается A и вытесненное по В1, как без replace', () => {
+    const ps = pieces();
+    const better: ItemInput = { ...A2, subs: { 'DEF%': 5, CHD: 4, SPD: 3, CHC: 4 }, bt: 4 };
+    const st = store(ps);
+    const plain = putOn(ctx, st, caren.id, better), rep = putOn(ctx, st, caren.id, better, { replace: ps[0].id });
+    expect(plain.removed.map((p) => p.id)).toEqual([ps[0].id]);
+    expect(rep.removed.map((p) => p.id)).toEqual([ps[0].id]);
+  });
+});
+
 describe('«По статам»: случаи владельца', () => {
   it('Core Fusion Eternal (Speed ×4): три Effectiveness, ни одной Speed — «По статам»; случайный Effectiveness ×2 считается', () => {
     const cf = char('Core Fusion Eternal');
