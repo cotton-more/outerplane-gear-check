@@ -462,10 +462,11 @@ function putsOn(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: Item
   return !!o && o.used && holdsKind(o);
 }
 
-// «ломает»: куда ещё одна вещь распавшегося сета вернула бы его (и нужна ли она на T4). «Найди ещё … на T4» — только
-// в слоты, где после этого у новой «Надеть» (П2): найденная — та же вещь, что в проверке раскладки (сета, на T4, без
-// сабстатов: «Надеть» даёт даже пустая найденная — заслуга самой новой), — в пул, и исход новой по нему. Своя вещь
-// слота, сделанная T4, не в счёт: текст — «найдёшь ещё»
+// «ломает»: куда ещё одна вещь распавшегося сета вернула бы его (и нужна ли она на T4). «Найди ещё …» (и «… на T4») —
+// только в слоты, где после этого у новой «Надеть» (П2; без T4 — решение владельца 2026-10-01): найденная — та же вещь,
+// что в проверке раскладки (сета, без сабстатов: «Надеть» даёт даже пустая найденная — заслуга самой новой; Breakthrough
+// — T4 или, как у вещи с формы, не указан), — в пул, и исход новой по нему. Нет слотов без T4 — пробуем на T4. Своя
+// вещь слота, сделанная T4, не в счёт: текст — «найдёшь ещё»
 function fixFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: ItemInput, forced: Assembly, was: Assembly, set: string): Outcome['fix'] {
   const xSlot = x.slot;
   for (const t4 of [false, true]) {
@@ -476,8 +477,7 @@ function fixFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x: Item
       const s = armorScore(ctx, c, v, vc(ctx, c, v), arm);
       const rows = bonusRows(ctx.idx.SET, arm.filter((e): e is Entry => !!e)).map(rowKey);
       if (!(hs(s, was) >= 0 && was.bonuses.filter((r) => r.set === set).every((r) => rows.includes(rowKey(r))))) return false;
-      if (!t4) return true;
-      const found: Piece = { id: '#fix', slot, grade: 'unique', setId: set, itemKey: null, main: null, yellow: {}, lit: {}, bt: 4, at: '' };
+      const found: Piece = { id: '#fix', slot, grade: 'unique', setId: set, itemKey: null, main: null, yellow: {}, lit: {}, bt: t4 ? 4 : null, at: '' };
       return putsOn(ctx, c, v, [...pieces, found], x);
     });
     if (slots.length) return { set, slots, t4, mark: false, make: false, pieces: [], which: [] };

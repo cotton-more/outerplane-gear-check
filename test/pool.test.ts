@@ -765,6 +765,30 @@ describe('совет «отметь T4» для любого сета (Р20)', (
     expect(r).toMatchObject({ kind: 'breaks', fix: { set: set('Speed'), slots: ['helmet', 'armor'], t4: true, mark: false } });
   });
 
+  // шаг 10 (владелец 2026-10-01): «найди ещё {set}-вещь» без T4 — то же правило П2: слот в совете, только если с пустой
+  // найденной вещью сета (без сабстатов, Breakthrough не указан) в нём у новой «Надеть». Пул: Immunity-шлем и -броня,
+  // Speed-перчатки и -ботинки; новая — Speed-шлем, Immunity ×2 распадается
+  const immuPool = (speed: Subs) => [
+    P('helmet', 'Immunity', { 'DEF%': 2, CHC: 2, CHD: 1 }), P('armor', 'Immunity', { 'DEF%': 2, CHC: 2 }),
+    P('gloves', 'Speed', speed), P('shoes', 'Speed', speed),
+  ];
+  const HELMET_X = X('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+
+  it('«найди ещё Immunity-вещь: перчатки или ботинки» (без T4) пропал: с пустой найденной она не встаёт («на уровне»), «Надеть» нет', () => {
+    const pcs = immuPool({ 'DEF%': 2, CHC: 2 });
+    const r = rowOf(pcs, HELMET_X);
+    expect(r).toMatchObject({ kind: 'breaks', broken: set('Immunity'), fix: null });
+    const after = (slot: ArmorSlot) => rowOf([...pcs, P(slot, 'Immunity', {})], HELMET_X);
+    expect((['gloves', 'shoes'] as ArmorSlot[]).map((sl) => [after(sl).kind, after(sl).used, puts(after(sl))])).toEqual([['eq', false, false], ['eq', false, false]]);
+  });
+
+  it('сторож: Speed-перчатки и -ботинки слабые — совет «найди ещё Immunity-вещь» (без T4) прежний, с пустой найденной — «Надеть»', () => {
+    const pcs = immuPool(JUNK);
+    const r = rowOf(pcs, HELMET_X);
+    expect(r).toMatchObject({ kind: 'breaks', fix: { set: set('Immunity'), slots: ['gloves', 'shoes'], t4: false, mark: false } });
+    for (const sl of r.fix!.slots) expect(puts(rowOf([...pcs, P(sl, 'Immunity', {})], HELMET_X))).toBe(true);
+  });
+
   it('перебор (3000 пулов вокруг шага 14): каждый «отметь» / «найди ещё на T4» выполнен — у новой «Надеть» (П2); «отметь» — кратчайший, вещи без Breakthrough не в её слоте', () => {
     const r7 = lcg(7);
     const rnd = (n: number) => Math.floor(r7() * n);

@@ -141,14 +141,14 @@ holds the stamp and where the piece goes into the assembly, or when the piece st
   segments weighted by chain place, counting the Reforges ahead;
 - **on par** — including "on par: Speed ×2 at T4", when the new piece, until it's T4, would switch the bonus off;
 - **breaks a set** — better by segments, but it fits only in a set piece's place and the set falls apart. A line says
-  which piece would fix it — only if the new one would then really get "Equip": "Fits once you find another Penetration
-  piece at T4: helmet or armor" (even the plainest such piece would do). If the character already has such a piece with
-  no Breakthrough set — "Fits once the Speed gloves are marked Breakthrough T4" (or "the Penetration armor and gloves");
-  set below T4 — "…reach Breakthrough T4". Several such pieces in the slot and only one helps — its substats in
-  brackets. In a "Pen mix" without T4, four Penetration pieces make Penetration ×4 (×4 has a bonus at T0 too, ×2 only at
-  T4), and a piece of the other half doesn't fit — the line names the two Penetration pieces to bring to T4. The other
-  half's pieces don't get a "no longer needs it" line meanwhile. No advice — neither a mark nor
-  the plainest found piece would put it in;
+  which piece would fix it — only if the new one would then really get "Equip": "Fits once you find another Immunity
+  piece: gloves or boots" (or "…Penetration piece at T4: helmet or armor") — even the plainest such piece would do. If
+  the character already has such a piece with no Breakthrough set — "Fits once the Speed gloves are marked Breakthrough
+  T4" (or "the Penetration armor and gloves"); set below T4 — "…reach Breakthrough T4". Several such pieces in the slot
+  and only one helps — its substats in brackets. In a "Pen mix" without T4, four Penetration pieces make Penetration ×4
+  (×4 has a bonus at T0 too, ×2 only at T4), and a piece of the other half doesn't fit — the line names the two
+  Penetration pieces to bring to T4. The other half's pieces don't get a "no longer needs it" line meanwhile. No advice
+  — neither a mark nor the plainest found piece would put it in;
 - **stats only** — the piece is not from the build's sets: better than the slot's piece, but it breaks a set — don't equip.
 
 Below — "More: …" with the character's other builds (tap to expand), "Leaves Speed as is", "Also counts toward … — which
