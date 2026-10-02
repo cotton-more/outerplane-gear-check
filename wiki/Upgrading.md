@@ -40,10 +40,11 @@ rated as it is — by the segments lit right now. Did a Reforge or Breakthrough?
 
 ## The 4th substat on Epics
 
-Epics drop with three substats, and the first Reforge adds a fourth — a random one; the other 5 attempts add segments.
+Usually an Epic drops with three substats, and the first Reforge adds a fourth — a random one; the other 5 attempts
+add segments. Some Epics drop with four.
 
 - **Change Stats (Transistone) opens on an Epic only with a 4th substat** — but per the guide they're not worth
   spending on Epics.
-- **You can mark the 4th** on any Epic piece — armor, weapon or accessory: the "+ 4th substat from Reforge" button
+- **You can mark the 4th** on any Epic piece — armor, weapon or accessory: the "+ 4th substat" button
   under the substat rows, on the form and on the piece card. The main and the stats already marked are unavailable
   there: they never roll as the fourth.

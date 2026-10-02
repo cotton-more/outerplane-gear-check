@@ -14,15 +14,16 @@ const ROLLS = [1, 2, 3, 4, 5, 6];
 // нажатие на стат — заменить или убрать его (в окне; сегменты при замене остаются). Отдельной кнопки ✕ нет:
 // рядом с игрой окно узкое, и место нужнее названию стата; снять стат можно и повторным нажатием в сетке.
 // Добавляют сабстаты сеткой над строками: строки растут вниз, и сетка при вводе не сдвигается.
-// У Epic-брони с тремя — кнопка 4-го сабстата от Reforge: на телефоне сетку к этому времени уже сменила карточка.
+// У Epic-брони с тремя — кнопка 4-го сабстата (бывает от первого Reforge или сразу с дропа): на телефоне сетку к этому
+// времени уже сменила карточка.
 // Нажатие, с которым сумма уровней ушла бы выше предела грейда (logic/subs levelCap), не срабатывает — под строками
 // строка «больше N не бывает»; уходит со следующей правкой сабстатов (новый объект subs) или сменой грейда. То же —
 // у добавления сабстата сеткой и «+ 4-й» (EvalPanel), поэтому «упёрлось» хранит EvalPanel: cap и onCap. Строка
 // появилась — прокрутка к ней ровно настолько, чтобы её было видно (на форме — над нижней плашкой, eval.css), без анимации
 export type CapAt = { subs: Subs; grade: Grade }; // на чём нажатие упёрлось в предел
 
-export function SubRows({ subs, grade, epic, fourth, cap, onCap, dispatch, onPick, onAddFourth }: {
-  subs: Subs; grade: Grade; epic: boolean; fourth: boolean; cap: CapAt | null; onCap: (at: CapAt) => void;
+export function SubRows({ subs, grade, fourth, cap, onCap, dispatch, onPick, onAddFourth }: {
+  subs: Subs; grade: Grade; fourth: boolean; cap: CapAt | null; onCap: (at: CapAt) => void;
   dispatch: Dispatch<Action>; onPick: (editing: string) => void; onAddFourth: () => void;
 }) {
   const t = useT();
@@ -36,13 +37,12 @@ export function SubRows({ subs, grade, epic, fourth, cap, onCap, dispatch, onPic
   };
   return (
     <div className="subrows" {...tour('rows')}>
-      {keys.map((k, i) => {
+      {keys.map((k) => {
         const r = subs[k] || 1;
         return (
           <div key={k} className="subrow">
             <button type="button" className={`pick subkey${FLAT.has(k) ? ' flat' : ''}`} onClick={() => onPick(k)} aria-label={t.ui.subReplace(subLabel(k))} {...tourItem(k)}>
               <StatIcon stat={k} /><span className="lab">{subLabel(k)}</span>
-              {epic && i === MAX_SUBS - 1 && <span className="subtag">Reforge</span>}
             </button>
             <span className="roll-b" role="group" aria-label={t.ui.subYellow(subLabel(k))}>
               {ROLLS.map((n) => (

@@ -132,7 +132,7 @@ Tap a piece to fix it after upgrading in the game. The edit is narrow — only w
 - **segments** — how many are lit on the substat in the game, 1–6, with no yellow/orange split. A tap sets the number,
   tapping it again lowers it by one. A piece's segments add up to at most 22 on a Legendary and 17 on an Epic;
 - **"T4"** — you did Breakthrough T4; off — T0–T3 (an Epic weapon or accessory has none);
-- **"+ 4th substat from Reforge"** on an Epic with three — the first Reforge added a fourth;
+- **"+ 4th substat"** on an Epic with three — the first Reforge added a fourth;
 - **Transistone** changed a stat — that's not an edit: enter the piece again and "Equip", and "Remove from Caren" this
   one;
 - **"Try a replacement"** — rating for Caren: "Replace" removes exactly this piece;

@@ -154,7 +154,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={addSub} />}
         </div>
         {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
-        <SubRows subs={s.subs} grade={s.grade} epic={epic} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
+        <SubRows subs={s.subs} grade={s.grade} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
       </div>
 
       <div className="actions">

@@ -31,7 +31,7 @@ from Sevih, who runs outerpedia.
 
 ## Tips and what's new
 
-Some things are easy to miss: the first tap in the grid for an accessory, the 4th substat after Reforge, replacing a
+Some things are easy to miss: the first tap in the grid for an accessory, the 4th substat on an Epic, replacing a
 stat in its row. The app shows a short tip once, when you first get there: one at a time, at most three per launch, and
 only after a pause in tapping. "Got it", or a tap on what the tip points at, and it won't come back. After an update, a
 "New: …" strip lists what changed; "Later" keeps a dot on ☰ and Help until you look. Tips are listed in Help, where they
@@ -82,8 +82,8 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 
 ## 4th substat on Epic
 
-Epics drop with three substats; the first Reforge adds a fourth. Did a Reforge — mark the new stat with
-"+ 4th substat from Reforge" under the rows — on armor, weapons and accessories. The verdict takes the piece as it
+Usually an Epic drops with three substats and the first Reforge adds a fourth; some drop with four. If the piece has
+one — mark it with "+ 4th substat" under the rows — on armor, weapons and accessories. The verdict takes the piece as it
 is: it doesn't guess what a Reforge will roll — see [Upgrading](Upgrading#reforge).
 
 Next: [Fast cleanup](Fast-cleanup) · [Reading the verdict](Reading-the-verdict)
