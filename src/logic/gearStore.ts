@@ -6,7 +6,7 @@ import { GRADES, SLOTS, isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import { makeCtx } from './context';
 import { normalizeStored, type Normalized } from './fusion';
-import { buildKey, gc, MAX_LIT, type Bt, type GearStore, type Mark, type Piece } from './gear';
+import { buildKey, gc, MAX_LIT, type Bt, type GearStore, type Mark, type Piece, type Worn } from './gear';
 import { isStats, play } from './pool';
 import { MAX_SUBS, type Subs } from './subs';
 
@@ -79,7 +79,8 @@ const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as con
 // перенос v1 → v2. Ростер и Core Fusion (logic/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
 // (находка 16)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
-  const { builds, v: _, ...rest } = v1;
+  // надетого и выбранного билда в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
+  const { builds, v: _, worn: _w, aim: _g, ...rest } = v1;
   const pools: Record<string, string[]> = {};
   const marks: Record<string, Mark> = {};
   for (const k of Object.keys(builds).sort()) {
@@ -108,7 +109,22 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
 const poolIds = (x: unknown): unknown[] =>
   Array.isArray(x) ? x : typeof x === 'string' ? [x] : x && typeof x === 'object' ? Object.values(x) : [];
 
-// v2: пулы — массивы строк, id только существующих вещей, без повторов; отметки — 'want' / 'skip'
+// надетое и выбранный билд из сырых данных: только строки, слот — из данных; что надето не из пула героя или не в
+// своём слоте и герои без пула — отбросит gc (syncWorn). Отброшенное — «прочитано не целиком» (readsWhole)
+const record = (x: unknown): Record<string, unknown> => (x && typeof x === 'object' && !Array.isArray(x) ? x as Record<string, unknown> : {});
+function restoreWorn(raw: unknown): Record<string, Worn> {
+  const out: Record<string, Worn> = {};
+  for (const [c, w] of Object.entries(record(raw))) {
+    const slots = Object.entries(record(w)).filter(([slot, id]) => typeof id === 'string' && SLOTS.some((s) => s.id === slot));
+    if (slots.length) out[c] = Object.fromEntries(slots);
+  }
+  return out;
+}
+const restoreAim = (raw: unknown): Record<string, string> =>
+  Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
+
+// v2: пулы — массивы строк, id только существующих вещей, без повторов; отметки — 'want' / 'skip'; надетое и билд —
+// restoreWorn / restoreAim
 function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
   const pieces = restorePieces(r.pieces, idx);
   const pools: Record<string, string[]> = {};
@@ -119,10 +135,12 @@ function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
   const marks = Object.fromEntries(Object.entries((r.marks && typeof r.marks === 'object' ? r.marks : {}) as Record<string, unknown>)
     .filter(([, m]) => m === 'want' || m === 'skip')) as Record<string, Mark>;
   const autoNew = Array.isArray(r.autoNew) ? r.autoNew.filter((k): k is string => typeof k === 'string') : [];
-  const { marks: _m, autoNew: _a, ...rest } = r;
+  const worn = restoreWorn(r.worn), aim = restoreAim(r.aim);
+  const { marks: _m, autoNew: _a, worn: _w, aim: _g, ...rest } = r;
   return gc({
     ...rest, v: 2, seq: seqOf(r, pieces), pieces, pools,
     ...(Object.keys(marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
+    ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(aim).length ? { aim } : {}),
   });
 }
 
@@ -183,9 +201,17 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
   return Object.keys(st.pieces).length ? st : null;
 }
 
-// «Вернуть» перехода (logic/fusion switchFusion): вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем
-export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[] }): GearStore {
+// «Вернуть» перехода (logic/fusion switchFusion): вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем.
+// Надетое base: в слоте, где на fusion надета одна из ушедших к base вещей, — она (выбор за эти секунды); в остальных —
+// r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
+// копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Выбранного билда у base нет —
+// он не переходил, а без пула не хранится
+export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;
   const pool = (st.pools[fusion] ?? []).filter((id) => r.had.includes(id) || !r.moved.includes(id));
-  return gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool } });
+  const own = st.worn?.[fusion] ?? {};
+  const back = Object.entries(own).filter(([, id]) => id && r.moved.includes(id) && !r.had.includes(id));
+  const w: Worn = { ...r.worn, ...Object.fromEntries(back) };
+  const worn = Object.keys(w).length ? { ...st.worn, [base]: w } : st.worn;
+  return gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
 }

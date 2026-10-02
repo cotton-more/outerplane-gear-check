@@ -38,7 +38,10 @@ export type Mark = 'want' | 'skip'; // «Собираю» / «Не собира�
 // но старая запись (из прежних версий) может быть в пулах нескольких героев — делится при правке (updateIn). marks — «Собираю» / «Не собираю»: ключ — билд целиком
 // (buildKey) или вариант связки (buildKey#подпись, logic/variants). autoNew — варианты, которые после переноса v1
 // собираются сами, а в v1 начаты не были: разовая подсказка в карточке. Незнакомые поля (v1builds — билды v1 как
-// были, следующая версия) переносятся как есть
+// были, следующая версия) переносятся как есть. worn — что надето на персонаже: слот → id записи его пула (надетое ⊂
+// пул, слот записи = ключ; syncWorn). aim — выбранный билд персонажа: ключ варианта (Variant.key, «По статам» —
+// charId/#stats); только у героя с пулом. Пустых worn и aim не храним
+export type Worn = Partial<Record<SlotId, string>>;
 export interface GearStore {
   v: 2;
   seq: number;                        // счётчик id вещей
@@ -46,6 +49,8 @@ export interface GearStore {
   pools: Record<string, string[]>;
   marks?: Record<string, Mark>;
   autoNew?: string[];
+  worn?: Record<string, Worn>;
+  aim?: Record<string, string>;
   [extra: string]: unknown;
 }
 
@@ -68,17 +73,45 @@ export function gearedChars(st: GearStore): Map<string, number> {
 // у кого в пуле эта запись
 export const holdersOf = (st: GearStore, id: string): string[] => Object.keys(st.pools).filter((c) => st.pools[c].includes(id));
 
-// вещи, которых нет ни в одном пуле, из хранилища убираем; пустые пулы — тоже
+// вещи, которых нет ни в одном пуле, из хранилища убираем; пустые пулы — тоже; затем надетое — по пулам (syncWorn)
 export function gc(st: GearStore): GearStore {
   const pools = Object.fromEntries(Object.entries(st.pools).filter(([, ids]) => ids.length));
   const used = new Set(Object.values(pools).flat());
   const pieces = Object.fromEntries(Object.entries(st.pieces).filter(([id]) => used.has(id)));
-  return { ...st, pieces, pools };
+  return syncWorn({ ...st, pieces, pools });
 }
 
-// Р16: сняли звезду с героя, у которого есть вещи, и сказали «Да, убрать» — его пул, отметки «Собираю» и подсказки
-// autoNew уходят; записи, которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
-export interface Dropped { charId: string; ids: string[]; pieces: Record<string, Piece>; marks: Record<string, Mark>; autoNew: string[]; at: number }
+// надетое ⊂ пул: из worn — записи не из пула героя, со слотом не того типа, герои без пула и пустые; из aim — герои
+// без пула. Ничего не убрано — то же хранилище; поле опустело — убираем его (пустых не храним)
+export function syncWorn(st: GearStore): GearStore {
+  if (!st.worn && !st.aim) return st;
+  let cut = false;
+  const worn: Record<string, Worn> = {};
+  for (const [c, w] of Object.entries(st.worn ?? {})) {
+    const pool = st.pools[c] ?? [];
+    const all = Object.entries(w ?? {});
+    const kept = all.filter(([slot, id]) => typeof id === 'string' && pool.includes(id) && st.pieces[id]?.slot === slot);
+    if (kept.length !== all.length || !kept.length) cut = true;
+    if (kept.length) worn[c] = Object.fromEntries(kept);
+  }
+  const aim = Object.fromEntries(Object.entries(st.aim ?? {}).filter(([c]) => st.pools[c]?.length));
+  if (Object.keys(aim).length !== Object.keys(st.aim ?? {}).length) cut = true;
+  if (!cut) return st;
+  const next = { ...st };
+  if (st.worn) { if (Object.keys(worn).length) next.worn = worn; else delete next.worn; }
+  if (st.aim) { if (Object.keys(aim).length) next.aim = aim; else delete next.aim; }
+  return next;
+}
+// надета ли запись на этом герое (для «Вернуть» после «Убрать у X»)
+export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slot'>): boolean => st.worn?.[charId]?.[p.slot] === p.id;
+
+// Р16: сняли звезду с героя, у которого есть вещи, и сказали «Да, убрать» — его пул, отметки «Собираю», подсказки
+// autoNew, надетое и выбранный билд уходят; записи, которые есть и у других, остаются у них (gc). Dropped — всё, что
+// ушло, для «Вернуть»
+export interface Dropped {
+  charId: string; ids: string[]; pieces: Record<string, Piece>; marks: Record<string, Mark>; autoNew: string[]; at: number;
+  worn?: Worn; aim?: string;
+}
 const ofChar = (charId: string, key: string) => key.startsWith(charId + '/');
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
   const ids = st.pools[charId] ?? [];
@@ -93,11 +126,13 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     marks: Object.fromEntries(Object.entries(st.marks ?? {}).filter(([k]) => ofChar(charId, k))),
     autoNew: (st.autoNew ?? []).filter((k) => ofChar(charId, k)),
     at: Object.keys(st.pools).indexOf(charId),
+    ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}), ...(st.aim?.[charId] !== undefined ? { aim: st.aim[charId] } : {}),
   };
   return { st: next, dropped };
 }
-// «Вернуть» после dropChar: записи, пул на прежнем месте, отметки и подсказки — как были. За эти секунды герою успели
-// дать что-то новое — оно остаётся после прежних; отметку успели поставить заново — её не трогаем
+// «Вернуть» после dropChar: записи, пул на прежнем месте, отметки, подсказки, надетое и выбранный билд — как были. За
+// эти секунды герою успели дать что-то новое — оно остаётся после прежних; отметку, надетое в слоте или билд успели
+// выбрать заново — их не трогаем
 export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const pieces = { ...d.pieces, ...st.pieces };
   const pool = [...d.ids.filter((id) => pieces[id]), ...(st.pools[d.charId] ?? []).filter((id) => !d.ids.includes(id))];
@@ -106,10 +141,13 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const marks = { ...d.marks, ...st.marks };
   const autoNew = [...(st.autoNew ?? []), ...d.autoNew.filter((k) => !st.autoNew?.includes(k))];
   const { marks: _m, autoNew: _a, ...rest } = st;
-  return {
+  const worn = d.worn ? { ...st.worn, [d.charId]: { ...d.worn, ...st.worn?.[d.charId] } } : st.worn;
+  const aim = d.aim !== undefined ? { ...st.aim, [d.charId]: st.aim?.[d.charId] ?? d.aim } : st.aim;
+  return syncWorn({
     ...rest, pieces, pools: Object.fromEntries(entries),
     ...(st.marks || Object.keys(d.marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
-  };
+    ...(worn ? { worn } : {}), ...(aim ? { aim } : {}),
+  });
 }
 
 // новая запись вещи с формы: уровень (lit) и Breakthrough — как на форме (поля нет — не указан). yellow — тот же
@@ -133,7 +171,8 @@ export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: Ge
 // После правки уровень один: yellow = min(lit, 4), как у newPiece. Правка — только у этого героя (В9): запись есть и у
 // других (старая общая) — ему копия (copy-on-write): новая запись (seq + 1) на том же месте его пула, у других —
 // прежняя. Пул не чистит (В-А3): ставшее ненужным — «больше не нужна» и «Убрать у X»; «Вернуть» нет — нажатие
-// обратимо тем же нажатием. id — запись после правки: шторка идёт за ним. Ничего не поменялось — то же хранилище.
+// обратимо тем же нажатием. id — запись после правки: шторка идёт за ним; надетая на нём — тоже (worn). Ничего не
+// поменялось — то же хранилище.
 // 4-й сабстат — только допустимый на этом предмете (mains subAllowed, как на форме) и новый.
 // UI ОБЯЗАН снять висящее «Вернуть» соседнего действия при правке (В3: одно на все): undoRemove / undoDrop / undoPut /
 // unfuseChar возвращают запись по id, а её поправили или скопировали
@@ -154,12 +193,14 @@ export function updateIn(idx: Index, st: GearStore, charId: string, id: string, 
   const keys = Object.keys(lit);
   if (bt === p.bt && keys.length === Object.keys(p.lit).length && keys.every((k) => lit[k] === p.lit[k])) return same;
   const edited: Piece = { ...p, yellow: yellowOf(lit), lit, bt, at };
-  if (holdersOf(st, id).length < 2) return { st: { ...st, pieces: { ...st.pieces, [id]: edited } }, id };
+  if (holdersOf(st, id).length < 2) return { st: syncWorn({ ...st, pieces: { ...st.pieces, [id]: edited } }), id };
   // копия: номер — следующий за seq; только безопасное целое и свободный id (gearStore seqOf), иначе копия затёрла бы вещь
   const seq = st.seq + 1, nid = 'p' + seq;
   if (!Number.isSafeInteger(seq) || st.pieces[nid]) return same;
   const pool = st.pools[charId].map((x) => (x === id ? nid : x));
-  return { st: { ...st, seq, pieces: { ...st.pieces, [nid]: { ...edited, id: nid } }, pools: { ...st.pools, [charId]: pool } }, id: nid };
+  const next: GearStore = { ...st, seq, pieces: { ...st.pieces, [nid]: { ...edited, id: nid } }, pools: { ...st.pools, [charId]: pool } };
+  if (isWorn(st, charId, p)) next.worn = { ...st.worn, [charId]: { ...st.worn![charId], [p.slot]: nid } };
+  return { st: syncWorn(next), id: nid };
 }
 
 // только для тестов: записи прежней правки (bt 1–3, оранжевые) и прямые патчи; в приложении правка — updateIn

@@ -5,8 +5,17 @@
 // есть вещи, — в ростере (Р16, normalizeStored).
 // Вещи X: у CF пусто — переходят к CF; у CF есть свои — не заменяем и не дополняем, вещи X убраны из его пула (записи,
 // которые есть и у других, остаются у других). «Собираю» не переносится: билды у героев разные.
+// Надетое (worn) идёт за вещами: всё, что было надето на X, надето и на CF; убраны — не надето. Выбранный билд (aim)
+// не переносится — по той же причине, что «Собираю»; у героя без пула его нет (syncWorn).
 import type { Index } from '../data';
-import { gc, type GearStore } from './gear';
+import { gc, syncWorn, type GearStore, type Worn } from './gear';
+
+// надетое from — к to вместе с вещами; своё надетое to в том же слоте остаётся (его вещи на нём и были)
+function wornTo(worn: GearStore['worn'], from: string, to: string): GearStore['worn'] {
+  if (!worn?.[from]) return worn;
+  const { [from]: w, ...rest } = worn;
+  return { ...rest, [to]: { ...w, ...worn[to] } };
+}
 
 export interface FusionFix {
   base: string;
@@ -29,6 +38,7 @@ export function replacedX(idx: Index, roster: Iterable<string>, pools: GearStore
 export function normalizeFusion(idx: Index, roster: readonly string[], st: GearStore): { roster: string[]; st: GearStore; fixes: FusionFix[] } {
   let list = [...roster];
   let pools = st.pools;
+  let worn = st.worn;
   const fixes: FusionFix[] = [];
   for (const [base, fusion] of Object.entries(idx.FUSED)) {
     const r = new Set(list);
@@ -39,13 +49,14 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
     const { [base]: _, ...rest } = pools;
     const kind = pools[fusion]?.length ? 'removed' : 'moved';
     pools = kind === 'moved' ? { ...rest, [fusion]: ids } : rest;
+    if (kind === 'moved') worn = wornTo(worn, base, fusion);
     fixes.push({ base, fusion, kind, ids });
   }
   if (!fixes.length) return { roster: list, st, fixes };
   // подсказка «теперь собирается сам» у X без вещей не нужна (находка 16)
   const autoNew = st.autoNew?.filter((k) => !fixes.some((f) => k.startsWith(f.base + '/')));
   const { autoNew: _a, ...rest } = st;
-  const next = { ...rest, pools, ...(autoNew?.length ? { autoNew } : {}) };
+  const next = { ...rest, pools, ...(worn ? { worn } : {}), ...(autoNew?.length ? { autoNew } : {}) };
   return { roster: list, st: pools === st.pools && autoNew?.length === st.autoNew?.length ? st : gc(next), fixes };
 }
 
@@ -64,8 +75,9 @@ export function normalizeStored(idx: Index, roster: readonly string[], st: GearS
 export const changed = (n: Pick<Normalized, 'fixes' | 'added'>) => n.fixes.length > 0 || n.added.length > 0;
 
 // окно перехода (звезда, «Надеть», оценка для героя): «Да, Core Fusion X» или «Да, X». to — кого выбрали, from — второй из пары;
-// в ростере — только to (на месте from), вещи from — к to. moved / had — для «Вернуть» (gearStore unfuseChar)
-export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[] }
+// в ростере — только to (на месте from), вещи from — к to, надетое from — тоже (wornTo). moved / had / worn (надетое
+// from до перехода) — для «Вернуть» (gearStore unfuseChar)
+export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[]; worn?: Worn }
 export function switchFusion(idx: Index, roster: readonly string[], st: GearStore, to: string): Switch | null {
   const from = idx.CHAR[to]?.fusionOf ?? idx.FUSED[to];
   if (!from) return null;
@@ -76,7 +88,10 @@ export function switchFusion(idx: Index, roster: readonly string[], st: GearStor
   const had = st.pools[to] ?? [];
   if (!moved.length) return { to, from, roster: list, st, moved, had };
   const { [from]: _, ...rest } = st.pools;
-  return { to, from, roster: list, st: { ...st, pools: { ...rest, [to]: [...had, ...moved.filter((id) => !had.includes(id))] } }, moved, had };
+  const pools = { ...rest, [to]: [...had, ...moved.filter((id) => !had.includes(id))] };
+  const worn = wornTo(st.worn, from, to);
+  const next = syncWorn({ ...st, pools, ...(worn ? { worn } : {}) });
+  return { to, from, roster: list, st: next, moved, had, ...(st.worn?.[from] ? { worn: st.worn[from] } : {}) };
 }
 
 // будет ли окно перехода у героя (звезда, «Надеть», оценка для героя): второй из пары есть — в ростере или с вещами. Его id

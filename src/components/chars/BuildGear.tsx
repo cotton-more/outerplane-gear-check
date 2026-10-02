@@ -17,7 +17,7 @@ import { tryOnPreset } from '../../logic/tryon';
 import { subWeights } from '../../logic/score';
 import { lookFor } from '../../logic/vs';
 import { DROP_LEVEL, MAX_SUBS, levelCap, withinCap, type Subs } from '../../logic/subs';
-import { isStats, markOfVariant, removeFrom, undoRemove, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
+import { isStats, markOfVariant, removeFrom, removeUndo, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
 import { badgeOf, whereUsed } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
 import { buildOfKey, type Variant } from '../../logic/variants';
@@ -228,8 +228,9 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
     if (to !== p.lit[k]) edit({ ...p.lit, [k]: to }, { lit: { [k]: to } });
   };
   const remove = () => {
+    const undo = removeUndo(gear.store, c.id, p);
     gear.set(removeFrom(gear.store, c.id, p.id));
-    onRemoved?.(t.ui.removedFrom(c.name), '', (x) => undoRemove(x, p, [c.id]));
+    onRemoved?.(t.ui.removedFrom(c.name), '', undo);
     onClose();
   };
   const canFourth = p.grade === 'rare' && keys.length === MAX_SUBS - 1;

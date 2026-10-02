@@ -7,7 +7,7 @@ import { SLOTS } from '../../data';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { hasBt, type GearStore, type Piece } from '../../logic/gear';
-import { isStats, removeFrom, undoRemove, type CharPool, type PoolView } from '../../logic/pool';
+import { isStats, removeFrom, removeUndo, type CharPool, type PoolView } from '../../logic/pool';
 import { whereUsed } from '../../logic/poolVs';
 import { buildOfKey } from '../../logic/variants';
 import type { GearApi } from '../../state/useGear';
@@ -32,8 +32,9 @@ export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onR
   };
   const unused = new Set(cp.unused.map((p) => p.id));
   const remove = (p: Piece) => {
+    const undo = removeUndo(gear.store, c.id, p);
     gear.set(removeFrom(gear.store, c.id, p.id));
-    onRemoved?.(t.ui.removedFrom(c.name), '', (x) => undoRemove(x, p, [c.id]));
+    onRemoved?.(t.ui.removedFrom(c.name), '', undo);
   };
   const groups = SLOTS.map(({ id }) => ({ slot: id, list: pieces.filter((p) => p.slot === id) })).filter((g) => g.list.length);
   return (

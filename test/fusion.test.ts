@@ -5,7 +5,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '../src/data';
 import type { Dataset } from '../src/data/types';
-import { buildKey, dropChar, undoDrop, type GearStore, type Piece } from '../src/logic/gear';
+import { buildKey, dropChar, undoDrop, updateIn, type GearStore, type Piece } from '../src/logic/gear';
+import { removeFrom } from '../src/logic/pool';
 import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '../src/logic/fusion';
 import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
@@ -252,5 +253,63 @@ describe('загрузка и код: та же нормализация', () =>
     expect({ pools: r.st.pools, roster: r.roster }).toEqual({ pools: { [CF]: ['p2'] }, roster: [CF] });
     expect(loadGear(JSON.parse(JSON.stringify(raw)), idx, [X]).st).toEqual(r.st);
     expect(encodeGear(r.st).startsWith('OGC-GEAR2 ')).toBe(true);
+  });
+});
+
+// «Надето», шаг 1: надетое X идёт за его вещами к Core Fusion X; выбранный билд (aim) не переходит
+describe('Core Fusion: надетое идёт за вещами', () => {
+  const xAim = buildKey(X, 'Speed');
+  const dressedX = (extra: Partial<GearStore> = {}) =>
+    v2({ [X]: ['p1', 'p2'], ...extra.pools }, { worn: { [X]: { helmet: 'p1' }, ...extra.worn }, aim: { [X]: xAim, ...extra.aim } });
+
+  it('moved: у Core Fusion пусто — надетое X на нём, билда у него нет, у X — ни того, ни другого', () => {
+    const n = normalizeFusion(idx, [X, CF], dressedX());
+    expect({ kind: n.fixes[0].kind, worn: n.st.worn, aim: n.st.aim }).toEqual({ kind: 'moved', worn: { [CF]: { helmet: 'p1' } }, aim: undefined });
+  });
+
+  it('removed: у Core Fusion свои вещи — надетое X убрано, своё надетое Core Fusion — как было', () => {
+    const st = dressedX({ pools: { [CF]: ['p3'] }, worn: { [CF]: { helmet: 'p3' } }, aim: { [CF]: buildKey(CF, 'Speed') } });
+    const n = normalizeFusion(idx, [X, CF], st);
+    expect({ kind: n.fixes[0].kind, worn: n.st.worn, aim: n.st.aim })
+      .toEqual({ kind: 'removed', worn: { [CF]: { helmet: 'p3' } }, aim: { [CF]: buildKey(CF, 'Speed') } });
+  });
+
+  it('«Да, Core Fusion X»: надетое X — на Core Fusion, билда у Core Fusion нет; «Вернуть» — надетое снова на X', () => {
+    const st = dressedX();
+    const sw = switchFusion(idx, [X], st, CF)!;
+    const back = unfuseChar(sw.st, sw.from, sw.to, sw);
+    expect({ worn: sw.st.worn, aim: sw.st.aim, back: back.worn, backAim: back.aim })
+      .toEqual({ worn: { [CF]: { helmet: 'p1' } }, aim: undefined, back: st.worn, backAim: undefined });
+  });
+
+  it('переход, когда у Core Fusion свой надетый шлем: он остаётся; «Вернуть» — у X снова его шлем', () => {
+    const st = dressedX({ pools: { [CF]: ['p3'] }, worn: { [CF]: { helmet: 'p3' } } });
+    const sw = switchFusion(idx, [X, CF], st, CF)!;
+    const back = unfuseChar(sw.st, sw.from, sw.to, sw);
+    expect({ worn: sw.st.worn, back: back.worn }).toEqual({ worn: { [CF]: { helmet: 'p3' } }, back: { [X]: { helmet: 'p1' }, [CF]: { helmet: 'p3' } } });
+  });
+
+  it('«Вернуть» правила Core Fusion из App (moved, без снимка): надетое перешедших — снова на X', () => {
+    const n = normalizeFusion(idx, [X, CF], dressedX());
+    const f = n.fixes[0];
+    expect(unfuseChar(n.st, f.base, f.fusion, { moved: f.ids, had: [] }).worn).toEqual({ [X]: { helmet: 'p1' } });
+  });
+
+  it('после перехода Core Fusion убрал свой надетый шлем: «Вернуть» — у X снова надет его шлем', () => {
+    const st = dressedX({ pools: { [CF]: ['p3'] }, worn: { [CF]: { helmet: 'p3' } } });
+    const sw = switchFusion(idx, [X, CF], st, CF)!;
+    const gone = removeFrom(sw.st, CF, 'p3');
+    expect(unfuseChar(gone, sw.from, sw.to, sw).worn).toEqual({ [X]: { helmet: 'p1' } });
+  });
+
+  // правка общей записи у Core Fusion — ему копия (новая вещь Core Fusion, остаётся у него и надета на нём); X
+  // возвращается его прежняя запись — и надетой
+  it('после перехода Core Fusion поправил общую надетую запись (копия): «Вернуть» — у X надета прежняя, у CF — копия', () => {
+    const st = v2({ [X]: ['p1'], [CAREN]: ['p1'] }, { worn: { [X]: { helmet: 'p1' } } });
+    const sw = switchFusion(idx, [X, CAREN], st, CF)!;
+    const edited = updateIn(idx, sw.st, CF, 'p1', { lit: { SPD: 2 } });
+    const back = unfuseChar(edited.st, sw.from, sw.to, sw);
+    expect({ pools: back.pools, worn: back.worn })
+      .toEqual({ pools: { [X]: ['p1'], [CAREN]: ['p1'], [CF]: [edited.id] }, worn: { [X]: { helmet: 'p1' }, [CF]: { helmet: edited.id } } });
   });
 });
