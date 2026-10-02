@@ -12,7 +12,6 @@ import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { MAX_LIT, hasBt, pieceInput, type Bt, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
 import { itemMains } from '../../logic/mains';
-import { t4Only } from '../../logic/builds';
 import { tryOnPreset } from '../../logic/tryon';
 import { subWeights } from '../../logic/score';
 import { lookFor } from '../../logic/vs';
@@ -21,6 +20,7 @@ import { isStats, markOfVariant, removeFrom, removeUndo, type Assembly, type Cha
 import { badgeOf, whereUsed } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
 import { buildOfKey, type Variant } from '../../logic/variants';
+import { freeSlots, missingParts, t4Parts } from '../../logic/wearing';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
 import { tour, tourItem } from '../../tour/anchors';
@@ -99,9 +99,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
     return t.ui.bonusRow(setName(r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
   });
   // часть связки с бонусом только на T4, а его нет: «Speed — 1 из 2 · бонус ×2 только на T4»
-  const cnt = (set: string) => ARMOR.filter((sl) => a.slots[sl]?.setId === set).length;
-  const t4Lines = combo.filter((p) => t4Only(idx.SET[p.set], p.n) && !a.bonuses.some((r) => r.set === p.set && r.n >= p.n))
-    .map((p) => t.ui.partT4(setName(p.set), Math.min(cnt(p.set), p.n), p.n));
+  const t4Lines = t4Parts(ctx, a).map((p) => t.ui.partT4(setName(p.set), p.k, p.n));
   // «Слабее всех»: вся броня занята — самая слабая по ценности (вещь не из связки слабее любой) и что ей искать
   const armor = ARMOR.map((slot) => ({ slot, e: a.slots[slot] }));
   const weak = !stats && armor.every((x) => x.e?.piece)
@@ -113,8 +111,8 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   // «Не хватает»: части связки — куда (слоты не под этой связкой) и нужен ли T4. По достижимой сборке: того, что уже
   // есть в пуле, не просим, даже если раскладка ради статов его не взяла (Speed ×4 отдал слот Immunity-вещи)
   const reach = cp.reach.get(v.key) ?? a;
-  const free = ARMOR.filter((sl) => reach.roles[sl] !== 'set');
-  const missing = reach.missing.map((m) => t.ui.missing(setName(m.set), m.n - m.have, free as string[], t4Only(idx.SET[m.set], m.n)));
+  const free = freeSlots(reach);
+  const missing = missingParts(ctx, reach).map((m) => t.ui.missing(setName(m.set), m.need, m.slots, m.t4));
   const first = c.builds[0]?.sets[0]?.[0];
   const where = (id: string) => {
     const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStatsQ : x.name));

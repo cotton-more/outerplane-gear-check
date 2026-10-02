@@ -44,7 +44,7 @@ const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
 const GEAR: GearKind[] = ['weapon', 'accessory'];
 const NEWEST = 1e9; // вещь с формы — всегда новее записанных: при равенстве она ничего не вытесняет
 const EPS = 1e-9;
-const LOST_MIN = 0.01; // вытесненное дешевле — «ничего не стоило»: выигрыш делится на него, как в сравнении пары (vs)
+export const LOST_MIN = 0.01; // вытесненное дешевле — «ничего не стоило»: выигрыш делится на него, как в сравнении пары (vs)
 
 // «По статам»: вариант без связки с цепочкой, которая у большинства билдов персонажа (при равенстве — первого)
 export const STATS = '#stats';
@@ -202,6 +202,18 @@ function armorScore(ctx: Ctx, c: Char, v: Variant, x: VCache, arm: readonly (Ent
 // лучшая по ценности (при равенстве старшая): такие вещи одинаково влияют на связку и бонусы (prune: false — для теста)
 export function assemble(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[], opts: { force?: Entry; prune?: boolean } = {}): Assembly {
   return search(ctx, c, v, entries, opts, false).asm;
+}
+
+// Сборка из вещей как есть — по одной на слот (последняя из entries): без перебора и без выбора лучшей. Для надетого героя
+// («Надето», logic/wearing): те же счёт, бонусы и роли, что у assemble, но раскладку задают вещи, а не поиск
+export function assembleFixed(ctx: Ctx, c: Char, v: Variant, entries: readonly Entry[]): Assembly {
+  const slots: Partial<Record<SlotId, Entry>> = {};
+  for (const e of entries) slots[e.slot] = e;
+  const s = armorScore(ctx, c, v, vc(ctx, c, v), ARMOR.map((slot) => slots[slot] ?? null));
+  const gear = GEAR.map((slot) => slots[slot]).filter((e): e is Entry => !!e);
+  return report(ctx, v, slots, {
+    ...s, total: s.total + gear.reduce((n, e) => n + e.v, 0), filled: s.filled + gear.length, older: s.older + gear.reduce((n, e) => n + e.num, 0),
+  });
 }
 
 // Выбранная раскладка и достижимая (Р1): та, где на связку работает больше всего вещей пула — последняя вещь сета-стата
@@ -472,7 +484,7 @@ export interface CharOutcome {
                       // и тихая строка «По статам», где она встаёт с исходом «пустой слот» или «лучше» (Р11)
 }
 
-const rowKey = (r: BonusRow) => `${r.set}:${r.n}:${r.tier}`;
+export const rowKey = (r: BonusRow) => `${r.set}:${r.n}:${r.tier}`;
 const hs = (a: Pick<Assembly, 'hard' | 'live' | 'soft'>, z: Pick<Assembly, 'hard' | 'live' | 'soft'>) =>
   a.hard !== z.hard ? a.hard - z.hard : a.live !== z.live ? a.live - z.live : a.soft - z.soft;
 const byDelta = (d: number | null): OutcomeKind => ((d ?? 0) <= -MARGIN ? 'down' : 'eq');
@@ -579,7 +591,7 @@ function rivalOf(es: readonly Entry[], X: Entry): Entry | null {
 // T4 новой — 4P T0 → 2P T4 + 4P T4 той же ценности, потери нет. Полные строки в знаменателе завышали цену замены (вещь
 // «на уровне», где она «лучше», — ложное понижение). Вид исхода с T4 и на T0 может разойтись, когда раскладки разные
 // (с T4 «на уровне» по паре или при двух вытесненных) — так и есть: штамп и «Надеть» от T4 не хуже (перебор шага 2)
-function lostBonusValue(ctx: Ctx, c: Char, W: VCache['W'], lostBonus: readonly BonusRow[], gainedBonus: readonly BonusRow[]): number {
+export function lostBonusValue(ctx: Ctx, c: Char, W: VCache['W'], lostBonus: readonly BonusRow[], gainedBonus: readonly BonusRow[]): number {
   const by = new Map<string, number>();
   for (const r of lostBonus) by.set(r.set, (by.get(r.set) ?? 0) + bonusValue(ctx, c, W, r));
   for (const r of gainedBonus) by.set(r.set, (by.get(r.set) ?? 0) - bonusValue(ctx, c, W, r));
