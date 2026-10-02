@@ -10,11 +10,12 @@ import { isArmor, SLOTS } from '../data';
 import type { ArmorSlot, Char, SetPiece, SlotId } from '../data/types';
 import { t4Only } from './builds';
 import type { Ctx } from './context';
-import { aimOf, type AimShown } from './aim';
+import { aimOf, type AimShown, type AimWhy } from './aim';
 import { pieceInput, type GearStore, type Piece } from './gear';
 import { itemMains } from './mains';
 import {
-  assembleFixed, entriesFor, isStats, LOST_MIN, lostBonusValue, markOfVariant, rowKey, type Assembly, type CharPool, type Entry,
+  assembleFixed, entriesFor, isStats, LOST_MIN, lostBonusValue, markOfVariant, rowKey, undoWear, wearFromPool,
+  type Assembly, type CharPool, type Entry, type WearResult,
 } from './pool';
 import { subWeights } from './score';
 import { bonusRows, bonusWeights, type BonusRow } from './setBonus';
@@ -122,7 +123,7 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, cp: CharPool): WornVi
   return { ...base, slots, set: parts.length ? { k: progressOf(armor, parts), n: parts.reduce((n, p) => n + p.n, 0) } : null, t4: t4Parts(ctx, before) };
 }
 
-function tokensOf(ctx: Ctx, c: Char, v: Variant | null, p: Piece | undefined | null): WornToken[] {
+export function tokensOf(ctx: Ctx, c: Char, v: Variant | null, p: Piece | undefined | null): WornToken[] {
   if (!p) return [];
   const W = v ? subWeights(ctx, v.b, c, itemMains(ctx.idx, pieceInput(p))) : null;
   return Object.keys(p.lit).map((key) => ({ key, lit: p.lit[key], credit: W?.get(key)?.credit ?? 0 }));
@@ -207,7 +208,7 @@ export function aimOptions(ctx: Ctx, c: Char, st: GearStore, cp: CharPool): AimO
 export interface RedressPlan {
   v: Variant;
   wear: { piece: Piece; replaces: Piece | null }[];  // «Надень из своих»: вещи раскладки варианта, которые не надеты, по слотам (все 6)
-  remove: Piece[];                                   // «Снимешь»: надетое, которого в раскладке нет
+  remove: Piece[];                                   // «Снимешь»: надетое, которое заменят вещи из «wear»
   missing: MissingPart[];                            // «Не хватает» (как у BuildGear)
   on: BonusRow[];                                    // бонусы, которые включатся: после «Надеть все», а сейчас нет
   off: BonusRow[];                                   // и которые выключатся
@@ -222,8 +223,9 @@ export function redressPlan(ctx: Ctx, c: Char, st: GearStore, cp: CharPool, key:
   for (const slot of SLOT_IDS) {
     const to = layout.slots[slot]?.piece ?? null, was = worn[slot] ?? null;
     if (was && to && same(was, to)) continue;
+    // «Снимешь» — только надетое, которое заменит раскладка; слот без вещи в раскладке остаётся как есть
     if (to) wear.push({ piece: to, replaces: was });
-    if (was) remove.push(was);
+    if (to && was) remove.push(was);
   }
   const wornRows = bonusRows(ctx.idx.SET, armorOf(worn));
   const was = new Set(wornRows.map(rowKey)), will = new Set(layout.bonuses.map(rowKey));
@@ -231,4 +233,33 @@ export function redressPlan(ctx: Ctx, c: Char, st: GearStore, cp: CharPool, key:
     v, wear, remove, missing: missingParts(ctx, cp.reach.get(key) ?? layout),
     on: layout.bonuses.filter((r) => !was.has(rowKey(r))), off: wornRows.filter((r) => !will.has(rowKey(r))),
   };
+}
+
+// «Надеть все N» на экране «Переодеть»: вещи по очереди (каждая — wearFromPool: прежняя надетая слота уходит, если её не
+// держит билд). Не надето ничего — null. results — по порядку, для «Вернуть» (undoWearMany — с конца)
+export interface WearManyResult { st: GearStore; results: WearResult[] }
+export function wearMany(ctx: Ctx, st: GearStore, charId: string, ids: readonly string[]): WearManyResult | null {
+  const results: WearResult[] = [];
+  let cur = st;
+  for (const id of ids) {
+    const r = wearFromPool(ctx, cur, charId, id);
+    if (!r) continue;
+    results.push(r);
+    cur = r.st;
+  }
+  return results.length ? { st: cur, results } : null;
+}
+export const undoWearMany = (st: GearStore, charId: string, r: Pick<WearManyResult, 'results'>): GearStore =>
+  [...r.results].reverse().reduce((x, one) => undoWear(x, charId, one), st);
+
+// --------------------------------------------------------------------------- причина выбора билда («Билды героев»)
+
+// Что показать как причину выбора по правилу: «first» честно читается «вещей билдов нет» только когда у выбранного билда
+// в вещах героя нет ни одной вещи его сетов; иначе ничья с вещами — «tie». Ключ сохранён игроком — null
+export type Reason = AimWhy | { kind: 'tie' };
+export function reasonOf(cp: Pick<CharPool, 'asm'>, aim: AimShown): Reason | null {
+  const w = aim.why;
+  if (!w) return null;
+  if (w.kind === 'first' && (cp.asm.get(aim.key)?.progress ?? 0) > 0) return { kind: 'tie' };
+  return w;
 }

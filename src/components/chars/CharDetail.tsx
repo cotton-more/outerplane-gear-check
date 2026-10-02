@@ -12,10 +12,12 @@ import type { GearApi } from '../../state/useGear';
 import { updateIn, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
 import { isStats, play, setMark, undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '../../logic/pool';
 import { badgeOf } from '../../logic/poolVs';
-import { wornView } from '../../logic/wearing';
+import { redressPlan, undoWearMany, wearMany, wornView } from '../../logic/wearing';
 import type { Variant } from '../../logic/variants';
 import { BuildGear, PieceSheet } from './BuildGear';
 import { PoolList } from './PoolList';
+import { AimSheet } from './AimSheet';
+import { Redress } from './Redress';
 import { WornGear } from './WornGear';
 import { VariantChips } from './VariantChips';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
@@ -44,6 +46,9 @@ interface Props {
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
   onPieceEdit?: (charId: string, was: string, now: string) => void;
   onRateFor?: (c: Char) => void;
+  redress?: string | null;
+  onRedress?: (key: string | null) => void;
+  onChooseAim?: (charId: string, key: string) => void;
 }
 
 // ранг варианта для заголовка и выбора: доля сборки, потом итог сборки, потом порядок outerpedia
@@ -57,7 +62,7 @@ const byRank = (asm: Map<string, { progress: number; need: number; total: number
 };
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor }: Props) {
+export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, redress = null, onRedress, onChooseAim }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -69,6 +74,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     : lead ? (isStats(lead) ? 'stats' : Math.max(0, c!.builds.indexOf(lead.parent))) : 0));
   const [picked, setPicked] = useState<Record<string, string>>({}); // вкладка → выбранный вариант (чипы)
   const [pieceId, setPieceId] = useState<string | null>(null);
+  const [aimOpen, setAimOpen] = useState(false); // шторка «Билд для X»
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
   useEffect(() => { if (!active) setPieceId(null); }, [active]);
   const piece = pieceId ? gear.store.pieces[pieceId] : undefined;
@@ -158,11 +164,27 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     gear.set(r.st);
     onGearToast?.(t.ui.wornAllToast(c.name, Object.keys(r.worn).length), '', (x) => undoWearAll(x, c.id, r));
   };
+  // «Надеть все N» на «Переодеть»: вещи по очереди, одно сообщение; «Вернуть» — все
+  const wearList = (ids: string[]) => {
+    const r = wearMany(ctx, gear.store, c.id, ids);
+    if (!r) return;
+    gear.set(r.st);
+    onGearToast?.(t.ui.wornAllToast(c.name, r.results.length), r.results.some((x) => x.removed.length) ? t.ui.prunedNote : '', (x) => undoWearMany(x, c.id, r));
+  };
   // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
   const cur = wornTab && wv?.variant ? wv.variant : v;
   const enter = onTryOn && wv?.variant ? (slot: SlotId) => onTryOn(c, isStats(wv.variant!) ? wv.variant!.b : wv.variant!.parent, slot, undefined, wv.variant!.sig, false, true) : undefined;
   // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
   const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
+  // «Переодеть»: подвид карточки (App держит выбор — к нему же ведёт «Билды героев»); вариант пропал — обычная карточка
+  const plan = redress && showWorn && b ? redressPlan(ctx, c, gear.store, cp!, redress) : null;
+  if (plan) {
+    return (
+      <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
+        <Redress c={c} ctx={ctx} plan={plan} onBack={() => onRedress?.(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
+      </aside>
+    );
+  }
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
       <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
@@ -231,10 +253,11 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           </div>
           {list.length > 1 && !wornTab && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
           {wornTab && wv
-            ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined} />
+            ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined} onChange={live ? () => setAimOpen(true) : undefined} />
             : <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
               onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />}
           <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />
+          {aimOpen && cp && <AimSheet c={c} ctx={ctx} st={gear.store} cp={cp} onClose={() => setAimOpen(false)} onChoose={(key) => { setAimOpen(false); onChooseAim?.(c.id, key); }} />}
           {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
             onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, isStats(cur) ? cur.b : cur.parent, piece.slot, piece, cur.sig, true); } : undefined}
             onWear={live ? () => { setPieceId(null); wear(piece.id); } : undefined} />}

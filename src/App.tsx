@@ -22,6 +22,7 @@ import { isArmor, type Index } from './data';
 import { LangContext, TEXTS, savedLang, type Lang } from './i18n';
 import { makeCtx } from './logic/context';
 import { evaluate } from './logic/evaluate';
+import { confirmAims, setAim, unconfirmed, undoAims } from './logic/aim';
 import { dropChar, gearedChars, undoDrop, type GearStore, type Piece } from './logic/gear';
 import { loadGear, unfuseChar } from './logic/gearStore';
 import { gateOf, normalizeStored, replacedX, storeFor, switchFusion, type FusionFix } from './logic/fusion';
@@ -43,6 +44,7 @@ import { useRoster, type RosterApi } from './state/useRoster';
 import { holdStoredWrites, readStored, takeLoadNote } from './state/stored';
 import { FusionAsk } from './components/chars/FusionAsk';
 import { RosterRemoveAsk } from './components/chars/RosterRemoveAsk';
+import { AimsSheet } from './components/chars/AimsSheet';
 import { useTryOn } from './state/useTryOn';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
@@ -450,6 +452,38 @@ export function App() {
   };
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
+  // «Надето» (шаг 7): «Переодеть» — выбор здесь, а не в карточке: к нему ведут и «сменить ▾», и «Билды героев». Ушли с этой
+  // карточки или с вкладки — выбор снят
+  const [redress, setRedress] = useState<{ charId: string; key: string } | null>(null);
+  useEffect(() => { if (redress && (s.charId !== redress.charId || s.tab !== 'chars')) setRedress(null); }, [redress, s.charId, s.tab]);
+  // выбор билда в шторке: запись (aim — только явно, Р17) с «Вернуть» и экран «Переодеть» на карточке героя
+  const chooseAim = (charId: string, key: string) => {
+    const r = setAim(gear.store, charId, key);
+    setAimsOpen(false);
+    if (r.st !== gear.store) {
+      const v = view.of(charId)?.variants.find((x) => x.key === key);
+      gear.set(r.st);
+      setGearUndo({ text: t.ui.aimToast(charName(charId), !v || isStats(v) ? t.ui.byStats : v.name), note: '', tab: 'chars', undo: (x) => undoAims(x, r) });
+    }
+    setRedress({ charId, key });
+    openChar(charId);
+  };
+  // сообщение «Выбрал билды по твоим вещам у N героев — проверь»: пока есть герои без выбранного билда и плашку не закрыли
+  // и не нажали «Всё верно» (флаг ogc.aimsShown — не в экипировке: загрузка в ogc.gear ничего не пишет, Р17). В обучении и
+  // на чужой версии экипировки — нет
+  const [aimsShown, setAimsShown] = useState(() => storage.get('aimsShown', false));
+  const [aimsOpen, setAimsOpen] = useState(false);
+  const aimsOn = !aimsShown && !touring && !demo && !gear.newer;
+  const aimsPending = useMemo(() => (aimsOn ? unconfirmed(ctx, gear.store) : []), [aimsOn, ctx, gear.store]);
+  const hideAims = () => { storage.set('aimsShown', true); setAimsShown(true); };
+  const confirmAll = () => {
+    const r = confirmAims(ctx, gear.store, aimsPending);
+    hideAims();
+    setAimsOpen(false);
+    if (r.st === gear.store) return;
+    gear.set(r.st);
+    setGearUndo({ text: t.ui.aimsSaved, note: '', tab: s.tab, undo: (x) => undoAims(x, r) });
+  };
   // правка в карточке вещи снимает висящее «Вернуть» любого прежнего действия (В3: одно на все): откаты возвращают
   // запись по id, а её за эти секунды поправили или скопировали (gear updateIn, REFUTE-5). Общую запись скопировали
   // (новый id у этого героя), а это запись replace его режима — replace идёт за копией (иначе «Заменить» пропадёт)
@@ -609,6 +643,11 @@ export function App() {
       <div className="app">
         <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} />
         {pwa.update === 'data' && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
+        {aimsPending.length > 0 && (
+          <div id="aimsnote">
+            <Notice text={t.ui.aimsNotice(aimsPending.length)} action={t.ui.aimsCheck} onAction={() => setAimsOpen(true)} onClose={hideAims} />
+          </div>
+        )}
         {layout.desktopModeOnPhone && !fitHidden && (
           <div id="fitnote">
             <Notice text={t.ui.desktopModeNotice}
@@ -630,7 +669,8 @@ export function App() {
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined}
               onRateFor={canEquip ? (c) => startTryOn(c) : undefined}
-              onPieceOpen={setPieceOpen} />
+              onPieceOpen={setPieceOpen}
+              redress={redress?.charId === s.charId ? redress.key : null} onRedress={(key) => setRedress(key && s.charId ? { charId: s.charId, key } : null)} onChooseAim={chooseAim} />
           </section>
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />
@@ -659,6 +699,9 @@ export function App() {
               <button type="button" onClick={onGearUndo}>{t.ui.undoAction}</button>
             )}
           </div>
+        )}
+        {aimsOpen && aimsPending.length > 0 && !tour.run && (
+          <AimsSheet ctx={ctx} view={view} st={gear.store} ids={aimsPending} onClose={() => setAimsOpen(false)} onConfirm={confirmAll} onChoose={chooseAim} />
         )}
         {removeAsk && !tour.run && (
           <RosterRemoveAsk name={charName(removeAsk.id)} n={removeAsk.n} onYes={doRemove} onClose={() => setRemoveAsk(null)} />

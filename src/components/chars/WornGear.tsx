@@ -26,7 +26,7 @@ function deltaText(a: WornAdvice): string {
 }
 
 // onEnter — «Ввести» у пустого слота; onWear — надеть вещь пула; onWearAll — «Да, всё надето»; onChange — «сменить ▾»
-// (шторка выбора билда, шаг 7: пока нет — кнопка видна, но не нажимается). Нет onEnter/onWear — обучение и новая версия
+// (шторка «Билд для X», AimSheet; нет — кнопка видна, но не нажимается). Нет onEnter/onWear — обучение и новая версия
 // страницы: слоты показываются, действий нет
 export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWearAll, onChange }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece: (id: string) => void;
@@ -45,7 +45,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWea
     <div className="bgear worn" {...tour('wtab')}>
       <p className="worn-aim">
         <span><Rich text={aim} /></span>
-        <button type="button" className="btn small" disabled={!onChange} aria-label={t.ui.wornChangeAria(c.name)} onClick={onChange}>{t.ui.wornChange}</button>
+        <button type="button" className="btn small" {...tour('wchange')} disabled={!onChange} aria-label={t.ui.wornChangeAria(c.name)} onClick={onChange}>{t.ui.wornChange}</button>
       </p>
       {empty && <p className="worn-hint">{t.ui.wornEmpty(c.name)}</p>}
       {all && (

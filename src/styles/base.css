@@ -183,6 +183,7 @@ html.narrow .top { padding-block: 10px 8px; gap: 8px 16px; }
 html.narrow .brand p { display: none; }
 .fitnote { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--temp-soft); color: var(--ink); font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; }
 .fitnote button { flex: none; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 2px 0; }
+.fitnote .notice-x { margin: -8px -8px -8px 0; min-width: 36px; min-height: 36px; padding: 0; color: var(--ink-2); font-size: 15px; font-weight: 400; }
 footer.foot { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
 footer.foot a { color: var(--ink-2); }
 footer.foot .lic summary { cursor: pointer; width: fit-content; }

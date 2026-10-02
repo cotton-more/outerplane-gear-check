@@ -15,6 +15,8 @@ export const COVERAGE: Record<string, Coverage> = {
   'Notice.tsx': 'helper',          // плашка с одной кнопкой
   'Rich.tsx': 'helper',            // жирный текст в фразах
   'Sheet.tsx': 'helper',           // шторка для окон
+  'chars/AimsSheet.tsx': 'helper', // list of heroes with picked builds, opened from the notice button: the notice explains it
+  'chars/Redress.tsx': 'helper',   // re-dress screen, opens from the build sheet whose tip explains it; sections name themselves
   'chars/RosterRemoveAsk.tsx': 'helper', // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'eval/EvalPanel.tsx': 'core',    // форма: слот, грейд, сет или main, сетка
   'eval/ItemPicker.tsx': 'core',   // окно выбора Legendary по названию — шаг «сет или предмет»

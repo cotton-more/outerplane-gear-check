@@ -220,3 +220,36 @@ html.xs .bgear-t { grid-row: 3; }
 .worn-advice { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 7px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; color: var(--ink); }
 .worn-advice > span { min-width: 0; flex: 1 1 160px; }
 .worn-advice .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+
+/* «Надето», шаг 7: шторка «Билд для X», экран «Переодеть», шторка «Билды героев» */
+.alist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.arow { width: 100%; display: grid; gap: 3px; padding: 9px 10px 9px 38px; position: relative; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
+.arow::before { content: ''; position: absolute; left: 11px; top: 11px; width: 16px; height: 16px; box-sizing: border-box; border: 2px solid var(--line-2); border-radius: 50%; }
+.arow[aria-checked="true"] { border-color: var(--accent); }
+.arow[aria-checked="true"]::before { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 38%, transparent 42%); }
+.arow-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
+.arow-h b { min-width: 0; font-size: 14px; }
+.arow-c { display: flex; flex-wrap: wrap; gap: 4px; }
+.achip, .rchip { display: inline-block; padding: 2px 8px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.achip.now, .rchip.on { background: var(--keep-soft); border-color: color-mix(in srgb, var(--keep) 50%, transparent); color: var(--keep); }
+.achip.can { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }
+.rchip { font-size: 12.5px; padding: 4px 10px; white-space: normal; }
+.rchip.off { background: var(--junk-soft); border-color: color-mix(in srgb, var(--junk) 50%, transparent); color: var(--junk); }
+.arow-l { font-size: 12.5px; color: var(--ink-2); }
+.aim-go { position: sticky; bottom: 0; width: 100%; box-shadow: 0 0 0 6px var(--surface), 0 14px 0 0 var(--surface); } /* плотная подложка: строки под кнопкой не просвечивают */
+.rd-top { position: sticky; top: 0; z-index: 2; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.rd-title { margin: 4px 0 0; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.rd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rd-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.rd-row img, .rd-row .noimg, .rd-row .ico { width: 22px; height: 22px; object-fit: contain; color: var(--ink-2); }
+.rd-row .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.rd-row .rd-m { grid-column: 2 / 4; grid-row: 2; font: 600 11px var(--font-mono); color: var(--ink-3); }
+.rd-row .bgear-t { grid-column: 2 / 4; grid-row: 3; }
+.rd-foot { margin: 0; padding-bottom: 16px; }
+.tlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tlist li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.tlist img.face, .tlist .noimg.face { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.tl-t { min-width: 0; display: grid; gap: 1px; font-size: 14px; }
+.tl-t b { overflow-wrap: anywhere; }
+.tl-n { font: 700 11px/1 var(--font-mono); color: var(--ink-3); }
+.tlist .btn { min-height: 34px; padding: 4px 12px; }

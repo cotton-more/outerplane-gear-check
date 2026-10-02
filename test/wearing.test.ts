@@ -9,7 +9,8 @@ import { buildKey, type GearStore, type Piece } from '../src/logic/gear';
 import { poolView, type Mark } from '../src/logic/pool';
 import type { Subs } from '../src/logic/subs';
 import { variantsOf } from '../src/logic/variants';
-import { aimOptions, missingParts, redressPlan, t4Parts, wornView } from '../src/logic/wearing';
+import { aimOf } from '../src/logic/aim';
+import { aimOptions, missingParts, reasonOf, redressPlan, t4Parts, undoWearMany, wearMany, wornView } from '../src/logic/wearing';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -208,7 +209,7 @@ describe('шторка «Билд для X»', () => {
 });
 
 describe('экран «Переодеть»', () => {
-  it('надень из своих — вещи раскладки, не надетые; снимешь — надетое, которого в ней нет', () => {
+  it('надень из своих — вещи раскладки, не надетые; снимешь — надетое, которое она заменит', () => {
     const { st, speed, pen } = deltaStore();
 
     const p = plan(st, PEN4);
@@ -274,5 +275,42 @@ describe('общие с карточкой билда', () => {
 
   it('вариантов Delta — те, что в тесте (ключи сверены с данными)', () => {
     expect(variantsOf(idx, delta).map((v) => v.key)).toEqual([PEN4, ATK_SPD, PEN_ATK, SUPPORT]);
+  });
+});
+
+describe('«Надеть все» на «Переодеть»: wearMany', () => {
+  it('надевает вещи раскладки по очереди — надетое = раскладка', () => {
+    const { st, pen } = deltaStore();
+    const r = wearMany(ctx, st, delta.id, ids(plan(st, PEN4).wear.map((w) => w.piece)))!;
+    expect(Object.values(r.st.worn![delta.id]).sort()).toEqual(ids(pen).sort());
+  });
+
+  it('«Вернуть» возвращает прежнее надетое', () => {
+    const { st, speed } = deltaStore();
+    const r = wearMany(ctx, st, delta.id, ids(plan(st, PEN4).wear.map((w) => w.piece)))!;
+    expect(Object.values(undoWearMany(r.st, delta.id, r).worn![delta.id]).sort()).toEqual(ids(speed).sort());
+  });
+
+  it('надевать нечего (всё надето) — null', () => {
+    const { st, speed } = deltaStore();
+    expect(wearMany(ctx, st, delta.id, ids(speed))).toBeNull();
+  });
+});
+
+describe('причина выбора билда: reasonOf', () => {
+  it('«поровну — первый» при вещах билдов в пуле — ничья (tie)', () => {
+    const { st } = deltaStore({ aim: undefined });
+    const cp = cpOf(st, delta);
+    expect(reasonOf(cp, aimOf(delta, st, cp))).toEqual({ kind: 'tie' });
+  });
+
+  it('«поровну — первый», когда вещей билдов нет, — остаётся', () => {
+    const st = store(delta, [piece('helmet', 'Counterattack')], []);
+    const cp = cpOf(st, delta);
+    expect(reasonOf(cp, aimOf(delta, st, cp))?.kind).toBe('first');
+  });
+
+  it('«По статам» — причина stats', () => {
+    expect(reasonOf({ asm: new Map() }, { key: STATS, why: { kind: 'stats' } })).toEqual({ kind: 'stats' });
   });
 });
