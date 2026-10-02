@@ -9,7 +9,8 @@ import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updateIn, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
 import { assemble, assembleReach, entriesFor, hasStatBuild, heldBy, holds, isStats, outcomeFor, play, poolView, putOn, puts, started, statVariant, STATS, undoPut, type Assembly, type Entry, type Play, type PoolStore } from '../src/logic/pool';
 import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '../src/logic/setBonus';
-import { charVs, whereOf, whereUsed } from '../src/logic/poolVs';
+import { charVs, nextToWear, whereOf, whereUsed } from '../src/logic/poolVs';
+import type { PoolView } from '../src/logic/pool';
 import { slotMains } from '../src/logic/builds';
 import { decodeItem, MAINS } from '../src/logic/itemCode';
 import type { Subs } from '../src/logic/subs';
@@ -371,6 +372,28 @@ describe('П3: временное оружие билд не начинает', 
 
   it('«Кому надеть?»: Luna без вещей, новое Steel Sword ATK% — строки нет (ничего не начнёт, вставать некуда)', () => {
     expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), luna.id, input(sword()))).toBeNull();
+  });
+
+  // «Надето», шаг 5: режим героя (wear) — строка «голая», но «Надеть» есть: ввод надетого в игре
+  it('режим героя (wear): Caren без вещей, Attack-перчатки без её статов — «Надеть» только как ввод надетого (asWorn)', () => {
+    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Attack'), itemKey: null, main: null, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } };
+    const cv = charVs(ctx, poolView(ctx, EMPTY_GEAR), caren.id, x, undefined, { explicit: true, wear: true })!;
+
+    expect({ useful: cv.useful, asWorn: cv.asWorn, replaces: cv.replaces }).toEqual({ useful: true, asWorn: true, replaces: false });
+  });
+
+  it('без wear та же вещь Caren — строки нет', () => {
+    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Attack'), itemKey: null, main: null, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } };
+
+    expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), caren.id, x, undefined, { explicit: true })).toBeNull();
+  });
+
+  it('режим героя (wear): в слоте надетая — подпись «Заменить» (Р4), даже если её держит билд', () => {
+    const h = helm();
+    const st: GearStore = { ...EMPTY_GEAR, pieces: { [h.id]: h }, pools: { [luna.id]: [h.id] }, worn: { [luna.id]: { helmet: h.id } } };
+    const cv = charVs(ctx, poolView(ctx, st), luna.id, input({ ...h, id: 'x' }), undefined, { explicit: true, wear: true })!;
+
+    expect(cv.replaces).toBe(true);
   });
 
   it('«Кому надеть?»: Luna без вещей, рекомендованное оружие — «начнёт» все варианты', () => {
@@ -1677,5 +1700,28 @@ describe('оружие не для класса героя (classLimits)', () =>
     expect(p.variants.every((v) => !p.asm.get(v.key)!.slots.weapon)).toBe(true);
     expect(p.variants.some((v) => !isStats(v) && started(p.reach.get(v.key)!))).toBe(false);
     expect(inPlay([w], {}, aer)).toEqual(['#stats']);
+  });
+});
+
+// «Дальше: {слот}» (шаг 5 «Надето»): первый ненадетый слот после слота формы, по кругу; слот формы надет — нет
+describe('nextToWear', () => {
+  const viewOf = (on: SlotId[]) => ({
+    of: () => ({ pieces: on.map((slot, i) => ({ id: 'w' + i, slot })), worn: new Set(on.map((_, i) => 'w' + i)) }),
+  }) as unknown as PoolView;
+
+  it('после ботинок — по кругу к первому ненадетому: оружие надето — аксессуар', () => {
+    expect(nextToWear(viewOf(['weapon']), 'c', 'shoes')).toBe('accessory');
+  });
+
+  it('слот формы надет — null', () => {
+    expect(nextToWear(viewOf(['helmet']), 'c', 'helmet')).toBeNull();
+  });
+
+  it('все прочие надеты — null', () => {
+    expect(nextToWear(viewOf(['weapon', 'accessory', 'armor', 'gloves', 'shoes']), 'c', 'helmet')).toBeNull();
+  });
+
+  it('героя нет в виде — следующий по порядку', () => {
+    expect(nextToWear({ of: () => null } as unknown as PoolView, 'c', 'weapon')).toBe('accessory');
   });
 });

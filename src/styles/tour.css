@@ -25,6 +25,9 @@
 .tour-invite > span { flex: 1 1 180px; }
 html.narrow body.has-vbar .tour-invite { bottom: 66px; }
 @media (max-height: 560px) { html.narrow body.has-vbar .tour-invite { bottom: 52px; } }
+/* над «Следующий» — «Дальше: Ботинки» (ввод надетого): плашка выше на строку */
+html.narrow body.has-vbar:has(.vb-next small) .tour-invite { bottom: 84px; }
+@media (max-height: 560px) { html.narrow body.has-vbar:has(.vb-next small) .tour-invite { bottom: 72px; } }
 .guide .guide-tour { margin: 0 0 12px; }
 .tour-off { margin: -2px 0 8px !important; color: var(--temp); font-weight: 600; }
 /* подсказка по ходу: та же полоса, рамка — пунктиром, чтобы не путать с шагом тура */

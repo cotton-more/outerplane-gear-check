@@ -26,7 +26,7 @@ import { dropChar, gearedChars, undoDrop, type GearStore, type Piece } from './l
 import { loadGear, unfuseChar } from './logic/gearStore';
 import { gateOf, normalizeStored, replacedX, storeFor, switchFusion, type FusionFix } from './logic/fusion';
 import { holds, isStats, poolView, putOn, undoPut, type PoolView, type PutResult } from './logic/pool';
-import { charsVs, charVs, gearBadges, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
+import { charsVs, charVs, gearBadges, nextToWear, sectionChars, whereUsed, type CharVs } from './logic/poolVs';
 import { charMatches } from './logic/lists';
 import { dropSubs } from './logic/subs';
 import type { Build, Char, GearKind, SlotId } from './data/types';
@@ -141,8 +141,9 @@ export function App() {
   // у кого есть вещи: персонаж → лучший «N/6» (плитки, меню, фильтр «с экипировкой»)
   const geared = useMemo(() => gearBadges(view), [view]);
   // строка героя: явный выбор — все его билды и «По статам» (Р11), без only (заметка шага 2: исход по одному варианту
-  // прятал «Надеть»); с replace — кнопка «Заменить» есть всегда
-  const heroVs = useMemo(() => (hero ? charVs(ctx, tview, hero.c.id, input, undefined, { explicit: true, replace }) : null), [ctx, tview, hero, key, replace]); // eslint-disable-line react-hooks/exhaustive-deps
+  // прятал «Надеть»); с replace — кнопка «Заменить» есть всегда; wear — «Надеть на X» есть всегда («Надето»: ввод
+  // надетого в игре, и у вещи без пользы)
+  const heroVs = useMemo(() => (hero ? charVs(ctx, tview, hero.c.id, input, undefined, { explicit: true, replace, wear: true }) : null), [ctx, tview, hero, key, replace]); // eslint-disable-line react-hooks/exhaustive-deps
   // материал: вещь лучше той, для которой она материал, или в режиме героя она встаёт в его билд — «надень»
   const mat = useMemo(() => {
     const needs = materialFor(view, input);
@@ -398,7 +399,9 @@ export function App() {
     gear.set(st);
     const was = input;
     setVerdictOpen(false);
-    dispatch({ type: 'reset' });
+    // ввод надетого (режим героя, слот формы не был надет): форма — на следующем ненадетом слоте героя («Дальше: …»)
+    const go = hero?.c.id === c.id ? wearNext : null;
+    dispatch(go ? { type: 'reset', slot: go } : { type: 'reset' });
     dropReplace(); // записи уже нет, форма пуста — замена сделана
     setUndo(null);
     if (layout.narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
@@ -409,9 +412,11 @@ export function App() {
     // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote (без
     // перечня, вопрос 6).
     // Убраны 2+ вещи её слота — назвать каждую: «Заменено: ботинки Caren — убраны прежние: Speed и Immunity.»
+    // Р4: была надетая её слота (её держат билды — осталась в пуле) — тоже «Заменено», как на кнопке (poolVs replaces)
     const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
+    const wasOn = !!r.wasWorn && r.was.includes(r.wasWorn);
     const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
-      : mine.length ? t.ui.replaced(c.name, r.piece.slot, t4) : [t.ui.equipped(c.name, r.piece.slot, t4), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+      : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : [t.ui.equipped(c.name, r.piece.slot, t4), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
     const notes: string[] = [];
     // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке)
     if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
@@ -547,6 +552,9 @@ export function App() {
   // «Заменить» всегда); вторая — «или — Rin · Speed ▸», если такой исход есть и у другого (в режиме героя других нет)
   const cardVs = vsList[0];
   const cardEquip = canEquip && !!cardVs?.useful;
+  // «Дальше: {слот}» — ввод надетого: режим героя, «Надеть» есть, слот формы у героя не надет и есть ещё ненадетые
+  const wearNext = hero && canEquip && heroVs?.useful ? nextToWear(tview, hero.c.id, s.slot) : null;
+  const nextNote = wearNext ? t.ui.nextWear(t.ui.slotNames[wearNext]) : null;
   const cardOther = cardEquip && !hero ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
   // id не задан — «Какое обучение?» (туров несколько); новичку из карточки и из «Появилось обучение» — главный
   const startTour = (id?: TourId) => { setHelpOpen(false); setHelpNews([]); setVerdictOpen(false); tour.start(id); };
@@ -611,7 +619,7 @@ export function App() {
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => tryOn.set(null)} vs={vsList[0] ?? null} onEquip={cardEquip ? (v) => doEquip(v.c) : undefined}
               other={cardOther} onEquipOther={cardOther ? (v) => doEquip(v.c) : undefined}
-              onReset={onReset} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={openTours} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
+              onReset={onReset} nextNote={nextNote} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={openTours} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || hero ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -624,7 +632,7 @@ export function App() {
           </section>
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />
-        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
+        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} nextNote={nextNote} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         {inviteShown && (
           <div className="tour-strip tour-invite" role="status">

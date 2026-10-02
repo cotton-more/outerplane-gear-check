@@ -209,8 +209,9 @@ const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — '
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
 // Подсказка и «что ввести дальше» (вердикт idle) — приглушённой строкой со стрелкой до трёх строк, вердикт — штампом:
 // сразу видно, где «сделай это», а где результат. quiet — идёт обучение: что делать, говорит его полоса, здесь не дублируем.
-export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
-  r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; quiet: boolean; tab: Tab; rosterSize: number;
+// nextNote — «Дальше: Ботинки» над «Следующий» при вводе надетого (режим героя): куда встанет форма после «Надеть»
+export function VBar({ r, news, show, compact, stampless, hint, nextNote = null, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
+  r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; nextNote?: string | null; quiet: boolean; tab: Tab; rosterSize: number;
   onTab: (t: Tab) => void; onMenu: () => void; onReset: () => void; onOpen: () => void;
 }) {
   const t = useT();
@@ -244,7 +245,10 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
             : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
-      {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>}
+      {evalTab && (() => {
+        const reset = <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>;
+        return nextNote ? <div className="vb-next"><small>{nextNote}</small>{reset}</div> : reset;
+      })()}
     </div>
   );
 }

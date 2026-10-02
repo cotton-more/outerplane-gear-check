@@ -290,6 +290,8 @@ export const en: Texts = {
     vsT4: (set, n, capped) => `${set} ×${n} only gives its bonus at T4: until the new one is T4, there is no bonus${capped ? ' — so no higher than "on par"' : ''}.`,
     equipTo: (name) => `Equip on ${name}`,
     replaceOn: (slot, name) => `Replace ${name}'s ${slot}`,
+    equipAsWorn: 'Wears it in game? Tap to record it as worn',
+    nextWear: (slot) => `Next: ${slot}`,
     equipPick: 'Equip on…',
     equipSheet: 'Equip on whom?',
     equipSearch: 'Character name',

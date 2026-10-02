@@ -83,13 +83,13 @@ describe('режим «для героя»', () => {
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
   });
 
-  it('в режиме героя у неё лучше — кнопки нет (надеть можно только полезную вещь); имени в строке нет — оно на полосе', async () => {
+  it('в режиме героя у неё лучше — только «Надеть» (ввод надетого); имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
     // все, кому подходит (только Caren), уже носят лучше — штамп понижен (logic/worn), заголовок уже про неё
     expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
     expect($('.vcard .vc-vs b')).toBeNull();
-    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
   });
 
   it('«Следующий» режим героя не сбрасывает, ✕ — снимает', async () => {
@@ -199,11 +199,11 @@ describe('режим «для героя»', () => {
   });
 
   // было: «не по билду Speed» (Defense); вещь не для героя — offHero (11.1), кнопки нет
-  it('сета нет в её билдах и полезных статов нет: «Caren doesn\'t need it: Attack…», кнопки нет', async () => {
+  it('сета нет в её билдах и полезных статов нет: «Caren doesn\'t need it: Attack…», только «Надеть»', async () => {
     const atk = D.sets.find((s) => s.short === 'Attack')!.id;
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: atk, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } }, { tryon: { charId: caren.id, build: 'Speed' } });
     const off = "Caren doesn't need it: Attack isn't in Caren's builds.";
-    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     expect($('.vc-note')?.textContent).toBe(off);
     await click($('.vcard'));
     expect($('.v-off')?.textContent).toBe(off);
@@ -345,11 +345,11 @@ describe('штамп по надетому', () => {
   });
 
   // режим героя (В10): предустановка Speed/Immu исход не сужает — Speed-шлем Caren лучше новой во всех её билдах
-  it('режим героя Caren (предустановка Speed/Immu): её Speed-шлем лучше — «Разобрать», надеть нельзя', async () => {
+  it('режим героя Caren (предустановка Speed/Immu): её Speed-шлем лучше — «Разобрать», только «Надеть»', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 2 } },
       { gear: STRONG, tryon: { charId: caren.id, build: 'Speed/Immu' } });
     expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
-    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     await click($('.vcard'));
     expect($('.v-reasons')?.textContent).toContain("Won't improve anyone");
   });
@@ -402,10 +402,10 @@ describe('режим героя и «По статам» (находка 28)', (
   });
 
   // было: «Drakhan · By stats — ничего не даст» в заголовке; у героя Revenge нет в билдах — offHero (11.1)
-  it('режим героя, вещь не из его сетов и без полезных статов: offHero, кнопки нет', async () => {
+  it('режим героя, вещь не из его сетов и без полезных статов: offHero, только «Надеть»', async () => {
     await mount({ slot: 'armor', grade: 'rare' }, { setId: revenge, subs: { RES: 2, EFF: 2, 'ATK%': 1 } },
       { roster: [drakhan.id], gear: EMPTY, tryon: { charId: drakhan.id, build: '#stats' } });
-    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe(`Equip on ${drakhan.name}`); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     await click($('.vcard'));
     expect($('.v-off')?.textContent).toBe(`${drakhan.name} doesn't need it: Revenge isn't in ${drakhan.name}'s builds.`);
   });
@@ -451,7 +451,7 @@ describe('replace — на одну введённую вещь', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
   };
 
-  it('«Следующий» снимает replace: слабый шлем — без «Заменить», режим «Только для · Caren» остался', async () => {
+  it('«Следующий» снимает replace: слабый шлем — «Надеть», не «Заменить», режим «Только для · Caren» остался', async () => {
     await mount(onCard, MID, { gear: G([strong], { [caren.id]: ['p1'] }) });
     await tryReplace();
     expect($('.vc-equip')?.textContent).toBe(REPLACE);
@@ -459,7 +459,7 @@ describe('replace — на одну введённую вещь', () => {
     await click($('.vb-reset'));
     await enter(JUNK);
 
-    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
     expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
   });
@@ -478,7 +478,7 @@ describe('replace — на одну введённую вещь', () => {
     expect(stored('gear').pools[caren.id]).toEqual(['p1', 'p3']);
   });
 
-  it('смена слота снимает replace: на перчатках и снова на шлеме замены нет', async () => {
+  it('смена слота снимает replace: на перчатках и снова на шлеме — «Надеть», не «Заменить»', async () => {
     await mount(onCard, MID, { gear: G([strong], { [caren.id]: ['p1'] }) });
     await tryReplace();
 
@@ -487,7 +487,7 @@ describe('replace — на одну введённую вещь', () => {
     await click($('.slot[aria-label="Helmet"]'));
     await enter(MID.subs);
 
-    expect($('.vc-equip')).toBeNull();
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     expect($('.tryon')).toBeTruthy();
   });
 
@@ -548,5 +548,102 @@ describe('replace — на одну введённую вещь', () => {
     await click($('.vc-equip'));
     expect(stored('gear').pools[caren.id]).not.toContain('p2');
     expect(stored('gear').pools[rin.id]).toEqual(['p1']);
+  });
+});
+
+// «Надето», шаг 5: в режиме героя «Надеть на X» — всегда (ввод надетого в игре, и у вещи без пользы); подпись = действие
+// (Р4: «Заменить», если в слоте надетая); «Дальше: {слот}» над «Следующий» — после «Надеть» форма на следующем
+// ненадетом слоте героя (грейд прежний, остальное пустое)
+describe('«Надето»: режим героя — «Надеть» всегда, «Дальше: слот»', () => {
+  const atk = D.sets.find((s) => s.short === 'Attack')!.id;
+  const JUNK_GLOVES = { setId: atk, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } }; // Attack нет в билдах Caren, статы не её
+  const JUNK_HELM = { setId: speed, subs: { RES: 1, EFF: 1, HP: 1, ATK: 1 } };
+  const WORN = { ...GEAR, worn: { [caren.id]: { helmet: 'p1' } } };
+  const hero = { tryon: { charId: caren.id, build: 'Speed' } };
+
+  it('вещь без пользы: «Надеть на Caren» и под ней «Носит в игре…»', async () => {
+    await mount({ slot: 'gloves', grade: 'unique' }, JUNK_GLOVES, hero);
+
+    expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
+    expect($('.vc-wear')?.textContent).toBe('Wears it in game? Tap to record it as worn');
+  });
+
+  it('вещь без пользы: «Надеть» — надета и в пуле, тост с «Вернуть»', async () => {
+    await mount({ slot: 'gloves', grade: 'unique' }, JUNK_GLOVES, hero);
+
+    await click($('.vc-equip'));
+
+    const g = stored('gear');
+    expect(g.worn[caren.id].gloves).toBe('p2');
+    expect(g.pools[caren.id]).toEqual(['p1', 'p2']);
+    expect($('.gear-toast')?.textContent).toBe('On Caren: gloves.Undo');
+  });
+
+  it('полезная вещь в режиме героя — без «Носит в игре…»', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, hero);
+
+    expect($('.vc-equip')).toBeTruthy();
+    expect($('.vc-wear')).toBeNull();
+  });
+
+  it('в слоте надетая, её держит билд: подпись «Заменить шлем Caren», тост «Заменено», она в пуле', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, { ...hero, gear: WORN });
+    expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
+
+    await click($('.vc-equip'));
+
+    expect($('.gear-toast')?.textContent).toBe("Replaced: Caren's helmet.Undo");
+    expect(stored('gear').worn[caren.id].helmet).toBe('p2');
+    expect(stored('gear').pools[caren.id]).toContain('p1');
+  });
+
+  it('слот формы не надет: «Дальше: Armor» над «Следующий»', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, hero);
+
+    expect($('.vbar .vb-next small')?.textContent).toBe('Next: Armor');
+  });
+
+  it('после «Надеть» форма — на следующем ненадетом слоте: сет пустой, грейд прежний', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, JUNK_HELM, hero);
+
+    await click($('.vc-equip'));
+
+    expect(stored('state')).toMatchObject({ slot: 'armor', grade: 'rare' });
+    expect(stored('item').setId ?? null).toBeNull();
+    expect($('.vbar .vb-next small')?.textContent).toBe('Next: Gloves');
+  });
+
+  it('«Следующий» без «Надеть» слот не меняет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, hero);
+
+    await click($('.vb-reset'));
+
+    expect(stored('state').slot).toBe('helmet');
+  });
+
+  it('слот формы надет (оценивают замену) — «Дальше» нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, { ...hero, gear: WORN });
+
+    expect($('.vb-next')).toBeNull();
+    expect($('.vb-reset')).toBeTruthy();
+  });
+
+  it('режим «для всех» — ни «Дальше», ни кнопки у вещи без пользы', async () => {
+    await mount({ slot: 'gloves', grade: 'unique' }, JUNK_GLOVES);
+
+    expect($('.vc-equip')).toBeNull();
+    expect($('.vb-next')).toBeNull();
+  });
+
+  it('«Примерить замену» надетой: «Заменить» убирает именно её, надета новая', async () => {
+    await mount(onCard, JUNK_HELM, { gear: WORN });
+    await click(byText('.bgear-row', 'Speed Set'));
+    await click(byText('.piece-act button', 'Try a replacement'));
+    expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
+
+    await click($('.vc-equip'));
+
+    expect(stored('gear').pools[caren.id]).toEqual(['p2']);
+    expect(stored('gear').worn[caren.id].helmet).toBe('p2');
   });
 });

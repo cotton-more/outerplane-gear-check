@@ -151,7 +151,8 @@ export function heroOutcome(ctx: Ctx, view: PoolView, item: ItemInput, vs: CharV
 // хуже, — это скажут чип и заголовок (решение оркестратора, refute-10 п. 5: иначе «полезных статов нет» у вещи с ними)
 export function heroNote(t: Texts, ctx: Ctx, c: Char, item: ItemInput, vs: CharVs | null): string | null {
   if (!wearable(ctx, c, item)) return t.tryon.noClass(c.name);
-  if (vs?.useful && vs.best && isStats(vs.best.v)) return t.tryon.offStats(c.name);
+  // asWorn — кнопка только ради ввода надетого (режим героя), «встанет» она не говорит
+  if (vs?.useful && !vs.asWorn && vs.best && isStats(vs.best.v)) return t.tryon.offStats(c.name);
   const set = item.setId;
   if (isArmor(item.slot) && set && !(vs?.best && holds(vs.best)) && !c.builds.some((b) => b.sets.some((cb) => cb.some((p) => p.set === set)))) {
     return t.tryon.offHero(c.name, ctx.idx.SET[set]?.short ?? set);

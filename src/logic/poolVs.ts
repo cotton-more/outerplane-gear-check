@@ -1,6 +1,6 @@
 // Строки экранов по пулу (GEARPOOL): одна строка на персонажа — его лучший исход (logic/pool outcomeFor) и
 // остальные («Ещё: …»). Их читают карточка вердикта, «Сейчас на персонажах», «Кому надеть?» и режим героя.
-import { isArmor } from '../data';
+import { isArmor, SLOTS } from '../data';
 import type { Char, SlotId } from '../data/types';
 import { uniqChars } from './builds';
 import type { Ctx } from './context';
@@ -17,12 +17,17 @@ export interface CharVs {
   starts: Variant[];    // с ней начнут собираться
   useful: boolean;      // кнопка «Надеть» / «Заменить» (Р4): главный исход держит и она в нём встаёт, или начнёт билд;
                         // при явном выборе — и тихая «По статам», где она встаёт пустым слотом или лучше (Р11)
-  replaces: boolean;    // «Надеть» уберёт вещь её слота (planFor, В1) — подпись «Заменить»; убранные других слотов
-                        // «Заменить {слот}» не делают — они только в сообщении (prunedNote)
+  replaces: boolean;    // подпись «Заменить» (Р4): «Надеть» уберёт вещь её слота (planFor, В1) или в её слоте есть
+                        // надетая (она перестанет быть надетой); убранные других слотов «Заменить {слот}» не делают — они
+                        // только в сообщении (prunedNote)
+  asWorn: boolean;      // кнопка есть только из-за режима героя (wear): сам исход её не дал бы — под ней «Носит в
+                        // игре — нажми, запишем как надетое»
 }
 
-// replace — режим «для героя» из «Примерить замену» (TryOn.replace): «Заменить» есть всегда, запись уходит (planPut)
-export interface CharVsOpts extends OutcomeOpts { replace?: string | null }
+// replace — режим «для героя» из «Примерить замену» (TryOn.replace): «Заменить» есть всегда, запись уходит (planPut).
+// wear — режим «для героя» («Надето», решение владельца): «Надеть на X» есть всегда, даже у вещи без пользы и вне
+// билдов, — это ввод надетого в игре; такую вещь пул держит надетой
+export interface CharVsOpts extends OutcomeOpts { replace?: string | null; wear?: boolean }
 
 // у исхода есть «Надеть» (Р4): держит и она в нём встаёт; тихая «По статам» (есть только при явном выборе) — встаёт
 // пустым слотом или лучше (Р11)
@@ -39,7 +44,7 @@ export const byBest = (a: Outcome, z: Outcome) => rank(a) - rank(z) || (z.delta 
 // слота — кнопка «Заменить» всегда, лучше вещь или хуже (Р4 не действует), даже без исходов; иначе — как без replace.
 // Строки и главный исход — те же, что без него: они говорят, что вещь даст, а кнопка — что сделает «Надеть»
 export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput, only?: string, opts: CharVsOpts = {}): CharVs | null {
-  const { replace, ...oo } = opts;
+  const { replace, wear = false, ...oo } = opts;
   const o = outcomeFor(ctx, view, charId, item, oo);
   if (!o) return null;
   const rep = !!replaceOf(view.of(charId)?.pieces ?? [], item.slot, replace);
@@ -47,9 +52,10 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   const all = opts.explicit ? o.rows : o.rows.filter((r) => !r.quiet);
   const rows = (only ? all.filter((r) => r.v.key === only) : all.filter((r) => !r.entering || r.kind === 'completes')).sort(byBest);
   const starts = only ? [] : o.starts;
-  if (!rows.length && !starts.length && !rep) return null;
+  // ни исхода, ни «начнёт»: строка только ради кнопки — «Заменить» из «Примерить замену» или «Надеть» режима героя
+  if (!rows.length && !starts.length && !rep && !wear) return null;
   // Р11: автоматический показ — по сету; строка «По статам» одна героя не приводит
-  if (!opts.explicit && !rep && !only && !starts.length && rows.every((r) => isStats(r.v))) return null;
+  if (!opts.explicit && !rep && !wear && !only && !starts.length && rows.every((r) => isStats(r.v))) return null;
   // встаёт только в новые билды — главная строка «начнёт …», а не исход, где она не встаёт или штамп не держит; «начнёт»
   // главнее и строки «По статам» (находка 28). Главная — исход с «Надеть» (и тихая «По статам» при явном выборе): иначе
   // подпись («ломает») и кнопка («Надеть» в «По статам») говорили бы о разном
@@ -60,9 +66,28 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   // «+N» — варианты с тем же исходом на экране: «соберёт» у половины связки — это «сет n из m», не «+1» к «соберёт»
   const same = best ? rows.filter((r) => r !== best && shownKind(r) === shownKind(best) && !r.v.dupOf).length : 0;
   // only — строка одного варианта («По статам» или запасная): встаёт пустым слотом или лучше — «Надеть» и у тихой (Р11)
-  const useful = rep || (only ? !!top && (isStats(top.v) ? top.used && holdsKind(top) : puts(top)) : o.useful);
-  const replaces = useful && !!planFor(ctx, view, charId, item, replace)?.removed.some((p) => p.slot === item.slot);
-  return { c: o.c, best, rows, same, starts, useful, replaces };
+  const own = rep || (only ? !!top && (isStats(top.v) ? top.used && holdsKind(top) : puts(top)) : o.useful);
+  const useful = own || wear;
+  // Р4: подпись = действие — «Заменить», если уберёт вещь её слота или снимет надетую её слота (тост equipOn — так же)
+  const cp = view.of(charId);
+  const wornHere = !!cp?.pieces.some((p) => p.slot === item.slot && cp.worn.has(p.id));
+  const replaces = useful && (wornHere || !!planFor(ctx, view, charId, item, replace)?.removed.some((p) => p.slot === item.slot));
+  return { c: o.c, best, rows, same, starts, useful, replaces, asWorn: !own && wear };
+}
+
+// «Дальше: {слот}» при вводе надетого (режим героя): слот формы у героя не надет — после «Надеть» форма встанет на
+// первый ненадетый слот после него (по кругу: оружие, аксессуар, шлем, броня, перчатки, ботинки). Слот формы надет
+// (оценивают замену) или других ненадетых нет — null
+export function nextToWear(view: PoolView, charId: string, slot: SlotId): SlotId | null {
+  const cp = view.of(charId);
+  const on = new Set(cp ? cp.pieces.filter((p) => cp.worn.has(p.id)).map((p) => p.slot) : []);
+  if (on.has(slot)) return null;
+  const i = SLOTS.findIndex((x) => x.id === slot);
+  for (let k = 1; k < SLOTS.length; k++) {
+    const next = SLOTS[(i + k) % SLOTS.length].id;
+    if (!on.has(next)) return next;
+  }
+  return null;
 }
 
 // строки нескольких персонажей: сначала те, кого вещь держит, потом прочие. Вид пула — общий или

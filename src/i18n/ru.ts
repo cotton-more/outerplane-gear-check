@@ -336,6 +336,10 @@ export const ru = {
     vsT4: (set: string, n: number, capped: boolean) => `${set} ×${n} даёт бонус только на T4: пока новая не на T4, бонуса не будет${capped ? ' — поэтому не выше «на уровне»' : ''}.`,
     equipTo: (name: string) => `Надеть на ${name}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,
+    // режим героя: кнопка есть только чтобы записать надетое (вещь сама ему ничего не даёт)
+    equipAsWorn: 'Носит в игре — нажми, запишем как надетое',
+    // над «Следующий» при вводе надетого: после «Надеть» форма — на этом слоте (slotNames)
+    nextWear: (slot: string) => `Дальше: ${slot}`,
     equipPick: 'Надеть на…',
     equipSheet: 'Кому надеть?',
     equipSearch: 'Имя персонажа',

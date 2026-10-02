@@ -233,6 +233,7 @@ export function VsSection({ list, view, slot, t4 = false, onEquip, onOpenChar }:
                   {equipLabel(t, x, slot, t4)}
                 </button>
               )}
+              {onEquip && x.asWorn && <p className="muted small vs-wear">{t.ui.equipAsWorn}</p>}
               {o && startNames.length > 0 && <p className="muted small">{t.ui.vsStarts(startNames.join(', '))}</p>}
               {idle.length > 0 && <p className="muted small">{t.ui.vsAlso(idle.join(', '), idle.length)}</p>}
               {others.length > 0 && (open === x.c.id

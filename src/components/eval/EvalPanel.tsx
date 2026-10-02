@@ -43,10 +43,11 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub:
 // hero — режим «для героя»: полоса над слотами, ✕ — onTryOnEnd; heroNote — строка про героя под карточкой (logic/tryon
 // heroNote: не носит, не нужна, «По статам», ничего не даст). vs — лучший исход для строки карточки;
 // onEquip — кнопка «Надеть на Caren» / «Заменить шлем Caren» под карточкой (нет — кнопки нет); other и onEquipOther —
-// вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, onHelp, onCode, onTour, news, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
+// вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих. Кнопка только ради ввода надетого
+// (vs.asWorn) — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» над «Следующий предмет»
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onHelp, onCode, onTour, news, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
   s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
-  onReset: () => void; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
+  onReset: () => void; nextNote?: string | null; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
 }) {
@@ -149,6 +150,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
                   )}
                 </div>
               )}
+              {vs?.asWorn && onEquip && <p className="vc-wear">{t.ui.equipAsWorn}</p>}
               {heroNote && <p className="vc-note">{heroNote}</p>}
             </>
             : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={addSub} />}
@@ -158,7 +160,10 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       </div>
 
       <div className="actions">
-        <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>
+        {(() => {
+          const reset = <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>;
+          return nextNote ? <span className="next-at"><small>{nextNote}</small>{reset}</span> : reset;
+        })()}
         <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
         <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={onHelp}>{t.ui.help}</button>
         <button type="button" className="btn" onClick={onTour}>{t.tour.start}</button>

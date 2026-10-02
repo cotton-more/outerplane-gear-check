@@ -43,7 +43,7 @@ export type Action =
   | { type: 'roll'; key: string; n: number }
   | { type: 't4' }
   | { type: 'clearSubs' }
-  | { type: 'reset' }
+  | { type: 'reset'; slot?: SlotId } // slot — «Дальше: {слот}» после «Надеть» при вводе надетого
   | { type: 'load'; item: ItemInput }
   | { type: 'expand'; key: string }
   | { type: 'settings'; patch: Partial<Settings> }
@@ -124,7 +124,10 @@ export function reducer(s: AppState, a: Action): AppState {
     case 'reset':
       // следующий предмет: слот, грейд, сет брони и main оружия или аксессуара остаются — это как фильтр инвентаря:
       // подряд идут дропы одного забега или вещи, отфильтрованные в игре по main. Если сет или main другой, сменить
-      // его стоит почти столько же, сколько выбрать с пустого поля. Предмет по названию и сабстаты — у каждой вещи свои
+      // его стоит почти столько же, сколько выбрать с пустого поля. Предмет по названию и сабстаты — у каждой вещи свои.
+      // С другим слотом (ввод надетого: следующий ненадетый слот героя) — та же вещь другого слота не ждёт: остаётся
+      // только грейд, сет, main и прочее пустые (форму не предзаполняем)
+      if (a.slot && a.slot !== s.slot) return { ...s, ...EMPTY_ITEM, slot: a.slot };
       return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null, main: s.main };
     case 'load': {
       // Breakthrough входа — в «T4» (где он есть, hasBt); само поле bt в состояние не попадает
