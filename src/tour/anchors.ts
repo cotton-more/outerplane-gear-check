@@ -5,6 +5,7 @@ export const ANCHORS = [
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', // подсказки модулей
   'tryon', 'gequip', 'gslots', 'gpiece', 'gtry', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
   'pool', 'variants', 'want', 'stats', // вещи персонажа, варианты связок, «Собираю», «По статам» (GEARPOOL)
+  'wtab', // вкладка «Надето» в карточке персонажа
   'fusion', // пометка «заменён Core Fusion X» на плитке X
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
 ] as const;

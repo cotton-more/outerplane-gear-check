@@ -10,11 +10,13 @@ import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
 import { updateIn, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
-import { isStats, play, setMark, type PoolView } from '../../logic/pool';
+import { isStats, play, setMark, undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '../../logic/pool';
 import { badgeOf } from '../../logic/poolVs';
+import { wornView } from '../../logic/wearing';
 import type { Variant } from '../../logic/variants';
 import { BuildGear, PieceSheet } from './BuildGear';
 import { PoolList } from './PoolList';
+import { WornGear } from './WornGear';
 import { VariantChips } from './VariantChips';
 import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
 import { tour } from '../../tour/anchors';
@@ -31,12 +33,12 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
 // персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»).
 // onPieceEdit — правка в карточке вещи (герой, прежний id, id после правки): висящее «Вернуть» прежнего действия (одно
 // на все, В3) App снимает — откаты возвращают запись по id, а её поправили или скопировали (gear updateIn); копия — и
-// replace режима героя переходит на неё. onRateFor — «Оценить вещь для Caren» (режим
+// replace режима героя переходит на неё. «Ввести» на вкладке «Надето» — onTryOn с slotOnly: на форме только слот. onRateFor — «Оценить вещь для Caren» (режим
 // «для героя» без предустановки). «Примерить замену» — onTryOn с from и replacing: «Надеть» заменит эту запись в любом
 // случае (её id — TryOn.replace); «Слабее всех» тоже отдаёт from, но только для сета на форме
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
-  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing?: boolean) => void;
+  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing?: boolean, slotOnly?: boolean) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
@@ -60,9 +62,11 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
   const cp = c ? view.of(c.id) : null;
-  // вкладка: 'stats' — «По статам», иначе номер билда; при открытии — билд лучшего варианта
+  // вкладка: 'worn' — «Надето» (у героев ростера), 'stats' — «По статам», иначе номер билда; при открытии — «Надето», если
+  // на герое что-то надето, иначе билд лучшего варианта
   const lead = cp ? [...cp.inPlay].filter((v) => !v.dupOf).sort(byRank(cp.asm))[0] ?? null : null;
-  const [tab, setTab] = useState<number | 'stats'>(() => (lead ? (isStats(lead) ? 'stats' : Math.max(0, c!.builds.indexOf(lead.parent))) : 0));
+  const [tab, setTab] = useState<number | 'stats' | 'worn'>(() => (c && rosterApi.roster.has(c.id) && c.builds.length > 0 && Object.keys(gear.store.worn?.[c.id] ?? {}).length > 0 ? 'worn'
+    : lead ? (isStats(lead) ? 'stats' : Math.max(0, c!.builds.indexOf(lead.parent))) : 0));
   const [picked, setPicked] = useState<Record<string, string>>({}); // вкладка → выбранный вариант (чипы)
   const [pieceId, setPieceId] = useState<string | null>(null);
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
@@ -94,6 +98,9 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // «N/6» на вкладке — у лучшего варианта билда
   const badge = (b: Build) => (has ? Math.max(0, ...variantsOfBuild(b).map((v) => badgeOf(asm.get(v.key)!))) : 0);
   const statsTab = tab === 'stats' && cp!.stat;
+  const showWorn = own && c.builds.length > 0;
+  const wornTab = tab === 'worn' && showWorn;
+  const wv = showWorn ? wornView(ctx, c, gear.store, cp!) : null;
   const bi = typeof tab === 'number' ? Math.min(tab, c.builds.length - 1) : 0;
   const b = statsTab ? cp!.stat!.parent : c.builds[bi];
   const list = b && !statsTab ? variantsOfBuild(b) : [];
@@ -135,6 +142,25 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     setPieceId(r.id);
     onPieceEdit?.(c.id, pieceId, r.id);
   };
+  // «Надеть» из совета и из карточки вещи: вещь пула героя — надетая; сообщение с «Вернуть» (App onGearToast); прежняя надетая,
+  // которую больше ничто не держит, уходит — «Лишнее убрано»
+  const live = !!onTryOn && !!onGearToast && !gear.newer;
+  const wear = (id: string) => {
+    const r = wearFromPool(ctx, gear.store, c.id, id);
+    if (!r) return;
+    gear.set(r.st);
+    onGearToast?.(t.ui.wornToast(c.name, t.ui.slotNames[r.slot]), r.removed.length ? t.ui.prunedNote : '', (x) => undoWear(x, c.id, r));
+  };
+  // «Да, всё надето»: весь пул героя надет (в нём не больше одной вещи на слот)
+  const wearEverything = () => {
+    const r = wearAll(gear.store, c.id);
+    if (!r) return;
+    gear.set(r.st);
+    onGearToast?.(t.ui.wornAllToast(c.name, Object.keys(r.worn).length), '', (x) => undoWearAll(x, c.id, r));
+  };
+  // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
+  const cur = wornTab && wv?.variant ? wv.variant : v;
+  const enter = onTryOn && wv?.variant ? (slot: SlotId) => onTryOn(c, isStats(wv.variant!) ? wv.variant!.b : wv.variant!.parent, slot, undefined, wv.variant!.sig, false, true) : undefined;
   // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
   const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
   return (
@@ -183,11 +209,16 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         <>
           {/* «По статам» — отдельный билд у каждого персонажа с билдами (находка 28): вкладка последней */}
           <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
+            {wv && (
+              <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
+                {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
+              </button>
+            )}
             {c.builds.map((x, i) => {
               const one = variantsOfBuild(x);
               const dup = one.length === 1 && one[0].dupOf ? cp!.variants.find((y) => y.key === one[0].dupOf) : null;
               return (
-                <button key={i} type="button" role="tab" aria-selected={!statsTab && x === b} onClick={() => setTab(i)}>
+                <button key={i} type="button" role="tab" aria-selected={!statsTab && !wornTab && x === b} onClick={() => setTab(i)}>
                   {x.name}{dup ? <span className="bt-n">{t.ui.dupOf(dup.name)}</span> : badge(x) > 0 && <span className="bt-n">{badge(x)}/6</span>}
                 </button>
               );
@@ -198,13 +229,16 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
               </button>
             )}
           </div>
-          {list.length > 1 && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
-          <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
-            onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />
+          {list.length > 1 && !wornTab && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
+          {wornTab && wv
+            ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined} />
+            : <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
+              onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />}
           <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />
           {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
-            onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, statsTab ? v.b : v.parent, piece.slot, piece, v.sig, true); } : undefined} />}
-          {!statsTab && <BuildView c={c} b={b} ctx={ctx} />}
+            onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, isStats(cur) ? cur.b : cur.parent, piece.slot, piece, cur.sig, true); } : undefined}
+            onWear={live ? () => { setPieceId(null); wear(piece.id); } : undefined} />}
+          {!statsTab && !wornTab && <BuildView c={c} b={b} ctx={ctx} />}
         </>
       ) : (
         <div className="cd-empty">

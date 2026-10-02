@@ -462,12 +462,13 @@ export function App() {
   // «Примерить» (пустой слот), «Слабее всех» — ещё слот и сет на форму (build/combo — предустановка); «Примерить
   // замену» (replacing) — ещё запись from: «Надеть» заменит её в любом случае. Персонаж — в ростер (как у «Надеть»),
   // грейд прежний. Вещь, которую вводили, уходит в «Вернуть»; та же вещь на форме (слот и сет те же) остаётся.
-  // Режим героя на CF, когда есть X (или на X, когда есть CF), — сначала окно перехода (в)
-  const startTryOn = (c: Char, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing = false) => {
-    const go = (st: GearStore) => tryOnGo(c, st, b, slot, from, combo, replacing);
+  // Режим героя на CF, когда есть X (или на X, когда есть CF), — сначала окно перехода (в). slotOnly — «Ввести» на вкладке
+  // «Надето»: билд и связка героя — в режим, а на форме только слот (сет, предмет, main и сабстаты пустые, грейд прежний)
+  const startTryOn = (c: Char, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing = false, slotOnly = false) => {
+    const go = (st: GearStore) => tryOnGo(c, st, b, slot, from, combo, replacing, slotOnly);
     if (!fusionGate(c.id, (sw) => { go(sw.st); switchToast(sw, 'eval'); })) go(gear.store);
   };
-  const tryOnGo = (c: Char, st: GearStore, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing = false) => {
+  const tryOnGo = (c: Char, st: GearStore, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing = false, slotOnly = false) => {
     const next: TryOn = {
       charId: c.id, ...(b ? { build: b.name } : {}), ...(b && combo ? { combo } : {}), ...(replacing && from ? { replace: from.id } : {}),
     };
@@ -476,12 +477,12 @@ export function App() {
     setVerdictOpen(false);
     const sv = st === gear.store ? view : poolView(ctx, st);
     const h = slot ? heroTarget(idx, next, sv) : null;
-    const p = slot && h ? tryOnPreset(sv, h, slot, from) : null;
-    if (p && (s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
+    const p = slot && h ? (slotOnly ? { slot, setId: null } : tryOnPreset(sv, h, slot, from)) : null;
+    if (p && (slotOnly || s.slot !== p.slot || (isArmor(p.slot) && s.setId !== p.setId))) {
       const cur = itemInput(s);
       // на форме уже пустая заготовка (второй «Примерить» подряд) — прежнее «Вернуть» остаётся
       setUndo((u) => (touring ? null : hasItem(cur) ? cur : u));
-      dispatch({ type: 'load', item: { slot: p.slot, grade: s.grade, setId: p.setId, itemKey: null, main: s.slot === p.slot ? s.main : null, unlisted: false, subs: {} } });
+      dispatch({ type: 'load', item: { slot: p.slot, grade: s.grade, setId: p.setId, itemKey: null, main: !slotOnly && s.slot === p.slot ? s.main : null, unlisted: false, subs: {} } });
     } else dispatch({ type: 'tab', tab: 'eval' });
     if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
   };

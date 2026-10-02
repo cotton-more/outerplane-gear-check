@@ -460,6 +460,24 @@ export const ru = {
     // what — имя сета или предмета, когда убраны 2+ (replacedMany): вместо «Старые»
     oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
+    // вкладка «Надето» (шаг 6): «Билд — Speed · сет 3 из 4 · сменить ▾», блок слотов, совет «из своих»
+    tabWorn: 'Надето',
+    wornBuild: (build: string, k: number, n: number) => `Билд — **${build}** · сет ${k} из ${n}`,
+    wornBuildPlain: (build: string) => `Билд — **${build}**`,
+    wornChange: 'сменить ▾',
+    wornChangeAria: (name: string) => `Сменить билд ${name}`,
+    wornTitle: (k: number) => `Надето · ${k} из 6`,
+    wornEnter: 'Ввести',
+    wornEmpty: (name: string) => `Отметь, что надето на ${name} сейчас в игре.`,
+    wornAllAsk: (name: string, k: number) => `Вещи ${name} — ${k} шт., не больше одной на слот. Всё это сейчас надето?`,
+    wornAllYes: 'Да, всё надето',
+    wornBetter: (piece: string, delta: string) => `Лучше из своих: ${piece}${delta ? ` ${delta}` : ''}`,
+    wornFrom: (piece: string) => `Из своих: ${piece}`,
+    wornWear: 'Надеть',
+    wornWearAria: (piece: string) => `Надеть ${piece}`,
+    wornToast: (name: string, slot: string) => `Надето на ${name}: ${slot}`,
+    wornAllToast: (name: string, n: number) => `Надето на ${name}: ${n} ${plural(n, 'вещь', 'вещи', 'вещей')}`,
+    poolWorn: 'надета',
     // меню ☰ и список персонажей: у кого что надето
     menuGear: (n: number) => `Экипировка · ${n}`,
     withGear: 'с экипировкой',
@@ -763,9 +781,11 @@ export const ru = {
       stats: '«По статам» — все вещи персонажа по цепочке, без сетов. Вещь не по билду встаёт сюда: «Надеть на…» → поиск по имени или «Оценить вещь для …».',
       fusion: 'Отметишь Core Fusion Eternal — Eternal станет неактивным и встанет за ним, а его вещи перейдут к Core Fusion Eternal. Звезда на Eternal вернёт всё назад.',
       bt: 'Вещь уже на Breakthrough T4 — нажми «T4»: бонус сета и материал для Breakthrough посчитаются как в игре. Свежий дроп — T0, отмечать не нужно.',
+      wornTab: 'Здесь — что на герое сейчас в игре. Пустой слот — «Ввести»: откроется оценка для этого слота.',
     },
     // строка «Что нового» — у подсказок с news
     news: {
+      wornTab: 'Вкладка «Надето»: отметь, что сейчас на героях.',
       move: 'при замене стат из другой строки переезжает',
       gear: 'вещи персонажа — билды собираются сами',
       bt: 'отметка «T4» на форме',

@@ -209,3 +209,14 @@ html.xs .bgear-t { grid-row: 3; }
 .pool-unused .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 .twin-act .btn { display: grid; gap: 2px; text-align: left; justify-items: start; }
 .twin-act .btn small { font-weight: 400; font-size: 11.5px; color: var(--ink-3); }
+
+/* вкладка «Надето»: строка билда с «сменить ▾», подсказка пустой вкладки, совет «из своих» под слотом */
+.worn-aim { margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; font-size: 13px; color: var(--ink-2); }
+.worn-aim > span { min-width: 0; }
+.worn-aim b { color: var(--ink); }
+.worn-aim .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.worn-aim .btn:disabled { opacity: .6; }
+.worn-hint { margin: 0; font-size: 13px; color: var(--ink-2); }
+.worn-advice { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 7px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; color: var(--ink); }
+.worn-advice > span { min-width: 0; flex: 1 1 160px; }
+.worn-advice .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }

@@ -492,8 +492,9 @@ describe('кнопка = то, что сделает «Надеть»', () => {
   // было (браузер): у Core Fusion Eternal главная строка «только статы — … оставь как есть» про «По статам», а под ней
   // «Надеть на Core Fusion Eternal» — и её Effectiveness-шлем уходил. «По статам» теперь остаётся и после «Надеть»
   // (находка 28): Effectiveness-шлем сильнее по статам и стоит в нём — «Надеть», не «Заменить», и он остаётся в пуле.
-  // «Надето», В4: «По статам» вещи не держит — Effectiveness-шлем не стоит ни в одном билде, «Надеть» Speed-шлема его
-  // заменяет: кнопка «Заменить» = тост «Заменено», шлема в пуле нет (было — «Надеть» и шлем остаётся)
+  // «Надето», В4: «По статам» вещи не держит. Effectiveness-шлем держал настоящий вариант, «По статам» лишь страховал;
+  // «Надеть» Speed-шлема его заменяет: кнопка «Заменить» = тост «Заменено», шлема в пуле нет (было — «Надеть» и шлем
+  // остаётся: его страховал «По статам»)
   it('Core Fusion Eternal, 4 Effectiveness: Speed-шлем только начнёт Speed — главная строка «начнёт», кнопка «Заменить» = тост, Effectiveness-шлем уходит (В4)', async () => {
     const cf = char('Core Fusion Eternal');
     const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Effectiveness'), { SPD: 2, EFF: 2, CHC: 1, HP: 1 }));
@@ -1489,7 +1490,7 @@ describe('«По статам» у каждого героя (находка 28)
 
   it('карточка Drakhan без вещей: вкладка «By stats» последней, на ней — что туда встаёт и «Собрать билд»', async () => {
     await mount({ tab: 'chars', charId: drakhan.id }, {}, { roster: [drakhan.id] });
-    expect($$('.btabs button').map((b) => b.textContent)).toEqual([...drakhan.builds.map((b) => b.name), 'By stats']);
+    expect($$('.btabs button').map((b) => b.textContent)).toEqual(['Worn0/6', ...drakhan.builds.map((b) => b.name), 'By stats']); // «Надето» — первая у героя ростера (шаг 6)
     expect($('.btabs button[aria-selected="true"]')?.textContent).toBe(drakhan.builds[0].name);
     await click(byText('.btabs button', 'By stats'));
     expect($('.bgear-none p')?.textContent).toBe(`"By stats" — ${drakhan.name}'s pieces by the chain, no sets. What ${drakhan.name} wears off-build in the game goes here too: press "Gear up this build" and enter the pieces.`);

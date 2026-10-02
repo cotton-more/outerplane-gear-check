@@ -8,8 +8,7 @@ import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { hasBt, type GearStore, type Piece } from '../../logic/gear';
 import { isStats, removeFrom, removeUndo, type CharPool, type PoolView } from '../../logic/pool';
-import { whereUsed } from '../../logic/poolVs';
-import { buildOfKey } from '../../logic/variants';
+import { whereOf } from '../../logic/poolVs';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon } from '../Img';
 import { tour } from '../../tour/anchors';
@@ -25,8 +24,10 @@ export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onR
   if (!pieces.length) return null;
   const open = cp.inPlay.filter((v) => !isStats(v) && !v.dupOf);
   const where = (p: Piece) => {
-    const used = whereUsed(view, c.id, p.id).filter((v) => !v.dupOf);
-    const names = [...new Set(used.map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
+    const at = whereOf(view, c.id, p.id);
+    if (at.worn) return t.ui.poolWorn;
+    const used = at.builds.filter((v) => !v.dupOf);
+    const names = [...new Set(used.map((v) => v.parent.name))];
     const all = open.length > 1 && open.every((v) => used.includes(v));
     return all ? t.ui.poolEverywhere : names.length ? t.ui.poolIn(names.join(', ')) : '';
   };

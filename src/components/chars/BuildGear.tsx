@@ -17,9 +17,9 @@ import { subWeights } from '../../logic/score';
 import { lookFor } from '../../logic/vs';
 import { DROP_LEVEL, MAX_SUBS, levelCap, withinCap, type Subs } from '../../logic/subs';
 import { isStats, markOfVariant, removeFrom, removeUndo, type Assembly, type CharPool, type PoolView } from '../../logic/pool';
-import { badgeOf, whereUsed } from '../../logic/poolVs';
+import { badgeOf, whereOf, whereUsed } from '../../logic/poolVs';
 import { tierLabel, type BonusRow } from '../../logic/setBonus';
-import { buildOfKey, type Variant } from '../../logic/variants';
+import type { Variant } from '../../logic/variants';
 import { freeSlots, missingParts, t4Parts } from '../../logic/wearing';
 import type { GearApi } from '../../state/useGear';
 import { SlotIcon, StatIcon } from '../Img';
@@ -31,10 +31,16 @@ import { BtChip } from '../eval/BtChip';
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
+const nameOf = (ctx: Ctx, p: Piece): string => p.setId
+  ? `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`
+  : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
+// то же одной строкой («Speed Set», «Combination Simulator · SPD») — для фраз вроде совета «Лучше из своих: …»
+export const pieceText = (ctx: Ctx, p: Piece): string => {
+  const name = nameOf(ctx, p);
+  return p.setId || !p.main ? name : `${name ? name + ' · ' : ''}${p.main}`;
+};
 export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
-  const name = p.setId
-    ? `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`
-    : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
+  const name = nameOf(ctx, p);
   const main = p.setId ? null : p.main;
   return (
     <>
@@ -75,6 +81,15 @@ export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st
   return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
 }
 
+// бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
+export function bonusLinesOf(t: ReturnType<typeof useT>, idx: Index, c: Char, rows: readonly BonusRow[], combo: readonly { set: string }[]): string[] {
+  return rows.map((r) => {
+    const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
+    const own = combo.some((p) => p.set === r.set);
+    return t.ui.bonusRow(idx.SET[r.set]?.short ?? r.set, r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
+  });
+}
+
 // onTryOn — «Примерить» у этого варианта (App): режим героя, слот и сет подставятся на форму; нет — во время обучения и у новой версии.
 // У «По статам» b — его билд (имя STATS): предустановка «По статам», а не родителя.
 // onOpenPiece — карточка вещи; onWant — переключатель «Собираю»
@@ -92,12 +107,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const combo = b.sets[0] ?? [];
   const try_ = onTryOn && ((slot?: SlotId, from?: Piece) => onTryOn(stats ? v.b : v.parent, slot, from, v.sig));
   const setName = (id: string) => idx.SET[id]?.short ?? id;
-  // бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
-  const bonusLines = a.bonuses.map((r) => {
-    const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
-    const own = combo.some((p) => p.set === r.set);
-    return t.ui.bonusRow(setName(r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
-  });
+  const bonusLines = bonusLinesOf(t, idx, c, a.bonuses, combo);
   // часть связки с бонусом только на T4, а его нет: «Speed — 1 из 2 · бонус ×2 только на T4»
   const t4Lines = t4Parts(ctx, a).map((p) => t.ui.partT4(setName(p.set), p.k, p.n));
   // «Слабее всех»: вся броня занята — самая слабая по ценности (вещь не из связки слабее любой) и что ей искать
@@ -115,7 +125,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
   const missing = missingParts(ctx, reach).map((m) => t.ui.missing(setName(m.set), m.need, m.slots, m.t4));
   const first = c.builds[0]?.sets[0]?.[0];
   const where = (id: string) => {
-    const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => (isStats(x) ? t.ui.byStatsQ : x.name));
+    const others = whereUsed(view, c.id, id).filter((x) => x.key !== v.key && !x.dupOf).map((x) => x.name);
     return others.length ? t.ui.slotAlsoIn(others.join(', ')) : '';
   };
   if (gear.newer) return <div className="bgear" {...tour('bgear')}><p className="muted small">{t.ui.gearNewer}</p></div>;
@@ -203,8 +213,8 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
 // правкой. Правку делает onEdit (CharDetail: gear updateIn — у этого героя, общая запись делится, шторка идёт за новым
 // id). Кнопки уровня — как на форме: 5–6 (после Reforge) узкие. Окно выбора 4-го — внутри этой же шторки (вложенные
 // закрывались бы одним Esc). «Убрать у Caren» — только из её вещей (пулы независимы, В9); onRemoved — сообщение с «Вернуть»
-export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRemoved }: {
-  c: Char; p: Piece; ctx: Ctx; gear: GearApi; view: PoolView; onClose: () => void; onEdit: (patch: PieceEdit) => void; onTry?: () => void;
+export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRemoved, onWear }: {
+  c: Char; p: Piece; ctx: Ctx; gear: GearApi; view: PoolView; onClose: () => void; onEdit: (patch: PieceEdit) => void; onTry?: () => void; onWear?: () => void;
   onRemoved?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
 }) {
   const t = useT();
@@ -216,7 +226,8 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
   useEffect(() => { if (capped) capRef.current?.scrollIntoView?.({ block: 'nearest' }); }, [capped, capAt]);
   const keys = Object.keys(p.lit);
   const { blocked } = itemMains(ctx.idx, pieceInput(p));
-  const builds = [...new Set(whereUsed(view, c.id, p.id).map((v) => buildOfKey(v.key, t.ui.byStatsQ)))];
+  const at = whereOf(view, c.id, p.id);
+  const builds = [...new Set(at.builds.map((v) => v.parent.name))];
   const edit = (lit: Subs, patch: PieceEdit) => {
     if (!withinCap(p.grade, p.lit, lit)) { setCapAt({ lit: p.lit }); return; }
     onEdit(patch);
@@ -249,7 +260,9 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
           <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
           {hasBt(p.slot, p.grade) && <BtChip anchor={false} armor={isArmor(p.slot)} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />}
         </div>
-        <p className="muted small">{builds.length ? t.ui.poolIn(builds.join(', ')) : t.ui.pieceNowhere}</p>
+        <p className="muted small">{at.worn || builds.length
+          ? [at.worn && t.ui.poolWorn, builds.length > 0 && t.ui.poolIn(builds.join(', '))].filter(Boolean).join(' · ')
+          : t.ui.pieceNowhere}</p>
         <div className="subrows">
           {keys.map((k) => (
             <div key={k} className="subrow">
@@ -268,6 +281,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
         <p className="muted small">{t.ui.pieceEditNote(c.name)}</p>
         <div className="piece-act">
           <button type="button" className="btn primary" onClick={onClose}>{t.ui.pieceDone}</button>
+          {onWear && !at.worn && <button type="button" className="btn" onClick={onWear}>{t.ui.wornWear}</button>}
           {onTry && <button type="button" className="btn" onClick={onTry} {...tourItem('try')}>{t.tryon.replace}</button>}
           <button type="button" className="btn" onClick={remove}>{t.ui.pieceRemove(c.name)}</button>
         </div>
