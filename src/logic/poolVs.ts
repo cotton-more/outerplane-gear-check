@@ -99,20 +99,25 @@ export function gearBadges(view: PoolView): Map<string, number> {
 
 // где у персонажа стоит запись: собираемые варианты, в выбранной или достижимой сборке которых она есть.
 // В настоящем варианте броня не из связки, которой больше некого вытеснять (других вещей её слота в пуле нет), — не
-// «засчитано»: прочая в пустой слот — не исход. «По статам» — только если больше нигде: не повторять его у каждой
-// вещи, но и вещь только в нём — не бездомная. Нет и там — варианты, которые не собираются («Не собираю» или не
+// «засчитано»: прочая в пустой слот — не исход. Нет таких — варианты, которые не собираются («Не собираю» или не
 // начат), а пул их сборки держит (held, решение владельца «что держит пул» — (а)): вещь, которую держит только такой
-// вариант, — тоже «в нём», а не без строки. Что пул держит (usedIn), это не меняет
+// вариант, — тоже «в нём», а не без строки. «По статам» — никогда: он вещи не держит («Надето», В4). Что пул держит
+// (usedIn), это не меняет
 export function whereUsed(view: PoolView, charId: string, id: string): Variant[] {
+  return whereOf(view, charId, id).builds;
+}
+// то же и надета ли запись на герое (worn): у надетой «надета» вместо «где стоит», и она не «бездомная» (PoolList)
+export interface Where { builds: Variant[]; worn: boolean }
+export function whereOf(view: PoolView, charId: string, id: string): Where {
   const cp = view.of(charId);
-  if (!cp) return [];
+  if (!cp) return { builds: [], worn: false };
   const alone = (slot: SlotId) => !cp.pieces.some((p) => p.slot === slot && p.id !== id);
   const counts = (v: Variant) => heldBy(cp, v).some((a) => {
     const slot = (Object.keys(a.slots) as SlotId[]).find((sl) => a.slots[sl]?.id === id);
     return !!slot && !(isArmor(slot) && a.roles[slot] === 'filler' && alone(slot));
   });
+  const worn = cp.worn.has(id);
   const real = cp.inPlay.filter((v) => !isStats(v) && counts(v));
-  if (real.length) return real;
-  if (cp.stat && heldBy(cp, cp.stat).some((a) => Object.values(a.slots).some((e) => e?.id === id))) return [cp.stat];
-  return cp.variants.filter((v) => !isStats(v) && !cp.inPlay.includes(v) && counts(v));
+  if (real.length) return { builds: real, worn };
+  return { builds: cp.variants.filter((v) => !isStats(v) && !cp.inPlay.includes(v) && counts(v)), worn };
 }

@@ -12,14 +12,15 @@
 //   - «По статам» — отдельный билд у каждого персонажа с билдами (находка 28, Р11–Р13): все вещи пула по цепочке. Он
 //     «живой» (собираешь, держит штамп), пока ни один настоящий билд не начат; потом его строка тихая —
 //     «Надеть» в него только при явном выборе (поиск по имени, режим героя).
-//   - Что держит пул (held) — шире «собираешь»: лучшие раскладки всех вариантов (собирается он или нет, «Не собираю»
-//     тоже — В2) и «По статам». «Надеть» убирает то, что это «Надеть» вытеснило из них, в любом слоте (В1).
+//   - Что держит пул (held) — шире «собираешь»: лучшие раскладки всех настоящих вариантов (собирается он или нет,
+//     «Не собираю» тоже — В2) и надетое героя; «По статам» вещи не держит («Надето», В4). «Надеть» убирает то, что это
+//     «Надеть» вытеснило из них, в любом слоте (В1), — надетое никогда.
 //   - Исход вещи с формы для персонажа (outcomeFor): что станет с каждым собираемым вариантом, если её добавить.
 import { isArmor } from '../data';
 import type { ArmorSlot, Char, Combo, GearKind, SetPiece, SlotId } from '../data/types';
 import { t4Only } from './builds';
 import type { Ctx } from './context';
-import { EMPTY_GEAR, gc, isWorn, newPiece, pieceInput, syncWorn, today, type GearStore, type Mark, type Piece } from './gear';
+import { EMPTY_GEAR, gc, isWorn, newPiece, pieceInput, syncWorn, today, type GearStore, type Mark, type Piece, type Worn } from './gear';
 import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible, type BonusRow } from './setBonus';
 import type { SubWeight } from './score';
 import type { ItemInput } from './verdict';
@@ -29,11 +30,13 @@ import { against, fit, itemValue, MARGIN, pieceValue, wearable, type Fit, type P
 export type { Mark };
 
 // то, что пул берёт из хранилища (GearStore v2): вещи, пулы персонажей, отметки «Собираю / Не собираю»
-// (ключ — вариант или билд целиком); seq — счётчик id: по нему номер вещи, которую добавит «Надеть» (planFor)
+// (ключ — вариант или билд целиком); seq — счётчик id: по нему номер вещи, которую добавит «Надеть» (planFor);
+// worn — надетое героев (слот → запись его пула): его пул держит всегда
 export interface PoolStore {
   pieces: Readonly<Record<string, Piece>>;
   pools: Readonly<Record<string, readonly string[]>>;
   marks?: Readonly<Record<string, Mark>>;
+  worn?: Readonly<Record<string, Readonly<Worn>>>;
   seq?: number;
 }
 
@@ -289,9 +292,15 @@ function report(ctx: Ctx, v: Variant, slots: Partial<Record<SlotId, Entry>>, s: 
 
 // --------------------------------------------------------------------------- «собираешь»
 
+// marks — отметки (общие); worn — надетое ЭТОГО героя (слот → id записи): пул держит его всегда (heldOf). Надетое — по
+// герою, поэтому у вида пула опции свои у каждого героя (heroOpts)
 export interface PlayOpts {
   marks?: Readonly<Record<string, Mark>>;
+  worn?: Readonly<Worn>;
 }
+// опции героя из хранилища: отметки и его надетое
+export const heroOpts = (st: Pick<PoolStore, 'marks' | 'worn'>, charId: string): PlayOpts =>
+  ({ marks: st.marks, ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}) });
 
 // отметка варианта: на нём самом, на билде целиком; у билда, где связка одна, — и та, что стояла на этой связке,
 // когда их было несколько (данные обновились — отметка не пропадает)
@@ -329,11 +338,11 @@ export interface Play {
   asm: Map<string, Assembly>;          // сборка каждого варианта — её показывает карточка
   reach: Map<string, Assembly>;        // достижимая сборка (assembleReach): по ней «собираешь»; не отличается — тот же объект
   inPlay: Variant[];
-  held: Set<string>;                   // записи, которые держит пул (heldOf): от него usedIn, «ненужные», чистка «Надеть»
+  held: Set<string>;                   // записи, которые держит пул (heldOf: билды и надетое): usedIn, «ненужные», чистка «Надеть»
 }
 
 export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts = {}, x?: ItemInput | null): Play {
-  // «По статам» собирается всегда: его вещи пул держит и тогда, когда он не живой (usedIn)
+  // «По статам» собирается всегда (карточка, тихая строка при явном выборе); вещей он не держит (В4, heldOf)
   const stat = statVariant(c);
   const statLive = !!stat && hasStatBuild(ctx, c, x ? [...pieces, x] : pieces);
   const variants = [...(stat ? [stat] : []), ...variantsOf(ctx.idx, c)];
@@ -352,7 +361,7 @@ export function play(ctx: Ctx, c: Char, pieces: readonly Piece[], opts: PlayOpts
     const m = markOf(opts.marks, v);
     return m !== 'skip' && (m === 'want' || started(reach.get(v.key)!));
   };
-  return { variants, stat, statLive, asm, reach, inPlay: variants.filter(self), held: heldOf({ variants, asm, reach }) };
+  return { variants, stat, statLive, asm, reach, inPlay: variants.filter(self), held: heldOf({ variants, asm, reach }, pieces, opts.worn) };
 }
 
 // сборки варианта, чьи вещи пул держит: выбранная и достижимая (если другая)
@@ -361,16 +370,18 @@ export const heldBy = (p: Pick<Play, 'asm' | 'reach'>, v: Variant): Assembly[] =
   return r === a ? [a] : [a, r];
 };
 
-// Что держит пул (решение владельца 2026-10-01, «что держит пул» — (а)): лучшую раскладку — выбранную и достижимую —
-// КАЖДОГО варианта героя, есть в пуле вещи его сета или нет (шлем DEF% 4 / HP% 3 — лучший для Def/Immu у героя без
-// Defense- и Immunity-вещей), с «Не собираю» тоже (В2: отметка — только про штамп и исходы), и «По статам» — живой он
-// или нет (находка 28: Effectiveness-броня сильнее Speed-брони по статам не «ненужная»). Отметки не влияют:
-// play собирает все варианты всегда. Источники — одним объединением: «Надето» (своя фича после eval-only) добавится
-// сюда ещё одной строкой
-function heldOf(p: Pick<Play, 'variants' | 'asm' | 'reach'>): Set<string> {
+// Что держит пул (решение владельца 2026-10-01, «что держит пул» — (а); «Надето», В4): лучшую раскладку — выбранную и
+// достижимую — КАЖДОГО настоящего варианта героя, есть в пуле вещи его сета или нет (шлем DEF% 4 / HP% 3 — лучший для
+// Def/Immu у героя без Defense- и Immunity-вещей), с «Не собираю» тоже (В2: отметка — только про штамп и исходы), и
+// надетое героя (надетое ⊂ пул: в игре оно на нём). «По статам» не держит ничего (В4): в пуле — минимум вещей под билды
+// героя, а надетое держится само. Отметки не влияют: play собирает все варианты всегда. Надетое — только записи этого
+// пула (pieces): в planPut пул бывает без записи, которая ещё надета
+function heldOf(p: Pick<Play, 'variants' | 'asm' | 'reach'>, pieces: readonly Piece[], worn?: Readonly<Worn>): Set<string> {
   const ids = (as: readonly Assembly[]) => as.flatMap((a) => Object.values(a.slots).map((e) => e?.id));
+  const mine = new Set(pieces.map((x) => x.id));
   return new Set([
-    ...p.variants.flatMap((v) => ids(heldBy(p, v))), // все варианты и «По статам» (он среди variants)
+    ...p.variants.filter((v) => !isStats(v)).flatMap((v) => ids(heldBy(p, v))),
+    ...Object.values(worn ?? {}).filter((id) => !!id && mine.has(id)),
   ].filter((id): id is string => !!id));
 }
 
@@ -385,6 +396,8 @@ export interface CharPool extends Play {
   c: Char;
   pieces: Piece[];
   unused: Piece[]; // вещи, которых нет ни в одной сборке, что держит пул (usedIn): в пуле им быть незачем (решение владельца)
+  opts: PlayOpts;  // опции его сборки (heroOpts): отметки и его надетое — с ними же planFor, computeOutcome, putOn
+  worn: Set<string>; // надетые записи героя (его пул держит их всегда; «надета» вместо «где стоит» — PoolList)
 }
 
 export interface PoolView {
@@ -393,7 +406,8 @@ export interface PoolView {
   of: (charId: string) => CharPool | null;
 }
 
-// один раз на хранилище: персонажи считаются по запросу и запоминаются
+// один раз на хранилище: персонажи считаются по запросу и запоминаются. opts — общие (отметки); надетое — у каждого
+// героя своё (CharPool.opts)
 export function poolView(ctx: Ctx, st: PoolStore): PoolView {
   const opts: PlayOpts = { marks: st.marks };
   const memo = new Map<string, CharPool | null>();
@@ -401,7 +415,10 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
     if (memo.has(id)) return memo.get(id)!;
     const c = ctx.idx.CHAR[id];
     const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
-    const r = c ? { c, pieces, ...play(ctx, c, pieces, opts), unused: [] as Piece[] } : null;
+    const po = heroOpts(st, id);
+    const mine = new Set(pieces.map((p) => p.id));
+    const worn = new Set(Object.values(po.worn ?? {}).filter((x): x is string => !!x && mine.has(x)));
+    const r = c ? { c, pieces, ...play(ctx, c, pieces, po), unused: [] as Piece[], opts: po, worn } : null;
     if (r) {
       const used = usedIn(r);
       r.unused = pieces.filter((p) => !used.has(p.id));
@@ -683,7 +700,7 @@ function computeOutcome(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   const { c, pieces } = cp;
   // не для его класса (vs wearable) — ему ни к чему: ни строки, ни «По статам» при явном выборе, ни «начнёт»
   if (!wearable(ctx, c, x)) return null;
-  const withX = play(ctx, c, pieces, view.opts, x);
+  const withX = play(ctx, c, pieces, cp.opts, x);
   const was = new Set(cp.inPlay.map((v) => v.key));
   const starts = withX.inPlay.filter((v) => !was.has(v.key) && !isStats(v));
   const quiet = opts.explicit && cp.stat && !was.has(cp.stat.key) ? cp.stat : null;
@@ -722,82 +739,145 @@ export const puts = (o: Outcome): boolean => holds(o) && o.used;
 
 // --------------------------------------------------------------------------- операции с пулом
 
-// что сделало «Надеть»: новая запись (id, piece); removed и began — как в planPut (removed — вещи любого слота, которые
-// стояли в сборке, что держит пул, а с ней — ни в одной: её слота — «Заменить», других — строка «Лишнее убрано — не
-// вошло ни в один билд»); was — пул персонажа до «Надеть»: «Вернуть» ставит убранные на их прежние места. Отметок «Надеть» не
-// ставит (Р19 ушло, В10)
-export interface PutResult { st: GearStore; id: string; piece: Piece; removed: Piece[]; began: string[]; was: readonly string[] }
+// Что сделало действие с надетым (данные для «Вернуть» — точечно, не снимок worn: снимок затёр бы выбор, сделанный за
+// эти секунды): запись id надета на героя в слот slot; wasWorn — что было надето в этом слоте до (null — ничего);
+// removed — убранные записи пула (вещи любого слота, которые пул держал, а после — нет); was — пул героя до: «Вернуть»
+// ставит убранные на их прежние места
+export interface WearResult { st: GearStore; id: string; slot: SlotId; wasWorn: string | null; removed: Piece[]; was: readonly string[] }
+// что сделало «Надеть»: новая запись (id, piece) — в пуле и надета в своём слоте; removed и began — как в planPut (её
+// слота — «Заменить», других — строка «Лишнее убрано — не вошло ни в один билд»). Отметок «Надеть» не ставит (Р19 ушло,
+// В10)
+export interface PutResult extends WearResult { piece: Piece; began: string[] }
 
 const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
+// опции героя, когда на нём надета ещё и p (в её слоте — вместо прежней)
+const wearIn = (po: PlayOpts, p: Pick<Piece, 'id' | 'slot'>): PlayOpts => ({ ...po, worn: { ...po.worn, [p.slot]: p.id } });
+// надеть id на героя в слот (null — снять): пустое надетое героя и пустое поле не храним, порядок ключей прежний
+function setWorn(st: GearStore, charId: string, slot: SlotId, id: string | null): GearStore {
+  const { [slot]: _, ...rest } = st.worn?.[charId] ?? {};
+  const mine: Worn = id ? { ...st.worn?.[charId], [slot]: id } : rest;
+  const { [charId]: _c, ...others } = st.worn ?? {};
+  const worn = Object.keys(mine).length ? { ...st.worn, [charId]: mine } : others;
+  const next: GearStore = { ...st, worn };
+  if (!Object.keys(worn).length) delete next.worn;
+  return next;
+}
 
 // запись, которую заменяет «Надеть» в режиме героя (planPut replace): есть в его пуле и того же слота, иначе нет
 export const replaceOf = (mine: readonly Piece[], slot: SlotId, replace?: string | null): Piece | undefined =>
   replace ? mine.find((p) => p.id === replace && p.slot === slot) : undefined;
 
 // Что сделает «Надеть» piece на персонажа — без записи (им же считать подпись «Заменить» / «Надеть»).
-// removed (В1, вместо Р7) — всё, что вытеснило ЭТО «Надеть», в любом слоте: запись стояла в сборке, что держит пул
-// (usedIn — все варианты и «По статам»), а с новой — ни в одной. Только если новая встала (её держит пул); не встала —
-// ничего не убираем. Ставшее ненужным раньше (новые данные, «Развитие»/«Эндгейм», ручное «Убрать», правка) не трогаем:
-// строка «больше не нужна» и «Убрать у X». Каждая убранная названа в сообщении, «Вернуть» — всё обратно (undoPut).
+// «Надеть» = надел в игре: новая — в пуле и надета в своём слоте (вместо прежней надетой). removed (В1, вместо Р7) — всё,
+// что вытеснило ЭТО «Надеть», в любом слоте: пул держал запись (usedIn — сборки настоящих вариантов и надетое героя),
+// а с новой — нет. Держит до — с прежним надетым (po.worn), после — с новой надетой: прежняя надетая её слота уходит,
+// только если её не держат билды. Новую не убирает никогда (она надета). Ставшее ненужным раньше (новые данные,
+// «Развитие»/«Эндгейм», ручное «Убрать», правка) не трогаем: строка «больше не нужна» и «Убрать у X». Каждая убранная
+// названа в сообщении, «Вернуть» — всё обратно (undoPut).
 // Отметок не ставит: исключения Р19 (цель режима героя — «Собираю») больше нет — пул держит сборки всех вариантов (held).
 // began — тост «Начал собирать …»: варианты, которые собираются и с этой вещью начаты, а до неё — нет (начало
-// по вещам, Р14, Р18). pre — play(mine, po), если уже посчитан (вид пула).
-// replace — id записи из «Примерить замену» (режим «для героя», TryOn.replace; решение владельца «заменить в любом
-// случае» — (а)): она уходит всегда, лучше новая или хуже, остальное — по В1 с пулом уже без неё. Записи нет в его пуле
-// (чужая, уже убранная) или она другого слота (слот на форме сменили) — как без replace
+// по вещам, Р14, Р18). po — опции героя (heroOpts: отметки и его надетое); pre — play(mine, po), если уже посчитан (вид
+// пула). replace — id записи из «Примерить замену» (режим «для героя», TryOn.replace; решение владельца «заменить в
+// любом случае» — (а)): она уходит всегда, лучше новая или хуже, остальное — по В1 с пулом уже без неё. Записи нет в
+// его пуле (чужая, уже убранная) или она другого слота (слот на форме сменили) — как без replace
 export interface PutPlan { removed: Piece[]; began: string[] }
 export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, po: PlayOpts = {}, pre?: Play, replace?: string | null): PutPlan {
   const out = replaceOf(mine, piece.slot, replace);
   const rest = out ? mine.filter((p) => p !== out) : mine;
-  const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...rest, piece], po);
+  const before = pre ?? play(ctx, c, mine, po), after = play(ctx, c, [...rest, piece], wearIn(po, piece));
   const was = usedIn(before), now = usedIn(after);
-  const placed = now.has(piece.id);
-  const removed = mine.filter((p) => p === out || (placed && was.has(p.id) && !now.has(p.id)));
+  const removed = mine.filter((p) => p === out || (was.has(p.id) && !now.has(p.id)));
   const began = after.inPlay.filter((v) => !isStats(v) && started(after.reach.get(v.key)!) && !started(before.reach.get(v.key)!)).map((v) => v.key);
   return { removed, began };
 }
 
 // Что сделает «Надеть» вещи с формы на персонажа — по виду пула, без записи: от этого подпись «Заменить» / «Надеть»
-// (poolVs). Та же новая запись, что создаст putOn (номер — следующий за seq), те же отметки
+// (poolVs). Та же новая запись, что создаст putOn (номер — следующий за seq), те же отметки и его надетое (CharPool.opts)
 const seqOf = (st: PoolStore) => st.seq ?? Math.max(0, ...Object.keys(st.pieces).map(numOf));
 export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, replace?: string | null): PutPlan | null {
   const cp = view.of(charId);
   if (!cp) return null;
   const { piece } = newPiece({ ...EMPTY_GEAR, seq: seqOf(view.st) }, x, '');
-  return planPut(ctx, cp.c, cp.pieces, piece, view.opts, cp, replace);
+  return planPut(ctx, cp.c, cp.pieces, piece, cp.opts, cp, replace);
 }
 
-// Надеть вещь на персонажа: всегда новая запись, даже если у него (или у другого) такая же — в Оценку вводят новую
-// вещь из инвентаря (решение владельца 2026-10-01), пулы независимы (В9); лишнюю вытеснит planPut. replace —
-// «Примерить замену» (planPut): эта запись уходит всегда
+// Надеть вещь на персонажа (и в режиме героя, и из вердикта): всегда новая запись, даже если у него (или у другого)
+// такая же — в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01), пулы независимы (В9); она же —
+// надетая его слота. Лишнее вытеснит planPut. replace — «Примерить замену» (planPut): эта запись уходит всегда
 export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { at?: string; replace?: string | null } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const was = st.pools[charId] ?? [];
   const made = newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed, began } = c ? planPut(ctx, c, mine, piece, { marks: st.marks }, undefined, opts.replace) : { removed: [], began: [] };
+  const { removed, began } = c ? planPut(ctx, c, mine, piece, heroOpts(st, charId), undefined, opts.replace) : { removed: [], began: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...was.filter((id) => !gone.has(id)), piece.id];
-  const next = gc({ ...made.st, pools: { ...made.st.pools, [charId]: pool } });
-  return { st: next, id: piece.id, piece, removed, began, was };
+  const next = gc(setWorn({ ...made.st, pools: { ...made.st.pools, [charId]: pool } }, charId, piece.slot, piece.id));
+  return { st: next, id: piece.id, slot: piece.slot, wasWorn: st.worn?.[charId]?.[piece.slot] ?? null, piece, removed, began, was };
 }
 
-// «Вернуть» после «Надеть»: вещь — из пула, убранные — обратно (записи, даже если gc их стёр) и на прежние места (за
-// той вещью, за которой стояли до «Надеть», — ничего не трогали между ними, пул байт в байт как был). Её там уже нет
-// (успели убрать) — ничего не трогаем
-export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore {
-  if (!st.pools[charId]?.includes(r.id)) return st;
+// «Вернуть» точечно: убранные — обратно (записи, даже если gc их стёр) и на прежние места в пуле (за той вещью, за
+// которой стояли до действия); в слоте — снова прежняя надетая, если там всё ещё r.id (иначе слот за эти секунды
+// поменяли — не трогаем). pool — пул героя, от которого возвращать
+function restoreWear(st: GearStore, charId: string, r: WearResult, pool: string[]): GearStore {
   const pieces = { ...st.pieces };
   for (const p of r.removed) pieces[p.id] ??= p;
-  const pool = st.pools[charId].filter((id) => id !== r.id);
   const back = new Set(r.removed.map((p) => p.id).filter((id) => !pool.includes(id)));
   for (const id of r.was.filter((x) => back.has(x))) {
     const i = r.was.indexOf(id);
     const after = r.was.slice(0, i).reverse().find((x) => pool.includes(x));
     pool.splice(after === undefined ? 0 : pool.indexOf(after) + 1, 0, id);
   }
-  return gc({ ...st, pieces, pools: { ...st.pools, [charId]: pool } });
+  const next: GearStore = { ...st, pieces, pools: { ...st.pools, [charId]: pool } };
+  return gc(st.worn?.[charId]?.[r.slot] === r.id ? setWorn(next, charId, r.slot, r.wasWorn) : next);
+}
+
+// «Вернуть» после «Надеть»: вещь — из пула, убранные и надетое её слота — как до «Надеть» (restoreWear): пул байт в
+// байт как был, если между ними его не трогали. Её там уже нет (успели убрать) — ничего не трогаем
+export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore {
+  if (!st.pools[charId]?.includes(r.id)) return st;
+  return restoreWear(st, charId, r, st.pools[charId].filter((id) => id !== r.id));
+}
+
+// Надеть вещь из пула героя (надел в игре): в её слоте — она, ничего не создаёт. Прежняя надетая слота остаётся в пуле,
+// если её держат билды, иначе уходит (как у putOn: removed — для prunedNote и «Вернуть»). Записи нет в его пуле или
+// она уже надета — null
+export function wearFromPool(ctx: Ctx, st: GearStore, charId: string, id: string): WearResult | null {
+  const p = st.pieces[id];
+  if (!p || !st.pools[charId]?.includes(id) || isWorn(st, charId, p)) return null;
+  const c = ctx.idx.CHAR[charId];
+  const old = st.worn?.[charId]?.[p.slot] ?? null;
+  // сборки от надетого не зависят: убыть может только прежняя надетая её слота — если её больше ничто не держит
+  const gone = c && old && !play(ctx, c, poolPieces(st, charId), wearIn(heroOpts(st, charId), p)).held.has(old) ? old : null;
+  const was = st.pools[charId];
+  const removed = gone ? [st.pieces[gone]] : [];
+  const next = gc(setWorn({ ...st, pools: { ...st.pools, [charId]: was.filter((x) => x !== gone) } }, charId, p.slot, id));
+  return { st: next, id, slot: p.slot, wasWorn: old, removed, was };
+}
+// «Вернуть» после wearFromPool: прежняя надетая — снова надета и на своём месте в пуле (restoreWear)
+export const undoWear = (st: GearStore, charId: string, r: WearResult): GearStore => restoreWear(st, charId, r, [...(st.pools[charId] ?? [])]);
+
+// «Да, всё надето»: в пуле героя не больше одной вещи на слот (пустые слоты — можно) и на нём ничего не надето — надеть
+// всё. Иначе — null. worn — что надето этим (для «Вернуть»)
+export interface WearAllResult { st: GearStore; worn: Worn }
+export function wearAll(st: GearStore, charId: string): WearAllResult | null {
+  const pool = st.pools[charId] ?? [];
+  if (!pool.length || Object.keys(st.worn?.[charId] ?? {}).length) return null;
+  const worn: Worn = {};
+  for (const id of pool) {
+    const p = st.pieces[id];
+    if (!p) continue;
+    if (worn[p.slot]) return null;
+    worn[p.slot] = id;
+  }
+  return { st: syncWorn({ ...st, worn: { ...st.worn, [charId]: worn } }), worn };
+}
+// «Вернуть» после wearAll: снять только то, что надето им и всё ещё надето (выбор за эти секунды не трогаем)
+export function undoWearAll(st: GearStore, charId: string, r: WearAllResult): GearStore {
+  let next = st;
+  for (const [slot, id] of Object.entries(r.worn) as [SlotId, string][]) if (next.worn?.[charId]?.[slot] === id) next = setWorn(next, charId, slot, null);
+  return next;
 }
 
 // «Убрать у Caren»: только из её пула; у других запись остаётся. Надетая на ней — больше не надета (gc). undo — «Вернуть»

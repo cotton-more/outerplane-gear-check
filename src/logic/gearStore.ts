@@ -7,7 +7,7 @@ import type { Grade, SlotId } from '../data/types';
 import { makeCtx } from './context';
 import { normalizeStored, type Normalized } from './fusion';
 import { buildKey, gc, MAX_LIT, type Bt, type GearStore, type Mark, type Piece, type Worn } from './gear';
-import { isStats, play } from './pool';
+import { heroOpts, isStats, play } from './pool';
 import { MAX_SUBS, type Subs } from './subs';
 
 // v1: вещи лежали в билдах («персонаж/билд» → слот → id)
@@ -98,7 +98,8 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
   for (const [charId, ids] of Object.entries(n.st.pools)) {
     const c = idx.CHAR[charId];
     if (!c) continue;
-    const p = play(ctx, c, ids.map((id) => n.st.pieces[id]), { marks });
+    // надетого у v1 нет (worn вырезан выше) — heroOpts ради одного правила с видом пула
+    const p = play(ctx, c, ids.map((id) => n.st.pieces[id]), { ...heroOpts(n.st, charId), marks });
     for (const v of p.inPlay) if (!isStats(v) && !builds[v.parentKey]) autoNew.push(v.key);
   }
   return { ...n, st: autoNew.length ? { ...n.st, autoNew } : n.st };

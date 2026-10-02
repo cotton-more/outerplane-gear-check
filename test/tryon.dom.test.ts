@@ -191,8 +191,9 @@ describe('режим «для героя»', () => {
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: atk, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } },
       { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
     await click($('.vc-equip'));
-    // прочая в пустой слот Speed — не «засчитано в Speed»: кнопка и строка обещали «По статам»
-    expect($('.gear-toast')?.textContent).toContain('On Caren: gloves. Counts in "By stats".');
+    // прочая в пустой слот Speed — не «засчитано в Speed»; «Надето», В4: и не «в По статам» — он вещи не держит, тост
+    // без «Засчитано» (было — «Counts in "By stats".»)
+    expect($('.gear-toast')?.textContent).toBe('On Caren: gloves.Undo');
     expect(stored('gear').pools[caren.id]).toHaveLength(1);
     expect(stored('gear').marks ?? {}).toEqual({});
   });

@@ -10,7 +10,7 @@ import {
 } from '../src/logic/gear';
 import { normalizeFusion, switchFusion } from '../src/logic/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '../src/logic/gearStore';
-import { planFor, planPut, poolView, putOn, removeFrom, removeUndo, setMark, undoPut, undoRemove } from '../src/logic/pool';
+import { planFor, planPut, poolView, putOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '../src/logic/pool';
 import type { ItemInput } from '../src/logic/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
@@ -316,12 +316,13 @@ describe('«Надеть»: что уходит из пула (В1)', () => {
   });
 
   it('новая не встала ни в одну сборку — ничего не убрано, даже ненужные', () => {
-    // слабый Speed-шлем ненужный; новый шлем чужого сета без полезных Caren статов не встаёт никуда
+    // слабый Speed-шлем ненужный; новый шлем чужого сета без полезных Caren статов не встаёт никуда.
+    // «Надето» (шаг 2): «Надеть» = надел в игре — новая надета, пул её держит: не «ненужная» (было — ['p1', 'p3'])
     const ps = [rec('p1', A('helmet', 'Speed', JUNK)), rec('p2', A('helmet', 'Speed', STRONG))];
     const { piece } = newPiece(pool(ps), A('helmet', 'Life', { RES: 1, EFF: 1 }), '');
     const plan = planPut(ctx, idx.CHAR[CAREN], ps, piece);
     expect(plan.removed).toEqual([]);
-    expect(poolView(ctx, putOn(ctx, pool(ps), CAREN, A('helmet', 'Life', { RES: 1, EFF: 1 })).st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p1', 'p3']);
+    expect(poolView(ctx, putOn(ctx, pool(ps), CAREN, A('helmet', 'Life', { RES: 1, EFF: 1 })).st).of(CAREN)!.unused.map((p) => p.id)).toEqual(['p1']);
   });
 
   it('Р1: слабый Speed-шлем, который раскладка Speed отдала сильному Attack-шлему, — в пуле нужен: Speed ×4 собирается из пула', () => {
@@ -667,10 +668,18 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     expect(consistent(after)).toBe(true);
   });
 
-  it.each(mutations)('%s: у хранилища без надетого полей worn и aim не появляется', (_, act) => {
+  // «Надеть» надевает новую (шаг 2) — у него worn появляется: отдельный тест ниже
+  const PUT = '«Надеть» с заменой шлема';
+  it.each(mutations.filter(([name]) => name !== PUT))('%s: у хранилища без надетого полей worn и aim не появляется', (_, act) => {
     const st = plain();
     const after = act(st);
     expect(['worn' in after, 'aim' in after]).toEqual([false, false]);
+  });
+
+  it('«Надеть» с заменой шлема у хранилища без надетого: worn — только новая в её слоте, aim не появляется', () => {
+    const st = plain();
+    const r = putOn(ctx, st, CAREN, helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 }), { replace: 'p1' });
+    expect({ worn: r.st.worn, aim: 'aim' in r.st }).toEqual({ worn: { [CAREN]: { helmet: r.id } }, aim: false });
   });
 
   describe('чтение', () => {
@@ -757,5 +766,161 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     const later = putOn(ctx, gone, KAPPA, helmet({ HP: 1 })).st;
     const chosen = { ...later, aim: { ...later.aim, [KAPPA]: buildKey(KAPPA, 'Speed') } };
     expect(undo(chosen).aim?.[KAPPA]).toBe(buildKey(KAPPA, 'Speed'));
+  });
+});
+
+// «Надето», шаг 2: «Надеть» = надел в игре — вещь в пул и в надетое своего слота; «Надеть из пула», «Да, всё надето»;
+// «Вернуть» — точечно (пул и надетое этого слота этого героя), не снимок worn/aim
+describe('«Надето»: «Надеть» надевает, «Надеть из пула», «Да, всё надето», «Вернуть»', () => {
+  const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
+  const STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 }, NOTHING = { RES: 1, EFF: 1 };
+  // S — сильный Speed-шлем (стоит во всех билдах Caren), J — шлем чужого сета без полезных Caren статов (ни в одном)
+  const S = () => rec('p1', A('helmet', 'Speed', STRONG)), J = () => rec('p2', A('helmet', 'Life', NOTHING));
+  const LIFE = A('helmet', 'Life', NOTHING), SPEED = A('helmet', 'Speed', { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 });
+  const dressed = (worn: Record<string, string>, ps = [S(), J()]) => v2(ps, { [CAREN]: ps.map((p) => p.id) }, { worn: { [CAREN]: worn } });
+  const J_ = JSON.stringify;
+
+  describe('«Надеть» с формы', () => {
+    it('вещь без полезных статов после «Надеть» — в пуле, надета и не «ненужная»', () => {
+      const r = putOn(ctx, v2([S()], { [CAREN]: ['p1'] }), CAREN, LIFE);
+      const cp = poolView(ctx, r.st).of(CAREN)!;
+      expect({ pool: r.st.pools[CAREN].includes(r.id), worn: r.st.worn?.[CAREN]?.helmet, unused: cp.unused.map((p) => p.id) })
+        .toEqual({ pool: true, worn: r.id, unused: [] });
+    });
+
+    it('в слоте надета вещь, которую держит билд: она остаётся в пуле (не надета), новая надета', () => {
+      const r = putOn(ctx, dressed({ helmet: 'p1' }, [S()]), CAREN, LIFE);
+      expect({ removed: r.removed, pool: r.st.pools[CAREN], worn: r.st.worn }).toEqual({ removed: [], pool: ['p1', r.id], worn: { [CAREN]: { helmet: r.id } } });
+    });
+
+    it('в слоте надета вещь, которую не держит ни один билд: она уходит, новая надета', () => {
+      const r = putOn(ctx, dressed({ helmet: 'p2' }), CAREN, LIFE);
+      expect({ removed: r.removed.map((p) => p.id), pool: r.st.pools[CAREN], worn: r.st.worn }).toEqual({ removed: ['p2'], pool: ['p1', r.id], worn: { [CAREN]: { helmet: r.id } } });
+    });
+
+    it('«Надеть» с replace: уходит именно эта запись, надетое — на новой', () => {
+      const r = putOn(ctx, dressed({ helmet: 'p1' }), CAREN, SPEED, { replace: 'p1' });
+      expect({ removed: r.removed.map((p) => p.id), pool: r.st.pools[CAREN], worn: r.st.worn?.[CAREN] }).toEqual({ removed: ['p1'], pool: ['p2', r.id], worn: { helmet: r.id } });
+    });
+
+    it('надетое других слотов «Надеть» не трогает', () => {
+      const boots = rec('p3', A('shoes', 'Life', NOTHING));
+      const r = putOn(ctx, dressed({ helmet: 'p2', shoes: 'p3' }, [S(), J(), boots]), CAREN, LIFE);
+      expect(r.st.worn?.[CAREN]).toEqual({ helmet: r.id, shoes: 'p3' });
+    });
+
+    it.each([
+      ['надета вещь, которую держит билд', () => dressed({ helmet: 'p1' })],
+      ['надета вещь, которую не держит ни один билд', () => dressed({ helmet: 'p2' })],
+    ])('подпись (planFor) — то же, что сделает putOn: %s', (_, mk) => {
+      const st = mk();
+      const plan = planFor(ctx, poolView(ctx, st), CAREN, LIFE)!;
+      const r = putOn(ctx, st, CAREN, LIFE);
+      expect({ removed: plan.removed.map((p) => p.id), began: plan.began }).toEqual({ removed: r.removed.map((p) => p.id), began: r.began });
+    });
+  });
+
+  describe('«Вернуть» после «Надеть»', () => {
+    it('пул и надетое её слота — как до «Надеть» (байт в байт, кроме счётчика id)', () => {
+      const st = dressed({ helmet: 'p2' });
+      const r = putOn(ctx, st, CAREN, LIFE);
+      expect(J_({ ...undoPut(r.st, CAREN, r), seq: st.seq })).toBe(J_(st));
+    });
+
+    it('выбранный билд, сделанный после «Надеть», «Вернуть» не трогает', () => {
+      const r = putOn(ctx, dressed({ helmet: 'p2' }), CAREN, LIFE);
+      const chosen = { ...r.st, aim: { [CAREN]: K2 } };
+      expect(undoPut(chosen, CAREN, r).aim).toEqual({ [CAREN]: K2 });
+    });
+
+    it('после «Надеть» в слоте надели другую — «Вернуть» её не снимает', () => {
+      const r = putOn(ctx, dressed({ helmet: 'p1' }, [S()]), CAREN, LIFE);
+      const other = wearFromPool(ctx, r.st, CAREN, 'p1')!.st;
+      expect(undoPut(other, CAREN, r).worn).toEqual({ [CAREN]: { helmet: 'p1' } });
+    });
+
+    // перенос из шага 1 (проба build/worn/refute1a «putOn replacing worn then undoPut»): была в пуле, но не надета
+    it('«Надеть» с replace надетой записи, потом «Вернуть» — она снова в пуле и надета', () => {
+      const st = dressed({ helmet: 'p1' }, [S()]);
+      const r = putOn(ctx, st, CAREN, SPEED, { replace: 'p1' });
+      const back = undoPut(r.st, CAREN, r);
+      expect({ pool: back.pools[CAREN], worn: back.worn }).toEqual({ pool: ['p1'], worn: { [CAREN]: { helmet: 'p1' } } });
+    });
+  });
+
+  describe('«Надеть из пула» (wearFromPool)', () => {
+    it('надетая сменилась; прежняя, которую держит билд, — в пуле', () => {
+      const r = wearFromPool(ctx, dressed({ helmet: 'p1' }), CAREN, 'p2')!;
+      expect({ removed: r.removed, pool: r.st.pools[CAREN], worn: r.st.worn }).toEqual({ removed: [], pool: ['p1', 'p2'], worn: { [CAREN]: { helmet: 'p2' } } });
+    });
+
+    it('прежняя, которую не держит ни один билд, уходит из пула', () => {
+      const r = wearFromPool(ctx, dressed({ helmet: 'p2' }), CAREN, 'p1')!;
+      expect({ removed: r.removed.map((p) => p.id), pool: r.st.pools[CAREN], worn: r.st.worn }).toEqual({ removed: ['p2'], pool: ['p1'], worn: { [CAREN]: { helmet: 'p1' } } });
+    });
+
+    it('ничего не создаёт: записи и счётчик те же', () => {
+      const st = dressed({ helmet: 'p1' });
+      const r = wearFromPool(ctx, st, CAREN, 'p2')!;
+      expect({ seq: r.st.seq, pieces: Object.keys(r.st.pieces) }).toEqual({ seq: st.seq, pieces: ['p1', 'p2'] });
+    });
+
+    it.each([
+      ['прежняя ушла из пула', () => dressed({ helmet: 'p2' }), 'p1'],
+      ['прежняя осталась в пуле', () => dressed({ helmet: 'p1' }), 'p2'],
+      ['слот был пуст, надет другой', () => dressed({ shoes: 'p3' }, [S(), J(), rec('p3', A('shoes', 'Life', NOTHING))]), 'p2'],
+      ['у героя ничего не было надето', () => v2([S(), J()], { [CAREN]: ['p1', 'p2'] }), 'p2'],
+    ])('«Вернуть» — байт в байт: %s', (_, mk, id) => {
+      const st = mk();
+      const r = wearFromPool(ctx, st, CAREN, id)!;
+      expect(J_(undoWear(r.st, CAREN, r))).toBe(J_(st));
+    });
+
+    it('уже надета или не из его пула — ничего (null)', () => {
+      const st = dressed({ helmet: 'p1' });
+      expect([wearFromPool(ctx, st, CAREN, 'p1'), wearFromPool(ctx, st, KAPPA, 'p2'), wearFromPool(ctx, st, CAREN, 'zz')]).toEqual([null, null, null]);
+    });
+  });
+
+  describe('«Да, всё надето» (wearAll)', () => {
+    const six = () => [rec('w1', { ...A('helmet', 'Speed', STRONG) }), rec('w2', A('armor', 'Speed', STRONG)), rec('w3', A('gloves', 'Speed', STRONG)),
+      rec('w4', A('shoes', 'Speed', STRONG)), rec('w5', { slot: 'weapon', grade: 'unique', setId: null, itemKey: null, main: 'DEF%', subs: STRONG }),
+      rec('w6', { slot: 'accessory', grade: 'unique', setId: null, itemKey: null, main: 'DEF%', subs: STRONG })];
+
+    it('по одной вещи на слот — надеты все', () => {
+      const ps = six();
+      const r = wearAll(v2(ps, { [CAREN]: ps.map((p) => p.id) }), CAREN)!;
+      expect(r.st.worn).toEqual({ [CAREN]: { helmet: 'w1', armor: 'w2', gloves: 'w3', shoes: 'w4', weapon: 'w5', accessory: 'w6' } });
+    });
+
+    it('5 вещей без брони — надеты все пять, броня пустая', () => {
+      const ps = six().filter((p) => p.slot !== 'armor');
+      const r = wearAll(v2(ps, { [CAREN]: ps.map((p) => p.id) }), CAREN)!;
+      expect(r.st.worn).toEqual({ [CAREN]: { helmet: 'w1', gloves: 'w3', shoes: 'w4', weapon: 'w5', accessory: 'w6' } });
+    });
+
+    it('две вещи в одном слоте — ничего (null)', () => {
+      expect(wearAll(v2([S(), J()], { [CAREN]: ['p1', 'p2'] }), CAREN)).toBeNull();
+    });
+
+    it('на герое уже что-то надето — ничего (null)', () => {
+      const ps = six();
+      expect(wearAll(v2(ps, { [CAREN]: ps.map((p) => p.id) }, { worn: { [CAREN]: { helmet: 'w1' } } }), CAREN)).toBeNull();
+    });
+
+    it('«Вернуть» — байт в байт (и надетое других героев на месте)', () => {
+      const ps = [...six(), rec('k1', helmet({ HP: 1 }))];
+      const st = v2(ps, { [KAPPA]: ['k1'], [CAREN]: ps.slice(0, 6).map((p) => p.id) }, { worn: { [KAPPA]: { helmet: 'k1' } } });
+      const r = wearAll(st, CAREN)!;
+      expect(J_(undoWearAll(r.st, CAREN, r))).toBe(J_(st));
+    });
+
+    it('«Вернуть» не снимает то, что за эти секунды надели в слот заново', () => {
+      const ps = [...six(), rec('w7', A('helmet', 'Speed', NOTHING))];
+      const st = v2(ps, { [CAREN]: ps.slice(0, 6).map((p) => p.id) });
+      const r = wearAll(st, CAREN)!;
+      const later = wearFromPool(ctx, { ...r.st, pools: { [CAREN]: [...r.st.pools[CAREN], 'w7'] } }, CAREN, 'w7')!.st;
+      expect(undoWearAll(later, CAREN, r).worn).toEqual({ [CAREN]: { helmet: 'w7' } });
+    });
   });
 });

@@ -9,7 +9,7 @@ import { makeCtx } from '../src/logic/context';
 import { buildKey, EMPTY_GEAR, updateIn, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
 import { assemble, assembleReach, entriesFor, hasStatBuild, heldBy, holds, isStats, outcomeFor, play, poolView, putOn, puts, started, statVariant, STATS, undoPut, type Assembly, type Entry, type Play, type PoolStore } from '../src/logic/pool';
 import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '../src/logic/setBonus';
-import { charVs, whereUsed } from '../src/logic/poolVs';
+import { charVs, whereOf, whereUsed } from '../src/logic/poolVs';
 import { slotMains } from '../src/logic/builds';
 import { decodeItem, MAINS } from '../src/logic/itemCode';
 import type { Subs } from '../src/logic/subs';
@@ -1243,7 +1243,9 @@ describe('что держит пул и что убирает «Надеть» (
   // REFUTE2 п.6, Transistone: у Caren Speed-шлем A (EFF) на T4 — в Speed и в «По статам». Переброшенный A′ (CHC вместо
   // EFF, с формы ниже T4) введён заново и надет: в Speed (4 Speed, T4 у трёх — Speed ×2 T4 и без A) A′ лучше, а в
   // «По статам» (два Speed на T4 и сильные Attack-вещи) A держит Speed ×2 T4 — A остаётся в пуле: «призрак», убрать
-  // его — «Убрать у Caren» (чистый путь — «Примерить замену», шаг 6)
+  // его — «Убрать у Caren» (чистый путь — «Примерить замену», шаг 6).
+  // «Надето», В4: «По статам» больше не держит — A остаётся, потому что шлем A стоит в сборках Pen, Def, Speed/Immu и
+  // Def/Immu (своих шлемов у них нет); ожидание то же. Без них A уходит — тест «Transistone с надетой A» ниже
   describe('Transistone-«призрак»: A′ вытеснил A из Speed, A стоит в «По статам» и не убран', () => {
     const STRONG4 = { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 2 };
     const pieces = () => [
@@ -1268,6 +1270,32 @@ describe('что держит пул и что убирает «Надеть» (
       }).toEqual({ speed: r.id, stats: ps[0].id, removed: [], kept: true });
     });
   });
+
+  // «Надето», шаг 2: A надета. Шлемы Pen, Def и Immu (свои у этих вариантов) — шлем A стоит только в Speed и в «По
+  // статам»; «Надеть» A′ в тот же слот: A′ лучше в Speed, «По статам» не держит (В4), надета теперь A′ — A уходит
+  describe('Transistone с надетой A: «Надеть» A′ в тот же слот', () => {
+    const STRONG4 = { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 2 }, JUNK2 = { HP: 1, RES: 1 };
+    const pieces = () => [
+      P('helmet', 'Speed', { 'DEF%': 2, CHD: 2, SPD: 1, EFF: 2 }, 4), P('armor', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 2 }, 4),
+      P('gloves', 'Speed', { HP: 1, RES: 1 }, 4), P('shoes', 'Speed', { HP: 1, ATK: 1 }, 0),
+      P('gloves', 'Attack', STRONG4), P('shoes', 'Attack', STRONG4),
+      P('helmet', 'Penetration', JUNK2), P('helmet', 'Defense', JUNK2), P('helmet', 'Immunity', JUNK2),
+    ];
+    const A2 = { ...X('helmet', 'Speed', { 'DEF%': 2, CHD: 2, SPD: 1, CHC: 2 }), bt: 0 as const };
+    const worn = (ps: Piece[]): GearStore => ({ ...store(caren, ps), worn: { [caren.id]: { helmet: ps[0].id } } });
+
+    it('до «Надеть»: A — только в Speed и в «По статам»', () => {
+      const ps = pieces();
+      expect(holders(play(ctx, caren, ps), ps[0].id).sort()).toEqual([STATS, 'Speed'].sort());
+    });
+
+    it('A надета, «Надеть» A′: A уходит (её не держит ни один билд), надета A′', () => {
+      const ps = pieces();
+      const r = putOn(ctx, worn(ps), caren.id, A2);
+      expect({ removed: r.removed.map((x) => x.id), kept: r.st.pools[caren.id].includes(ps[0].id), worn: r.st.worn?.[caren.id]?.helmet })
+        .toEqual({ removed: [ps[0].id], kept: false, worn: r.id });
+    });
+  });
 });
 
 // Шаг 5 «Оценка — единственный ввод»: правка в шторке (updateIn) пересобирает билды, но пул не чистит (В-А3) — ставшая
@@ -1287,10 +1315,11 @@ describe('правка в шторке пересобирает, но не чи�
   const store = (ps: Piece[]): GearStore =>
     ({ ...EMPTY_GEAR, seq: seq + 1, pieces: Object.fromEntries(ps.map((p) => [p.id, p])), pools: { [caren.id]: ps.map((p) => p.id) } });
 
-  it('до правки: A — только в Speed, B — только в «По статам», ненужных нет', () => {
+  // «Надето», В4: «По статам» вещи не держит — B, которая только в нём, «больше не нужна» уже до правки (было — unused [])
+  it('до правки: A — только в Speed, B — только в «По статам», и она «больше не нужна» (В4)', () => {
     const ps = pieces(), [a, b] = ps;
     const cp = poolView(ctx, store(ps)).of(caren.id)!;
-    expect({ a: held(cp, a.id), b: held(cp, b.id), unused: cp.unused }).toEqual({ a: ['Speed'], b: [STATS], unused: [] });
+    expect({ a: held(cp, a.id), b: held(cp, b.id), unused: cp.unused.map((p) => p.id) }).toEqual({ a: ['Speed'], b: [STATS], unused: [b.id] });
   });
 
   it('SPD у A 4 → 6: «По статам» пересобран — шлем A вместо B', () => {
@@ -1489,7 +1518,7 @@ describe('«По статам» у каждого героя (находка 28)
   });
 
   describe('Eternal: «По статам» рядом с Speed', () => {
-    it('CMPP + GLUJ: собирается Speed, «По статам» есть (не собирается сам) и держит обе вещи', () => {
+    it('CMPP + GLUJ: собирается Speed, «По статам» есть (не собирается сам), обе вещи в его сборке', () => {
       const a = rec(CMPP), b = rec(GLUJ);
       const p = play(ctx, eternal, [a, b]);
       expect(p.inPlay.map((v) => (isStats(v) ? STATS : v.name))).toEqual(['Speed']);
@@ -1498,16 +1527,18 @@ describe('«По статам» у каждого героя (находка 28)
       expect([s.slots.armor?.id, s.slots.gloves?.id]).toEqual([a.id, b.id]);
     });
 
-    it('Effectiveness-броня сильнее по статам, чем Speed-броня, — не «ненужная»: стоит в «По статам»', () => {
+    // «Надето», В4: «По статам» вещи не держит — в пуле минимум под билды. Было: Effectiveness-броня не «ненужная»
+    // (держал «По статам»), «Надеть» Speed-брони её не убирал
+    it('Effectiveness-броня сильнее по статам, чем Speed-броня, но только в «По статам» — «ненужная» (В4)', () => {
       const eff = rec(CMPP), spd = rec(WEAK_SPEED);
-      expect(poolView(ctx, store({ [eternal.id]: [eff, spd] })).of(eternal.id)!.unused).toEqual([]);
+      expect(poolView(ctx, store({ [eternal.id]: [eff, spd] })).of(eternal.id)!.unused).toEqual([eff]);
     });
 
-    it('«Надеть» слабую Speed-броню на Eternal с CMPP: CMPP остаётся — она лучше по статам', () => {
+    it('«Надеть» слабую Speed-броню на Eternal с CMPP: CMPP уходит — её держал только «По статам» (В4)', () => {
       const eff = rec(CMPP);
       const r = putOn(ctx, store({ [eternal.id]: [eff] }), eternal.id, WEAK_SPEED);
-      expect(r.removed).toEqual([]);
-      expect(r.st.pools[eternal.id]).toContain(eff.id);
+      expect(r.removed).toEqual([eff]);
+      expect(r.st.pools[eternal.id]).not.toContain(eff.id);
     });
 
     it('есть GLUJ, CMPP через поиск: «По статам — пустой слот», строка тихая (штамп не держит), надеть можно', () => {
@@ -1551,13 +1582,14 @@ describe('«По статам» у каждого героя (находка 28)
     });
   });
 
-  describe('где стоит вещь (whereUsed): «По статам» — только если больше нигде', () => {
-    it('броня не из связки, одна в своём слоте (прочая в пустой слот Speed): «По статам», и пул её держит', () => {
+  // «Надето», В4: «По статам» вещи не держит и в «где стоит» не называется (было — «По статам», если больше нигде)
+  describe('где стоит вещь (whereUsed): «По статам» — никогда (В4)', () => {
+    it('броня не из связки, одна в своём слоте (прочая в пустой слот Speed): без «где стоит», а пул её держит', () => {
       const shoes = rec(item('shoes', 'Swiftness', { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }));
       const view = poolView(ctx, store({ [caren.id]: [rec(item('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1 })), shoes] }));
       const cp = view.of(caren.id)!;
       expect(cp.asm.get(variant('Caren', 'Speed').key)!.slots.shoes?.id).toBe(shoes.id); // в раскладке Speed она есть
-      expect(whereUsed(view, caren.id, shoes.id).map(isStats)).toEqual([true]);
+      expect(whereUsed(view, caren.id, shoes.id)).toEqual([]);
       expect(cp.unused).toEqual([]);
     });
 
@@ -1575,11 +1607,23 @@ describe('«По статам» у каждого героя (находка 28)
       expect(whereUsed(view, eternal.id, g.id).map((v) => v.name)).toEqual(['Speed']);
     });
 
-    it('вещь только в «По статам» — «По статам»', () => {
+    it('вещь только в «По статам» — ни одного билда (В4)', () => {
       // в Speed броня — Speed-вещь (сет идёт вещь за вещью), в «По статам» — CMPP: она сильнее
       const eff = rec(CMPP);
       const view = poolView(ctx, store({ [eternal.id]: [eff, rec(GLUJ), rec(WEAK_SPEED)] }));
-      expect(whereUsed(view, eternal.id, eff.id).map(isStats)).toEqual([true]);
+      expect(whereUsed(view, eternal.id, eff.id)).toEqual([]);
+    });
+
+    it('надетая вещь «мимо» (только в «По статам»): в «где стоит» — флаг «надета», «По статам» нет', () => {
+      const eff = rec(CMPP);
+      const view = poolView(ctx, { ...store({ [eternal.id]: [eff, rec(GLUJ), rec(WEAK_SPEED)] }), worn: { [eternal.id]: { armor: eff.id } } });
+      expect({ where: whereOf(view, eternal.id, eff.id), unused: view.of(eternal.id)!.unused }).toEqual({ where: { builds: [], worn: true }, unused: [] });
+    });
+
+    it('не надетая — флаг «надета» снят', () => {
+      const eff = rec(CMPP), g = rec(GLUJ);
+      const view = poolView(ctx, { ...store({ [eternal.id]: [eff, g] }), worn: { [eternal.id]: { armor: eff.id } } });
+      expect(whereOf(view, eternal.id, g.id).worn).toBe(false);
     });
   });
 });

@@ -491,17 +491,19 @@ describe('кнопка = то, что сделает «Надеть»', () => {
 
   // было (браузер): у Core Fusion Eternal главная строка «только статы — … оставь как есть» про «По статам», а под ней
   // «Надеть на Core Fusion Eternal» — и её Effectiveness-шлем уходил. «По статам» теперь остаётся и после «Надеть»
-  // (находка 28): Effectiveness-шлем сильнее по статам и стоит в нём — «Надеть», не «Заменить», и он остаётся в пуле
-  it('Core Fusion Eternal, 4 Effectiveness: Speed-шлем только начнёт Speed — главная строка «начнёт», кнопка «Надеть» = тост, Effectiveness-шлем остаётся', async () => {
+  // (находка 28): Effectiveness-шлем сильнее по статам и стоит в нём — «Надеть», не «Заменить», и он остаётся в пуле.
+  // «Надето», В4: «По статам» вещи не держит — Effectiveness-шлем не стоит ни в одном билде, «Надеть» Speed-шлема его
+  // заменяет: кнопка «Заменить» = тост «Заменено», шлема в пуле нет (было — «Надеть» и шлем остаётся)
+  it('Core Fusion Eternal, 4 Effectiveness: Speed-шлем только начнёт Speed — главная строка «начнёт», кнопка «Заменить» = тост, Effectiveness-шлем уходит (В4)', async () => {
     const cf = char('Core Fusion Eternal');
     const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Effectiveness'), { SPD: 2, EFF: 2, CHC: 1, HP: 1 }));
     await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 3, EFF: 2, CHC: 2, 'ATK%': 1 } },
       { gear: G(pcs, { [cf.id]: ['e1', 'e2', 'e3', 'e4'] }), roster: [cf.id] });
     expect($('.vcard .vc-vs')?.textContent).toBe('startsCore Fusion Eternal· Speed');
-    expect($('.vc-equip')?.textContent).toBe('Equip on Core Fusion Eternal');
+    expect($('.vc-equip')?.textContent).toBe("Replace Core Fusion Eternal's helmet");
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain('On Core Fusion Eternal: helmet.');
-    expect(stored().pools[cf.id]).toContain('e1');
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
+    expect(stored().pools[cf.id]).not.toContain('e1');
   });
 
   // «По статам» живой (в пуле нет брони из сетов связок) — его «только статы» остаётся в «Ещё», но не главной строкой
@@ -514,12 +516,15 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     const row = byText('.v-vs .vs-row', 'Core Fusion Eternal')!;
     expect(row.querySelector('.vs')?.textContent).toBe('starts');
     expect(row.querySelector('.vs-more-btn')?.textContent).toContain('By stats — stats only');
-    expect(row.querySelector('.vs-act')?.textContent).toBe('Equip on Core Fusion Eternal');
+    // «Надето», В4: Effectiveness-шлем держал только «По статам» — «Надеть» его заменит (было — «Equip on …»)
+    expect(row.querySelector('.vs-act')?.textContent).toBe("Replace Core Fusion Eternal's helmet");
   });
 
   // было (сценарий «Eternal»): «Кому надеть?» — «Надеть — начнёт Speed», а жмёшь — «Заменено: шлем Eternal». Attack-шлем
-  // сильнее по статам и остаётся в «По статам» (находка 28) — «Надето», шлем в пуле
-  it('Eternal, 4 Attack, слабый Speed-шлем через «Кому надеть?»: вещь начнёт Speed, Attack-шлем остаётся — тост «Надето», «Начал собирать Speed»', async () => {
+  // сильнее по статам и остаётся в «По статам» (находка 28) — «Надето», шлем в пуле.
+  // «Надето», В4: «По статам» вещи не держит — Attack-шлем ни в одном билде, «Надеть» его заменяет: тост «Заменено»,
+  // шлема в пуле нет (было — «Надето» и шлем остаётся). Подпись строки = тост: «Заменить» (ниже)
+  it('Eternal, 4 Attack, слабый Speed-шлем через «Кому надеть?»: вещь начнёт Speed, Attack-шлем уходит — тост «Заменено», «Начал собирать Speed» (В4)', async () => {
     const eternal = char('Eternal');
     const pcs = ['helmet', 'armor', 'gloves', 'shoes'].map((sl, i) => P('e' + (i + 1), sl, set('Attack'), { SPD: 3, EFF: 2, CHC: 2 }));
     await mount({ slot: 'helmet', grade: 'unique', rosterOnly: false }, { setId: speed, subs: { SPD: 1, HP: 1, RES: 1, DEF: 1 } },
@@ -528,9 +533,9 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     const row = byText('.equip-row', 'Eternal')!;
     expect(row.querySelector('.vs')?.textContent).toBe('starts');
     await click(row);
-    expect($('.gear-toast')?.textContent).toContain('On Eternal: helmet.');
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Eternal's helmet.");
     expect($('.gear-toast small')?.textContent).toContain('Started filling Speed.');
-    expect(stored().pools[eternal.id]).toContain('e1');
+    expect(stored().pools[eternal.id]).not.toContain('e1');
   });
 });
 
@@ -1478,7 +1483,8 @@ describe('«По статам» у каждого героя (находка 28)
     expect(row.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
     await click(row);
     expect(stored().pools[drakhan.id]).toHaveLength(1);
-    expect($('.gear-toast')?.textContent).toContain('Counts in "By stats".');
+    // «Надето», В4: «По статам» не называется в «где стоит» — тост без «Засчитано» (было — «Counts in "By stats".»)
+    expect($('.gear-toast')?.textContent).toBe('On Demiurge Drakhan: armor.Undo');
   });
 
   it('карточка Drakhan без вещей: вкладка «By stats» последней, на ней — что туда встаёт и «Собрать билд»', async () => {
@@ -1513,11 +1519,14 @@ describe('«По статам» у каждого героя (находка 28)
     expect(row.querySelector('.act')?.textContent).toBe('Equip — By stats');
     expect(row.querySelector('.vs')?.textContent).not.toBe('starts');
     await click(row);
-    expect($('.gear-toast')?.textContent).toContain('Counts in "By stats".');
+    // «Надето», В4: «По статам» не называется в «где стоит»; вещь в сборках несобираемых Speed и Critical Strike — они
+    // (whereUsed, шаг 10 eval-only). Было — «Counts in "By stats".»
+    expect($('.gear-toast')?.textContent).toContain('Counts in Speed, Critical Strike.');
     expect(stored().marks ?? {}).toEqual(marks);
   });
 
-  it('Caren со Speed-шлемом, Swiftness-ботинки через поиск: тост «Засчитано в By stats», а не в её билдах', async () => {
+  // «Надето», В4: «По статам» не называется в «где стоит» — тост без «Засчитано» (было — «Засчитано в By stats»)
+  it('Caren со Speed-шлемом, Swiftness-ботинки через поиск: тост без «Засчитано» — ни в «By stats», ни в её билдах (В4)', async () => {
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Swiftness'), subs: { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 } },
       { gear: G([WEAK], { [caren.id]: ['p1'] }) });
     await click($('.vcard'));
@@ -1526,19 +1535,20 @@ describe('«По статам» у каждого героя (находка 28)
     const row = byText('.equip-row', 'Caren')!;
     expect(row.querySelector('.act')?.textContent).toBe('Equip — empty slot · By stats');
     await click(row);
-    expect($('.gear-toast')?.textContent).toContain('On Caren: boots. Counts in "By stats".');
+    expect($('.gear-toast')?.textContent).toBe('On Caren: boots.Undo');
   });
 
-  it('вещь только в «По статам» — в списке вещей «в By stats»; вещь и в Speed — только «в Speed»', async () => {
+  // «Надето», В4: «По статам» вещи не держит — вещь только в нём «больше не нужна» (было — «в By stats»)
+  it('вещь только в «По статам» — в списке вещей «больше не нужна»; вещь и в Speed — только «в Speed» (В4)', async () => {
     const eternal = char('Core Fusion Eternal');
     const pcs = [P('p1', 'armor', set('Effectiveness'), { SPD: 3, EFF: 2, HP: 1 }, { grade: 'rare' }), P('p2', 'gloves', speed, { SPD: 1, 'ATK%': 3, EFF: 2 }, { grade: 'rare' }),
       P('p3', 'armor', speed, { SPD: 1, HP: 1, RES: 1 }, { grade: 'rare' })];
     await mount({ tab: 'chars', charId: eternal.id }, {}, { roster: [eternal.id], gear: G(pcs, { [eternal.id]: ['p1', 'p2', 'p3'] }) });
     await click($('.pool summary'));
     const where = (id: string) => $$('.pool-list li')[['p1', 'p2', 'p3'].indexOf(id)].querySelector('.pool-w')?.textContent;
-    expect(where('p1')).toBe('in "By stats"');
+    expect(where('p1')).toBe('');
+    expect($$('.pool-list li')[0].textContent).toContain('no longer needs it');
     expect(where('p2')).toBe('in Speed');
-    expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
   });
 });
 
