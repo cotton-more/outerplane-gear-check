@@ -6,8 +6,6 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/3-upgrade.png" width="360" alt="Upgrading block">
 
-_A shot of the previous version: the block has no Reforge lines any more._
-
 ## What the game has
 
 - **Enhance** (+0…+10, hammers) raises only the main stat.

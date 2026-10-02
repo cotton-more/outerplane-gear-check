@@ -61,6 +61,8 @@ async function shoot(lang) {
     localStorage.setItem('ogc.roster', JSON.stringify(window.OGC_DATA.chars.filter((c) => names.includes(c.name)).map((c) => c.id)));
   }, ROSTER, lang, doneTour());
   await page.goto(url, { waitUntil: 'networkidle0' }); // не reload: адрес мог сохранить #персонажа с прошлого прогона
+  // вспышка плашки вердикта гаснет анимацией, а «уменьшить движение» её выключает — без этого плашка осталась бы залитой
+  await page.addStyleTag({ content: '.vb-flash { display: none; }' });
 
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));
   const step = (fn) => page.evaluate(async (src) => {

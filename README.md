@@ -22,7 +22,7 @@ works in the browser, installs on a phone as an app, works offline. English and 
 </tr>
 <tr>
 <td>Who it suits: each character's substat priority chain and what of it matched.</td>
-<td>Upgrading: what to invest in this piece — Enhance, Breakthrough, Transistone (shot from the previous version).</td>
+<td>Upgrading: what to invest in this piece — Enhance, Breakthrough, Transistone.</td>
 </tr>
 </table>
 
