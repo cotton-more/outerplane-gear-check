@@ -40,7 +40,7 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 ## First steps
 
 1. **Mark your characters:** ☰ → "Characters", the star on each one you own. While the roster is empty, the evaluation
-   uses every character in the game. The roster moves to another device with a code ("export / import").
+   uses every character in the game. The roster moves to another device with a code ("export / import"). Marked a hero? Open them and use the "Worn" tab to record what they wear in the game now.
 2. **Split the screen:** the game in one half, Gear Check in the other.
 3. **Enter the piece:**
    - the slot (row of icons) and grade: `L` — Legendary (Etheric), `E` — Epic (Steel);

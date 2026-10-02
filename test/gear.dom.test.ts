@@ -712,7 +712,7 @@ describe('«Кому надеть?»', () => {
     expect($('.equip-subs')?.textContent).toBe('DEF%2CHC2CHD3HP1');
     expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace helmet — the new one is better · Speed');
     expect($$('.equip-row')).toHaveLength(1);
-    expect($('.equip')?.textContent).toContain('Here are those whose builds can use the piece. Off-build? Search a character by name: it goes into "By stats".');
+    expect($('.equip')?.textContent).toContain('Here are those whose builds can use the piece. Off-build? Search a character by name: "Equip" records it as worn.');
     expect($('.equip .toggle')).toBeNull(); // «показать и не по билду» больше нет
 
     const input = $('.equip-q input') as HTMLInputElement;
@@ -757,7 +757,7 @@ describe('«Кому надеть?»', () => {
     await click($('.vcard'));
     await click($('.v-equip'));
     expect($$('.equip-row')).toHaveLength(0);
-    expect($('.equip .muted')?.textContent).toBe('It gives no build anything. Search a character by name — with useful stats it goes into their "By stats".');
+    expect($('.equip .muted')?.textContent).toBe('It gives no build anything. Search a character by name — "Equip" records it as worn.');
   });
 
   // «Надеть» уберёт вещь её слота — подпись = действие: «Заменить ботинки — соберёт Speed», «…— Speed: сет 3 из 4»
@@ -1493,7 +1493,7 @@ describe('«По статам» у каждого героя (находка 28)
     expect($$('.btabs button').map((b) => b.textContent)).toEqual(['Worn0/6', ...drakhan.builds.map((b) => b.name), 'By stats']); // «Надето» — первая у героя ростера (шаг 6)
     expect($('.btabs button[aria-selected="true"]')?.textContent).toBe(drakhan.builds[0].name);
     await click(byText('.btabs button', 'By stats'));
-    expect($('.bgear-none p')?.textContent).toBe(`"By stats" — ${drakhan.name}'s pieces by the chain, no sets. What ${drakhan.name} wears off-build in the game goes here too: press "Gear up this build" and enter the pieces.`);
+    expect($('.bgear-none p')?.textContent).toBe(`"By stats" — ${drakhan.name}'s pieces by the chain, no sets. Record what ${drakhan.name} wears off-build on the "Worn" tab.`);
     expect($('.bgear-none')?.getAttribute('data-tour')).toBe('stats');
   });
 

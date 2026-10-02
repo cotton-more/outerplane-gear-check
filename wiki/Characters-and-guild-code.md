@@ -11,7 +11,7 @@ a character directly.
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
 next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on
-outerpedia in a new tab.
+outerpedia in a new tab. For a roster hero the first tab is "Worn": what they wear in the game and which build they're dressed for ([Equipment](Equipment#worn-and-the-heros-build)).
 
 Only roster characters have gear: "Equip" adds the character to the roster, importing a gear code adds everyone who
 has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,

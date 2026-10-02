@@ -42,16 +42,13 @@ Whether a build is started depends on what can be assembled from the character's
 layout gave a Speed piece's slot to a piece of another set for its stats, Speed is still filled: "— Speed ×2 can be made
 from Caren's pieces, but the layout is better without it".
 
-Not filling a build? Turn off "Filling": its pieces stop holding the verdict but don't leave — the character keeps the
-pieces of every build's best layout and of "By stats". Turn it back on and it's filled by the rules again. "Equip" never
+Not filling a build? Turn off "Filling": its pieces stop holding the verdict but don't leave — the character keeps the pieces of every build's best layout and of what's worn. Turn it back on and it's filled by the rules again. "Equip" never
 sets "Filling" — only you flip it.
 
 **"By stats".** Every character with builds has a "By stats" build — the last tab: all the character's pieces by the
 substat chain, no sets, and incidental set bonuses count. While no build is started (Eternal in Effectiveness, Stella in
 Attack and Critical Hit), "By stats" fills itself and holds the stamp. The first piece of a build's set or a listed
-weapon or accessory (with a listed main) starts that build, and the "By stats" line turns quiet: it neither holds nor
-lowers the stamp. An off-build piece goes into "By stats" only on purpose — by a name search in "Equip on whom?" or when
-rating for a character ("Rate a piece for Caren").
+weapon or accessory (with a listed main) starts that build, and the "By stats" line turns quiet: it neither holds nor lowers the stamp. "By stats" doesn't hold pieces: a piece only it needs becomes "no longer needed" — unless it's worn. An off-build piece reaches a character only on purpose — a name search in "Equip on whom?" or rating for a character ("Rate a piece for Caren"): it is recorded as worn and held while worn.
 
 ## How a piece reaches a character
 
@@ -59,9 +56,7 @@ rating for a character ("Rate a piece for Caren").
 the segments that are lit and "T4": Reforges still ahead don't count.
 
 Only from a verdict: enter a piece as usual, open the details and press **"Equip on…"** — or the button under the card
-on a phone. **A piece with no useful stats never reaches a character:** you can equip a piece only if it goes into a
-build or into "By stats". Off-build pieces aren't offered by themselves — search the character by name in "Equip on
-whom?" (for the one found, the piece goes into "By stats") or tap "Rate a piece for Caren". "Equip on whom?" has a row
+on a phone. **"Equip" records the piece as worn in its slot.** A verdict offers it to those whose build it fits. Off-build pieces aren't offered by themselves — search the character by name in "Equip on whom?" or tap "Rate a piece for Caren": there "Equip" is on every piece, even a useless one — that's how you record what the hero wears in the game. "Equip on whom?" has a row
 per roster character saying what happens: "Equip — completes Speed", "Equip — Speed/Immu: set 3 of 4", "Replace helmet —
 the new one is better · Speed", "Replace helmet — completes Speed", "Equip — starts Speed". Name search covers all
 characters, not just the roster — except those replaced by Core Fusion.
@@ -72,9 +67,7 @@ assembly — or when the piece starts a new build. The card's third line is the 
 Speed/Immu", "▲ +25% Caren · Speed +1" ("+1" — the same in one more build). With "T4" on, the button and the message
 say " · T4".
 
-**"Equip" reassembles the builds and removes what it pushed out** — in any slot: a piece that sat in the character's
-assembly before "Equip" and in none after it, "By stats" included. If the piece of its slot left, the button says
-"Replace". Pieces that became unneeded earlier (new data, an edit on the piece card, "Remove") are left alone by "Equip":
+**"Equip" records the piece as worn, reassembles the builds and removes what it pushed out.** The slot's old worn piece leaves only if no build holds it; elsewhere — a piece that sat in the assembly before "Equip" and in none after it, and isn't worn. If the slot has a worn piece (or "Equip" removes the slot's piece), the button says "Replace". Pieces that became unneeded earlier (new data, an edit on the piece card, "Remove") are left alone by "Equip":
 on the card they get a "no longer needs it" line and "Remove from Caren".
 
 After "Equip" the message says where the piece went ("Counts in Speed, Speed/Immu") and which build it started
@@ -99,17 +92,14 @@ Above the form — the **"Only for · Caren ✕"** strip. While it's there: the 
 "Equip" are only about Caren, across all of Caren's builds; the stamp is shared, over the whole roster. "Next" keeps the
 mode; ✕ — everyone again. The title after " — " talks about others and about this character: "completes Speed/Immu on
 Caren", "Caren · Speed/Immu: set 3 of 4", "on Caren — on par: Speed ×2 at T4". The piece's set is in none of Caren's
-builds — the line "Caren doesn't need it: Attack isn't in Caren's builds.". With useful stats — "It fits Caren by stats
-— it goes into "By stats"." and the "Equip on Caren" button; without them — "This piece gives Caren nothing: no
-useful stats." and it can't be equipped.
+builds — the line "Caren doesn't need it: Attack isn't in Caren's builds.". With useful stats — "It fits Caren by stats, not by build." and the "Equip on Caren" button. A piece with no useful stats gets the line "This piece gives Caren nothing: no useful stats." — and the "Equip on Caren" button is still there, with "Wears it in game? Tap to record it as worn" under it. Tap it if Caren wears the piece in the game. If the slot already has a worn piece, it says "Replace Caren's {slot}". When you enter worn pieces, after "Equip" the form moves to the next empty slot; the button says "Next: {slot}".
 
 **"Try a replacement"** on a piece — the "Replace" button is always there and removes exactly that piece, whether the new
 one is better or worse — for the piece you enter next; "Next" drops the replacement.
 
 ## On the character card
 
-At the top — **"Best assembled: Speed · set 4 of 4"** or **"Closest to done: …"**, then "Also assembled: …". The card
-opens on the best build's tab; the tab shows "Speed 6/6": pieces working for the build; "By stats" is the last tab.
+At the top — **"Best assembled: Speed · set 4 of 4"** or **"Closest to done: …"**, then "Also assembled: …". The first tab is **"Worn · k/6"** — see the section below; the card opens on it when the hero has something worn, otherwise on the best build's tab; the build tab shows "Speed 6/6": pieces working for the build; "By stats" is the last tab.
 Under the tab — variant chips, "Filling" and the set bonuses with their tier.
 
 The slots show how the variant is assembled: substats colored by its chain, Breakthrough next to them ("T4",
@@ -118,8 +108,7 @@ and what to look for. **"Missing: Immunity — 1 more, armor, gloves or boots."*
 
 **"Caren's gear · N"** — a collapsed list of all her pieces by slot ("Helmet · 2", "Armor · 1"…) and where each one
 sits: "in Speed, Speed/Immu", "in every build"; each piece also shows its Breakthrough ("T4", "T0–T3"). A piece she no longer needs (the builds use better ones) gets a line and
-**"Remove from Caren"**. Such a piece isn't removed by itself; only the "Equip" that pushed it out removes it — with a
-message.
+**"Remove from Caren"**. Such a piece isn't removed by itself; only the "Equip" that pushed it out removes it — with a message. A worn piece is marked "worn": while worn, it is "needed".
 
 **Only roster characters have gear.** "Equip" on a character outside the roster adds the character to the roster;
 importing a gear code and starting the app add everyone who has gear. Unstar Caren while Caren has gear — a window
@@ -142,6 +131,22 @@ An edit removes nothing by itself: if another piece is no longer needed, it gets
 from Caren".
 
 Enhance isn't tracked: pieces are assumed to be +10.
+
+## Worn and the hero's build
+
+**"change ▾"** opens "Build for Caren": each variant shows what you have for it ("worn 2 of 4", "3 of 4 in pieces",
+"1 missing"). Picking another build leads to the **"Re-dress"** screen: what to wear from your own (one piece or "Wear
+all"), what you take off, what's missing. In the game you do the same yourself — the app only counts.
+
+After the update, heroes with gear get a notice "Picked builds from your pieces for N heroes — please check". "Check"
+opens "Heroes' builds" with the reasons; "All correct" saves. The rule: only one build → the one marked "Filling" → the
+one with more of the combo's bonuses on → the one with more of the combo's pieces → the first. A build marked "Not
+filling" is never picked.
+
+The card's first tab is **"Worn"**: the line "Build — Speed · set 3 of 4 · change ▾", six slots and the bonuses of the
+worn sets. If one of the hero's pieces is better for their build, the slot shows "Better in own pieces: … · Wear". An
+empty slot has "Enter": "Rate" opens for that slot, and after "Equip" the form moves to the next empty one ("Next:
+{slot}"). If the hero has at most one piece per slot, "Yes, all worn" replaces the entry.
 
 ## "On your characters now" in the verdict
 
@@ -195,7 +200,7 @@ Core Fusion has its own builds and its own priority chain. The same goes for Sno
 Epsilon.
 
 - **Star Core Fusion Eternal** while Eternal is there (in the roster or with gear) — a window "Mark Core Fusion
-  Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, and Eternal turns inactive. The same window comes
+  Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn, and Eternal turns inactive. The same window comes
   up for "Equip on Core Fusion Eternal" and "Rate a piece for Core Fusion Eternal".
 - **Inactive Eternal** sits in the list right after Core Fusion Eternal, marked "replaced by Core Fusion Eternal": the
   verdict doesn't consider Eternal, and Eternal isn't in "Equip on whom?" or in rating for a character.
@@ -219,7 +224,7 @@ itself). The menu clears other filters: exactly N tiles. A tile shows "6/6" of t
 
 ## Backup
 
-"Export / import" on the characters tab: the **OGC-GEAR2** code — all pieces and "Filling" marks. Copy it to keep a
+"Export / import" on the characters tab: the **OGC-GEAR2** code — all pieces, what's worn, the chosen builds and "Filling" marks. Copy it to keep a
 backup or move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the
 roster), and "Undo" brings the previous gear back. An old OGC-GEAR1 code still reads: pieces go to their characters, and
 builds with pieces become "Filling". During a tutorial there's no code: the page shows an example, not your pieces.
