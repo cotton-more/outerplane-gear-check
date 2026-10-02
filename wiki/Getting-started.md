@@ -64,11 +64,11 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 <table>
 <tr>
 <td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/1-grid.png" alt="Attack Set picked: the stats it needs are highlighted"></td>
-<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict with the priority chain"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
 </tr>
 <tr>
 <td>Pick the set — the stats it needs light up.</td>
-<td>Mark the substats — the verdict replaces the grid: what the best candidate needs and what of it the piece has.</td>
+<td>Mark the substats — the verdict shows who the piece suits and offers to equip it.</td>
 </tr>
 </table>
 

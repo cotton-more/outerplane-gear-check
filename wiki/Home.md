@@ -23,8 +23,8 @@ verdict, why, and which of your characters it suits. Builds come from [outerpedi
 
 <table>
 <tr>
-<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict with the priority chain"></td>
-<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/ru/2-verdict.png" alt="Вердикт «Оставить» с цепочкой приоритета"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/ru/2-verdict.png" alt="Вердикт «Оставить»: кому подходит и кому начнёт"></td>
 </tr>
 <tr><td>English</td><td>Русский — меню ☰ → язык</td></tr>
 </table>

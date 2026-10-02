@@ -10,11 +10,11 @@ works in the browser, installs on a phone as an app, works offline. English and 
 <table>
 <tr>
 <td width="50%"><img src="screenshots/en/1-grid.png" alt="Attack Set picked: the stats it needs are highlighted"></td>
-<td width="50%"><img src="screenshots/en/2-verdict.png" alt="Keep verdict with the priority chain"></td>
+<td width="50%"><img src="screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
 </tr>
 <tr>
 <td>Pick the set — the stats it needs light up. 0–1 bright stats on the piece? Dismantle without entering anything.</td>
-<td>Mark the substats — the verdict replaces the grid: what the best candidate needs and what of it the piece has.</td>
+<td>Mark the substats — the verdict shows who the piece suits and offers to equip it.</td>
 </tr>
 <tr>
 <td><img src="screenshots/en/4-who-fits.png" alt="Who it suits: characters' priority chains"></td>
