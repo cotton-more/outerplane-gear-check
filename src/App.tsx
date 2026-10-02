@@ -166,9 +166,10 @@ export function App() {
     // «Оставляй — лучше надетой такой же» (logic/material): её владельцы — тоже, даже не кандидаты вердикта (сырой —
     // «Разобрать», секций нет): совет «надень её» — с кнопкой
     const wearers = mat.wear.up.map((n) => idx.CHAR[n.key.slice(0, n.key.indexOf('/'))]).filter((c) => c && !chars.includes(c));
-    const list = charsVs(ctx, viewOf, input, [...new Set(wearers), ...chars]);
-    // герой из заголовка «Оставляй — лучше надетой … X» — первой карточкой: кнопка под ней — про него; прочие — как были
+    // герой из заголовка «Оставляй — лучше надетой … X» — первой карточкой, его строка остаётся даже тихой «По статам»:
+    // кнопка под ней — про него; прочие — как были
     const lead = wearLead(worn, mat.wear);
+    const list = charsVs(ctx, viewOf, input, [...new Set(wearers), ...chars], {}, lead);
     const i = lead ? list.findIndex((x) => x.c.id === lead) : -1;
     return i > 0 ? [list[i], ...list.filter((_, j) => j !== i)] : list;
   }, [ctx, viewOf, raw, worn, verdict, hero, heroVs, gear.store, roster, mat, idx]); // eslint-disable-line react-hooks/exhaustive-deps

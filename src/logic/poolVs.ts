@@ -27,7 +27,9 @@ export interface CharVs {
 // replace — режим «для героя» из «Примерить замену» (TryOn.replace): «Заменить» есть всегда, запись уходит (planPut).
 // wear — режим «для героя» («Надето», решение владельца): «Надеть на X» есть всегда, даже у вещи без пользы и вне
 // билдов, — это ввод надетого в игре; такую вещь пул держит надетой
-export interface CharVsOpts extends OutcomeOpts { replace?: string | null; wear?: boolean }
+// lead — герой из заголовка «Оставляй — лучше надетой … X»: его строка остаётся, даже если все его строки «По статам»
+// (Р11 её бы убрала), и с «Надеть» / «Заменить»
+export interface CharVsOpts extends OutcomeOpts { replace?: string | null; wear?: boolean; lead?: boolean }
 
 // у исхода есть «Надеть» (Р4): держит и она в нём встаёт; тихая «По статам» (есть только при явном выборе) — встаёт
 // пустым слотом или лучше (Р11)
@@ -44,7 +46,7 @@ export const byBest = (a: Outcome, z: Outcome) => rank(a) - rank(z) || (z.delta 
 // слота — кнопка «Заменить» всегда, лучше вещь или хуже (Р4 не действует), даже без исходов; иначе — как без replace.
 // Строки и главный исход — те же, что без него: они говорят, что вещь даст, а кнопка — что сделает «Надеть»
 export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput, only?: string, opts: CharVsOpts = {}): CharVs | null {
-  const { replace, wear = false, ...oo } = opts;
+  const { replace, wear = false, lead: headline = false, ...oo } = opts;
   const o = outcomeFor(ctx, view, charId, item, oo);
   if (!o) return null;
   const rep = !!replaceOf(view.of(charId)?.pieces ?? [], item.slot, replace);
@@ -53,9 +55,9 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   const rows = (only ? all.filter((r) => r.v.key === only) : all.filter((r) => !r.entering || r.kind === 'completes')).sort(byBest);
   const starts = only ? [] : o.starts;
   // ни исхода, ни «начнёт»: строка только ради кнопки — «Заменить» из «Примерить замену» или «Надеть» режима героя
-  if (!rows.length && !starts.length && !rep && !wear) return null;
+  if (!rows.length && !starts.length && !rep && !wear && !headline) return null;
   // Р11: автоматический показ — по сету; строка «По статам» одна героя не приводит
-  if (!opts.explicit && !rep && !wear && !only && !starts.length && rows.every((r) => isStats(r.v))) return null;
+  if (!opts.explicit && !rep && !wear && !headline && !only && !starts.length && rows.every((r) => isStats(r.v))) return null;
   // встаёт только в новые билды — главная строка «начнёт …», а не исход, где она не встаёт или штамп не держит; «начнёт»
   // главнее и строки «По статам» (находка 28). Главная — исход с «Надеть» (и тихая «По статам» при явном выборе): иначе
   // подпись («ломает») и кнопка («Надеть» в «По статам») говорили бы о разном
@@ -67,7 +69,7 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   const same = best ? rows.filter((r) => r !== best && shownKind(r) === shownKind(best) && !r.v.dupOf).length : 0;
   // only — строка одного варианта («По статам» или запасная): встаёт пустым слотом или лучше — «Надеть» и у тихой (Р11)
   const own = rep || (only ? !!top && (isStats(top.v) ? top.used && holdsKind(top) : puts(top)) : o.useful);
-  const useful = own || wear;
+  const useful = own || wear || headline;
   // Р4: подпись = действие — «Заменить», если уберёт вещь её слота или снимет надетую её слота (тост equipOn — так же)
   const cp = view.of(charId);
   const wornHere = !!cp?.pieces.some((p) => p.slot === item.slot && cp.worn.has(p.id));
@@ -92,9 +94,10 @@ export function nextToWear(view: PoolView, charId: string, slot: SlotId): SlotId
 
 // строки нескольких персонажей: сначала те, кого вещь держит, потом прочие. Вид пула — общий или
 // свой у героя: тот, на котором «Надеть» на него сделает putOn (Core Fusion X при X — после окна перехода, App)
-export function charsVs(ctx: Ctx, view: PoolView | ((charId: string) => PoolView), item: ItemInput, chars: readonly Char[], opts: OutcomeOpts = {}): CharVs[] {
+// lead — id героя из заголовка вердикта (logic/material wearLead): только его строка остаётся тихой «По статам»
+export function charsVs(ctx: Ctx, view: PoolView | ((charId: string) => PoolView), item: ItemInput, chars: readonly Char[], opts: OutcomeOpts = {}, lead: string | null = null): CharVs[] {
   const viewOf = typeof view === 'function' ? view : () => view;
-  const out = chars.map((c) => charVs(ctx, viewOf(c.id), c.id, item, undefined, opts)).filter((x): x is CharVs => !!x);
+  const out = chars.map((c) => charVs(ctx, viewOf(c.id), c.id, item, undefined, c.id === lead ? { ...opts, lead: true } : opts)).filter((x): x is CharVs => !!x);
   const key = (x: CharVs) => (x.best ? (holds(x.best) ? 0 : 3) : 2);
   return out.sort((a, z) => key(a) - key(z) || (a.best && z.best ? byBest(a.best, z.best) : 0));
 }

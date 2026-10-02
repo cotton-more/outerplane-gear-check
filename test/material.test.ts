@@ -9,7 +9,8 @@ import { makeCtx } from '../src/logic/context';
 import { evaluate } from '../src/logic/evaluate';
 import { EMPTY_GEAR, updatePiece, type Bt, type GearStore } from '../src/logic/gear';
 import { poolView, putOn } from '../src/logic/pool';
-import { betterThanWorn, materialFor, withMaterial } from '../src/logic/material';
+import { betterThanWorn, materialFor, wearLead, withMaterial } from '../src/logic/material';
+import { charsVs } from '../src/logic/poolVs';
 import { withWorn } from '../src/logic/worn';
 import type { ItemInput } from '../src/logic/verdict';
 
@@ -374,5 +375,40 @@ describe('материал Breakthrough для надетой', () => {
     expect(mat(st, weapon)).toHaveLength(1);
     const epicW: ItemInput = { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { HP: 1 } };
     expect(mat(wearing(0, { ...epicW, subs: { CHC: 1 } }), epicW)).toEqual([]);
+  });
+  // ревью eval-only: герой из заголовка «Оставляй — лучше надетой … X» — всегда в «Сейчас на персонажах», с кнопкой, даже
+  // если все его строки — «По статам» (Р11 их прячет). Герой без начатых билдов носит вещь сета вне его билдов
+  describe('герой из заголовка — в «Сейчас на персонажах»', () => {
+    const attack = D.sets.find((x) => x.short === 'Attack')!.id;
+    const A = (subs: Record<string, number>): ItemInput => ({ slot: 'helmet', grade: 'rare', setId: attack, itemKey: null, main: null, subs });
+    const bryn = D.chars.find((c) => c.name === 'Bryn')!;
+    const setup = () => {
+      const r = putOn(ctx, EMPTY_GEAR, caren.id, A({ HP: 1, DEF: 1, ATK: 1 }));
+      const view = poolView(ctx, updatePiece(r.st, r.id, { bt: 2 }));
+      const item = A({ DEF: 1, CHC: 1, HP: 1 });
+      const needs = materialFor(view, item), up = betterThanWorn(ctx, view, item, needs);
+      const worn = withWorn(ctx, view, item, evaluate(ctx, item), { hold: up.length > 0 });
+      return { view, item, lead: wearLead(worn, { up, target: null }) };
+    };
+
+    it('строка героя есть и с кнопкой «Заменить» (в слоте надетая)', () => {
+      const { view, item, lead } = setup();
+      const list = charsVs(ctx, view, item, [caren], {}, lead);
+
+      expect(list.map((x) => [x.c.id, x.useful, x.replaces])).toEqual([[caren.id, true, true]]);
+    });
+
+    it('без героя заголовка строка «только По статам» по-прежнему тихая (Р11)', () => {
+      const { view, item } = setup();
+
+      expect(charsVs(ctx, view, item, [caren])).toEqual([]);
+    });
+
+    it('герой заголовка не открывает чужие строки «только По статам»', () => {
+      const { view, item, lead } = setup();
+      const list = charsVs(ctx, view, item, [bryn], {}, lead);
+
+      expect(list.some((x) => x.c.id === bryn.id)).toBe(false);
+    });
   });
 });
