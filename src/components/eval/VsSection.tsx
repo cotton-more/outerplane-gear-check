@@ -187,9 +187,10 @@ function PairLines({ o, t4 }: { o: Outcome; t4: boolean }) {
   );
 }
 
-// t4 — на форме нажата «T4»: «· T4» в подписи кнопки, без строки «бонус только на T4»
-export function VsSection({ list, view, slot, t4 = false, onEquip, onOpenChar }: {
-  list: CharVs[]; view: PoolView; slot: string; t4?: boolean; onEquip?: (x: CharVs) => void; onOpenChar: (id: string) => void;
+// t4 — на форме нажата «T4»: «· T4» в подписи кнопки, без строки «бонус только на T4»; nextNote — «Дальше: Ботинки»
+// под кнопкой (режим героя)
+export function VsSection({ list, view, slot, t4 = false, nextNote = null, onEquip, onOpenChar }: {
+  list: CharVs[]; view: PoolView; slot: string; t4?: boolean; nextNote?: string | null; onEquip?: (x: CharVs) => void; onOpenChar: (id: string) => void;
 }) {
   const t = useT();
   const [open, setOpen] = useState<string | null>(null);
@@ -233,7 +234,8 @@ export function VsSection({ list, view, slot, t4 = false, onEquip, onOpenChar }:
                   {equipLabel(t, x, slot, t4)}
                 </button>
               )}
-              {onEquip && x.asWorn && <p className="muted small vs-wear">{t.ui.equipAsWorn}</p>}
+              {onEquip && x.asWorn && !x.replaces && <p className="muted small vs-wear">{t.ui.equipAsWorn}</p>}
+              {onEquip && x.useful && nextNote && <p className="muted small vs-wear vs-next">{nextNote}</p>}
               {o && startNames.length > 0 && <p className="muted small">{t.ui.vsStarts(startNames.join(', '))}</p>}
               {idle.length > 0 && <p className="muted small">{t.ui.vsAlso(idle.join(', '), idle.length)}</p>}
               {others.length > 0 && (open === x.c.id

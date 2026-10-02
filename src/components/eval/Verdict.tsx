@@ -27,6 +27,7 @@ import { ShareCode } from './ItemCode';
 interface Props {
   r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
   vs?: CharVs[]; view?: PoolView; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void;
+  nextNote?: string | null; // «Дальше: Ботинки» под кнопкой «Надеть» (режим героя, ввод надетого)
   offNote?: string | null; // режим «для героя»: строка про героя (logic/tryon heroNote) — не носит, не нужна, «По статам»
 }
 
@@ -38,7 +39,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip, onEquipPick, offNote }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip, onEquipPick, offNote, nextNote }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -63,7 +64,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
         {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
-      {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} onEquip={onEquip} onOpenChar={onOpenChar} />}
+      {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} nextNote={nextNote} onEquip={onEquip} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>
@@ -209,9 +210,8 @@ const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — '
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
 // Подсказка и «что ввести дальше» (вердикт idle) — приглушённой строкой со стрелкой до трёх строк, вердикт — штампом:
 // сразу видно, где «сделай это», а где результат. quiet — идёт обучение: что делать, говорит его полоса, здесь не дублируем.
-// nextNote — «Дальше: Ботинки» над «Следующий» при вводе надетого (режим героя): куда встанет форма после «Надеть»
-export function VBar({ r, news, show, compact, stampless, hint, nextNote = null, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
-  r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; nextNote?: string | null; quiet: boolean; tab: Tab; rosterSize: number;
+export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen }: {
+  r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; quiet: boolean; tab: Tab; rosterSize: number;
   onTab: (t: Tab) => void; onMenu: () => void; onReset: () => void; onOpen: () => void;
 }) {
   const t = useT();
@@ -245,10 +245,7 @@ export function VBar({ r, news, show, compact, stampless, hint, nextNote = null,
             : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
-      {evalTab && (() => {
-        const reset = <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>;
-        return nextNote ? <div className="vb-next"><small>{nextNote}</small>{reset}</div> : reset;
-      })()}
+      {evalTab && <button type="button" className="vb-reset" aria-label={t.ui.resetItem} onClick={onReset} {...tour('next')}>{t.ui.reset}</button>}
     </div>
   );
 }

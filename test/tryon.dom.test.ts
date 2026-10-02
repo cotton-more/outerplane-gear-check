@@ -552,8 +552,8 @@ describe('replace — на одну введённую вещь', () => {
 });
 
 // «Надето», шаг 5: в режиме героя «Надеть на X» — всегда (ввод надетого в игре, и у вещи без пользы); подпись = действие
-// (Р4: «Заменить», если в слоте надетая); «Дальше: {слот}» над «Следующий» — после «Надеть» форма на следующем
-// ненадетом слоте героя (грейд прежний, остальное пустое)
+// (Р4: «Заменить», если в слоте надетая); «Носит в игре…» — только под «Надеть на X»; «Дальше: {слот}» — под кнопкой
+// «Надеть» / «Заменить»: после неё форма на следующем ненадетом слоте героя (грейд прежний, остальное пустое)
 describe('«Надето»: режим героя — «Надеть» всегда, «Дальше: слот»', () => {
   const atk = D.sets.find((s) => s.short === 'Attack')!.id;
   const JUNK_GLOVES = { setId: atk, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } }; // Attack нет в билдах Caren, статы не её
@@ -589,6 +589,7 @@ describe('«Надето»: режим героя — «Надеть» всег�
   it('в слоте надетая, её держит билд: подпись «Заменить шлем Caren», тост «Заменено», она в пуле', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, { ...hero, gear: WORN });
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
+    expect($('.vc-wear')).toBeNull(); // «Носит в игре…» только под «Надеть на X»
 
     await click($('.vc-equip'));
 
@@ -597,10 +598,36 @@ describe('«Надето»: режим героя — «Надеть» всег�
     expect(stored('gear').pools[caren.id]).toContain('p1');
   });
 
-  it('слот формы не надет: «Дальше: Armor» над «Следующий»', async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, hero);
+  it('слот формы не надет: «Дальше: Armor» под «Надеть на Caren», не над «Следующий»', async () => {
+    await mount({ slot: 'gloves', grade: 'unique' }, JUNK_GLOVES, hero);
 
-    expect($('.vbar .vb-next small')?.textContent).toBe('Next: Armor');
+    expect($('.vc-acts + .vc-wear')?.textContent).toBe('Wears it in game? Tap to record it as worn');
+    expect($('.vc-next')?.textContent).toBe('Next: Boots');
+    expect($('.vc-next')?.previousElementSibling?.className).toBe('vc-wear');
+    expect($('.vbar')?.textContent).not.toContain('Next:');
+  });
+
+  it('подпись «Заменить» (Примерить замену), слот не надет: «Дальше» есть, «Носит в игре…» нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, { ...hero, tryon: { ...hero.tryon, replace: 'p1' } });
+
+    expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
+    expect($('.vc-wear')).toBeNull();
+    expect($('.vc-next')?.textContent).toBe('Next: Armor');
+  });
+
+  it('широкий экран: «Дальше» под кнопкой «Надеть на Caren» в колонке вердикта, не над «Следующий»', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
+    try {
+      await mount({ slot: 'gloves', grade: 'unique' }, JUNK_GLOVES, hero);
+
+      const act = $('.v-vs .vs-act')!;
+      expect(act.textContent).toBe('Equip on Caren');
+      expect(act.nextElementSibling?.textContent).toBe('Wears it in game? Tap to record it as worn');
+      expect(act.nextElementSibling?.nextElementSibling?.textContent).toBe('Next: Boots');
+      expect($('.actions')?.textContent).not.toContain('Next:');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    }
   });
 
   it('после «Надеть» форма — на следующем ненадетом слоте: сет пустой, грейд прежний', async () => {
@@ -610,7 +637,6 @@ describe('«Надето»: режим героя — «Надеть» всег�
 
     expect(stored('state')).toMatchObject({ slot: 'armor', grade: 'rare' });
     expect(stored('item').setId ?? null).toBeNull();
-    expect($('.vbar .vb-next small')?.textContent).toBe('Next: Gloves');
   });
 
   it('«Следующий» без «Надеть» слот не меняет', async () => {
@@ -624,7 +650,7 @@ describe('«Надето»: режим героя — «Надеть» всег�
   it('слот формы надет (оценивают замену) — «Дальше» нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, JUNK_HELM, { ...hero, gear: WORN });
 
-    expect($('.vb-next')).toBeNull();
+    expect($('.vc-next')).toBeNull();
     expect($('.vb-reset')).toBeTruthy();
   });
 
@@ -632,7 +658,7 @@ describe('«Надето»: режим героя — «Надеть» всег�
     await mount({ slot: 'gloves', grade: 'unique' }, JUNK_GLOVES);
 
     expect($('.vc-equip')).toBeNull();
-    expect($('.vb-next')).toBeNull();
+    expect($('.vc-next')).toBeNull();
   });
 
   it('«Примерить замену» надетой: «Заменить» убирает именно её, надета новая', async () => {
