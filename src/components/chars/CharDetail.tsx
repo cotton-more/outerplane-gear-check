@@ -220,7 +220,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         </div>
       )}
       {rateFor && !has && <div className="cd-rate"><button type="button" className="btn small" onClick={rateFor}>{t.tryon.rateFor(c.name)}</button></div>}
-      {headline}
+      {/* «Лучше всего собран…» — про сборку билдов; на «Надето» про надетое, не про неё */}
+      {!wornTab && headline}
       {autoNew.map((k) => (
         <p key={k} className="cd-note">
           <span>{t.ui.autoNew(cp!.variants.find((x) => x.key === k)!.name, c.name)}</span>

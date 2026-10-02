@@ -243,6 +243,8 @@ html.xs .bgear-t { grid-row: 3; }
 .rd-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .rd-row img, .rd-row .noimg, .rd-row .ico { width: 22px; height: 22px; object-fit: contain; color: var(--ink-2); }
 .rd-row .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.rd-row .bgear-n { align-items: flex-start; white-space: normal; } /* узко: имя сета переносится, а не обрезается */
+.rd-row .bgear-n .pn { overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
 .rd-row .rd-m { grid-column: 2 / 4; grid-row: 2; font: 600 11px var(--font-mono); color: var(--ink-3); }
 .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 3; }
 .rd-foot { margin: 0; padding-bottom: 16px; }

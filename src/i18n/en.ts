@@ -715,7 +715,7 @@ export const en: Texts = {
       aimChange: 'The build is what you dress the hero for. Change it and I\'ll show what to wear.',
     },
     news: {
-      wornTab: '“Worn” tab: mark what your heroes wear now.',
+      wornTab: '“Worn” tab: mark what your heroes wear now',
       move: 'on replace, a stat from another row moves over',
       gear: 'character gear — builds assemble themselves',
       bt: '“T4” on the form',

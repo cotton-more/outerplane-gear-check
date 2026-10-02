@@ -94,6 +94,19 @@ describe('вкладка «Надето»: порядок и вкладка по
   });
 });
 
+describe('заголовок сборки над вкладками', () => {
+  // «Лучше всего собран…» / «По статам — ни один билд не начат» — про сборку билдов, а не про надетое
+  it('на вкладке «Надето» его нет, на вкладке билда — есть', async () => {
+    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
+    expect(selected()).toBe('Worn1/6');
+    expect($('.cd-lead')).toBeNull();
+
+    await click($$('.btabs button').find((b) => !b.textContent?.includes('Worn')));
+
+    expect($('.cd-lead')).not.toBeNull();
+  });
+});
+
 describe('«Ввести» у пустого слота', () => {
   it('режим героя на этот слот: грейд прежний, сет, сабстаты пусты', async () => {
     await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) },
