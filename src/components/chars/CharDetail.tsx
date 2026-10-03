@@ -216,7 +216,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
       </div>
       {fusedBy && (
         <div className="own-row">
-          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name)}</button>
+          <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name, fusedBy.name)}</button>
         </div>
       )}
       {rateFor && !has && <div className="cd-rate"><button type="button" className="btn small" onClick={rateFor}>{t.tryon.rateFor(c.name)}</button></div>}

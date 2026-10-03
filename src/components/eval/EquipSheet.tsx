@@ -29,7 +29,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   const needle = q.trim().toLowerCase();
   const chars = useMemo(() => {
     // X не предлагаем, когда есть Core Fusion X: в игре его больше нет. Core Fusion X при X — окно перехода (App)
-    const withBuilds = D.chars.filter((c) => c.builds.length && !ctx.off.has(c.id));
+    const withBuilds = D.chars.filter((c) => c.builds.length && (!ctx.off.has(c.id) || !!c.fusionOf));
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);

@@ -179,7 +179,7 @@ describe('окна перехода', () => {
     await click(tile('Eternal')?.querySelector('.star') as HTMLElement);
 
     expect(ask()?.getAttribute('aria-label')).toBe('Switch back to Eternal?');
-    expect($('.fusion-ask p')?.textContent).toBe('Core Fusion Eternal leaves the roster; its gear (1) moves to Eternal.');
+    expect($('.fusion-ask p')?.textContent).toBe("All of Core Fusion Eternal's gear (1) moves to Eternal, and Core Fusion Eternal becomes inactive: only Eternal stays in the roster.");
     await click(askBtn('Yes, Eternal'));
     expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [caren.id, eternal.id], pools: { [eternal.id]: ['p1'] } });
     expect($('.gear-toast')?.textContent).toContain("Eternal replaces Core Fusion Eternal in the roster. Core Fusion Eternal's gear moved to Eternal.");
@@ -362,6 +362,22 @@ describe('список и карточка X', () => {
     expect($('.cd-head h2')?.textContent).toBe('Core Fusion Eternal');
   });
 
+  it('при X в ростере — Core Fusion X сразу за ним, приглушён, с пометкой «replaced by X»', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [eternal.id] });
+    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    const cf = tile('Core Fusion Eternal')!.querySelector('.ctile')!;
+
+    expect(names[names.indexOf('Eternal') + 1]).toBe('Core Fusion Eternal');
+    expect(cf.classList.contains('off')).toBe(true);
+    expect(cf.querySelector('.coff')?.textContent).toBe('replaced by Eternal');
+  });
+
+  it('карточка Core Fusion X при X: строка «заменён» ведёт на X', async () => {
+    await mount({ tab: 'chars', charId: cfEternal.id }, {}, { roster: [eternal.id] });
+    await click(byText('.own-row .linkbtn', 'Core Fusion Eternal is replaced by Eternal'));
+    expect($('.cd-head h2')?.textContent).toBe('Eternal');
+  });
+
   it('«Кому надеть?» при Core Fusion X: X нет ни в списке, ни в поиске по имени', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, cfEternal.id] });
     await click($('.vcard'));
@@ -372,3 +388,121 @@ describe('список и карточка X', () => {
     expect(names().filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
   });
 });
+
+describe('кейсы добавления героя в ростер (X и CF)', () => {
+  it('кейс 1: никого нет в ростере — можно добавить любого без окна', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    // ни один не неактивен
+    expect(tile('Eternal')!.querySelector('.coff')).toBeNull();
+    expect(tile('Core Fusion Eternal')!.querySelector('.coff')).toBeNull();
+
+    // нажимаем на X — добавляется сразу, CF становится неактивным
+    await click(tile('Eternal')?.querySelector('.star') as HTMLElement);
+    expect(ask()).toBeNull();
+    expect(roster()).toEqual([eternal.id]);
+    expect(tile('Core Fusion Eternal')!.querySelector('.ctile')!.classList.contains('off')).toBe(true);
+    expect(tile('Core Fusion Eternal')!.querySelector('.coff')?.textContent).toBe('replaced by Eternal');
+  });
+
+  it('кейс 2: есть X с вещами → добавляем CF (окно, вещи переходят, X неактивен) → добавляем X (подтверждение, вещи переходят, CF неактивен)', async () => {
+    const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
+    await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id] });
+
+    // кликаем по CF — окно подтверждения
+    await click(tile('Core Fusion Eternal')?.querySelector('.star') as HTMLElement);
+    expect(ask()?.getAttribute('aria-label')).toBe('Mark Core Fusion Eternal?');
+    await click(askBtn('Yes, Core Fusion Eternal'));
+
+    // CF в ростере, вещи перешли, X неактивен
+    expect(roster()).toEqual([cfEternal.id]);
+    expect(stored().pools[cfEternal.id]).toEqual(['p1']);
+    expect(tile('Eternal')!.querySelector('.ctile')!.classList.contains('off')).toBe(true);
+    expect(tile('Eternal')!.querySelector('.coff')?.textContent).toBe('replaced by Core Fusion Eternal');
+
+    // кликаем по X — обязательно окно подтверждения
+    await click(tile('Eternal')?.querySelector('.star') as HTMLElement);
+    expect(ask()?.getAttribute('aria-label')).toBe('Switch back to Eternal?');
+    await click(askBtn('Yes, Eternal'));
+
+    // X в ростере, вещи вернулись, CF неактивен
+    expect(roster()).toEqual([eternal.id]);
+    expect(stored().pools[eternal.id]).toEqual(['p1']);
+    expect(tile('Core Fusion Eternal')!.querySelector('.ctile')!.classList.contains('off')).toBe(true);
+    expect(tile('Core Fusion Eternal')!.querySelector('.coff')?.textContent).toBe('replaced by Eternal');
+  });
+
+  it('кейс 3: старая версия с X и CF — приоритет CF, вещи X переходят если у CF нет, X неактивен', async () => {
+    const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
+    await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id, cfEternal.id] });
+
+    expect(roster()).toEqual([cfEternal.id]);
+    expect(stored().pools[cfEternal.id]).toEqual(['p1']);
+    expect(tile('Eternal')!.querySelector('.ctile')!.classList.contains('off')).toBe(true);
+    expect(tile('Eternal')!.querySelector('.coff')?.textContent).toBe('replaced by Core Fusion Eternal');
+  });
+});
+
+describe('сортировка списка героев с учётом Core Fusion', () => {
+  it('Notia и Core Fusion Notia рядом в списке', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    const iNotia = names.indexOf('Notia');
+    const iCfNotia = names.indexOf('Core Fusion Notia');
+    expect(iNotia).toBeGreaterThan(-1);
+    expect(iCfNotia).toBeGreaterThan(-1);
+    expect(Math.abs(iNotia - iCfNotia)).toBe(1);
+  });
+
+  it('Epsilon и Core Fusion Epsilon рядом в списке', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    const iEps = names.indexOf('Epsilon');
+    const iCfEps = names.indexOf('Core Fusion Epsilon');
+    expect(iEps).toBeGreaterThan(-1);
+    expect(iCfEps).toBeGreaterThan(-1);
+    expect(Math.abs(iEps - iCfEps)).toBe(1);
+  });
+
+  it('при включенном тогле «без билдов» Snow и Lisha показываются рядом со своими Core Fusion версиями', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    await click($('#c-all'));
+
+    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    const iSnow = names.indexOf('Snow');
+    const iCfSnow = names.indexOf('Core Fusion Snow');
+    expect(iSnow).toBeGreaterThan(-1);
+    expect(iCfSnow).toBeGreaterThan(-1);
+    expect(Math.abs(iSnow - iCfSnow)).toBe(1);
+
+    const iLisha = names.indexOf('Lisha');
+    const iCfLisha = names.indexOf('Core Fusion Lisha');
+    expect(iLisha).toBeGreaterThan(-1);
+    expect(iCfLisha).toBeGreaterThan(-1);
+    expect(Math.abs(iLisha - iCfLisha)).toBe(1);
+  });
+
+  it('Dahlia и Gnosis Dahlia рядом в списке: сначала Dahlia, затем Gnosis Dahlia', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    const iDahlia = names.indexOf('Dahlia');
+    const iGnosisDahlia = names.indexOf('Gnosis Dahlia');
+    expect(iDahlia).toBeGreaterThan(-1);
+    expect(iGnosisDahlia).toBe(iDahlia + 1);
+  });
+
+  it('Vlada и Demiurge Vlada, Viella и Gnosis Viella: сначала базовый, затем вариант с префиксом', async () => {
+    await mount({ tab: 'chars' }, {}, { roster: [] });
+    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    const iVlada = names.indexOf('Vlada');
+    const iDemiurgeVlada = names.indexOf('Demiurge Vlada');
+    expect(iVlada).toBeGreaterThan(-1);
+    expect(iDemiurgeVlada).toBe(iVlada + 1);
+
+    const iViella = names.indexOf('Viella');
+    const iGnosisViella = names.indexOf('Gnosis Viella');
+    expect(iViella).toBeGreaterThan(-1);
+    expect(iGnosisViella).toBe(iViella + 1);
+  });
+});
+
+

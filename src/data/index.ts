@@ -46,6 +46,16 @@ export const MAIN_LAYOUT: (string | null)[] = [
 export const MAIN_GRID = MAIN_LAYOUT.filter((k): k is string => k !== null);
 
 export function createIndex(D: Dataset) {
+  // Связываем Core Fusion героев с базовыми, если fusionOf не был проставлен в исходном датасете
+  const baseByName = Object.fromEntries(
+    D.chars.filter((c) => !c.prefix || c.prefix !== 'Core Fusion').map((c) => [c.base || c.name, c.id])
+  );
+  for (const c of D.chars) {
+    if (!c.fusionOf && (c.prefix === 'Core Fusion' || c.name.startsWith('Core Fusion '))) {
+      const baseName = c.base || c.name.replace(/^Core Fusion\s+/, '');
+      if (baseByName[baseName]) c.fusionOf = baseByName[baseName];
+    }
+  }
   const SUB = Object.fromEntries(D.substats.map((s) => [s.key, s]));
   // цена сегмента flat и %-версии: [flat, %]
   const TICK: Record<string, [number, number]> = {};

@@ -423,16 +423,21 @@ export const ru = {
     pieceNowhere: 'Ни в одном билде: в каждом стоит лучше.',
     gearNewerCode: 'Код сохранила более новая версия страницы — обнови страницу.',
     fusionGear: (base: string, fusion: string) => `Вещи ${base} перешли к ${fusion}.`,
-    // Core Fusion X заменил X (logic/fusion): пометка в списке, строка карточки X, окна перехода
-    fusionOffMark: (base: string) => `заменён Core Fusion ${base}`,
-    fusionOffCard: (base: string) => `${base} заменён Core Fusion ${base}: в ростере и с вещами — Core Fusion ${base}.`,
+    // Core Fusion X заменил X или X заменил Core Fusion X (logic/fusion): пометка в списке, строка карточки, окна перехода
+    fusionOffMark: (name: string, isFusion?: boolean) => (isFusion ? `заменён ${name}` : `заменён Core Fusion ${name}`),
+    fusionOffCard: (name: string, activeName?: string) =>
+      activeName
+        ? `${name} заменён ${activeName}: в ростере и с вещами — ${activeName}.`
+        : `${name} заменён Core Fusion ${name}: в ростере и с вещами — Core Fusion ${name}.`,
     fuseAskTitle: (base: string) => `Отметить Core Fusion ${base}?`,
     fuseAskText: (base: string, n: number) => (n
       ? `Все вещи ${base} (${n}) перейдут к Core Fusion ${base}, а ${base} станет неактивным: в ростере — только Core Fusion ${base}.`
       : `${base} станет неактивным: в ростере — только Core Fusion ${base}.`),
     fuseAskYes: (base: string) => `Да, Core Fusion ${base}`,
     unfuseAskTitle: (base: string) => `Вернуться к ${base}?`,
-    unfuseAskText: (base: string, n: number) => (n ? `Core Fusion ${base} уйдёт из ростера, его вещи (${n}) перейдут к ${base}.` : `Core Fusion ${base} уйдёт из ростера.`),
+    unfuseAskText: (base: string, n: number) => (n
+      ? `Все вещи Core Fusion ${base} (${n}) перейдут к ${base}, а Core Fusion ${base} станет неактивным: в ростере — только ${base}.`
+      : `Core Fusion ${base} станет неактивным: в ростере — только ${base}.`),
     unfuseAskYes: (base: string) => `Да, ${base}`,
     cancel: 'Отмена',
     // сняли звезду с героя, у которого есть вещи (Р16: вещи только у героев ростера), — окно RosterRemoveAsk

@@ -364,15 +364,20 @@ export const en: Texts = {
     pieceNowhere: 'In no build: every build has a better one.',
     gearNewerCode: 'A newer page saved this code — reload the page.',
     fusionGear: (base, fusion) => `${base}'s gear moved to ${fusion}.`,
-    fusionOffMark: (base) => `replaced by Core Fusion ${base}`,
-    fusionOffCard: (base) => `${base} is replaced by Core Fusion ${base}: Core Fusion ${base} is in the roster and has the gear.`,
+    fusionOffMark: (name, isFusion) => (isFusion ? `replaced by ${name}` : `replaced by Core Fusion ${name}`),
+    fusionOffCard: (name, activeName) =>
+      activeName
+        ? `${name} is replaced by ${activeName}: ${activeName} is in the roster and has the gear.`
+        : `${name} is replaced by Core Fusion ${name}: Core Fusion ${name} is in the roster and has the gear.`,
     fuseAskTitle: (base) => `Mark Core Fusion ${base}?`,
     fuseAskText: (base, n) => (n
       ? `All of ${base}'s gear (${n}) moves to Core Fusion ${base}, and ${base} becomes inactive: only Core Fusion ${base} stays in the roster.`
       : `${base} becomes inactive: only Core Fusion ${base} stays in the roster.`),
     fuseAskYes: (base) => `Yes, Core Fusion ${base}`,
     unfuseAskTitle: (base) => `Switch back to ${base}?`,
-    unfuseAskText: (base, n) => (n ? `Core Fusion ${base} leaves the roster; its gear (${n}) moves to ${base}.` : `Core Fusion ${base} leaves the roster.`),
+    unfuseAskText: (base, n) => (n
+      ? `All of Core Fusion ${base}'s gear (${n}) moves to ${base}, and Core Fusion ${base} becomes inactive: only ${base} stays in the roster.`
+      : `Core Fusion ${base} becomes inactive: only ${base} stays in the roster.`),
     unfuseAskYes: (base) => `Yes, ${base}`,
     cancel: 'Cancel',
     rosterRemoveTitle: (name) => `Remove ${name} from the roster?`,

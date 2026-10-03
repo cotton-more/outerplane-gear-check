@@ -106,7 +106,7 @@ export function App() {
   // X при Core Fusion X — не герой режима (logic/fusion). Вариант предустановки здесь не нужен — он только для формы
   const hero = useMemo(() => {
     const h = demo ? heroTarget(idx, demo.tryOn) : touring ? null : heroTarget(idx, realTry.value);
-    return h && off.has(h.c.id) ? null : h;
+    return h && (off.has(h.c.id) && !h.c.fusionOf) ? null : h;
   }, [idx, demo, realTry.value, touring, off]);
   // «Примерить замену»: запись, которую «Надеть» заменит в любом случае (logic/pool planPut); её уже нет в пуле или она
   // другого слота — как без неё
@@ -338,7 +338,7 @@ export function App() {
     },
     add: (ids) => {
       const cur = rosterApi.list();
-      const next = [...cur, ...ids.filter((id) => !cur.includes(id) && !off.has(id))];
+      const next = [...cur, ...ids.filter((id) => !cur.includes(id) && !(off.has(id) && !idx.CHAR[id]?.fusionOf))];
       rosterBatch(next);
       return next.filter((id) => !cur.includes(id));
     },

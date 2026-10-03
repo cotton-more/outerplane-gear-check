@@ -1,8 +1,8 @@
 // Список персонажей: поиск, фильтры, ростер (звёздочки), экспорт/импорт ростера.
-import { useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
 import type { Char } from '../../data/types';
 import { useT } from '../../i18n';
-import { charMatches, type CharFilter } from '../../logic/lists';
+import { charMatches, compareChars, type CharFilter } from '../../logic/lists';
 import { encodeRoster, parseRoster } from '../../logic/rosterCode';
 import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
@@ -22,15 +22,23 @@ interface Props {
   off: ReadonlyMap<string, string>; onGearImport: (prev: GearStore, raw: unknown) => boolean; touring: boolean;
 }
 
-// X — сразу за своим Core Fusion, если тот тоже в списке
-function fusionOrder(list: Char[], off: ReadonlyMap<string, string>, char: (id: string) => Char | undefined): Char[] {
+// Неактивный герой пары (X при Core Fusion X или Core Fusion X при X) — сразу за своим активным, если тот тоже в списке
+function fusionOrder(
+  list: Char[],
+  off: ReadonlyMap<string, string>,
+  char: (id: string) => Char | undefined,
+  partner: (id: string) => string | undefined,
+): Char[] {
   const ids = new Set(list.map((c) => c.id));
   const out: Char[] = [];
   for (const c of list) {
     if (off.has(c.id) && ids.has(off.get(c.id)!)) continue;
     out.push(c);
-    const x = c.fusionOf && off.get(c.fusionOf) === c.id && ids.has(c.fusionOf) ? char(c.fusionOf) : undefined;
-    if (x) out.push(x);
+    const pid = partner(c.id);
+    if (pid && off.get(pid) === c.id && ids.has(pid)) {
+      const p = char(pid);
+      if (p) out.push(p);
+    }
   }
   return out;
 }
@@ -41,7 +49,11 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
   const { D } = idx;
   const { roster } = rosterApi;
   const [io, setIo] = useState(false);
-  const shown = useMemo(() => fusionOrder(D.chars.filter((c) => charMatches(c, s, roster, geared)), off, (id) => idx.CHAR[id]), [D, s, roster, geared, off, idx]);
+  const partner = useCallback((id: string) => idx.CHAR[id]?.fusionOf ?? idx.FUSED[id], [idx]);
+  const shown = useMemo(() => {
+    const matched = D.chars.filter((c) => charMatches(c, s, roster, geared)).sort(compareChars);
+    return fusionOrder(matched, off, (id) => idx.CHAR[id], partner);
+  }, [D, s, roster, geared, off, idx, partner]);
   const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // как в меню «Экипировка · N»
   // с фильтром «с экипировкой» — сколько персонажей ростера ещё ничего не собрали
   const rest = s.cGear ? D.chars.filter((c) => roster.has(c.id) && !geared.has(c.id) && c.builds.length).length : 0;
@@ -78,7 +90,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
       </div>
       <div className="roster-bar">
         <span>{t.ui.rosterCount} <b>{roster.size}</b>{nGeared > 0 && <> · {t.ui.gearCount(nGeared)}</>}</span>
-        <button type="button" className="linkbtn" onClick={() => rosterApi.add(shown.map((c) => c.id))}>{t.ui.markShown}</button>
+        <button type="button" className="linkbtn" onClick={() => rosterApi.add(shown.filter((c) => !off.has(c.id)).map((c) => c.id))}>{t.ui.markShown}</button>
         <button type="button" className="linkbtn" onClick={() => setIo(!io)}>{t.ui.exportImport}</button>
         {roster.size > 0 && <ClearRoster onClear={rosterApi.clear} />}
       </div>
@@ -87,6 +99,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
           <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)}
+            partnerName={idx.CHAR[partner(c.id) ?? '']?.name}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
         )) : <p className="empty">{s.cGear && !nGeared ? t.ui.gearNobody : t.ui.nobodyFound}</p>}
       </div>
@@ -95,9 +108,9 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
   );
 }
 
-// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; off — заменён Core Fusion: пометка, приглушён
-function CharTile({ c, own, selected, isNew, gear, off, onSelect, onToggle }: {
-  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; onSelect: () => void; onToggle: () => void;
+// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; off — заменён в паре: пометка, приглушён
+function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSelect, onToggle }: {
+  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; partnerName?: string; onSelect: () => void; onToggle: () => void;
 }) {
   const t = useT();
   const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
@@ -109,7 +122,7 @@ function CharTile({ c, own, selected, isNew, gear, off, onSelect, onToggle }: {
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
         {gear !== undefined && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
-        {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.name)}</span>}
+        {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
       </button>
       <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>
         {own ? '★' : '☆'}

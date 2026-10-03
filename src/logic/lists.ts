@@ -75,7 +75,6 @@ export interface CharFilter {
   cGear?: boolean; // только с экипировкой (меню ☰ «Экипировка»); не сохраняется, как и поиск
 }
 
-// geared — у кого что-то надето (logic/gear gearedChars): нужно только фильтру «с экипировкой»
 export function charMatches(c: Char, f: CharFilter, roster: ReadonlySet<string>, geared?: ReadonlyMap<string, number>): boolean {
   const q = f.cq.trim().toLowerCase();
   if (q && !(c.name.toLowerCase().includes(q) || c.slug.includes(q) || (c.nick || '').toLowerCase().includes(q))) return false;
@@ -86,3 +85,22 @@ export function charMatches(c: Char, f: CharFilter, roster: ReadonlySet<string>,
   if (!f.cAll && !c.builds.length && !q) return false;
   return true;
 }
+
+// Сортировка всегда по имени героя (c.base); префикс/вариант (Gnosis, Core Fusion, Demiurge и т. д.) — второй уровень сортировки
+export function charSortName(c: Char): string {
+  return c.base || c.name;
+}
+
+// Сортировка списка героев: сначала по базовому имени героя, затем по префиксу/варианту
+export function compareChars(a: Char, b: Char): number {
+  const an = charSortName(a);
+  const bn = charSortName(b);
+  const diff = an.localeCompare(bn, 'en', { sensitivity: 'base' });
+  if (diff !== 0) return diff;
+  const ap = a.prefix || '';
+  const bp = b.prefix || '';
+  const pDiff = ap.localeCompare(bp, 'en', { sensitivity: 'base' });
+  if (pDiff !== 0) return pDiff;
+  return a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+}
+

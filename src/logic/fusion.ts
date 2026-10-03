@@ -26,11 +26,19 @@ export interface FusionFix {
 
 const exists = (roster: ReadonlySet<string>, pools: GearStore['pools'], id: string) => roster.has(id) || !!pools[id]?.length;
 
-// X, которого заменил его Core Fusion: X → CF (CF есть — в ростере или с вещами)
+// Неактивный герой пары (X ↔ Core Fusion X): если есть Core Fusion — неактивен X (приоритет CF);
+// если есть только X — неактивен Core Fusion X. Второй неактивен: не кандидат вердикта, не в «Кому надеть?»
+// и не герой режима «для героя», в списке — сразу за активным с пометкой.
 export function replacedX(idx: Index, roster: Iterable<string>, pools: GearStore['pools']): Map<string, string> {
   const r = new Set(roster);
   const off = new Map<string, string>();
-  for (const [base, fusion] of Object.entries(idx.FUSED)) if (exists(r, pools, fusion)) off.set(base, fusion);
+  for (const [base, fusion] of Object.entries(idx.FUSED)) {
+    if (exists(r, pools, fusion)) {
+      off.set(base, fusion);
+    } else if (exists(r, pools, base)) {
+      off.set(fusion, base);
+    }
+  }
   return off;
 }
 

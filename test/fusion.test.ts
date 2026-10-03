@@ -170,10 +170,12 @@ describe('readsWhole', () => {
 });
 
 describe('кто неактивен', () => {
-  it('Core Fusion в ростере или с вещами — X неактивен; нет Core Fusion — все активны', () => {
+  it('Core Fusion в ростере или с вещами — X неактивен; X в ростере или с вещами — Core Fusion неактивен; нет обоих — все активны', () => {
     expect([...replacedX(idx, [CF], {})]).toEqual([[X, CF]]);
     expect([...replacedX(idx, [], { [CF]: ['p1'] })]).toEqual([[X, CF]]);
-    expect([...replacedX(idx, [X], { [X]: ['p1'] })]).toEqual([]);
+    expect([...replacedX(idx, [X], { [X]: ['p1'] })]).toEqual([[CF, X]]);
+    expect([...replacedX(idx, [X], {})]).toEqual([[CF, X]]);
+    expect([...replacedX(idx, [], {})]).toEqual([]);
   });
 });
 
