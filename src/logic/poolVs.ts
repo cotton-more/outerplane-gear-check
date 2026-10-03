@@ -114,13 +114,15 @@ export function sectionChars(res: Verdict): Char[] {
 export const badgeOf = (a: Assembly): number =>
   isStats(a.v) ? a.filled : Object.values(a.roles).filter((r) => r === 'set' || r === 'rec' || r === 'stopgap').length;
 
-// у кого есть вещи: персонаж → лучший «N/6» среди собираемых вариантов (плитка, меню, фильтр «с экипировкой»)
+// у кого есть вещи: персонаж → сколько из них отмечено надетым (плитка «надето N из 6», как «Надето · N» на вкладке героя).
+// Ключи — все герои с вещами (меню, фильтр «с экипировкой»); число — 0, пока ничего не отмечено
 export function gearBadges(view: PoolView): Map<string, number> {
   const out = new Map<string, number>();
   for (const id of Object.keys(view.st.pools)) {
     const cp = view.of(id);
     if (!cp?.pieces.length) continue;
-    out.set(id, Math.max(0, ...cp.inPlay.map((v) => badgeOf(cp.asm.get(v.key)!))));
+    const ids = new Set(cp.pieces.map((p) => p.id));
+    out.set(id, Object.values(view.st.worn?.[id] ?? {}).filter((x) => ids.has(x)).length);
   }
   return out;
 }

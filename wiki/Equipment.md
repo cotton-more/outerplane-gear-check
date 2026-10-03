@@ -215,7 +215,7 @@ Epsilon.
 ## Who has gear
 
 Menu ☰ → **"Gear · N"** — the character list with the "with gear" filter (on a computer, the filter in the list
-itself). The menu clears other filters: exactly N tiles. A tile shows "6/6" of the best build.
+itself). The menu clears other filters: exactly N tiles. A tile shows how many pieces are marked worn: "0/6" until you mark any.
 
 ## Tutorial
 

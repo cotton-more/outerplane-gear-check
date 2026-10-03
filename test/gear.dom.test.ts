@@ -1177,11 +1177,16 @@ describe('меню, плитки, код копии, другая вкладка
     await click(byText('.menu-nav button', 'Gear · 1'));
     expect(($('#c-gear') as HTMLInputElement).checked).toBe(true);
     expect($$('#cgrid .ctile .cn').map((e) => e.textContent)).toEqual(['Caren']);
-    expect($('#cgrid .gearb')?.textContent).toBe('1 of 6 equipped1/6');
+    expect($('#cgrid .gearb')?.textContent).toBe('0 of 6 equipped0/6'); // отмеченного надетого нет (плитка = счёт вкладки «Надето»)
     expect($('.roster-bar')?.textContent).toContain('gear on 1');
     expect($('.cgrid-note')?.textContent).toContain('1 more in your roster has no gear yet');
     await click($('#cgrid .ctile'));
     expect(byText('.btabs button', 'Speed')?.textContent).toBe('Speed1/6');
+  });
+
+  it('плитка считает отмеченное надетое, не вещи билда', async () => {
+    await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }), roster: [caren.id, kappa.id] });
+    expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']);
   });
 
   it('код копии в «Экспорт / импорт» — OGC-GEAR2, вся экипировка; импорт — «Вернуть» возвращает прежнее', async () => {

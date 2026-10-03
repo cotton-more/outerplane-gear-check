@@ -86,7 +86,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
       {io && (touring ? <p className="roster-io small muted">{t.ui.gearCodeTour}</p> : <GearIO gear={gear} onImport={onGearImport} />)}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
-          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id) ?? 0} off={off.has(c.id)}
+          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
         )) : <p className="empty">{s.cGear && !nGeared ? t.ui.gearNobody : t.ui.nobodyFound}</p>}
       </div>
@@ -95,9 +95,9 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
   );
 }
 
-// gear — сколько вещей в самом собранном билде: «6/6» на плитке; off — заменён Core Fusion: пометка, приглушён
+// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; off — заменён Core Fusion: пометка, приглушён
 function CharTile({ c, own, selected, isNew, gear, off, onSelect, onToggle }: {
-  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number; off: boolean; onSelect: () => void; onToggle: () => void;
+  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; onSelect: () => void; onToggle: () => void;
 }) {
   const t = useT();
   const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
@@ -107,7 +107,7 @@ function CharTile({ c, own, selected, isNew, gear, off, onSelect, onToggle }: {
         title={c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : '')}>
         <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
-        {gear > 0 && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
+        {gear !== undefined && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
         {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.name)}</span>}
       </button>
