@@ -8,7 +8,7 @@ import { replacedX } from '../src/logic/fusion';
 import type { GearStore, Piece } from '../src/logic/gear';
 import { loadGear, readGearCode } from '../src/logic/gearStore';
 import type { Subs } from '../src/logic/subs';
-import { cmpKit, milli, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit, type Part, type SetGain, type World } from '../src/logic/trade/model';
+import { cmpKit, milli, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '../src/logic/trade/model';
 import { keyOf } from '../src/logic/trade/kit';
 import { worldOf } from '../src/logic/trade/world';
 
@@ -133,4 +133,27 @@ export function loadOwner(): Owner {
   const { st, roster } = loadGear(raw, idx, []);
   const settings = { rosterOnly: true, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
   return { st, roster, ctx: makeCtx(idx, settings, new Set(roster), undefined, replacedX(idx, roster, st.pools)) };
+}
+
+// ----------------------------------------------------------------------------------------------- синтетический мир
+
+// Мир из чисел: героям — вещи (слот, код, сет), надетое, запас и очки каждой вещи по его мерилу (null/нет — не носит).
+// Порядок героев = ростер. Ключ вещи в value — id; значение — очки или { v, fit }
+export interface SynthHero {
+  worn?: Partial<Record<SlotId, string>>; pool?: string[]; pinned?: boolean;
+  value?: Record<string, number | { v: number; fit: Fit } | null>; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>;
+}
+export function synthWorld(o: { items: Record<string, { slot: SlotId; set?: string; code?: string; bt?: number; t4?: boolean }>; heroes: Record<string, SynthHero> }): World {
+  const items: Record<string, Item> = {};
+  Object.entries(o.items).forEach(([id, it], i) => {
+    items[id] = { id, slot: it.slot, code: it.code ?? id, bt: it.bt ?? (it.t4 ? 4 : 0), set: it.set ?? null, t4: !!it.t4, ord: i + 1 };
+  });
+  const ids = Object.keys(o.heroes);
+  const heroes = ids.map((id, rank) => {
+    const h = o.heroes[id];
+    const worn = h.worn ?? {};
+    return { id, rank, pinned: !!h.pinned, worn, pool: [...new Set([...(h.pool ?? []), ...Object.values(worn)])] };
+  });
+  const gauges = new Map(ids.map((id) => [id, synthGauge({ parts: o.heroes[id].parts, bonus: o.heroes[id].bonus, value: o.heroes[id].value ?? {} })]));
+  return { heroes, items, gauge: (id) => gauges.get(id) ?? null };
 }
