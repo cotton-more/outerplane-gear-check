@@ -11,7 +11,7 @@ export function heroPlan(w: World, inp: PlanInput): HeroPlan {
   const g = w.gauge(inp.to);
   const cin: CandInput = { to: inp.to, skip: inp.skip, allow: inp.allow };
   const plan = g ? planFor(g, candidates(w, cin)) : { kit: { slots: {}, key: null as never }, changes: [], losses: [] };
-  return { plan, holes: fillHoles(w, { to: inp.to, plan, skip: inp.skip }) };
+  return { plan, holes: fillHoles(w, { to: inp.to, plan }) };
 }
 
 export interface PinnedHint { heroes: string[]; gain: Milli; plan: HeroPlan }

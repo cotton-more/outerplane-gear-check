@@ -1,8 +1,7 @@
 // «Сделал» плана героя (R6.6, R8.5, R8.6, R3.2, R4.3–R4.5, R10.6, .x/0040-trade/SPEC.md): одна запись в хранилище.
 // Изменения: вещь уходит из пула держателя (была надета — дыра), входит в пул получателя и надевается; свободная — просто
 // в пул; снятая остаётся в пуле получателя ненадетой. Копии взятого (тот же код) в пуле получателя уходят из пула — их
-// может взять дыра, иначе их больше нет в приложении (leftovers). Заполнения дыр: вещь — из пула держателя (свободная —
-// из пула получателя), в пул героя дыры, надета. Закрепление получателя = переключатель плана. План считали на другом
+// больше нет в приложении (leftovers). Дыры не закрываются (владелец, 2026-10-04). Закрепление получателя = переключатель плана. План считали на другом
 // хранилище — null (пересчитать). «Вернуть» — хранилище до шага, если после шага его не трогали.
 import type { SlotId } from '../../data/types';
 import { gc, setPinned, type GearStore } from '../gear';
@@ -30,7 +29,7 @@ function copiesOf(pools: Placement['pools'], code: (id: string) => string | null
 }
 
 // один шаг: копии взятого уходят из пула получателя; вещь уходит от держателя, входит в пул получателя и надевается
-// (снятая остаётся в его пуле); заполнения дыр — из пула держателя (свободная — от получателя), в пул героя дыры, надеть.
+// (снятая остаётся в его пуле); у отдавшего слот пустеет.
 // Надетое, которое ушло к другому, на прежнем держателе больше не надето. Меняет p на месте
 export function moveStep(p: Placement, step: Step, code: (id: string) => string | null): void {
   const out = (c: string, id: string) => { if (p.pools[c]) p.pools[c] = p.pools[c].filter((x) => x !== id); };
@@ -39,10 +38,8 @@ export function moveStep(p: Placement, step: Step, code: (id: string) => string 
     (p.worn[c] ??= {})[slot] = id;
   };
   const taken = takenOf(step.plans);
-  const homeOf = new Map<string, string>();
   for (const { to, plan } of step.plans) {
-    for (const id of copiesOf(p.pools, code, plan, to, taken)) { out(to, id); homeOf.set(id, to); }
-    for (const c of plan.changes) if (c.was) homeOf.set(c.was.item.id, to);
+    for (const id of copiesOf(p.pools, code, plan, to, taken)) out(to, id);
   }
   for (const { to, plan } of step.plans) {
     for (const { slot, cand } of plan.changes) {
@@ -51,12 +48,6 @@ export function moveStep(p: Placement, step: Step, code: (id: string) => string 
     }
   }
   for (const { to, plan } of step.plans) for (const { slot, cand } of plan.changes) put(to, slot, cand.item.id);
-  for (const f of step.fills) {
-    if (!f.cand) continue;
-    const from = f.cand.holder ?? homeOf.get(f.cand.item.id);
-    if (from) out(from, f.cand.item.id);
-    put(f.hero, f.slot, f.cand.item.id);
-  }
   for (const [c, w] of Object.entries(p.worn)) for (const [slot, id] of Object.entries(w)) if (id && !p.pools[c]?.includes(id)) delete w[slot as SlotId];
 }
 
@@ -66,8 +57,7 @@ export function leftovers(st: GearStore, hp: HeroPlan, to: string): string[] {
 }
 export function leftoversOf(st: GearStore, step: Step): Record<string, string[]> {
   const taken = takenOf(step.plans);
-  const filled = new Set(step.fills.map((f) => f.cand?.item.id));
-  return Object.fromEntries(step.plans.map(({ to, plan }) => [to, copiesOf(st.pools, codeIn(st), plan, to, taken).filter((id) => !filled.has(id))]));
+  return Object.fromEntries(step.plans.map(({ to, plan }) => [to, copiesOf(st.pools, codeIn(st), plan, to, taken)]));
 }
 
 const codeIn = (st: GearStore) => (id: string) => (st.pieces[id] ? codeOf(st.pieces[id]) : null);

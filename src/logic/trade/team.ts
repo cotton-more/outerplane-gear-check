@@ -164,8 +164,8 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
     const after = kitIn(r.w, to);
     return { to, before: before.get(to)!, after, unfilled: SLOT_ORDER.filter((s) => !after.slots[s]) };
   });
-  // шаги без изменений и заполнений не нужны ни плану, ни «Сделал»
-  const steps = r.steps.filter((s) => s.plans.some((p) => p.plan.changes.length) || s.fills.some((f) => f.cand));
+  // шаги без изменений не нужны ни плану, ни «Сделал»
+  const steps = r.steps.filter((s) => s.plans.some((p) => p.plan.changes.length));
   return { order: r.order, steps, members, moves: movesOf(w0, r.w, r.order) };
 }
 

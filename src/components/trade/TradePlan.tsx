@@ -44,7 +44,7 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
   const t = useT();
   const { idx } = ctx;
   const name = (id: string) => idx.CHAR[id]?.name ?? id;
-  const breaks = new Map(fills.filter((f) => !f.cand).map((f) => [`${f.hero}:${f.slot}`, f.breaks]));
+  const breaks = new Map(fills.map((f) => [`${f.hero}:${f.slot}`, f.breaks]));
   const from = (m: Move) => (m.from.kind === 'worn' ? t.trade.fromWorn(name(m.from.hero))
     : m.from.kind === 'stock' ? t.trade.fromStock(name(m.from.hero)) : t.trade.fromInventory);
 

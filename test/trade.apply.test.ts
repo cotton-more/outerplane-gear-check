@@ -14,16 +14,15 @@ import { cand, ctx, hasOwner, HERO, idx, loadOwner, piece, store } from './trade
 const { rin, karen, noa, maya } = HERO;
 const SET = 'Attack';
 
-type Fill = { hero: string; slot: SlotId; id: string; holder: string | null };
 type Chg = { slot: SlotId; id: string; holder: string | null; was?: string };
 // план вручную: apply опирается только на id, slot, holder
-const planOf = (changes: Chg[], fills: Fill[] = []): HeroPlan => ({
+const planOf = (changes: Chg[]): HeroPlan => ({
   plan: {
     kit: { slots: {}, key: null as never },
     changes: changes.map((c) => ({ slot: c.slot, cand: cand({ id: c.id, slot: c.slot, v: 1, cost: c.holder === null ? 2 : 3, holder: c.holder }), was: c.was ? cand({ id: c.was, slot: c.slot, v: 1, cost: 0, holder: rin }) : null })),
     losses: [],
   },
-  holes: { fills: fills.map((f) => ({ hero: f.hero, slot: f.slot, cand: cand({ id: f.id, slot: f.slot, v: 1, cost: f.holder === null ? 2 : 3, holder: f.holder }), breaks: null })), unfilled: [] },
+  holes: { fills: [], unfilled: [] },
 });
 const go = (st: GearStore, to: string, hp: HeroPlan, pin = true) => applyHero(st, { to, hp, pin, stamp: stampOf(st) })!;
 const wornOf = (st: GearStore, h: string, slot: SlotId) => st.worn?.[h]?.[slot];
@@ -75,14 +74,6 @@ describe('E. применение: один герой', () => {
       expect(x.pools[rin]).not.toContain(old.id);
       expect(leftovers(st, hp, rin)).toEqual([old.id]);
     });
-    it('дыра Карен берёт старую копию — она в пуле Карен и надета, leftovers пуст', () => {
-      const { st, old, fresh } = arrange();
-      const hp = planOf([{ slot: 'gloves', id: fresh.id, holder: karen, was: old.id }], [{ hero: karen, slot: 'gloves', id: old.id, holder: null }]);
-      const x = go(st, rin, hp).st;
-      expect(inPool(x, karen, old)).toBe(true);
-      expect(wornOf(x, karen, 'gloves')).toBe(old.id);
-      expect(leftovers(st, hp, rin)).toEqual([]);
-    });
   });
   it('E5: pin true — закреплён; pin false — нет; был закреплён и pin false — снят', () => {
     const { st, r, k } = base();
@@ -117,8 +108,9 @@ describe('E. применение: один герой', () => {
   });
   it('E8: у каждого героя worn ⊂ pool, по вещи на слот, нет двух вещей одного кода в пуле', () => {
     const { st, r, k, n } = base();
-    const hp = planOf([{ slot: 'gloves', id: k.id, holder: karen, was: r.id }], [{ hero: karen, slot: 'gloves', id: n.id, holder: noa }]);
+    const hp = planOf([{ slot: 'gloves', id: k.id, holder: karen, was: r.id }]);
     const x = go(st, rin, hp).st;
+    expect(x.pools[noa]).toContain(n.id);
     for (const h of Object.keys(x.pools)) {
       const w = x.worn?.[h] ?? {};
       for (const id of Object.values(w)) expect(x.pools[h]).toContain(id);
@@ -180,22 +172,14 @@ describe('E. применение: один герой', () => {
 });
 
 describe('F. дыры: применение', () => {
-  it('F8: перчатки Майи у Рин; дыру перчаток Майи закрывает снятая с Рин, дыру шлема — запас Ноа', () => {
-    const r = piece('gloves', SET, lv(1)), m = piece('gloves', SET, lv(2)), mh = piece('helmet', SET, lv(1)), nh = piece('helmet', SET, lv(2));
-    const st = store({ [rin]: { pool: [r], worn: [r] }, [maya]: { pool: [m, mh], worn: [m, mh] }, [noa]: { pool: [nh] } });
-    const hp = planOf(
-      [{ slot: 'gloves', id: m.id, holder: maya, was: r.id }],
-      [{ hero: maya, slot: 'gloves', id: r.id, holder: null }, { hero: maya, slot: 'helmet', id: nh.id, holder: noa }],
-    );
-    const x = go(st, rin, hp).st;
+  it('F8: перчатки Майи у Рин — у Майи перчатки пустые, снятые с Рин остаются у Рин (дыры не закрываются)', () => {
+    const r = piece('gloves', SET, lv(1)), m = piece('gloves', SET, lv(2));
+    const st = store({ [rin]: { pool: [r], worn: [r] }, [maya]: { pool: [m], worn: [m] } });
+    const x = go(st, rin, planOf([{ slot: 'gloves', id: m.id, holder: maya, was: r.id }])).st;
     expect(wornOf(x, rin, 'gloves')).toBe(m.id);
-    expect(inPool(x, rin, r)).toBe(false);
-    expect(inPool(x, maya, r)).toBe(true);
-    expect(wornOf(x, maya, 'gloves')).toBe(r.id);
+    expect(inPool(x, rin, r)).toBe(true);
     expect(inPool(x, maya, m)).toBe(false);
-    expect(inPool(x, noa, nh)).toBe(false);
-    expect(inPool(x, maya, nh)).toBe(true);
-    expect(wornOf(x, maya, 'helmet')).toBe(nh.id);
+    expect(wornOf(x, maya, 'gloves')).toBeUndefined();
   });
 });
 

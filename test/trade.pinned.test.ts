@@ -30,12 +30,12 @@ describe('G. подсказка закреплённых', () => {
   it('G3: то же с конвертируемым сетом — подсказки нет', () => {
     expect(pinnedHint(world({ gain: 0.3, set: { conv: true } }), { to: 'R' })).toBeNull();
   });
-  it('G4: «Взять» — вещь Карен в плане, дыра Карен закрыта по R8, Карен остаётся закреплённой', () => {
+  it('G4: «Взять» — вещь Карен в плане, у Карен дыра (не закрывается), Карен остаётся закреплённой', () => {
     const w = world({ gain: 1.5 });
     expect(heroPlan(w, { to: 'R' }).plan.changes).toEqual([]); // без «Взять» вещь Карен не берётся
     const h = pinnedHint(w, { to: 'R' })!;
     expect(h.plan.plan.changes.map((c) => c.cand.item.id)).toEqual(['k1']);
-    expect(h.plan.holes.fills.find((f) => f.hero === 'K')!.cand?.item.id).toBe('r1'); // снятая с Рин
+    expect(h.plan.holes.fills.map((f) => f.hero)).toEqual(['K']);
     expect(w.heroes.find((x) => x.id === 'K')!.pinned).toBe(true);
   });
   it('G6: закреплены Карен и Лея, в лучший план попали только вещи Карен → «У Карен», Леи нет', () => {
