@@ -1,10 +1,10 @@
 // План обмена (.x/0040-trade/SPEC.md R6.3–R6.6, R8.4, R9, R10.4, R10.5; DESIGN «Экран плана»). Главное — какие вещи на
 // ком должны быть: у героя — итоговая вещь каждого меняемого слота целиком (как в сборке билда: сет или предмет, main,
-// сабстаты с уровнями, T4) и ключ поиска в Change Gear; источник («у Ноа», «в инвентаре») — мелким шрифтом, подсказка для
-// поиска. Сначала получатели (в порядке выполнения), потом те, у кого забрали надетое: «▼ −13%», чем закрыта дыра или
+// сабстаты с уровнями, T4) — по ней и ищут в Change Gear; у оружия и аксессуара сабстат для Secondary и сортировки
+// отмечен ↓ (R9.1). Под вещью — откуда взять («у Ноа», «в инвентаре», владелец 2026-10-04: строки «Искать» нет). Сначала получатели (в порядке выполнения), потом те, у кого забрали надетое: «▼ −13%», чем закрыта дыра или
 // «нет: оружие» и что искать. Очки — комплект по мерилу героя; процент — R10.5. «Не брать» — пересчёт без этой вещи у этого
 // героя. У получателя — билд мерила «Speed ▾»: шторка «Билд для X», смена — пересчёт. Изменений нет — «Менять нечего», переключатель и «Ок» (R6.3).
-import { GRADE_NAME, subLabel } from '../../data';
+import { GRADE_NAME, isArmor, subLabel } from '../../data';
 import type { SlotId } from '../../data/types';
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
@@ -53,6 +53,8 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
     const v = c && aimVariant(ctx, view, st, m.hero);
     if (!p || !c) return null;
     const W = v ? subWeights(ctx, v.b, c, itemMains(idx, pieceInput(p))) : null;
+    // оружие и аксессуар: Primary — main в названии, Secondary (и сортировка) — отмечен ↓ среди сабстатов; броню ищут по сету
+    const sort = v && !isArmor(p.slot) ? keyOfItem(ctx, c, v.b, p).sub : null;
     return (
       <li key={m.slot} className="tmove">
         <div className="bgear-row">
@@ -62,13 +64,11 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
           <span className="bgear-t">
             {Object.keys(p.lit).map((k) => {
               const cr = W?.get(k)?.credit ?? 0;
-              return <span key={k} className={`tok${cr >= 1 ? ' ok' : cr > 0 ? ' half' : ''}`}>{subLabel(k)}<i>{p.lit[k]}</i></span>;
+              const s2 = k === sort;
+              return <span key={k} className={`tok${cr >= 1 ? ' ok' : cr > 0 ? ' half' : ''}${s2 ? ' sort' : ''}`} title={s2 ? t.trade.sortTitle : undefined}>{subLabel(k)}{s2 && ' ↓'}<i>{p.lit[k]}</i></span>;
             })}
           </span>
-          <span className="tkey">
-            {v && <>{t.trade.search} {keyText(t, ctx, keyOfItem(ctx, c, v.b, p))}</>}
-            <small className="tfrom"> · {from(m)}</small>
-          </span>
+          <span className="tsrc">{from(m)}</span>
         </div>
       </li>
     );

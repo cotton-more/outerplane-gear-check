@@ -55,7 +55,6 @@
 .tmove { display: grid; gap: 3px; }
 .tmove .bgear-row { cursor: default; }
 .tkey { grid-column: 2 / 4; font-size: 11.5px; color: var(--ink); }
-.tfrom { font-size: 11px; color: var(--ink-3); }
 .thole p { margin: 0; }
 .thole p:first-child { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
 .thole .ico, .thole img { width: 20px; height: 20px; color: var(--ink-3); }
@@ -69,3 +68,5 @@
 .cd-trade .toggle { gap: 6px; }
 .ctile .pinb { position: absolute; top: 58px; right: 8px; line-height: 0; padding: 2px; border-radius: 3px; background: var(--accent-soft); }
 .ctile .pinb .ico { width: 12px; height: 12px; }
+.tsrc { grid-column: 2 / 4; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.tplan .bgear-t .tok.sort { box-shadow: inset 0 0 0 1px var(--accent); }

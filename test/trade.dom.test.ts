@@ -109,8 +109,7 @@ describe('J. обмен вещами', () => {
     await click(byText('.cd-trade button', 'Trade'));
 
     expect($('.tmove .bgear-row')).not.toBeNull();
-    expect($('.tmove .tkey')?.textContent).toMatch(/^Search:/);
-    expect($('.tmove .tfrom')?.textContent).toContain('on Aer');
+    expect($('.tmove .tsrc')?.textContent).toBe('on Aer');
     expect($('.tline.to .tline-g')?.textContent).toMatch(/▾$/); // билд мерила — его можно сменить (R4.2)
     expect(byText('.tmove button', "Don't take")).toBeTruthy();
     expect(($('.tpin input') as HTMLInputElement).checked).toBe(true);
@@ -118,7 +117,7 @@ describe('J. обмен вещами', () => {
 
     await click(byText('.tmove button', "Don't take"));
 
-    expect($('.tline.to .tmove .tfrom')).toBeNull();
+    expect($('.tline.to .tmove .tsrc')).toBeNull();
   });
 
   it('J4: «Done» сохраняет обмен и закрепляет Caren; «Undo» возвращает ogc.gear байт в байт', async () => {
@@ -176,7 +175,7 @@ describe('J. обмен вещами', () => {
     await click($('.trade-count'));
     for (let i = 0; i < 100 && !$('.tplan'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
 
-    expect($('.tline.to .tfrom')?.textContent).toContain('on Aer');
+    expect($('.tline.to .tsrc')?.textContent).toBe('on Aer');
     expect($$('.tline').map((l) => l.querySelector('.tline-n')?.textContent)).not.toContain('Aer');
     expect($('.tline:not(.to)')).toBeNull();
   });

@@ -692,6 +692,7 @@ export const en: Texts = {
     skip: "Don't take",
     search: 'Search:',
     anyGrade: '6★',
+    sortTitle: 'Secondary Stat — sort by it',
     keySub: (sub: string) => `${sub} ↓`, // Secondary и сортировка по нему
     emptySlot: (slot: string) => `${(SLOT_EN[slot] ?? slot).replace(/^./, (x) => x.toUpperCase())}: empty`,
     gone: (what: string) => `The old copy of ${what} stays in inventory, removed from the app.`,

@@ -794,6 +794,7 @@ export const ru = {
     skip: 'Не брать',
     search: 'Искать:',
     anyGrade: '6★',
+    sortTitle: 'Secondary Stat — сортировка по нему',
     keySub: (sub: string) => `${sub} ↓`, // Secondary и сортировка по нему
     emptySlot: (slot: string) => `${cap(NOM[slot] ?? slot)}: пусто`,
     gone: (what: string) => `Старая копия ${what} останется в инвентаре, из приложения уйдёт.`,
