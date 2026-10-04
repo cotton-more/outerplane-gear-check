@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { SlotId } from '../src/data/types';
 import { isPinned, type GearStore, type Piece } from '../src/logic/gear';
 import { restoreGear } from '../src/logic/gearStore';
-import { applyHero, leftovers, stampOf } from '../src/logic/trade/apply';
+import { applyHero, applyTeam, leftovers, stampOf } from '../src/logic/trade/apply';
+import { teamPlan, type TeamPlan } from '../src/logic/trade/team';
 import { candidates } from '../src/logic/trade/cands';
 import { codeOf } from '../src/logic/trade/model';
 import { heroPlan, type HeroPlan } from '../src/logic/trade/plan';
@@ -210,5 +211,65 @@ describe('X5: сквозной «Сделал» на вещах владельц
       }
     }
     expect(changes).toBeGreaterThan(0);
+  });
+});
+
+describe('H6, H9: «Сделал» команды', () => {
+  // Рин и Ноа меняются перчатками (r ⇄ n); Рин берёт ещё шлем Карен kh (запас); дыру не делаем
+  const arrange = () => {
+    const r = piece('gloves', SET, lv(1)), n = piece('gloves', SET, lv(3)), kh = piece('helmet', SET, lv(4)), k = piece('gloves', SET, lv(5));
+    const st = store({ [rin]: { pool: [r], worn: [r] }, [noa]: { pool: [n], worn: [n] }, [karen]: { pool: [k, kh], worn: [k] } });
+    // шаг очереди: Рин берёт перчатки Ноа и шлем Карен; потом обмен пары: Ноа получает снятые с Рин перчатки
+    const tp: TeamPlan = {
+      order: [rin, noa],
+      steps: [
+        { kind: 'hero', plans: [{ to: rin, plan: planOf([{ slot: 'gloves', id: n.id, holder: noa, was: r.id }, { slot: 'helmet', id: kh.id, holder: karen }]).plan }], fills: [], unfilled: {} },
+        { kind: 'swap', plans: [{ to: noa, plan: planOf([{ slot: 'gloves', id: r.id, holder: rin }]).plan }], fills: [], unfilled: {} },
+      ],
+      members: [],
+    };
+    return { st, tp, r, n, kh };
+  };
+  it('H6: одно «Сделал» — применены все члены и закрепления по переключателям', () => {
+    const { st, tp, r, n, kh } = arrange();
+    const x = applyTeam(st, { tp, pin: { [rin]: true, [noa]: false }, stamp: stampOf(st) })!.st;
+    expect(wornOf(x, rin, 'gloves')).toBe(n.id);
+    expect(wornOf(x, rin, 'helmet')).toBe(kh.id);
+    expect(wornOf(x, noa, 'gloves')).toBe(r.id);
+    expect(x.pools[rin]).not.toContain(r.id);
+    expect(x.pools[noa]).toEqual([r.id]);
+    expect(x.pools[karen]).not.toContain(kh.id);
+    expect(isPinned(x, rin)).toBe(true);
+    expect(isPinned(x, noa)).toBe(false);
+  });
+  it('H9: после «Сделал» обмен закончен — «Вернуть» откатывает весь план; новый расчёт с теми же героями возможен', () => {
+    const { st, tp } = arrange();
+    const res = applyTeam(st, { tp, pin: { [rin]: true, [noa]: true }, stamp: stampOf(st) })!;
+    expect(applyTeam(res.st, { tp, pin: {}, stamp: stampOf(st) })).toBeNull(); // старый план к новому хранилищу не применить
+    expect(res.undo(res.st)).toEqual(st);
+  });
+});
+
+describe('X6: сквозной «Сделал» команды на вещах владельца', () => {
+  it.skipIf(!hasOwner())('X6: после applyTeam надетое членов = итог расчёта; надетое ⊂ пул; у героя нет двух вещей одного кода', () => {
+    const o = loadOwner();
+    const w = worldOf(o.ctx, o.st, o.roster);
+    const ids = w.heroes.filter((h) => w.gauge(h.id)).map((h) => h.id);
+    let moved = 0;
+    for (let n = 0; n + 4 <= ids.length; n += 4) {
+      const tp = teamPlan(w, { team: ids.slice(n, n + 4) })!;
+      const x = applyTeam(o.st, { tp, pin: {}, stamp: stampOf(o.st) })!.st;
+      for (const m of tp.members) {
+        const want = Object.fromEntries(Object.entries(m.after.slots).map(([s, c]) => [s, c!.item.id]));
+        expect(x.worn?.[m.to] ?? {}, m.to).toEqual(want);
+        moved += tp.steps.length;
+      }
+      for (const [c, list] of Object.entries(x.pools)) {
+        for (const id of Object.values(x.worn?.[c] ?? {})) expect(list).toContain(id);
+        const codes = list.map((id) => codeOf(x.pieces[id]));
+        expect(new Set(codes).size, c).toBe(codes.length);
+      }
+    }
+    expect(moved).toBeGreaterThan(0);
   });
 });

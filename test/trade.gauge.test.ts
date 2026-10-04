@@ -12,6 +12,7 @@ import { worldOf } from '../src/logic/trade/world';
 import type { SlotId } from '../src/data/types';
 import type { Subs } from '../src/logic/subs';
 import { ctx, HERO, hasOwner, lcg, loadOwner, piece, realWorld, store } from './trade.helpers';
+import { teamPlan } from '../src/logic/trade/team';
 
 const char = (id: string) => ctx.idx.CHAR[id];
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
@@ -246,5 +247,16 @@ describe('X1. Эквивалентность модели сборке прил�
       expect(r, `случай ${i}: ${JSON.stringify(r)}`).toBeNull();
     }
     expect(checked).toBe(30);
+  });
+});
+
+describe('B8: мерило члена команды', () => {
+  it('B8: сменил билд члена — план команды пересчитан по новому билду', () => {
+    const others = [HERO.rin, HERO.karen, HERO.noa];
+    const mkStore = (key: string) => store({ [D]: { pool: armorOf('Speed', GOOD2) }, ...Object.fromEntries(others.map((h) => [h, { pool: [piece('weapon', null)] }])) }, { aim: { [D]: key } });
+    const plan = (key: string) => teamPlan(realWorld(mkStore(key)), { team: [D, ...others] })!.members[0].after;
+    const a = plan(PEN4), b = plan(ATK_SPD);
+    expect(realWorld(mkStore(PEN4)).gauge(D)!.key).toBe(PEN4); // premise
+    expect(a.key).not.toEqual(b.key);
   });
 });

@@ -17,6 +17,9 @@ export interface HoleFill {
 }
 export interface HolesInput { to: string; plan: Plan; skip?: ReadonlySet<string> }
 export interface HolesResult { fills: HoleFill[]; unfilled: SlotId[] } // unfilled — слоты получателя, оставшиеся пустыми (F9)
+// несколько получателей (команда): дыры — только у героев вне их; unfilled — по каждому получателю
+export interface HolesManyInput { plans: readonly { to: string; plan: Plan }[]; skip?: ReadonlySet<string> }
+export interface HolesMany { fills: HoleFill[]; unfilled: Record<string, SlotId[]> }
 
 interface Hole { hero: Hero; g: Gauge; slot: SlotId; cands: Cand[]; base: Partial<Record<SlotId, Cand>>; idx: number }
 
@@ -33,17 +36,24 @@ const activeSets = (g: Gauge, slots: Partial<Record<SlotId, Cand>>): Set<string>
 };
 
 export function fillHoles(w: World, inp: HolesInput): HolesResult {
-  const heroOf = new Map(w.heroes.map((h) => [h.id, h]));
-  const taken = new Set(inp.plan.changes.map((c) => c.cand.item.id));
-  const recv = heroOf.get(inp.to);
-  const takenCodes = new Set([...taken].map((id) => w.items[id].code));
-  // свободные вещи этого расчёта: снятое с получателя и его копии взятого (R6.6)
-  const freeIds = new Set<string>();
-  for (const c of inp.plan.changes) if (c.was) freeIds.add(c.was.item.id);
-  for (const id of recv?.pool ?? []) if (!taken.has(id) && takenCodes.has(w.items[id].code)) freeIds.add(id);
+  const r = fillHolesMany(w, { plans: [{ to: inp.to, plan: inp.plan }], skip: inp.skip });
+  return { fills: r.fills, unfilled: r.unfilled[inp.to] };
+}
 
-  // дыры: слот героя, надетое в котором уходит получателю (получатель вещь берёт сам — своя дыра не нужна)
-  const lost = inp.plan.losses.filter((l) => l.holder !== inp.to);
+export function fillHolesMany(w: World, inp: HolesManyInput): HolesMany {
+  const heroOf = new Map(w.heroes.map((h) => [h.id, h]));
+  const recvs = new Set(inp.plans.map((p) => p.to));
+  const taken = new Set(inp.plans.flatMap((p) => p.plan.changes.map((c) => c.cand.item.id)));
+  // свободные вещи этого расчёта: снятое с получателей (не взятое другим) и их копии взятого (R6.6)
+  const freeIds = new Set<string>();
+  for (const { to, plan } of inp.plans) {
+    for (const c of plan.changes) if (c.was && !taken.has(c.was.item.id)) freeIds.add(c.was.item.id);
+    const codes = new Set(plan.changes.map((c) => c.cand.item.code));
+    for (const id of heroOf.get(to)?.pool ?? []) if (!taken.has(id) && codes.has(w.items[id].code)) freeIds.add(id);
+  }
+
+  // дыры: слот героя вне получателей, надетое в котором уходит получателю (получатель вещь берёт сам — своя дыра не нужна)
+  const lost = inp.plans.flatMap((p) => p.plan.losses).filter((l) => !recvs.has(l.holder));
   const holeSlots = new Set(lost.map((l) => `${l.holder}:${l.slot}`));
   const known = (h: Hero, slot: SlotId) => !!h.worn[slot] || holeSlots.has(`${h.id}:${slot}`);
 
@@ -92,7 +102,7 @@ export function fillHoles(w: World, inp: HolesInput): HolesResult {
     const was = activeSets(h.g, { ...h.base, [h.slot]: lostCand(w, h) });
     return { hero: h.hero.id, slot: h.slot, cand, breaks: [...was].find((s) => !before.has(s)) ?? null };
   });
-  const unfilled = SLOT_ORDER.filter((s) => !inp.plan.kit.slots[s]);
+  const unfilled = Object.fromEntries(inp.plans.map(({ to, plan }) => [to, SLOT_ORDER.filter((s) => !plan.kit.slots[s])]));
   return { fills, unfilled };
 }
 
