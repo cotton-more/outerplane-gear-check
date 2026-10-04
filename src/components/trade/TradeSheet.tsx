@@ -81,7 +81,8 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
     runTeam(world, inp, ac.signal).then((tp) => {
       if (!tp || ac.signal.aborted) return;
       const w1 = tp.steps.reduce(advance, world);
-      setTres({ tp, lines: linesOf(world, w1, tp.order, tp.moves), fills: tp.steps.flatMap((s) => s.fills), stamp, hint: undefined, empty: !tp.moves.moves.length });
+      // команда — только её члены (владелец, 2026-10-04): потери и дыры других героев не показываем
+      setTres({ tp, lines: linesOf(world, w1, tp.order, tp.moves).filter((l) => l.receiver), fills: tp.steps.flatMap((s) => s.fills), stamp, hint: undefined, empty: !tp.moves.moves.length });
       return runChunks(teamHintSteps(world, inp, tp), ac.signal).then((h) => {
         if (!ac.signal.aborted) setTres((r) => (r && r.tp === tp ? { ...r, hint: h && { heroes: h.heroes, gain: h.gain } } : r));
       });

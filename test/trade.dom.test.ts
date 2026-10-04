@@ -162,4 +162,22 @@ describe('J. обмен вещами', () => {
     expect($('.tplan')).toBeNull();
     expect(localStorage.getItem('ogc.gear')).toBe(before);
   });
+
+  it('команда: в плане только члены команды — у Aer вне команды берут шлем, его строки нет (владелец, 2026-10-04)', async () => {
+    const fourth = D.chars.find((c) => c.builds.length && ![caren.id, aer.id, ais.id, akari.id].includes(c.id))!;
+    const team = [caren.id, ais.id, akari.id, fourth.id];
+    await mount({ roster: [...team, aer.id], gear: gear() }, { charId: null });
+    await click(byText('button', 'Trade gear'));
+    await click(byText('.trade-mode button', 'Team'));
+    for (const id of team) {
+      await click($$('.team-add')[0]);
+      await click(hero(D.chars.find((c) => c.id === id)!.name));
+    }
+    await click($('.trade-count'));
+    for (let i = 0; i < 100 && !$('.tplan'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+
+    expect($('.tline.to .tfrom')?.textContent).toContain('on Aer');
+    expect($$('.tline').map((l) => l.querySelector('.tline-n')?.textContent)).not.toContain('Aer');
+    expect($('.tline:not(.to)')).toBeNull();
+  });
 });
