@@ -14,8 +14,8 @@ const numOf = (id: string) => { const n = Number(id.replace(/^\D+/, '')); return
 export const itemOf = (p: Piece): Item =>
   ({ id: p.id, slot: p.slot, code: codeOf(p), bt: p.bt, set: p.setId, t4: p.bt === 4, ord: numOf(p.id) });
 
-// roster — порядок ростера (ogc.roster); pinned — закреплённые (R3; хранилище — этап 4)
-export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], pinned: ReadonlySet<string> = new Set()): World {
+// roster — порядок ростера (ogc.roster); pinned — закреплённые (R3), по умолчанию — из хранилища
+export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], pinned: ReadonlySet<string> = new Set(st.pinned ?? [])): World {
   const place = (id: string) => { const i = roster.indexOf(id); return i < 0 ? roster.length : i; };
   const ids = Object.keys(st.pools).filter((id) => st.pools[id].length && ctx.idx.CHAR[id]);
   ids.sort((a, z) => place(a) - place(z));
