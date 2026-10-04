@@ -794,9 +794,7 @@ export const ru = {
     skip: 'Не брать',
     search: 'Искать:',
     anyGrade: '6★',
-    keySet: (set: string) => `Set Effect: ${set}`,
-    keyMain: (main: string) => `Primary: ${main}`,
-    keySub: (sub: string) => `Secondary: ${sub}, сортировка по нему`,
+    keySub: (sub: string) => `${sub} ↓`, // Secondary и сортировка по нему
     emptySlot: (slot: string) => `${cap(NOM[slot] ?? slot)}: пусто`,
     gone: (what: string) => `Старая копия ${what} останется в инвентаре, из приложения уйдёт.`,
     pinnedBetter: (names: string, pts: number) => `У ${names} (закреплены) лучше: +${dec(pts)} очк.`,

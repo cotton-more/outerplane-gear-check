@@ -191,7 +191,7 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
             pinOf={pinOf} onPin={(id, on) => setPins((p) => ({ ...p, [id]: on }))}
             onSkip={(item, h) => setSkip((s) => new Set([...s, skipKey(item, h)]))}
             onTake={(heroes) => setAllow((a) => new Set([...a, ...heroes]))}
-            onDone={done} onCancel={cancel} />
+            onDone={done} onCancel={cancel} gaugeName={gaugeName} onAim={setAimFor} />
         )}
       </div>
       {aimC && aimCp && (

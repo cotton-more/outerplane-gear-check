@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '../src/data/types';
 import { TIPS } from '../src/tour/registry';
 
@@ -68,7 +68,6 @@ const stored = () => JSON.parse(localStorage.getItem('ogc.gear') ?? 'null');
 const gear = (extra: Pc = {}) => G([WEAK, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] },
   { worn: { [caren.id]: { helmet: 'p1' }, [aer.id]: { helmet: 'p2' } }, ...extra });
 const ROSTER = [caren.id, aer.id];
-const wait = (ms = 50) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
 const hero = (n: string) => byText('.trade-hero', n);
 
 describe('J. обмен вещами', () => {
@@ -111,7 +110,8 @@ describe('J. обмен вещами', () => {
 
     expect($('.tmove .bgear-row')).not.toBeNull();
     expect($('.tmove .tkey')?.textContent).toMatch(/^Search:/);
-    expect($('.tmove .tfrom small')?.textContent).toBe('on Aer');
+    expect($('.tmove .tfrom')?.textContent).toContain('on Aer');
+    expect($('.tline.to .tline-g')?.textContent).toMatch(/▾$/); // билд мерила — его можно сменить (R4.2)
     expect(byText('.tmove button', "Don't take")).toBeTruthy();
     expect(($('.tpin input') as HTMLInputElement).checked).toBe(true);
     expect($('.tline:not(.to) .tgain.down')).not.toBeNull();
@@ -147,11 +147,16 @@ describe('J. обмен вещами', () => {
       await click($$('.team-add')[0]);
       await click(hero(D.chars.find((c) => c.id === id)!.name));
     }
-    await click($('.trade-count'));
-
-    expect($('.trade-busy')?.textContent).toContain('Calculating…');
-    await click(byText('.trade-busy button', 'Cancel'));
-    await wait();
+    // куски расчёта (setTimeout) не идут, пока не отпустим: иначе быстрый расчёт успевал закончиться до проверки
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    try {
+      await click($('.trade-count'));
+      expect($('.trade-busy')?.textContent).toContain('Calculating…');
+      await click(byText('.trade-busy button', 'Cancel'));
+      await act(async () => { vi.runAllTimers(); });
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect($('.trade-busy')).toBeNull();
     expect($('.tplan')).toBeNull();

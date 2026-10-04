@@ -692,9 +692,7 @@ export const en: Texts = {
     skip: "Don't take",
     search: 'Search:',
     anyGrade: '6★',
-    keySet: (set: string) => `Set Effect: ${set}`,
-    keyMain: (main: string) => `Primary: ${main}`,
-    keySub: (sub: string) => `Secondary: ${sub}, sort by it`,
+    keySub: (sub: string) => `${sub} ↓`, // Secondary и сортировка по нему
     emptySlot: (slot: string) => `${(SLOT_EN[slot] ?? slot).replace(/^./, (x) => x.toUpperCase())}: empty`,
     gone: (what: string) => `The old copy of ${what} stays in inventory, removed from the app.`,
     pinnedBetter: (names: string, pts: number) => `Better with ${names}'s gear (pinned): +${dec(pts)} pts`,

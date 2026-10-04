@@ -3,7 +3,7 @@
 // сабстаты с уровнями, T4) и ключ поиска в Change Gear; источник («у Ноа», «в инвентаре») — мелким шрифтом, подсказка для
 // поиска. Сначала получатели (в порядке выполнения), потом те, у кого забрали надетое: «▼ −13%», чем закрыта дыра или
 // «нет: оружие» и что искать. Очки — комплект по мерилу героя; процент — R10.5. «Не брать» — пересчёт без этой вещи у этого
-// героя. Изменений нет — «Менять нечего», переключатель и «Ок» (R6.3).
+// героя. У получателя — билд мерила «Speed ▾»: шторка «Билд для X», смена — пересчёт. Изменений нет — «Менять нечего», переключатель и «Ок» (R6.3).
 import { GRADE_NAME, subLabel } from '../../data';
 import type { SlotId } from '../../data/types';
 import { useT } from '../../i18n';
@@ -25,8 +25,8 @@ export interface Hint { heroes: string[]; gain: number }
 type T = ReturnType<typeof useT>;
 
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
-  return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && t.trade.keySet(ctx.idx.SET[k.set]?.short ?? k.set),
-    k.main && t.trade.keyMain(subLabel(k.main)), k.sub && t.trade.keySub(subLabel(k.sub)), k.t4 && 'T4'].filter(Boolean).join(' · ');
+  return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && (ctx.idx.SET[k.set]?.short ?? k.set),
+    k.main && subLabel(k.main), k.sub && t.trade.keySub(subLabel(k.sub)), k.t4 && 'T4'].filter(Boolean).join(' · ');
 }
 
 function gainText(t: T, l: HeroLine): { text: string; cls: string } {
@@ -35,10 +35,11 @@ function gainText(t: T, l: HeroLine): { text: string; cls: string } {
   return { text, cls: g.n > 0 ? 'up' : g.n < 0 ? 'down' : '' };
 }
 
-export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pinOf, onPin, onSkip, onTake, onDone, onCancel }: {
+export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pinOf, onPin, onSkip, onTake, onDone, onCancel, gaugeName, onAim }: {
   ctx: Ctx; view: PoolView; st: GearStore; lines: readonly HeroLine[]; fills: readonly HoleFill[]; hint: Hint | null | undefined;
   empty: boolean; stale: boolean; pinOf: (id: string) => boolean; onPin: (id: string, on: boolean) => void;
   onSkip: (item: string, hero: string) => void; onTake: (heroes: string[]) => void; onDone: () => void; onCancel: () => void;
+  gaugeName: (id: string) => string; onAim: (id: string) => void;
 }) {
   const t = useT();
   const { idx } = ctx;
@@ -56,20 +57,19 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
       <li key={m.slot} className="tmove">
         <div className="bgear-row">
           <SlotIcon slot={m.slot} />
-          <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-          {hasBt(p.slot, p.grade) && <span className="bgear-m">{btText(t, p.bt)}</span>}
+          <span className="bgear-n"><PieceName ctx={ctx} p={p} />{hasBt(p.slot, p.grade) && <span className="pm">· {btText(t, p.bt)}</span>}</span>
+          <button type="button" className="linkbtn small tskip" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>
           <span className="bgear-t">
             {Object.keys(p.lit).map((k) => {
               const cr = W?.get(k)?.credit ?? 0;
               return <span key={k} className={`tok${cr >= 1 ? ' ok' : cr > 0 ? ' half' : ''}`}>{subLabel(k)}<i>{p.lit[k]}</i></span>;
             })}
           </span>
+          <span className="tkey">
+            {v && <>{t.trade.search} {keyText(t, ctx, keyOfItem(ctx, c, v.b, p))}</>}
+            <small className="tfrom"> · {from(m)}</small>
+          </span>
         </div>
-        {v && <p className="tkey">{t.trade.search} {keyText(t, ctx, keyOfItem(ctx, c, v.b, p))}</p>}
-        <p className="tfrom">
-          <small>{from(m)}</small>
-          <button type="button" className="linkbtn small" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>
-        </p>
       </li>
     );
   };
@@ -98,6 +98,7 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
             <h4 className="tline-h">
               {c && <Img k={'face:' + c.icon} className="face" />}
               <span className="tline-n">{name(l.hero)}</span>
+              {l.receiver && <button type="button" className="linkbtn small tline-g" onClick={() => onAim(l.hero)}>{gaugeName(l.hero)} ▾</button>}
               {(!empty || !l.receiver) && <span className={`tgain ${g.cls}`}>{g.text}</span>}
               {[...sets, ...lost].length > 0 && <span className="tline-s">{[...sets, ...lost].join(', ')}</span>}
             </h4>
