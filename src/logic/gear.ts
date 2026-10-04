@@ -40,7 +40,8 @@ export type Mark = 'want' | 'skip'; // «Собираю» / «Не собира�
 // собираются сами, а в v1 начаты не были: разовая подсказка в карточке. Незнакомые поля (v1builds — билды v1 как
 // были, следующая версия) переносятся как есть. worn — что надето на персонаже: слот → id записи его пула (надетое ⊂
 // пул, слот записи = ключ; syncWorn). aim — выбранный билд персонажа: ключ варианта (Variant.key, «По статам» —
-// charId/#stats); только у героя с пулом. Пустых worn и aim не храним
+// charId/#stats); только у героя с пулом. pinned — закреплённые герои «Не отдавать надетое» (обмен, R3): только с пулом.
+// Пустых worn, aim и pinned не храним
 export type Worn = Partial<Record<SlotId, string>>;
 export interface GearStore {
   v: 2;
@@ -51,6 +52,7 @@ export interface GearStore {
   autoNew?: string[];
   worn?: Record<string, Worn>;
   aim?: Record<string, string>;
+  pinned?: string[];
   [extra: string]: unknown;
 }
 
@@ -81,10 +83,10 @@ export function gc(st: GearStore): GearStore {
   return syncWorn({ ...st, pieces, pools });
 }
 
-// надетое ⊂ пул: из worn — записи не из пула героя, со слотом не того типа, герои без пула и пустые; из aim — герои
-// без пула. Ничего не убрано — то же хранилище; поле опустело — убираем его (пустых не храним)
+// надетое ⊂ пул: из worn — записи не из пула героя, со слотом не того типа, герои без пула и пустые; из aim и pinned —
+// герои без пула. Ничего не убрано — то же хранилище; поле опустело — убираем его (пустых не храним)
 export function syncWorn(st: GearStore): GearStore {
-  if (!st.worn && !st.aim) return st;
+  if (!st.worn && !st.aim && !st.pinned) return st;
   let cut = false;
   const worn: Record<string, Worn> = {};
   for (const [c, w] of Object.entries(st.worn ?? {})) {
@@ -96,12 +98,27 @@ export function syncWorn(st: GearStore): GearStore {
   }
   const aim = Object.fromEntries(Object.entries(st.aim ?? {}).filter(([c]) => st.pools[c]?.length));
   if (Object.keys(aim).length !== Object.keys(st.aim ?? {}).length) cut = true;
+  const pinned = (st.pinned ?? []).filter((c) => st.pools[c]?.length);
+  if (st.pinned && pinned.length !== st.pinned.length) cut = true;
   if (!cut) return st;
   const next = { ...st };
   if (st.worn) { if (Object.keys(worn).length) next.worn = worn; else delete next.worn; }
   if (st.aim) { if (Object.keys(aim).length) next.aim = aim; else delete next.aim; }
+  if (st.pinned) { if (pinned.length) next.pinned = pinned; else delete next.pinned; }
   return next;
 }
+
+// «Не отдавать надетое» (обмен, R3): отметка на герое целиком, только у героя с вещами (R3.4)
+export const isPinned = (st: GearStore, charId: string): boolean => !!st.pinned?.includes(charId);
+// поставить или снять; у героя без пула и когда уже так — то же хранилище
+export function setPinned(st: GearStore, charId: string, on: boolean): GearStore {
+  if (isPinned(st, charId) === on || (on && !st.pools[charId]?.length)) return st;
+  const pinned = on ? [...(st.pinned ?? []), charId] : st.pinned!.filter((c) => c !== charId);
+  const { pinned: _, ...rest } = st;
+  return pinned.length ? { ...rest, pinned } : rest as GearStore;
+}
+// строка «Закреплены» (R3.6): в порядке ростера
+export const pinnedOf = (st: GearStore, roster: readonly string[]): string[] => roster.filter((c) => isPinned(st, c));
 // надета ли запись на этом герое (для «Вернуть» после «Убрать у X»)
 export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slot'>): boolean => st.worn?.[charId]?.[p.slot] === p.id;
 
@@ -110,7 +127,7 @@ export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slo
 // ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; marks: Record<string, Mark>; autoNew: string[]; at: number;
-  worn?: Worn; aim?: string;
+  worn?: Worn; aim?: string; pinned?: boolean;
 }
 const ofChar = (charId: string, key: string) => key.startsWith(charId + '/');
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
@@ -127,10 +144,11 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     autoNew: (st.autoNew ?? []).filter((k) => ofChar(charId, k)),
     at: Object.keys(st.pools).indexOf(charId),
     ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}), ...(st.aim?.[charId] !== undefined ? { aim: st.aim[charId] } : {}),
+    ...(isPinned(st, charId) ? { pinned: true } : {}),
   };
   return { st: next, dropped };
 }
-// «Вернуть» после dropChar: записи, пул на прежнем месте, отметки, подсказки, надетое и выбранный билд — как были. За
+// «Вернуть» после dropChar: записи, пул на прежнем месте, отметки, подсказки, надетое, выбранный билд и закрепление — как были. За
 // эти секунды герою успели дать что-то новое — оно остаётся после прежних; отметку, надетое в слоте или билд успели
 // выбрать заново — их не трогаем
 export function undoDrop(st: GearStore, d: Dropped): GearStore {
@@ -143,11 +161,12 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const { marks: _m, autoNew: _a, ...rest } = st;
   const worn = d.worn ? { ...st.worn, [d.charId]: { ...d.worn, ...st.worn?.[d.charId] } } : st.worn;
   const aim = d.aim !== undefined ? { ...st.aim, [d.charId]: st.aim?.[d.charId] ?? d.aim } : st.aim;
-  return syncWorn({
+  const back = syncWorn({
     ...rest, pieces, pools: Object.fromEntries(entries),
     ...(st.marks || Object.keys(d.marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
     ...(worn ? { worn } : {}), ...(aim ? { aim } : {}),
   });
+  return d.pinned ? setPinned(back, d.charId, true) : back;
 }
 
 // новая запись вещи с формы: уровень (lit) и Breakthrough — как на форме (поля нет — не указан). yellow — тот же

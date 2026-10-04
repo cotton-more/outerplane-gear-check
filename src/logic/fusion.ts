@@ -7,8 +7,9 @@
 // которые есть и у других, остаются у других). «Собираю» не переносится: билды у героев разные.
 // Надетое (worn) идёт за вещами: всё, что было надето на X, надето и на CF; убраны — не надето. Выбранный билд (aim)
 // не переносится — по той же причине, что «Собираю»; у героя без пула его нет (syncWorn).
+// Закрепление (обмен, R3.4): CF закреплён, если закреплён X или CF — и при переходе вещей, и при слиянии пулов.
 import type { Index } from '../data';
-import { gc, syncWorn, type GearStore, type Worn } from './gear';
+import { gc, isPinned, setPinned, syncWorn, type GearStore, type Worn } from './gear';
 
 // надетое from — к to вместе с вещами; своё надетое to в том же слоте остаётся (его вещи на нём и были)
 function wornTo(worn: GearStore['worn'], from: string, to: string): GearStore['worn'] {
@@ -48,6 +49,7 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
   let pools = st.pools;
   let worn = st.worn;
   const fixes: FusionFix[] = [];
+  const pins = new Set(st.pinned ?? []);
   for (const [base, fusion] of Object.entries(idx.FUSED)) {
     const r = new Set(list);
     if (!exists(r, pools, base) || !exists(r, pools, fusion)) continue;
@@ -58,13 +60,15 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
     const kind = pools[fusion]?.length ? 'removed' : 'moved';
     pools = kind === 'moved' ? { ...rest, [fusion]: ids } : rest;
     if (kind === 'moved') worn = wornTo(worn, base, fusion);
+    if (pins.delete(base)) pins.add(fusion);
     fixes.push({ base, fusion, kind, ids });
   }
   if (!fixes.length) return { roster: list, st, fixes };
   // подсказка «теперь собирается сам» у X без вещей не нужна (находка 16)
   const autoNew = st.autoNew?.filter((k) => !fixes.some((f) => k.startsWith(f.base + '/')));
   const { autoNew: _a, ...rest } = st;
-  const next = { ...rest, pools, ...(worn ? { worn } : {}), ...(autoNew?.length ? { autoNew } : {}) };
+  const { pinned: _p, ...keep } = rest;
+  const next = { ...keep, pools, ...(worn ? { worn } : {}), ...(autoNew?.length ? { autoNew } : {}), ...(pins.size ? { pinned: [...pins] } : {}) };
   return { roster: list, st: pools === st.pools && autoNew?.length === st.autoNew?.length ? st : gc(next), fixes };
 }
 
@@ -84,8 +88,8 @@ export const changed = (n: Pick<Normalized, 'fixes' | 'added'>) => n.fixes.lengt
 
 // окно перехода (звезда, «Надеть», оценка для героя): «Да, Core Fusion X» или «Да, X». to — кого выбрали, from — второй из пары;
 // в ростере — только to (на месте from), вещи from — к to, надетое from — тоже (wornTo). moved / had / worn (надетое
-// from до перехода) — для «Вернуть» (gearStore unfuseChar)
-export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[]; worn?: Worn }
+// from до перехода), pin / pinTo (были ли from / to закреплены) — для «Вернуть» (gearStore unfuseChar)
+export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[]; worn?: Worn; pin?: boolean; pinTo?: boolean }
 export function switchFusion(idx: Index, roster: readonly string[], st: GearStore, to: string): Switch | null {
   const from = idx.CHAR[to]?.fusionOf ?? idx.FUSED[to];
   if (!from) return null;
@@ -98,8 +102,9 @@ export function switchFusion(idx: Index, roster: readonly string[], st: GearStor
   const { [from]: _, ...rest } = st.pools;
   const pools = { ...rest, [to]: [...had, ...moved.filter((id) => !had.includes(id))] };
   const worn = wornTo(st.worn, from, to);
-  const next = syncWorn({ ...st, pools, ...(worn ? { worn } : {}) });
-  return { to, from, roster: list, st: next, moved, had, ...(st.worn?.[from] ? { worn: st.worn[from] } : {}) };
+  const pin = isPinned(st, from);
+  const next = syncWorn(pin ? setPinned({ ...st, pools, ...(worn ? { worn } : {}) }, to, true) : { ...st, pools, ...(worn ? { worn } : {}) });
+  return { to, from, roster: list, st: next, moved, had, ...(st.worn?.[from] ? { worn: st.worn[from] } : {}), ...(pin ? { pin } : {}), ...(isPinned(st, to) ? { pinTo: true } : {}) };
 }
 
 // будет ли окно перехода у героя (звезда, «Надеть», оценка для героя): второй из пары есть — в ростере или с вещами. Его id

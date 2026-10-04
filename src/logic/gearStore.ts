@@ -6,7 +6,7 @@ import { GRADES, SLOTS, isArmor, type Index } from '../data';
 import type { Grade, SlotId } from '../data/types';
 import { makeCtx } from './context';
 import { normalizeStored, type Normalized } from './fusion';
-import { buildKey, gc, MAX_LIT, type Bt, type GearStore, type Mark, type Piece, type Worn } from './gear';
+import { buildKey, gc, MAX_LIT, setPinned, type Bt, type GearStore, type Mark, type Piece, type Worn } from './gear';
 import { heroOpts, isStats, play } from './pool';
 import { MAX_SUBS, type Subs } from './subs';
 
@@ -80,7 +80,7 @@ const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as con
 // (находка 16)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   // надетого и выбранного билда в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
-  const { builds, v: _, worn: _w, aim: _g, ...rest } = v1;
+  const { builds, v: _, worn: _w, aim: _g, pinned: _p, ...rest } = v1;
   const pools: Record<string, string[]> = {};
   const marks: Record<string, Mark> = {};
   for (const k of Object.keys(builds).sort()) {
@@ -121,6 +121,9 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
   }
   return out;
 }
+// закреплённые (R3.3): не массив — отметок нет; не строки и повторы — долой; герои без пула — уберёт gc (syncWorn)
+const restorePinned = (raw: unknown): string[] =>
+  Array.isArray(raw) ? [...new Set(raw.filter((c): c is string => typeof c === 'string'))] : [];
 const restoreAim = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
 
@@ -136,12 +139,13 @@ function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
   const marks = Object.fromEntries(Object.entries((r.marks && typeof r.marks === 'object' ? r.marks : {}) as Record<string, unknown>)
     .filter(([, m]) => m === 'want' || m === 'skip')) as Record<string, Mark>;
   const autoNew = Array.isArray(r.autoNew) ? r.autoNew.filter((k): k is string => typeof k === 'string') : [];
-  const worn = restoreWorn(r.worn), aim = restoreAim(r.aim);
-  const { marks: _m, autoNew: _a, worn: _w, aim: _g, ...rest } = r;
+  const worn = restoreWorn(r.worn), aim = restoreAim(r.aim), pinned = restorePinned(r.pinned);
+  const { marks: _m, autoNew: _a, worn: _w, aim: _g, pinned: _p, ...rest } = r;
   return gc({
     ...rest, v: 2, seq: seqOf(r, pieces), pieces, pools,
     ...(Object.keys(marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
     ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(aim).length ? { aim } : {}),
+    ...(pinned.length ? { pinned } : {}),
   });
 }
 
@@ -206,13 +210,15 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
 // Надетое base: в слоте, где на fusion надета одна из ушедших к base вещей, — она (выбор за эти секунды); в остальных —
 // r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
 // копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Выбранного билда у base нет —
-// он не переходил, а без пула не хранится
-export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn }): GearStore {
+// он не переходил, а без пула не хранится. Закрепление base (r.pin) — снова у base; fusion, закреплённый только
+// переходом (r.pinTo нет), — снят
+export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn; pin?: boolean; pinTo?: boolean }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;
   const pool = (st.pools[fusion] ?? []).filter((id) => r.had.includes(id) || !r.moved.includes(id));
   const own = st.worn?.[fusion] ?? {};
   const back = Object.entries(own).filter(([, id]) => id && r.moved.includes(id) && !r.had.includes(id));
   const w: Worn = { ...r.worn, ...Object.fromEntries(back) };
   const worn = Object.keys(w).length ? { ...st.worn, [base]: w } : st.worn;
-  return gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
+  const next = gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
+  return r.pin ? setPinned(setPinned(next, base, true), fusion, !!r.pinTo) : next;
 }
