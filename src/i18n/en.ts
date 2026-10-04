@@ -763,10 +763,12 @@ export const en: Texts = {
       fusion: "Mark Core Fusion Eternal and Eternal turns inactive, right after it in the list; Eternal's gear moves to Core Fusion Eternal. The star on Eternal switches back.",
       bt: 'Already at Breakthrough T4? Tap “T4” — set bonus and Breakthrough material count as in the game. A fresh drop is T0 — leave it off.',
       wornTab: 'This is what the hero wears in game now. Empty slot — “Enter” opens evaluation for that slot.',
+      trade: 'Trade gear: who wears what from all your gear — others’, spare, inventory. Tap Done once re-dressed in game. The pin keeps this hero’s gear from others.',
       aimChange: 'The build is what you dress the hero for. Change it and I\'ll show what to wear.',
     },
     news: {
       wornTab: '“Worn” tab: mark what your heroes wear now',
+      trade: 'Trade gear — re-dress a hero or a team from all your gear',
       move: 'on replace, a stat from another row moves over',
       gear: 'character gear — builds assemble themselves',
       bt: '“T4” on the form',
