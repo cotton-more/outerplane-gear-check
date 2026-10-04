@@ -5,12 +5,13 @@
 // Лучший итог: сумма комплектов членов (R2.5), потом очки героев вне команды, потом выигрыши членов по возрастанию, потом
 // первый порядок. Расчёт — генератором (teamSteps): runTeam уступает поток кусками, «Отмена» — без последствий (J7).
 import type { SlotId } from '../../data/types';
-import { moveStep, type Placement, type Step } from './apply';
+import type { Step } from './apply';
 import { skipKey } from './cands';
 import { THRESHOLD, type Plan } from './gate';
 import type { HoleFill } from './holes';
 import { keyOf } from './kit';
 import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type Hero, type Kit, type KitKey, type Milli, type World } from './model';
+import { advance, movesOf, type Moves } from './moves';
 import { heroPlan } from './plan';
 
 export const TEAM_SIZE = 4;
@@ -24,30 +25,14 @@ export interface TeamStep extends Step {
   unfilled: Record<string, SlotId[]>;
 }
 export interface TeamMember { to: string; before: Kit; after: Kit; unfilled: SlotId[] }
-export interface TeamPlan { order: string[]; steps: TeamStep[]; members: TeamMember[] }
+// steps — как считалось (для «Сделал»); moves — что игроку надеть: итог против начала, каждая вещь один раз
+export interface TeamPlan { order: string[]; steps: TeamStep[]; members: TeamMember[]; moves: Moves }
 
 // ровно 4 разных героя с билдами (R4.1, R2.7)
 export const teamOk = (w: World, team: readonly string[]): boolean =>
   team.length === TEAM_SIZE && new Set(team).size === TEAM_SIZE && team.every((id) => !!w.gauge(id));
 
 // ----------------------------------------------------------------------------------------------- мир по ходу расчёта
-
-// мир после шага: тот же перенос, что у «Сделал» (apply moveStep); мерила и вещи — прежние (R2.6: на момент расчёта)
-function advance(w: World, step: Step): World {
-  const p: Placement = {
-    pools: Object.fromEntries(w.heroes.map((h) => [h.id, [...h.pool]])),
-    worn: Object.fromEntries(w.heroes.map((h) => [h.id, { ...h.worn }])),
-  };
-  moveStep(p, step, (id) => w.items[id]?.code ?? null);
-  const old = new Set(w.heroes.map((h) => h.id));
-  const heroes: Hero[] = [];
-  for (const h of w.heroes) if (p.pools[h.id]?.length) heroes.push({ ...h, pool: p.pools[h.id], worn: p.worn[h.id] ?? {} });
-  // получатель без вещей — после шага с вещами: в конец (места в ростере у него не было)
-  for (const [id, pool] of Object.entries(p.pools)) {
-    if (!old.has(id) && pool.length) heroes.push({ id, rank: w.heroes.length + heroes.length, pinned: false, worn: p.worn[id] ?? {}, pool });
-  }
-  return { heroes, items: w.items, gauge: w.gauge };
-}
 
 const locked = (w: World, ids: readonly string[]): World =>
   ids.length ? { ...w, heroes: w.heroes.map((h) => (ids.includes(h.id) && !h.pinned ? { ...h, pinned: true } : h)) } : w;
@@ -181,7 +166,7 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
   });
   // шаги без изменений и заполнений не нужны ни плану, ни «Сделал»
   const steps = r.steps.filter((s) => s.plans.some((p) => p.plan.changes.length) || s.fills.some((f) => f.cand));
-  return { order: r.order, steps, members };
+  return { order: r.order, steps, members, moves: movesOf(w0, r.w, r.order) };
 }
 
 const run = <T>(gen: Generator<void, T>): T => { for (;;) { const r = gen.next(); if (r.done) return r.value; } };

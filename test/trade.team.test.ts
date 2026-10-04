@@ -92,6 +92,17 @@ describe('H. команда', () => {
     expect(kitOf(tp, 'D')).toEqual({ gloves: 'gN', helmet: 'hN' });
   });
 
+  it('H18: инструкция K2 — у каждого по слотам, каждая вещь один раз; у обмена двоих второй берёт из инвентаря', () => {
+    const tp = run(k2(3), ['N', 'D']);
+    expect(tp.moves.moves).toEqual([
+      { hero: 'D', slot: 'helmet', item: 'hN', from: { kind: 'worn', hero: 'N' } },
+      { hero: 'D', slot: 'gloves', item: 'gN', from: { kind: 'worn', hero: 'N' } },
+      { hero: 'N', slot: 'helmet', item: 'hD', from: { kind: 'inventory' } },
+      { hero: 'N', slot: 'gloves', item: 'gD', from: { kind: 'inventory' } },
+    ]);
+    expect(tp.moves.emptied).toEqual([]);
+  });
+
   it('H5: старые перчатки Дельты Ноа носить не может → слот перчаток Ноа пуст, обмен остаётся', () => {
     const tp = run(k2(null), ['N', 'D']);
     expect(kitOf(tp, 'N')).toEqual({ helmet: 'hD' });

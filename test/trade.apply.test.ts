@@ -227,6 +227,7 @@ describe('H6, H9: «Сделал» команды', () => {
         { kind: 'swap', plans: [{ to: noa, plan: planOf([{ slot: 'gloves', id: r.id, holder: rin }]).plan }], fills: [], unfilled: {} },
       ],
       members: [],
+      moves: { moves: [], emptied: [] },
     };
     return { st, tp, r, n, kh };
   };
@@ -264,6 +265,17 @@ describe('X6: сквозной «Сделал» команды на вещах �
         expect(x.worn?.[m.to] ?? {}, m.to).toEqual(want);
         moved += tp.steps.length;
       }
+      // H18: инструкция — каждая вещь один раз; выполнить её по порядку, как в игре, = надетое после «Сделал»
+      const items = tp.moves.moves.map((mv) => mv.item);
+      expect(new Set(items).size).toBe(items.length);
+      const game: Record<string, Record<string, string>> = Object.fromEntries(Object.entries(o.st.worn ?? {}).map(([c, wn]) => [c, { ...wn } as Record<string, string>]));
+      for (const mv of tp.moves.moves) {
+        for (const wn of Object.values(game)) for (const [s, id] of Object.entries(wn)) if (id === mv.item) delete wn[s];
+        (game[mv.hero] ??= {})[mv.slot] = mv.item;
+      }
+      for (const e of tp.moves.emptied) delete game[e.hero]?.[e.slot];
+      const clean = (r: Record<string, Record<string, string | undefined>>) => Object.fromEntries(Object.entries(r).filter(([, wn]) => Object.keys(wn).length));
+      expect(clean(game)).toEqual(clean(x.worn ?? {}));
       for (const [c, list] of Object.entries(x.pools)) {
         for (const id of Object.values(x.worn?.[c] ?? {})) expect(list).toContain(id);
         const codes = list.map((id) => codeOf(x.pieces[id]));
