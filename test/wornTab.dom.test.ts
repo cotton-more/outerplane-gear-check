@@ -23,7 +23,8 @@ const P = (id: string, slot: string, setId: string | null, yellow: Record<string
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
   ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 const WEAK = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4 });
-const BETTER = P('p2', 'helmet', speed, NEW);
+// лучше WEAK больше чем на 1 очк. (порог совета, R10.8)
+const BETTER = P('p2', 'helmet', speed, NEW, { lit: { 'DEF%': 6, CHC: 6, CHD: 6, HP: 6 } });
 const SLOT6 = ['weapon', 'accessory', 'helmet', 'armor', 'gloves', 'shoes'];
 const six = SLOT6.map((slot, i) => P('s' + (i + 1), slot, ['helmet', 'armor', 'gloves', 'shoes'].includes(slot) ? speed : null, { CHC: 2, SPD: 2 }, slot === 'weapon' || slot === 'accessory' ? { grade: 'rare' } : {}));
 
@@ -159,7 +160,7 @@ describe('совет «из своих» и «Надеть»', () => {
   it('лучший шлем в вещах: «Лучше из своих» с ▲, «Надеть» ставит его, тост, «Вернуть» — прежний', async () => {
     await mount({ gear: G([WEAK, BETTER], { [caren.id]: ['p1', 'p2'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
     const advice = $('.worn-advice')!;
-    expect(advice.textContent).toMatch(/^Better in own pieces: Speed Set ▲ \+\d+%Wear$/);
+    expect(advice.textContent).toMatch(/^Better in own pieces: Speed Set ▲ (\+\d+%|×\d+)Wear$/);
     await click(advice.querySelector('button'));
 
     expect(stored().worn[caren.id].helmet).toBe('p2');

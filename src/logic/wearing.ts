@@ -18,9 +18,11 @@ import {
   type Assembly, type CharPool, type Entry, type WearResult,
 } from './pool';
 import { subWeights } from './score';
-import { bonusRows, bonusWeights, type BonusRow } from './setBonus';
+import { bonusRows, bonusWeights, convertible, type BonusRow } from './setBonus';
+import { THRESHOLD } from './trade/gate';
+import { milli } from './trade/model';
 import type { Variant } from './variants';
-import { against, MARGIN } from './vs';
+import { against } from './vs';
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
 const SLOT_IDS: SlotId[] = SLOTS.map((s) => s.id);
@@ -85,7 +87,7 @@ export interface WornToken { key: string; lit: number; credit: number } // credi
 export interface WornAdvice {
   piece: Piece;                // вещь раскладки билда из вещей героя
   delta: number | null;        // выигрыш итога к цене вытесненного (outcomeOf); у пустого слота — null
-  up: boolean;                 // «▲»: delta не меньше MARGIN (у оружия и аксессуара — ещё рекомендованная вместо нерекомендованной)
+  up: boolean;                 // «▲»: очков больше хотя бы на 1 (R6.2 обмена; у оружия и аксессуара — ещё рекомендованная вместо нерекомендованной)
   setOn: SetPiece[];           // части связки, бонус которых с ней включится
   gained: BonusRow[];
   lost: BonusRow[];
@@ -130,7 +132,8 @@ export function tokensOf(ctx: Ctx, c: Char, v: Variant | null, p: Piece | undefi
 }
 
 // Совет по слоту: вещь раскладки билда против надетого (по сборке). Пустой слот — вещь раскладки без выигрыша. Нет совета,
-// когда вещь та же (или такая же по содержимому), и когда она не лучше: ни выигрыша от MARGIN, ни включённого бонуса сета
+// когда вещь та же (или такая же по содержимому), и когда она не лучше по порогу обмена (R6.2, .x/0040-trade): очков больше
+// хотя бы на 1 (округлённых до тысячных), или включается бонус неконвертируемого сета, или рекомендованность выше
 function adviceFor(ctx: Ctx, c: Char, v: Variant, em: ReadonlyMap<string, Entry>, worn: Partial<Record<SlotId, Piece>>, before: Assembly, pick: Piece | null, slot: SlotId): WornAdvice | null {
   if (!pick) return null;
   const old = worn[slot];
@@ -146,9 +149,9 @@ function adviceFor(ctx: Ctx, c: Char, v: Variant, em: ReadonlyMap<string, Entry>
   const lostValue = (out?.v ?? 0) + lostBonusValue(ctx, c, bonusWeights(ctx, c, v.b), lost, gained);
   const delta = out || lost.length ? (after.total - before.total) / Math.max(lostValue, LOST_MIN) : null;
   const rec = !isArmor(slot) && against(ctx, c, v.b, pieceInput(pick), old, entry.fit).why === 'rec';
-  const up = rec || (delta ?? 0) >= MARGIN;
+  const up = rec || milli(after.total) - milli(before.total) >= THRESHOLD;
   const setOn = combo(v).filter((p) => enabled(after.bonuses, p) && !enabled(before.bonuses, p));
-  return up || setOn.length ? { piece: pick, delta, up, setOn, gained, lost } : null;
+  return up || setOn.some((p) => !convertible(ctx, c, p.set)) ? { piece: pick, delta, up, setOn, gained, lost } : null;
 }
 
 // --------------------------------------------------------------------------- шторка «Билд для X»

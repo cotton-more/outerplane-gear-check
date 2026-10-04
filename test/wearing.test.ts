@@ -53,7 +53,7 @@ function deltaStore(extra: Partial<GearStore> = {}, more: Piece[] = []) {
 }
 
 describe('вкладка «Надето»: совет «лучше из своих»', () => {
-  it('вещь раскладки лучше надетой от MARGIN — совет со стрелкой вверх и выигрышем', () => {
+  it('M1: вещь раскладки лучше надетой на ≥ 1 очк. — совет со стрелкой вверх и выигрышем', () => {
     const [h1, ...rest] = armorOf('Speed');
     const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
     const weak = { ...h1, lit: { SPD: 1 }, yellow: { SPD: 1 } };
@@ -62,13 +62,38 @@ describe('вкладка «Надето»: совет «лучше из свои
     const advice = adviceOf(valentine, st, 'helmet');
 
     expect(advice).toMatchObject({ piece: { id: h2.id }, up: true });
-    expect(advice!.delta).toBeGreaterThanOrEqual(0.1);
+    expect(advice!.delta).toBeGreaterThan(0);
   });
 
-  it('вещь раскладки лучше меньше чем на MARGIN и сет не включает — совета нет', () => {
+  it('M1: вещь раскладки лучше надетой на 0,8 очк. и сет не включает — совета нет', () => {
     const [h1, ...rest] = armorOf('Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 5 });
     const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
     const st = store(valentine, [h1, h2, ...rest], [h1, ...rest]);
+
+    expect(adviceOf(valentine, st, 'helmet')).toBeNull();
+  });
+
+  it('M1: лучше надетой на 1,6 очк. (ATK 4 против 6) — совет есть', () => {
+    const [h1, ...rest] = armorOf('Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 4 });
+    const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
+    const st = store(valentine, [h1, h2, ...rest], [h1, ...rest]);
+
+    expect(adviceOf(valentine, st, 'helmet')).toMatchObject({ piece: { id: h2.id }, up: true });
+  });
+
+  it('M2: запасная включает бонус конвертируемого сета (Speed), но очков меньше чем на 1 — совета нет', () => {
+    const [, ...rest] = armorOf('Speed');
+    const stylish = piece('helmet', null, { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
+    const speedHelmet = piece('helmet', 'Speed', { SPD: 1, CHC: 1 });
+    const st = store(valentine, [stylish, speedHelmet, ...rest], [stylish, ...rest]);
+
+    expect(adviceOf(valentine, st, 'helmet')).toBeNull();
+  });
+
+  it('M4: вещь, снятая обменом (хуже надетой), лежит в пуле — вернуть её «Надето» не советует', () => {
+    const [h1, ...rest] = armorOf('Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 4 });
+    const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
+    const st = store(valentine, [h1, h2, ...rest], [h2, ...rest]);
 
     expect(adviceOf(valentine, st, 'helmet')).toBeNull();
   });
@@ -81,7 +106,7 @@ describe('вкладка «Надето»: совет «лучше из свои
     expect(adviceOf(valentine, st, 'helmet')).toBeNull();
   });
 
-  it('вещь хуже по статам, но включает сет, — совет есть: Penetration ×4 включится', () => {
+  it('M2: вещь хуже по статам, но включает неконвертируемый сет, — совет есть: Penetration ×4 включится', () => {
     const [, ...pen] = armorOf('Penetration');
     const stylish = piece('helmet', null, { CHC: 6, CHD: 6, ATK: 6, SPD: 6 });
     const penHelmet = piece('helmet', 'Penetration', { CHC: 1 });
@@ -101,7 +126,7 @@ describe('вкладка «Надето»: совет «лучше из свои
     expect(advice).toEqual({ piece: h, delta: null, up: false, setOn: [], gained: [], lost: [] });
   });
 
-  it('рекомендованное оружие вместо временного — совет со стрелкой вверх', () => {
+  it('M3: рекомендованное оружие вместо временного — совет со стрелкой вверх', () => {
     const epic = weapon('rare', null), rec = weapon('unique', '23');
     const st = store(delta, [epic, rec], [epic], { aim: { [delta.id]: PEN4 } });
 
