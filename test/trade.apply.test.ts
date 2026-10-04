@@ -170,6 +170,13 @@ describe('E. применение: один герой', () => {
     const changed = { ...st, seq: st.seq + 1 };
     expect(applyHero(changed, { to: rin, hp: planOf([]), pin: true, stamp })).toBeNull();
   });
+  it('перечитанное хранилище (ключи в другом порядке) — тот же отпечаток: «Сделал» и «Вернуть» работают', () => {
+    const { st } = base();
+    const reread = JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(st).reverse()))) as GearStore;
+    const r = go(reread, rin, planOf([]));
+    const again = JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(r.st).reverse()))) as GearStore;
+    expect(r.undo(again)).toEqual(reread);
+  });
 });
 
 describe('F. дыры: применение', () => {

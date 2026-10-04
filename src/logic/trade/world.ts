@@ -3,7 +3,8 @@
 import type { Ctx } from '../context';
 import { aimOf } from '../aim';
 import { pieceInput, type GearStore, type Piece } from '../gear';
-import { poolView } from '../pool';
+import { poolView, type PoolView } from '../pool';
+import type { Variant } from '../variants';
 import { bonusRows, bonusValue, bonusWeights, convertible } from '../setBonus';
 import { fit, pieceValue, wearable } from '../vs';
 import { codeOf, milli, type Gauge, type Hero, type Item, type SetGain, type World } from './model';
@@ -58,4 +59,12 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], pinn
     return g;
   };
   return { heroes, items, gauge };
+}
+
+// мерило героя для экрана (подпись, ключ поиска) — тот же билд «Надето», что у gauge
+export function aimVariant(ctx: Ctx, view: PoolView, st: GearStore, id: string): Variant | null {
+  const c = ctx.idx.CHAR[id], cp = c?.builds.length ? view.of(id) : null;
+  if (!c || !cp) return null;
+  const key = aimOf(c, st, cp).key;
+  return cp.variants.find((v) => v.key === key) ?? null;
 }

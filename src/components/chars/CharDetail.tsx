@@ -9,7 +9,7 @@ import { flatFactor } from '../../logic/score';
 import { cap, classText } from '../../logic/text';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import { updateIn, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
+import { isPinned, setPinned, updateIn, type GearStore, type Piece, type PieceEdit } from '../../logic/gear';
 import { isStats, play, setMark, undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '../../logic/pool';
 import { badgeOf } from '../../logic/poolVs';
 import { redressPlan, undoWearMany, wearMany, wornView } from '../../logic/wearing';
@@ -20,7 +20,7 @@ import { AimSheet } from './AimSheet';
 import { Redress } from './Redress';
 import { WornGear } from './WornGear';
 import { VariantChips } from './VariantChips';
-import { ClassIcon, ElementIcon, Frame, Img, SetIcon, TalismanIcon } from '../Img';
+import { ClassIcon, ElementIcon, Frame, Icon, Img, SetIcon, TalismanIcon } from '../Img';
 import { tour } from '../../tour/anchors';
 
 const ROLE: Record<string, string> = { dps: 'DPS', support: 'Support', sustain: 'Sustain' };
@@ -46,6 +46,7 @@ interface Props {
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
   onPieceEdit?: (charId: string, was: string, now: string) => void;
   onRateFor?: (c: Char) => void;
+  onTrade?: (c: Char) => void; // «К обмену ▸» — шторка обмена сразу с планом героя
   redress?: string | null;
   onRedress?: (key: string | null) => void;
   onChooseAim?: (charId: string, key: string) => void;
@@ -62,7 +63,7 @@ const byRank = (asm: Map<string, { progress: number; need: number; total: number
 };
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, redress = null, onRedress, onChooseAim }: Props) {
+export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, onTrade, redress = null, onRedress, onChooseAim }: Props) {
   const { D, CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -217,6 +218,18 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
       {fusedBy && (
         <div className="own-row">
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name, fusedBy.name)}</button>
+        </div>
+      )}
+      {/* «Обмен вещами» (R10.1): «К обмену ▸» и «Не отдавать надетое» (у героя без вещей отметки нет, R3.4) */}
+      {c.builds.length > 0 && !gear.newer && (onTrade || has) && (
+        <div className="cd-trade">
+          {onTrade && <button type="button" className="btn small" onClick={() => onTrade(c)} {...tour('trade')}>{t.trade.open}</button>}
+          {has && (
+            <label className="toggle">
+              <input type="checkbox" checked={isPinned(gear.store, c.id)} onChange={(e) => gear.set(setPinned(gear.store, c.id, e.target.checked))} />
+              {' '}<Icon name="pin" />{t.trade.pin}
+            </label>
+          )}
         </div>
       )}
       {rateFor && !has && <div className="cd-rate"><button type="button" className="btn small" onClick={rateFor}>{t.tryon.rateFor(c.name)}</button></div>}

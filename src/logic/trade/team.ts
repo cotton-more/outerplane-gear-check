@@ -38,7 +38,7 @@ const locked = (w: World, ids: readonly string[]): World =>
   ids.length ? { ...w, heroes: w.heroes.map((h) => (ids.includes(h.id) && !h.pinned ? { ...h, pinned: true } : h)) } : w;
 
 // надетое героя как комплект по его мерилу
-function kitIn(w: World, id: string): Kit {
+export function kitIn(w: World, id: string): Kit {
   const g = w.gauge(id)!, h = w.heroes.find((x) => x.id === id);
   const slots: Partial<Record<SlotId, Cand>> = {};
   for (const s of SLOT_ORDER) {
@@ -173,8 +173,7 @@ const run = <T>(gen: Generator<void, T>): T => { for (;;) { const r = gen.next()
 export const teamPlan = (w: World, inp: TeamInput): TeamPlan | null => run(teamSteps(w, inp));
 
 // фоновый расчёт кусками: уступает поток между кусками; signal.abort() — null, без последствий
-export function runTeam(w: World, inp: TeamInput, signal?: AbortSignal, slice = 8): Promise<TeamPlan | null> {
-  const gen = teamSteps(w, inp);
+export function runChunks<T>(gen: Generator<void, T>, signal?: AbortSignal, slice = 8): Promise<T | null> {
   return new Promise((resolve, reject) => {
     const step = () => {
       if (signal?.aborted) { resolve(null); return; }
@@ -191,6 +190,8 @@ export function runTeam(w: World, inp: TeamInput, signal?: AbortSignal, slice = 
     setTimeout(step, 0);
   });
 }
+export const runTeam = (w: World, inp: TeamInput, signal?: AbortSignal, slice = 8): Promise<TeamPlan | null> =>
+  runChunks(teamSteps(w, inp), signal, slice);
 
 // ----------------------------------------------------------------------------------------------- подсказка закреплённых
 
@@ -202,16 +203,20 @@ const sumKey = (tp: TeamPlan) => {
   return { total, live, rec };
 };
 
-// R6.5 для команды: тот же порог по сумме членов; герои — закреплённые вне команды, чьи вещи попали в лучший план
-export function teamHint(w: World, inp: TeamInput): TeamHint | null {
+// R6.5 для команды: тот же порог по сумме членов; герои — закреплённые вне команды, чьи вещи попали в лучший план.
+// base — план без них (уже посчитанный экраном); экран считает подсказку кусками (runChunks) после плана
+export function* teamHintSteps(w: World, inp: TeamInput, base: TeamPlan): Generator<void, TeamHint | null> {
   const pinned = new Set(w.heroes.filter((h) => h.pinned && !inp.team.includes(h.id) && !inp.allow?.has(h.id)).map((h) => h.id));
   if (!pinned.size || !teamOk(w, inp.team)) return null;
-  const wide = teamPlan(w, { ...inp, allow: new Set([...(inp.allow ?? []), ...pinned]) })!;
+  const wide = (yield* teamSteps(w, { ...inp, allow: new Set([...(inp.allow ?? []), ...pinned]) }))!;
   const heroes = [...new Set(wide.steps.flatMap((s) => s.plans.flatMap((p) => p.plan.changes.map((c) => c.cand.holder))).filter((h): h is string => !!h && pinned.has(h)))];
   if (!heroes.length) return null;
-  const base = teamPlan(w, inp)!;
-  const take = teamPlan(w, { ...inp, allow: new Set([...(inp.allow ?? []), ...heroes]) })!;
+  const take = (yield* teamSteps(w, { ...inp, allow: new Set([...(inp.allow ?? []), ...heroes]) }))!;
   const a = sumKey(base), b = sumKey(take);
   const gain = b.total - a.total;
   return gain >= THRESHOLD || b.live > a.live || b.rec > a.rec ? { heroes, gain, plan: take } : null;
+}
+export function teamHint(w: World, inp: TeamInput): TeamHint | null {
+  const base = teamPlan(w, inp);
+  return base && run(teamHintSteps(w, inp, base));
 }

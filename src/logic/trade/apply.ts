@@ -12,7 +12,11 @@ import { codeOf } from './model';
 import type { HeroPlan } from './plan';
 import type { TeamPlan } from './team';
 
-export const stampOf = (st: GearStore): string => JSON.stringify(st);
+// отпечаток содержимого: ключи объектов по алфавиту — перечитанное хранилище (useGear: другая вкладка, страница снова на
+// экране) собирает объекты в другом порядке, а содержимое то же
+const canon = (x: unknown): unknown => (Array.isArray(x) ? x.map(canon)
+  : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon((x as Record<string, unknown>)[k])])) : x);
+export const stampOf = (st: GearStore): string => JSON.stringify(canon(st));
 
 // пулы и надетое — то, что меняет «Сделал»; один и тот же перенос у применения и у расчёта команды (team.ts)
 export interface Placement { pools: Record<string, string[]>; worn: Record<string, Partial<Record<SlotId, string>>> }

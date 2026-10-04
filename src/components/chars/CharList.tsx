@@ -7,9 +7,9 @@ import { encodeRoster, parseRoster } from '../../logic/rosterCode';
 import type { Action, AppState } from '../../state/appState';
 import type { RosterApi } from '../../state/useRoster';
 import type { GearApi } from '../../state/useGear';
-import type { GearStore } from '../../logic/gear';
+import { isPinned, type GearStore } from '../../logic/gear';
 import { encodeGear, readGearCode } from '../../logic/gearStore';
-import { ClassIcon, ElementIcon, Img } from '../Img';
+import { ClassIcon, ElementIcon, Icon, Img } from '../Img';
 import { useIndex } from '../IndexContext';
 import { tour } from '../../tour/anchors';
 
@@ -20,6 +20,7 @@ import { tour } from '../../tour/anchors';
 interface Props {
   s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
   off: ReadonlyMap<string, string>; onGearImport: (prev: GearStore, raw: unknown) => boolean; touring: boolean;
+  onTrade?: () => void; // «Обмен вещами» (components/trade) — вход и на ПК, без меню ☰
 }
 
 // Неактивный герой пары (X при Core Fusion X или Core Fusion X при X) — сразу за своим активным, если тот тоже в списке
@@ -43,7 +44,7 @@ function fusionOrder(
   return out;
 }
 
-export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImport, touring }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImport, touring, onTrade }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -92,13 +93,14 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
         <span>{t.ui.rosterCount} <b>{roster.size}</b>{nGeared > 0 && <> · {t.ui.gearCount(nGeared)}</>}</span>
         <button type="button" className="linkbtn" onClick={() => rosterApi.add(shown.filter((c) => !off.has(c.id)).map((c) => c.id))}>{t.ui.markShown}</button>
         <button type="button" className="linkbtn" onClick={() => setIo(!io)}>{t.ui.exportImport}</button>
+        {onTrade && nGeared > 0 && <button type="button" className="linkbtn" onClick={onTrade}>{t.trade.title}</button>}
         {roster.size > 0 && <ClearRoster onClear={rosterApi.clear} />}
       </div>
       {io && <RosterIO rosterApi={rosterApi} />}
       {io && (touring ? <p className="roster-io small muted">{t.ui.gearCodeTour}</p> : <GearIO gear={gear} onImport={onGearImport} />)}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
-          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)}
+          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)} pinned={isPinned(gear.store, c.id)}
             partnerName={idx.CHAR[partner(c.id) ?? '']?.name}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
         )) : <p className="empty">{s.cGear && !nGeared ? t.ui.gearNobody : t.ui.nobodyFound}</p>}
@@ -108,9 +110,9 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
   );
 }
 
-// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; off — заменён в паре: пометка, приглушён
-function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSelect, onToggle }: {
-  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; partnerName?: string; onSelect: () => void; onToggle: () => void;
+// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; pinned — булавка «Не отдавать надетое» (R10.2); off — заменён в паре: пометка, приглушён
+function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerName, onSelect, onToggle }: {
+  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; pinned: boolean; partnerName?: string; onSelect: () => void; onToggle: () => void;
 }) {
   const t = useT();
   const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
@@ -121,6 +123,7 @@ function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSelect, o
         <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
         <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
         {gear !== undefined && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
+        {pinned && <span className="pinb" title={t.trade.pinTile(c.name)}><Icon name="pin" /><span className="sr-only">{t.trade.pinTile(c.name)}</span></span>}
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
         {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
       </button>

@@ -18,6 +18,9 @@ export const COVERAGE: Record<string, Coverage> = {
   'chars/AimsSheet.tsx': 'helper', // list of heroes with picked builds, opened from the notice button: the notice explains it
   'chars/Redress.tsx': 'helper',   // re-dress screen, opens from the build sheet whose tip explains it; sections name themselves
   'chars/RosterRemoveAsk.tsx': 'helper', // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
+  'trade/TeamPick.tsx': 'helper',  // team diamond inside the trade sheet: the trade tip explains the sheet
+  'trade/TradePlan.tsx': 'helper', // trade plan inside the trade sheet: the trade tip explains the sheet
+  'trade/TradeSheet.tsx': 'todo',  // trade sheet: tip text waits for the owner (CLAUDE.md, tour)
   'eval/EvalPanel.tsx': 'core',    // форма: слот, грейд, сет или main, сетка
   'eval/ItemPicker.tsx': 'core',   // окно выбора Legendary по названию — шаг «сет или предмет»
   'eval/MainButtons.tsx': 'core',  // main оружия кнопками — тот же шаг

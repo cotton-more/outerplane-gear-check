@@ -43,5 +43,6 @@ export const TABLER = {
   'check': ["M5 12l5 5l10 -10"],
   'replace': ["M3 4a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4","M15 16a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4","M21 11v-3a2 2 0 0 0 -2 -2h-6l3 3m0 -6l-3 3","M3 13v3a2 2 0 0 0 2 2h6l-3 -3m0 6l3 -3"],
   'equal': ["M5 10h14","M5 14h14"],
+  'pin': ["M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4","M9 15l-4.5 4.5","M14.5 4l5.5 5.5"],
 } as const satisfies Record<string, readonly string[]>;
 export type IconName = keyof typeof TABLER;

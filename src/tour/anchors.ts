@@ -9,6 +9,7 @@ export const ANCHORS = [
   'wchange', // «сменить ▾» на ней: шторка «Билд для X»
   'fusion', // пометка «заменён Core Fusion X» на плитке X
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
+  'trade', // «К обмену ▸» в карточке персонажа
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 

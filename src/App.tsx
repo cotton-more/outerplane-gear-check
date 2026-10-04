@@ -45,6 +45,7 @@ import { holdStoredWrites, readStored, takeLoadNote } from './state/stored';
 import { FusionAsk } from './components/chars/FusionAsk';
 import { RosterRemoveAsk } from './components/chars/RosterRemoveAsk';
 import { AimsSheet } from './components/chars/AimsSheet';
+import { TradeSheet } from './components/trade/TradeSheet';
 import { useTryOn } from './state/useTryOn';
 import { TIPS } from './tour/registry';
 import { TipLayer } from './tour/TipLayer';
@@ -349,6 +350,9 @@ export function App() {
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // «Обмен вещами» (components/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя)
+  const [trade, setTrade] = useState<{ hero: string | null } | null>(null);
+  const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   const [codeOpen, setCodeOpen] = useState(false);
   // «Следующий» убрал предмет по ошибке — несколько секунд его можно вернуть
   const [undo, setUndo] = useState<ItemInput | null>(null);
@@ -664,12 +668,13 @@ export function App() {
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={!canEquip || hero ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); }} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} off={off} onGearImport={onGearImport} touring={!!tour.run} />
+            <CharList s={s} dispatch={dispatch} rosterApi={rosterUi} gear={gear} geared={geared} off={off} onGearImport={onGearImport} touring={!!tour.run}
+              onTrade={canEquip ? () => setTrade({ hero: null }) : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? startTryOn : undefined}
               onRateFor={canEquip ? (c) => startTryOn(c) : undefined}
-              onPieceOpen={setPieceOpen}
+              onPieceOpen={setPieceOpen} onTrade={canEquip ? (c) => setTrade({ hero: c.id }) : undefined}
               redress={redress?.charId === s.charId ? redress.key : null} onRedress={(key) => setRedress(key && s.charId ? { charId: s.charId, key } : null)} onChooseAim={chooseAim} />
           </section>
         </main>
@@ -723,8 +728,12 @@ export function App() {
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={openTours}
+            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={openTours} onTrade={canEquip ? () => setTrade({ hero: null }) : undefined}
             footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />} />
+        )}
+        {trade && canEquip && (
+          <TradeSheet ctx={ctx} view={view} gear={gear} roster={rosterList} off={off} start={trade.hero} onClose={() => setTrade(null)}
+            onApplied={(text, undo) => setGearUndo({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x })} />
         )}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>

@@ -19,6 +19,8 @@ const NAMES = [
   'flame', 'droplet', 'leaf', 'sun', 'moon', 'axe', 'building-castle', 'target-arrow', 'first-aid-kit', 'wand',
   // экипировка: надеть, заменить, на уровне
   'check', 'replace', 'equal',
+  // обмен вещами: закреплённый герой
+  'pin',
 ];
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'icons', 'tabler.ts');
