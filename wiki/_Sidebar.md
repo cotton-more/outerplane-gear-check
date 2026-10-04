@@ -8,6 +8,7 @@
 - [Upgrading](Upgrading)
 - [Characters and guild code](Characters-and-guild-code)
 - [Equipment](Equipment)
+- [Trading gear](Trading-gear)
 - [Limitations and credits](Limitations-and-credits)
 
 **Русский**
@@ -18,4 +19,5 @@
 - [Прокачка](Прокачка)
 - [Персонажи и код для гильдии](Персонажи-и-код-для-гильдии)
 - [Экипировка](Экипировка)
+- [Обмен вещами](Обмен-вещами)
 - [Ограничения и авторы](Ограничения-и-авторы)
