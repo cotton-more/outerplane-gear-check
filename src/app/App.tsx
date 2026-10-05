@@ -2,6 +2,7 @@
 // здесь — что от чего зависит, открытые шторки и разметка.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from '@/screens/chars/CharDetail';
+import { ShareCard } from '@/screens/share/ShareCard';
 import { EvalPanel } from '@/screens/eval/EvalPanel';
 import { Verdict, VerdictSheet } from '@/screens/eval/VerdictPanel';
 import { VBar } from '@/screens/eval/VBar';
@@ -13,6 +14,9 @@ import { RosterRemoveAsk } from '@/features/roster/RosterRemoveAsk';
 import { useRoster } from '@/features/roster/useRoster';
 import { useRosterUi } from '@/features/roster/useRosterUi';
 import { CodeInput } from '@/features/eval/code/ItemCode';
+import { heroCodeIn } from '@/features/gear/store/heroCode';
+import { readGearCode } from '@/features/gear/store/gearStore';
+import { decodeBackup } from '@/features/roster/backup';
 import { fitsData } from '@/features/eval/form/formState';
 import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
@@ -51,7 +55,7 @@ import { Header } from './shell/Header';
 import { Menu } from './shell/Menu';
 import { OnboardingStrips } from './shell/OnboardingStrips';
 import { useAppState } from './useAppState';
-import { slugFromHash, useHashRoute } from './useHashRoute';
+import { heroFromHash, slugFromHash, useHashRoute } from './useHashRoute';
 import { useHotkeys } from './useHotkeys';
 import { useOnboarding, type Demo } from './useOnboarding';
 import { usePwa } from './usePwa';
@@ -61,6 +65,9 @@ export function App() {
   const layout = useLayout();
   const rosterApi = useRoster(idx);
   const { roster } = rosterApi;
+  // карточка показа героя по ссылке (screens/share, .x/0060 SPEC 3.3): код из адреса читается до того, как useHashRoute
+  // его перепишет; пока она открыта, обучение и «Что нового» молчат (3.5)
+  const [shownCode, setShown] = useState<string | null>(heroFromHash);
   // #slug в адресе при загрузке важнее сохранённой вкладки
   // пока идёт обучение, страница не сохраняется: вещь игрока отложена и вернётся в конце (src/tour/useTour.ts)
   const [touring, setTouring] = useState(false);
@@ -115,7 +122,7 @@ export function App() {
   const charName = (id: string) => heroName(idx, id);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
   const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id, geared, off)), [idx, s, roster, geared, off, dispatch]);
-  useHashRoute(idx, s.tab, s.charId, openChar);
+  useHashRoute(idx, s.tab, s.charId, openChar, setShown);
 
   const ros = useRosterUi({
     idx, t, rosterApi, gear, touring, off, tab: s.tab, msg, say,
@@ -133,7 +140,7 @@ export function App() {
   const { input, shown, vsList, tview, offNote, cardShown, hint } = vm;
   const onb = useOnboarding({
     idx, s, dispatch, roster, layout, nSubs: vm.nSubs, shown, verdict: vm.verdict, stampKind: vm.worn.v, material: vm.mat.wear,
-    hero: !!hero, gearSeq: gear.store.seq, verdictOpen, pieceOpen, helpOpen, formUndo, setDemo, setTouring,
+    hero: !!hero, gearSeq: gear.store.seq, verdictOpen, pieceOpen, helpOpen, formUndo, paused: !!shownCode, setDemo, setTouring,
     onTourRunning: () => { setFormUndo(null); say(null); },
     closeSheets: () => { setHelpOpen(false); setVerdictOpen(false); },
   });
@@ -200,14 +207,14 @@ export function App() {
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? heroMode.start : undefined}
               onRateFor={canEquip ? (c) => heroMode.start(c) : undefined}
               onPieceOpen={setPieceOpen} onTrade={canEquip ? (c) => setTrade({ hero: c.id }) : undefined}
-              redress={aims.redressKey} onRedress={aims.onRedress} onChooseAim={aims.chooseAim} />
+              redress={aims.redressKey} onRedress={aims.onRedress} onChooseAim={aims.chooseAim} canShare={!tour.run && !gear.newer} />
           </section>
         </main>
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         <OnboardingStrips onb={onb} />
-        <TipLayer tour={tour} c={onb.tourCtx} enabled={onb.tipsOn} forced={onb.forcedTip} onForced={onb.onForced} />
+        <TipLayer tour={tour} c={onb.tourCtx} enabled={onb.tipsOn} forced={shownCode ? null : onb.forcedTip} onForced={onb.onForced} />
         <TourLayer tour={tour} c={onb.tourCtx} rosterEmpty={roster.size === 0} tours={onb.tours} onTab={onTab} onRoster={() => onTab('chars')} />
         {msg && gearToast && (
           <Toast className="gear-toast" style={toastAt} text={msg.text} note={msg.note} action={t.ui.undoAction}
@@ -243,9 +250,16 @@ export function App() {
         )}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>
-            <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); dropReplace(); setCodeOpen(false); }} />
+            <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); dropReplace(); setCodeOpen(false); }}
+              other={(text) => {
+                // код героя или ссылка показа — карточка показа, форма не трогается; резервная копия — на «Персонажи»
+                const hero = heroCodeIn(text);
+                if (hero) { setCodeOpen(false); setShown(hero); return true; }
+                return decodeBackup(text) !== null || readGearCode(text) !== null ? t.ui.codeBackup : null;
+              }} />
           </Sheet>
         )}
+        {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); onb.clearHelpNews(); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={onb.openTours} tips={<TipsHelp tour={tour} news={onb.helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
           <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={onEquipPick} onClose={() => setVerdictOpen(false)} />

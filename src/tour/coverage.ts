@@ -15,6 +15,8 @@ export const COVERAGE: Record<string, Coverage> = {
   'app/shell/Menu.tsx': 'helper',                      // меню ☰: те же кнопки, что под формой на ПК; «Экипировка» называет конец тура gear
   'app/shell/OnboardingStrips.tsx': 'helper',          // полосы «Появилось обучение» и «Что нового»: говорят сами за себя
   'screens/chars/BuildView.tsx': 'helper',             // билд из outerpedia в карточке: его объясняет подсказка карточки персонажа
+  'screens/chars/CharHead.tsx': 'helper',              // шапка героя: портрет, имя, тиры — только показ
+  'screens/share/ShareCard.tsx': 'helper',            // карточка показа по ссылке: только просмотр, полоса сверху говорит сама; кнопку объясняет подсказка share
   'screens/eval/EvalPanel.tsx': 'core',                // форма: слот, грейд, сет или main, сетка
   'screens/eval/VBar.tsx': 'core',                     // плашка вердикта на телефоне — шаг «Вердикт» главного тура (якорь verdict)
   'screens/eval/VerdictCard.tsx': 'core',              // карточка вердикта — шаг «Вердикт» главного тура (якорь verdict)

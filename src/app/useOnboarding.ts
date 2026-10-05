@@ -21,7 +21,7 @@ import type { Action, AppState } from './appState';
 export type Demo = { store: GearStore; tryOn: TryOn | null } | null;
 
 export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, verdict, stampKind, material, hero, gearSeq,
-  verdictOpen, pieceOpen, helpOpen, formUndo, setDemo, setTouring, onTourRunning, closeSheets }: {
+  verdictOpen, pieceOpen, helpOpen, formUndo, paused = false, setDemo, setTouring, onTourRunning, closeSheets }: {
   idx: Index; s: AppState; dispatch: Dispatch<Action>; roster: ReadonlySet<string>; layout: Layout;
   nSubs: number; shown: Verdict; verdict: Verdict;
   stampKind: Verdict['v'];               // штамп по вещам героев (gear/model/stamp), до материала
@@ -29,6 +29,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   hero: boolean; gearSeq: number;
   verdictOpen: boolean; pieceOpen: boolean; helpOpen: boolean;
   formUndo: ItemInput | null;            // на экране «Вернуть» формы — полосы не показываем
+  paused?: boolean;                      // открыта карточка показа героя (.x/0060 SPEC 3.5): ни карточки новичка, ни полос, ни подсказок — и не отмечаем их показанными
   setDemo: Dispatch<SetStateAction<Demo>>;
   setTouring: (on: boolean) => void;
   onTourRunning: () => void;             // тур начался или кончился: снять «Вернуть» формы и экипировки
@@ -81,7 +82,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   // id не задан — «Какое обучение?» (туров несколько); новичку из карточки и из «Появилось обучение» — главный
   const startTour = (id?: TourId) => { closeSheets(); setHelpNews([]); tour.start(id); };
   const openTours = () => startTour();
-  const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run;
+  const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run && !paused;
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
   // пока приложение откроют крупнее. Кнопка «Обучение» в меню и Справке работает всегда.
   // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
@@ -89,7 +90,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   const inviteDue = tour.available && !tour.store.invited
     && (tour.store.first === 'skipped' || (tour.store.first === 'new' && !welcomeHidden));
   const [inviteOpen, setInviteOpen] = useState(false);
-  const inviteShown = (inviteOpen || inviteDue) && layout.tall && !tour.run && !welcomeShown && s.tab === 'eval' && !formUndo;
+  const inviteShown = (inviteOpen || inviteDue) && layout.tall && !tour.run && !welcomeShown && s.tab === 'eval' && !formUndo && !paused;
   useEffect(() => {
     if (inviteShown && !inviteOpen) { setInviteOpen(true); tour.markInvited(); }
   }, [inviteShown]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,7 +99,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   const [newsLater, setNewsLater] = useState(false);
   const [forcedTip, setForcedTip] = useState<Tip | null>(null);
   const newsShown = layout.tall && tour.available && news.length > 0 && !newsLater && !tour.run && !welcomeShown && !inviteShown
-    && s.tab === 'eval' && !formUndo;
+    && s.tab === 'eval' && !formUndo && !paused;
   // «Показать»: у новости с туром — тур («Экипировка»), иначе — сама подсказка
   const showNews = () => {
     tour.knowTips(news);
@@ -109,7 +110,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
     setHelpNews(news);
     tour.knowTips(news);
   }, [helpOpen, news]); // eslint-disable-line react-hooks/exhaustive-deps
-  const tipsOn = layout.tall && tour.available && !tour.run && !welcomeShown && !inviteShown && !newsShown && !formUndo;
+  const tipsOn = layout.tall && tour.available && !tour.run && !welcomeShown && !inviteShown && !newsShown && !formUndo && !paused;
   const onForced = useCallback(() => setForcedTip(null), []);
   return {
     tour, tourCtx, tours, startTour, openTours,

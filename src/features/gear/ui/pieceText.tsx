@@ -21,8 +21,11 @@ export const pieceText = (ctx: Ctx, p: Piece): string => {
   const name = nameOf(ctx, p);
   return p.setId || !p.main ? name : `${name ? name + ' · ' : ''}${p.main}`;
 };
+// сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных» (.x/0060 SPEC 3.6)
 export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
-  const name = nameOf(ctx, p);
+  const t = useT();
+  const unknown = p.setId ? !ctx.idx.SET[p.setId] : !!p.itemKey && !ctx.idx.ITEM[p.slot as GearKind]?.[p.itemKey];
+  const name = unknown ? t.ui.notInData : nameOf(ctx, p);
   const main = p.setId ? null : p.main;
   return (
     <>

@@ -26,13 +26,19 @@ export function ShareCode({ item }: { item: ItemInput }) {
   );
 }
 
-// окно «Ввести код»: код из чата гильдии → предмет на панели оценки
-export function CodeInput({ fits, onLoad }: { fits: (item: ItemInput) => boolean; onLoad: (item: ItemInput) => void }) {
+// окно «Ввести код»: код из чата гильдии → предмет на панели оценки. other — сначала другие коды (код героя, резервная
+// копия, .x/0060 SPEC 3.3): true — разобрался сам, строка — что сказать, null — это не они, читаем код предмета
+export function CodeInput({ fits, onLoad, other }: {
+  fits: (item: ItemInput) => boolean; onLoad: (item: ItemInput) => void; other?: (text: string) => true | string | null;
+}) {
   const t = useT();
   const [text, setText] = useState('');
-  const [error, setError] = useState<DecodeError | 'data' | null>(null);
+  const [error, setError] = useState<DecodeError | 'data' | { text: string } | null>(null);
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    const o = other?.(text) ?? null;
+    if (o === true) return;
+    if (o !== null) { setError({ text: o }); return; }
     const d = decodeItem(text);
     if (!d.ok) setError(d.error);
     else if (!fits(d.item)) setError('data');
@@ -44,7 +50,7 @@ export function CodeInput({ fits, onLoad }: { fits: (item: ItemInput) => boolean
         autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go"
         onChange={(e) => { setText(e.target.value); setError(null); }} />
       <button type="submit" className="btn primary">{t.ui.codeOpen}</button>
-      {error && <p className="err" role="alert">{t.ui.codeErrors[error]}</p>}
+      {error && <p className="err" role="alert">{typeof error === 'string' ? t.ui.codeErrors[error] : error.text}</p>}
       <p className="muted small">{t.ui.codeHint}</p>
     </form>
   );

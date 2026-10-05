@@ -10,7 +10,7 @@ const fileOf = (path: string) => path.replace(/^\.\.\//, ''); // путь от s
 // (test/tour/tour.test.ts напомнит); файл не из списка встанет в конец.
 export const TIP_ORDER = [
   'features/worn/AimSheet', 'screens/chars/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
-  'features/roster/FusionAsk', 'features/gear/ui/PoolList', 'features/gear/ui/VariantChips', 'features/worn/WornGear',
+  'features/roster/FusionAsk', 'features/gear/ui/PoolList', 'features/gear/ui/VariantChips', 'features/worn/WornGear', 'features/worn/ShareButton',
   'features/eval/form/BtChip', 'features/eval/verdict/Chain', 'features/gear/ui/EquipSheet', 'features/eval/code/ItemCode',
   'features/eval/form/StatGrid', 'features/eval/form/SubPicker', 'features/eval/form/SubRows', 'features/tryon/TryOnStrip',
   'screens/eval/VerdictPanel', 'features/gear/ui/VsSection',

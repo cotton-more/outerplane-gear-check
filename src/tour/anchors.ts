@@ -10,6 +10,7 @@ export const ANCHORS = [
   'fusion', // пометка «заменён Core Fusion X» на плитке X
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
   'trade', // «К обмену ▸» в карточке персонажа
+  'share', // «Поделиться» во вкладке «Надето»
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 
