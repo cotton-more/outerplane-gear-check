@@ -71,7 +71,7 @@ const ask = () => $('.fusion-ask')?.closest<HTMLElement>('.drawer') ?? null;
 const askBtn = (text: string) => byText('.fusion-ask .btn', text);
 const importCode = async (code: string) => {
   await click(byText('.roster-bar .linkbtn', 'export'));
-  const ta = $('#gear-code') as HTMLTextAreaElement;
+  const ta = $('#backup-code') as HTMLTextAreaElement;
   ta.value = code;
   await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 };
@@ -284,13 +284,14 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
 });
 
 describe('пакетные добавления — без окон, одно сообщение', () => {
-  it('код ростера «Добавить» Core Fusion, у X в ростере вещи — вещи переходят, сообщение; «Вернуть» — как было', async () => {
+  // «Добавить» ушло (.x/0060 SPEC 2.3): тот же пакет — старым кодом ростера в «Заменить»
+  it('код ростера «Заменить» с X и Core Fusion, у X вещи — вещи переходят, сообщение; «Вернуть» — как было', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
     await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id] });
     await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#roster-code') as HTMLTextAreaElement;
-    ta.value = 'core-fusion-eternal';
-    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Add'));
+    const ta = $('#backup-code') as HTMLTextAreaElement;
+    ta.value = 'eternal, core-fusion-eternal';
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 
     expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [cfEternal.id], pools: { [cfEternal.id]: ['p1'] } });
     expect($('.gear-toast')?.textContent).toContain('Core Fusion Eternal kept in the roster: Eternal is replaced, their gear moved to Core Fusion Eternal.');

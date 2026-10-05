@@ -1205,14 +1205,16 @@ describe('меню, плитки, код копии, другая вкладка
     expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']);
   });
 
-  it('код копии в «Экспорт / импорт» — OGC-GEAR2, вся экипировка; импорт — «Вернуть» возвращает прежнее', async () => {
+  // .x/0060 SPEC 2: одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
+  it('резервная копия в «Экспорт / импорт» — OGC-GEAR3, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 4 })], { [caren.id]: ['p1'] }) });
     await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#gear-code') as HTMLTextAreaElement;
-    expect(ta.value.startsWith('OGC-GEAR2 ')).toBe(true);
-    const { decodeGear, encodeGear } = await import('@/features/gear/store/gearStore');
-    const { createIndex } = await import('@/game/data');
-    expect((decodeGear(ta.value, createIndex(D)) as { pieces: Record<string, { yellow: object }> }).pieces.p1.yellow).toEqual({ SPD: 1 });
+    const ta = $('#backup-code') as HTMLTextAreaElement;
+    expect(ta.value.startsWith('OGC-GEAR3-')).toBe(true);
+    const { encodeGear } = await import('@/features/gear/store/gearStore');
+    const { decodeBackup } = await import('@/features/roster/backup');
+    const b = decodeBackup(ta.value) as { roster: string[]; raw: { pieces: Record<string, { lit: object; bt: number }> } };
+    expect([b.roster, b.raw.pieces.p1.lit, b.raw.pieces.p1.bt]).toEqual([[caren.id], { SPD: 1 }, 4]);
     ta.value = encodeGear(G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 0 })], { [kappa.id]: ['p1'] }) as never);
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'] });
@@ -1226,8 +1228,8 @@ describe('меню, плитки, код копии, другая вкладка
   it('код, сохранённый более новой версией, — «обнови страницу»', async () => {
     await mount({ tab: 'chars' }, {});
     await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#gear-code') as HTMLTextAreaElement;
-    ta.value = 'OGC-GEAR3 abc';
+    const ta = $('#backup-code') as HTMLTextAreaElement;
+    ta.value = 'OGC-GEAR4-abc';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(ta.closest('.roster-io')?.textContent).toContain('A newer page saved this code — reload the page.');
   });
@@ -1327,7 +1329,7 @@ describe('вещи только у героев ростера (Р16)', () => {
   it('код ростера «Заменить»: герои с вещами остаются — после героев из кода', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: shared() });
     await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#roster-code') as HTMLTextAreaElement;
+    const ta = $('#backup-code') as HTMLTextAreaElement;
     ta.value = 'kappa';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(roster()).toEqual([kappa.id, rin.id, caren.id]);
@@ -1340,24 +1342,27 @@ describe('вещи только у героев ростера (Р16)', () => {
     it('код ростера «Заменить»: Rin убрана, Caren осталась после героев кода, в тосте строка с Caren', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: carenOnly() });
       await click(byText('.roster-bar .linkbtn', 'export'));
-      const ta = $('#roster-code') as HTMLTextAreaElement;
+      const ta = $('#backup-code') as HTMLTextAreaElement;
       ta.value = 'kappa';
 
       await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 
-      expect({ roster: roster(), toast: $('.gear-toast span')?.textContent })
-        .toEqual({ roster: [kappa.id, caren.id], toast: 'Kept in the roster — they have gear: Caren.' });
+      expect({ roster: roster(), toast: $('.gear-toast span')?.textContent, note: $('.gear-toast small')?.textContent })
+        .toEqual({ roster: [kappa.id, caren.id], toast: expect.stringMatching(/^Replaced: 1/), note: 'Kept in the roster — they have gear: Caren.' });
     });
 
-    it('код ростера «Заменить» без героев с вещами — тоста нет', async () => {
+    // .x/0060 SPEC 2.4: код ростера в поле копии — теперь всегда с «Вернуть» (было: без героев с вещами тоста нет)
+    it('код ростера «Заменить» без героев с вещами — сообщение с «Вернуть»: ростер как был', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, kappa.id], gear: G([], {}) });
       await click(byText('.roster-bar .linkbtn', 'export'));
-      const ta = $('#roster-code') as HTMLTextAreaElement;
+      const ta = $('#backup-code') as HTMLTextAreaElement;
       ta.value = 'caren';
 
       await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 
-      expect({ roster: roster(), toast: $('.gear-toast') }).toEqual({ roster: [caren.id], toast: null });
+      expect({ roster: roster(), toast: $('.gear-toast span')?.textContent, note: $('.gear-toast small') }).toEqual({ roster: [caren.id], toast: 'Replaced: 1', note: null });
+      await click(byText('.gear-toast button', 'Undo'));
+      expect(roster()).toEqual([rin.id, kappa.id]);
     });
   });
 
@@ -1400,12 +1405,11 @@ describe('вещи только у героев ростера (Р16)', () => {
       expect({ roster: roster(), gear: localStorage.getItem('ogc.gear') }).toEqual({ roster: [caren.id, eternal.id, kappa.id], gear: text() });
     });
 
-    it('код ростера «Заменить» на Core Fusion Eternal — ничего', async () => {
+    // .x/0060 SPEC 2.3: в обучении резервной копии нет — ни кода, ни «Заменить» (было: код ростера «Заменить» ничего не делал)
+    it('поля копии нет — только строка «после обучения»', async () => {
       await toTourChars();
       await click(byText('.roster-bar .linkbtn', 'export'));
-      const ta = $('#roster-code') as HTMLTextAreaElement;
-      ta.value = 'core-fusion-eternal';
-      await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+      expect({ box: $('#backup-code'), note: $('.roster-io')?.textContent }).toEqual({ box: null, note: expect.stringContaining('after the tutorial') });
       expect({ roster: roster(), gear: localStorage.getItem('ogc.gear') }).toEqual({ roster: [caren.id, eternal.id], gear: text() });
     });
   });

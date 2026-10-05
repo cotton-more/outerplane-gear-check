@@ -543,7 +543,6 @@ export const ru = {
     segLabel: (n: number) => `${n} ${plural(n, 'сегмент', 'сегмента', 'сегментов')}`,
     pieceRemove: (name: string) => `Убрать у ${name}`,
     pieceDone: 'Готово',
-    gearCodeLabel: 'Экипировка — код для резервной копии и переноса на другое устройство',
     // во время обучения на странице пример, а не вещи игрока: код показал бы и заменил бы пример
     gearCodeTour: 'Код экипировки — после обучения: пока оно идёт, на странице пример, а не твои вещи.',
     gearApplied: (n: number) => `Экипировка загружена: вещей ${n}.`,
@@ -554,7 +553,13 @@ export const ru = {
     // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (features/gear/model/fusion normalizeFusion)
     fusionFixed: (base: string, how: 'moved' | 'removed' | 'none') =>
       `В ростере оставлен Core Fusion ${base}: ${base} заменён${how === 'moved' ? `, его вещи перешли к Core Fusion ${base}` : how === 'removed' ? ', его вещи убраны' : ''}.`,
-    gearBad: 'Код не читается — скопируй его целиком, с OGC-GEAR в начале.',
+    // поле «Резервная копия» (.x/0060 SPEC 2.3–2.4)
+    backupLabel: 'Резервная копия — ростер и вещи одним кодом',
+    backupApplied: (pieces: number, heroes: number) => `Загружено из копии: вещей ${pieces}, героев в ростере ${heroes}.`,
+    backupBroken: 'Код повреждён или обрезан — скопируй его целиком.',
+    backupHero: 'Это код героя — открой его через «Ввести код».',
+    backupNoHeroes: 'Не нашёл ни одного героя.',
+    backupBad: 'Код не читается.',
     gearNewer: 'Экипировку сохранила более новая версия страницы — обнови страницу, чтобы её видеть и менять.',
     addSub: 'Добавить сабстат',
     mainGroup: 'Main stat',
@@ -607,9 +612,7 @@ export const ru = {
     rosterToggle: (name: string, own: boolean) => `${name} — ${own ? 'убрать из ростера' : 'добавить в ростер'}`,
     rosterSelected: 'Выделено — нажми Ctrl/Cmd+C',
     rosterApplied: (replace: boolean, n: number, missed: string) => `${replace ? 'Заменено' : 'Добавлено'}: ${n}${missed ? `; не распознано: ${missed}` : ''}`,
-    rosterCodeLabel: 'Код ростера (slug через запятую). Скопируй, чтобы перенести в другой браузер, или вставь свой: «Заменить» заменит текущий ростер, «Добавить» — допишет.',
     replace: 'Заменить',
-    add: 'Добавить',
     // билды персонажа
     charBuilds: 'Билды персонажа',
     pickChar: 'Выбери персонажа — покажу рекомендованные сеты, оружие, аксессуары и приоритет сабстатов по билдам outerpedia.',

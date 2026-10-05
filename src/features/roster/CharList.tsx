@@ -4,11 +4,10 @@ import { useCallback, useMemo, useState, type Dispatch } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import { charMatches, compareChars, type CharFilter, type ListAction, type ListState } from './charFilter';
-import { encodeRoster, parseRoster } from './rosterCode';
 import type { RosterApi } from './useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { isPinned, type GearStore } from '@/features/gear/model/gear';
-import { encodeGear, readGearCode } from '@/features/gear/store/gearStore';
+import { isPinned } from '@/features/gear/model/gear';
+import { encodeBackup } from './backup';
 import { ClassIcon, ElementIcon } from '@/game/icons/Img';
 import { useIndex } from '@/game/data/IndexContext';
 import { Toggle } from '@/shared/ui/Toggle';
@@ -16,13 +15,12 @@ import { CodeBox } from '@/shared/ui/CodeBox';
 import { FilterChips } from '@/shared/ui/FilterChips';
 import { CharTile } from './CharTile';
 
-// onGearImport — код экипировки заменил записи: всех, у кого есть вещи, — в ростер, сообщение с «Вернуть» (App; вещей
-// в коде нет — false); geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/gear/model/fusion): в списке
+// onBackup — «Заменить» в поле «Резервная копия» (useRosterUi): что вышло — строкой под полем; geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/gear/model/fusion): в списке
 // сразу за ним, с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
-// touring — идёт обучение: на странице экипировка тура (пример или пусто), кода экипировки нет
+// touring — идёт обучение: на странице экипировка тура (пример или пусто), резервной копии нет
 interface Props {
   s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
-  off: ReadonlyMap<string, string>; onGearImport: (prev: GearStore, raw: unknown) => boolean; touring: boolean;
+  off: ReadonlyMap<string, string>; onBackup: (text: string) => string; touring: boolean;
   onTrade?: () => void; // «Обмен для команды» (features/trade, сразу режим «Команда») — вход и на ПК, без меню ☰
 }
 
@@ -47,7 +45,7 @@ function fusionOrder(
   return out;
 }
 
-export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImport, touring, onTrade }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear, geared, off, onBackup, touring, onTrade }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -85,8 +83,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
         <button type="button" className="linkbtn" onClick={() => setIo(!io)}>{t.ui.exportImport}</button>
         {onTrade && nGeared > 0 && <button type="button" className="linkbtn" onClick={onTrade}>{t.trade.teamOpen}</button>}
       </div>
-      {io && <RosterIO rosterApi={rosterApi} />}
-      {io && (touring ? <p className="roster-io small muted">{t.ui.gearCodeTour}</p> : <GearIO gear={gear} onImport={onGearImport} />)}
+      {io && (touring ? <p className="roster-io small muted">{t.ui.gearCodeTour}</p> : <BackupIO rosterApi={rosterApi} gear={gear} onBackup={onBackup} />)}
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
           <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)} pinned={isPinned(gear.store, c.id)}
@@ -98,34 +95,14 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
   );
 }
 
-function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
-  const idx = useIndex();
+// Резервная копия одним кодом (.x/0060-share-code SPEC 2.3): ростер и вещи; «Заменить» — всё, что было, заменяется кодом
+// (есть «Вернуть»), понимает и старые коды экипировки и ростера. Экипировку сохранила более новая версия — «Заменить» нет
+function BackupIO({ rosterApi, gear, onBackup }: { rosterApi: RosterApi; gear: GearApi; onBackup: (text: string) => string }) {
   const t = useT();
-  const apply = (value: string, mode: 'replace' | 'add', say: (msg: string) => void) => {
-    const { found, missed } = parseRoster(idx, value);
-    if (mode === 'replace') rosterApi.replace(found); else rosterApi.add(found);
-    say(t.ui.rosterApplied(mode === 'replace', found.length, missed.length ? missed.slice(0, 5).join(', ') + (missed.length > 5 ? '…' : '') : ''));
-  };
+  const code = useMemo(() => encodeBackup(gear.store, rosterApi.list()), [gear.store, rosterApi.roster]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <CodeBox id="roster-code" msgId="io-msg" label={t.ui.rosterCodeLabel} code={encodeRoster(idx, rosterApi.roster)}
-      actions={({ value, say }) => <>
-        <button type="button" className="btn" onClick={() => apply(value(), 'replace', say)}>{t.ui.replace}</button>
-        <button type="button" className="btn" onClick={() => apply(value(), 'add', say)}>{t.ui.add}</button>
-      </>} />
-  );
-}
-
-// резервная копия экипировки кодом (OGC-GEAR2): вещи и пулы целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
-function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, raw: unknown) => boolean }) {
-  const t = useT();
-  const apply = (value: string, say: (msg: string) => void) => {
-    const raw = readGearCode(value);
-    if (raw === 'newer') { say(t.ui.gearNewerCode); return; }
-    say(raw !== null && onImport(gear.store, raw) ? '' : t.ui.gearBad);
-  };
-  return (
-    <CodeBox id="gear-code" label={gear.newer ? t.ui.gearNewer : t.ui.gearCodeLabel}
-      code={Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : ''}
-      actions={({ value, say }) => <button type="button" className="btn" onClick={() => apply(value(), say)} disabled={gear.newer}>{t.ui.replace}</button>} />
+    <CodeBox id="backup-code" msgId="io-msg" label={gear.newer ? t.ui.gearNewer : t.ui.backupLabel}
+      code={code}
+      actions={({ value, say }) => <button type="button" className="btn" onClick={() => say(onBackup(value()))} disabled={gear.newer}>{t.ui.replace}</button>} />
   );
 }

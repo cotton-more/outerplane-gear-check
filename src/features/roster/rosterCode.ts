@@ -1,8 +1,6 @@
-// Код ростера для переноса между браузерами: slug персонажей через запятую.
+// Старый код ростера (до резервной копии одним кодом, features/roster/backup): slug персонажей через запятую. Его
+// по-прежнему понимает «Заменить» в поле копии.
 import type { Index } from '@/game/data';
-
-export const encodeRoster = (idx: Index, roster: Iterable<string>): string =>
-  [...roster].filter((id) => idx.CHAR[id]).map((id) => idx.CHAR[id].slug).join(', ');
 
 // принимает slug или id, разделители — пробел, запятая, точка с запятой
 export function parseRoster(idx: Index, text: string): { found: string[]; missed: string[] } {

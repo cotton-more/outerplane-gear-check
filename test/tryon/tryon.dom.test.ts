@@ -151,7 +151,7 @@ describe('режим «для героя»', () => {
     const { encodeGear } = await import('@/features/gear/store/gearStore');
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
     await click(byText('.roster-bar .linkbtn', 'export / import'));
-    const ta = $('#gear-code') as HTMLTextAreaElement;
+    const ta = $('#backup-code') as HTMLTextAreaElement;
     ta.value = encodeGear(GEAR as never);
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('button')].find((b) => b.textContent === 'Replace'));
     expect($('.gear-toast')).toBeTruthy();

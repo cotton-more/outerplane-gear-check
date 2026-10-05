@@ -548,7 +548,7 @@ describe('тур «Экипировка» на примере', () => {
       await click(byText('.menu button', 'Characters'));
     }
     await click(byText('.roster-bar .linkbtn', 'export / import'));
-    expect($('#gear-code')).toBeNull();
+    expect($('#backup-code')).toBeNull();
     expect($('#char-list')?.textContent).toContain(TEXTS.en.ui.gearCodeTour);
     await click($('.tour-x'));
     expect(snapshot()).toEqual(before);
@@ -556,10 +556,9 @@ describe('тур «Экипировка» на примере', () => {
       await click($('.vb-tab'));
       await click(byText('.menu button', 'Characters'));
     }
-    if (!$('#gear-code')) await click(byText('.roster-bar .linkbtn', 'export / import'));
-    const { decodeGear } = await import('@/features/gear/store/gearStore');
-    const { createIndex } = await import('@/game/data');
-    expect(Object.keys((decodeGear(($('#gear-code') as HTMLTextAreaElement).value, createIndex(D)) as { pools: object }).pools)).toEqual([kappa.id]);
+    if (!$('#backup-code')) await click(byText('.roster-bar .linkbtn', 'export / import'));
+    const { decodeBackup } = await import('@/features/roster/backup');
+    expect(Object.keys((decodeBackup(($('#backup-code') as HTMLTextAreaElement).value) as { raw: { pools: object } }).raw.pools)).toEqual([kappa.id]);
   });
 
   it('«Вернуть» экипировки, начатое до тура, после тура не всплывает', async () => {

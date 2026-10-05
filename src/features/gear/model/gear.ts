@@ -162,7 +162,7 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
 // новая запись вещи с формы: уровень (lit) и Breakthrough — как на форме (поля нет — не указан). yellow — тот же
 // уровень, но не выше четырёх: хранилище читает жёлтые только 1…4 (gearStore restorePieces), а старая вкладка читает
 // yellow и lit
-const yellowOf = (lit: Subs): Subs => Object.fromEntries(Object.entries(lit).map(([k, n]) => [k, Math.min(n, DROP_LEVEL)]));
+export const yellowOf = (lit: Subs): Subs => Object.fromEntries(Object.entries(lit).map(([k, n]) => [k, Math.min(n, DROP_LEVEL)]));
 export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: GearStore; piece: Piece } {
   const id = 'p' + (st.seq + 1);
   const lit = { ...item.subs };

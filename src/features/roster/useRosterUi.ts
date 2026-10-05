@@ -14,6 +14,7 @@ import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import type { Tab } from '@/shared/tab';
 import type { RosterApi } from './useRoster';
+import { readPasted } from './backup';
 
 // переход Core Fusion перед действием (звезда, «Надеть», «Оценить вещь для»): хранилище после него, его строка и «Вернуть»
 export interface Switched { st: GearStore; note: string; undo: (st: GearStore) => GearStore; after?: () => void }
@@ -50,7 +51,8 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   // В обучении экипировка не пишется (на странице — тура): нормализуем по настоящим вещам игрока, и если правка ростера
   // тронула бы их (переход Core Fusion переносит или убирает вещи) — её нет вовсе, без окна и без записи; иначе пишется
   // только ростер. Так ростер в туре не расходится с вещами игрока (вещи — только у героев ростера)
-  const rosterBatch = (ids: string[]) => {
+  // intro — код ростера в поле копии: сообщение есть всегда, с «Вернуть» прежнего ростера (SPEC 2.4)
+  const rosterBatch = (ids: string[], intro?: string) => {
     const prev = rosterApi.list(), st = gear.store, real = realStore();
     const held = prev.filter((id) => !ids.includes(id) && real.pools[id]?.length);
     const next = [...ids, ...held];
@@ -65,13 +67,17 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     // «Очистить», «Заменить» кодом: кого оставили из-за вещей — строкой (к сообщению Core Fusion, если оно есть)
     const kept = held.filter((id) => r.roster.includes(id)).map(charName).join(', ');
     const keptNote = kept ? t.ui.rosterKeptGear(kept) : '';
-    if (!r.fixes.length) {
+    if (!r.fixes.length && intro === undefined) {
       if (keptNote) say({ text: keptNote, note: '', tab: 'chars' });
       return;
     }
     // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище
     const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
       : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
+    if (intro !== undefined) {
+      say({ text: intro, note: [fixesNote(r.fixes), keptNote].filter(Boolean).join(' '), tab: 'chars', undo, after: () => rosterApi.replace(prev) });
+      return;
+    }
     say({ text: fixesNote(r.fixes), note: keptNote, tab: 'chars', undo, after: rosterBack(prev, r.roster) });
   };
   // окна перехода (в): звезда, «Надеть», «Оценить вещь для» CF, когда есть X (или на X, когда есть CF). then — действие после «Да»
@@ -183,8 +189,38 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     say({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: fixesNote(r.fixes), tab: 'chars', undo: () => prev, after: rosterBack(before, next) });
     return true;
   };
+  // поле «Резервная копия» (SPEC 2.4): что вышло — строкой под полем ('' — ушло сообщением с «Вернуть»). Новый код
+  // заменяет ростер и вещи целиком, затем правила запуска (все с вещами — в ростере, Core Fusion); «Вернуть» — прежние
+  // хранилище и ростер в точности
+  const onBackup = (text: string): string => {
+    const p = readPasted(idx, text);
+    switch (p.kind) {
+      case 'backup': {
+        const before = rosterApi.list(), prev = gear.store;
+        const r = loadGear(p.backup.raw, idx, p.backup.roster);
+        gear.set(r.st);
+        rosterApi.replace(r.roster);
+        say({
+          text: t.ui.backupApplied(Object.keys(r.st.pieces).length, r.roster.length), note: fixesNote(r.fixes), tab: 'chars',
+          undo: () => prev, after: () => rosterApi.replace(before),
+        });
+        return '';
+      }
+      case 'gear': return onGearImport(gear.store, p.raw) ? '' : t.ui.backupBad;
+      case 'roster': {
+        const missed = p.missed.length ? p.missed.slice(0, 5).join(', ') + (p.missed.length > 5 ? '…' : '') : '';
+        rosterBatch(p.found, t.ui.rosterApplied(true, p.found.length, missed));
+        return '';
+      }
+      case 'newer': return t.ui.gearNewerCode;
+      case 'broken': return t.ui.backupBroken;
+      case 'hero': return t.ui.backupHero;
+      case 'noHeroes': return t.ui.backupNoHeroes;
+      default: return t.ui.backupBad;
+    }
+  };
   return {
-    rosterUi, joinRoster, fusionGate, switchToast, undoMsg, onGearImport,
+    rosterUi, joinRoster, fusionGate, switchToast, undoMsg, onGearImport, onBackup,
     fusionAsk, doSwitch, closeFusionAsk: () => setFusionAsk(null),
     removeAsk, doRemove, closeRemoveAsk: () => setRemoveAsk(null),
   };
