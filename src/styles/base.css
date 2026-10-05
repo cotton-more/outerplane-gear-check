@@ -165,6 +165,8 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 
 .tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface-3); border-radius: 12px; }
 .tabs button { border: 0; background: transparent; padding: 9px 14px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.top-more { align-self: stretch; min-width: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--surface-3); color: var(--ink-2); font: 700 20px/1 var(--font-body); }
+.top-more:hover { color: var(--ink); }
 .tabs .count { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); margin-left: 4px; }
 html.xs .tabs { width: 100%; }
 html.xs .tabs button { flex: 1; }
@@ -182,7 +184,7 @@ html.xs .tabs button { flex: 1; }
 .note-line { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-3); }
 .empty { padding: 12px; color: var(--ink-3); font-size: 13px; }
 
-/* ---------- узкий экран, плашки, подвал */
+/* ---------- узкий экран, плашки */
 html.narrow .step { padding: 12px 14px 14px; }
 html.narrow .step-h { margin-bottom: 8px; }
 html.narrow .top { padding-block: 10px 8px; gap: 8px 16px; }
@@ -190,11 +192,6 @@ html.narrow .brand p { display: none; }
 .fitnote { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--temp-soft); color: var(--ink); font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; }
 .fitnote button { flex: none; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 2px 0; }
 .fitnote .notice-x { margin: -8px -8px -8px 0; min-width: 36px; min-height: 36px; padding: 0; color: var(--ink-2); font-size: 15px; font-weight: 400; }
-footer.foot { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); display: grid; gap: 4px; }
-footer.foot a { color: var(--ink-2); }
-footer.foot .lic summary { cursor: pointer; width: fit-content; }
-footer.foot .lic p { margin: 6px 0 0; }
-footer.foot .lic .mit { font-size: 11.5px; }
 
 /* ---------- шторка снизу (.drawer; класс .sheet занят раскладкой на <html>): окна выбора и подробности вердикта */
 body.drawer-lock { overflow: hidden; }
@@ -206,6 +203,8 @@ html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
 .drawer-h h3 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drawer-x { flex: none; width: 40px; height: 40px; border: 0; background: none; font-size: 16px; color: var(--ink-2); border-radius: var(--radius-s); }
 .drawer-b { overflow: auto; overscroll-behavior: contain; padding: 12px 14px 14px; }
+/* строка под прокручиваемым телом, всегда на виду («Ещё»: фраза VA Games) */
+.drawer-f { flex: none; border-top: 1px solid var(--line); }
 .drawer .items { max-height: none; overflow: visible; }
 
 /* ---------- низкий экран (разделённый экран с игрой): шапка в одну строку */
@@ -216,6 +215,7 @@ html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
   .brand-mark { width: 28px; height: 28px; }
   .tabs { flex: 1; padding: 3px; }
   .tabs button { flex: 1; padding: 5px 8px; font-size: 13px; }
+  .top-more { min-width: 40px; padding: 0 8px; }
   .step { padding-block: 10px; }
 }
 
@@ -233,7 +233,6 @@ html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); }
 .guide h4:first-child { margin-top: 0; }
 .guide p { margin: 0; }
 html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
-footer.foot .lang { margin-top: 4px; }
 .drawer .lang { margin-bottom: 12px; }
 
 /* справка: ссылка на подробное руководство в Wiki */

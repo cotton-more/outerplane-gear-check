@@ -9,6 +9,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { openBackup } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -70,8 +71,7 @@ const tile = (name: string) => $$('#cgrid .cwrap').find((w) => w.querySelector('
 const ask = () => $('.fusion-ask')?.closest<HTMLElement>('.drawer') ?? null;
 const askBtn = (text: string) => byText('.fusion-ask .btn', text);
 const importCode = async (code: string) => {
-  await click(byText('.roster-bar .linkbtn', 'export'));
-  const ta = $('#backup-code') as HTMLTextAreaElement;
+  const ta = await openBackup();
   ta.value = code;
   await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 };
@@ -288,8 +288,7 @@ describe('пакетные добавления — без окон, одно с
   it('код ростера «Заменить» с X и Core Fusion, у X вещи — вещи переходят, сообщение; «Вернуть» — как было', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
     await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id] });
-    await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#backup-code') as HTMLTextAreaElement;
+    const ta = await openBackup();
     ta.value = 'eternal, core-fusion-eternal';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 

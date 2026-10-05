@@ -116,7 +116,7 @@ describe('режимы списка на странице', () => {
     expect($$('.cmode button').map((b) => b.textContent)).toEqual(['★ Mine 2', 'To dress 2', 'All']);
     await click($('.vb-tab')); // ← Оценка
     await click($('.vb-tab')); // ☰
-    expect(byText('.menu-nav button', 'To dress · 2')).toBeTruthy();
+    expect(byText('.more-nav button', 'To dress · 2')).toBeTruthy();
   });
 
   // 8. «Мои» и «Все» запоминаются, «Доодеть» — нет

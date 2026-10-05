@@ -11,6 +11,7 @@ export const ANCHORS = [
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
   'trade', // «К обмену ▸» в карточке персонажа
   'share', // «Поделиться» во вкладке «Надето»
+  'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 

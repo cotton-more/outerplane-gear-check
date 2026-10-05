@@ -20,8 +20,9 @@ export function popPlace(at: Point, box: { w: number; h: number; bodyTop: number
   return { left: fit(at.x - box.w / 2, box.w, view.w), top: fit(at.y - box.bodyTop - box.bodyH / 2, box.h, view.h) };
 }
 
-export function Sheet({ title, onClose, children, className, at }: {
-  title: string; onClose: () => void; children: ReactNode; className?: string; at?: Point;
+// foot — строка под прокручиваемым телом: всегда на виду (в «Ещё» — обязательная фраза VA Games)
+export function Sheet({ title, onClose, children, className, at, foot }: {
+  title: string; onClose: () => void; children: ReactNode; className?: string; at?: Point; foot?: ReactNode;
 }) {
   const t = useT();
   const close = useRef(onClose);
@@ -60,6 +61,7 @@ export function Sheet({ title, onClose, children, className, at }: {
           <CloseButton className="drawer-x" label={t.ui.close} onClick={onClose} />
         </div>
         <div className="drawer-b">{children}</div>
+        {foot && <div className="drawer-f">{foot}</div>}
       </div>
     </div>,
     document.body,

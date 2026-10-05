@@ -225,24 +225,31 @@ export const ru = {
     updateNotice: 'Вышли новые данные outerpedia — обнови, чтобы видеть свежие билды.',
     updateAction: 'Обновить',
     desktopModeNotice: 'Браузер открыл страницу в режиме «Версия для ПК» — я подстроил масштаб. Если что-то выглядит странно, выключи этот режим: меню ⋮ → «Версия для ПК».',
-    // подвал
-    footData: 'Данные:',
-    footGameVersion: 'версия игры',
-    footSnapshot: 'снимок от',
-    footCounts: (chars: number, withBuilds: number, builds: number) => `${persons(chars)}, с билдами ${withBuilds}, билдов ${builds}.`,
-    footUpdatePwa: 'Новые данные outerpedia — плашка «Обновить»; улучшения приложения ставятся сами при следующем запуске.',
-    // пока ждёт обновление только приложения — вместо footUpdatePwa, с кнопкой updateAction
-    footUpdateReady: 'Готова новая версия.',
-    footUpdateSingle: 'Обновить данные:',
-    footUpdateSingleWhere: 'в папке проекта.',
-    footRights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Неофициальный фан-проект: все права на игру принадлежат VA Games Co., Ltd., билды — работа авторов outerpedia. Инструмент не связан ни с издателем, ни с outerpedia.',
+    // «Ещё» (app/shell/More): переходы (на узком экране), действия, настройки, данные; внизу — фраза VA Games, всегда на виду
+    more: 'Ещё',
+    moreSettings: 'Настройки',
+    moreEval: 'Оценка',
+    moreData: 'Данные',
+    backup: 'Резервная копия',
+    about: 'О приложении',
+    // «О приложении»: откуда данные, их версия, как обновить, сборка, лицензии
+    aboutData: 'Данные:',
+    aboutGameVersion: 'версия игры',
+    aboutSnapshot: 'снимок от',
+    aboutCounts: (chars: number, withBuilds: number, builds: number) => `${persons(chars)}, с билдами ${withBuilds}, билдов ${builds}.`,
+    aboutUpdatePwa: 'Новые данные outerpedia — плашка «Обновить»; улучшения приложения ставятся сами при следующем запуске.',
+    // пока ждёт обновление только приложения — вместо aboutUpdatePwa, с кнопкой updateAction
+    updateReady: 'Готова новая версия.',
+    aboutUpdateSingle: 'Обновить данные:',
+    aboutUpdateSingleWhere: 'в папке проекта.',
+    rights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Неофициальный фан-проект: все права на игру принадлежат VA Games Co., Ltd., билды — работа авторов outerpedia. Инструмент не связан ни с издателем, ни с outerpedia.',
     licenses: 'Лицензии (MIT)',
     licenseWhat: { outerpedia: 'outerpedia — рекомендации по билдам, игровые таблицы, формула flat/%', react: 'React', tabler: 'Tabler Icons — значки статов, слотов, сетов, стихий и классов' },
     installApp: 'Установить как приложение',
-    footBuild: (date: string, hash: string, dirty: boolean) => `Сборка приложения: ${date} · ${hash}${dirty ? ' + незакоммиченные правки' : ''}`,
-    iosFooter: 'На iPhone и iPad: в Safari «Поделиться» → «На экран „Домой“» — будет работать как приложение и без сети.',
+    aboutBuild: (date: string, hash: string, dirty: boolean) => `Сборка приложения: ${date} · ${hash}${dirty ? ' + незакоммиченные правки' : ''}`,
+    iosMore: 'На iPhone и iPad: в Safari «Поделиться» → «На экран „Домой“» — будет работать как приложение и без сети.',
     language: 'Язык',
-    icons: 'Иконки',
+    icons: 'Значки',
     iconsOwn: 'свои',
     iconsGame: 'из игры',
     // панель ввода
@@ -269,7 +276,6 @@ export const ru = {
     fourthSheet: 'Какой 4-й сабстат?',
     levelSheet: (k: string) => `${k} — сколько сегментов?`, // окно уровня после нажатия в сетке
     // настройки оценки
-    settings: 'Настройки оценки',
     settingsNow: (end: boolean, fodder: boolean, lv120: boolean, quirks: boolean) =>
       [end ? 'эндгейм' : 'развитие', fodder ? 'коплю фоддер' : 'без фоддера брони', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'без Quirks'],
     stageGroup: 'Этап аккаунта',
@@ -563,7 +569,7 @@ export const ru = {
     shownBroken: 'Ссылка повреждена — попроси прислать её ещё раз.',
     shownNewer: 'Ссылку сделала более новая версия — обнови страницу.',
     notInData: 'нет в твоих данных',
-    codeBackup: 'Это резервная копия — загрузи её на «Персонажах» → экспорт / импорт.',
+    codeBackup: 'Это резервная копия — загрузи её в «Ещё» → «Резервная копия».',
     backupLabel: 'Резервная копия — ростер и вещи одним кодом',
     backupApplied: (pieces: number, heroes: number) => `Загружено из копии: вещей ${pieces}, героев в ростере ${heroes}.`,
     backupBroken: 'Код повреждён или обрезан — скопируй его целиком.',
@@ -609,7 +615,6 @@ export const ru = {
     reset: 'Следующий',
     undoText: 'Предмет убран',
     undoAction: 'Вернуть',
-    menu: 'Меню',
     details: 'подробнее',
     // персонажи
     charsHint: '☆ — отметь своих: оценка будет учитывать только их',
@@ -863,6 +868,7 @@ export const ru = {
       subs: 'Для примера нужны только SPD, CHC и CHD: нажми лишний стат в строке и замени его или убери.',
     },
     tips: {
+      more: 'Настройки оценки, резервная копия, язык и справка теперь в «Ещё».',
       star: 'Отметь звёздочкой своих персонажей — оценка будет по ним, а не по всем героям игры.',
       accMain: 'У аксессуара первое нажатие в сетке — это main stat, как сверху на вещи в игре. Дальше идут сабстаты.',
       mainCell: 'Клетка «main» — стат из main вещи: сабстатом такой не выпадает.',
@@ -896,6 +902,7 @@ export const ru = {
     },
     // строка «Что нового» — у подсказок с news
     news: {
+      more: 'настройки, резервная копия, язык и справка — в «Ещё»',
       wornTab: 'вкладка «Надето»: отметь, что сейчас на героях',
       trade: 'Обмен вещами — переодеть героя или команду из всех вещей',
       move: 'при замене стат из другой строки переезжает',

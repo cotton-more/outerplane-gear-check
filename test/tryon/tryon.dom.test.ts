@@ -12,6 +12,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { openBackup, openMore } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -137,8 +138,8 @@ describe('режим «для героя»', () => {
   it('второй «Примерить» подряд: «Вернуть» — всё ещё та вещь, которую вводили', async () => {
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
     await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
-    await click($('.vb-tab'));
-    await click(byText('.menu button', 'Characters'));
+    await openMore();
+    await click(byText('.more button', 'Characters'));
     await click(byText('.bgear-empty', 'Boots')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
     expect(stored('state').slot).toBe('shoes');
 
@@ -147,16 +148,21 @@ describe('режим «для героя»', () => {
     expect(stored('item').subs).toEqual({ CHC: 2, SPD: 1 });
   });
 
+  // «Ещё» открывается с любой вкладки на ПК: сообщение о копии ложится на «Персонажи», где игрок и был
   it('сообщение экипировки на «Персонажах» не прячет «Вернуть» формы на «Оценке»', async () => {
     const { encodeGear } = await import('@/features/gear/store/gearStore');
-    await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
-    await click(byText('.roster-bar .linkbtn', 'export / import'));
-    const ta = $('#backup-code') as HTMLTextAreaElement;
-    ta.value = encodeGear(GEAR as never);
-    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('button')].find((b) => b.textContent === 'Replace'));
-    expect($('.gear-toast')).toBeTruthy();
-    await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
-    expect($('.toast:not(.gear-toast)')?.textContent).toContain('Undo');
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
+    try {
+      await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
+      const ta = await openBackup();
+      ta.value = encodeGear(GEAR as never);
+      await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('button')].find((b) => b.textContent === 'Replace'));
+      expect($('.gear-toast')).toBeTruthy();
+      await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
+      expect($('.toast:not(.gear-toast)')?.textContent).toContain('Undo');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    }
   });
 
   it('вещей нет: «Собрать билд» — режим героя без смены вещи на форме', async () => {

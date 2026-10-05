@@ -62,9 +62,10 @@ async function run(w, h, theme, tour) {
   const click = async (fn, ...args) => { await page.evaluate(fn, ...args); await pause(600); };
   const byText = (sel, text) => [...document.querySelectorAll(sel)].find((b) => b.textContent.includes(text))?.click();
 
-  // запуск: на телефоне — из меню ☰, на ПК — кнопкой под формой; затем «Какое обучение?»
-  if (w < 720) { await click(() => document.querySelector('.vb-tab').click()); await click(byText, '.menu button', 'Tutorial'); }
-  else await click(byText, '.actions button', 'Tutorial');
+  // запуск: «Ещё» (на телефоне ☰ на плашке, на ПК ⋯ в шапке) → «Обучение»; затем «Какое обучение?»
+  if (w < 720) await click(() => document.querySelector('.vb-tab').click());
+  else await click(() => document.querySelector('.top-more').click());
+  await click(byText, '.more button', 'Tutorial');
   if (tour === 'core') { await click(byText, '.tour-strip button', 'Checking a piece'); await click(byText, '.tour-strip button', 'Example'); }
   else await click(byText, '.tour-strip button', 'Gear · 1 min');
 

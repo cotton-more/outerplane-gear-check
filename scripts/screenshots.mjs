@@ -69,7 +69,7 @@ async function shoot(lang) {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const tap = async (el) => { el.click(); await wait(200); };
     // по подписи клетки: в тексте кнопки есть ещё пометка «%» со значка
-    const stat = (label) => [...document.querySelectorAll('.sg')].find((b) => b.querySelector(':scope > span:not(.ico)')?.textContent === label);
+    const stat = (label) => [...document.querySelectorAll('.sg')].find((b) => b.querySelector(':scope > span:not(.ico):not(.noimg)')?.textContent === label);
     await eval(src)({ wait, tap, stat }); // eslint-disable-line no-eval
   }, fn.toString());
   mkdirSync(OUT, { recursive: true });
