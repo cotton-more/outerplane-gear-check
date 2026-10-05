@@ -3,5 +3,5 @@
 import { defineTips } from '../../tour/types';
 
 export default defineTips(
-  { id: 'aimChange', rev: 1, at: 'wchange', when: (c) => c.s.tab === 'chars' },
+  { id: 'aimChange', rev: 2, at: 'wchange', when: (c) => c.s.tab === 'chars' },
 );
