@@ -3,9 +3,7 @@
 // бонусы сетов), кандидаты получателя. Очки — целые тысячные (R2.2): округляются один раз, при построении модели.
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';
-
-export type Milli = number;
-export const milli = (points: number): Milli => Math.round(points * 1000);
+import type { Milli } from '@/features/gear/model/vs';
 
 // порядок слотов в ключе сравнения и в пороге (R6.2): оружие, аксессуар, шлем, броня, перчатки, ботинки
 export const SLOT_ORDER: readonly SlotId[] = ['weapon', 'accessory', 'helmet', 'armor', 'gloves', 'shoes'];

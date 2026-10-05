@@ -9,7 +9,7 @@
 // не переносится — по той же причине, что «Собираю»; у героя без пула его нет (syncWorn).
 // Закрепление (обмен, R3.4): CF закреплён, если закреплён X или CF — и при переходе вещей, и при слиянии пулов.
 import type { Index } from '@/game/data';
-import { gc, isPinned, setPinned, syncWorn, type GearStore, type Worn } from '@/features/gear/model/gear';
+import { gc, isPinned, setPinned, syncWorn, type GearStore, type Worn } from './gear';
 
 // надетое from — к to вместе с вещами; своё надетое to в том же слоте остаётся (его вещи на нём и были)
 function wornTo(worn: GearStore['worn'], from: string, to: string): GearStore['worn'] {

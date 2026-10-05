@@ -5,9 +5,8 @@
 // Принятое — в fix; комплект пересчитывается с ним, поэтому «уже принятые замены» учитываются у следующих слотов.
 import type { SlotId } from '@/game/data/types';
 import { bestKit, keyOf, type Fix } from './kit';
-import { GEAR_SLOTS, milli, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit, type Milli } from './model';
-
-export const THRESHOLD: Milli = milli(1); // R6.2: «хотя бы на 1 очк.»
+import { GEAR_SLOTS, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit } from './model';
+import { THRESHOLD, type Milli } from '@/features/gear/model/vs';
 
 const FIT: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
 const isGear = (slot: SlotId) => GEAR_SLOTS.includes(slot);

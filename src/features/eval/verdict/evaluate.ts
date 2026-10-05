@@ -3,7 +3,8 @@ import type { Ctx } from '@/game/context';
 import { evalArmor } from './evalArmor';
 import { evalGear } from './evalGear';
 import { upgradePlan } from './upgrade';
-import { emptyVerdict, type ItemInput, type Verdict } from './verdict';
+import { emptyVerdict, type Verdict } from './verdict';
+import type { ItemInput } from '@/game/item/item';
 
 // Вердикт — как вещь подходит героям сейчас, по введённым сегментам: Reforge впереди не гадаем (решение владельца
 // 2026-10-01) — после Reforge в игре вещь вводят заново

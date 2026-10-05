@@ -7,7 +7,8 @@
 // включённых бонусов сетов связки, потом больше вещей сетов связки (по выбранной раскладке варианта из вещей героя);
 // ничья — первый в списке. Нет билдов вовсе или все «Не собираю» — «По статам».
 import type { SetPiece } from '@/game/data/types';
-import { buildKey, syncWorn, type GearStore } from '@/features/gear/model/gear';
+import { syncWorn, type GearStore } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
 import type { Ctx } from '@/game/context';
 import { isStats, markOfVariant, poolView, STATS, type Assembly, type CharPool } from '@/features/gear/pool';
 import type { Variant } from '@/game/build/variants';

@@ -4,7 +4,7 @@ import { SLOTS, createIndex, isArmor } from '@/game/data';
 import type { Dataset, GearKind } from '@/game/data/types';
 import { epicMains, legendMains } from '@/game/build/builds';
 import { decodeItem, encodeItem } from '@/features/eval/code/codec';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { fitsData, fromPersisted, reducer } from '@/app/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));

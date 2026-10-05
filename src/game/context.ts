@@ -18,7 +18,7 @@ export interface Ctx {
   settings: Settings;
   roster: ReadonlySet<string>;
   scoped: boolean;              // «только мои персонажи» включено и ростер не пуст
-  // X, которого заменил его Core Fusion (features/roster/fusion, X → CF): не кандидат вердикта — ни среди своих, ни среди других
+  // X, которого заменил его Core Fusion (features/gear/model/fusion, X → CF): не кандидат вердикта — ни среди своих, ни среди других
   off: ReadonlyMap<string, string>;
   inScope: (c: Char) => boolean;
   outScope: (c: Char) => boolean; // «не в ростере» при «только мои»: кандидат, но не свой

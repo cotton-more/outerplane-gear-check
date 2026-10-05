@@ -12,7 +12,7 @@
 import { GRADES, SLOTS, isArmor } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 // Порядок в таблицах (и в SLOTS, GRADES) — часть формата: только дописывать в конец, иначе старые коды прочитаются неверно.
 // Сабстатов ровно 13 и разряд под них полный (1 + 13·4 = 53): новый сабстат — это уже новый формат кода.

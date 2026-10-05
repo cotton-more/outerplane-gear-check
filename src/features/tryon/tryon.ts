@@ -14,7 +14,8 @@ import type { Piece } from '@/features/gear/model/gear';
 import { uniqChars } from '@/game/build/builds';
 import { holds, isStats, outcomeFor, shownKind, statsUseful, statVariant, STATS, type Outcome, type PoolView } from '@/features/gear/pool';
 import { byBest, type CharVs } from '@/features/gear/model/poolVs';
-import { bestRow, type ItemInput, type Verdict } from '@/features/eval/verdict/verdict';
+import { bestRow, type Verdict } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { wearable } from '@/features/gear/model/vs';
 import { variantsOf, type Variant } from '@/game/build/variants';
 

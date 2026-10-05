@@ -6,12 +6,13 @@ import { createIndex } from '@/game/data';
 import type { Dataset, SlotId } from '@/game/data/types';
 import { aimOf, confirmAims, pickAim, savedAim, setAim, statsKey, undoAims, unconfirmed } from '@/features/worn/aim';
 import { makeCtx } from '@/game/context';
-import { buildKey, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { normalizeFusion } from '@/features/roster/fusion';
+import { type GearStore, type Piece } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
+import { normalizeFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, restoreGear } from '@/features/gear/store/gearStore';
 import { poolView, putOn, type Mark } from '@/features/gear/pool';
 import type { Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

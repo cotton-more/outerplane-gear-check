@@ -1,13 +1,14 @@
-// Core Fusion (features/roster/fusion, правила владельца 2026-09-30): нормализация {ростер, хранилище} — есть X и Core Fusion X,
+// Core Fusion (features/gear/model/fusion, правила владельца 2026-09-30): нормализация {ростер, хранилище} — есть X и Core Fusion X,
 // остаётся CF; вещи X переходят к CF, если у CF пусто, иначе убраны (общие записи остаются у других); окно перехода
 // в обе стороны и его «Вернуть»; загрузка v1 и v2 и код копии — через ту же нормализацию.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
-import { buildKey, dropChar, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { dropChar, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
 import { removeFrom } from '@/features/gear/pool';
-import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '@/features/roster/fusion';
+import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '@/features/gear/model/fusion';
 import { makeCtx } from '@/game/context';
 import { evaluate } from '@/features/eval/verdict/evaluate';
 import { encodeGear, loadGear, readsWhole, unfuseChar } from '@/features/gear/store/gearStore';

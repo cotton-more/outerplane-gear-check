@@ -14,7 +14,7 @@ import { useIndex } from '@/game/data/IndexContext';
 import { tour } from '@/tour/anchors';
 
 // onGearImport — код экипировки заменил записи: всех, у кого есть вещи, — в ростер, сообщение с «Вернуть» (App; вещей
-// в коде нет — false); geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/roster/fusion): в списке
+// в коде нет — false); geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/gear/model/fusion): в списке
 // сразу за ним, с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
 // touring — идёт обучение: на странице экипировка тура (пример или пусто), кода экипировки нет
 interface Props {

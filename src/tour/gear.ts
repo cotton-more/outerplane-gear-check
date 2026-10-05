@@ -5,9 +5,9 @@
 import type { Index } from '@/game/data';
 import type { Build, Char } from '@/game/data/types';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { buildKey } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
 import { combosWith } from '@/game/build/builds';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import type { Step } from './types';
 
 const DEMO = { char: '2000089', build: 'Speed', set: 'Speed' } as const; // Caren: Speed ×4, цепочка DEF › CHC › CHD › SPD

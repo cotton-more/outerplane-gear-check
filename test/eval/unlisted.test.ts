@@ -6,7 +6,7 @@ import type { Dataset } from '@/game/data/types';
 import { legendMains } from '@/game/build/builds';
 import { makeCtx, type Settings } from '@/game/context';
 import { evaluate } from '@/features/eval/verdict/evaluate';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { fromPersisted, reducer } from '@/app/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));

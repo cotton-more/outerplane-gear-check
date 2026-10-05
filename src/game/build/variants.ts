@@ -5,7 +5,9 @@
 import type { Index } from '@/game/data';
 import type { Build, Char, Combo } from '@/game/data/types';
 import { comboText } from './builds';
-import { buildKey } from '@/features/gear/model/gear';
+
+// ключ билда героя; билд — по имени: номер в списке outerpedia может сдвинуться при обновлении данных
+export const buildKey = (charId: string, build: string) => `${charId}/${build}`;
 
 export interface Variant {
   key: string;        // ключ: у билда с одной связкой — buildKey, иначе buildKey#sig

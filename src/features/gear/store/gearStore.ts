@@ -1,12 +1,13 @@
 // Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 → v2 (GEARPOOL), код OGC-GEAR2.
 // Перенос детерминированный: все вещи v1 — в пул персонажа (запись у двух персонажей — в оба пула, без копии),
 // билды v1 с вещами — «Собираю». Ни одна вещь и ни одно поле не теряются (билды v1 как были — в v1builds, не читается),
-// кроме правила Core Fusion (features/roster/fusion): у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16).
+// кроме правила Core Fusion (features/gear/model/fusion): у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16).
 import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { normalizeStored, type Normalized } from '@/features/roster/fusion';
-import { buildKey, gc, MAX_LIT, setPinned, type Bt, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { normalizeStored, type Normalized } from '@/features/gear/model/fusion';
+import { gc, MAX_LIT, setPinned, type Bt, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
 import { heroOpts, isStats, play } from '@/features/gear/pool';
 import { MAX_SUBS, type Subs } from '@/game/item/subs';
 
@@ -76,7 +77,7 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 // (от них зависит только «временная» у оружия в «Развитии»)
 const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
 
-// перенос v1 → v2. Ростер и Core Fusion (features/roster/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
+// перенос v1 → v2. Ростер и Core Fusion (features/gear/model/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
 // (находка 16)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   // надетого и выбранного билда в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
@@ -150,7 +151,7 @@ function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
 }
 
 // из хранилища или кода: v1 — проверка v1 и перенос; v2 — проверка; иначе (мусор, более новая версия) — пусто.
-// Затем ростер и Core Fusion (features/roster/fusion normalizeStored): все с вещами — в ростер, есть X и Core Fusion X — остаётся
+// Затем ростер и Core Fusion (features/gear/model/fusion normalizeStored): все с вещами — в ростер, есть X и Core Fusion X — остаётся
 // Core Fusion; fixes и added — что поменялось (запись и сообщение после загрузки, импорт)
 export type Loaded = Normalized;
 export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): Loaded {
@@ -206,7 +207,7 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
   return Object.keys(st.pieces).length ? st : null;
 }
 
-// «Вернуть» перехода (features/roster/fusion switchFusion): вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем.
+// «Вернуть» перехода (features/gear/model/fusion switchFusion): вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем.
 // Надетое base: в слоте, где на fusion надета одна из ушедших к base вещей, — она (выбор за эти секунды); в остальных —
 // r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
 // копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Выбранного билда у base нет —

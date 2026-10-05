@@ -25,14 +25,14 @@ import { evaluate } from '@/features/eval/verdict/evaluate';
 import { confirmAims, setAim, unconfirmed, undoAims } from '@/features/worn/aim';
 import { dropChar, gearedChars, undoDrop, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { loadGear, unfuseChar } from '@/features/gear/store/gearStore';
-import { gateOf, normalizeStored, replacedX, storeFor, switchFusion, type FusionFix } from '@/features/roster/fusion';
+import { gateOf, normalizeStored, replacedX, storeFor, switchFusion, type FusionFix } from '@/features/gear/model/fusion';
 import { holds, isStats, poolView, putOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
 import { charsVs, charVs, gearBadges, nextToWear, sectionChars, whereUsed, type CharVs } from '@/features/gear/model/poolVs';
 import { charMatches } from '@/features/eval/form/lists';
 import { dropSubs } from '@/game/item/subs';
 import type { Build, Char, GearKind, SlotId } from '@/game/data/types';
 import { buildOfKey } from '@/game/build/variants';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { heroNote, heroOutcome, heroTarget, heroTitle, noReplace, tryOnPreset, type TryOn } from '@/features/tryon/tryon';
 import { betterThanWorn, materialFor, wearLead, withMaterial } from '@/features/gear/model/material';
 import { withWorn } from '@/features/gear/model/stamp';
@@ -91,7 +91,7 @@ export function App() {
   const gear: GearApi = useMemo(() => (demo
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
     : touring ? { ...realGear, set: () => {} } : realGear), [demo, realGear, touring]);
-  // Core Fusion (features/roster/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и не герой режима «для героя»
+  // Core Fusion (features/gear/model/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и не герой режима «для героя»
   const off = useMemo(() => replacedX(idx, roster, gear.store.pools), [idx, roster, gear.store.pools]);
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off), [idx, s.settings, roster, t, off]);
   // вердикт зависит только от предмета и настроек — не пересчитываем его на каждый ввод в поиске
@@ -104,7 +104,7 @@ export function App() {
   const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
   const realTry = useTryOn(idx, !touring);
   const tryOn = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : realTry;
-  // X при Core Fusion X — не герой режима (features/roster/fusion). Вариант предустановки здесь не нужен — он только для формы
+  // X при Core Fusion X — не герой режима (features/gear/model/fusion). Вариант предустановки здесь не нужен — он только для формы
   const hero = useMemo(() => {
     const h = demo ? heroTarget(idx, demo.tryOn) : touring ? null : heroTarget(idx, realTry.value);
     return h && (off.has(h.c.id) && !h.c.fusionOf) ? null : h;
@@ -124,7 +124,7 @@ export function App() {
   const tryNow = useRef(tryOn.value);
   useEffect(() => { tryNow.current = tryOn.value; });
   // П9: «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
-  // «Да» — на хранилище, где вещи X уже у него (features/roster/fusion storeFor): его строка и кнопка — по этому виду пула. Окна не
+  // «Да» — на хранилище, где вещи X уже у него (features/gear/model/fusion storeFor): его строка и кнопка — по этому виду пула. Окна не
   // будет или вещи не переходят — общий вид. В обучении окон нет (fusionGate)
   const viewOf = useMemo(() => {
     const memo = new Map<string, PoolView>();
@@ -203,7 +203,7 @@ export function App() {
   // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
   const pieceLabel = (p: Piece) => (p.setId ? idx.SET[p.setId]?.short ?? p.setId
     : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
-  // Core Fusion (features/roster/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
+  // Core Fusion (features/gear/model/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
   const fixesNote = (fixes: FusionFix[]) => fixes.map((f) => t.ui.fusionFixed(charName(f.base), f.kind)).join(' ');
   // после загрузки: нормализация что-то поменяла (features/gear/store/stored — уже записано, Р17) — сказать один раз: кого добавили
   // в ростер (у них есть вещи, Р16) и что стало с X при Core Fusion X
@@ -524,7 +524,7 @@ export function App() {
     } else dispatch({ type: 'tab', tab: 'eval' });
     if (layout.narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
   };
-  // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер, затем Core Fusion (features/roster/fusion
+  // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер, затем Core Fusion (features/gear/model/fusion
   // normalizeStored). «Вернуть» — всё хранилище, как было до него; ростер — каким был. Вещей нет — false
   const onGearImport = (prev: GearStore, raw: unknown): boolean => {
     const before = rosterApi.list();

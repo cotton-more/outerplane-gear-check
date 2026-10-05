@@ -54,7 +54,7 @@ describe('useRoster между вкладками', () => {
   });
 });
 
-// Core Fusion и Р16 (features/roster/fusion normalizeStored): ростер читается вместе с экипировкой; окна перехода и пакетные
+// Core Fusion и Р16 (features/gear/model/fusion normalizeStored): ростер читается вместе с экипировкой; окна перехода и пакетные
 // добавления — в App (test/roster/fusion.dom.test.ts, test/gear/gear.dom.test.ts). Здесь — загрузка и страховка записи
 describe('useRoster: Core Fusion', () => {
   const [ETERNAL, CF_ETERNAL] = [id('Eternal'), id('Core Fusion Eternal')];

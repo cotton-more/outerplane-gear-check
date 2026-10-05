@@ -5,7 +5,8 @@ import type { Char, SlotId } from '@/game/data/types';
 import { uniqChars } from '@/game/build/builds';
 import type { Ctx } from '@/game/context';
 import { heldBy, holds, holdsKind, isStats, OUTCOME_ORDER, outcomeFor, planFor, puts, replaceOf, shownKind, type Assembly, type Outcome, type OutcomeOpts, type PoolView } from '@/features/gear/pool';
-import { bestRow, type ItemInput, type Verdict } from '@/features/eval/verdict/verdict';
+import { bestRow, type Verdict } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import type { Variant } from '@/game/build/variants';
 
 export interface CharVs {

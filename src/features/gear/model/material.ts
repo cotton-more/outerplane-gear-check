@@ -14,7 +14,8 @@ import type { Ctx } from '@/game/context';
 import type { Piece } from './gear';
 import { outcomeFor, type PoolView } from '@/features/gear/pool';
 import { buildOfKey } from '@/game/build/variants';
-import type { ItemInput, Verdict } from '@/features/eval/verdict/verdict';
+import type { Verdict } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 export interface Need { piece: Piece; key: string; left: number } // key — вариант, где она стоит; left — ступеней до T4
 

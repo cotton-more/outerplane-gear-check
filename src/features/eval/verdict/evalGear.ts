@@ -9,7 +9,8 @@ import { itemMains } from '@/game/item/mains';
 import { dedupe, flatMisses, rows, type Row } from '@/game/build/score';
 import { dropSubs } from '@/game/item/subs';
 import { fmtGood, namesLine } from '@/game/text';
-import type { ItemInput, Verdict } from './verdict';
+import type { Verdict } from './verdict';
+import type { ItemInput } from '@/game/item/item';
 
 type Scored = Omit<Row, 'alt'>;
 

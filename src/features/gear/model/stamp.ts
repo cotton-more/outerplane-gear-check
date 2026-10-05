@@ -25,7 +25,8 @@ import { upgradePlan } from '@/features/eval/verdict/upgrade';
 import { holds, outcomeFor, type Outcome, type PoolView } from '@/features/gear/pool';
 import { dropSubs } from '@/game/item/subs';
 import { namesLine } from '@/game/text';
-import { bestRow, type ItemInput, type Verdict } from '@/features/eval/verdict/verdict';
+import { bestRow, type Verdict } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 // исходы, по которым штамп понижается, или null. Кандидаты — первая открытая секция вердикта (кому вещь подходит).
 // Вещь введена не вся — не понижаем: без остальных сабстатов её ценность занижена

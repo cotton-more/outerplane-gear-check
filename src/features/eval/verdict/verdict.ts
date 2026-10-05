@@ -1,7 +1,5 @@
 // Результат оценки предмета — что показывает панель вердикта.
-import type { Grade, SlotId } from '@/game/data/types';
 import type { Row } from '@/game/build/score';
-import type { Subs } from '@/game/item/subs';
 
 export type VerdictKind = 'idle' | 'keep' | 'temp' | 'maybe' | 'fodder' | 'junk';
 
@@ -29,21 +27,6 @@ export interface Verdict {
   othersKeep?: Row[];
   // «подходит ли» строка — от этого цвет оценки в списке; null — считать по CFG.keepCount
   qualifies?: ((m: Omit<Row, 'alt'>) => boolean) | null;
-}
-
-// Что вбито на панели ввода.
-export interface ItemInput {
-  slot: SlotId;
-  grade: Grade;
-  setId: string | null;
-  itemKey: string | null;
-  main: string | null;
-  unlisted?: boolean; // Legendary оружие/аксессуар, которого нет в данных outerpedia
-  subs: Subs;
-  // Breakthrough с формы (броня, Legendary оружие и аксессуар — gear hasBt): 4 — «T4», 0 — ниже T4 (T0–T3). Поля нет или
-  // null — не указан (старые входы, эталон, Epic оружие и аксессуар). Вердикт evaluate его не читает — только пул
-  // (сборка и исходы — у брони, материал — у всех)
-  bt?: 0 | 4 | null;
 }
 
 // лучший кандидат вердикта — первая строка первой открытой секции из ростера; у «Разобрать» кандидатов нет

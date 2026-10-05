@@ -6,8 +6,8 @@ import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/ge
 import { poolView, type PoolView } from '@/features/gear/pool';
 import type { Variant } from '@/game/build/variants';
 import { bonusRows, bonusValue, bonusWeights, convertible } from '@/game/set/setBonus';
-import { fit, pieceValue, wearable } from '@/features/gear/model/vs';
-import { codeOf, milli, type Gauge, type Hero, type Item, type SetGain, type World } from './model';
+import { fit, pieceValue, wearable, milli } from '@/features/gear/model/vs';
+import { codeOf, type Gauge, type Hero, type Item, type SetGain, type World } from './model';
 
 // номер записи из id («p12» → 12), как в features/gear/pool
 const numOf = (id: string) => { const n = Number(id.replace(/^\D+/, '')); return Number.isFinite(n) ? n : 0; };

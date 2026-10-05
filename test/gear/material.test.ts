@@ -12,7 +12,7 @@ import { poolView, putOn } from '@/features/gear/pool';
 import { betterThanWorn, materialFor, wearLead, withMaterial } from '@/features/gear/model/material';
 import { charsVs } from '@/features/gear/model/poolVs';
 import { withWorn } from '@/features/gear/model/stamp';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

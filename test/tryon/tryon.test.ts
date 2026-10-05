@@ -10,11 +10,12 @@ import { TEXTS } from '@/i18n';
 import { makeCtx, type Ctx } from '@/game/context';
 import { evaluate } from '@/features/eval/verdict/evaluate';
 import { EMPTY_GEAR, updatePiece, type GearStore } from '@/features/gear/model/gear';
-import { buildKey } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
 import { isStats, outcomeFor, poolView, putOn, STATS } from '@/features/gear/pool';
 import { charVs } from '@/features/gear/model/poolVs';
 import { heroNote, heroOutcome, heroTarget, heroTitle, restoreTryOn, tryOnPreset } from '@/features/tryon/tryon';
-import type { ItemInput, Verdict } from '@/features/eval/verdict/verdict';
+import type { Verdict } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { withWorn } from '@/features/gear/model/stamp';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));

@@ -7,10 +7,12 @@
 import type { SlotId } from '@/game/data/types';
 import type { Step } from './apply';
 import { skipKey } from './cands';
-import { THRESHOLD, type Plan } from './gate';
+import { type Plan } from './gate';
+import { THRESHOLD } from '@/features/gear/model/vs';
 import type { HoleFill } from './holes';
 import { keyOf } from './kit';
-import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type Hero, type Kit, type KitKey, type Milli, type World } from './model';
+import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
+import type { Milli } from '@/features/gear/model/vs';
 import { advance, movesOf, type Moves } from './moves';
 import { heroPlan } from './plan';
 

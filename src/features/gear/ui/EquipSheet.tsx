@@ -2,7 +2,7 @@
 // кому вещь встанет в билд (соберёт, сет 3 из 4, пустой слот, новая лучше) или начнёт новый, и неактивная «Уже есть».
 // Без поиска — по сету, как вердикт (Р11). Поиск по имени — явный выбор: вещь не по билду, но с полезными статами
 // встанет персонажу в «По статам» (находка 28). Вещь без полезных статов не попадает никому (Р13). Сначала держащие
-// исходы, потом «начнёт»; имя ищется среди всех персонажей (без X, когда есть Core Fusion X: features/roster/fusion). В шапке —
+// исходы, потом «начнёт»; имя ищется среди всех персонажей (без X, когда есть Core Fusion X: features/gear/model/fusion). В шапке —
 // сама вещь.
 import { useMemo, useState } from 'react';
 import { subLabel } from '@/game/data';
@@ -12,7 +12,7 @@ import type { Ctx } from '@/game/context';
 import { holds, shownKind, type PoolView } from '@/features/gear/pool';
 import { charsVs, type CharVs } from '@/features/gear/model/poolVs';
 import { buildOfKey } from '@/game/build/variants';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { Img, SlotIcon } from '@/game/icons/Img';
 import { Sheet } from '@/shared/ui/Sheet';
 import { VsChip } from './VsSection';

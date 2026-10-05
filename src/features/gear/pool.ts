@@ -23,7 +23,7 @@ import type { Ctx } from '@/game/context';
 import { EMPTY_GEAR, gc, isPinned, isWorn, newPiece, pieceInput, setPinned, syncWorn, today, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
 import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible, type BonusRow } from '@/game/set/setBonus';
 import type { SubWeight } from '@/game/build/score';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { comboSig, variantsOf, type Variant } from '@/game/build/variants';
 import { against, fit, itemValue, MARGIN, pieceValue, wearable, type Fit, type Pair } from '@/features/gear/model/vs';
 

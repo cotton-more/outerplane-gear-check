@@ -2,12 +2,13 @@
 // Мерило строит мост world.ts: key — билд, который показывает «Надето» (aimOf); parts — связка; value — очки и fit.
 import { describe, expect, it } from 'vitest';
 import { aimOf, statsKey } from '@/features/worn/aim';
-import { buildKey, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
 import { assemble, entriesFor, poolView } from '@/features/gear/pool';
-import { fit, pieceValue } from '@/features/gear/model/vs';
+import { fit, pieceValue, milli } from '@/features/gear/model/vs';
 import { candidates } from '@/features/trade/model/cands';
 import { bestKit } from '@/features/trade/model/kit';
-import { milli, SLOT_ORDER } from '@/features/trade/model/model';
+import { SLOT_ORDER } from '@/features/trade/model/model';
 import { worldOf } from '@/features/trade/model/world';
 import type { SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';

@@ -2,7 +2,8 @@
 // мерилу, R2.2), сеты, которые включились и выключились, что надеть (moves) и какие слоты опустели; копии, которые после
 // «Сделал» не будут ни в одном пуле («из приложения уйдёт»). Данные, не подписи: подписи — компоненты и i18n.
 import type { SlotId } from '@/game/data/types';
-import { SLOT_ORDER, type Milli, type Part, type World } from './model';
+import { SLOT_ORDER, type Part, type World } from './model';
+import type { Milli } from '@/features/gear/model/vs';
 import type { Move, Moves } from './moves';
 import { kitIn } from './team';
 

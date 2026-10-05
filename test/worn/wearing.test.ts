@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset, Grade, SlotId } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { buildKey, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { type GearStore, type Piece } from '@/features/gear/model/gear';
 import { poolView, type Mark } from '@/features/gear/pool';
 import type { Subs } from '@/game/item/subs';
-import { variantsOf } from '@/game/build/variants';
+import { variantsOf, buildKey } from '@/game/build/variants';
 import { aimOf } from '@/features/worn/aim';
 import { aimOptions, missingParts, reasonOf, redressPlan, t4Parts, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 

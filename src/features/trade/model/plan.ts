@@ -1,8 +1,10 @@
 // План героя целиком (R6, R8) и подсказка закреплённых (R6.5, .x/0040-trade/SPEC.md): кандидаты → порог → дыры.
 import { candidates, type CandInput } from './cands';
-import { planFor, THRESHOLD, type Plan } from './gate';
+import { planFor, type Plan } from './gate';
+import { THRESHOLD } from '@/features/gear/model/vs';
 import { fillHoles, type HolesResult } from './holes';
-import type { Milli, World } from './model';
+import type { World } from './model';
+import type { Milli } from '@/features/gear/model/vs';
 
 export interface PlanInput { to: string; skip?: ReadonlySet<string>; allow?: ReadonlySet<string> }
 export interface HeroPlan { plan: Plan; holes: HolesResult }

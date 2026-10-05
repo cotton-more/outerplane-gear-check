@@ -6,7 +6,7 @@
 // броня DEF, перчатки EFF + DEF, ботинки RES + HP% (берём по сету и грейду из данных), у оружия всегда есть flat ATK.
 import { FLAT, isArmor, type Index } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from './item';
 
 export interface ItemMains {
   lines: string[];              // все строки main на предмете: фиксированные и выбранная

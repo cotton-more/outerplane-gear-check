@@ -8,7 +8,8 @@ import { isArmor, SLOT } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import { buildsOf, combosWith } from '@/game/build/builds';
 import type { Ctx } from '@/game/context';
-import type { ItemInput, Verdict } from './verdict';
+import type { Verdict } from './verdict';
+import type { ItemInput } from '@/game/item/item';
 
 export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
   const { idx, t } = ctx;

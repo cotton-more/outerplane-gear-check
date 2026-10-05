@@ -1,5 +1,5 @@
 // Экипировка ('ogc.gear') и ростер ('ogc.roster') читаются вместе: правило «вещи только у героев ростера» (Р16) и Core
-// Fusion смотрят на оба (features/roster/fusion normalizeStored). Нормализация что-то поменяла — сразу пишем оба ключа (Р17):
+// Fusion смотрят на оба (features/gear/model/fusion normalizeStored). Нормализация что-то поменяла — сразу пишем оба ключа (Р17):
 // иначе сообщение о ней повторялось бы при каждом запуске, а половина правки могла потеряться. Не пишем, если экипировку
 // сохранила более новая версия страницы (эта её не понимает — перезапись стёрла бы её) или хранилища нет. Ничего не
 // поменялось — не пишем. Чтение что-то отбросило (саб не из данных, отметка или поле новой версии — readsWhole) — тоже
@@ -7,7 +7,7 @@
 // данных иначе стёрла бы то, что понимает новая). Во время обучения не пишем ничего (holdStoredWrites).
 // Один разбор на одно содержимое хранилища: его читают оба хука.
 import type { Index } from '@/game/data';
-import { changed } from '@/features/roster/fusion';
+import { changed } from '@/features/gear/model/fusion';
 import { loadGear, newerGear, readsWhole, type Loaded } from './gearStore';
 import { storage } from '@/shared/storage';
 

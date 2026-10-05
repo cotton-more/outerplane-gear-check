@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { dropChar, isPinned, pinnedOf, setPinned, undoDrop, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { normalizeFusion, switchFusion } from '@/features/roster/fusion';
+import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
 import { removeFrom, removeUndo } from '@/features/gear/pool';
 

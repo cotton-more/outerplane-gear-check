@@ -19,10 +19,8 @@ import {
 } from '@/features/gear/pool';
 import { subWeights } from '@/game/build/score';
 import { bonusRows, bonusWeights, convertible, type BonusRow } from '@/game/set/setBonus';
-import { THRESHOLD } from '@/features/trade/model/gate';
-import { milli } from '@/features/trade/model/model';
 import type { Variant } from '@/game/build/variants';
-import { against } from '@/features/gear/model/vs';
+import { against, milli, THRESHOLD } from '@/features/gear/model/vs';
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
 const SLOT_IDS: SlotId[] = SLOTS.map((s) => s.id);

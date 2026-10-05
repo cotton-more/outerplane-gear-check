@@ -4,11 +4,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createIndex } from '@/game/data';
 import type { Dataset, Grade, SlotId } from '@/game/data/types';
 import { makeCtx, type Ctx } from '@/game/context';
-import { replacedX } from '@/features/roster/fusion';
+import { replacedX } from '@/features/gear/model/fusion';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { loadGear, readGearCode } from '@/features/gear/store/gearStore';
 import type { Subs } from '@/game/item/subs';
-import { cmpKit, milli, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '@/features/trade/model/model';
+import { cmpKit, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '@/features/trade/model/model';
+import { milli } from '@/features/gear/model/vs';
 import { keyOf } from '@/features/trade/model/kit';
 import { worldOf } from '@/features/trade/model/world';
 

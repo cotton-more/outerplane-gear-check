@@ -69,7 +69,7 @@ Speed/Immu. Потом оцениваю вещь Immunity: если по ста�
 
 **Карточка.** Показывается самый выгодный вариант, остальные удобно посмотреть рядом.
 
-**Core Fusion** (правила владельца 2026-09-30, `features/roster/fusion.ts`). Core Fusion X заменяет X: в ростере никогда нет
+**Core Fusion** (правила владельца 2026-09-30, `features/gear/model/fusion.ts`). Core Fusion X заменяет X: в ростере никогда нет
 обоих. После Core Fusion герой другой — свои билды и цепочка (сравни на outerpedia Core Fusion Epsilon и Epsilon). Так
 у Snow, Lisha, Veronica, Eternal, Notia и Epsilon; связь — поле `originalCharacter` в данных outerpedia.
 - «Есть герой» — он в ростере или у него есть вещи. Есть CF — X неактивен: не кандидат вердикта, не в «Кому надеть?» и

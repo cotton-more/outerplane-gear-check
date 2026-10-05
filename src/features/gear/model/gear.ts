@@ -7,7 +7,7 @@ import { isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { subAllowed } from '@/game/item/mains';
 import { DROP_LEVEL, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
 export const MAX_LIT = 6;     // сегментов у сабстата в игре
@@ -57,8 +57,6 @@ export interface GearStore {
 }
 
 export const EMPTY_GEAR: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };
-// билд — по имени: номер в списке outerpedia может сдвинуться при обновлении данных
-export const buildKey = (charId: string, build: string) => `${charId}/${build}`;
 export const today = () => new Date().toISOString().slice(0, 10);
 
 // запись как вход сравнения: уровень сабстата — сколько горит (lit), жёлтые и оранжевые вместе (один уровень)

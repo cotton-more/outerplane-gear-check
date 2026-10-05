@@ -11,7 +11,7 @@ import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
 import { evaluate } from '@/features/eval/verdict/evaluate';
 import { decodeItem } from '@/features/eval/code/codec';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

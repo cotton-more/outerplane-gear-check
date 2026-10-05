@@ -7,7 +7,7 @@ import type { Settings, Stage } from '@/game/context';
 import type { CharFilter } from '@/features/eval/form/lists';
 import { MAX_LIT, hasBt } from '@/features/gear/model/gear';
 import { MAX_SUBS, levelCap, levelSum, withinCap, type Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 export type Tab = 'eval' | 'chars';
 

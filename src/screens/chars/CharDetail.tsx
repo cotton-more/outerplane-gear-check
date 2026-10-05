@@ -95,7 +95,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   const own = rosterApi.roster.has(c.id);
   const elName = D.elements[c.element] || c.element;
   const clsName = D.classes[c.class] || c.class;
-  // есть Core Fusion этого героя (features/roster/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
+  // есть Core Fusion этого героя (features/gear/model/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
   const fusedBy = ctx.off.has(c.id) ? CHAR[ctx.off.get(c.id)!] : null;
   const asm = cp!.asm;
   const variantsOfBuild = (b: Build) => cp!.variants.filter((v) => v.parent === b && !isStats(v)).sort(byRank(asm));

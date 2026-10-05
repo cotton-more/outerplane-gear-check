@@ -423,7 +423,7 @@ export const ru = {
     pieceNowhere: 'Ни в одном билде: в каждом стоит лучше.',
     gearNewerCode: 'Код сохранила более новая версия страницы — обнови страницу.',
     fusionGear: (base: string, fusion: string) => `Вещи ${base} перешли к ${fusion}.`,
-    // Core Fusion X заменил X или X заменил Core Fusion X (features/roster/fusion): пометка в списке, строка карточки, окна перехода
+    // Core Fusion X заменил X или X заменил Core Fusion X (features/gear/model/fusion): пометка в списке, строка карточки, окна перехода
     fusionOffMark: (name: string, isFusion?: boolean) => (isFusion ? `заменён ${name}` : `заменён Core Fusion ${name}`),
     fusionOffCard: (name: string, activeName?: string) =>
       activeName
@@ -549,7 +549,7 @@ export const ru = {
     rosterKeptGear: (names: string) => `Оставлены в ростере — у них есть вещи: ${names}.`,
     // окно перехода Core Fusion (App): кто кого заменил в ростере; «Вещи … перешли к …» — fusionGear
     fusionReplaces: (fusion: string, base: string) => `${fusion} заменяет ${base} в ростере.`,
-    // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (features/roster/fusion normalizeFusion)
+    // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (features/gear/model/fusion normalizeFusion)
     fusionFixed: (base: string, how: 'moved' | 'removed' | 'none') =>
       `В ростере оставлен Core Fusion ${base}: ${base} заменён${how === 'moved' ? `, его вещи перешли к Core Fusion ${base}` : how === 'removed' ? ', его вещи убраны' : ''}.`,
     gearBad: 'Код не читается — скопируй его целиком, с OGC-GEAR в начале.',

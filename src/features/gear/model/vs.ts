@@ -11,7 +11,7 @@ import { MAX_LIT, pieceInput, type Piece } from './gear';
 import { itemMains } from '@/game/item/mains';
 import { scoreBuild, subWeights, type Row } from '@/game/build/score';
 import type { Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 // Вещь против одной вещи в том же слоте (против того, что стоит в сборке, features/gear/pool)
 export interface Pair {
@@ -39,6 +39,11 @@ export function vsFigure(vs: Pick<Pair, 'delta' | 'wornEmpty'>): VsFigure | null
   return pct > 200 ? { kind: 'times', n: Math.round(vs.delta + 1) } : { kind: 'pct', n: pct };
 }
 
+// Очки целыми тысячными (R2.2 «Обмена вещами»): сравнение без дробного шума, округление — один раз. Заметный выигрыш —
+// хотя бы на 1 очк. (R6.2): так решают «Обмен вещами» (trade) и «Переодеть» («Надето», worn/wearing)
+export type Milli = number;
+export const milli = (points: number): Milli => Math.round(points * 1000);
+export const THRESHOLD: Milli = milli(1);
 export const MARGIN = 0.1;
 
 // полезные сегменты вещи для билда: вес места × засчитывается (1, ½, 0) × уровень сабстата (как есть).

@@ -2,7 +2,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useT } from '@/i18n';
 import { CODE_PREFIX, decodeItem, encodeItem, type DecodeError } from './codec';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { tour } from '@/tour/anchors';
 
 // строка в вердикте: код текущего предмета и «Скопировать» — вставить в чат игры

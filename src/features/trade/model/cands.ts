@@ -3,7 +3,8 @@
 // уже есть, без BT выше (R5.5). Герои без билдов — ни получатели, ни держатели (R2.7).
 import type { SlotId } from '@/game/data/types';
 import { keyOf } from './kit';
-import { SLOT_ORDER, type Cand, type Cands, type Cost, type Gauge, type Hero, type Milli, type World } from './model';
+import { SLOT_ORDER, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
+import type { Milli } from '@/features/gear/model/vs';
 
 export interface CandInput {
   to: string;                       // получатель

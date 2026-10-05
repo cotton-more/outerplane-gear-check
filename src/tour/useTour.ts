@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
 import { itemInput, type Action, type Tab } from '@/app/appState';
 import { storage } from '@/shared/storage';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 import { TIPS } from './registry';
 import { bootTour, loadTour, markSeen, saveTour, type Revs, type TourStore } from './store';
 import { TOURS, tourSeenId } from './tours';

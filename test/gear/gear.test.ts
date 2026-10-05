@@ -5,13 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import {
-  buildKey, dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, undoDrop, updateIn, updatePiece, type GearStore, type Piece,
-} from '@/features/gear/model/gear';
-import { normalizeFusion, switchFusion } from '@/features/roster/fusion';
+import { dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, undoDrop, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { buildKey } from '@/game/build/variants';
+import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
 import { planFor, planPut, poolView, putOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
-import type { ItemInput } from '@/features/eval/verdict/verdict';
+import type { ItemInput } from '@/game/item/item';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -116,7 +115,7 @@ describe('перенос v1 → v2 (design-final §F)', () => {
   });
 
   // правило владельца 2026-09-30 (было: вещи X сливались к Core Fusion X): у Core Fusion свои вещи — вещи X убраны
-  it('Core Fusion: вещи у X и у Core Fusion X — у Core Fusion его вещи, вещи X убраны (features/roster/fusion)', () => {
+  it('Core Fusion: вещи у X и у Core Fusion X — у Core Fusion его вещи, вещи X убраны (features/gear/model/fusion)', () => {
     const [eternal, cf] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
     const st = restoreGear(v1([rec('p1', helmet({ CHC: 1 })), rec('p2', helmet({ CHD: 1 }))], { [`${eternal.id}/Speed`]: { helmet: 'p1' }, [`${cf.id}/Speed`]: { helmet: 'p2' } }), idx);
     expect(st.pools).toEqual({ [cf.id]: ['p2'] });
