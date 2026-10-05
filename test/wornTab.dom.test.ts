@@ -95,6 +95,17 @@ describe('вкладка «Надето»: порядок и вкладка по
   });
 });
 
+describe('билд героя на вкладках', () => {
+  it('на «Надето» — вешалка вместо имени; вкладка билда героя обведена, одна', async () => {
+    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
+    const name = $('.bt-split .aimb')?.getAttribute('title');
+
+    expect($('.bt-split .aimb .ico')).not.toBeNull();
+    expect($$('.btabs .bt-aim')).toHaveLength(1);
+    expect($('.btabs .bt-aim')?.textContent).toMatch(new RegExp('^' + name));
+  });
+});
+
 describe('заголовок сборки над вкладками', () => {
   // «Лучше всего собран…» / «По статам — ни один билд не начат» — про сборку билдов, а не про надетое
   it('на вкладке «Надето» его нет, на вкладке билда — есть', async () => {

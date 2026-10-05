@@ -8,6 +8,7 @@ import type { Ctx } from '../../logic/context';
 import type { GearStore } from '../../logic/gear';
 import type { CharPool } from '../../logic/pool';
 import { aimOptions, type AimOption, type AimPart } from '../../logic/wearing';
+import { Icon } from '../Img';
 import { Sheet } from '../Sheet';
 
 type T = ReturnType<typeof useT>;
@@ -26,12 +27,13 @@ function partLine(t: T, ctx: Ctx, p: AimPart): string {
   return p.worn >= p.part.n ? t.ui.aimPartWorn(name, p.worn, p.part.n) : t.ui.aimPartHave(name, p.owned, p.part.n);
 }
 
-// кнопка билда героя «Speed ▾» — открывает эту шторку: правая половина «Надето» на карточке героя, план и ромб обмена.
-// Нет onClick — видна, но не нажимается (обучение, новая версия страницы)
-export function AimButton({ name, aria, onClick, ...rest }: { name: string; aria: string; onClick?: () => void; 'data-tour'?: string }) {
+// кнопка билда героя «Speed ▾» — открывает эту шторку: план и ромб обмена. icon — вешалка вместо имени: правая половина
+// «Надето» на карточке героя, где сам билд подсвечен среди вкладок. Нет onClick — видна, но не нажимается (обучение,
+// новая версия страницы)
+export function AimButton({ name, aria, icon, onClick, ...rest }: { name: string; aria: string; icon?: boolean; onClick?: () => void; 'data-tour'?: string }) {
   return (
-    <button type="button" className="aimb" disabled={!onClick} aria-label={aria} title={name} onClick={onClick} {...rest}>
-      <span className="aimb-n">{name}</span> ▾
+    <button type="button" className={icon ? 'aimb ico-only' : 'aimb'} disabled={!onClick} aria-label={aria} title={name} onClick={onClick} {...rest}>
+      {icon ? <Icon name="hanger" /> : <span className="aimb-n">{name}</span>} ▾
     </button>
   );
 }

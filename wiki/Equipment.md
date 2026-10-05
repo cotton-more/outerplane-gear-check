@@ -134,7 +134,7 @@ Enhance isn't tracked: pieces are assumed to be +10.
 
 ## Worn and the hero's build
 
-The **"Worn"** button is a group: the left half opens the tab, the right half — the hero's build **"Speed ▾"** — opens "Build for Caren": each variant shows what you have for it ("worn 2 of 4", "3 of 4 in pieces",
+The **"Worn"** button is a group: the left half opens the tab, the right half — the hanger **▾** — opens "Build for Caren" (the hero's build itself is outlined among the tabs): each variant shows what you have for it ("worn 2 of 4", "3 of 4 in pieces",
 "1 missing"). Picking another build leads to the **"Re-dress"** screen: what to wear from your own (one piece or "Wear
 all"), what you take off, what's missing. In the game you do the same yourself — the app only counts.
 

@@ -175,6 +175,12 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
   const cur = wornTab && wv?.variant ? wv.variant : v;
   const aimName = !wv?.variant || isStats(wv.variant) ? t.ui.byStats : wv.variant.parent.name;
+  // вкладка билда героя (aimOf) — подсвечена: на кнопке «Надето» вместо имени вешалка; null — «По статам»
+  const aimMark = (x: Build | null) => {
+    const av = wv?.variant;
+    const on = !!av && (x ? !isStats(av) && av.parent === x : isStats(av));
+    return on ? { className: 'bt-aim', title: t.ui.aimTab(aimName) } : {};
+  };
   const enter = onTryOn && wv?.variant ? (slot: SlotId) => onTryOn(c, isStats(wv.variant!) ? wv.variant!.b : wv.variant!.parent, slot, undefined, wv.variant!.sig, false, true) : undefined;
   // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
   const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
@@ -246,26 +252,27 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         <>
           {/* «По статам» — отдельный билд у каждого персонажа с билдами (находка 28): вкладка последней */}
           <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
-            {/* «Надето» — групповая кнопка: слева вкладка, справа билд героя «Speed ▾» (шторка «Билд для X») */}
+            {/* «Надето» — групповая кнопка: слева вкладка, справа вешалка ▾ — сменить билд героя (шторка «Билд для X»); сам
+                билд героя подсвечен среди вкладок (bt-aim) */}
             {wv && (
               <span className="bt-split" role="group" aria-label={t.ui.tabWorn}>
                 <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
                   {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
                 </button>
-                <AimButton name={aimName} aria={t.ui.wornChangeAria(c.name)} onClick={live ? () => setAimOpen(true) : undefined} {...tour('wchange')} />
+                <AimButton icon name={aimName} aria={t.ui.wornChangeAria(c.name)} onClick={live ? () => setAimOpen(true) : undefined} {...tour('wchange')} />
               </span>
             )}
             {c.builds.map((x, i) => {
               const one = variantsOfBuild(x);
               const dup = one.length === 1 && one[0].dupOf ? cp!.variants.find((y) => y.key === one[0].dupOf) : null;
               return (
-                <button key={i} type="button" role="tab" aria-selected={!statsTab && !wornTab && x === b} onClick={() => setTab(i)}>
+                <button key={i} type="button" role="tab" aria-selected={!statsTab && !wornTab && x === b} onClick={() => setTab(i)} {...aimMark(x)}>
                   {x.name}{dup ? <span className="bt-n">{t.ui.dupOf(dup.name)}</span> : badge(x) > 0 && <span className="bt-n">{badge(x)}/6</span>}
                 </button>
               );
             })}
             {cp!.stat && (
-              <button type="button" role="tab" aria-selected={!!statsTab} onClick={() => setTab('stats')}>
+              <button type="button" role="tab" aria-selected={!!statsTab} onClick={() => setTab('stats')} {...aimMark(null)}>
                 {t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}
               </button>
             )}
