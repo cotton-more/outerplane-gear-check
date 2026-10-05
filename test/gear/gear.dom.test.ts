@@ -1195,17 +1195,16 @@ describe('карточка персонажа', () => {
 });
 
 describe('меню, плитки, код копии, другая вкладка', () => {
-  it('меню ☰ «Not fully equipped · N» — «only mine» и «not fully equipped»: герои ростера меньше чем 6/6, остальные фильтры сняты', async () => {
+  it('меню ☰ «To dress · N» — режим «To dress»: герои ростера меньше чем 6/6, остальные фильтры сняты', async () => {
     await mount({ slot: 'helmet', grade: 'unique', cel: 'fire' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }), roster: [caren.id, kappa.id] });
     await click($('.vb-tab'));
-    await click(byText('.menu-nav button', 'Not fully equipped · 2'));
-    expect(($('#c-bare') as HTMLInputElement).checked).toBe(true);
-    expect(($('#c-owned') as HTMLInputElement).checked).toBe(true);
+    await click(byText('.menu-nav button', 'To dress · 2'));
+    expect($('.cmode [aria-pressed="true"]')?.textContent).toBe('To dress 2');
     expect($$('#cgrid .ctile .cn').map((e) => e.textContent).sort()).toEqual(['Caren', 'Kappa']);
     expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']); // у Kappa вещей нет — ничего не надето
     expect($('.roster-bar')?.textContent).toContain('gear on 1');
-    await click($('#c-owned'));
-    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // без «only mine» — и не из ростера: у них не надето ничего
+    await click(byText('.cmode button', 'All'));
+    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // в «All» — и не из ростера: у них не надето ничего
   });
 
   it('список: нет «mark all shown» и «clear roster»; «Team trade» — сразу команда', async () => {

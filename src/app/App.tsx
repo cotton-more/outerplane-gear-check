@@ -48,7 +48,7 @@ import { TipLayer } from '@/tour/TipLayer';
 import { TipsHelp } from '@/tour/TipsHelp';
 import { TourLayer } from '@/tour/TourLayer';
 import { openCharAction, reducer } from './appState';
-import { isBare } from '@/features/roster/charFilter';
+import { countToDress } from '@/features/roster/charFilter';
 import { Footer, LangSwitch } from './shell/Footer';
 import { Help, Welcome, type InstallInfo } from './shell/Guide';
 import { Header } from './shell/Header';
@@ -75,6 +75,8 @@ export function App() {
     const c = idx.CHAR_BY_SLUG[slugFromHash()];
     return c ? reducer(init, openCharAction(idx, init, roster, c.id)) : init;
   }, !touring);
+  // пока ростер пуст, режим списка «Все» — и первая звёздочка его не меняет: список не схлопывается под рукой (SPEC 6)
+  useEffect(() => { if (roster.size === 0 && s.cMode !== 'all') dispatch({ type: 'charFilter', patch: { cMode: 'all' } }); }, [roster.size, s.cMode, dispatch]);
   const [lang, setLang] = useState<Lang>(savedLang);
   const t = TEXTS[lang];
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
@@ -99,6 +101,8 @@ export function App() {
   const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
   // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, меню и фильтр «не всё надето»)
   const geared = useMemo(() => gearBadges(view), [view]);
+  // сколько своих доодеть: число у «Доодеть» в списке и в «Ещё»
+  const todressN = useMemo(() => countToDress(idx.D.chars, roster, geared, off), [idx, roster, geared, off]);
 
   // открытые шторки и окна
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -200,7 +204,7 @@ export function App() {
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={onEquipPick} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} onBackup={ros.onBackup} touring={!!tour.run}
+            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} todressN={todressN} onBackup={ros.onBackup} touring={!!tour.run}
               onTrade={canEquip ? () => setTrade('team') : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
@@ -234,10 +238,10 @@ export function App() {
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
         {menuOpen && (
           <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
-            bareN={idx.D.chars.filter((c) => roster.has(c.id) && isBare(c, geared, off)).length}
-            // список ровно тех, кого считает N: «только мои» и «не всё надето», прочие фильтры (стихия, класс, поиск) — сбросить
+            bareN={todressN}
+            // список ровно тех, кого считает N: режим «Доодеть», прочие фильтры (стихия, класс, поиск) — сбросить
             onBare={() => {
-              dispatch({ type: 'charFilter', patch: { cBare: true, cOwned: true, cq: '', cel: '', ccl: '' } });
+              dispatch({ type: 'charFilter', patch: { cMode: 'todress', cq: '', cel: '', ccl: '' } });
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}

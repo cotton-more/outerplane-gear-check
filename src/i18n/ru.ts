@@ -521,9 +521,8 @@ export const ru = {
       stats: 'билды выключены — По статам',
     },
     poolWorn: 'надета',
-    // меню ☰ и список персонажей: кого доодеть (надето меньше 6 из 6)
-    menuBare: (n: number) => `Не всё надето · ${n}`,
-    notAllWorn: 'не всё надето',
+    // «Ещё» и список персонажей: кого доодеть (надето меньше 6 из 6)
+    menuBare: (n: number) => `Доодеть · ${n}`,
     gearCount: (n: number) => `экипировка у ${n}`,
     allDressed: 'Все одеты полностью — у каждого 6/6.',
     gearTile: (n: number) => `надето ${n} из 6`,
@@ -615,8 +614,11 @@ export const ru = {
     // персонажи
     charsHint: '☆ — отметь своих: оценка будет учитывать только их',
     charSearch: 'Имя: Stella, Demiurge, Gnosis…',
-    onlyMine: 'только мои',
-    withoutBuilds: 'показать и без билдов',
+    // кого показывать: свои / свои, кого есть кому доодеть / все с билдами
+    modeGroup: 'Кого показывать',
+    modeMine: 'Мои',
+    modeToDress: 'Доодеть',
+    modeAll: 'Все',
     rosterCount: 'В ростере:',
     exportImport: 'экспорт / импорт',
     nobodyFound: 'Никого не нашлось.',

@@ -3,14 +3,14 @@
 import { useCallback, useMemo, useState, type Dispatch } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
-import { charMatches, compareChars, type CharFilter, type ListAction, type ListState } from './charFilter';
+import { charMatches, compareChars, effectiveMode, type CharFilter, type ListAction, type ListState } from './charFilter';
 import type { RosterApi } from './useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { isPinned } from '@/features/gear/model/gear';
 import { encodeBackup } from './backup';
 import { ClassIcon, ElementIcon } from '@/game/icons/Img';
 import { useIndex } from '@/game/data/IndexContext';
-import { Toggle } from '@/shared/ui/Toggle';
+import { SegSwitch } from '@/shared/ui/SegSwitch';
 import { CodeBox } from '@/shared/ui/CodeBox';
 import { FilterChips } from '@/shared/ui/FilterChips';
 import { CharTile } from './CharTile';
@@ -20,7 +20,7 @@ import { CharTile } from './CharTile';
 // touring — идёт обучение: на странице экипировка тура (пример или пусто), резервной копии нет
 interface Props {
   s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
-  off: ReadonlyMap<string, string>; onBackup: (text: string) => string; touring: boolean;
+  off: ReadonlyMap<string, string>; todressN: number; onBackup: (text: string) => string; touring: boolean;
   onTrade?: () => void; // «Обмен для команды» (features/trade, сразу режим «Команда») — вход и на ПК, без меню ☰
 }
 
@@ -39,20 +39,22 @@ function fusionOrder(list: Char[], partner: (id: string) => string | undefined, 
   return out;
 }
 
-export function CharList({ s, dispatch, rosterApi, gear, geared, off, onBackup, touring, onTrade }: Props) {
+export function CharList({ s, dispatch, rosterApi, gear, geared, off, todressN, onBackup, touring, onTrade }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
   const { roster } = rosterApi;
   const [io, setIo] = useState(false);
   const partner = useCallback((id: string) => idx.CHAR[id]?.fusionOf ?? idx.FUSED[id], [idx]);
+  // пока ростер пуст, режим «Все» (SPEC 6)
+  const mode = effectiveMode(s.cMode, roster.size);
   const shown = useMemo(() => {
-    const matched = D.chars.filter((c) => charMatches(c, s, roster, geared, off)).sort(compareChars);
+    const matched = D.chars.filter((c) => charMatches(c, { ...s, cMode: mode }, roster, geared, off)).sort(compareChars);
     return fusionOrder(matched, partner, (id) => idx.CHAR[id]);
-  }, [D, s, roster, geared, off, idx, partner]);
-  const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // как в меню «Экипировка · N»
-  // «не всё надето» пусто, и сузить больше нечем: все одеты
-  const allDressed = !!s.cBare && !s.cq && !s.cel && !s.ccl;
+  }, [D, s, mode, roster, geared, off, idx, partner]);
+  const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // у скольких есть вещи
+  // «Доодеть» пусто, и сузить больше нечем: все одеты
+  const allDressed = mode === 'todress' && !s.cq && !s.cel && !s.ccl;
   const filter = (patch: Partial<CharFilter>) => dispatch({ type: 'charFilter', patch });
   return (
     <div className="panel" id="char-list">
@@ -66,11 +68,14 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onBackup, 
           <FilterChips options={D.elements} value={s.cel} onChange={(cel) => filter({ cel })} icon={(k) => <ElementIcon el={k} />} />
           <FilterChips options={D.classes} value={s.ccl} onChange={(ccl) => filter({ ccl })} icon={(k) => <ClassIcon cls={k} />} />
         </div>
-        <div className="filt">
-          <Toggle id="c-owned" checked={s.cOwned} onChange={(on) => filter({ cOwned: on })}>{t.ui.onlyMine}</Toggle>
-          <Toggle id="c-bare" checked={!!s.cBare} onChange={(on) => filter({ cBare: on })}>{t.ui.notAllWorn}</Toggle>
-          <Toggle id="c-all" checked={s.cAll} onChange={(on) => filter({ cAll: on })}>{t.ui.withoutBuilds}</Toggle>
-        </div>
+        {roster.size > 0 && (
+          <SegSwitch className="cmode" label="" group={t.ui.modeGroup} value={mode} onChange={(cMode) => filter({ cMode })}
+            options={[
+              { value: 'mine', label: <><span className="vb-star">★</span> {t.ui.modeMine} {roster.size}</> },
+              { value: 'todress', label: <>{t.ui.modeToDress} {todressN}</> },
+              { value: 'all', label: t.ui.modeAll },
+            ]} />
+        )}
       </div>
       <div className="roster-bar">
         <span>{t.ui.rosterCount} <b>{roster.size}</b>{nGeared > 0 && <> · {t.ui.gearCount(nGeared)}</>}</span>

@@ -278,3 +278,5 @@ html.xs .bgear-t { grid-row: 3; }
 .tl-t b { overflow-wrap: anywhere; }
 .tl-n { font: 700 11px/1 var(--font-mono); color: var(--ink-3); }
 .tlist .btn { min-height: 34px; padding: 4px 12px; }
+/* «Мои · Доодеть · Все» (CharList): переключатель режимов */
+.cmode { margin-top: 10px; }

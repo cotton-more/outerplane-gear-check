@@ -473,22 +473,18 @@ describe('сортировка списка героев с учётом Core Fu
     expect(Math.abs(iEps - iCfEps)).toBe(1);
   });
 
-  it('при включенном тогле «без билдов» Snow и Lisha показываются рядом со своими Core Fusion версиями', async () => {
+  // герой без билдов в «Все» — только поиском: Snow и Lisha находятся по имени вместе со своими Core Fusion
+  it('поиском находятся Snow и Lisha без билдов — рядом со своими Core Fusion версиями', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [] });
-    await click($('#c-all'));
+    await type($('#char-q') as HTMLInputElement, 'snow');
+    const snow = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    expect(Math.abs(snow.indexOf('Snow') - snow.indexOf('Core Fusion Snow'))).toBe(1);
+    expect(snow.indexOf('Snow')).toBeGreaterThan(-1);
 
-    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
-    const iSnow = names.indexOf('Snow');
-    const iCfSnow = names.indexOf('Core Fusion Snow');
-    expect(iSnow).toBeGreaterThan(-1);
-    expect(iCfSnow).toBeGreaterThan(-1);
-    expect(Math.abs(iSnow - iCfSnow)).toBe(1);
-
-    const iLisha = names.indexOf('Lisha');
-    const iCfLisha = names.indexOf('Core Fusion Lisha');
-    expect(iLisha).toBeGreaterThan(-1);
-    expect(iCfLisha).toBeGreaterThan(-1);
-    expect(Math.abs(iLisha - iCfLisha)).toBe(1);
+    await type($('#char-q') as HTMLInputElement, 'lisha');
+    const lisha = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    expect(lisha.indexOf('Lisha')).toBeGreaterThan(-1);
+    expect(Math.abs(lisha.indexOf('Lisha') - lisha.indexOf('Core Fusion Lisha'))).toBe(1);
   });
 
   it('Dahlia и Gnosis Dahlia рядом в списке: сначала Dahlia, затем Gnosis Dahlia', async () => {

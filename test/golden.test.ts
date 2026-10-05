@@ -36,7 +36,9 @@ function runList(inp: any) {
     case 'sets': { const { live, dead } = setOptions(ctx); return { live: live.map(({ set, n }) => [set.id, n]), dead: dead.map((s) => s.id) }; }
     case 'items': return itemOptions(ctx, inp.slot as GearKind, inp.q || '', inp.cls || '').map(({ i, n }) => [i.key, n]);
     case 'mains': return epicMains(idx, inp.slot).map((m) => [m, mainDemand(ctx, inp.slot, m)]);
-    default: return D.chars.filter((c) => charMatches(c, { cq: inp.cq || '', cel: inp.cel || '', ccl: inp.ccl || '', cOwned: !!inp.cOwned, cAll: !!inp.cAll }, ctx.roster)).map((c) => c.id);
+    // входы эталона — прежние (снят со старой страницы): cOwned — «Мои», иначе «Все»; cAll («показать и без билдов») больше
+    // ничего не значит: без билдов в «Все» — только поиском, в «Мои» — всегда (.x/0070-more-sheet SPEC 5.1–5.3)
+    default: return D.chars.filter((c) => charMatches(c, { cq: inp.cq || '', cel: inp.cel || '', ccl: inp.ccl || '', cMode: inp.cOwned ? 'mine' : 'all' }, ctx.roster)).map((c) => c.id);
   }
 }
 
