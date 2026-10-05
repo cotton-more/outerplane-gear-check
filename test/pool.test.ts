@@ -1,24 +1,24 @@
-// Пул экипировки (logic/pool, GEARPOOL C1): сборка варианта из вещей персонажа — точная (сверка с перебором без
+// Пул экипировки (features/gear/pool, GEARPOOL C1): сборка варианта из вещей персонажа — точная (сверка с перебором без
 // отсечения), цель владельца (сет-эффект держится, сет-стат ломается только ради итога), «собираешь», «По статам»,
 // ненужные вещи.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { ArmorSlot, Char, Dataset, SlotId } from '../src/data/types';
-import { makeCtx } from '../src/logic/context';
-import { buildKey, EMPTY_GEAR, updateIn, updatePiece, type Bt, type GearStore, type Piece } from '../src/logic/gear';
-import { assemble, assembleReach, entriesFor, hasStatBuild, heldBy, holds, isStats, outcomeFor, play, poolView, putOn, puts, started, statVariant, STATS, undoPut, type Assembly, type Entry, type Play, type PoolStore } from '../src/logic/pool';
-import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '../src/logic/setBonus';
-import { charVs, nextToWear, whereOf, whereUsed } from '../src/logic/poolVs';
-import type { PoolView } from '../src/logic/pool';
-import { slotMains } from '../src/logic/builds';
-import { decodeItem, MAINS } from '../src/logic/itemCode';
-import type { Subs } from '../src/logic/subs';
-import type { ItemInput } from '../src/logic/verdict';
-import { variantsOf, type Variant } from '../src/logic/variants';
-import { evaluate } from '../src/logic/evaluate';
-import { withWorn } from '../src/logic/worn';
-import { fit } from '../src/logic/vs';
+import { createIndex } from '@/game/data';
+import type { ArmorSlot, Char, Dataset, SlotId } from '@/game/data/types';
+import { makeCtx } from '@/game/context';
+import { buildKey, EMPTY_GEAR, updateIn, updatePiece, type Bt, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { assemble, assembleReach, entriesFor, hasStatBuild, heldBy, holds, isStats, outcomeFor, play, poolView, putOn, puts, started, statVariant, STATS, undoPut, type Assembly, type Entry, type Play, type PoolStore } from '@/features/gear/pool';
+import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '@/game/set/setBonus';
+import { charVs, nextToWear, whereOf, whereUsed } from '@/features/gear/model/poolVs';
+import type { PoolView } from '@/features/gear/pool';
+import { slotMains } from '@/game/build/builds';
+import { decodeItem, MAINS } from '@/features/eval/code/codec';
+import type { Subs } from '@/game/item/subs';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
+import { variantsOf, type Variant } from '@/game/build/variants';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { withWorn } from '@/features/gear/model/stamp';
+import { fit } from '@/features/gear/model/vs';
 
 // псевдослучайные [0, 1) с сидом (mulberry32): прежний x * 1103515245 + 12345 в числах JS терял точность (произведение
 // больше 2^53) и зацикливался — «1000 пулов» были 190 разными

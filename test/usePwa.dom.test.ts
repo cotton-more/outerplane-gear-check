@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-// Обновление PWA (hooks/usePwa) на поддельном service worker: новые данные — плашка (update 'data'), только правки
+// Обновление PWA (app/usePwa) на поддельном service worker: новые данные — плашка (update 'data'), только правки
 // приложения — строка в подвале ('app'). Само включается только обновление приложения и только при холодном запуске
 // (worker ждал уже при загрузке страницы); пришедшее посреди работы ждёт кнопки.
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { usePwa } from '../src/hooks/usePwa';
+import { usePwa } from '@/app/usePwa';
 
 const PAGE = '090f6abeddf4c2dc000c836f956f6a0c3aa2101d';
 const NEWER = '43a5d2db1c7e0f9a8b6d5e4f3a2b1c0d9e8f7a6b';

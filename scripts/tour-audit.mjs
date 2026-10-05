@@ -6,7 +6,7 @@
 import { execFileSync } from 'node:child_process';
 
 // Wiki сюда не входит: база — сборка кода, и коммит только в Wiki оставался бы «непубликованным» до следующего кода
-const WATCH = ['src/components', 'src/state', 'src/logic', 'src/hooks', 'src/App.tsx', 'src/i18n/ru.ts'];
+const WATCH = ['src/app', 'src/screens', 'src/features', 'src/game', 'src/shared', 'src/i18n/ru.ts'];
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 << 20 }).trim();
 const touchesTour = (files) => files.some((f) => f.startsWith('src/tour/') || f.endsWith('.tour.ts'));
 
@@ -31,7 +31,7 @@ if (base) {
 }
 
 const dirty = git('status', '--porcelain', '--', ...WATCH).split('\n').filter(Boolean);
-const dirtyTour = git('status', '--porcelain', '--', 'src/tour', 'src/components').split('\n').some((l) => l.endsWith('.tour.ts') || l.includes('src/tour/'));
+const dirtyTour = git('status', '--porcelain', '--', 'src').split('\n').some((l) => l.endsWith('.tour.ts') || l.includes('src/tour/'));
 
 if (warn.length || (dirty.length && !dirtyTour)) {
   console.log('\n⚠️  Обучение не решено (CLAUDE.md → «Обучение»):');

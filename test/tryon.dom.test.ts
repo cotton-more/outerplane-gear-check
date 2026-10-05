@@ -10,8 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset } from '../src/data/types';
-import { TIPS } from '../src/tour/registry';
+import type { Dataset } from '@/game/data/types';
+import { TIPS } from '@/tour/registry';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -48,9 +48,9 @@ async function mount(state: Record<string, unknown>, item: Record<string, unknow
     const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], gear: GEAR, state: { tab: 'eval', ...state }, item, ...extra };
     for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   }
-  const { App } = await import('../src/App');
-  const { IndexContext } = await import('../src/components/IndexContext');
-  const { createIndex } = await import('../src/data');
+  const { App } = await import('@/app/App');
+  const { IndexContext } = await import('@/game/data/IndexContext');
+  const { createIndex } = await import('@/game/data');
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
@@ -86,7 +86,7 @@ describe('режим «для героя»', () => {
   it('в режиме героя у неё лучше — только «Надеть» (ввод надетого); имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
-    // все, кому подходит (только Caren), уже носят лучше — штамп понижен (logic/worn), заголовок уже про неё
+    // все, кому подходит (только Caren), уже носят лучше — штамп понижен (features/gear/model/stamp), заголовок уже про неё
     expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
     expect($('.vcard .vc-vs b')).toBeNull();
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
@@ -148,7 +148,7 @@ describe('режим «для героя»', () => {
   });
 
   it('сообщение экипировки на «Персонажах» не прячет «Вернуть» формы на «Оценке»', async () => {
-    const { encodeGear } = await import('../src/logic/gearStore');
+    const { encodeGear } = await import('@/features/gear/store/gearStore');
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
     await click(byText('.roster-bar .linkbtn', 'export / import'));
     const ta = $('#gear-code') as HTMLTextAreaElement;
@@ -308,7 +308,7 @@ describe('режим «для героя»: вход, одна строка, з�
   });
 });
 
-// Без режима героя (logic/worn): штамп по надетому — всем, кому подходит, уже надето не хуже; вещь уже в билде
+// Без режима героя (features/gear/model/stamp): штамп по надетому — всем, кому подходит, уже надето не хуже; вещь уже в билде
 describe('штамп по надетому', () => {
   // на Caren · Speed — шлем заметно лучше новой (сравнение — как есть, по уровням)
   const STRONG = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };

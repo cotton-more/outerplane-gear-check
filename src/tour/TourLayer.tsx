@@ -4,9 +4,9 @@
 // На примере рамки показывают точные кнопки, а остальное приглушено — но нажимается: ошибку можно поправить.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Rich } from '../components/Rich';
-import { useT } from '../i18n';
-import type { Tab } from '../state/appState';
+import { Rich } from '@/shared/ui/Rich';
+import { useT } from '@/i18n';
+import type { Tab } from '@/app/appState';
 import { pinSelector, type Anchor } from './anchors';
 import { cardOpen, freeBottom, overlayOpen, pad, rect, targets, union, type Geom, type Rect } from './dom';
 import { stepText } from './core';

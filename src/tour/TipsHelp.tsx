@@ -1,5 +1,5 @@
 // Раздел «Подсказки» в Справке: выключатель, «показать заново» и все подсказки списком — новые помечены.
-import { useT } from '../i18n';
+import { useT } from '@/i18n';
 import { TIPS } from './registry';
 import type { TourApi } from './useTour';
 import type { Tip } from './types';

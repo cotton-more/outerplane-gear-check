@@ -1,21 +1,21 @@
-// Режим «для героя» (logic/tryon, пул GEARPOOL; прежде — примерка билда): что хранится, какой вариант предустановки,
+// Режим «для героя» (features/tryon/tryon, пул GEARPOOL; прежде — примерка билда): что хранится, какой вариант предустановки,
 // что подставляется на форму и заголовок вердикта — штамп общий, а строка после « — » говорит и про других, и про
 // героя (лучший исход по всем его билдам). Шаг 10: tryOnTarget/tryOnTitle/targetName удалены — те же случаи через
 // heroTarget/heroTitle; случаи «не по билду» (цель — один вариант) ушли вместе с примеркой билда (В10)
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { TEXTS } from '../src/i18n';
-import { makeCtx, type Ctx } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
-import { EMPTY_GEAR, updatePiece, type GearStore } from '../src/logic/gear';
-import { buildKey } from '../src/logic/gear';
-import { isStats, outcomeFor, poolView, putOn, STATS } from '../src/logic/pool';
-import { charVs } from '../src/logic/poolVs';
-import { heroNote, heroOutcome, heroTarget, heroTitle, restoreTryOn, tryOnPreset } from '../src/logic/tryon';
-import type { ItemInput, Verdict } from '../src/logic/verdict';
-import { withWorn } from '../src/logic/worn';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { TEXTS } from '@/i18n';
+import { makeCtx, type Ctx } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { EMPTY_GEAR, updatePiece, type GearStore } from '@/features/gear/model/gear';
+import { buildKey } from '@/features/gear/model/gear';
+import { isStats, outcomeFor, poolView, putOn, STATS } from '@/features/gear/pool';
+import { charVs } from '@/features/gear/model/poolVs';
+import { heroNote, heroOutcome, heroTarget, heroTitle, restoreTryOn, tryOnPreset } from '@/features/tryon/tryon';
+import type { ItemInput, Verdict } from '@/features/eval/verdict/verdict';
+import { withWorn } from '@/features/gear/model/stamp';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -189,7 +189,7 @@ describe('режим героя: заголовок вердикта (то, чт
     expect(TEXTS.en.tryon.others(['Titia', 'Kappa'])).toBe('Titia and Kappa need it');
   });
 
-  // штамп понизили (logic/worn): всем, кому подходит, она ничего не даёт; лучший исход героя среди них — заголовок уже
+  // штамп понизили (features/gear/model/stamp): всем, кому подходит, она ничего не даёт; лучший исход героя среди них — заголовок уже
   // про него
   it('«Разобрать», потому что все уже носят лучше: про героя не повторяем', () => {
     const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);

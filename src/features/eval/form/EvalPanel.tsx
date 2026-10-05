@@ -1,0 +1,250 @@
+// Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
+// слот → грейд + сет или main (у брони — и «T4») → у Legendary оружия и аксессуара строка предмета с «T4» → сетка
+// сабстатов → строки с сегментами.
+// Сет и предмет выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием. Main тоже без окна:
+// у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main рядом с
+// грейдом). «T4» — в конце строки сета или предмета (вопрос 7 ревью eval-only): у Legendary аксессуара предмет поэтому
+// своей строкой, как у оружия, — в одной строке с грейдом, main и «T4» на 280px имени не оставалось бы.
+// На телефоне, когда вердикт готов, на месте сетки встаёт карточка вердикта.
+import { useMemo, useState, type Dispatch } from 'react';
+import { GRADE_NAME, GRADES, SLOTS, isArmor, subLabel } from '@/game/data';
+import type { GearKind } from '@/game/data/types';
+import { fineHover } from '@/shared/layout/useLayout';
+import { useT } from '@/i18n';
+import type { Ctx } from '@/game/context';
+import { hasBt } from '@/features/gear/model/gear';
+import { MAX_SUBS, withinCap } from '@/game/item/subs';
+import { mainOptions, setSubDemand } from './lists';
+import { blocksOf, itemMains as mainLines } from '@/game/item/mains';
+import type { Verdict as VerdictData } from '@/features/eval/verdict/verdict';
+import type { Action, AppState } from '@/app/appState';
+import { tour, tourItem } from '@/tour/anchors';
+import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
+import { Sheet } from '@/shared/ui/Sheet';
+import { BtChip } from './BtChip';
+import { ItemPicker } from './ItemPicker';
+import { MainButtons } from './MainButtons';
+import { MainPicker } from './MainPicker';
+import { PickField } from './PickField';
+import { SetPicker } from './SetPicker';
+import { SubPicker } from './SubPicker';
+import { StatGrid } from './StatGrid';
+import { SubRows, type CapAt } from './SubRows';
+import { VerdictCard } from '@/features/eval/verdict/VerdictPanel';
+import { TryOnStrip } from '@/features/tryon/TryOnStrip';
+import type { Char } from '@/game/data/types';
+import type { CharVs } from '@/features/gear/model/poolVs';
+import { holds } from '@/features/gear/pool';
+import { equipLabel, variantName } from '@/features/gear/ui/VsSection';
+import { Icon } from '@/game/icons/Img';
+
+type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
+
+// hero — режим «для героя»: полоса над слотами, ✕ — onTryOnEnd; heroNote — строка про героя под карточкой (features/tryon/tryon
+// heroNote: не носит, не нужна, «По статам», ничего не даст). vs — лучший исход для строки карточки;
+// onEquip — кнопка «Надеть на Caren» / «Заменить шлем Caren» под карточкой (нет — кнопки нет); other и onEquipOther —
+// вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих. Кнопка только ради ввода надетого
+// (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
+// «Надеть» / «Заменить»: куда встанет форма после неё
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onHelp, onCode, onTour, news, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
+  s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
+  onReset: () => void; nextNote?: string | null; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
+  hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
+  other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
+}) {
+  const { SET, ITEM } = ctx.idx;
+  const t = useT();
+  const [open, setOpen] = useState<Open>(null);
+  const close = () => setOpen(null);
+  // новый сабстат (сетка, «+ 4-й») с суммой уровней выше предела не добавляется — строка segCap под строками, как у
+  // нажатия сегмента (SubRows); снять стат можно всегда
+  const [cap, setCap] = useState<CapAt | null>(null);
+  const addSub = (key: string) => {
+    const adds = !(key in s.subs) && Object.keys(s.subs).length < MAX_SUBS;
+    if (adds && !withinCap(s.grade, s.subs, { ...s.subs, [key]: 1 })) { setCap({ subs: s.subs, grade: s.grade }); return; }
+    dispatch({ type: 'sub', key });
+  };
+  const armor = isArmor(s.slot);
+  const bt = hasBt(s.slot, s.grade);
+  const t4 = bt && s.t4 ? t.ui.withT4 : '';
+  // строки main: у брони фиксированы сетом, у оружия — flat ATK и выбранный; сабстатов, которые они запрещают, в сетке нет
+  const im = useMemo(() => mainLines(ctx.idx, { slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main }),
+    [ctx.idx, s.slot, s.grade, s.setId, s.itemKey, s.main]);
+  const useful = useMemo(() => (armor && s.setId ? setSubDemand(ctx, s.setId, im) : null), [ctx, armor, s.setId, im]);
+  const full = Object.keys(s.subs).length >= MAX_SUBS;
+  const kind = s.slot as GearKind;
+  const epic = s.grade === 'rare';
+  const set = armor && s.setId ? SET[s.setId] : undefined;
+  const item = !armor && !epic && s.itemKey ? ITEM[kind][s.itemKey] : undefined;
+  const itemMains = (key: string) => { const it = ITEM[kind][key]; return it ? [...it.mains, ...it.extraMains] : []; };
+  const weapon = s.slot === 'weapon';
+  const mainValue = s.main ? <><StatIcon stat={s.main} main />{s.main}</> : undefined;
+  const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
+  const allMains = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic) : []), [ctx, weapon, kind, epic]);
+  // у аксессуара без main сетка сначала выбирает main — в игре он сверху предмета
+  const mainMode = s.slot === 'accessory' && !s.main && opts.length > 0 ? opts : null;
+  const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
+  // сабстаты уже вводят, а сет, main или предмет не выбран — без него вердикта нет: выделяем, чего не хватает
+  const started = Object.keys(s.subs).length > 0;
+  const found = !!s.itemKey || s.unlisted;
+  const need = !started ? null
+    : armor ? (s.setId ? null : 'set')
+      : weapon ? (!s.main ? 'main' : !epic && !found ? 'item' : null)
+        : epic || s.unlisted ? (s.main ? null : 'main') : found ? null : 'item';
+  const itemField = (
+    <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
+      placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at="item" need={need === 'item'} />
+  );
+  const mainField = <PickField value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at="pick" need={need === 'main'} />;
+  const btChip = <BtChip on={s.t4} armor={armor} onToggle={() => dispatch({ type: 't4' })} />;
+
+  return (
+    <div className="panel eval-in" id="eval-in">
+      <div className="form">
+        {hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />}
+        <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
+          {SLOTS.map((sl, i) => (
+            <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
+              onClick={() => dispatch({ type: 'slot', slot: sl.id })} {...tourItem(sl.id)}>
+              <SlotIcon slot={sl.id} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
+            </button>
+          ))}
+        </div>
+        <div className="formrow">
+          <div className="gradesw" role="group" aria-label={t.ui.gradeGroup} {...tour('grade')}>
+            {GRADES.map((g) => (
+              <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
+                onClick={() => dispatch({ type: 'grade', grade: g })} {...tourItem(g)}>
+                <GradeFrame grade={g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
+              </button>
+            ))}
+          </div>
+          {armor
+            ? <>
+              <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
+              {btChip}
+            </>
+            : weapon
+              ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} />
+              : mainField}
+        </div>
+        {!armor && !epic && <div className="formrow">{itemField}{btChip}</div>}
+        <div className="subzone" {...tour('grid')}>
+          {cardShown
+            ? <>
+              <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!hero} />
+              {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
+              {((vs && onEquip) || (other?.best && onEquipOther)) && (
+                <div className="vc-acts">
+                  {vs && onEquip && (
+                    <button type="button" className={`btn vc-equip${vs.best && holds(vs.best) ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
+                      <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot], !!t4)}
+                    </button>
+                  )}
+                  {other?.best && onEquipOther && (
+                    <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>
+                      {/* подпись = действие (Р7): заменит — «или — заменить шлем Caren · …»; имя — варианта, как на карточке (Р5) */}
+                      {other.replaces
+                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, variantName(t, other.best.v) + t4)
+                        : t.ui.orOther(other.c.name, variantName(t, other.best.v) + t4)}
+                    </button>
+                  )}
+                </div>
+              )}
+              {vs?.asWorn && !vs.replaces && onEquip && <p className="vc-wear">{t.ui.equipAsWorn}</p>}
+              {nextNote && vs && onEquip && <p className="vc-next">{nextNote}</p>}
+              {heroNote && <p className="vc-note">{heroNote}</p>}
+            </>
+            : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={addSub} />}
+        </div>
+        {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
+        <SubRows subs={s.subs} grade={s.grade} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
+      </div>
+
+      <div className="actions">
+        <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>
+        <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
+        <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={onHelp}>{t.ui.help}</button>
+        <button type="button" className="btn" onClick={onTour}>{t.tour.start}</button>
+        <label className="toggle">
+          <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
+          {' '}{t.ui.rosterOnly}{ctx.roster.size ? ` (${ctx.roster.size})` : t.ui.rosterOnlyEmpty}
+        </label>
+        <span className="hk">
+          {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> {t.ui.hkSlot} · <kbd>L</kbd>/<kbd>E</kbd> {t.ui.hkGrade} · <kbd>Esc</kbd> {t.ui.hkReset}</>}
+        </span>
+      </div>
+      <EvalSettings s={s} dispatch={dispatch} />
+
+      {open === 'set' && (
+        <Sheet title={t.ui.setSheet} onClose={close}>
+          <SetPicker ctx={ctx} current={s.setId} onPick={(setId) => { dispatch({ type: 'set', setId }); close(); }} />
+        </Sheet>
+      )}
+      {open === 'item' && (
+        <Sheet title={t.ui.legendaryGear(kind)} onClose={close}>
+          <ItemPicker ctx={ctx} kind={kind} current={s.itemKey}
+            onPick={(key) => { dispatch({ type: 'item', itemKey: key, mains: itemMains(key) }); close(); }}
+            onUnlisted={() => { dispatch({ type: 'unlisted' }); close(); }} />
+        </Sheet>
+      )}
+      {open === 'main' && (
+        <Sheet title={item ? `Main stat · ${item.name}` : epic ? t.ui.mainEpic(kind) : t.ui.mainUnlisted} onClose={close}>
+          <MainPicker ctx={ctx} kind={kind} item={item} epic={epic} current={s.main}
+            onPick={(main) => { if (main !== s.main) pickMain(main); close(); }} />
+        </Sheet>
+      )}
+      {open === 'fourth' && (
+        <Sheet title={t.ui.fourthSheet} onClose={close}>
+          <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={null}
+            onPick={(key) => { addSub(key); close(); }} />
+        </Sheet>
+      )}
+      {open !== null && typeof open === 'object' && (
+        <Sheet title={t.ui.replaceSub(subLabel(open.sub))} onClose={close}>
+          <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={open.sub}
+            onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }}
+            onRemove={() => { dispatch({ type: 'sub', key: open.sub }); close(); }} />
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
+// Настройки оценки: под формой на широком экране; на телефоне — в меню (inline — без сворачивания).
+export function EvalSettings({ s, dispatch, inline }: { s: AppState; dispatch: Dispatch<Action>; inline?: boolean }) {
+  const t = useT();
+  const st = s.settings;
+  const set = (patch: Partial<typeof st>) => dispatch({ type: 'settings', patch });
+  const cur = t.ui.settingsNow(st.stage === 'end', st.fodder, st.lv120, st.quirks);
+  const body = (
+      <div className="settings-body">
+        <div className="seg" role="group" aria-label={t.ui.stageGroup}>
+          <span className="muted small">{t.ui.stage}</span>
+          <button type="button" className="fbtn" aria-pressed={st.stage === 'grow'} onClick={() => set({ stage: 'grow' })}>{t.ui.stageGrow}</button>
+          <button type="button" className="fbtn" aria-pressed={st.stage === 'end'} onClick={() => set({ stage: 'end' })}>{t.ui.stageEnd}</button>
+        </div>
+        <label className="toggle">
+          <input type="checkbox" id="opt-fodder" checked={st.fodder} onChange={(e) => set({ fodder: e.target.checked })} />
+          {' '}{t.ui.fodder} <span className="muted">{t.ui.fodderNote}</span>
+        </label>
+        <div className="seg" role="group" aria-label={t.ui.levelGroup}>
+          <span className="muted small">{t.ui.level}</span>
+          <button type="button" className="fbtn" aria-pressed={!st.lv120} onClick={() => set({ lv120: false })}>lv 100</button>
+          <button type="button" className="fbtn" aria-pressed={st.lv120} onClick={() => set({ lv120: true })}>lv 120 (Limit Break)</button>
+        </div>
+        <label className="toggle">
+          <input type="checkbox" id="opt-quirks" checked={st.quirks} onChange={(e) => set({ quirks: e.target.checked })} />
+          {' '}{t.ui.quirks} <span className="muted">{t.ui.quirksNote}</span>
+        </label>
+        <p className="muted small">{t.ui.flatNote}</p>
+      </div>
+  );
+  if (inline) return body;
+  return (
+    <details className="settings" id="settings" open={s.settingsOpen} onToggle={(e) => dispatch({ type: 'settingsOpen', open: e.currentTarget.open })}>
+      <summary>{t.ui.settings} <span className="cur">· {cur.join(' · ')}</span></summary>
+      {body}
+    </details>
+  );
+}

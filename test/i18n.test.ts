@@ -2,15 +2,15 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { en } from '../src/i18n/en';
-import { TEXTS } from '../src/i18n';
-import { tierLabel } from '../src/logic/setBonus';
-import { subsText } from '../src/logic/text';
-import { makeCtx, type Settings } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
-import type { Verdict } from '../src/logic/verdict';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { en } from '@/i18n/en';
+import { TEXTS } from '@/i18n';
+import { tierLabel } from '@/game/set/setBonus';
+import { subsText } from '@/game/text';
+import { makeCtx, type Settings } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import type { Verdict } from '@/features/eval/verdict/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const golden = JSON.parse(readFileSync(new URL('./golden.json', import.meta.url), 'utf8'));
@@ -48,7 +48,7 @@ describe('английский словарь', () => {
 
 // Русский допустим только в словаре, в комментариях и там, где он — данные: кириллические двойники
 // латиницы в коде предмета, клавиши русской раскладки, названия языков.
-const ALLOWED = ['src/i18n/ru.ts', 'src/i18n/index.ts', 'src/logic/itemCode.ts', 'src/hooks/useHotkeys.ts'];
+const ALLOWED = ['src/i18n/ru.ts', 'src/i18n/index.ts', 'src/features/eval/code/codec.ts', 'src/app/useHotkeys.ts'];
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {

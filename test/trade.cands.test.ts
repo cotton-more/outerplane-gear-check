@@ -1,9 +1,9 @@
 // «Обмен вещами»: понятия (A1, A2) и кандидаты получателя (C1–C9), .x/0040-trade/TESTS.md
 import { describe, expect, it } from 'vitest';
-import type { SlotId } from '../src/data/types';
-import { bestKit } from '../src/logic/trade/kit';
-import { codeOf } from '../src/logic/trade/model';
-import { candidates, skipKey, slotKey } from '../src/logic/trade/cands';
+import type { SlotId } from '@/game/data/types';
+import { bestKit } from '@/features/trade/model/kit';
+import { codeOf } from '@/features/trade/model/model';
+import { candidates, skipKey, slotKey } from '@/features/trade/model/cands';
 import { GOOD, HERO, piece, realWorld, store } from './trade.helpers';
 
 const ids = (c: ReturnType<typeof candidates>, slot: SlotId): string[] => (c[slot] ?? []).map((x) => x.item.id);

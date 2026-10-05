@@ -1,7 +1,7 @@
 // Язык интерфейса и вердиктов: русский или английский. Выбор хранится в ogc.lang,
 // пока не выбран — по языку браузера: русский для ru, иначе английский.
 import { createContext, useContext } from 'react';
-import { storage } from '../state/storage';
+import { storage } from '@/shared/storage';
 import { en } from './en';
 import { ru, type Texts } from './ru';
 

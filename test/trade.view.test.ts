@@ -1,9 +1,9 @@
 // Что показывает план (R10.4, R10.5, .x/0040-trade/SPEC.md): проценты (J6) и итог по героям — кто получил, кто
 // потерял, включившийся сет, копии, которые уйдут из приложения. Подписи — test/trade.dom.test.ts.
 import { describe, expect, it } from 'vitest';
-import { heroMoves, advance } from '../src/logic/trade/moves';
-import { heroPlan } from '../src/logic/trade/plan';
-import { gainOf, linesOf } from '../src/logic/trade/view';
+import { heroMoves, advance } from '@/features/trade/model/moves';
+import { heroPlan } from '@/features/trade/model/plan';
+import { gainOf, linesOf } from '@/features/trade/model/view';
 import { synthWorld } from './trade.helpers';
 
 describe('J6. проценты', () => {

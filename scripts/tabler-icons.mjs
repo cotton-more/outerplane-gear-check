@@ -1,8 +1,8 @@
 // Свои значки вместо картинок из игры — контуры Tabler Icons (MIT, © Paweł Kuna).
-// Скачивает выбранные outline-иконки фиксированной версии и пишет src/icons/tabler.ts: имя → пути SVG.
+// Скачивает выбранные outline-иконки фиксированной версии и пишет src/game/icons/tabler.ts: имя → пути SVG.
 // Страница их не качает: пути лежат в коде. Новая иконка — дописать имя в NAMES и запустить:
 //   node scripts/tabler-icons.mjs
-// Какая иконка у какого стата, слота, сета — src/icons/own.ts. Лицензия — src/licenses.ts.
+// Какая иконка у какого стата, слота, сета — src/game/icons/own.ts. Лицензия — src/app/shell/licenses.ts.
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,7 @@ const NAMES = [
   'pin', 'hanger',
 ];
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'icons', 'tabler.ts');
+const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'icons', 'tabler.ts');
 const url = (name) => `https://cdn.jsdelivr.net/npm/@tabler/icons@${VERSION}/icons/outline/${name}.svg`;
 
 const icons = {};
@@ -51,4 +51,4 @@ ${body}
 } as const satisfies Record<string, readonly string[]>;
 export type IconName = keyof typeof TABLER;
 `);
-console.log(`src/icons/tabler.ts: ${NAMES.length} иконок из @tabler/icons ${VERSION}`);
+console.log(`src/game/icons/tabler.ts: ${NAMES.length} иконок из @tabler/icons ${VERSION}`);

@@ -1,17 +1,17 @@
-// Экипировка (logic/gear, logic/gearStore, операции logic/pool): вещи у персонажа (хранилище v2), перенос v1 → v2,
+// Экипировка (features/gear/model/gear, features/gear/store/gearStore, операции features/gear/pool): вещи у персонажа (хранилище v2), перенос v1 → v2,
 // сегменты после Reforge, Breakthrough, резервная копия, «Надеть», «Убрать», отметки и «Вернуть».
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { makeCtx } from '../src/logic/context';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { makeCtx } from '@/game/context';
 import {
   buildKey, dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, undoDrop, updateIn, updatePiece, type GearStore, type Piece,
-} from '../src/logic/gear';
-import { normalizeFusion, switchFusion } from '../src/logic/fusion';
-import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '../src/logic/gearStore';
-import { planFor, planPut, poolView, putOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '../src/logic/pool';
-import type { ItemInput } from '../src/logic/verdict';
+} from '@/features/gear/model/gear';
+import { normalizeFusion, switchFusion } from '@/features/roster/fusion';
+import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
+import { planFor, planPut, poolView, putOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -116,7 +116,7 @@ describe('перенос v1 → v2 (design-final §F)', () => {
   });
 
   // правило владельца 2026-09-30 (было: вещи X сливались к Core Fusion X): у Core Fusion свои вещи — вещи X убраны
-  it('Core Fusion: вещи у X и у Core Fusion X — у Core Fusion его вещи, вещи X убраны (logic/fusion)', () => {
+  it('Core Fusion: вещи у X и у Core Fusion X — у Core Fusion его вещи, вещи X убраны (features/roster/fusion)', () => {
     const [eternal, cf] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!);
     const st = restoreGear(v1([rec('p1', helmet({ CHC: 1 })), rec('p2', helmet({ CHD: 1 }))], { [`${eternal.id}/Speed`]: { helmet: 'p1' }, [`${cf.id}/Speed`]: { helmet: 'p2' } }), idx);
     expect(st.pools).toEqual({ [cf.id]: ['p2'] });
@@ -714,7 +714,7 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     });
 
     // старая вкладка (v: 2) переносит worn как есть, а после её «Убрать» запись висит; запись нормализации (Caren — в
-    // ростер) при этом не пишется: readsWhole — условие записи в state/stored
+    // ростер) при этом не пишется: readsWhole — условие записи в features/gear/store/stored
     it('старая вкладка: надето то, что она уже убрала, — при чтении отброшено, нормализация не пишется', () => {
       const raw = { ...plain(), pools: { [CAREN]: ['p2'], [KAPPA]: ['p3', 'p1'] }, worn: { [CAREN]: { helmet: 'p1', shoes: 'p2' } } };
       const n = loadGear(raw, idx, [KAPPA]);

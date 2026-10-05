@@ -1,8 +1,8 @@
 // «Обмен вещами», лучший комплект получателя (R6.1, R2.5): .x/0040-trade/TESTS.md, раздел D, и сверка с перебором.
 import { describe, expect, it } from 'vitest';
-import type { SlotId } from '../src/data/types';
-import { bestKit, keyOf } from '../src/logic/trade/kit';
-import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type Part, type SetGain } from '../src/logic/trade/model';
+import type { SlotId } from '@/game/data/types';
+import { bestKit, keyOf } from '@/features/trade/model/kit';
+import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type Part, type SetGain } from '@/features/trade/model/model';
 import { bruteKit, cand, candsOf, lcg, synthGauge } from './trade.helpers';
 
 const speed: Part = { set: 'Speed', n: 4, conv: true };

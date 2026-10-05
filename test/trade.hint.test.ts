@@ -1,7 +1,7 @@
 // «Обмен вещами», как найти вещь в игре (R9): .x/0040-trade/TESTS.md, раздел I. Реальные данные фикстуры; цепочка Рин —
 // ATK › CHC › CHD › SPD › DMG UP% (build 0).
 import { describe, expect, it } from 'vitest';
-import { keyOfHole, keyOfItem, sourceOf } from '../src/logic/trade/hint';
+import { keyOfHole, keyOfItem, sourceOf } from '@/features/trade/model/hint';
 import { cand, ctx, HERO, idx, piece, setId } from './trade.helpers';
 
 const rin = idx.CHAR[HERO.rin];

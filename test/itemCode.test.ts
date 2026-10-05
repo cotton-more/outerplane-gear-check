@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { SLOTS, createIndex, isArmor } from '../src/data';
-import type { Dataset, GearKind } from '../src/data/types';
-import { epicMains, legendMains } from '../src/logic/builds';
-import { decodeItem, encodeItem } from '../src/logic/itemCode';
-import type { ItemInput } from '../src/logic/verdict';
-import { fitsData, fromPersisted, reducer } from '../src/state/appState';
+import { SLOTS, createIndex, isArmor } from '@/game/data';
+import type { Dataset, GearKind } from '@/game/data/types';
+import { epicMains, legendMains } from '@/game/build/builds';
+import { decodeItem, encodeItem } from '@/features/eval/code/codec';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
+import { fitsData, fromPersisted, reducer } from '@/app/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

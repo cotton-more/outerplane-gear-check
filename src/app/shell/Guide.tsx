@@ -1,0 +1,73 @@
+// Справка для новичка: карточка при первом запуске (пока ростер пуст) и окно «Справка».
+import type { ReactNode } from 'react';
+import { useT } from '@/i18n';
+import { CODE_PREFIX } from '@/features/eval/code/codec';
+import { Rich } from '@/shared/ui/Rich';
+
+export interface InstallInfo { canInstall: boolean; onInstall: () => void; ios: boolean }
+
+const List = ({ items, ordered }: { items: string[]; ordered?: boolean }) => {
+  const li = items.map((x) => <li key={x}><Rich text={x} /></li>);
+  return ordered ? <ol>{li}</ol> : <ul>{li}</ul>;
+};
+
+// установка: на Android — кнопка (beforeinstallprompt), на iPhone и iPad — только вручную через «Поделиться»
+function InstallHint({ install }: { install: InstallInfo }) {
+  const t = useT();
+  if (install.canInstall) {
+    return (
+      <p className="guide-install">
+        <span>{t.ui.canInstall}</span>
+        <button type="button" className="btn" onClick={install.onInstall}>{t.ui.install}</button>
+      </p>
+    );
+  }
+  if (install.ios) return <p className="guide-install"><span><Rich text={t.ui.iosInstall} /></span></p>;
+  return null;
+}
+
+// onTour нет — окно низкое, обучение не предлагаем (App: layout.tall)
+export function Welcome({ install, onTour, onRoster, onClose }: { install: InstallInfo; onTour?: () => void; onRoster: () => void; onClose: () => void }) {
+  const t = useT();
+  return (
+    <section className="panel welcome" aria-label={t.ui.howTo}>
+      <h2>{t.ui.howTo}</h2>
+      <List items={t.ui.steps} ordered />
+      <InstallHint install={install} />
+      <div className="welcome-actions">
+        {onTour && <button type="button" className="btn primary" onClick={onTour}>{t.tour.welcomeCta}</button>}
+        <button type="button" className={onTour ? 'btn' : 'btn primary'} onClick={onRoster}>{t.ui.markChars}</button>
+        <button type="button" className="btn" onClick={onClose}>{t.ui.gotIt}</button>
+      </div>
+    </section>
+  );
+}
+
+// содержимое окна «Справка»; сверху — пройти обучение заново и подсказки (tips — src/tour/TipsHelp.tsx)
+export function Help({ install, onTour, tips }: { install: InstallInfo; onTour: () => void; tips?: ReactNode }) {
+  const t = useT();
+  return (
+    <div className="guide">
+      <p className="guide-tour"><button type="button" className="btn" onClick={onTour}>{t.tour.startLong}</button></p>
+      {tips}
+      <h4>{t.ui.howTo}</h4>
+      <List items={t.ui.steps} ordered />
+      <h4>{t.ui.helpInput}</h4>
+      <List items={t.ui.helpInputItems} />
+      <h4>{t.ui.helpRoutine}</h4>
+      <List items={t.ui.helpRoutineItems} ordered />
+      <h4>{t.ui.verdict}</h4>
+      <List items={t.ui.helpVerdicts} />
+      <h4>{t.ui.tabChars}</h4>
+      <List items={t.ui.helpChars} />
+      <h4>{t.ui.helpTrade}</h4>
+      <List items={t.ui.helpTradeItems} />
+      <h4>{t.ui.helpCode}</h4>
+      <p>{t.ui.helpCodeText(`${CODE_PREFIX} KXRM TPWA`)}</p>
+      <h4>{t.ui.helpInstall}</h4>
+      <InstallHint install={{ ...install, ios: false }} /> {/* для iPhone — строка в списке ниже */}
+      <List items={t.ui.helpInstallItems} />
+      <p className="guide-more"><a href={t.ui.wikiUrl} target="_blank" rel="noopener">{t.ui.wikiLink}</a></p>
+    </div>
+  );
+}

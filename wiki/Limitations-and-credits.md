@@ -27,7 +27,7 @@ outerpedia's authors; the tool is not affiliated with VA Games or with outerpedi
 Build recommendations, game tables and the flat/% formula come from outerpedia under the MIT license; the page also
 bundles React (MIT) and Tabler Icons (MIT) — the stat, slot, set, element and class icons. Copyright lines and the
 full license texts are in the app footer ("Licenses") and in
-[`src/licenses.ts`](https://github.com/cotton-more/outerplane-gear-check/blob/main/src/licenses.ts).
+[`src/app/shell/licenses.ts`](https://github.com/cotton-more/outerplane-gear-check/blob/main/src/app/shell/licenses.ts).
 
 Found a bug or a strange verdict — [open an issue](https://github.com/cotton-more/outerplane-gear-check/issues),
 ideally with the item code.

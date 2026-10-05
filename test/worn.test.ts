@@ -1,18 +1,18 @@
-// Штамп по вещам персонажей (logic/worn, пул GEARPOOL): «Оставить» → «Разобрать», когда всем, кому вещь подходит, она
+// Штамп по вещам персонажей (features/gear/model/stamp, пул GEARPOOL): «Оставить» → «Разобрать», когда всем, кому вещь подходит, она
 // ничего не даёт; такая же вещь у персонажа — «Оставить». Персонаж без вещей — как раздетый. Случаи — прежние (B3),
 // ожидания те же, кроме помеченных «иначе»: вещи теперь у персонажа, а не у билда.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { TEXTS } from '../src/i18n';
-import { makeCtx, type Ctx } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
-import { buildKey, EMPTY_GEAR, updatePiece, type GearStore } from '../src/logic/gear';
-import { betterThanWorn, materialFor, withMaterial } from '../src/logic/material';
-import { outcomeFor, poolView, putOn } from '../src/logic/pool';
-import type { ItemInput } from '../src/logic/verdict';
-import { withWorn } from '../src/logic/worn';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { TEXTS } from '@/i18n';
+import { makeCtx, type Ctx } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { buildKey, EMPTY_GEAR, updatePiece, type GearStore } from '@/features/gear/model/gear';
+import { betterThanWorn, materialFor, withMaterial } from '@/features/gear/model/material';
+import { outcomeFor, poolView, putOn } from '@/features/gear/pool';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
+import { withWorn } from '@/features/gear/model/stamp';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

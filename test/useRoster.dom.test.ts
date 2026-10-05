@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
-// Ростер (state/useRoster) между вкладками: другая вкладка отметила персонажа — подхватили, и звёздочка здесь его не
+// Ростер (features/roster/useRoster) между вкладками: другая вкладка отметила персонажа — подхватили, и звёздочка здесь его не
 // стирает; то же при возврате на страницу (PWA в памяти пропустила событие).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { useRoster, type RosterApi } from '../src/state/useRoster';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { useRoster, type RosterApi } from '@/features/roster/useRoster';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const idx = createIndex(D);
@@ -54,7 +54,7 @@ describe('useRoster между вкладками', () => {
   });
 });
 
-// Core Fusion и Р16 (logic/fusion normalizeStored): ростер читается вместе с экипировкой; окна перехода и пакетные
+// Core Fusion и Р16 (features/roster/fusion normalizeStored): ростер читается вместе с экипировкой; окна перехода и пакетные
 // добавления — в App (test/fusion.dom.test.ts, test/gear.dom.test.ts). Здесь — загрузка и страховка записи
 describe('useRoster: Core Fusion', () => {
   const [ETERNAL, CF_ETERNAL] = [id('Eternal'), id('Core Fusion Eternal')];

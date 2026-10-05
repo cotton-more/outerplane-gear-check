@@ -1,18 +1,18 @@
 // «Обмен вещами», блок B (мерило героя, TESTS.md B1–B7, B9) и X1 (модель обмена эквивалентна сборке приложения).
 // Мерило строит мост world.ts: key — билд, который показывает «Надето» (aimOf); parts — связка; value — очки и fit.
 import { describe, expect, it } from 'vitest';
-import { aimOf, statsKey } from '../src/logic/aim';
-import { buildKey, pieceInput, type GearStore, type Piece } from '../src/logic/gear';
-import { assemble, entriesFor, poolView } from '../src/logic/pool';
-import { fit, pieceValue } from '../src/logic/vs';
-import { candidates } from '../src/logic/trade/cands';
-import { bestKit } from '../src/logic/trade/kit';
-import { milli, SLOT_ORDER } from '../src/logic/trade/model';
-import { worldOf } from '../src/logic/trade/world';
-import type { SlotId } from '../src/data/types';
-import type { Subs } from '../src/logic/subs';
+import { aimOf, statsKey } from '@/features/worn/aim';
+import { buildKey, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { assemble, entriesFor, poolView } from '@/features/gear/pool';
+import { fit, pieceValue } from '@/features/gear/model/vs';
+import { candidates } from '@/features/trade/model/cands';
+import { bestKit } from '@/features/trade/model/kit';
+import { milli, SLOT_ORDER } from '@/features/trade/model/model';
+import { worldOf } from '@/features/trade/model/world';
+import type { SlotId } from '@/game/data/types';
+import type { Subs } from '@/game/item/subs';
 import { ctx, HERO, hasOwner, lcg, loadOwner, piece, realWorld, store } from './trade.helpers';
-import { teamPlan } from '../src/logic/trade/team';
+import { teamPlan } from '@/features/trade/model/team';
 
 const char = (id: string) => ctx.idx.CHAR[id];
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];

@@ -19,7 +19,7 @@ html.sheet body.sheet-open { overflow: hidden; }
 /* свой значок поверх портрета — на подложке, иначе контур теряется на ярком арте */
 .ctile .badges .ico { width: 18px; height: 18px; padding: 2px; border-radius: 5px; background: var(--surface); }
 .ctile.nob .face { filter: grayscale(.7); }
-/* X, которого заменил Core Fusion X (logic/fusion): приглушён, под именем — пометка */
+/* X, которого заменил Core Fusion X (features/roster/fusion): приглушён, под именем — пометка */
 .ctile.off { border-style: dashed; background: var(--surface); }
 .ctile.off .face { filter: grayscale(1); opacity: .6; }
 .ctile.off .cn { color: var(--ink-3); }

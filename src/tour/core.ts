@@ -1,8 +1,8 @@
 // Главный тур «Первая вещь»: пять шагов по форме, написаны вручную, чтобы шли одной историей.
 // Каждый шаг засчитывается по изменению на странице (нажатие или горячая клавиша — всё равно), а «Дальше» есть всегда.
 // Тексты — ru.ts и en.ts, раздел tour.steps; подсказки отдельных функций — в *.tour.ts модулей (registry.ts).
-import { isArmor } from '../data';
-import { dropSubs } from '../logic/subs';
+import { isArmor } from '@/game/data';
+import { dropSubs } from '@/game/item/subs';
 import type { Anchor, Pin } from './anchors';
 import type { Step, StepText, TourCtx } from './types';
 

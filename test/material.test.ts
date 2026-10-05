@@ -1,18 +1,18 @@
-// Материал Breakthrough для вещи персонажа (logic/material, пул): «Разобрать» → «Фоддер», у «Фоддер» — для чего он.
+// Материал Breakthrough для вещи персонажа (features/gear/model/material, пул): «Разобрать» → «Фоддер», у «Фоддер» — для чего он.
 // Пример из хендоффа: Legendary Speed-шлем RES% / EFF% / HP / DMG RED% при надетом на Caren · Speed шлеме на T2.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { TEXTS } from '../src/i18n';
-import { makeCtx } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
-import { EMPTY_GEAR, updatePiece, type Bt, type GearStore } from '../src/logic/gear';
-import { poolView, putOn } from '../src/logic/pool';
-import { betterThanWorn, materialFor, wearLead, withMaterial } from '../src/logic/material';
-import { charsVs } from '../src/logic/poolVs';
-import { withWorn } from '../src/logic/worn';
-import type { ItemInput } from '../src/logic/verdict';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { TEXTS } from '@/i18n';
+import { makeCtx } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { EMPTY_GEAR, updatePiece, type Bt, type GearStore } from '@/features/gear/model/gear';
+import { poolView, putOn } from '@/features/gear/pool';
+import { betterThanWorn, materialFor, wearLead, withMaterial } from '@/features/gear/model/material';
+import { charsVs } from '@/features/gear/model/poolVs';
+import { withWorn } from '@/features/gear/model/stamp';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -333,7 +333,7 @@ describe('материал Breakthrough для надетой', () => {
       expect(r.lines[0]).toBe(ru.material.line(`${nom} Caren · Speed`));
     });
 
-    // Legendary не разбирают: «Оставить», которое никого не улучшит, — «Фоддер — уже не хуже» (logic/worn), а не «Разбирай»
+    // Legendary не разбирают: «Оставить», которое никого не улучшит, — «Фоддер — уже не хуже» (features/gear/model/stamp), а не «Разбирай»
     it('копия надетой на T4 — материала нет: «Фоддер — уже не хуже у Caren» без строки «Материал»', () => {
       const r = app([caren.id], 4, OLD);
 

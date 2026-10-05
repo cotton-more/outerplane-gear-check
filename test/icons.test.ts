@@ -1,16 +1,16 @@
-// Свои значки вместо картинок из игры (src/icons/own.ts): у всего, что страница показывает, есть свой значок,
+// Свои значки вместо картинок из игры (src/game/icons/own.ts): у всего, что страница показывает, есть свой значок,
 // а %-версия стата помечена «%» — DEF щит, DEF% щит с %.
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { StatGrid } from '../src/components/eval/StatGrid';
-import { GameIconsContext } from '../src/components/Img';
-import { IndexContext } from '../src/components/IndexContext';
-import { MAIN_GRID, SLOTS, createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { CLASS_ICON, ELEMENT_ICON, SET_ICON, SLOT_ICON, statIcon } from '../src/icons/own';
-import { TABLER } from '../src/icons/tabler';
+import { StatGrid } from '@/features/eval/form/StatGrid';
+import { GameIconsContext } from '@/game/icons/Img';
+import { IndexContext } from '@/game/data/IndexContext';
+import { MAIN_GRID, SLOTS, createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { CLASS_ICON, ELEMENT_ICON, SET_ICON, SLOT_ICON, statIcon } from '@/game/icons/own';
+import { TABLER } from '@/game/icons/tabler';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

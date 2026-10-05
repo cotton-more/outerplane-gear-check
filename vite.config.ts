@@ -58,6 +58,7 @@ function buildInfo(): { hash: string; date: string; dirty: boolean } {
 export default defineConfig({
   define: { __BUILD__: JSON.stringify(buildInfo()) },
   base: './',
+  resolve: { alias: { '@': resolve(import.meta.dirname, 'src') } }, // @/features/… — путь от src/
   plugins: [react(), viteSingleFile(), devData()],
   build: {
     outDir: 'build/app',

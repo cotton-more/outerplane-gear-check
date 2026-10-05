@@ -1,7 +1,7 @@
 // Раскладка: «Версия для ПК» на телефоне распознаётся, а поворот телефона — нет (раньше ландшафт после поворота
 // выглядел как «Версия для ПК»: страница увеличена в 2+ раза, мобильная раскладка).
 import { describe, expect, it } from 'vitest';
-import { measure } from '../src/hooks/useLayout';
+import { measure } from '@/shared/layout/useLayout';
 
 const phone = { coarse: true };
 

@@ -1,8 +1,8 @@
 // Типы обучения: туры (tours.ts — главный core.ts и «Экипировка» gear.ts) и подсказки, которые модули объявляют
 // в своих *.tour.ts (registry.ts).
-import type { Texts } from '../i18n';
-import type { Verdict } from '../logic/verdict';
-import type { AppState, Tab } from '../state/appState';
+import type { Texts } from '@/i18n';
+import type { Verdict } from '@/features/eval/verdict/verdict';
+import type { AppState, Tab } from '@/app/appState';
 import type { Anchor, Pin } from './anchors';
 
 export type TourId = 'core' | 'gear';
@@ -21,8 +21,8 @@ export interface TourCtx {
   pieceOpen: boolean;   // открыта карточка вещи в блоке билда
   tryOn: boolean;       // режим «для героя» (прежде — примерка билда)
   gearSeq: number;      // счётчик вещей экипировки: растёт, когда вещь надели (не при переносе)
-  material: boolean;    // «Фоддер», потому что вещь — материал Breakthrough для надетой и её отдают (logic/material)
-  worn: boolean;        // «Разобрать», потому что всем, кому вещь подходит, уже надето не хуже (logic/worn)
+  material: boolean;    // «Фоддер», потому что вещь — материал Breakthrough для надетой и её отдают (features/gear/model/material)
+  worn: boolean;        // «Разобрать», потому что всем, кому вещь подходит, уже надето не хуже (features/gear/model/stamp)
 }
 
 // подстановки для текста шага (ru.ts и en.ts, раздел tour.steps)

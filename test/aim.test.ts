@@ -1,17 +1,17 @@
-// Выбранный билд героя (logic/aim, «Надето», В2, В11, Р17): правило выбора, когда игрок не выбрал; явный выбор и «Всё
+// Выбранный билд героя (features/worn/aim, «Надето», В2, В11, Р17): правило выбора, когда игрок не выбрал; явный выбор и «Всё
 // верно» пишут точечно; загрузка и «Надеть» выбор не создают. Герои — из эталонных данных, вещи — синтетические.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset, SlotId } from '../src/data/types';
-import { aimOf, confirmAims, pickAim, savedAim, setAim, statsKey, undoAims, unconfirmed } from '../src/logic/aim';
-import { makeCtx } from '../src/logic/context';
-import { buildKey, type GearStore, type Piece } from '../src/logic/gear';
-import { normalizeFusion } from '../src/logic/fusion';
-import { decodeGear, encodeGear, loadGear, restoreGear } from '../src/logic/gearStore';
-import { poolView, putOn, type Mark } from '../src/logic/pool';
-import type { Subs } from '../src/logic/subs';
-import type { ItemInput } from '../src/logic/verdict';
+import { createIndex } from '@/game/data';
+import type { Dataset, SlotId } from '@/game/data/types';
+import { aimOf, confirmAims, pickAim, savedAim, setAim, statsKey, undoAims, unconfirmed } from '@/features/worn/aim';
+import { makeCtx } from '@/game/context';
+import { buildKey, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { normalizeFusion } from '@/features/roster/fusion';
+import { decodeGear, encodeGear, loadGear, restoreGear } from '@/features/gear/store/gearStore';
+import { poolView, putOn, type Mark } from '@/features/gear/pool';
+import type { Subs } from '@/game/item/subs';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Хранение экипировки (state/useGear): при загрузке без исправлений не переписываем (Р17: исправила нормализация —
+// Хранение экипировки (features/gear/store/useGear): при загрузке без исправлений не переписываем (Р17: исправила нормализация —
 // пишем сразу, test/gear.dom.test.ts); во время обучения на странице пусто и ничего не пишется — ни во время, ни после
 // (запись из пустого стора тура стёрла бы вещи игрока); действие пишет сразу.
 import { readFileSync } from 'node:fs';
@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { EMPTY_GEAR, newPiece, type GearStore } from '../src/logic/gear';
-import { useGear, type GearApi } from '../src/state/useGear';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { EMPTY_GEAR, newPiece, type GearStore } from '@/features/gear/model/gear';
+import { useGear, type GearApi } from '@/features/gear/store/useGear';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const idx = createIndex(D);

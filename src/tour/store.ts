@@ -8,7 +8,7 @@
 //   resetAt — когда нажали «Показать подсказки заново»
 // Метки времени нужны для двух вкладок: при записи берём то, что поменяли позже, а не то, что в этой вкладке.
 // Незнакомые id не стираются: вдруг это вкладка с более новой версией.
-import { storage } from '../state/storage';
+import { storage } from '@/shared/storage';
 
 export type First = 'new' | 'done' | 'skipped';
 export type Revs = Record<string, number>;

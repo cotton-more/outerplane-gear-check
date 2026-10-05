@@ -1,16 +1,16 @@
 // Хелперы тестов «Обмен вещами» (.x/0040-trade/DESIGN.md): синтетика — модель прямо из чисел; реальные данные —
 // фикстура, роли героев, фабрики вещей и хранилища; снимок вещей владельца (.x/00-equip.md).
 import { existsSync, readFileSync } from 'node:fs';
-import { createIndex } from '../src/data';
-import type { Dataset, Grade, SlotId } from '../src/data/types';
-import { makeCtx, type Ctx } from '../src/logic/context';
-import { replacedX } from '../src/logic/fusion';
-import type { GearStore, Piece } from '../src/logic/gear';
-import { loadGear, readGearCode } from '../src/logic/gearStore';
-import type { Subs } from '../src/logic/subs';
-import { cmpKit, milli, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '../src/logic/trade/model';
-import { keyOf } from '../src/logic/trade/kit';
-import { worldOf } from '../src/logic/trade/world';
+import { createIndex } from '@/game/data';
+import type { Dataset, Grade, SlotId } from '@/game/data/types';
+import { makeCtx, type Ctx } from '@/game/context';
+import { replacedX } from '@/features/roster/fusion';
+import type { GearStore, Piece } from '@/features/gear/model/gear';
+import { loadGear, readGearCode } from '@/features/gear/store/gearStore';
+import type { Subs } from '@/game/item/subs';
+import { cmpKit, milli, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '@/features/trade/model/model';
+import { keyOf } from '@/features/trade/model/kit';
+import { worldOf } from '@/features/trade/model/world';
 
 // ----------------------------------------------------------------------------------------------- синтетика
 

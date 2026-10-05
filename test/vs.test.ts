@@ -1,4 +1,4 @@
-// Исход вещи с формы на пуле (logic/pool outcomeFor) — случаи прежнего сравнения с надетым (logic/vs compare):
+// Исход вещи с формы на пуле (features/gear/pool outcomeFor) — случаи прежнего сравнения с надетым (features/gear/model/vs compare):
 // пустой слот, лучше, хуже, та же вещь, 2+2, временная против рекомендованной, T4. Пример владельца: у Caren в
 // цепочке пусто 3-е место — новая его закрывает, теряя 4-е. Ожидания те же, кроме помеченных «иначе»: новые правила
 // владельца (GEARPOOL). Пара вещей в одном слоте (against, vsFigure) — внизу.
@@ -6,17 +6,17 @@
 // не считаем. Надетая с оранжевыми в примерах — 2/2/2/3 (было 4/3/2/3: тогда свежей засчитывались 6 Reforge впереди)
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset, SlotId } from '../src/data/types';
-import { makeCtx } from '../src/logic/context';
-import { buildKey, type Bt, type Piece } from '../src/logic/gear';
-import { evaluate } from '../src/logic/evaluate';
-import { holds, outcomeFor, poolView, type Outcome } from '../src/logic/pool';
-import { chipLabel } from '../src/components/eval/VsSection';
-import { TEXTS } from '../src/i18n';
-import { charsVs, charVs, sectionChars, type CharVs } from '../src/logic/poolVs';
-import type { Subs } from '../src/logic/subs';
-import { against, itemValue, pieceValue, vsFigure } from '../src/logic/vs';
+import { createIndex } from '@/game/data';
+import type { Dataset, SlotId } from '@/game/data/types';
+import { makeCtx } from '@/game/context';
+import { buildKey, type Bt, type Piece } from '@/features/gear/model/gear';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { holds, outcomeFor, poolView, type Outcome } from '@/features/gear/pool';
+import { chipLabel } from '@/features/gear/ui/VsSection';
+import { TEXTS } from '@/i18n';
+import { charsVs, charVs, sectionChars, type CharVs } from '@/features/gear/model/poolVs';
+import type { Subs } from '@/game/item/subs';
+import { against, itemValue, pieceValue, vsFigure } from '@/features/gear/model/vs';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -275,7 +275,7 @@ describe('исход вещи с формы: повтор vs.test', () => {
     expect(['Speed/Immu', 'Def/Immu'].map((n) => o.rows.find((r) => r.v.name === n))).toMatchObject([{ kind: 'closer', entering: false }, { kind: 'closer', entering: false }]);
   });
 
-  // три случая b02e947 (compareAll / equipTargets) — на строках пула (logic/poolVs)
+  // три случая b02e947 (compareAll / equipTargets) — на строках пула (features/gear/model/poolVs)
   describe('«Сейчас на персонажах» и «Кому надеть?»: повтор b02e947', () => {
     const kitsune = D.chars.find((c) => c.name.startsWith('Kitsune'))!;
     const kappa = char('Kappa');

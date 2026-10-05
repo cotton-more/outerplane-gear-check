@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { Dataset } from '../src/data/types';
-import { TIPS } from '../src/tour/registry';
+import type { Dataset } from '@/game/data/types';
+import { TIPS } from '@/tour/registry';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -49,9 +49,9 @@ afterEach(async () => {
 async function mount(extra: Record<string, unknown>, state: Record<string, unknown> = {}, item: Record<string, unknown> = {}) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'chars', charId: caren.id, ...state }, item, ...extra };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
-  const { App } = await import('../src/App');
-  const { IndexContext } = await import('../src/components/IndexContext');
-  const { createIndex } = await import('../src/data');
+  const { App } = await import('@/app/App');
+  const { IndexContext } = await import('@/game/data/IndexContext');
+  const { createIndex } = await import('@/game/data');
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);

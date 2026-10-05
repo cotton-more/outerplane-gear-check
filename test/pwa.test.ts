@@ -1,7 +1,7 @@
-// Какое обновление ждёт (hooks/usePwa): «Вышли новые данные» — только когда ждущий worker ответил и версия данных у него
+// Какое обновление ждёт (app/usePwa): «Вышли новые данные» — только когда ждущий worker ответил и версия данных у него
 // другая, чем у открытой страницы. Всё остальное — обновление приложения: про новые данные без доказательства не говорим.
 import { describe, expect, it } from 'vitest';
-import { askWorker, updateKind } from '../src/hooks/usePwa';
+import { askWorker, updateKind } from '@/app/usePwa';
 
 const PAGE = '090f6abeddf4c2dc000c836f956f6a0c3aa2101d';
 const NEWER = '43a5d2db1c7e0f9a8b6d5e4f3a2b1c0d9e8f7a6b';

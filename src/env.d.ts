@@ -1,4 +1,4 @@
-import type { Dataset } from './data/types';
+import type { Dataset } from '@/game/data/types';
 
 declare global {
   // версия сборки — vite.config.ts: последний коммит кода приложения; dirty — собрано с незакоммиченными правками

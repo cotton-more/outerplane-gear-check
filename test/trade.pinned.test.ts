@@ -1,6 +1,6 @@
 // «Обмен вещами», подсказка закреплённых (R6.5): .x/0040-trade/TESTS.md, G1–G4, G6 (G5 — команда, этап 5).
 import { describe, expect, it } from 'vitest';
-import { heroPlan, pinnedHint } from '../src/logic/trade/plan';
+import { heroPlan, pinnedHint } from '@/features/trade/model/plan';
 import { synthWorld } from './trade.helpers';
 
 // Рин (R) носит шлем r1; у закреплённой Карен (K) шлем k1 для Рин лучше на `gain`; Лея (L) закреплена, её перчатки l1

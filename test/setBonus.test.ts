@@ -1,11 +1,11 @@
-// Бонусы сетов по Breakthrough (logic/setBonus) — правило и примеры владельца; ценность бонуса в сегментах.
+// Бонусы сетов по Breakthrough (game/set/setBonus) — правило и примеры владельца; ценность бонуса в сегментах.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CFG } from '../src/config';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { makeCtx } from '../src/logic/context';
-import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible } from '../src/logic/setBonus';
+import { CFG } from '@/game/config';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { makeCtx } from '@/game/context';
+import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible } from '@/game/set/setBonus';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -71,7 +71,7 @@ describe('ценность бонуса', () => {
     expect(D.sets.find((s) => s.short === 'Critical Strike')!.bonus).toMatchObject({ t4: { p2: { stat: 'CHD', value: 33 }, p4: { value: 22 } }, t0: { p2: { value: 20 }, p4: { value: 15 } } });
   });
 
-  // на этом стоит П7 (logic/pool rivalOf): вещь сета в том же слоте на T4 не хуже такой же не на T4
+  // на этом стоит П7 (features/gear/pool rivalOf): вещь сета в том же слоте на T4 не хуже такой же не на T4
   it('ещё одна вещь на T4 бонус сета не уменьшает: сумма по стату и самая большая строка (2P/4P) не меньше', () => {
     const bad: string[] = [];
     for (const s of D.sets) {

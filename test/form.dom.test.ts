@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset } from '../src/data/types';
-import { TIPS } from '../src/tour/registry';
+import type { Dataset } from '@/game/data/types';
+import { TIPS } from '@/tour/registry';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -33,9 +33,9 @@ afterEach(async () => {
 async function mount(state: Record<string, unknown>, item: Record<string, unknown>, extra: Record<string, unknown> = {}) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, state: { tab: 'eval', ...state }, item, ...extra };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
-  const { App } = await import('../src/App');
-  const { IndexContext } = await import('../src/components/IndexContext');
-  const { createIndex } = await import('../src/data');
+  const { App } = await import('@/app/App');
+  const { IndexContext } = await import('@/game/data/IndexContext');
+  const { createIndex } = await import('@/game/data');
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
@@ -227,7 +227,7 @@ describe('«T4» на форме', () => {
   });
 });
 
-// сегменты 1–6 (шаг 8): 5–6 — после Reforge; сумма не выше предела грейда (logic/subs levelCap)
+// сегменты 1–6 (шаг 8): 5–6 — после Reforge; сумма не выше предела грейда (game/item/subs levelCap)
 describe('сегменты 1–6', () => {
   const speed = () => D.sets.find((s) => s.short === 'Speed')!.id;
   const btn = (row: number, n: number) => $(`.subrow:nth-child(${row}) .roll-b button:nth-child(${n})`);

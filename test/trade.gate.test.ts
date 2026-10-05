@@ -1,9 +1,9 @@
 // «Обмен вещами», порог и итог плана героя (R6.2–R6.4): .x/0040-trade/TESTS.md, раздел D (D1–D4, D6–D11, D14–D18).
 // Надетое — кандидат с ценой 0 (cand({ cost: 0 })), как его даёт candidates().
 import { describe, expect, it } from 'vitest';
-import type { SlotId } from '../src/data/types';
-import { planFor } from '../src/logic/trade/gate';
-import type { Cand, Part } from '../src/logic/trade/model';
+import type { SlotId } from '@/game/data/types';
+import { planFor } from '@/features/trade/model/gate';
+import type { Cand, Part } from '@/features/trade/model/model';
 import { cand, candsOf, synthGauge } from './trade.helpers';
 
 const pen: Part = { set: 'Pen', n: 2, conv: false };

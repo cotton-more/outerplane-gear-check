@@ -161,7 +161,7 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .gear-toast button { margin-left: auto; }
 .gear-toast small { font-size: 12px; color: var(--ink-2); }
 /* телефон: сообщение поверх шторки вердикта — снизу у её содержимого место, чтобы строку под ним можно было прокрутить
-   (на ПК сообщение над колонкой формы — hooks/useToastPlace) */
+   (на ПК сообщение над колонкой формы — shared/layout/useToastPlace) */
 html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
 /* строка сравнения на карточке: «▲ +25% Caren · Speed +CHD (3-е) · −SPD (4-е)»; кнопка «Надеть» — под карточкой */
 .vcard .vc-vs { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; }

@@ -1,9 +1,9 @@
 // «Обмен вещами», дыры в плане (R8): дыры не закрываются (владелец, 2026-10-04) — у отдавшего слот пустеет, план
 // подсказывает, что искать (breaks — выключенный значимый бонус, R9.2). Применение — test/trade.apply.test.ts.
 import { describe, expect, it } from 'vitest';
-import type { SlotId } from '../src/data/types';
-import { advance } from '../src/logic/trade/moves';
-import { heroPlan } from '../src/logic/trade/plan';
+import type { SlotId } from '@/game/data/types';
+import { advance } from '@/features/trade/model/moves';
+import { heroPlan } from '@/features/trade/model/plan';
 import { synthWorld } from './trade.helpers';
 
 // Рин (R) забирает у Майи (M) вещь слота; снятая с Рин вещь — в пуле Рин

@@ -3,38 +3,46 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { TEXTS } from '../src/i18n';
-import { ANCHORS } from '../src/tour/anchors';
-import { CORE, CORE_ANCHORS } from '../src/tour/core';
-import { COVERAGE } from '../src/tour/coverage';
-import { place } from '../src/tour/place';
-import { TIP_COUNTS, TIPS } from '../src/tour/registry';
-import { TOURS } from '../src/tour/tours';
-import { bootTour, markSeen, mergeTour, type TourStore } from '../src/tour/store';
-import { LIMITS, newsOf, nextTip } from '../src/tour/tips';
-import type { StepText, Tip, TourCtx } from '../src/tour/types';
+import { TEXTS } from '@/i18n';
+import { ANCHORS } from '@/tour/anchors';
+import { CORE, CORE_ANCHORS } from '@/tour/core';
+import { COVERAGE } from '@/tour/coverage';
+import { place } from '@/tour/place';
+import { TIP_COUNTS, TIP_ORDER, TIPS } from '@/tour/registry';
+import { TOURS } from '@/tour/tours';
+import { bootTour, markSeen, mergeTour, type TourStore } from '@/tour/store';
+import { LIMITS, newsOf, nextTip } from '@/tour/tips';
+import type { StepText, Tip, TourCtx } from '@/tour/types';
 
-const COMPONENTS = new URL('../src/components/', import.meta.url).pathname;
+// компоненты — всё в src, кроме самого обучения (src/tour) и точки входа; путь — от src/
+const SRC = new URL('../src/', import.meta.url).pathname;
+const AREAS = ['app', 'screens', 'features', 'game', 'shared'];
 const tsx = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
   const p = join(dir, f);
-  return statSync(p).isDirectory() ? tsx(p) : f.endsWith('.tsx') ? [relative(COMPONENTS, p)] : [];
+  return statSync(p).isDirectory() ? tsx(p) : f.endsWith('.tsx') ? [relative(SRC, p)] : [];
 });
 
 describe('у каждого компонента — обучение или пометка', () => {
-  const files = tsx(COMPONENTS);
+  const files = AREAS.flatMap((a) => tsx(join(SRC, a)));
   // свой .tour.ts — только с подсказками: пустой файл обучением не считается
   const own = (f: string) => (TIP_COUNTS[f.replace(/\.tsx$/, '.tour.ts')] ?? 0) > 0;
 
   it('новый компонент без обучения — подскажем, что сделать', () => {
     const missing = files.filter((f) => !own(f) && !COVERAGE[f]);
     const how = (f: string) => [
-      `Компонент без обучения: src/components/${f}`,
-      `  Игрок это видит → создай src/components/${f.replace(/\.tsx$/, '.tour.ts')} рядом (export default defineTips(...), src/tour/types.ts),`,
+      `Компонент без обучения: src/${f}`,
+      `  Игрок это видит → создай src/${f.replace(/\.tsx$/, '.tour.ts')} рядом (export default defineTips(...), src/tour/types.ts),`,
       '  тексты — в ru.ts и en.ts. Сначала предложи текст подсказки владельцу и спроси, показывать ли как «Что нового».',
       `  Объясняет главный тур или служебный → впиши в src/tour/coverage.ts: '${f}': 'core' | 'helper' с причиной в комментарии.`,
       '  Подробно: DEVELOPMENT.md → «Обучение».',
     ].join('\n');
     expect(missing.map(how).join('\n\n')).toBe('');
+  });
+
+  it('каждый *.tour.ts — в порядке показа (TIP_ORDER в src/tour/registry.ts), лишних там нет', () => {
+    const tours = Object.keys(TIP_COUNTS);
+    expect(tours.filter((f) => !TIP_ORDER.includes(f)).map((f) => `допиши '${f.replace(/\.tour\.ts$/, '')}' в TIP_ORDER (src/tour/registry.ts) — в своё место показа`)).toEqual([]);
+    expect(TIP_ORDER.filter((f) => !tours.includes(f))).toEqual([]);
   });
 
   it('в coverage.ts нет лишнего: ни удалённых файлов, ни тех, у кого уже свой .tour.ts', () => {

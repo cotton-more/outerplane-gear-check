@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Core Fusion на живой странице 360px (правила владельца 2026-09-30, logic/fusion): загрузка и перенос v1 — остаётся
+// Core Fusion на живой странице 360px (правила владельца 2026-09-30, features/roster/fusion): загрузка и перенос v1 — остаётся
 // Core Fusion, сообщение; окна перехода (звезда, «Надеть», режим героя) в обе стороны и «Отмена»; пакетные добавления без
 // окон; импорт кода v1 и v2 с обоими; список — X сразу за Core Fusion, с пометкой; карточка X.
 import { readFileSync } from 'node:fs';
@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset } from '../src/data/types';
-import { TIPS } from '../src/tour/registry';
+import type { Dataset } from '@/game/data/types';
+import { TIPS } from '@/tour/registry';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -49,9 +49,9 @@ afterEach(async () => {
 async function mount(state: Record<string, unknown>, item: Record<string, unknown>, extra: Record<string, unknown> = {}) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'eval', ...state }, item, ...extra };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
-  const { App } = await import('../src/App');
-  const { IndexContext } = await import('../src/components/IndexContext');
-  const { createIndex } = await import('../src/data');
+  const { App } = await import('@/app/App');
+  const { IndexContext } = await import('@/game/data/IndexContext');
+  const { createIndex } = await import('@/game/data');
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
@@ -314,7 +314,7 @@ describe('импорт кода с обоими', () => {
 
   it('v2: у Core Fusion его вещи, вещи X убраны; в ростер — Core Fusion; «Вернуть» — всё как было', async () => {
     await mount({ tab: 'chars' }, {});
-    const { encodeGear } = await import('../src/logic/gearStore');
+    const { encodeGear } = await import('@/features/gear/store/gearStore');
     await importCode(encodeGear(G(pieces, { [eternal.id]: ['p1'], [cfEternal.id]: ['p2'] }) as never));
 
     expect({ pools: stored().pools, pieces: Object.keys(stored().pieces), roster: roster() })
@@ -333,7 +333,7 @@ describe('импорт кода с обоими', () => {
 
   it('вещи только у X, Core Fusion в ростере — вещи переходят к Core Fusion', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [cfEternal.id] });
-    const { encodeGear } = await import('../src/logic/gearStore');
+    const { encodeGear } = await import('@/features/gear/store/gearStore');
     await importCode(encodeGear(G(pieces.slice(0, 1), { [eternal.id]: ['p1'] }) as never));
     expect({ pools: stored().pools, roster: roster() }).toEqual({ pools: { [cfEternal.id]: ['p1'] }, roster: [cfEternal.id] });
   });

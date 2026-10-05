@@ -1,15 +1,15 @@
 // Броня: строже к Epic (слабые «три полезных» — в разбор), подсказки про flat и про перековку одного сабстата.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CFG } from '../src/config';
-import { createIndex } from '../src/data';
-import type { Dataset, Grade } from '../src/data/types';
-import { ru } from '../src/i18n/ru';
-import { makeCtx } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
-import { itemMains } from '../src/logic/mains';
-import { flatFactor, subWeights, tierPlaces } from '../src/logic/score';
-import { setSubDemand } from '../src/logic/lists';
+import { CFG } from '@/game/config';
+import { createIndex } from '@/game/data';
+import type { Dataset, Grade } from '@/game/data/types';
+import { ru } from '@/i18n/ru';
+import { makeCtx } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { itemMains } from '@/game/item/mains';
+import { flatFactor, subWeights, tierPlaces } from '@/game/build/score';
+import { setSubDemand } from '@/features/eval/form/lists';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

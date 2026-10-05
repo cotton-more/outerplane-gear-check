@@ -2,13 +2,13 @@
 // Намеренно поменял поведение — перегенерируй эталон: `task golden:update`, и просмотри diff test/golden.json.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CFG } from '../src/config';
-import { createIndex } from '../src/data';
-import type { Dataset, GearKind } from '../src/data/types';
-import { epicMains } from '../src/logic/builds';
-import { makeCtx, type Settings } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
-import { charMatches, itemOptions, mainDemand, setOptions } from '../src/logic/lists';
+import { CFG } from '@/game/config';
+import { createIndex } from '@/game/data';
+import type { Dataset, GearKind } from '@/game/data/types';
+import { epicMains } from '@/game/build/builds';
+import { makeCtx, type Settings } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
+import { charMatches, itemOptions, mainDemand, setOptions } from '@/features/eval/form/lists';
 import { compactVerdict, internFeet, stringifyGolden } from './golden-format.mjs';
 
 const GOLDEN = new URL('./golden.json', import.meta.url);

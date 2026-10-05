@@ -1,12 +1,12 @@
 // «Обмен вещами», этап 4: отметка героя «Не отдавать надетое» в хранилище вещей (.x/0040-trade/TESTS.md, A3–A7, A9).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { dropChar, isPinned, pinnedOf, setPinned, undoDrop, type GearStore, type Piece } from '../src/logic/gear';
-import { normalizeFusion, switchFusion } from '../src/logic/fusion';
-import { decodeGear, encodeGear, restoreGear, unfuseChar } from '../src/logic/gearStore';
-import { removeFrom, removeUndo } from '../src/logic/pool';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { dropChar, isPinned, pinnedOf, setPinned, undoDrop, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { normalizeFusion, switchFusion } from '@/features/roster/fusion';
+import { decodeGear, encodeGear, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
+import { removeFrom, removeUndo } from '@/features/gear/pool';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

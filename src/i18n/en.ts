@@ -1,7 +1,7 @@
 // English texts: the same keys as ru.ts (type Texts) — TypeScript won't let a translation go missing.
-// **like this** — bold (components/Rich.tsx). Game terms are as in the English client.
-import type { GearKind } from '../data/types';
-import type { StepText } from '../tour/types';
+// **like this** — bold (shared/ui/Rich.tsx). Game terms are as in the English client.
+import type { GearKind } from '@/game/data/types';
+import type { StepText } from '@/tour/types';
 import type { Texts } from './ru';
 
 const persons = (n: number) => `${n} character${n === 1 ? '' : 's'}`;

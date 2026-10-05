@@ -2,12 +2,12 @@
 // Пример живёт только в памяти: у тура своя экипировка и свой режим героя (App), записи игрока — ogc.gear, ogc.tryon,
 // ростер — не трогаются. Вещь на форме откладывается и возвращается, как в главном туре (useTour).
 // Тексты — ru.ts и en.ts, раздел tour.steps (g…).
-import type { Index } from '../data';
-import type { Build, Char } from '../data/types';
-import type { GearStore, Piece } from '../logic/gear';
-import { buildKey } from '../logic/gear';
-import { combosWith } from '../logic/builds';
-import type { ItemInput } from '../logic/verdict';
+import type { Index } from '@/game/data';
+import type { Build, Char } from '@/game/data/types';
+import type { GearStore, Piece } from '@/features/gear/model/gear';
+import { buildKey } from '@/features/gear/model/gear';
+import { combosWith } from '@/game/build/builds';
+import type { ItemInput } from '@/features/eval/verdict/verdict';
 import type { Step } from './types';
 
 const DEMO = { char: '2000089', build: 'Speed', set: 'Speed' } as const; // Caren: Speed ×4, цепочка DEF › CHC › CHD › SPD

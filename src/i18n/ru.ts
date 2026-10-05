@@ -1,7 +1,7 @@
 // Русские тексты: вердикты (logic/) и интерфейс (components/). en.ts — тот же набор ключей (тип Texts):
-// TypeScript не даст пропустить перевод. **так** — жирным (components/Rich.tsx).
-import type { GearKind } from '../data/types';
-import type { StepText } from '../tour/types';
+// TypeScript не даст пропустить перевод. **так** — жирным (shared/ui/Rich.tsx).
+import type { GearKind } from '@/game/data/types';
+import type { StepText } from '@/tour/types';
 
 const plural = (n: number, one: string, few: string, many: string): string => {
   const m10 = n % 10, m100 = n % 100;
@@ -219,7 +219,7 @@ export const ru = {
     sections: 'Разделы',
     tabEval: 'Оценка предмета',
     tabChars: 'Персонажи',
-    // плашки; updateNotice — только когда вышли новые данные, не на каждую правку приложения (hooks/usePwa)
+    // плашки; updateNotice — только когда вышли новые данные, не на каждую правку приложения (app/usePwa)
     updateNotice: 'Вышли новые данные outerpedia — обнови, чтобы видеть свежие билды.',
     updateAction: 'Обновить',
     desktopModeNotice: 'Браузер открыл страницу в режиме «Версия для ПК» — я подстроил масштаб. Если что-то выглядит странно, выключи этот режим: меню ⋮ → «Версия для ПК».',
@@ -307,7 +307,7 @@ export const ru = {
     segCap: (max: number) => `Больше ${max} сегментов на вещи не бывает — проверь сабстаты.`,
     subRemove: (k: string) => `Убрать ${k}`,
     chainTail: (k: string) => `${k} есть на вещи, но в приоритете дальше четвёртого места — в счёт не идёт`,
-    // экипировка: что надето в билдах (logic/gear, logic/vs; components/eval/VsSection, EquipSheet, chars/BuildGear)
+    // экипировка: что надето в билдах (features/gear/model/gear, features/gear/model/vs; features/gear/ui/VsSection, EquipSheet, chars/BuildGear)
     slotNames: { weapon: 'Оружие', accessory: 'Аксессуар', helmet: 'Шлем', armor: 'Броня', gloves: 'Перчатки', shoes: 'Ботинки' } as Record<string, string>,
     slotAcc: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
     slotNom: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
@@ -323,7 +323,7 @@ export const ru = {
     vsTimes: (n: number) => `Полезных сегментов в ${n} ${plural(n, 'раз', 'раза', 'раз')} больше.`,
     vsEmpty: 'У надетой полезных нет: ни один её сабстат этому билду не засчитывается.',
     vsAhead: (k: string, worn: number, next: number) => `На надетой больше сегментов: ${k} — ${dec(worn)} против ${dec(next)} у новой.`,
-    // оружие и аксессуар: решила пассивка, а не сегменты (logic/vs, Vs.why)
+    // оружие и аксессуар: решила пассивка, а не сегменты (features/gear/model/vs, Vs.why)
     vsWhy: {
       rec: 'Эта вещь — из рекомендованных билду, надетая — нет: пассивка важнее сабстатов.',
       stopgap: 'Надета рекомендованная, а эта — временная: пассивка важнее сабстатов, менять не нужно.',
@@ -332,7 +332,7 @@ export const ru = {
     vsMaterial: (bt: number) => `Та же вещь, что надета (T${bt}): эта — ступень её Breakthrough, T${bt} → T${bt + 1}.`,
     vsMaterialBelow: 'Та же вещь, что надета (ниже T4): эта — ступень её Breakthrough.',
     vsPassive: 'Другая пассивка: сравниваю только сабстаты, а какая пассивка лучше — решает билд.',
-    // Speed ×2 и Penetration ×2 дают бонус только на T4 (logic/builds t4Only)
+    // Speed ×2 и Penetration ×2 дают бонус только на T4 (game/build/builds t4Only)
     vsT4: (set: string, n: number, capped: boolean) => `${set} ×${n} даёт бонус только на T4: пока новая не на T4, бонуса не будет${capped ? ' — поэтому не выше «на уровне»' : ''}.`,
     equipTo: (name: string) => `Надеть на ${name}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,
@@ -350,7 +350,7 @@ export const ru = {
     equipRowCloser: (build: string, n: number, m: number) => `Надеть — ${build}: сет ${n} из ${m}`,
     equipRowStarts: (builds: string) => `Надеть — начнёт ${builds}`,
     equipRowEq: (build: string) => `Надеть — ${build}`,
-    // исходы вещи по пулу (logic/pool): чип, строки «Сейчас на персонажах» и карточки
+    // исходы вещи по пулу (features/gear/pool): чип, строки «Сейчас на персонажах» и карточки
     vsCloser: (n: number, m: number) => `сет ${n} из ${m}`,
     vsProgress: (build: string, n: number, m: number, set: string, k: number, of: number) => `${build}: будет ${n} из ${m} — ${set} ${k} из ${of}.`,
     vsNeed: (set: string, slots: string[]) => `Ещё одна ${set} — ${inSlots(slots)} — соберёт его.`,
@@ -423,7 +423,7 @@ export const ru = {
     pieceNowhere: 'Ни в одном билде: в каждом стоит лучше.',
     gearNewerCode: 'Код сохранила более новая версия страницы — обнови страницу.',
     fusionGear: (base: string, fusion: string) => `Вещи ${base} перешли к ${fusion}.`,
-    // Core Fusion X заменил X или X заменил Core Fusion X (logic/fusion): пометка в списке, строка карточки, окна перехода
+    // Core Fusion X заменил X или X заменил Core Fusion X (features/roster/fusion): пометка в списке, строка карточки, окна перехода
     fusionOffMark: (name: string, isFusion?: boolean) => (isFusion ? `заменён ${name}` : `заменён Core Fusion ${name}`),
     fusionOffCard: (name: string, activeName?: string) =>
       activeName
@@ -549,7 +549,7 @@ export const ru = {
     rosterKeptGear: (names: string) => `Оставлены в ростере — у них есть вещи: ${names}.`,
     // окно перехода Core Fusion (App): кто кого заменил в ростере; «Вещи … перешли к …» — fusionGear
     fusionReplaces: (fusion: string, base: string) => `${fusion} заменяет ${base} в ростере.`,
-    // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (logic/fusion normalizeFusion)
+    // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (features/roster/fusion normalizeFusion)
     fusionFixed: (base: string, how: 'moved' | 'removed' | 'none') =>
       `В ростере оставлен Core Fusion ${base}: ${base} заменён${how === 'moved' ? `, его вещи перешли к Core Fusion ${base}` : how === 'removed' ? ', его вещи убраны' : ''}.`,
     gearBad: 'Код не читается — скопируй его целиком, с OGC-GEAR в начале.',
@@ -705,7 +705,7 @@ export const ru = {
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',
   },
   // --- обучение (src/tour): кнопки, полосы и шаги главного тура; шаг — функция от StepText (src/tour/types.ts)
-  // --- материал Breakthrough для надетой вещи (logic/material): «Разобрать» → «Фоддер»
+  // --- материал Breakthrough для надетой вещи (features/gear/model/material): «Разобрать» → «Фоддер»
   material: {
     title: (slotGen: string, who: string) => `Фоддер — материал Breakthrough для ${slotGen} ${who}`,
     need: (slot: string, who: string, bt: number, left: number) => `${slot} ${who} — T${bt}, ещё ${left} шт. до T4`,
@@ -724,7 +724,7 @@ export const ru = {
     planWear: (who: string) => `**Надень её** на ${who}, пока нет лучше, — в Breakthrough надетой не отдавай.`,
   },
 
-  // --- штамп по надетому (logic/worn): всем, кому подходит, уже надето не хуже; вещь уже в билде
+  // --- штамп по надетому (features/gear/model/stamp): всем, кому подходит, уже надето не хуже; вещь уже в билде
   worn: {
     // eq — у кого-то «на уровне»: «не хуже», а не «лучше». Причина — первой: на карточке (280px) заголовок в одну
     // строку, длинное имя («Kitsune of Eternity Tamamo-no-Mae») съело бы «уже лучше»
@@ -734,7 +734,7 @@ export const ru = {
     stale: 'Разобрал вещь в игре — убери её в карточке персонажа, и вердикт пересчитается.',
   },
 
-  // --- режим «для героя»: оценка для одного персонажа по всем его билдам (logic/tryon, components/eval/TryOnStrip)
+  // --- режим «для героя»: оценка для одного персонажа по всем его билдам (features/tryon/tryon, features/tryon/TryOnStrip)
   tryon: {
     label: 'Только для',
     end: 'Оценивать для всех',
@@ -754,7 +754,7 @@ export const ru = {
     } as Record<string, string>)[kind] ?? '',
     // «Разобрать», а ей вещь лучше надетого или слот пуст
     butWear: (kind: string, name: string) => `но ${kind === 'fill' ? `у ${name} слот пуст` : `лучше, чем на ${name}`}: надень, пока нет лучше`,
-    // оценка для героя (logic/tryon heroNote): сета вещи нет ни в одном билде героя, по статам не подходит
+    // оценка для героя (features/tryon/tryon heroNote): сета вещи нет ни в одном билде героя, по статам не подходит
     offHero: (name: string, set: string) => `${name} она не нужна: ${set} нет в билдах ${name}.`,
     // режим героя: вещь не по билду, но по статам полезна (Р11)
     offStats: (name: string) => `${name} она подходит по статам, не по билду.`,

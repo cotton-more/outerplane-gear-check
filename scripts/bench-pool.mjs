@@ -1,4 +1,4 @@
-// Скорость пула экипировки (logic/pool, GEARPOOL): не в CI — цифры для решения, считать ли на телефоне сразу.
+// Скорость пула экипировки (features/gear/pool, GEARPOOL): не в CI — цифры для решения, считать ли на телефоне сразу.
 //   node scripts/bench-pool.mjs
 // Ростер 60 персонажей с билдами, у каждого пул по 1–3 вещи на слот (броня — в основном сеты его связок);
 // замеры: один вердикт (исходы у всех 60), «Кому надеть?» по всем 95 с билдами.
@@ -7,10 +7,10 @@ import { createServer } from 'vite';
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' });
 const load = (p) => server.ssrLoadModule(p);
-const { createIndex } = await load('/src/data/index.ts');
-const { makeCtx } = await load('/src/logic/context.ts');
-const { poolView, outcomeFor } = await load('/src/logic/pool.ts');
-const { variantsOf } = await load('/src/logic/variants.ts');
+const { createIndex } = await load('/src/game/data/index.ts');
+const { makeCtx } = await load('/src/game/context.ts');
+const { poolView, outcomeFor } = await load('/src/features/gear/pool.ts');
+const { variantsOf } = await load('/src/game/build/variants.ts');
 
 const D = JSON.parse(readFileSync(new URL('../test/fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

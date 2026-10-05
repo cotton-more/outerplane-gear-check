@@ -1,9 +1,24 @@
-// Реестр подсказок: собирает все src/components/**/*.tour.ts сам, без ручной регистрации.
+// Реестр подсказок: собирает все src/**/*.tour.ts сам, без ручной регистрации.
 // Работает во всех форматах сборки: vite-plugin-singlefile встраивает eager-модули в тот же скрипт.
 import type { Tip } from './types';
 
-const mods = import.meta.glob<Tip[]>('../components/**/*.tour.ts', { eager: true, import: 'default' });
+const mods = import.meta.glob<Tip[]>('../**/*.tour.ts', { eager: true, import: 'default' });
+const fileOf = (path: string) => path.replace(/^\.\.\//, ''); // путь от src/
 
-export const TIPS: Tip[] = Object.values(mods).flat();
+// Порядок подсказок — порядок показа: «Что нового» начинается с первой новой, по ходу — первая подходящая, в Справке —
+// список по порядку. Вкладками: «Персонажи», «Оценка», «Обмен». Новый *.tour.ts — допиши сюда, в своё место
+// (test/tour.test.ts напомнит); файл не из списка встанет в конец.
+export const TIP_ORDER = [
+  'features/worn/AimSheet', 'features/gear/ui/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
+  'features/roster/FusionAsk', 'features/gear/ui/PoolList', 'features/gear/ui/VariantChips', 'features/worn/WornGear',
+  'features/eval/form/BtChip', 'features/eval/verdict/Chain', 'features/gear/ui/EquipSheet', 'features/eval/code/ItemCode',
+  'features/eval/form/StatGrid', 'features/eval/form/SubPicker', 'features/eval/form/SubRows', 'features/tryon/TryOnStrip',
+  'features/eval/verdict/VerdictPanel', 'features/gear/ui/VsSection',
+  'features/trade/ui/TradeSheet',
+].map((f) => f + '.tour.ts');
+const rank = (f: string) => { const i = TIP_ORDER.indexOf(f); return i < 0 ? TIP_ORDER.length : i; };
+const files = Object.keys(mods).map(fileOf).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+
+export const TIPS: Tip[] = files.flatMap((f) => mods['../' + f]);
 // сколько подсказок в каждом файле: пустой *.tour.ts обучением не считается (test/tour.test.ts)
-export const TIP_COUNTS: Record<string, number> = Object.fromEntries(Object.entries(mods).map(([f, tips]) => [f.replace(/^\.\.\/components\//, ''), tips.length]));
+export const TIP_COUNTS: Record<string, number> = Object.fromEntries(files.map((f) => [f, mods['../' + f].length]));

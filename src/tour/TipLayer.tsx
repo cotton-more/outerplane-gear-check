@@ -3,7 +3,7 @@
 // закрыли или нажали на то, на что она показывает; ушла сама (закрыли окно, сменили вещь) — покажется ещё.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useT } from '../i18n';
+import { useT } from '@/i18n';
 import type { Anchor } from './anchors';
 import { freeBottom, inView, overlayOpen, pad, rect, targets, type Rect } from './dom';
 import { place } from './place';

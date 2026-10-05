@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset } from '../src/data/types';
-import { TIPS } from '../src/tour/registry';
+import type { Dataset } from '@/game/data/types';
+import { TIPS } from '@/tour/registry';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -48,9 +48,9 @@ afterEach(async () => {
 async function mount(state: Record<string, unknown>, item: Record<string, unknown>, extra: Record<string, unknown> = {}) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'eval', ...state }, item, ...extra };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
-  const { App } = await import('../src/App');
-  const { IndexContext } = await import('../src/components/IndexContext');
-  const { createIndex } = await import('../src/data');
+  const { App } = await import('@/app/App');
+  const { IndexContext } = await import('@/game/data/IndexContext');
+  const { createIndex } = await import('@/game/data');
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
@@ -234,7 +234,7 @@ describe('«Надеть» и «Вернуть»', () => {
   });
 
   it('две шторки сразу: Esc закрывает верхнюю, drawer-lock снимается с последней', async () => {
-    const { Sheet } = await import('../src/components/Sheet');
+    const { Sheet } = await import('@/shared/ui/Sheet');
     const closed: string[] = [];
     const el = document.createElement('div');
     document.body.append(el);
@@ -1194,8 +1194,8 @@ describe('меню, плитки, код копии, другая вкладка
     await click(byText('.roster-bar .linkbtn', 'export'));
     const ta = $('#gear-code') as HTMLTextAreaElement;
     expect(ta.value.startsWith('OGC-GEAR2 ')).toBe(true);
-    const { decodeGear, encodeGear } = await import('../src/logic/gearStore');
-    const { createIndex } = await import('../src/data');
+    const { decodeGear, encodeGear } = await import('@/features/gear/store/gearStore');
+    const { createIndex } = await import('@/game/data');
     expect((decodeGear(ta.value, createIndex(D)) as { pieces: Record<string, { yellow: object }> }).pieces.p1.yellow).toEqual({ SPD: 1 });
     ta.value = encodeGear(G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 0 })], { [kappa.id]: ['p1'] }) as never);
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
@@ -1366,8 +1366,8 @@ describe('вещи только у героев ростера (Р16)', () => {
     const gear = G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [rin.id]: ['p1'], [caren.id]: ['p1', 'p2'] },
       { marks: { [`${caren.id}/Speed`]: 'want' } });
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
-    const { restoreGear } = await import('../src/logic/gearStore');
-    const { createIndex } = await import('../src/data');
+    const { restoreGear } = await import('@/features/gear/store/gearStore');
+    const { createIndex } = await import('@/game/data');
     const before = JSON.stringify(restoreGear(gear, createIndex(D), [rin.id, caren.id, kappa.id]));
     await click(tileStar('Caren'));
     await click(askBtn('Yes, remove'));
@@ -1429,9 +1429,9 @@ describe('запись при загрузке (Р17)', () => {
   const remount = async () => {
     await act(async () => root?.unmount());
     document.body.innerHTML = '';
-    const { App } = await import('../src/App');
-    const { IndexContext } = await import('../src/components/IndexContext');
-    const { createIndex } = await import('../src/data');
+    const { App } = await import('@/app/App');
+    const { IndexContext } = await import('@/game/data/IndexContext');
+    const { createIndex } = await import('@/game/data');
     const el = document.createElement('div');
     document.body.append(el);
     root = createRoot(el);

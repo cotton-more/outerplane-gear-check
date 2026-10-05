@@ -1,14 +1,14 @@
 // «Обмен вещами», применение плана героя (этап 4): .x/0040-trade/TESTS.md, E1–E12 и F8.
 import { describe, expect, it } from 'vitest';
-import type { SlotId } from '../src/data/types';
-import { isPinned, type GearStore, type Piece } from '../src/logic/gear';
-import { restoreGear } from '../src/logic/gearStore';
-import { applyHero, applyTeam, leftovers, stampOf } from '../src/logic/trade/apply';
-import { teamPlan, type TeamPlan } from '../src/logic/trade/team';
-import { candidates } from '../src/logic/trade/cands';
-import { codeOf } from '../src/logic/trade/model';
-import { heroPlan, type HeroPlan } from '../src/logic/trade/plan';
-import { worldOf } from '../src/logic/trade/world';
+import type { SlotId } from '@/game/data/types';
+import { isPinned, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { restoreGear } from '@/features/gear/store/gearStore';
+import { applyHero, applyTeam, leftovers, stampOf } from '@/features/trade/model/apply';
+import { teamPlan, type TeamPlan } from '@/features/trade/model/team';
+import { candidates } from '@/features/trade/model/cands';
+import { codeOf } from '@/features/trade/model/model';
+import { heroPlan, type HeroPlan } from '@/features/trade/model/plan';
+import { worldOf } from '@/features/trade/model/world';
 import { cand, ctx, hasOwner, HERO, idx, loadOwner, piece, store } from './trade.helpers';
 
 const { rin, karen, noa, maya } = HERO;

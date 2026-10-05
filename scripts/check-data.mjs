@@ -172,7 +172,7 @@ function reachability(ogc) {
 // --------------------------------------------------------------------------- данные
 
 // Бонусы сетов числом (update.py bonus_of) — как на страницах сетов outerpedia (сверено владельцем 2026-09-29):
-// сет → [T4 2P, T4 4P, T0 2P, T0 4P], null — строки нет. Разошлось — сборка билдов из вещей (logic/pool) считает бонус
+// сет → [T4 2P, T4 4P, T0 2P, T0 4P], null — строки нет. Разошлось — сборка билдов из вещей (features/gear/pool) считает бонус
 // не так, как игра
 const SET_BONUS = {
   Attack: [35, 25, 30, 20], Defense: [30, 20, 25, 15], Life: [35, 25, 30, 20], 'Critical Hit': [18, 12, 15, 10],
@@ -305,8 +305,8 @@ function unknownMains(D, known) {
   for (const [kind, list] of [['weapon', D.weapons], ['accessory', D.amulets]]) {
     for (const i of list) {
       for (const m of [...i.mains, ...i.extraMains]) {
-        if (!code.has(m)) out.add(`main «${m}» (${i.name}) не записать в код предмета — допиши его в MAINS в src/logic/itemCode.ts`);
-        if (kind === 'accessory' && !grid.has(m)) out.add(`main «${m}» (${i.name}) нет в сетке аксессуара — MAIN_GRID в src/data/index.ts`);
+        if (!code.has(m)) out.add(`main «${m}» (${i.name}) не записать в код предмета — допиши его в MAINS в src/features/eval/code/codec.ts`);
+        if (kind === 'accessory' && !grid.has(m)) out.add(`main «${m}» (${i.name}) нет в сетке аксессуара — MAIN_GRID в src/game/data/index.ts`);
       }
     }
   }
@@ -315,7 +315,7 @@ function unknownMains(D, known) {
     ...D.sets.flatMap((s) => Object.values(s.fixed || {}).flatMap((g) => Object.values(g).flat())),
     ...[...D.weapons, ...D.amulets].flatMap((i) => i.fixed || []),
   ];
-  const where = 'STAT_ICON в src/data/index.ts и STAT в src/icons/own.ts';
+  const where = 'STAT_ICON в src/game/data/index.ts и STAT в src/game/icons/own.ts';
   for (const m of lines) if (!icons.has(m)) out.add(`строка main «${m}» странице незнакома — нет значка (${where})`);
   for (const m of Object.keys(D.mainBlocks || {})) if (!icons.has(m)) out.add(`main «${m}» странице незнаком — нет значка (${where})`);
   return out;
@@ -569,7 +569,7 @@ async function main() {
     check('Main stat знакомы странице', !bad.length, bad);
     // новый сет без своего значка рисуется шестиугольником: не ошибка, но стоит дорисовать
     const own = new Set(known.setIcons || []);
-    const noIcon = newD.sets.filter((st) => !own.has(st.short)).map((st) => `сет «${st.short}» без своего значка — допиши в SET_ICON (src/icons/own.ts), пока там шестиугольник`);
+    const noIcon = newD.sets.filter((st) => !own.has(st.short)).map((st) => `сет «${st.short}» без своего значка — допиши в SET_ICON (src/game/icons/own.ts), пока там шестиугольник`);
     check('Свои значки сетов', noIcon.length ? null : true, noIcon);
   });
 

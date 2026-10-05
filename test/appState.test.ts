@@ -2,13 +2,13 @@ import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { SubPicker } from '../src/components/eval/SubPicker';
-import { IndexContext } from '../src/components/IndexContext';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { makeCtx } from '../src/logic/context';
-import { MAX_SUBS, dropSubs } from '../src/logic/subs';
-import { fromPersisted, itemInput, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '../src/state/appState';
+import { SubPicker } from '@/features/eval/form/SubPicker';
+import { IndexContext } from '@/game/data/IndexContext';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { makeCtx } from '@/game/context';
+import { MAX_SUBS, dropSubs } from '@/game/item/subs';
+import { fromPersisted, itemInput, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '@/app/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -169,7 +169,7 @@ describe('reducer: «T4» (Breakthrough брони, В4; у Legendary оружи
       expect(reducer(on('accessory', { itemKey: null, unlisted: true }), { type: 'unlisted' }).t4).toBe(true);
     });
 
-    // main у того же предмета — та же вещь для Breakthrough (материал logic/material — по предмету, при любом main)
+    // main у того же предмета — та же вещь для Breakthrough (материал features/gear/model/material — по предмету, при любом main)
     it('смена main и правка сабстатов «T4» не трогают', () => {
       const after = run(on(), { type: 'main', main: 'HP%' }, { type: 'sub', key: 'CHD' }, { type: 'roll', key: 'SPD', n: 3 },
         { type: 'replaceSub', from: 'CHC', to: 'HP' }, { type: 'clearSubs' });

@@ -1,9 +1,9 @@
-// Варианты билда (logic/variants): билд с несколькими связками сетов — по варианту на связку, ключи, имена, дубли.
+// Варианты билда (game/build/variants): билд с несколькими связками сетов — по варианту на связку, ключи, имена, дубли.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset } from '../src/data/types';
-import { comboSig, variantsOf } from '../src/logic/variants';
+import { createIndex } from '@/game/data';
+import type { Dataset } from '@/game/data/types';
+import { comboSig, variantsOf } from '@/game/build/variants';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

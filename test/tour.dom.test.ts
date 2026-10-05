@@ -7,11 +7,11 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset } from '../src/data/types';
-import { TEXTS } from '../src/i18n';
-import { CORE } from '../src/tour/core';
-import { LIMITS } from '../src/tour/tips';
-import { TIPS } from '../src/tour/registry';
+import type { Dataset } from '@/game/data/types';
+import { TEXTS } from '@/i18n';
+import { CORE } from '@/tour/core';
+import { LIMITS } from '@/tour/tips';
+import { TIPS } from '@/tour/registry';
 
 // в jsdom import.meta.url — не file:, берём путь от этого файла
 // обучение пройдено, полоса была; все подсказки знакомы — ничего не «новое»
@@ -39,9 +39,9 @@ afterEach(async () => {
 async function mount(saved: Record<string, unknown> = {}) {
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   localStorage.setItem('ogc.lang', '"en"');
-  const { App } = await import('../src/App');
-  const { IndexContext } = await import('../src/components/IndexContext');
-  const { createIndex } = await import('../src/data');
+  const { App } = await import('@/app/App');
+  const { IndexContext } = await import('@/game/data/IndexContext');
+  const { createIndex } = await import('@/game/data');
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
@@ -115,7 +115,7 @@ describe('на примере — только то, что в примере', 
     await mount();
     await click(byText('.welcome button', 'Take it'));
     await click(byText('.tour-strip button', 'Example'));
-    const { pinSelector } = await import('../src/tour/anchors');
+    const { pinSelector } = await import('@/tour/anchors');
     expect($(pinSelector('slot:armor')) && $(pinSelector('grade:rare'))).toBeTruthy();
     await click($('.slot[aria-label="Helmet"]'));
     expect(strip()).toContain(T.stepOf(1, CORE.length));
@@ -557,8 +557,8 @@ describe('тур «Экипировка» на примере', () => {
       await click(byText('.menu button', 'Characters'));
     }
     if (!$('#gear-code')) await click(byText('.roster-bar .linkbtn', 'export / import'));
-    const { decodeGear } = await import('../src/logic/gearStore');
-    const { createIndex } = await import('../src/data');
+    const { decodeGear } = await import('@/features/gear/store/gearStore');
+    const { createIndex } = await import('@/game/data');
     expect(Object.keys((decodeGear(($('#gear-code') as HTMLTextAreaElement).value, createIndex(D)) as { pools: object }).pools)).toEqual([kappa.id]);
   });
 

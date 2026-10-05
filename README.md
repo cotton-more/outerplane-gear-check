@@ -51,6 +51,6 @@ The app has a short one too: ☰ → Help.
 This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of
 outerpedia's authors; the tool is not affiliated with VA Games or with outerpedia. Build recommendations, game tables
 and the flat/% formula come from [outerpedia](https://github.com/Sevih/outerpedia) under the MIT license; the page
-also bundles React (MIT) and Tabler Icons (MIT). Full license texts: the app footer ("Licenses") and [`src/licenses.ts`](src/licenses.ts).
+also bundles React (MIT) and Tabler Icons (MIT). Full license texts: the app footer ("Licenses") and [`src/app/shell/licenses.ts`](src/app/shell/licenses.ts).
 
 Development notes (in Russian): [DEVELOPMENT.md](DEVELOPMENT.md).

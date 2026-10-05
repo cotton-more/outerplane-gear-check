@@ -1,16 +1,16 @@
-// Данные «Надето» (logic/wearing, шаг 4): вкладка (совет «лучше из своих», сет k из n), шторка «Билд для X» (варианты, флаги),
+// Данные «Надето» (features/worn/wearing, шаг 4): вкладка (совет «лучше из своих», сет k из n), шторка «Билд для X» (варианты, флаги),
 // экран «Переодеть» (надень, снимешь, не хватает, включится / выключится). Герои — из эталонных данных, вещи — синтетические.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset, Grade, SlotId } from '../src/data/types';
-import { makeCtx } from '../src/logic/context';
-import { buildKey, type GearStore, type Piece } from '../src/logic/gear';
-import { poolView, type Mark } from '../src/logic/pool';
-import type { Subs } from '../src/logic/subs';
-import { variantsOf } from '../src/logic/variants';
-import { aimOf } from '../src/logic/aim';
-import { aimOptions, missingParts, reasonOf, redressPlan, t4Parts, undoWearMany, wearMany, wornView } from '../src/logic/wearing';
+import { createIndex } from '@/game/data';
+import type { Dataset, Grade, SlotId } from '@/game/data/types';
+import { makeCtx } from '@/game/context';
+import { buildKey, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { poolView, type Mark } from '@/features/gear/pool';
+import type { Subs } from '@/game/item/subs';
+import { variantsOf } from '@/game/build/variants';
+import { aimOf } from '@/features/worn/aim';
+import { aimOptions, missingParts, reasonOf, redressPlan, t4Parts, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

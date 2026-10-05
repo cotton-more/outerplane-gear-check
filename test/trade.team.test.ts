@@ -1,12 +1,12 @@
 // «Обмен вещами», этап 5: командный обмен (R7.1–R7.3): .x/0040-trade/TESTS.md, H1–H5, H7, H8, H10–H17, G5, J7.
 // H6, H9 (применение) — в тестах применения; H10 — отдельно.
 import { describe, expect, it } from 'vitest';
-import { moveStep } from '../src/logic/trade/apply';
-import { skipKey } from '../src/logic/trade/cands';
-import { keyOf } from '../src/logic/trade/kit';
-import { heroPlan } from '../src/logic/trade/plan';
-import type { Cand, World } from '../src/logic/trade/model';
-import { runTeam, teamHint, teamOk, teamPlan, type TeamPlan } from '../src/logic/trade/team';
+import { moveStep } from '@/features/trade/model/apply';
+import { skipKey } from '@/features/trade/model/cands';
+import { keyOf } from '@/features/trade/model/kit';
+import { heroPlan } from '@/features/trade/model/plan';
+import type { Cand, World } from '@/features/trade/model/model';
+import { runTeam, teamHint, teamOk, teamPlan, type TeamPlan } from '@/features/trade/model/team';
 import { synthWorld, type SynthHero } from './trade.helpers';
 
 type Items = Parameters<typeof synthWorld>[0]['items'];

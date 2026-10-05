@@ -3,11 +3,11 @@
 // бейджа «Топ-ролл» тоже нет.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createIndex } from '../src/data';
-import type { Dataset, Grade } from '../src/data/types';
-import { ru } from '../src/i18n/ru';
-import { makeCtx } from '../src/logic/context';
-import { evaluate } from '../src/logic/evaluate';
+import { createIndex } from '@/game/data';
+import type { Dataset, Grade } from '@/game/data/types';
+import { ru } from '@/i18n/ru';
+import { makeCtx } from '@/game/context';
+import { evaluate } from '@/features/eval/verdict/evaluate';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('./fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
