@@ -213,3 +213,35 @@ describe('строки GEARPOOL', () => {
     expect(enUi.vsWorn('Legendary', 4)).toBe('now: Legendary, Breakthrough T4');
   });
 });
+
+// .x/0070-more-sheet SPEC 10: Справка и обучение говорят про «Ещё» и режимы списка, а не про прежнее меню ☰, подвал и галочки
+describe('справка и обучение после «Ещё»', () => {
+  const STALE = {
+    ru: [/меню ☰/i, /в подвале/i, /экспорт \/ импорт/i, /не всё надето/i, /показать и без билдов/i, /Обмен для команды.{0,12}в ростере/],
+    en: [/☰ menu/i, /footer/i, /export \/ import/i, /not fully equipped/i, /show those without builds/i, /Team trade" in the roster/],
+  } as const;
+  const help = (lang: 'ru' | 'en') => {
+    const u = TEXTS[lang].ui, t = TEXTS[lang].tour;
+    return [...u.helpInputItems, ...u.helpRoutineItems, ...u.helpVerdicts, ...u.helpChars, ...u.helpTradeItems, ...u.helpInstallItems, ...u.steps,
+      t.endText(true), t.endText(false), t.gearEnd(true), t.gearEnd(false), ...Object.values(t.tips) as string[], ...Object.values(t.news) as string[]].join('\n');
+  };
+
+  it.each(['ru', 'en'] as const)('%s: нет отсылок к прежнему меню ☰, подвалу, «экспорт / импорт» и галочкам', (lang) => {
+    const text = help(lang);
+    expect(STALE[lang].filter((re) => re.test(text)).map(String)).toEqual([]);
+  });
+
+  it.each(['ru', 'en'] as const)('%s: Справка называет «Ещё», «Доодеть», резервную копию и «Обмен»', (lang) => {
+    const u = TEXTS[lang].ui;
+    const chars = u.helpChars.join('\n');
+    for (const word of [u.more, u.modeMine, u.modeToDress, u.modeAll, u.backup, u.moreSettings]) expect(chars).toContain(word);
+    expect(u.helpTradeItems.join('\n')).toContain(u.tradeBtn);
+    expect(u.helpInputItems.join('\n')).toContain(u.more);
+  });
+
+  it.each(['ru', 'en'] as const)('%s: конец тура зовёт «Ещё»; «Что нового» про «Ещё» — владельцев текст', (lang) => {
+    const t = TEXTS[lang].tour;
+    expect(t.endText(true)).toContain(lang === 'ru' ? '«Ещё»' : '“More”');
+    expect(t.tips.more).toBe(lang === 'ru' ? 'Настройки оценки, резервная копия, язык и справка теперь в «Ещё».' : 'Evaluation settings, backup, language and help are now in “More”.');
+  });
+});

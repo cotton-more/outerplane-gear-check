@@ -16,7 +16,7 @@ html.narrow .slot > span:not(.ico) { display: none; }
 @media (hover: hover) and (pointer: fine) { html:not(.sheet) .slot kbd { display: inline-block; } }
 .formrow { display: flex; gap: 6px; min-width: 0; }
 .gradesw { display: flex; gap: 4px; flex: none; }
-/* грейд — цветная плашка (красная Legendary, синяя Epic; или рамка из игры — переключатель в подвале) с белой буквой; невыбранный приглушён */
+/* грейд — цветная плашка (красная Legendary, синяя Epic; или рамка из игры — переключатель в «Ещё») с белой буквой; невыбранный приглушён */
 .grade { display: inline-grid; place-items: center; width: 44px; min-height: 44px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font-weight: 700; }
 .grade > * { grid-area: 1 / 1; }
 .grade img, .grade .noimg, .grade .gframe { width: 100%; height: 100%; border-radius: 5px; object-fit: cover; }

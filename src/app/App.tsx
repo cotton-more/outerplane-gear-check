@@ -99,7 +99,7 @@ export function App() {
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off), [idx, s.settings, roster, t, off]);
   // экипировка по пулу (features/gear/pool): вид — один раз на хранилище
   const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
-  // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, меню и фильтр «не всё надето»)
+  // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, «Доодеть» в списке и в «Ещё»)
   const geared = useMemo(() => gearBadges(view), [view]);
   // сколько своих доодеть: число у «Доодеть» в списке и в «Ещё»
   const todressN = useMemo(() => countToDress(idx.D.chars, roster, geared, off), [idx, roster, geared, off]);

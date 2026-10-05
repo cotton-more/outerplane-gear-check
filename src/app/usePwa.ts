@@ -11,7 +11,7 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || (
 
 // ответ worker'а на { type: 'ogc:info' } (pwa/sw.template.js): версия приложения и версия данных — коммит outerpedia
 export interface WorkerInfo { version?: unknown; data?: unknown }
-// 'data' — вышли новые данные: плашка «Обновить»; 'app' — только правки приложения: строка в подвале
+// 'data' — вышли новые данные: плашка «Обновить»; 'app' — только правки приложения: «Готова новая версия» в «Ещё»
 export type UpdateKind = 'data' | 'app';
 
 // Какое обновление ждёт. Данные — только когда worker ответил и версия данных у него другая, чем у открытой страницы.
@@ -42,7 +42,7 @@ export function askWorker(w: ServiceWorker, ms = 1500): Promise<WorkerInfo | nul
 // снимка, он меняется только с новыми данными. Новый worker ждёт; страница спрашивает его, что в нём (askWorker),
 // и сравнивает со своими данными — dataVersion, meta.commit открытого набора:
 // - другие данные — 'data', плашка «Вышли новые данные»;
-// - те же — 'app', обновилось только приложение: тихая строка в подвале, а если worker ждал уже при загрузке
+// - те же — 'app', обновилось только приложение: «Готова новая версия» в «Ещё», а если worker ждал уже при загрузке
 //   страницы (холодный запуск) — включаем сразу, перезагрузка; недовведённая вещь — в ogc.item.
 export function usePwa(dataVersion: string | null) {
   const [pending, setPending] = useState<{ w: ServiceWorker; kind: UpdateKind } | null>(null);
@@ -64,7 +64,7 @@ export function usePwa(dataVersion: string | null) {
       if (boot && kind === 'app') w.postMessage('skipWaiting'); // перезагрузит onControllerChange
     };
     const onVisible = () => { if (document.visibilityState === 'visible' && reg) reg.update().catch(() => {}); };
-    // пришло посреди работы — само не включаем: плашка или строка в подвале
+    // пришло посреди работы — само не включаем: плашка или «Готова новая версия» в «Ещё»
     const track = (w: ServiceWorker) => w.addEventListener('statechange', () => { if (w.state === 'installed' && sw.controller) void found(w, false); });
     sw.register('sw.js').then((r) => {
       reg = r;

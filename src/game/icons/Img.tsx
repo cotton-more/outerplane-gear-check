@@ -1,7 +1,7 @@
 // Картинки по ключу датасета (face:…, eq:…, stat:…, class:…, elem:…, frame:…).
 // Нет картинки — серая заглушка того же размера; не загрузилась — прячем, чтобы не торчал значок битой картинки.
 // Статы, слоты, грейд, предметы, сеты, стихии, классы и талисманы рисуются своими значками (Icon, src/game/icons/own.ts);
-// картинки из игры для них — только для сравнения, переключателем в подвале (GameIconsContext). Портреты — из игры.
+// картинки из игры для них — по выбору в «Ещё» → «Настройки» (GameIconsContext), без выбора — из игры. Портреты — из игры.
 import { createContext, useContext } from 'react';
 import { STAT_ICON } from '@/game/data';
 import type { GearSet, Item, SlotId } from '@/game/data/types';
@@ -9,7 +9,7 @@ import { CLASS_ICON, ELEMENT_ICON, SLOT_ICON, TALISMAN_ICON, setIcon, statIcon }
 import { TABLER, type IconName } from './tabler';
 import { useIndex } from '@/game/data/IndexContext';
 
-// true — значки из игры вместо своих (переключатель в подвале, на время сравнения)
+// true — значки из игры вместо своих («Ещё» → «Настройки»; без выбора — из игры)
 export const GameIconsContext = createContext(false);
 const useGameIcons = () => useContext(GameIconsContext);
 
