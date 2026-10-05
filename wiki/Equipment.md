@@ -134,9 +134,9 @@ Enhance isn't tracked: pieces are assumed to be +10.
 
 ## Worn and the hero's build
 
-The **"Worn"** button is a group: the left half opens the tab, the right half — the hanger **▾** — opens "Build for Caren" (the hero's build itself is outlined among the tabs): each variant shows what you have for it ("worn 2 of 4", "3 of 4 in pieces",
-"1 missing"). Picking another build leads to the **"Re-dress"** screen: what to wear from your own (one piece or "Wear
-all"), what you take off, what's missing. In the game you do the same yourself — the app only counts.
+The build the hero is dressed for is outlined among the tabs. On another build's tab, under the tabs, there is
+**"Re-dress for DPS ▸"** (for the variant shown). The hero's build is saved (with "Undo") and the **"Re-dress"** screen
+opens: what to wear from your own (one piece or "Wear all"), what you take off, what's missing. In the game you do the same yourself — the app only counts.
 
 After the update, heroes with gear get a notice "Picked builds from your pieces for N heroes — please check". "Check"
 opens "Heroes' builds" with the reasons; "All correct" saves. The rule: only one build → the one marked "Filling" → the

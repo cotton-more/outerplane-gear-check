@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// «Надето», шаг 7: плашка «Выбрал билды…», шторка «Билды героев» («Всё верно»), шторка «Билд для X» (строки частей связки),
-// «Переодеть» → «Надеть все» → «Вернуть». Данные — только из test/fixtures, не владельца. Логика — test/wearing.test.ts,
+// «Надето», шаг 7: плашка «Выбрал билды…», шторка «Билды героев» («Всё верно»), шторка «Билд для X» (строки частей связки;
+// открывается «Speed ▾» в плане обмена), вешалка у вкладки билда → «Переодеть» → «Надеть все» → «Вернуть». Данные — только из test/fixtures, не владельца. Логика — test/wearing.test.ts,
 // test/aim.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -161,13 +161,14 @@ describe('шторка «Билд для X»', () => {
   const openSheet = async (aim: boolean) => {
     const g = deltaGear(aim);
     await mount({ gear: g.gear });
-    await click($('.bt-split .aimb'));
+    await click(byText('.cd-trade button', 'Trade'));
+    await click($('.tline.to .aimb'));
     return g;
   };
 
-  it('«сменить ▾» открывает шторку с вариантами и строками частей связки', async () => {
+  it('«… ▾» в плане обмена открывает шторку с вариантами и строками частей связки', async () => {
     await openSheet(true);
-    const sheet = $('[role="dialog"]')!;
+    const sheet = $$('[role="dialog"]').at(-1)!;
     expect(sheet.getAttribute('aria-label')).toBe('Build for Heatwave Cop Delta');
     const rows = [...sheet.querySelectorAll<HTMLElement>('.arow')].map((r) => r.textContent!);
     expect(rows[0]).toContain('current');
@@ -178,26 +179,39 @@ describe('шторка «Билд для X»', () => {
   });
 
   it('нажатие на текущий билд закрывает шторку, ничего не записывая', async () => {
-    const { gear } = deltaGear(true);
-    await mount({ gear });
+    await openSheet(true);
     const before = localStorage.getItem('ogc.gear');
-    await click($('.bt-split .aimb'));
-    await click($('[role="dialog"] .arow'));
-    expect($('[role="dialog"]')).toBeNull();
+    await click($('.aimsheet .arow'));
+    expect($('.aimsheet')).toBeNull();
     expect(localStorage.getItem('ogc.gear')).toBe(before);
   });
 });
 
+// вкладка DPS (лучший вариант — Penetration ×4: все четыре в вещах), «Переодеть в …» под вкладками
+const dress = async () => {
+  await click(byText('.btabs [role="tab"]', 'DPS'));
+  await click($('.cd-dress button'));
+};
+
 describe('«Переодеть»', () => {
+  it('«Переодеть в …» — только у показанного билда, если герой одет не в него; билд героя обведён', async () => {
+    await mount({ gear: deltaGear(true).gear });
+    await click(byText('.btabs [role="tab"]', 'Priority Support'));
+    expect($('.cd-dress button')).toBeNull();
+    expect($('.btabs .bt-aim')?.textContent).toContain('Priority Support');
+
+    await click(byText('.btabs [role="tab"]', 'DPS'));
+    expect($('.cd-dress button')?.textContent).toContain('Re-dress for DPS');
+  });
+
+
   it('другой билд → «Переодеть» → «Надеть все» → надето по раскладке; «Вернуть» — как было', async () => {
     const { speed, pen } = await (async () => {
       const g = deltaGear(true);
       await mount({ gear: g.gear });
       return g;
     })();
-    await click($('.bt-split .aimb'));
-    await click($$('.arow').find((r) => r.textContent!.includes('Penetration ×4') && r.textContent!.includes('can re-dress')));
-    await click(byText('.aim-go', 'Re-dress for'));
+    await dress();
 
     expect(stored().aim[delta.id]).toBe(PEN4);
     expect($('.gear-toast')?.textContent).toContain("Heatwave Cop Delta's build: DPS · Penetration ×4");
@@ -217,9 +231,7 @@ describe('«Переодеть»', () => {
   it('«Надеть» у одной вещи — только она, тост «Надето на …: слот»', async () => {
     const g = deltaGear(true);
     await mount({ gear: g.gear });
-    await click($('.bt-split .aimb'));
-    await click($$('.arow').find((r) => r.textContent!.includes('Penetration ×4') && r.textContent!.includes('can re-dress')));
-    await click(byText('.aim-go', 'Re-dress for'));
+    await dress();
     await click($('.redress .rd-row .btn'));
 
     expect(Object.values(stored().worn[delta.id]).filter((id) => g.pen.some((p) => p.id === id))).toHaveLength(1);
@@ -228,11 +240,9 @@ describe('«Переодеть»', () => {
 
   it('«← имя» возвращает на карточку героя', async () => {
     await mount({ gear: deltaGear(true).gear });
-    await click($('.bt-split .aimb'));
-    await click($$('.arow').find((r) => r.textContent!.includes('can re-dress')));
-    await click(byText('.aim-go', 'Re-dress for'));
+    await dress();
     await click($('.rd-top button'));
     expect($('.redress')).toBeNull();
-    expect($('.worn-aim')).toBeTruthy();
+    expect($('.btabs')).toBeTruthy();
   });
 });

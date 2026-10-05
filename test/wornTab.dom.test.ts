@@ -86,23 +86,12 @@ describe('вкладка «Надето»: порядок и вкладка по
     expect(tabs().some((x) => x?.includes('Worn'))).toBe(false);
   });
 
-  it('пустая вкладка: подсказка; билд героя «… ▾» — вторая половина кнопки «Надето»', async () => {
+  it('пустая вкладка: подсказка и строка билда есть всегда', async () => {
     await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }) });
     await click(byText('.btabs [role="tab"]', 'Worn'));
     expect($('.worn-hint')?.textContent).toBe('Mark what Caren wears in game now.');
-    expect($('.bt-split .aimb')?.textContent).toMatch(/ ▾$/);
-    expect($('.bt-split .aimb')?.getAttribute('aria-label')).toBe('Change build for Caren');
-  });
-});
-
-describe('билд героя на вкладках', () => {
-  it('на «Надето» — вешалка вместо имени; вкладка билда героя обведена, одна', async () => {
-    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
-    const name = $('.bt-split .aimb')?.getAttribute('title');
-
-    expect($('.bt-split .aimb .ico')).not.toBeNull();
-    expect($$('.btabs .bt-aim')).toHaveLength(1);
-    expect($('.btabs .bt-aim')?.textContent).toMatch(new RegExp('^' + name));
+    expect($('.worn-aim')?.textContent).toContain('Build — ');
+    expect($('.cd-dress')).toBeNull(); // на «Надето» «Переодеть» нет
   });
 });
 

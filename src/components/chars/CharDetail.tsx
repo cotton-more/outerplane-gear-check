@@ -1,6 +1,6 @@
 // Билды персонажа по outerpedia: сеты, оружие и аксессуар с main stat, приоритет сабстатов, талисманы, заметка.
 // На узком экране — полноэкранная шторка поверх списка.
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type Key, type ReactNode } from 'react';
 import { FLAT } from '../../data';
 import type { Build, Char, GearKind, GearRef, SlotId } from '../../data/types';
 import { useT } from '../../i18n';
@@ -16,7 +16,6 @@ import { redressPlan, undoWearMany, wearMany, wornView } from '../../logic/weari
 import type { Variant } from '../../logic/variants';
 import { BuildGear, PieceSheet } from './BuildGear';
 import { PoolList } from './PoolList';
-import { AimButton, AimSheet } from './AimSheet';
 import { Redress } from './Redress';
 import { WornGear } from './WornGear';
 import { VariantChips } from './VariantChips';
@@ -75,7 +74,6 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     : lead ? (isStats(lead) ? 'stats' : Math.max(0, c!.builds.indexOf(lead.parent))) : 0));
   const [picked, setPicked] = useState<Record<string, string>>({}); // вкладка → выбранный вариант (чипы)
   const [pieceId, setPieceId] = useState<string | null>(null);
-  const [aimOpen, setAimOpen] = useState(false); // шторка «Билд для X»
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
   useEffect(() => { if (!active) setPieceId(null); }, [active]);
   const piece = pieceId ? gear.store.pieces[pieceId] : undefined;
@@ -175,12 +173,18 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
   const cur = wornTab && wv?.variant ? wv.variant : v;
   const aimName = !wv?.variant || isStats(wv.variant) ? t.ui.byStats : wv.variant.parent.name;
-  // вкладка билда героя (aimOf) — подсвечена: на кнопке «Надето» вместо имени вешалка; null — «По статам»
-  const aimMark = (x: Build | null) => {
+  // вкладка билда: билд героя (aimOf) обведён; x null — «По статам»
+  const tabOf = (x: Build | null, selected: boolean, onClick: () => void, body: ReactNode, key: Key) => {
     const av = wv?.variant;
-    const on = !!av && (x ? !isStats(av) && av.parent === x : isStats(av));
-    return on ? { className: 'bt-aim', title: t.ui.aimTab(aimName) } : {};
+    const aim = !!av && (x ? !isStats(av) && av.parent === x : isStats(av));
+    return (
+      <button key={key} type="button" role="tab" aria-selected={selected} onClick={onClick}
+        {...(aim ? { className: 'bt-aim', title: t.ui.aimTab(aimName) } : {})}>{body}</button>
+    );
   };
+  // «Переодеть в …» под вкладками: показан не билд героя — запись билда с «Вернуть» и экран «Переодеть» (App, onChooseAim).
+  // Не во вкладках: иначе ширина выбранной меняется и ряды перескакивают
+  const dressTo = !wornTab && wv && live && onChooseAim && v && wv.variant?.key !== v.key ? v : null;
   const enter = onTryOn && wv?.variant ? (slot: SlotId) => onTryOn(c, isStats(wv.variant!) ? wv.variant!.b : wv.variant!.parent, slot, undefined, wv.variant!.sig, false, true) : undefined;
   // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
   const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
@@ -252,38 +256,33 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         <>
           {/* «По статам» — отдельный билд у каждого персонажа с билдами (находка 28): вкладка последней */}
           <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
-            {/* «Надето» — групповая кнопка: слева вкладка, справа вешалка ▾ — сменить билд героя (шторка «Билд для X»); сам
-                билд героя подсвечен среди вкладок (bt-aim) */}
             {wv && (
-              <span className="bt-split" role="group" aria-label={t.ui.tabWorn}>
-                <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
-                  {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
-                </button>
-                <AimButton icon name={aimName} aria={t.ui.wornChangeAria(c.name)} onClick={live ? () => setAimOpen(true) : undefined} {...tour('wchange')} />
-              </span>
+              <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
+                {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
+              </button>
             )}
             {c.builds.map((x, i) => {
               const one = variantsOfBuild(x);
               const dup = one.length === 1 && one[0].dupOf ? cp!.variants.find((y) => y.key === one[0].dupOf) : null;
-              return (
-                <button key={i} type="button" role="tab" aria-selected={!statsTab && !wornTab && x === b} onClick={() => setTab(i)} {...aimMark(x)}>
-                  {x.name}{dup ? <span className="bt-n">{t.ui.dupOf(dup.name)}</span> : badge(x) > 0 && <span className="bt-n">{badge(x)}/6</span>}
-                </button>
-              );
+              return tabOf(x, !statsTab && !wornTab && x === b, () => setTab(i),
+                <>{x.name}{dup ? <span className="bt-n">{t.ui.dupOf(dup.name)}</span> : badge(x) > 0 && <span className="bt-n">{badge(x)}/6</span>}</>, i);
             })}
-            {cp!.stat && (
-              <button type="button" role="tab" aria-selected={!!statsTab} onClick={() => setTab('stats')} {...aimMark(null)}>
-                {t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}
-              </button>
-            )}
+            {cp!.stat && tabOf(null, !!statsTab, () => setTab('stats'),
+              <>{t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}</>, 'stats')}
           </div>
           {list.length > 1 && !wornTab && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
+          {dressTo && (
+            <div className="cd-dress">
+              <button type="button" className="btn small" onClick={() => onChooseAim!(c.id, dressTo.key)} {...tour('wchange')}>
+                <Icon name="hanger" />{t.ui.aimRedress(isStats(dressTo) ? t.ui.byStats : dressTo.name)}
+              </button>
+            </div>
+          )}
           {wornTab && wv
             ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined} />
             : <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
               onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />}
           <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />
-          {aimOpen && cp && <AimSheet c={c} ctx={ctx} st={gear.store} cp={cp} onClose={() => setAimOpen(false)} onChoose={(key) => { setAimOpen(false); onChooseAim?.(c.id, key); }} />}
           {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
             onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, isStats(cur) ? cur.b : cur.parent, piece.slot, piece, cur.sig, true); } : undefined}
             onWear={live ? () => { setPieceId(null); wear(piece.id); } : undefined} />}
