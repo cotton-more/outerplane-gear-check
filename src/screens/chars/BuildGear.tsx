@@ -26,6 +26,7 @@ import { tour, tourItem } from '@/tour/anchors';
 import { Sheet } from '@/shared/ui/Sheet';
 import { SubPicker } from '@/features/eval/form/SubPicker';
 import { BtChip } from '@/features/eval/form/BtChip';
+import { ShareCode } from '@/features/eval/code/ItemCode';
 import { setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
 import { CapNote, LevelButtons } from '@/game/item/SubLevels';
@@ -152,6 +153,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
 // правкой. Правку делает onEdit (CharDetail: gear updateIn — у этого героя, общая запись делится, шторка идёт за новым
 // id). Кнопки уровня — как на форме: 5–6 (после Reforge) узкие. Окно выбора 4-го — внутри этой же шторки (вложенные
 // закрывались бы одним Esc). «Убрать у Caren» — только из её вещей (пулы независимы, В9); onRemoved — сообщение с «Вернуть»
+// Под сегментами — код вещи для чата и «Скопировать», как в вердикте (у вещи с 5–6 сегментами кода нет)
 export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRemoved, onWear }: {
   c: Char; p: Piece; ctx: Ctx; gear: GearApi; view: PoolView; onClose: () => void; onEdit: (patch: PieceEdit) => void; onTry?: () => void; onWear?: () => void;
   onRemoved?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
@@ -210,6 +212,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
           {canFourth && <button type="button" className="subadd" onClick={() => setFourth(true)}>+ {t.ui.addFourth}</button>}
           <CapNote shown={capped} grade={p.grade} at={capAt} />
         </div>
+        <ShareCode item={pieceInput(p)} anchor={false} />
         <p className="muted small">{t.ui.pieceEditNote(c.name)}</p>
         <div className="piece-act">
           <button type="button" className="btn primary" onClick={onClose}>{t.ui.pieceDone}</button>

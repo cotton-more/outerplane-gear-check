@@ -10,6 +10,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { encodeItem } from '@/features/eval/code/codec';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -1043,6 +1044,21 @@ describe('карточка персонажа', () => {
     expect([...$$('.piece .roll-b')[0].querySelectorAll('button')].map((b) => b.className)).toEqual(['lit', 'lit', 'lit', '', 'after', 'after']);
     expect($$('.piece .roll-b')[0].querySelector('[aria-pressed="true"]')?.textContent).toBe('4'); // уровень = lit
     expect($('.piece')?.textContent).toContain('Transistone changed a stat? Enter the piece again');
+  });
+
+  it('код вещи для чата и «Скопировать», как в вердикте; уровень 5 (после Reforge) — кода нет', async () => {
+    const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 3, SPD: 1 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
+    await click($('.bgear-row'));
+    const code = encodeItem({ slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 3, SPD: 1 } });
+    expect(code).toBeTruthy();
+    expect($('.piece .v-share .code')?.textContent).toBe(code);
+    expect(byText('.piece .v-share .btn', 'Copy')).toBeTruthy();
+    expect($('.piece [data-tour="code"]')).toBeNull(); // якорь подсказки «code» — только у вердикта
+
+    await click($$('.piece .roll-b')[1].querySelectorAll<HTMLElement>('button')[4]); // CHC — уровень 5
+
+    expect($('.piece .v-share')).toBeNull();
   });
 
   it('нажатие ставит уровень; на текущий — на один меньше, но не ниже 1', async () => {

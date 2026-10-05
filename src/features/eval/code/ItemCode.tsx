@@ -6,8 +6,9 @@ import type { ItemInput } from '@/game/item/item';
 import { tour } from '@/tour/anchors';
 import { copyText } from '@/shared/copyText';
 
-// строка в вердикте: код текущего предмета и «Скопировать» — вставить в чат игры
-export function ShareCode({ item }: { item: ItemInput }) {
+// строка в вердикте и в карточке вещи персонажа (BuildGear PieceSheet): код предмета и «Скопировать» — вставить в чат
+// игры. У вещи с 5–6 сегментами кода нет (codec) — строки нет. anchor = false — без якоря подсказки «code»: он у вердикта
+export function ShareCode({ item, anchor = true }: { item: ItemInput; anchor?: boolean }) {
   const t = useT();
   const code = encodeItem(item);
   const el = useRef<HTMLElement>(null);
@@ -17,7 +18,7 @@ export function ShareCode({ item }: { item: ItemInput }) {
     copyText(`${CODE_PREFIX} ${code}`, () => setMsg(t.ui.copied), () => { if (el.current) getSelection()?.selectAllChildren(el.current); setMsg(t.ui.codeSelected); });
   };
   return (
-    <div className="v-share" {...tour('code')}>
+    <div className="v-share" {...(anchor ? tour('code') : {})}>
       <span className="muted">{t.ui.codeForChat}</span>
       <b className="code" ref={el}>{code}</b>
       <span className="muted small" aria-live="polite">{msg}</span>

@@ -165,6 +165,8 @@ html.xs .bgear-t { grid-row: 3; }
   .piece .subkey img, .piece .subkey .noimg, .piece .subkey .ico { display: none; }
 }
 .piece-act { display: flex; flex-wrap: wrap; gap: 8px; }
+/* код вещи для чата (ShareCode) — строкой карточки, без полосы и отступов строки вердикта */
+.piece .v-share { padding: 0; border-bottom: 0; }
 /* окна-вопросы (Core Fusion, снятие звезды): заголовок — вопрос с именем, на 280 не режем многоточием, а переносим */
 .drawer.ask .drawer-h h3 { white-space: normal; text-wrap: balance; }
 /* окно перехода Core Fusion (FusionAsk): текст и «Да» / «Отмена» */

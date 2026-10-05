@@ -621,7 +621,7 @@ export const en: Texts = {
       '**"Better in own pieces"** on the "Worn" tab uses the same threshold as the trade: a spare piece beats the worn one by at least 1 point for the build, or turns on a set, or gives a recommended weapon.',
     ],
     helpCode: 'Code for your guild',
-    helpCodeText: (example) => `The verdict details show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster. A piece with 5–6 segments has no code.`,
+    helpCodeText: (example) => `The verdict details and a character's piece card show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster. A piece with 5–6 segments has no code.`,
     helpInstall: 'Installing',
     helpInstallItems: [
       '**Android (Chrome):** menu ⋮ → "Install app" or "Add to Home screen".',

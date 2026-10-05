@@ -131,6 +131,9 @@ Tap a piece to fix it after upgrading in the game. The edit is narrow — only w
 - **"Try a replacement"** — rating for Caren: "Replace" removes exactly this piece;
 - **"Remove from Caren"** — dismantled it, used it for Breakthrough, or she doesn't need it: builds reassemble.
 
+The card also has the **item code for chat** and "Copy", as in the verdict: show the piece to your guild without
+entering it again. A piece with 5–6 segments has no code.
+
 An edit removes nothing by itself: if another piece is no longer needed, it gets a "no longer needs it" line and "Remove
 from Caren".
 
