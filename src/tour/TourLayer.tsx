@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Rich } from '@/shared/ui/Rich';
 import { useT } from '@/i18n';
-import type { Tab } from '@/app/appState';
+import type { Tab } from '@/shared/tab';
 import { pinSelector, type Anchor } from './anchors';
 import { cardOpen, freeBottom, overlayOpen, pad, rect, targets, union, type Geom, type Rect } from './dom';
 import { stepText } from './core';

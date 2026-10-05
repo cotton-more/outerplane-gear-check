@@ -23,3 +23,4 @@ export const withinCap = (grade: Grade, from: Subs, to: Subs): boolean => {
   const sum = levelSum(to);
   return sum <= levelCap(grade) || sum <= levelSum(from);
 };
+export const MAX_LIT = 6;     // сегментов у сабстата в игре

@@ -5,8 +5,8 @@ import type { GearKind, Grade, SlotId } from '@/game/data/types';
 import { epicMains, legendMains } from '@/game/build/builds';
 import { itemMains } from '@/game/item/mains';
 import type { Settings } from '@/game/context';
-import { MAX_LIT, hasBt } from '@/features/gear/model/gear';
-import { MAX_SUBS, levelCap, levelSum, withinCap, type Subs } from '@/game/item/subs';
+import { hasBt } from '@/game/item/item';
+import { MAX_SUBS, levelCap, levelSum, withinCap, type Subs, MAX_LIT } from '@/game/item/subs';
 import type { ItemInput } from '@/game/item/item';
 
 export interface FormState {

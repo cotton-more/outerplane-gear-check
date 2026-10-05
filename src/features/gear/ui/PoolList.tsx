@@ -6,13 +6,14 @@
 import { SLOTS } from '@/game/data';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { hasBt, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { type GearStore, type Piece } from '@/features/gear/model/gear';
+import { hasBt } from '@/game/item/item';
 import { isStats, removeFrom, removeUndo, type CharPool, type PoolView } from '@/features/gear/pool';
 import { whereOf } from '@/features/gear/model/poolVs';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { tour } from '@/tour/anchors';
-import { PieceName, btText } from './BuildGear';
+import { PieceName, btText } from './pieceText';
 
 export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onRateFor }: {
   cp: CharPool; ctx: Ctx; gear: GearApi; view: PoolView; own: boolean; onOpenPiece: (id: string) => void;

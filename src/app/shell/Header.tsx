@@ -1,5 +1,5 @@
 import { useT } from '@/i18n';
-import type { Tab } from '@/app/appState';
+import type { Tab } from '@/shared/tab';
 
 // Знак — тот же, что на иконке приложения (update.py, render_app_icon): буква O из логотипа Outerplane с искрой.
 function BrandMark() {

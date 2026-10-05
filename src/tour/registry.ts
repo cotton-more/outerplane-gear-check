@@ -9,11 +9,11 @@ const fileOf = (path: string) => path.replace(/^\.\.\//, ''); // путь от s
 // список по порядку. Вкладками: «Персонажи», «Оценка», «Обмен». Новый *.tour.ts — допиши сюда, в своё место
 // (test/tour/tour.test.ts напомнит); файл не из списка встанет в конец.
 export const TIP_ORDER = [
-  'features/worn/AimSheet', 'features/gear/ui/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
+  'features/worn/AimSheet', 'screens/chars/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
   'features/roster/FusionAsk', 'features/gear/ui/PoolList', 'features/gear/ui/VariantChips', 'features/worn/WornGear',
   'features/eval/form/BtChip', 'features/eval/verdict/Chain', 'features/gear/ui/EquipSheet', 'features/eval/code/ItemCode',
   'features/eval/form/StatGrid', 'features/eval/form/SubPicker', 'features/eval/form/SubRows', 'features/tryon/TryOnStrip',
-  'features/eval/verdict/VerdictPanel', 'features/gear/ui/VsSection',
+  'screens/eval/VerdictPanel', 'features/gear/ui/VsSection',
   'features/trade/ui/TradeSheet',
 ].map((f) => f + '.tour.ts');
 const rank = (f: string) => { const i = TIP_ORDER.indexOf(f); return i < 0 ? TIP_ORDER.length : i; };

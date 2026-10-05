@@ -6,10 +6,11 @@ import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
 import { normalizeStored, type Normalized } from '@/features/gear/model/fusion';
-import { gc, MAX_LIT, setPinned, type Bt, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { gc, setPinned, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import type { Bt } from '@/game/item/item';
 import { buildKey } from '@/game/build/variants';
 import { heroOpts, isStats, play } from '@/features/gear/pool';
-import { MAX_SUBS, type Subs } from '@/game/item/subs';
+import { MAX_SUBS, type Subs, MAX_LIT } from '@/game/item/subs';
 
 // v1: вещи лежали в билдах («персонаж/билд» → слот → id)
 interface BuildGearV1 { slots: Partial<Record<SlotId, string>>; at: string }

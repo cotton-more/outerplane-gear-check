@@ -7,7 +7,7 @@ import { SLOTS, subLabel } from '@/game/data';
 import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { hasBt } from '@/features/gear/model/gear';
+import { hasBt } from '@/game/item/item';
 import { isStats, wearAll } from '@/features/gear/pool';
 import { vsFigure } from '@/features/gear/model/vs';
 import type { WornAdvice, WornView } from './wearing';
@@ -15,7 +15,7 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { Rich } from '@/shared/ui/Rich';
 import { tour } from '@/tour/anchors';
-import { PieceName, bonusLinesOf, btText, pieceText } from '@/features/gear/ui/BuildGear';
+import { PieceName, bonusLinesOf, btText, pieceText } from '@/features/gear/ui/pieceText';
 
 // «▲ +25%», «▲ ×3»; выигрыша нет (пустой слот, вещь лишь включит бонус сета) — ничего
 function deltaText(a: WornAdvice): string {

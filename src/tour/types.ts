@@ -2,7 +2,8 @@
 // в своих *.tour.ts (registry.ts).
 import type { Texts } from '@/i18n';
 import type { Verdict } from '@/features/eval/verdict/verdict';
-import type { AppState, Tab } from '@/app/appState';
+import type { AppState } from '@/app/appState';
+import type { Tab } from '@/shared/tab';
 import type { Anchor, Pin } from './anchors';
 
 export type TourId = 'core' | 'gear';

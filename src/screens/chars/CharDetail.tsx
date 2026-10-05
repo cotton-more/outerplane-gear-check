@@ -14,7 +14,7 @@ import { isStats, play, setMark, undoWear, undoWearAll, wearAll, wearFromPool, t
 import { badgeOf } from '@/features/gear/model/poolVs';
 import { redressPlan, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 import type { Variant } from '@/game/build/variants';
-import { BuildGear, PieceSheet } from '@/features/gear/ui/BuildGear';
+import { BuildGear, PieceSheet } from './BuildGear';
 import { PoolList } from '@/features/gear/ui/PoolList';
 import { Redress } from '@/features/worn/Redress';
 import { WornGear } from '@/features/worn/WornGear';

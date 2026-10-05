@@ -9,7 +9,7 @@ import type { CharPool } from '@/features/gear/pool';
 import type { Variant } from '@/game/build/variants';
 import { tour } from '@/tour/anchors';
 import { Sheet } from '@/shared/ui/Sheet';
-import { wantWhy } from './BuildGear';
+import { wantWhy } from './pieceText';
 
 // что отличает вариант: имя без имени билда («Defense mix · Penetration» → «Penetration»)
 const short = (v: Variant) => v.name.slice(v.parent.name.length + 3) || v.name;

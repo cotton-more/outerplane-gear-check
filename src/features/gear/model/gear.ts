@@ -3,20 +3,12 @@
 // вердикте): сегменты (1–6, один уровень) и «T4» — как на форме; сделал в игре Reforge или Breakthrough — правка в
 // шторке вещи (updateIn). Enhance не храним: считаем +10. Пулы независимы (В9): «Надеть» всегда кладёт новую запись;
 // старая общая запись (из прежних версий) делится, когда её правят у одного героя.
-import { isArmor, type Index } from '@/game/data';
+import type { Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { subAllowed } from '@/game/item/mains';
-import { DROP_LEVEL, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/game/item/item';
+import { DROP_LEVEL, MAX_LIT, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
+import { hasBt, type Bt, type ItemInput } from '@/game/item/item';
 
-export type Bt = 0 | 1 | 2 | 3 | 4;
-export const MAX_LIT = 6;     // сегментов у сабстата в игре
-
-// Breakthrough вещи ведём («T4» на форме и в шторке, метка в пуле и в слоте): у брони — бонус сета и материал такой же
-// вещи, у Legendary оружия и аксессуара — материал такого же предмета (вопрос 7 (б) ревью eval-only, отменяет В4
-// «только у брони»). У Epic оружия и аксессуара предмета на форме нет — такую же вещь не найти (features/gear/model/material), и
-// Breakthrough ни на что не влияет: кнопки нет, Breakthrough не указан, как раньше
-export const hasBt = (slot: SlotId, grade: Grade): boolean => isArmor(slot) || grade === 'unique';
 
 export interface Piece {
   id: string;

@@ -10,7 +10,8 @@ import { GRADE_NAME, isArmor, subLabel } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { hasBt, pieceInput, type GearStore } from '@/features/gear/model/gear';
+import { pieceInput, type GearStore } from '@/features/gear/model/gear';
+import { hasBt } from '@/game/item/item';
 import { itemMains } from '@/game/item/mains';
 import type { PoolView } from '@/features/gear/pool';
 import { subWeights } from '@/game/build/score';
@@ -21,7 +22,7 @@ import { gainOf, type HeroLine } from '@/features/trade/model/view';
 import { aimVariant } from '@/features/trade/model/world';
 import { SlotIcon, Img } from '@/game/icons/Img';
 import { AimButton } from '@/features/worn/AimSheet';
-import { PieceName, btText, pieceText } from '@/features/gear/ui/BuildGear';
+import { PieceName, btText, pieceText } from '@/features/gear/ui/pieceText';
 
 
 export interface Hint { heroes: string[]; gain: number }

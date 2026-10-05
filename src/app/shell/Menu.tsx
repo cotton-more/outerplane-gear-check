@@ -3,7 +3,7 @@
 import type { Dispatch, ReactNode } from 'react';
 import { useT } from '@/i18n';
 import type { Action, AppState } from '@/app/appState';
-import { EvalSettings } from '@/features/eval/form/EvalPanel';
+import { EvalSettings } from '@/screens/eval/EvalPanel';
 import { Sheet } from '@/shared/ui/Sheet';
 
 export function Menu({ s, dispatch, rosterSize, news, onClose, onChars, onGear, gearN, onCode, onHelp, onTour, onTrade, footer }: {

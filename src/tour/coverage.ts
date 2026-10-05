@@ -13,12 +13,13 @@ export const COVERAGE: Record<string, Coverage> = {
   'app/shell/Guide.tsx': 'core',                   // карточка первого запуска и Справка — отсюда начинается тур
   'app/shell/Header.tsx': 'helper',                // вкладки на широком экране
   'app/shell/Menu.tsx': 'helper',                  // меню ☰: те же кнопки, что под формой на ПК; «Экипировка» называет конец тура gear
-  'features/eval/form/EvalPanel.tsx': 'core',      // форма: слот, грейд, сет или main, сетка
+  'screens/eval/EvalPanel.tsx': 'core',            // форма: слот, грейд, сет или main, сетка
   'features/eval/form/ItemPicker.tsx': 'core',     // окно выбора Legendary по названию — шаг «сет или предмет»
   'features/eval/form/MainButtons.tsx': 'core',    // main оружия кнопками — тот же шаг
   'features/eval/form/MainPicker.tsx': 'core',     // окно main — тот же шаг
   'features/eval/form/PickField.tsx': 'helper',    // поле, открывающее окно выбора
   'features/eval/form/SetPicker.tsx': 'core',      // окно сетов — шаг «сет»
+  'features/gear/ui/pieceText.tsx': 'helper',      // подписи вещи в строках экипировки
   'features/roster/RosterRemoveAsk.tsx': 'helper', // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'features/worn/AimsSheet.tsx': 'helper',         // list of heroes with picked builds, opened from the notice button: the notice explains it
   'features/worn/Redress.tsx': 'helper',           // re-dress screen, opens from the build sheet whose tip explains it; sections name themselves
@@ -28,4 +29,5 @@ export const COVERAGE: Record<string, Coverage> = {
   'shared/ui/Notice.tsx': 'helper',                // плашка с одной кнопкой
   'shared/ui/Rich.tsx': 'helper',                  // жирный текст в фразах
   'shared/ui/Sheet.tsx': 'helper',                 // шторка для окон
+  'shared/ui/Toast.tsx': 'helper',                 // сообщение внизу с «Вернуть»: его текст говорит сам за себя
 };

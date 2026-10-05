@@ -6,22 +6,23 @@
 // «Слабее всех» и «Примерить замену» (вещь) открывают оценку в режиме «для героя» — слот и сет этого варианта на форме;
 // на вкладке «По статам» — без сета (туда встаёт то, что герой носит не по билду, находка 28).
 import { useEffect, useRef, useState } from 'react';
-import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel, type Index } from '@/game/data';
-import type { Build, Char, GearKind, SlotId } from '@/game/data/types';
+import { GRADE_NAME, SLOT, SLOTS, isArmor, subLabel } from '@/game/data';
+import type { Build, Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { MAX_LIT, hasBt, pieceInput, type Bt, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { pieceInput, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { hasBt } from '@/game/item/item';
 import { itemMains } from '@/game/item/mains';
 import { tryOnPreset } from '@/features/tryon/tryon';
 import { subWeights } from '@/game/build/score';
 import { lookFor } from '@/features/gear/model/vs';
-import { DROP_LEVEL, MAX_SUBS, levelCap, withinCap, type Subs } from '@/game/item/subs';
-import { isStats, markOfVariant, removeFrom, removeUndo, type Assembly, type CharPool, type PoolView } from '@/features/gear/pool';
+import { DROP_LEVEL, MAX_LIT, MAX_SUBS, levelCap, withinCap, type Subs } from '@/game/item/subs';
+import { isStats, removeFrom, removeUndo, type Assembly, type CharPool, type PoolView } from '@/features/gear/pool';
 import { badgeOf, whereOf, whereUsed } from '@/features/gear/model/poolVs';
-import { tierLabel, type BonusRow } from '@/game/set/setBonus';
 import type { Variant } from '@/game/build/variants';
 import { freeSlots, missingParts, t4Parts } from '@/features/worn/wearing';
 import type { GearApi } from '@/features/gear/store/useGear';
+import { bonusLinesOf, btText, PieceName, wantWhy } from '@/features/gear/ui/pieceText';
 import { SlotIcon, StatIcon } from '@/game/icons/Img';
 import { tour, tourItem } from '@/tour/anchors';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -29,66 +30,6 @@ import { SubPicker } from '@/features/eval/form/SubPicker';
 import { BtChip } from '@/features/eval/form/BtChip';
 
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
-
-// название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
-const nameOf = (ctx: Ctx, p: Piece): string => p.setId
-  ? `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`
-  : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
-// то же одной строкой («Speed Set», «Combination Simulator · SPD») — для фраз вроде совета «Лучше из своих: …»
-export const pieceText = (ctx: Ctx, p: Piece): string => {
-  const name = nameOf(ctx, p);
-  return p.setId || !p.main ? name : `${name ? name + ' · ' : ''}${p.main}`;
-};
-export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
-  const name = nameOf(ctx, p);
-  const main = p.setId ? null : p.main;
-  return (
-    <>
-      <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>
-      {name && <span className="pn">{name}</span>}
-      {main && <span className="pm">{name ? '· ' : ''}{main}</span>}
-    </>
-  );
-}
-
-// Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
-export const btText = (t: ReturnType<typeof useT>, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
-
-// текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base
-export const bonusText = (idx: Index, r: BonusRow): string => {
-  const s = idx.SET[r.set];
-  return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
-};
-
-// Собираю: почему вариант собирается (или нет) — строка рядом с переключателем. Всё — по показанной раскладке, как чип
-// и слоты. Собирается он потому, что часть связки можно собрать из пула, а раскладка ради статов её не взяла (Р1), —
-// «— Speed ×2 собирается из вещей Caren, но сейчас выгоднее без неё»: «готова» противоречило бы слотам
-export function wantWhy(t: ReturnType<typeof useT>, idx: Index, cp: CharPool, st: GearStore, v: Variant): string {
-  if (!cp.inPlay.includes(v)) return t.ui.fillingOff;
-  if (isStats(v)) return '';
-  const a = cp.asm.get(v.key)!;
-  if (a.need && a.progress === a.need) return t.ui.fillingWhy.done;
-  const mark = markOfVariant(st.marks, v);
-  if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
-  if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
-  const reach = cp.reach.get(v.key) ?? a;
-  if (reach !== a) {
-    const part = reach.complete.find((p) => !a.complete.some((q) => q.set === p.set));
-    return part ? t.ui.fillingReach(`${idx.SET[part.set]?.short ?? part.set} ×${part.n}`, cp.c.name) : '';
-  }
-  // начат (Р14), но не ближе всех — строки нет: «ближе всех» было бы неправдой
-  const top = Math.max(0, ...cp.inPlay.filter((x) => !isStats(x)).map((x) => (cp.reach.get(x.key) ?? cp.asm.get(x.key)!).progress));
-  return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
-}
-
-// бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
-export function bonusLinesOf(t: ReturnType<typeof useT>, idx: Index, c: Char, rows: readonly BonusRow[], combo: readonly { set: string }[]): string[] {
-  return rows.map((r) => {
-    const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
-    const own = combo.some((p) => p.set === r.set);
-    return t.ui.bonusRow(idx.SET[r.set]?.short ?? r.set, r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
-  });
-}
 
 // onTryOn — «Примерить» у этого варианта (App): режим героя, слот и сет подставятся на форму; нет — во время обучения и у новой версии.
 // У «По статам» b — его билд (имя STATS): предустановка «По статам», а не родителя.

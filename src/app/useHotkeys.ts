@@ -1,6 +1,6 @@
 import { useEffect, useRef, type Dispatch } from 'react';
 import { SLOTS } from '@/game/data';
-import { hasBt } from '@/features/gear/model/gear';
+import { hasBt } from '@/game/item/item';
 import type { Action, AppState } from './appState';
 import type { Layout } from '@/shared/layout/useLayout';
 

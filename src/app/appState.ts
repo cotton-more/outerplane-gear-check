@@ -3,10 +3,10 @@
 import { GRADES, SLOTS, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Stage } from '@/game/context';
-import type { CharFilter, ListAction } from '@/features/roster/charFilter';
+import { charMatches, type CharFilter, type ListAction } from '@/features/roster/charFilter';
 import { EMPTY_ITEM, formReducer, type FormAction, type FormState } from '@/features/eval/form/formState';
+import type { Tab } from '@/shared/tab';
 
-export type Tab = 'eval' | 'chars';
 
 export interface AppState extends FormState, CharFilter {
   tab: Tab;
@@ -19,6 +19,13 @@ export type Action =
   | FormAction
   | ListAction
   | { type: 'openChar'; id: string; reveal: 'keep' | 'filters' | 'filters+all' };
+
+// открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
+export function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string, geared?: ReadonlyMap<string, number>): Action {
+  const c = idx.CHAR[id];
+  const reveal = !c || charMatches(c, s, roster, geared) ? 'keep' : c.builds.length ? 'filters' : 'filters+all';
+  return { type: 'openChar', id, reveal };
+}
 
 export function reducer(s: AppState, a: Action): AppState {
   switch (a.type) {
