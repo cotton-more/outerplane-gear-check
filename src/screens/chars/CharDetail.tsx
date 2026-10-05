@@ -22,6 +22,7 @@ import { tour } from '@/tour/anchors';
 import { setName } from '@/game/set/setName';
 import { variantName } from '@/features/gear/ui/pieceText';
 import { HeroFace } from '@/game/hero/HeroFace';
+import { HeroName } from '@/game/hero/HeroName';
 import { Toggle } from '@/shared/ui/Toggle';
 import { CloseButton } from '@/shared/ui/CloseButton';
 import { BuildView } from './BuildView';
@@ -213,7 +214,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         </span>
         <div>
           <div className="cd-name">
-            <h2>{c.name}</h2>
+            <h2><HeroName c={c} stacked /></h2>
             <button type="button" className="cd-star" aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={() => rosterApi.toggle(c.id)}>
               {own ? '★' : '☆'}
             </button>

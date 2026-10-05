@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { HeroFace } from '@/game/hero/HeroFace';
+import { HeroName } from '@/game/hero/HeroName';
 import { ClassIcon, ElementIcon } from '@/game/icons/Img';
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
@@ -15,7 +16,6 @@ export function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerNa
   corner?: ReactNode;
 }) {
   const t = useT();
-  const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
   return (
     <div className="cwrap">
       <button type="button" className={`ctile${c.builds.length ? '' : ' nob'}${off ? ' off' : ''}`} aria-pressed={selected} onClick={onSelect}
@@ -24,7 +24,7 @@ export function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerNa
         <HeroFace c={c} />{isNew && <span className="newb">NEW</span>}
         {gear !== undefined && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         {pinned && <PinMark className="pinb" label={t.trade.pinTile(c.name)} />}
-        <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
+        <span className="cn"><HeroName c={c} stacked /></span>
         {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
       </button>
       {corner !== undefined ? corner : (
