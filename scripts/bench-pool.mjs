@@ -9,7 +9,7 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 const load = (p) => server.ssrLoadModule(p);
 const { createIndex } = await load('/src/game/data/index.ts');
 const { makeCtx } = await load('/src/game/context.ts');
-const { poolView, outcomeFor } = await load('/src/features/gear/pool.ts');
+const { poolView, outcomeFor } = await load('/src/features/gear/pool/index.ts');
 const { variantsOf } = await load('/src/game/build/variants.ts');
 
 const D = JSON.parse(readFileSync(new URL('../test/fixtures/data.json', import.meta.url), 'utf8'));
