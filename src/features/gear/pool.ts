@@ -334,7 +334,7 @@ export const started = (reach: Pick<Assembly, 'progress' | 'slots'>): boolean =>
 // списков его билдов (gearStarts; временное — не в счёт). Вещь брони из сета связки всегда встаёт в достижимую сборку
 // своего варианта (она собирает больше всего вещей на связку), рекомендованное оружие — в свой слот (оно идёт раньше
 // временного и прочих), и только они. «Не собираю» тут не важен: отмеченный так билд всё равно начат. Отдельной
-// функцией — без сборок (сверка — test/pool.test.ts)
+// функцией — без сборок (сверка — test/gear/pool.test.ts)
 type FitOf = Parameters<typeof fit>[3];
 export function hasStatBuild(ctx: Ctx, c: Char, pieces: readonly FitOf[]): boolean {
   if (!c.builds.length || !pieces.length) return false;

@@ -7,7 +7,7 @@ const fileOf = (path: string) => path.replace(/^\.\.\//, ''); // путь от s
 
 // Порядок подсказок — порядок показа: «Что нового» начинается с первой новой, по ходу — первая подходящая, в Справке —
 // список по порядку. Вкладками: «Персонажи», «Оценка», «Обмен». Новый *.tour.ts — допиши сюда, в своё место
-// (test/tour.test.ts напомнит); файл не из списка встанет в конец.
+// (test/tour/tour.test.ts напомнит); файл не из списка встанет в конец.
 export const TIP_ORDER = [
   'features/worn/AimSheet', 'features/gear/ui/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
   'features/roster/FusionAsk', 'features/gear/ui/PoolList', 'features/gear/ui/VariantChips', 'features/worn/WornGear',
@@ -20,5 +20,5 @@ const rank = (f: string) => { const i = TIP_ORDER.indexOf(f); return i < 0 ? TIP
 const files = Object.keys(mods).map(fileOf).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 
 export const TIPS: Tip[] = files.flatMap((f) => mods['../' + f]);
-// сколько подсказок в каждом файле: пустой *.tour.ts обучением не считается (test/tour.test.ts)
+// сколько подсказок в каждом файле: пустой *.tour.ts обучением не считается (test/tour/tour.test.ts)
 export const TIP_COUNTS: Record<string, number> = Object.fromEntries(files.map((f) => [f, mods['../' + f].length]));
