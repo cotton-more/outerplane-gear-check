@@ -25,10 +25,11 @@ T0–T3; ×4 at T4 when all four are T4, otherwise ×4 T0–T3. Speed, Penetrati
 ×4 T0–T3 is the whole bonus. Examples: Speed T4 T4 → +13%; Speed T4 T4 T0 → +13%; Speed T4 T4 T0 T0 → +25%; Speed T4 ×4
 → 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A stat set's bonus converts into that stat's segments and is weighed
 against the pieces; an incidental set (Effectiveness ×2 on a Speed build) counts too. A piece's Breakthrough is the
-**"T4"** button next to the set (on a Legendary weapon or accessory — next to the item) on the form and on the piece
-card: on — T4, off — T0–T3. Weapons and accessories have no set — there "T4" is only about material: no more copies are
-needed for its Breakthrough. An Epic weapon or accessory has no item on the form, so no "T4" either. "T?" and "mark
-Breakthrough" show only on old records with no Breakthrough set.
+**"T4"** button next to the set (on a Legendary weapon or accessory — next to the item, on an Epic one — next to the
+main stat) on the form and on the piece card: on — T4, off — T0–T3. Weapons and accessories have no set — there "T4" is
+only about material: no more copies are needed for its Breakthrough. **"T?"** shows on old records with no
+Breakthrough set: such a piece counts as below T4 (T0–T3), and the set-bonus advice says "mark Breakthrough" — in the
+game it may already be T4.
 
 ## "Filling"
 
@@ -71,7 +72,10 @@ say " · T4".
 on the card they get a "no longer needs it" line and "Remove from Caren".
 
 After "Equip" the message says where the piece went ("Counts in Speed, Speed/Immu") and which build it started
-("Started filling Speed"); after "Replace" — that the old one can feed the new one's Breakthrough. What was removed —
+("Started filling Speed"); after "Replace" — what to do with the old one: the same Epic — "The old weapon can feed the
+new one's Breakthrough" (an Epic is no loss, even at T4); the same Legendary — "Old helmet — evaluate it first: it may
+suit another hero": don't feed it to Breakthrough before you check it on the form. The new one at T4 — no material
+line. What was removed —
 there too: "Replaced: Caren's boots — the old Speed and Immunity ones are removed.", "Extras removed — not in any
 build.". After "Equip" the form clears as on "Next": slot, grade and set stay. "Undo" (8 seconds) puts everything back,
 the piece onto the form too. The app never offers the removed piece to other characters: take it off in the game and
@@ -120,7 +124,7 @@ gear: Caren.".
 Tap a piece to fix it after upgrading in the game. The edit is narrow — only what upgrading changes:
 - **segments** — how many are lit on the substat in the game, 1–6, with no yellow/orange split. A tap sets the number,
   tapping it again lowers it by one. A piece's segments add up to at most 22 on a Legendary and 17 on an Epic;
-- **"T4"** — you did Breakthrough T4; off — T0–T3 (an Epic weapon or accessory has none);
+- **"T4"** — you did Breakthrough T4; off — T0–T3 (on any piece, Epic weapons and accessories too);
 - **"+ 4th substat"** on an Epic with three — the first Reforge added a fourth;
 - **Transistone** changed a stat — that's not an edit: enter the piece again and "Equip", and "Remove from Caren" this
   one;
@@ -147,6 +151,12 @@ The card's first tab is **"Worn"**: the line "Build — Speed · set 3 of 4", si
 worn sets. For a build with several set combos, this line and every other place that names the hero's build show the combo: "Defense mix · Penetration". If one of the hero's pieces is better for their build (by at least 1 point, or it turns on a set, or gives a recommended weapon), the slot shows "Better in own pieces: … · Wear". An
 empty slot has "Enter": "Rate" opens for that slot, and after "Equip" the form moves to the next empty one ("Next:
 {slot}"). If the hero has at most one piece per slot, "Yes, all worn" replaces the entry.
+
+**"Share"** sits by the "Worn · N of 6" heading when at least one piece is marked worn. On a phone it opens the system
+share sheet with a link (send it in a messenger); on a computer the link is copied — "Link copied". Your friend opens it
+and sees a **"Shared · view only"** card: the hero, the build, the worn pieces with substats colored by their own
+settings. Nothing on the card is clickable except ✕ and "outerpedia ↗", and nothing changes on their side — neither the
+roster nor the gear. More — [Characters and guild code](Characters-and-guild-code).
 
 ## "On your characters now" in the verdict
 
@@ -184,10 +194,13 @@ you don't fill" or "— it starts filling". For weapons and accessories the pass
   slot, "better", "breaks a set" and "on par because of T4" when better by segments, a different recommended passive,
   for weapons and accessories an off-build piece in the slot, Breakthrough material that beats its piece. "Stats only"
   and the quiet "By stats" line decide nothing either way. "Maybe" is never lowered.
-- **"Dismantle" → "Fodder"** when the same piece (armor — the same set, slot and grade; weapons and accessories — the
-  same item and grade) sits below T4 in a build a character is filling: "…worn below T4 — helmet on Caren · Speed" (an old record at
-  T1–T3 — "helmet on Caren · Speed — T2, 2 more to T4"). If the new one beats it — **"Keep — better than the helmet on Caren: wear it and feed the
-  old one to it"**; the new one already at T4 — "…: wear it". An exact copy of the worn one: that one below T4 —
+- **"Dismantle" → "Fodder"** when the same piece (armor — the same set, slot and grade; a Legendary weapon or accessory
+  — the same item; an Epic weapon — any Epic weapon, in the game always a Steel Sword, an Epic accessory — any Steel
+  Necklace, with any main stat) sits below T4 (or "T?") in a build a character is filling: "…worn below T4 — helmet on
+  Caren · Speed" (an old record at T1–T3 — "helmet on Caren · Speed — T2, 2 more to T4"). If a new Epic beats it —
+  **"Keep — better than the helmet on Caren: wear it and feed the old one to it"**; a new Legendary that beats the same
+  worn one, or a new piece already at T4 — "…: wear it": a removed Legendary gets evaluated first, it may suit someone
+  else. An exact copy of the worn one: that one below T4 —
   "Fodder", at T4 — "Dismantle — already as good". "Maybe" with the same piece worn below T4: the new one beats it —
   also "Keep — better than the…", otherwise the stamp stays, with a "Material: …" line.
 
