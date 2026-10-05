@@ -1203,16 +1203,14 @@ describe('меню, плитки, код копии, другая вкладка
     expect($('.cmode [aria-pressed="true"]')?.textContent).toBe('To dress 2');
     expect($$('#cgrid .ctile .cn').map((e) => e.textContent).sort()).toEqual(['Caren', 'Kappa']);
     expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']); // у Kappa вещей нет — ничего не надето
-    expect($('.roster-bar')?.textContent).toContain('gear on 1');
     await click(byText('.cmode button', 'All'));
     expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // в «All» — и не из ростера: у них не надето ничего
   });
 
-  it('список: нет «mark all shown» и «clear roster»; «Team trade» — сразу команда', async () => {
+  it('панель списка: «Trade» — сразу команда; «mark all shown», «clear roster», «export / import» нет', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }), roster: [caren.id] });
-    const links = $$('.roster-bar button').map((b) => b.textContent);
-    expect(links).toEqual(['Team trade']);
-    await click(byText('.roster-bar button', 'Team trade'));
+    expect($$('#char-list button').map((b) => b.textContent).filter((t) => /mark|clear|export|import/i.test(t ?? ''))).toEqual([]);
+    await click(byText('.cbar button', 'Trade'));
     expect($('.trade-mode [aria-selected="true"]')?.textContent).toBe('Team');
   });
 

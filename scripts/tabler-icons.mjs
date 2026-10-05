@@ -21,6 +21,8 @@ const NAMES = [
   'check', 'replace', 'equal',
   // обмен вещами: закреплённый герой; билд героя — под что его одеваем (кнопка «Надето»)
   'pin', 'hanger',
+  // список персонажей: кнопка фильтра и «Обмен»
+  'filter', 'arrows-exchange',
 ];
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'icons', 'tabler.ts');

@@ -529,7 +529,6 @@ export const ru = {
     poolWorn: 'надета',
     // «Ещё» и список персонажей: кого доодеть (надето меньше 6 из 6)
     menuBare: (n: number) => `Доодеть · ${n}`,
-    gearCount: (n: number) => `экипировка у ${n}`,
     allDressed: 'Все одеты полностью — у каждого 6/6.',
     gearTile: (n: number) => `надето ${n} из 6`,
     // «Слабее всех» — самая слабая вещь брони в билде и что искать ей на замену
@@ -624,8 +623,10 @@ export const ru = {
     modeMine: 'Мои',
     modeToDress: 'Доодеть',
     modeAll: 'Все',
-    rosterCount: 'В ростере:',
-    exportImport: 'экспорт / импорт',
+    filter: 'Фильтр',
+    filterReset: 'Сбросить',
+    filterOff: (name: string) => `${name} — снять фильтр`,
+    tradeBtn: 'Обмен',
     nobodyFound: 'Никого не нашлось.',
     rosterToggle: (name: string, own: boolean) => `${name} — ${own ? 'убрать из ростера' : 'добавить в ростер'}`,
     rosterSelected: 'Выделено — нажми Ctrl/Cmd+C',

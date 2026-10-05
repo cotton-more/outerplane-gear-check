@@ -1,16 +1,13 @@
-// Список персонажей: поиск, фильтры (и «не всё надето» — кого доодеть), ростер (звёздочки), экспорт/импорт ростера,
-// «Обмен для команды».
+// Список персонажей: панель над сеткой (CharBar: поиск, фильтр, «Мои · Доодеть · Все», «Обмен») и сетка плиток со звёздочками.
 import { useCallback, useMemo, type Dispatch } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
-import { charMatches, compareChars, effectiveMode, type CharFilter, type ListAction, type ListState } from './charFilter';
+import { charMatches, compareChars, effectiveMode, type ListAction, type ListState } from './charFilter';
 import type { RosterApi } from './useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { isPinned } from '@/features/gear/model/gear';
-import { ClassIcon, ElementIcon } from '@/game/icons/Img';
 import { useIndex } from '@/game/data/IndexContext';
-import { SegSwitch } from '@/shared/ui/SegSwitch';
-import { FilterChips } from '@/shared/ui/FilterChips';
+import { CharBar } from './CharBar';
 import { CharTile } from './CharTile';
 
 // geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/gear/model/fusion): в списке
@@ -19,7 +16,7 @@ import { CharTile } from './CharTile';
 interface Props {
   s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
   off: ReadonlyMap<string, string>; todressN: number;
-  onTrade?: () => void; // «Обмен для команды» (features/trade, сразу режим «Команда») — вход и на ПК, без меню ☰
+  onTrade?: () => void; // «Обмен» (features/trade, сразу режим «Команда») — кнопка на панели, когда у кого-то есть вещи
 }
 
 // Пара X и Core Fusion X — рядом и всегда в одном порядке: Core Fusion X сразу за X, кто бы из них ни был активен
@@ -52,32 +49,9 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, todressN, 
   const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // у скольких есть вещи
   // «Доодеть» пусто, и сузить больше нечем: все одеты
   const allDressed = mode === 'todress' && !s.cq && !s.cel && !s.ccl;
-  const filter = (patch: Partial<CharFilter>) => dispatch({ type: 'charFilter', patch });
   return (
     <div className="panel" id="char-list">
-      <div className="step">
-        <div className="step-h"><h2>{t.ui.tabChars}</h2><span className="hint">{t.ui.charsHint}</span></div>
-        <div className="tools">
-          <input className="search" id="char-q" type="search" placeholder={t.ui.charSearch} value={s.cq}
-            onChange={(e) => filter({ cq: e.target.value })} autoComplete="off" enterKeyHint="search" />
-        </div>
-        <div className="tools">
-          <FilterChips options={D.elements} value={s.cel} onChange={(cel) => filter({ cel })} icon={(k) => <ElementIcon el={k} />} />
-          <FilterChips options={D.classes} value={s.ccl} onChange={(ccl) => filter({ ccl })} icon={(k) => <ClassIcon cls={k} />} />
-        </div>
-        {roster.size > 0 && (
-          <SegSwitch className="cmode" label="" group={t.ui.modeGroup} value={mode} onChange={(cMode) => filter({ cMode })}
-            options={[
-              { value: 'mine', label: <><span className="vb-star">★</span> {t.ui.modeMine} {roster.size}</> },
-              { value: 'todress', label: <>{t.ui.modeToDress} {todressN}</> },
-              { value: 'all', label: t.ui.modeAll },
-            ]} />
-        )}
-      </div>
-      <div className="roster-bar">
-        <span>{t.ui.rosterCount} <b>{roster.size}</b>{nGeared > 0 && <> · {t.ui.gearCount(nGeared)}</>}</span>
-        {onTrade && nGeared > 0 && <button type="button" className="linkbtn" onClick={onTrade}>{t.trade.teamOpen}</button>}
-      </div>
+      <CharBar s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} onTrade={onTrade && nGeared > 0 ? onTrade : undefined} />
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
           <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)} pinned={isPinned(gear.store, c.id)}
