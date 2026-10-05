@@ -85,8 +85,8 @@ async function shoot(lang) {
   await shot('1-grid');
   // 2. CHC, ATK%, DMG UP% по 3 жёлтых — карточка «Оставить» с цепочкой лучшего кандидата
   await step(async ({ tap, stat }) => {
-    for (const l of ['CHC', 'ATK%', 'DMG↑%']) await tap(stat(l));
-    for (const row of document.querySelectorAll('.subrow')) await tap(row.querySelectorAll('.roll-b button')[2]);
+    // клетка сетки, затем уровень 3 в окне (LevelAsk)
+    for (const l of ['CHC', 'ATK%', 'DMG↑%']) { await tap(stat(l)); await tap(document.querySelectorAll('.drawer.lvl .roll-b button')[2]); }
   });
   await shot('2-verdict');
   // 3. подробности: блок «Прокачка» — Enhance, Breakthrough, Transistone

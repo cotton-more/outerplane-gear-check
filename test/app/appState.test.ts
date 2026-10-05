@@ -40,6 +40,24 @@ describe('reducer: сабстаты', () => {
     expect(reducer(on, { type: 'sub', key: 'SPD' }).subs).toEqual({});
   });
 
+  // окно уровня после сетки (LevelAsk): новый стат встаёт сразу с выбранным уровнем
+  it('новый стат с уровнем n встаёт с ним; у отмеченного n не важен — нажатие снимает', () => {
+    const on = reducer(fresh(), { type: 'sub', key: 'SPD', n: 3 });
+    expect(on.subs).toEqual({ SPD: 3 });
+    expect(reducer(on, { type: 'sub', key: 'SPD', n: 5 }).subs).toEqual({});
+  });
+
+  it('уровень вне 1–6 не добавляет стат', () => {
+    const s = fresh();
+    for (const n of [0, 7, 2.5]) expect(reducer(s, { type: 'sub', key: 'SPD', n })).toBe(s);
+  });
+
+  it('новый стат с уровнем сверх предела — не срабатывает (Legendary 6/6/6 + 5 = 23), в пределе — да', () => {
+    const s = fresh({ grade: 'unique', subs: { SPD: 6, CHC: 6, CHD: 6 } });
+    expect(reducer(s, { type: 'sub', key: 'ATK%', n: 5 })).toBe(s);
+    expect(reducer(s, { type: 'sub', key: 'ATK%', n: 4 }).subs).toEqual({ SPD: 6, CHC: 6, CHD: 6, 'ATK%': 4 });
+  });
+
   it('замена стата сохраняет его строку и жёлтые сегменты', () => {
     const s = fresh({ subs: { SPD: 2, CHC: 3, CHD: 1 } });
     const next = reducer(s, { type: 'replaceSub', from: 'CHC', to: 'ATK%' });

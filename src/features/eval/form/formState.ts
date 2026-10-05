@@ -31,7 +31,7 @@ export type FormAction =
   | { type: 'item'; itemKey: string | null; mains?: string[] } // mains — какие main бывают у этого предмета
   | { type: 'unlisted' }
   | { type: 'main'; main: string; blocks?: string | null } // blocks — какой сабстат этот main запрещает (game/item/mains blocksOf)
-  | { type: 'sub'; key: string }
+  | { type: 'sub'; key: string; n?: number } // n — уровень нового сабстата (окно уровня после сетки); нет — 1
   | { type: 'replaceSub'; from: string; to: string }
   | { type: 'roll'; key: string; n: number }
   | { type: 't4' }
@@ -86,10 +86,11 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       return { ...s, main, subs, expand: {} };
     }
     case 'sub': {
-      // выбранный стат сразу получает 1 сегмент (если сумма не уйдёт выше предела); повторное нажатие снимает выбор
+      // новый стат встаёт с уровнем n (по умолчанию 1), если сумма не уйдёт выше предела; отмеченный — снимается
       const subs = { ...s.subs };
+      const n = a.n ?? 1;
       if (a.key in subs) delete subs[a.key];
-      else if (Object.keys(subs).length < MAX_SUBS) subs[a.key] = 1;
+      else if (Object.keys(subs).length < MAX_SUBS && Number.isInteger(n) && n >= 1 && n <= MAX_LIT) subs[a.key] = n;
       else return s;
       return withSubs(s, subs);
     }

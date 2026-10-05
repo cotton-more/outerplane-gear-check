@@ -58,6 +58,11 @@ const click = async (el: HTMLElement | null | undefined) => {
 // слой обучения меряет страницу раз в кадр (открыто ли окно, где якорь) — даём кадру пройти
 const frame = () => act(() => new Promise<void>((r) => setTimeout(r, 40)));
 const cell = (label: string) => [...document.querySelectorAll<HTMLElement>('.sg')].find((b) => b.querySelector(':scope > span:not(.ico)')?.textContent === label);
+// новый сабстат: клетка сетки, затем уровень в окне (LevelAsk)
+const add = async (label: string, n = 1) => {
+  await click(cell(label));
+  await click($(`.drawer.lvl .roll-b button:nth-child(${n})`));
+};
 const strip = () => $('.tour-strip:not(.tour-invite)')?.textContent ?? '';
 const stored = (k: string) => JSON.parse(localStorage.getItem('ogc.' + k) ?? 'null');
 // «Какое обучение?» → главный тур
@@ -87,7 +92,7 @@ describe('главный тур на примере', () => {
     await click(byText('.drawer .set', 'Speed'));
 
     expect(strip()).toContain(T.stepOf(3, CORE.length));
-    for (const k of ['SPD', 'CHC', 'CHD']) await click(cell(k));
+    for (const k of ['SPD', 'CHC', 'CHD']) await add(k);
 
     expect(strip()).toContain(T.stepOf(4, CORE.length));
     await click($('.vcard[data-tour="verdict"]'));
@@ -128,7 +133,7 @@ describe('на примере — только то, что в примере', 
     expect(strip()).toContain('needs Speed Set');
     await click($('[data-tour="pick"]'));
     await click($(pinSelector('sets:Speed')));
-    for (const k of ['SPD', 'HP%', 'CHC']) await click(cell(k));
+    for (const k of ['SPD', 'HP%', 'CHC']) await add(k);
     expect(strip()).toContain(T.stepOf(3, CORE.length));
     expect(strip()).toContain('only SPD, CHC and CHD');
     await click($(pinSelector('rows:HP%')));
@@ -141,8 +146,8 @@ describe('на примере — только то, что в примере', 
 describe('вещь игрока не теряется', () => {
   it('повтор из меню: вещь на форме откладывается, во время тура не перезаписывается и возвращается', async () => {
     await mount({ welcomeHidden: true, tour: DONE });
-    await click(cell('SPD'));
-    await click(cell('ATK'));
+    await add('SPD');
+    await add('ATK');
     const item = localStorage.getItem('ogc.item');
     await click($('.vb-tab'));
     await click(byText('.menu button', 'Tutorial'));
@@ -161,8 +166,8 @@ describe('вещь игрока не теряется', () => {
 
   it('«Обучение» ещё раз посреди тура: начинаем сначала, а отложенной остаётся вещь игрока', async () => {
     await mount({ welcomeHidden: true, tour: DONE });
-    await click(cell('SPD'));
-    await click(cell('ATK'));
+    await add('SPD');
+    await add('ATK');
     const item = localStorage.getItem('ogc.item'), state = localStorage.getItem('ogc.state');
     await click(byText('.actions button', 'Tutorial'));
     await pickCore();
@@ -192,7 +197,7 @@ describe('вещь игрока не теряется', () => {
 
   it('Esc посреди тура закрывает его и не нажимает «Следующий»', async () => {
     await mount({ welcomeHidden: true, tour: DONE });
-    await click(cell('SPD'));
+    await add('SPD');
     await click(byText('.actions button', 'Tutorial'));
     await pickCore();
     await click(byText('.tour-strip button', 'Example'));
@@ -222,10 +227,10 @@ describe('вещь игрока не теряется', () => {
     await pickCore();
     await click(byText('.tour-strip button', 'My own'));
     for (let i = 0; i < 2; i++) await click(byText('.tour-strip button', T.next));
-    await click(cell('SPD'));
-    await click(cell('ATK'));
-    await click(cell('HP'));
-    await click(cell('CHC'));
+    await add('SPD');
+    await add('ATK');
+    await add('HP');
+    await add('CHC');
     await click(byText('.tour-strip button', T.next));
     expect(strip()).toContain(T.stepOf(5, CORE.length));
     await esc();
@@ -242,11 +247,11 @@ describe('вещь игрока не теряется', () => {
 
   it('на своей вещи: не нажал «Следующий» — спросим, какую оставить', async () => {
     await mount({ welcomeHidden: true, tour: DONE });
-    await click(cell('SPD'));
+    await add('SPD');
     await click(byText('.actions button', 'Tutorial'));
     await pickCore();
     await click(byText('.tour-strip button', 'My own'));
-    await click(cell('HP'));
+    await add('HP');
     await click($('.tour-x'));
     expect(strip()).toContain('Which one to keep');
     await click(byText('.tour-strip button', 'Keep this one'));

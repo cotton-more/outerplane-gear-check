@@ -287,15 +287,108 @@ describe('сегменты 1–6', () => {
     expect($('.seg-cap')?.textContent).toContain('17');
   });
 
-  it('сетка сверх предела (Epic 6/6/5 без сета): сабстат не добавлен, та же строка; снять стат сеткой можно', async () => {
+  it('сетка сверх предела (Epic 6/6/5 без сета): окна уровня нет, сабстат не добавлен, та же строка; снять стат сеткой можно', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { subs: { SPD: 6, CHC: 6, CHD: 5 } });
 
     await click($('.statgrid .sg[data-tour-item="ATK%"]'));
 
+    expect($('.drawer.lvl')).toBeNull();
     expect(document.querySelectorAll('.subrow')).toHaveLength(3);
     expect($('.seg-cap')?.textContent).toContain('17');
     await click($('.statgrid .sg[data-tour-item="CHD"]'));
     expect(document.querySelectorAll('.subrow')).toHaveLength(2);
     expect($('.seg-cap')).toBeNull();
+  });
+});
+
+// окно уровня (LevelAsk): нажатие в сетке — окно у клетки с кнопками 1–6; уровень — стат встаёт в строку с ним,
+// отмена — стата нет
+describe('окно уровня после сетки', () => {
+  const speed = () => D.sets.find((s) => s.short === 'Speed')!.id;
+  const click = async (el: HTMLElement | null) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
+  const grid = (k: string) => $(`.statgrid .sg[data-tour-item="${k}"]`);
+  const lvl = (n: number) => $(`.drawer.lvl .roll-b button:nth-child(${n})`);
+  const rows = () => [...document.querySelectorAll('.subrow')].map((r) =>
+    [r.querySelector('.subkey')?.getAttribute('data-tour-item'), r.querySelector('.roll-b [aria-pressed="true"]')?.textContent]);
+  const key = (k: string) => act(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); });
+
+  it('нажатие в сетке — окно со статом в заголовке и кнопками 1–6, ни одна не нажата; в строках стата ещё нет', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed() });
+
+    await click(grid('ATK%'));
+
+    expect($('.drawer-back.pop .drawer.lvl')).toBeTruthy();
+    expect($('.drawer.lvl h3')?.textContent).toBe('ATK% — how many segments?');
+    expect([...document.querySelectorAll('.drawer.lvl .roll-b button')].map((b) => b.textContent)).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect($('.drawer.lvl [aria-pressed="true"]')).toBeNull();
+    expect(rows()).toEqual([]);
+  });
+
+  it('уровень в окне — стат в строке с ним, окно закрыто; следующий встаёт ниже', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed() });
+
+    await click(grid('SPD'));
+    await click(lvl(3));
+    await click(grid('CHC'));
+    await click(lvl(1));
+
+    expect($('.drawer.lvl')).toBeNull();
+    expect(rows()).toEqual([['SPD', '3'], ['CHC', '1']]);
+  });
+
+  it('✕, нажатие мимо окна и Esc — стат не добавлен', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed(), subs: { SPD: 2 } });
+
+    await click(grid('CHC'));
+    await click($('.drawer.lvl .drawer-x'));
+    await click(grid('CHC'));
+    await click($('.drawer-back.pop'));
+    await click(grid('CHC'));
+    await key('Escape');
+
+    expect($('.drawer.lvl')).toBeNull();
+    expect(rows()).toEqual([['SPD', '2']]);
+  });
+
+  it('отмеченный стат в сетке снимается сразу, без окна', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed(), subs: { SPD: 2, CHC: 3 } });
+
+    await click(grid('SPD'));
+
+    expect($('.drawer.lvl')).toBeNull();
+    expect(rows()).toEqual([['CHC', '3']]);
+  });
+
+  it('клавиши 1–6 в окне ставят уровень, а не слот', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed() });
+
+    await click(grid('SPD'));
+    await key('4');
+
+    expect(rows()).toEqual([['SPD', '4']]);
+    expect($('.slot[aria-pressed="true"]')?.getAttribute('aria-label')).toBe('Helmet');
+  });
+
+  it('уровень сверх предела (Legendary 6/6/6 + 5 = 23): окно остаётся, в нём строка «больше 22 не бывает»; 4 — встаёт', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed(), subs: { SPD: 6, CHC: 6, CHD: 6 } });
+    await click(grid('ATK%'));
+
+    await click(lvl(5));
+
+    expect($('.drawer.lvl .seg-cap')?.textContent).toContain('22');
+    expect(rows()).toHaveLength(3);
+    await click(lvl(4));
+    expect($('.drawer.lvl')).toBeNull();
+    expect(rows()).toEqual([['SPD', '6'], ['CHC', '6'], ['CHD', '6'], ['ATK%', '4']]);
+  });
+
+  it('«+ 4-й сабстат» у Epic — без окна уровня, с уровнем 1', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed(), subs: { SPD: 2, CHC: 2, CHD: 2 } });
+    await click($('.subadd'));
+
+    await click($('.subopt[data-tour-item="ATK%"]'));
+
+    expect($('.drawer.lvl')).toBeNull();
+    expect(rows()).toEqual([['SPD', '2'], ['CHC', '2'], ['CHD', '2'], ['ATK%', '1']]);
   });
 });

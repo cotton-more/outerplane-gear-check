@@ -437,13 +437,12 @@ describe('replace — на одну введённую вещь', () => {
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 };
   const MID = { setId: speed, subs: { 'DEF%': 3, CHC: 3, RES: 2, HP: 1 } }; // хуже p1 — «Заменить» только из replace
   const REPLACE = "Replace Caren's helmet";
-  // ввод сабстатов сеткой и сегментами, как игрок
+  // ввод сабстатов сеткой и уровнем в окне, как игрок
   const enter = async (subs: Record<string, number>) => {
     for (const [k, n] of Object.entries(subs)) {
       if (!$('.statgrid')) break; // карточка сменила сетку (хлам — сразу)
       await click($(`.statgrid button[data-tour-item="${k}"]`));
-      const row = $$('.subrow').find((r) => r.querySelector('.subkey')?.getAttribute('data-tour-item') === k);
-      await click(row?.querySelectorAll<HTMLElement>('.roll-b button')[n - 1]);
+      await click($(`.drawer.lvl .roll-b button:nth-child(${n})`));
     }
   };
   const tryReplace = async () => {

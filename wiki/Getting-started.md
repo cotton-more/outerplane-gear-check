@@ -48,10 +48,11 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
      **Legendary weapon and accessory** — find the item and mark the main stat; **Epic weapon and accessory** — just the main stat;
      a piece already at Breakthrough T4 — tap **"T4"** next to the set or item (a fresh drop is T0, leave it off);
    - **main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the
-     grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Faded —
+     grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Grey —
      no one needs that main;
-   - **substats** — tap them in the grid in order, as in the game; segments — buttons 1–6 in the stat's row: all that
-     are lit in the game (a fresh drop has up to 4).
+   - **substats** — tap them in the grid in order, as in the game; each tap opens a window with buttons 1–6 — pick how
+     many segments are lit in the game (a fresh drop has up to 4). Tap outside the window and the stat isn't added;
+     to fix the segments later — buttons 1–6 in the stat's row.
      Stats sit in pairs by parameter, one above the other: ATK% over ATK, HP% over HP, DEF% over DEF, CHC over CHD,
      DMG UP% over DMG RED%, EFF% over RES%; SPD and attack on the left, defense on the right. The grid has all 13
      substats in the game: EFF% and RES% carry a % on the piece too, while flat EFF, flat RES, PEN% and CDMG RED% only

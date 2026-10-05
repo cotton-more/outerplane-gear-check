@@ -5,12 +5,12 @@ import type { MainOption } from './lists';
 import type { Subs } from '@/game/item/subs';
 import { StatIcon } from '@/game/icons/Img';
 
-// Сетка сабстатов прямо на форме вместо окна выбора: одно нажатие — стат встаёт в следующую строку с уровнем 1,
-// повторное — снимает его.
+// Сетка сабстатов прямо на форме вместо окна выбора: нажатие — окно уровня 1–6 у клетки (LevelAsk, его открывает EvalPanel),
+// стат встаёт в следующую строку с выбранным уровнем; повторное нажатие на отмеченный — снимает его.
 // Раскладка 7×2 по параметрам: пары стоят одна над другой — CHC над CHD, ATK% над ATK, DMG UP% над DMG RED%,
 // HP% над HP, DEF% над DEF, EFF% над RES%; слева SPD и атака, справа защита. %-статы над своими flat-версиями,
 // чтобы «есть ли на предмете %» решалось местом кнопки, а не чтением подписи. null — пустая клетка.
-// useful — спрос билдов выбранного сета: ярче — нужен, блёклый — не нужен никому.
+// useful — спрос билдов выбранного сета: ярче — нужен, серый без заливки — не нужен никому (нажать можно).
 // mains — у аксессуара без main: сетка сначала выбирает main (он в игре сверху предмета), потом сабстаты.
 // Flat-статы main не бывают — на их местах PEN% и CDMG RED%, которые бывают только main; остальные на своих местах.
 // Выбранный main отмечен в сетке «main»; нажатие снимает его, и сетка снова выбирает main.
@@ -31,7 +31,7 @@ const SHORT: Record<string, string> = { 'DMG UP%': 'DMG↑%', 'DMG RED%': 'DMG�
 
 export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onMain }: {
   subs: Subs; main: string | null; blocked: Set<string>; full: boolean; useful: Map<string, number> | null;
-  mains: MainOption[] | null; onPick: (key: string) => void; onMain: (key: string) => void;
+  mains: MainOption[] | null; onPick: (key: string, cell: HTMLElement) => void; onMain: (key: string) => void;
 }) {
   const t = useT();
   if (mains) {
@@ -71,7 +71,7 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
         const label = subLabel(k);
         return (
           <button key={k} type="button" className={cls} aria-pressed={on} disabled={full && !on} {...tourItem(k)}
-            title={on ? t.ui.subRemove(label) : credit === null ? label : t.ui.usefulTitle(label, credit)} onClick={() => onPick(k)}>
+            title={on ? t.ui.subRemove(label) : credit === null ? label : t.ui.usefulTitle(label, credit)} onClick={(e) => onPick(k, e.currentTarget)}>
             <StatIcon stat={k} /><span>{SHORT[k] ?? label}</span>
           </button>
         );

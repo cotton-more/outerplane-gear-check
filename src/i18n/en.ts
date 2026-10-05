@@ -227,6 +227,7 @@ export const en: Texts = {
     replaceSub: (k) => `Replace ${k}`,
     addFourth: '4th substat',
     fourthSheet: 'Which 4th substat?',
+    levelSheet: (k) => `${k} — how many segments?`,
     settings: 'Evaluation settings',
     settingsNow: (end, fodder, lv120, quirks) =>
       [end ? 'endgame' : 'progression', fodder ? 'saving fodder' : 'no armor fodder', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'no Quirks'],
@@ -493,7 +494,7 @@ export const en: Texts = {
     addSub: 'Add a substat',
     mainGroup: 'Main stat',
     mainInGrid: 'Main ↓',
-    mainFirst: 'Main stat first — in the game it is on top of the piece, then the substats in order. Faded — no one needs that main.',
+    mainFirst: 'Main stat first — in the game it is on top of the piece, then the substats in order. Grey — no one needs that main.',
     mainCell: (k) => `Main stat ${k} — tap to remove`,
     fixedMainCell: (k) => `${k} is this slot's main stat: it never rolls as a substat here`,
     usefulTitle: (k, credit) => `${k}${credit >= 1 ? ' — needed by builds with this set' : credit > 0 ? ' — needed, but far down the priority (½)' : ' — no build with this set needs it'}`,
@@ -564,7 +565,7 @@ export const en: Texts = {
     howTo: 'How to use',
     steps: [
       '**Mark your characters** — until you do, the evaluation considers every character in the game.',
-      '**Enter the item:** slot, grade (L — Etheric, E — Steel), set or item; substats in the grid, in order, as in the game; segments in the rows — all that are lit.',
+      '**Enter the item:** slot, grade (L — Etheric, E — Steel), set or item; substats in the grid, in order, as in the game: tap a stat, then pick in the window how many segments are lit.',
       '**The verdict** appears right away, with an explanation. "Next" — on to the next item; slot, grade, set and main stay, substats are cleared.',
     ],
     markChars: 'Mark characters',
@@ -579,7 +580,7 @@ export const en: Texts = {
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. Stats sit in pairs by parameter, one above the other: ATK% over ATK, HP% over HP, DEF% over DEF, CHC over CHD, DMG UP% over DMG RED%, EFF% over RES%. A cell marked main never rolls as a substat on this piece — it is already in the main (HP% on helmets and boots, flat DEF on chest armor and gloves, flat ATK on weapons). A flat EFF or flat RES main doesn\'t block EFF% and RES% substats — in the game they are different stats. The grid has all 13 substats in the game; PEN%, CDMG RED%, flat EFF and flat RES never roll as substats — only as mains.',
-      '**Segments** — how many are lit on the substat in the game, 1–6 (yellow and orange together). A fresh drop has up to 4. The verdict takes the piece as it is: Reforges still ahead don\'t count.',
+      '**Segments** — how many are lit on the substat in the game, 1–6 (yellow and orange together). You pick them in the window right after tapping the grid; tap outside the window and the stat isn\'t added. To fix them — the buttons in the row. A fresh drop has up to 4. The verdict takes the piece as it is: Reforges still ahead don\'t count.',
       '**4th substat on an Epic** — usually an Epic drops with three and the first Reforge adds a fourth; some drop with four. If the piece has one — "+ 4th substat" under the rows.',
       'Tap a stat in its row to replace it (its segments stay) or remove it. When replacing, you can also pick a stat from another row: it moves here and that row is freed — handy for entering the next piece over the last one. Tapping it again in the grid removes it too. Code, help and settings are in the ☰ menu.',
     ],
@@ -591,7 +592,7 @@ export const en: Texts = {
       'For Epic, the verdict appears after two useless substats — no need to enter the third.',
       '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
       '**Epic Breakthrough** takes only the same piece, any substats: for armor an Epic of the same set and slot, for a weapon any Steel Sword, for an accessory any Steel Necklace, with any main stat. Have an Epic "Keep" below T4 — set such Epics aside for it instead of dismantling, you need 4. An Epic weapon or accessory that is a "Stopgap" gets only dismantle fodder — don\'t spend Glunite.',
-      '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: faded — no one needs it, dismantle.',
+      '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: grey — no one needs it, dismantle.',
       '**Legendary** with "I save Legendary armor for Breakthrough": the verdict shows which to upgrade and which to keep for Breakthrough.',
     ],
     helpVerdicts: [
@@ -812,7 +813,7 @@ export const en: Texts = {
           : x.legend
             ? 'Find the accessory by name — the passive and possible mains depend on it.'
             : 'Mark the main stat: the first tap in the grid is the main, then come the substats.',
-      grid: (x: StepText) => `${x.demo ? 'Mark **SPD**, **CHC** and **CHD** — in order, as in the game.' : 'Mark the substats in order, as in the game.'}${
+      grid: (x: StepText) => `${x.demo ? 'Mark **SPD**, **CHC** and **CHD** in order, as in the game' : 'Mark the substats in order, as in the game'}, and in the window pick how many segments are lit.${
         x.kind === 'armor' ? ' Bright cells are wanted by builds for this set.' : ''} Marked ${x.n} of ${x.of}.`,
       verdict: (x: StepText) => x.narrow
         ? 'The verdict is ready. Tap the card: who it suits, what to upgrade and the code for your guild.'

@@ -22,6 +22,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'screens/eval/VerdictCard.tsx': 'core',              // карточка вердикта — шаг «Вердикт» главного тура (якорь verdict)
   'features/eval/form/EvalSettings.tsx': 'helper',     // настройки оценки: подписи говорят сами за себя
   'features/eval/form/ItemPicker.tsx': 'core',         // окно выбора Legendary по названию — шаг «сет или предмет»
+  'features/eval/form/LevelAsk.tsx': 'core',           // окно уровня после нажатия в сетке — шаг «сетка»; очевидно само (владелец: в «Что нового» не нужно)
   'features/eval/form/MainButtons.tsx': 'core',        // main оружия кнопками — тот же шаг
   'features/eval/form/MainPicker.tsx': 'core',         // окно main — тот же шаг
   'features/eval/form/PickField.tsx': 'helper',        // поле, открывающее окно выбора

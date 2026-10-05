@@ -18,7 +18,7 @@
    Epic "Keep" below T4 — set Epics of the same set and slot aside for it instead of dismantling (you need 4);
    the verdict reminds you.
 8. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
-   faded, no one needs that main — dismantle.
+   grey, no one needs that main — dismantle.
 9. **Legendary** with "I save Legendary armor for Breakthrough" (on by default): the verdict shows which to upgrade
    and which to keep for Breakthrough.
 

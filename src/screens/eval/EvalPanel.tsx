@@ -1,7 +1,8 @@
 // Панель ввода предмета — компактная форма, чтобы в разделённом экране весь ввод помещался без прокрутки:
 // слот → грейд + сет или main (у брони — и «T4») → у Legendary оружия и аксессуара строка предмета с «T4» → сетка
 // сабстатов → строки с сегментами.
-// Сет и предмет выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, одним нажатием. Main тоже без окна:
+// Сет и предмет выбираются в окнах (Sheet); сабстаты — сеткой прямо на форме, уровень — сразу в окне 1–6 у нажатой
+// клетки (features/eval/form/LevelAsk), снять — повторным нажатием в сетке. Main тоже без окна:
 // у оружия — три кнопки рядом с грейдом, у аксессуара — первое нажатие в сетке (окно — по нажатию на поле main рядом с
 // грейдом). «T4» — в конце строки сета или предмета (вопрос 7 ревью eval-only): у Legendary аксессуара предмет поэтому
 // своей строкой, как у оружия, — в одной строке с грейдом, main и «T4» на 280px имени не оставалось бы.
@@ -19,7 +20,7 @@ import type { Verdict as VerdictData } from '@/features/eval/verdict/verdict';
 import type { FormAction, FormState } from '@/features/eval/form/formState';
 import { tour, tourItem } from '@/tour/anchors';
 import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
-import { Sheet } from '@/shared/ui/Sheet';
+import { Sheet, type Point } from '@/shared/ui/Sheet';
 import { BtChip } from '@/features/eval/form/BtChip';
 import { ItemPicker } from '@/features/eval/form/ItemPicker';
 import { MainButtons } from '@/features/eval/form/MainButtons';
@@ -27,6 +28,7 @@ import { MainPicker } from '@/features/eval/form/MainPicker';
 import { PickField } from '@/features/eval/form/PickField';
 import { SetPicker } from '@/features/eval/form/SetPicker';
 import { SubPicker } from '@/features/eval/form/SubPicker';
+import { LevelAsk } from '@/features/eval/form/LevelAsk';
 import { StatGrid } from '@/features/eval/form/StatGrid';
 import { SubRows, type CapAt } from '@/features/eval/form/SubRows';
 import { VerdictCard } from './VerdictCard';
@@ -39,7 +41,8 @@ import { RosterOnlyToggle } from '@/features/eval/form/RosterOnlyToggle';
 import { EquipButton } from '@/features/gear/ui/EquipButton';
 import { EvalSettings } from '@/features/eval/form/EvalSettings';
 
-type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
+// sub: какой стат заменяем; level: какой стат добавляем — окно уровня у центра нажатой клетки (at); fourth — 4-й у Epic
+type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { level: string; at: Point };
 
 // hero — режим «для героя»: полоса над слотами, ✕ — onTryOnEnd; heroNote — строка про героя под карточкой (features/tryon/tryon
 // heroNote: не носит, не нужна, «По статам», ничего не даст). vs — лучший исход для строки карточки;
@@ -58,11 +61,19 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const [open, setOpen] = useState<Open>(null);
   const close = () => setOpen(null);
   // новый сабстат (сетка, «+ 4-й») с суммой уровней выше предела не добавляется — строка segCap под строками, как у
-  // нажатия сегмента (SubRows); снять стат можно всегда
+  // нажатия сегмента (SubRows); снять стат можно всегда. Сетка: не влезает даже уровень 1 — окно уровня не открывается
   const [cap, setCap] = useState<CapAt | null>(null);
-  const addSub = (key: string) => {
-    const adds = !(key in s.subs) && Object.keys(s.subs).length < MAX_SUBS;
-    if (adds && !withinCap(s.grade, s.subs, { ...s.subs, [key]: 1 })) { setCap({ subs: s.subs, grade: s.grade }); return; }
+  const fits = (key: string) => withinCap(s.grade, s.subs, { ...s.subs, [key]: 1 });
+  const tapGrid = (key: string, cell: HTMLElement) => {
+    if (key in s.subs) { dispatch({ type: 'sub', key }); return; }
+    if (Object.keys(s.subs).length >= MAX_SUBS) return;
+    if (!fits(key)) { setCap({ subs: s.subs, grade: s.grade }); return; }
+    const r = cell.getBoundingClientRect();
+    setOpen({ level: key, at: { x: r.left + r.width / 2, y: r.top + r.height / 2 } });
+  };
+  // 4-й у Epic — с уровнем 1: от первого Reforge он приходит с одним сегментом
+  const addFourth = (key: string) => {
+    if (!(key in s.subs) && !fits(key)) { setCap({ subs: s.subs, grade: s.grade }); return; }
     dispatch({ type: 'sub', key });
   };
   const armor = isArmor(s.slot);
@@ -155,7 +166,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
               {nextNote && vs && onEquip && <p className="vc-next">{nextNote}</p>}
               {heroNote && <p className="vc-note">{heroNote}</p>}
             </>
-            : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={addSub} />}
+            : <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={tapGrid} />}
         </div>
         {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
         <SubRows subs={s.subs} grade={s.grade} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
@@ -194,10 +205,14 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       {open === 'fourth' && (
         <Sheet title={t.ui.fourthSheet} onClose={close}>
           <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={null}
-            onPick={(key) => { addSub(key); close(); }} />
+            onPick={(key) => { addFourth(key); close(); }} />
         </Sheet>
       )}
-      {open !== null && typeof open === 'object' && (
+      {open !== null && typeof open === 'object' && 'level' in open && (
+        <LevelAsk stat={open.level} at={open.at} grade={s.grade} subs={s.subs} onClose={close}
+          onPick={(n) => { dispatch({ type: 'sub', key: open.level, n }); close(); }} />
+      )}
+      {open !== null && typeof open === 'object' && 'sub' in open && (
         <Sheet title={t.ui.replaceSub(subLabel(open.sub))} onClose={close}>
           <SubPicker ctx={ctx} subs={s.subs} blocked={im.blocked} editing={open.sub}
             onPick={(key) => { if (key !== open.sub) dispatch({ type: 'replaceSub', from: open.sub, to: key }); close(); }}

@@ -54,7 +54,9 @@ html.xs .pick-sfx { display: none; }
 .msw img, .msw .noimg, .msw .ico { width: 18px; height: 18px; flex: none; }
 html.xs .msw img, html.xs .msw .noimg, html.xs .msw .ico { display: none; }
 html.xs .msw { padding: 0 2px; font-size: 12px; }
-.msw.u0 { opacity: .5; }
+/* main, который никому не нужен: серым и без заливки, но рамка — кнопка, её можно нажать (прозрачность делала её
+   бледнее неактивной) */
+.msw.u0:not([aria-pressed="true"]) { background: transparent; color: var(--ink-3); font-weight: 500; }
 .msw[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); opacity: 1; }
 .msw:disabled { cursor: default; opacity: .22; }
 .subrows { display: grid; gap: 6px; }
@@ -160,6 +162,18 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .roll-b button.after { color: var(--ink-3); }
 .roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: var(--seg-lit-ink); }
 .roll-b button[aria-pressed="true"] { background: var(--seg-y); color: #1b1300; }
+/* окно уровня нового сабстата (LevelAsk): у нажатой клетки и на телефоне (Sheet at — место считает popPlace), кнопки
+   1–6 — 3×2, крупно; 5–6 (после Reforge) приглушены, но не блёклые: их можно нажать. Заголовок переносится:
+   «DMG RED% — сколько сегментов?» на 280px в строку не влезает */
+.drawer-back.pop { display: block; }
+.drawer-back.pop > .drawer { position: absolute; width: min(300px, calc(100% - 16px)); }
+.drawer.lvl { border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .25); }
+.drawer.lvl .drawer-h h3 { white-space: normal; text-wrap: balance; }
+.drawer.lvl .roll-b { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border: 0; border-radius: 0; background: none; overflow: visible; }
+.drawer.lvl .roll-b button { min-width: 0; height: 52px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface-2); font-size: 18px; color: var(--ink); }
+.drawer.lvl .roll-b button.after { background: transparent; color: var(--ink-3); font-weight: 500; }
+.drawer.lvl .seg-cap { margin: 10px 0 0; }
+@media (max-height: 460px) { .drawer.lvl .roll-b button { height: 44px; } }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); }
 .actions .hk { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }
@@ -220,7 +234,9 @@ html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-botto
 .sg.flat { font-weight: 500; color: var(--ink-2); }
 .sg.u1 { border-color: color-mix(in srgb, var(--keep) 60%, var(--line)); background: color-mix(in srgb, var(--keep-soft) 75%, var(--surface-2)); }
 .sg.u2 { border-color: color-mix(in srgb, var(--temp) 50%, var(--line)); }
-.sg.u0 { opacity: .42; }
+/* не нужен ни одному билду сета: серым и без заливки, рамка как у кнопки — нажать можно (прозрачность .42 делала клетку
+   бледнее неактивной «main») */
+.sg.u0:not([aria-pressed="true"]) { background: transparent; color: var(--ink-3); font-weight: 500; }
 .sg[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); opacity: 1; }
 .sg:disabled { cursor: default; }
 /* у аксессуара без main сетка выбирает main; выбранный main — отметка «main» на его месте в сетке сабстатов */

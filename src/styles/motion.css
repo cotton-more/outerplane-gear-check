@@ -14,6 +14,8 @@
 .drawer { animation: m-sheet .2s cubic-bezier(.2, .8, .2, 1); }
 html:not(.narrow) .drawer { animation-name: m-pop; }
 html.sheet .char-detail.open { animation: m-sheet .2s cubic-bezier(.2, .8, .2, 1); }
+/* окно уровня сабстата у клетки (Sheet at) — ввод: появляется сразу, кнопка уже под пальцем */
+.drawer-back.pop, .drawer-back.pop > .drawer { animation: none; }
 
 /* карточка вердикта на месте сетки, полосы обучения и подсказок, «Вернуть» */
 .vcard { animation: m-rise .18s ease-out; }
