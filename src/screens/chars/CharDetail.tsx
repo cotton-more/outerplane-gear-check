@@ -20,7 +20,7 @@ import { VariantChips } from '@/features/gear/ui/VariantChips';
 import { ClassIcon, ElementIcon, Icon } from '@/game/icons/Img';
 import { tour } from '@/tour/anchors';
 import { setName } from '@/game/set/setName';
-import { parentName, variantName } from '@/features/gear/ui/pieceText';
+import { variantName } from '@/features/gear/ui/pieceText';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { Toggle } from '@/shared/ui/Toggle';
 import { CloseButton } from '@/shared/ui/CloseButton';
@@ -176,7 +176,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   };
   // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
   const cur = wornTab && wv?.variant ? wv.variant : v;
-  const aimName = wv?.variant ? parentName(t, wv.variant) : t.ui.byStats;
+  const aimName = wv?.variant ? variantName(t, wv.variant) : t.ui.byStats;
   // вкладка билда: билд героя (aimOf) обведён; x null — «По статам»
   const tabOf = (x: Build | null, selected: boolean, onClick: () => void, body: ReactNode, key: Key) => {
     const av = wv?.variant;

@@ -203,3 +203,19 @@ describe('«Надеть» в карточке вещи и «надета» в �
     expect(byText('.piece-act button', 'Wear')).toBeUndefined();
   });
 });
+
+describe('выбранный билд называется именем варианта (Р-1, решение владельца 2026-10-05)', () => {
+  it('у билда с несколькими связками «Надето» говорит связку, а не только имя билда', async () => {
+    const { createIndex } = await import('@/game/data');
+    const { variantsOf } = await import('@/game/build/variants');
+    const idx = createIndex(D);
+    const hero = D.chars.find((c) => variantsOf(idx, c).some((v) => v.sig))!;
+    const v = variantsOf(idx, hero).find((x) => x.sig)!;
+    const helm = P('h', 'helmet', v.b.sets[0][0].set, { CHC: 2, SPD: 2 });
+    await mount({ roster: [hero.id], gear: G([helm], { [hero.id]: ['h'] }, { worn: { [hero.id]: { helmet: 'h' } }, aim: { [hero.id]: v.key } }) },
+      { charId: hero.id });
+
+    expect(v.name).not.toBe(v.parent.name);
+    expect($('.worn-aim')?.textContent).toContain(`Build — ${v.name}`);
+  });
+});

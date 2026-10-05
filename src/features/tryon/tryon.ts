@@ -19,7 +19,7 @@ import type { ItemInput } from '@/game/item/item';
 import { wearable } from '@/features/gear/model/vs';
 import { variantsOf, type Variant } from '@/game/build/variants';
 import { partText, setName } from '@/game/set/setName';
-import { parentName } from '@/features/gear/ui/pieceText';
+import { variantName } from '@/features/gear/ui/pieceText';
 
 // build — предустановка формы: билд (STATS — «По статам», у персонажа с билдами); нет — режим героя без неё.
 // combo — подпись связки варианта (game/build/variants); нет — у билда одна связка или берём самую собранную.
@@ -104,7 +104,7 @@ function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
 // статы») — про героя ничего: строку под карточкой даёт heroNote
 export function heroTitle(t: Texts, idx: Index, res: Verdict, c: Char, o: Outcome | null, armor = true): string {
   const row = tryRowOf(idx, o);
-  const build = o ? parentName(t, o.v) : '';
+  const build = o ? variantName(t, o.v) : '';
   const clause = (temp: boolean) => (row ? t.tryon.clause(row.kind, c.name, build, temp, row) : '');
   return titleWith(t, res, c, row, clause, !!o && !!res.wornBy?.includes(o.v.key), armor);
 }

@@ -17,7 +17,7 @@ import { Rich } from '@/shared/ui/Rich';
 import { tour } from '@/tour/anchors';
 import { PieceName, bonusLinesOf, btText, pieceText } from '@/features/gear/ui/pieceText';
 import { setName } from '@/game/set/setName';
-import { parentName } from '@/features/gear/ui/pieceText';
+import { variantName } from '@/features/gear/ui/pieceText';
 import { SubToken } from '@/game/item/SubToken';
 
 // «▲ +25%», «▲ ×3»; выигрыша нет (пустой слот, вещь лишь включит бонус сета) — ничего
@@ -38,7 +38,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWea
   const { idx } = ctx;
   if (gear.newer) return <div className="bgear" {...tour('wtab')}><p className="muted small">{t.ui.gearNewer}</p></div>;
   const v = wv.variant;
-  const build = v ? parentName(t, v) : t.ui.byStats;
+  const build = v ? variantName(t, v) : t.ui.byStats;
   const aim = wv.set && v && !isStats(v) ? t.ui.wornBuild(build, wv.set.k, wv.set.n) : t.ui.wornBuildPlain(build);
   const empty = wv.count === 0;
   const all = empty && !!onWearAll && wearAll(gear.store, c.id) !== null;

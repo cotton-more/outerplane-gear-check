@@ -71,9 +71,8 @@ export function bonusLinesOf(t: Texts, idx: Index, c: Char, rows: readonly Bonus
   });
 }
 
-// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ
+// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ.
+// Выбранный билд героя — везде им (решение владельца 2026-10-05, Р-1): карточка, «Надето», обмен, режим героя, вердикт
 export const variantName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.name);
-// имя билда-родителя варианта («Defense mix», без связки): вкладки карточки, «Надето», режим героя, совет «надень её»
-export const parentName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.parent.name);
 // имя билда по ключу во фразе: «Идёт в …», «остаётся в …» — у «По статам» в кавычках
 export const buildName = (t: Texts, key: string) => buildOfKey(key, t.ui.byStatsQ);

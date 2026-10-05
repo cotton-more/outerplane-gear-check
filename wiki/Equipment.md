@@ -144,7 +144,7 @@ one with more of the combo's bonuses on → the one with more of the combo's pie
 filling" is never picked.
 
 The card's first tab is **"Worn"**: the line "Build — Speed · set 3 of 4", six slots and the bonuses of the
-worn sets. If one of the hero's pieces is better for their build (by at least 1 point, or it turns on a set, or gives a recommended weapon), the slot shows "Better in own pieces: … · Wear". An
+worn sets. For a build with several set combos, this line and every other place that names the hero's build show the combo: "Defense mix · Penetration". If one of the hero's pieces is better for their build (by at least 1 point, or it turns on a set, or gives a recommended weapon), the slot shows "Better in own pieces: … · Wear". An
 empty slot has "Enter": "Rate" opens for that slot, and after "Equip" the form moves to the next empty one ("Next:
 {slot}"). If the hero has at most one piece per slot, "Yes, all worn" replaces the entry.
 
