@@ -49,6 +49,7 @@ export const en: Texts = {
       `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
     noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.",
     tempNoInvest: "**Breakthrough** — don't invest: it's a stopgap until the right piece drops.",
+    btTempEpic: (name) => `**Breakthrough** — only with dismantle fodder: any ${name} with any main stat is one tier. Don't spend Glunite: it's a stopgap.`,
     fodderArmor: (piece, set) =>
       `**Don't upgrade** — it's material: one piece is one Breakthrough tier for the Legendary ${piece} ${set} Set you keep. Unless you reroll its substats with Transistone (Total).`,
     fodderGear: (name) =>
@@ -396,6 +397,7 @@ export const en: Texts = {
     replacedMany: (name, slot, olds, t4 = '') => `Replaced: ${name}'s ${SLOT_EN[slot]}${t4} — the old ${andEn(olds)} ones are removed.`,
     prunedNote: 'Extras removed — not in any build.',
     oldMaterial: (slot, what) => `The ${what ?? 'old'} ${SLOT_EN[slot]} can feed the new ${plEn(slot) ? "ones'" : "one's"} Breakthrough.`,
+    oldEvaluate: (slot, what) => `${what ? `The ${what} ${SLOT_EN[slot]}` : `Old ${SLOT_EN[slot]}`} — evaluate ${plEn(slot) ? 'them' : 'it'} first: ${plEn(slot) ? 'they' : 'it'} may suit another hero.`,
     gearTitle: (n) => `Equipped · ${n} of 6`,
     tabWorn: 'Worn',
     wornBuild: (build, k, n) => `Build — **${build}** · set ${k} of ${n}`,

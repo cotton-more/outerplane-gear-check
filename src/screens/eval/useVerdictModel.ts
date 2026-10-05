@@ -51,15 +51,16 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   // прятал «Надеть»); с replace — кнопка «Заменить» есть всегда; wear — «Надеть на X» есть всегда («Надето»: ввод
   // надетого в игре, и у вещи без пользы)
   const heroVs = useMemo(() => (hero ? charVs(ctx, tview, hero.c.id, input, undefined, { explicit: true, replace, wear: true }) : null), [ctx, tview, hero, key, replace]); // eslint-disable-line react-hooks/exhaustive-deps
-  // материал: вещь лучше той, для которой она материал, или в режиме героя она встаёт в его билд — «надень»
+  // материал: вещь лучше той, для которой она материал, или в режиме героя она встаёт в его билд — «надень». Запись из
+  // «Примерить замену» (replace) — та же вещь в игре, введённая заново: себе она не материал
   const mat = useMemo(() => {
-    const needs = materialFor(view, input);
+    const needs = materialFor(view, input).filter((n) => n.piece.id !== replace);
     const up = needs.length ? betterThanWorn(ctx, view, input, needs) : [];
     const o = heroVs?.best?.used ? heroVs.best : null;
     const aim = hero && o && (o.kind === 'fill' || o.kind === 'up' || o.kind === 'closer' || o.kind === 'completes')
       ? `${hero.c.name} · ${variantName(t, o.v)}` : null;
     return { needs, wear: { up, target: aim, t4: input.bt === 4 } };
-  }, [ctx, view, heroVs, hero, key, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx, view, heroVs, hero, key, t, replace]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп по вещам персонажей (features/gear/model/stamp): такая же у кого-то — «Оставить»; всем, кому подходит, она ничего не даёт —
   // «Разобрать». Вещь — материал и лучше такой же у кого-то — не понижаем (совет «надень»)
   const worn = useMemo(() => withWorn(ctx, view, input, raw, { hold: mat.wear.up.length > 0 }), [ctx, view, raw, mat]); // eslint-disable-line react-hooks/exhaustive-deps

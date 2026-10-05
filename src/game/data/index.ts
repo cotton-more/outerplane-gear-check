@@ -1,5 +1,5 @@
 // Индексы и справочники поверх датасета: строятся один раз при загрузке страницы.
-import type { ArmorSlot, Dataset, Grade, SlotId } from './types';
+import type { ArmorSlot, Dataset, GearKind, Grade, SlotId } from './types';
 
 export interface SlotInfo {
   id: SlotId;
@@ -22,6 +22,8 @@ export const isArmor = (slot: SlotId): slot is ArmorSlot => ARMOR.includes(slot)
 export const GRADES: Grade[] = ['unique', 'rare'];
 export const GRADE_NAME: Record<Grade, string> = { unique: 'Legendary', rare: 'Epic' };
 export const GRADE_PREFIX: Record<Grade, string> = { unique: 'Etheric', rare: 'Steel' };
+// Epic оружие и аксессуар в игре всегда такие (варианты [Settlement Support] — те же): имя в «Прокачке»
+export const EPIC_NAME: Record<GearKind, string> = { weapon: 'Steel Sword', accessory: 'Steel Necklace' };
 
 export const STAT_ICON: Record<string, string> = {
   'ATK': 'CM_Stat_Icon_ATK', 'ATK%': 'CM_Stat_Icon_ATK', 'DEF': 'CM_Stat_Icon_DEF', 'DEF%': 'CM_Stat_Icon_DEF',

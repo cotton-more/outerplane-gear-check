@@ -1,7 +1,7 @@
 // Что делает форма «Оценки» после ввода: «Следующий» и «Вернуть» формы, «Надеть» из карточки, вердикта и «Кому
 // надеть?» — новая запись в пуле героя (features/gear/pool putOn), сообщение с «Вернуть», форма — как после «Следующий».
 import type { Dispatch } from 'react';
-import { isArmor, type Index } from '@/game/data';
+import type { Index } from '@/game/data';
 import type { Char, GearKind, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
@@ -11,6 +11,7 @@ import { itemInput, type FormAction, type FormState } from '@/features/eval/form
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { holds, poolView, putOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
 import { nextToWear, whereUsed, type CharVs } from '@/features/gear/model/poolVs';
+import { oldFate } from '@/features/gear/model/material';
 import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import type { Switched } from '@/features/roster/useRosterUi';
@@ -112,16 +113,18 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
       after: both(both(joined, sw?.after), () => { dispatch({ type: 'load', item: was }); backReplace(c.id, rep); }),
     });
   };
-  // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote): та же линия — материал новой.
-  // Кому отдать снятую — не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. Запись из «Примерить
-  // замену» (rep) — та же вещь в игре, введённая заново (Reforge, Transistone): не материал. Новая на T4 — материал ей не
-  // нужен (как в вердикте, features/gear/model/material titleWearT4). Убраны 2+ — в строках имя сета или предмета вместо «Старые»
-  // (заголовок replacedMany их уже перечислил)
+  // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote): такая же Epic — материал новой,
+  // такая же Legendary — «сначала оцени» (features/gear/model/material oldFate, .x/0060 SPEC 4.5). Кому отдать снятую —
+  // не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. Запись из «Примерить замену» (rep) — та же вещь в
+  // игре, введённая заново (Reforge, Transistone): ни то, ни другое. Убраны 2+ — в строках имя сета или предмета вместо
+  // «Старые» (заголовок replacedMany их уже перечислил)
   const removedNotes = (r: PutResult, mine: readonly Piece[], rep: string | null) => {
-    if (r.piece.bt === 4) return [];
     const many = mine.length > 1;
-    return mine.filter((old) => old.id !== rep && (isArmor(old.slot) ? old.setId === r.piece.setId && old.grade === r.piece.grade : !!old.itemKey && old.itemKey === r.piece.itemKey))
-      .map((old) => t.ui.oldMaterial(old.slot, many ? pieceLabel(old) : undefined));
+    return mine.filter((old) => old.id !== rep).flatMap((old) => {
+      const fate = oldFate(old, r.piece);
+      const what = many ? pieceLabel(old) : undefined;
+      return fate === 'material' ? [t.ui.oldMaterial(old.slot, what)] : fate === 'evaluate' ? [t.ui.oldEvaluate(old.slot, what)] : [];
+    });
   };
   return { onReset, onUndo, doEquip, cardEquip, cardOther, nextNote };
 }

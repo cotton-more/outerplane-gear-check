@@ -128,8 +128,9 @@ describe('«Прокачка»: оружие', () => {
     expect(r.plan).toEqual([P.fodderGear(weapon.name)]);
   });
 
-  it('временная замена — только Enhance, Reforge и Breakthrough не вкладывать, сколько бы ни было сегментов', () => {
+  // .x/0060 SPEC 4.3: у Epic — Breakthrough только вещами из разбора (любой Steel Sword), Glunite не тратить
+  it('временная замена — только Enhance, Breakthrough — вещами из разбора, сколько бы ни было сегментов', () => {
     const plan = (n: number) => evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: n, CHC: n, CHD: n } });
-    expect([1, 3].map((n) => [plan(n).v, plan(n).plan])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.tempNoInvest]]));
+    expect([1, 3].map((n) => [plan(n).v, plan(n).plan])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.btTempEpic('Steel Sword')]]));
   });
 });

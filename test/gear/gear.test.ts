@@ -539,10 +539,12 @@ describe('правка в шторке (updateIn)', () => {
     expect(updateIn(idx, on.st, CAREN, 'p1', { bt: 0 }, AT).st.pieces.p1.bt).toBe(0);
   });
 
-  it('«T4» у Epic оружия — не применяется: предмета нет, такую же вещь не найти', () => {
+  // было: не применяется. .x/0060 SPEC 4.2: у Epic оружия «T4» есть, старая запись «не указан» — тоже переключается
+  it('«T4» у Epic оружия → 4 и обратно → 0', () => {
     const w = rec('p1', { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { CHC: 2 } });
-    const st = v2([w], { [CAREN]: ['p1'] });
-    expect(updateIn(idx, st, CAREN, 'p1', { bt: 4 }, AT).st).toBe(st);
+    const on = updateIn(idx, v2([w], { [CAREN]: ['p1'] }), CAREN, 'p1', { bt: 4 }, AT);
+    expect(on.st.pieces.p1.bt).toBe(4);
+    expect(updateIn(idx, on.st, CAREN, 'p1', { bt: 0 }, AT).st.pieces.p1.bt).toBe(0);
   });
 
   it('4-й сабстат у Epic с тремя — с уровнем 1; у Legendary, у Epic с четырьмя и тот же стат — нет', () => {

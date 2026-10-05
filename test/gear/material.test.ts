@@ -103,15 +103,21 @@ describe('материал Breakthrough для надетой', () => {
     expect(mat(r0.st, epic)).toEqual([]);
   });
 
-  it.each([
-    ['Breakthrough не указан', null],
-    ['надетая уже на T4', 4],
-  ] as const)('%s — не материал, вердикт тот же', (_, bt) => {
+  it('надетая уже на T4 — не материал, вердикт тот же', () => {
     const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
-    const st = wearing(bt, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'));
+    const st = wearing(4, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'));
     expect(mat(st, epic)).toEqual([]);
     const res = evaluate(ctx, epic);
     expect(withMaterial(idx, ru, res, mat(st, epic))).toBe(res);
+  });
+
+  // было: не указан — не материал. Решение 10 .x/0060: «не указан» = ниже T4, как bt 0
+  it('Breakthrough не указан — материал, как ниже T4: «Фоддер», без счёта ступеней', () => {
+    const epic = helmet({ HP: 1, 'DMG RED%': 1, RES: 1 }, 'rare');
+    const st = wearing(null, helmet({ 'DEF%': 2, CHC: 2, CHD: 1 }, 'rare'));
+    expect(mat(st, epic)).toMatchObject([{ left: 4 }]);
+    const r = judge(epic, st);
+    expect([r.v, r.lines[0]]).toEqual(['fodder', ru.material.line('шлем Caren · Speed')]);
   });
 
   it('другой грейд или сет — не материал', () => {
@@ -153,13 +159,14 @@ describe('материал Breakthrough для надетой', () => {
       expect(r.plan).not.toContain(ru.material.plan);
     });
 
-    // Н3: «надень» — по вещам как есть. Было: у свежей 6 Reforge впереди, у надетой (4 оранжевых) — 2, и новая «лучше»
+    // Н3: «надень» — по вещам как есть. Было: у свежей 6 Reforge впереди, у надетой (4 оранжевых) — 2, и новая «лучше».
+    // .x/0060 SPEC 4.5: у Legendary — без «а старую — ей в Breakthrough»: снятую сначала оценивают
     it('«Фоддер» сырым вердиктом (Legendary, «Копишь фоддер») и лучше надетой — тоже «Оставляй», строки «Фоддер» нет', () => {
       const r = judgeAll(helmet({ CHC: 1, RES: 1, HP: 1, EFF: 1 }), wearing(2, helmet({ HP: 1, DEF: 1, ATK: 1, RES: 1 })));
       expect(r.v).toBe('keep');
-      expect(r.title).toBe(ru.material.titleWear('helmet', 'Caren · Speed'));
+      expect(r.title).toBe(ru.material.titleWearT4('helmet', 'Caren · Speed'));
       expect(r.lines.join('\n')).not.toContain('Держи не больше 4');
-      expect(r.plan[0]).toBe(ru.material.planReplace('Caren · Speed'));
+      expect(r.plan[0]).toBe(ru.material.planWear('Caren · Speed'));
     });
 
     it('род слота в заголовке: надетого шлема, надетой брони, надетых перчаток, надетого оружия', () => {
@@ -345,11 +352,12 @@ describe('материал Breakthrough для надетой', () => {
     // сырой «Спорно» (в ростере — только Bryn, Caren в нём нет): лучше надетой такой же ниже T4 — «Оставляй», вердикт про
     // оцениваемую вещь
     const bryn = D.chars.find((c) => c.name === 'Bryn')!.id;
-    it(`новая лучше надетой ниже T4 — «Оставляй — лучше надетого ${gen} Caren · Speed: надень её, а старую — ей в Breakthrough»`, () => {
+    // .x/0060 SPEC 4.5: снятая Legendary — не материал (было «…, а старую — ей в Breakthrough»)
+    it(`новая лучше надетой ниже T4 — «Оставляй — лучше надетого ${gen} Caren · Speed: надень её»`, () => {
       const r = app([bryn], 0, X(BETTER));
 
-      expect(r).toMatchObject({ v: 'keep', title: `Оставляй — лучше надетого ${gen} Caren · Speed: надень её, а старую — ей в Breakthrough` });
-      expect(r.lines[0]).toBe(ru.material.lineWear(`${nom} Caren · Speed`));
+      expect(r).toMatchObject({ v: 'keep', title: `Оставляй — лучше надетого ${gen} Caren · Speed: надень её` });
+      expect([r.lines[0], r.plan]).toEqual([ru.material.lineWearT4(`${nom} Caren · Speed`), [ru.material.planWear('Caren · Speed')]]);
     });
 
     it('новая с «T4» лучше надетой ниже T4 — «…: надень её», без «старую — ей в Breakthrough»', () => {
@@ -369,13 +377,14 @@ describe('материал Breakthrough для надетой', () => {
     });
   });
 
-  it('оружие: тот же предмет — материал; Epic без предмета — никогда', () => {
+  // было: Epic без предмета — никогда. .x/0060 SPEC 4.2: Epic оружие — материал Epic оружия с любым main
+  it('оружие: тот же предмет — материал; Epic — любое Epic оружие, и с другим main', () => {
     const w = caren.builds[0].weapons[0];
     const weapon: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: w.key, main: w.mains[0], subs: { HP: 1 } };
     const st = wearing(0, { ...weapon, subs: { CHC: 1 } });
     expect(mat(st, weapon)).toHaveLength(1);
     const epicW: ItemInput = { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { HP: 1 } };
-    expect(mat(wearing(0, { ...epicW, subs: { CHC: 1 } }), epicW)).toEqual([]);
+    expect(mat(wearing(0, { ...epicW, main: 'DEF%', subs: { CHC: 1 } }), epicW)).toHaveLength(1);
   });
   // ревью eval-only: герой из заголовка «Оставляй — лучше надетой … X» — всегда в «Сейчас на персонажах», с кнопкой, даже
   // если все его строки — «По статам» (Р11 их прячет). Герой без начатых билдов носит вещь сета вне его билдов

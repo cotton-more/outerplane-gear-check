@@ -12,7 +12,7 @@ import { MAX_LIT } from '@/game/item/subs';
 import { itemMains } from '@/game/item/mains';
 import { scoreBuild, subWeights, type Row } from '@/game/build/score';
 import type { Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/game/item/item';
+import { sameForBt, type ItemInput } from '@/game/item/item';
 
 // Вещь против одной вещи в том же слоте (против того, что стоит в сборке, features/gear/pool)
 export interface Pair {
@@ -127,9 +127,6 @@ export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piec
   }
   const place = (cover: Map<number, string>, other: Map<number, string>) =>
     [...cover].filter(([p]) => !other.has(p)).map(([p, k]) => ({ key: k, place: p + 1 })).sort((a, z) => a.place - z.place);
-  const sameType = isArmor(item.slot)
-    ? worn.setId === item.setId && worn.grade === item.grade
-    : !!item.itemKey && worn.itemKey === item.itemKey;
   const lost = place(E.cover, X.cover);
   const ahead = kind === 'down' && !why && !lost.length
     ? [...E.segs].map(([k, w]) => ({ key: k, worn: w, next: X.segs.get(k) ?? 0 })).filter((x) => x.worn > x.next)
@@ -139,7 +136,7 @@ export function against(ctx: Ctx, c: Char, b: Build, item: ItemInput, worn: Piec
     kind, delta, why, wornEmpty: E.v === 0 && X.v > 0, ahead,
     gained: place(X.cover, E.cover), lost,
     chains: { worn: rowOf(ctx, c, b, wi, wi.subs), next: rowOf(ctx, c, b, item, item.subs) },
-    material: sameType && worn.bt !== null && worn.bt < 4,
+    material: sameForBt(item, worn) && (worn.bt ?? 0) < 4,
     passive: !isArmor(item.slot) && !!worn.itemKey && !!item.itemKey && worn.itemKey !== item.itemKey,
   };
 }

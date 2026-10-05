@@ -11,7 +11,6 @@ import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { isStats, markOfVariant, type CharPool } from '@/features/gear/pool';
 import { partText, setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
-import { hasBt } from '@/game/item/item';
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
 const nameOf = (ctx: Ctx, p: Piece): string => p.setId
@@ -38,10 +37,10 @@ export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
 export const btText = (t: Texts, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
 // Breakthrough отдельной меткой — во всех строках вещей одинаково (Р-3, решение владельца 2026-10-05): в карточке билда и на
 // «Надето» — своей колонкой (на телефоне — второй строкой), в списке вещей, плане обмена и «Переодеть» — первой во второй
-// строке (.bgear-meta), метки идут столбиком. У Epic оружия и аксессуара Breakthrough нет — метки нет
+// строке (.bgear-meta), метки идут столбиком. У любой вещи, и у Epic оружия и аксессуара (.x/0060)
 export function BtLabel({ p }: { p: Pick<Piece, 'slot' | 'grade' | 'bt'> }) {
   const t = useT();
-  return hasBt(p.slot, p.grade) ? <span className="bgear-m">{btText(t, p.bt)}</span> : null;
+  return <span className="bgear-m">{btText(t, p.bt)}</span>;
 }
 
 // текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base

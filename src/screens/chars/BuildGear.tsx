@@ -1,7 +1,6 @@
 // Сборка варианта билда из вещей персонажа (GEARPOOL, features/gear/pool): 6 слотов, у вещи — сабстаты с сегментами,
-// окрашенные по цепочке этого билда, и Breakthrough («T4», «T0–T3», «T?» — не указан; у Epic оружия и аксессуара его
-// нет — gear hasBt); бонусы сетов с уровнем; «Собираю»; «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet):
-// узкая правка (Н1) — сегменты 1–6, «T4» (у брони и Legendary оружия и аксессуара), 4-й сабстат у Epic с тремя;
+// окрашенные по цепочке этого билда, и Breakthrough («T4», «T0–T3», «T?» — не указан, у любой вещи); бонусы сетов с уровнем; «Собираю»; «Не хватает». Нажатие на вещь — карточка вещи (PieceSheet):
+// узкая правка (Н1) — сегменты 1–6, «T4», 4-й сабстат у Epic с тремя;
 // «Убрать у Caren». Вещь к персонажу кладёт только вердикт («Надеть на…»); «Собрать билд», «Примерить» (пустой слот),
 // «Слабее всех» и «Примерить замену» (вещь) открывают оценку в режиме «для героя» — слот и сет этого варианта на форме;
 // на вкладке «По статам» — без сета (туда встаёт то, что герой носит не по билду, находка 28).
@@ -11,7 +10,6 @@ import type { Build, Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { pieceInput, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
-import { hasBt } from '@/game/item/item';
 import { itemMains } from '@/game/item/mains';
 import { tryOnPreset } from '@/features/tryon/tryon';
 import { subWeights } from '@/game/build/score';
@@ -148,7 +146,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
 }
 
 // Карточка вещи — узкая правка (Н1): сегменты сабстатов 1–6 одним цветом (нажатие ставит уровень, на текущий — на
-// один меньше, не ниже 1), «T4» (hasBt), «+ 4-й сабстат» у Epic с тремя (уровень 1, В-А2). Стат не меняется:
+// один меньше, не ниже 1), «T4», «+ 4-й сабстат» у Epic с тремя (уровень 1, В-А2). Стат не меняется:
 // Transistone — ввести вещь заново (pieceEditNote). Нажатие, с которым сумма уровней ушла бы выше предела грейда
 // (game/item/subs levelCap), не срабатывает — строка «больше N не бывает», как на форме (SubRows); уходит со следующей
 // правкой. Правку делает onEdit (CharDetail: gear updateIn — у этого героя, общая запись делится, шторка идёт за новым
@@ -197,7 +195,7 @@ export function PieceSheet({ c, p, ctx, gear, view, onClose, onEdit, onTry, onRe
       <div className="piece" {...tour('gpiece')}>
         <div className="piece-top">
           <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
-          {hasBt(p.slot, p.grade) && <BtChip anchor={false} armor={isArmor(p.slot)} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />}
+          <BtChip anchor={false} armor={isArmor(p.slot)} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />
         </div>
         <p className="muted small">{at.worn || builds.length
           ? [at.worn && t.ui.poolWorn, builds.length > 0 && t.ui.poolIn(builds.join(', '))].filter(Boolean).join(' · ')

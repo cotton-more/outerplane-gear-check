@@ -134,10 +134,12 @@ describe('«T4» на форме', () => {
     expect(chip()?.getAttribute('title')).toBe('Already at T4 — no more copies needed for its Breakthrough');
   });
 
-  // у Epic предмета на форме нет — такую же вещь не найти, «T4» ни на что бы не влияла
-  it.each(['weapon', 'accessory'])('Epic %s: «T4» нет', async (slot) => {
+  // было: у Epic «T4» нет. .x/0060 SPEC 4.1: есть, в одном ряду с грейдом и main (предмета у Epic нет)
+  it.each(['weapon', 'accessory'])('Epic %s: «T4» — в ряду грейда, после main', async (slot) => {
     await mount({ slot, grade: 'rare' }, {});
-    expect($('.btchip')).toBeNull();
+    const rows = [...document.querySelectorAll('.form .formrow')];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].lastElementChild?.getAttribute('data-tour')).toBe('bt');
   });
 
   it('Legendary аксессуар: main — рядом с грейдом, предмет и «T4» — второй строкой, как у оружия', async () => {

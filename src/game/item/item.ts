@@ -11,16 +11,20 @@ export interface ItemInput {
   main: string | null;
   unlisted?: boolean; // Legendary оружие/аксессуар, которого нет в данных outerpedia
   subs: Subs;
-  // Breakthrough с формы (броня, Legendary оружие и аксессуар — gear hasBt): 4 — «T4», 0 — ниже T4 (T0–T3). Поля нет или
-  // null — не указан (старые входы, эталон, Epic оружие и аксессуар). Вердикт evaluate его не читает — только пул
+  // Breakthrough с формы (у любой вещи): 4 — «T4», 0 — ниже T4 (T0–T3). Поля нет или null — не указан (старые входы,
+  // эталон, Epic оружие и аксессуар до 0060), считается ниже T4. Вердикт evaluate его не читает — только пул
   // (сборка и исходы — у брони, материал — у всех)
   bt?: 0 | 4 | null;
 }
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
 
-// Breakthrough вещи ведём («T4» на форме и в шторке, метка в пуле и в слоте): у брони — бонус сета и материал такой же
-// вещи, у Legendary оружия и аксессуара — материал такого же предмета (вопрос 7 (б) ревью eval-only, отменяет В4
-// «только у брони»). У Epic оружия и аксессуара предмета на форме нет — такую же вещь не найти (features/gear/model/material), и
-// Breakthrough ни на что не влияет: кнопки нет, Breakthrough не указан, как раньше
-export const hasBt = (slot: SlotId, grade: Grade): boolean => isArmor(slot) || grade === 'unique';
+// Breakthrough ведём у любой вещи («T4» на форме и в шторке, метка в строках): у брони — бонус сета и материал такой же
+// вещи, у оружия и аксессуара — материал такого же предмета (вопрос 7 (б) ревью eval-only; у Epic — .x/0060 SPEC 4).
+// Такая же вещь — ступень Breakthrough: броня — тот же слот, сет и грейд; Legendary оружие и аксессуар — тот же
+// предмет; Epic — любая того же слота (в игре это всегда Steel Sword и Steel Necklace, материал — с любым main,
+// проверено в игре)
+type Same = { slot: SlotId; grade: Grade; setId: string | null; itemKey: string | null };
+export const sameForBt = (a: Same, b: Same): boolean =>
+  a.slot === b.slot && a.grade === b.grade
+  && (isArmor(a.slot) ? !!a.setId && a.setId === b.setId : a.grade === 'rare' || (!!a.itemKey && a.itemKey === b.itemKey));

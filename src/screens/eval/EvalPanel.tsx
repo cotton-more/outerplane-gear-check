@@ -12,7 +12,6 @@ import type { GearKind } from '@/game/data/types';
 import { fineHover } from '@/shared/layout/useLayout';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { hasBt } from '@/game/item/item';
 import { MAX_SUBS, withinCap } from '@/game/item/subs';
 import { mainOptions, setSubDemand } from '@/features/eval/form/lists';
 import { blocksOf, itemMains as mainLines } from '@/game/item/mains';
@@ -67,8 +66,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
     dispatch({ type: 'sub', key });
   };
   const armor = isArmor(s.slot);
-  const bt = hasBt(s.slot, s.grade);
-  const t4 = bt && s.t4 ? t.ui.withT4 : '';
+  const t4 = s.t4 ? t.ui.withT4 : '';
   // строки main: у брони фиксированы сетом, у оружия — flat ATK и выбранный; сабстатов, которые они запрещают, в сетке нет
   const im = useMemo(() => mainLines(ctx.idx, { slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main }),
     [ctx.idx, s.slot, s.grade, s.setId, s.itemKey, s.main]);
@@ -126,9 +124,11 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
               <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
               {btChip}
             </>
-            : weapon
-              ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} />
-              : mainField}
+            : <>
+              {weapon ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} /> : mainField}
+              {/* у Epic предмета на форме нет — «T4» рядом с main (.x/0060 SPEC 4.1) */}
+              {epic && btChip}
+            </>}
         </div>
         {!armor && !epic && <div className="formrow">{itemField}{btChip}</div>}
         <div className="subzone" {...tour('grid')}>

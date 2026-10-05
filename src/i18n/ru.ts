@@ -79,6 +79,8 @@ export const ru = {
       `**Breakthrough** до T4 — обязательно: к T4 усиливается пассивка, и +20% к main stat. Материал — копии ${name} (годятся и с другим main stat) или Refined Glunite.`,
     noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.',
     tempNoInvest: '**Breakthrough** — не вкладывай: вещь на замену, её сменит нужная.',
+    // Epic оружие и аксессуар «Временно» (.x/0060 SPEC 4.3): name — Steel Sword или Steel Necklace
+    btTempEpic: (name: string) => `**Breakthrough** — только вещами из разбора: любой ${name} с любым main — ступень. Glunite не трать: вещь на замену.`,
     fodderArmor: (piece: string, set: string) =>
       `**Не прокачивай** — это материал: одна вещь — одна ступень Breakthrough для Legendary ${piece} ${set} Set, которую оставляешь. Исключение — если перебросишь ей сабстаты Transistone (Total).`,
     fodderGear: (name: string) =>
@@ -464,6 +466,8 @@ export const ru = {
     prunedNote: 'Лишнее убрано — не вошло ни в один билд.',
     // what — имя сета или предмета, когда убраны 2+ (replacedMany): вместо «Старые»
     oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
+    // снята такая же Legendary (.x/0060 SPEC 4.5): не материал — может быть лучшей для другого героя
+    oldEvaluate: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — сначала оцени ${by(slot, 'его', 'её', 'его', 'их')}: может подойти другому герою.`,
     gearTitle: (n: number) => `Собрано · ${n} из 6`,
     // вкладка «Надето» (шаг 6): «Билд — Speed · сет 3 из 4», блок слотов, совет «из своих»
     tabWorn: 'Надето',

@@ -289,26 +289,27 @@ describe('«Заменить»: что со старой', () => {
     P('p2', 'armor', speed, { 'ATK%': 2, CHC: 2 }), P('p3', 'gloves', speed, { 'ATK%': 2, CHC: 2 }), P('p4', 'shoes', speed, { 'ATK%': 2, CHC: 2 }),
   ], { [caren.id]: ['p1'], [rin.id]: ['p2', 'p3', 'p4'] });
 
-  it('старый шлем пригодился бы Rin — ни кнопки «Отдать», ни строки про Rin; та же линия — материал новой', async () => {
+  // .x/0060 SPEC 4.5: снятая Legendary — не материал (было «материал новой»): «сначала оцени», может подойти другому
+  it('старый шлем пригодился бы Rin — ни кнопки «Отдать», ни строки про Rin; та же Legendary — «сначала оцени»', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: gear(), roster: [caren.id, rin.id] });
 
     await click($('.vc-equip'));
 
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
-    expect($('.gear-toast small')?.textContent).toBe("The old helmet can feed the new one's Breakthrough.");
+    expect($('.gear-toast small')?.textContent).toBe('Old helmet — evaluate it first: it may suit another hero.');
     expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
     expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4']);
   });
 
-  // доработка шага 10 (refute-10 п. 3): новая на T4 — Breakthrough уже полный, «старый — материал для нового» неправда
-  // (как вердикт: titleWearT4 — только «надень»)
+  // доработка шага 10 (refute-10 п. 3): новая на T4 — Breakthrough уже полный, «старый — материал для нового» неправда.
+  // Снятой Legendary «сначала оцени» — и при новой на T4: она может подойти другому (.x/0060 SPEC 4.5)
   it('«Заменить» с нажатой «T4»: «Заменено: шлем Caren · T4.», строки про материал нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, t4: true }, { gear: gear(), roster: [caren.id, rin.id] });
 
     await click($('.vc-equip'));
 
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · T4.");
-    expect($('.gear-toast small')).toBeNull();
+    expect($('.gear-toast small')?.textContent).toBe('Old helmet — evaluate it first: it may suit another hero.');
   });
 
   // шаг 10 (В9, Р15): было — строка «Старый остался у Kappa (в Speed)» (oldStill). Пулы независимы — про других ни слова;
@@ -829,13 +830,18 @@ describe('карточка персонажа', () => {
     expect($('.bgear-m')?.textContent).toBe('T4');
   });
 
-  it('карточка Epic оружия: «T4» нет, метки Breakthrough в слоте нет', async () => {
+  // было: «T4» и метки нет. .x/0060 SPEC 4.1: у Epic оружия — как у всех; старая запись — «T?»
+  it('карточка Epic оружия: «T4» есть, метка «T?» у старой записи', async () => {
     const ps = [P('p1', 'weapon', null, { CHC: 2, SPD: 1 }, { grade: 'rare', main: caren.builds[0].weapons[0].mains[0] })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1'] }) });
     expect($$('.bgear-row')).toHaveLength(1); // Epic с main из списка — в слоте билда («Развитие»)
     await click($('.bgear-row'));
 
-    expect([$('.piece') !== null, $('.piece .btchip'), $('.bgear-m')]).toEqual([true, null, null]);
+    expect([$('.piece') !== null, $('.piece .btchip') !== null, $('.bgear-m')?.textContent]).toEqual([true, true, 'T?']);
+
+    await click($('.piece .btchip'));
+
+    expect(stored().pieces.p1.bt).toBe(4);
   });
 
   it('«Собираю» выключить — «Не собираю» у варианта; включить обратно — отметки нет (собирается сам)', async () => {
@@ -959,7 +965,8 @@ describe('карточка персонажа', () => {
   // находка 6: было — в строке только название и «где стоит», какая из двух одинаковых на T4 — только в шторке.
   // Вопрос 7 (б): было — у оружия метки нет; теперь у Legendary оружия и аксессуара — тоже, у Epic — нет (Breakthrough не ведём)
   // Р-3 (решение владельца 2026-10-05): Breakthrough — отдельной меткой, как в слоте билда, а не «· T4» в названии
-  it('«Вещи Caren · N»: Breakthrough — меткой «T0–T3» / «T4», как в слоте билда, и у Legendary оружия; у Epic оружия метки нет', async () => {
+  // .x/0060: у Epic оружия — тоже, «T?» — не указан
+  it('«Вещи Caren · N»: Breakthrough — меткой «T0–T3» / «T4», как в слоте билда, и у оружия; «T?» — не указан', async () => {
     const ps = [P('p1', 'helmet', speed, { 'DEF%': 2 }, { bt: 0 }), P('p2', 'helmet', speed, { CHC: 2 }, { bt: 4 }),
       P('p3', 'weapon', null, { CHC: 1 }, { main: 'ATK%', bt: 0 }), P('p4', 'weapon', null, { CHC: 2 }, { main: 'HP%', bt: 4 }),
       P('p5', 'weapon', null, { CHC: 1 }, { grade: 'rare', main: 'DEF%', bt: null })];
@@ -967,7 +974,7 @@ describe('карточка персонажа', () => {
 
     const rows = $$('.pool-row').map((r) => [r.querySelector('.bgear-n')?.textContent, r.querySelector('.bgear-m')?.textContent ?? null]);
 
-    expect(rows).toEqual([['LATK%', 'T0–T3'], ['LHP%', 'T4'], ['EEpic· DEF%', null], ['LSpeed Set', 'T0–T3'], ['LSpeed Set', 'T4']]);
+    expect(rows).toEqual([['LATK%', 'T0–T3'], ['LHP%', 'T4'], ['EEpic· DEF%', 'T?'], ['LSpeed Set', 'T0–T3'], ['LSpeed Set', 'T4']]);
   });
 
   // на 280 ширину в jsdom не проверить (@container в chars.css); проверяем разметку: кнопка — до заголовка, своим блоком

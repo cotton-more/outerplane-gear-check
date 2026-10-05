@@ -1,5 +1,6 @@
-// Материал Breakthrough для того, что уже надето: такая же вещь (броня — тот же сет, слот и грейд; оружие и
-// аксессуар — тот же предмет и грейд) на записанной вещи, у которой Breakthrough указан и ещё не T4.
+// Материал Breakthrough для того, что уже надето: такая же вещь (game/item sameForBt: броня — тот же сет, слот и грейд;
+// Legendary оружие и аксессуар — тот же предмет; Epic — любая того же слота) на записанной вещи не на T4 («не указан» —
+// тоже ниже T4, решение 10 .x/0060).
 // Одна вещь — одна ступень, сабстаты не важны. Тогда «Разобрать» поднимается до «Фоддер»: разобрав, потерял бы
 // ступень для вещи, которую носишь. Ищем среди вещей в собираемых сборках всех персонажей, а не только у тех, кому
 // вещь подходит по вердикту. «Надета» — стоит в выбранной раскладке (её показывает карточка), не в достижимой: вещь,
@@ -7,26 +8,25 @@
 // Штамп только поднимается: «Оставить» и «Временно» не трогаем, там это пометка в «Сейчас на персонажах»; «Спорно» —
 // только строка «Материал» (ответ владельца на вопрос 2 ревью eval-only): «Спорно» не понижаем.
 // Вещь лучше той надетой, для которой она материал (или в режиме героя у него слот пуст), — совет «надень», а не «отдай».
-// Лучше надетой такой же — штамп «Оставляй»: вердикт всегда про ту вещь, которую оцениваем (решение владельца).
-import { FLAT, isArmor, type Index } from '@/game/data';
+// Лучше надетой такой же — штамп «Оставляй»: вердикт всегда про ту вещь, которую оцениваем (решение владельца). Снятую
+// Legendary материалом не называем (.x/0060 SPEC 4.5): она может быть лучшей для другого героя — «надень её», без «а
+// старую — ей в Breakthrough»; Epic не жалко — снятая ей ступень.
+import { FLAT, type Index } from '@/game/data';
 import type { Texts } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import type { Piece } from './gear';
 import { outcomeFor, type PoolView } from '@/features/gear/pool';
 import { buildOfKey } from '@/game/build/variants';
 import type { Verdict } from '@/features/eval/verdict/verdict';
-import type { ItemInput } from '@/game/item/item';
+import { sameForBt, type ItemInput } from '@/game/item/item';
 import { heroName } from '@/game/hero/HeroName';
 
 export interface Need { piece: Piece; key: string; left: number } // key — вариант, где она стоит; left — ступеней до T4
 
 // персонажи, которых нет в данных, пропускаем (их пулы с устройства на более новых данных хранятся, но не видны)
 export function materialFor(view: PoolView, item: ItemInput): Need[] {
-  const armor = isArmor(item.slot);
   const out = new Map<string, Need>();
-  const can = (p: Piece | null | undefined): p is Piece & { bt: number } =>
-    !!p && p.slot === item.slot && p.grade === item.grade && p.bt !== null && p.bt < 4
-    && (armor ? !!item.setId && p.setId === item.setId : !!item.itemKey && p.itemKey === item.itemKey);
+  const can = (p: Piece | null | undefined): p is Piece => !!p && (p.bt ?? 0) < 4 && sameForBt(item, p);
   for (const [id, ids] of Object.entries(view.st.pools)) {
     // сборки считаем только у тех, у кого такая вещь вообще есть в пуле (находка 27: иначе первое нажатие после
     // правки пула собирало бы всех персонажей)
@@ -37,7 +37,7 @@ export function materialFor(view: PoolView, item: ItemInput): Need[] {
       for (const e of Object.values(cp.asm.get(v.key)!.slots)) {
         const p = e?.piece;
         if (!can(p) || out.has(p.id)) continue;
-        out.set(p.id, { piece: p, key: v.key, left: 4 - p.bt });
+        out.set(p.id, { piece: p, key: v.key, left: 4 - (p.bt ?? 0) });
       }
     }
   }
@@ -61,7 +61,7 @@ const whoOf = (idx: Index, key: string, t: Texts) => {
 
 // Когда вещь лучше надеть, чем отдать в Breakthrough: up — надетые слабее её (betterThanWorn); target — в режиме героя
 // у цели этот слот пуст или вещь лучше надетой («Caren · Speed»); t4 — она сама на T4 (форма): старую ей в
-// Breakthrough не отдать, только надеть
+// Breakthrough не отдать, только надеть. У Legendary — тоже только надеть: снятую не отдаём (SPEC 4.5)
 export interface Wear { up: Need[]; target: string | null; t4?: boolean }
 
 // штампы, которые «лучше надетой такой же» (up) поднимает до «Оставляй»: «Спорно» — это «Разобрать» или «Фоддер»
@@ -91,6 +91,7 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
   const own = set ? res.lines.filter((l) => l !== t.armor.enableFodder(set)) : res.lines;
   if (wears(res, wear)) {
     const who = whoOf(idx, wear.up[0].key, t);
+    const keepOld = wear.t4 || needs[0].piece.grade === 'unique';
     // Из прежних строк — первая: кому и чем вещь хороша (как у понижения, features/gear/model/stamp; у «Спорно» — кому из тех, кого нет
     // в ростере, она «Оставить»), и «Проверь HP: flat». Прочие — почему «Разобрать» или «Фоддер» и как поднять до
     // «Оставить» — не про этот штамп; у оружия и аксессуара первая строка «Фоддер» и объясняет — её тоже нет.
@@ -99,9 +100,9 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
     const flat = new Set([...FLAT].map((k) => t.verdict.flatHint(k)));
     return {
       ...res, v: 'keep',
-      title: wear.t4 ? M.titleWearT4(slot, who) : M.titleWear(slot, who),
-      lines: [(wear.t4 ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...own.filter((l, i) => i === first || flat.has(l))],
-      plan: [wear.t4 ? M.planWear(who) : M.planReplace(who)],
+      title: keepOld ? M.titleWearT4(slot, who) : M.titleWear(slot, who),
+      lines: [(keepOld ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...own.filter((l, i) => i === first || flat.has(l))],
+      plan: [keepOld ? M.planWear(who) : M.planReplace(who)],
     };
   }
   // «Спорно»: штамп и заголовок те же, «Материал» — после первой строки (кому из тех, кого нет в ростере, она хороша)
@@ -116,4 +117,13 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
     lines,
     plan: [wearPlan ?? M.plan],
   };
+}
+
+// Что сказать о снятой с формы вещи того же слота (сообщение после «Надеть» / «Заменить»): такая же Epic — материал
+// новой, и с T4 (Epic не жалко); новая на T4 — материал ей не нужен. Такая же Legendary — «сначала оцени»: может
+// подойти другому герою (SPEC 4.5). Другая вещь — ничего
+export function oldFate(old: Piece, put: Pick<Piece, 'slot' | 'grade' | 'setId' | 'itemKey' | 'bt'>): 'material' | 'evaluate' | null {
+  if (!sameForBt(put, old)) return null;
+  if (old.grade === 'unique') return 'evaluate';
+  return put.bt === 4 ? null : 'material';
 }

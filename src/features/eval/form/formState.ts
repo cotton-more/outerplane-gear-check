@@ -5,7 +5,6 @@ import type { GearKind, Grade, SlotId } from '@/game/data/types';
 import { epicMains, legendMains } from '@/game/build/builds';
 import { itemMains } from '@/game/item/mains';
 import type { Settings } from '@/game/context';
-import { hasBt } from '@/game/item/item';
 import { MAX_SUBS, levelCap, levelSum, withinCap, type Subs, MAX_LIT } from '@/game/item/subs';
 import type { ItemInput } from '@/game/item/item';
 
@@ -18,7 +17,7 @@ export interface FormState {
   main: string | null;
   unlisted: boolean;                // Legendary оружие/аксессуар, которого нет в списке: оценка по main stat
   subs: Subs;                       // уровень сабстата — сколько сегментов горит в игре, 1–6
-  t4: boolean;                      // Breakthrough T4; не нажата — ниже T4 (T0–T3). Есть у брони и Legendary оружия и аксессуара (gear hasBt), у Epic оружия и аксессуара — всегда false
+  t4: boolean;                      // Breakthrough T4; не нажата — ниже T4 (T0–T3). Есть у любой вещи
   expand: Record<string, boolean>;  // раскрытые секции вердикта
   // настройки оценки
   settings: Settings;
@@ -108,7 +107,7 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       if (!(a.key in s.subs) || !Number.isInteger(a.n) || a.n < 1 || a.n > MAX_LIT) return s;
       return withSubs(s, { ...s.subs, [a.key]: a.n });
     case 't4':
-      return hasBt(s.slot, s.grade) ? { ...s, t4: !s.t4 } : s;
+      return { ...s, t4: !s.t4 };
     case 'clearSubs':
       return { ...s, subs: {} };
     case 'reset':
@@ -120,9 +119,9 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       if (a.slot && a.slot !== s.slot) return { ...s, ...EMPTY_ITEM, slot: a.slot };
       return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null, main: s.main };
     case 'load': {
-      // Breakthrough входа — в «T4» (где он есть, hasBt); само поле bt в состояние не попадает
+      // Breakthrough входа — в «T4»; само поле bt в состояние не попадает
       const { bt, ...item } = a.item;
-      return { ...s, ...EMPTY_ITEM, ...item, t4: hasBt(item.slot, item.grade) && bt === 4 };
+      return { ...s, ...EMPTY_ITEM, ...item, t4: bt === 4 };
     }
     case 'expand':
       return { ...s, expand: { ...s.expand, [a.key]: true } };
@@ -133,20 +132,20 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
   }
 }
 
-// вещь с формы — с Breakthrough: «T4» → 4, иначе ниже T4 (0, В4); у Epic оружия и аксессуара Breakthrough нет (hasBt)
+// вещь с формы — с Breakthrough: «T4» → 4, иначе ниже T4 (0, В4)
 export const itemInput = (s: FormState): ItemInput => ({
   slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs,
-  ...(hasBt(s.slot, s.grade) ? { bt: s.t4 ? 4 : 0 } : {}),
+  bt: s.t4 ? 4 : 0,
 });
 
 // --- недовведённый предмет: отдельный ключ 'ogc.item'. Android выгружает PWA из памяти, пока ты в игре, —
 // после перезапуска продолжаешь с того же места; «Сброс» очищает.
 
-// t4 — только нажатая и где он есть (hasBt): старая вкладка его не знает и просто не прочтёт
+// t4 — только нажатая: старая вкладка его не знает и просто не прочтёт
 export type PersistedItem = Pick<FormState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'> & { t4?: true };
 
 export const toPersistedItem = (s: FormState): PersistedItem =>
-  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs, ...(hasBt(s.slot, s.grade) && s.t4 ? { t4: true as const } : {}) });
+  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs, ...(s.t4 ? { t4: true as const } : {}) });
 
 // сохранённый предмет → состояние; всё, что не сходится с текущими данными, слотом и грейдом, отбрасывается
 export function restoreItem<S extends FormState>(s: S, saved: unknown, idx: Index): S {
@@ -173,7 +172,7 @@ export function restoreItem<S extends FormState>(s: S, saved: unknown, idx: Inde
   // вердикт мог бы отправить настоящую в разбор); сет, предмет и main остаются. Предел — наибольший из грейдов: ввод
   // набирает до 22 у Legendary, а смена грейда сумму не режет — такая Epic после перезапуска должна вернуться как была
   const fits = levelSum(subs) <= Math.max(...GRADES.map(levelCap));
-  return { ...s, setId, itemKey, main, unlisted, subs: fits ? subs : {}, t4: hasBt(s.slot, s.grade) && r.t4 === true };
+  return { ...s, setId, itemKey, main, unlisted, subs: fits ? subs : {}, t4: r.t4 === true };
 }
 
 // предмет из кода гильдии подходит к текущим данным: restoreItem ничего не отбросил.
