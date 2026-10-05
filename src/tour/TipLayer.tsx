@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '@/i18n';
 import type { Anchor } from './anchors';
-import { freeBottom, inView, overlayOpen, pad, rect, targets, type Rect } from './dom';
+import { freeBottom, inView, onScreen, overlayOpen, pad, rect, targets, type Rect } from './dom';
 import { place } from './place';
 import { TIPS } from './registry';
 import { nextTip, type TipSession } from './tips';
@@ -13,8 +13,9 @@ import type { Tip, TourCtx } from './types';
 import type { TourApi } from './useTour';
 
 // якорь подсказки на экране: видимый элемент в свободной части окна — если он за краем, полоса закрыла бы
-// что-то другое (кнопку «← К списку», ✕ шторки), а рамки не было бы видно
-const at = (a: Anchor) => targets([`[data-tour="${a}"]`], overlayOpen()).find(inView);
+// что-то другое (кнопку «← К списку», ✕ шторки), а рамки не было бы видно. Исключение — «Ещё» (☰ стоит на самой плашке
+// вердикта): полоса встаёт над плашкой, рамка — вокруг ☰
+const at = (a: Anchor) => targets([`[data-tour="${a}"]`], overlayOpen()).find((el) => inView(el) || (a === 'more' && onScreen(el)));
 
 // forced — «Показать» в «Что нового»: эту подсказку сразу, без лимитов и условий; нет якоря на экране — просто текст
 export function TipLayer({ tour, c, enabled, forced, onForced }: {
@@ -22,7 +23,7 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
 }) {
   const t = useT();
   const [tip, setTip] = useState<Tip | null>(null);
-  const [g, setG] = useState<{ ring: Rect | null; bottom: number; h: number; vw: number; vh: number }>({ ring: null, bottom: 0, h: 0, vw: 0, vh: 0 });
+  const [g, setG] = useState<{ ring: Rect | null; bar: boolean; bottom: number; h: number; vw: number; vh: number }>({ ring: null, bar: false, bottom: 0, h: 0, vw: 0, vh: 0 });
   const strip = useRef<HTMLDivElement>(null);
   const sess = useRef<TipSession>({ shown: 0, lastAt: 0 });
   const lastInput = useRef(0);
@@ -67,7 +68,7 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
     const tick = () => {
       const el = at(tip.at);
       const r = el?.getBoundingClientRect();
-      const next = { ring: r && r.height > 0 ? rect(r) : null, bottom: freeBottom(), h: strip.current?.offsetHeight ?? 0, vw: window.innerWidth, vh: window.innerHeight };
+      const next = { ring: r && r.height > 0 ? rect(r) : null, bar: !!el?.closest('#vbar'), bottom: freeBottom(), h: strip.current?.offsetHeight ?? 0, vw: window.innerWidth, vh: window.innerHeight };
       const s = JSON.stringify(next);
       if (s !== last) { last = s; setG(next); }
       id = requestAnimationFrame(tick);
@@ -84,7 +85,8 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
   const ok = () => { tour.seeTip(tip); pinned.current = false; setTip(null); };
   const box = g.ring && { top: g.ring.top, bottom: g.ring.top + g.ring.height };
   // цель выше свободного места — полоса снизу, поверх низа цели
-  const side = place(box, 0, g.bottom || g.vh, g.h) === 'top' ? 'top' : 'bottom';
+  // цель на плашке вердикта (☰) — полоса прямо над ней, а не наверху экрана
+  const side = !g.bar && place(box, 0, g.bottom || g.vh, g.h) === 'top' ? 'top' : 'bottom';
   const style = side === 'bottom' ? { bottom: Math.max(0, g.vh - (g.bottom || g.vh)) } : { top: 0 };
   return createPortal(
     <>

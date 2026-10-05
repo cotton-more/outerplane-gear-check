@@ -39,6 +39,12 @@ export function inView(el: Element): boolean {
   return r.height > 0 && r.bottom > 0 && r.top < bottom;
 }
 
+// элемент в окне, хоть под плашкой вердикта: кнопка «Ещё» (☰) стоит на самой плашке, полоса подсказки встаёт над ней
+export function onScreen(el: Element): boolean {
+  const r = el.getBoundingClientRect();
+  return r.height > 0 && r.bottom > 0 && r.top < window.innerHeight;
+}
+
 // карточка персонажа во весь экран (телефон): плашка тура встаёт снизу, чтобы не закрыть «← К списку»
 export const cardOpen = () => document.body.classList.contains('sheet-open');
 
