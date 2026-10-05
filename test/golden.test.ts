@@ -8,7 +8,8 @@ import type { Dataset, GearKind } from '@/game/data/types';
 import { epicMains } from '@/game/build/builds';
 import { makeCtx, type Settings } from '@/game/context';
 import { evaluate } from '@/features/eval/verdict/evaluate';
-import { charMatches, itemOptions, mainDemand, setOptions } from '@/features/eval/form/lists';
+import { itemOptions, mainDemand, setOptions } from '@/features/eval/form/lists';
+import { charMatches } from '@/features/roster/charFilter';
 import { compactVerdict, internFeet, stringifyGolden } from './golden-format.mjs';
 
 const GOLDEN = new URL('./golden.json', import.meta.url);

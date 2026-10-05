@@ -8,7 +8,8 @@ import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
 import { MAX_SUBS, dropSubs } from '@/game/item/subs';
-import { fromPersisted, itemInput, reducer, restoreItem, toPersisted, toPersistedItem, type Action, type AppState } from '@/app/appState';
+import { fromPersisted, reducer, toPersisted, type Action, type AppState } from '@/app/appState';
+import { itemInput, restoreItem, toPersistedItem } from '@/features/eval/form/formState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

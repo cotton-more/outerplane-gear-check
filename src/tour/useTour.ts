@@ -4,7 +4,8 @@
 // своя остаётся, а если на форме до тура тоже была вещь, игрок выбирает, какую оставить.
 // Туров несколько — «Обучение» сначала спрашивает, какой (pick). Вкладка и открытый персонаж тоже возвращаются.
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
-import { itemInput, type Action, type Tab } from '@/app/appState';
+import { type Action, type Tab } from '@/app/appState';
+import { itemInput } from '@/features/eval/form/formState';
 import { storage } from '@/shared/storage';
 import type { ItemInput } from '@/game/item/item';
 import { TIPS } from './registry';

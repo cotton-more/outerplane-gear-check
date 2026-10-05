@@ -9,7 +9,9 @@ import type { Row } from '@/game/build/score';
 import { useT } from '@/i18n';
 import { fmtGood } from '@/game/text';
 import { bestRow, type Section, type Verdict as VerdictData } from './verdict';
-import { itemInput, type Action, type AppState, type Tab } from '@/app/appState';
+import type { Tab } from '@/app/appState';
+import type { FormAction, FormState } from '@/features/eval/form/formState';
+import { itemInput } from '@/features/eval/form/formState';
 import { tour } from '@/tour/anchors';
 import { GearFrame, Img, SetIcon } from '@/game/icons/Img';
 import { useIndex } from '@/game/data/IndexContext';
@@ -25,7 +27,7 @@ import { ShareCode } from '@/features/eval/code/ItemCode';
 
 // vs — «Сейчас на персонажах» (features/gear/model/poolVs), view — пул; onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
 interface Props {
-  r: VerdictData; s: AppState; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
+  r: VerdictData; s: FormState; dispatch: Dispatch<FormAction>; onOpenChar: (id: string) => void;
   vs?: CharVs[]; view?: PoolView; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void;
   nextNote?: string | null; // «Дальше: Ботинки» под кнопкой «Надеть» (режим героя, ввод надетого)
   offNote?: string | null; // режим «для героя»: строка про героя (features/tryon/tryon heroNote) — не носит, не нужна, «По статам»
@@ -84,7 +86,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
 }
 
 function VerdictSection({ sec, r, expand, nSubs, setId, dispatch, onOpenChar }: {
-  sec: Section; r: VerdictData; expand: Record<string, boolean>; nSubs: number; setId: string | null; dispatch: Dispatch<Action>; onOpenChar: (id: string) => void;
+  sec: Section; r: VerdictData; expand: Record<string, boolean>; nSubs: number; setId: string | null; dispatch: Dispatch<FormAction>; onOpenChar: (id: string) => void;
 }) {
   const t = useT();
   const key = sec.title;

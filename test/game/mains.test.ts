@@ -15,7 +15,8 @@ import type { MainOption } from '@/features/eval/form/lists';
 import { itemMains, takenByMain } from '@/game/item/mains';
 import { flatFactor, rows, tierPlaces, uselessFor } from '@/game/build/score';
 import type { ItemInput } from '@/game/item/item';
-import { fromPersisted, reducer, restoreItem, type AppState } from '@/app/appState';
+import { fromPersisted, reducer, type AppState } from '@/app/appState';
+import { restoreItem } from '@/features/eval/form/formState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

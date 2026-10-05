@@ -5,7 +5,8 @@ import type { Dataset, GearKind } from '@/game/data/types';
 import { epicMains, legendMains } from '@/game/build/builds';
 import { decodeItem, encodeItem } from '@/features/eval/code/codec';
 import type { ItemInput } from '@/game/item/item';
-import { fitsData, fromPersisted, reducer } from '@/app/appState';
+import { fromPersisted, reducer } from '@/app/appState';
+import { fitsData } from '@/features/eval/form/formState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);

@@ -3,7 +3,7 @@ import { FLAT, subLabel } from '@/game/data';
 import type { Grade } from '@/game/data/types';
 import { useT } from '@/i18n';
 import { DROP_LEVEL, MAX_SUBS, levelCap, withinCap, type Subs } from '@/game/item/subs';
-import type { Action } from '@/app/appState';
+import type { FormAction } from './formState';
 import { tour, tourItem } from '@/tour/anchors';
 import { StatIcon } from '@/game/icons/Img';
 
@@ -24,7 +24,7 @@ export type CapAt = { subs: Subs; grade: Grade }; // на чём нажатие 
 
 export function SubRows({ subs, grade, fourth, cap, onCap, dispatch, onPick, onAddFourth }: {
   subs: Subs; grade: Grade; fourth: boolean; cap: CapAt | null; onCap: (at: CapAt) => void;
-  dispatch: Dispatch<Action>; onPick: (editing: string) => void; onAddFourth: () => void;
+  dispatch: Dispatch<FormAction>; onPick: (editing: string) => void; onAddFourth: () => void;
 }) {
   const t = useT();
   const keys = Object.keys(subs);

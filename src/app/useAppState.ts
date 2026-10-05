@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import type { Index } from '@/game/data';
-import { fromPersisted, reducer, restoreItem, toPersisted, toPersistedItem, type AppState } from './appState';
+import { fromPersisted, reducer, toPersisted, type AppState } from './appState';
+import { restoreItem, toPersistedItem } from '@/features/eval/form/formState';
 import { storage } from '@/shared/storage';
 
 // Состояние страницы: стартует из 'ogc.state' (настройки, вкладка) и 'ogc.item' (недовведённый предмет),

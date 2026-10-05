@@ -17,7 +17,7 @@ import { MAX_SUBS, withinCap } from '@/game/item/subs';
 import { mainOptions, setSubDemand } from './lists';
 import { blocksOf, itemMains as mainLines } from '@/game/item/mains';
 import type { Verdict as VerdictData } from '@/features/eval/verdict/verdict';
-import type { Action, AppState } from '@/app/appState';
+import type { FormAction, FormState } from './formState';
 import { tour, tourItem } from '@/tour/anchors';
 import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -47,7 +47,7 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub:
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: куда встанет форма после неё
 export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onHelp, onCode, onTour, news, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
-  s: AppState; dispatch: Dispatch<Action>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
+  s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
@@ -212,7 +212,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
 }
 
 // Настройки оценки: под формой на широком экране; на телефоне — в меню (inline — без сворачивания).
-export function EvalSettings({ s, dispatch, inline }: { s: AppState; dispatch: Dispatch<Action>; inline?: boolean }) {
+export function EvalSettings({ s, dispatch, inline }: { s: FormState; dispatch: Dispatch<FormAction>; inline?: boolean }) {
   const t = useT();
   const st = s.settings;
   const set = (patch: Partial<typeof st>) => dispatch({ type: 'settings', patch });

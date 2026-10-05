@@ -2,9 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
-import { charMatches, compareChars, type CharFilter } from '@/features/eval/form/lists';
+import { charMatches, compareChars, type CharFilter, type ListAction, type ListState } from './charFilter';
 import { encodeRoster, parseRoster } from './rosterCode';
-import type { Action, AppState } from '@/app/appState';
 import type { RosterApi } from './useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { isPinned, type GearStore } from '@/features/gear/model/gear';
@@ -18,7 +17,7 @@ import { tour } from '@/tour/anchors';
 // сразу за ним, с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
 // touring — идёт обучение: на странице экипировка тура (пример или пусто), кода экипировки нет
 interface Props {
-  s: AppState; dispatch: Dispatch<Action>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
+  s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
   off: ReadonlyMap<string, string>; onGearImport: (prev: GearStore, raw: unknown) => boolean; touring: boolean;
   onTrade?: () => void; // «Обмен вещами» (features/trade) — вход и на ПК, без меню ☰
 }
