@@ -16,7 +16,7 @@ import { FilterChips } from '@/shared/ui/FilterChips';
 import { CharTile } from './CharTile';
 
 // onBackup — «Заменить» в поле «Резервная копия» (useRosterUi): что вышло — строкой под полем; geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/gear/model/fusion): в списке
-// сразу за ним, с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
+// рядом с ним (пара всегда в одном порядке, fusionOrder), с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
 // touring — идёт обучение: на странице экипировка тура (пример или пусто), резервной копии нет
 interface Props {
   s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
@@ -24,23 +24,17 @@ interface Props {
   onTrade?: () => void; // «Обмен для команды» (features/trade, сразу режим «Команда») — вход и на ПК, без меню ☰
 }
 
-// Неактивный герой пары (X при Core Fusion X или Core Fusion X при X) — сразу за своим активным, если тот тоже в списке
-function fusionOrder(
-  list: Char[],
-  off: ReadonlyMap<string, string>,
-  char: (id: string) => Char | undefined,
-  partner: (id: string) => string | undefined,
-): Char[] {
+// Пара X и Core Fusion X — рядом и всегда в одном порядке: Core Fusion X сразу за X, кто бы из них ни был активен
+// (неактивный приглушён). Иначе при смене героя в ростере пара менялась бы местами (владелец 2026-10-05)
+function fusionOrder(list: Char[], partner: (id: string) => string | undefined, char: (id: string) => Char | undefined): Char[] {
   const ids = new Set(list.map((c) => c.id));
   const out: Char[] = [];
   for (const c of list) {
-    if (off.has(c.id) && ids.has(off.get(c.id)!)) continue;
+    if (c.fusionOf && ids.has(c.fusionOf)) continue;
     out.push(c);
     const pid = partner(c.id);
-    if (pid && off.get(pid) === c.id && ids.has(pid)) {
-      const p = char(pid);
-      if (p) out.push(p);
-    }
+    const p = pid && !c.fusionOf && ids.has(pid) ? char(pid) : undefined;
+    if (p) out.push(p);
   }
   return out;
 }
@@ -54,7 +48,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onBackup, 
   const partner = useCallback((id: string) => idx.CHAR[id]?.fusionOf ?? idx.FUSED[id], [idx]);
   const shown = useMemo(() => {
     const matched = D.chars.filter((c) => charMatches(c, s, roster, geared, off)).sort(compareChars);
-    return fusionOrder(matched, off, (id) => idx.CHAR[id], partner);
+    return fusionOrder(matched, partner, (id) => idx.CHAR[id]);
   }, [D, s, roster, geared, off, idx, partner]);
   const nGeared = D.chars.filter((c) => geared.has(c.id) && c.builds.length).length; // как в меню «Экипировка · N»
   // «не всё надето» пусто, и сузить больше нечем: все одеты

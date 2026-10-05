@@ -331,15 +331,34 @@ describe('импорт кода с обоими', () => {
 });
 
 describe('список и карточка X', () => {
-  it('X — сразу за Core Fusion, приглушён, с пометкой «replaced by Core Fusion X»', async () => {
+  // порядок пары не зависит от того, кто активен (владелец 2026-10-05: было — неактивный вставал за активным, и при
+  // смене пара менялась местами): Core Fusion X всегда сразу за X
+  it('X неактивен — пара на том же месте: Core Fusion сразу за X; X приглушён, с пометкой «replaced by Core Fusion X»', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [cfEternal.id] });
     const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
     const x = tile('Eternal')!.querySelector('.ctile')!;
 
-    expect(names[names.indexOf('Core Fusion Eternal') + 1]).toBe('Eternal');
+    expect(names[names.indexOf('Eternal') + 1]).toBe('Core Fusion Eternal');
     expect(x.classList.contains('off')).toBe(true);
     expect(x.querySelector('.coff')?.textContent).toBe('replaced by Core Fusion Eternal');
     expect(x.querySelector('.coff')?.getAttribute('data-tour')).toBe('fusion'); // якорь подсказки окна перехода
+  });
+
+  it('сменили, кто в ростере (Notia ↔ Core Fusion Notia), — порядок списка тот же', async () => {
+    const [notia, cfNotia] = ['Notia', 'Core Fusion Notia'].map(char);
+    const order = async (id: string) => {
+      await mount({ tab: 'chars' }, {}, { roster: [id] });
+      const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+      await act(async () => root?.unmount());
+      document.body.innerHTML = '';
+      localStorage.clear();
+      return names;
+    };
+
+    const a = await order(notia.id), z = await order(cfNotia.id);
+
+    expect(z).toEqual(a);
+    expect(a[a.indexOf('Notia') + 1]).toBe('Core Fusion Notia');
   });
 
   it('без Core Fusion X — на своём месте, без пометки', async () => {

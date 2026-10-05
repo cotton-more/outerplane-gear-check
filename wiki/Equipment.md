@@ -215,7 +215,7 @@ Epsilon.
 - **Star Core Fusion Eternal** while Eternal is there (in the roster or with gear) — a window "Mark Core Fusion
   Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn, and Eternal turns inactive. The same window comes
   up for "Equip on Core Fusion Eternal" and "Rate a piece for Core Fusion Eternal".
-- **Inactive Eternal** sits in the list right after Core Fusion Eternal, marked "replaced by Core Fusion Eternal": the
+- **Inactive Eternal** keeps its place in the list, Core Fusion Eternal right after it (whichever of the pair is in the roster), marked "replaced by Core Fusion Eternal": the
   verdict doesn't consider Eternal, and Eternal isn't in "Equip on whom?" or in rating for a character.
 - **The star on Eternal** — a window "Switch back to Eternal?": Core Fusion Eternal leaves the roster, Core Fusion
   Eternal's gear moves to Eternal.

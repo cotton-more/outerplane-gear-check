@@ -19,7 +19,7 @@ remove" — a message with "Undo".
 
 Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster never holds
 both. Star Core Fusion Eternal while Eternal is in the roster or has gear — a window: Eternal's gear moves to Core
-Fusion Eternal, and Eternal turns inactive. Inactive Eternal sits in the list right after Core Fusion Eternal, marked "replaced by Core Fusion Eternal", and the
+Fusion Eternal, and Eternal turns inactive. Inactive Eternal keeps its place in the list, Core Fusion Eternal right after it, marked "replaced by Core Fusion Eternal", and the
 verdict doesn't consider Eternal. The star on Eternal switches back — through a window too. After "Yes" — a message
 with "Undo". More — [Equipment](Equipment#core-fusion).
 
