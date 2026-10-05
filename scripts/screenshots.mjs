@@ -56,6 +56,8 @@ async function shoot(lang) {
     localStorage.setItem('ogc.lang', JSON.stringify(lang));
     localStorage.setItem('ogc.welcomeHidden', 'true');
     localStorage.setItem('ogc.fitnoteHidden', 'true');
+    // значки: без выбора приложение показывает значки из игры; в README и Wiki — свои контуры, как до «Ещё» (Д7 решает для игроков, не для витрины)
+    localStorage.setItem('ogc.gameIcons', 'false');
     // обучение пройдено и все подсказки знакомы: иначе на каждом кадре была бы полоса «Появилось обучение» или «Новое»
     localStorage.setItem('ogc.tour', tour);
     localStorage.setItem('ogc.roster', JSON.stringify(window.OGC_DATA.chars.filter((c) => names.includes(c.name)).map((c) => c.id)));
@@ -109,7 +111,8 @@ async function shoot(lang) {
   await step(async ({ tap, stat }) => {
     await tap(document.querySelector('.drawer-x'));
     await tap(document.querySelector('.vb-reset'));
-    for (const l of ['RES%', 'DMG↓%']) await tap(stat(l));
+    // клетка сетки, затем уровень 1 в окне (LevelAsk)
+    for (const l of ['RES%', 'DMG↓%']) { await tap(stat(l)); await tap(document.querySelectorAll('.drawer.lvl .roll-b button')[0]); }
   });
   await pause(6500); // плашка «Вернуть» гаснет
   await shot('5-early-junk');

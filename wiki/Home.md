@@ -27,5 +27,5 @@ verdict, why, and which of your characters it suits. Builds come from [outerpedi
 <td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
 <td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/ru/2-verdict.png" alt="Вердикт «Оставить»: кому подходит и кому начнёт"></td>
 </tr>
-<tr><td>English</td><td>Русский — меню ☰ → язык</td></tr>
+<tr><td>English</td><td>Русский — «Ещё» → язык</td></tr>
 </table>
