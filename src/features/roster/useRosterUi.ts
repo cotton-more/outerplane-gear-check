@@ -167,7 +167,6 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
       return next.filter((id) => !cur.includes(id));
     },
     replace: (ids) => rosterBatch(ids),
-    clear: () => rosterBatch([]),
   };
   // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер, затем Core Fusion (features/gear/model/fusion
   // normalizeStored). «Вернуть» — всё хранилище, как было до него; ростер — каким был. Вещей нет — false

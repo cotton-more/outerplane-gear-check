@@ -21,9 +21,11 @@ export type Action =
   | { type: 'openChar'; id: string; reveal: 'keep' | 'filters' | 'filters+all' };
 
 // открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
-export function openCharAction(idx: Index, s: AppState, roster: ReadonlySet<string>, id: string, geared?: ReadonlyMap<string, number>): Action {
+export function openCharAction(
+  idx: Index, s: AppState, roster: ReadonlySet<string>, id: string, geared?: ReadonlyMap<string, number>, off?: Pick<ReadonlyMap<string, string>, 'has'>,
+): Action {
   const c = idx.CHAR[id];
-  const reveal = !c || charMatches(c, s, roster, geared) ? 'keep' : c.builds.length ? 'filters' : 'filters+all';
+  const reveal = !c || charMatches(c, s, roster, geared, off) ? 'keep' : c.builds.length ? 'filters' : 'filters+all';
   return { type: 'openChar', id, reveal };
 }
 
@@ -38,7 +40,7 @@ export function reducer(s: AppState, a: Action): AppState {
       // персонаж из вердикта: если фильтры списка его прячут — сбрасываем их
       const next: AppState = { ...s, tab: 'chars', charId: a.id };
       if (a.reveal === 'keep') return next;
-      return { ...next, cel: '', ccl: '', cq: '', cOwned: false, cGear: false, ...(a.reveal === 'filters+all' ? { cAll: true } : {}) };
+      return { ...next, cel: '', ccl: '', cq: '', cOwned: false, cBare: false, ...(a.reveal === 'filters+all' ? { cAll: true } : {}) };
     }
     case 'selectChar':
       return { ...s, charId: a.id };
@@ -89,6 +91,6 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
     ccl: oneOf(p.ccl, ['', ...Object.keys(idx.D.classes)], ''),
     cOwned: bool(p.cOwned, false),
     cAll: bool(p.cAll, false),
-    cGear: false,
+    cBare: false,
   };
 }

@@ -177,7 +177,6 @@ html.xs .bgear-t { grid-row: 3; }
 /* сколько надето: «6/6» на плитке и на вкладке билда */
 .ctile .gearb { position: absolute; top: 58px; left: 8px; font: 700 9.5px/1 var(--font-mono); padding: 2px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
 .btabs .bt-n { margin-left: 6px; font: 700 10.5px/1 var(--font-mono); opacity: .75; }
-.cgrid-note { margin: -6px 16px 14px; }
 /* GEARPOOL: заголовок карточки «Лучше всего собран», подсказка после переноса */
 .cd-lead { margin: 4px 16px 0; display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--keep-soft); font-size: 13px; }
 .cd-rate { margin: 8px 16px 0; }

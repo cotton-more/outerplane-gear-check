@@ -113,8 +113,8 @@ sits: "in Speed, Speed/Immu", "in every build"; each piece also shows its Breakt
 **Only roster characters have gear.** "Equip" on a character outside the roster adds the character to the roster;
 importing a gear code and starting the app add everyone who has gear. Unstar Caren while Caren has gear — a window
 "Remove Caren from the roster? Caren's gear (N) is removed from the app.": "Yes, remove" — the message "Caren is out of
-the roster." with "Undo", "Cancel" — nothing. "Clear roster"
-and "Replace" with a roster code keep characters who have gear — message "Kept in the roster — they have
+the roster." with "Undo", "Cancel" — nothing.
+"Replace" with a roster code keeps characters who have gear — message "Kept in the roster — they have
 gear: Caren.".
 
 Tap a piece to fix it after upgrading in the game. The edit is narrow — only what upgrading changes:
@@ -208,14 +208,17 @@ Epsilon.
   Eternal's gear moves to Eternal.
 - After "Yes" — a message with "Undo"; "Cancel" changes nothing. "Filling" marks don't carry over: the heroes' builds
   differ.
-- **Both at once** — in data saved by an older version, in a gear code, in a roster code or in "mark all shown": Core
+- **Both at once** — in data saved by an older version, in a gear code or in a roster code: Core
   Fusion stays, with no window, in one message. Core Fusion Eternal has no gear — Eternal's gear moves to Core Fusion
   Eternal; it has its own — Eternal's gear is removed.
 
-## Who has gear
+## Who still needs gear
 
-Menu ☰ → **"Gear · N"** — the character list with the "with gear" filter (on a computer, the filter in the list
-itself). The menu clears other filters: exactly N tiles. A tile shows how many pieces are marked worn: "0/6" until you mark any.
+A hero tile shows how many pieces are marked worn: "0/6" until you mark any. The **"not fully equipped"** toggle in the
+character list keeps heroes with builds who wear fewer than 6 of 6 — including those who wear nothing; a hero replaced
+by their Core Fusion isn't shown. Together with "only mine" — who in your roster still needs gear. Menu ☰ →
+**"Not fully equipped · N"** turns both on and clears other filters: exactly N tiles. Everyone dressed — "Everyone is
+fully equipped — 6/6 each."
 
 ## Tutorial
 

@@ -10,7 +10,6 @@ export interface RosterApi {
   add: (ids: string[]) => string[];      // кого добавили
   remove: (ids: string[]) => void;
   replace: (ids: string[]) => void;
-  clear: () => void;
 }
 
 // Ростер в 'ogc.roster' — id персонажей в порядке добавления.
@@ -62,6 +61,5 @@ export function useRoster(idx: Index): RosterApi {
   }, [add, write]);
   const remove = useCallback((ids: string[]) => write(cur.current.filter((id) => !ids.includes(id))), [write]);
   const replace = useCallback((ids: string[]) => write(ids), [write]);
-  const clear = useCallback(() => write([]), [write]);
-  return { roster, list: get, toggle, add, remove, replace, clear };
+  return { roster, list: get, toggle, add, remove, replace };
 }

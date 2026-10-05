@@ -1,4 +1,5 @@
 // Фильтр и порядок списка персонажей; что выбрано в списке — действия, которые шлёт список (их выполняет app/appState).
+import { SLOTS } from '@/game/data';
 import type { Char } from '@/game/data/types';
 
 export interface CharFilter {
@@ -7,16 +8,24 @@ export interface CharFilter {
   ccl: string;     // класс
   cOwned: boolean; // только мои
   cAll: boolean;   // и без билдов
-  cGear?: boolean; // только с экипировкой (меню ☰ «Экипировка»); не сохраняется, как и поиск
+  cBare?: boolean; // не всё надето: меньше 6 из 6 (и меню ☰ «Не всё надето»); не сохраняется, как и поиск
 }
 
-export function charMatches(c: Char, f: CharFilter, roster: ReadonlySet<string>, geared?: ReadonlyMap<string, number>): boolean {
+// «не всё надето»: героя есть кому доодеть — у него есть билды, надето меньше 6 из 6 (geared — сколько отмечено надетым,
+// нет записи — ничего), и его не заменил Core Fusion (off)
+export function isBare(c: Char, geared?: ReadonlyMap<string, number>, off?: Pick<ReadonlyMap<string, string>, 'has'>): boolean {
+  return c.builds.length > 0 && !off?.has(c.id) && (geared?.get(c.id) ?? 0) < SLOTS.length;
+}
+
+export function charMatches(
+  c: Char, f: CharFilter, roster: ReadonlySet<string>, geared?: ReadonlyMap<string, number>, off?: Pick<ReadonlyMap<string, string>, 'has'>,
+): boolean {
   const q = f.cq.trim().toLowerCase();
   if (q && !(c.name.toLowerCase().includes(q) || c.slug.includes(q) || (c.nick || '').toLowerCase().includes(q))) return false;
   if (f.cel && c.element !== f.cel) return false;
   if (f.ccl && c.class !== f.ccl) return false;
   if (f.cOwned && !roster.has(c.id)) return false;
-  if (f.cGear && !geared?.has(c.id)) return false;
+  if (f.cBare && !isBare(c, geared, off)) return false;
   if (!f.cAll && !c.builds.length && !q) return false;
   return true;
 }

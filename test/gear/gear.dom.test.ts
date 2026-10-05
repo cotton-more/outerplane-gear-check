@@ -1172,17 +1172,25 @@ describe('карточка персонажа', () => {
 });
 
 describe('меню, плитки, код копии, другая вкладка', () => {
-  it('меню ☰ «Gear · 1» — список «with gear»: только Caren, на плитке «1/6», на вкладке тоже', async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }), roster: [caren.id, kappa.id] });
+  it('меню ☰ «Not fully equipped · N» — «only mine» и «not fully equipped»: герои ростера меньше чем 6/6, остальные фильтры сняты', async () => {
+    await mount({ slot: 'helmet', grade: 'unique', cel: 'fire' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }), roster: [caren.id, kappa.id] });
     await click($('.vb-tab'));
-    await click(byText('.menu-nav button', 'Gear · 1'));
-    expect(($('#c-gear') as HTMLInputElement).checked).toBe(true);
-    expect($$('#cgrid .ctile .cn').map((e) => e.textContent)).toEqual(['Caren']);
-    expect($('#cgrid .gearb')?.textContent).toBe('0 of 6 equipped0/6'); // отмеченного надетого нет (плитка = счёт вкладки «Надето»)
+    await click(byText('.menu-nav button', 'Not fully equipped · 2'));
+    expect(($('#c-bare') as HTMLInputElement).checked).toBe(true);
+    expect(($('#c-owned') as HTMLInputElement).checked).toBe(true);
+    expect($$('#cgrid .ctile .cn').map((e) => e.textContent).sort()).toEqual(['Caren', 'Kappa']);
+    expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']); // у Kappa вещей нет — ничего не надето
     expect($('.roster-bar')?.textContent).toContain('gear on 1');
-    expect($('.cgrid-note')?.textContent).toContain('1 more in your roster has no gear yet');
-    await click($('#cgrid .ctile'));
-    expect(byText('.btabs [role="tab"]', 'Speed')?.textContent).toBe('Speed1/6');
+    await click($('#c-owned'));
+    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // без «only mine» — и не из ростера: у них не надето ничего
+  });
+
+  it('список: нет «mark all shown» и «clear roster»; «Team trade» — сразу команда', async () => {
+    await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }), roster: [caren.id] });
+    const links = $$('.roster-bar button').map((b) => b.textContent);
+    expect(links).toEqual(['export / import', 'Team trade']);
+    await click(byText('.roster-bar button', 'Team trade'));
+    expect($('.trade-mode [aria-selected="true"]')?.textContent).toBe('Team');
   });
 
   it('плитка считает отмеченное надетое, не вещи билда', async () => {
@@ -1308,15 +1316,7 @@ describe('вещи только у героев ростера (Р16)', () => {
     expect(ask()?.getAttribute('aria-label')).toBe('Remove Caren from the roster?');
   });
 
-  // пакетное: «Очистить ростер» и код ростера «Заменить» героев с вещами не убирают (убрать с вещами — звездой, через окно)
-  it('«Очистить ростер»: герои с вещами остаются на своих местах, вещи на месте', async () => {
-    const gear = shared();
-    await mount({ tab: 'chars' }, {}, { roster: [kappa.id, rin.id, caren.id], gear });
-    await click(byText('.roster-bar .linkbtn', 'clear'));
-    await click(byText('.roster-bar .linkbtn', 'tap again'));
-    expect({ roster: roster(), gear: stored() }).toEqual({ roster: [rin.id, caren.id], gear });
-  });
-
+  // пакетное: код ростера «Заменить» героев с вещами не убирает (убрать с вещами — звездой, через окно)
   it('код ростера «Заменить»: герои с вещами остаются — после героев из кода', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: shared() });
     await click(byText('.roster-bar .linkbtn', 'export'));
@@ -1330,16 +1330,6 @@ describe('вещи только у героев ростера (Р16)', () => {
   describe('кого оставили из-за вещей — в тосте', () => {
     const carenOnly = () => G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] });
 
-    it('«Очистить ростер»: Rin без вещей убрана, Caren с вещами осталась, в тосте строка с Caren', async () => {
-      await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: carenOnly() });
-
-      await click(byText('.roster-bar .linkbtn', 'clear'));
-      await click(byText('.roster-bar .linkbtn', 'tap again'));
-
-      expect({ roster: roster(), toast: $('.gear-toast span')?.textContent, buttons: $$('.gear-toast button').length })
-        .toEqual({ roster: [caren.id], toast: 'Kept in the roster — they have gear: Caren.', buttons: 0 });
-    });
-
     it('код ростера «Заменить»: Rin убрана, Caren осталась после героев кода, в тосте строка с Caren', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: carenOnly() });
       await click(byText('.roster-bar .linkbtn', 'export'));
@@ -1352,13 +1342,15 @@ describe('вещи только у героев ростера (Р16)', () => {
         .toEqual({ roster: [kappa.id, caren.id], toast: 'Kept in the roster — they have gear: Caren.' });
     });
 
-    it('«Очистить ростер» без героев с вещами — тоста нет', async () => {
+    it('код ростера «Заменить» без героев с вещами — тоста нет', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, kappa.id], gear: G([], {}) });
+      await click(byText('.roster-bar .linkbtn', 'export'));
+      const ta = $('#roster-code') as HTMLTextAreaElement;
+      ta.value = 'caren';
 
-      await click(byText('.roster-bar .linkbtn', 'clear'));
-      await click(byText('.roster-bar .linkbtn', 'tap again'));
+      await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 
-      expect({ roster: roster(), toast: $('.gear-toast') }).toEqual({ roster: [], toast: null });
+      expect({ roster: roster(), toast: $('.gear-toast') }).toEqual({ roster: [caren.id], toast: null });
     });
   });
 

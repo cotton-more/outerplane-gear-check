@@ -284,16 +284,6 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
 });
 
 describe('пакетные добавления — без окон, одно сообщение', () => {
-  it('«Отметить показанных» с X и Core Fusion — в ростере только Core Fusion, сообщение', async () => {
-    await mount({ tab: 'chars' }, {}, { roster: [] });
-    await type($('#char-q') as HTMLInputElement, 'eternal');
-    await click(byText('.roster-bar .linkbtn', 'mark all shown'));
-
-    expect(ask()).toBeNull();
-    expect(roster()).toEqual([cfEternal.id]);
-    expect($('.gear-toast span')?.textContent).toBe('Core Fusion Eternal kept in the roster: Eternal is replaced.');
-  });
-
   it('код ростера «Добавить» Core Fusion, у X в ростере вещи — вещи переходят, сообщение; «Вернуть» — как было', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
     await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id] });

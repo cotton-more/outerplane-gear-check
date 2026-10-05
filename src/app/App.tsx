@@ -44,6 +44,7 @@ import { TipLayer } from '@/tour/TipLayer';
 import { TipsHelp } from '@/tour/TipsHelp';
 import { TourLayer } from '@/tour/TourLayer';
 import { openCharAction, reducer } from './appState';
+import { isBare } from '@/features/roster/charFilter';
 import { Footer, LangSwitch } from './shell/Footer';
 import { Help, Welcome, type InstallInfo } from './shell/Guide';
 import { Header } from './shell/Header';
@@ -89,7 +90,7 @@ export function App() {
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off), [idx, s.settings, roster, t, off]);
   // экипировка по пулу (features/gear/pool): вид — один раз на хранилище
   const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
-  // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, меню, фильтр «с экипировкой»)
+  // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, меню и фильтр «не всё надето»)
   const geared = useMemo(() => gearBadges(view), [view]);
 
   // открытые шторки и окна
@@ -98,8 +99,9 @@ export function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
-  // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя)
-  const [trade, setTrade] = useState<{ hero: string | null } | null>(null);
+  // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
+  // или меню ☰ «Обмен для команды», сразу в режиме «Команда»
+  const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
   const [pieceOpen, setPieceOpen] = useState(false); // карточка вещи в блоке билда (для тура «Экипировка»)
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   // сообщения с «Вернуть»: экипировки (features/gear/ui/gearMsg) и формы — «Следующий» убрал предмет по ошибке
@@ -112,7 +114,7 @@ export function App() {
   const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
   const charName = (id: string) => heroName(idx, id);
   const onTab = (tab: Tab) => dispatch({ type: 'tab', tab });
-  const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id, geared)), [idx, s, roster, geared, dispatch]);
+  const openChar = useCallback((id: string) => dispatch(openCharAction(idx, s, roster, id, geared, off)), [idx, s, roster, geared, off, dispatch]);
   useHashRoute(idx, s.tab, s.charId, openChar);
 
   const ros = useRosterUi({
@@ -192,7 +194,7 @@ export function App() {
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} onGearImport={ros.onGearImport} touring={!!tour.run}
-              onTrade={canEquip ? () => setTrade({ hero: null }) : undefined} />
+              onTrade={canEquip ? () => setTrade('team') : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? heroMode.start : undefined}
@@ -225,18 +227,18 @@ export function App() {
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
         {menuOpen && (
           <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
-            gearN={[...geared.keys()].filter((id) => idx.CHAR[id]?.builds.length).length}
-            // список ровно тех, кого считает N: прочие фильтры списка (сохранённые «только мои», стихия, класс) — сбросить
-            onGear={() => {
-              dispatch({ type: 'charFilter', patch: { cGear: true, cq: '', cel: '', ccl: '', cOwned: false } });
+            bareN={idx.D.chars.filter((c) => roster.has(c.id) && isBare(c, geared, off)).length}
+            // список ровно тех, кого считает N: «только мои» и «не всё надето», прочие фильтры (стихия, класс, поиск) — сбросить
+            onBare={() => {
+              dispatch({ type: 'charFilter', patch: { cBare: true, cOwned: true, cq: '', cel: '', ccl: '' } });
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade({ hero: null }) : undefined}
+            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined}
             footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />} />
         )}
         {trade && canEquip && (
-          <TradeSheet ctx={ctx} view={view} gear={gear} roster={rosterList} off={off} start={trade.hero} onClose={() => setTrade(null)}
+          <TradeSheet ctx={ctx} view={view} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}
             onApplied={(text, undo) => say({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x })} />
         )}
         {codeOpen && (
