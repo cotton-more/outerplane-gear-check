@@ -55,6 +55,18 @@ describe('слои src', () => {
     expect(files.filter((f) => area(f) === 'features' && !FEATURES.includes(f.split('/')[1]))).toEqual([]);
   });
 
+  // macOS и Windows не различают регистр: Verdict.tsx рядом с verdict.ts — импорт без расширения находит не тот файл
+  it('в одной папке нет имён, которые отличаются только регистром', () => {
+    const stem = (f: string) => f.replace(/\.(tour\.ts|tsx|ts)$/, '');
+    const seen = new Map<string, string>();
+    const clash = files.flatMap((f) => {
+      const k = stem(f).toLowerCase(), was = seen.get(k);
+      seen.set(k, stem(f));
+      return was && was !== stem(f) ? [`${was} / ${stem(f)}`] : [];
+    });
+    expect(clash).toEqual([]);
+  });
+
   it('зависимости только вниз — иначе перенеси общее ниже или собери в screens', () => {
     const bad = files.flatMap((f) => importsOf(f).map(({ to, typeOnly }) => {
       const p = problem(f, to, typeOnly);

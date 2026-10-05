@@ -28,7 +28,7 @@ import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
 import { makeCtx } from '@/game/context';
 import { useIndex } from '@/game/data/IndexContext';
-import { heroName } from '@/game/hero/heroName';
+import { heroName } from '@/game/hero/HeroName';
 import { GameIconsContext } from '@/game/icons/Img';
 import type { ItemInput } from '@/game/item/item';
 import { LangContext, TEXTS, savedLang, type Lang } from '@/i18n';

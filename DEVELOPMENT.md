@@ -137,7 +137,7 @@ PWA — функция только кода и снимка данных: да�
 
 | Что | Где |
 |---|---|
-| портрет героя, имя по id | `game/hero/HeroFace`, `game/hero/heroName` |
+| портрет героя; имя одной строкой (приставка приглушена и режется первой) и имя по id | `game/hero/HeroFace`, `game/hero/HeroName` (`HeroName`, `heroName`) |
 | сабстат чипом «ATK 3» (цвет — засчитан ли билду), кнопки уровня 1–6 и строка «больше N не бывает» | `game/item/SubToken`, `game/item/SubLevels` |
 | имя сета, «Speed ×4» | `game/set/setName` (`setName`, `partText`) |
 | название вещи и main, Breakthrough, текст бонуса, имя варианта и билда-родителя | `features/gear/ui/pieceText` |

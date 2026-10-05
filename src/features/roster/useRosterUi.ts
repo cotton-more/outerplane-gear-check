@@ -3,7 +3,7 @@
 // спросить, что записать и что сказать.
 import { useEffect, useState } from 'react';
 import type { Index } from '@/game/data';
-import { heroName } from '@/game/hero/heroName';
+import { heroName } from '@/game/hero/HeroName';
 import type { Texts } from '@/i18n';
 import { dropChar, gearedChars, undoDrop, type GearStore } from '@/features/gear/model/gear';
 import { gateOf, normalizeStored, switchFusion, type FusionFix } from '@/features/gear/model/fusion';

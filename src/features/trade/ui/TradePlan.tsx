@@ -24,10 +24,10 @@ import { SlotIcon } from '@/game/icons/Img';
 import { AimButton } from '@/features/worn/AimSheet';
 import { PieceName, btText, pieceText } from '@/features/gear/ui/pieceText';
 import { setName } from '@/game/set/setName';
-import { heroName } from '@/game/hero/heroName';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { SubToken } from '@/game/item/SubToken';
 import { Toggle } from '@/shared/ui/Toggle';
+import { heroName, HeroName } from '@/game/hero/HeroName';
 
 
 export interface Hint { heroes: string[]; gain: number }
@@ -104,7 +104,7 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
           <section key={l.hero} className="tline to">
             <h4 className="tline-h">
               {c && <HeroFace c={c} />}
-              <span className="tline-n">{name(l.hero)}</span>
+              <span className="tline-n">{c ? <HeroName c={c} /> : name(l.hero)}</span>
               <AimButton name={gaugeName(l.hero)} aria={t.ui.wornChangeAria(name(l.hero))} onClick={() => onAim(l.hero)} />
               {!empty && <span className={`tgain ${g.cls}`}>{g.text}</span>}
               {sets.length > 0 && <span className="tline-s">{sets.join(', ')}</span>}

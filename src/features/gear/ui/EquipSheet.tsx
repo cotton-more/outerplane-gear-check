@@ -19,6 +19,7 @@ import { tour } from '@/tour/anchors';
 import { setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { SubToken } from '@/game/item/SubToken';
+import { HeroName } from '@/game/hero/HeroName';
 
 // viewOf — вид пула героя, на котором «Надеть» сделает putOn: у Core Fusion X при X — после окна перехода, вещи X уже
 // у него (П9); у прочих — общий вид
@@ -78,7 +79,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
                 <button type="button" className="equip-row" onClick={() => onEquip(x.c)}>
                   <HeroFace c={x.c} />
                   <span className="nm">
-                    <b>{x.c.name}</b>
+                    <b><HeroName c={x.c} /></b>
                     <span className="act">{action(x)}</span>
                   </span>
                   <VsChip o={x.best} starts={!x.best || x.best.entering || !x.best.used} />

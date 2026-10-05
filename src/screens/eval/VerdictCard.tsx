@@ -8,6 +8,7 @@ import type { CharVs } from '@/features/gear/model/poolVs';
 import { variantName } from '@/features/gear/ui/pieceText';
 import { chipLabel, VsChip } from '@/features/gear/ui/VsChip';
 import { subLabel } from '@/game/data';
+import { HeroName } from '@/game/hero/HeroName';
 
 // На плашке слово вердикта уже есть в штампе: «Оставляй — подходит 26 персонажам» → «подходит 26 персонажам»
 export const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(' — ') ? r.title.slice(r.title.indexOf(' — ') + 3) : r.title);
@@ -41,10 +42,10 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
       </span>
       <span className="vc-title">{barTitle(r)}</span>
       {shownVs
-        ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b>{shownVs.c.name}</b>{build && <span className="bn">· {build}{shownVs.same > 0 ? ` +${shownVs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
+        ? <span className="vc-vs"><VsChip o={o} starts={starts} />{named && <><b><HeroName c={shownVs.c} /></b>{build && <span className="bn">· {build}{shownVs.same > 0 ? ` +${shownVs.same}` : ''}</span>}</>}{places && <span className="vc-places">{places}</span>}</span>
         : !named ? null
         : best && best.good != null
-        ? <span className="vc-chain"><b>{best.c.name}</b><Chain m={best} /></span>
+        ? <span className="vc-chain"><b><HeroName c={best.c} /></b><Chain m={best} /></span>
         : r.lines[0] && <span className="vc-line"><Rich text={r.lines[0]} /></span>}
     </button>
   );

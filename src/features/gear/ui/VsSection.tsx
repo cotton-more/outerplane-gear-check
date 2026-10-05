@@ -19,6 +19,7 @@ import { bonusText, buildName, variantName } from './pieceText';
 import { figOf, outcomeWord, VsChip } from './VsChip';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { EquipButton } from './EquipButton';
+import { HeroName } from '@/game/hero/HeroName';
 
 // сет во фразе; нет сета — пусто
 const setOr = (idx: Index, set: string | null | undefined) => (set ? setName(idx, set) : '');
@@ -168,7 +169,7 @@ export function VsSection({ list, view, slot, t4 = false, nextNote = null, onEqu
               <div className="vs-h">
                 <HeroFace c={x.c} />
                 <div className="nm">
-                  <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{name}</span>
+                  <button type="button" onClick={() => onOpenChar(x.c.id)}><b><HeroName c={x.c} /></b></button> <span className="bn">{name}</span>
                   {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt)}</span>}
                 </div>
                 {!bare && <VsChip o={o} starts={o ? o.entering : true} />}

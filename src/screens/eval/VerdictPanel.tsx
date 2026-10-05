@@ -23,6 +23,7 @@ import { Icon } from '@/game/icons/Img';
 import { VsSection } from '@/features/gear/ui/VsSection';
 import { ShareCode } from '@/features/eval/code/ItemCode';
 import { HeroFace } from '@/game/hero/HeroFace';
+import { HeroName } from '@/game/hero/HeroName';
 
 // vs — «Сейчас на персонажах» (features/gear/model/poolVs), view — пул; onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
 interface Props {
@@ -142,7 +143,7 @@ function MatchRow({ m, sec, r, nSubs, onOpenChar }: { m: Row; sec: Section; r: V
     <li className={`match${sec.dim ? ' dim' : ''}`}>
       <HeroFace c={c} />
       <div className="nm">
-        <button type="button" title={t.ui.openBuilds} onClick={() => onOpenChar(c.id)}>{c.name}</button>
+        <button type="button" title={t.ui.openBuilds} onClick={() => onOpenChar(c.id)}><HeroName c={c} /></button>
         <span className="bn">{m.b.name}{m.alt.length ? t.ui.alsoBuilds(m.alt.join(', ')) : ''}</span>
       </div>
       {score}

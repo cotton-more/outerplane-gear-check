@@ -5,6 +5,7 @@ import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { CloseButton } from '@/shared/ui/CloseButton';
+import { HeroName } from '@/game/hero/HeroName';
 
 export function TryOnStrip({ c, onEnd }: { c: Char; onEnd: () => void }) {
   const t = useT();
@@ -13,7 +14,7 @@ export function TryOnStrip({ c, onEnd }: { c: Char; onEnd: () => void }) {
       <span className="tryon-k">{t.tryon.label}</span>
       <span className="tryon-d" aria-hidden="true">·</span>
       <HeroFace c={c} />
-      <span className="tryon-n" title={c.name}><b>{c.name}</b></span>
+      <span className="tryon-n" title={c.name}><b><HeroName c={c} /></b></span>
       <CloseButton className="tryon-x" label={t.tryon.end} title={t.tryon.end} onClick={onEnd} />
     </div>
   );

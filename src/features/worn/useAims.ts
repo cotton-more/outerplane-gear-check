@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Index } from '@/game/data';
 import type { Ctx } from '@/game/context';
-import { heroName } from '@/game/hero/heroName';
+import { heroName } from '@/game/hero/HeroName';
 import type { Texts } from '@/i18n';
 import { type PoolView } from '@/features/gear/pool';
 import type { GearApi } from '@/features/gear/store/useGear';

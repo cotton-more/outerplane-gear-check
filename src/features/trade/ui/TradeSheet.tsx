@@ -24,11 +24,11 @@ import { AimSheet } from '@/features/worn/AimSheet';
 import { Sheet } from '@/shared/ui/Sheet';
 import { TeamPick } from './TeamPick';
 import { TradePlan, type Hint } from './TradePlan';
-import { heroName } from '@/game/hero/heroName';
 import { variantName } from '@/features/gear/ui/pieceText';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { CloseButton } from '@/shared/ui/CloseButton';
 import { PinMark } from '@/features/gear/ui/PinMark';
+import { heroName, HeroName } from '@/game/hero/HeroName';
 
 type Undo = (st: GearStore) => GearStore | null;
 
@@ -152,7 +152,7 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
             <li key={id}>
               <button type="button" className="trade-hero" onClick={() => onPick(id)}>
                 <HeroFace c={idx.CHAR[id]} />
-                <span className="trade-hn">{name(id)}</span>
+                <span className="trade-hn"><HeroName c={idx.CHAR[id]} /></span>
                 {isPinned(st, id) && <PinMark className="trade-pin" label={t.trade.pinTile(name(id))} />}
               </button>
             </li>
@@ -174,7 +174,7 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
             <span>{t.trade.pinned}</span>
             {pinned.map((id) => (
               <span key={id} className="trade-chip">
-                {name(id)}
+                {idx.CHAR[id] ? <HeroName c={idx.CHAR[id]} /> : name(id)}
                 <CloseButton className="tour-x" label={t.trade.unpin(name(id))} onClick={() => gear.set(setPinned(st, id, false))} />
               </span>
             ))}

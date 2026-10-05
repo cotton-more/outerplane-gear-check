@@ -132,6 +132,12 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .app { max-width: 1240px; margin: 0 auto; }
 .mono { font-family: var(--font-mono); }
 .muted { color: var(--ink-3); }
+/* имя героя одной строкой (HeroName): приставка приглушена и при нехватке места режется первой, имя — последним */
+.hname { display: inline-flex; align-items: baseline; gap: 0.28em; max-width: 100%; min-width: 0; white-space: nowrap; }
+/* сжатие — почти всё на приставке (огромный flex-shrink): имя сжимается, только когда её уже не видно — «Tamamo-…».
+   Не наоборот (крошечный flex-shrink у имени): при сумме коэффициентов меньше 1 flexbox не отдаёт имени остаток */
+.hname-p { flex: 0 1000000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-3); }
+.hname-b { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .small { font-size: 13px; }
 kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-2); background: var(--surface-2); }
 .noimg { display: inline-block; background: var(--surface-3); border-radius: 6px; }

@@ -16,7 +16,7 @@ import { outcomeFor, type PoolView } from '@/features/gear/pool';
 import { buildOfKey } from '@/game/build/variants';
 import type { Verdict } from '@/features/eval/verdict/verdict';
 import type { ItemInput } from '@/game/item/item';
-import { heroName } from '@/game/hero/heroName';
+import { heroName } from '@/game/hero/HeroName';
 
 export interface Need { piece: Piece; key: string; left: number } // key — вариант, где она стоит; left — ступеней до T4
 

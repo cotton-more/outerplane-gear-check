@@ -13,6 +13,7 @@ import { AimSheet } from './AimSheet';
 import { partText, setName } from '@/game/set/setName';
 import { variantName } from '@/features/gear/ui/pieceText';
 import { HeroFace } from '@/game/hero/HeroFace';
+import { HeroName } from '@/game/hero/HeroName';
 
 export function AimsSheet({ ctx, view, st, ids, onClose, onConfirm, onChoose }: {
   ctx: Ctx; view: PoolView; st: GearStore; ids: readonly string[]; onClose: () => void; onConfirm: () => void;
@@ -50,7 +51,7 @@ export function AimsSheet({ ctx, view, st, ids, onClose, onConfirm, onChoose }: 
               <li key={id}>
                 <HeroFace c={cp.c} />
                 <span className="tl-t">
-                  <b>{cp.c.name}</b>
+                  <b><HeroName c={cp.c} /></b>
                   <span className="muted small">{[v ? variantName(t, v) : '', reason].filter(Boolean).join(' · ')}</span>
                 </span>
                 {a && a.need > 0 && <span className="tl-n">{a.progress}/{a.need}</span>}

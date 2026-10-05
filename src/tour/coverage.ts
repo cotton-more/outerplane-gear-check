@@ -37,6 +37,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'game/hero/HeroFace.tsx': 'helper',                  // портрет героя
+  'game/hero/HeroName.tsx': 'helper',                  // имя героя одной строкой: приставка режется первой
   'game/icons/Img.tsx': 'helper',                      // картинки и значки
   'game/item/SubLevels.tsx': 'helper',                 // кнопки уровня сабстата и строка предела: их объясняют подсказки формы и карточки вещи
   'game/item/SubToken.tsx': 'helper',                  // сабстат вещи чипом в строках экипировки
