@@ -1,14 +1,17 @@
 // Команда обмена — четыре места ромбом, как в игре (R4.2, R10.3). Пустое место — «+»: нажатие открывает выбор героя под
-// ромбом. У члена — портрет и имя (✕ убирает из команды), мерило «сменить ▾» (шторка «Билд для X») и булавка «Не отдавать
-// надетое» (у героя без вещей её нет, R3.4). Выбор героя, запись мерила и закрепления — у TradeSheet.
+// ромбом. Член — плитка как в списке персонажей (CharTile): нажатие — выбор на его место (там же «Убрать из команды»,
+// TradeSheet), в углу вместо звезды — булавка «Не отдавать надетое» (у героя без вещей её нет, R3.4); под плиткой — билд
+// мерила «Speed ▾», как на карточке героя (шторка «Билд для X»). Выбор героя, запись мерила и закрепления — у TradeSheet.
 import { useT } from '../../i18n';
 import type { Ctx } from '../../logic/context';
 import { isPinned, type GearStore } from '../../logic/gear';
-import { Icon, Img } from '../Img';
+import { AimButton } from '../chars/AimSheet';
+import { CharTile } from '../chars/CharList';
+import { Icon } from '../Img';
 
-export function TeamPick({ team, ctx, st, place, gaugeName, onPlace, onRemove, onAim, onPin }: {
+export function TeamPick({ team, ctx, st, place, gaugeName, onPlace, onAim, onPin }: {
   team: readonly (string | null)[]; ctx: Ctx; st: GearStore; place: number | null; gaugeName: (id: string) => string;
-  onPlace: (i: number) => void; onRemove: (i: number) => void; onAim: (id: string) => void; onPin: (id: string) => void;
+  onPlace: (i: number) => void; onAim: (id: string) => void; onPin: (id: string) => void;
 }) {
   const t = useT();
   return (
@@ -23,19 +26,16 @@ export function TeamPick({ team, ctx, st, place, gaugeName, onPlace, onRemove, o
           );
         }
         const pinned = isPinned(st, id);
+        const n = st.pools[id]?.length ?? 0;
         return (
           <div key={i} className={`team-p team-${i}`}>
-            <button type="button" className="team-face" aria-pressed={place === i} onClick={() => onPlace(i)}>
-              <Img k={'face:' + c.icon} className="face" />
-              <span className="team-n">{c.name}</span>
-            </button>
-            <button type="button" className="team-x tour-x" aria-label={t.trade.removeMember(c.name)} onClick={() => onRemove(i)}>✕</button>
-            <button type="button" className="linkbtn small team-g" onClick={() => onAim(id)}>{gaugeName(id)} ▾</button>
-            {st.pools[id]?.length ? (
-              <button type="button" className="team-pin" aria-pressed={pinned} aria-label={t.trade.pin} title={t.trade.pin} onClick={() => onPin(id)}>
-                <Icon name="pin" />
-              </button>
-            ) : null}
+            <CharTile c={c} selected={place === i} isNew={ctx.idx.NEW.has(id)} gear={n || undefined} off={false} pinned={false} onSelect={() => onPlace(i)}
+              corner={n ? (
+                <button type="button" className="team-pin" aria-pressed={pinned} aria-label={t.trade.pin} title={t.trade.pin} onClick={() => onPin(id)}>
+                  <Icon name="pin" />
+                </button>
+              ) : null} />
+            <AimButton name={gaugeName(id)} aria={t.ui.wornChangeAria(c.name)} onClick={() => onAim(id)} />
           </div>
         );
       })}

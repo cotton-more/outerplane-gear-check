@@ -1,9 +1,11 @@
 // План обмена (.x/0040-trade/SPEC.md R6.3–R6.6, R8.4, R9, R10.4, R10.5; DESIGN «Экран плана»). Главное — какие вещи на
 // ком должны быть: у героя — итоговая вещь каждого меняемого слота целиком (как в сборке билда: сет или предмет, main,
 // сабстаты с уровнями, T4) — по ней и ищут в Change Gear; у оружия и аксессуара сабстат для Secondary и сортировки
-// отмечен ↓ (R9.1). Под вещью — откуда взять («у Ноа», «в инвентаре», владелец 2026-10-04: строки «Искать» нет). Сначала получатели (в порядке выполнения), потом те, у кого забрали надетое: «▼ −13%», чем закрыта дыра или
-// «нет: оружие» и что искать. Очки — комплект по мерилу героя; процент — R10.5. «Не брать» — пересчёт без этой вещи у этого
-// героя. У получателя — билд мерила «Speed ▾»: шторка «Билд для X», смена — пересчёт. Изменений нет — «Менять нечего», переключатель и «Ок» (R6.3).
+// отмечен ↓ (R9.1). Под вещью — откуда взять («у Ноа», «в инвентаре», владелец 2026-10-04: строки «Искать» нет). Только
+// получатели, в порядке выполнения: тех, у кого забрали надетое, не показываем (владелец, 2026-10-04 и 2026-10-05). Очки —
+// комплект по мерилу героя; процент — R10.5. «Не брать» — пересчёт без этой вещи у этого героя. У героя — билд мерила
+// «Speed ▾» (как на карточке героя): шторка «Билд для X», смена — пересчёт. Изменений нет — «Менять нечего», переключатель
+// и «Ок» (R6.3).
 import { GRADE_NAME, isArmor, subLabel } from '../../data';
 import type { SlotId } from '../../data/types';
 import { useT } from '../../i18n';
@@ -18,6 +20,7 @@ import type { Move } from '../../logic/trade/moves';
 import { gainOf, type HeroLine } from '../../logic/trade/view';
 import { aimVariant } from '../../logic/trade/world';
 import { SlotIcon, Img } from '../Img';
+import { AimButton } from '../chars/AimSheet';
 import { PieceName, btText, pieceText } from '../chars/BuildGear';
 
 
@@ -91,30 +94,25 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
         const g = gainText(t, l);
         const c = idx.CHAR[l.hero];
         const sets = [...l.on.map((p) => t.trade.setOn(idx.SET[p.set]?.short ?? p.set, p.n)), ...l.off.map((p) => t.trade.setOff(idx.SET[p.set]?.short ?? p.set, p.n))];
-        const lost = l.receiver ? [] : l.emptied.map((s) => t.trade.noSlot(s));
         const shown = new Set(l.moves.map((m) => m.slot));
         return (
-          <section key={l.hero} className={l.receiver ? 'tline to' : 'tline'}>
+          <section key={l.hero} className="tline to">
             <h4 className="tline-h">
               {c && <Img k={'face:' + c.icon} className="face" />}
               <span className="tline-n">{name(l.hero)}</span>
-              {l.receiver && <button type="button" className="linkbtn small tline-g" onClick={() => onAim(l.hero)}>{gaugeName(l.hero)} ▾</button>}
-              {(!empty || !l.receiver) && <span className={`tgain ${g.cls}`}>{g.text}</span>}
-              {[...sets, ...lost].length > 0 && <span className="tline-s">{[...sets, ...lost].join(', ')}</span>}
+              <AimButton name={gaugeName(l.hero)} aria={t.ui.wornChangeAria(name(l.hero))} onClick={() => onAim(l.hero)} />
+              {!empty && <span className={`tgain ${g.cls}`}>{g.text}</span>}
+              {sets.length > 0 && <span className="tline-s">{sets.join(', ')}</span>}
             </h4>
             <ul className="tmoves">
               {l.moves.map(moveRow)}
-              {l.receiver
-                ? l.empty.filter((s) => !shown.has(s)).map((s) => holeRow(l.hero, s, t.trade.emptySlot(s)))
-                : l.emptied.map((s) => holeRow(l.hero, s, t.trade.emptySlot(s)))}
+              {l.empty.filter((s) => !shown.has(s)).map((s) => holeRow(l.hero, s, t.trade.emptySlot(s)))}
             </ul>
             {l.gone.map((id) => st.pieces[id] && <p key={id} className="muted small">{t.trade.gone(pieceText(ctx, st.pieces[id]))}</p>)}
-            {l.receiver && (
-              <label className="toggle tpin">
-                <input type="checkbox" checked={pinOf(l.hero)} onChange={(e) => onPin(l.hero, e.target.checked)} />
-                {' '}{t.trade.pinAfter}
-              </label>
-            )}
+            <label className="toggle tpin">
+              <input type="checkbox" checked={pinOf(l.hero)} onChange={(e) => onPin(l.hero, e.target.checked)} />
+              {' '}{t.trade.pinAfter}
+            </label>
           </section>
         );
       })}

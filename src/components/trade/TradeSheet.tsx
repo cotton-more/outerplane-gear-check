@@ -1,6 +1,6 @@
 // Шторка «Обмен вещами» (.x/0040-trade/SPEC.md R4, R10.3–R10.6). Режим «Герой»: выбрать героя → план считается сразу;
 // «Сделал» — и можно выбрать следующего (прежний закреплён, если не снял переключатель, R4.4). Режим «Команда»: четыре места
-// ромбом (у члена — мерило «сменить ▾» и закрепление), «Посчитать» → «Считаю…» и «Отмена» (runTeam кусками), потом
+// ромбом (у члена — плитка, мерило «Speed ▾» и закрепление), «Посчитать» → «Считаю…» и «Отмена» (runTeam кусками), потом
 // подсказка закреплённых — тоже кусками, после плана. «Не брать», «Взять», смена мерила или закрепления — пересчёт (R7.3).
 // Строка «Закреплены» с ✕ (R3.6). «Сделал» — одна запись (logic/trade/apply), сообщение с «Вернуть» — у App (onApplied).
 // Неподтверждённый план нигде не хранится (R4.5): закрыл шторку — плана нет.
@@ -65,7 +65,8 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
     const h = pinnedHint(world, inp);
     return {
       hp, fills: hp.holes.fills, stamp, empty: !hp.plan.changes.length,
-      lines: linesOf(world, advance(world, step), [hero], heroMoves(world, hero, step)),
+      // только сам герой (владелец, 2026-10-05): у кого забрали — не показываем, как и в команде
+      lines: linesOf(world, advance(world, step), [hero], heroMoves(world, hero, step)).filter((l) => l.receiver),
       hint: h && { heroes: h.heroes, gain: h.gain },
     };
   }, [mode, hero, world, skip, allow, stamp]);
@@ -122,6 +123,13 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
     setGo(false);
     fresh();
   };
+  // «Убрать из команды» — под ромбом, когда выбрано занятое место
+  const removeMember = () => {
+    setTeam((tm) => tm.map((x, i) => (i === place ? null : x)));
+    setPlace(null);
+    setGo(false);
+    fresh();
+  };
   const togglePin = (id: string) => gear.set(setPinned(st, id, !isPinned(st, id)));
   const pinned = pinnedOf(st, roster);
   const aimC: Char | undefined = aimFor ? idx.CHAR[aimFor] : undefined;
@@ -172,8 +180,10 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
           <>
             <p className="muted small">{t.trade.teamHint}</p>
             <TeamPick team={team} ctx={ctx} st={st} place={place} gaugeName={gaugeName}
-              onPlace={(i) => { setPlace(place === i ? null : i); }} onRemove={(i) => { setTeam((tm) => tm.map((x, j) => (j === i ? null : x))); setGo(false); fresh(); }}
-              onAim={setAimFor} onPin={togglePin} />
+              onPlace={(i) => { setPlace(place === i ? null : i); }} onAim={setAimFor} onPin={togglePin} />
+            {place !== null && team[place] && (
+              <button type="button" className="linkbtn small trade-out" onClick={removeMember}>{t.trade.removeMember(name(team[place]!))}</button>
+            )}
             {place !== null && picker(members, pickMember, t.trade.pickMember)}
             {members.length === team.length && !go && place === null && (
               <button type="button" className="btn primary trade-count" onClick={() => { setGo(true); setStale(false); }}>{t.trade.count}</button>

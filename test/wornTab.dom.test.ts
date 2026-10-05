@@ -60,8 +60,8 @@ const $$ = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)];
 const click = async (el: HTMLElement | null | undefined) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
 const byText = (sel: string, text: string) => $$(sel).find((e) => e.textContent?.includes(text));
 const stored = () => JSON.parse(localStorage.getItem('ogc.gear') ?? 'null');
-const tabs = () => $$('.btabs button').map((b) => b.textContent);
-const selected = () => $('.btabs button[aria-selected="true"]')?.textContent;
+const tabs = () => $$('.btabs [role="tab"]').map((b) => b.textContent);
+const selected = () => $('.btabs [role="tab"][aria-selected="true"]')?.textContent;
 
 describe('вкладка «Надето»: порядок и вкладка по умолчанию', () => {
   it('герой ростера: «Надето» — первая вкладка, счётчик k/6', async () => {
@@ -86,12 +86,12 @@ describe('вкладка «Надето»: порядок и вкладка по
     expect(tabs().some((x) => x?.includes('Worn'))).toBe(false);
   });
 
-  it('пустая вкладка: подсказка и строка билда «сменить ▾» есть всегда', async () => {
+  it('пустая вкладка: подсказка; билд героя «… ▾» — вторая половина кнопки «Надето»', async () => {
     await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }) });
-    await click(byText('.btabs button', 'Worn'));
+    await click(byText('.btabs [role="tab"]', 'Worn'));
     expect($('.worn-hint')?.textContent).toBe('Mark what Caren wears in game now.');
-    expect($('.worn-aim button')?.textContent).toBe('change ▾');
-    expect($('.worn-aim button')?.getAttribute('aria-label')).toBe('Change build for Caren');
+    expect($('.bt-split .aimb')?.textContent).toMatch(/ ▾$/);
+    expect($('.bt-split .aimb')?.getAttribute('aria-label')).toBe('Change build for Caren');
   });
 });
 
@@ -102,7 +102,7 @@ describe('заголовок сборки над вкладками', () => {
     expect(selected()).toBe('Worn1/6');
     expect($('.cd-lead')).toBeNull();
 
-    await click($$('.btabs button').find((b) => !b.textContent?.includes('Worn')));
+    await click($$('.btabs [role="tab"]').find((b) => !b.textContent?.includes('Worn')));
 
     expect($('.cd-lead')).not.toBeNull();
   });
@@ -127,7 +127,7 @@ describe('«Да, всё надето»', () => {
 
   it('по одной вещи на слот: кнопка есть, нажатие надевает всё, тост и «Вернуть»', async () => {
     await mount({ gear: G(six, { [caren.id]: six.map((p) => p.id as string) }) });
-    await click(byText('.btabs button', 'Worn'));
+    await click(byText('.btabs [role="tab"]', 'Worn'));
     expect($('.bgear-none p')?.textContent).toBe('Caren has 6 pieces, at most one per slot. Are all of them worn now?');
     await click(byText('.bgear-none button', 'Yes, all worn'));
 
@@ -140,13 +140,13 @@ describe('«Да, всё надето»', () => {
   it('пять вещей без брони — кнопка есть', async () => {
     const five = six.filter((p) => p.slot !== 'armor');
     await mount({ gear: G(five, { [caren.id]: five.map((p) => p.id as string) }) });
-    await click(byText('.btabs button', 'Worn'));
+    await click(byText('.btabs [role="tab"]', 'Worn'));
     expect(askShown()).toBe(true);
   });
 
   it('два шлема в вещах — кнопки нет', async () => {
     await mount({ gear: G([WEAK, BETTER], { [caren.id]: ['p1', 'p2'] }) });
-    await click(byText('.btabs button', 'Worn'));
+    await click(byText('.btabs [role="tab"]', 'Worn'));
     expect(askShown()).toBe(false);
   });
 

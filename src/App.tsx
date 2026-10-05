@@ -456,7 +456,7 @@ export function App() {
   };
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => setGearUndo({ text, note, tab: 'chars', undo });
-  // «Надето» (шаг 7): «Переодеть» — выбор здесь, а не в карточке: к нему ведут и «сменить ▾», и «Билды героев». Ушли с этой
+  // «Надето» (шаг 7): «Переодеть» — выбор здесь, а не в карточке: к нему ведут и «Speed ▾» у «Надето», и «Билды героев». Ушли с этой
   // карточки или с вкладки — выбор снят
   const [redress, setRedress] = useState<{ charId: string; key: string } | null>(null);
   useEffect(() => { if (redress && (s.charId !== redress.charId || s.tab !== 'chars')) setRedress(null); }, [redress, s.charId, s.tab]);

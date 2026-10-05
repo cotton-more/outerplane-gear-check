@@ -268,7 +268,7 @@ describe('обучение не пишет в экипировку игрока'
     await click(byText('.vb-tab', '☰'));
     await click(byText('.menu button', 'Characters'));
     expect($('#char-detail h2')?.textContent).toBe(luna.name);
-    await click(byText('.btabs button', 'Pen mix'));
+    await click(byText('.btabs [role="tab"]', 'Pen mix'));
     await click(byText('.vchips .vchip', 'more'));
     expect(document.querySelectorAll('.vlist li').length).toBeGreaterThan(0);
   };

@@ -1,5 +1,5 @@
 // Список персонажей: поиск, фильтры, ростер (звёздочки), экспорт/импорт ростера.
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from 'react';
 import type { Char } from '../../data/types';
 import { useT } from '../../i18n';
 import { charMatches, compareChars, type CharFilter } from '../../logic/lists';
@@ -110,9 +110,11 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
   );
 }
 
-// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; pinned — булавка «Не отдавать надетое» (R10.2); off — заменён в паре: пометка, приглушён
-function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerName, onSelect, onToggle }: {
-  c: Char; own: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; pinned: boolean; partnerName?: string; onSelect: () => void; onToggle: () => void;
+// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; pinned — булавка «Не отдавать надетое» (R10.2); off — заменён в паре: пометка, приглушён.
+// corner — своя кнопка в углу вместо звезды ростера (ромб команды обмена — булавка); null — пустой угол
+export function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerName, onSelect, onToggle, corner }: {
+  c: Char; own?: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; pinned: boolean; partnerName?: string; onSelect: () => void; onToggle?: () => void;
+  corner?: ReactNode;
 }) {
   const t = useT();
   const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
@@ -127,9 +129,11 @@ function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerName, onS
         <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
         {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
       </button>
-      <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={onToggle}>
-        {own ? '★' : '☆'}
-      </button>
+      {corner !== undefined ? corner : (
+        <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, !!own)} onClick={onToggle}>
+          {own ? '★' : '☆'}
+        </button>
+      )}
     </div>
   );
 }

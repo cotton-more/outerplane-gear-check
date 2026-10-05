@@ -161,7 +161,7 @@ describe('режим «для героя»', () => {
 
   it('вещей нет: «Собрать билд» — режим героя без смены вещи на форме', async () => {
     await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: { CHC: 2 } }, { gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
-    await click(byText('.btabs button', 'Pen'));
+    await click(byText('.btabs [role="tab"]', 'Pen'));
     await click(byText('.bgear-none button', 'Gear up this build'));
 
     expect($('.tryon .tryon-n')?.textContent).toBe('Caren');
@@ -385,7 +385,7 @@ describe('режим героя и «По статам» (находка 28)', (
 
   it('вкладка «По статам» → «Собрать билд»: режим героя Drakhan с предустановкой «По статам»', async () => {
     await mount({ tab: 'chars', charId: drakhan.id }, {}, { roster: [drakhan.id], gear: EMPTY });
-    await click(byText('.btabs button', 'By stats'));
+    await click(byText('.btabs [role="tab"]', 'By stats'));
     await click($('.bgear-none button'));
     expect($('.tryon .tryon-n')?.textContent).toBe(drakhan.name);
     expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
@@ -394,7 +394,7 @@ describe('режим героя и «По статам» (находка 28)', (
   it('вкладка «По статам» → «Примерить» у пустого слота: режим героя с «По статам», на форме слот без сета', async () => {
     const gear = { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'armor', grade: 'rare', setId: revenge, itemKey: null, main: null, yellow: HLMW.subs, lit: HLMW.subs, bt: null, at: '' } }, pools: { [drakhan.id]: ['p1'] } };
     await mount({ tab: 'chars', charId: drakhan.id, slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear });
-    expect($('.btabs button[aria-selected="true"]')?.textContent).toMatch(/^By stats/); // открыта на лучшем варианте
+    expect($('.btabs [role="tab"][aria-selected="true"]')?.textContent).toMatch(/^By stats/); // открыта на лучшем варианте
     await click(byText('.bgear-empty', 'Helmet')?.querySelector<HTMLElement>('.bgear-act button'));
     expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
     expect(stored('state')).toMatchObject({ tab: 'eval', slot: 'helmet' });

@@ -1,4 +1,4 @@
-// Вкладка «Надето» (шаг 6): что на герое сейчас в игре — билд героя (aimOf) с «сменить ▾», бонусы надетых сетов и 6 слотов
+// Вкладка «Надето» (шаг 6): что на герое сейчас в игре — билд героя (aimOf; сменить — «Speed ▾» рядом с вкладкой, CharDetail), бонусы надетых сетов и 6 слотов
 // как в «Собрано» (BuildGear). Пустой слот — «Ввести»: режим героя на этот слот, форма — только слот. Совет у слота: вещь
 // раскладки билда из вещей героя лучше надетой («Лучше из своих») или слот пуст («Из своих») — «Надеть» ставит её надетой.
 // Пустая вкладка: «Да, всё надето» — когда в вещах героя не больше одной на слот. Данные — logic/wearing (wornView); запись —
@@ -25,12 +25,11 @@ function deltaText(a: WornAdvice): string {
   return a.up ? `▲ ${body}` : body;
 }
 
-// onEnter — «Ввести» у пустого слота; onWear — надеть вещь пула; onWearAll — «Да, всё надето»; onChange — «сменить ▾»
-// (шторка «Билд для X», AimSheet; нет — кнопка видна, но не нажимается). Нет onEnter/onWear — обучение и новая версия
-// страницы: слоты показываются, действий нет
-export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWearAll, onChange }: {
+// onEnter — «Ввести» у пустого слота; onWear — надеть вещь пула; onWearAll — «Да, всё надето». Нет onEnter/onWear —
+// обучение и новая версия страницы: слоты показываются, действий нет
+export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWearAll }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece: (id: string) => void;
-  onEnter?: (slot: SlotId) => void; onWear?: (id: string) => void; onWearAll?: () => void; onChange?: () => void;
+  onEnter?: (slot: SlotId) => void; onWear?: (id: string) => void; onWearAll?: () => void;
 }) {
   const t = useT();
   const { idx } = ctx;
@@ -43,10 +42,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWea
   const lines = [...bonusLinesOf(t, idx, c, wv.bonuses, v?.b.sets[0] ?? []), ...wv.t4.map((p) => t.ui.partT4(idx.SET[p.set]?.short ?? p.set, p.k, p.n))];
   return (
     <div className="bgear worn" {...tour('wtab')}>
-      <p className="worn-aim">
-        <span><Rich text={aim} /></span>
-        <button type="button" className="btn small" {...tour('wchange')} disabled={!onChange} aria-label={t.ui.wornChangeAria(c.name)} onClick={onChange}>{t.ui.wornChange}</button>
-      </p>
+      <p className="worn-aim"><Rich text={aim} /></p>
       {empty && <p className="worn-hint">{t.ui.wornEmpty(c.name)}</p>}
       {all && (
         <div className="bgear-none">

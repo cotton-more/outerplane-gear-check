@@ -16,7 +16,7 @@ import { redressPlan, undoWearMany, wearMany, wornView } from '../../logic/weari
 import type { Variant } from '../../logic/variants';
 import { BuildGear, PieceSheet } from './BuildGear';
 import { PoolList } from './PoolList';
-import { AimSheet } from './AimSheet';
+import { AimButton, AimSheet } from './AimSheet';
 import { Redress } from './Redress';
 import { WornGear } from './WornGear';
 import { VariantChips } from './VariantChips';
@@ -174,6 +174,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   };
   // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
   const cur = wornTab && wv?.variant ? wv.variant : v;
+  const aimName = !wv?.variant || isStats(wv.variant) ? t.ui.byStats : wv.variant.parent.name;
   const enter = onTryOn && wv?.variant ? (slot: SlotId) => onTryOn(c, isStats(wv.variant!) ? wv.variant!.b : wv.variant!.parent, slot, undefined, wv.variant!.sig, false, true) : undefined;
   // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
   const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
@@ -245,10 +246,14 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         <>
           {/* «По статам» — отдельный билд у каждого персонажа с билдами (находка 28): вкладка последней */}
           <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
+            {/* «Надето» — групповая кнопка: слева вкладка, справа билд героя «Speed ▾» (шторка «Билд для X») */}
             {wv && (
-              <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
-                {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
-              </button>
+              <span className="bt-split" role="group" aria-label={t.ui.tabWorn}>
+                <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
+                  {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
+                </button>
+                <AimButton name={aimName} aria={t.ui.wornChangeAria(c.name)} onClick={live ? () => setAimOpen(true) : undefined} {...tour('wchange')} />
+              </span>
             )}
             {c.builds.map((x, i) => {
               const one = variantsOfBuild(x);
@@ -267,7 +272,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           </div>
           {list.length > 1 && !wornTab && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
           {wornTab && wv
-            ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined} onChange={live ? () => setAimOpen(true) : undefined} />
+            ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined} />
             : <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
               onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />}
           <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />

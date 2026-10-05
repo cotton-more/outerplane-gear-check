@@ -134,7 +134,7 @@ Enhance isn't tracked: pieces are assumed to be +10.
 
 ## Worn and the hero's build
 
-**"change ▾"** opens "Build for Caren": each variant shows what you have for it ("worn 2 of 4", "3 of 4 in pieces",
+The **"Worn"** button is a group: the left half opens the tab, the right half — the hero's build **"Speed ▾"** — opens "Build for Caren": each variant shows what you have for it ("worn 2 of 4", "3 of 4 in pieces",
 "1 missing"). Picking another build leads to the **"Re-dress"** screen: what to wear from your own (one piece or "Wear
 all"), what you take off, what's missing. In the game you do the same yourself — the app only counts.
 
@@ -143,7 +143,7 @@ opens "Heroes' builds" with the reasons; "All correct" saves. The rule: only one
 one with more of the combo's bonuses on → the one with more of the combo's pieces → the first. A build marked "Not
 filling" is never picked.
 
-The card's first tab is **"Worn"**: the line "Build — Speed · set 3 of 4 · change ▾", six slots and the bonuses of the
+The card's first tab is **"Worn"**: the line "Build — Speed · set 3 of 4", six slots and the bonuses of the
 worn sets. If one of the hero's pieces is better for their build (by at least 1 point, or it turns on a set, or gives a recommended weapon), the slot shows "Better in own pieces: … · Wear". An
 empty slot has "Enter": "Rate" opens for that slot, and after "Equip" the form moves to the next empty one ("Next:
 {slot}"). If the hero has at most one piece per slot, "Yes, all worn" replaces the entry.

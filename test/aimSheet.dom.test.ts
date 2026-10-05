@@ -161,7 +161,7 @@ describe('шторка «Билд для X»', () => {
   const openSheet = async (aim: boolean) => {
     const g = deltaGear(aim);
     await mount({ gear: g.gear });
-    await click($('.worn-aim button'));
+    await click($('.bt-split .aimb'));
     return g;
   };
 
@@ -181,7 +181,7 @@ describe('шторка «Билд для X»', () => {
     const { gear } = deltaGear(true);
     await mount({ gear });
     const before = localStorage.getItem('ogc.gear');
-    await click($('.worn-aim button'));
+    await click($('.bt-split .aimb'));
     await click($('[role="dialog"] .arow'));
     expect($('[role="dialog"]')).toBeNull();
     expect(localStorage.getItem('ogc.gear')).toBe(before);
@@ -195,7 +195,7 @@ describe('«Переодеть»', () => {
       await mount({ gear: g.gear });
       return g;
     })();
-    await click($('.worn-aim button'));
+    await click($('.bt-split .aimb'));
     await click($$('.arow').find((r) => r.textContent!.includes('Penetration ×4') && r.textContent!.includes('can re-dress')));
     await click(byText('.aim-go', 'Re-dress for'));
 
@@ -217,7 +217,7 @@ describe('«Переодеть»', () => {
   it('«Надеть» у одной вещи — только она, тост «Надето на …: слот»', async () => {
     const g = deltaGear(true);
     await mount({ gear: g.gear });
-    await click($('.worn-aim button'));
+    await click($('.bt-split .aimb'));
     await click($$('.arow').find((r) => r.textContent!.includes('Penetration ×4') && r.textContent!.includes('can re-dress')));
     await click(byText('.aim-go', 'Re-dress for'));
     await click($('.redress .rd-row .btn'));
@@ -228,7 +228,7 @@ describe('«Переодеть»', () => {
 
   it('«← имя» возвращает на карточку героя', async () => {
     await mount({ gear: deltaGear(true).gear });
-    await click($('.worn-aim button'));
+    await click($('.bt-split .aimb'));
     await click($$('.arow').find((r) => r.textContent!.includes('can re-dress')));
     await click(byText('.aim-go', 'Re-dress for'));
     await click($('.rd-top button'));

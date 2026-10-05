@@ -797,7 +797,7 @@ describe('карточка персонажа', () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(four, { [caren.id]: four.map((p) => p.id as string) }) });
 
     expect($('.cd-lead')?.textContent).toContain('Best assembled: Speed · set 4 of 4');
-    expect(byText('.btabs button', 'Speed')?.textContent).toBe('Speed4/6');
+    expect(byText('.btabs [role="tab"]', 'Speed')?.textContent).toBe('Speed4/6');
     expect($('.want-btn')?.getAttribute('aria-pressed')).toBe('true');
     expect($('.want-row')?.textContent).toContain('— assembled');
     expect($('.bgear-set')?.textContent).toContain('Speed ×4 · T? — ');
@@ -841,7 +841,7 @@ describe('карточка персонажа', () => {
   it('«Собираю» выключить — «Не собираю» у варианта; включить обратно — отметки нет (собирается сам)', async () => {
     const four = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { CHC: 1 }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(four, { [caren.id]: four.map((p) => p.id as string) }) });
-    await click(byText('.btabs button', 'Speed/Immu'));
+    await click(byText('.btabs [role="tab"]', 'Speed/Immu'));
     await click($('.want-btn'));
     expect(stored().marks).toEqual({ [caren.id + '/Speed/Immu']: 'skip' });
     expect($('.want-row')?.textContent).toContain("not filling — its pieces don't hold the verdict");
@@ -854,7 +854,7 @@ describe('карточка персонажа', () => {
     const luna = char('Demiurge Luna');
     const pen = ['helmet', 'armor'].map((slot, i) => P('p' + (i + 1), slot, set('Penetration'), { 'ATK%': 2, CHC: 1 }));
     await mount({ tab: 'chars', charId: luna.id }, {}, { gear: G(pen, { [luna.id]: ['p1', 'p2'] }), roster: [luna.id] });
-    await click(byText('.btabs button', 'Pen mix'));
+    await click(byText('.btabs [role="tab"]', 'Pen mix'));
     const chips = $$('.vchips .vchip');
     expect(chips.map((c) => c.textContent)).toHaveLength(4);
     expect(chips[3].textContent).toBe('2 more ▾');
@@ -870,7 +870,7 @@ describe('карточка персонажа', () => {
   it('шторка вариантов без вещей: связки со сбором есть, «Собираю» нет — как в блоке билда', async () => {
     const luna = char('Demiurge Luna');
     await mount({ tab: 'chars', charId: luna.id }, {}, { roster: [luna.id] });
-    await click(byText('.btabs button', 'Pen mix'));
+    await click(byText('.btabs [role="tab"]', 'Pen mix'));
     await click(byText('.vchips .vchip', 'more'));
 
     expect($$('.vlist li')).toHaveLength(5);
@@ -882,8 +882,8 @@ describe('карточка персонажа', () => {
     const eff = ['helmet', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, set('Effectiveness'), { SPD: 2, EFF: 1 }));
     await mount({ tab: 'chars', charId: cf.id }, {}, { gear: G(eff, { [cf.id]: ['p1', 'p2', 'p3'] }), roster: [cf.id] });
     expect($('.cd-lead')?.textContent).toBe("By stats — no build started yet: pieces are laid out by Core Fusion Eternal's chain.");
-    expect($$('.btabs button').map((b) => b.textContent).at(-1)).toBe('By stats3/6');
-    expect($('.btabs button[aria-selected="true"]')?.textContent).toBe('By stats3/6'); // открыта на лучшем варианте
+    expect($$('.btabs [role="tab"]').map((b) => b.textContent).at(-1)).toBe('By stats3/6');
+    expect($('.btabs [role="tab"][aria-selected="true"]')?.textContent).toBe('By stats3/6'); // открыта на лучшем варианте
     expect($('.bgear-set')?.textContent).toContain("Effectiveness ×2 · T? — Effectiveness +18% · mark Breakthrough · not in Core Fusion Eternal's builds, but the bonus counts");
     expect($('.bgear-need')?.textContent).toContain('Missing: Speed Set pieces — the first one starts Speed');
   });
@@ -896,7 +896,7 @@ describe('карточка персонажа', () => {
       P('p5', 'helmet', imm, { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }), P('p6', 'gloves', imm, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }),
     ];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
-    await click($$('.btabs button').find((b) => /^Speed\d/.test(b.textContent ?? '')));
+    await click($$('.btabs [role="tab"]').find((b) => /^Speed\d/.test(b.textContent ?? '')));
     expect($$('.bgear-list li').filter((li) => li.textContent?.includes('Speed Set'))).toHaveLength(3);
     expect($('.bgear-need')).toBeNull();
     expect(byText('.pool-list li', 'no longer needs it')).toBeUndefined();
@@ -910,7 +910,7 @@ describe('карточка персонажа', () => {
       P('p5', 'helmet', imm, { 'DEF%': 3, CHC: 2, CHD: 2, SPD: 1 }), P('p6', 'gloves', imm, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }),
     ];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
-    await click($$('.btabs button').find((b) => /^Speed\d/.test(b.textContent ?? '')));
+    await click($$('.btabs [role="tab"]').find((b) => /^Speed\d/.test(b.textContent ?? '')));
     expect($('.want-row .want-btn')?.getAttribute('aria-pressed')).toBe('true');
     expect($('.want-row .muted')?.textContent).toBe("— Speed ×4 can be made from Caren's pieces, but the layout is better without it");
   });
@@ -918,7 +918,7 @@ describe('карточка персонажа', () => {
   it('Р14: Def/Immu начат одной Immunity-вещью — «Собираю» включён, но не «ближе всех к сборке» (ближе Speed ×4)', async () => {
     const pieces = [...['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { CHC: 1 })), P('p5', 'helmet', set('Immunity'), { CHC: 1 })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(pieces, { [caren.id]: pieces.map((p) => p.id as string) }) });
-    await click(byText('.btabs button', 'Def/Immu'));
+    await click(byText('.btabs [role="tab"]', 'Def/Immu'));
     expect($('.want-row .want-btn')?.getAttribute('aria-pressed')).toBe('true');
     expect($('.want-row .muted')?.textContent).toBe('');
   });
@@ -1181,7 +1181,7 @@ describe('меню, плитки, код копии, другая вкладка
     expect($('.roster-bar')?.textContent).toContain('gear on 1');
     expect($('.cgrid-note')?.textContent).toContain('1 more in your roster has no gear yet');
     await click($('#cgrid .ctile'));
-    expect(byText('.btabs button', 'Speed')?.textContent).toBe('Speed1/6');
+    expect(byText('.btabs [role="tab"]', 'Speed')?.textContent).toBe('Speed1/6');
   });
 
   it('плитка считает отмеченное надетое, не вещи билда', async () => {
@@ -1495,9 +1495,9 @@ describe('«По статам» у каждого героя (находка 28)
 
   it('карточка Drakhan без вещей: вкладка «By stats» последней, на ней — что туда встаёт и «Собрать билд»', async () => {
     await mount({ tab: 'chars', charId: drakhan.id }, {}, { roster: [drakhan.id] });
-    expect($$('.btabs button').map((b) => b.textContent)).toEqual(['Worn0/6', ...drakhan.builds.map((b) => b.name), 'By stats']); // «Надето» — первая у героя ростера (шаг 6)
-    expect($('.btabs button[aria-selected="true"]')?.textContent).toBe(drakhan.builds[0].name);
-    await click(byText('.btabs button', 'By stats'));
+    expect($$('.btabs [role="tab"]').map((b) => b.textContent)).toEqual(['Worn0/6', ...drakhan.builds.map((b) => b.name), 'By stats']); // «Надето» — первая у героя ростера (шаг 6)
+    expect($('.btabs [role="tab"][aria-selected="true"]')?.textContent).toBe(drakhan.builds[0].name);
+    await click(byText('.btabs [role="tab"]', 'By stats'));
     expect($('.bgear-none p')?.textContent).toBe(`"By stats" — ${drakhan.name}'s pieces by the chain, no sets. Record what ${drakhan.name} wears off-build on the "Worn" tab.`);
     expect($('.bgear-none')?.getAttribute('data-tour')).toBe('stats');
   });

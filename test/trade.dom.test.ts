@@ -92,7 +92,7 @@ describe('J. обмен вещами', () => {
       await click($$('.team-add')[0]);
       await click(hero(D.chars.find((c) => c.id === id)!.name));
     }
-    expect($$('.team-g')).toHaveLength(4);
+    expect($$('.team .aimb')).toHaveLength(4);
     expect($$('.team-pin').length).toBeGreaterThan(0);
 
     expect($('.trade-pinned')).toBeNull();
@@ -104,16 +104,34 @@ describe('J. обмен вещами', () => {
     expect(stored().pinned).toBeUndefined();
   });
 
+  it('команда: член — плитка как в списке с булавкой вместо звезды; нажатие — «Убрать из команды» под ромбом', async () => {
+    await mount({ roster: [caren.id, aer.id], gear: gear() }, { charId: null });
+    await click(byText('button', 'Trade gear'));
+    await click(byText('.trade-mode button', 'Team'));
+    await click($$('.team-add')[0]);
+    await click(hero('Caren'));
+
+    expect($('.team .ctile .cn')?.textContent).toBe('Caren');
+    expect($('.team .star')).toBeNull();
+    expect($('.team .cwrap .team-pin')).not.toBeNull();
+
+    await click($('.team .ctile'));
+    await click(byText('.trade-out', 'Caren'));
+
+    expect($('.team .ctile')).toBeNull();
+    expect($$('.team-add')).toHaveLength(4);
+  });
+
   it('J3: у вещи в плане — ключ поиска, источник, «Не брать», переключатель закрепления; «Не брать» пересчитывает', async () => {
     await mount({ gear: gear(), roster: ROSTER });
     await click(byText('.cd-trade button', 'Trade'));
 
     expect($('.tmove .bgear-row')).not.toBeNull();
     expect($('.tmove .tsrc')?.textContent).toBe('on Aer');
-    expect($('.tline.to .tline-g')?.textContent).toMatch(/▾$/); // билд мерила — его можно сменить (R4.2)
+    expect($('.tline.to .aimb')?.textContent).toMatch(/▾$/); // билд мерила — его можно сменить (R4.2)
     expect(byText('.tmove button', "Don't take")).toBeTruthy();
     expect(($('.tpin input') as HTMLInputElement).checked).toBe(true);
-    expect($('.tline:not(.to) .tgain.down')).not.toBeNull();
+    expect($('.tline:not(.to)')).toBeNull(); // только сам герой: у Aer забирают шлем, его строки нет (владелец, 2026-10-05)
 
     await click(byText('.tmove button', "Don't take"));
 

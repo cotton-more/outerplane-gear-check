@@ -15,7 +15,9 @@ on "Characters". Only roster heroes that have builds take part.
 - **Hero** — pick whom to re-dress. They get the best of what other heroes and the inventory have.
 - **Team** — four places in a diamond, like in the game. Members swap pieces among themselves and take from the rest.
   Press "Calculate"; change a member — "Calculate" again.
-- Each member shows the **yardstick**: the build they are dressed for ("Name ▾") or "by stats". You can change it.
+- A team member is a tile like in the character list; the pin sits in the corner instead of the star. Tap the tile to
+  put another hero there or "Remove from team".
+- Under the tile — the **yardstick**: the build they are dressed for ("Name ▾") or "by stats". Tap it to change.
 
 ## Keep worn gear
 
@@ -34,7 +36,7 @@ For each receiver:
 - **an empty slot** — "Search:" with a hint of what to look for;
 - **"Keep worn gear after the trade"** — for the receiver, on by default.
 
-A team plan shows only its members. **Holes are not filled:** a piece taken off stays off until you enter a new one
+The plan shows only whom you re-dress: the hero or the team members; heroes you take pieces from are not shown. **Holes are not filled:** a piece taken off stays off until you enter a new one
 through "Rate".
 
 ## Done, Cancel, Undo
