@@ -7,7 +7,6 @@ import { SLOTS } from '@/game/data';
 import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { hasBt } from '@/game/item/item';
 import { isStats, wearAll } from '@/features/gear/pool';
 import { vsFigure } from '@/features/gear/model/vs';
 import type { WornAdvice, WornView } from './wearing';
@@ -15,10 +14,11 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { Rich } from '@/shared/ui/Rich';
 import { tour } from '@/tour/anchors';
-import { PieceName, bonusLinesOf, btText, pieceText } from '@/features/gear/ui/pieceText';
+import { PieceName, bonusLinesOf, pieceText } from '@/features/gear/ui/pieceText';
 import { setName } from '@/game/set/setName';
 import { variantName } from '@/features/gear/ui/pieceText';
 import { SubToken } from '@/game/item/SubToken';
+import { BtLabel } from '@/features/gear/ui/pieceText';
 
 // «▲ +25%», «▲ ×3»; выигрыша нет (пустой слот, вещь лишь включит бонус сета) — ничего
 function deltaText(a: WornAdvice): string {
@@ -67,7 +67,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWea
                 <button type="button" className="bgear-row" onClick={() => onOpenPiece(p.id)}>
                   <SlotIcon slot={slot} />
                   <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                  {hasBt(p.slot, p.grade) && <span className="bgear-m">{btText(t, p.bt)}</span>}
+                  <BtLabel p={p} />
                   <span className="bgear-t">
                     {s.tokens.map((k) => (
                       <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />

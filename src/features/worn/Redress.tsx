@@ -6,13 +6,13 @@ import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { type Piece } from '@/features/gear/model/gear';
-import { hasBt } from '@/game/item/item';
 import { tokensOf, type RedressPlan } from './wearing';
 import { SlotIcon } from '@/game/icons/Img';
-import { PieceName, btText, pieceText } from '@/features/gear/ui/pieceText';
+import { PieceName, pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
 import { variantName } from '@/features/gear/ui/pieceText';
 import { SubToken } from '@/game/item/SubToken';
+import { BtLabel } from '@/features/gear/ui/pieceText';
 
 export function Redress({ c, ctx, plan, onBack, onWear, onWearAll }: {
   c: Char; ctx: Ctx; plan: RedressPlan; onBack: () => void; onWear?: (id: string) => void; onWearAll?: (ids: string[]) => void;
@@ -25,7 +25,7 @@ export function Redress({ c, ctx, plan, onBack, onWear, onWearAll }: {
       <SlotIcon slot={p.slot} />
       <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
       {act}
-      <span className="rd-m">{t.ui.slotNames[p.slot]}{hasBt(p.slot, p.grade) && ` · ${btText(t, p.bt)}`}</span>
+      <span className="bgear-meta rd-m"><BtLabel p={p} /><span>{t.ui.slotNames[p.slot]}</span></span>
       {toWear && (
         <span className="bgear-t">
           {tokensOf(ctx, c, plan.v, p).map((k) => (

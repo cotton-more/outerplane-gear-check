@@ -22,7 +22,7 @@ import { badgeOf, whereOf, whereUsed } from '@/features/gear/model/poolVs';
 import type { Variant } from '@/game/build/variants';
 import { freeSlots, missingParts, t4Parts } from '@/features/worn/wearing';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { bonusLinesOf, btText, PieceName, wantWhy } from '@/features/gear/ui/pieceText';
+import { bonusLinesOf, PieceName, wantWhy } from '@/features/gear/ui/pieceText';
 import { SlotIcon, StatIcon } from '@/game/icons/Img';
 import { tour, tourItem } from '@/tour/anchors';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -32,6 +32,7 @@ import { setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
 import { CapNote, LevelButtons } from '@/game/item/SubLevels';
 import { WantToggle } from '@/features/gear/ui/WantToggle';
+import { BtLabel } from '@/features/gear/ui/pieceText';
 
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
@@ -117,7 +118,7 @@ export function BuildGear({ c, v, cp, ctx, gear, view, onTryOn, onOpenPiece, onW
               <button type="button" className="bgear-row" onClick={() => onOpenPiece(p.id)} {...tourItem(slot)}>
                 <SlotIcon slot={slot} />
                 <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                {hasBt(p.slot, p.grade) && <span className="bgear-m">{btText(t, p.bt)}</span>}
+                <BtLabel p={p} />
                 <span className="bgear-t">
                   {Object.keys(p.lit).map((k) => <SubToken key={k} stat={k} lit={p.lit[k]} credit={W.get(k)?.credit ?? 0} />)}
                 </span>

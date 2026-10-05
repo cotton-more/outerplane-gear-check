@@ -135,6 +135,8 @@ html:not(.sheet) .cd-top { display: none; }
 html.xs .bgear-m { grid-column: 2 / 4; grid-row: 2; }
 html.xs .bgear-t { grid-row: 3; }
 .bgear-m { font: 600 11px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+/* вторая строка вещи в списке, плане обмена и «Переодеть»: Breakthrough меткой первым (BtLabel), за ним — где она */
+.bgear-meta { grid-column: 2 / -1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .bgear-t { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
 .bgear-t .tok { display: inline-flex; align-items: center; gap: 4px; padding-right: 3px; }
 .bgear-t .tok i, .piece .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }

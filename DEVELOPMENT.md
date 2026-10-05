@@ -140,7 +140,7 @@ PWA — функция только кода и снимка данных: да�
 | портрет героя; имя одной строкой (приставка приглушена и режется первой), в две строки (`stacked`: плитка, шапка карточки) и имя по id | `game/hero/HeroFace`, `game/hero/HeroName` (`HeroName`, `heroName`) |
 | сабстат чипом «ATK 3» (цвет — засчитан ли билду), кнопки уровня 1–6 и строка «больше N не бывает» | `game/item/SubToken`, `game/item/SubLevels` |
 | имя сета, «Speed ×4» | `game/set/setName` (`setName`, `partText`) |
-| название вещи и main, Breakthrough, текст бонуса, имя варианта и билда-родителя | `features/gear/ui/pieceText` |
+| название вещи и main, Breakthrough меткой (`BtLabel` — одна во всех строках вещей), текст бонуса, имя варианта | `features/gear/ui/pieceText` |
 | чип исхода «▲ +25%», кнопка «Надеть / Заменить», «Собираю», булавка «Не отдавать» | `features/gear/ui/VsChip`, `EquipButton`, `WantToggle`, `PinMark` |
 | шторка, окно-вопрос, кнопка ✕, галочка, переключатель сегментами, фильтр кнопками, поле кода, сообщение с «Вернуть», плашка | `shared/ui/` (`Sheet`, `AskSheet`, `CloseButton`, `Toggle`, `SegSwitch`, `FilterChips`, `CodeBox`, `Toast`, `Notice`) |
 | скопировать в буфер, значение, которое гаснет само | `shared/copyText`, `shared/useTimed` |

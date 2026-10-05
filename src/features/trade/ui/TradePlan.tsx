@@ -11,7 +11,6 @@ import type { SlotId } from '@/game/data/types';
 import { useT, type Texts } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { pieceInput, type GearStore } from '@/features/gear/model/gear';
-import { hasBt } from '@/game/item/item';
 import { itemMains } from '@/game/item/mains';
 import type { PoolView } from '@/features/gear/pool';
 import { subWeights } from '@/game/build/score';
@@ -22,12 +21,13 @@ import { gainOf, type HeroLine } from '@/features/trade/model/view';
 import { aimVariant } from '@/features/trade/model/world';
 import { SlotIcon } from '@/game/icons/Img';
 import { AimButton } from '@/features/worn/AimSheet';
-import { PieceName, btText, pieceText } from '@/features/gear/ui/pieceText';
+import { PieceName, pieceText } from '@/features/gear/ui/pieceText';
 import { setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { SubToken } from '@/game/item/SubToken';
 import { Toggle } from '@/shared/ui/Toggle';
 import { heroName, HeroName } from '@/game/hero/HeroName';
+import { BtLabel } from '@/features/gear/ui/pieceText';
 
 
 export interface Hint { heroes: string[]; gain: number }
@@ -68,15 +68,15 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
       <li key={m.slot} className="tmove">
         <div className="bgear-row">
           <SlotIcon slot={m.slot} />
-          <span className="bgear-n"><PieceName ctx={ctx} p={p} />{hasBt(p.slot, p.grade) && <span className="pm">· {btText(t, p.bt)}</span>}</span>
+          <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
           <button type="button" className="linkbtn small tskip" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>
+          <span className="bgear-meta"><BtLabel p={p} /><span className="tsrc">{from(m)}</span></span>
           <span className="bgear-t">
             {Object.keys(p.lit).map((k) => {
               const s2 = k === sort;
               return <SubToken key={k} stat={k} lit={p.lit[k]} credit={W?.get(k)?.credit ?? 0} sort={s2} title={s2 ? t.trade.sortTitle : undefined} />;
             })}
           </span>
-          <span className="tsrc">{from(m)}</span>
         </div>
       </li>
     );

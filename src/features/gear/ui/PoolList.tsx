@@ -7,13 +7,13 @@ import { SLOTS } from '@/game/data';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { type GearStore, type Piece } from '@/features/gear/model/gear';
-import { hasBt } from '@/game/item/item';
 import { isStats, removeFrom, removeUndo, type CharPool, type PoolView } from '@/features/gear/pool';
 import { whereOf } from '@/features/gear/model/poolVs';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { tour } from '@/tour/anchors';
-import { PieceName, btText } from './pieceText';
+import { PieceName } from './pieceText';
+import { BtLabel } from './pieceText';
 
 export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onRateFor }: {
   cp: CharPool; ctx: Ctx; gear: GearApi; view: PoolView; own: boolean; onOpenPiece: (id: string) => void;
@@ -52,8 +52,8 @@ export function PoolList({ cp, ctx, gear, view, own, onOpenPiece, onRemoved, onR
                 <li key={p.id} className={unused.has(p.id) ? 'unused' : undefined}>
                   <button type="button" className="pool-row" onClick={() => onOpenPiece(p.id)}>
                     <SlotIcon slot={p.slot} />
-                    <span className="bgear-n"><PieceName ctx={ctx} p={p} />{hasBt(p.slot, p.grade) && <span className="pm">· {btText(t, p.bt)}</span>}</span>
-                    <span className="pool-w">{where(p)}</span>
+                    <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
+                    <span className="bgear-meta"><BtLabel p={p} /><span className="pool-w">{where(p)}</span></span>
                   </button>
                   {unused.has(p.id) && !gear.newer && (
                     <p className="pool-unused">
