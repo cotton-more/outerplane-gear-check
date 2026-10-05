@@ -345,15 +345,14 @@ describe('9. фраза VA Games, подвала нет', () => {
     expect($('#foot')).toBeNull();
   });
 
-  it.each([['en', TEXTS.en.ui.rights], ['ru', TEXTS.ru.ui.rights]] as const)('20. «Ещё» (%s): последняя строка шторки — фраза VA Games дословно, вне прокручиваемого тела', async (lang, rights) => {
+  it.each([['en', TEXTS.en.ui.rights], ['ru', TEXTS.ru.ui.rights]] as const)('20. «Ещё» (%s): последняя строка шторки — фраза VA Games дословно, не спрятана в «О приложении»', async (lang, rights) => {
     await mount({ lang });
     await openMore();
-    const foot = $('.drawer .drawer-f')!;
+    const foot = $('.drawer .more-rights')!;
     expect(foot.textContent).toBe(rights);
     expect(foot.textContent).toContain(PHRASE);
-    expect(foot.previousElementSibling?.classList.contains('drawer-b')).toBe(true);
-    expect(foot.closest('.drawer')?.lastElementChild).toBe(foot);
-    expect($('.drawer-b')?.contains(foot)).toBe(false);
+    expect(foot.parentElement?.lastElementChild).toBe(foot);
+    expect(foot.closest('#more-about, details')).toBeNull();
   });
 
   it('фраза видна и при раскрытых «Backup» и «About»', async () => {
@@ -361,7 +360,7 @@ describe('9. фраза VA Games, подвала нет', () => {
     await openMore();
     await click($('#more-backup'));
     await click($('#more-about'));
-    expect($('.drawer .drawer-f')?.textContent).toContain(PHRASE);
+    expect($('.drawer .more-rights')?.textContent).toContain(PHRASE);
   });
 });
 

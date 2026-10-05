@@ -242,6 +242,6 @@ describe('справка и обучение после «Ещё»', () => {
   it.each(['ru', 'en'] as const)('%s: конец тура зовёт «Ещё»; «Что нового» про «Ещё» — владельцев текст', (lang) => {
     const t = TEXTS[lang].tour;
     expect(t.endText(true)).toContain(lang === 'ru' ? '«Ещё»' : '“More”');
-    expect(t.tips.more).toBe(lang === 'ru' ? 'Настройки оценки, резервная копия, язык и справка теперь в «Ещё».' : 'Evaluation settings, backup, language and help are now in “More”.');
+    expect(t.tips.more).toBe(lang === 'ru' ? 'Настройки оценки, резервная копия, язык и справка — в «Ещё».' : 'Evaluation settings, backup, language and help are in “More”.');
   });
 });

@@ -143,7 +143,7 @@ PWA — функция только кода и снимка данных: да�
 | имя сета, «Speed ×4» | `game/set/setName` (`setName`, `partText`) |
 | название вещи и main, Breakthrough меткой (`BtLabel` — одна во всех строках вещей), текст бонуса, имя варианта | `features/gear/ui/pieceText` |
 | чип исхода «▲ +25%», кнопка «Надеть / Заменить», «Собираю», булавка «Не отдавать» | `features/gear/ui/VsChip`, `EquipButton`, `WantToggle`, `PinMark` |
-| шторка (с нижней строкой `foot`, которая не прокручивается), окно-вопрос, кнопка ✕, галочка, переключатель сегментами, фильтр кнопками, строка, раскрывающаяся на месте, поле кода, сообщение с «Вернуть», плашка | `shared/ui/` (`Sheet`, `AskSheet`, `CloseButton`, `Toggle`, `SegSwitch`, `FilterChips`, `Expand`, `CodeBox`, `Toast`, `Notice`) |
+| шторка, окно-вопрос, кнопка ✕, галочка, переключатель сегментами, фильтр кнопками, строка, раскрывающаяся на месте, поле кода, сообщение с «Вернуть», плашка | `shared/ui/` (`Sheet`, `AskSheet`, `CloseButton`, `Toggle`, `SegSwitch`, `FilterChips`, `Expand`, `CodeBox`, `Toast`, `Notice`) |
 | скопировать в буфер, значение, которое гаснет само | `shared/copyText`, `shared/useTimed` |
 | шапка героя (портрет со стихией и классом, имя, тиры, outerpedia ↗) | `screens/chars/CharHead` |
 | битовый поток коротких кодов, CRC-32, base62; вещь в коде (одна запись для копии и кода героя) | `shared/bits`, `features/gear/store/pieceCode` |

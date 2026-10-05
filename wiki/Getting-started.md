@@ -45,7 +45,7 @@ version is ready · Update" or "Install as an app" when there is one; "Enter cod
 language and icons (from the game or own outlines; without a choice — from the game); **Data** — "Backup" (the roster
 and gear in one code, see [Characters and guild code](Characters-and-guild-code#backup)) and "About" (where the data
 comes from, game version, snapshot date, how many characters and builds, the app build, "Licenses (MIT)"). At the
-bottom, always in view, is the fan-content notice from [Limitations and credits](Limitations-and-credits#licenses-and-rights).
+bottom, as the last line, is the fan-content notice from [Limitations and credits](Limitations-and-credits#licenses-and-rights).
 There is no footer under the page.
 
 ## First steps

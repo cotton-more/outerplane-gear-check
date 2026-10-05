@@ -22,8 +22,8 @@ Builds are outerpedia's curated recommendations ([outerpedia](https://github.com
 ## Licenses and rights
 
 This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of
-outerpedia's authors; the tool is not affiliated with VA Games or with outerpedia. The same notice is always in view at
-the bottom of "More" in the app.
+outerpedia's authors; the tool is not affiliated with VA Games or with outerpedia. The same notice is the last line
+of "More" in the app.
 
 Build recommendations, game tables and the flat/% formula come from outerpedia under the MIT license; the page also
 bundles React (MIT) and Tabler Icons (MIT) — the stat, slot, set, element and class icons. Copyright lines and the

@@ -1,8 +1,9 @@
 // «Ещё» — одна шторка и на телефоне (кнопка ☰ на нижней плашке), и на ПК (кнопка ⋯ в шапке); .x/0070-more-sheet SPEC 1.
 // Сверху вниз: переходы (только на узком экране: ★ Персонажи, «Доодеть · N», «Обмен для команды»); уведомления, пока
 // актуальны (новая версия, установка, подсказка для iPhone); «Ввести код», «Справка», «Обучение»; «Настройки» (только мои,
-// «Оценка» со сводкой, язык, значки); «Данные» («Резервная копия» и «О приложении» раскрываются на месте); внизу — обязательная
-// фраза VA Games, всегда на виду (не прокручивается). Нажатие на переход или действие закрывает шторку и выполняет его.
+// «Оценка» со сводкой, язык, значки); «Данные» («Резервная копия» и «О приложении» раскрываются на месте); последней строкой —
+// обязательная фраза VA Games: не спрятана в «О приложении», но и не прибита к низу — в разделённом экране шторка низкая.
+// Нажатие на переход или действие закрывает шторку и выполняет его.
 import { useState, type Dispatch } from 'react';
 import { useT, type Lang } from '@/i18n';
 import type { Action, AppState } from '@/app/appState';
@@ -33,7 +34,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
   const [aboutOpen, setAboutOpen] = useState(false);
   const go = (f: () => void) => () => { onClose(); f(); };
   return (
-    <Sheet title={t.ui.more} onClose={onClose} foot={<p className="more-rights">{t.ui.rights}</p>}>
+    <Sheet title={t.ui.more} onClose={onClose}>
       <div className="more">
         {narrow && (
           <div className="more-nav">
@@ -74,6 +75,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
             <About lang={lang} appUpdate={!!onAppUpdate} />
           </Expand>
         </section>
+        <p className="more-rights">{t.ui.rights}</p>
       </div>
     </Sheet>
   );

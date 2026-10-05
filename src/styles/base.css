@@ -203,8 +203,6 @@ html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
 .drawer-h h3 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drawer-x { flex: none; width: 40px; height: 40px; border: 0; background: none; font-size: 16px; color: var(--ink-2); border-radius: var(--radius-s); }
 .drawer-b { overflow: auto; overscroll-behavior: contain; padding: 12px 14px 14px; }
-/* строка под прокручиваемым телом, всегда на виду («Ещё»: фраза VA Games) */
-.drawer-f { flex: none; border-top: 1px solid var(--line); }
 .drawer .items { max-height: none; overflow: visible; }
 
 /* ---------- низкий экран (разделённый экран с игрой): шапка в одну строку */

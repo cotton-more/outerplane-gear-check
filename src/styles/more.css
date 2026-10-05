@@ -1,4 +1,4 @@
-/* «Ещё» (app/shell/More): шторка с переходами, действиями, настройками и данными; внизу — фраза VA Games (.drawer-f) */
+/* «Ещё» (app/shell/More): шторка с переходами, действиями, настройками и данными; последней строкой — фраза VA Games */
 .more { display: grid; gap: 14px; }
 .more-nav, .more-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .more .vb-star { color: var(--star-on); }
@@ -10,7 +10,7 @@
 .more .toggle { display: block; line-height: 1.4; }
 .more .toggle input { vertical-align: -4px; margin: 0 6px 0 0; }
 .more .lang, .drawer .more .lang { margin: 0; }
-.more-rights { margin: 0; padding: 8px 14px; font-size: 11px; line-height: 1.35; color: var(--ink-3); }
+.more-rights { margin: 4px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.35; color: var(--ink-3); }
 /* строка, раскрывающаяся на месте (shared/ui/Expand): заголовок, сводка второй строкой, стрелка справа */
 .xp { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .xp-h { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1px 8px; width: 100%; min-height: 44px; padding: 7px 12px; border: 0; background: none; text-align: left; font-size: 14px; font-weight: 600; }

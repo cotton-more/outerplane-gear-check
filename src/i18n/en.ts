@@ -761,7 +761,7 @@ export const en: Texts = {
       subs: 'The example needs only SPD, CHC and CHD: tap the extra stat in its row and replace or remove it.',
     },
     tips: {
-      more: 'Evaluation settings, backup, language and help are now in “More”.',
+      more: 'Evaluation settings, backup, language and help are in “More”.',
       star: 'Star your characters — the check will use them instead of every hero in the game.',
       accMain: 'For an accessory, the first tap in the grid is the main stat, as at the top of the piece in the game. Then come the substats.',
       mainCell: 'A “main” cell is a stat in the main line: it never rolls as a substat.',
