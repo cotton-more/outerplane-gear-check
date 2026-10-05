@@ -6,11 +6,13 @@ import { useT } from '@/i18n';
 import { aimOf } from './aim';
 import type { Ctx } from '@/game/context';
 import type { GearStore } from '@/features/gear/model/gear';
-import { isStats, type PoolView } from '@/features/gear/pool';
+import { type PoolView } from '@/features/gear/pool';
 import { reasonOf } from './wearing';
-import { Img } from '@/game/icons/Img';
 import { Sheet } from '@/shared/ui/Sheet';
-import { AimSheet, partName } from './AimSheet';
+import { AimSheet } from './AimSheet';
+import { partText, setName } from '@/game/set/setName';
+import { variantName } from '@/features/gear/ui/pieceText';
+import { HeroFace } from '@/game/hero/HeroFace';
 
 export function AimsSheet({ ctx, view, st, ids, onClose, onConfirm, onChoose }: {
   ctx: Ctx; view: PoolView; st: GearStore; ids: readonly string[]; onClose: () => void; onConfirm: () => void;
@@ -25,8 +27,8 @@ export function AimsSheet({ ctx, view, st, ids, onClose, onConfirm, onChoose }: 
     switch (w.kind) {
       case 'only': return t.ui.aimWhy.only;
       case 'want': return t.ui.aimWhy.want;
-      case 'on': return w.part ? t.ui.aimWhy.on(partName(ctx, w.part)) : '';
-      case 'more': return w.set ? t.ui.aimWhy.more(ctx.idx.SET[w.set]?.short ?? w.set) : '';
+      case 'on': return w.part ? t.ui.aimWhy.on(partText(ctx.idx, w.part)) : '';
+      case 'more': return w.set ? t.ui.aimWhy.more(setName(ctx.idx, w.set)) : '';
       case 'tie': return t.ui.aimWhy.tie;
       case 'stats': return t.ui.aimWhy.stats;
       default: return t.ui.aimWhy.first;
@@ -46,10 +48,10 @@ export function AimsSheet({ ctx, view, st, ids, onClose, onConfirm, onChoose }: 
             const reason = why(id);
             return (
               <li key={id}>
-                <Img k={'face:' + cp.c.icon} className="face" />
+                <HeroFace c={cp.c} />
                 <span className="tl-t">
                   <b>{cp.c.name}</b>
-                  <span className="muted small">{[v ? (isStats(v) ? t.ui.byStats : v.name) : '', reason].filter(Boolean).join(' · ')}</span>
+                  <span className="muted small">{[v ? variantName(t, v) : '', reason].filter(Boolean).join(' · ')}</span>
                 </span>
                 {a && a.need > 0 && <span className="tl-n">{a.progress}/{a.need}</span>}
                 <button type="button" className="btn small" aria-label={t.ui.aimTitle(cp.c.name)} onClick={() => setOpen(id)}>▾</button>

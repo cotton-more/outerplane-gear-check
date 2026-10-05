@@ -5,12 +5,13 @@ import type { Index } from '@/game/data';
 import type { Ctx } from '@/game/context';
 import { heroName } from '@/game/hero/heroName';
 import type { Texts } from '@/i18n';
-import { isStats, type PoolView } from '@/features/gear/pool';
+import { type PoolView } from '@/features/gear/pool';
 import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import type { Tab } from '@/shared/tab';
 import { confirmAims, setAim, unconfirmed, undoAims } from './aim';
+import { variantName } from '@/features/gear/ui/pieceText';
 
 export function useAims({ idx, t, ctx, gear, view, touring, demo, charId, tab, say, openChar }: {
   idx: Index; t: Texts; ctx: Ctx; gear: GearApi; view: PoolView;
@@ -29,7 +30,7 @@ export function useAims({ idx, t, ctx, gear, view, touring, demo, charId, tab, s
     if (r.st !== gear.store) {
       const v = view.of(id)?.variants.find((x) => x.key === key);
       gear.set(r.st);
-      say({ text: t.ui.aimToast(heroName(idx, id), !v || isStats(v) ? t.ui.byStats : v.name), note: '', tab: 'chars', undo: (x) => undoAims(x, r) });
+      say({ text: t.ui.aimToast(heroName(idx, id), v ? variantName(t, v) : t.ui.byStats), note: '', tab: 'chars', undo: (x) => undoAims(x, r) });
     }
     setRedress({ charId: id, key });
     openChar(id);

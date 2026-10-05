@@ -6,76 +6,24 @@
 // строка «начнёт» с кнопкой (и у персонажа без вещей).
 import { useState } from 'react';
 import { GRADE_NAME, subLabel, type Index } from '@/game/data';
-import type { SetPiece } from '@/game/data/types';
 import { useT } from '@/i18n';
-import { holds, isStats, shownKind, type Outcome, type PoolView } from '@/features/gear/pool';
+import { holds, isStats, type Outcome, type PoolView } from '@/features/gear/pool';
 import type { CharVs } from '@/features/gear/model/poolVs';
-import { tierLabel, type BonusRow } from '@/game/set/setBonus';
+import { tierLabel } from '@/game/set/setBonus';
 import { subsText } from '@/game/text';
-import { buildOfKey } from '@/game/build/variants';
-import { vsFigure, type VsFigure } from '@/features/gear/model/vs';
-import { Icon, Img } from '@/game/icons/Img';
 import { useIndex } from '@/game/data/IndexContext';
 import { Chain } from '@/features/eval/verdict/Chain';
 import { tour } from '@/tour/anchors';
+import { partText, setName } from '@/game/set/setName';
+import { bonusText, buildName, variantName } from './pieceText';
+import { figOf, outcomeWord, VsChip } from './VsChip';
+import { HeroFace } from '@/game/hero/HeroFace';
+import { EquipButton } from './EquipButton';
 
-type T = ReturnType<typeof useT>;
-const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `×${f.n}` : `${f.n > 0 ? '+' : f.n < 0 ? '−' : '±'}${Math.abs(f.n)}%`);
-// разница: у вставшей — выигрыш к вытесненному, у невставшей — против вещи в её слоте. Вытесненное ничего не стоило —
-// «полезных нет», а не «×2609»
-const figOf = (o: Outcome) => vsFigure({ delta: o.delta, wornEmpty: (!!o.pair?.wornEmpty || o.lostEmpty) && o.kind !== 'completes' && o.kind !== 'closer' });
-const upKind = (o: Outcome) => o.kind === 'up' || o.kind === 'completes' || o.kind === 'closer';
-
-// слово исхода: значок ▲▼ и строка «Ещё» («Speed — соберёт»); «соберёт» — вся связка, половина — «сет n из m» (shownKind)
-export function outcomeWord(t: T, o: Outcome): string {
-  if (shownKind(o) === 'closer') return t.ui.vsCloser(o.after.progress, o.after.need);
-  if (o.kind === 'up' || o.kind === 'down') {
-    const f = figOf(o);
-    return o.pair?.why ? t.ui.vsKind[o.pair.why] : !f ? t.ui.vsKind.better : f.kind === 'empty' ? t.ui.vsKind.better : num(f);
-  }
-  return t.ui.vsKind[o.kind] ?? o.kind;
-}
-
-// чип целиком, как его прочтёт диктор (подпись карточки): «начнёт», «лучше надетой: +25%», «сет 3 из 4»
-export function chipLabel(t: T, o: Outcome | null, starts?: boolean): string {
-  if (starts || !o || (o.entering && o.used)) return t.ui.vsKind.starts;
-  // «лучше надетой: +25%»; без числа (вытесненное ничего не стоило) — просто «лучше», не «лучше надетой: лучше»
-  if (o.kind === 'up' || o.kind === 'down') {
-    const word = outcomeWord(t, o);
-    return /^[+−±×]/.test(word) ? (t.ui.vsSr[o.kind] ?? '') + word : word;
-  }
-  if (o.kind === 'completes' || o.kind === 'closer') return outcomeWord(t, o);
-  return t.ui.vsKind[o.kind] ?? o.kind;
-}
-
-// чип исхода; o null — вещь только начнёт билд
-export function VsChip({ o, starts }: { o: Outcome | null; starts?: boolean }) {
-  const t = useT();
-  if (starts || !o || (o.entering && o.used)) return <span className="vs fill">{t.ui.vsKind.starts}</span>;
-  if (o.kind === 'up' || o.kind === 'down' || o.kind === 'completes' || o.kind === 'closer') {
-    const up = o.kind !== 'down';
-    const sr = o.kind === 'up' || o.kind === 'down' ? t.ui.vsSr[o.kind] : '';
-    return <span className={`vs ${up ? 'up' : 'down'}`}><Icon name={up ? 'trending-up' : 'trending-down'} />{sr && <span className="sr-only">{sr}</span>}{outcomeWord(t, o)}</span>;
-  }
-  const cls = o.kind === 'capped' ? 'eq' : o.kind === 'stats' ? 'off' : o.kind;
-  return <span className={`vs ${cls}`}>{o.kind === 'eq' || o.kind === 'capped' ? <Icon name="equal" /> : null}{t.ui.vsKind[o.kind]}</span>;
-}
-
-// что сделает кнопка: заменить, если «Надеть» уберёт вещь её слота (poolVs replaces), иначе — надеть; на форме нажата
-// «T4» — «· T4» в конце (В4: видно, с каким Breakthrough вещь ляжет в пул)
-export const equipLabel = (t: T, x: CharVs, slot: string, t4 = false) =>
-  (x.replaces ? t.ui.replaceOn(slot, x.c.name) : t.ui.equipTo(x.c.name)) + (t4 ? t.ui.withT4 : '');
-
-const setName = (idx: Index, set: string | null | undefined) => (set ? idx.SET[set]?.short ?? set : '');
-const partText = (idx: Index, p: Pick<SetPiece, 'set' | 'n'>) => `${setName(idx, p.set)} ×${p.n}`;
-const bonusText = (idx: Index, r: BonusRow) => {
-  const s = idx.SET[r.set];
-  return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
-};
+// сет во фразе; нет сета — пусто
+const setOr = (idx: Index, set: string | null | undefined) => (set ? setName(idx, set) : '');
 const ARMOR = ['helmet', 'armor', 'gloves', 'shoes'] as const;
-const buildName = (t: T, key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «остаётся в …»
-// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ
-export const variantName = (t: T, v: Outcome['v']) => (isStats(v) ? t.ui.byStats : v.name);
+const upKind = (o: Outcome) => o.kind === 'up' || o.kind === 'completes' || o.kind === 'closer';
 
 // строки одного исхода (раздел «Тексты» HANDOFF)
 export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
@@ -88,24 +36,24 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
   const cnt = (a: typeof o.after, set: string) => ARMOR.filter((sl) => a.slots[sl]?.setId === set).length;
   if (o.used) {
     if ((o.kind === 'completes' || o.kind === 'closer') && o.part) {
-      out.push(t.ui.vsProgress(bn, o.after.progress, o.after.need, setName(idx, o.part.set), Math.min(cnt(o.after, o.part.set), o.part.n), o.part.n));
+      out.push(t.ui.vsProgress(bn, o.after.progress, o.after.need, setOr(idx, o.part.set), Math.min(cnt(o.after, o.part.set), o.part.n), o.part.n));
       const done = o.after.complete.find((p) => !o.before.complete.some((q) => q.set === p.set));
       if (done && o.after.progress < o.after.need) out.push(t.ui.vsHalf(partText(idx, done)));
       const miss = o.after.missing;
       if (miss.length === 1 && miss[0].n - miss[0].have === 1) {
         const free = ARMOR.filter((sl) => o.after.roles[sl] !== 'set');
-        out.push(t.ui.vsNeed(setName(idx, miss[0].set), [...free]));
+        out.push(t.ui.vsNeed(setOr(idx, miss[0].set), [...free]));
       }
     }
     if (o.surplus && o.part) out.push(t.ui.vsSurplus(partText(idx, o.part)));
     if (o.worn && wornSet && o.worn.piece) {
       const stays = rows.filter((r) => r !== o && Object.values(r.before.slots).some((e) => e?.id === o.worn!.id) && !r.displaced.some((e) => e.id === o.worn!.id));
-      if (stays.length) out.push(t.ui.vsStays(setName(idx, wornSet), o.worn.slot, [...new Set(stays.map((r) => buildName(t, r.v.key)))].join(', ')));
+      if (stays.length) out.push(t.ui.vsStays(setOr(idx, wornSet), o.worn.slot, [...new Set(stays.map((r) => buildName(t, r.v.key)))].join(', ')));
     }
     for (const e of o.displaced) {
       if (e.id === o.worn?.id) continue;
       const now = o.after.slots[e.slot];
-      if (now && now.setId && e.setId) out.push(t.ui.vsShuffle(e.slot, setName(idx, now.setId), setName(idx, e.setId)));
+      if (now && now.setId && e.setId) out.push(t.ui.vsShuffle(e.slot, setOr(idx, now.setId), setOr(idx, e.setId)));
     }
     if (o.broken && o.worn) {
       const lost = o.lostBonus.filter((r) => r.set === o.broken);
@@ -120,23 +68,23 @@ export function OutcomeLines({ o, rows }: { o: Outcome; rows: Outcome[] }) {
     if (o.pair?.wornEmpty) {
       out.push(t.ui.vsEmpty);
       for (const r of o.lostBonus) if (r.set === o.broken) dim.push(t.ui.vsBonusLost(partText(idx, r), tierLabel(r.tier), bonusText(idx, r)));
-    } else out.push(t.ui.vsBreaksBy(setName(idx, o.worn.setId), o.worn.slot, pctOf(o), partText(idx, part)));
+    } else out.push(t.ui.vsBreaksBy(setOr(idx, o.worn.setId), o.worn.slot, pctOf(o), partText(idx, part)));
     // T4 у одной или двух вещей сета не на T4 (Р20; Pen mix, Р2), иначе — найти ещё вещь сета;
     // совет есть, только если после него у новой «Надеть» (П2, features/gear/pool)
     // «сделать», если у отмечаемых известен Breakthrough (П5); слоты — всегда, сабстаты — когда в слоте таких несколько (П6)
     if (o.fix?.mark) {
-      const f = o.fix, set = setName(idx, f.set);
+      const f = o.fix, set = setOr(idx, f.set);
       const [sa, sb] = f.which.map((p) => (p ? subsText(p.lit) : undefined));
       out.push(f.slots.length === 1
         ? (f.make ? t.ui.vsBreaksMakeOne : t.ui.vsBreaksMarkOne)(set, f.slots[0], sa)
         : (f.make ? t.ui.vsBreaksMakeTwo : t.ui.vsBreaksMarkTwo)(set, f.slots[0], f.slots[1], sa, sb));
-    } else if (o.fix) out.push(t.ui.vsBreaksFix(setName(idx, o.fix.set), o.fix.t4, o.fix.slots));
+    } else if (o.fix) out.push(t.ui.vsBreaksFix(setOr(idx, o.fix.set), o.fix.t4, o.fix.slots));
     if (lost?.bon.stat && o.brokenSegs) {
       out.push(t.ui.vsSetCost(partText(idx, part), tierLabel(lost.tier), bonusText(idx, lost), o.brokenSegs, subLabel(lost.bon.stat), o.worn.slot));
-    } else dim.push(t.ui.vsNoTrade(setName(idx, o.broken)));
+    } else dim.push(t.ui.vsNoTrade(setOr(idx, o.broken)));
   } else if (o.kind === 'stats' && o.worn) {
     const part = o.v.b.sets[0]?.find((p) => p.set === wornSet);
-    const what = part ? partText(idx, part) : setName(idx, wornSet) || t.ui.byStatsQ;
+    const what = part ? partText(idx, part) : setOr(idx, wornSet) || t.ui.byStatsQ;
     // у надетой полезных нет — процента нет, но что сломается, сказать надо: одна строка
     dim.push(o.pair?.wornEmpty ? t.ui.vsStatsEmpty(o.worn.slot, what) : t.ui.vsStatsOnly(pctOf(o), o.worn.slot, what));
   }
@@ -174,7 +122,7 @@ function PairLines({ o, t4 }: { o: Outcome; t4: boolean }) {
       {p?.why && <p className="muted">{t.ui.vsWhy[p.why]}</p>}
       {fig && (o.kind === 'up' || o.kind === 'eq' || o.kind === 'down') && <p className="muted">{fig.kind === 'empty' ? t.ui.vsEmpty : fig.kind === 'times' ? t.ui.vsTimes(fig.n) : t.ui.vsDelta(fig.n)}</p>}
       {o.t4 && !t4 && (o.kind === 'fill' || o.kind === 'up' || o.kind === 'capped' || o.kind === 'closer') && (
-        <p className="muted">{t.ui.vsT4(setName(idx, o.t4.set), o.t4.n, o.kind === 'capped')}</p>
+        <p className="muted">{t.ui.vsT4(setOr(idx, o.t4.set), o.t4.n, o.kind === 'capped')}</p>
       )}
       {p?.passive && <p className="muted">{t.ui.vsPassive}</p>}
       {p?.ahead && <p className="muted">{t.ui.vsAhead(subLabel(p.ahead.key), p.ahead.worn, p.ahead.next)}</p>}
@@ -218,7 +166,7 @@ export function VsSection({ list, view, slot, t4 = false, nextNote = null, onEqu
           return (
             <li key={x.c.id} className={`vs-row vs-${o?.kind ?? 'starts'}`}>
               <div className="vs-h">
-                <Img k={'face:' + x.c.icon} className="face" />
+                <HeroFace c={x.c} />
                 <div className="nm">
                   <button type="button" onClick={() => onOpenChar(x.c.id)}><b>{x.c.name}</b></button> <span className="bn">{name}</span>
                   {w && <span className="vs-worn">{t.ui.vsWorn(GRADE_NAME[w.grade], w.bt)}</span>}
@@ -229,10 +177,7 @@ export function VsSection({ list, view, slot, t4 = false, nextNote = null, onEqu
               {o && <PairLines o={o} t4={t4} />}
               {safe.length > 0 && !x.rows.some((r) => r.kind === 'stats') && <p className="muted">{t.ui.vsSafe(safe.join(', '))}</p>}
               {onEquip && x.useful && (
-                <button type="button" className={`btn vs-act${o && holds(o) ? ' good' : ''}`} onClick={() => onEquip(x)} {...tour('gequip')}>
-                  <Icon name={x.replaces ? 'replace' : 'check'} />
-                  {equipLabel(t, x, slot, t4)}
-                </button>
+                <EquipButton place="vs-act" x={x} slot={slot} t4={t4} good={!!o && holds(o)} onEquip={onEquip} />
               )}
               {onEquip && x.asWorn && !x.replaces && <p className="muted small vs-wear">{t.ui.equipAsWorn}</p>}
               {onEquip && x.useful && nextNote && <p className="muted small vs-wear vs-next">{nextNote}</p>}

@@ -2,27 +2,26 @@
 // надето. Нажатие на текущий закрывает шторку; на другой — выбирает его, кнопка «Переодеть в …» записывает выбор и открывает
 // экран «Переодеть» (запись, «Вернуть» и переход — у родителя: CharDetail, App). Строки — только про вещи героя.
 import { useState } from 'react';
-import type { Char, SetPiece } from '@/game/data/types';
-import { useT } from '@/i18n';
+import type { Char } from '@/game/data/types';
+import { useT, type Texts } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import type { GearStore } from '@/features/gear/model/gear';
 import type { CharPool } from '@/features/gear/pool';
 import { aimOptions, type AimOption, type AimPart } from './wearing';
 import { Sheet } from '@/shared/ui/Sheet';
+import { partText, setName } from '@/game/set/setName';
 
-type T = ReturnType<typeof useT>;
+type T = Texts;
 
-// «Speed ×4»
-export const partName = (ctx: Pick<Ctx, 'idx'>, p: SetPiece): string => `${ctx.idx.SET[p.set]?.short ?? p.set} ×${p.n}`;
 // «DPS · Penetration ×4»; «По статам» — своё имя
 export const optionName = (t: T, o: Pick<AimOption, 'stats' | 'variant'>): string => (o.stats ? t.ui.byStats : o.variant.name);
 
 // строка части связки: не хватает — «не хватает m»; бонус только на T4 и его нет — «1 из 2 · бонус ×2 только на T4»;
 // иначе надето (все надеты) или в вещах
 function partLine(t: T, ctx: Ctx, p: AimPart): string {
-  const name = partName(ctx, p.part);
+  const name = partText(ctx.idx, p.part);
   if (p.missing > 0) return t.ui.aimPartMissing(name, p.missing);
-  if (p.t4 && !p.on) return t.ui.partT4(ctx.idx.SET[p.part.set]?.short ?? p.part.set, p.owned, p.part.n);
+  if (p.t4 && !p.on) return t.ui.partT4(setName(ctx.idx, p.part.set), p.owned, p.part.n);
   return p.worn >= p.part.n ? t.ui.aimPartWorn(name, p.worn, p.part.n) : t.ui.aimPartHave(name, p.owned, p.part.n);
 }
 

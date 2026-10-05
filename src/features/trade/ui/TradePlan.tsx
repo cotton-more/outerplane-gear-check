@@ -8,7 +8,7 @@
 // и «Ок» (R6.3).
 import { GRADE_NAME, isArmor, subLabel } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
-import { useT } from '@/i18n';
+import { useT, type Texts } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { pieceInput, type GearStore } from '@/features/gear/model/gear';
 import { hasBt } from '@/game/item/item';
@@ -20,16 +20,21 @@ import type { HoleFill } from '@/features/trade/model/holes';
 import type { Move } from '@/features/trade/model/moves';
 import { gainOf, type HeroLine } from '@/features/trade/model/view';
 import { aimVariant } from '@/features/trade/model/world';
-import { SlotIcon, Img } from '@/game/icons/Img';
+import { SlotIcon } from '@/game/icons/Img';
 import { AimButton } from '@/features/worn/AimSheet';
 import { PieceName, btText, pieceText } from '@/features/gear/ui/pieceText';
+import { setName } from '@/game/set/setName';
+import { heroName } from '@/game/hero/heroName';
+import { HeroFace } from '@/game/hero/HeroFace';
+import { SubToken } from '@/game/item/SubToken';
+import { Toggle } from '@/shared/ui/Toggle';
 
 
 export interface Hint { heroes: string[]; gain: number }
-type T = ReturnType<typeof useT>;
+type T = Texts;
 
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
-  return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && (ctx.idx.SET[k.set]?.short ?? k.set),
+  return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && setName(ctx.idx, k.set),
     k.main && subLabel(k.main), k.sub && t.trade.keySub(subLabel(k.sub)), k.t4 && 'T4'].filter(Boolean).join(' · ');
 }
 
@@ -47,7 +52,7 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
 }) {
   const t = useT();
   const { idx } = ctx;
-  const name = (id: string) => idx.CHAR[id]?.name ?? id;
+  const name = (id: string) => heroName(idx, id);
   const breaks = new Map(fills.map((f) => [`${f.hero}:${f.slot}`, f.breaks]));
   const from = (m: Move) => (m.from.kind === 'worn' ? t.trade.fromWorn(name(m.from.hero))
     : m.from.kind === 'stock' ? t.trade.fromStock(name(m.from.hero)) : t.trade.fromInventory);
@@ -67,9 +72,8 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
           <button type="button" className="linkbtn small tskip" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>
           <span className="bgear-t">
             {Object.keys(p.lit).map((k) => {
-              const cr = W?.get(k)?.credit ?? 0;
               const s2 = k === sort;
-              return <span key={k} className={`tok${cr >= 1 ? ' ok' : cr > 0 ? ' half' : ''}${s2 ? ' sort' : ''}`} title={s2 ? t.trade.sortTitle : undefined}>{subLabel(k)}{s2 && ' ↓'}<i>{p.lit[k]}</i></span>;
+              return <SubToken key={k} stat={k} lit={p.lit[k]} credit={W?.get(k)?.credit ?? 0} sort={s2} title={s2 ? t.trade.sortTitle : undefined} />;
             })}
           </span>
           <span className="tsrc">{from(m)}</span>
@@ -94,12 +98,12 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
       {lines.map((l) => {
         const g = gainText(t, l);
         const c = idx.CHAR[l.hero];
-        const sets = [...l.on.map((p) => t.trade.setOn(idx.SET[p.set]?.short ?? p.set, p.n)), ...l.off.map((p) => t.trade.setOff(idx.SET[p.set]?.short ?? p.set, p.n))];
+        const sets = [...l.on.map((p) => t.trade.setOn(setName(idx, p.set), p.n)), ...l.off.map((p) => t.trade.setOff(setName(idx, p.set), p.n))];
         const shown = new Set(l.moves.map((m) => m.slot));
         return (
           <section key={l.hero} className="tline to">
             <h4 className="tline-h">
-              {c && <Img k={'face:' + c.icon} className="face" />}
+              {c && <HeroFace c={c} />}
               <span className="tline-n">{name(l.hero)}</span>
               <AimButton name={gaugeName(l.hero)} aria={t.ui.wornChangeAria(name(l.hero))} onClick={() => onAim(l.hero)} />
               {!empty && <span className={`tgain ${g.cls}`}>{g.text}</span>}
@@ -110,10 +114,7 @@ export function TradePlan({ ctx, view, st, lines, fills, hint, empty, stale, pin
               {l.empty.filter((s) => !shown.has(s)).map((s) => holeRow(l.hero, s, t.trade.emptySlot(s)))}
             </ul>
             {l.gone.map((id) => st.pieces[id] && <p key={id} className="muted small">{t.trade.gone(pieceText(ctx, st.pieces[id]))}</p>)}
-            <label className="toggle tpin">
-              <input type="checkbox" checked={pinOf(l.hero)} onChange={(e) => onPin(l.hero, e.target.checked)} />
-              {' '}{t.trade.pinAfter}
-            </label>
+            <Toggle className="tpin" checked={pinOf(l.hero)} onChange={(on) => onPin(l.hero, on)}>{t.trade.pinAfter}</Toggle>
           </section>
         );
       })}

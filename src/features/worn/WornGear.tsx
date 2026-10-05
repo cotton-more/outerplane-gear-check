@@ -3,7 +3,7 @@
 // раскладки билда из вещей героя лучше надетой («Лучше из своих») или слот пуст («Из своих») — «Надеть» ставит её надетой.
 // Пустая вкладка: «Да, всё надето» — когда в вещах героя не больше одной на слот. Данные — features/worn/wearing (wornView); запись —
 // CharDetail (onWear, onWearAll), у него же тост с «Вернуть».
-import { SLOTS, subLabel } from '@/game/data';
+import { SLOTS } from '@/game/data';
 import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
@@ -16,6 +16,9 @@ import { SlotIcon } from '@/game/icons/Img';
 import { Rich } from '@/shared/ui/Rich';
 import { tour } from '@/tour/anchors';
 import { PieceName, bonusLinesOf, btText, pieceText } from '@/features/gear/ui/pieceText';
+import { setName } from '@/game/set/setName';
+import { parentName } from '@/features/gear/ui/pieceText';
+import { SubToken } from '@/game/item/SubToken';
 
 // «▲ +25%», «▲ ×3»; выигрыша нет (пустой слот, вещь лишь включит бонус сета) — ничего
 function deltaText(a: WornAdvice): string {
@@ -35,11 +38,11 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWea
   const { idx } = ctx;
   if (gear.newer) return <div className="bgear" {...tour('wtab')}><p className="muted small">{t.ui.gearNewer}</p></div>;
   const v = wv.variant;
-  const build = !v || isStats(v) ? t.ui.byStats : v.parent.name;
+  const build = v ? parentName(t, v) : t.ui.byStats;
   const aim = wv.set && v && !isStats(v) ? t.ui.wornBuild(build, wv.set.k, wv.set.n) : t.ui.wornBuildPlain(build);
   const empty = wv.count === 0;
   const all = empty && !!onWearAll && wearAll(gear.store, c.id) !== null;
-  const lines = [...bonusLinesOf(t, idx, c, wv.bonuses, v?.b.sets[0] ?? []), ...wv.t4.map((p) => t.ui.partT4(idx.SET[p.set]?.short ?? p.set, p.k, p.n))];
+  const lines = [...bonusLinesOf(t, idx, c, wv.bonuses, v?.b.sets[0] ?? []), ...wv.t4.map((p) => t.ui.partT4(setName(idx, p.set), p.k, p.n))];
   return (
     <div className="bgear worn" {...tour('wtab')}>
       <p className="worn-aim"><Rich text={aim} /></p>
@@ -67,7 +70,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWea
                   {hasBt(p.slot, p.grade) && <span className="bgear-m">{btText(t, p.bt)}</span>}
                   <span className="bgear-t">
                     {s.tokens.map((k) => (
-                      <span key={k.key} className={`tok${k.credit >= 1 ? ' ok' : k.credit > 0 ? ' half' : ''}`}>{subLabel(k.key)}<i>{k.lit}</i></span>
+                      <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />
                     ))}
                   </span>
                 </button>

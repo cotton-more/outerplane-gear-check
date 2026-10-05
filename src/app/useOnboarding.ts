@@ -1,7 +1,7 @@
 // Обучение на странице (src/tour): что тур видит (TourCtx), пример тура «Экипировка», карточка новичка «Как
 // пользоваться», полосы «Появилось обучение» и «Что нового», подсказки по ходу. Когда что показывать — здесь,
 // как показывать — src/tour.
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { Index } from '@/game/data';
 import type { ItemInput } from '@/game/item/item';
 import type { Verdict } from '@/features/eval/verdict/verdict';
@@ -65,11 +65,14 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
     setDemo((x) => x && (x.tryOn ? x : { ...x, tryOn: { charId: d.c.id, build: d.b.name } }));
     dispatch({ type: 'load', item: d.item });
   }, [idx, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+  // onRunning у тура — один на всё время (useTour держит его с первого показа): свежий onTourRunning — через ref
+  const running = useRef(onTourRunning);
+  useEffect(() => { running.current = onTourRunning; });
   const tour = useTour({
     c: tourCtx, dispatch, was: { roster: roster.size, welcomeHidden }, tours, onTour: onTourRun, onStep: onTourStep,
     // «Вернуть» экипировки тоже: после тура оно вернуло бы экипировку тура (пример или пусто) поверх записей игрока
     // в обучении и запись нормализации при чтении хранилища (Р17) не срабатывает — ничего не пишем
-    onRunning: useCallback((on: boolean) => { holdStoredWrites(on); setTouring(on); onTourRunning(); }, []), // eslint-disable-line react-hooks/exhaustive-deps
+    onRunning: useCallback((on: boolean) => { holdStoredWrites(on); setTouring(on); running.current(); }, [setTouring]),
     onDone: hideWelcome,
   });
   useEffect(() => () => holdStoredWrites(false), []); // страницу закрыли посреди обучения

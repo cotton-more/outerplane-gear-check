@@ -30,13 +30,15 @@ import { SetPicker } from '@/features/eval/form/SetPicker';
 import { SubPicker } from '@/features/eval/form/SubPicker';
 import { StatGrid } from '@/features/eval/form/StatGrid';
 import { SubRows, type CapAt } from '@/features/eval/form/SubRows';
-import { VerdictCard } from './VerdictPanel';
+import { VerdictCard } from './VerdictCard';
 import { TryOnStrip } from '@/features/tryon/TryOnStrip';
 import type { Char } from '@/game/data/types';
 import type { CharVs } from '@/features/gear/model/poolVs';
 import { holds } from '@/features/gear/pool';
-import { equipLabel, variantName } from '@/features/gear/ui/VsSection';
-import { Icon } from '@/game/icons/Img';
+import { variantName } from '@/features/gear/ui/pieceText';
+import { RosterOnlyToggle } from '@/features/eval/form/RosterOnlyToggle';
+import { EquipButton } from '@/features/gear/ui/EquipButton';
+import { EvalSettings } from '@/features/eval/form/EvalSettings';
 
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string }; // sub: какой стат заменяем; fourth — 4-й у Epic
 
@@ -137,9 +139,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
               {((vs && onEquip) || (other?.best && onEquipOther)) && (
                 <div className="vc-acts">
                   {vs && onEquip && (
-                    <button type="button" className={`btn vc-equip${vs.best && holds(vs.best) ? ' good' : ''}`} onClick={() => onEquip(vs)} {...tour('gequip')}>
-                      <Icon name={vs.replaces ? 'replace' : 'check'} />{equipLabel(t, vs, t.ui.slotAcc[s.slot], !!t4)}
-                    </button>
+                    <EquipButton place="vc-equip" x={vs} slot={t.ui.slotAcc[s.slot]} t4={!!t4} good={!!vs.best && holds(vs.best)} onEquip={onEquip} />
                   )}
                   {other?.best && onEquipOther && (
                     <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>
@@ -166,10 +166,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
         <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={onHelp}>{t.ui.help}</button>
         <button type="button" className="btn" onClick={onTour}>{t.tour.start}</button>
-        <label className="toggle">
-          <input type="checkbox" id="opt-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
-          {' '}{t.ui.rosterOnly}{ctx.roster.size ? ` (${ctx.roster.size})` : t.ui.rosterOnlyEmpty}
-        </label>
+        <RosterOnlyToggle id="opt-roster" s={s} dispatch={dispatch} rosterSize={ctx.roster.size} />
         <span className="hk">
           {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> {t.ui.hkSlot} · <kbd>L</kbd>/<kbd>E</kbd> {t.ui.hkGrade} · <kbd>Esc</kbd> {t.ui.hkReset}</>}
         </span>
@@ -211,40 +208,3 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   );
 }
 
-// Настройки оценки: под формой на широком экране; на телефоне — в меню (inline — без сворачивания).
-export function EvalSettings({ s, dispatch, inline }: { s: FormState; dispatch: Dispatch<FormAction>; inline?: boolean }) {
-  const t = useT();
-  const st = s.settings;
-  const set = (patch: Partial<typeof st>) => dispatch({ type: 'settings', patch });
-  const cur = t.ui.settingsNow(st.stage === 'end', st.fodder, st.lv120, st.quirks);
-  const body = (
-      <div className="settings-body">
-        <div className="seg" role="group" aria-label={t.ui.stageGroup}>
-          <span className="muted small">{t.ui.stage}</span>
-          <button type="button" className="fbtn" aria-pressed={st.stage === 'grow'} onClick={() => set({ stage: 'grow' })}>{t.ui.stageGrow}</button>
-          <button type="button" className="fbtn" aria-pressed={st.stage === 'end'} onClick={() => set({ stage: 'end' })}>{t.ui.stageEnd}</button>
-        </div>
-        <label className="toggle">
-          <input type="checkbox" id="opt-fodder" checked={st.fodder} onChange={(e) => set({ fodder: e.target.checked })} />
-          {' '}{t.ui.fodder} <span className="muted">{t.ui.fodderNote}</span>
-        </label>
-        <div className="seg" role="group" aria-label={t.ui.levelGroup}>
-          <span className="muted small">{t.ui.level}</span>
-          <button type="button" className="fbtn" aria-pressed={!st.lv120} onClick={() => set({ lv120: false })}>lv 100</button>
-          <button type="button" className="fbtn" aria-pressed={st.lv120} onClick={() => set({ lv120: true })}>lv 120 (Limit Break)</button>
-        </div>
-        <label className="toggle">
-          <input type="checkbox" id="opt-quirks" checked={st.quirks} onChange={(e) => set({ quirks: e.target.checked })} />
-          {' '}{t.ui.quirks} <span className="muted">{t.ui.quirksNote}</span>
-        </label>
-        <p className="muted small">{t.ui.flatNote}</p>
-      </div>
-  );
-  if (inline) return body;
-  return (
-    <details className="settings" id="settings" open={s.settingsOpen} onToggle={(e) => dispatch({ type: 'settingsOpen', open: e.currentTarget.open })}>
-      <summary>{t.ui.settings} <span className="cur">· {cur.join(' · ')}</span></summary>
-      {body}
-    </details>
-  );
-}

@@ -10,7 +10,7 @@ import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { setAim } from '@/features/worn/aim';
 import { isPinned, pinnedOf, setPinned, type GearStore } from '@/features/gear/model/gear';
-import { isStats, type PoolView } from '@/features/gear/pool';
+import { type PoolView } from '@/features/gear/pool';
 import { applyHero, applyTeam, stampOf } from '@/features/trade/model/apply';
 import { skipKey } from '@/features/trade/model/cands';
 import type { HoleFill } from '@/features/trade/model/holes';
@@ -21,10 +21,14 @@ import { linesOf, type HeroLine } from '@/features/trade/model/view';
 import { aimVariant, worldOf } from '@/features/trade/model/world';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { AimSheet } from '@/features/worn/AimSheet';
-import { Icon, Img } from '@/game/icons/Img';
 import { Sheet } from '@/shared/ui/Sheet';
 import { TeamPick } from './TeamPick';
 import { TradePlan, type Hint } from './TradePlan';
+import { heroName } from '@/game/hero/heroName';
+import { variantName } from '@/features/gear/ui/pieceText';
+import { HeroFace } from '@/game/hero/HeroFace';
+import { CloseButton } from '@/shared/ui/CloseButton';
+import { PinMark } from '@/features/gear/ui/PinMark';
 
 type Undo = (st: GearStore) => GearStore | null;
 
@@ -37,7 +41,7 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
   const t = useT();
   const { idx } = ctx;
   const st = gear.store;
-  const name = (id: string) => idx.CHAR[id]?.name ?? id;
+  const name = (id: string) => heroName(idx, id);
   const [mode, setMode] = useState<'hero' | 'team'>('hero');
   const [hero, setHero] = useState<string | null>(start);
   const [team, setTeam] = useState<(string | null)[]>([null, null, null, null]);
@@ -136,7 +140,7 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
   const aimCp = aimFor ? view.of(aimFor) : null;
   const gaugeName = (id: string) => {
     const v = aimVariant(ctx, view, st, id);
-    return !v || isStats(v) ? t.ui.byStats : v.name;
+    return v ? variantName(t, v) : t.ui.byStats;
   };
 
   const picker = (exclude: readonly string[], onPick: (id: string) => void, title: string) => (
@@ -147,9 +151,9 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
           {pickable.filter((id) => !exclude.includes(id)).map((id) => (
             <li key={id}>
               <button type="button" className="trade-hero" onClick={() => onPick(id)}>
-                <Img k={'face:' + idx.CHAR[id].icon} className="face" />
+                <HeroFace c={idx.CHAR[id]} />
                 <span className="trade-hn">{name(id)}</span>
-                {isPinned(st, id) && <span className="trade-pin" title={t.trade.pinTile(name(id))}><Icon name="pin" /><span className="sr-only">{t.trade.pinTile(name(id))}</span></span>}
+                {isPinned(st, id) && <PinMark className="trade-pin" label={t.trade.pinTile(name(id))} />}
               </button>
             </li>
           ))}
@@ -171,7 +175,7 @@ export function TradeSheet({ ctx, view, gear, roster, off, start, onApplied, onC
             {pinned.map((id) => (
               <span key={id} className="trade-chip">
                 {name(id)}
-                <button type="button" className="tour-x" aria-label={t.trade.unpin(name(id))} onClick={() => gear.set(setPinned(st, id, false))}>✕</button>
+                <CloseButton className="tour-x" label={t.trade.unpin(name(id))} onClick={() => gear.set(setPinned(st, id, false))} />
               </span>
             ))}
           </p>

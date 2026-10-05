@@ -5,6 +5,7 @@
 import type { Index } from '@/game/data';
 import type { Build, Char, Combo } from '@/game/data/types';
 import { comboText } from './builds';
+import { setName } from '@/game/set/setName';
 
 // ключ билда героя; билд — по имени: номер в списке outerpedia может сдвинуться при обновлении данных
 export const buildKey = (charId: string, build: string) => `${charId}/${build}`;
@@ -27,7 +28,7 @@ export const comboSig = (combo: Combo): string =>
 function varyingPart(idx: Index, b: Build, combo: Combo): string {
   const common = b.sets[0].filter((p) => b.sets.every((cb) => cb.some((q) => q.set === p.set))).map((p) => p.set);
   const rest = combo.filter((p) => !common.includes(p.set));
-  return common.length && rest.length ? rest.map((p) => idx.SET[p.set]?.short ?? p.set).join(' + ') : comboText(idx, combo);
+  return common.length && rest.length ? rest.map((p) => setName(idx, p.set)).join(' + ') : comboText(idx, combo);
 }
 
 // одинаковые для игры варианты: та же связка, цепочка, оружие и аксессуар с main

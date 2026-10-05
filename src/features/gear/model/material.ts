@@ -16,6 +16,7 @@ import { outcomeFor, type PoolView } from '@/features/gear/pool';
 import { buildOfKey } from '@/game/build/variants';
 import type { Verdict } from '@/features/eval/verdict/verdict';
 import type { ItemInput } from '@/game/item/item';
+import { heroName } from '@/game/hero/heroName';
 
 export interface Need { piece: Piece; key: string; left: number } // key — вариант, где она стоит; left — ступеней до T4
 
@@ -55,7 +56,7 @@ export function betterThanWorn(ctx: Ctx, view: PoolView, item: ItemInput, needs:
 // чей вариант по ключу: «Caren · Speed»
 const whoOf = (idx: Index, key: string, t: Texts) => {
   const id = key.slice(0, key.indexOf('/'));
-  return `${idx.CHAR[id]?.name ?? id} · ${buildOfKey(key, t.ui.byStats)}`;
+  return `${heroName(idx, id)} · ${buildOfKey(key, t.ui.byStats)}`;
 };
 
 // Когда вещь лучше надеть, чем отдать в Breakthrough: up — надетые слабее её (betterThanWorn); target — в режиме героя

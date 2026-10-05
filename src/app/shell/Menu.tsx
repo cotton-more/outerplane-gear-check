@@ -3,8 +3,9 @@
 import type { Dispatch, ReactNode } from 'react';
 import { useT } from '@/i18n';
 import type { Action, AppState } from '@/app/appState';
-import { EvalSettings } from '@/screens/eval/EvalPanel';
+import { EvalSettings } from '@/features/eval/form/EvalSettings';
 import { Sheet } from '@/shared/ui/Sheet';
+import { RosterOnlyToggle } from '@/features/eval/form/RosterOnlyToggle';
 
 export function Menu({ s, dispatch, rosterSize, news, onClose, onChars, onGear, gearN, onCode, onHelp, onTour, onTrade, footer }: {
   s: AppState; dispatch: Dispatch<Action>; rosterSize: number; news: boolean; onClose: () => void;
@@ -25,10 +26,7 @@ export function Menu({ s, dispatch, rosterSize, news, onClose, onChars, onGear, 
           <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={go(onHelp)}>{t.ui.help}</button>
           <button type="button" className="btn" onClick={go(onTour)}>{t.tour.start}</button>
         </div>
-        <label className="toggle">
-          <input type="checkbox" id="menu-roster" checked={s.settings.rosterOnly} onChange={(e) => dispatch({ type: 'settings', patch: { rosterOnly: e.target.checked } })} />
-          {' '}{t.ui.rosterOnly}{rosterSize ? ` (${rosterSize})` : t.ui.rosterOnlyEmpty}
-        </label>
+        <RosterOnlyToggle id="menu-roster" s={s} dispatch={dispatch} rosterSize={rosterSize} />
         <EvalSettings s={s} dispatch={dispatch} inline />
         {footer}
       </div>

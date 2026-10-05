@@ -4,6 +4,7 @@ import { useT } from '@/i18n';
 import { CODE_PREFIX, decodeItem, encodeItem, type DecodeError } from './codec';
 import type { ItemInput } from '@/game/item/item';
 import { tour } from '@/tour/anchors';
+import { copyText } from '@/shared/copyText';
 
 // строка в вердикте: код текущего предмета и «Скопировать» — вставить в чат игры
 export function ShareCode({ item }: { item: ItemInput }) {
@@ -13,9 +14,7 @@ export function ShareCode({ item }: { item: ItemInput }) {
   const [msg, setMsg] = useState('');
   if (!code) return null;
   const copy = () => {
-    const fallback = () => { if (el.current) getSelection()?.selectAllChildren(el.current); setMsg(t.ui.codeSelected); };
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(`${CODE_PREFIX} ${code}`).then(() => setMsg(t.ui.copied), fallback);
-    else fallback();
+    copyText(`${CODE_PREFIX} ${code}`, () => setMsg(t.ui.copied), () => { if (el.current) getSelection()?.selectAllChildren(el.current); setMsg(t.ui.codeSelected); });
   };
   return (
     <div className="v-share" {...tour('code')}>

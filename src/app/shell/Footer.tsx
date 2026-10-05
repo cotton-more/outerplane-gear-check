@@ -4,15 +4,14 @@ import { useIndex } from '@/game/data/IndexContext';
 import type { InstallInfo } from './Guide';
 import { LANG_NAME, LANGS, useT, type Lang } from '@/i18n';
 import { MIT_HOLDERS, MIT_TEXT } from './licenses';
+import { SegSwitch } from '@/shared/ui/SegSwitch';
 
 // «Язык: Русский · English» — в подвале и в справке
 export function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
   const t = useT();
   return (
-    <div className="seg lang" role="group" aria-label={t.ui.language}>
-      <span className="muted small">{t.ui.language}:</span>
-      {LANGS.map((l) => <button key={l} type="button" className="fbtn" lang={l} aria-pressed={lang === l} onClick={() => onLang(l)}>{LANG_NAME[l]}</button>)}
-    </div>
+    <SegSwitch className="lang" label={`${t.ui.language}:`} group={t.ui.language} value={lang} onChange={onLang}
+      options={LANGS.map((l) => ({ value: l, label: LANG_NAME[l], lang: l }))} />
   );
 }
 
@@ -23,11 +22,8 @@ const buildDate = (lang: Lang) => new Date(__BUILD__.date).toLocaleString(lang =
 function IconSwitch({ game, onChange }: { game: boolean; onChange: (game: boolean) => void }) {
   const t = useT();
   return (
-    <div className="seg lang" role="group" aria-label={t.ui.icons}>
-      <span className="muted small">{t.ui.icons}:</span>
-      <button type="button" className="fbtn" aria-pressed={!game} onClick={() => onChange(false)}>{t.ui.iconsOwn}</button>
-      <button type="button" className="fbtn" aria-pressed={game} onClick={() => onChange(true)}>{t.ui.iconsGame}</button>
-    </div>
+    <SegSwitch className="lang" label={`${t.ui.icons}:`} group={t.ui.icons} value={game} onChange={onChange}
+      options={[{ value: false, label: t.ui.iconsOwn }, { value: true, label: t.ui.iconsGame }]} />
   );
 }
 

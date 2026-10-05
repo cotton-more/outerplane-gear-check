@@ -6,7 +6,7 @@ import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { isPinned, type GearStore } from '@/features/gear/model/gear';
 import { AimButton } from '@/features/worn/AimSheet';
-import { CharTile } from '@/features/roster/CharList';
+import { CharTile } from '@/features/roster/CharTile';
 import { Icon } from '@/game/icons/Img';
 
 export function TeamPick({ team, ctx, st, place, gaugeName, onPlace, onAim, onPin }: {

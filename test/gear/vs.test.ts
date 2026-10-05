@@ -14,7 +14,7 @@ import type { Bt } from '@/game/item/item';
 import { buildKey } from '@/game/build/variants';
 import { evaluate } from '@/features/eval/verdict/evaluate';
 import { holds, outcomeFor, poolView, type Outcome } from '@/features/gear/pool';
-import { chipLabel } from '@/features/gear/ui/VsSection';
+import { chipLabel } from '@/features/gear/ui/VsChip';
 import { TEXTS } from '@/i18n';
 import { charsVs, charVs, sectionChars, type CharVs } from '@/features/gear/model/poolVs';
 import type { Subs } from '@/game/item/subs';

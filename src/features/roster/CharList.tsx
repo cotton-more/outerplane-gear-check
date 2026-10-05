@@ -1,5 +1,5 @@
 // Список персонажей: поиск, фильтры, ростер (звёздочки), экспорт/импорт ростера.
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import { charMatches, compareChars, type CharFilter, type ListAction, type ListState } from './charFilter';
@@ -8,9 +8,12 @@ import type { RosterApi } from './useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { isPinned, type GearStore } from '@/features/gear/model/gear';
 import { encodeGear, readGearCode } from '@/features/gear/store/gearStore';
-import { ClassIcon, ElementIcon, Icon, Img } from '@/game/icons/Img';
+import { ClassIcon, ElementIcon } from '@/game/icons/Img';
 import { useIndex } from '@/game/data/IndexContext';
-import { tour } from '@/tour/anchors';
+import { Toggle } from '@/shared/ui/Toggle';
+import { CodeBox } from '@/shared/ui/CodeBox';
+import { FilterChips } from '@/shared/ui/FilterChips';
+import { CharTile } from './CharTile';
 
 // onGearImport — код экипировки заменил записи: всех, у кого есть вещи, — в ростер, сообщение с «Вернуть» (App; вещей
 // в коде нет — false); geared — у кого сколько надето; off — X, которого заменил Core Fusion X (features/gear/model/fusion): в списке
@@ -67,25 +70,13 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
             onChange={(e) => filter({ cq: e.target.value })} autoComplete="off" enterKeyHint="search" />
         </div>
         <div className="tools">
-          <div className="filt">
-            {Object.entries(D.elements).map(([k, v]) => (
-              <button key={k} type="button" className="fbtn" aria-pressed={s.cel === k} onClick={() => filter({ cel: s.cel === k ? '' : k })}>
-                <ElementIcon el={k} />{v}
-              </button>
-            ))}
-          </div>
-          <div className="filt">
-            {Object.entries(D.classes).map(([k, v]) => (
-              <button key={k} type="button" className="fbtn" aria-pressed={s.ccl === k} onClick={() => filter({ ccl: s.ccl === k ? '' : k })}>
-                <ClassIcon cls={k} />{v}
-              </button>
-            ))}
-          </div>
+          <FilterChips options={D.elements} value={s.cel} onChange={(cel) => filter({ cel })} icon={(k) => <ElementIcon el={k} />} />
+          <FilterChips options={D.classes} value={s.ccl} onChange={(ccl) => filter({ ccl })} icon={(k) => <ClassIcon cls={k} />} />
         </div>
         <div className="filt">
-          <label className="toggle"><input type="checkbox" id="c-owned" checked={s.cOwned} onChange={(e) => filter({ cOwned: e.target.checked })} /> {t.ui.onlyMine}</label>
-          <label className="toggle"><input type="checkbox" id="c-gear" checked={!!s.cGear} onChange={(e) => filter({ cGear: e.target.checked })} /> {t.ui.withGear}</label>
-          <label className="toggle"><input type="checkbox" id="c-all" checked={s.cAll} onChange={(e) => filter({ cAll: e.target.checked })} /> {t.ui.withoutBuilds}</label>
+          <Toggle id="c-owned" checked={s.cOwned} onChange={(on) => filter({ cOwned: on })}>{t.ui.onlyMine}</Toggle>
+          <Toggle id="c-gear" checked={!!s.cGear} onChange={(on) => filter({ cGear: on })}>{t.ui.withGear}</Toggle>
+          <Toggle id="c-all" checked={s.cAll} onChange={(on) => filter({ cAll: on })}>{t.ui.withoutBuilds}</Toggle>
         </div>
       </div>
       <div className="roster-bar">
@@ -105,34 +96,6 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, onGearImpo
         )) : <p className="empty">{s.cGear && !nGeared ? t.ui.gearNobody : t.ui.nobodyFound}</p>}
       </div>
       {rest > 0 && shown.length > 0 && <p className="muted small cgrid-note">{t.ui.gearRest(rest)}</p>}
-    </div>
-  );
-}
-
-// gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; pinned — булавка «Не отдавать надетое» (R10.2); off — заменён в паре: пометка, приглушён.
-// corner — своя кнопка в углу вместо звезды ростера (ромб команды обмена — булавка); null — пустой угол
-export function CharTile({ c, own, selected, isNew, gear, off, pinned, partnerName, onSelect, onToggle, corner }: {
-  c: Char; own?: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; pinned: boolean; partnerName?: string; onSelect: () => void; onToggle?: () => void;
-  corner?: ReactNode;
-}) {
-  const t = useT();
-  const base = c.prefix ? c.name.slice(c.prefix.length + 1) : c.name;
-  return (
-    <div className="cwrap">
-      <button type="button" className={`ctile${c.builds.length ? '' : ' nob'}${off ? ' off' : ''}`} aria-pressed={selected} onClick={onSelect}
-        title={c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : '')}>
-        <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
-        <Img k={'face:' + c.icon} className="face" />{isNew && <span className="newb">NEW</span>}
-        {gear !== undefined && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
-        {pinned && <span className="pinb" title={t.trade.pinTile(c.name)}><Icon name="pin" /><span className="sr-only">{t.trade.pinTile(c.name)}</span></span>}
-        <span className="cn">{c.prefix && <span className="cp">{c.prefix}</span>}{base}</span>
-        {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
-      </button>
-      {corner !== undefined ? corner : (
-        <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, !!own)} onClick={onToggle}>
-          {own ? '★' : '☆'}
-        </button>
-      )}
     </div>
   );
 }
@@ -162,63 +125,31 @@ function ClearRoster({ onClear }: { onClear: () => void }) {
 function RosterIO({ rosterApi }: { rosterApi: RosterApi }) {
   const idx = useIndex();
   const t = useT();
-  const code = encodeRoster(idx, rosterApi.roster);
-  const ta = useRef<HTMLTextAreaElement>(null);
-  const [msg, setMsg] = useState('');
-  const copy = () => {
-    const el = ta.current;
-    if (!el) return;
-    const fallback = () => { el.select(); setMsg(t.ui.rosterSelected); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(() => setMsg(t.ui.copied), fallback);
-    else fallback();
-  };
-  const apply = (mode: 'replace' | 'add') => {
-    const { found, missed } = parseRoster(idx, ta.current?.value || '');
+  const apply = (value: string, mode: 'replace' | 'add', say: (msg: string) => void) => {
+    const { found, missed } = parseRoster(idx, value);
     if (mode === 'replace') rosterApi.replace(found); else rosterApi.add(found);
-    setMsg(t.ui.rosterApplied(mode === 'replace', found.length, missed.length ? missed.slice(0, 5).join(', ') + (missed.length > 5 ? '…' : '') : ''));
+    say(t.ui.rosterApplied(mode === 'replace', found.length, missed.length ? missed.slice(0, 5).join(', ') + (missed.length > 5 ? '…' : '') : ''));
   };
   return (
-    <div className="roster-io">
-      <label className="small muted" htmlFor="roster-code">{t.ui.rosterCodeLabel}</label>
-      {/* key: после изменения ростера поле показывает свежий код */}
-      <textarea key={code} id="roster-code" ref={ta} defaultValue={code} />
-      <div className="filt">
-        <button type="button" className="btn" onClick={copy}>{t.ui.copy}</button>
-        <button type="button" className="btn" onClick={() => apply('replace')}>{t.ui.replace}</button>
-        <button type="button" className="btn" onClick={() => apply('add')}>{t.ui.add}</button>
-        <span className="small muted" id="io-msg" role="status">{msg}</span>
-      </div>
-    </div>
+    <CodeBox id="roster-code" msgId="io-msg" label={t.ui.rosterCodeLabel} code={encodeRoster(idx, rosterApi.roster)}
+      actions={({ value, say }) => <>
+        <button type="button" className="btn" onClick={() => apply(value(), 'replace', say)}>{t.ui.replace}</button>
+        <button type="button" className="btn" onClick={() => apply(value(), 'add', say)}>{t.ui.add}</button>
+      </>} />
   );
 }
 
 // резервная копия экипировки кодом (OGC-GEAR2): вещи и пулы целиком; «Заменить» — всё, что было, заменяется кодом (есть «Вернуть»)
 function GearIO({ gear, onImport }: { gear: GearApi; onImport: (prev: GearStore, raw: unknown) => boolean }) {
   const t = useT();
-  const code = Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : '';
-  const ta = useRef<HTMLTextAreaElement>(null);
-  const [msg, setMsg] = useState('');
-  const copy = () => {
-    const el = ta.current;
-    if (!el) return;
-    const fallback = () => { el.select(); setMsg(t.ui.rosterSelected); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(() => setMsg(t.ui.copied), fallback);
-    else fallback();
-  };
-  const apply = () => {
-    const raw = readGearCode(ta.current?.value || '');
-    if (raw === 'newer') { setMsg(t.ui.gearNewerCode); return; }
-    setMsg(raw !== null && onImport(gear.store, raw) ? '' : t.ui.gearBad);
+  const apply = (value: string, say: (msg: string) => void) => {
+    const raw = readGearCode(value);
+    if (raw === 'newer') { say(t.ui.gearNewerCode); return; }
+    say(raw !== null && onImport(gear.store, raw) ? '' : t.ui.gearBad);
   };
   return (
-    <div className="roster-io">
-      <label className="small muted" htmlFor="gear-code">{gear.newer ? t.ui.gearNewer : t.ui.gearCodeLabel}</label>
-      <textarea key={code} id="gear-code" ref={ta} defaultValue={code} />
-      <div className="filt">
-        <button type="button" className="btn" onClick={copy}>{t.ui.copy}</button>
-        <button type="button" className="btn" onClick={apply} disabled={gear.newer}>{t.ui.replace}</button>
-        <span className="small muted" role="status">{msg}</span>
-      </div>
-    </div>
+    <CodeBox id="gear-code" label={gear.newer ? t.ui.gearNewer : t.ui.gearCodeLabel}
+      code={Object.keys(gear.store.pieces).length ? encodeGear(gear.store) : ''}
+      actions={({ value, say }) => <button type="button" className="btn" onClick={() => apply(value(), say)} disabled={gear.newer}>{t.ui.replace}</button>} />
   );
 }

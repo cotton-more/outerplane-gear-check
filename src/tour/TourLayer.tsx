@@ -13,6 +13,7 @@ import { stepText } from './core';
 import { place, type Box } from './place';
 import type { TourCtx, TourId } from './types';
 import { stepsOf, type TourApi } from './useTour';
+import { CloseButton } from '@/shared/ui/CloseButton';
 
 // На примере всё, кроме нужных кнопок, приглушено: маска с окном на каждую цель (одно общее окно открывало бы и
 // соседние кнопки). Нажатия проходят — слой pointer-events: none
@@ -103,7 +104,7 @@ export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
   const above = { bottom: Math.max(0, g.vh - (g.bottom || g.vh)) };
   const stripStyle = side === 'bottom' || side === 'pill-low' ? above : side === 'top' ? { top: 0 } : undefined;
 
-  const closeBtn = <button type="button" className="tour-x" aria-label={t.tour.close} onClick={tour.close}>✕</button>;
+  const closeBtn = <CloseButton className="tour-x" label={t.tour.close} onClick={tour.close} />;
   let body;
   if (away) {
     body = <><span>{stepNo < 0 ? t.tour.start : t.tour.stepOf(stepNo + 1, steps.length)}</span>

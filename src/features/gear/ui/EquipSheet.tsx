@@ -5,7 +5,6 @@
 // исходы, потом «начнёт»; имя ищется среди всех персонажей (без X, когда есть Core Fusion X: features/gear/model/fusion). В шапке —
 // сама вещь.
 import { useMemo, useState } from 'react';
-import { subLabel } from '@/game/data';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
@@ -13,10 +12,13 @@ import { holds, shownKind, type PoolView } from '@/features/gear/pool';
 import { charsVs, type CharVs } from '@/features/gear/model/poolVs';
 import { buildOfKey } from '@/game/build/variants';
 import type { ItemInput } from '@/game/item/item';
-import { Img, SlotIcon } from '@/game/icons/Img';
+import { SlotIcon } from '@/game/icons/Img';
 import { Sheet } from '@/shared/ui/Sheet';
-import { VsChip } from './VsSection';
+import { VsChip } from './VsChip';
 import { tour } from '@/tour/anchors';
+import { setName } from '@/game/set/setName';
+import { HeroFace } from '@/game/hero/HeroFace';
+import { SubToken } from '@/game/item/SubToken';
 
 // viewOf — вид пула героя, на котором «Надеть» сделает putOn: у Core Fusion X при X — после окна перехода, вещи X уже
 // у него (П9); у прочих — общий вид
@@ -24,7 +26,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   ctx: Ctx; viewOf: (charId: string) => PoolView; item: ItemInput; onEquip: (c: Char) => void; onClose: () => void;
 }) {
   const t = useT();
-  const { SET, ITEM, D } = ctx.idx;
+  const { ITEM, D } = ctx.idx;
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   const chars = useMemo(() => {
@@ -37,7 +39,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
     .sort((a, z) => rank(a) - rank(z)), [ctx, viewOf, item, chars, needle]);
   const acc = t.ui.slotAcc[item.slot];
   const nameOf = (x: Pick<ItemInput, 'slot' | 'setId' | 'itemKey' | 'main'> & { grade: string }) => {
-    const what = x.setId ? `${SET[x.setId]?.short ?? x.setId} Set` : [x.itemKey ? ITEM[x.slot as 'weapon' | 'accessory'][x.itemKey]?.name : x.grade === 'rare' ? 'Epic' : '', x.main].filter(Boolean).join(' · ');
+    const what = x.setId ? `${setName(ctx.idx, x.setId)} Set` : [x.itemKey ? ITEM[x.slot as 'weapon' | 'accessory'][x.itemKey]?.name : x.grade === 'rare' ? 'Epic' : '', x.main].filter(Boolean).join(' · ');
     return `${what} · ${x.grade === 'unique' ? 'L' : 'E'}`;
   };
   const bn = (key: string) => buildOfKey(key, t.ui.byStats);
@@ -66,7 +68,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
       <div className="equip">
         <div className="equip-item">
           <p><SlotIcon slot={item.slot} /><span><b>{t.ui.slotNames[item.slot]}</b> · {nameOf(item)}</span></p>
-          <p className="equip-subs">{Object.entries(item.subs).map(([k, n]) => <span key={k} className="tok">{subLabel(k)}<i>{n}</i></span>)}</p>
+          <p className="equip-subs">{Object.entries(item.subs).map(([k, n]) => <SubToken key={k} stat={k} lit={n} />)}</p>
         </div>
         <label className="equip-q"><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.ui.equipSearch} aria-label={t.ui.equipSearch} /></label>
         {list.length ? (
@@ -74,7 +76,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
             {list.map((x) => (
               <li key={x.c.id}>
                 <button type="button" className="equip-row" onClick={() => onEquip(x.c)}>
-                  <Img k={'face:' + x.c.icon} className="face" />
+                  <HeroFace c={x.c} />
                   <span className="nm">
                     <b>{x.c.name}</b>
                     <span className="act">{action(x)}</span>

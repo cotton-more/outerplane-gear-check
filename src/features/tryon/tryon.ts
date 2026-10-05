@@ -18,6 +18,8 @@ import { bestRow, type Verdict } from '@/features/eval/verdict/verdict';
 import type { ItemInput } from '@/game/item/item';
 import { wearable } from '@/features/gear/model/vs';
 import { variantsOf, type Variant } from '@/game/build/variants';
+import { partText, setName } from '@/game/set/setName';
+import { parentName } from '@/features/gear/ui/pieceText';
 
 // build — предустановка формы: билд (STATS — «По статам», у персонажа с билдами); нет — режим героя без неё.
 // combo — подпись связки варианта (game/build/variants); нет — у билда одна связка или берём самую собранную.
@@ -90,7 +92,7 @@ export function tryOnPreset(view: PoolView | null, hero: Hero, slot: SlotId, fro
 interface TryRow { kind: string; n?: number; m?: number; part?: string; empty?: boolean } // empty — её слот пуст
 function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
   if (!o || o.kind === 'stats') return null;
-  const part = (set: string | null | undefined, n?: number) => (set ? `${idx.SET[set]?.short ?? set} ×${n ?? 2}` : undefined);
+  const part = (set: string | null | undefined, n?: number) => (set ? partText(idx, { set, n: n ?? 2 }) : undefined);
   if (shownKind(o) === 'closer') return { kind: 'closer', n: o.after.progress, m: o.after.need, empty: !o.worn };
   if (o.kind === 'capped') return { kind: 'capped', part: part(o.t4?.set, o.t4?.n) };
   if (o.surplus && o.part) return { kind: 'surplus', part: part(o.part.set, o.part.n) };
@@ -102,7 +104,7 @@ function tryRowOf(idx: Index, o: Outcome | null): TryRow | null {
 // статы») — про героя ничего: строку под карточкой даёт heroNote
 export function heroTitle(t: Texts, idx: Index, res: Verdict, c: Char, o: Outcome | null, armor = true): string {
   const row = tryRowOf(idx, o);
-  const build = o ? (isStats(o.v) ? t.ui.byStats : o.v.parent.name) : '';
+  const build = o ? parentName(t, o.v) : '';
   const clause = (temp: boolean) => (row ? t.tryon.clause(row.kind, c.name, build, temp, row) : '');
   return titleWith(t, res, c, row, clause, !!o && !!res.wornBy?.includes(o.v.key), armor);
 }
@@ -156,7 +158,7 @@ export function heroNote(t: Texts, ctx: Ctx, c: Char, item: ItemInput, vs: CharV
   if (vs?.useful && !vs.asWorn && vs.best && isStats(vs.best.v)) return t.tryon.offStats(c.name);
   const set = item.setId;
   if (isArmor(item.slot) && set && !(vs?.best && holds(vs.best)) && !c.builds.some((b) => b.sets.some((cb) => cb.some((p) => p.set === set)))) {
-    return t.tryon.offHero(c.name, ctx.idx.SET[set]?.short ?? set);
+    return t.tryon.offHero(c.name, setName(ctx.idx, set));
   }
   return !vs?.best && !vs?.starts.length && !statsUseful(ctx, c, item) ? t.tryon.noStats(c.name) : null;
 }

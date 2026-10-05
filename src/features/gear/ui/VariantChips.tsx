@@ -10,6 +10,7 @@ import type { Variant } from '@/game/build/variants';
 import { tour } from '@/tour/anchors';
 import { Sheet } from '@/shared/ui/Sheet';
 import { wantWhy } from './pieceText';
+import { WantToggle } from './WantToggle';
 
 // что отличает вариант: имя без имени билда («Defense mix · Penetration» → «Penetration»)
 const short = (v: Variant) => v.name.slice(v.parent.name.length + 3) || v.name;
@@ -46,10 +47,7 @@ export function VariantChips({ list, cur, cp, ctx, st, onPick, onWant }: {
                     <b>{short(v)}</b> <span className="n">{prog(v)}</span>
                   </button>
                   {cp.pieces.length > 0 && (
-                    <>
-                      <button type="button" className="want-btn" aria-pressed={cp.inPlay.includes(v)} onClick={() => onWant(v)}>{t.ui.filling}</button>
-                      <span className="muted small">{wantWhy(t, ctx.idx, cp, st, v)}</span>
-                    </>
+                    <WantToggle on={cp.inPlay.includes(v)} why={wantWhy(t, ctx.idx, cp, st, v)} onToggle={() => onWant(v)} />
                   )}
                 </li>
               ))}

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from '@/screens/chars/CharDetail';
 import { EvalPanel } from '@/screens/eval/EvalPanel';
-import { VBar, Verdict, VerdictSheet } from '@/screens/eval/VerdictPanel';
+import { Verdict, VerdictSheet } from '@/screens/eval/VerdictPanel';
+import { VBar } from '@/screens/eval/VBar';
 import { useFormFlow } from '@/screens/eval/useFormFlow';
 import { useVerdictModel } from '@/screens/eval/useVerdictModel';
 import { CharList } from '@/features/roster/CharList';
@@ -47,6 +48,7 @@ import { Footer, LangSwitch } from './shell/Footer';
 import { Help, Welcome, type InstallInfo } from './shell/Guide';
 import { Header } from './shell/Header';
 import { Menu } from './shell/Menu';
+import { OnboardingStrips } from './shell/OnboardingStrips';
 import { useAppState } from './useAppState';
 import { slugFromHash, useHashRoute } from './useHashRoute';
 import { useHotkeys } from './useHotkeys';
@@ -202,20 +204,7 @@ export function App() {
         <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
           onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
-        {onb.inviteShown && (
-          <div className="tour-strip tour-invite" role="status">
-            <span>{t.tour.invite}</span>
-            <button type="button" className="btn" onClick={() => { onb.closeInvite(); onb.startTour('core'); }}>{t.tour.welcomeCta}</button>
-            <button type="button" className="tour-x" aria-label={t.ui.close} onClick={onb.closeInvite}>✕</button>
-          </div>
-        )}
-        {onb.newsShown && (
-          <div className="tour-strip tour-invite" role="status">
-            <span>{t.tour.newsStrip(t.tour.news[news[0].id as keyof typeof t.tour.news] ?? t.tour.tips[news[0].id], news.length - 1)}</span>
-            <button type="button" className="btn" onClick={onb.showNews}>{t.tour.newsShow}</button>
-            <button type="button" className="btn" onClick={onb.newsLater}>{t.tour.newsLater}</button>
-          </div>
-        )}
+        <OnboardingStrips onb={onb} />
         <TipLayer tour={tour} c={onb.tourCtx} enabled={onb.tipsOn} forced={onb.forcedTip} onForced={onb.onForced} />
         <TourLayer tour={tour} c={onb.tourCtx} rosterEmpty={roster.size === 0} tours={onb.tours} onTab={onTab} onRoster={() => onTab('chars')} />
         {msg && gearToast && (

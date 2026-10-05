@@ -15,6 +15,7 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import type { Switched } from '@/features/roster/useRosterUi';
 import type { Hero } from '@/features/tryon/tryon';
+import { setName } from '@/game/set/setName';
 
 const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
 
@@ -58,7 +59,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   const usedFor = (st: GearStore, charId: string, id: string) =>
     [...new Set(whereUsed(poolView(ctx, st), charId, id).map((v) => buildName(v.key)))];
   // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
-  const pieceLabel = (p: Piece) => (p.setId ? idx.SET[p.setId]?.short ?? p.setId
+  const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId)
     : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
   // «Надеть на CF», когда есть X, — сначала окно перехода (в). Строка и кнопка CF посчитаны по этому же хранилищу
   // (viewOf, П9)

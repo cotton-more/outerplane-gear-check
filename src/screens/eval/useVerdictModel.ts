@@ -10,11 +10,12 @@ import { evaluate } from '@/features/eval/verdict/evaluate';
 import { itemInput, type FormState } from '@/features/eval/form/formState';
 import type { GearStore } from '@/features/gear/model/gear';
 import { storeFor } from '@/features/gear/model/fusion';
-import { isStats, poolView, type PoolView } from '@/features/gear/pool';
+import { poolView, type PoolView } from '@/features/gear/pool';
 import { charsVs, charVs, sectionChars, type CharVs } from '@/features/gear/model/poolVs';
 import { betterThanWorn, materialFor, wearLead, withMaterial } from '@/features/gear/model/material';
 import { withWorn } from '@/features/gear/model/stamp';
 import { heroNote, heroOutcome, heroTitle, type Hero } from '@/features/tryon/tryon';
+import { parentName } from '@/features/gear/ui/pieceText';
 
 export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval }: {
   idx: Index; t: Texts; ctx: Ctx;
@@ -56,7 +57,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
     const up = needs.length ? betterThanWorn(ctx, view, input, needs) : [];
     const o = heroVs?.best?.used ? heroVs.best : null;
     const aim = hero && o && (o.kind === 'fill' || o.kind === 'up' || o.kind === 'closer' || o.kind === 'completes')
-      ? `${hero.c.name} · ${isStats(o.v) ? t.ui.byStats : o.v.parent.name}` : null;
+      ? `${hero.c.name} · ${parentName(t, o.v)}` : null;
     return { needs, wear: { up, target: aim, t4: input.bt === 4 } };
   }, [ctx, view, heroVs, hero, key, t]); // eslint-disable-line react-hooks/exhaustive-deps
   // штамп по вещам персонажей (features/gear/model/stamp): такая же у кого-то — «Оставить»; всем, кому подходит, она ничего не даёт —

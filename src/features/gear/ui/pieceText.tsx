@@ -5,14 +5,15 @@ import type { Char, GearKind } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
 import { tierLabel, type BonusRow } from '@/game/set/setBonus';
-import type { Variant } from '@/game/build/variants';
+import { buildOfKey, type Variant } from '@/game/build/variants';
 import type { Texts } from '@/i18n';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { isStats, markOfVariant, type CharPool } from '@/features/gear/pool';
+import { partText, setName } from '@/game/set/setName';
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
 const nameOf = (ctx: Ctx, p: Piece): string => p.setId
-  ? `${ctx.idx.SET[p.setId]?.short ?? p.setId} Set`
+  ? `${setName(ctx.idx, p.setId)} Set`
   : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
 // то же одной строкой («Speed Set», «Combination Simulator · SPD») — для фраз вроде совета «Лучше из своих: …»
 export const pieceText = (ctx: Ctx, p: Piece): string => {
@@ -54,7 +55,7 @@ export function wantWhy(t: Texts, idx: Index, cp: CharPool, st: GearStore, v: Va
   const reach = cp.reach.get(v.key) ?? a;
   if (reach !== a) {
     const part = reach.complete.find((p) => !a.complete.some((q) => q.set === p.set));
-    return part ? t.ui.fillingReach(`${idx.SET[part.set]?.short ?? part.set} ×${part.n}`, cp.c.name) : '';
+    return part ? t.ui.fillingReach(partText(idx, part), cp.c.name) : '';
   }
   // начат (Р14), но не ближе всех — строки нет: «ближе всех» было бы неправдой
   const top = Math.max(0, ...cp.inPlay.filter((x) => !isStats(x)).map((x) => (cp.reach.get(x.key) ?? cp.asm.get(x.key)!).progress));
@@ -66,6 +67,13 @@ export function bonusLinesOf(t: Texts, idx: Index, c: Char, rows: readonly Bonus
   return rows.map((r) => {
     const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
     const own = combo.some((p) => p.set === r.set);
-    return t.ui.bonusRow(idx.SET[r.set]?.short ?? r.set, r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
+    return t.ui.bonusRow(setName(idx, r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
   });
 }
+
+// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ
+export const variantName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.name);
+// имя билда-родителя варианта («Defense mix», без связки): вкладки карточки, «Надето», режим героя, совет «надень её»
+export const parentName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.parent.name);
+// имя билда по ключу во фразе: «Идёт в …», «остаётся в …» — у «По статам» в кавычках
+export const buildName = (t: Texts, key: string) => buildOfKey(key, t.ui.byStatsQ);
