@@ -2,19 +2,32 @@
 import { SLOTS } from '@/game/data';
 import type { Char } from '@/game/data/types';
 
+// Кого показывать (.x/0070-more-sheet SPEC 5): «Мои» — все свои, с билдами и без; «Доодеть» — свои с билдами, у кого надето
+// меньше 6 из 6; «Все» — с билдами, а героя без билдов находит только поиск
+export type CharMode = 'mine' | 'todress' | 'all';
+
 export interface CharFilter {
   cq: string;      // поиск по имени
   cel: string;     // стихия
   ccl: string;     // класс
-  cOwned: boolean; // только мои
-  cAll: boolean;   // и без билдов
-  cBare?: boolean; // не всё надето: меньше 6 из 6 (и меню ☰ «Не всё надето»); не сохраняется, как и поиск
+  cMode: CharMode; // «Мои» и «Все» сохраняются, «Доодеть» — нет (после перезапуска «Мои»), как и поиск
 }
 
-// «не всё надето»: героя есть кому доодеть — у него есть билды, надето меньше 6 из 6 (geared — сколько отмечено надетым,
+// Пока ростер пуст, режим «Все»: «Мои» и «Доодеть» показали бы пустоту (SPEC 6). Применяют те, кто знает ростер: список и
+// «открыть героя»; сам отбор (charMatches) берёт режим как есть
+export const effectiveMode = (mode: CharMode, rosterSize: number): CharMode => (rosterSize === 0 ? 'all' : mode);
+
+// «Доодеть»: героя есть кому доодеть — у него есть билды, надето меньше 6 из 6 (geared — сколько отмечено надетым,
 // нет записи — ничего), и его не заменил Core Fusion (off)
 export function isBare(c: Char, geared?: ReadonlyMap<string, number>, off?: Pick<ReadonlyMap<string, string>, 'has'>): boolean {
   return c.builds.length > 0 && !off?.has(c.id) && (geared?.get(c.id) ?? 0) < SLOTS.length;
+}
+
+// сколько своих доодеть: число у «Доодеть» в списке и в «Ещё»
+export function countToDress(
+  chars: readonly Char[], roster: ReadonlySet<string>, geared?: ReadonlyMap<string, number>, off?: Pick<ReadonlyMap<string, string>, 'has'>,
+): number {
+  return chars.filter((c) => roster.has(c.id) && isBare(c, geared, off)).length;
 }
 
 export function charMatches(
@@ -24,10 +37,9 @@ export function charMatches(
   if (q && !(c.name.toLowerCase().includes(q) || c.slug.includes(q) || (c.nick || '').toLowerCase().includes(q))) return false;
   if (f.cel && c.element !== f.cel) return false;
   if (f.ccl && c.class !== f.ccl) return false;
-  if (f.cOwned && !roster.has(c.id)) return false;
-  if (f.cBare && !isBare(c, geared, off)) return false;
-  if (!f.cAll && !c.builds.length && !q) return false;
-  return true;
+  if (f.cMode === 'mine') return roster.has(c.id);
+  if (f.cMode === 'todress') return roster.has(c.id) && isBare(c, geared, off);
+  return c.builds.length > 0 || !!q; // «Все»: герой без билдов — только поиском
 }
 
 // Сортировка всегда по имени героя (c.base); префикс/вариант (Gnosis, Core Fusion, Demiurge и т. д.) — второй уровень сортировки

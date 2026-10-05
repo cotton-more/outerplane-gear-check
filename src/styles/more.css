@@ -1,0 +1,27 @@
+/* «Ещё» (app/shell/More): шторка с переходами, действиями, настройками и данными; последней строкой — фраза VA Games */
+.more { display: grid; gap: 14px; }
+.more-nav, .more-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.more .vb-star { color: var(--star-on); }
+.more-notes { display: grid; gap: 8px; }
+.more-notes .fitnote { margin: 0; }
+.more-notes p { margin: 0; }
+.more-group { display: grid; gap: 10px; }
+.more-group h4 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.more .toggle { display: block; line-height: 1.4; }
+.more .toggle input { vertical-align: -4px; margin: 0 6px 0 0; }
+.more .lang, .drawer .more .lang { margin: 0; }
+.more-rights { margin: 4px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.35; color: var(--ink-3); }
+/* строка, раскрывающаяся на месте (shared/ui/Expand): заголовок, сводка второй строкой, стрелка справа */
+.xp { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.xp-h { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1px 8px; width: 100%; min-height: 44px; padding: 7px 12px; border: 0; background: none; text-align: left; font-size: 14px; font-weight: 600; }
+.xp-n { grid-column: 1; grid-row: 2; font-size: 12.5px; font-weight: 500; line-height: 1.3; color: var(--ink-3); }
+.xp-c { grid-column: 2; grid-row: 1 / span 2; color: var(--ink-3); font-size: 12px; }
+.xp-b { padding: 4px 12px 12px; }
+.xp-b .roster-io { padding: 0; }
+/* «О приложении» */
+.about { display: grid; gap: 8px; font-size: 12.5px; color: var(--ink-3); }
+.about p { margin: 0; }
+.about a { color: var(--ink-2); }
+.about .lic summary { cursor: pointer; width: fit-content; }
+.about .lic p { margin: 6px 0 0; }
+.about .lic .mit { font-size: 11.5px; }

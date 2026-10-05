@@ -16,6 +16,7 @@ import './styles/base.css';
 import './styles/eval.css';
 import './styles/verdict.css';
 import './styles/chars.css';
+import './styles/more.css';
 import './styles/trade.css';
 import './styles/tour.css';
 import './styles/motion.css';

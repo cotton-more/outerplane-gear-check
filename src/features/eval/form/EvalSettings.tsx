@@ -1,17 +1,19 @@
-// Настройки оценки: стадия, фоддер, уровень, quirks — под формой на широком экране; на телефоне — в меню ☰ (inline —
-// без сворачивания).
+// Настройки оценки в «Ещё»: стадия, фоддер, уровень, quirks. Строка «Оценка» со сводкой текущих настроек раскрывается
+// на месте; открыта ли — хранится в состоянии страницы (settingsOpen) и переживает перезапуск.
 import type { Dispatch } from 'react';
 import { useT } from '@/i18n';
 import type { FormAction, FormState } from './formState';
+import { Expand } from '@/shared/ui/Expand';
 import { Toggle } from '@/shared/ui/Toggle';
 import { SegSwitch } from '@/shared/ui/SegSwitch';
 
-export function EvalSettings({ s, dispatch, inline }: { s: FormState; dispatch: Dispatch<FormAction>; inline?: boolean }) {
+export function EvalSettings({ s, dispatch }: { s: FormState; dispatch: Dispatch<FormAction> }) {
   const t = useT();
   const st = s.settings;
   const set = (patch: Partial<typeof st>) => dispatch({ type: 'settings', patch });
   const cur = t.ui.settingsNow(st.stage === 'end', st.fodder, st.lv120, st.quirks);
-  const body = (
+  return (
+    <Expand id="settings" title={t.ui.moreEval} note={cur.join(' · ')} open={s.settingsOpen} onToggle={(open) => dispatch({ type: 'settingsOpen', open })}>
       <div className="settings-body">
         <SegSwitch label={t.ui.stage} group={t.ui.stageGroup} value={st.stage} onChange={(stage) => set({ stage })}
           options={[{ value: 'grow', label: t.ui.stageGrow }, { value: 'end', label: t.ui.stageEnd }]} />
@@ -25,12 +27,6 @@ export function EvalSettings({ s, dispatch, inline }: { s: FormState; dispatch: 
         </Toggle>
         <p className="muted small">{t.ui.flatNote}</p>
       </div>
-  );
-  if (inline) return body;
-  return (
-    <details className="settings" id="settings" open={s.settingsOpen} onToggle={(e) => dispatch({ type: 'settingsOpen', open: e.currentTarget.open })}>
-      <summary>{t.ui.settings} <span className="cur">· {cur.join(' · ')}</span></summary>
-      {body}
-    </details>
+    </Expand>
   );
 }

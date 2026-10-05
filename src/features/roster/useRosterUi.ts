@@ -68,17 +68,17 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     const kept = held.filter((id) => r.roster.includes(id)).map(charName).join(', ');
     const keptNote = kept ? t.ui.rosterKeptGear(kept) : '';
     if (!r.fixes.length && intro === undefined) {
-      if (keptNote) say({ text: keptNote, note: '', tab: 'chars' });
+      if (keptNote) say({ text: keptNote, note: '', tab });
       return;
     }
     // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище
     const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
       : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
     if (intro !== undefined) {
-      say({ text: intro, note: [fixesNote(r.fixes), keptNote].filter(Boolean).join(' '), tab: 'chars', undo, after: () => rosterApi.replace(prev) });
+      say({ text: intro, note: [fixesNote(r.fixes), keptNote].filter(Boolean).join(' '), tab, undo, after: () => rosterApi.replace(prev) });
       return;
     }
-    say({ text: fixesNote(r.fixes), note: keptNote, tab: 'chars', undo, after: rosterBack(prev, r.roster) });
+    say({ text: fixesNote(r.fixes), note: keptNote, tab, undo, after: rosterBack(prev, r.roster) });
   };
   // окна перехода (в): звезда, «Надеть», «Оценить вещь для» CF, когда есть X (или на X, когда есть CF). then — действие после «Да»
   // на хранилище после перехода; нет конфликта — false, действие идёт сразу. В обучении окон нет — как пакетное
@@ -174,7 +174,7 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     },
     replace: (ids) => rosterBatch(ids),
   };
-  // импорт кода экипировки заменил все записи: все, у кого есть вещи, — в ростер, затем Core Fusion (features/gear/model/fusion
+  // импорт кода экипировки (из «Ещё», с любой вкладки — сообщение на той, где игрок сейчас) заменил все записи: все, у кого есть вещи, — в ростер, затем Core Fusion (features/gear/model/fusion
   // normalizeStored). «Вернуть» — всё хранилище, как было до него; ростер — каким был. Вещей нет — false
   const onGearImport = (prev: GearStore, raw: unknown): boolean => {
     const before = rosterApi.list();
@@ -186,7 +186,7 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     rosterApi.replace(next);
     const names = next.filter((id) => !before.includes(id) && idx.CHAR[id]).map(charName).join(', ');
     const text = t.ui.gearApplied(n);
-    say({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: fixesNote(r.fixes), tab: 'chars', undo: () => prev, after: rosterBack(before, next) });
+    say({ text: names ? `${text} ${t.ui.gearRosterAdded(names)}` : text, note: fixesNote(r.fixes), tab, undo: () => prev, after: rosterBack(before, next) });
     return true;
   };
   // поле «Резервная копия» (SPEC 2.4): что вышло — строкой под полем ('' — ушло сообщением с «Вернуть»). Новый код
@@ -201,7 +201,7 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
         gear.set(r.st);
         rosterApi.replace(r.roster);
         say({
-          text: t.ui.backupApplied(Object.keys(r.st.pieces).length, r.roster.length), note: fixesNote(r.fixes), tab: 'chars',
+          text: t.ui.backupApplied(Object.keys(r.st.pieces).length, r.roster.length), note: fixesNote(r.fixes), tab,
           undo: () => prev, after: () => rosterApi.replace(before),
         });
         return '';

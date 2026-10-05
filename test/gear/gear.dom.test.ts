@@ -11,6 +11,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 import { encodeItem } from '@/features/eval/code/codec';
+import { openBackup, openMore, startTour } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -1195,24 +1196,21 @@ describe('карточка персонажа', () => {
 });
 
 describe('меню, плитки, код копии, другая вкладка', () => {
-  it('меню ☰ «Not fully equipped · N» — «only mine» и «not fully equipped»: герои ростера меньше чем 6/6, остальные фильтры сняты', async () => {
+  it('меню ☰ «To dress · N» — режим «To dress»: герои ростера меньше чем 6/6, остальные фильтры сняты', async () => {
     await mount({ slot: 'helmet', grade: 'unique', cel: 'fire' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }), roster: [caren.id, kappa.id] });
     await click($('.vb-tab'));
-    await click(byText('.menu-nav button', 'Not fully equipped · 2'));
-    expect(($('#c-bare') as HTMLInputElement).checked).toBe(true);
-    expect(($('#c-owned') as HTMLInputElement).checked).toBe(true);
+    await click(byText('.more-nav button', 'To dress · 2'));
+    expect($('.cmode [aria-pressed="true"]')?.textContent).toBe('To dress 2');
     expect($$('#cgrid .ctile .cn').map((e) => e.textContent).sort()).toEqual(['Caren', 'Kappa']);
     expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']); // у Kappa вещей нет — ничего не надето
-    expect($('.roster-bar')?.textContent).toContain('gear on 1');
-    await click($('#c-owned'));
-    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // без «only mine» — и не из ростера: у них не надето ничего
+    await click(byText('.cmode button', 'All'));
+    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // в «All» — и не из ростера: у них не надето ничего
   });
 
-  it('список: нет «mark all shown» и «clear roster»; «Team trade» — сразу команда', async () => {
+  it('панель списка: «Trade» — сразу команда; «mark all shown», «clear roster», «export / import» нет', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }), roster: [caren.id] });
-    const links = $$('.roster-bar button').map((b) => b.textContent);
-    expect(links).toEqual(['export / import', 'Team trade']);
-    await click(byText('.roster-bar button', 'Team trade'));
+    expect($$('#char-list button').map((b) => b.textContent).filter((t) => /mark|clear|export|import/i.test(t ?? ''))).toEqual([]);
+    await click(byText('.cbar button', 'Trade'));
     expect($('.trade-mode [aria-selected="true"]')?.textContent).toBe('Team');
   });
 
@@ -1222,10 +1220,9 @@ describe('меню, плитки, код копии, другая вкладка
   });
 
   // .x/0060 SPEC 2: одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
-  it('резервная копия в «Экспорт / импорт» — OGC-GEAR3, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
+  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR3, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 4 })], { [caren.id]: ['p1'] }) });
-    await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#backup-code') as HTMLTextAreaElement;
+    const ta = await openBackup();
     expect(ta.value.startsWith('OGC-GEAR3-')).toBe(true);
     const { encodeGear } = await import('@/features/gear/store/gearStore');
     const { decodeBackup } = await import('@/features/roster/backup');
@@ -1243,8 +1240,7 @@ describe('меню, плитки, код копии, другая вкладка
 
   it('код, сохранённый более новой версией, — «обнови страницу»', async () => {
     await mount({ tab: 'chars' }, {});
-    await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#backup-code') as HTMLTextAreaElement;
+    const ta = await openBackup();
     ta.value = 'OGC-GEAR4-abc';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(ta.closest('.roster-io')?.textContent).toContain('A newer page saved this code — reload the page.');
@@ -1344,8 +1340,7 @@ describe('вещи только у героев ростера (Р16)', () => {
   // пакетное: код ростера «Заменить» героев с вещами не убирает (убрать с вещами — звездой, через окно)
   it('код ростера «Заменить»: герои с вещами остаются — после героев из кода', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: shared() });
-    await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#backup-code') as HTMLTextAreaElement;
+    const ta = await openBackup();
     ta.value = 'kappa';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(roster()).toEqual([kappa.id, rin.id, caren.id]);
@@ -1357,8 +1352,7 @@ describe('вещи только у героев ростера (Р16)', () => {
 
     it('код ростера «Заменить»: Rin убрана, Caren осталась после героев кода, в тосте строка с Caren', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id], gear: carenOnly() });
-      await click(byText('.roster-bar .linkbtn', 'export'));
-      const ta = $('#backup-code') as HTMLTextAreaElement;
+      const ta = await openBackup();
       ta.value = 'kappa';
 
       await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
@@ -1370,8 +1364,7 @@ describe('вещи только у героев ростера (Р16)', () => {
     // .x/0060 SPEC 2.4: код ростера в поле копии — теперь всегда с «Вернуть» (было: без героев с вещами тоста нет)
     it('код ростера «Заменить» без героев с вещами — сообщение с «Вернуть»: ростер как был', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, kappa.id], gear: G([], {}) });
-      await click(byText('.roster-bar .linkbtn', 'export'));
-      const ta = $('#backup-code') as HTMLTextAreaElement;
+      const ta = await openBackup();
       ta.value = 'caren';
 
       await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
@@ -1404,12 +1397,11 @@ describe('вещи только у героев ростера (Р16)', () => {
     const mine = () => G([P('p1', 'helmet', speed, { CHC: 1 })], { [eternal.id]: ['p1'] });
     const toTourChars = async () => {
       await mount({ tab: 'eval' }, {}, { roster: [caren.id, eternal.id], gear: mine() });
-      await click($('.vb-tab'));
-      await click(byText('.menu button', 'Tutorial'));
+      await startTour();
       await click(byText('.tour-strip button', 'Checking a piece'));
       await click(byText('.tour-strip button', 'Example'));
-      await click($('.vb-tab'));
-      await click(byText('.menu button', 'Characters'));
+      await openMore();
+      await click(byText('.more button', 'Characters'));
     };
     const text = () => JSON.stringify(mine());
 
@@ -1424,8 +1416,9 @@ describe('вещи только у героев ростера (Р16)', () => {
     // .x/0060 SPEC 2.3: в обучении резервной копии нет — ни кода, ни «Заменить» (было: код ростера «Заменить» ничего не делал)
     it('поля копии нет — только строка «после обучения»', async () => {
       await toTourChars();
-      await click(byText('.roster-bar .linkbtn', 'export'));
-      expect({ box: $('#backup-code'), note: $('.roster-io')?.textContent }).toEqual({ box: null, note: expect.stringContaining('after the tutorial') });
+      await openMore();
+      await click($('#more-backup'));
+      expect({ box: $('#backup-code'), note: $('.xp-b')?.textContent }).toEqual({ box: null, note: expect.stringContaining('after the tutorial') });
       expect({ roster: roster(), gear: localStorage.getItem('ogc.gear') }).toEqual({ roster: [caren.id, eternal.id], gear: text() });
     });
   });
@@ -1433,12 +1426,11 @@ describe('вещи только у героев ростера (Р16)', () => {
   it('в обучении: звезда Caren с вещами — ни окна, ни удаления; вещи и ростер на месте', async () => {
     const gear = shared();
     await mount({ tab: 'eval' }, {}, { roster: [rin.id, caren.id], gear });
-    await click($('.vb-tab'));
-    await click(byText('.menu button', 'Tutorial'));
+    await startTour();
     await click(byText('.tour-strip button', 'Checking a piece'));
     await click(byText('.tour-strip button', 'Example'));
-    await click($('.vb-tab'));
-    await click(byText('.menu button', 'Characters'));
+    await openMore();
+    await click(byText('.more button', 'Characters'));
     await click(tileStar('Caren'));
     expect({ ask: ask(), roster: roster(), gear: stored() }).toEqual({ ask: null, roster: [rin.id, caren.id], gear });
   });

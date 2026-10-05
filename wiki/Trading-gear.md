@@ -7,8 +7,8 @@ the game you do it yourself — the app only calculates and tells you what to lo
 
 ## How to open
 
-"Trade ▸" on a hero card — straight to that hero's plan. "Team trade" in the roster row on "Characters" and in the ☰
-menu — straight to team mode. Only roster heroes that have builds take part.
+"Trade ▸" on a hero card — straight to that hero's plan. "Trade" above the character list, and "Team trade" in
+More on a phone — straight to team mode. Only roster heroes that have builds take part.
 
 ## Hero and team
 

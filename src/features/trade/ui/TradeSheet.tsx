@@ -34,7 +34,7 @@ type Undo = (st: GearStore) => GearStore | null;
 
 interface Result { lines: HeroLine[]; fills: HoleFill[]; stamp: string; hint: Hint | null | undefined; empty: boolean }
 
-// start — герой с карточки «К обмену ▸» (сразу его план); team — открыта «Обменом для команды» (список, меню ☰): сразу «Команда»
+// start — герой с карточки «К обмену ▸» (сразу его план); team — открыта «Обменом для команды» (кнопка «Обмен» над списком, «Ещё» на телефоне): сразу «Команда»
 export function TradeSheet({ ctx, view, gear, roster, off, start, team: teamFirst, onApplied, onClose }: {
   ctx: Ctx; view: PoolView; gear: GearApi; roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>;
   start: string | null; team?: boolean; onApplied: (text: string, undo: Undo) => void; onClose: () => void;

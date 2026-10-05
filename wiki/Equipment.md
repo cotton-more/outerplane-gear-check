@@ -230,20 +230,20 @@ Epsilon.
 
 ## Who still needs gear
 
-A hero tile shows how many pieces are marked worn: "0/6" until you mark any. The **"not fully equipped"** toggle in the
-character list keeps heroes with builds who wear fewer than 6 of 6 — including those who wear nothing; a hero replaced
-by their Core Fusion isn't shown. Together with "only mine" — who in your roster still needs gear. Menu ☰ →
-**"Not fully equipped · N"** turns both on and clears other filters: exactly N tiles. Everyone dressed — "Everyone is
-fully equipped — 6/6 each."
+A hero tile shows how many pieces are marked worn: "0/6" until you mark any. The **"To dress"** mode above the
+character list keeps your heroes with builds who wear fewer than 6 of 6 — including those who wear nothing; a hero
+replaced by their Core Fusion isn't shown. The number on the button is how many there are. On a phone, More →
+**"To dress · N"** opens the list in this mode and clears the other filters (search, element, class): exactly N tiles.
+Everyone dressed — "Everyone is fully equipped — 6/6 each."
 
 ## Tutorial
 
-☰ → "Tutorial" → **"Gear · 1 min"**: five steps on the example of Caren · Speed — the piece card, rating for Caren
+More → "Tutorial" → **"Gear · 1 min"**: five steps on the example of Caren · Speed — the piece card, rating for Caren
 ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode and roster don't change.
 
 ## Backup
 
-"Export / import" on the characters tab: the **OGC-GEAR2** code — all pieces, what's worn, the chosen builds and "Filling" marks. Copy it to keep a
+More → "Backup": the **OGC-GEAR2** code — all pieces, what's worn, the chosen builds and "Filling" marks. Copy it to keep a
 backup or move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the
 roster), and "Undo" brings the previous gear back. An old OGC-GEAR1 code still reads: pieces go to their characters, and
 builds with pieces become "Filling". During a tutorial there's no code: the page shows an example, not your pieces.

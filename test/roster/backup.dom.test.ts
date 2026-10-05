@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Поле «Резервная копия» на «Персонажах» (.x/0060-share-code SPEC 2.3–2.4): что вставили — что происходит.
+// Поле «Резервная копия» в «Ещё» (.x/0060-share-code SPEC 2.3–2.4, .x/0070-more-sheet SPEC 1.3): что вставили — что происходит.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -7,6 +7,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { openBackup } from '../app/more';
 import { encodeBackup } from '@/features/roster/backup';
 import type { GearStore } from '@/features/gear/model/gear';
 
@@ -49,7 +50,7 @@ async function mount(extra: Record<string, unknown> = {}) {
   document.body.append(el);
   root = createRoot(el);
   await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
-  await click($$('.roster-bar .linkbtn').find((b) => b.textContent === 'export / import'));
+  await openBackup();
 }
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 const $$ = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)];

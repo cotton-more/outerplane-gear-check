@@ -8,8 +8,9 @@ import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
 import { MAX_SUBS, dropSubs } from '@/game/item/subs';
-import { fromPersisted, reducer, toPersisted, type Action, type AppState } from '@/app/appState';
+import { fromPersisted, openCharAction, reducer, toPersisted, type Action, type AppState } from '@/app/appState';
 import { itemInput, restoreItem, toPersistedItem } from '@/features/eval/form/formState';
+import { charMatches } from '@/features/roster/charFilter';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -298,13 +299,13 @@ describe('reducer: слот и «Следующий»', () => {
 });
 
 describe('сохранение в localStorage', () => {
-  it('тот же набор из 14 полей, что у прежней страницы', () => {
+  it('прежний набор полей без «показать и без билдов» (cAll)', () => {
     expect(Object.keys(toPersisted(fresh())).sort()).toEqual(
-      ['cAll', 'cOwned', 'ccl', 'cel', 'charId', 'fodder', 'grade', 'lv120', 'quirks', 'rosterOnly', 'settingsOpen', 'slot', 'stage', 'tab'].sort());
+      ['cOwned', 'ccl', 'cel', 'charId', 'fodder', 'grade', 'lv120', 'quirks', 'rosterOnly', 'settingsOpen', 'slot', 'stage', 'tab'].sort());
   });
 
   it('сохранённое состояние восстанавливается без потерь', () => {
-    const s = fresh({ tab: 'chars', slot: 'shoes', grade: 'rare', settingsOpen: true, charId: D.chars[0].id, ccl: 'mage', cAll: true,
+    const s = fresh({ tab: 'chars', slot: 'shoes', grade: 'rare', settingsOpen: true, charId: D.chars[0].id, ccl: 'mage', cMode: 'mine',
       settings: { rosterOnly: false, fodder: true, stage: 'end', lv120: true, quirks: false } });
     expect(toPersisted(fromPersisted(JSON.parse(JSON.stringify(toPersisted(s))), idx))).toEqual(toPersisted(s));
   });
@@ -314,10 +315,82 @@ describe('сохранение в localStorage', () => {
     expect([s.slot, s.grade, s.tab, s.settings.stage, s.charId, s.settings.rosterOnly]).toEqual(['gloves', 'unique', 'eval', 'grow', null, true]);
   });
 
+  // 8. «Мои» и «Все» запоминаются, «Доодеть» — нет: после перезапуска «Мои»
+  it('«Мои» и «Все» переживают перезапуск; «Доодеть» после него — «Мои»', () => {
+    const back = (cMode: AppState['cMode']) => fromPersisted(JSON.parse(JSON.stringify(toPersisted(fresh({ cMode })))), idx).cMode;
+    expect([back('mine'), back('all'), back('todress')]).toEqual(['mine', 'all', 'mine']);
+  });
+
+  it('поиск не запоминается, стихия и класс — да', () => {
+    const s = fromPersisted(JSON.parse(JSON.stringify(toPersisted(fresh({ cq: 'ste', cel: 'fire', ccl: 'mage' })))), idx);
+    expect([s.cq, s.cel, s.ccl]).toEqual(['', 'fire', 'mage']);
+  });
+
+  // 9. состояние прежней версии с «показать и без билдов» читается без ошибок, лишнее отброшено
+  it('сохранённое прежней версией («только мои», «показать и без билдов») читается, cAll не переживает', () => {
+    const old = { tab: 'chars', cel: 'water', ccl: '', cOwned: true, cAll: true };
+    const s = fromPersisted(old as never, idx);
+    expect([s.tab, s.cel, s.cMode]).toEqual(['chars', 'water', 'mine']);
+    expect(toPersisted(s)).not.toHaveProperty('cAll');
+    expect(fromPersisted({ cOwned: false, cAll: true } as never, idx).cMode).toBe('all');
+    expect(fromPersisted({ cOwned: 'yes' } as never, idx).cMode).toBe('all');
+  });
+
   it('новичку фоддер включён, сохранённый выбор не трогаем', () => {
     expect(fromPersisted(null, idx).settings.fodder).toBe(true);
     expect(fromPersisted({ fodder: false }, idx).settings.fodder).toBe(false);
   });
+});
+
+// 10–12. открыть героя извне (вердикт, «Сейчас на персонажах», #slug): карточка открывается всегда, плитка — видна
+describe('открыть героя извне', () => {
+  const withBuilds = D.chars.filter((c) => c.builds.length);
+  const hero = withBuilds[0];
+  const bare = D.chars.find((c) => !c.builds.length)!;
+  const open = (s: AppState, roster: string[], id: string) => reducer(s, openCharAction(idx, s, new Set(roster), id));
+  const filters = (s: AppState) => [s.cq, s.cel, s.ccl, s.cMode];
+
+  it('10. герой виден в списке — фильтры не меняются', () => {
+    const s = fresh({ cMode: 'mine', cel: hero.element, ccl: hero.class, cq: hero.name.slice(0, 3) });
+    const next = open(s, [hero.id], hero.id);
+    expect([next.tab, next.charId]).toEqual(['chars', hero.id]);
+    expect(filters(next)).toEqual(filters(s));
+  });
+
+  it('11. герой с билдами скрыт стихией — стихия, класс, поиск сброшены, режим «Все», плитка видна', () => {
+    const other = ['fire', 'water', 'earth', 'light', 'dark'].find((e) => e !== hero.element)!;
+    const s = fresh({ cMode: 'mine', cel: other, ccl: 'mage', cq: 'zzz' });
+    const next = open(s, [hero.id], hero.id);
+    expect(next.charId).toBe(hero.id);
+    expect(filters(next)).toEqual(['', '', '', 'all']);
+    expect(charMatchesNow(next, [hero.id], hero)).toBe(true);
+  });
+
+  it('11. «Доодеть» прячет полностью одетого — режим «Все»', () => {
+    const next = reducer(fresh({ cMode: 'todress' }), openCharAction(idx, fresh({ cMode: 'todress' }), new Set([hero.id]), hero.id, new Map([[hero.id, 6]])));
+    expect(next.cMode).toBe('all');
+  });
+
+  it('12. чужой герой без билдов — режим «Все», в поиске его имя, плитка видна', () => {
+    const s = fresh({ cMode: 'mine', cel: 'fire', ccl: 'striker', cq: 'zzz' });
+    const next = open(s, [hero.id], bare.id);
+    expect(next.charId).toBe(bare.id);
+    expect(filters(next)).toEqual([bare.name, '', '', 'all']);
+    expect(charMatchesNow(next, [hero.id], bare)).toBe(true);
+  });
+
+  it('12. свой герой без билдов в «Мои» виден — фильтры не трогаются', () => {
+    const s = fresh({ cMode: 'mine', cq: '' });
+    expect(filters(open(s, [bare.id], bare.id))).toEqual(filters(s));
+  });
+
+  it('при пустом ростере «Мои» читается как «Все»: герой с билдами виден, герой без билдов — по имени', () => {
+    const s = fresh({ cMode: 'mine' });
+    expect(filters(open(s, [], hero.id))).toEqual(filters(s));
+    expect(open(s, [], bare.id).cq).toBe(bare.name);
+  });
+
+  const charMatchesNow = (s: AppState, roster: string[], c: typeof hero) => charMatches(c, s, new Set(roster));
 });
 
 describe('недовведённый предмет переживает перезапуск', () => {

@@ -1,5 +1,6 @@
 import { useT } from '@/i18n';
 import type { Tab } from '@/shared/tab';
+import { tour } from '@/tour/anchors';
 
 // Знак — тот же, что на иконке приложения (update.py, render_app_icon): буква O из логотипа Outerplane с искрой.
 function BrandMark() {
@@ -20,7 +21,8 @@ function BrandMark() {
   );
 }
 
-export function Header({ tab, onTab, rosterSize }: { tab: Tab; onTab: (t: Tab) => void; rosterSize: number }) {
+// «⋯» справа от вкладок — «Ещё» (app/shell/More); на телефоне шапки нет, там ☰ на нижней плашке. news — точка «новое»
+export function Header({ tab, onTab, rosterSize, news, onMore }: { tab: Tab; onTab: (t: Tab) => void; rosterSize: number; news: boolean; onMore: () => void }) {
   const t = useT();
   return (
     <header className="top">
@@ -37,6 +39,7 @@ export function Header({ tab, onTab, rosterSize }: { tab: Tab; onTab: (t: Tab) =
           {t.ui.tabChars} <span className="count">{rosterSize ? `★ ${rosterSize}` : ''}</span>
         </button>
       </nav>
+      <button type="button" className={news ? 'top-more has-news' : 'top-more'} aria-label={t.ui.more} title={t.ui.more} onClick={onMore} {...tour('more')}>⋯</button>
     </header>
   );
 }

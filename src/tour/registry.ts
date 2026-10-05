@@ -6,10 +6,10 @@ const mods = import.meta.glob<Tip[]>('../**/*.tour.ts', { eager: true, import: '
 const fileOf = (path: string) => path.replace(/^\.\.\//, ''); // путь от src/
 
 // Порядок подсказок — порядок показа: «Что нового» начинается с первой новой, по ходу — первая подходящая, в Справке —
-// список по порядку. Вкладками: «Персонажи», «Оценка», «Обмен». Новый *.tour.ts — допиши сюда, в своё место
+// список по порядку. Сначала «Ещё» (там теперь настройки), затем вкладками: «Персонажи», «Оценка», «Обмен». Новый *.tour.ts — допиши сюда, в своё место
 // (test/tour/tour.test.ts напомнит); файл не из списка встанет в конец.
 export const TIP_ORDER = [
-  'features/worn/AimSheet', 'screens/chars/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
+  'app/shell/More', 'features/worn/AimSheet', 'screens/chars/BuildGear', 'screens/chars/CharDetail', 'features/roster/CharList',
   'features/roster/FusionAsk', 'features/gear/ui/PoolList', 'features/gear/ui/VariantChips', 'features/worn/WornGear', 'features/worn/ShareButton',
   'features/eval/form/BtChip', 'features/eval/verdict/Chain', 'features/gear/ui/EquipSheet', 'features/eval/code/ItemCode',
   'features/eval/form/StatGrid', 'features/eval/form/SubPicker', 'features/eval/form/SubRows', 'features/tryon/TryOnStrip',

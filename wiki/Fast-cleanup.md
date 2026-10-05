@@ -26,4 +26,4 @@
 
 Two useless substats — the verdict comes right away, no need to enter the third.
 
-Evaluation settings (Progression / Endgame, fodder, level and Quirks) are in the ☰ menu.
+Evaluation settings (Progression / Endgame, fodder, level and Quirks) are in More → Settings → Evaluation.

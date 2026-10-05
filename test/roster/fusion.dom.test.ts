@@ -9,6 +9,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { openBackup } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -70,8 +71,7 @@ const tile = (name: string) => $$('#cgrid .cwrap').find((w) => w.querySelector('
 const ask = () => $('.fusion-ask')?.closest<HTMLElement>('.drawer') ?? null;
 const askBtn = (text: string) => byText('.fusion-ask .btn', text);
 const importCode = async (code: string) => {
-  await click(byText('.roster-bar .linkbtn', 'export'));
-  const ta = $('#backup-code') as HTMLTextAreaElement;
+  const ta = await openBackup();
   ta.value = code;
   await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 };
@@ -288,8 +288,7 @@ describe('пакетные добавления — без окон, одно с
   it('код ростера «Заменить» с X и Core Fusion, у X вещи — вещи переходят, сообщение; «Вернуть» — как было', async () => {
     const gear = G([P('p1', 'helmet', speed, { SPD: 2 })], { [eternal.id]: ['p1'] });
     await mount({ tab: 'chars' }, {}, { gear, roster: [eternal.id] });
-    await click(byText('.roster-bar .linkbtn', 'export'));
-    const ta = $('#backup-code') as HTMLTextAreaElement;
+    const ta = await openBackup();
     ta.value = 'eternal, core-fusion-eternal';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
 
@@ -473,22 +472,18 @@ describe('сортировка списка героев с учётом Core Fu
     expect(Math.abs(iEps - iCfEps)).toBe(1);
   });
 
-  it('при включенном тогле «без билдов» Snow и Lisha показываются рядом со своими Core Fusion версиями', async () => {
+  // герой без билдов в «Все» — только поиском: Snow и Lisha находятся по имени вместе со своими Core Fusion
+  it('поиском находятся Snow и Lisha без билдов — рядом со своими Core Fusion версиями', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [] });
-    await click($('#c-all'));
+    await type($('#char-q') as HTMLInputElement, 'snow');
+    const snow = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    expect(Math.abs(snow.indexOf('Snow') - snow.indexOf('Core Fusion Snow'))).toBe(1);
+    expect(snow.indexOf('Snow')).toBeGreaterThan(-1);
 
-    const names = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
-    const iSnow = names.indexOf('Snow');
-    const iCfSnow = names.indexOf('Core Fusion Snow');
-    expect(iSnow).toBeGreaterThan(-1);
-    expect(iCfSnow).toBeGreaterThan(-1);
-    expect(Math.abs(iSnow - iCfSnow)).toBe(1);
-
-    const iLisha = names.indexOf('Lisha');
-    const iCfLisha = names.indexOf('Core Fusion Lisha');
-    expect(iLisha).toBeGreaterThan(-1);
-    expect(iCfLisha).toBeGreaterThan(-1);
-    expect(Math.abs(iLisha - iCfLisha)).toBe(1);
+    await type($('#char-q') as HTMLInputElement, 'lisha');
+    const lisha = $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
+    expect(lisha.indexOf('Lisha')).toBeGreaterThan(-1);
+    expect(Math.abs(lisha.indexOf('Lisha') - lisha.indexOf('Core Fusion Lisha'))).toBe(1);
   });
 
   it('Dahlia и Gnosis Dahlia рядом в списке: сначала Dahlia, затем Gnosis Dahlia', async () => {

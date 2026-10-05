@@ -82,8 +82,8 @@ describe('J. обмен вещами', () => {
   it('J2: список героев, вкладка «Team» из четырёх мест, закрепление и строка «Pinned:»', async () => {
     const roster = [caren.id, aer.id, ais.id, akari.id, bare.id];
     await mount({ roster, gear: G([WEAK, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] }) }, { charId: null });
-    // «Team trade» в ростере — сразу режим «Team» (для одного героя — «Trade ▸» на карточке)
-    await click(byText('.roster-bar button', 'Team trade'));
+    // «Trade» на панели списка — сразу режим «Team» (для одного героя — «Trade ▸» на карточке)
+    await click(byText('.cbar button', 'Trade'));
     expect($$('.team-p')).toHaveLength(4);
     await click(byText('.trade-mode button', 'Hero'));
     expect(hero('Caren')).toBeTruthy();
@@ -109,7 +109,7 @@ describe('J. обмен вещами', () => {
 
   it('команда: член — плитка как в списке с булавкой вместо звезды; нажатие — «Убрать из команды» под ромбом', async () => {
     await mount({ roster: [caren.id, aer.id], gear: gear() }, { charId: null });
-    await click(byText('button', 'Team trade'));
+    await click(byText('.cbar button', 'Trade'));
     await click($$('.team-add')[0]);
     await click(hero('Caren'));
 
@@ -160,7 +160,7 @@ describe('J. обмен вещами', () => {
     const roster = [caren.id, aer.id, ais.id, akari.id];
     await mount({ roster, gear: gear() }, { charId: null });
     const before = localStorage.getItem('ogc.gear');
-    await click(byText('button', 'Team trade'));
+    await click(byText('.cbar button', 'Trade'));
     for (const id of roster) {
       await click($$('.team-add')[0]);
       await click(hero(D.chars.find((c) => c.id === id)!.name));
@@ -185,7 +185,7 @@ describe('J. обмен вещами', () => {
     const fourth = D.chars.find((c) => c.builds.length && ![caren.id, aer.id, ais.id, akari.id].includes(c.id))!;
     const team = [caren.id, ais.id, akari.id, fourth.id];
     await mount({ roster: [...team, aer.id], gear: gear() }, { charId: null });
-    await click(byText('button', 'Team trade'));
+    await click(byText('.cbar button', 'Trade'));
     for (const id of team) {
       await click($$('.team-add')[0]);
       await click(hero(D.chars.find((c) => c.id === id)!.name));
