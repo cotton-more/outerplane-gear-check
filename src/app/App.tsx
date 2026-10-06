@@ -133,7 +133,7 @@ export function App() {
     onAsk: () => { setVerdictOpen(false); setEquipOpen(false); },
   });
   const heroMode = useHeroMode({
-    idx, ctx, view, gear, form: s, demoTry, touring, off, narrow: layout.narrow,
+    idx, gear, form: s, demoTry, touring, off, narrow: layout.narrow,
     fusionGate: ros.fusionGate, switchToast: ros.switchToast, joinRoster: ros.joinRoster,
     load: (item) => dispatch({ type: 'load', item }), toEval: () => onTab('eval'), closeVerdict: () => setVerdictOpen(false), setFormUndo,
   });

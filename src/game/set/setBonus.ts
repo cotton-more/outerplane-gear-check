@@ -5,14 +5,10 @@
 //     (4P T0–T3 — уже весь бонус: Speed T4 T4 T0 T0 = +25%, а не 13 + 25).
 // Speed T4 T4 T0 = +13%; Speed T4 ×4 = 13 + 12; Attack T4 T4 T0 T0 = 35 + 20. bt: null (не указан) — не T4; вещь с
 // формы оценки — T4, только если там нажата «T4» (ItemInput.bt).
-// Ценность бонуса — в той же валюте, что ценность вещи (features/gear/model/vs value): сегменты стата × вес его места в цепочке ×
-// засчитывается. Бонус, который статом не выразить (stat null: Penetration, Immunity, …), ценности не имеет — его
-// сборка держит связкой (features/gear/pool). Нет данных о бонусах или базы SPD — бонус считается невыразимым.
-import { CFG } from '@/game/config';
-import type { Build, Char, GearSet, SetBonus } from '@/game/data/types';
+// Бонус, который статом не выразить (stat null: Penetration, Immunity, …), — отдельный случай. Нет данных о бонусах или
+// базы SPD — бонус считается невыразимым.
+import type { Char, GearSet, SetBonus } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import { NO_MAINS } from '@/game/item/mains';
-import { subWeights, type SubWeight } from '@/game/build/score';
 
 export interface BonusRow {
   set: string;
@@ -80,12 +76,3 @@ export function bonusSegments(ctx: Ctx, c: Char, bon: SetBonus): number | null {
   return base ? (bon.value / 100) * base / step : null;
 }
 
-// ценность строки бонуса для билда: как у сабстата на том же месте цепочки (стата нет в цепочке — 0), без потолка 6.
-// W — веса цепочки билда без main (bonusWeights): у бонуса нет main, который занял бы место
-export const bonusWeights = (ctx: Ctx, c: Char, b: Build): Map<string, SubWeight> => subWeights(ctx, b, c, NO_MAINS);
-export function bonusValue(ctx: Ctx, c: Char, W: ReadonlyMap<string, SubWeight>, row: BonusRow): number {
-  const segs = bonusSegments(ctx, c, row.bon);
-  const w = segs && row.bon.stat ? W.get(row.bon.stat) : undefined;
-  if (!segs || !w || !w.credit) return 0;
-  return CFG.tierWeights[Math.min(w.tier, CFG.tierWeights.length - 1)] * w.credit * segs;
-}

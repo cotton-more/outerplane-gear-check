@@ -17,7 +17,6 @@ export interface Variant {
   parentKey: string;  // buildKey родителя
   b: Build;           // билд с одной связкой: у единственной — сам родитель
   sig: string | null; // подпись связки (null — у билда с одной связкой)
-  dupOf?: string;     // такой же вариант этого персонажа раньше (Sigma «Speed» и «Support»): ключ первого
 }
 
 // подпись связки: части по номеру сета, «2x2+11x2» — от порядка связки в outerpedia (он ничего не значит) не зависит
@@ -30,9 +29,6 @@ function varyingPart(idx: Index, b: Build, combo: Combo): string {
   const rest = combo.filter((p) => !common.includes(p.set));
   return common.length && rest.length ? rest.map((p) => setName(idx, p.set)).join(' + ') : comboText(idx, combo);
 }
-
-// одинаковые для игры варианты: та же связка, цепочка, оружие и аксессуар с main
-const sameFor = (v: Variant) => JSON.stringify([v.sig ?? comboSig(v.b.sets[0] ?? []), v.b.subs, v.b.weapons, v.b.amulets]);
 
 const memo = new WeakMap<Char, Variant[]>();
 
@@ -48,12 +44,6 @@ export function variantsOf(idx: Index, c: Char): Variant[] {
       const name = `${parent.name} · ${varyingPart(idx, parent, combo)}`;
       out.push({ key: `${parentKey}#${sig}`, name, parent, parentKey, b: { ...parent, name, sets: [combo] }, sig });
     }
-  }
-  const first = new Map<string, string>();
-  for (const v of out) {
-    const same = sameFor(v);
-    const was = first.get(same);
-    if (was) v.dupOf = was; else first.set(same, v.key);
   }
   memo.set(c, out);
   return out;

@@ -9,7 +9,7 @@ import { dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, set
 import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
-import { planFor, planPut, poolView, putOn, stashOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
+import { planFor, planPut, poolView, putOn, stashOn, removeFrom, removeUndo, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
 import type { ItemInput } from '@/game/item/item';
 import { pinOptions, profileOf } from '@/game/build/profile';
 import { poolInfo } from '@/features/gear/pool/info';
@@ -108,12 +108,6 @@ describe('перенос v1 → v2 (design-final §F)', () => {
     const st = restoreGear(v1(pieces, { [K]: { helmet: 'p1', armor: 'p2' }, [buildKey(KAPPA, 'Speed')]: { gloves: 'p3', helmet: 'p1' } }), idx);
     expect(Object.keys(st.pieces).sort()).toEqual(['p1', 'p2', 'p3']);
     expect(new Set(Object.values(st.pools).flat())).toEqual(new Set(['p1', 'p2', 'p3']));
-  });
-
-  it('autoNew — варианты, которые собираются сами, а в v1 не были начаты', () => {
-    const four = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => rec('p' + (i + 1), { ...helmet({ CHC: 1 }), slot: slot as Piece['slot'] }));
-    const st = restoreGear(v1(four, { [K]: Object.fromEntries(four.map((p) => [p.slot, p.id])) }), idx);
-    expect(st.autoNew).toEqual([K2]); // Speed ×2 собран — Speed/Immu собирается сам
   });
 
   // правило владельца 2026-09-30 (было: вещи X сливались к Core Fusion X): у Core Fusion свои вещи — вещи X убраны
@@ -256,13 +250,6 @@ describe('«Надеть», «Убрать», отметки и «Вернуть
     expect(solo).toMatchObject({ pools: {}, pieces: {} });
     expect(undoRemove(solo, st.pieces.p1, [CAREN, KAPPA])).toMatchObject({ pools: { [CAREN]: ['p1'], [KAPPA]: ['p1'] }, pieces: { p1: st.pieces.p1 } });
   });
-
-  it('отметка: поставить, заменить, снять', () => {
-    const st = setMark(setMark(EMPTY_GEAR, K, 'want'), K2, 'skip');
-    expect(st.marks).toEqual({ [K]: 'want', [K2]: 'skip' });
-    expect(setMark(st, K, null).marks).toEqual({ [K2]: 'skip' });
-  });
-
 });
 
 describe('«Надеть»: что уходит из пула (В1, PLAN Д7)', () => {
@@ -356,12 +343,6 @@ describe('«Надеть»: вариант, где она встала, — на
   const ps = [rec('p1', A('helmet', 'Defense'), 4), rec('p2', A('gloves', 'Immunity'), 4), rec('p3', A('gloves', 'Patience')), rec('p4', A('shoes', 'Defense'), 4)];
   const st = v2(ps, { [GNOSIS]: ps.map((p) => p.id) });
   const PEN = { ...A('shoes', 'Penetration'), subs: { HP: 1, CHC: 1, RES: 4, EFF: 3 } };
-
-  it('Pen Def собирается без отметки: «Собираю» не нужен', () => {
-    const r = putOn(ctx, st, GNOSIS, PEN);
-    expect(r.st.marks ?? {}).toEqual({});
-    expect(poolView(ctx, r.st).of(GNOSIS)!.inPlay.map((v) => v.key)).toContain(buildKey(GNOSIS, 'Pen Def'));
-  });
 
   it('новые ботинки не «ненужные»', () => {
     const r = putOn(ctx, st, GNOSIS, PEN);
@@ -602,7 +583,6 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     ['undoDrop', (st) => { const r = dropChar(st, CAREN); return undoDrop(r.st, r.dropped); }],
     ['updateIn общей записи (копия)', (st) => updateIn(idx, st, CAREN, 'p1', { lit: { CHC: 3 } }).st],
     ['updateIn своей записи', (st) => updateIn(idx, st, CAREN, 'p2', { lit: { RES: 2 } }).st],
-    ['setMark', (st) => setMark(st, K2, 'skip')],
     ['normalizeFusion moved', (st) => normalizeFusion(idx, [cf], asEternal(st)).st],
     ['normalizeFusion removed', (st) => normalizeFusion(idx, [], asEternal(st, true)).st],
     ['switchFusion', (st) => switchFusion(idx, [], asEternal(st), cf)!.st],

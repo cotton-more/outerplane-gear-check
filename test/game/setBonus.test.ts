@@ -1,11 +1,10 @@
 // Бонусы сетов по Breakthrough (game/set/setBonus) — правило и примеры владельца; ценность бонуса в сегментах.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CFG } from '@/game/config';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible } from '@/game/set/setBonus';
+import { bonusRows, bonusSegments, convertible } from '@/game/set/setBonus';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -43,21 +42,11 @@ describe('бонус сета по Breakthrough — примеры владел�
   });
 });
 
-describe('ценность бонуса', () => {
+describe('бонус в сегментах сабстата', () => {
   it('в сегментах сабстата: Attack 2P T4 35% = 35 / 4 сегмента ATK%; Speed — % от базы SPD (Caren 98)', () => {
     expect(bonusSegments(ctx, caren, { stat: 'ATK%', value: 35, mode: 'rate' })).toBeCloseTo(8.75);
     expect(bonusSegments(ctx, caren, { stat: 'SPD', value: 13, mode: 'rate' })).toBeCloseTo(0.13 * (98 + 4) / 3); // quirks +4
     expect(bonusSegments(ctx, caren, { stat: null, value: 11, mode: 'add' })).toBeNull();
-  });
-
-  it('ценность — как у сабстата на том же месте цепочки; стата нет в цепочке — 0', () => {
-    const b = caren.builds[0]; // DEF › CHC › CHD › SPD › DMG UP%
-    const W = bonusWeights(ctx, caren, b);
-    const [spd] = bonusRows(idx.SET, pieces('Speed', 4, 4));
-    const [atk] = bonusRows(idx.SET, pieces('Attack', 4, 4));
-    const w = W.get('SPD')!;
-    expect(bonusValue(ctx, caren, W, spd)).toBeCloseTo(CFG.tierWeights[w.tier] * bonusSegments(ctx, caren, spd.bon)!);
-    expect(bonusValue(ctx, caren, W, atk)).toBe(0);
   });
 
   it('переводимы 8 сетов-статов; Penetration, Immunity, Counterattack — нет; без базы SPD Speed — нет', () => {

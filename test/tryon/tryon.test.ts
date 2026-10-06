@@ -1,15 +1,14 @@
-// Режим «для героя» (features/tryon/tryon, пул GEARPOOL; прежде — примерка билда): что хранится, какой вариант предустановки,
-// что подставляется на форму и заголовок вердикта — штамп общий, а строка после « — » говорит и про других, и про
-// героя (лучший исход по всем его билдам). Шаг 10: tryOnTarget/tryOnTitle/targetName удалены — те же случаи через
-// heroTarget/heroTitle; случаи «не по билду» (цель — один вариант) ушли вместе с примеркой билда (В10)
+// Режим «для героя» (features/tryon/tryon): что хранится, что подставляется на форму и заголовок вердикта — штамп общий,
+// а строка после « — » говорит и про других, и про героя (лучший исход по всем его билдам). Предустановки формы по билду
+// больше нет (этап 7 .x/0085): старые build и combo из хранилища читаются и отбрасываются.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { TEXTS } from '@/i18n';
-import { makeCtx, type Ctx } from '@/game/context';
-import { EMPTY_GEAR, type GearStore } from '@/features/gear/model/gear';
-import { isStats, poolView, putOn, STATS } from '@/features/gear/pool';
+import { makeCtx } from '@/game/context';
+import { EMPTY_GEAR, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { poolView, putOn } from '@/features/gear/pool';
 import { charVs } from '@/features/gear/model/poolVs';
 import { heroNote, heroTarget, heroTitle, restoreTryOn, tryOnPreset } from '@/features/tryon/tryon';
 import type { Verdict } from '@/features/eval/verdict/verdict';
@@ -25,19 +24,12 @@ const armor = (slot: ItemInput['slot'], s: string, subs: Record<string, number>,
   ({ slot, grade, setId: set(s), itemKey: null, main: null, subs });
 const NEW = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 });
 const OLD = armor('helmet', 'Speed', { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
-const all = (items: ItemInput[], c: Ctx = ctx) => items.reduce<GearStore>((s, x) => putOn(c, s, caren.id, x).st, EMPTY_GEAR);
-// герой с предустановкой билда (вариант — для формы)
-const target = (build: string, st: GearStore = EMPTY_GEAR, combo?: string) => heroTarget(idx, { charId: caren.id, build, ...(combo ? { combo } : {}) }, poolView(ctx, st))!;
 
-describe('примерка: что хранится', () => {
-  it('персонаж и билд из данных — примерка есть; связка варианта — тоже', () => {
-    expect(restoreTryOn({ charId: caren.id, build: 'Pen' }, idx)).toEqual({ charId: caren.id, build: 'Pen' });
-    expect(restoreTryOn({ charId: caren.id, build: 'Pen', combo: '11x4' }, idx)).toEqual({ charId: caren.id, build: 'Pen', combo: '11x4' });
-  });
-
-  // шаг 6 (В10): билда больше нет — режим героя без предустановки, а не «примерки нет»
-  it('билда больше нет — режим героя без предустановки: build и combo отброшены', () => {
-    expect(restoreTryOn({ charId: caren.id, build: 'Old', combo: '11x4' }, idx)).toEqual({ charId: caren.id });
+describe('режим «для героя»: что хранится', () => {
+  it('персонаж из данных — режим героя; старые build и combo отброшены', () => {
+    expect(restoreTryOn({ charId: caren.id }, idx)).toEqual({ charId: caren.id });
+    expect(restoreTryOn({ charId: caren.id, build: 'Pen', combo: '11x4' }, idx)).toEqual({ charId: caren.id });
+    expect(restoreTryOn({ charId: caren.id, build: 3 }, idx)).toEqual({ charId: caren.id });
   });
 
   it.each([
@@ -49,98 +41,29 @@ describe('примерка: что хранится', () => {
     expect(restoreTryOn(raw, idx)).toBeNull();
   });
 
-  it('цель — персонаж и вариант предустановки', () => {
-    expect(target('Pen')).toMatchObject({ c: { name: 'Caren' }, v: { key: `${caren.id}/Pen`, parent: { name: 'Pen' } } });
-    expect(heroTarget(idx, null)).toBeNull();
-  });
-
-  // шаг 10: героя без билдов не с чем сравнивать — режима героя нет (в хранилище бывает от старых данных)
-  it('герой без билдов — режима героя нет', () => {
-    const none = D.chars.find((c) => !c.builds.length)!;
-    expect(heroTarget(idx, { charId: none.id })).toBeNull();
-  });
-
-  it('билд с несколькими связками: combo — тот вариант; нет или устарел — самый собранный, при равенстве первый', () => {
-    const anarky = D.chars.find((c) => c.name === 'Anarky')!;
-    const tg = (combo?: string, st: GearStore = EMPTY_GEAR) => heroTarget(idx, { charId: anarky.id, build: 'Defense mix', ...(combo ? { combo } : {}) }, poolView(ctx, st))!.v!.name;
-    expect(tg()).toBe('Defense mix · Penetration');
-    expect(tg('2x2+19x2')).toBe('Defense mix · Swiftness');
-    expect(tg('9x9')).toBe('Defense mix · Penetration');
-    const immu = putOn(ctx, EMPTY_GEAR, anarky.id, armor('helmet', 'Immunity', { CHC: 1 })).st;
-    expect(tg(undefined, immu)).toBe('Defense mix · Immunity');
-  });
-});
-
-describe('примерка: что встаёт на форму', () => {
-  it('пустой слот брони — сет варианта', () => {
-    expect(tryOnPreset(poolView(ctx, EMPTY_GEAR), target('Speed'), 'gloves')).toEqual({ slot: 'gloves', setId: set('Speed') });
-  });
-
-  it('2+2: сет, которого не хватает, — в сборке уже два Speed, значит Immunity', () => {
-    const st = all([armor('helmet', 'Speed', { CHC: 1 }), armor('armor', 'Speed', { CHC: 1 })]);
-    expect(tryOnPreset(poolView(ctx, st), target('Speed/Immu', st), 'gloves').setId).toBe(set('Immunity'));
-  });
-
-  it('«Примерить замену» — сет той вещи; оружие — без сета', () => {
-    const r = putOn(ctx, EMPTY_GEAR, caren.id, armor('helmet', 'Immunity', { CHC: 1 }));
-    expect(tryOnPreset(poolView(ctx, r.st), target('Speed/Immu', r.st), 'helmet', r.piece).setId).toBe(set('Immunity'));
-    expect(tryOnPreset(poolView(ctx, EMPTY_GEAR), target('Speed'), 'weapon')).toEqual({ slot: 'weapon', setId: null });
-  });
-
-  it('«Примерить замену» у вещи не из связки (Defense в Speed) — сет варианта, а не её', () => {
-    const r = putOn(ctx, EMPTY_GEAR, caren.id, armor('shoes', 'Defense', { CHC: 1 }));
-    expect(tryOnPreset(poolView(ctx, r.st), target('Speed', r.st), 'shoes', r.piece).setId).toBe(set('Speed'));
-  });
-});
-
-describe('примерка «По статам»', () => {
-  const stats = (st: GearStore = EMPTY_GEAR) => heroTarget(idx, { charId: caren.id, build: STATS }, poolView(ctx, st))!;
-
-  it('восстанавливается из хранилища; вариант предустановки — «По статам»', () => {
-    const t = restoreTryOn({ charId: caren.id, build: STATS }, idx);
-    expect(t).toEqual({ charId: caren.id, build: STATS });
-    expect(isStats(stats().v!)).toBe(true);
-  });
-
-  // шаг 6 (В10): у героя без билдов «По статам» нет — режим героя без предустановки
-  it('у персонажа без билдов «По статам» нет — режим героя без предустановки', () => {
-    const none = D.chars.find((c) => !c.builds.length)!;
-    expect(restoreTryOn({ charId: none.id, build: STATS }, idx)).toEqual({ charId: none.id });
-  });
-
-  it('на форму: слот; у брони — сет той вещи или никакого (связки нет)', () => {
-    const r = putOn(ctx, EMPTY_GEAR, caren.id, armor('helmet', 'Immunity', { CHC: 1 }));
-    expect(tryOnPreset(poolView(ctx, r.st), stats(r.st), 'helmet', r.piece)).toEqual({ slot: 'helmet', setId: set('Immunity') });
-    expect(tryOnPreset(poolView(ctx, EMPTY_GEAR), stats(), 'gloves')).toEqual({ slot: 'gloves', setId: null });
-  });
-});
-
-// Шаг 6 «Оценка — единственный ввод»: режим «для героя» (В7, В10) — цель герой, а не билд; build и combo — только
-// предустановка формы; replace — запись из «Примерить замену»
-describe('режим «для героя»: что хранится', () => {
-  it('без build — режим героя', () => {
-    expect(restoreTryOn({ charId: caren.id }, idx)).toEqual({ charId: caren.id });
-  });
-
-  it('старый { charId, build, combo } — режим героя с предустановкой', () => {
-    expect(restoreTryOn({ charId: caren.id, build: 'Pen', combo: '11x4' }, idx)).toEqual({ charId: caren.id, build: 'Pen', combo: '11x4' });
-  });
-
   it('replace — читается строка; не строка или пустая — отброшена, режим героя остаётся', () => {
-    expect(restoreTryOn({ charId: caren.id, build: 'Speed', replace: 'p7' }, idx)).toEqual({ charId: caren.id, build: 'Speed', replace: 'p7' });
+    expect(restoreTryOn({ charId: caren.id, build: 'Speed', replace: 'p7' }, idx)).toEqual({ charId: caren.id, replace: 'p7' });
     expect(restoreTryOn({ charId: caren.id, replace: 7 }, idx)).toEqual({ charId: caren.id });
     expect(restoreTryOn({ charId: caren.id, replace: '' }, idx)).toEqual({ charId: caren.id });
   });
 
-  it('build не строка — режим героя без предустановки', () => {
-    expect(restoreTryOn({ charId: caren.id, build: 3, combo: '11x4' }, idx)).toEqual({ charId: caren.id });
+  it('heroTarget: герой; нет режима — null; герой без билдов (в хранилище бывает от старых данных) — null', () => {
+    expect(heroTarget(idx, { charId: caren.id })).toEqual({ c: caren });
+    expect(heroTarget(idx, null)).toBeNull();
+    const none = D.chars.find((c) => !c.builds.length)!;
+    expect(heroTarget(idx, { charId: none.id })).toBeNull();
+  });
+});
+
+describe('режим «для героя»: что встаёт на форму', () => {
+  it('слот; у брони — сет «Примерить замену», иначе никакого', () => {
+    const helmet = { setId: set('Immunity') } as Piece;
+    expect(tryOnPreset('gloves')).toEqual({ slot: 'gloves', setId: null });
+    expect(tryOnPreset('helmet', helmet)).toEqual({ slot: 'helmet', setId: set('Immunity') });
   });
 
-  it('heroTarget: с build — герой и вариант предустановки; без build — только герой; нет режима — null', () => {
-    expect(heroTarget(idx, { charId: caren.id, build: 'Pen' })).toMatchObject({ c: { name: 'Caren' }, v: { key: `${caren.id}/Pen` } });
-    expect(heroTarget(idx, { charId: caren.id })).toEqual({ c: caren });
-    expect(heroTarget(idx, { charId: caren.id, build: 'Old' })).toEqual({ c: caren });
-    expect(heroTarget(idx, null)).toBeNull();
+  it('оружие — без сета, даже если заменяют вещь с сетом', () => {
+    expect(tryOnPreset('weapon', { setId: set('Immunity') } as Piece)).toEqual({ slot: 'weapon', setId: null });
   });
 });
 

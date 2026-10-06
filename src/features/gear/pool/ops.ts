@@ -1,7 +1,7 @@
-// Пул экипировки, операции с пулом — «Надеть», «Убрать», «Вернуть», «Собираю». Что держит пул — info.ts.
+// Пул экипировки, операции с пулом — «Надеть», «Убрать», «Вернуть». Что держит пул — info.ts.
 import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import { EMPTY_GEAR, gc, isWorn, newPiece, syncWorn, today, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { EMPTY_GEAR, gc, isWorn, newPiece, syncWorn, today, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { ItemInput } from '@/game/item/item';
 import type { PoolStore } from './base';
 import { profileFor } from '@/game/build/profile';
@@ -182,11 +182,4 @@ export function removeUndo(st: GearStore, charId: string, piece: Piece): (x: Gea
   const aim = st.aim?.[charId];
   const aims = last && aim !== undefined ? { [charId]: aim } : {};
   return (x) => undoRemove(x, piece, [charId], wornBy, aims);
-}
-
-// «Собираю / Не собираю»: null — снять отметку (вариант собирается сам или нет — по правилам)
-export function setMark(st: GearStore, key: string, mark: Mark | null): GearStore {
-  const { [key]: _, ...rest } = st.marks ?? {};
-  const marks = mark ? { ...rest, [key]: mark } : rest;
-  return { ...st, marks };
 }

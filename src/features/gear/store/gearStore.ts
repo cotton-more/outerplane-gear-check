@@ -4,12 +4,10 @@
 // кроме правила Core Fusion (features/gear/model/fusion): у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16).
 import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
-import { makeCtx } from '@/game/context';
 import { normalizeStored, type Normalized } from '@/features/gear/model/fusion';
 import { gc, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { Bt } from '@/game/item/item';
 import { buildKey } from '@/game/build/variants';
-import { heroOpts, isStats, play } from '@/features/gear/pool';
 import { MAX_SUBS, type Subs, MAX_LIT } from '@/game/item/subs';
 
 // v1: вещи лежали в билдах («персонаж/билд» → слот → id)
@@ -74,12 +72,8 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
   return { ...r, v: 1, seq: seqOf(r, kept), pieces: kept, builds };
 }
 
-// для подсказки «теперь собирается сам»: какие варианты собираются после переноса. Настройки — по умолчанию
-// (от них зависит только «временная» у оружия в «Развитии»)
-const MIGRATE_SETTINGS = { rosterOnly: false, stage: 'grow' as const, lv120: false, quirks: true };
-
-// перенос v1 → v2. Ростер и Core Fusion (features/gear/model/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
-// (находка 16)
+// перенос v1 → v2. Ростер и Core Fusion (features/gear/model/fusion normalizeStored). Подсказку autoNew больше не считаем (этап 7;
+// поле уйдёт на этапе 8)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   // надетого и выбранного билда в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
   const { builds, v: _, worn: _w, aim: _g, pinned: _p, pin: _n, ...rest } = v1;
@@ -94,17 +88,7 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
     const c = idx.CHAR[charId];
     if (c?.builds.some((b) => buildKey(c.id, b.name) === k)) marks[k] = 'want';
   }
-  const n = normalizeStored(idx, roster, gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, v1builds: builds }));
-  const ctx = makeCtx(idx, MIGRATE_SETTINGS, new Set());
-  const autoNew: string[] = [];
-  for (const [charId, ids] of Object.entries(n.st.pools)) {
-    const c = idx.CHAR[charId];
-    if (!c) continue;
-    // надетого у v1 нет (worn вырезан выше) — heroOpts ради одного правила с видом пула
-    const p = play(ctx, c, ids.map((id) => n.st.pieces[id]), { ...heroOpts(n.st, charId), marks });
-    for (const v of p.inPlay) if (!isStats(v) && !builds[v.parentKey]) autoNew.push(v.key);
-  }
-  return { ...n, st: autoNew.length ? { ...n.st, autoNew } : n.st };
+  return normalizeStored(idx, roster, gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, v1builds: builds }));
 }
 
 // пул в хранилище — массив id. Испорченный пул не выбрасываем целиком: gc стёр бы вещи, которых нет в других пулах.

@@ -3,28 +3,23 @@ import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Piece } from '@/features/gear/model/gear';
 import type { PoolStore } from './base';
-import { heroOpts, play, type PlayOpts, type Play } from './play';
 import { heroPool, type HeroPool, type Pools } from '@/features/gear/verdict';
 
-export interface CharPool extends Play {
+export interface CharPool {
   c: Char;
   pieces: Piece[];
   unused: Piece[]; // «больше не нужна»: пул героя их не держит (features/gear/pool/info, FORMULA §5 п. 6)
-  opts: PlayOpts;  // опции его сборки (heroOpts): отметки и его надетое — с ними же planFor, computeOutcome, putOn
   worn: Set<string>; // надетые записи героя (его пул держит их всегда; «надета» вместо «где стоит» — PoolList)
 }
 
 export interface PoolView {
   st: PoolStore;
-  opts: PlayOpts;
   of: (charId: string) => CharPool | null;
   hero: Pools;    // пул героя по «статам + сетам» (features/gear/pool/info): что держится и почему
 }
 
-// один раз на хранилище: персонажи считаются по запросу и запоминаются. opts — общие (отметки); надетое — у каждого
-// героя своё (CharPool.opts)
+// один раз на хранилище: персонажи считаются по запросу и запоминаются
 export function poolView(ctx: Ctx, st: PoolStore): PoolView {
-  const opts: PlayOpts = { marks: st.marks };
   const heroes = new Map<string, HeroPool | null>();
   const hero = (id: string): HeroPool | null => {
     if (heroes.has(id)) return heroes.get(id)!;
@@ -41,14 +36,12 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
     if (memo.has(id)) return memo.get(id)!;
     const c = ctx.idx.CHAR[id];
     const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
-    const po = heroOpts(st, id);
     const mine = new Set(pieces.map((p) => p.id));
-    const worn = new Set(Object.values(po.worn ?? {}).filter((x): x is string => !!x && mine.has(x)));
-    const r = c ? { c, pieces, ...play(ctx, c, pieces, po), unused: [] as Piece[], opts: po, worn } : null;
+    const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
     // «больше не нужна» — по «статам + сетам» (features/gear/pool/info, FORMULA §5 п. 6)
-    if (r) r.unused = hero(id)?.info.unneeded ?? [];
+    const r = c ? { c, pieces, worn, unused: hero(id)?.info.unneeded ?? [] } : null;
     memo.set(id, r);
     return r;
   };
-  return { st, opts, of, hero };
+  return { st, of, hero };
 }

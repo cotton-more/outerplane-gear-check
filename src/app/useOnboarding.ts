@@ -62,7 +62,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
     if (!d) return;
     if (step === 'gPiece') dispatch({ type: 'openChar', id: d.c.id, reveal: 'keep' });
     if (step !== 'gCard') return;
-    setDemo((x) => x && (x.tryOn ? x : { ...x, tryOn: { charId: d.c.id, build: d.b.name } }));
+    setDemo((x) => x && (x.tryOn ? x : { ...x, tryOn: { charId: d.c.id } }));
     dispatch({ type: 'load', item: d.item });
   }, [idx, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
   // onRunning у тура — один на всё время (useTour держит его с первого показа): свежий onTourRunning — через ref

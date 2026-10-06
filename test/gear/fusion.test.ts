@@ -237,14 +237,6 @@ describe('загрузка и код: та же нормализация', () =>
     expect(Object.keys(r.st.pieces)).toEqual(['p2']);
   });
 
-  it('перенос v1: autoNew — по итоговым пулам: у X без вещей его нет, у Core Fusion — по перешедшим вещам', () => {
-    const [eps, cfEps] = [id('Epsilon'), id('Core Fusion Epsilon')];
-    const r = loadGear(v1({ [buildKey(eps, 'Speed')]: { helmet: 'p1', armor: 'p2' } }), idx, [cfEps]);
-    const autoNew = r.st.autoNew ?? [];
-    expect(autoNew.filter((k) => k.startsWith(eps + '/'))).toEqual([]);
-    expect(autoNew.some((k) => k.startsWith(cfEps + '/'))).toBe(true);
-  });
-
   it('перенос v1: одна запись в билдах X и Core Fusion — остаётся у Core Fusion', () => {
     const r = loadGear(v1({ [buildKey(X, 'Speed')]: { helmet: 'p1', armor: 'p2' }, [buildKey(CF, 'Speed')]: { helmet: 'p1' } }), idx, [CF]);
     expect({ pools: r.st.pools, pieces: Object.keys(r.st.pieces) }).toEqual({ pools: { [CF]: ['p1'] }, pieces: ['p1'] });

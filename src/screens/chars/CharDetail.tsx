@@ -3,7 +3,7 @@
 // надетой на 1+ очко) и «Что искать»; «Пул» — все вещи и зачем каждая; «Билды» — справка outerpedia, только просмотр.
 // На узком экране — полноэкранная шторка поверх списка.
 import { useEffect, useState } from 'react';
-import type { Build, Char, SlotId } from '@/game/data/types';
+import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
@@ -35,7 +35,7 @@ import { CharHead } from './CharHead';
 // replace режима героя переходит на неё. onRateFor — «Оценить вещь для Caren» (режим «для героя» без предустановки)
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
-  onTryOn?: (c: Char, b?: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing?: boolean, slotOnly?: boolean) => void;
+  onTryOn?: (c: Char, slot?: SlotId, from?: Piece, replacing?: boolean, slotOnly?: boolean) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
@@ -131,7 +131,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   };
   // «Поделиться»: надета хоть одна вещь (SPEC 3.1)
   const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, pieces, pin?.key ?? null) : null;
-  const enter = onTryOn ? (slot: SlotId) => onTryOn(c, undefined, slot, undefined, null, false, true) : undefined;
+  const enter = onTryOn ? (slot: SlotId) => onTryOn(c, slot, undefined, false, true) : undefined;
   const rateFor = onRateFor && !gear.newer && hasBuilds ? () => onRateFor(c) : undefined;
   const why = (p: Piece) => {
     if (!hp) return '';
@@ -199,7 +199,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           )}
           {shownPiece && piece && (
             <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} why={why(piece)} worn={!!hp?.wornIds.has(piece.id)} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
-              onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, undefined, piece.slot, piece, null, true); } : undefined}
+              onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, piece.slot, piece, true); } : undefined}
               onWear={live ? () => { setPieceId(null); wear(piece.id); } : undefined} />
           )}
           {sheet === 'redress' && wv?.redress && hp && (
