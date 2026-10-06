@@ -169,7 +169,8 @@ The stamp is always about **the piece being rated**:
 - **Keep** — worth wearing: put it on the named hero or keep it for them ("Set aside"). **Stopgap** — a piece that
   passed only as a temporary one: Epic armor under the temporary rule, a weapon or accessory without the needed passive.
 - **Fodder** — this piece **is** material: Breakthrough with it now ("Fodder — Breakthrough for Caren's boots") or keep it
-  in reserve for a future strong one. A reserve piece goes to Breakthrough as soon as a good piece of the same set and
+  in reserve for a future strong one, or let it sit in inventory: an Epic is already set aside for that set and slot
+  ("Fodder — let it sit in inventory"). A reserve piece goes to Breakthrough as soon as a good piece of the same set and
   slot arrives: the verdict says "Feed the weak … from Caren's reserve into this one". A piece already at T4 is never
   material. A Legendary weapon or accessory that is the wrong main for a hero whose builds recommend it is kept in
   reserve too.

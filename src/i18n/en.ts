@@ -183,6 +183,8 @@ export const en: Texts = {
     btNowWhy: (slot, name) => `Do it now: ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? "aren't" : "isn't"} T4 yet. One piece — one step.`,
     reserve: (set, slot, name) => `Fodder — reserve for ${name}'s ${set} ${SLOT_EN[slot]}`,
     reserveWhy: (name, set, slot) => `${name} has started ${set} but no ${set} ${SLOT_EN[slot]}. When a strong one drops, feed this one to it.`,
+    inventory: 'Fodder — let it sit in inventory',
+    inventoryWhy: (name, set, slot) => `${name} already has an Epic ${set} ${SLOT_EN[slot]} set aside. Don't set this Legendary aside for anyone, but don't dismantle it either: it'll be material once a good Legendary ${set} ${SLOT_EN[slot]} drops.`,
     reserveItem: (item, name) => `Fodder — reserve for ${name}'s ${item}`,
     reserveItemWhy: (name, item, mains) => `${name}'s builds ask for ${item} with ${mains}, and ${name} has none. When one drops, feed this one to it.`,
     feed: (set, slot, name) => `Feed the weak ${set} ${SLOT_EN[slot]} from ${name}'s reserve into this one.`,

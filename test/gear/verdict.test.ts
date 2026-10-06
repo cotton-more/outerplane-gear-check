@@ -203,6 +203,24 @@ describe('T5 вердикт новой вещи', () => {
     expect(after.unneeded.map((p) => p.id)).toContain('weakA');
   });
 
+  it('В1а ревью этапа 10: Epic-запас Speed-шлема; годный Legendary — «Оставь», Epic «больше не нужна»; слабый Legendary — «пусть лежит»', () => {
+    const [, sG, sB] = speedCaren();
+    const dHelm = mk('dHelm', 'helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+    const epic = mk('eW', 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1 }, 0, { grade: 'rare' });
+    const base = [sG, sB, dHelm];
+    expect(kindOf(world(['Caren'], { Caren: base }).v(epic))).toBe('material reserve');
+    const w = world(['Caren'], { Caren: [...base, epic] }, { Caren: base.map((p) => p.id) });
+    const good = mk('g', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 0);
+    const r = w.v(good)!;
+    expect([kindOf(r), r.named[0].reserveBt]).toEqual(['keep a', null]); // Epic Legendary-шлему не материал
+    expect(poolInfo(prof('Caren'), [...base, epic, good], new Set(base.map((p) => p.id))).unneeded.map((p) => p.id)).toEqual(['eW']);
+    const lie = w.v(weakSpd('lW'))!;
+    expect([kindOf(lie), names(lie.reserve)]).toEqual(['material inventory', ['Caren']]);
+    // Legendary-запас — слабый Legendary, как раньше, «Разобрать» (T5.7)
+    const w2 = world(['Caren'], { Caren: [...base, weakSpd('wA')] }, { Caren: base.map((p) => p.id) });
+    expect(kindOf(w2.v(mk('wB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('junk');
+  });
+
   it('T5.7а (вопрос 14): аксессуар Fran не с тем main → запас; второй → «Разобрать»; годный → «Надень» и запасной ему в Breakthrough', () => {
     const acc = (id: string, main: string, bt: 0 | 4 = 0) => mk(id, 'accessory', null, { CHD: 2, 'ATK%': 2, RES: 2, 'HP%': 2 }, bt, { itemKey: '1017', main });
     const bad = acc('xBad', 'CHC');

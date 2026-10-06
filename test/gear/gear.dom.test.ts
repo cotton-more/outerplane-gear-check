@@ -1203,6 +1203,18 @@ describe('вердикт «статы + сеты»', () => {
     expect($('.vcard .vc-title')?.textContent).toBe("reserve for Caren's Speed helmet");
   });
 
+  it('В1а ревью этапа 10: слабый Legendary при Epic-запасе — «Fodder — let it sit in inventory», без «Отложить»', async () => {
+    const ok = { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 };
+    const pcs = [P('s1', 'gloves', speed, ok, { bt: 4 }), P('s2', 'shoes', speed, ok, { bt: 4 }), P('e1', 'helmet', speed, { SPD: 1, RES: 1, EFF: 1 }, { grade: 'rare', bt: 0 })];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { SPD: 1, RES: 1, EFF: 1, HP: 1 } },
+      { gear: G(pcs, { [caren.id]: ['s1', 's2', 'e1'] }, { worn: { [caren.id]: { gloves: 's1', shoes: 's2' } } }) });
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vcard .vc-title')?.textContent).toBe('let it sit in inventory');
+    expect($('.vc-stash')).toBeNull();
+    await click($('.vcard'));
+    expect($('.v-reasons')?.textContent).toContain("Caren already has an Epic Speed helmet set aside. Don't set this Legendary aside for anyone");
+  });
+
   it('В6 ревью этапа 10: запас и в режиме героя — «Отложить для Caren»', async () => {
     const ok = { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 };
     const pcs = [P('s1', 'gloves', speed, ok, { bt: 4 }), P('s2', 'shoes', speed, ok, { bt: 4 })];

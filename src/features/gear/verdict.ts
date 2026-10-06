@@ -197,11 +197,11 @@ function sameOf(hps: HeroPool[], x: Piece): Same | null {
 export type Kind = 'wear' | 'keep' | 'material' | 'maybe' | 'junk';
 export interface Result {
   kind: Kind;
-  sub?: 'a' | 'b' | 'now' | 'reserve';
+  sub?: 'a' | 'b' | 'now' | 'reserve' | 'inventory';
   heroes: HeroRes[];          // все герои ростера с билдами
   named: HeroRes[];           // A10: герой с наибольшей пользой первым, ещё до двух
   now: Target[];              // материал сейчас (§4 п. 3а), лучшие цели первыми
-  reserve: Char[];            // запас (п. 3б, 3в)
+  reserve: Char[];            // запас (п. 3б, 3в); у 'inventory' — герой, у которого лежит Epic-запас
   maybe: Char[];              // «Спорно»
   quiet: Quiet | null;        // тихая строка у материала, запаса и «Разобрать»
   same: Same | null;          // похоже, это отложенная раньше вещь (её запись в расчёт не входит)
@@ -233,6 +233,15 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | nu
   if (now.length) return res('material', { sub: 'now', now, quiet });
   const reserve = hps.filter((hp, i) => reserveFor(hp, x, heroes[i])).map((hp) => hp.c);
   if (reserve.length) return res('material', { sub: 'reserve', reserve, quiet });
+  // В1а ревью этапа 10: слабая Legendary-броня, а для её сета и слота у героя уже лежит запас другого грейда (Epic ей не
+  // материал) — не «Разобрать» и не «Отложить»: пусть лежит в инвентаре игры
+  const lie = isArmor(x.slot) && x.grade === 'unique' && x.bt !== 4
+    ? hps.find((hp, i) => {
+      const rid = hp.info.reserve.get(reserveKey(x));
+      return !heroes[i].bar && !!rid && hp.pieces.some((p) => p.id === rid && p.grade !== x.grade);
+    })
+    : undefined;
+  if (lie) return res('material', { sub: 'inventory', reserve: [lie.c], quiet });
   const maybe = maybeFor(ctx, x);
   if (maybe.length) return res('maybe', { maybe, quiet });
   return res('junk', { quiet });

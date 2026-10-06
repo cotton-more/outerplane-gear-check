@@ -212,6 +212,10 @@ export const ru = {
     reserve: (set: string, slot: string, name: string) => `Фоддер — запас для ${set}-${GEN[slot]} ${name}`,
     reserveWhy: (name: string, set: string, slot: string) =>
       `У ${name} начат ${set}, а ${set}-${GEN[slot]} нет. ${by(slot, 'Придёт сильный — этот пойдёт ему', 'Придёт сильная — эта пойдёт ей', 'Придёт сильное — это пойдёт ему', 'Придут сильные — эти пойдут им')} в Breakthrough.`,
+    // В1а: слабый Legendary, а у героя для этого сета и слота уже отложен Epic
+    inventory: 'Фоддер — пусть лежит в инвентаре',
+    inventoryWhy: (name: string, set: string, slot: string) =>
+      `Для ${set}-${GEN[slot]} у ${name} уже отложен Epic. Этот Legendary никому не откладывай, но и не разбирай: пригодится материалом, когда придёт ${by(slot, 'годный', 'годная', 'годное', 'годные')} Legendary ${set}-${NOM[slot]}.`,
     reserveItem: (item: string, name: string) => `Фоддер — запас для ${item} ${name}`,
     reserveItemWhy: (name: string, item: string, mains: string) => `Билды ${name} просят ${item} с ${mains}, а у ${name} его нет. Придёт такой — эта пойдёт ему в Breakthrough.`,
     feed: (set: string, slot: string, name: string) => `${by(slot, 'Слабый', 'Слабая', 'Слабое', 'Слабые')} ${set}-${NOM[slot]} из запаса ${name} — в Breakthrough этой.`,
