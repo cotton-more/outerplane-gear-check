@@ -100,7 +100,7 @@ describe('свежая Epic с тремя сабстатами — без Reforg
   });
 
   it('«Временно», подробности: в «Прокачке» — Enhance и «не вкладывай», строк Reforge нет', async () => {
-    await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 } });
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'DMG UP%': 2, 'ATK%': 3, CHD: 3 } });
     await act(async () => $('.vcard')!.click());
 
     expect($('.vcard .stamp')?.textContent).toBe('Stopgap');

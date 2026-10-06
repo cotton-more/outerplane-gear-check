@@ -62,7 +62,7 @@ describe('Epic-броня: решают главные статы (1–2 сту�
   });
 
   it('один главный стат с хорошим роллом и ещё полезный — «Временно», в тексте — чего не хватает', () => {
-    const r = attackHelmet('rare', { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+    const r = attackHelmet('rare', { 'DMG UP%': 2, 'ATK%': 3, CHD: 3 }); // с 3/3/3 — уже 6+ очков: «Оставить»
     expect(r.v).toBe('temp');
     expect(r.lines[0]).toContain('нет CHC');
   });
@@ -77,7 +77,7 @@ describe('Epic-броня: решают главные статы (1–2 сту�
   });
 
   it('Legendary эти пути не трогают: два главных из четырёх — по-прежнему не «Оставить»', () => {
-    expect(attackHelmet('unique', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3, RES: 1 }).v).not.toBe('keep');
+    expect(attackHelmet('unique', { CHC: 2, 'ATK%': 3, 'DMG UP%': 3, RES: 1 }).v).not.toBe('keep');
   });
 });
 

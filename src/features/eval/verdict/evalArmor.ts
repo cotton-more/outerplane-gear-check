@@ -4,13 +4,12 @@ import { GRADE_NAME, GRADE_PREFIX, SLOT, subLabel } from '@/game/data';
 import { buildsOf, combosWith } from '@/game/build/builds';
 import type { Ctx } from '@/game/context';
 import { itemMains, subForms } from '@/game/item/mains';
-import { dedupe, flatMisses, rows, topTokens, type Part, type Row } from '@/game/build/score';
+import { dedupe, flatMisses, rows, topTokens, type Row } from '@/game/build/score';
 import { dropSubs } from '@/game/item/subs';
 import { fmtGood, namesLine } from '@/game/text';
+import { armorBar, type Scored } from './bar';
 import type { Verdict } from './verdict';
 import type { ItemInput } from '@/game/item/item';
-
-type Scored = Omit<Row, 'alt'>;
 
 export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const { idx, settings, t } = ctx;
@@ -38,19 +37,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   const judged = all.filter((x) => x.b.subs.some((tier) => tier.length));
   const spdRoll = subs.SPD || 0;
-  const yellowOf = (parts: Part[]) => parts.reduce((a, p) => a + (subs[p.key] || 1), 0);
-  const full = (m: Scored) => m.parts.filter((p) => p.ok && !p.half);
-  // главные статы — засчитаны целиком (не ½ и не слабый flat) и стоят на 1–2 ступени приоритета билда
-  const mains = (m: Scored) => full(m).filter((p) => (p.tier ?? Infinity) < CFG.epicTopTiers);
-  // Epic не исправить камнями, поэтому решают главные статы и ролл на них:
-  //   три полезных — если среди них SPD или главный стат, либо ролл хороший;
-  //   или два главных стата с хорошим роллом — тогда третий может быть любым
-  const topTier = (m: Scored) => m.parts.some((p) => p.ok && (p.key === 'SPD' || (p.tier ?? Infinity) < CFG.epicTopTiers));
-  const strong = (m: Scored) => legend || topTier(m) || m.yellow >= CFG.epicYellow;
-  const twoMain = (m: Scored) => !legend && mains(m).length >= 2 && yellowOf(mains(m)) >= CFG.epicYellow;
-  const qualifies = (m: Scored) => m.good != null && ((m.good >= CFG.keepCount && strong(m)) || (m.spd && m.good >= CFG.spdKeep && spdRoll >= CFG.spdRoll) || twoMain(m));
-  // «Временно» у Epic: главный стат с хорошим роллом и ещё полезный, вместе 5+ сегментов — носить, пока не выпадет вещь с недостающим
-  const tempOk = (m: Scored) => !legend && mains(m).some((p) => (subs[p.key] || 1) >= CFG.epicTempRoll) && full(m).length >= 2 && yellowOf(full(m)) >= CFG.tempYellow;
+  const { yellowOf, full, mains, twoMain, qualifies, tempOk } = armorBar(ctx, s);
   res.qualifies = qualifies;
   // сет основной, если он в первой связке билда, — дальше идут запасные варианты
   const primary = (r: Scored) => r.b.sets[0]?.some((p) => p.set === set.id) ?? false;

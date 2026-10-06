@@ -6,13 +6,12 @@ import type { GearKind } from '@/game/data/types';
 import { buildsOf, gearList, gearRef, slotMains, uniqChars, type BuildRef } from '@/game/build/builds';
 import type { Ctx } from '@/game/context';
 import { itemMains } from '@/game/item/mains';
-import { dedupe, flatMisses, rows, tempOk as tempOkFor, type Row } from '@/game/build/score';
+import { dedupe, flatMisses, rows, type Row } from '@/game/build/score';
 import { dropSubs } from '@/game/item/subs';
 import { fmtGood, namesLine } from '@/game/text';
+import { gearBar, type Scored } from './bar';
 import type { Verdict } from './verdict';
 import type { ItemInput } from '@/game/item/item';
-
-type Scored = Omit<Row, 'alt'>;
 
 export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const { idx, settings, t } = ctx;
@@ -30,7 +29,7 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const stopgapFor = (main: string, classLimits: string[]) =>
     buildsOf(idx, (b, c) => (!classLimits.length || classLimits.includes(c.class)) && slotMains(b, kind).has(main));
   const tempNeed = Math.max(CFG.tempGood2, expected - 1); // полезных для временной (score tempOk): Epic — 2, Legendary — 3
-  const tempOk = (m: Scored) => tempOkFor(s.grade, m);
+  const { tempOk } = gearBar(s.grade);
   res.qualifies = tempOk;
   const tempRank = (r: Scored) => (tempOk(r) ? 100 : 0) + (r.good ?? 0) * 2 + (r.yellow ?? 0) * 0.1 + (r.ratio ?? 0) * 0.01;
   const stopgapRows = (list: BuildRef[]) => dedupe(rows(ctx, s.grade, list, subs, im), tempRank);

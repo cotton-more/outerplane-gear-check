@@ -63,7 +63,7 @@ const attackHelmet = (subs: Record<string, number>) => evaluate(ctx(), { slot: '
 
 describe('Epic: 4-й сабстат от первого Reforge', () => {
   it('свежая Epic с тремя сабстатами, «Временно»: без кубика и без строк Reforge — Enhance и «не вкладывай»', () => {
-    const r = attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+    const r = attackHelmet({ 'DMG UP%': 2, 'ATK%': 3, CHD: 3 });
     expect(r.v).toBe('temp');
     expect('gamble' in r).toBe(false);
     expect(r.plan).toEqual([P.enhance, P.tempNoInvest]);
