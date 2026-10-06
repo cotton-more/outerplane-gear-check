@@ -78,7 +78,8 @@ function bestSwap(w: World, team: readonly string[], skip?: ReadonlySet<string>)
         delete into[s];
         if (!id) return;
         const val = g.value(id);
-        if (!val || skip?.has(skipKey(id, to.id))) { ok = false; return; }
+        // чужая вещь, надетая тоже, — только годная для получателя (FORMULA §7 п. 2), как у шага (cands)
+        if (!val || !val.ok || skip?.has(skipKey(id, to.id))) { ok = false; return; }
         const c: Cand = { item: w.items[id], v: val.v, fit: val.fit, cost: 3, loss: 0, holder: from.id, rank: from.rank };
         into[s] = c;
         ch.push({ slot: s, cand: c, was });

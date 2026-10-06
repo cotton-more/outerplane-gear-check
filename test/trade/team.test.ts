@@ -271,6 +271,16 @@ describe('H. команда', () => {
     expect(tp.steps).toEqual([]);
   });
 
+  it('H19 (FORMULA §7 п. 2): обмен парой не отдаёт члену вещь, не годную для него', () => {
+    const w = mk({ a1: { slot: 'helmet' }, b1: { slot: 'helmet' } }, {
+      A: { worn: { helmet: 'a1' }, value: { a1: 1, b1: { v: 8, fit: 'no', ok: false } } },
+      B: { worn: { helmet: 'b1' }, value: { b1: 5, a1: 5 } },
+    });
+    const tp = run(w, ['A', 'B']);
+    expect(got(tp, 'A')).toEqual({});
+    expect(tp.steps).toEqual([]);
+  });
+
   it('H17: член без вещей получает вещи по плану, порога нет', () => {
     const w = mk({ w: { slot: 'weapon' } }, { R: { value: { w: 4 } }, O: { worn: { weapon: 'w' } } });
     expect(teamOk(w, team('R'))).toBe(true);
