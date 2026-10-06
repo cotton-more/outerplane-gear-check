@@ -12,7 +12,7 @@ import { useT, type Texts } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { pieceInput, type GearStore } from '@/features/gear/model/gear';
 import { itemMains } from '@/game/item/mains';
-import { profileOf } from '@/game/build/profile';
+import { profileFor } from '@/game/build/profile';
 import { subWeights } from '@/game/build/score';
 import { keyOfHole, keyOfItem, type SearchKey } from '@/features/trade/model/hint';
 import type { HoleFill } from '@/features/trade/model/holes';
@@ -30,6 +30,8 @@ import { OrderButton } from './OrderSheet';
 
 type T = Texts;
 const pts = (m: number) => m / 1000;
+// очки так, как их пишет план (до десятых): «+0 очк.» и «слабее на 0 очк.» не бывает (ревью этапа 10)
+const tenths = (m: number) => Math.round(m / 100) / 10;
 
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
   return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && setName(ctx.idx, k.set),
@@ -37,7 +39,7 @@ function keyText(t: T, ctx: Ctx, k: SearchKey): string {
 }
 
 function gainText(t: T, l: HeroLine): { text: string; cls: string } {
-  const n = pts(l.after - l.before);
+  const n = tenths(l.after - l.before);
   return { text: t.trade.gainPts(n), cls: n > 0 ? 'up' : n < 0 ? 'down' : '' };
 }
 
@@ -49,7 +51,8 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
   const t = useT();
   const { idx } = ctx;
   const name = (id: string) => heroName(idx, id);
-  const profile = (id: string) => (idx.CHAR[id] ? profileOf(ctx, idx.CHAR[id]) : null);
+  // у закреплённого — цепочка его билда (FORMULA §0)
+  const profile = (id: string) => (idx.CHAR[id] ? profileFor(ctx, idx.CHAR[id], st.pin?.[id]) : null);
   const breaks = new Map(fills.map((f) => [`${f.hero}:${f.slot}`, f.breaks]));
   const from = (m: Move) => (m.from.kind === 'worn' ? t.trade.fromWorn(name(m.from.hero))
     : m.from.kind === 'stock' ? t.trade.fromStock(name(m.from.hero)) : t.trade.fromInventory);
@@ -95,7 +98,7 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
         const g = gainText(t, l);
         const c = idx.CHAR[l.hero];
         const sets = [...l.on.map((p) => t.trade.setOn(setName(idx, p.set), p.n)), ...l.off.map((p) => t.trade.setOff(setName(idx, p.set), p.n))];
-        const drop = l.ptsAfter < l.ptsBefore;
+        const drop = tenths(l.ptsBefore - l.ptsAfter) > 0;
         const shown = new Set(l.moves.map((m) => m.slot));
         return (
           <section key={l.hero} className="tline to">

@@ -81,5 +81,7 @@ function applyAll(st: GearStore, steps: readonly Step[], stamp: string): Applied
   const { worn: _w, ...base } = st;
   const next = gc({ ...base, pools: p.pools, ...(Object.keys(rest).length ? { worn: rest } : {}) });
   const after = stampOf(next);
+  // ничего не переехало («Менять нечего» — «Ок») — то же хранилище: ни записи, ни тоста, ни блокировки сеанса
+  if (after === stampOf(st)) return { st, undo: () => null };
   return { st: next, undo: (x) => (stampOf(x) === after ? st : null) };
 }

@@ -136,9 +136,9 @@ describe('E. применение: один герой', () => {
     expect(a.st.pools[noa]).not.toContain(n.id);
     expect(a.st.pools[karen]).toContain(k.id);
   });
-  it('E12: план без изменений — хранилище прежнее', () => {
+  it('E12: план без изменений — то же хранилище (тот же объект: «Ок» на «Менять нечего» не пишет и не блокирует, ревью этапа 10)', () => {
     const { st } = base();
-    expect(go(st, rin, planOf([])).st).toEqual(st);
+    expect(go(st, rin, planOf([])).st).toBe(st);
   });
   it('устаревший stamp — null', () => {
     const { st } = base();
@@ -147,9 +147,9 @@ describe('E. применение: один герой', () => {
     expect(applyHero(changed, { to: rin, hp: planOf([]), stamp })).toBeNull();
   });
   it('перечитанное хранилище (ключи в другом порядке) — тот же отпечаток: «Сделал» и «Вернуть» работают', () => {
-    const { st } = base();
+    const { st, r: rp, k } = base();
     const reread = JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(st).reverse()))) as GearStore;
-    const r = go(reread, rin, planOf([]));
+    const r = go(reread, rin, planOf([{ slot: 'gloves', id: k.id, holder: karen, was: rp.id }]));
     const again = JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(r.st).reverse()))) as GearStore;
     expect(r.undo(again)).toEqual(reread);
   });
