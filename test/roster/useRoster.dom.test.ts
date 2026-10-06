@@ -59,7 +59,7 @@ describe('useRoster между вкладками', () => {
 describe('useRoster: Core Fusion', () => {
   const [ETERNAL, CF_ETERNAL] = [id('Eternal'), id('Core Fusion Eternal')];
   const gear = (pools: Record<string, string[]>) => localStorage.setItem('ogc.gear', JSON.stringify({
-    v: 2, seq: 1, pools,
+    v: 3, seq: 1, pools,
     pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: D.sets[0].id, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' } },
   }));
 

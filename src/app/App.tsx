@@ -27,6 +27,7 @@ import { comboText } from '@/game/build/builds';
 import { gearBadges } from '@/features/gear/model/poolVs';
 import { poolView } from '@/features/gear/pool';
 import { useGear, type GearApi } from '@/features/gear/store/useGear';
+import { takeModelNote } from '@/features/gear/store/stored';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
@@ -115,6 +116,9 @@ export function App() {
   const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
   const [pieceOpen, setPieceOpen] = useState(false); // карточка вещи в блоке билда (для тура «Экипировка»)
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
+  // перенос на новую модель (.x/0085 PLAN Д11): игроку прежней модели — одно сообщение за всё время (флаг пишется сразу)
+  const [modelNote, setModelNote] = useState(false);
+  useEffect(() => { if (takeModelNote(idx)) setModelNote(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // сообщения с «Вернуть»: экипировки (features/gear/ui/gearMsg) и формы — «Следующий» убрал предмет по ошибке
   const [msg, say] = useTimed<GearMsg>(GEAR_MSG_MS);
   const [formUndo, setFormUndo] = useTimed<ItemInput>(6000);
@@ -196,6 +200,7 @@ export function App() {
               action={t.ui.gotIt} onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
           </div>
         )}
+        {modelNote && <div id="modelnote"><Notice text={t.ui.modelNote} action={t.ui.gotIt} onAction={() => setModelNote(false)} /></div>}
         {onb.welcomeShown && <Welcome install={install} onTour={layout.tall ? () => onb.startTour('core') : undefined} onRoster={() => onTab('chars')} onClose={onb.hideWelcome} />}
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>

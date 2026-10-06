@@ -28,7 +28,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, setId: string | null, yellow: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: null, at: '', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 const WEAK = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4 });
 
 beforeAll(() => {
@@ -69,7 +69,7 @@ const type = async (el: HTMLInputElement, v: string) => {
 };
 
 describe('«Надеть» и «Вернуть»', () => {
-  it('«Надеть на…» → Caren (вещей нет): «Надеть — +N очк.», вещь у неё, отметок нет, «Вернуть» — как было', async () => {
+  it('«Надеть на…» → Caren (вещей нет): «Надеть — +N очк.», вещь у неё, «Вернуть» — как было', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
     await click($('.v-equip'));
@@ -79,12 +79,10 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');
     expect($('.gear-toast small')).toBeNull();
     // bt 0: форма брони без «T4» — ниже T4 (В4, шаг 3; было null — форма Breakthrough не знала)
-    expect(stored()).toMatchObject({ v: 2, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: 0 } } });
-    expect(stored().marks ?? {}).toEqual({});
+    expect(stored()).toMatchObject({ v: 3, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: 0 } } });
     await click(byText('.gear-toast button', 'Undo'));
-    // «Вернуть» без отметок пустых marks не дописывает (шаг 4): хранилище как до «Надеть»
+    // «Вернуть»: хранилище как до «Надеть»
     expect(stored()).toMatchObject({ pieces: {}, pools: {} });
-    expect(stored().marks ?? {}).toEqual({});
   });
 
   // доработка 2 шага 10 (решение владельца, refute-10 п. 6): было — после «Заменить» вещь оставалась на форме и
@@ -405,7 +403,7 @@ describe('кнопка = то, что сделает «Надеть»', () => {
     const pcs = [P('p1', 'helmet', set('Immunity'), { CHC: 1, HP: 1, RES: 1, EFF: 1 }), P('p2', 'gloves', set('Immunity'), mid), P('p3', 'armor', speed, mid),
       P('p4', 'shoes', speed, mid), P('p5', 'helmet', speed, mid)];
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 2 } },
-      { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4', 'p5'] }, { marks: { [`${caren.id}/Speed`]: 'want' } }) });
+      { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4', 'p5'] }) });
     await openPick();
     expect(byText('.equip-row', 'Caren')).toBeUndefined();
   });
@@ -812,10 +810,10 @@ describe('меню, плитки, код копии, другая вкладка
   });
 
   // .x/0060 SPEC 2: одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
-  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR3, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
+  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR4, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 4 })], { [caren.id]: ['p1'] }) });
     const ta = await openBackup();
-    expect(ta.value.startsWith('OGC-GEAR3-')).toBe(true);
+    expect(ta.value.startsWith('OGC-GEAR4-')).toBe(true);
     const { encodeGear } = await import('@/features/gear/store/gearStore');
     const { decodeBackup } = await import('@/features/roster/backup');
     const b = decodeBackup(ta.value) as { roster: string[]; raw: { pieces: Record<string, { lit: object; bt: number }> } };
@@ -833,13 +831,13 @@ describe('меню, плитки, код копии, другая вкладка
   it('код, сохранённый более новой версией, — «обнови страницу»', async () => {
     await mount({ tab: 'chars' }, {});
     const ta = await openBackup();
-    ta.value = 'OGC-GEAR4-abc';
+    ta.value = 'OGC-GEAR5-abc';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(ta.closest('.roster-io')?.textContent).toContain('A newer page saved this code — reload the page.');
   });
 
-  it('экипировку сохранила более новая версия (v: 3): «Надеть на…» нет, в карточке — «обнови страницу», запись не тронута', async () => {
-    const newer = { v: 3, seq: 0, pieces: {}, pools: {} };
+  it('экипировку сохранила более новая версия (v: 4): «Надеть на…» нет, в карточке — «обнови страницу», запись не тронута', async () => {
+    const newer = { v: 4, seq: 0, pieces: {}, pools: {} };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: newer });
     await click($('.vcard'));
     expect($('.v-equip')).toBeNull();
@@ -870,9 +868,8 @@ describe('вещи только у героев ростера (Р16)', () => {
   const tileStar = (name: string) => $$('#cgrid .cwrap').find((w) => w.querySelector('.ctile')?.getAttribute('title')?.split(' — ')[0] === name)?.querySelector<HTMLElement>('.star');
   const ask = () => $('.roster-ask')?.closest<HTMLElement>('.drawer') ?? null;
   const askBtn = (text: string) => byText('.roster-ask .btn', text);
-  // у Caren две вещи, одна из них — та же запись, что у Rin; отметка «Собираю» у Caren
-  const shared = () => G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [caren.id]: ['p1', 'p2'], [rin.id]: ['p2'] },
-    { marks: { [`${caren.id}/Speed`]: 'want' } });
+  // у Caren две вещи, одна из них — та же запись, что у Rin
+  const shared = () => G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [caren.id]: ['p1', 'p2'], [rin.id]: ['p2'] });
 
   it('загрузка: у Caren вещи, в ростере её нет — она в ростере, сообщение «Added to the roster: Caren.»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
@@ -888,17 +885,17 @@ describe('вещи только у героев ростера (Р16)', () => {
   });
 
   // сообщение — только о герое: что та же запись осталась у Rin, не говорим (было: «Removed from Caren. Rin still has it.»)
-  it('«Да, убрать»: Caren не в ростере, её вещи и отметки убраны, общая запись у Rin осталась; сообщение только о Caren', async () => {
+  it('«Да, убрать»: Caren не в ростере, её вещи убраны, общая запись у Rin осталась; сообщение только о Caren', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
     await click(tileStar('Caren'));
     await click(askBtn('Yes, remove'));
-    expect({ roster: roster(), pools: stored().pools, pieces: Object.keys(stored().pieces), marks: stored().marks })
-      .toEqual({ roster: [rin.id, kappa.id], pools: { [rin.id]: ['p2'] }, pieces: ['p2'], marks: {} });
+    expect({ roster: roster(), pools: stored().pools, pieces: Object.keys(stored().pieces) })
+      .toEqual({ roster: [rin.id, kappa.id], pools: { [rin.id]: ['p2'] }, pieces: ['p2'] });
     expect({ text: $('.gear-toast span')?.textContent, note: $('.gear-toast small'), buttons: $$('.gear-toast button').map((x) => x.textContent) })
       .toEqual({ text: 'Caren is out of the roster.', note: null, buttons: ['Undo'] });
   });
 
-  it('«Вернуть» после «Да» — вещи, отметки и место в ростере как были', async () => {
+  it('«Вернуть» после «Да» — вещи и место в ростере как были', async () => {
     const gear = shared();
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
     await click(tileStar('Caren'));
@@ -970,8 +967,7 @@ describe('вещи только у героев ростера (Р16)', () => {
 
   it('«Вернуть» после «Да» точен и когда хранилище за время тоста перечитали (вернулись на страницу)', async () => {
     // у Rin — первая запись, своя у Caren — вторая: смысловое «Вернуть» поставило бы её первой среди записей
-    const gear = G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [rin.id]: ['p1'], [caren.id]: ['p1', 'p2'] },
-      { marks: { [`${caren.id}/Speed`]: 'want' } });
+    const gear = G([P('p1', 'helmet', speed, { CHC: 1 }), P('p2', 'armor', speed, { CHC: 1 })], { [rin.id]: ['p1'], [caren.id]: ['p1', 'p2'] });
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
     const { restoreGear } = await import('@/features/gear/store/gearStore');
     const { createIndex } = await import('@/game/data');
@@ -1056,16 +1052,38 @@ describe('запись при загрузке (Р17)', () => {
     expect($('.gear-toast')).toBeNull();
   });
 
+  // .x/0085 PLAN Д11, TESTS T8.1: хранилище прежней модели — перенос в v3 записан, сообщение о переносе один раз,
+  // пулы и надетое те же
+  it('T8.1 хранилище v2 с «Собираю», выбранным билдом и булавкой: сообщение один раз, перенос записан, вещи и надетое те же', async () => {
+    const old = { ...lone(), v: 2, worn: { [caren.id]: { helmet: 'p1' } }, marks: { [`${caren.id}/Speed`]: 'want' }, aim: { [caren.id]: `${caren.id}/Speed` }, pinned: [caren.id] };
+    await mount({ tab: 'chars' }, {}, { gear: old });
+    expect($('#modelnote')?.textContent).toContain('Evaluation updated: no build to pick per hero');
+    expect(stored()).toEqual({ ...lone(), worn: { [caren.id]: { helmet: 'p1' } } });
+    await click($('#modelnote button'));
+    expect($('#modelnote')).toBeNull();
+    await remount();
+    expect($('#modelnote')).toBeNull();
+  });
+
+  it('новый игрок и хранилище v3 — сообщения о переносе нет', async () => {
+    await mount({ tab: 'chars' }, {});
+    expect($('#modelnote')).toBeNull();
+    await act(async () => root?.unmount());
+    localStorage.clear();
+    await mount({ tab: 'chars' }, {}, { gear: lone() });
+    expect($('#modelnote')).toBeNull();
+  });
+
   it('экипировку сохранила более новая версия — ничего не пишется, и ростер тоже', async () => {
-    const newer = { v: 3, seq: 0, pieces: {}, pools: {} };
+    const newer = { v: 4, seq: 0, pieces: {}, pools: {} };
     const text = JSON.stringify(newer);
     await mount({ tab: 'chars' }, {}, { roster: [char('Eternal').id, char('Core Fusion Eternal').id], gear: newer });
     expect({ gear: localStorage.getItem('ogc.gear'), roster: roster() }).toEqual({ gear: text, roster: [char('Eternal').id, char('Core Fusion Eternal').id] });
   });
 
-  // вход опровержения: запись при загрузке стирала саб не из данных и отметку, которых эта версия не понимает
-  it('чтение что-то отбросило (саб NEWSUB, отметка «maybe») — не пишется, хотя Caren добавлена в ростер в памяти', async () => {
-    const gear = JSON.stringify(G([P('p1', 'helmet', speed, { CHC: 1, NEWSUB: 2 })], { [caren.id]: ['p1'] }, { marks: { [`${caren.id}/Speed`]: 'maybe' } }));
+  // вход опровержения: запись при загрузке стирала саб не из данных, которого эта версия не понимает
+  it('чтение что-то отбросило (саб NEWSUB) — не пишется, хотя Caren добавлена в ростер в памяти', async () => {
+    const gear = JSON.stringify(G([P('p1', 'helmet', speed, { CHC: 1, NEWSUB: 2 })], { [caren.id]: ['p1'] }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: JSON.parse(gear) });
     expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster'), star: $('.cd-star')?.getAttribute('aria-pressed') })
       .toEqual({ gear, roster: '[]', star: 'true' });

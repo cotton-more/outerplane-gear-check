@@ -273,7 +273,7 @@ describe('обучение не пишет в экипировку игрока'
   const speed = D.sets.find((x) => x.short === 'Speed')!.id;
   const MINE = {
     welcomeHidden: true, tour: DONE, roster: [caren.id, luna.id], state: { tab: 'eval', charId: luna.id },
-    gear: { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2, SPD: 1 }, lit: { CHC: 2, SPD: 1 }, bt: null, at: '' } }, pools: { [caren.id]: ['p1'] } },
+    gear: { v: 3, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2, SPD: 1 }, lit: { CHC: 2, SPD: 1 }, bt: null, at: '' } }, pools: { [caren.id]: ['p1'] } },
   };
   // карточка Luna → «Pin a set» → набор → «Pin»
   const lunaPin = async () => {

@@ -116,7 +116,7 @@ export function store(heroes: Record<string, { pool: Piece[]; worn?: Piece[] }>,
     pools[id] = h.pool.map((p) => p.id);
     if (h.worn?.length) worn[id] = Object.fromEntries(h.worn.map((p) => [p.slot, p.id]));
   }
-  return { v: 2, seq: 999, pieces, pools, worn, ...extra };
+  return { v: 3, seq: 999, pieces, pools, worn, ...extra };
 }
 
 // мир из хранилища: ростер — порядок героев в хранилище, если не задан; locked — переодетые в этом окне, orders — заказы

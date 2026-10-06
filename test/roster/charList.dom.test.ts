@@ -19,7 +19,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, lit: Record<string, number>): Pc =>
   ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '' });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 
 beforeAll(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

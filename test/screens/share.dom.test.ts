@@ -25,7 +25,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, lit: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '2026-10-01', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 const HELM = P('p1', 'helmet', { 'DEF%': 2, CHC: 3, CHD: 1, SPD: 2 }, { bt: 4 });
 const ARM = P('p2', 'armor', { CHC: 2, SPD: 1 }, { bt: 0 });
 const WORN = G([HELM, ARM], { [caren.id]: ['p1', 'p2'] }, { worn: { [caren.id]: { helmet: 'p1', armor: 'p2' } } });

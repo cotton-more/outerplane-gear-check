@@ -2,8 +2,8 @@
 // сайта и код после «#»: всё после «#» браузер на сервер не шлёт. В коде — номер формата, герой, по слоту — надетая
 // вещь (запись SPEC 1, без даты) или «пусто», и закреплённый набор (.x/0085 PLAN Д9; «По статам» — не закреплён).
 // Набор — отпечатком имени билда и подписи (24 бита): узнаётся, даже если outerpedia переставила билды, и код не растёт
-// от длины имени (≤ 64 знаков). Коды до закрепления несли отпечаток выбранного билда — он ни с одним набором не
-// совпадает, карточка показывается без набора.
+// от длины имени (≤ 64 знаков). Версия 2 (.x/0085 PLAN Д11); код версии 1 нёс на том же месте выбранный билд — поле
+// читается и пропускается, карточка — без набора.
 import { SLOTS, type Index } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
 import { pinOptions } from '@/game/build/profile';
@@ -12,7 +12,7 @@ import type { Piece } from '@/features/gear/model/gear';
 import { readBody, writeBody, type PieceBody } from './pieceCode';
 
 export const HERO_PREFIX = 'OGH';
-const VERSION = 1;
+const VERSION = 2;
 // герой: обычный (2000000 + n), Core Fusion (2700000 + n) или любой номер как есть
 const BASES = [2000000, 2700000, 0];
 const HASH_BITS = 24;
@@ -34,8 +34,8 @@ function hashOf(s: string): number {
 }
 const tail = (key: string) => key.slice(key.indexOf('/') + 1);
 
-export type HeroBuild = { kind: 'stats' } | { kind: 'named'; hash: number } | { kind: 'none' };
-export interface HeroShare { heroId: string; slots: Partial<Record<SlotId, PieceBody>>; build: HeroBuild }
+// pin — отпечаток закреплённого набора; null — не закреплён (или код версии 1)
+export interface HeroShare { heroId: string; slots: Partial<Record<SlotId, PieceBody>>; pin: number | null }
 
 // pin — ключ закрепления (profile pinKey), null — «По статам». null — героя таким номером не записать (id не число)
 export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>, pin: string | null): string | null {
@@ -61,24 +61,25 @@ export function decodeHero(code: string): HeroShare | 'newer' | 'broken' {
     const r = new BitReader(bits);
     const v = r.get(4);
     if (v > VERSION) return 'newer';
-    if (v !== VERSION) return 'broken';
+    if (v !== VERSION && v !== 1) return 'broken';
     const base = BASES[r.get(2)];
     if (base === undefined) return 'broken';
     const heroId = String(base + r.vlq(7));
     const slots: HeroShare['slots'] = {};
     for (const { id: slot } of SLOTS) if (r.get(1)) slots[slot] = readBody(r, slot);
+    // поле набора: 0 — нет (v1), 1 — «По статам» (не закреплён), 2 — отпечаток; у v1 — выбранного билда, пропускаем
     const k = r.get(2);
-    const build: HeroBuild = k === 1 ? { kind: 'stats' } : k === 2 ? { kind: 'named', hash: r.get(HASH_BITS) } : { kind: 'none' };
+    const hash = k === 2 ? r.get(HASH_BITS) : null;
     if (k === 3 || r.left) return 'broken';
-    return { heroId, slots, build };
+    return { heroId, slots, pin: v === VERSION ? hash : null };
   } catch {
     return 'broken';
   }
 }
 
 // ключ закрепления по отпечатку; null — не закреплён или такого набора в этих данных нет (переименовали, убрали)
-export function pinKeyOf(idx: Index, heroId: string, build: HeroBuild): string | null {
+export function pinKeyOf(idx: Index, heroId: string, pin: number | null): string | null {
   const c = idx.CHAR[heroId];
-  if (!c || build.kind !== 'named') return null;
-  return pinOptions(c).find((o) => hashOf(tail(o.key)) === build.hash)?.key ?? null;
+  if (!c || pin === null) return null;
+  return pinOptions(c).find((o) => hashOf(tail(o.key)) === pin)?.key ?? null;
 }

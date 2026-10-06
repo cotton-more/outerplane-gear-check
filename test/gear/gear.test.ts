@@ -1,5 +1,5 @@
-// Экипировка (features/gear/model/gear, features/gear/store/gearStore, операции features/gear/pool): вещи у персонажа (хранилище v2), перенос v1 → v2,
-// сегменты после Reforge, Breakthrough, резервная копия, «Надеть», «Убрать», отметки и «Вернуть».
+// Экипировка (features/gear/model/gear, features/gear/store/gearStore, операции features/gear/pool): вещи у персонажа (хранилище v3), перенос v1 → v3,
+// сегменты после Reforge, Breakthrough, резервная копия, «Надеть», «Убрать» и «Вернуть».
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
@@ -31,14 +31,13 @@ const v1 = (pieces: Piece[], builds: Record<string, Record<string, string>>, ext
   builds: Object.fromEntries(Object.entries(builds).map(([k, slots]) => [k, { slots, at: '' }])), ...extra,
 });
 const v2 = (pieces: Piece[], pools: Record<string, string[]>, extra: Partial<GearStore> = {}): GearStore =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...extra });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...extra });
 
-describe('перенос v1 → v2 (design-final §F)', () => {
-  it('1. одна запись в нескольких билдах персонажа — один id в его пуле; билды с вещами — «Собираю»', () => {
+describe('перенос v1 → v3 (design-final §F, .x/0085 PLAN Д11)', () => {
+  it('1. одна запись в нескольких билдах персонажа — один id в его пуле; «Собираю» и билды v1 не хранятся', () => {
     const p1 = rec('p1', helmet({ CHC: 2 }));
     const st = restoreGear(v1([p1], { [K]: { helmet: 'p1' }, [K2]: { helmet: 'p1' } }), idx);
-    expect(st).toMatchObject({ v: 2, pools: { [CAREN]: ['p1'] }, marks: { [K]: 'want', [K2]: 'want' } });
-    expect(st.pieces.p1).toEqual(p1);
+    expect(st).toEqual({ v: 3, seq: 1, pieces: { p1 }, pools: { [CAREN]: ['p1'] } });
   });
 
   it('2. запись у двух персонажей — в оба пула, без копии', () => {
@@ -54,19 +53,11 @@ describe('перенос v1 → v2 (design-final §F)', () => {
     expect(restoreGear(v1([a, b], { [K]: { helmet: 'p1' }, [K2]: { helmet: 'p2' } }), idx).pools).toEqual({ [CAREN]: ['p1', 'p2'] });
   });
 
-  it('4. билд, которого нет в данных (переименовали), — вещи в пул, без отметки; прежние билды — в v1builds', () => {
+  it('4. билд, которого нет в данных (переименовали), — вещи в пул', () => {
     const old = buildKey(CAREN, 'Speed (old)');
     const st = restoreGear(v1([rec('p1', helmet({ CHC: 2 }))], { [old]: { helmet: 'p1' } }), idx);
     expect(st.pools).toEqual({ [CAREN]: ['p1'] });
-    expect(st.marks ?? {}).toEqual({});
-    expect(st.v1builds).toEqual({ [old]: { slots: { helmet: 'p1' }, at: '' } });
-  });
-
-  it('4b. билд с несколькими связками — отметка на билде целиком (все варианты)', () => {
-    const anarky = D.chars.find((c) => c.name === 'Anarky')!;
-    const key = buildKey(anarky.id, 'Defense mix');
-    const st = restoreGear(v1([rec('p1', { ...helmet({ CHC: 1 }), setId: set('Defense') })], { [key]: { helmet: 'p1' } }), idx);
-    expect(st.marks).toEqual({ [key]: 'want' });
+    expect(st.v1builds).toBeUndefined();
   });
 
   it('5. незнакомые персонажи и сеты — пулы хранятся (страница их не покажет)', () => {
@@ -95,12 +86,13 @@ describe('перенос v1 → v2 (design-final §F)', () => {
     expect(st.seq).toBe(7);
   });
 
-  it('незнакомые поля хранилища и вещи переживают перенос, «Надеть» и код копии; пустой билд примерки v1 — в v1builds', () => {
-    const raw = { ...v1([rec('p1', helmet({ CHC: 2 }), 1)], { [K]: { helmet: 'p1' } }, { note: 'x' }), builds: { [K]: { slots: { helmet: 'p1' }, at: '', tryon: true } } };
+  it('незнакомые поля хранилища и вещи переживают перенос, «Надеть» и код копии; поля прежней модели — нет', () => {
+    const raw = { ...v1([rec('p1', helmet({ CHC: 2 }), 1)], { [K]: { helmet: 'p1' } }, { note: 'x', marks: { [K]: 'want' }, aim: { [CAREN]: K } }), builds: { [K]: { slots: { helmet: 'p1' }, at: '', tryon: true } } };
     (raw.pieces.p1 as unknown as Record<string, unknown>).enh = 15;
     const st = putOn(ctx, restoreGear(raw, idx), CAREN, { ...helmet({ SPD: 1 }), slot: 'armor' }).st;
     const back = decodeGear(encodeGear(st), idx) as GearStore;
-    expect(back).toMatchObject({ note: 'x', pieces: { p1: { enh: 15 } }, v1builds: { [K]: { tryon: true } } });
+    expect(back).toMatchObject({ note: 'x', pieces: { p1: { enh: 15 } } });
+    expect([back.v1builds, back.marks, back.aim]).toEqual([undefined, undefined, undefined]);
   });
 
   it('ни одна вещь не теряется: каждая вещь v1 — в каком-то пуле', () => {
@@ -118,10 +110,10 @@ describe('перенос v1 → v2 (design-final §F)', () => {
   });
 });
 
-describe('хранилище v2 и код копии', () => {
-  it('v2: id без вещей и повторы выброшены, пустые пулы убраны, неверные отметки — тоже; незнакомые поля — как есть', () => {
-    const raw = { ...v2([rec('p1', helmet({ CHC: 1 }))], { [CAREN]: ['p1', 'p1', 'p9'], [KAPPA]: ['p9'], x: 'no' as never }), marks: { [K]: 'want', [K2]: 'maybe' }, extra: 1 };
-    expect(restoreGear(raw, idx)).toEqual({ v: 2, seq: 1, pieces: raw.pieces, pools: { [CAREN]: ['p1'] }, marks: { [K]: 'want' }, extra: 1 });
+describe('хранилище v3 и код копии', () => {
+  it('v3: id без вещей и повторы выброшены, пустые пулы убраны; незнакомые поля — как есть', () => {
+    const raw = { ...v2([rec('p1', helmet({ CHC: 1 }))], { [CAREN]: ['p1', 'p1', 'p9'], [KAPPA]: ['p9'], x: 'no' as never }), extra: 1 };
+    expect(restoreGear(raw, idx)).toEqual({ v: 3, seq: 1, pieces: raw.pieces, pools: { [CAREN]: ['p1'] }, extra: 1 });
   });
 
   it('gc: вещь, которой нет ни в одном пуле, стирается', () => {
@@ -129,22 +121,22 @@ describe('хранилище v2 и код копии', () => {
     expect(Object.keys(st.pieces)).toEqual(['p1']);
   });
 
-  it('v: 3 — «новее» и пусто; v: 1 и v: 2 — не новее; мусор — пусто', () => {
-    expect(newerGear({ v: 3 })).toBe(true);
-    expect(newerGear({ v: 2 })).toBe(false);
-    expect(restoreGear({ v: 3, pieces: {}, pools: {} }, idx)).toEqual(EMPTY_GEAR);
+  it('v: 4 — «новее» и пусто; v: 1, v: 2 и v: 3 — не новее; мусор — пусто', () => {
+    expect(newerGear({ v: 4 })).toBe(true);
+    expect([1, 2, 3].map((v) => newerGear({ v }))).toEqual([false, false, false]);
+    expect(restoreGear({ v: 4, pieces: {}, pools: {} }, idx)).toEqual(EMPTY_GEAR);
     expect(restoreGear('x', idx)).toEqual(EMPTY_GEAR);
   });
 
-  it('код: OGC-GEAR2 туда и обратно; OGC-GEAR1 — переносится; OGC-GEAR3 и внутри v: 3 — «новее»; пустой и чужой — нет', () => {
+  it('код: OGC-GEAR2 туда и обратно; OGC-GEAR1 — переносится; OGC-GEAR3 и внутри v: 4 — «новее»; пустой и чужой — нет', () => {
     const st = v2([rec('p1', helmet({ CHC: 2 }))], { [CAREN]: ['p1'] });
     const code = encodeGear(st);
     expect(code.startsWith('OGC-GEAR2 ')).toBe(true);
     expect(decodeGear(code, idx)).toEqual(st);
     const b64 = (x: unknown) => btoa(JSON.stringify(x)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    expect(decodeGear('OGC-GEAR1 ' + b64(v1([rec('p1', helmet({ CHC: 2 }))], { [K]: { helmet: 'p1' } })), idx)).toMatchObject({ v: 2, pools: { [CAREN]: ['p1'] } });
+    expect(decodeGear('OGC-GEAR1 ' + b64(v1([rec('p1', helmet({ CHC: 2 }))], { [K]: { helmet: 'p1' } })), idx)).toMatchObject({ v: 3, pools: { [CAREN]: ['p1'] } });
     expect(decodeGear('OGC-GEAR3 ' + b64({ v: 3 }), idx)).toBe('newer');
-    expect(decodeGear('OGC-GEAR2 ' + b64({ v: 3, pieces: {}, pools: {} }), idx)).toBe('newer');
+    expect(decodeGear('OGC-GEAR2 ' + b64({ v: 4, pieces: {}, pools: {} }), idx)).toBe('newer');
     expect(decodeGear(encodeGear(EMPTY_GEAR), idx)).toBeNull(); // пустая копия не затирает записи
     expect(decodeGear('OGC-GEAR2 !!!', idx)).toBeNull();
     expect(decodeGear('SPD, CHC', idx)).toBeNull();
@@ -545,29 +537,26 @@ describe('правка в шторке (updateIn)', () => {
   });
 });
 
-// «Надето», шаг 1: worn (слот → запись пула героя) и aim (выбранный билд) — данные и инвариант «надетое ⊂ пул»
-describe('надетое (worn) и выбранный билд (aim)', () => {
+// «Надето», шаг 1: worn (слот → запись пула героя) — данные и инвариант «надетое ⊂ пул»
+describe('надетое (worn)', () => {
   const RIN = '2000019';
-  const STATS_KEY = buildKey(KAPPA, '#stats');
   const shoes = (subs: Record<string, number>): ItemInput => ({ ...helmet(subs), slot: 'shoes' });
   const plain = () => v2([rec('p1', helmet({ CHC: 2 })), rec('p2', shoes({ RES: 1 })), rec('p3', helmet({ HP: 1 }))], { [CAREN]: ['p1', 'p2'], [KAPPA]: ['p3', 'p1'] });
   const dressed = (): GearStore => ({
     ...plain(),
     worn: { [CAREN]: { helmet: 'p1', shoes: 'p2' }, [KAPPA]: { helmet: 'p3' } },
-    aim: { [CAREN]: K, [KAPPA]: STATS_KEY },
   });
-  // надетое ⊂ пул героя, слот записи = ключ; выбранный билд — только у героя с пулом
+  // надетое ⊂ пул героя, слот записи = ключ
   const consistent = (st: GearStore) =>
-    Object.entries(st.worn ?? {}).every(([c, w]) => Object.keys(w).length > 0 && Object.entries(w).every(([slot, id]) => !!id && !!st.pools[c]?.includes(id) && st.pieces[id]?.slot === slot))
-    && Object.keys(st.aim ?? {}).every((c) => !!st.pools[c]?.length);
+    Object.entries(st.worn ?? {}).every(([c, w]) => Object.keys(w).length > 0 && Object.entries(w).every(([slot, id]) => !!id && !!st.pools[c]?.includes(id) && st.pieces[id]?.slot === slot));
   const [eternal, cf] = ['Eternal', 'Core Fusion Eternal'].map((n) => D.chars.find((c) => c.name === n)!.id);
   // то же хранилище, но вещи Caren — у Eternal (и вещи Kappa — у Core Fusion Eternal, если withCf)
   const asEternal = (st: GearStore, withCf = false): GearStore => {
-    const { worn: _w, aim: _a, ...rest } = st;
+    const { worn: _w, ...rest } = st;
     const to = (x: Record<string, unknown> | undefined) => x && { [eternal]: x[CAREN], ...(withCf ? { [cf]: x[KAPPA] } : {}) };
     return {
       ...rest, pools: to(st.pools) as GearStore['pools'],
-      ...(st.worn ? { worn: to(st.worn) as GearStore['worn'] } : {}), ...(st.aim ? { aim: to(st.aim) as GearStore['aim'] } : {}),
+      ...(st.worn ? { worn: to(st.worn) as GearStore['worn'] } : {}),
     };
   };
   // все мутации списка вещей
@@ -589,7 +578,7 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     ['unfuseChar', (st) => { const sw = switchFusion(idx, [], asEternal(st), cf)!; return unfuseChar(sw.st, sw.from, sw.to, sw); }],
   ];
 
-  it.each(mutations)('%s: надетое — из пула героя и в своём слоте, билд — у героя с пулом', (_, act) => {
+  it.each(mutations)('%s: надетое — из пула героя и в своём слоте', (_, act) => {
     const st = dressed();
     const after = act(st);
     expect(consistent(after)).toBe(true);
@@ -597,25 +586,24 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
 
   // «Надеть» надевает новую (шаг 2) — у него worn появляется: отдельный тест ниже
   const PUT = '«Надеть» с заменой шлема';
-  it.each(mutations.filter(([name]) => name !== PUT))('%s: у хранилища без надетого полей worn и aim не появляется', (_, act) => {
+  it.each(mutations.filter(([name]) => name !== PUT))('%s: у хранилища без надетого поля worn не появляется', (_, act) => {
     const st = plain();
     const after = act(st);
-    expect(['worn' in after, 'aim' in after]).toEqual([false, false]);
+    expect('worn' in after).toBe(false);
   });
 
-  it('«Надеть» с заменой шлема у хранилища без надетого: worn — только новая в её слоте, aim не появляется', () => {
+  it('«Надеть» с заменой шлема у хранилища без надетого: worn — только новая в её слоте', () => {
     const st = plain();
     const r = putOn(ctx, st, CAREN, helmet({ 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 }), { replace: 'p1' });
-    expect({ worn: r.st.worn, aim: 'aim' in r.st }).toEqual({ worn: { [CAREN]: { helmet: r.id } }, aim: false });
+    expect(r.st.worn).toEqual({ [CAREN]: { helmet: r.id } });
   });
 
   describe('чтение', () => {
-    it('надетое и билд прочитаны как есть; код копии их сохраняет; прочитано целиком', () => {
+    it('надетое прочитано как есть; код копии его сохраняет; прочитано целиком', () => {
       const st = dressed();
       const read = restoreGear(st, idx);
       const coded = decodeGear(encodeGear(st), idx) as GearStore;
-      expect({ worn: read.worn, aim: read.aim, coded: [coded.worn, coded.aim], whole: readsWhole(st, idx) })
-        .toEqual({ worn: st.worn, aim: st.aim, coded: [st.worn, st.aim], whole: true });
+      expect({ worn: read.worn, coded: coded.worn, whole: readsWhole(st, idx) }).toEqual({ worn: st.worn, coded: st.worn, whole: true });
     });
 
     const bad: [string, Partial<GearStore>, Partial<GearStore>][] = [
@@ -623,24 +611,21 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
       ['запись не из пула героя', { worn: { [CAREN]: { helmet: 'p3' } } }, { worn: undefined }],
       ['чужой слот', { worn: { [CAREN]: { helmet: 'p1', gloves: 'p2' } } }, { worn: { [CAREN]: { helmet: 'p1' } } }],
       ['надетое у героя без пула', { worn: { [RIN]: { helmet: 'p1' } } }, { worn: undefined }],
-      ['билд у героя без пула', { aim: { [CAREN]: K, [RIN]: buildKey(RIN, 'Speed') } }, { aim: { [CAREN]: K } }],
-      ['билд не строкой', { aim: { [CAREN]: 7 as unknown as string } }, { aim: undefined }],
       ['надетое не объектом', { worn: 'p1' as unknown as GearStore['worn'] }, { worn: undefined }],
     ];
     it.each(bad)('%s — отброшено, прочитано не целиком', (_, extra, kept) => {
       const raw = { ...plain(), ...extra };
       const read = restoreGear(raw, idx);
-      expect({ worn: read.worn, aim: read.aim, whole: readsWhole(raw, idx) })
-        .toEqual({ worn: undefined, aim: undefined, ...kept, whole: false });
+      expect({ worn: read.worn, whole: readsWhole(raw, idx) }).toEqual({ worn: undefined, ...kept, whole: false });
     });
 
-    // пустое — не потеря (Р17, как пустые пулы и отметки): убрано, но прочитано целиком
+    // пустое — не потеря (Р17, как пустые пулы): убрано, но прочитано целиком
     it('пустой объект надетого у героя — убран, прочитано целиком', () => {
       const raw = { ...plain(), worn: { [CAREN]: {}, [KAPPA]: { helmet: 'p3' } } };
       expect({ worn: restoreGear(raw, idx).worn, whole: readsWhole(raw, idx) }).toEqual({ worn: { [KAPPA]: { helmet: 'p3' } }, whole: true });
     });
 
-    // старая вкладка (v: 2) переносит worn как есть, а после её «Убрать» запись висит; запись нормализации (Caren — в
+    // старая вкладка переносит worn как есть, а после её «Убрать» запись висит; запись нормализации (Caren — в
     // ростер) при этом не пишется: readsWhole — условие записи в features/gear/store/stored
     it('старая вкладка: надето то, что она уже убрала, — при чтении отброшено, нормализация не пишется', () => {
       const raw = { ...plain(), pools: { [CAREN]: ['p2'], [KAPPA]: ['p3', 'p1'] }, worn: { [CAREN]: { helmet: 'p1', shoes: 'p2' } } };
@@ -656,12 +641,12 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     expect({ id: r.id, worn: r.st.worn }).toEqual({ id: 'p4', worn: { [CAREN]: { helmet: 'p4', shoes: 'p2' }, [KAPPA]: { helmet: 'p3' } } });
   });
 
-  it('dropChar: надетое и билд героя уходят; undoDrop — хранилище как было', () => {
+  it('dropChar: надетое героя уходит; undoDrop — хранилище как было', () => {
     const before = dressed();
     const r = dropChar(before, CAREN);
     const back = undoDrop(r.st, r.dropped);
-    expect({ gone: [r.st.worn?.[CAREN], r.st.aim?.[CAREN]], back, worn: JSON.stringify(back.worn), aim: JSON.stringify(back.aim) })
-      .toEqual({ gone: [undefined, undefined], back: before, worn: JSON.stringify(before.worn), aim: JSON.stringify(before.aim) });
+    expect({ gone: r.st.worn?.[CAREN], back, worn: JSON.stringify(back.worn) })
+      .toEqual({ gone: undefined, back: before, worn: JSON.stringify(before.worn) });
   });
 
   it('«Убрать у Caren» надетую — не надета; «Вернуть» — снова надета', () => {
@@ -672,27 +657,11 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     expect([isWorn(gone, CAREN, p1), isWorn(back, CAREN, p1), back.worn]).toEqual([false, true, st.worn]);
   });
 
-  it('«Вернуть» после «Убрать» — точечно: билд, выбранный за эти секунды, остаётся', () => {
-    const st = dressed();
-    const gone = removeFrom(st, CAREN, 'p1');
-    const chosen = { ...gone, aim: { ...gone.aim, [CAREN]: K2 } };
-    expect(undoRemove(chosen, st.pieces.p1, [CAREN], [CAREN]).aim).toEqual({ [CAREN]: K2, [KAPPA]: STATS_KEY });
-  });
-
-  it('«Убрать» последнюю вещь героя и «Вернуть» — выбранный билд снова выбран', () => {
+  it('«Убрать» последнюю вещь героя и «Вернуть» — как было', () => {
     const st = { ...dressed(), pools: { [CAREN]: ['p1', 'p2'], [KAPPA]: ['p3'] } };
     const undo = removeUndo(st, KAPPA, st.pieces.p3);
     const gone = removeFrom(st, KAPPA, 'p3');
-    expect({ gone: gone.aim?.[KAPPA], back: undo(gone) }).toEqual({ gone: undefined, back: st });
-  });
-
-  it('«Вернуть» последней вещи: билд, выбранный за эти секунды, не затирается', () => {
-    const st = { ...dressed(), pools: { [CAREN]: ['p1', 'p2'], [KAPPA]: ['p3'] } };
-    const undo = removeUndo(st, KAPPA, st.pieces.p3);
-    const gone = removeFrom(st, KAPPA, 'p3');
-    const later = putOn(ctx, gone, KAPPA, helmet({ HP: 1 })).st;
-    const chosen = { ...later, aim: { ...later.aim, [KAPPA]: buildKey(KAPPA, 'Speed') } };
-    expect(undo(chosen).aim?.[KAPPA]).toBe(buildKey(KAPPA, 'Speed'));
+    expect({ gone: gone.worn?.[KAPPA], back: undo(gone) }).toEqual({ gone: undefined, back: st });
   });
 });
 
@@ -797,12 +766,6 @@ describe('«Надето»: «Надеть» надевает, «Надеть и
       const st = dressed({ helmet: 'p2' });
       const r = putOn(ctx, st, CAREN, LIFE);
       expect(J_({ ...undoPut(r.st, CAREN, r), seq: st.seq })).toBe(J_(st));
-    });
-
-    it('выбранный билд, сделанный после «Надеть», «Вернуть» не трогает', () => {
-      const r = putOn(ctx, dressed({ helmet: 'p2' }), CAREN, LIFE);
-      const chosen = { ...r.st, aim: { [CAREN]: K2 } };
-      expect(undoPut(chosen, CAREN, r).aim).toEqual({ [CAREN]: K2 });
     });
 
     it('после «Надеть» в слоте надели другую — «Вернуть» её не снимает', () => {

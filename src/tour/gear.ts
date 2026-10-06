@@ -28,7 +28,7 @@ export function gearDemo(idx: Index): GearDemo | null {
     p2: piece('p2', 'armor', 'unique', { CHC: 4, CHD: 3, SPD: 2, 'DEF%': 2 }, 4),
     p3: piece('p3', 'gloves', 'rare', { 'DEF%': 2, CHC: 1, SPD: 2 }, 1),
   };
-  const store: GearStore = { v: 2, seq: 3, pieces, pools: { [c.id]: ['p1', 'p2', 'p3'] }, worn: { [c.id]: { helmet: 'p1', armor: 'p2', gloves: 'p3' } } };
+  const store: GearStore = { v: 3, seq: 3, pieces, pools: { [c.id]: ['p1', 'p2', 'p3'] }, worn: { [c.id]: { helmet: 'p1', armor: 'p2', gloves: 'p3' } } };
   // новый лучше надетого (его уровни — lit) на ~31%: шаг 4 «Заменить шлем Caren» держится на этом
   const item: ItemInput = { slot: 'helmet', grade: 'unique', setId: set.id, itemKey: null, main: null, subs: { 'DEF%': 3, CHC: 3, CHD: 3, HP: 1 } };
   return { c, b, store, item };

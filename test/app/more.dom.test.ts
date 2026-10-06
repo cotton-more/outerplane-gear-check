@@ -22,7 +22,7 @@ let root: Root | null = null;
 
 const P = (id: string, slot: string, lit: Record<string, number>): Record<string, unknown> =>
   ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '' });
-const GEAR = { v: 2, seq: 1, pieces: { p1: P('p1', 'helmet', { SPD: 1 }) }, pools: { [caren.id]: ['p1'] } };
+const GEAR = { v: 3, seq: 1, pieces: { p1: P('p1', 'helmet', { SPD: 1 }) }, pools: { [caren.id]: ['p1'] } };
 
 const setWidth = (w: number) => Object.defineProperty(window, 'innerWidth', { configurable: true, value: w });
 

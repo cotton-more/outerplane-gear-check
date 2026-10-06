@@ -5,17 +5,20 @@
 // поменялось — не пишем. Чтение что-то отбросило (саб не из данных, отметка или поле новой версии — readsWhole) — тоже
 // не пишем: нормализуем в памяти, пишем после действия игрока, как до Р17 (старая закэшированная PWA с прежним снимком
 // данных иначе стёрла бы то, что понимает новая). Во время обучения не пишем ничего (holdStoredWrites).
+// Хранилище прежней версии (v1, v2) пишем в v3 сразу — так же, один раз (.x/0085 PLAN Д11). Игроку прежней модели (были
+// вещи) — разовое сообщение о переносе (takeModelNote, флаг 'ogc.modelNote').
 // Один разбор на одно содержимое хранилища: его читают оба хука.
 import type { Index } from '@/game/data';
 import { changed } from '@/features/gear/model/fusion';
-import { loadGear, newerGear, readsWhole, type Loaded } from './gearStore';
+import { loadGear, newerGear, oldModel, readsWhole, type Loaded } from './gearStore';
 import { storage } from '@/shared/storage';
 
 export interface Stored extends Loaded { newer: boolean }
 
 // note — что поменяла нормализация этого разбора, для сообщения после загрузки; забирается один раз (takeLoadNote)
 type Note = Pick<Loaded, 'fixes' | 'added'>;
-let last: { key: string; idx: Index; r: Stored; note: Note | null } | null = null;
+// model — прочитано хранилище прежней модели, а сообщения о переносе ещё не было (takeModelNote)
+let last: { key: string; idx: Index; r: Stored; note: Note | null; model: boolean } | null = null;
 let held = false;
 // идёт обучение — запись нормализации при чтении не срабатывает (App, onRunning)
 export const holdStoredWrites = (on: boolean) => { held = on; };
@@ -32,11 +35,12 @@ export function readStored(idx: Index): Stored {
   const unreadable = (key: string, v: unknown) => v === null && storage.raw(key) !== null;
   const whole = readsWhole(raw, idx) && !unreadable('gear', raw) && !unreadable('roster', list)
     && (list === null || (Array.isArray(list) && list.length === roster.length));
-  if (changed(r) && !r.newer && !held && whole && storage.available()) {
+  const migrated = raw !== null && typeof raw === 'object' && ((raw as { v?: unknown }).v === 1 || (raw as { v?: unknown }).v === 2);
+  if ((changed(r) || migrated) && !r.newer && !held && whole && storage.available()) {
     storage.set('roster', r.roster);
     storage.set('gear', r.st);
   }
-  last = { key: keyNow(), idx, r, note: changed(r) ? { fixes: r.fixes, added: r.added } : null };
+  last = { key: keyNow(), idx, r, note: changed(r) ? { fixes: r.fixes, added: r.added } : null, model: oldModel(raw) && !storage.get('modelNote', false) };
   return r;
 }
 
@@ -46,4 +50,13 @@ export function takeLoadNote(idx: Index): Note | null {
   const n = last!.note;
   last!.note = null;
   return n;
+}
+
+// сообщение о переносе на новую модель (TEXTS 41): true — один раз за всё время; флаг пишется сразу
+export function takeModelNote(idx: Index): boolean {
+  readStored(idx);
+  if (!last!.model) return false;
+  last!.model = false;
+  storage.set('modelNote', true);
+  return true;
 }

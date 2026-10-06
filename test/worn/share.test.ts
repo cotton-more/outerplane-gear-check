@@ -23,7 +23,7 @@ const SIX = (): Piece[] => [
   ...(['helmet', 'armor', 'gloves', 'shoes'] as const).map((s, i) => P('p' + (3 + i), s, { setId: set('Speed'), lit: { 'DEF%': 2, CHC: 3, CHD: 1, SPD: i + 1 }, yellow: { 'DEF%': 2, CHC: 3, CHD: 1, SPD: i + 1 }, bt: i % 2 ? 4 : null })),
 ];
 const wearing = (c: { id: string }, pieces: Piece[]): GearStore => ({
-  v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [c.id]: pieces.map((p) => p.id) },
+  v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [c.id]: pieces.map((p) => p.id) },
   worn: { [c.id]: Object.fromEntries(pieces.map((p) => [p.slot, p.id])) },
 });
 const codeOf = (c: { id: string }, st: GearStore, pin: string | null = null) => shareCodeOf(idx.CHAR[c.id], st, Object.values(st.pieces), pin)!;
@@ -95,7 +95,18 @@ describe('3.2 код героя', () => {
 
   it('код новее этой версии — «новее»', async () => {
     const { BitWriter, seal } = await import('@/shared/bits');
-    expect(decodeHero('OGH' + seal(new BitWriter().put(2, 4).put(0, 20).bits))).toBe('newer');
+    expect(decodeHero('OGH' + seal(new BitWriter().put(3, 4).put(0, 20).bits))).toBe('newer');
+  });
+
+  // .x/0085 PLAN Д11: OGH v1 (до закрепления) нёс на месте набора отпечаток выбранного билда — читается, поле пропущено
+  it('T8.2 OGH v1 с отпечатком билда — вещи на месте, набора нет', async () => {
+    const { BitWriter, seal } = await import('@/shared/bits');
+    const pin = pinOptions(caren)[0];
+    const v2 = back(codeOf(caren, wearing(caren, SIX()), pin.key));
+    const w = new BitWriter().put(1, 4).put(0, 2).vlq(Number(caren.id) - 2000000, 7);
+    for (let i = 0; i < 6; i++) w.put(0, 1);
+    const v1 = decodeHero('OGH' + seal(w.put(2, 2).put(v2.pin!, 24).bits)) as HeroShare;
+    expect([v2.pin === null, v1.heroId, v1.pin, shownStore(idx, v1).pin]).toEqual([false, caren.id, null, undefined]);
   });
 
   it('из ссылки, с пробелами и переносами — тот же код; не код героя — null', () => {

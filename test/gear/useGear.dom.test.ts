@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Хранение экипировки (features/gear/store/useGear): при загрузке без исправлений не переписываем (Р17: исправила нормализация —
 // пишем сразу, test/gear/gear.dom.test.ts); во время обучения на странице пусто и ничего не пишется — ни во время, ни после
-// (запись из пустого стора тура стёрла бы вещи игрока); действие пишет сразу.
+// (запись из пустого стора тура стёрла бы вещи игрока); действие пишет сразу. Хранилище прежней модели (v1, v2) — перенос
+// в v3 пишется при загрузке один раз, пулы и надетое те же (.x/0085 PLAN Д11, TESTS T8.1).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -11,12 +12,20 @@ import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { EMPTY_GEAR, newPiece, type GearStore } from '@/features/gear/model/gear';
 import { useGear, type GearApi } from '@/features/gear/store/useGear';
+import { takeModelNote } from '@/features/gear/store/stored';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const idx = createIndex(D);
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
-// v1 из прежней версии: читается с переносом, но на загрузке не переписывается (Caren в ростере — исправлять нечего)
-const RAW = { v: 1, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2 }, lit: { CHC: 2 }, bt: null, at: '', note: 'x' } }, builds: { '2000089/Speed': { slots: { helmet: 'p1' }, at: '' } } };
+const PIECE = { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2 }, lit: { CHC: 2 }, bt: null, at: '', note: 'x' };
+// v3 с незнакомым полем вещи: на загрузке не переписывается (Caren в ростере — исправлять нечего)
+const RAW = { v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] } };
+// v1 и v2 из прежних версий: в v2 — надетое и поля прежней модели («Собираю», autoNew, выбранный билд, булавка, билды v1)
+const V1 = { v: 1, seq: 1, pieces: { p1: PIECE }, builds: { '2000089/Speed': { slots: { helmet: 'p1' }, at: '' } } };
+const V2 = {
+  ...RAW, v: 2, worn: { '2000089': { helmet: 'p1' } },
+  marks: { '2000089/Speed': 'want' }, autoNew: ['2000089/Speed'], aim: { '2000089': '2000089/Speed' }, pinned: ['2000089'], v1builds: { x: 1 },
+};
 // вещь на Caren (v2)
 const withPiece = (subs: Record<string, number>, slot: 'helmet' | 'armor' = 'helmet'): GearStore => {
   const { st, piece } = newPiece(EMPTY_GEAR, { slot, grade: 'unique', setId: speed, itemKey: null, main: null, subs });
@@ -46,7 +55,47 @@ describe('useGear', () => {
     await render(true);
 
     expect(stored()).toBe(text);
-    expect(api.store).toMatchObject({ v: 2, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 } } } });
+    expect(api.store).toMatchObject({ v: 3, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 }, note: 'x' } } });
+  });
+
+  it('T8.1 v2: при загрузке переписано в v3 один раз — поля прежней модели сняты, пулы, вещи и надетое те же', async () => {
+    localStorage.setItem('ogc.gear', JSON.stringify(V2));
+    await render(true);
+
+    const once = stored();
+    expect(JSON.parse(once!)).toEqual({ v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] }, worn: { '2000089': { helmet: 'p1' } } });
+    expect(api.store).toEqual(JSON.parse(once!));
+    await act(async () => root?.unmount());
+    root = null;
+    await render(true);
+    expect(stored()).toBe(once);
+  });
+
+  it('T8.1 v1: перенос в v3 записан при загрузке, вещь в пуле Caren', async () => {
+    localStorage.setItem('ogc.gear', JSON.stringify(V1));
+    await render(true);
+    expect(JSON.parse(stored()!)).toEqual({ v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] } });
+  });
+
+  it('T8.1 v2 с сабом не из данных — перенос в памяти, на загрузке не пишется (Р17)', async () => {
+    const text = JSON.stringify({ ...V2, pieces: { p1: { ...PIECE, yellow: { CHC: 2, NEWSUB: 1 } } } });
+    localStorage.setItem('ogc.gear', text);
+    await render(true);
+    expect([stored(), api.store.v, 'marks' in api.store]).toEqual([text, 3, false]);
+  });
+
+  it('сообщение о переносе: игроку прежней модели — один раз за всё время; новому и v3 — нет', async () => {
+    localStorage.setItem('ogc.gear', JSON.stringify(V2));
+    await render(true);
+    expect([takeModelNote(idx), takeModelNote(idx)]).toEqual([true, false]);
+    expect(localStorage.getItem('ogc.modelNote')).toBe('true');
+    localStorage.setItem('ogc.gear', JSON.stringify(V2)); // хранилище снова v2 (другая вкладка): флаг уже стоит
+    expect(takeModelNote(idx)).toBe(false);
+    localStorage.clear();
+    localStorage.setItem('ogc.gear', JSON.stringify(RAW));
+    expect(takeModelNote(idx)).toBe(false);
+    localStorage.clear();
+    expect(takeModelNote(idx)).toBe(false);
   });
 
   it('во время обучения: на странице пусто, запись ничего не делает; после тура не пишется, на странице — хранилище', async () => {
@@ -59,7 +108,7 @@ describe('useGear', () => {
     await render(true);
 
     expect(stored()).toBe(text);
-    expect(api.store).toMatchObject({ v: 2, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 } } } });
+    expect(api.store).toMatchObject({ v: 3, pools: { '2000089': ['p1'] }, pieces: { p1: { yellow: { CHC: 2 } } } });
   });
 
   // нормализация ростера (X и Core Fusion X) что-то «исправила», но строку экипировки разобрать не вышло — Р17 не пишет:
@@ -81,8 +130,8 @@ describe('useGear', () => {
     expect(localStorage.getItem('ogc.roster')).toBe('["2000089"');
   });
 
-  it('экипировку сохранила более новая версия (v: 3): newer, и запись не перезаписывается', async () => {
-    const text = JSON.stringify({ v: 3, seq: 0, pieces: {}, pools: {} });
+  it('экипировку сохранила более новая версия (v: 4): newer, и запись не перезаписывается', async () => {
+    const text = JSON.stringify({ v: 4, seq: 0, pieces: {}, pools: {} });
     localStorage.setItem('ogc.gear', text);
     await render(true);
     expect(api.newer).toBe(true);

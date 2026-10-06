@@ -4,10 +4,9 @@
 // Нормализация — при загрузке, переносе v1, импорте кода и пакетных правках ростера: есть оба — остаётся CF; все, у кого
 // есть вещи, — в ростере (Р16, normalizeStored).
 // Вещи X: у CF пусто — переходят к CF; у CF есть свои — не заменяем и не дополняем, вещи X убраны из его пула (записи,
-// которые есть и у других, остаются у других). «Собираю» не переносится: билды у героев разные.
-// Надетое (worn) идёт за вещами: всё, что было надето на X, надето и на CF; убраны — не надето. Выбранный билд (aim)
-// не переносится — по той же причине, что «Собираю»; у героя без пула его нет (syncWorn).
-// Закрепление (обмен, R3.4): CF закреплён, если закреплён X или CF — и при переходе вещей, и при слиянии пулов.
+// которые есть и у других, остаются у других).
+// Надетое (worn) идёт за вещами: всё, что было надето на X, надето и на CF; убраны — не надето. Закрепление набора
+// (pin) не переносится: билды у героев разные (.x/0085 PLAN Д9).
 import type { Index } from '@/game/data';
 import { gc, syncWorn, type GearStore, type Worn } from './gear';
 
@@ -61,12 +60,8 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
     if (kind === 'moved') worn = wornTo(worn, base, fusion);
     fixes.push({ base, fusion, kind, ids });
   }
-  if (!fixes.length) return { roster: list, st, fixes };
-  // подсказка «теперь собирается сам» у X без вещей не нужна (находка 16)
-  const autoNew = st.autoNew?.filter((k) => !fixes.some((f) => k.startsWith(f.base + '/')));
-  const { autoNew: _a, ...rest } = st;
-  const next = { ...rest, pools, ...(worn ? { worn } : {}), ...(autoNew?.length ? { autoNew } : {}) };
-  return { roster: list, st: pools === st.pools && autoNew?.length === st.autoNew?.length ? st : gc(next), fixes };
+  if (!fixes.length || pools === st.pools) return { roster: list, st, fixes };
+  return { roster: list, st: gc({ ...st, pools, ...(worn ? { worn } : {}) }), fixes };
 }
 
 // Р16: вещи есть только у героев ростера. Загрузка, перенос v1, импорт кода, пакетные правки ростера: каждый, у кого есть

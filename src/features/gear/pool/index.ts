@@ -2,7 +2,6 @@
 // game/build/profile; решения — .x/0085-stat-set-model/FORMULA.md). Старый движок («собираешь», варианты, исход вещи)
 // удалён на этапе 7.
 // Разделы: base — общее, info — что держится, view — вид пула, ops — операции с пулом.
-export type { Mark } from '@/features/gear/model/gear';
 export type { PoolStore } from './base';
 export { poolView } from './view';
 export type { CharPool, PoolView } from './view';

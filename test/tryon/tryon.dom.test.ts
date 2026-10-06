@@ -22,9 +22,9 @@ const speed = D.sets.find((s) => s.short === 'Speed')!.id;
 const NEW = { setId: speed, subs: { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 } };
 // у Caren — шлем Speed Set похуже новой, Speed «Собираю»
 const GEAR = {
-  v: 2, seq: 1,
+  v: 3, seq: 1,
   pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4, at: '' } },
-  pools: { [caren.id]: ['p1'] }, marks: { [caren.id + '/Speed']: 'want' },
+  pools: { [caren.id]: ['p1'] },
 };
 let root: Root | null = null;
 
@@ -187,13 +187,12 @@ describe('режим «для героя»', () => {
   it('вещей нет, сет не из её билдов, «Надеть на Caren»: вещь у неё, Speed не отмечен «Собираю»', async () => {
     const atk = D.sets.find((s) => s.short === 'Attack')!.id;
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: atk, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } },
-      { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
+      { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 3, seq: 0, pieces: {}, pools: {} } });
     await click($('.vc-equip'));
     // прочая в пустой слот Speed — не «засчитано в Speed»; «Надето», В4: и не «в По статам» — он вещи не держит, тост
     // без «Засчитано» (было — «Counts in "By stats".»)
     expect($('.gear-toast')?.textContent).toBe('On Caren: gloves.Undo');
     expect(stored('gear').pools[caren.id]).toHaveLength(1);
-    expect(stored('gear').marks ?? {}).toEqual({});
   });
 
   // было: «не по билду Speed» (Defense); вещь не для героя — offHero (11.1), кнопки нет
@@ -294,7 +293,7 @@ describe('режим «для героя»: вход, одна строка, з�
       ['p376', 'shoes', 'unique', '13', { 'ATK%': 1, CHD: 4, RES: 2, 'DEF%': 2 }, null],
     ];
     const pieces = Object.fromEntries(rows.map(([id, slot, grade, setId, lit, bt]) => [id, { id, slot, grade, setId, itemKey: null, main: null, yellow: lit, lit, bt, at: '' }]));
-    const gear = { v: 2, seq: 400, pieces, pools: { [eris.id]: rows.map((r) => r[0]) } };
+    const gear = { v: 3, seq: 400, pieces, pools: { [eris.id]: rows.map((r) => r[0]) } };
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { SPD: 1, DEF: 4, 'ATK%': 4, HP: 3 }, t4: true },
       { gear, roster: [eris.id], tryon: { charId: eris.id, build: 'Pen' } });
 
@@ -365,7 +364,7 @@ describe('режим героя и «По статам» (находка 28)', (
   const drakhan = D.chars.find((c) => c.slug === 'demiurge-drakhan')!;
   const revenge = D.sets.find((s) => s.short === 'Revenge')!.id;
   const HLMW = { setId: revenge, subs: { SPD: 3, HP: 1, 'HP%': 1 } };
-  const EMPTY = { v: 2, seq: 0, pieces: {}, pools: {} };
+  const EMPTY = { v: 3, seq: 0, pieces: {}, pools: {} };
 
   // было: «Drakhan · Speed — не по билду» (цель — вариант); у героя — его «По статам», где слот пуст
   it('Drakhan (предустановка Speed), вещей нет: «слот пуст», строка про «По статам» и «Надеть» — вещь у неё', async () => {
@@ -375,7 +374,6 @@ describe('режим героя и «По статам» (находка 28)', (
     expect($('.v-off')?.textContent).toBe(`It fits ${drakhan.name} by stats, not by build.`);
     await click($('.vs-act'));
     expect(stored('gear').pools[drakhan.id]).toHaveLength(1);
-    expect(stored('gear').marks ?? {}).toEqual({});
   });
 
   // было: «Drakhan · By stats — ничего не даст» в заголовке; у героя Revenge нет в билдах — offHero (11.1)
@@ -409,7 +407,7 @@ describe('replace — на одну введённую вещь', () => {
   const P = (id: string, setId: string, lit: Record<string, number>, o: Pc = {}): Pc =>
     ({ id, slot: 'helmet', grade: 'unique', setId, itemKey: null, main: null, yellow: lit, lit, bt: 4, at: '', ...o });
   const G = (pieces: Pc[], pools: Record<string, string[]>) =>
-    ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools });
+    ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools });
   const strong = P('p1', speed, { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 });
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 };
   const MID = { setId: speed, subs: { 'DEF%': 3, CHC: 3, RES: 2, HP: 1 } }; // хуже p1 — «Заменить» только из replace

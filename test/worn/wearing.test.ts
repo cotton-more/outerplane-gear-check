@@ -34,7 +34,7 @@ const piece = (slot: SlotId, short: string | null, lit: Subs = GOOD, extra: Part
 const armorOf = (short: string | null, lit?: Subs) => ARMOR.map((slot) => piece(slot, short, lit));
 
 const store = (pool: Piece[], worn: Piece[], extra: Partial<GearStore> = {}): GearStore => ({
-  v: 2, seq: 999, pieces: Object.fromEntries(pool.map((p) => [p.id, p])), pools: { [delta.id]: pool.map((p) => p.id) },
+  v: 3, seq: 999, pieces: Object.fromEntries(pool.map((p) => [p.id, p])), pools: { [delta.id]: pool.map((p) => p.id) },
   worn: { [delta.id]: Object.fromEntries(worn.map((p) => [p.slot, p.id])) }, ...extra,
 });
 const view = (st: GearStore) => wornView(ctx, delta, st, poolView(ctx, st).hero(delta.id));

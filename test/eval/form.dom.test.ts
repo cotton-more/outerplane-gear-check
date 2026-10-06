@@ -170,7 +170,7 @@ describe('«T4» на форме', () => {
     const good = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
     const pcs = [P('a1', 'helmet', set('Defense'), good), P('a2', 'gloves', set('Defense'), good), P('a3', 'shoes', set('Penetration'), good),
       P('a4', 'armor', set('Penetration'), { 'DEF%': 3, CHC: 3, CHD: 2 }, { grade: 'rare', bt: 0 })];
-    const gear = { v: 2, seq: 4, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] } };
+    const gear = { v: 3, seq: 4, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] } };
     await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Penetration'), subs: { HP: 1, 'DMG RED%': 1, RES: 1 } }, { gear, roster: [anarky.id] });
     expect($('.vcard .stamp')?.textContent).toBe('Fodder');
     expect($('.vcard .vc-title')?.textContent).toBe("Breakthrough for Anarky's armor");
