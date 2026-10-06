@@ -4,6 +4,7 @@ import type { Ctx } from '@/game/context';
 import type { Piece } from '@/features/gear/model/gear';
 import type { PoolStore } from './base';
 import { heroOpts, play, usedIn, type PlayOpts, type Play } from './play';
+import { heroPool, type HeroPool, type Pools } from '@/features/gear/verdict';
 
 export interface CharPool extends Play {
   c: Char;
@@ -17,6 +18,7 @@ export interface PoolView {
   st: PoolStore;
   opts: PlayOpts;
   of: (charId: string) => CharPool | null;
+  hero: Pools;    // пул героя по «статам + сетам» (features/gear/pool/info): что держится и почему
 }
 
 // один раз на хранилище: персонажи считаются по запросу и запоминаются. opts — общие (отметки); надетое — у каждого
@@ -39,5 +41,16 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
     memo.set(id, r);
     return r;
   };
-  return { st, opts, of };
+  const heroes = new Map<string, HeroPool | null>();
+  const hero = (id: string): HeroPool | null => {
+    if (heroes.has(id)) return heroes.get(id)!;
+    const c = ctx.idx.CHAR[id];
+    const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
+    const mine = new Set(pieces.map((p) => p.id));
+    const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
+    const r = c ? heroPool(ctx, c, pieces, worn) : null;
+    heroes.set(id, r);
+    return r;
+  };
+  return { st, opts, of, hero };
 }
