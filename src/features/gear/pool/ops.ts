@@ -4,7 +4,7 @@ import type { Ctx } from '@/game/context';
 import { EMPTY_GEAR, gc, isWorn, newPiece, syncWorn, today, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { ItemInput } from '@/game/item/item';
 import type { PoolStore } from './base';
-import { profileOf } from '@/game/build/profile';
+import { profileFor } from '@/game/build/profile';
 import { numOf } from './base';
 import { poolInfo } from './info';
 import type { PoolView } from './view';
@@ -42,9 +42,9 @@ export const replaceOf = (mine: readonly Piece[], slot: SlotId, replace?: string
 // replace — id записи из «Примерить замену» (решение владельца «заменить в любом случае» — (а)): она уходит всегда.
 // Записи нет в его пуле (чужая, уже убранная) или она другого слота — как без replace
 export interface PutPlan { removed: Piece[] }
-export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, worn: Readonly<Worn> = {}, replace?: string | null): PutPlan {
+export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, worn: Readonly<Worn> = {}, replace?: string | null, pin?: string | null): PutPlan {
   const out = replaceOf(mine, piece.slot, replace);
-  const P = profileOf(ctx, c);
+  const P = profileFor(ctx, c, pin);
   if (!P) return { removed: out ? [out] : [] };
   const rest = out ? mine.filter((p) => p !== out) : mine;
   const ids = new Set(mine.map((p) => p.id));
@@ -61,7 +61,7 @@ export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
   const hp = view.hero(charId);
   if (!hp) return null;
   const { piece } = newPiece({ ...EMPTY_GEAR, seq: seqOf(view.st) }, x, '');
-  return planPut(ctx, hp.c, hp.pieces, piece, view.st.worn?.[charId], replace);
+  return planPut(ctx, hp.c, hp.pieces, piece, view.st.worn?.[charId], replace, view.st.pin?.[charId]);
 }
 
 // Надеть вещь на персонажа (и в режиме героя, и из вердикта): всегда новая запись, даже если у него (или у другого)
@@ -73,7 +73,7 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
   const was = st.pools[charId] ?? [];
   const made = newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed } = c ? planPut(ctx, c, mine, piece, st.worn?.[charId], opts.replace) : { removed: [] };
+  const { removed } = c ? planPut(ctx, c, mine, piece, st.worn?.[charId], opts.replace, st.pin?.[charId]) : { removed: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...was.filter((id) => !gone.has(id)), piece.id];
   const next = gc(setWorn({ ...made.st, pools: { ...made.st.pools, [charId]: pool } }, charId, piece.slot, piece.id));
@@ -121,7 +121,7 @@ export function wearFromPool(ctx: Ctx, st: GearStore, charId: string, id: string
   const c = ctx.idx.CHAR[charId];
   const old = st.worn?.[charId]?.[p.slot] ?? null;
   // убыть может только прежняя надетая её слота — если пул её больше не держит (features/gear/pool/info)
-  const P = c ? profileOf(ctx, c) : null;
+  const P = c ? profileFor(ctx, c, st.pin?.[charId]) : null;
   const on = new Set([...Object.values({ ...st.worn?.[charId], [p.slot]: id })].filter((x): x is string => !!x));
   const gone = P && old && !poolInfo(P, poolPieces(st, charId), on).why.has(old) ? old : null;
   const was = st.pools[charId];

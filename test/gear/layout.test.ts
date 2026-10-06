@@ -5,10 +5,12 @@ import type { Piece } from '@/features/gear/model/gear';
 import { wearable } from '@/features/gear/model/vs';
 import type { Fit } from '@/features/gear/model/vs';
 import { bonusRows, convertible } from '@/game/set/setBonus';
-import { partKey, rowPoints, type Profile } from '@/game/build/profile';
+import { partKey, pinCombo, pinKey, pinnedProfile, pinOf, pinOptions, profileFor, rowPoints, type Profile } from '@/game/build/profile';
+import { eligibleIn, pieceBar, poolInfo } from '@/features/gear/pool/info';
+import { heroOutcome, heroPool } from '@/features/gear/verdict';
 import { setValue } from '@/game/set/setValue';
 import { better, bestLayout, cmpLex, gearRank, layoutValue, NEW_ID, piecePoints, type Layout } from '@/features/gear/layout';
-import { ARMOR, char, ctx, D, EPS, GEAR, gen, heroes, mk, prof, randArmor, randGear, randPool, twenty } from './statSets';
+import { ARMOR, char, ctx, D, EPS, GEAR, gen, heroes, mk, prof, randArmor, randGear, randPool, setId, twenty } from './statSets';
 
 const RANK: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
 
@@ -218,6 +220,51 @@ describe('ценность раскладки и лучшая раскладка
     const a = mk('p5', 'helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
     const b = mk('p9', 'helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
     expect(bestLayout(P, [b, a], {}).layout.helmet?.id).toBe('p5');
+  });
+
+  it('T4.6: закрепление — броня чужих сетов исключена (надетая остаётся), половины только частей набора, цепочка своего билда', () => {
+    const anarky = char('Anarky'); // «По статам» — цепочка Patience (SPD = HP = DMG RED% на 4-м месте); Defense mix — без них
+    const P = prof(anarky);
+    const mix = anarky.builds.find((b) => b.name === 'Defense mix')!;
+    const combo = mix.sets.find((x) => x.some((q) => q.set === setId('Penetration')))!;
+    const key = pinKey(anarky, mix, combo);
+    expect(pinOptions(anarky).map((o) => o.key)).toContain(key);
+    const pin = pinOf(anarky, key)!;
+    const Pp = pinnedProfile(P, pin);
+    expect(profileFor(ctx, anarky, key)).toBe(Pp);
+    // меню — только набор, цепочка — его билда
+    expect([...Pp.menuSets].sort()).toEqual([setId('Defense'), setId('Penetration')].sort());
+    expect([...Pp.parts].sort()).toEqual([partKey(setId('Defense'), 2), partKey(setId('Penetration'), 2)].sort());
+    expect(Pp.chain.subs).toEqual(mix.subs);
+    const hp = mk('hH', 'helmet', 'Defense', { 'DEF%': 2, CHC: 2, 'DMG RED%': 3, SPD: 1 });
+    expect(piecePoints(P, hp)).toBeGreaterThan(piecePoints(Pp, hp)); // DMG RED% у «По статам» засчитан, у Defense mix — нет
+    // половины — только частей набора: Immunity ×2 есть в меню героя, но не в наборе
+    expect(setValue(P, setId('Immunity'), 2, 2).halves).toBe(1);
+    expect(setValue(Pp, setId('Immunity'), 2, 2).halves).toBe(0);
+    // броня чужого сета: годна «По статам», закреплённому — нет; не надета — не в раскладке, надета — остаётся
+    const aD = mk('aD', 'armor', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+    const pG = mk('pG', 'gloves', 'Penetration', { 'DEF%': 2, CHC: 3, CHD: 1, SPD: 2 });
+    const pB = mk('pB', 'shoes', 'Penetration', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 });
+    const sH = mk('sH', 'helmet', 'Swiftness', { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 });
+    expect(pieceBar(P, sH).pass).toBe(true);
+    expect(pieceBar(Pp, sH).pass).toBe(false);
+    expect(pieceBar(Pp, pG).pass).toBe(pieceBar(P, pG).pass);
+    const pool = [aD, pG, pB, sH];
+    const none = new Set<string>();
+    expect(bestLayout(P, pool, { eligible: eligibleIn(P, none) }).layout.helmet?.id).toBe('sH');
+    expect(bestLayout(Pp, pool, { eligible: eligibleIn(Pp, none) }).layout.helmet).toBeUndefined();
+    expect(bestLayout(Pp, pool, { eligible: eligibleIn(Pp, new Set(['sH'])) }).layout.helmet?.id).toBe('sH');
+    // пул: не надетая чужая — «больше не нужна»; вердикт: чужой сет закреплённому не «Надень» и не «Оставь»
+    expect(poolInfo(Pp, pool, none).unneeded.map((p) => p.id)).toEqual(['sH']);
+    const bare = heroPool(ctx, anarky, [aD, pG, pB], none, key)!;
+    expect(bare.P).toBe(Pp);
+    expect(heroOutcome(heroPool(ctx, anarky, [aD, pG, pB], none)!, { ...sH, id: NEW_ID }).kind).toBe('wear');
+    expect(heroOutcome(bare, { ...sH, id: NEW_ID }).kind).toBe('none');
+    // билд переименовали — ключ не годится, профиль «По статам»
+    const stale = key.replace('Defense mix', 'Defense mix old');
+    expect(pinOf(anarky, stale)).toBeNull();
+    expect(profileFor(ctx, anarky, stale)).toBe(P);
+    expect(pinCombo(key)).toEqual([...combo].sort((a, z) => Number(a.set) - Number(z.set)));
   });
 
   it('кандидаты: eligible отсекает вещи; вещь с формы (NEW_ID) при равенстве уступает записанной', () => {

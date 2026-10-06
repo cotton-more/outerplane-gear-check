@@ -1,5 +1,6 @@
 // Пул героя по «статам + сетам» (.x/0085 FORMULA §5): что держим и почему, что «больше не нужна». Порог «годная» вещи
 // для героя (§4 «Порог») — здесь же: его читают пул, вердикт новой вещи и лучшая раскладка.
+import { CFG } from '@/game/config';
 import { isArmor } from '@/game/data';
 import type { ArmorSlot } from '@/game/data/types';
 import type { Profile } from '@/game/build/profile';
@@ -19,7 +20,8 @@ export const geq1 = (a: number, b: number): boolean => milli(a) - milli(b) >= TH
 
 // Порог для героя: броня — прежние правила «Оставить / Временно» по его цепочке ИЛИ очки ≥ 6 (armorBar, этап 2);
 // оружие и аксессуар — ранг по любому его билду: рекомендованная или временная с хорошими сабстатами (gearRank).
-// keep — прошла как «Оставить», temp — только как временная (штамп «Временно», PLAN Д2)
+// keep — прошла как «Оставить», temp — только как временная (штамп «Временно», PLAN Д2). Закреплённому (§6) броня других
+// сетов не годится; очки — по цепочке профиля (у закреплённого — его билда)
 export interface Bar { pass: boolean; keep: boolean; temp: boolean }
 const barMemo = new WeakMap<Profile, WeakMap<Piece, Bar>>();
 export function pieceBar(P: Profile, p: Piece): Bar {
@@ -28,11 +30,12 @@ export function pieceBar(P: Profile, p: Piece): Bar {
   const hit = m.get(p);
   if (hit) return hit;
   let r: Bar;
-  if (isArmor(p.slot)) {
+  if (isArmor(p.slot) && P.pin && !(p.setId && P.menuSets.has(p.setId))) r = { pass: false, keep: false, temp: false };
+  else if (isArmor(p.slot)) {
     const input = pieceInput(p);
     const sc = { ...scoreBuild(P.ctx, p.grade, P.c, P.chain, p.lit, itemMains(P.ctx.idx, input)), c: P.c, b: P.chain, i: 0 };
     const bar = armorBar(P.ctx, input);
-    const keep = bar.qualifies(sc), temp = !keep && bar.tempOk(sc);
+    const keep = bar.passesOld(sc) || piecePoints(P, p) >= CFG.goodPoints, temp = !keep && bar.tempOk(sc);
     r = { pass: keep || temp, keep, temp };
   } else {
     const f = gearRank(P, p);
@@ -110,7 +113,7 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   for (const p of sorted) {
     if (strong.has(p.id) || p.bt === 4 || pass(p) || reserve.has(reserveKey(p))) continue;
     if (isArmor(p.slot)) {
-      if (!p.setId) continue;
+      if (!p.setId || (P.pin && !P.menuSets.has(p.setId))) continue; // закреплённому — запас только сетов набора
       const started = pool.some((q) => q.setId === p.setId && strong.has(q.id));
       const slotHas = pool.some((q) => q.slot === p.slot && q.setId === p.setId && strong.has(q.id));
       if (!started || slotHas) continue;

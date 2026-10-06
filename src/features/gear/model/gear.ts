@@ -6,6 +6,7 @@
 import type { Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { subAllowed } from '@/game/item/mains';
+import { pinOf } from '@/game/build/profile';
 import { DROP_LEVEL, MAX_LIT, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
 import { type Bt, type ItemInput } from '@/game/item/item';
 
@@ -33,7 +34,9 @@ export type Mark = 'want' | 'skip'; // «Собираю» / «Не собира�
 // были, следующая версия) переносятся как есть. worn — что надето на персонаже: слот → id записи его пула (надетое ⊂
 // пул, слот записи = ключ; syncWorn). aim — выбранный билд персонажа: ключ варианта (Variant.key, «По статам» —
 // charId/#stats); только у героя с пулом. pinned — прежняя булавка обмена «Не отдавать надетое»: больше не читается,
-// хранится до переноса v3 (.x/0085 PLAN Д11). Пустых worn, aim и pinned не храним
+// хранится до переноса v3 (.x/0085 PLAN Д11). pin — закреплённый набор героя (.x/0085 FORMULA §6): ключ pinKey
+// («герой/билд#подпись»); от пула не зависит — герой из ростера может закрепить набор до первой вещи. Пустых worn, aim,
+// pinned и pin не храним
 export type Worn = Partial<Record<SlotId, string>>;
 export interface GearStore {
   v: 2;
@@ -45,6 +48,7 @@ export interface GearStore {
   worn?: Record<string, Worn>;
   aim?: Record<string, string>;
   pinned?: string[];
+  pin?: Record<string, string>;
   [extra: string]: unknown;
 }
 
@@ -102,11 +106,11 @@ export function syncWorn(st: GearStore): GearStore {
 export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slot'>): boolean => st.worn?.[charId]?.[p.slot] === p.id;
 
 // Р16: сняли звезду с героя, у которого есть вещи, и сказали «Да, убрать» — его пул, отметки «Собираю», подсказки
-// autoNew, надетое и выбранный билд уходят; записи, которые есть и у других, остаются у них (gc). Dropped — всё, что
+// autoNew, надетое, выбранный билд и закрепление уходят; записи, которые есть и у других, остаются у них (gc). Dropped — всё, что
 // ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; marks: Record<string, Mark>; autoNew: string[]; at: number;
-  worn?: Worn; aim?: string;
+  worn?: Worn; aim?: string; pin?: string;
 }
 const ofChar = (charId: string, key: string) => key.startsWith(charId + '/');
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
@@ -114,8 +118,9 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
   const { [charId]: _, ...pools } = st.pools;
   const marks = Object.fromEntries(Object.entries(st.marks ?? {}).filter(([k]) => !ofChar(charId, k)));
   const autoNew = (st.autoNew ?? []).filter((k) => !ofChar(charId, k));
-  const { marks: _m, autoNew: _a, ...rest } = st;
-  const next = gc({ ...rest, pools, ...(st.marks ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}) });
+  const { marks: _m, autoNew: _a, pin: _p, ...rest } = st;
+  const { [charId]: myPin, ...pin } = st.pin ?? {};
+  const next = gc({ ...rest, pools, ...(st.marks ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}), ...(Object.keys(pin).length ? { pin } : {}) });
   const dropped: Dropped = {
     charId, ids,
     pieces: Object.fromEntries(ids.filter((id) => !next.pieces[id] && st.pieces[id]).map((id) => [id, st.pieces[id]])),
@@ -123,6 +128,7 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     autoNew: (st.autoNew ?? []).filter((k) => ofChar(charId, k)),
     at: Object.keys(st.pools).indexOf(charId),
     ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}), ...(st.aim?.[charId] !== undefined ? { aim: st.aim[charId] } : {}),
+    ...(myPin !== undefined ? { pin: myPin } : {}),
   };
   return { st: next, dropped };
 }
@@ -139,10 +145,11 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const { marks: _m, autoNew: _a, ...rest } = st;
   const worn = d.worn ? { ...st.worn, [d.charId]: { ...d.worn, ...st.worn?.[d.charId] } } : st.worn;
   const aim = d.aim !== undefined ? { ...st.aim, [d.charId]: st.aim?.[d.charId] ?? d.aim } : st.aim;
+  const pin = d.pin !== undefined ? { ...st.pin, [d.charId]: st.pin?.[d.charId] ?? d.pin } : st.pin;
   return syncWorn({
     ...rest, pieces, pools: Object.fromEntries(entries),
     ...(st.marks || Object.keys(d.marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
-    ...(worn ? { worn } : {}), ...(aim ? { aim } : {}),
+    ...(worn ? { worn } : {}), ...(aim ? { aim } : {}), ...(pin ? { pin } : {}),
   });
 }
 
@@ -203,4 +210,26 @@ export function updateIn(idx: Index, st: GearStore, charId: string, id: string, 
 export function updatePiece(st: GearStore, id: string, patch: Partial<Pick<Piece, 'yellow' | 'lit' | 'bt'>>, at = today()): GearStore {
   const p = st.pieces[id];
   return p ? { ...st, pieces: { ...st.pieces, [id]: { ...p, ...patch, at } } } : st;
+}
+
+// Закрепить набор (key — profile pinKey) или снять (null — «По статам»). was — что стояло, для «Вернуть». Ничего не
+// поменялось — то же хранилище
+export interface PinResult { st: GearStore; was: string | null; now: string | null }
+export function setPin(st: GearStore, charId: string, key: string | null): PinResult {
+  const was = st.pin?.[charId] ?? null;
+  if (was === key) return { st, was, now: key };
+  const { [charId]: _, ...rest } = st.pin ?? {};
+  const pin = key === null ? rest : { ...rest, [charId]: key };
+  const next: GearStore = { ...st, pin };
+  if (!Object.keys(pin).length) delete next.pin;
+  return { st: next, was, now: key };
+}
+// «Вернуть»: только если стоит то, что записано этим действием
+export const undoPin = (st: GearStore, charId: string, r: Pick<PinResult, 'was' | 'now'>): GearStore =>
+  ((st.pin?.[charId] ?? null) === r.now ? setPin(st, charId, r.was).st : st);
+
+// закрепления, которых больше нет в данных (билд переименовали или убрали набор, PLAN Д9): герой → ключ. Героя нет в
+// данных — не трогаем (его пул лежит, как лежал)
+export function stalePins(idx: Index, st: Pick<GearStore, 'pin'>): Record<string, string> {
+  return Object.fromEntries(Object.entries(st.pin ?? {}).filter(([c, key]) => idx.CHAR[c] && !pinOf(idx.CHAR[c], key)));
 }

@@ -5,13 +5,13 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, undoDrop, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, setPin, stalePins, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
 import { planFor, planPut, poolView, putOn, stashOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
 import type { ItemInput } from '@/game/item/item';
-import { profileOf } from '@/game/build/profile';
+import { pinOptions, profileOf } from '@/game/build/profile';
 import { poolInfo } from '@/features/gear/pool/info';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
@@ -713,6 +713,51 @@ describe('надетое (worn) и выбранный билд (aim)', () => {
     const later = putOn(ctx, gone, KAPPA, helmet({ HP: 1 })).st;
     const chosen = { ...later, aim: { ...later.aim, [KAPPA]: buildKey(KAPPA, 'Speed') } };
     expect(undo(chosen).aim?.[KAPPA]).toBe(buildKey(KAPPA, 'Speed'));
+  });
+});
+
+describe('закрепление (pin, .x/0085 FORMULA §6)', () => {
+  const caren = idx.CHAR[CAREN];
+  const [a, b] = pinOptions(caren);
+  const base = () => v2([rec('p1', helmet({ CHC: 2 })), rec('p2', helmet({ HP: 1 }))], { [CAREN]: ['p1'], [KAPPA]: ['p2'] });
+
+  it('setPin пишет и снимает («По статам» = null); undoPin — точечно', () => {
+    const st = base();
+    const one = setPin(st, CAREN, a.key);
+    expect(one.st.pin).toEqual({ [CAREN]: a.key });
+    const two = setPin(one.st, CAREN, b.key);
+    expect({ was: two.was, pin: two.st.pin }).toEqual({ was: a.key, pin: { [CAREN]: b.key } });
+    const off = setPin(two.st, CAREN, null);
+    expect('pin' in off.st).toBe(false);
+    expect(setPin(off.st, CAREN, null).st).toBe(off.st);
+    expect(undoPin(off.st, CAREN, off).pin).toEqual({ [CAREN]: b.key });
+    // за эти секунды закрепили другое — «Вернуть» не трогает
+    expect(undoPin(setPin(two.st, CAREN, a.key).st, CAREN, two).pin).toEqual({ [CAREN]: a.key });
+  });
+
+  it('чтение: ключ как есть, код копии его сохраняет; не строка — отброшено, прочитано не целиком', () => {
+    const st = setPin(base(), CAREN, a.key).st;
+    expect(restoreGear(st, idx).pin).toEqual({ [CAREN]: a.key });
+    expect((decodeGear(encodeGear(st), idx) as GearStore).pin).toEqual({ [CAREN]: a.key });
+    expect(readsWhole(st, idx)).toBe(true);
+    const bad = { ...base(), pin: { [CAREN]: 5 } };
+    expect([restoreGear(bad, idx).pin, readsWhole(bad, idx)]).toEqual([undefined, false]);
+  });
+
+  it('от пула не зависит: «Убрать» последнюю вещь и gc закрепление не снимают; dropChar снимает, undoDrop возвращает', () => {
+    const st = setPin(base(), CAREN, a.key).st;
+    expect(gc(removeFrom(st, CAREN, 'p1')).pin).toEqual({ [CAREN]: a.key });
+    const r = dropChar(st, CAREN);
+    expect(r.st.pin).toBeUndefined();
+    expect(undoDrop(r.st, r.dropped)).toEqual(st);
+  });
+
+  it('stalePins: билд переименовали — ключ устарел; пул героя — по профилю закрепления', () => {
+    const stale = a.key.replace(a.build.name, a.build.name + ' old');
+    expect(stalePins(idx, { pin: { [CAREN]: stale, [KAPPA]: pinOptions(idx.CHAR[KAPPA])[0].key } })).toEqual({ [CAREN]: stale });
+    const st = setPin(base(), CAREN, a.key).st;
+    expect(poolView(ctx, st).hero(CAREN)!.P.pin?.key).toBe(a.key);
+    expect(poolView(ctx, base()).hero(CAREN)!.P.pin).toBeUndefined();
   });
 });
 

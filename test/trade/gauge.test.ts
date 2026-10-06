@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { comboSig } from '@/game/build/variants';
-import { combosOf, comboProfile, profileOf } from '@/game/build/profile';
+import { combosOf, comboProfile, pinOptions, profileOf } from '@/game/build/profile';
 import { setValue } from '@/game/set/setValue';
 import { bestLayout, gearRank, piecePoints } from '@/features/gear/layout';
 import { eligibleIn } from '@/features/gear/pool/info';
@@ -116,7 +116,28 @@ describe('мерило героя — заказ', () => {
     expect(all.find((c) => c.item.id === shared.id)?.holder).toBe(K);
   });
 
-  it.todo('T7.5: закрепление — жёстко (этап 6)');
+  it('T7.5: закрепление — жёстко: набор закрепления вместо заказа, броня других сетов не годна, своё надетое остаётся', () => {
+    const c = char(D);
+    const pin = pinOptions(c).find((o) => comboSig(o.combo) === SPEED4)!;
+    expect(pin).toBeTruthy(); // premise: Speed ×4 у Delta есть
+    const myPen = piece('helmet', 'Penetration', GOOD2);
+    const theirs = ARMOR.map((slot) => piece(slot, 'Penetration', GOOD2, { bt: 4 }));
+    const st = store({ [D]: { pool: [myPen], worn: [myPen] }, [K]: { pool: theirs } }, { pin: { [D]: pin.key } });
+    const free = store({ [D]: { pool: [myPen], worn: [myPen] }, [K]: { pool: theirs } });
+    // заказ из шторки обмена не меняет мерило закреплённого
+    const w = realWorld(st, undefined, [], { [D]: PEN4 });
+    const g = w.gauge(D)!;
+    expect(g.key).toBe(SPEED4);
+    expect(g.parts).toEqual([{ set: SPEED, n: 4 }]);
+    expect(g.bonus(PEN, 4, 4).halves).toBe(0);
+    // чужая Pen-броня: без закрепления — кандидат, с закреплением — нет; своё надетое — кандидат
+    expect(realWorld(free).gauge(D)!.value(theirs[0].id)!.ok).toBe(true);
+    expect(g.value(theirs[0].id)!.ok).toBe(false);
+    const ids = Object.values(candidates(w, { to: D })).flat().map((x) => x.item.id);
+    expect(ids).toContain(myPen.id);
+    expect(ids.some((id) => theirs.some((p) => p.id === id))).toBe(false);
+    expect(heroPlan(w, { to: D }).plan.kit.slots.helmet?.item.id).toBe(myPen.id);
+  });
 });
 
 // ------------------------------------------------------------------------------------------- T7.1, X1

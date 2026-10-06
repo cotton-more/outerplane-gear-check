@@ -5,7 +5,7 @@ import { isArmor } from '@/game/data';
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { buildsOf, combosWith } from '@/game/build/builds';
-import { partKey, profileOf, type Profile } from '@/game/build/profile';
+import { partKey, profileFor, type Profile } from '@/game/build/profile';
 import { scoreBuild, tempOk, uselessFor } from '@/game/build/score';
 import { itemMains, subAllowed, subForms } from '@/game/item/mains';
 import { dropSubs } from '@/game/item/subs';
@@ -26,8 +26,9 @@ export const formPiece = (x: ItemInput): Piece => ({
 export interface HeroPool { c: Char; P: Profile; pieces: Piece[]; wornIds: ReadonlySet<string>; info: PoolInfo }
 // пул героя по id; у героя без билдов (профиля нет) — null
 export type Pools = (charId: string) => HeroPool | null;
-export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySet<string>): HeroPool | null {
-  const P = profileOf(ctx, c);
+// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (§6)
+export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySet<string>, pin?: string | null): HeroPool | null {
+  const P = profileFor(ctx, c, pin);
   return P ? { c, P, pieces, wornIds, info: poolInfo(P, pieces, wornIds) } : null;
 }
 
@@ -117,7 +118,7 @@ function reserveFor(hp: HeroPool, x: Piece, h: HeroRes): boolean {
   if (h.bar || x.bt === 4 || hp.info.reserve.has(reserveKey(x))) return false;
   const { info, pieces } = hp;
   if (!isArmor(x.slot)) return listedFor(hp.P, x) && !pieces.some((q) => q.id !== x.id && sameForBt(q, x));
-  if (!x.setId) return false;
+  if (!x.setId || (hp.P.pin && !hp.P.menuSets.has(x.setId))) return false;
   const started = pieces.some((q) => q.setId === x.setId && info.strong.has(q.id));
   const slotHas = pieces.some((q) => q.slot === x.slot && q.setId === x.setId && info.strong.has(q.id));
   return started && !slotHas;
@@ -218,7 +219,7 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | nu
   const x = formPiece(input);
   const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
   const same = sameOf(all, x);
-  const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds)! : hp)) : all;
+  const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds, hp.P.pin?.key)! : hp)) : all;
   const heroes = hps.map((hp) => heroOutcome(hp, x));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>
     ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, same, ...more });
@@ -227,7 +228,8 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | nu
   const keep = heroes.filter((h) => h.kind === 'keep').sort((a, z) => z.margin - a.margin);
   if (keep.length) return res('keep', { sub: keep[0].sub, named: keep.slice(0, 3) });
   const quiet = quietOf(hps, x, heroes);
-  const now = hps.flatMap((hp) => materialTargets(hp, x)).sort((a, z) => piecePoints(profileOf(ctx, z.c)!, z.piece) - piecePoints(profileOf(ctx, a.c)!, a.piece));
+  const ptsOf = (t: Target) => piecePoints(hps.find((hp) => hp.c === t.c)!.P, t.piece);
+  const now = hps.flatMap((hp) => materialTargets(hp, x)).sort((a, z) => ptsOf(z) - ptsOf(a));
   if (now.length) return res('material', { sub: 'now', now, quiet });
   const reserve = hps.filter((hp, i) => reserveFor(hp, x, heroes[i])).map((hp) => hp.c);
   if (reserve.length) return res('material', { sub: 'reserve', reserve, quiet });

@@ -82,7 +82,7 @@ const MIGRATE_SETTINGS = { rosterOnly: false, stage: 'grow' as const, lv120: fal
 // (находка 16)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   // надетого и выбранного билда в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
-  const { builds, v: _, worn: _w, aim: _g, pinned: _p, ...rest } = v1;
+  const { builds, v: _, worn: _w, aim: _g, pinned: _p, pin: _n, ...rest } = v1;
   const pools: Record<string, string[]> = {};
   const marks: Record<string, Mark> = {};
   for (const k of Object.keys(builds).sort()) {
@@ -126,6 +126,8 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
 // закреплённые (R3.3): не массив — отметок нет; не строки и повторы — долой; герои без пула — уберёт gc (syncWorn)
 const restorePinned = (raw: unknown): string[] =>
   Array.isArray(raw) ? [...new Set(raw.filter((c): c is string => typeof c === 'string'))] : [];
+// закрепление (.x/0085 FORMULA §6) — те же строки, что выбранный билд; ключ, которого больше нет в данных, снимает
+// stalePins с сообщением
 const restoreAim = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
 
@@ -141,13 +143,13 @@ function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
   const marks = Object.fromEntries(Object.entries((r.marks && typeof r.marks === 'object' ? r.marks : {}) as Record<string, unknown>)
     .filter(([, m]) => m === 'want' || m === 'skip')) as Record<string, Mark>;
   const autoNew = Array.isArray(r.autoNew) ? r.autoNew.filter((k): k is string => typeof k === 'string') : [];
-  const worn = restoreWorn(r.worn), aim = restoreAim(r.aim), pinned = restorePinned(r.pinned);
-  const { marks: _m, autoNew: _a, worn: _w, aim: _g, pinned: _p, ...rest } = r;
+  const worn = restoreWorn(r.worn), aim = restoreAim(r.aim), pinned = restorePinned(r.pinned), pin = restoreAim(r.pin);
+  const { marks: _m, autoNew: _a, worn: _w, aim: _g, pinned: _p, pin: _n, ...rest } = r;
   return gc({
     ...rest, v: 2, seq: seqOf(r, pieces), pieces, pools,
     ...(Object.keys(marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
     ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(aim).length ? { aim } : {}),
-    ...(pinned.length ? { pinned } : {}),
+    ...(pinned.length ? { pinned } : {}), ...(Object.keys(pin).length ? { pin } : {}),
   });
 }
 

@@ -1,9 +1,9 @@
-// Мост к приложению: мир обмена из хранилища и данных. Мерило героя — его заказ (.x/0085 FORMULA §7 п. 1): «По статам» или
-// набор из его билдов; очки, ранг, порог «годная» и ценность сетов — теми же функциями, что лучшая раскладка
+// Мост к приложению: мир обмена из хранилища и данных. Мерило героя — его заказ (.x/0085 FORMULA §7 п. 1): «По статам»,
+// набор из его билдов или, у закреплённого, его закрепление (жёстко, §6); очки, ранг, порог «годная» и ценность сетов — теми же функциями, что лучшая раскладка
 // (features/gear/layout, pool/info). Блокировки сеанса (§7 п. 4) — из шторки обмена, не из хранилища.
 import type { Ctx } from '@/game/context';
 import type { Char, Combo } from '@/game/data/types';
-import { combosOf, comboProfile, profileOf } from '@/game/build/profile';
+import { combosOf, comboProfile, pinnedProfile, pinOf, profileOf } from '@/game/build/profile';
 import { comboSig } from '@/game/build/variants';
 import { setValue } from '@/game/set/setValue';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
@@ -42,8 +42,11 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
     const c = ctx.idx.CHAR[heroId];
     const P = c ? profileOf(ctx, c) : null;
     if (!c || !P) { memo.set(heroId, null); return null; }
-    const combo = orderCombo(c, o.orders?.[heroId] ?? STATS);
-    const Po = combo ? comboProfile(P, combo) : P;
+    // закреплённый (§6, §7 п. 1) — жёстко: его набор, цепочка его билда, броня других сетов не годна; заказ не меняется
+    const pin = pinOf(c, st.pin?.[heroId]);
+    const Pv = pin ? pinnedProfile(P, pin) : P;
+    const combo = pin ? pin.combo : orderCombo(c, o.orders?.[heroId] ?? STATS);
+    const Po = pin ? Pv : combo ? comboProfile(P, combo) : P;
     const vals = new Map<string, Worth | null>();
     const g: Gauge = {
       key: combo ? comboSig(combo) : STATS,
@@ -51,7 +54,7 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
       value(itemId) {
         if (vals.has(itemId)) return vals.get(itemId)!;
         const p = st.pieces[itemId];
-        const r = p && wearable(ctx, c, p) ? { v: milli(piecePoints(P, p)), fit: gearRank(P, p), ok: pieceBar(P, p).pass } : null;
+        const r = p && wearable(ctx, c, p) ? { v: milli(piecePoints(Pv, p)), fit: gearRank(Pv, p), ok: pieceBar(Pv, p).pass } : null;
         vals.set(itemId, r);
         return r;
       },
