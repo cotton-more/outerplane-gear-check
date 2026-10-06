@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // «Надето», шаг 7: плашка «Выбрал билды…», шторка «Билды героев» («Всё верно»), шторка «Билд для X» (строки частей связки;
-// открывается «Speed ▾» в плане обмена), вешалка у вкладки билда → «Переодеть» → «Надеть все» → «Вернуть». Данные — только из test/fixtures, не владельца. Логика — test/worn/wearing.test.ts,
+// открывается «▾» в списке «Билды героев»; обмен с этапа 5 .x/0085 — по заказу, не по билду), вешалка у вкладки билда → «Переодеть» → «Надеть все» → «Вернуть». Данные — только из test/fixtures, не владельца. Логика — test/worn/wearing.test.ts,
 // test/worn/aim.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -158,28 +158,28 @@ describe('«Билды героев»', () => {
 });
 
 describe('шторка «Билд для X»', () => {
-  const openSheet = async (aim: boolean) => {
-    const g = deltaGear(aim);
+  const openSheet = async () => {
+    const g = deltaGear(false);
     await mount({ gear: g.gear });
-    await click(byText('.cd-trade button', 'Trade'));
-    await click($('.tline.to .aimb'));
+    await click(byText('#aimsnote button', 'Check'));
+    await click($('[role="dialog"] .tlist li .btn'));
     return g;
   };
 
-  it('«… ▾» в плане обмена открывает шторку с вариантами и строками частей связки', async () => {
-    await openSheet(true);
+  it('«▾» в списке «Билды героев» открывает шторку с вариантами и строками частей связки', async () => {
+    await openSheet();
     const sheet = $$('[role="dialog"]').at(-1)!;
     expect(sheet.getAttribute('aria-label')).toBe('Build for Heatwave Cop Delta');
     const rows = [...sheet.querySelectorAll<HTMLElement>('.arow')].map((r) => r.textContent!);
+    // билд не выбран: текущий — угаданный по вещам (Penetration ×4: все четыре в вещах)
     expect(rows[0]).toContain('current');
-    expect(rows[0]).toContain('Speed ×4 · worn 4 of 4');
-    expect(rows.find((r) => r.includes('Penetration ×4'))).toContain('Penetration ×4 · 4 of 4 in pieces');
-    expect(rows.find((r) => r.includes('Penetration ×4'))).toContain('can re-dress');
+    expect(rows[0]).toContain('Penetration ×4 · 4 of 4 in pieces');
+    expect(rows.find((r) => r.includes('Speed ×4'))).toContain('Speed ×4 · worn 4 of 4');
     expect(rows.at(-1)).toContain("best by the stat chain from Heatwave Cop Delta's pieces");
   });
 
   it('нажатие на текущий билд закрывает шторку, ничего не записывая', async () => {
-    await openSheet(true);
+    await openSheet();
     const before = localStorage.getItem('ogc.gear');
     await click($('.aimsheet .arow'));
     expect($('.aimsheet')).toBeNull();

@@ -24,7 +24,7 @@ export function advance(w: World, step: Step): World {
   for (const h of w.heroes) if (p.pools[h.id]?.length) heroes.push({ ...h, pool: p.pools[h.id], worn: p.worn[h.id] ?? {} });
   // получатель без вещей — после шага с вещами: в конец (места в ростере у него не было)
   for (const [id, pool] of Object.entries(p.pools)) {
-    if (!old.has(id) && pool.length) heroes.push({ id, rank: w.heroes.length + heroes.length, pinned: false, worn: p.worn[id] ?? {}, pool });
+    if (!old.has(id) && pool.length) heroes.push({ id, rank: w.heroes.length + heroes.length, locked: false, worn: p.worn[id] ?? {}, pool });
   }
   return { heroes, items: w.items, gauge: w.gauge };
 }

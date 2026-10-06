@@ -205,7 +205,7 @@ export function App() {
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} todressN={todressN}
+            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
               onTrade={canEquip ? () => setTrade('team') : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
@@ -250,7 +250,7 @@ export function App() {
             onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined} />
         )}
         {trade && canEquip && (
-          <TradeSheet ctx={ctx} view={view} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}
+          <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}
             onApplied={(text, undo) => say({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x })} />
         )}
         {codeOpen && (

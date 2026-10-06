@@ -6,7 +6,7 @@ import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
 import { normalizeStored, type Normalized } from '@/features/gear/model/fusion';
-import { gc, setPinned, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { gc, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { Bt } from '@/game/item/item';
 import { buildKey } from '@/game/build/variants';
 import { heroOpts, isStats, play } from '@/features/gear/pool';
@@ -212,15 +212,13 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
 // Надетое base: в слоте, где на fusion надета одна из ушедших к base вещей, — она (выбор за эти секунды); в остальных —
 // r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
 // копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Выбранного билда у base нет —
-// он не переходил, а без пула не хранится. Закрепление base (r.pin) — снова у base; fusion, закреплённый только
-// переходом (r.pinTo нет), — снят
-export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn; pin?: boolean; pinTo?: boolean }): GearStore {
+// он не переходил, а без пула не хранится
+export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;
   const pool = (st.pools[fusion] ?? []).filter((id) => r.had.includes(id) || !r.moved.includes(id));
   const own = st.worn?.[fusion] ?? {};
   const back = Object.entries(own).filter(([, id]) => id && r.moved.includes(id) && !r.had.includes(id));
   const w: Worn = { ...r.worn, ...Object.fromEntries(back) };
   const worn = Object.keys(w).length ? { ...st.worn, [base]: w } : st.worn;
-  const next = gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
-  return r.pin ? setPinned(setPinned(next, base, true), fusion, !!r.pinTo) : next;
+  return gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
 }

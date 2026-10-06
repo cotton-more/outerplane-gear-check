@@ -1,9 +1,9 @@
-// «Обмен вещами» (.x/0040-trade/SPEC.md, решения реализации — DESIGN.md): модель расчёта. Расчёт работает не с вещами
-// приложения, а с заранее посчитанными числами: мир (герои, вещи), мерило героя (ценность вещи, рекомендованность,
-// бонусы сетов), кандидаты получателя. Очки — целые тысячные (R2.2): округляются один раз, при построении модели.
+// «Обмен вещами» (.x/0040-trade/SPEC.md; мерило — .x/0085 FORMULA §7): модель расчёта. Расчёт работает не с вещами
+// приложения, а с заранее посчитанными числами: мир (герои, вещи), мерило героя по его заказу (очки вещи, ранг, годная
+// ли, ценность сетов), кандидаты получателя. Очки — целые тысячные (R2.2): округляются один раз, при построении модели.
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';
-import type { Milli } from '@/features/gear/model/vs';
+import { THRESHOLD, type Milli } from '@/features/gear/model/vs';
 
 // порядок слотов в ключе сравнения и в пороге (R6.2): оружие, аксессуар, шлем, броня, перчатки, ботинки
 export const SLOT_ORDER: readonly SlotId[] = ['weapon', 'accessory', 'helmet', 'armor', 'gloves', 'shoes'];
@@ -25,20 +25,24 @@ export interface Item {
 export interface Hero {
   id: string;
   rank: number;             // место в ростере
-  pinned: boolean;          // «Не отдавать надетое» (R3)
+  locked: boolean;          // переодет в этом окне обмена: его надетое следующие не берут (FORMULA §7 п. 4)
   worn: Partial<Record<SlotId, string>>;
   pool: readonly string[];
 }
 
-// часть связки мерила: сет, сколько вещей нужно, конвертируемый ли (R2.3)
-export interface Part { set: string; n: number; conv: boolean }
-export interface SetGain { v: Milli; top: number } // очки бонусов сета и наибольшая активная строка (0, 2, 4)
+// часть заказа: сет и сколько вещей (2 или 4)
+export interface Part { set: string; n: number }
+// ценность сета в раскладке (FORMULA §2): очки, включённые половины, из них — половины сета-эффекта
+export interface SetGain { v: Milli; halves: number; eff: number }
+// вещь для героя: очки (§1), ранг оружия и аксессуара (§3), годная ли (порог §4; надетое получателя годно всегда)
+export interface Worth { v: Milli; fit: Fit; ok: boolean }
 
-// Мерило героя (R2.1): билд из «Надето» или «По статам» (parts пустые)
+// Мерило героя — его заказ (§7 п. 1): «По статам» (parts пустые, половины — у всех частей меню) или набор (половины —
+// только у его частей)
 export interface Gauge {
   key: string;
   parts: readonly Part[];
-  value(itemId: string): { v: Milli; fit: Fit } | null; // null — герой не может носить (класс)
+  value(itemId: string): Worth | null; // null — герой не может носить (класс)
   bonus(set: string, n: number, n4: number): SetGain;
 }
 
@@ -62,8 +66,10 @@ export interface Cand {
 
 export type Cands = Partial<Record<SlotId, readonly Cand[]>>;
 
+// rank — Σ рангов оружия и аксессуара; total — V; pts — очки вещей без сетов; halves / eff — включённые половины (все и
+// сетов-эффектов); дальше — ничьи R6.1
 export interface KitKey {
-  hard: number; live: number; soft: number; rec: number; stop: number; total: Milli; filled: number;
+  rank: number; total: Milli; pts: Milli; halves: number; eff: number; filled: number;
   cost: number; loss: Milli; ranks: number[]; ords: number[];
 }
 export interface Kit { slots: Partial<Record<SlotId, Cand>>; key: KitKey }
@@ -73,11 +79,15 @@ const lex = (a: readonly number[], z: readonly number[]): number => {
   return 0;
 };
 
-// польза комплекта по R2.5: > 0 — a лучше
+// польза комплекта, как у лучшей раскладки (§3): ранг, V, заполненность. > 0 — a лучше
 export function cmpUse(a: KitKey, z: KitKey): number {
-  return a.hard - z.hard || a.live - z.live || a.soft - z.soft || a.rec - z.rec || a.stop - z.stop
-    || a.total - z.total || a.filled - z.filled;
+  return a.rank - z.rank || a.total - z.total || a.filled - z.filled;
 }
+
+// §3 п. 3 и §7 п. 5: b лучше a по порогу — выше ранг, или V больше хотя бы на 1 очко, или включилась половина
+// сета-эффекта при не меньшем V
+export const gains = (a: KitKey, b: KitKey): boolean =>
+  b.rank > a.rank || b.total - a.total >= THRESHOLD || (b.eff > a.eff && b.total >= a.total);
 
 // полный порядок (R2.5, потом ничьи R6.1): > 0 — a лучше
 export function cmpKit(a: KitKey, z: KitKey): number {

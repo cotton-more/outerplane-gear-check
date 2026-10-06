@@ -25,15 +25,6 @@ function partLine(t: T, ctx: Ctx, p: AimPart): string {
   return p.worn >= p.part.n ? t.ui.aimPartWorn(name, p.worn, p.part.n) : t.ui.aimPartHave(name, p.owned, p.part.n);
 }
 
-// кнопка билда героя «Speed ▾» — открывает эту шторку: план и ромб обмена. Нет onClick — видна, но не нажимается
-export function AimButton({ name, aria, onClick }: { name: string; aria: string; onClick?: () => void }) {
-  return (
-    <button type="button" className="aimb" disabled={!onClick} aria-label={aria} title={name} onClick={onClick}>
-      <span className="aimb-n">{name}</span> ▾
-    </button>
-  );
-}
-
 export function AimSheet({ c, ctx, st, cp, onClose, onChoose }: {
   c: Char; ctx: Ctx; st: GearStore; cp: CharPool; onClose: () => void; onChoose: (key: string) => void;
 }) {

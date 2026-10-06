@@ -1,7 +1,7 @@
 // Пул экипировки, операции с пулом — «Надеть», «Убрать», «Вернуть», «Собираю». Что держит пул — info.ts.
 import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import { EMPTY_GEAR, gc, isPinned, isWorn, newPiece, setPinned, syncWorn, today, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { EMPTY_GEAR, gc, isWorn, newPiece, syncWorn, today, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { ItemInput } from '@/game/item/item';
 import type { PoolStore } from './base';
 import { profileOf } from '@/game/build/profile';
@@ -162,8 +162,8 @@ export function removeFrom(st: GearStore, charId: string, id: string): GearStore
 // «Вернуть» после «Убрать»: запись и её место в пулах этих персонажей — обратно (кто уже снова её держит — не трогаем).
 // wornBy — на ком из них она была надета (isWorn до «Убрать»): снова надета в своём слоте, если слот за эти секунды не
 // заняли. aims — выбранный билд тех, у кого «Убрать» опустошило пул (gc его снял): снова выбран, если за эти секунды
-// не выбрали другой; pins — закрепление тех же героев (R3.4). Только это — не снимок worn и aim целиком: он затёр бы выбор, сделанный после «Убрать»
-export function undoRemove(st: GearStore, piece: Piece, holders: readonly string[], wornBy: readonly string[] = [], aims: Readonly<Record<string, string>> = {}, pins: readonly string[] = []): GearStore {
+// не выбрали другой. Только это — не снимок worn и aim целиком: он затёр бы выбор, сделанный после «Убрать»
+export function undoRemove(st: GearStore, piece: Piece, holders: readonly string[], wornBy: readonly string[] = [], aims: Readonly<Record<string, string>> = {}): GearStore {
   const pools = { ...st.pools };
   for (const c of holders) if (!pools[c]?.includes(piece.id)) pools[c] = [...(pools[c] ?? []), piece.id];
   const next: GearStore = { ...st, pieces: { ...st.pieces, [piece.id]: st.pieces[piece.id] ?? piece }, pools };
@@ -172,17 +172,16 @@ export function undoRemove(st: GearStore, piece: Piece, holders: readonly string
     next.worn = { ...next.worn, [c]: { ...next.worn?.[c], [piece.slot]: piece.id } };
   }
   for (const [c, key] of Object.entries(aims)) if (holders.includes(c) && next.aim?.[c] === undefined) next.aim = { ...next.aim, [c]: key };
-  return pins.filter((c) => holders.includes(c)).reduce((x, c) => setPinned(x, c, true), syncWorn(next));
+  return syncWorn(next);
 }
 // «Убрать у Caren» вместе с данными для «Вернуть» (снять до записи): надета ли она на ней и, если это последняя вещь,
-// её выбранный билд и закрепление
+// её выбранный билд
 export function removeUndo(st: GearStore, charId: string, piece: Piece): (x: GearStore) => GearStore {
   const wornBy = isWorn(st, charId, piece) ? [charId] : [];
   const last = st.pools[charId]?.length === 1 && st.pools[charId][0] === piece.id;
   const aim = st.aim?.[charId];
   const aims = last && aim !== undefined ? { [charId]: aim } : {};
-  const pins = last && isPinned(st, charId) ? [charId] : [];
-  return (x) => undoRemove(x, piece, [charId], wornBy, aims, pins);
+  return (x) => undoRemove(x, piece, [charId], wornBy, aims);
 }
 
 // «Собираю / Не собираю»: null — снять отметку (вариант собирается сам или нет — по правилам)

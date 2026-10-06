@@ -1,37 +1,37 @@
-// План героя целиком (R6, R8) и подсказка закреплённых (R6.5, .x/0040-trade/SPEC.md): кандидаты → порог → дыры.
+// План героя целиком (R6, R8, .x/0040-trade/SPEC.md): кандидаты → порог → дыры. Честная строка заказа набора
+// (.x/0085 FORMULA §7 п. 3): часть, которая не собралась, потому что её сета нет в нужном числе слотов.
+import type { SlotId } from '@/game/data/types';
 import { candidates, type CandInput } from './cands';
 import { planFor, type Plan } from './gate';
-import { THRESHOLD } from '@/features/gear/model/vs';
 import { fillHoles, type HolesResult } from './holes';
-import type { World } from './model';
-import type { Milli } from '@/features/gear/model/vs';
+import { ARMOR_SLOTS, type Cand, type Cands, type Gauge, type Part, type World } from './model';
 
-export interface PlanInput { to: string; skip?: ReadonlySet<string>; allow?: ReadonlySet<string> }
-export interface HeroPlan { plan: Plan; holes: HolesResult }
+export interface PlanInput { to: string; skip?: ReadonlySet<string>; open?: ReadonlySet<string> }
+// missing — части заказа, которым не хватает вещей: slots — слоты брони, где вещи этого сета нет ни у кого
+export interface Missing { part: Part; slots: SlotId[] }
+export interface HeroPlan { plan: Plan; holes: HolesResult; missing: Missing[] }
+
+// часть включена: у сета в комплекте нужное число половин (×2 — одна, ×4 — две)
+export function partOn(g: Gauge, slots: Partial<Record<SlotId, Cand>>, p: Part): boolean {
+  let n = 0, n4 = 0;
+  for (const s of ARMOR_SLOTS) if (slots[s]?.item.set === p.set) { n++; if (slots[s]!.item.t4) n4++; }
+  return n >= 2 && g.bonus(p.set, n, n4).halves >= (p.n === 4 ? 2 : 1);
+}
+
+export function missingOf(g: Gauge, cands: Cands, slots: Partial<Record<SlotId, Cand>>): Missing[] {
+  const out: Missing[] = [];
+  for (const part of g.parts) {
+    if (partOn(g, slots, part)) continue;
+    const lack = ARMOR_SLOTS.filter((s) => !(cands[s] ?? []).some((c) => c.item.set === part.set));
+    if (ARMOR_SLOTS.length - lack.length < part.n) out.push({ part, slots: lack });
+  }
+  return out;
+}
 
 export function heroPlan(w: World, inp: PlanInput): HeroPlan {
   const g = w.gauge(inp.to);
-  const cin: CandInput = { to: inp.to, skip: inp.skip, allow: inp.allow };
-  const plan = g ? planFor(g, candidates(w, cin)) : { kit: { slots: {}, key: null as never }, changes: [], losses: [] };
-  return { plan, holes: fillHoles(w, { to: inp.to, plan }) };
-}
-
-export interface PinnedHint { heroes: string[]; gain: Milli; plan: HeroPlan }
-
-// «У {героев} (закреплены) лучше» (R6.5): с вещами закреплённых итог лучше по порогу (+1 очк., включился
-// неконвертируемый сет, выросла рекомендованность). Герои — только те закреплённые, чьи вещи попали в лучший план;
-// plan — то, что получится после «Взять»
-export function pinnedHint(w: World, inp: PlanInput): PinnedHint | null {
-  const g = w.gauge(inp.to);
-  if (!g) return null;
-  const pinned = new Set(w.heroes.filter((h) => h.pinned && h.id !== inp.to && !inp.allow?.has(h.id)).map((h) => h.id));
-  if (!pinned.size) return null;
-  const base = heroPlan(w, inp);
-  const wide = heroPlan(w, { ...inp, allow: new Set([...(inp.allow ?? []), ...pinned]) });
-  const heroes = [...new Set(wide.plan.changes.map((c) => c.cand.holder).filter((h): h is string => !!h && pinned.has(h)))];
-  if (!heroes.length) return null;
-  const take = heroPlan(w, { ...inp, allow: new Set([...(inp.allow ?? []), ...heroes]) });
-  const a = base.plan.kit.key, b = take.plan.kit.key;
-  const gain = b.total - a.total;
-  return gain >= THRESHOLD || b.live > a.live || b.rec > a.rec ? { heroes, gain, plan: take } : null;
+  const cin: CandInput = { to: inp.to, skip: inp.skip, open: inp.open };
+  const cands = g ? candidates(w, cin) : {};
+  const plan = g ? planFor(g, cands) : { kit: { slots: {}, key: null as never }, changes: [], losses: [] };
+  return { plan, holes: fillHoles(w, { to: inp.to, plan }), missing: g ? missingOf(g, cands, plan.kit.slots) : [] };
 }

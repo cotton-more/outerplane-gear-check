@@ -1,10 +1,10 @@
 // «Сделал» плана героя (R6.6, R8.5, R8.6, R3.2, R4.3–R4.5, R10.6, .x/0040-trade/SPEC.md): одна запись в хранилище.
 // Изменения: вещь уходит из пула держателя (была надета — дыра), входит в пул получателя и надевается; свободная — просто
 // в пул; снятая остаётся в пуле получателя ненадетой. Копии взятого (тот же код) в пуле получателя уходят из пула — их
-// больше нет в приложении (leftovers). Дыры не закрываются (владелец, 2026-10-04). Закрепление получателя = переключатель плана. План считали на другом
-// хранилище — null (пересчитать). «Вернуть» — хранилище до шага, если после шага его не трогали.
+// больше нет в приложении (leftovers). Дыры не закрываются (владелец, 2026-10-04). План считали на другом хранилище —
+// null (пересчитать). «Вернуть» — хранилище до шага, если после шага его не трогали.
 import type { SlotId } from '@/game/data/types';
-import { gc, setPinned, type GearStore } from '@/features/gear/model/gear';
+import { gc, type GearStore } from '@/features/gear/model/gear';
 import type { Plan } from './gate';
 import type { HoleFill } from './holes';
 import { codeOf } from './model';
@@ -64,14 +64,13 @@ const codeIn = (st: GearStore) => (id: string) => (st.pieces[id] ? codeOf(st.pie
 
 export interface Applied { st: GearStore; undo: (x: GearStore) => GearStore | null }
 
-export const applyHero = (st: GearStore, o: { to: string; hp: HeroPlan; pin: boolean; stamp: string }): Applied | null =>
-  applyAll(st, [{ plans: [{ to: o.to, plan: o.hp.plan }], fills: o.hp.holes.fills }], { [o.to]: o.pin }, o.stamp);
+export const applyHero = (st: GearStore, o: { to: string; hp: HeroPlan; stamp: string }): Applied | null =>
+  applyAll(st, [{ plans: [{ to: o.to, plan: o.hp.plan }], fills: o.hp.holes.fills }], o.stamp);
 
-// команда: шаги по порядку, одно «Сделал» на всех (R7.2); pin — «После обмена не отдавать надетое» по членам
-export const applyTeam = (st: GearStore, o: { tp: TeamPlan; pin: Readonly<Record<string, boolean>>; stamp: string }): Applied | null =>
-  applyAll(st, o.tp.steps, Object.fromEntries(o.tp.order.map((id) => [id, !!o.pin[id]])), o.stamp);
+// команда: шаги по порядку, одно «Сделал» на всех (R7.2)
+export const applyTeam = (st: GearStore, o: { tp: TeamPlan; stamp: string }): Applied | null => applyAll(st, o.tp.steps, o.stamp);
 
-function applyAll(st: GearStore, steps: readonly Step[], pins: Readonly<Record<string, boolean>>, stamp: string): Applied | null {
+function applyAll(st: GearStore, steps: readonly Step[], stamp: string): Applied | null {
   if (stampOf(st) !== stamp) return null;
   const p: Placement = {
     pools: Object.fromEntries(Object.entries(st.pools).map(([c, ids]) => [c, [...ids]])),
@@ -80,8 +79,7 @@ function applyAll(st: GearStore, steps: readonly Step[], pins: Readonly<Record<s
   for (const step of steps) moveStep(p, step, codeIn(st));
   const rest = Object.fromEntries(Object.entries(p.worn).filter(([, w]) => Object.keys(w).length));
   const { worn: _w, ...base } = st;
-  let next = gc({ ...base, pools: p.pools, ...(Object.keys(rest).length ? { worn: rest } : {}) });
-  for (const [to, pin] of Object.entries(pins)) next = setPinned(next, to, pin);
+  const next = gc({ ...base, pools: p.pools, ...(Object.keys(rest).length ? { worn: rest } : {}) });
   const after = stampOf(next);
   return { st: next, undo: (x) => (stampOf(x) === after ? st : null) };
 }

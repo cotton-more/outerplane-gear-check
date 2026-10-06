@@ -29,7 +29,6 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/eval/form/RosterOnlyToggle.tsx': 'helper', // «Только мой ростер» — настройка оценки, подпись говорит сама
   'features/eval/form/SetPicker.tsx': 'core',          // окно сетов — шаг «сет»
   'features/gear/ui/EquipButton.tsx': 'helper',        // кнопка «Надеть»: её объясняют подсказки вердикта и тур «Экипировка»
-  'features/gear/ui/PinMark.tsx': 'helper',            // булавка «Не отдавать надетое»: её объясняет подсказка обмена
   'features/gear/ui/VsChip.tsx': 'helper',             // чип исхода в «Сейчас на персонажах» и карточке вердикта: их подсказки его объясняют
   'features/gear/ui/WantToggle.tsx': 'helper',         // «Собираю»: его объясняет подсказка want карточки билда
   'features/gear/ui/pieceText.tsx': 'helper',          // подписи вещи в строках экипировки
@@ -42,6 +41,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/worn/Redress.tsx': 'helper',               // re-dress screen, opens from the build sheet whose tip explains it; sections name themselves
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
+  'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
   'game/hero/HeroFace.tsx': 'helper',                  // портрет героя
   'game/hero/HeroName.tsx': 'helper',                  // имя героя одной строкой: приставка режется первой
   'game/icons/Img.tsx': 'helper',                      // картинки и значки

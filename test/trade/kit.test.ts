@@ -1,12 +1,11 @@
-// «Обмен вещами», лучший комплект получателя (R6.1, R2.5): .x/0040-trade/TESTS.md, раздел D, и сверка с перебором.
+// «Обмен вещами», лучший комплект получателя (R6.1; польза — .x/0085 FORMULA §3): .x/0040-trade/TESTS.md, раздел D, и
+// сверка с перебором (X2).
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import { bestKit, keyOf } from '@/features/trade/model/kit';
-import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type Part, type SetGain } from '@/features/trade/model/model';
+import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type SetGain } from '@/features/trade/model/model';
 import { bruteKit, cand, candsOf, lcg, synthGauge } from './helpers';
 
-const speed: Part = { set: 'Speed', n: 4, conv: true };
-const pen: Part = { set: 'Pen', n: 4, conv: false };
 const idsOf = (g: Gauge, list: Cand[]) => {
   const k = bestKit(g, candsOf(list));
   return Object.fromEntries(Object.entries(k.slots).map(([s, c]) => [s, c.item.id]));
@@ -75,9 +74,9 @@ describe('выбор комплекта: ничьи (R6.1)', () => {
   });
 });
 
-describe('выбор комплекта: связка билда (R2.3, R2.5)', () => {
-  it('D20: четвёртая Speed (+3) проигрывает вещи другого сета (+8), если Speed остаётся 3 из 4', () => {
-    const g = synthGauge({ parts: [speed], bonus: { Speed: { 4: 3 } } });
+describe('выбор комплекта: польза — V, как у лучшей раскладки (.x/0085 FORMULA §3, §7)', () => {
+  it('D20: четвёртая Speed (+3 сету) проигрывает вещи другого сета (+8)', () => {
+    const g = synthGauge({ bonus: { Speed: { 4: 3 } } });
     const own = [
       cand({ id: 'h', slot: 'helmet', v: 1, set: 'Speed' }),
       cand({ id: 'a', slot: 'armor', v: 1, set: 'Speed' }),
@@ -86,53 +85,32 @@ describe('выбор комплекта: связка билда (R2.3, R2.5)', 
     const s4 = cand({ id: 's4', slot: 'shoes', v: 0, set: 'Speed' });
     const other = cand({ id: 'other', slot: 'shoes', v: 8, set: 'Other' });
     const [h, a, gl] = own;
-    const kS = useOf(g, { helmet: h, armor: a, gloves: gl, shoes: s4 });
-    const kO = useOf(g, { helmet: h, armor: a, gloves: gl, shoes: other });
-    expect([kS.soft, kO.soft]).toEqual([3, 3]); // часть связки та же
-    expect(kS.total).toBe(3000 + 3000);          // 1+1+1+0 + бонус 3
-    expect(kO.total).toBe(11000);
+    expect(useOf(g, { helmet: h, armor: a, gloves: gl, shoes: s4 }).total).toBe(3000 + 3000); // 1+1+1+0 + сет 3
+    expect(useOf(g, { helmet: h, armor: a, gloves: gl, shoes: other }).total).toBe(11000);
     expect(idsOf(g, [...own, s4, other]).shoes).toBe('other');
   });
 
-  it('D20: две Speed проигрывают трём, даже если очков у них больше на 8', () => {
-    const g = synthGauge({ parts: [speed] });
-    const own = [cand({ id: 'h', slot: 'helmet', v: 1, set: 'Speed' }), cand({ id: 'a', slot: 'armor', v: 1, set: 'Speed' })];
-    const three = cand({ id: 'three', slot: 'gloves', v: 0, set: 'Speed' });
-    const two = cand({ id: 'two', slot: 'gloves', v: 8, set: 'Other' });
-    const k3 = useOf(g, { helmet: own[0], armor: own[1], gloves: three });
-    const k2 = useOf(g, { helmet: own[0], armor: own[1], gloves: two });
-    expect([k3.soft, k2.soft]).toEqual([3, 2]);
-    expect(k2.total - k3.total).toBe(8000);
-    expect(idsOf(g, [...own, three, two]).gloves).toBe('three');
-  });
-
-  it('D21: включённый бонус неконвертируемого сета из связки важнее очков (на 8 хуже)', () => {
-    // бонус Pen включается от двух T4-вещей; без T4 — только очки
-    const g = synthGauge({
-      parts: [{ set: 'Pen', n: 2, conv: false }],
-      bonusFn: (set, _n, n4) => (set === 'Pen' && n4 >= 2 ? { v: 0, top: 2 } : { v: 0, top: 0 }),
+  describe('D21: половина сета-эффекта стоит своё в V, но не больше', () => {
+    // Pen ×2 на T4 включает половину сета-эффекта ценой 6 очк. (U); без T4 — ничего
+    const g = synthGauge({ bonusFn: (set, _n, n4) => (set === 'Pen' && n4 >= 2 ? { v: 6000, halves: 1, eff: 1 } : { v: 0, halves: 0, eff: 0 }) });
+    const withHalf = [cand({ id: 'h4', slot: 'helmet', v: 0, set: 'Pen', t4: true }), cand({ id: 'a4', slot: 'armor', v: 0, set: 'Pen', t4: true })];
+    it('пара без T4 с очками 2 + 2 — берётся пара T4 (6 > 4)', () => {
+      const no = [cand({ id: 'h0', slot: 'helmet', v: 2, set: 'Pen' }), cand({ id: 'a0', slot: 'armor', v: 2, set: 'Pen' })];
+      const k = useOf(g, { helmet: withHalf[0], armor: withHalf[1] });
+      expect([k.halves, k.eff, k.total]).toEqual([1, 1, 6000]);
+      expect(idsOf(g, [...withHalf, ...no])).toEqual({ helmet: 'h4', armor: 'a4' });
     });
-    const withBonus = [cand({ id: 'h4', slot: 'helmet', v: 0, set: 'Pen', t4: true }), cand({ id: 'a4', slot: 'armor', v: 0, set: 'Pen', t4: true })];
-    const noBonus = [cand({ id: 'h0', slot: 'helmet', v: 4, set: 'Pen' }), cand({ id: 'a0', slot: 'armor', v: 4, set: 'Pen' })];
-    const kB = useOf(g, { helmet: withBonus[0], armor: withBonus[1] });
-    const kN = useOf(g, { helmet: noBonus[0], armor: noBonus[1] });
-    expect([kB.hard, kN.hard]).toEqual([2, 2]);
-    expect([kB.live, kN.live]).toEqual([1, 0]);
-    expect(kN.total - kB.total).toBe(8000);
-    expect(idsOf(g, [...withBonus, ...noBonus])).toEqual({ helmet: 'h4', armor: 'a4' });
+    it('пара без T4 с очками 4 + 4 — берётся она (8 > 6)', () => {
+      const no = [cand({ id: 'h0', slot: 'helmet', v: 4, set: 'Pen' }), cand({ id: 'a0', slot: 'armor', v: 4, set: 'Pen' })];
+      expect(idsOf(g, [...withHalf, ...no])).toEqual({ helmet: 'h0', armor: 'a0' });
+    });
   });
 
-  it('D22: три части Pen (бонус не включён) лучше двух частей с большими очками', () => {
-    const g = synthGauge({ parts: [pen] });
-    const own = [cand({ id: 'h', slot: 'helmet', v: 1, set: 'Pen' }), cand({ id: 'a', slot: 'armor', v: 1, set: 'Pen' })];
-    const three = cand({ id: 'three', slot: 'gloves', v: 0, set: 'Pen' });
-    const two = cand({ id: 'two', slot: 'gloves', v: 8, set: 'Other' });
-    const k3 = useOf(g, { helmet: own[0], armor: own[1], gloves: three });
-    const k2 = useOf(g, { helmet: own[0], armor: own[1], gloves: two });
-    expect([k3.hard, k2.hard]).toEqual([3, 2]);
-    expect([k3.live, k2.live]).toEqual([0, 0]);
-    expect(k2.total).toBeGreaterThan(k3.total);
-    expect(idsOf(g, [...own, three, two]).gloves).toBe('three');
+  it('ранг оружия решает раньше V: рекомендованное с меньшими очками бьёт оружие не из билдов', () => {
+    const g = synthGauge();
+    const rec = cand({ id: 'rec', slot: 'weapon', v: 2, fit: 'rec' }), no = cand({ id: 'no', slot: 'weapon', v: 9, fit: 'no' });
+    expect(useOf(g, { weapon: rec }).rank).toBe(2);
+    expect(idsOf(g, [rec, no]).weapon).toBe('rec');
   });
 });
 
@@ -156,14 +134,14 @@ describe('выбор комплекта: заполненность и BT', () =
   ];
 
   it('D24: BT 4 без T4-бонуса, очки те же — остаётся своя копия BT 0', () => {
-    const g = synthGauge({ bonusFn: (set, n) => (set === 'S' && n >= 2 ? { v: 3000, top: 2 } : { v: 0, top: 0 }) });
+    const g = synthGauge({ bonusFn: (set, n) => (set === 'S' && n >= 2 ? { v: 3000, halves: 1, eff: 0 } : { v: 0, halves: 0, eff: 0 }) });
     const list = base();
     expect(useOf(g, { helmet: list[0] }).total).toBe(useOf(g, { helmet: list[1] }).total);
     expect(idsOf(g, list).helmet).toBe('mine');
   });
 
   it('D24: T4 даёт бонус сета (очки выше) — берётся копия с BT 4', () => {
-    const g = synthGauge({ bonusFn: (set, n, n4) => (set === 'S' && n >= 2 ? { v: 3000 + (n4 >= 1 ? 5000 : 0), top: 2 } : { v: 0, top: 0 }) });
+    const g = synthGauge({ bonusFn: (set, n, n4) => (set === 'S' && n >= 2 ? { v: 3000 + (n4 >= 1 ? 5000 : 0), halves: 1, eff: 0 } : { v: 0, halves: 0, eff: 0 }) });
     const list = base();
     const rest = { armor: list[2], gloves: list[3] };
     expect(useOf(g, { helmet: list[1], ...rest }).total).toBeGreaterThan(useOf(g, { helmet: list[0], ...rest }).total);
@@ -177,11 +155,9 @@ describe('X2: лучший комплект совпадает с полным �
     const int = (n: number) => Math.floor(r() * n);
     for (let t = 0; t < 50; t++) {
       const names = ['A', 'B', 'C'].slice(0, 2 + int(2));
-      const parts: Part[] = [];
-      for (const s of names) if (r() < 0.6) parts.push({ set: s, n: r() < 0.5 ? 2 : 4, conv: r() < 0.5 });
       const bonus: Record<string, { 2?: number; 4?: number }> = {};
       for (const s of names) bonus[s] = { ...(r() < 0.8 ? { 2: int(6) } : {}), ...(r() < 0.8 ? { 4: int(9) } : {}) };
-      const g = synthGauge({ parts, bonus });
+      const g = synthGauge({ bonus, effect: names.filter(() => r() < 0.4) });
       const list: Cand[] = [];
       for (const slot of SLOT_ORDER) {
         const armor = !['weapon', 'accessory'].includes(slot);
@@ -207,14 +183,14 @@ describe('X2: отсечение и границы на броне', () => {
     const int = (n: number) => Math.floor(r() * n);
     for (let t = 0; t < 200; t++) {
       const names = ['A', 'B', 'C', 'D'].slice(0, 2 + int(3));
-      const parts: Part[] = [];
-      for (const s of names) if (r() < 0.5) parts.push({ set: s, n: r() < 0.5 ? 2 : 4, conv: r() < 0.5 });
       const table = new Map<string, SetGain>();
       const g = synthGauge({
-        parts,
         bonusFn: (set, n, n4) => {
           const k = `${set}:${n}:${n4}`;
-          if (!table.has(k)) table.set(k, { v: int(4) * 1000 * (r() < 0.3 ? 0 : 1), top: n >= 4 && r() < 0.6 ? 4 : n >= 2 && r() < 0.7 ? 2 : 0 });
+          if (!table.has(k)) {
+            const halves = n >= 4 && r() < 0.6 ? 2 : n >= 2 && r() < 0.7 ? 1 : 0;
+            table.set(k, { v: int(4) * 1000 * (r() < 0.3 ? 0 : 1), halves, eff: r() < 0.4 ? halves : 0 });
+          }
           return table.get(k)!;
         },
       });

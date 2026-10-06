@@ -6,7 +6,7 @@ import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import type { RosterApi } from '@/features/roster/useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { isPinned, setPinned, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
 import { isStats, play, setMark, undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
 import { badgeOf } from '@/features/gear/model/poolVs';
 import { redressPlan, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
@@ -22,7 +22,6 @@ import { Icon } from '@/game/icons/Img';
 import { tour } from '@/tour/anchors';
 import { setName } from '@/game/set/setName';
 import { variantName } from '@/features/gear/ui/pieceText';
-import { Toggle } from '@/shared/ui/Toggle';
 import { CloseButton } from '@/shared/ui/CloseButton';
 import { BuildView } from './BuildView';
 import { CharHead } from './CharHead';
@@ -210,13 +209,10 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name, fusedBy.name)}</button>
         </div>
       )}
-      {/* «Обмен вещами» (R10.1): «К обмену ▸» и «Не отдавать надетое» (у героя без вещей отметки нет, R3.4) */}
-      {c.builds.length > 0 && !gear.newer && (onTrade || has) && (
+      {/* «Обмен вещами» (R10.1): «К обмену ▸» */}
+      {c.builds.length > 0 && !gear.newer && onTrade && (
         <div className="cd-trade">
-          {onTrade && <button type="button" className="btn small" onClick={() => onTrade(c)} {...tour('trade')}>{t.trade.open}</button>}
-          {has && (
-            <Toggle checked={isPinned(gear.store, c.id)} onChange={(on) => gear.set(setPinned(gear.store, c.id, on))}><Icon name="pin" />{t.trade.pin}</Toggle>
-          )}
+          <button type="button" className="btn small" onClick={() => onTrade(c)} {...tour('trade')}>{t.trade.open}</button>
         </div>
       )}
       {rateFor && !has && <div className="cd-rate"><button type="button" className="btn small" onClick={rateFor}>{t.tryon.rateFor(c.name)}</button></div>}

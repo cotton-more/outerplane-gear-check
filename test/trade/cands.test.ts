@@ -1,9 +1,10 @@
-// «Обмен вещами»: понятия (A1, A2) и кандидаты получателя (C1–C9), .x/0040-trade/TESTS.md
+// «Обмен вещами»: понятия (A1, A2) и кандидаты получателя (C1–C9), .x/0040-trade/TESTS.md; сеанс и источники —
+// .x/0085 TESTS T7.4, вопрос 15
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import { bestKit } from '@/features/trade/model/kit';
 import { codeOf } from '@/features/trade/model/model';
-import { candidates, skipKey, slotKey } from '@/features/trade/model/cands';
+import { candidates, skipKey } from '@/features/trade/model/cands';
 import { GOOD, HERO, piece, realWorld, store } from './helpers';
 
 const ids = (c: ReturnType<typeof candidates>, slot: SlotId): string[] => (c[slot] ?? []).map((x) => x.item.id);
@@ -44,20 +45,26 @@ describe('C. кандидаты', () => {
     expect(c.helmet?.find((x) => x.item.id === spare.id)?.cost).toBe(1);
   });
 
-  it('C2: надетое закреплённой Карен — не кандидат; в одной команде — кандидат', () => {
-    const kw = piece('gloves', 'Speed');
+  it('T7.4: Карен переодета в этом окне — её надетое не кандидат, её пул — кандидат; член команды впереди — кандидат', () => {
+    const kw = piece('gloves', 'Speed'), spare = piece('helmet', 'Speed');
     const st = store({
       [HERO.rin]: { pool: [piece('helmet', 'Life')] },
-      [HERO.karen]: { pool: [kw], worn: [kw] },
+      [HERO.karen]: { pool: [kw, spare], worn: [kw] },
     });
     const w = realWorld(st, undefined, [HERO.karen]);
-    expect(w.heroes.find((h) => h.id === HERO.karen)?.pinned).toBe(true);
+    expect(w.heroes.find((h) => h.id === HERO.karen)?.locked).toBe(true);
     expect(ids(candidates(w, { to: HERO.rin }), 'gloves')).not.toContain(kw.id);
-    expect(ids(candidates(w, { to: HERO.rin, team: [HERO.rin, HERO.karen] }), 'gloves')).toContain(kw.id);
-    expect(ids(candidates(w, { to: HERO.rin, team: [HERO.karen] }), 'gloves')).not.toContain(kw.id);
+    expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).toContain(spare.id);
+    expect(ids(candidates(w, { to: HERO.rin, open: new Set([HERO.karen]) }), 'gloves')).toContain(kw.id);
   });
 
-  describe('C3: запас Ноа', () => {
+  it('T7.4: окно закрыто (новый мир без блокировок) — надетое Карен снова кандидат', () => {
+    const kw = piece('gloves', 'Speed');
+    const st = store({ [HERO.rin]: { pool: [piece('helmet', 'Life')] }, [HERO.karen]: { pool: [kw], worn: [kw] } });
+    expect(ids(candidates(realWorld(st), { to: HERO.rin }), 'gloves')).toContain(kw.id);
+  });
+
+  describe('C3: запас Ноа (вопрос 15: источник — любая вещь)', () => {
     const noaArmor = piece('armor', 'Speed'), marked = piece('armor', 'Life'), unmarked = piece('helmet', 'Speed');
     const st = store({
       [HERO.rin]: { pool: [piece('gloves', 'Life')] },
@@ -68,17 +75,13 @@ describe('C. кандидаты', () => {
       expect(w.heroes.find((h) => h.id === HERO.noa)?.worn.armor).toBe(noaArmor.id);
       expect(ids(candidates(w, { to: HERO.rin }), 'armor')).toContain(marked.id);
     });
-    it('слот не отмечен — не кандидат', () => {
+    it('слот не отмечен — тоже кандидат', () => {
       expect(w.heroes.find((h) => h.id === HERO.noa)?.worn.helmet).toBeUndefined();
-      expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).not.toContain(unmarked.id);
-    });
-    it('слот освобождён этим расчётом — кандидат', () => {
-      const c = candidates(w, { to: HERO.rin, freed: new Set([slotKey(HERO.noa, 'helmet')]) });
-      expect(ids(c, 'helmet')).toContain(unmarked.id);
+      expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).toContain(unmarked.id);
     });
   });
 
-  it('C4: запас закреплённого героя — кандидат', () => {
+  it('C4: запас переодетого в этом окне героя — кандидат', () => {
     const worn = piece('armor', 'Speed'), spare = piece('armor', 'Life');
     const st = store({
       [HERO.rin]: { pool: [piece('gloves', 'Life')] },
@@ -151,7 +154,7 @@ describe('C. кандидаты', () => {
     expect(ids(candidates(w, { to: HERO.rin, skip }), 'gloves')).toContain(own.id);
   });
 
-  it('C8: у героя нет вещей — берёт надетое незакреплённых и чужой запас, закреплённых надетое не трогает', () => {
+  it('C8: у героя нет вещей — берёт надетое других и чужой запас, надетое переодетых в окне не трогает', () => {
     const nw = piece('helmet', 'Speed'), ns = piece('helmet', 'Life'), kw = piece('gloves', 'Speed');
     const st = store({
       [HERO.rin]: { pool: [] },

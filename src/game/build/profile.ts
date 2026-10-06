@@ -1,10 +1,11 @@
 // Профиль героя для «статов + сетов» (.x/0085 FORMULA §0, §2 п. 3): цепочка «По статам», меню частей сетов из всех его
 // билдов и U — очки самой ценной строки T4 на 2 вещи среди статовых сетов. Половина сета из меню стоит U.
-import type { Build, Char, SetBonus } from '@/game/data/types';
+import type { Build, Char, Combo, SetBonus } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { bonusSegments, convertible } from '@/game/set/setBonus';
 import type { SubWeight } from './score';
 import { pointWeights, weightOfPlace } from './points';
+import { comboSig } from './variants';
 
 export interface Profile {
   ctx: Ctx;
@@ -60,4 +61,32 @@ export function profileOf(ctx: Ctx, c: Char): Profile | null {
   const P: Profile = { ...base, chain, U: Math.max(0, ...uBy.map((x) => x.pts)), uBy, parts, menuSets };
   byChar.set(c, P);
   return P;
+}
+
+// наборы героя (связки всех его билдов) без повторов, в порядке outerpedia: заказ обмена (§7 п. 1)
+const combosMemo = new WeakMap<Char, Combo[]>();
+export function combosOf(c: Char): Combo[] {
+  const hit = combosMemo.get(c);
+  if (hit) return hit;
+  const seen = new Set<string>(), out: Combo[] = [];
+  for (const b of c.builds) for (const combo of b.sets) {
+    const sig = comboSig(combo);
+    if (combo.length && !seen.has(sig)) { seen.add(sig); out.push(combo); }
+  }
+  combosMemo.set(c, out);
+  return out;
+}
+
+// профиль под один набор: половины — только у его частей (заказ обмена §7 п. 2); цепочка, U и веса — героя
+const comboMemo = new WeakMap<Profile, Map<string, Profile>>();
+export function comboProfile(P: Profile, combo: Combo): Profile {
+  let m = comboMemo.get(P);
+  if (!m) comboMemo.set(P, (m = new Map()));
+  const sig = comboSig(combo);
+  let out = m.get(sig);
+  if (!out) {
+    out = { ...P, parts: new Set(combo.map((p) => partKey(p.set, p.n))), menuSets: new Set(combo.map((p) => p.set)) };
+    m.set(sig, out);
+  }
+  return out;
 }

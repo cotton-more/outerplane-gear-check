@@ -1,12 +1,12 @@
-// «Обмен вещами», этап 5: командный обмен (R7.1–R7.3): .x/0040-trade/TESTS.md, H1–H5, H7, H8, H10–H17, G5, J7.
-// H6, H9 (применение) — в тестах применения; H10 — отдельно.
+// «Обмен вещами», этап 5: командный обмен (R7.1–R7.3): .x/0040-trade/TESTS.md, H1–H5, H7, H8, H10–H17, J7; у каждого
+// свой заказ — .x/0085 TESTS T7.6. H6, H9 (применение) — в тестах применения; H10 — отдельно.
 import { describe, expect, it } from 'vitest';
 import { moveStep } from '@/features/trade/model/apply';
 import { skipKey } from '@/features/trade/model/cands';
 import { keyOf } from '@/features/trade/model/kit';
 import { heroPlan } from '@/features/trade/model/plan';
 import type { Cand, World } from '@/features/trade/model/model';
-import { runTeam, teamHint, teamOk, teamPlan, type TeamPlan } from '@/features/trade/model/team';
+import { runTeam, teamOk, teamPlan, type TeamPlan } from '@/features/trade/model/team';
 import { synthWorld, type SynthHero } from './helpers';
 
 type Items = Parameters<typeof synthWorld>[0]['items'];
@@ -27,7 +27,7 @@ const got = (tp: TeamPlan, id: string) => {
   const was = member(tp, id).before.slots;
   return Object.fromEntries(Object.entries(kitOf(tp, id)).filter(([s, x]) => was[s as keyof typeof was]?.item.id !== x));
 };
-const run = (w: World, members: string[], extra: { skip?: ReadonlySet<string>; allow?: ReadonlySet<string> } = {}): TeamPlan => {
+const run = (w: World, members: string[], extra: { skip?: ReadonlySet<string> } = {}): TeamPlan => {
   const tp = teamPlan(w, { team: team(...members), ...extra });
   expect(tp).not.toBeNull();
   return tp!;
@@ -47,12 +47,12 @@ describe('H. команда', () => {
     expect(got(tp, 'R')).toEqual({ weapon: 'spare' });
   });
 
-  const swapWorld = (pinned: boolean) => mk({ ha: { slot: 'helmet' }, wb: { slot: 'weapon' } }, {
-    A: { worn: { helmet: 'ha' }, pinned, value: { ha: 0, wb: 10 } },
-    B: { worn: { weapon: 'wb' }, pinned, value: { wb: 0, ha: 10 } },
+  const swapWorld = (locked: boolean) => mk({ ha: { slot: 'helmet' }, wb: { slot: 'weapon' } }, {
+    A: { worn: { helmet: 'ha' }, locked, value: { ha: 0, wb: 10 } },
+    B: { worn: { weapon: 'wb' }, locked, value: { wb: 0, ha: 10 } },
   });
 
-  it('H2: A первым берёт оружие B; B после этого шлем A не берёт (надетое прошедшего шаг закреплено)', () => {
+  it('H2: A первым берёт оружие B; B после этого шлем A не берёт (надетое прошедшего шаг закрыто)', () => {
     const tp = run(swapWorld(false), ['A', 'B']);
     expect(got(tp, 'A')).toEqual({ weapon: 'wb' });
     expect(got(tp, 'B')).toEqual({});
@@ -72,7 +72,7 @@ describe('H. команда', () => {
     expect(run(w, ['A', 'B'])).toEqual(tp);
   });
 
-  it('H4: член впереди по очереди берёт надетое закреплённого члена', () => {
+  it('H4: член впереди по очереди берёт надетое члена, переодетого раньше в этом окне', () => {
     const tp = run(swapWorld(true), ['A', 'B']);
     expect(got(tp, 'A')).toEqual({ weapon: 'wb' });
   });
@@ -159,19 +159,19 @@ describe('H. команда', () => {
       let w = w0;
       for (let i = 0; i < order.length; i++) {
         const done = order.slice(0, i), ahead = order.slice(i + 1);
-        const lockedW = { ...w, heroes: w.heroes.map((h) => (done.includes(h.id) ? { ...h, pinned: true } : h)) };
-        const hp = heroPlan(lockedW, { to: order[i], allow: new Set(ahead) });
+        const lockedW = { ...w, heroes: w.heroes.map((h) => (done.includes(h.id) ? { ...h, locked: true } : h)) };
+        const hp = heroPlan(lockedW, { to: order[i], open: new Set(ahead) });
         const p = { pools: Object.fromEntries(w.heroes.map((h) => [h.id, [...h.pool]])), worn: Object.fromEntries(w.heroes.map((h) => [h.id, { ...h.worn }])) };
         moveStep(p, { plans: [{ to: order[i], plan: hp.plan }], fills: hp.holes.fills }, (id) => w.items[id]?.code ?? null);
         const ids = new Set([...w.heroes.map((h) => h.id), ...Object.keys(p.pools)]);
-        w = { ...w, heroes: [...ids].filter((id) => p.pools[id]?.length).map((id, rank) => ({ ...(w.heroes.find((h) => h.id === id) ?? { id, rank, pinned: false }), pool: p.pools[id], worn: p.worn[id] ?? {} })) };
+        w = { ...w, heroes: [...ids].filter((id) => p.pools[id]?.length).map((id, rank) => ({ ...(w.heroes.find((h) => h.id === id) ?? { id, rank, locked: false }), pool: p.pools[id], worn: p.worn[id] ?? {} })) };
       }
-      const use = [0, 0, 0, 0, 0, 0, 0];
+      const use = [0, 0, 0];
       for (const id of order) {
         const g = w.gauge(id)!, h = w.heroes.find((x) => x.id === id);
-        const slots = Object.fromEntries(Object.entries(h?.worn ?? {}).filter(([, iid]) => iid && g.value(iid!)).map(([s, iid]) => [s, { item: w.items[iid!], ...g.value(iid!)!, cost: 0 as const, loss: 0, holder: id, rank: 0 }]));
+        const slots = Object.fromEntries(Object.entries(h?.worn ?? {}).filter(([, iid]) => iid && g.value(iid!)).map(([s, iid]) => [s, { item: w.items[iid!], v: g.value(iid!)!.v, fit: g.value(iid!)!.fit, cost: 0 as const, loss: 0, holder: id, rank: 0 }]));
         const k = keyOf(g, slots);
-        [k.hard, k.live, k.soft, k.rec, k.stop, k.total, k.filled].forEach((x, i) => (use[i] += x));
+        [k.rank, k.total, k.filled].forEach((x, i) => (use[i] += x));
       }
       return use;
     };
@@ -181,7 +181,7 @@ describe('H. команда', () => {
       it(`итог не хуже любой очереди: ${name}`, () => {
         const t = team(...members);
         const tp = run(w, [...members]);
-        const mine = tp.members.reduce((u, m) => { const k = m.after.key; [k.hard, k.live, k.soft, k.rec, k.stop, k.total, k.filled].forEach((x, i) => (u[i] += x)); return u; }, [0, 0, 0, 0, 0, 0, 0]);
+        const mine = tp.members.reduce((u, m) => { const k = m.after.key; [k.rank, k.total, k.filled].forEach((x, i) => (u[i] += x)); return u; }, [0, 0, 0]);
         for (const order of perms(t)) expect(lexGe(mine, chain(w, order)), order.join(',')).toBe(true);
       });
     }
@@ -225,7 +225,7 @@ describe('H. команда', () => {
     });
   });
 
-  it('H14: член берёт вещь у героя вне команды и из запаса по тому же порогу; закреплённого не трогает', () => {
+  it('H14: член берёт вещь у героя вне команды и из запаса по тому же порогу; переодетого в этом окне не трогает', () => {
     const w = mk(
       {
         r: { slot: 'weapon' }, wO: { slot: 'weapon' }, rh: { slot: 'helmet' }, mh: { slot: 'helmet' }, hM: { slot: 'helmet' },
@@ -236,29 +236,27 @@ describe('H. команда', () => {
         O: { worn: { weapon: 'wO' } },
         M: { worn: { helmet: 'mh' }, pool: ['hM'] },
         Q: { worn: { gloves: 'qg' } },
-        P: { worn: { armor: 'pa' }, pinned: true },
+        P: { worn: { armor: 'pa' }, locked: true },
       },
     );
     expect(got(run(w, ['R']), 'R')).toEqual({ weapon: 'wO', helmet: 'hM' });
   });
 
-  describe('H15: сеты из связки', () => {
-    const world = (conv: boolean) => mk(
+  describe('H15 (T7.6): сеты — по ценности в V у заказа члена', () => {
+    // половина S стоит half: 4 — шлем S (3 + 4 = 7) уступает шлему без сета (8); 6 — берётся шлем S (9 > 8)
+    const world = (half: number) => mk(
       { ra: { slot: 'armor', set: 'S' }, hS: { slot: 'helmet', set: 'S' }, hX: { slot: 'helmet' } },
       {
-        R: {
-          worn: { armor: 'ra' }, value: { ra: 5, hS: 3, hX: 8 },
-          parts: [{ set: 'S', n: 2, conv }], bonus: { S: { 2: 0 } },
-        },
+        R: { worn: { armor: 'ra' }, value: { ra: 5, hS: 3, hX: 8 }, bonus: { S: { 2: half } } },
         O1: { worn: { helmet: 'hS' } },
         O2: { worn: { helmet: 'hX' } },
       },
     );
-    it('последняя вещь конвертируемого сета +3, другая +8 → берётся +8', () => {
-      expect(got(run(world(true), ['R']), 'R')).toEqual({ helmet: 'hX' });
+    it('половина S дешевле разницы очков → берётся +8', () => {
+      expect(got(run(world(4), ['R']), 'R')).toEqual({ helmet: 'hX' });
     });
-    it('вариант с бонусом неконвертируемого сета выше вариантов по очкам', () => {
-      expect(got(run(world(false), ['R']), 'R')).toEqual({ helmet: 'hS' });
+    it('половина S дороже разницы → берётся шлем S', () => {
+      expect(got(run(world(6), ['R']), 'R')).toEqual({ helmet: 'hS' });
     });
   });
 
@@ -277,29 +275,6 @@ describe('H. команда', () => {
     const w = mk({ w: { slot: 'weapon' } }, { R: { value: { w: 4 } }, O: { worn: { weapon: 'w' } } });
     expect(teamOk(w, team('R'))).toBe(true);
     expect(got(run(w, ['R']), 'R')).toEqual({ weapon: 'w' });
-  });
-});
-
-describe('G5. подсказка закреплённых для команды', () => {
-  // Рин (R) носит меч r1, Ноа (N) — шлем nh; закреплённая Карен (K) носит меч k1 и шлем kh
-  const world = (sword: number, helmet = 5) => mk(
-    { r1: { slot: 'weapon' }, k1: { slot: 'weapon' }, nh: { slot: 'helmet' }, kh: { slot: 'helmet' } },
-    {
-      R: { worn: { weapon: 'r1' }, value: { r1: 5, k1: sword } },
-      N: { worn: { helmet: 'nh' }, value: { nh: 5, kh: helmet } },
-      K: { worn: { weapon: 'k1', helmet: 'kh' }, pinned: true, value: { k1: 5, kh: 5 } },
-    },
-  );
-  const inp = { team: team('R', 'N') };
-
-  it('меч Карен даёт Рин +1,2 → «У Карен (закреплена) лучше: +1,2»', () => {
-    expect(teamHint(world(6.2), inp)).toMatchObject({ heroes: ['K'], gain: 1200 });
-  });
-  it('меч даёт Рин +0,8 → подсказки нет', () => {
-    expect(teamHint(world(5.8), inp)).toBeNull();
-  });
-  it('меч Рин +0,6 и шлем Ноа +0,6 (порог по отдельности не пройден) → подсказки нет', () => {
-    expect(teamHint(world(5.6, 5.6), inp)).toBeNull();
   });
 });
 
