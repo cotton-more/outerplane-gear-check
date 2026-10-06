@@ -146,8 +146,9 @@ By default the hero is evaluated "By stats". If you want one specific set, press
 sets of their builds (the label says the build and "k of 4" — how many pieces of it the hero already has). The sheet
 warns: armor of other sets won't be taken, even with good stats. To undo — "By stats — not pinned". The pinned set is in
 the blue "Pinned: …" plate where the button was. What's worn from other sets stays until a piece of the set takes the
-slot. A pinned hero's order in a trade is one: the pin ([Trading gear](Trading-gear)). If outerpedia drops the pinned
-set, the app unpins it and tells you.
+slot. A pinned hero's order in a trade is one: the pin ([Trading gear](Trading-gear)). If outerpedia renames the build and the
+set with the same chain stays, the pin moves by itself; if it drops the set, the app unpins it and tells you.
+Unstarring the hero unpins it (the message has Undo).
 
 ## "On your characters now" in the verdict
 

@@ -259,3 +259,27 @@ describe('панель над сеткой (SPEC 4)', () => {
     expect($$('.cbar > *').map((e) => e.className)).toEqual(['cbar-row', 'cbar-row', 'cbar-chips']);
   });
 });
+
+describe('В4 ревью этапа 10: звезда с героя без вещей снимает закрепление', () => {
+  it('сообщение «Caren: … unpinned.» с «Undo» — звезда и закрепление снова на месте', async () => {
+    const { pinOptions } = await import('@/game/build/profile');
+    const key = pinOptions(caren)[0].key;
+    await mount({ gear: G([], {}, { pin: { [caren.id]: key } }), state: { tab: 'chars', cOwned: false } });
+    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
+    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('ogc.gear') ?? '{}').pin).toBeUndefined();
+    expect($('.gear-toast span')?.textContent).toMatch(/^Caren: .+ unpinned\.$/);
+    await click($$('.gear-toast button').find((b) => b.textContent === 'Undo'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id]);
+    expect(JSON.parse(localStorage.getItem('ogc.gear')!).pin).toEqual({ [caren.id]: key });
+  });
+
+  it('без закрепления — как раньше: без сообщения', async () => {
+    await mount({ state: { tab: 'chars', cOwned: false } });
+    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
+    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]);
+    expect($('.gear-toast')).toBeNull();
+  });
+});

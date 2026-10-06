@@ -232,6 +232,7 @@ export const en: Texts = {
     pinWarn: (name) => `${name} won't take armor of other sets, even with good stats. To undo — By stats.`,
     pinned: (combo) => `Pinned: ${combo}`,
     pinnedAria: (combo) => `Pinned: ${combo} — change`,
+    unpinned: (name, combo) => `${name}: ${combo} unpinned.`,
     pinGone: (name, combo) => `${name}: set ${combo} is gone from outerpedia — unpinned.`,
     pinGo: 'Pin',
     pinFill: (k, n) => `${k} of ${n}`,

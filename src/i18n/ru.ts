@@ -277,6 +277,7 @@ export const ru = {
     pinWarn: (name: string) => `Броню других сетов ${name} не беру, даже с хорошими статами. Снять — «По статам».`,
     pinned: (combo: string) => `Закреплено: ${combo}`,
     pinnedAria: (combo: string) => `Закреплено: ${combo} — изменить`,
+    unpinned: (name: string, combo: string) => `${name}: закрепление ${combo} снято.`,
     pinGone: (name: string, combo: string) => `${name}: набор ${combo} пропал из outerpedia — закрепление снято.`,
     pinGo: 'Закрепить',
     pinFill: (k: number, n: number) => `${k} из ${n}`,
