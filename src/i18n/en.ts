@@ -628,6 +628,7 @@ export const en: Texts = {
     order: (order: string) => `Order: ${order} ▾`,
     stats: (a: number, b: number) => `Stats: ${dec(a)} → ${dec(b)} pts`,
     missing: (part: string, set: string, slots: string) => `${part} won't come together: no ${set} ${slots}.`,
+    needT4: (part: string) => `${part} won't come together: needs T4.`,
     weaker: (pts: number) => `Stats drop by ${dec(pts)} pts.`,
     session: "Heroes you've re-dressed in this trade keep their gear while the window is open.",
   },

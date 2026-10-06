@@ -115,7 +115,8 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
               {sets.length > 0 && <span className="tline-s">{sets.join(', ')}</span>}
             </h4>
             {(missing[l.hero] ?? []).map((m) => (
-              <p key={m.part.set} className="tmiss">{t.trade.missing(partText(idx, m.part), setName(idx, m.part.set), m.slots.map((s) => t.ui.slotNom[s]).join(', '))}</p>
+              <p key={m.part.set} className="tmiss">{m.t4 ? t.trade.needT4(partText(idx, m.part))
+                : t.trade.missing(partText(idx, m.part), setName(idx, m.part.set), m.slots.map((s) => t.ui.slotNom[s]).join(', '))}</p>
             ))}
             <ul className="tmoves">
               {l.moves.map(moveRow)}

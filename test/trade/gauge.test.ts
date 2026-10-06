@@ -69,6 +69,18 @@ describe('мерило героя — заказ', () => {
     expect(heroPlan(realWorld(st), { to: D }).missing).toEqual([]);
   });
 
+  it('В2 ревью этапа 10: Attack ×2 + Speed ×2, Speed на T0 — «Speed ×2 не собирается: нужен T4»; на T4 — строки нет', () => {
+    const ATK = setId('Attack');
+    const order = orderOf(D, [`${ATK}x2`, `${SPEED}x2`].sort((a, z) => Number(a.split('x')[0]) - Number(z.split('x')[0])).join('+'));
+    const atk = [piece('helmet', 'Attack', GOOD2, { bt: 4 }), piece('armor', 'Attack', GOOD2, { bt: 4 })];
+    const t0 = [piece('gloves', 'Speed', GOOD2, { bt: 0 }), piece('shoes', 'Speed', GOOD2, { bt: 0 })];
+    const st = store({ [D]: { pool: [...atk, ...t0], worn: [...atk, ...t0] } });
+    expect(heroPlan(realWorld(st, undefined, [], { [D]: order }), { to: D }).missing).toEqual([{ part: { set: SPEED, n: 2 }, slots: [], t4: true }]);
+    const t4 = [piece('gloves', 'Speed', GOOD2, { bt: 4 }), piece('shoes', 'Speed', GOOD2, { bt: 4 })];
+    const st4 = store({ [D]: { pool: [...atk, ...t4], worn: [...atk, ...t4] } });
+    expect(heroPlan(realWorld(st4, undefined, [], { [D]: order }), { to: D }).missing).toEqual([]);
+  });
+
   it('T7.2: заказ набора собирает его, «По статам» — то, что больше по V', () => {
     // Speed ×4 надет, такие же по статам Pen-вещи на T4 — в запасе другого героя
     const speed = armorOf('Speed', GOOD2), pen = ARMOR.map((slot) => piece(slot, 'Penetration', { SPD: 4, CHC: 4, CHD: 4, ATK: 3 }, { bt: 4 }));

@@ -718,6 +718,7 @@ export const ru = {
     order: (order: string) => `Заказ: ${order} ▾`,
     stats: (a: number, b: number) => `Статы: ${dec(a)} → ${dec(b)} очк.`,
     missing: (part: string, set: string, slots: string) => `${part} не собирается: нет ${set} — ${slots}.`,
+    needT4: (part: string) => `${part} не собирается: нужен T4.`,
     weaker: (pts: number) => `Статы станут слабее на ${dec(pts)} очк.`,
     session: 'Кого уже переодел в этом обмене, того не трогаю, пока окно открыто.',
   },

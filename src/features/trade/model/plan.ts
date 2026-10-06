@@ -8,7 +8,8 @@ import { ARMOR_SLOTS, type Cand, type Cands, type Gauge, type Part, type World }
 
 export interface PlanInput { to: string; skip?: ReadonlySet<string>; open?: ReadonlySet<string> }
 // missing — части заказа, которым не хватает вещей: slots — слоты брони, где вещи этого сета нет ни у кого
-export interface Missing { part: Part; slots: SlotId[] }
+// t4 — вещи части есть по слотам, но ниже T4, а части нужен T4 (ревью этапа 10, В2): «не собирается: нужен T4»
+export interface Missing { part: Part; slots: SlotId[]; t4?: boolean }
 export interface HeroPlan { plan: Plan; holes: HolesResult; missing: Missing[] }
 
 // часть включена: у сета в комплекте нужное число половин (×2 — одна, ×4 — две)
@@ -23,7 +24,11 @@ export function missingOf(g: Gauge, cands: Cands, slots: Partial<Record<SlotId, 
   for (const part of g.parts) {
     if (partOn(g, slots, part)) continue;
     const lack = ARMOR_SLOTS.filter((s) => !(cands[s] ?? []).some((c) => c.item.set === part.set));
-    if (ARMOR_SLOTS.length - lack.length < part.n) out.push({ part, slots: lack });
+    if (ARMOR_SLOTS.length - lack.length < part.n) { out.push({ part, slots: lack }); continue; }
+    const need = part.n === 4 ? 2 : 1;
+    const have4 = ARMOR_SLOTS.filter((s) => (cands[s] ?? []).some((c) => c.item.set === part.set && c.item.t4)).length;
+    const n4 = Math.min(have4, part.n);
+    if (n4 < part.n && g.bonus(part.set, part.n, part.n).halves >= need && g.bonus(part.set, part.n, n4).halves < need) out.push({ part, slots: [], t4: true });
   }
   return out;
 }

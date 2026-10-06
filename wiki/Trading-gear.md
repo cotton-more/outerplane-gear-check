@@ -40,7 +40,8 @@ For each receiver:
 
 - **the gain** — how many points stronger the hero gets ("+4.2 pts"), or weaker ("Stats drop by N pts"); sets that
   turn on or off are named ("Speed ×4 activates");
-- an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves";
+- an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
+  pieces are there but below T4, "Speed ×2 won't come together: needs T4";
 - **what to put on**, by slot; under each piece, small — where it comes from ("on Caren", "in inventory · Caren's stock",
   "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓;
 - **"Don't take"** — the app offers another piece;
