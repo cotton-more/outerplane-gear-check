@@ -5,12 +5,11 @@ import type { Index } from '@/game/data';
 import type { Char, GearKind, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
-import { buildOfKey } from '@/game/build/variants';
 import type { Texts } from '@/i18n';
 import { itemInput, type FormAction, type FormState } from '@/features/eval/form/formState';
-import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { holds, poolView, putOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
-import { nextToWear, whereUsed, type CharVs } from '@/features/gear/model/poolVs';
+import type { Piece } from '@/features/gear/model/gear';
+import { putOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
+import { nextToWear, type CharVs } from '@/features/gear/model/poolVs';
 import { oldFate } from '@/features/gear/model/material';
 import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
@@ -51,14 +50,10 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   // «Дальше: {слот}» — ввод надетого: режим героя, «Надеть» есть, слот формы у героя не надет и есть ещё ненадетые
   const wearNext: SlotId | null = hero && canEquip && heroVs?.useful ? nextToWear(tview, hero.c.id, s.slot) : null;
   const nextNote = wearNext ? t.ui.nextWear(t.ui.slotNames[wearNext]) : null;
-  const cardOther = cardEquip && !hero ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
+  const cardOther = cardEquip && !hero ? vsList.slice(1).find((x) => x.useful && x.h.kind === 'wear') ?? null : null;
   // надеть вещь с формы на персонажа (features/gear/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
   // стало с вытесненной, с «Вернуть». Всегда новая запись — и при такой же у него или у другого: в Оценку вводят новую
   // вещь из инвентаря, пулы независимы (В9; окна «Это шлем Rin?» нет)
-  const buildName = (key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «Идёт в …», «(в …)»
-  // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
-  const usedFor = (st: GearStore, charId: string, id: string) =>
-    [...new Set(whereUsed(poolView(ctx, st), charId, id).map((v) => buildName(v.key)))];
   // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
   const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId)
     : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
@@ -89,7 +84,6 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     setFormUndo(null);
     if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
     if (touring) return;
-    const used = usedFor(st, c.id, r.id);
     // «· T4» — нажата «T4» на форме (В4): с каким Breakthrough вещь легла в пул
     const t4 = input.bt === 4 ? t.ui.withT4 : '';
     // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote (без
@@ -99,13 +93,11 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
     const wasOn = !!r.wasWorn && r.was.includes(r.wasWorn);
     const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
-      : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : [t.ui.equipped(c.name, r.piece.slot, t4), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+      : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : t.ui.equipped(c.name, r.piece.slot, t4);
     const notes: string[] = [];
-    // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке)
-    if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
     notes.push(...removedNotes(r, mine, rep));
-    // вопрос 6: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
-    if (pruned.length) notes.push(t.ui.prunedNote);
+    // вопрос 6, PLAN Д7: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
+    if (pruned.length) notes.push(t.fit.pruned(c.name));
     if (sw) notes.push(sw.note);
     say({
       text, note: notes.join(' '), tab: 'eval',

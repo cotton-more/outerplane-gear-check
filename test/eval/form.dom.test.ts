@@ -161,24 +161,24 @@ describe('«T4» на форме', () => {
     expect(pressed()).toBe('true');
   });
 
-  // Anarky · Defense mix: Pen-броня Epic T0 на ней; новая Pen-броня Epic лучше. Без «T4» новую надевают и кормят ей
-  // старую (Breakthrough новой), с «T4» — только надевают (тот же пример, что в gear.dom «Anarky»)
-  it('нажатие меняет вход вердикта: строка карточки — без «и скорми старую»', async () => {
+  // Anarky: годная Pen-броня Epic T0 в пуле; новая Pen-броня Epic с мусором — материал её Breakthrough. С «T4» новая
+  // материалом не бывает (D6, .x/0085 FORMULA §4 п. 3а) — «Разобрать»
+  it('нажатие меняет вход вердикта: без «T4» — Breakthrough для брони Anarky, с «T4» — нет', async () => {
     const anarky = D.chars.find((c) => c.name === 'Anarky')!;
     const P = (id: string, slot: string, setId: string, yellow: Record<string, number>, o: Record<string, unknown> = {}) =>
       ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: 4, at: '', ...o });
-    const good = { DEF: 2, CHC: 2, CHD: 2, SPD: 1 };
+    const good = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
     const pcs = [P('a1', 'helmet', set('Defense'), good), P('a2', 'gloves', set('Defense'), good), P('a3', 'shoes', set('Penetration'), good),
-      P('a4', 'armor', set('Penetration'), { HP: 1, 'DMG RED%': 1, RES: 1 }, { grade: 'rare', bt: 0 })];
-    const gear = { v: 2, seq: 4, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] },
-      marks: { [`${anarky.id}/Defense mix`]: 'want' } };
-    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Penetration'), subs: { CHC: 1, CHD: 1, HP: 1 } }, { gear, roster: [anarky.id] });
-    expect($('.vcard .vc-title')?.textContent).toBe('better than the armor on Anarky · Defense mix: wear it and feed the old one to it');
+      P('a4', 'armor', set('Penetration'), { 'DEF%': 3, CHC: 3, CHD: 2 }, { grade: 'rare', bt: 0 })];
+    const gear = { v: 2, seq: 4, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] } };
+    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Penetration'), subs: { HP: 1, 'DMG RED%': 1, RES: 1 } }, { gear, roster: [anarky.id] });
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vcard .vc-title')?.textContent).toBe("Breakthrough for Anarky's armor");
 
     await click(chip());
 
     expect(pressed()).toBe('true');
-    expect($('.vcard .vc-title')?.textContent).toBe('better than the armor on Anarky · Defense mix: wear it');
+    expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
   });
 
   it('правка сабстата «T4» не снимает; «Следующий» — снимает', async () => {

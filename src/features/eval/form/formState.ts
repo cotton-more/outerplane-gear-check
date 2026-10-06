@@ -43,7 +43,7 @@ export type FormAction =
   | { type: 'settingsOpen'; open: boolean };
 
 // «T4» — у каждой вещи своя: сбрасывается вместе с предметом (слот, «Следующий», load), а ещё при смене грейда и того,
-// что делает вещь «такой же» для Breakthrough (features/gear/model/material): сета брони, предмета оружия и аксессуара
+// что делает вещь «такой же» для Breakthrough (game/item sameForBt, features/gear/verdict): сета брони, предмета оружия и аксессуара
 export const EMPTY_ITEM = { setId: null, itemKey: null, main: null, unlisted: false, subs: {}, t4: false, expand: {} };
 
 // правка сабстатов, которая поднимает сумму уровней выше предела (subs levelCap), не срабатывает

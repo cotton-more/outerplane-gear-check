@@ -6,13 +6,13 @@ import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { TEXTS } from '@/i18n';
 import { makeCtx } from '@/game/context';
-import { evaluate } from '@/features/eval/verdict/evaluate';
 import { upgradePlan } from '@/features/eval/verdict/upgrade';
 import type { Verdict } from '@/features/eval/verdict/verdict';
 import { encodeItem } from '@/features/eval/code/codec';
 import { EMPTY_GEAR, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { poolView, putOn, outcomeFor } from '@/features/gear/pool';
-import { betterThanWorn, materialFor, oldFate, withMaterial } from '@/features/gear/model/material';
+import { poolView, putOn } from '@/features/gear/pool';
+import { oldFate } from '@/features/gear/model/material';
+import { verdictOf } from '@/features/gear/verdict';
 import { fromPersisted, reducer } from '@/app/appState';
 import { itemInput } from '@/features/eval/form/formState';
 import type { Bt, ItemInput } from '@/game/item/item';
@@ -23,22 +23,19 @@ const ru = TEXTS.ru;
 const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
-const MARKS = { [`${caren.id}/Speed`]: 'want' as const };
+// вердикт по ростеру {Caren} («статы + сеты», features/gear/verdict)
+const mine = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
 
 const epic = (slot: 'weapon' | 'accessory', main: string, subs: Record<string, number>, bt?: 0 | 4): ItemInput =>
   ({ slot, grade: 'rare', setId: null, itemKey: null, main, subs, ...(bt !== undefined ? { bt } : {}) });
 // у Caren надето одно: эта вещь с таким Breakthrough
 const wearing = (item: ItemInput, bt: Bt | null): GearStore => {
-  const r = putOn(ctx, { ...EMPTY_GEAR, marks: MARKS }, caren.id, item);
+  const r = putOn(ctx, EMPTY_GEAR, caren.id, item);
   return updatePiece(r.st, r.id, { bt });
 };
-const judge = (item: ItemInput, st: GearStore) => {
-  const view = poolView(ctx, st), needs = materialFor(view, item);
-  return withMaterial(idx, ru, evaluate(ctx, item), needs, { up: betterThanWorn(ctx, view, item, needs), target: null, t4: item.bt === 4 });
-};
-// Epic оружие Caren носит в «По статам»: у Speed свой Legendary предмет
-const WHO = 'Caren · По статам';
-const WORN_W = epic('weapon', 'DEF%', { RES: 1, EFF: 1, HP: 1 });
+const judge = (item: ItemInput, st: GearStore) => verdictOf(mine, poolView(mine, st).hero, item)!;
+// Epic оружие Caren по временному правилу: main из её билдов, сабстаты хорошие — годное
+const WORN_W = epic('weapon', 'DEF%', { CHC: 2, CHD: 2, SPD: 1 });
 const JUNK_W = epic('weapon', 'ATK%', { RES: 1, EFF: 1, HP: 1 });
 
 describe('4.1 «T4» на форме у Epic оружия и аксессуара', () => {
@@ -62,86 +59,43 @@ describe('4.2 шторка надетого Epic оружия', () => {
 });
 
 describe('4.3 материал для Epic оружия', () => {
-  it.each([[0, 'fodder'], [null, 'fodder'], [4, 'junk']] as const)('надето Epic оружие bt %s, новое с другим main и мусором → %s', (bt, v) => {
-    expect(evaluate(ctx, JUNK_W).v).toBe('junk');
-
+  it.each([[0, 'material'], [null, 'material'], [4, 'junk']] as const)('надето годное Epic оружие bt %s, новое с другим main и мусором → %s', (bt, kind) => {
     const r = judge(JUNK_W, wearing(WORN_W, bt));
 
-    expect(r.v).toBe(v);
-    if (v === 'fodder') expect(r.title).toBe(`Фоддер — материал Breakthrough для оружия ${WHO}`);
+    expect(r.kind).toBe(kind);
+    if (kind === 'material') expect(r.now.map((n) => n.c.name)).toEqual(['Caren']);
   });
 
   it('4.4 Epic аксессуар не материал для Epic оружия, и наоборот', () => {
-    const acc = epic('accessory', 'ATK%', { CHC: 2, CHD: 2 });
-    expect(materialFor(poolView(ctx, wearing(WORN_W, 0)), acc)).toEqual([]);
-    expect(materialFor(poolView(ctx, wearing(acc, 0)), JUNK_W)).toEqual([]);
+    const acc = epic('accessory', 'ATK%', { CHC: 2, CHD: 2, HP: 1 });
+    expect(judge(acc, wearing(WORN_W, 0)).now).toEqual([]);
+    expect(judge(JUNK_W, wearing(epic('accessory', 'DEF%', { CHC: 2, CHD: 2, SPD: 1 }), 0)).now).toEqual([]);
   });
 
   it('Legendary оружие не материал для Epic, Epic — не для Legendary', () => {
     const ref = caren.builds[0].weapons[0];
-    const leg: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: ref.key, main: ref.mains[0], subs: { HP: 1 } };
-    expect(materialFor(poolView(ctx, wearing(WORN_W, 0)), leg)).toEqual([]);
-    expect(materialFor(poolView(ctx, wearing(leg, 0)), JUNK_W)).toEqual([]);
+    const leg: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: ref.key, main: ref.mains[0], subs: { HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 } };
+    expect(judge(leg, wearing(WORN_W, 0)).now).toEqual([]);
+    expect(judge(JUNK_W, wearing(leg, 0)).now).toEqual([]);
   });
 });
 
 describe('4.3а «не указан» = ниже T4 у любой вещи', () => {
   const helmet = (subs: Record<string, number>, grade: ItemInput['grade']): ItemInput => ({ slot: 'helmet', grade, setId: speed, itemKey: null, main: null, subs });
-  it.each(['unique', 'rare'] as const)('шлем %s «не указан» + такая же с мусором → «Фоддер — материал для …»', (grade) => {
-    const st = wearing(helmet({ 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, grade), null);
-    const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 }, grade);
-
-    const r = judge(junk, st);
-
-    expect(r).toMatchObject({ v: 'fodder' });
-    expect(r.lines[0]).toBe(ru.material.line('шлем Caren · Speed'));
-  });
-
-  it('в «Сейчас на персонажах» — пометка «ниже T4»: пара отмечена материалом', () => {
-    const st = wearing(helmet({ 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, 'unique'), null);
-    const o = outcomeFor(ctx, poolView(ctx, st), caren.id, helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 }, 'unique'))!;
-    expect(o.rows.find((r) => r.v.name === 'Speed')?.pair?.material).toBe(true);
-  });
-
-  it('у Epic оружия «не указан» — тоже пометка', () => {
-    const o = outcomeFor(ctx, poolView(ctx, wearing(WORN_W, null)), caren.id, WORN_W)!;
-    expect(o.rows.some((r) => r.pair?.material)).toBe(true);
-  });
+  it.each([['unique', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, { RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 }], ['rare', { 'DEF%': 3, CHC: 2, SPD: 2 }, { RES: 1, EFF: 1, HP: 1 }]] as const)(
+    'шлем %s «не указан» + такой же с мусором → «Фоддер — Breakthrough для шлема Caren»', (grade, worn, junk) => {
+      const r = judge(helmet(junk, grade), wearing(helmet(worn, grade), null));
+      expect(r.kind).toBe('material');
+      expect(r.sub).toBe('now');
+      expect(ru.fit.btNow('helmet', 'Caren')).toBe('Фоддер — Breakthrough для шлема Caren');
+    });
 });
 
 describe('4.5 лучше надетой такой же', () => {
-  const WEAK_W = WORN_W;
-  const BETTER_W = epic('weapon', 'DEF%', { CHC: 2, CHD: 1, HP: 1 });
-
-  it('Epic: новое оружие лучше надетого T0–T3 — «надень её, а старую — ей в Breakthrough»', () => {
-    const r = judge(BETTER_W, wearing(WEAK_W, 0));
-    expect(r).toMatchObject({ v: 'keep', title: ru.material.titleWear('weapon', WHO) });
-    expect(r.plan).toEqual([ru.material.planReplace(WHO)]);
-  });
-
-  it('Epic: новое на T4 — «надень её»', () => {
-    const r = judge({ ...BETTER_W, bt: 4 }, wearing(WEAK_W, 0));
-    expect(r.title).toBe(ru.material.titleWearT4('weapon', WHO));
-  });
-
-  // 4.5б: снятая Legendary — не материал (может подойти другому)
-  const helmet = (subs: Record<string, number>, grade: ItemInput['grade']): ItemInput => ({ slot: 'helmet', grade, setId: speed, itemKey: null, main: null, subs });
-  it('Legendary шлем лучше надетого такого же T0–T3 — «надень её» без хвоста, строка и «Прокачка» — как у новой на T4', () => {
-    const r = judge(helmet({ CHC: 1, RES: 1, HP: 1, EFF: 1 }, 'unique'), wearing(helmet({ HP: 1, DEF: 1, ATK: 1, RES: 1 }, 'unique'), 2));
-
-    expect(r).toMatchObject({ v: 'keep', title: 'Оставляй — лучше надетого шлема Caren · Speed: надень её' });
-    expect(r.lines[0]).toBe(ru.material.lineWearT4('шлем Caren · Speed — T2, ещё 2 шт. до T4'));
-    expect(r.plan).toEqual([ru.material.planWear('Caren · Speed')]);
-  });
-
-  it('Epic шлем — по-прежнему «…надень её, а старую — ей в Breakthrough»', () => {
-    const r = judge(helmet({ DEF: 1, CHC: 1, HP: 1 }, 'rare'), wearing(helmet({ HP: 1, DEF: 1, ATK: 1 }, 'rare'), 2));
-    expect(r.title).toBe('Оставляй — лучше надетого шлема Caren · Speed: надень её, а старую — ей в Breakthrough');
-  });
-
-  it('4.5г новая Legendary с мусором при надетой такой же ниже T4 — «Фоддер — материал для …»', () => {
-    const r = judge(helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 }, 'unique'), wearing(helmet({ 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, 'unique'), 2));
-    expect(r.v).toBe('fodder');
+  it('Epic: новое оружие лучше надетого на 1+ очко — «Надень» вместо надетого', () => {
+    const r = judge(epic('weapon', 'DEF%', { CHC: 4, CHD: 3, SPD: 2 }), wearing(WORN_W, 0));
+    expect(r.kind).toBe('wear');
+    expect(r.named[0].replaced?.slot).toBe('weapon');
   });
 });
 

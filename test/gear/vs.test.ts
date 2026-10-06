@@ -12,11 +12,11 @@ import { makeCtx } from '@/game/context';
 import { type Piece } from '@/features/gear/model/gear';
 import type { Bt } from '@/game/item/item';
 import { buildKey } from '@/game/build/variants';
-import { evaluate } from '@/features/eval/verdict/evaluate';
-import { holds, outcomeFor, poolView, type Outcome } from '@/features/gear/pool';
+import { holds, outcomeFor, poolView } from '@/features/gear/pool';
 import { chipLabel } from '@/features/gear/ui/VsChip';
 import { TEXTS } from '@/i18n';
-import { charsVs, charVs, sectionChars, type CharVs } from '@/features/gear/model/poolVs';
+import { charVs, type CharVs } from '@/features/gear/model/poolVs';
+import type { HeroRes } from '@/features/gear/verdict';
 import type { Subs } from '@/game/item/subs';
 import { against, itemValue, pieceValue, vsFigure } from '@/features/gear/model/vs';
 
@@ -277,51 +277,30 @@ describe('исход вещи с формы: повтор vs.test', () => {
     expect(['Speed/Immu', 'Def/Immu'].map((n) => o.rows.find((r) => r.v.name === n))).toMatchObject([{ kind: 'closer', entering: false }, { kind: 'closer', entering: false }]);
   });
 
-  // три случая b02e947 (compareAll / equipTargets) — на строках пула (features/gear/model/poolVs)
-  describe('«Сейчас на персонажах» и «Кому надеть?»: повтор b02e947', () => {
-    const kitsune = D.chars.find((c) => c.name.startsWith('Kitsune'))!;
-    const kappa = char('Kappa');
-    const store = (pools: Record<string, Piece[]>) => ({
-      pieces: Object.fromEntries(Object.values(pools).flat().map((p) => [p.id, p])),
-      pools: Object.fromEntries(Object.entries(pools).map(([c, ps]) => [c, ps.map((p) => p.id)])),
-    });
-    const shown = (xs: CharVs[]) => xs.filter((x) => x.best).map((x) => [x.c.name, x.best!.v.name, x.best!.kind]);
+  // строки героев по «статам + сетам» (features/gear/model/poolVs charVs): кнопка «Надеть» — когда вещь ему «Надень», в
+  // режиме героя или когда герой найден по имени в «Кому надеть?» (any)
+  describe('«Сейчас на персонажах» и «Кому надеть?»: строка героя', () => {
     const worn = () => helmetT4({ 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 });
+    const store = (ps: Piece[]) => ({ pieces: Object.fromEntries(ps.map((p) => [p.id, p])), pools: { [caren.id]: ps.map((p) => p.id) },
+      worn: { [caren.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } });
 
-    it('только первая открытая секция вердикта (Kitsune с этим шлемом «не те сабстаты» — нет); пустой слот первым', () => {
-      const pools = { [caren.id]: [worn(), rec(armor('armor', 'Immunity', { CHC: 1 }))], [kappa.id]: [rec(armor('armor', 'Speed', { CHC: 1 }))],
-        [kitsune.id]: [rec(armor('helmet', 'Speed', { SPD: 1 }))] };
-      const v = poolView(ctx, store(pools));
-      const chars = sectionChars(evaluate(ctx, NEW));
-
-      expect(outcomeFor(ctx, v, kitsune.id, NEW)?.rows.length).toBeGreaterThan(0); // исход у Kitsune есть, но он не в секции
-      expect(chars.map((c) => c.name)).not.toContain(kitsune.name);
-      // иначе: вещи у персонажа — пустой шлем Kappa (Speed ×2 станет ближе) раньше «лучше» у Caren; внутри Caren
-      // Speed/Immu не «пустой слот»: её шлем стоит и там
-      expect(shown(charsVs(ctx, v, NEW, chars))).toEqual([['Kappa', 'Speed', 'closer'], ['Caren', 'Speed', 'up']]);
+    it('новая лучше надетой на 1+ очко — «Надень», кнопка «Заменить»; цепочка героя — его «По статам»', () => {
+      const x = charVs(ctx, poolView(ctx, store([worn()])), caren.id, armor('helmet', 'Speed', { 'DEF%': 4, CHC: 3, CHD: 3, SPD: 2 }))!;
+      expect({ kind: x.h.kind, useful: x.useful, replaces: x.replaces }).toEqual({ kind: 'wear', useful: true, replaces: true });
+      expect(x.chain.b).toBe(caren.builds.find((b) => JSON.stringify(b.subs) === JSON.stringify(x.chain.b.subs)));
     });
 
-    it('только собираемые билды тех, кому вещь подходит; ничего не надето — исходов нет', () => {
-      const chars = sectionChars(evaluate(ctx, NEW));
-
-      expect(shown(charsVs(ctx, poolView(ctx, store({ [caren.id]: [worn()] })), NEW, chars))).toEqual([['Caren', 'Speed', 'up']]);
-      // иначе: пустой пул — не пусто, а «начнёт …» у каждого из секции (строки без исхода); в App — только ростер и те,
-      // у кого есть вещи
-      const empty = charsVs(ctx, poolView(ctx, store({})), NEW, chars);
-      expect(shown(empty)).toEqual([]);
-      expect(empty.every((x) => !x.rows.length && x.starts.length > 0)).toBe(true);
+    it('не лучше — кнопки нет; найден по имени (any) или режим героя (wear) — есть', () => {
+      const v = poolView(ctx, store([worn()]));
+      const weak = armor('helmet', 'Speed', { RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
+      expect(charVs(ctx, v, caren.id, weak)!.useful).toBe(false);
+      expect(charVs(ctx, v, caren.id, weak, { any: true })!.useful).toBe(true);
+      expect(charVs(ctx, v, caren.id, weak, { wear: true })).toMatchObject({ useful: true, asWorn: true });
     });
 
-    it('«Кому надеть?»: собираемые билды первыми; не по сету — только при поиске по имени (explicit)', () => {
-      const v = poolView(ctx, store({ [caren.id]: [rec(armor('armor', 'Immunity', { CHC: 1 }))] }));
-      const rows = charsVs(ctx, v, NEW, [kappa, caren]);
-
-      expect(rows.map((x) => [x.c.name, x.best?.v.name ?? null])).toEqual([['Caren', 'Speed/Immu'], ['Kappa', null]]);
-      expect(rows.every((x) => x.useful)).toBe(true);
-      // иначе: «не по билду» больше нет — у Anarky нет Speed в связках, шлем встанет только в тихую «По статам»
-      const anarky = char('Anarky');
-      expect(charVs(ctx, v, anarky.id, NEW)).toBeNull();
-      expect(charVs(ctx, v, anarky.id, NEW, undefined, { explicit: true })).toMatchObject({ useful: true, best: { quiet: true, kind: 'fill' } });
+    it('предмет не для класса героя — строки нет', () => {
+      const item = D.weapons.find((i) => i.classLimits.length && !i.classLimits.includes(caren.class))!;
+      expect(charVs(ctx, poolView(ctx, store([])), caren.id, { slot: 'weapon', grade: 'unique', setId: null, itemKey: item.key, main: item.mains[0], subs: { CHC: 1 } })).toBeNull();
     });
   });
 });
@@ -381,11 +360,12 @@ describe('пара вещей в одном слоте (against)', () => {
   });
 });
 
-// подпись карточки для диктора (VsSection chipLabel): «лучше надетой: +25%», а без числа — просто «лучше»
+// подпись чипа и карточки для диктора (VsChip chipLabel): прирост в очках, «держи», ранг без прироста
 describe('chipLabel', () => {
-  const up = (o: Partial<Outcome>) => ({ kind: 'up', entering: false, used: true, delta: 0.25, lostEmpty: false, pair: null, ...o }) as unknown as Outcome;
+  const x = (h: Partial<HeroRes>, slot: SlotId = 'helmet') => ({ slot, h: { kind: 'wear', dV: 2.5, rankUp: false, ...h } }) as unknown as CharVs;
 
-  it('с числом — «лучше надетой: +25%»; вытесненное ничего не стоило — «лучше», без повтора', () => {
-    expect([chipLabel(TEXTS.ru, up({})), chipLabel(TEXTS.ru, up({ lostEmpty: true }))]).toEqual(['лучше надетой: +25%', 'лучше']);
+  it('«+2,5 очк.», «держи», «рекомендованный» у аксессуара без прироста; ничего — без чипа', () => {
+    expect([chipLabel(TEXTS.ru, x({})), chipLabel(TEXTS.ru, x({ kind: 'keep' })), chipLabel(TEXTS.ru, x({ dV: -3, rankUp: true }, 'accessory')), chipLabel(TEXTS.ru, x({ kind: 'none', dV: 0 }))])
+      .toEqual(['+2,5 очк.', 'держи', 'рекомендованный', null]);
   });
 });

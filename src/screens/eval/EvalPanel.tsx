@@ -35,8 +35,7 @@ import { VerdictCard } from './VerdictCard';
 import { TryOnStrip } from '@/features/tryon/TryOnStrip';
 import type { Char } from '@/game/data/types';
 import type { CharVs } from '@/features/gear/model/poolVs';
-import { holds } from '@/features/gear/pool';
-import { variantName } from '@/features/gear/ui/pieceText';
+import { chipLabel } from '@/features/gear/ui/VsChip';
 import { EquipButton } from '@/features/gear/ui/EquipButton';
 
 // sub: какой стат заменяем; level: какой стат добавляем — окно уровня у центра нажатой клетки (at); fourth — 4-й у Epic
@@ -145,17 +144,17 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             ? <>
               <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!hero} />
               {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
-              {((vs && onEquip) || (other?.best && onEquipOther)) && (
+              {((vs && onEquip) || (other && onEquipOther)) && (
                 <div className="vc-acts">
                   {vs && onEquip && (
-                    <EquipButton place="vc-equip" x={vs} slot={t.ui.slotAcc[s.slot]} t4={!!t4} good={!!vs.best && holds(vs.best)} onEquip={onEquip} />
+                    <EquipButton place="vc-equip" x={vs} slot={t.ui.slotAcc[s.slot]} t4={!!t4} good={vs.h.kind === 'wear'} onEquip={onEquip} />
                   )}
-                  {other?.best && onEquipOther && (
+                  {other && onEquipOther && (
                     <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>
-                      {/* подпись = действие (Р7): заменит — «или — заменить шлем Caren · …»; имя — варианта, как на карточке (Р5) */}
+                      {/* подпись = действие (Р7): заменит — «или — заменить шлем Caren · +2,5 очк.» */}
                       {other.replaces
-                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, variantName(t, other.best.v) + t4)
-                        : t.ui.orOther(other.c.name, variantName(t, other.best.v) + t4)}
+                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, (chipLabel(t, other) ?? '') + t4)
+                        : t.ui.orOther(other.c.name, (chipLabel(t, other) ?? '') + t4)}
                     </button>
                   )}
                 </div>

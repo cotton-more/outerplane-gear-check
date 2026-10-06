@@ -56,7 +56,6 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const score = (list: typeof judged) => dedupe(rows(ctx, s.grade, list, subs, im, (x) => ({ combos: combosWith(x.b, set.id) })), rank);
   const scoped = score(judged.filter((x) => ctx.inScope(x.c)));
   const others = score(judged.filter((x) => ctx.outScope(x.c)));
-  res.othersKeep = others.filter(qualifies); // «Оставить» для них — строка у вещи, которую понизило надетое (features/gear/model/stamp)
   const whoWears = A.whoWears(set.short);
   const othersSection = () => { if (others.length) res.sections.push({ title: t.verdict.notInRoster, rows: others, dim: true, limit: 6 }); };
 

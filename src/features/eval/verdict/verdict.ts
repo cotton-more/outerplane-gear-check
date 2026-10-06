@@ -20,11 +20,6 @@ export interface Verdict {
   sections: Section[];
   foot: string;
   plan: string[];          // «Прокачка»: Enhance, Breakthrough, Transistone — что вкладывать в эту вещь
-  // штамп поменяли записи экипировки (features/gear/model/stamp): lower — все, кому подходит, уже носят не хуже; home — вещь уже в билде
-  worn?: 'lower';
-  wornBy?: string[];       // lower: билды («персонаж/билд»), где уже надето не хуже, — их персонажей называет заголовок
-  // не из ростера: кому броня — «Оставить», кто берёт предмет с этим main. У понижённой — строкой: разбор не молча
-  othersKeep?: Row[];
   // «подходит ли» строка — от этого цвет оценки в списке; null — считать по CFG.keepCount
   qualifies?: ((m: Omit<Row, 'alt'>) => boolean) | null;
 }

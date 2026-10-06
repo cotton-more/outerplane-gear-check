@@ -2,10 +2,10 @@
 // лучший из исходов по героям в порядке «Надень» → «Оставь» → материал (Breakthrough сейчас, запас) → «Спорно» →
 // «Разобрать». Пул героя — features/gear/pool/info (§5). Тексты — screens/eval (useVerdictModel).
 import { isArmor } from '@/game/data';
-import type { Char, SlotId } from '@/game/data/types';
+import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { buildsOf, combosWith } from '@/game/build/builds';
-import { profileOf, type Profile } from '@/game/build/profile';
+import { partKey, profileOf, type Profile } from '@/game/build/profile';
 import { scoreBuild, tempOk, uselessFor } from '@/game/build/score';
 import { itemMains, subAllowed, subForms } from '@/game/item/mains';
 import { dropSubs } from '@/game/item/subs';
@@ -13,10 +13,8 @@ import { sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
-import { better, bestLayout, layoutValue, NEW_ID, piecePoints, type Layout, type LayoutValue } from './layout';
+import { better, bestLayout, NEW_ID, piecePoints, type Layout, type LayoutValue } from './layout';
 import { eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
-
-const ALL: SlotId[] = ['weapon', 'accessory', 'helmet', 'armor', 'gloves', 'shoes'];
 
 // вещь с формы как запись: id NEW_ID — новее всех записанных
 export const formPiece = (x: ItemInput): Piece => ({
@@ -58,9 +56,10 @@ export interface HeroRes {
   margin: number;                // очки над лучшей держащейся вещью слота (порядок «Оставь», A10)
   slotEmpty: boolean;            // её слот пуст в нынешней раскладке
   replaced: Piece | null;        // «Надень»: вещь её слота, которую она сменит
+  rankUp: boolean;               // «Надень» по рангу: оружие или аксессуар из рекомендованных его билдам (§3 п. 3)
   alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней
   parts: { on: PartChange[]; off: PartChange[] };
-  needBt: boolean;               // «Оставь (а)»: сделай Breakthrough до T4 (A11)
+  needT4: PartChange | null;     // «Оставь (а)»: сделай Breakthrough до T4 — без него эта часть не включится (A11)
   reserveBt: Piece | null;       // запасная из пула героя — в Breakthrough новой (§4 п. 3б)
   layoutWith: Layout;            // лучшая раскладка с ней — что будет надето после «Надеть»
 }
@@ -78,9 +77,9 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const rp = rid ? pool.find((p) => p.id === rid) ?? null : null;
   const base: HeroRes = {
     c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: px - top,
-    slotEmpty: !info.layout[x.slot], replaced: null,
+    slotEmpty: !info.layout[x.slot], replaced: null, rankUp: withBest.value.rank > info.value.rank,
     alsoWear: Object.values(withBest.layout).filter((p) => p.id !== x.id && !wornIds.has(p.id)),
-    parts: partsDiff(info.value, withBest.value), needBt: false,
+    parts: partsDiff(info.value, withBest.value), needT4: null,
     reserveBt: rp && bar.pass && (x.bt ?? 0) < 4 && sameForBt(x, rp) ? rp : null,
     layoutWith: withBest.layout,
   };
@@ -92,13 +91,16 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
     // а) сет из меню: лучше хотя бы на 1 очко той, что держится для слота и сета (T4-вещь — лучшей на T4)
     const pair = heldHere.filter((p) => p.setId === x.setId && (x.bt !== 4 || p.bt === 4));
     const ref = pair.length ? Math.max(...pair.map((p) => piecePoints(P, p))) : null;
-    if (ref === null || geq1(px, ref)) return { ...base, kind: 'keep', sub: 'a', needBt: (x.bt ?? 0) < 4 && needsT4(P, x.setId) };
+    if (ref === null || geq1(px, ref)) return { ...base, kind: 'keep', sub: 'a', needT4: (x.bt ?? 0) < 4 && needsT4(P, x.setId) ? menuPart(P, x.setId) : null };
     return base;
   }
   // б) сет не из меню: на 1 очко выше каждой держащейся вещи слота, вещам сетов меню +U/2 (A12)
   if (!heldHere.length || geq1(px, offBar(P, heldHere))) return { ...base, kind: 'keep', sub: 'b' };
   return base;
 }
+
+// часть меню героя с этим сетом — меньшая («Penetration ×2»)
+const menuPart = (P: Profile, set: string): PartChange => ({ set, n: P.parts.has(partKey(set, 2)) ? 2 : 4 });
 
 // §4 п. 3а: держащиеся годные вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough. Вещь на T4 материалом
 // не бывает (D6); запас и слабые — не цели (A2)
@@ -191,9 +193,10 @@ export const rosterChars = (ctx: Ctx): Char[] =>
   [...ctx.roster].map((id) => ctx.idx.CHAR[id]).filter((c): c is Char => !!c && c.builds.length > 0 && !ctx.off.has(c.id));
 
 // Вердикт по ростеру; null — не считается: ростера нет («только мои» выключено или он пуст — по порогам, A21), введены
-// не все сабстаты (A20). pools — пул героя (у Core Fusion X при X — тот, что будет после окна перехода)
+// не все сабстаты (A20), предмета нет в данных outerpedia (его пассивки и рекомендаций не знаем — как прежде, по
+// порогам). pools — пул героя (у Core Fusion X при X — тот, что будет после окна перехода)
 export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | null {
-  if (!ctx.scoped || Object.keys(input.subs).length < dropSubs(input.grade)) return null;
+  if (!ctx.scoped || input.unlisted || Object.keys(input.subs).length < dropSubs(input.grade)) return null;
   const x = formPiece(input);
   const hps = rosterChars(ctx).filter((c) => wearable(ctx, c, x)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
   const heroes = hps.map((hp) => heroOutcome(hp, x));
@@ -212,7 +215,3 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | nu
   if (maybe.length) return res('maybe', { maybe, quiet });
   return res('junk', { quiet });
 }
-
-// V нынешней раскладки героя и с вещью — для строк «Кому надеть?» (поиск по имени: любой герой)
-export const layoutGain = (hp: HeroPool, layout: Layout): number => layoutValue(hp.P, layout).v - hp.info.value.v;
-export { ALL as ALL_SLOTS };

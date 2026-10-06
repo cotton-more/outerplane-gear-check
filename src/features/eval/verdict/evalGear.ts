@@ -143,7 +143,6 @@ export function evalGear(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   const rank = (r: Scored) => (r.mainOk ? 100 : 0) + (r.good ?? 0) * 2 + (r.ratio ?? 0);
   const scoped = dedupe(rows(ctx, s.grade, scopedAll, subs, im, extra), rank);
   const others = dedupe(rows(ctx, s.grade, all.filter((x) => ctx.outScope(x.c)), subs, im, extra), rank);
-  res.othersKeep = others.filter((r) => r.mainOk); // берут с этим main — строка у понижённой (features/gear/model/stamp)
   const ok = scoped.filter((r) => r.mainOk);
   const temp = s.main && settings.stage === 'grow'
     ? stopgapRows(stopgapFor(s.main, item.classLimits).filter((x) => ctx.inScope(x.c) && !ok.some((o) => o.c.id === x.c.id)))

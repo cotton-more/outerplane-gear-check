@@ -11,6 +11,7 @@ import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { isStats, markOfVariant, type CharPool } from '@/features/gear/pool';
 import { partText, setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
+import { useIndex } from '@/game/data/IndexContext';
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
 const nameOf = (ctx: Ctx, p: Piece): string => p.setId
@@ -87,3 +88,10 @@ export function bonusLinesOf(t: Texts, idx: Index, c: Char, rows: readonly Bonus
 export const variantName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.name);
 // имя билда по ключу во фразе: «Идёт в …», «остаётся в …» — у «По статам» в кавычках
 export const buildName = (t: Texts, key: string) => buildOfKey(key, t.ui.byStatsQ);
+
+// вещь во фразе: броня — «Speed-ботинки», оружие и аксессуар — имя предмета (Epic — main)
+export const pieceLabel = (t: Texts, idx: Index) => (p: Piece): string => (p.setId ? t.fit.piece(setName(idx, p.setId), p.slot)
+  : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
+export function usePieceLabel(): (p: Piece) => string {
+  return pieceLabel(useT(), useIndex());
+}

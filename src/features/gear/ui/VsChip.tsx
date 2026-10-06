@@ -1,49 +1,26 @@
-// Чип исхода вещи для героя (features/gear/pool Outcome): «▲ +25%», «сет 3 из 4», «начнёт», и его слова — для строки «Ещё»,
-// подписи карточки вердикта и кнопки «Надеть» / «Заменить». Карточка вердикта, «Сейчас на персонажах», «Кому надеть?».
+// Чип героя по вещи с формы («статы + сеты»): «▲ +2,5 очк.» — она ему «Надень», «держи» — «Оставь»; подпись кнопки
+// «Надеть на X» / «Заменить шлем X». Карточка вердикта, «Сейчас на персонажах», «Кому надеть?».
 import { useT, type Texts } from '@/i18n';
-import { shownKind, type Outcome } from '@/features/gear/pool';
 import type { CharVs } from '@/features/gear/model/poolVs';
-import { vsFigure, type VsFigure } from '@/features/gear/model/vs';
 import { Icon } from '@/game/icons/Img';
 
-const num = (f: Exclude<VsFigure, { kind: 'empty' }>) => (f.kind === 'times' ? `×${f.n}` : `${f.n > 0 ? '+' : f.n < 0 ? '−' : '±'}${Math.abs(f.n)}%`);
-// разница: у вставшей — выигрыш к вытесненному, у невставшей — против вещи в её слоте. Вытесненное ничего не стоило —
-// «полезных нет», а не «×2609»
-export const figOf = (o: Outcome) => vsFigure({ delta: o.delta, wornEmpty: (!!o.pair?.wornEmpty || o.lostEmpty) && o.kind !== 'completes' && o.kind !== 'closer' });
+// прирост, который стоит назвать: от сотой очка (ранг оружия бывает и при V ниже — тогда числа нет)
+export const gainOf = (x: CharVs): number | null => (x.h.dV >= 0.005 ? x.h.dV : null);
 
-// слово исхода: значок ▲▼ и строка «Ещё» («Speed — соберёт»); «соберёт» — вся связка, половина — «сет n из m» (shownKind)
-export function outcomeWord(t: Texts, o: Outcome): string {
-  if (shownKind(o) === 'closer') return t.ui.vsCloser(o.after.progress, o.after.need);
-  if (o.kind === 'up' || o.kind === 'down') {
-    const f = figOf(o);
-    return o.pair?.why ? t.ui.vsKind[o.pair.why] : !f ? t.ui.vsKind.better : f.kind === 'empty' ? t.ui.vsKind.better : num(f);
-  }
-  return t.ui.vsKind[o.kind] ?? o.kind;
+// слова чипа, как их прочтёт диктор; null — чипа нет
+export function chipLabel(t: Texts, x: CharVs): string | null {
+  const g = gainOf(x);
+  if (x.h.kind === 'keep') return t.fit.chipKeep;
+  if (g !== null) return t.fit.chipGain(t.fit.pts(g));
+  return x.h.kind === 'wear' && x.h.rankUp ? t.fit.chipRank(x.slot) : null;
 }
 
-// чип целиком, как его прочтёт диктор (подпись карточки): «начнёт», «лучше надетой: +25%», «сет 3 из 4»
-export function chipLabel(t: Texts, o: Outcome | null, starts?: boolean): string {
-  if (starts || !o || (o.entering && o.used)) return t.ui.vsKind.starts;
-  // «лучше надетой: +25%»; без числа (вытесненное ничего не стоило) — просто «лучше», не «лучше надетой: лучше»
-  if (o.kind === 'up' || o.kind === 'down') {
-    const word = outcomeWord(t, o);
-    return /^[+−±×]/.test(word) ? (t.ui.vsSr[o.kind] ?? '') + word : word;
-  }
-  if (o.kind === 'completes' || o.kind === 'closer') return outcomeWord(t, o);
-  return t.ui.vsKind[o.kind] ?? o.kind;
-}
-
-// чип исхода; o null — вещь только начнёт билд
-export function VsChip({ o, starts }: { o: Outcome | null; starts?: boolean }) {
+export function VsChip({ x }: { x: CharVs }) {
   const t = useT();
-  if (starts || !o || (o.entering && o.used)) return <span className="vs fill">{t.ui.vsKind.starts}</span>;
-  if (o.kind === 'up' || o.kind === 'down' || o.kind === 'completes' || o.kind === 'closer') {
-    const up = o.kind !== 'down';
-    const sr = o.kind === 'up' || o.kind === 'down' ? t.ui.vsSr[o.kind] : '';
-    return <span className={`vs ${up ? 'up' : 'down'}`}><Icon name={up ? 'trending-up' : 'trending-down'} />{sr && <span className="sr-only">{sr}</span>}{outcomeWord(t, o)}</span>;
-  }
-  const cls = o.kind === 'capped' ? 'eq' : o.kind === 'stats' ? 'off' : o.kind;
-  return <span className={`vs ${cls}`}>{o.kind === 'eq' || o.kind === 'capped' ? <Icon name="equal" /> : null}{t.ui.vsKind[o.kind]}</span>;
+  const label = chipLabel(t, x);
+  if (!label) return null;
+  if (x.h.kind === 'keep') return <span className="vs fill">{label}</span>;
+  return <span className="vs up"><Icon name="trending-up" />{label}</span>;
 }
 
 // что сделает кнопка: заменить, если «Надеть» уберёт вещь её слота (poolVs replaces), иначе — надеть; на форме нажата

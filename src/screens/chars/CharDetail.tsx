@@ -152,7 +152,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const r = wearFromPool(ctx, gear.store, c.id, id);
     if (!r) return;
     gear.set(r.st);
-    onGearToast?.(t.ui.wornToast(c.name, t.ui.slotNames[r.slot]), r.removed.length ? t.ui.prunedNote : '', (x) => undoWear(x, c.id, r));
+    onGearToast?.(t.ui.wornToast(c.name, t.ui.slotNames[r.slot]), r.removed.length ? t.fit.pruned(c.name) : '', (x) => undoWear(x, c.id, r));
   };
   // «Да, всё надето»: весь пул героя надет (в нём не больше одной вещи на слот)
   const wearEverything = () => {
@@ -166,7 +166,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const r = wearMany(ctx, gear.store, c.id, ids);
     if (!r) return;
     gear.set(r.st);
-    onGearToast?.(t.ui.wornAllToast(c.name, r.results.length), r.results.some((x) => x.removed.length) ? t.ui.prunedNote : '', (x) => undoWearMany(x, c.id, r));
+    onGearToast?.(t.ui.wornAllToast(c.name, r.results.length), r.results.some((x) => x.removed.length) ? t.fit.pruned(c.name) : '', (x) => undoWearMany(x, c.id, r));
   };
   // «Поделиться»: надета хоть одна вещь (SPEC 3.1)
   const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, cp!) : null;

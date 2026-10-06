@@ -9,7 +9,7 @@ import { poolView, type PoolView } from '@/features/gear/pool';
 import { poolInfo, pieceBar } from '@/features/gear/pool/info';
 import { piecePoints } from '@/features/gear/layout';
 import { verdictOf, type HeroRes, type Result } from '@/features/gear/verdict';
-import { ARMOR, char, gen, idx, mk, prof, randArmor, randPool, twenty, type Gen } from './statSets';
+import { ARMOR, char, gen, idx, mk, prof, randArmor, randPool, setId, twenty, type Gen } from './statSets';
 
 const inputOf = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt === 4 ? 4 : p.bt === null ? null : 0 });
 
@@ -124,10 +124,10 @@ describe('T5 вердикт новой вещи', () => {
     const w = world(['Anarky'], { Anarky: pool });
     const r0 = w.v(mk('pH0', 'helmet', 'Penetration', { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }, 0))!;
     expect(kindOf(r0)).toBe('keep a');
-    expect(r0.named[0].needBt).toBe(true);
+    expect(r0.named[0].needT4).toEqual({ set: setId('Penetration'), n: 2 });
     const r4 = w.v(mk('pH4', 'helmet', 'Penetration', { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }, 4))!;
     expect(kindOf(r4)).toBe('keep a');
-    expect(r4.named[0].needBt).toBe(false);
+    expect(r4.named[0].needT4).toBeNull();
   });
 
   it('T5.5: чужой сет — планка 4,75 + U/2 3,75 + 1 = 9,50: шлем Critical Hit на 9,50 «Оставь (б)», на 9,40 «Разобрать»', () => {

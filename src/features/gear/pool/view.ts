@@ -3,13 +3,13 @@ import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Piece } from '@/features/gear/model/gear';
 import type { PoolStore } from './base';
-import { heroOpts, play, usedIn, type PlayOpts, type Play } from './play';
+import { heroOpts, play, type PlayOpts, type Play } from './play';
 import { heroPool, type HeroPool, type Pools } from '@/features/gear/verdict';
 
 export interface CharPool extends Play {
   c: Char;
   pieces: Piece[];
-  unused: Piece[]; // вещи, которых нет ни в одной сборке, что держит пул (usedIn): в пуле им быть незачем (решение владельца)
+  unused: Piece[]; // «больше не нужна»: пул героя их не держит (features/gear/pool/info, FORMULA §5 п. 6)
   opts: PlayOpts;  // опции его сборки (heroOpts): отметки и его надетое — с ними же planFor, computeOutcome, putOn
   worn: Set<string>; // надетые записи героя (его пул держит их всегда; «надета» вместо «где стоит» — PoolList)
 }
@@ -25,22 +25,6 @@ export interface PoolView {
 // героя своё (CharPool.opts)
 export function poolView(ctx: Ctx, st: PoolStore): PoolView {
   const opts: PlayOpts = { marks: st.marks };
-  const memo = new Map<string, CharPool | null>();
-  const of = (id: string): CharPool | null => {
-    if (memo.has(id)) return memo.get(id)!;
-    const c = ctx.idx.CHAR[id];
-    const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
-    const po = heroOpts(st, id);
-    const mine = new Set(pieces.map((p) => p.id));
-    const worn = new Set(Object.values(po.worn ?? {}).filter((x): x is string => !!x && mine.has(x)));
-    const r = c ? { c, pieces, ...play(ctx, c, pieces, po), unused: [] as Piece[], opts: po, worn } : null;
-    if (r) {
-      const used = usedIn(r);
-      r.unused = pieces.filter((p) => !used.has(p.id));
-    }
-    memo.set(id, r);
-    return r;
-  };
   const heroes = new Map<string, HeroPool | null>();
   const hero = (id: string): HeroPool | null => {
     if (heroes.has(id)) return heroes.get(id)!;
@@ -50,6 +34,20 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
     const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
     const r = c ? heroPool(ctx, c, pieces, worn) : null;
     heroes.set(id, r);
+    return r;
+  };
+  const memo = new Map<string, CharPool | null>();
+  const of = (id: string): CharPool | null => {
+    if (memo.has(id)) return memo.get(id)!;
+    const c = ctx.idx.CHAR[id];
+    const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
+    const po = heroOpts(st, id);
+    const mine = new Set(pieces.map((p) => p.id));
+    const worn = new Set(Object.values(po.worn ?? {}).filter((x): x is string => !!x && mine.has(x)));
+    const r = c ? { c, pieces, ...play(ctx, c, pieces, po), unused: [] as Piece[], opts: po, worn } : null;
+    // «больше не нужна» — по «статам + сетам» (features/gear/pool/info, FORMULA §5 п. 6)
+    if (r) r.unused = hero(id)?.info.unneeded ?? [];
+    memo.set(id, r);
     return r;
   };
   return { st, opts, of, hero };

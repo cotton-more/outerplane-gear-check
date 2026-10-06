@@ -228,7 +228,8 @@ describe('окна перехода', () => {
 });
 
 // П9 (мелочь 1 повторного ревью): «Надеть» на Core Fusion при X с вещами — putOn после «Да», по пулу, где вещи X уже у
-// него; строка «Кому надеть?» считается по тому же пулу. Было: «Equip — starts Speed», а после «Да» — «Replaced»
+// него; строка «Кому надеть?» считается по тому же пулу («статы + сеты»: прирост в очках, «Заменить» — если в слоте есть
+// надетая или «Надеть» уберёт вещь слота)
 describe('«Надеть на Core Fusion» при X с вещами: строка — по пулу после перехода (П9)', () => {
   const HIT = { setId: speed, subs: { SPD: 4, 'ATK%': 3, CHC: 3, CHD: 3 } };
   const pick = async () => {
@@ -238,8 +239,9 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     return byText('.equip-row', 'Core Fusion Eternal') as HTMLElement;
   };
 
-  it('у X слабый Speed-шлем: строка «Replace helmet…», после «Да» — «Replaced», шлем X убран', async () => {
-    const gear = G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 }), P('e2', 'armor', set('Attack'), { SPD: 3, EFF: 3, CHC: 3, 'ATK%': 3 })], { [eternal.id]: ['e1', 'e2'] });
+  it('у X надет слабый Speed-шлем: строка «Replace helmet…», после «Да» — «Replaced», шлем X убран', async () => {
+    const gear = { ...G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 }), P('e2', 'armor', set('Attack'), { SPD: 3, EFF: 3, CHC: 3, 'ATK%': 3 })], { [eternal.id]: ['e1', 'e2'] }),
+      worn: { [eternal.id]: { helmet: 'e1', armor: 'e2' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
     const row = await pick();
     const label = row.querySelector('.act')?.textContent;
@@ -252,16 +254,17 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect(stored().pools[cfEternal.id]).not.toContain('e1');
   });
 
-  // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — на уровне, строки Core Fusion X нет
-  it('у X та же вещь: строки «Already has» нет — после перехода она ему ничего не даёт', async () => {
+  // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — после перехода она ему ничего не даёт; найден по
+  // имени — «Надеть» без прироста (TEXTS 23)
+  it('у X та же вещь: строка без прироста — после перехода она ему ничего не даёт', async () => {
     const gear = G([P('e1', 'helmet', speed, HIT.subs)], { [eternal.id]: ['e1'] });
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
     const row = await pick();
-    expect(row).toBeUndefined();
+    expect(row.querySelector('.act')?.textContent).toBe('Equip');
   });
 
   it('режим героя Core Fusion, X с вещами появился после его начала: кнопка под карточкой — по пулу после перехода', async () => {
-    const gear = G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 })], { [eternal.id]: ['e1'] });
+    const gear = { ...G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 })], { [eternal.id]: ['e1'] }), worn: { [eternal.id]: { helmet: 'e1' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id], tryon: { charId: cfEternal.id, build: 'Speed' } });
     const btn = $('.vc-equip')?.textContent;
 
@@ -272,14 +275,14 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect($('.gear-toast span')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
   });
 
-  it('X без вещей — строка по пустому пулу, как без Core Fusion: «Equip — starts Speed», тост «Started filling Speed»', async () => {
+  it('X без вещей — строка по пустому пулу, как без Core Fusion: «Equip — +N pts», тост «On Core Fusion Eternal: helmet.»', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { roster: [eternal.id] });
     const row = await pick();
     const label = row.querySelector('.act')?.textContent;
     await click(row);
     await click(askBtn('Yes, Core Fusion Eternal'));
-    expect(label).toMatch(/^Equip — starts Speed/);
-    expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\..*Started filling Speed\./);
+    expect(label).toMatch(/^Equip — \+[\d.]+ pts$/);
+    expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\./);
   });
 });
 
@@ -392,7 +395,6 @@ describe('список и карточка X', () => {
     await click($('.vcard'));
     await click($('.v-equip'));
     const names = () => $$('.equip-row .nm b').map((e) => e.textContent);
-    expect(names()).toContain('Core Fusion Eternal');
     await type($('.equip-q input') as HTMLInputElement, 'eter');
     expect(names().filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
   });

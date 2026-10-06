@@ -20,12 +20,12 @@ import type { Action, AppState } from './appState';
 // пример тура «Экипировка»: своя экипировка и свой режим героя в памяти
 export type Demo = { store: GearStore; tryOn: TryOn | null } | null;
 
-export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, verdict, stampKind, material, hero, gearSeq,
+export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, material, worn, hero, gearSeq,
   verdictOpen, pieceOpen, helpOpen, formUndo, paused = false, setDemo, setTouring, onTourRunning, closeSheets }: {
   idx: Index; s: AppState; dispatch: Dispatch<Action>; roster: ReadonlySet<string>; layout: Layout;
-  nSubs: number; shown: Verdict; verdict: Verdict;
-  stampKind: Verdict['v'];               // штамп по вещам героев (gear/model/stamp), до материала
-  material: { up: readonly unknown[]; target: string | null }; // совет «надень её» (gear/model/material)
+  nSubs: number; shown: Verdict;
+  material: boolean;                     // «Фоддер»: вещь — материал Breakthrough или запас (features/gear/verdict)
+  worn: boolean;                         // «Разобрать»: кому она годная, у тех уже не хуже
   hero: boolean; gearSeq: number;
   verdictOpen: boolean; pieceOpen: boolean; helpOpen: boolean;
   formUndo: ItemInput | null;            // на экране «Вернуть» формы — полосы не показываем
@@ -42,11 +42,10 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
     s, roster: roster.size, set: (s.setId && idx.SET[s.setId]?.short) || null, nSubs, verdict: shown, narrow: layout.narrow,
     verdictOpen: verdictOpen && layout.narrow, keys: fineHover(),
     pieceOpen, tryOn: hero, gearSeq,
-    // подсказка «Фоддер, а не разбор: эта пойдёт ей на Breakthrough» — не когда совет «надень её»
-    // («Фоддер» от понижения B3 — не материал: он из withWorn, а не из withMaterial)
-    material: shown.v === 'fodder' && stampKind !== 'fodder' && !material.up.length && !material.target,
+    // подсказка «Фоддер, а не разбор: эта пойдёт на Breakthrough»
+    material: shown.v === 'fodder' && material,
     // подсказка «все уже носят не хуже»: её текст — про «Разобрать»
-    worn: verdict.worn === 'lower' && shown.v === 'junk',
+    worn: shown.v === 'junk' && worn,
   };
   // тур «Экипировка» — только если персонаж примера есть в данных
   const tours = useMemo<TourId[]>(() => (gearDemo(idx) ? ['core', 'gear'] : ['core']), [idx]);

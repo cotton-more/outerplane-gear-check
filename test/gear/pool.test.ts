@@ -13,12 +13,10 @@ import { bonusRows, bonusValue, bonusWeights, convertible, tierLabel } from '@/g
 import { charVs, nextToWear, whereOf, whereUsed } from '@/features/gear/model/poolVs';
 import type { PoolView } from '@/features/gear/pool';
 import { slotMains } from '@/game/build/builds';
-import { decodeItem, MAINS } from '@/features/eval/code/codec';
+import { decodeItem } from '@/features/eval/code/codec';
 import type { Subs } from '@/game/item/subs';
 import type { ItemInput } from '@/game/item/item';
 import { variantsOf, type Variant, buildKey } from '@/game/build/variants';
-import { evaluate } from '@/features/eval/verdict/evaluate';
-import { withWorn } from '@/features/gear/model/stamp';
 import { fit } from '@/features/gear/model/vs';
 
 // псевдослучайные [0, 1) с сидом (mulberry32): прежний x * 1103515245 + 12345 в числах JS терял точность (произведение
@@ -332,9 +330,7 @@ describe('П3: временное оружие билд не начинает', 
   const steel = D.weapons.find((w) => w.name === 'Steel Sword' && w.star === 6)!; // Epic, main ATK% / DEF% / HP%
   const sword = () => W(steel.key, { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'ATK%', 'rare');
   const listed = () => W('17', { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'ATK%');
-  const input = (p: Piece): ItemInput => ({ slot: p.slot, grade: p.grade, setId: null, itemKey: p.itemKey, main: p.main, subs: p.lit });
   const real = (c: Char) => variantsOf(idx, c).map((v) => v.name);
-  const helm = () => P('helmet', 'Penetration', { 'ATK%': 2, CHC: 2, CHD: 2, SPD: 1 });
 
   it('Steel Sword ATK% у Luna — временное во всех билдах', () => {
     expect(luna.builds.map((b) => fit(ctx, luna, b, sword()))).toEqual(luna.builds.map(() => 'stopgap'));
@@ -369,66 +365,6 @@ describe('П3: временное оружие билд не начинает', 
     const pieces = [sword(), { ...acc, slot: 'accessory' as const }];
 
     expect(inPlay(pieces, {}, luna)).toEqual(real(luna));
-  });
-
-  it('«Кому надеть?»: Luna без вещей, новое Steel Sword ATK% — строки нет (ничего не начнёт, вставать некуда)', () => {
-    expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), luna.id, input(sword()))).toBeNull();
-  });
-
-  // «Надето», шаг 5: режим героя (wear) — строка «голая», но «Надеть» есть: ввод надетого в игре
-  it('режим героя (wear): Caren без вещей, Attack-перчатки без её статов — «Надеть» только как ввод надетого (asWorn)', () => {
-    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Attack'), itemKey: null, main: null, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } };
-    const cv = charVs(ctx, poolView(ctx, EMPTY_GEAR), caren.id, x, undefined, { explicit: true, wear: true })!;
-
-    expect({ useful: cv.useful, asWorn: cv.asWorn, replaces: cv.replaces }).toEqual({ useful: true, asWorn: true, replaces: false });
-  });
-
-  it('без wear та же вещь Caren — строки нет', () => {
-    const x: ItemInput = { slot: 'gloves', grade: 'unique', setId: set('Attack'), itemKey: null, main: null, subs: { RES: 2, EFF: 2, HP: 3, ATK: 1 } };
-
-    expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), caren.id, x, undefined, { explicit: true })).toBeNull();
-  });
-
-  it('режим героя (wear): в слоте надетая — подпись «Заменить» (Р4), даже если её держит билд', () => {
-    const h = helm();
-    const st: GearStore = { ...EMPTY_GEAR, pieces: { [h.id]: h }, pools: { [luna.id]: [h.id] }, worn: { [luna.id]: { helmet: h.id } } };
-    const cv = charVs(ctx, poolView(ctx, st), luna.id, input({ ...h, id: 'x' }), undefined, { explicit: true, wear: true })!;
-
-    expect(cv.replaces).toBe(true);
-  });
-
-  it('«Кому надеть?»: Luna без вещей, рекомендованное оружие — «начнёт» все варианты', () => {
-    const cv = charVs(ctx, poolView(ctx, EMPTY_GEAR), luna.id, input(listed()))!;
-
-    expect({ starts: cv.starts.map((v) => v.name), useful: cv.useful }).toEqual({ starts: real(luna), useful: true });
-  });
-
-  it('«Кому надеть?»: Pen-шлем начал Penetration и Pen mix — временное оружие встаёт в пустой слот, «начнёт» нет', () => {
-    const st: GearStore = { ...EMPTY_GEAR, pieces: {}, pools: { [luna.id]: [] } };
-    const h = helm();
-    st.pieces[h.id] = h; st.pools[luna.id].push(h.id);
-    const view = poolView(ctx, st);
-    const was = view.of(luna.id)!.inPlay.map((v) => v.name);
-    const cv = charVs(ctx, view, luna.id, input(sword()))!;
-
-    expect(was.length).toBeGreaterThan(0);
-    expect(was.length).toBeLessThan(real(luna).length);
-    expect(cv.starts).toEqual([]);
-    expect(cv.rows.every((r) => !r.entering)).toBe(true);
-    expect({ kind: cv.best?.kind, useful: cv.useful }).toEqual({ kind: 'fill', useful: true });
-  });
-
-  it('«Надеть» временного оружия: тост «Начал собирать» пуст, «По статам» живой', () => {
-    const r = putOn(ctx, EMPTY_GEAR, luna.id, input(sword()));
-
-    expect(r.began).toEqual([]);
-    expect(poolView(ctx, r.st).of(luna.id)!.statLive).toBe(true);
-  });
-
-  it('«Надеть» рекомендованного оружия: «Начал собирать» — все билды из его списков', () => {
-    const r = putOn(ctx, EMPTY_GEAR, luna.id, input(listed()));
-
-    expect(r.began.sort()).toEqual(variantsOf(idx, luna).map((v) => v.key).sort());
   });
 
   it('«Эндгейм»: Steel Sword у Luna — «нет» (не временное), только «По статам», как до П3', () => {
@@ -568,16 +504,6 @@ describe('Pen mix без T4 (Р2)', () => {
     expect(sets(asm(pma, [...t4, ...atk], luna))).toEqual(['Penetration', 'Penetration', 'Attack', 'Attack']);
   });
 
-  it.each([
-    ['Demiurge Luna', 'Pen mix · Attack', 'Attack'], ['Heatwave Cop Delta', 'DPS · Penetration ×2 + Attack ×2', 'Attack'], ['Core Fusion Lisha', 'Pen combos · Speed', 'Speed'],
-  ])('%s · %s: 4 Pen без отметки Breakthrough + 2 %s — вещи второй половины не ненужные, достижимая собирает связку', (who, vname, other) => {
-    const c = char(who), v = variant(who, vname);
-    const pieces = [...ARM.map((s) => P(s, 'Penetration', JUNK)), P('gloves', other, STRONG), P('shoes', other, STRONG)];
-    const cp = poolView(ctx, store(c, pieces)).of(c.id)!;
-    expect(cp.unused).toEqual([]);
-    expect(cp.reach.get(v.key)!.missing).toEqual([]);
-  });
-
   it('новая Attack-вещь «ломает» Pen ×4 — совет: отметить T4 у двух Pen не в её слоте; надеть нельзя', () => {
     const { pieces } = lunaPool();
     const o = outcomeFor(ctx, poolView(ctx, store(luna, pieces)), luna.id, HELMET)!;
@@ -693,7 +619,6 @@ describe('Pen mix без T4 (Р2)', () => {
   // П7 (находка «Ломает» при вещи пула не хуже, refute-a3): в пуле уже есть Attack-шлем сильнее новой — новая не встанет
   // ни при каких отметках (встанет он): исход по нему, «хуже», а не «ломает» с ложным советом
   describe('П7: в пуле уже есть вещь её сета в её слоте не хуже', () => {
-    const rosterCtx = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set([luna.id]));
     const withHelmet = (subs: Subs, bt: Bt | null = null) => {
       const { pieces } = lunaPool();
       const helmet = P('helmet', 'Attack', subs, bt);
@@ -706,12 +631,6 @@ describe('Pen mix без T4 (Р2)', () => {
       const r = rowOf(pieces);
       expect(r).toMatchObject({ kind: 'down', used: false, fix: null, worn: { id: helmet.id } });
       expect(holds(r)).toBe(false);
-    });
-
-    it('тот же пул: штамп понижен (ростер — Luna), а не «Оставить» из-за «ломает»', () => {
-      const { pieces } = withHelmet(STRONG);
-      const w = withWorn(rosterCtx, poolView(rosterCtx, store(luna, pieces)), HELMET, evaluate(rosterCtx, HELMET));
-      expect(w.worn).toBe('lower');
     });
 
     it('Attack-шлем пула на T4 и сильнее — тоже не «ломает»: T4 у него бонус сета только добавляет', () => {
@@ -1155,11 +1074,6 @@ describe('вид пула и ненужные вещи', () => {
     expect(outcomeFor(ctx, poolView(ctx, st), caren.id, x)).not.toBe(changed);
   });
 
-  it('вещь Speed/Immu-сборки не ненужная, хоть в Speed её место занято', () => {
-    const immu = P('helmet', 'Immunity', JUNK), immu2 = P('armor', 'Immunity', JUNK), sp = P('gloves', 'Speed', JUNK), sp2 = P('shoes', 'Speed', JUNK);
-    const st: PoolStore = { pieces: Object.fromEntries([immu, immu2, sp, sp2].map((p) => [p.id, p])), pools: { [caren.id]: [immu.id, immu2.id, sp.id, sp2.id] } };
-    expect(poolView(ctx, st).of(caren.id)!.unused).toEqual([]);
-  });
 });
 
 // Шаг 4 «Оценка — единственный ввод»: что держит пул (held) и что убирает «Надеть» (В1, В2; решение владельца «что
@@ -1182,18 +1096,6 @@ describe('что держит пул и что убирает «Надеть» (
       P('shoes', 'Effectiveness', { CHC: 2, CHD: 2, 'ATK%': 1, 'DMG UP%': 2 }),
     ];
     const GLOVES = X('gloves', 'Augmentation', { 'DMG RED%': 1, HP: 3, ATK: 1, 'ATK%': 3 });
-
-    it('«Надеть» убирает вытесненные ботинки — вещь другого слота; Speed-перчатки её слота остаются', () => {
-      const ps = pieces();
-      const r = putOn(ctx, store(bell, ps), bell.id, GLOVES);
-      expect(r.removed.map((p) => p.id)).toEqual([ps[2].id]);
-      expect(r.st.pools[bell.id]).toEqual([ps[0].id, ps[1].id, ps[3].id, ps[4].id, r.id]);
-    });
-
-    it('подпись — «Надеть», не «Заменить перчатки»: вещи её слота «Надеть» не убирает', () => {
-      const cv = charVs(ctx, poolView(ctx, store(bell, pieces())), bell.id, GLOVES)!;
-      expect({ useful: cv.useful, replaces: cv.replaces }).toEqual({ useful: true, replaces: false });
-    });
 
     it('«Вернуть» — хранилище как до «Надеть»: пул в том же порядке, записи те же', () => {
       const st = store(bell, pieces());
@@ -1223,13 +1125,6 @@ describe('что держит пул и что убирает «Надеть» (
       expect(p.inPlay.map((v) => v.name)).not.toContain('Speed/Immu');
     });
 
-    it('«Не собираю» у Speed/Immu и Def/Immu — «больше не нужна» нет ни у одной: unused не растёт', () => {
-      const ps = pieces();
-      const without = poolView(ctx, store(caren, ps)).of(caren.id)!.unused;
-      const skipped = poolView(ctx, store(caren, ps, skip)).of(caren.id)!.unused;
-      expect({ without, skipped }).toEqual({ without: [], skipped: [] });
-    });
-
     // шаг 10 (заметка шага 4): было — у вещи, которую держит только вариант с «Не собираю», строки «в …» не было
     it('где стоит: Immunity-шлем держит только Speed/Immu с «Не собираю» — «в Speed/Immu», как у остальных', () => {
       const ps = pieces();
@@ -1250,11 +1145,6 @@ describe('что держит пул и что убирает «Надеть» (
       const ps = pieces(), [x] = ps;
       const p = play(ctx, ame, ps);
       expect({ holders: holders(p, x.id), inPlay: p.inPlay.map((v) => v.name) }).toEqual({ holders: ['DPS attack'], inPlay: ['DPS pen'] });
-    });
-
-    it('X не «больше не нужна»', () => {
-      const ps = pieces();
-      expect(poolView(ctx, store(ame, ps)).of(ame.id)!.unused).toEqual([]);
     });
 
     // шаг 10 (заметка шага 4): было — без «в …»; вариант не начат, а пул держит его сборку
@@ -1305,27 +1195,18 @@ describe('что держит пул и что убирает «Надеть» (
       P('gloves', 'Attack', STRONG4), P('shoes', 'Attack', STRONG4),
       P('helmet', 'Penetration', JUNK2), P('helmet', 'Defense', JUNK2), P('helmet', 'Immunity', JUNK2),
     ];
-    const A2 = { ...X('helmet', 'Speed', { 'DEF%': 2, CHD: 2, SPD: 1, CHC: 2 }), bt: 0 as const };
-    const worn = (ps: Piece[]): GearStore => ({ ...store(caren, ps), worn: { [caren.id]: { helmet: ps[0].id } } });
 
     it('до «Надеть»: A — только в Speed и в «По статам»', () => {
       const ps = pieces();
       expect(holders(play(ctx, caren, ps), ps[0].id).sort()).toEqual([STATS, 'Speed'].sort());
     });
 
-    it('A надета, «Надеть» A′: A уходит (её не держит ни один билд), надета A′', () => {
-      const ps = pieces();
-      const r = putOn(ctx, worn(ps), caren.id, A2);
-      expect({ removed: r.removed.map((x) => x.id), kept: r.st.pools[caren.id].includes(ps[0].id), worn: r.st.worn?.[caren.id]?.helmet })
-        .toEqual({ removed: [ps[0].id], kept: false, worn: r.id });
-    });
   });
 });
 
 // Шаг 5 «Оценка — единственный ввод»: правка в шторке (updateIn) пересобирает билды, но пул не чистит (В-А3) — ставшая
 // ненужной вещь остаётся со строкой «больше не нужна» и «Убрать у Caren»
 describe('правка в шторке пересобирает, но не чистит (В-А3)', () => {
-  const held = (p: Play, id: string) => p.variants.filter((v) => heldBy(p, v).some((a) => Object.values(a.slots).some((e) => e?.id === id))).map((v) => (isStats(v) ? STATS : v.name));
   const JUNK2 = { HP: 1, RES: 1 }, STRONG4 = { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 2 };
   // Caren: два Speed-шлема — A (T0, SPD 4) и B (T4). В Speed ×4 (броня и перчатки на T4, ботинки на T0) T4 шлема бонуса
   // не меняет — встаёт A, он сильнее; в «По статам» (Speed-шлем и -броня, Attack-перчатки и -ботинки) B на T4 даёт
@@ -1339,13 +1220,6 @@ describe('правка в шторке пересобирает, но не чи�
   const store = (ps: Piece[]): GearStore =>
     ({ ...EMPTY_GEAR, seq: seq + 1, pieces: Object.fromEntries(ps.map((p) => [p.id, p])), pools: { [caren.id]: ps.map((p) => p.id) } });
 
-  // «Надето», В4: «По статам» вещи не держит — B, которая только в нём, «больше не нужна» уже до правки (было — unused [])
-  it('до правки: A — только в Speed, B — только в «По статам», и она «больше не нужна» (В4)', () => {
-    const ps = pieces(), [a, b] = ps;
-    const cp = poolView(ctx, store(ps)).of(caren.id)!;
-    expect({ a: held(cp, a.id), b: held(cp, b.id), unused: cp.unused.map((p) => p.id) }).toEqual({ a: ['Speed'], b: [STATS], unused: [b.id] });
-  });
-
   it('SPD у A 4 → 6: «По статам» пересобран — шлем A вместо B', () => {
     const ps = pieces(), [a, b] = ps;
     const st = store(ps);
@@ -1354,13 +1228,6 @@ describe('правка в шторке пересобирает, но не чи�
     expect([stats(st), stats(r.st)]).toEqual([b.id, a.id]);
   });
 
-  it('B больше ни в одном билде — «больше не нужна», но из пула не ушёл', () => {
-    const ps = pieces(), [a, b] = ps;
-    const r = updateIn(idx, store(ps), caren.id, a.id, { lit: { SPD: 6 } }, '');
-    const cp = poolView(ctx, r.st).of(caren.id)!;
-    expect({ b: held(cp, b.id), unused: cp.unused.map((p) => p.id), pool: r.st.pools[caren.id], kept: r.st.pieces[b.id] })
-      .toEqual({ b: [], unused: [b.id], pool: ps.map((p) => p.id), kept: b });
-  });
 });
 
 // Случаи владельца (прогон 1.4), вещи — свои, не из его кода: персонаж одет не в сеты своих билдов
@@ -1375,7 +1242,7 @@ describe('режим героя с replace: «Надеть» заменяет э
     P('gloves', 'Speed', { 'DEF%': 3, CHC: 2, CHD: 2 }, 4),
   ];
   const A2: ItemInput = { slot: 'helmet', grade: 'unique', setId: set('Speed'), itemKey: null, main: null, subs: { 'DEF%': 2, CHD: 2, SPD: 1, CHC: 1 }, bt: 0 };
-  const vsOf = (st: GearStore, replace?: string) => charVs(ctx, poolView(ctx, st), caren.id, A2, undefined, { explicit: true, replace })!;
+  const vsOf = (st: GearStore, replace?: string) => charVs(ctx, poolView(ctx, st), caren.id, A2, { replace })!;
 
   it('без replace A′ хуже A: кнопки нет', () => {
     expect(vsOf(store(pieces())).useful).toBe(false);
@@ -1439,18 +1306,6 @@ describe('«По статам»: случаи владельца', () => {
     expect(a.total).toBeGreaterThan(pieces.reduce((n, x) => n + entriesFor(ctx, cf, p.stat!, [x])[0].v, 0)); // + бонус EFF
   });
 
-  it('Demiurge Stella (Counter ×4, Revenge ×4): Attack ×2 (Epic) и Critical Hit ×2 без сабстатов — «По статам», оба бонуса, ценность пустых — 0', () => {
-    const stella = char('Demiurge Stella');
-    const crit = [P('armor', 'Critical Hit', {}), P('gloves', 'Critical Hit', {})];
-    const pieces = [P('helmet', 'Attack', { 'ATK%': 2, CHD: 2 }, null, 'rare'), P('shoes', 'Attack', { CHC: 2, 'ATK%': 1 }, null, 'rare'), ...crit];
-    const p = play(ctx, stella, pieces, { marks: { [buildKey(stella.id, 'Revenge')]: 'want' } });
-    expect(p.stat).not.toBeNull();
-    const a = p.asm.get(p.stat!.key)!;
-    expect(a.bonuses.map((r) => idx.SET[r.set].short).sort()).toEqual(['Attack', 'Critical Hit']);
-    expect(crit.map((x) => entriesFor(ctx, stella, p.stat!, [x])[0].v)).toEqual([0, 0]);
-    expect(a.filled).toBe(4);
-    expect(poolView(ctx, { pieces: Object.fromEntries(pieces.map((x) => [x.id, x])), pools: { [stella.id]: pieces.map((x) => x.id) } }).of(stella.id)!.unused).toEqual([]);
-  });
 });
 
 // Находка 28 (Р11–Р13): «По статам» — отдельный билд у каждого героя с билдами. Живой (держит штамп), пока в пуле нет
@@ -1473,48 +1328,6 @@ describe('«По статам» у каждого героя (находка 28)
   const EXPLICIT = { explicit: true };
   const WEAK_SPEED = item('armor', 'Speed', { SPD: 1, HP: 1, RES: 1 });
 
-  describe('Drakhan без вещей: броня Revenge с её статами', () => {
-    it('поиск по имени: строка «По статам — пустой слот», надеть можно', () => {
-      const x = charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW, undefined, EXPLICIT)!;
-      expect(isStats(x.best!.v)).toBe(true);
-      expect(x.best).toMatchObject({ kind: 'fill', used: true });
-      expect(x.useful).toBe(true);
-    });
-
-    it('без поиска (карточка, «Сейчас на персонажах», список без имени) её нет — по сету (Р11)', () => {
-      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW)).toBeNull();
-    });
-
-    it('с целью Speed сама вещь в Speed не встаёт', () => {
-      const speed = buildKey(drakhan.id, 'Speed');
-      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW, speed, EXPLICIT)).toBeNull();
-    });
-
-    it('«По статам» как цель подходит — надеть можно', () => {
-      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, HLMW, statVariant(drakhan)!.key, EXPLICIT)?.useful).toBe(true);
-    });
-
-    it('без полезных статов — хлам и при явном выборе (Р13)', () => {
-      const junk = item('armor', 'Revenge', { RES: 2, EFF: 2, 'ATK%': 1 }); // в её цепочке нет ни одного
-      expect(charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, junk, undefined, EXPLICIT)).toBeNull();
-    });
-
-    it('оружие не по билду (main ей не нужен) с полезными сабстатами — в «По статам» при явном выборе (допущение (а))', () => {
-      const want = new Set(drakhan.builds.flatMap((b) => [...slotMains(b, 'weapon')]));
-      const main = MAINS.find((m) => !want.has(m) && m !== 'SPD')!;
-      const w: ItemInput = { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main, unlisted: false, subs: { SPD: 3, HP: 2, CHC: 1 } };
-      const x = charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, w, undefined, EXPLICIT)!;
-      expect(isStats(x.best!.v)).toBe(true);
-      expect(x.useful).toBe(true);
-    });
-
-    it('первая Speed-вещь: главная строка — «начнёт Speed», а не тихая «По статам»', () => {
-      const x = charVs(ctx, poolView(ctx, EMPTY_GEAR), drakhan.id, item('helmet', 'Speed', { SPD: 3, HP: 2, CHC: 1 }), undefined, EXPLICIT)!;
-      expect(x.best).toBeNull();
-      expect(x.starts.map((v) => v.name)).toContain('Speed');
-    });
-  });
-
   describe('Drakhan с одной Revenge-бронёй: ни один билд не начат — «По статам» держит (Р12)', () => {
     const view = poolView(ctx, store({ [drakhan.id]: [rec(HLMW)] }));
     const helm = item('helmet', 'Revenge', { SPD: 4, HP: 2, CHC: 1 });
@@ -1529,16 +1342,6 @@ describe('«По статам» у каждого героя (находка 28)
       expect(holds(row)).toBe(true);
     });
 
-    it('без поиска Drakhan за одну строку «По статам» не показывается (Р11)', () => {
-      expect(charVs(ctx, view, drakhan.id, helm)).toBeNull();
-    });
-
-    it('первая Speed-вещь: строка «По статам» живая, а главная — «начнёт Speed»', () => {
-      const x = charVs(ctx, view, drakhan.id, item('helmet', 'Speed', { SPD: 3, HP: 2, CHC: 1 }))!;
-      expect(x.best).toBeNull();
-      expect(x.rows.find((r) => isStats(r.v))?.quiet).toBe(false);
-      expect(x.starts.map((v) => v.name)).toContain('Speed');
-    });
   });
 
   describe('Eternal: «По статам» рядом с Speed', () => {
@@ -1551,58 +1354,9 @@ describe('«По статам» у каждого героя (находка 28)
       expect([s.slots.armor?.id, s.slots.gloves?.id]).toEqual([a.id, b.id]);
     });
 
-    // «Надето», В4: «По статам» вещи не держит — в пуле минимум под билды. Было: Effectiveness-броня не «ненужная»
-    // (держал «По статам»), «Надеть» Speed-брони её не убирал
-    it('Effectiveness-броня сильнее по статам, чем Speed-броня, но только в «По статам» — «ненужная» (В4)', () => {
-      const eff = rec(CMPP), spd = rec(WEAK_SPEED);
-      expect(poolView(ctx, store({ [eternal.id]: [eff, spd] })).of(eternal.id)!.unused).toEqual([eff]);
-    });
-
-    it('«Надеть» слабую Speed-броню на Eternal с CMPP: CMPP уходит — её держал только «По статам» (В4)', () => {
-      const eff = rec(CMPP);
-      const r = putOn(ctx, store({ [eternal.id]: [eff] }), eternal.id, WEAK_SPEED);
-      expect(r.removed).toEqual([eff]);
-      expect(r.st.pools[eternal.id]).not.toContain(eff.id);
-    });
-
-    it('есть GLUJ, CMPP через поиск: «По статам — пустой слот», строка тихая (штамп не держит), надеть можно', () => {
-      const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
-      const row = outcomeFor(ctx, view, eternal.id, CMPP, EXPLICIT)!.rows.find((r) => isStats(r.v));
-      expect(row).toMatchObject({ kind: 'fill', used: true, quiet: true });
-      expect(holds(row!)).toBe(false);
-      expect(charVs(ctx, view, eternal.id, CMPP, undefined, EXPLICIT)?.useful).toBe(true);
-    });
-
-    it('то же без поиска — тихих строк нет, Eternal не показывается (Р11)', () => {
-      const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
-      expect(outcomeFor(ctx, view, eternal.id, CMPP)!.rows).toEqual([]);
-      expect(charVs(ctx, view, eternal.id, CMPP)).toBeNull();
-    });
-
     it('броня не из сета в пустой слот — у настоящего Speed по-прежнему не исход', () => {
       const view = poolView(ctx, store({ [eternal.id]: [rec(GLUJ)] }));
       expect(outcomeFor(ctx, view, eternal.id, CMPP, EXPLICIT)!.rows.filter((r) => !isStats(r.v))).toEqual([]);
-    });
-  });
-
-  describe('Luna: две Penetration, Critical Strike-перчатки через поиск', () => {
-    const luna = char('Demiurge Luna');
-    const pen = () => store({ [luna.id]: [rec(item('armor', 'Penetration', { ATK: 1, RES: 3, DEF: 2, CHC: 2 })), rec(item('gloves', 'Penetration', { HP: 1, EFF: 2, SPD: 3 }))] });
-    const crit: ItemInput = { ...item('gloves', 'Critical Strike', { EFF: 3, 'DEF%': 1, 'ATK%': 2, CHC: 3 }), grade: 'unique' };
-
-    it('главная строка — «начнёт Critical Strike»: одна вещь начинает билд (Р14)', () => {
-      const x = charVs(ctx, poolView(ctx, pen()), luna.id, crit, undefined, EXPLICIT)!;
-      expect({ best: x.best, starts: x.starts.map((v) => v.name) }).toEqual({ best: null, starts: ['Critical Strike'] });
-    });
-
-    it('Critical Strike «Не собираю» — главная строка тихая «По статам — лучше», а не «ломает», где вещь не встаёт (Р4: подпись = «Надеть»)', () => {
-      const st = { ...pen(), marks: { [buildKey(luna.id, 'Critical Strike')]: 'skip' as const } };
-      const x = charVs(ctx, poolView(ctx, st), luna.id, crit, undefined, EXPLICIT)!;
-      expect(isStats(x.best!.v)).toBe(true);
-      expect(x.best).toMatchObject({ kind: 'up', used: true, quiet: true });
-      expect(x.rows[0]).toBe(x.best);
-      expect(x.rows.some((r) => r.kind === 'breaks')).toBe(true);
-      expect(x.useful).toBe(true);
     });
   });
 
@@ -1638,12 +1392,6 @@ describe('«По статам» у каждого героя (находка 28)
       expect(whereUsed(view, eternal.id, eff.id)).toEqual([]);
     });
 
-    it('надетая вещь «мимо» (только в «По статам»): в «где стоит» — флаг «надета», «По статам» нет', () => {
-      const eff = rec(CMPP);
-      const view = poolView(ctx, { ...store({ [eternal.id]: [eff, rec(GLUJ), rec(WEAK_SPEED)] }), worn: { [eternal.id]: { armor: eff.id } } });
-      expect({ where: whereOf(view, eternal.id, eff.id), unused: view.of(eternal.id)!.unused }).toEqual({ where: { builds: [], worn: true }, unused: [] });
-    });
-
     it('не надетая — флаг «надета» снят', () => {
       const eff = rec(CMPP), g = rec(GLUJ);
       const view = poolView(ctx, { ...store({ [eternal.id]: [eff, g] }), worn: { [eternal.id]: { armor: eff.id } } });
@@ -1660,26 +1408,9 @@ describe('оружие не для класса героя (classLimits)', () =>
   const mageOnly = D.weapons.find((w) => w.name === 'Thumping Odyssey')!;
   const X: ItemInput = { slot: 'weapon', grade: 'unique', setId: null, itemKey: mageOnly.key, main: 'ATK%', unlisted: false, subs: { ATK: 2, CHC: 2, CHD: 1, SPD: 1 } };
   const EXPLICIT = { explicit: true };
-  const aerSpeed = buildKey(aer.id, 'Speed');
 
   it('данные: Thumping Odyssey — только Mage, Aer — Striker, Ame — Mage', () => {
     expect([mageOnly.classLimits, aer.class, ame.class]).toEqual([['mage'], 'striker', 'mage']);
-  });
-
-  it('Aer, явный выбор (поиск по имени): исхода нет — ни билда, ни «По статам»', () => {
-    // Arrange
-    const view = poolView(ctx, EMPTY_GEAR);
-    // Act
-    const o = outcomeFor(ctx, view, aer.id, X, EXPLICIT);
-    // Assert
-    expect(o).toBeNull();
-    expect(charVs(ctx, view, aer.id, X, undefined, EXPLICIT)).toBeNull();
-  });
-
-  it('Aer, цель Speed и цель «По статам»: строки нет', () => {
-    const view = poolView(ctx, EMPTY_GEAR);
-    expect(charVs(ctx, view, aer.id, X, aerSpeed, EXPLICIT)).toBeNull();
-    expect(charVs(ctx, view, aer.id, X, statVariant(aer)!.key, EXPLICIT)).toBeNull();
   });
 
   it('Mage-героиня Ame: исход есть — рекомендованное оружие встаёт в пустой слот', () => {
