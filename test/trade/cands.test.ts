@@ -33,6 +33,22 @@ describe('A. понятия', () => {
     expect(got.map((x) => x.holder).sort()).toEqual([HERO.noa, HERO.rin].sort());
   });
   it.todo('A2: взяли у Ноа — у Рин осталась (применение, этап 4)');
+
+  it('A3 (ревью этапа 10): запись в пулах Карен (надета) и Рин (не надета) — это надетое Карен, не запас Рин', () => {
+    const shared = piece('helmet', 'Speed', GOOD);
+    const st = store({
+      [HERO.karen]: { pool: [shared], worn: [shared] },
+      [HERO.rin]: { pool: [shared, piece('armor', 'Speed')], worn: [] },
+      [HERO.noa]: { pool: [piece('helmet', 'Life')] },
+    });
+    // Карен переодета в этом окне: её надетое закрыто — и для Ноа, и для самой Рин (своим запасом его не считаем)
+    const w = realWorld(st, undefined, [HERO.karen]);
+    expect(ids(candidates(w, { to: HERO.noa }), 'helmet')).not.toContain(shared.id);
+    expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).not.toContain(shared.id);
+    // окно открыто — кандидат как надетое Карен (цена 3), а не запас
+    const open = realWorld(st);
+    expect(candidates(open, { to: HERO.noa }).helmet?.filter((x) => x.item.id === shared.id).map((x) => [x.holder, x.cost])).toEqual([[HERO.karen, 3]]);
+  });
 });
 
 describe('C. кандидаты', () => {

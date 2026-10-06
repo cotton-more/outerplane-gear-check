@@ -37,9 +37,15 @@ export function candidates(w: World, inp: CandInput): Cands {
   if (!g) return {};
   const h = w.heroes.find((x) => x.id === inp.to) ?? { ...NOBODY, id: inp.to };
   const out: Partial<Record<SlotId, Cand[]>> = {};
-  // коды получателя и наибольший BT каждого (R5.5)
+  // запись в пулах двух героев, надетая одним, — его надетое, а не чей-то запас (ревью этапа 10): иначе сеанс её не
+  // закрывал, а после «Сделал» она была бы надета на двоих
+  const wornBy = new Map<string, string>();
+  for (const k of w.heroes) for (const id of Object.values(k.worn)) if (id) wornBy.set(id, k.id);
+  const elsewhere = (id: string) => { const by = wornBy.get(id); return !!by && by !== h.id; };
+  // коды получателя и наибольший BT каждого (R5.5); надетое другим в его пуле — не его копия
   const mine = new Map<string, number>();
   for (const id of h.pool) {
+    if (elsewhere(id)) continue;
     const it = w.items[id];
     if (it) mine.set(it.code, Math.max(mine.get(it.code) ?? 0, btOf(it.bt)));
   }
@@ -55,7 +61,7 @@ export function candidates(w: World, inp: CandInput): Cands {
   const wornIds = (k: Hero) => new Set(Object.values(k.worn).filter((x): x is string => !!x));
   // свои: надетое — 0, запас — 1
   const hw = wornIds(h);
-  for (const id of h.pool) add(id, hw.has(id) ? 0 : 1, h, 0, true);
+  for (const id of h.pool) if (!elsewhere(id)) add(id, hw.has(id) ? 0 : 1, h, 0, true);
   for (const k of w.heroes) {
     if (k.id === h.id) continue;
     const gk = w.gauge(k.id);
@@ -65,7 +71,7 @@ export function candidates(w: World, inp: CandInput): Cands {
     for (const id of k.pool) {
       const it = w.items[id];
       if (!it) continue;
-      if (!kw.has(id)) add(id, 2, k, 0, false);
+      if (!kw.has(id)) { if (!wornBy.has(id)) add(id, 2, k, 0, false); }
       else if (open && k.worn[it.slot] === id) add(id, 3, k, holderLoss(w, k, gk, it.slot), false);
     }
   }
