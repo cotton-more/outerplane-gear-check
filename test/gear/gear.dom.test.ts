@@ -1203,6 +1203,16 @@ describe('вердикт «статы + сеты»', () => {
     expect($('.vcard .vc-title')?.textContent).toBe("reserve for Caren's Speed helmet");
   });
 
+  it('В6 ревью этапа 10: запас и в режиме героя — «Отложить для Caren»', async () => {
+    const ok = { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 };
+    const pcs = [P('s1', 'gloves', speed, ok, { bt: 4 }), P('s2', 'shoes', speed, ok, { bt: 4 })];
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { SPD: 1, RES: 1, EFF: 1, HP: 1 } },
+      { gear: G(pcs, { [caren.id]: ['s1', 's2'] }, { worn: { [caren.id]: { gloves: 's1', shoes: 's2' } } }), tryon: { charId: caren.id } });
+    expect($('.tryon')).toBeTruthy();
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vc-stash')?.textContent).toBe('Set aside for Caren');
+  });
+
   it('вопрос 12: слабая вещь лучше надетой — «Фоддер» или «Разобрать», а тихая строка называет героя и что искать', async () => {
     const old = P('r1', 'helmet', set('Attack'), { CHC: 3, CHD: 2, RES: 1, EFF: 1 });
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Attack'), subs: { 'ATK%': 4, CHC: 2, RES: 1, EFF: 1 } },

@@ -94,8 +94,10 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const heroVs = useMemo(() => {
     if (!hero) return null;
     const x = charVs(ctx, tview, hero.c.id, input, { replace, wear: true });
-    // «Отложить для X» и в режиме героя: вещь ему «Оставь», и она, похоже, у него ещё не отложена
-    return x && x.h.kind === 'keep' && res?.same?.c.id !== hero.c.id ? { ...x, stash: true } : x;
+    // «Отложить для X» и в режиме героя: вещь ему «Оставь» или запас (В6 ревью этапа 10), и она, похоже, у него ещё не
+    // отложена
+    const forHim = x && (x.h.kind === 'keep' || (res?.kind === 'material' && res.sub === 'reserve' && res.reserve.some((c) => c.id === hero.c.id)));
+    return x && forHim && res?.same?.c.id !== hero.c.id ? { ...x, stash: true } : x;
   }, [ctx, tview, hero, key, replace, res]); // eslint-disable-line react-hooks/exhaustive-deps
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
