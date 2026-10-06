@@ -22,7 +22,7 @@ import { against, itemValue, pieceValue, vsFigure } from '@/features/gear/model/
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const char = (name: string) => D.chars.find((c) => c.name === name)!;
 const caren = char('Caren'); // DEF › CHC › CHD › SPD › DMG UP%

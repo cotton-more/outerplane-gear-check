@@ -93,7 +93,7 @@ export const lcg = (seed: number) => () => {
 
 export const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 export const idx = createIndex(D);
-export const ctx: Ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+export const ctx: Ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 
 // роли тестов (TESTS.md) → герои фикстуры. Рин, Карен, Ноа, Лея — striker; Дельта, Майя — ranger; NOBUILD — без билдов
 export const HERO = {
@@ -132,7 +132,7 @@ export function loadOwner(): Owner {
   const raw = readGearCode(readFileSync(OWNER_FILE, 'utf8').trim());
   if (raw === null || raw === 'newer') throw new Error('.x/00-equip.md: не код OGC-GEAR2');
   const { st, roster } = loadGear(raw, idx, []);
-  const settings = { rosterOnly: true, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
+  const settings = { rosterOnly: true, stage: 'grow' as const, lv120: false, quirks: true };
   return { st, roster, ctx: makeCtx(idx, settings, new Set(roster), undefined, replacedX(idx, roster, st.pools)) };
 }
 

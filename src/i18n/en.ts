@@ -96,16 +96,11 @@ export const en: Texts = {
       `All ${n} substats are useful for ${who}, but they're the lower tiers of the priority: none of the key stats (${top.join(', ')}), and ${yellow} of ${max} segments. Not worth investing in such an Epic: Transistones aren't spent on Epics (outerpedia's guide), and it can't be Breakthrough fodder for a Legendary.`,
     weakEpicKeepIf: (top, yellow) => `It would be worth keeping with ${top.join(' or ')}, or with ${yellow}+ segments on useful stats.`,
     wrongSubs: (set) => `Wear ${set} Set, but the substats don't fit`,
-    fodderTitle: 'Fodder — the substats fall short',
-    fodderBest: (who, good, list) => `Best option: ${who}, only ${good} useful: ${list}.`,
     noneNeeded: (set) => `None of the substats are needed by ${set} Set builds.`,
-    fodderWhy: (piece, set) =>
-      `Substats don't matter for Breakthrough and Transistone (Total) rerolls — any Legendary ${piece} ${set} Set will do. Keep no more than 4 per set and slot: that's how many it takes to bring one piece to T4.`,
     junkPartialTitle: "Dismantle — even the last substat won't save it",
     junkTitle: 'Dismantle — the substats miss',
     junkBest: (who, good, list) => `Even the best option (${who}) gets only ${good} useful: ${list}.`,
     epicTwo: "Two useful substats aren't enough for an Epic unless they're both key stats with a good roll: Transistone isn't spent on Epics, and an Epic can't be Breakthrough fodder for a Legendary.",
-    enableFodder: (set) => `Saving fodder for T4 ${set} Set? Turn it on in "Evaluation settings" — such pieces will become "Fodder".`,
     checkSpd: (roll) => `Check SPD: if it has ${roll}+ segments, mark them — that's already a "Keep".`,
     maybeTitle: "Doesn't fit your characters, but a good piece",
     maybeOthers: (names) => `For characters outside your roster this is a "Keep": ${names}. If you plan to build them, don't dismantle it.`,
@@ -234,14 +229,12 @@ export const en: Texts = {
     addFourth: '4th substat',
     fourthSheet: 'Which 4th substat?',
     levelSheet: (k) => `${k} — how many segments?`,
-    settingsNow: (end, fodder, lv120, quirks) =>
-      [end ? 'endgame' : 'progression', fodder ? 'saving fodder' : 'no armor fodder', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'no Quirks'],
+    settingsNow: (end, lv120, quirks) =>
+      [end ? 'endgame' : 'progression', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'no Quirks'],
     stageGroup: 'Account stage',
     stage: 'Stage:',
     stageGrow: 'Progression — I keep stopgaps',
     stageEnd: 'Endgame — recommended only',
-    fodder: 'I save Legendary armor for Breakthrough',
-    fodderNote: '(pieces that fall short on substats become "Fodder" instead of "Dismantle")',
     levelGroup: 'Character level',
     level: 'Character level:',
     quirks: 'Quirks upgraded',
@@ -501,9 +494,7 @@ export const en: Texts = {
     mainCell: (k) => `Main stat ${k} — tap to remove`,
     fixedMainCell: (k) => `${k} is this slot's main stat: it never rolls as a substat here`,
     usefulTitle: (k, credit) => `${k}${credit >= 1 ? ' — needed by builds with this set' : credit > 0 ? ' — needed, but far down the priority (½)' : ' — no build with this set needs it'}`,
-    triageHint: (legend, fodder) => (legend
-      ? `0–1 bright stats on the piece — ${fodder ? 'fodder, don\'t upgrade' : 'dismantle'}`
-      : '0–1 bright stats on the piece — dismantle right away'),
+    triageHint: '0–1 bright stats on the piece — dismantle right away',
     codeForChat: 'Code for chat',
     codeSelected: 'Selected — copy it',
     codeErrors: {
@@ -599,7 +590,7 @@ export const en: Texts = {
       '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
       '**Epic Breakthrough** takes only the same piece, any substats: for armor an Epic of the same set and slot, for a weapon any Steel Sword, for an accessory any Steel Necklace, with any main stat. Have an Epic "Keep" below T4 — set such Epics aside for it instead of dismantling, you need 4. An Epic weapon or accessory that is a "Stopgap" gets only dismantle fodder — don\'t spend Glunite.',
       '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: grey — no one needs it, dismantle.',
-      '**Legendary** with "I save Legendary armor for Breakthrough": the verdict shows which to upgrade and which to keep for Breakthrough.',
+      '**Legendary:** the verdict shows which to upgrade; with weak substats — dismantle.',
     ],
     helpVerdicts: [
       '**Keep** — the piece is needed: wear it and upgrade it; what exactly is in the "Upgrading" block in the details.',

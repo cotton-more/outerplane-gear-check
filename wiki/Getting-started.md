@@ -41,7 +41,7 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 Everything that isn't the form and the verdict is in one sheet, **More**: ☰ on the bottom bar on a phone, "⋯" next to the
 tabs on a computer. From top to bottom: on a phone, "Characters", "To dress · N" and "Team trade"; a line "A new
 version is ready · Update" or "Install as an app" when there is one; "Enter code", "Help", "Tutorial"; **Settings** —
-"only my characters", "Evaluation" (Progression / Endgame, fodder, level and Quirks; the row shows the current ones),
+"only my characters", "Evaluation" (Progression / Endgame, level and Quirks; the row shows the current ones),
 language and icons (from the game or own outlines; without a choice — from the game); **Data** — "Backup" (the roster
 and gear in one code, see [Characters and guild code](Characters-and-guild-code#backup)) and "About" (where the data
 comes from, game version, snapshot date, how many characters and builds, the app build, "Licenses (MIT)"). At the

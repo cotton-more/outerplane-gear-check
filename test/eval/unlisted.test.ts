@@ -11,7 +11,7 @@ import { fromPersisted, reducer } from '@/app/appState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const settings = (patch: Partial<Settings> = {}): Settings => ({ rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true, ...patch });
+const settings = (patch: Partial<Settings> = {}): Settings => ({ rosterOnly: false, stage: 'grow', lv120: false, quirks: true, ...patch });
 const ctx = (patch?: Partial<Settings>) => makeCtx(idx, settings(patch), new Set());
 const unlisted = (patch: Partial<ItemInput> = {}): ItemInput => ({ slot: 'weapon', grade: 'unique', setId: null, itemKey: null, main: null, unlisted: true, subs: {}, ...patch });
 

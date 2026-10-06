@@ -31,7 +31,7 @@ const lcg = (seed: number) => () => {
 };
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const char = (name: string) => D.chars.find((c) => c.name === name)!;
 const caren = char('Caren'); // DEF › CHC › CHD › SPD › DMG UP%
@@ -328,7 +328,7 @@ describe('«собираешь»', () => {
 // Demiurge Luna начинало все 8 вариантов, «Надеть — начнёт …» перечисляло все 8
 describe('П3: временное оружие билд не начинает', () => {
   const luna = char('Demiurge Luna'); // Mage; в списках всех билдов оружие 17 (ATK%)
-  const end = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'end', lv120: false, quirks: true }, new Set());
+  const end = makeCtx(idx, { rosterOnly: false, stage: 'end', lv120: false, quirks: true }, new Set());
   const steel = D.weapons.find((w) => w.name === 'Steel Sword' && w.star === 6)!; // Epic, main ATK% / DEF% / HP%
   const sword = () => W(steel.key, { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'ATK%', 'rare');
   const listed = () => W('17', { CHC: 2, CHD: 2, 'ATK%': 1, SPD: 1 }, 'ATK%');
@@ -693,7 +693,7 @@ describe('Pen mix без T4 (Р2)', () => {
   // П7 (находка «Ломает» при вещи пула не хуже, refute-a3): в пуле уже есть Attack-шлем сильнее новой — новая не встанет
   // ни при каких отметках (встанет он): исход по нему, «хуже», а не «ломает» с ложным советом
   describe('П7: в пуле уже есть вещь её сета в её слоте не хуже', () => {
-    const rosterCtx = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([luna.id]));
+    const rosterCtx = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set([luna.id]));
     const withHelmet = (subs: Subs, bt: Bt | null = null) => {
       const { pieces } = lunaPool();
       const helmet = P('helmet', 'Attack', subs, bt);

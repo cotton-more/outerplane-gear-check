@@ -12,7 +12,7 @@ import type { Verdict } from './verdict';
 import type { ItemInput } from '@/game/item/item';
 
 export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
-  const { idx, settings, t } = ctx;
+  const { idx, t } = ctx;
   const A = t.armor;
   const names = (list: { c: Row['c'] }[], max?: number) => namesLine(list, t.more, max);
   const subs = s.subs;
@@ -133,17 +133,11 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.v = 'junk';
     res.title = A.weakEpicTitle;
     res.lines.push(A.weakEpic(who, nSubs, top, best.yellow, 3 * nSubs), A.weakEpicKeepIf(top, CFG.epicYellow));
-  } else if (legend && settings.fodder && !partial) {
-    res.v = 'fodder';
-    res.title = A.fodderTitle;
-    res.lines.push(bestGood ? A.fodderBest(who, fmtGood(bestGood), okList) : A.noneNeeded(set.short));
-    res.lines.push(A.fodderWhy(SLOT[s.slot].game ?? '', set.short));
   } else {
     res.v = 'junk';
     res.title = partial ? A.junkPartialTitle : A.junkTitle;
     res.lines.push(bestGood ? A.junkBest(who, fmtGood(bestGood), okList) : A.noneNeeded(set.short));
     if (!legend && bestGood >= 2) res.lines.push(A.epicTwo);
-    if (legend && !partial) res.lines.push(A.enableFodder(set.short));
   }
   for (const k of flatMisses(best)) res.lines.push(t.verdict.flatHint(k));
   if (spdHint) res.lines.push(A.checkSpd(CFG.spdRoll));

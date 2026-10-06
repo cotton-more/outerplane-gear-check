@@ -319,9 +319,9 @@ describe('штамп по надетому', () => {
   // на Caren · Speed — шлем заметно лучше новой (сравнение — как есть, по уровням)
   const STRONG = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
 
-  it('Caren носит лучше — Legendary «Фоддер»: у кого лучше, ▼ на карточке, кнопки «Надеть» нет', async () => {
+  it('Caren носит лучше — Legendary-броня «Разобрать»: у кого лучше, ▼ на карточке, кнопки «Надеть» нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: STRONG });
-    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
     expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
     expect($('.vcard .vc-vs .vs.down')).toBeTruthy();
     expect($('.vc-equip')).toBeNull();

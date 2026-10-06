@@ -22,8 +22,8 @@ const W = ru.worn;
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const caren = D.chars.find((c) => c.name === 'Caren')!; // DEF › CHC › CHD › SPD › DMG UP%; Speed, Pen, Def, …/Immu
 const rin = D.chars.find((c) => c.name === 'Rin')!;     // ATK › CHC › CHD › SPD › DMG UP%; Speed, CritDmg, Pen
-const ctxOf = (chars: { id: string }[], fodder = true): Ctx =>
-  makeCtx(idx, { rosterOnly: true, fodder, stage: 'grow', lv120: false, quirks: true }, new Set(chars.map((c) => c.id)), ru);
+const ctxOf = (chars: { id: string }[]): Ctx =>
+  makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set(chars.map((c) => c.id)), ru);
 const piece = (slot: ItemInput['slot'], s: string, subs: Record<string, number>, grade: ItemInput['grade'] = 'unique'): ItemInput =>
   ({ slot, grade, setId: set(s), itemKey: null, main: null, subs });
 const helmet = (subs: Record<string, number>, grade: ItemInput['grade'] = 'unique', s = 'Speed') => piece('helmet', s, subs, grade);
@@ -65,10 +65,9 @@ describe('всем, кому подходит, она ничего не даёт
     expect(r.lines).toHaveLength(3);
   });
 
-  it('Legendary — «Фоддер»; не копишь фоддер — броня «Разобрать»', () => {
+  it('Legendary-броня, которую уже носят лучше, — «Разобрать» (настройки «Фоддер» нет)', () => {
     const mid = helmet({ 'DEF%': 2, CHC: 2, CHD: 2, HP: 1 });
-    expect(judge(ctxOf([caren]), mid, onCaren)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже лучше у Caren' });
-    expect(judge(ctxOf([caren], false), mid, onCaren)).toMatchObject({ v: 'junk', title: 'Разбирай — уже лучше у Caren' });
+    expect(judge(ctxOf([caren]), mid, onCaren)).toMatchObject({ v: 'junk', title: 'Разбирай — уже лучше у Caren' });
   });
 
   it('«на уровне» — тоже не улучшит: «уже не хуже»', () => {
@@ -76,13 +75,13 @@ describe('всем, кому подходит, она ничего не даёт
     const same = helmet({ 'DEF%': 2, CHC: 2, CHD: 2, RES: 1 }); // полезные те же, лишний — другой
     const st = on(EMPTY_GEAR, caren, worn);
     expect(rowOf(ctxOf([caren]), st, caren, same, 'Speed')?.kind).toBe('eq');
-    expect(judge(ctxOf([caren]), same, st)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже не хуже у Caren' });
+    expect(judge(ctxOf([caren]), same, st)).toMatchObject({ v: 'junk', title: 'Разбирай — уже не хуже у Caren' });
   });
 
   it('два кандидата, у обоих лучше, — называет обоих', () => {
     const both = helmet({ CHC: 2, CHD: 2, SPD: 2, HP: 1 });
     const st = on(onCaren, rin, helmet({ 'ATK%': 3, CHC: 3, CHD: 3, SPD: 2 }));
-    expect(judge(ctxOf([caren, rin]), both, st).title).toBe('Фоддер — уже лучше у Caren и Rin');
+    expect(judge(ctxOf([caren, rin]), both, st).title).toBe('Разбирай — уже лучше у Caren и Rin');
   });
 
   it('понижает и «Разобрать» у материала: такая же вещь не на T4 — «Фоддер» со строкой, для чего', () => {
@@ -141,7 +140,7 @@ describe('что удерживает штамп', () => {
       const ctx = ctxOf([caren, rin]);
       const st = on(onCaren, rin, atRin);
       expect([starts(ctx, st, caren), starts(ctx, st, rin)]).toEqual([[], []]);
-      expect(judge(ctx, both, st)).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже лучше у Caren и Rin' });
+      expect(judge(ctx, both, st)).toMatchObject({ v: 'junk', worn: 'lower', title: 'Разбирай — уже лучше у Caren и Rin' });
     });
 
     // случай повторного ревью (a3-lower seed 11): у Kappa собираются Swift-связки, Speed-вещей нет. Speed-ботинки там
@@ -188,9 +187,9 @@ describe('что удерживает штамп', () => {
     expect(r.kind).toBe('capped');
     expect(r.pair!.delta!).toBeGreaterThanOrEqual(0.1);
     expect(judge(ctxOf([caren]), better, st).v).toBe('keep');
-    expect(judge(ctxOf([caren], false), better, st).v).toBe('keep');
+    expect(judge(ctxOf([caren]), better, st).v).toBe('keep');
     const same = helmet({ 'DEF%': 2, CHC: 2, CHD: 1, RES: 1 });
-    expect(judge(ctxOf([caren]), same, st)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже не хуже у Caren' });
+    expect(judge(ctxOf([caren]), same, st)).toMatchObject({ v: 'junk', title: 'Разбирай — уже не хуже у Caren' });
   });
 
   it('оружие с другой рекомендованной пассивкой — держит; тот же предмет — понижаем', () => {
@@ -242,7 +241,7 @@ describe('что удерживает штамп', () => {
     it('и по сегментам новая не лучше — понижаем (иначе: не «ломает», а просто «хуже» — «уже лучше»)', () => {
       const weak = helmet({ 'DEF%': 2, CHC: 2, CHD: 2, HP: 1 }, 'unique', 'Immunity');
       expect(rowOf(ctxOf([caren]), st, caren, weak, 'Speed/Immu')?.kind).toBe('down');
-      expect(judge(ctxOf([caren]), weak, st)).toMatchObject({ v: 'fodder', title: 'Фоддер — уже лучше у Caren' });
+      expect(judge(ctxOf([caren]), weak, st)).toMatchObject({ v: 'junk', title: 'Разбирай — уже лучше у Caren' });
     });
 
     it('а по сегментам новая лучше — не понижаем: Speed ×2 на T0 без бонуса, распадётся — в итоге выгоднее', () => {
@@ -271,7 +270,7 @@ describe('понижение — как есть', () => {
 
     const worn = 6 + 3 * 0.8 + 3 * 0.65 + 2 * 0.5, next = 3 + 3 * 0.8 + 3 * 0.65 + 2 * 0.5; // веса цепочки Caren
     expect(rowOf(ctx, st, caren, x, 'Speed')?.pair?.delta).toBeCloseTo(next / worn - 1, 6);
-    expect(r).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже лучше у Caren' });
+    expect(r).toMatchObject({ v: 'junk', worn: 'lower', title: 'Разбирай — уже лучше у Caren' });
   });
 
   it('свежая против свежей: по сегментам как есть — два сильных стата у Caren весят больше четырёх средних', () => {
@@ -281,7 +280,7 @@ describe('понижение — как есть', () => {
     expect(evaluate(ctx, x).v).toBe('keep');
 
     expect(rowOf(ctx, st, caren, x, 'Speed')?.kind).toBe('eq');
-    expect(judge(ctx, x, st)).toMatchObject({ v: 'fodder', worn: 'lower', title: 'Фоддер — уже не хуже у Caren' });
+    expect(judge(ctx, x, st)).toMatchObject({ v: 'junk', worn: 'lower', title: 'Разбирай — уже не хуже у Caren' });
   });
 
   it('свежая против свежей, новая лучше как есть — «Оставить»', () => {
@@ -401,7 +400,7 @@ describe('вещь введена не вся — не понижаем', () => 
     const three = helmet({ 'DEF%': 3, CHC: 3, CHD: 2 });
     const st = on(EMPTY_GEAR, caren, helmet({ 'DEF%': 3, CHC: 2, CHD: 2, HP: 1 }));
     expect(judge(ctx, three, st).v).toBe('keep');
-    expect(judge(ctxOf([caren], false), three, st).v).toBe('keep');
+    expect(judge(ctxOf([caren]), three, st).v).toBe('keep');
   });
 
   it('Legendary-оружие без сабстатов — «Оставить» (пассивка и main), а не «Фоддер — уже лучше»', () => {

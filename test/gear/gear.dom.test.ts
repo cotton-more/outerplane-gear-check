@@ -484,7 +484,7 @@ describe('кнопка = то, что сделает «Надеть»', () => {
       P('k5', 'gloves', set('Defense'), { HP: 3, 'HP%': 2, CHC: 3, 'DEF%': 3 }, { bt: 4 }), P('k6', 'shoes', set('Defense'), { CHD: 2, RES: 2 }, { bt: 4 }),
     ];
     const marks = { [`${kappa.id}/Swift Defense`]: 'want', [`${kappa.id}/Swift Counter`]: 'want' };
-    await mount({ slot: 'shoes', grade: 'unique', rosterOnly: true, fodder: true, stage: 'grow' }, { setId: speed, subs: { 'DMG UP%': 1, 'DEF%': 3, CHD: 1, DEF: 3 } },
+    await mount({ slot: 'shoes', grade: 'unique', rosterOnly: true, stage: 'grow' }, { setId: speed, subs: { 'DMG UP%': 1, 'DEF%': 3, CHD: 1, DEF: 3 } },
       { gear: G(pcs, { [kappa.id]: pcs.map((p) => p.id as string) }, { marks }), roster: [kappa.id] });
     expect($('.vcard .vc-vs')?.textContent).toBe('startsKappa· Speed');
     expect($('.vcard')?.textContent).not.toContain('Fodder');

@@ -86,9 +86,7 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
     + (ns.length > 2 ? t.more(ns.length - 2) : '');
   const feed = needs.filter((n) => !wear.up.includes(n));
   const fed = feed.length ? [M.line(list(feed))] : [];
-  // «Копишь фоддер? Включи — станут «Фоддер»» не нужна: штамп уже «Фоддер»
   const set = needs[0].piece.setId ? idx.SET[needs[0].piece.setId]?.short : undefined;
-  const own = set ? res.lines.filter((l) => l !== t.armor.enableFodder(set)) : res.lines;
   if (wears(res, wear)) {
     const who = whoOf(idx, wear.up[0].key, t);
     const keepOld = wear.t4 || needs[0].piece.grade === 'unique';
@@ -101,13 +99,13 @@ export function withMaterial(idx: Index, t: Texts, res: Verdict, needs: Need[], 
     return {
       ...res, v: 'keep',
       title: keepOld ? M.titleWearT4(slot, who) : M.titleWear(slot, who),
-      lines: [(keepOld ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...own.filter((l, i) => i === first || flat.has(l))],
+      lines: [(keepOld ? M.lineWearT4 : M.lineWear)(list(wear.up)), ...fed, ...res.lines.filter((l, i) => i === first || flat.has(l))],
       plan: [keepOld ? M.planWear(who) : M.planReplace(who)],
     };
   }
   // «Спорно»: штамп и заголовок те же, «Материал» — после первой строки (кому из тех, кого нет в ростере, она хороша)
   if (res.v === 'maybe') return { ...res, lines: [...res.lines.slice(0, 1), ...fed, ...res.lines.slice(1)] };
-  const lines = [...fed, ...own];
+  const lines = [...fed, ...res.lines];
   // «Прокачка»: надеть в режиме героя, иначе не прокачивать
   const wearPlan = wear.target ? M.planWear(wear.target) : null;
   if (res.v === 'fodder') return { ...res, lines, ...(wearPlan ? { plan: [wearPlan] } : {}) };

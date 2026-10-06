@@ -7,7 +7,6 @@ export type Stage = 'grow' | 'end';
 
 export interface Settings {
   rosterOnly: boolean;
-  fodder: boolean;   // коплю Legendary броню для Breakthrough
   stage: Stage;      // «Развитие» держит временные замены, «Эндгейм» — нет
   lv120: boolean;
   quirks: boolean;

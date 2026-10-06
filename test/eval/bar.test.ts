@@ -15,7 +15,7 @@ import { armorBar } from '@/features/eval/verdict/bar';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const heroes = D.chars.filter((c) => c.builds.length);
 const char = (name: string): Char => D.chars.find((c) => c.name === name)!;
 

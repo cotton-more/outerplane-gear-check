@@ -20,7 +20,7 @@ import { restoreItem } from '@/features/eval/form/formState';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const speed = D.sets.find((s) => s.short === 'Speed')!;
 const item = (slot: SlotId, main: string | null, patch: Partial<ItemInput> = {}, grade: Grade = 'rare'): ItemInput =>
   ({ slot, grade, setId: slot === 'weapon' || slot === 'accessory' ? null : speed.id, itemKey: null, main, subs: {}, ...patch });

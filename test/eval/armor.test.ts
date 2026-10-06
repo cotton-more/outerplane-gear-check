@@ -13,7 +13,7 @@ import { setSubDemand } from '@/features/eval/form/lists';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const life = D.sets.find((s) => s.short === 'Life')!;
 // у танков с Life (Liselotte и др.) приоритет SPD > HP > DEF = DMG RED% = RES
 const lifeGloves = (grade: Grade, subs: Record<string, number>) => evaluate(ctx, { slot: 'gloves', grade, setId: life.id, itemKey: null, main: null, subs });

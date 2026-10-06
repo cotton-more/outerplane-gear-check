@@ -57,13 +57,13 @@ export function reducer(s: AppState, a: Action): AppState {
 
 export interface Persisted {
   tab: Tab; slot: SlotId; grade: Grade;
-  rosterOnly: boolean; fodder: boolean; stage: Stage; lv120: boolean; quirks: boolean; settingsOpen: boolean;
+  rosterOnly: boolean; stage: Stage; lv120: boolean; quirks: boolean; settingsOpen: boolean;
   // cOwned — «Мои» (и «Доодеть», который после перезапуска «Мои»): имя прежнее, чтобы прежняя версия страницы читала его как «только мои»
   charId: string | null; cel: string; ccl: string; cOwned: boolean;
 }
 
 export const toPersisted = (s: AppState): Persisted => ({
-  tab: s.tab, slot: s.slot, grade: s.grade, rosterOnly: s.settings.rosterOnly, fodder: s.settings.fodder,
+  tab: s.tab, slot: s.slot, grade: s.grade, rosterOnly: s.settings.rosterOnly,
   stage: s.settings.stage, lv120: s.settings.lv120, quirks: s.settings.quirks, settingsOpen: s.settingsOpen,
   charId: s.charId, cel: s.cel, ccl: s.ccl, cOwned: s.cMode !== 'all',
 });
@@ -82,7 +82,6 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
     ...EMPTY_ITEM,
     settings: {
       rosterOnly: bool(p.rosterOnly, true),
-      fodder: bool(p.fodder, true), // красную броню со слабыми сабстатами — в фоддер, а не в разбор (гайд outerpedia)
       stage: oneOf(p.stage, ['grow', 'end'] as const, 'grow'),
       lv120: bool(p.lv120, false),
       quirks: bool(p.quirks, true),

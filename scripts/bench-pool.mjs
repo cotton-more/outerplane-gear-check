@@ -42,7 +42,7 @@ for (const c of roster) {
   }
   pools[c.id] = ids;
 }
-const ctx = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster.map((c) => c.id)));
+const ctx = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster.map((c) => c.id)));
 const speed = D.sets.find((s) => s.short === 'Speed').id;
 const item = (i) => ({ slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 2, SPD: 1 + (i % 3), CHD: 1 } });
 

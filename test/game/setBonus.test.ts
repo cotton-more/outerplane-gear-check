@@ -9,7 +9,7 @@ import { bonusRows, bonusSegments, bonusValue, bonusWeights, convertible } from 
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const pieces = (short: string, ...bts: (number | null)[]) => bts.map((bt) => ({ setId: set(short), bt }));
 // сумма бонуса стата по строкам, как в игре складываются 2P и 4P

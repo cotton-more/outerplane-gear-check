@@ -191,7 +191,7 @@ you don't fill" or "— it starts filling". For weapons and accessories the pass
 
 ### The stamp
 
-- **"Keep" and "Stopgap" → "Dismantle"** (a Legendary "Keep" becomes "Fodder"; armor only if you keep fodder) when all
+- **"Keep" and "Stopgap" → "Dismantle"** (a Legendary weapon or accessory "Keep" becomes "Fodder"; armor — "Dismantle") when all
   substats are entered and the piece gives nothing to anyone it suits: "on par", "worse". What keeps the stamp: a
   character with no gear, the piece starts a build for them ("Equip — starts …"), "completes", "set 3 of 4", an empty
   slot, "better", "breaks a set" and "on par because of T4" when better by segments, a different recommended passive,

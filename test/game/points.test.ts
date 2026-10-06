@@ -13,7 +13,7 @@ import { convertible } from '@/game/set/setBonus';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const char = (name: string): Char => {
   const c = D.chars.find((x) => x.name === name);
   if (!c) throw new Error('нет героя ' + name);

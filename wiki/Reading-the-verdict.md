@@ -6,7 +6,7 @@
 |---|---|
 | **Keep** | the piece is needed: wear it and upgrade it — what exactly is in the "Upgrading" block ([more](Upgrading)) |
 | **Stopgap** | wear it until you find better. A weapon or accessory without the needed passive: wear it until a recommended Legendary drops — the verdict names which. That's why an Epic weapon or accessory never goes above "Stopgap", even with a perfect roll. Epic armor — only one key stat (the verdict names the missing one) |
-| **Fodder** | keep it for Breakthrough: Legendary armor with weak substats, an item with the needed passive but the wrong main stat, material for the same piece a character has below T4 (and if it beats that one — "Keep": wear it), or a Legendary that won't improve anyone: it gives nothing to anyone it suits ([Equipment](Equipment)) |
+| **Fodder** | keep it for Breakthrough: an item with the needed passive but the wrong main stat, material for the same piece a character has below T4 (and if it beats that one — "Keep": wear it), or a Legendary that won't improve anyone: it gives nothing to anyone it suits ([Equipment](Equipment)) |
 | **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster) |
 | **Dismantle** | doesn't suit your characters, the roll is weak, or it gives nothing to anyone it suits ([Equipment](Equipment)) |
 

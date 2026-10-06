@@ -18,7 +18,7 @@ import type { ItemInput } from '@/game/item/item';
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
 const ru = TEXTS.ru;
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const helmet = (subs: Record<string, number>, grade: ItemInput['grade'] = 'unique'): ItemInput =>
@@ -199,15 +199,6 @@ describe('материал Breakthrough для надетой', () => {
       expect(r.plan).toEqual([ru.material.plan]);
     });
 
-    it('настройка «Фоддер» выключена: «Включи — станут «Фоддер»» у поднятого штампа не остаётся', () => {
-      const off = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
-      const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
-      expect(evaluate(off, junk).lines).toContain(ru.armor.enableFodder('Speed'));
-      const r = judgeAll(junk, wearing(2), null, off);
-      expect(r.v).toBe('fodder');
-      expect(r.lines).not.toContain(ru.armor.enableFodder('Speed'));
-    });
-
     it('вещь у персонажа, которого нет в данных, — не материал (её нигде не видно)', () => {
       const junk = helmet({ RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 });
       expect(mat(wearing(2, WORN, '999999'), junk)).toEqual([]);
@@ -267,7 +258,7 @@ describe('материал Breakthrough для надетой', () => {
   // Bryn (ростер — только она) носит в Speed Epic-перчатки ниже T4 (с формы без «T4», bt 0)
   describe('«Спорно»: лучше надетой — «Оставляй», материал — строка, штамп тот же', () => {
     const bryn = D.chars.find((c) => c.name === 'Bryn')!;
-    const only = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([bryn.id]), ru);
+    const only = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set([bryn.id]), ru);
     const gloves = (subs: Record<string, number>, bt: 0 | 4 = 0): ItemInput => ({ slot: 'gloves', grade: 'rare', setId: speed, itemKey: null, main: null, subs, bt });
     const OLD = gloves({ 'DMG RED%': 3, 'DEF%': 2, SPD: 1 });
     const st = putOn(only, { ...EMPTY_GEAR, marks: { [`${bryn.id}/Speed`]: 'want' } }, bryn.id, OLD).st;
@@ -326,7 +317,7 @@ describe('материал Breakthrough для надетой', () => {
     const OLD = X({ CHC: 2, CHD: 2, SPD: 2, 'ATK%': 2 });
     const BETTER = { CHC: 4, CHD: 4, SPD: 4, 'ATK%': 4 };
     const app = (roster: string[], wornBt: 0 | 4, item: ItemInput) => {
-      const c = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster), ru);
+      const c = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster), ru);
       const r = putOn(c, { ...EMPTY_GEAR, marks: { [`${caren.id}/Speed`]: 'want' } }, caren.id, { ...OLD, bt: wornBt });
       const view = poolView(c, r.st), needs = materialFor(view, item), up = needs.length ? betterThanWorn(c, view, item, needs) : [];
       const worn = withWorn(c, view, item, evaluate(c, item), { hold: up.length > 0 });
@@ -369,7 +360,7 @@ describe('материал Breakthrough для надетой', () => {
 
     // «Оставить» и «Временно» материал не трогает (как у брони): сырой «Оставляй» остаётся, понижения нет (hold)
     it('сырой «Оставляй» и лучше надетой — штамп как есть, не понижен', () => {
-      const raw = evaluate(makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru), X(BETTER));
+      const raw = evaluate(makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru), X(BETTER));
 
       const r = app([caren.id], 0, X(BETTER));
 

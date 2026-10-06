@@ -37,9 +37,7 @@ game). So:
 - **The "all about attack" trap:** DMG UP% gives +2% per segment against +4% for ATK% and CHD, flat ATK (+40) is weaker
   than ATK% for characters with a high base, CHD without CHC works at half strength — such pieces look offensive, but
   they have no key stats.
-- **A Legendary that fell short — "Fodder":** substats don't matter for Breakthrough and a Transistone (Total) reroll,
-  and the outerpedia guide advises not to dismantle such red armor (keep no more than 4 per set and slot). Not saving
-  fodder — turn it off in the settings, then Legendaries go to "Dismantle" too.
+- **A Legendary that fell short — "Dismantle":** its substats miss every build, so it isn't worth upgrading.
 - **A Legendary with one odd substat out of four:** the verdict names it — a Transistone (Individual) rerolls just that
   substat and locks the other three.
 - **A flat ATK/DEF/HP is marked** that didn't count while the % version is needed — the verdict asks you to check the

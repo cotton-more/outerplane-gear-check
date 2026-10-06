@@ -16,7 +16,7 @@ import type { ItemInput } from '@/game/item/item';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const char = (name: string) => D.chars.find((c) => c.name === name)!;
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const [caren, dahlia, eternal, cfEternal, aer, noBuilds] = ['Caren', 'Gnosis Dahlia', 'Eternal', 'Core Fusion Eternal', 'Aer', 'Hanbyul Lee'].map(char);

@@ -94,6 +94,6 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   // выделено на форме (EvalPanel need); вопрос — на плашке внизу
   const cardShown = narrow && onEval && verdict.v !== 'idle' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
-  const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint(s.grade === 'unique', s.settings.fodder) : null;
+  const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint : null;
   return { input, raw, viewOf, tview, heroVs, mat, worn, verdict, vsList, offNote, shown, nSubs, cardShown, hint };
 }

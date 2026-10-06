@@ -76,7 +76,7 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 
 // для подсказки «теперь собирается сам»: какие варианты собираются после переноса. Настройки — по умолчанию
 // (от них зависит только «временная» у оружия в «Развитии»)
-const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
+const MIGRATE_SETTINGS = { rosterOnly: false, stage: 'grow' as const, lv120: false, quirks: true };
 
 // перенос v1 → v2. Ростер и Core Fusion (features/gear/model/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
 // (находка 16)

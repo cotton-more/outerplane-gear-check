@@ -23,7 +23,7 @@ describe('английские вердикты', () => {
   it('все случаи эталона считаются на английском без единой русской буквы', () => {
     const leaks: string[] = [];
     for (const { in: inp } of golden.cases) {
-      const settings: Settings = { rosterOnly: inp.rosterOnly, fodder: !!inp.fodder, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true };
+      const settings: Settings = { rosterOnly: inp.rosterOnly, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true };
       const ctx = makeCtx(idx, settings, new Set(golden.meta.rosters[inp.roster]), en);
       const r = evaluate(ctx, { slot: inp.slot, grade: inp.grade, setId: inp.setId, itemKey: inp.itemKey, main: inp.main, subs: Object.fromEntries(inp.subs) });
       const text = verdictText(r);

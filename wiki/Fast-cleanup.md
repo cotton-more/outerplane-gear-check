@@ -19,11 +19,10 @@
    the verdict reminds you.
 8. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
    grey, no one needs that main — dismantle.
-9. **Legendary** with "I save Legendary armor for Breakthrough" (on by default): the verdict shows which to upgrade
-   and which to keep for Breakthrough.
+9. **Legendary:** the verdict shows which to upgrade; with weak substats — dismantle.
 
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/5-early-junk.png" width="360" alt="Dismantle after just two substats">
 
 Two useless substats — the verdict comes right away, no need to enter the third.
 
-Evaluation settings (Progression / Endgame, fodder, level and Quirks) are in More → Settings → Evaluation.
+Evaluation settings (Progression / Endgame, level and Quirks) are in More → Settings → Evaluation.

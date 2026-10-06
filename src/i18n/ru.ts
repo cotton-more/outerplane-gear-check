@@ -129,16 +129,11 @@ export const ru = {
       `Все ${n} сабстата полезны для ${who}, но это нижние ступени приоритета: главного (${top.join(', ')}) нет, сегментов — ${yellow} из ${max}. Вкладываться в такой Epic невыгодно: Transistone на Epic не тратят (гайд outerpedia), а в Breakthrough для Legendary он не годится.`,
     weakEpicKeepIf: (top: string[], yellow: number) => `Оставить стоило бы с ${top.join(' или ')} либо с ${yellow}+ сегментами на полезных статах.`,
     wrongSubs: (set: string) => `Носят ${set} Set, но сабстаты не те`,
-    fodderTitle: 'Фоддер — сабстаты не дотянули',
-    fodderBest: (who: string, good: string, list: string) => `Лучший вариант: ${who}, полезны только ${good}: ${list}.`,
     noneNeeded: (set: string) => `Ни один сабстат не нужен билдам с ${set} Set.`,
-    fodderWhy: (piece: string, set: string) =>
-      `Для Breakthrough и реролла Transistone (Total) сабстаты не важны — годится любой Legendary ${piece} ${set} Set. Держи не больше 4 на сет и слот: столько нужно, чтобы довести один предмет до T4.`,
     junkPartialTitle: 'Разбирай — даже с последним сабстатом не вытянет',
     junkTitle: 'Разбирай — сабстаты мимо',
     junkBest: (who: string, good: string, list: string) => `Даже лучшему варианту (${who}) полезны только ${good}: ${list}.`,
     epicTwo: 'Для Epic двух полезных мало, если это не два главных стата с хорошим роллом: Transistone на Epic не тратят, а в Breakthrough для Legendary он не годится.',
-    enableFodder: (set: string) => `Копишь фоддер для T4 ${set} Set? Включи это в «Настройках оценки» — такие предметы станут «Фоддер».`,
     checkSpd: (roll: number) => `Проверь SPD: если у него ${roll}+ сегмента — отметь, это уже «Оставить».`,
     maybeTitle: 'Твоим не подходит, но предмет хороший',
     maybeOthers: (names: string) => `Для персонажей не из ростера это «Оставить»: ${names}. Если планируешь их качать — не разбирай.`,
@@ -276,14 +271,12 @@ export const ru = {
     fourthSheet: 'Какой 4-й сабстат?',
     levelSheet: (k: string) => `${k} — сколько сегментов?`, // окно уровня после нажатия в сетке
     // настройки оценки
-    settingsNow: (end: boolean, fodder: boolean, lv120: boolean, quirks: boolean) =>
-      [end ? 'эндгейм' : 'развитие', fodder ? 'коплю фоддер' : 'без фоддера брони', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'без Quirks'],
+    settingsNow: (end: boolean, lv120: boolean, quirks: boolean) =>
+      [end ? 'эндгейм' : 'развитие', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'без Quirks'],
     stageGroup: 'Этап аккаунта',
     stage: 'Этап:',
     stageGrow: 'Развитие — держу временные замены',
     stageEnd: 'Эндгейм — только рекомендованное',
-    fodder: 'коплю Legendary броню для Breakthrough',
-    fodderNote: '(не дотянувшие по сабстатам станут «Фоддер», а не «Разобрать»)',
     levelGroup: 'Уровень персонажей',
     level: 'Уровень персонажей:',
     quirks: 'Quirks прокачаны',
@@ -583,9 +576,7 @@ export const ru = {
     mainCell: (k: string) => `Main stat ${k} — нажми, чтобы убрать`,
     fixedMainCell: (k: string) => `${k} — main этого слота: сабстатом здесь не бывает`,
     usefulTitle: (k: string, credit: number) => `${k}${credit >= 1 ? ' — нужен билдам этого сета' : credit > 0 ? ' — нужен, но далеко в приоритете (за ½)' : ' — билдам этого сета не нужен'}`,
-    triageHint: (legend: boolean, fodder: boolean) => (legend
-      ? `Ярких статов на вещи 0–1 — ${fodder ? 'в фоддер, не прокачивай' : 'в разбор'}`
-      : 'Ярких статов на вещи 0–1 — сразу в разбор'),
+    triageHint: 'Ярких статов на вещи 0–1 — сразу в разбор',
     // код предмета
     codeForChat: 'Код для чата',
     codeSelected: 'Выделено — скопируй',
@@ -687,7 +678,7 @@ export const ru = {
       '«Оставить» — поставь замок, чтобы не разобрать случайно; «Временно» — носи, пока не найдёшь лучше.',
       '**Breakthrough у Epic** — только такой же вещью, сабстаты не важны: броня — Epic того же сета и слота, оружие — любой Steel Sword, аксессуар — любой Steel Necklace, с любым main. Есть Epic-«Оставить» не на T4 — такие Epic из разбора откладывай ему, нужно 4 штуки. Epic оружию и аксессуару «Временно» — только вещами из разбора, Glunite не трать.',
       '**Epic оружие и аксессуар:** на «Эндгейме» — в разбор; на «Развитии» сначала main stat: серый — он никому не нужен, в разбор.',
-      '**Legendary** с «коплю фоддер»: вердикт покажет, какие прокачивать, а какие оставить на Breakthrough.',
+      '**Legendary:** вердикт покажет, какие прокачивать; со слабыми сабстатами — в разбор.',
     ],
     helpVerdicts: [
       '**Оставить** — вещь нужна: носи и прокачивай, что именно — в блоке «Прокачка» в подробностях.',

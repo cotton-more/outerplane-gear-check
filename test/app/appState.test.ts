@@ -301,12 +301,12 @@ describe('reducer: слот и «Следующий»', () => {
 describe('сохранение в localStorage', () => {
   it('прежний набор полей без «показать и без билдов» (cAll)', () => {
     expect(Object.keys(toPersisted(fresh())).sort()).toEqual(
-      ['cOwned', 'ccl', 'cel', 'charId', 'fodder', 'grade', 'lv120', 'quirks', 'rosterOnly', 'settingsOpen', 'slot', 'stage', 'tab'].sort());
+      ['cOwned', 'ccl', 'cel', 'charId', 'grade', 'lv120', 'quirks', 'rosterOnly', 'settingsOpen', 'slot', 'stage', 'tab'].sort());
   });
 
   it('сохранённое состояние восстанавливается без потерь', () => {
     const s = fresh({ tab: 'chars', slot: 'shoes', grade: 'rare', settingsOpen: true, charId: D.chars[0].id, ccl: 'mage', cMode: 'mine',
-      settings: { rosterOnly: false, fodder: true, stage: 'end', lv120: true, quirks: false } });
+      settings: { rosterOnly: false, stage: 'end', lv120: true, quirks: false } });
     expect(toPersisted(fromPersisted(JSON.parse(JSON.stringify(toPersisted(s))), idx))).toEqual(toPersisted(s));
   });
 
@@ -336,10 +336,6 @@ describe('сохранение в localStorage', () => {
     expect(fromPersisted({ cOwned: 'yes' } as never, idx).cMode).toBe('all');
   });
 
-  it('новичку фоддер включён, сохранённый выбор не трогаем', () => {
-    expect(fromPersisted(null, idx).settings.fodder).toBe(true);
-    expect(fromPersisted({ fodder: false }, idx).settings.fodder).toBe(false);
-  });
 });
 
 // 10–12. открыть героя извне (вердикт, «Сейчас на персонажах», #slug): карточка открывается всегда, плитка — видна

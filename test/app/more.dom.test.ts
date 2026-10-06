@@ -237,7 +237,7 @@ describe('1.3 «Ещё»: настройки и данные', () => {
     await openMore();
     const row = $('#settings')!;
     expect(row.textContent).toContain('Evaluation');
-    expect(row.textContent).toContain('progression · saving fodder · lv 100 · Quirks');
+    expect(row.textContent).toContain('progression · lv 100 · Quirks');
     expect($('.more .settings-body')).toBeNull();
     await click(row);
     expect(saved().settingsOpen).toBe(true);

@@ -21,7 +21,7 @@ import { withWorn } from '@/features/gear/model/stamp';
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
 const ru = TEXTS.ru;
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const armor = (slot: ItemInput['slot'], s: string, subs: Record<string, number>, grade: ItemInput['grade'] = 'unique'): ItemInput =>
@@ -193,10 +193,10 @@ describe('режим героя: заголовок вердикта (то, чт
   // штамп понизили (features/gear/model/stamp): всем, кому подходит, она ничего не даёт; лучший исход героя среди них — заголовок уже
   // про него
   it('«Разобрать», потому что все уже носят лучше: про героя не повторяем', () => {
-    const mine = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
+    const mine = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]), ru);
     const st = putOn(mine, EMPTY_GEAR, caren.id, armor('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 2 })).st;
     const res = withWorn(mine, poolView(mine, st), NEW, evaluate(mine, NEW));
-    expect(res.title).toBe('Фоддер — уже лучше у Caren');
+    expect(res.title).toBe('Разбирай — уже лучше у Caren');
     expect(heroOf(res, st, NEW, mine)).toBe(res.title);
   });
 });

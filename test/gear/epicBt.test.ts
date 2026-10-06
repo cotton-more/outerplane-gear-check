@@ -20,7 +20,7 @@ import type { Bt, ItemInput } from '@/game/item/item';
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
 const ru = TEXTS.ru;
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set(), ru);
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
 const MARKS = { [`${caren.id}/Speed`]: 'want' as const };

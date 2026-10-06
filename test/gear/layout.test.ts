@@ -17,7 +17,7 @@ import { better, bestLayout, cmpLex, gearRank, layoutValue, NEW_ID, piecePoints,
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const EPS = 1e-9;
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
 const GEAR: SlotId[] = ['weapon', 'accessory'];

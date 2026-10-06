@@ -60,10 +60,10 @@ export function withWorn(ctx: Ctx, view: PoolView, item: ItemInput, res: Verdict
   if (opts.hold) return res;
   const rows = lowerBy(ctx, view, item, res);
   if (!rows) return res;
-  // «Фоддер» — материал для такой же вещи: у брони, если копишь фоддер, и у предмета из списков билдов. Legendary-оружие
+  // «Фоддер» — материал для такой же вещи: у предмета из списков билдов (у брони без ростера материала нет — «Разобрать», Д6). Legendary-оружие
   // «на замену» (его пассивки в билдах ростера нет) — «Разобрать», как evalGear поступает со слабой заменой
   const armor = isArmor(item.slot);
-  const v = res.v === 'keep' && item.grade === 'unique' && (!armor || ctx.settings.fodder) ? 'fodder' : 'junk';
+  const v = res.v === 'keep' && item.grade === 'unique' && !armor ? 'fodder' : 'junk';
   // Вещь нужна и тем, кого нет в ростере, — сказать, как у «Спорно» (решение владельца: штамп тот же, но не молча).
   // Из прежних строк — первая: кому и чем вещь хороша («сама по себе неплохая»)
   const who = [...new Map(rows.map((r) => [r.v.key.slice(0, r.v.key.indexOf('/')), ctx.idx.CHAR[r.v.key.slice(0, r.v.key.indexOf('/'))]])).values()].filter(Boolean);
