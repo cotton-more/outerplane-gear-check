@@ -96,6 +96,9 @@ describe('useGear', () => {
     expect(takeModelNote(idx)).toBe(false);
     localStorage.clear();
     expect(takeModelNote(idx)).toBe(false);
+    // v2 без вещей — прежней модели игрок не видел: сообщения нет (ревью этапа 10)
+    localStorage.setItem('ogc.gear', JSON.stringify({ ...V2, seq: 0, pieces: {}, pools: {} }));
+    expect(takeModelNote(idx)).toBe(false);
   });
 
   it('во время обучения: на странице пусто, запись ничего не делает; после тура не пишется, на странице — хранилище', async () => {

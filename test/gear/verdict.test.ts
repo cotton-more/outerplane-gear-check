@@ -105,6 +105,16 @@ describe('T5 вердикт новой вещи', () => {
     expect(r10.kind).toBe('wear');
   });
 
+  it('D11 (ревью этапа 10): «вместе с ней» — только вещи, что встают из-за новой, а не отложенные, уже бывшие в раскладке', () => {
+    const oldH = mk('oldH', 'helmet', 'Attack', { CHC: 3, CHD: 2, RES: 1, EFF: 1 });
+    const oldS = mk('oldS', 'shoes', 'Attack', { CHC: 1, RES: 1, EFF: 1, HP: 1 });
+    const stS = mk('stS', 'shoes', 'Attack', { CHC: 4, CHD: 3, 'ATK%': 2, SPD: 1 }); // отложены, лучше надетых — уже в раскладке
+    const w = world(['Rin'], { Rin: [oldH, oldS, stS] }, { Rin: ['oldH', 'oldS'] });
+    const r = w.v(mk('newH', 'helmet', 'Attack', { CHC: 5, CHD: 3, 'ATK%': 2, SPD: 2 }))!;
+    expect(r.kind).toBe('wear');
+    expect(w.hero('Rin', r).alsoWear.map((p) => p.id)).toEqual([]);
+  });
+
   it('T5.3: Pen-шлем 4,95 у Caren в Def ×4 → «Оставь (а)»', () => {
     const w = world(['Caren'], { Caren: cDefs() });
     const x = mk('penH', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 });

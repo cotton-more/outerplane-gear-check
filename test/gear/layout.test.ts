@@ -260,6 +260,12 @@ describe('ценность раскладки и лучшая раскладка
     expect(bare.P).toBe(Pp);
     expect(heroOutcome(heroPool(ctx, anarky, [aD, pG, pB], none)!, { ...sH, id: NEW_ID }).kind).toBe('wear');
     expect(heroOutcome(bare, { ...sH, id: NEW_ID }).kind).toBe('none');
+    // запас закреплённому — только сетов набора (ревью этапа 10): слабая Swiftness-броня при начатом Swiftness — не запас
+    const sWeak = mk('sW', 'armor', 'Swiftness', { RES: 1, EFF: 1, HP: 1, 'ATK%': 1 }, 0);
+    const pBweak = mk('pW', 'helmet', 'Penetration', { RES: 1, EFF: 1, HP: 1, 'ATK%': 1 }, 0);
+    expect(poolInfo(P, [sH, sWeak], new Set(['sH'])).why.get('sW')).toEqual(['reserve']);
+    expect(poolInfo(Pp, [sH, sWeak], new Set(['sH'])).why.get('sW')).toBeUndefined();
+    expect(poolInfo(Pp, [pG, pBweak], new Set(['pG'])).why.get('pW')).toEqual(['reserve']);
     // билд переименовали — ключ не годится, профиль «По статам»
     const stale = key.replace('Defense mix', 'Defense mix old');
     expect(pinOf(anarky, stale)).toBeNull();

@@ -208,6 +208,5 @@ describe('C. кандидаты', () => {
       expect(ids(c, 'helmet')).toEqual([]);
       expect(bestKit(w.gauge(HERO.rin)!, c).slots.helmet).toBeUndefined();
     });
-    it.todo('C9: пустой слот — подсказка (этап 3)');
   });
 });

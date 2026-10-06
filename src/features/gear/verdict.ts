@@ -58,7 +58,7 @@ export interface HeroRes {
   slotEmpty: boolean;            // её слот пуст в нынешней раскладке
   replaced: Piece | null;        // «Надень»: вещь её слота, которую она сменит
   rankUp: boolean;               // «Надень» по рангу: оружие или аксессуар из рекомендованных его билдам (§3 п. 3)
-  alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней
+  alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней (в нынешней раскладке их в этом слоте не было)
   parts: { on: PartChange[]; off: PartChange[] };
   needT4: PartChange | null;     // «Оставь (а)»: сделай Breakthrough до T4 — без него эта часть не включится (A11)
   reserveBt: Piece | null;       // запасная из пула героя — в Breakthrough новой (§4 п. 3б)
@@ -79,7 +79,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const base: HeroRes = {
     c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: px - top,
     slotEmpty: !info.layout[x.slot], replaced: null, rankUp: withBest.value.rank > info.value.rank,
-    alsoWear: Object.values(withBest.layout).filter((p) => p.id !== x.id && !wornIds.has(p.id)),
+    alsoWear: Object.values(withBest.layout).filter((p) => p.id !== x.id && !wornIds.has(p.id) && info.layout[p.slot]?.id !== p.id),
     parts: partsDiff(info.value, withBest.value), needT4: null,
     reserveBt: rp && bar.pass && (x.bt ?? 0) < 4 && sameForBt(x, rp) ? rp : null,
     layoutWith: withBest.layout,
