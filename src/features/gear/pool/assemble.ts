@@ -8,7 +8,7 @@ import type { SubWeight } from '@/game/build/score';
 import type { ItemInput } from '@/game/item/item';
 import type { Variant } from '@/game/build/variants';
 import { fit, itemValue, pieceValue, wearable, type Fit } from '@/features/gear/model/vs';
-import { ARMOR, GEAR, NEWEST, EPS } from './base';
+import { ARMOR, GEAR, NEWEST, EPS, numOf } from './base';
 import { isStats } from './stats';
 
 // вещь в сборке: записанная (piece) или с формы (piece null, id null; Breakthrough — как на форме, ItemInput.bt)
@@ -83,8 +83,7 @@ function storedValue(ctx: Ctx, c: Char, v: Variant, p: Piece): number {
   return r;
 }
 
-// номер записи из id («p12» → 12); не число или не конечное («p1e400») — 0, как у seqOf хранилища (gearStore)
-export const numOf = (id: string) => { const n = Number(id.replace(/^\D+/, '')); return Number.isFinite(n) ? n : 0; };
+export { numOf };
 // Вещь не для класса персонажа (vs wearable) — не вещь его сборки: её нет среди кандидатов ни одного варианта
 export function entriesFor(ctx: Ctx, c: Char, v: Variant, pieces: readonly Piece[], x?: ItemInput | null): Entry[] {
   const out: Entry[] = pieces.filter((p) => wearable(ctx, c, p)).map((p) => ({

@@ -18,3 +18,6 @@ export const GEAR: GearKind[] = ['weapon', 'accessory'];
 export const NEWEST = 1e9; // вещь с формы — всегда новее записанных: при равенстве она ничего не вытесняет
 export const EPS = 1e-9;
 export const LOST_MIN = 0.01; // вытесненное дешевле — «ничего не стоило»: выигрыш делится на него, как в сравнении пары (vs)
+
+// номер записи из id («p12» → 12); не число или не конечное («p1e400») — 0, как у seqOf хранилища (gearStore)
+export const numOf = (id: string) => { const n = Number(id.replace(/^\D+/, '')); return Number.isFinite(n) ? n : 0; };
