@@ -1268,7 +1268,7 @@ describe('вердикт «статы + сеты»', () => {
     expect(byText('.v-vs .vs-row', 'Rin')?.textContent).toContain('Rin gets +2.95 pts');
   });
 
-  it('T5.3: Pen-шлем у Caren в Def ×4 — «Оставь (а)»: строка «пока не надевай», кнопки нет', async () => {
+  it('T5.3: Pen-шлем у Caren в Def ×4 — «Оставь (а)»: строка «пока не надевай», вместо «Надеть» — «Отложить»', async () => {
     const def = set('Defense');
     const pcs = [P('c1', 'helmet', def, { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c2', 'armor', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }),
       P('c3', 'gloves', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c4', 'shoes', def, { 'DEF%': 3, CHC: 3, CHD: 1, SPD: 1 }, { bt: 4 })];
@@ -1281,6 +1281,38 @@ describe('вердикт «статы + сеты»', () => {
     expect(rows()).toEqual([['Caren', 'keep']]);
     expect($('.v-vs')?.textContent).toContain("Don't equip yet: keep it for Caren until Penetration comes together.");
     expect($('.v-vs .vs-act')).toBeNull();
+    expect($('.v-vs .vs-stash')?.textContent).toBe('Set aside for Caren');
+  });
+
+  // решение владельца 2026-10-06: «Оставь» и запас — кнопка «Отложить для X»; та же вещь ещё раз — «похоже, это она»
+  it('«Отложить для Caren»: вещь в пуле ненадетой, тост с «Вернуть»; та же вещь ещё раз — «Looks like … set aside for Caren»', async () => {
+    const def = set('Defense');
+    const pcs = [P('c1', 'helmet', def, { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c2', 'armor', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }),
+      P('c3', 'gloves', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c4', 'shoes', def, { 'DEF%': 3, CHC: 3, CHD: 1, SPD: 1 }, { bt: 4 })];
+    const PEN = { setId: set('Penetration'), subs: { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 } };
+    await mount({ slot: 'helmet', grade: 'unique' }, PEN,
+      { gear: G(pcs, { [caren.id]: ['c1', 'c2', 'c3', 'c4'] }, { worn: { [caren.id]: { helmet: 'c1', armor: 'c2', gloves: 'c3', shoes: 'c4' } } }) });
+    expect($('.vc-stash')?.textContent).toBe('Set aside for Caren');
+    await click($('.vc-stash'));
+    expect($('.gear-toast')?.textContent).toBe('Set aside for Caren: helmet.Undo');
+    expect(stored().pools[caren.id]).toEqual(['c1', 'c2', 'c3', 'c4', 'p5']);
+    expect(stored().worn[caren.id].helmet).toBe('c1');
+    expect(JSON.parse(localStorage.getItem('ogc.item')!).subs).toEqual({});
+
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(stored().pools[caren.id]).toEqual(['c1', 'c2', 'c3', 'c4']);
+    await click($('.vc-stash'));
+    // ту же вещь ввели снова
+    await act(async () => { localStorage.setItem('ogc.item', JSON.stringify(PEN)); });
+    await act(async () => root!.unmount());
+    const { App } = await import('@/app/App');
+    const { IndexContext } = await import('@/game/data/IndexContext');
+    const { createIndex } = await import('@/game/data');
+    root = createRoot(document.body.appendChild(document.createElement('div')));
+    await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
+    expect($('.vc-stash')).toBeNull();
+    await click($('.vcard'));
+    expect($('.v-reasons')?.textContent).toMatch(/^Looks like the Penetration helmet set aside for Caren \d\d\/\d\d\. If it is — do nothing\./);
   });
 
   it('T5.7: слабый Speed-шлем при начатом Speed — «Фоддер — запас для Speed-шлема Caren»', async () => {

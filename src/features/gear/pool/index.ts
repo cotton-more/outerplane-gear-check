@@ -30,5 +30,5 @@ export { poolView } from './view';
 export type { CharPool, PoolView } from './view';
 export { OUTCOME_ORDER, rowKey, lostBonusValue, outcomeFor, holds, holdsKind, shownKind, puts } from './outcome';
 export type { OutcomeKind, Outcome, CharOutcome, OutcomeOpts } from './outcome';
-export { replaceOf, planPut, planFor, putOn, undoPut, wearFromPool, undoWear, wearAll, undoWearAll, removeFrom, undoRemove, removeUndo, setMark } from './ops';
+export { replaceOf, planPut, planFor, putOn, stashOn, undoPut, wearFromPool, undoWear, wearAll, undoWearAll, removeFrom, undoRemove, removeUndo, setMark } from './ops';
 export type { WearResult, PutResult, PutPlan, WearAllResult } from './ops';

@@ -5,6 +5,7 @@ import type { GearKind } from '@/game/data/types';
 import type { Texts } from '@/i18n';
 import type { ItemInput } from '@/game/item/item';
 import { partText, setName } from '@/game/set/setName';
+import { subsText } from '@/game/text';
 import type { Piece } from '@/features/gear/model/gear';
 import type { VerdictKind } from '@/features/eval/verdict/verdict';
 import type { HeroRes, Result } from '@/features/gear/verdict';
@@ -13,10 +14,14 @@ type Label = (p: Piece) => string;
 const itemName = (idx: Index, x: Pick<ItemInput, 'slot' | 'itemKey' | 'main'>): string =>
   (x.itemKey ? idx.ITEM[x.slot as GearKind][x.itemKey]?.name : undefined) ?? x.main ?? '';
 
-// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 п. 3б, 3в)
-function feedLine(t: Texts, idx: Index, h: HeroRes, item: ItemInput): string | null {
-  if (!h.reserveBt) return null;
-  return item.setId ? t.fit.feed(setName(idx, item.setId), item.slot, h.c.name) : t.fit.feedItem(itemName(idx, item), h.c.name);
+// отложенная вещь во фразе — как найти её в игре: «Это Speed-шлем · DEF 1, SPD 2, RES 2, отложен 06.10.»
+export const stashedLine = (t: Texts, p: Piece, label: Label): string => t.fit.stashedOne(p.slot, label(p), subsText(p.lit), t.fit.date(p.at));
+
+// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 п. 3б, 3в) и какой он
+function feedLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Label): string[] {
+  if (!h.reserveBt) return [];
+  const feed = item.setId ? t.fit.feed(setName(idx, item.setId), item.slot, h.c.name) : t.fit.feedItem(itemName(idx, item), h.c.name);
+  return [feed, stashedLine(t, h.reserveBt, label)];
 }
 
 // строки героя: «Надень» — прирост, половины, вещи пула вместе с ней; «Оставь» — почему держать; запасная — ей в Breakthrough
@@ -37,14 +42,13 @@ export function heroLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, lab
       if (h.needT4) out.push(F.keepT4(partText(idx, h.needT4)));
     } else out.push(F.keepStatsWhy(set, name));
   }
-  const feed = feedLine(t, idx, h, item);
-  if (feed) out.push(feed);
+  out.push(...feedLines(t, idx, h, item, label));
   return out;
 }
 
 // штамп, заголовок и строки по исходу. «Надень» и «Оставь» — без строк: что даёт каждому названному герою, говорит
 // «Сейчас на персонажах» (PLAN Д3). «Спорно» и «Разобрать» — в useVerdictModel, где есть прежний вердикт по порогам
-export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput): { v: VerdictKind; title: string; lines: string[] } | null {
+export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput, label: Label): { v: VerdictKind; title: string; lines: string[] } | null {
   const F = t.fit;
   const h = r.named[0];
   if (r.kind === 'wear') {
@@ -58,7 +62,9 @@ export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput): { 
   }
   if (r.kind === 'material' && r.sub === 'now') {
     const n = r.now[0];
-    return { v: 'fodder', title: F.btNow(item.slot, n.c.name), lines: [F.btNowWhy(item.slot, n.c.name)] };
+    // цель не надета (отложена) — как её найти
+    const stashed = n.worn ? [] : [stashedLine(t, n.piece, label)];
+    return { v: 'fodder', title: F.btNow(item.slot, n.c.name), lines: [F.btNowWhy(item.slot, n.c.name), ...stashed] };
   }
   if (r.kind === 'material') {
     const c = r.reserve[0];

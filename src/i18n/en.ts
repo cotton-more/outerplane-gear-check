@@ -202,6 +202,12 @@ export const en: Texts = {
     pruned: (name) => `Extras removed — ${name} no longer needs them.`,
     why: { worn: 'worn', best: (set) => `best ${set}`, bestT4: (set) => `best ${set} at T4`, stats: 'by stats', reserve: 'reserve' },
     unneeded: 'no longer needed',
+    stash: (name) => `Set aside for ${name}`,
+    stashed: (name, slot) => `Set aside for ${name}: ${SLOT_EN[slot]}.`,
+    chipReserve: 'reserve',
+    date: (at) => (at ? `${at.slice(5, 7)}/${at.slice(8, 10)}` : ''),
+    stashedOne: (_slot, piece, subs, date) => `It's the ${piece} · ${subs}, set aside${date ? ' ' + date : ''}.`,
+    same: (_slot, piece, name, date) => `Looks like the ${piece} set aside for ${name}${date ? ' ' + date : ''}. If it is — do nothing.`,
   },
 
   ui: {

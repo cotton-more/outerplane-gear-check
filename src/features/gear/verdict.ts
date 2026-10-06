@@ -104,11 +104,11 @@ const menuPart = (P: Profile, set: string): PartChange => ({ set, n: P.parts.has
 
 // §4 п. 3а: держащиеся годные вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough. Вещь на T4 материалом
 // не бывает (D6); запас и слабые — не цели (A2)
-export interface Target { c: Char; piece: Piece }
+export interface Target { c: Char; piece: Piece; worn: boolean }
 function materialTargets(hp: HeroPool, x: Piece): Target[] {
   if (x.bt === 4) return [];
   return hp.pieces.filter((q) => q.id !== x.id && hp.info.strong.has(q.id) && (q.bt ?? 0) < 4 && sameForBt(x, q) && pieceBar(hp.P, q).pass)
-    .map((piece) => ({ c: hp.c, piece }));
+    .map((piece) => ({ c: hp.c, piece, worn: hp.wornIds.has(piece.id) }));
 }
 
 // §4 п. 3б, 3в: запас — слабая (не прошла порог) и не на T4. Броня: сет начат, в слоте его нет, запаса ещё нет. Оружие и
@@ -176,6 +176,23 @@ function lookFor(P: Profile, x: Piece): string[] {
   return out;
 }
 
+// Та же вещь, отложенная раньше (решение владельца 2026-10-06): у героя ростера ненадетая запись с тем же сетом или
+// предметом, слотом, грейдом, main и всеми сабстатами тех же уровней. Порядок сабстатов не учитываем — игрок его не вводит.
+// Вердикт считается без неё, а строка говорит: «похоже, это она — ничего не делай»
+export interface Same { c: Char; piece: Piece }
+const samePiece = (p: Piece, x: Piece): boolean => {
+  const a = Object.entries(p.lit), b = x.lit;
+  return p.slot === x.slot && p.grade === x.grade && p.setId === x.setId && p.itemKey === x.itemKey && p.main === x.main
+    && a.length === Object.keys(b).length && a.every(([k, n]) => b[k] === n);
+};
+function sameOf(hps: HeroPool[], x: Piece): Same | null {
+  for (const hp of hps) {
+    const piece = hp.pieces.find((p) => !hp.wornIds.has(p.id) && samePiece(p, x));
+    if (piece) return { c: hp.c, piece };
+  }
+  return null;
+}
+
 export type Kind = 'wear' | 'keep' | 'material' | 'maybe' | 'junk';
 export interface Result {
   kind: Kind;
@@ -186,6 +203,7 @@ export interface Result {
   reserve: Char[];            // запас (п. 3б, 3в)
   maybe: Char[];              // «Спорно»
   quiet: Quiet | null;        // тихая строка у материала, запаса и «Разобрать»
+  same: Same | null;          // похоже, это отложенная раньше вещь (её запись в расчёт не входит)
 }
 
 // герои ростера, которым вещь можно оценить: с билдами и не заменённые своим Core Fusion
@@ -198,10 +216,12 @@ export const rosterChars = (ctx: Ctx): Char[] =>
 export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | null {
   if (!ctx.scoped || input.unlisted || Object.keys(input.subs).length < dropSubs(input.grade)) return null;
   const x = formPiece(input);
-  const hps = rosterChars(ctx).filter((c) => wearable(ctx, c, x)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
+  const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
+  const same = sameOf(all, x);
+  const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds)! : hp)) : all;
   const heroes = hps.map((hp) => heroOutcome(hp, x));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>
-    ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, ...more });
+    ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, same, ...more });
   const wear = heroes.filter((h) => h.kind === 'wear').sort((a, z) => z.dV - a.dV || z.margin - a.margin);
   if (wear.length) return res('wear', { named: wear.slice(0, 3) });
   const keep = heroes.filter((h) => h.kind === 'keep').sort((a, z) => z.margin - a.margin);

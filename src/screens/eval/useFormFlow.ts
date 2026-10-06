@@ -8,7 +8,7 @@ import type { ItemInput } from '@/game/item/item';
 import type { Texts } from '@/i18n';
 import { itemInput, type FormAction, type FormState } from '@/features/eval/form/formState';
 import type { Piece } from '@/features/gear/model/gear';
-import { putOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
+import { putOn, stashOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
 import { nextToWear, type CharVs } from '@/features/gear/model/poolVs';
 import { oldFate } from '@/features/gear/model/material';
 import type { GearApi } from '@/features/gear/store/useGear';
@@ -47,6 +47,8 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   // «Заменить» всегда); вторая — «или — Rin · Speed ▸», если такой исход есть и у другого (в режиме героя других нет)
   const cardVs = vsList[0];
   const cardEquip = canEquip && !!cardVs?.useful;
+  // «Отложить для X» под карточкой — когда первый названный герой её держит («Оставь») или она ему запас
+  const cardStash = canEquip && !!cardVs?.stash;
   // «Дальше: {слот}» — ввод надетого: режим героя, «Надеть» есть, слот формы у героя не надет и есть ещё ненадетые
   const wearNext: SlotId | null = hero && canEquip && heroVs?.useful ? nextToWear(tview, hero.c.id, s.slot) : null;
   const nextNote = wearNext ? t.ui.nextWear(t.ui.slotNames[wearNext]) : null;
@@ -62,6 +64,27 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   const doEquip = (c: Char) => {
     closeEquip();
     if (!fusionGate(c.id, (sw) => equipOn(c, sw))) equipOn(c, null);
+  };
+  // «Отложить для X» (features/gear/pool stashOn): вещь в пул героя без отметки «надета»; форма — как после «Следующий»
+  const doStash = (c: Char) => {
+    if (!fusionGate(c.id, (sw) => stashFor(c, sw))) stashFor(c, null);
+  };
+  const stashFor = (c: Char, sw: Switched | null) => {
+    const r = stashOn(sw?.st ?? gear.store, c.id, input);
+    const joined = joinRoster(c.id);
+    gear.set(r.st);
+    const was = input;
+    closeVerdict();
+    dispatch({ type: 'reset' });
+    dropReplace();
+    setFormUndo(null);
+    if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
+    if (touring) return;
+    say({
+      text: t.fit.stashed(c.name, r.slot), note: sw ? sw.note : '', tab: 'eval',
+      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)),
+      after: both(both(joined, sw?.after), () => dispatch({ type: 'load', item: was })),
+    });
   };
   // sw — переход Core Fusion перед этим «Надеть»: его строка — в сообщение, его «Вернуть» — вместе с этим. В режиме
   // героя из «Примерить замену» запись replace уходит в любом случае (features/gear/pool planPut)
@@ -118,5 +141,5 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
       return fate === 'material' ? [t.ui.oldMaterial(old.slot, what)] : fate === 'evaluate' ? [t.ui.oldEvaluate(old.slot, what)] : [];
     });
   };
-  return { onReset, onUndo, doEquip, cardEquip, cardOther, nextNote };
+  return { onReset, onUndo, doEquip, doStash, cardEquip, cardStash, cardOther, nextNote };
 }

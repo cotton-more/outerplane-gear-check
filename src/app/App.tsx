@@ -158,7 +158,7 @@ export function App() {
     closeVerdict: () => setVerdictOpen(false), closeEquip: () => setEquipOpen(false),
     fusionGate: ros.fusionGate, joinRoster: ros.joinRoster, say,
   });
-  const { onReset, doEquip, nextNote } = flow;
+  const { onReset, doEquip, doStash, nextNote } = flow;
   useHotkeys(s, dispatch, layout, onReset);
   const aims = useAims({ idx, t, ctx, gear, view, touring, demo: !!demo, charId: s.charId, tab: s.tab, say, openChar });
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -200,9 +200,9 @@ export function App() {
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
-              other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined}
+              other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={onEquipPick} />}
+            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} todressN={todressN}
@@ -267,7 +267,7 @@ export function App() {
         {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); onb.clearHelpNews(); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={onb.openTours} tips={<TipsHelp tour={tour} news={onb.helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={onEquipPick} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

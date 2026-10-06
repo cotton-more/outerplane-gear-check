@@ -80,6 +80,15 @@ export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opt
   return { st: next, id: piece.id, slot: piece.slot, wasWorn: st.worn?.[charId]?.[piece.slot] ?? null, piece, removed, was };
 }
 
+// «Отложить для Caren» (решение владельца 2026-10-06): вердикт «Оставь» или запас — вещь в пул героя без отметки «надета»,
+// с датой: потом вердикт сравнивает новые вещи с ней и может назвать её материалом. Ничего не убирает. «Вернуть» — undoPut
+export function stashOn(st: GearStore, charId: string, x: ItemInput, at = today()): PutResult {
+  const was = st.pools[charId] ?? [];
+  const made = newPiece(st, x, at);
+  const next = { ...made.st, pools: { ...made.st.pools, [charId]: [...was, made.piece.id] } };
+  return { st: next, id: made.piece.id, slot: made.piece.slot, wasWorn: st.worn?.[charId]?.[made.piece.slot] ?? null, piece: made.piece, removed: [], was };
+}
+
 // «Вернуть» точечно: убранные — обратно (записи, даже если gc их стёр) и на прежние места в пуле (за той вещью, за
 // которой стояли до действия); в слоте — снова прежняя надетая, если там всё ещё r.id (иначе слот за эти секунды
 // поменяли — не трогаем). pool — пул героя, от которого возвращать

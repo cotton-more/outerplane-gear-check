@@ -21,12 +21,13 @@ export interface CharVs {
                               // найден по имени («Кому надеть?»)
   replaces: boolean;          // подпись «Заменить»: в её слоте есть надетая или «Надеть» уберёт вещь её слота (planFor)
   asWorn: boolean;            // кнопка есть только из-за режима героя (wear): под ней «Носит в игре — нажми, запишем как надетое»
+  stash: boolean;             // кнопка «Отложить для X»: вещь ему «Оставь» или запас (решение владельца 2026-10-06)
 }
 
 // replace — запись из «Примерить замену» (TryOn.replace): «Заменить» есть всегда, запись уходит (planPut). wear — режим
 // героя («Надето», решение владельца): «Надеть на X» есть всегда — это ввод надетого в игре. any — герой найден по имени
 // в «Кому надеть?»: «Надеть» запишет вещь на нём, даже без прироста. h — исход, если уже посчитан (вердикт)
-export interface CharVsOpts { replace?: string | null; wear?: boolean; any?: boolean; h?: HeroRes }
+export interface CharVsOpts { replace?: string | null; wear?: boolean; any?: boolean; h?: HeroRes; stash?: boolean }
 
 // строка героя; null — у героя нет билдов или вещь не для его класса
 export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput, opts: CharVsOpts = {}): CharVs | null {
@@ -39,7 +40,7 @@ export function charVs(ctx: Ctx, view: PoolView, charId: string, item: ItemInput
   const wornHere = hp.pieces.some((p) => p.slot === item.slot && hp.wornIds.has(p.id));
   const replaces = useful && (wornHere || !!planFor(ctx, view, charId, item, opts.replace)?.removed.some((p) => p.slot === item.slot));
   const chain = { c: hp.c, b: hp.P.chain, i: 0, ...scoreBuild(ctx, item.grade, hp.c, hp.P.chain, item.subs, itemMains(ctx.idx, item)) };
-  return { c: hp.c, slot: item.slot, h, chain, useful, replaces, asWorn: !own && !!opts.wear };
+  return { c: hp.c, slot: item.slot, h, chain, useful, replaces, asWorn: !own && !!opts.wear, stash: !!opts.stash };
 }
 
 // «Дальше: {слот}» при вводе надетого (режим героя): слот формы у героя не надет — после «Надеть» форма встанет на

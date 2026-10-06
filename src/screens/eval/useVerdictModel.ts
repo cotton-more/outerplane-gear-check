@@ -19,6 +19,7 @@ import { poolView, type PoolView } from '@/features/gear/pool';
 import { charVs, type CharVs } from '@/features/gear/model/poolVs';
 import { verdictOf, type Result } from '@/features/gear/verdict';
 import { resultHead } from '@/features/gear/ui/outcomeText';
+import { pieceLabel } from '@/features/gear/ui/pieceText';
 import { heroNote, heroTitle, type Hero } from '@/features/tryon/tryon';
 
 // Вердикт по исходу ростера. Прежний (raw) даёт то, чего исход не знает: строки «Проверь HP: flat», кому из не ростера
@@ -28,7 +29,7 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
   const flat = new Set([...FLAT].map((k) => t.verdict.flatHint(k)));
   const hints = raw.lines.filter((l) => flat.has(l));
   const armor = isArmor(input.slot);
-  const head = resultHead(t, idx, r, input);
+  const head = resultHead(t, idx, r, input, pieceLabel(t, idx));
   let out: Verdict;
   if (head) out = { ...raw, ...head, lines: [...head.lines, ...hints], sections: [] };
   else if (r.kind === 'maybe') {
@@ -44,7 +45,9 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
       : raw.v === 'junk' ? { ...raw, sections: [] }
       : { ...raw, v: 'junk', title: armor ? t.armor.junkTitle : t.gear.junkRosterTitle, lines: hints, sections: [] };
   }
-  return { ...out, plan: upgradePlan(ctx, input, out) };
+  // похоже, это отложенная раньше вещь — первой строкой (решение владельца 2026-10-06)
+  const same = r.same ? [t.fit.same(r.same.piece.slot, pieceLabel(t, idx)(r.same.piece), r.same.c.name, t.fit.date(r.same.piece.at))] : [];
+  return { ...out, lines: [...same, ...out.lines], plan: upgradePlan(ctx, input, out) };
 }
 
 // тихая строка (вопрос 12): слабая вещь дала бы герою больше, чем есть
@@ -88,11 +91,20 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const verdict = useMemo(() => (res && raw.v !== 'idle' ? fromResult(ctx, raw, res, input) : raw), [ctx, raw, res]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Сейчас на персонажах»: герои, которых назвал вердикт (до трёх); в режиме героя — одна строка героя: «Надеть на X»
   // есть всегда («Надето»: ввод надетого в игре), с «Примерить замену» — «Заменить»
-  const heroVs = useMemo(() => (hero ? charVs(ctx, tview, hero.c.id, input, { replace, wear: true }) : null), [ctx, tview, hero, key, replace]); // eslint-disable-line react-hooks/exhaustive-deps
+  const heroVs = useMemo(() => {
+    if (!hero) return null;
+    const x = charVs(ctx, tview, hero.c.id, input, { replace, wear: true });
+    // «Отложить для X» и в режиме героя: вещь ему «Оставь», и она, похоже, у него ещё не отложена
+    return x && x.h.kind === 'keep' && res?.same?.c.id !== hero.c.id ? { ...x, stash: true } : x;
+  }, [ctx, tview, hero, key, replace, res]); // eslint-disable-line react-hooks/exhaustive-deps
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
     if (hero) return heroVs ? [heroVs] : [];
-    return (res?.named ?? []).map((h) => charVs(ctx, viewOf(h.c.id), h.c.id, input, { h })).filter((x): x is CharVs => !!x);
+    // «Отложить для X» — у «Оставь» и запаса, кроме героя, у которого она, похоже, уже отложена
+    const stash = (c: { id: string }) => res?.same?.c.id !== c.id;
+    const named = (res?.named ?? []).map((h) => charVs(ctx, viewOf(h.c.id), h.c.id, input, { h, stash: h.kind === 'keep' && stash(h.c) }));
+    const reserve = res?.kind === 'material' && res.sub === 'reserve' ? res.reserve.filter(stash).map((c) => charVs(ctx, viewOf(c.id), c.id, input, { stash: true })) : [];
+    return [...named, ...reserve].filter((x): x is CharVs => !!x);
   }, [ctx, viewOf, verdict, hero, heroVs, res]); // eslint-disable-line react-hooks/exhaustive-deps
   // строка под карточкой: в режиме героя — про героя (features/tryon/tryon heroNote), иначе — тихая строка (вопрос 12)
   const offNote = verdict.v === 'idle' ? null : hero ? heroNote(t, ctx, hero.c, input, heroVs) : quietLine(t, res, s.slot);

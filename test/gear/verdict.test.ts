@@ -174,7 +174,9 @@ describe('T5 вердикт новой вещи', () => {
       expect(kindOf(r1)).toBe('material reserve');
       expect(names(r1.reserve)).toEqual(['Caren']);
       const w2 = world(['Caren'], { Caren: [...base, w1] }, { Caren: base.map((p) => p.id) });
-      expect(kindOf(w2.v(weakSpd('weakB')))).toBe('junk');
+      // второй такой же, но другой (уровень RES 2) — «Разобрать»; точная копия — «похоже, это отложенный» (решение 2026-10-06)
+      expect(kindOf(w2.v(mk('weakB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('junk');
+      expect(w2.v(weakSpd('weakC'))!.same?.piece.id).toBe('weakA');
     }
   });
 
@@ -199,7 +201,7 @@ describe('T5 вердикт новой вещи', () => {
     expect(kindOf(r1)).toBe('material reserve');
     expect(names(r1.reserve)).toEqual(['Fran']);
     const w2 = world(['Fran'], { Fran: [bad] }, { Fran: [] });
-    expect(kindOf(w2.v(acc('xBad2', 'CHC')))).toBe('junk');
+    expect(kindOf(w2.v({ ...acc('xBad2', 'CHC'), lit: { CHD: 3, 'ATK%': 2, RES: 2, 'HP%': 2 } }))).toBe('junk');
     const r3 = w2.v(acc('xGood', 'SPD'))!;
     expect(r3.kind).toBe('wear');
     expect(r3.named[0].reserveBt?.id).toBe('xBad');
@@ -354,5 +356,32 @@ describe('C1 вердикт ↔ пул', () => {
     expect(bad).toEqual([]);
     expect(wantKept).toBeGreaterThan(200);
     expect(held).toBeGreaterThan(0);
+  });
+});
+
+// Решение владельца 2026-10-06: «Отложить для X» кладёт вещь в пул ненадетой; та же вещь (сет, слот, грейд, main, все
+// сабстаты тех же уровней, порядок не важен) при новой оценке узнаётся — вердикт без неё и строка «похоже, это она»
+describe('отложенная вещь', () => {
+  const pen = () => mk('st', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, 0, { at: '2026-10-06' });
+
+  it('та же вещь ещё раз — same называет Caren и запись; вердикт как без неё («Оставь» снова)', () => {
+    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    const r = w.v(mk('again', 'helmet', 'Penetration', { SPD: 1, CHD: 1, CHC: 1, 'DEF%': 3 }, 0))!;
+    expect(r.same).toMatchObject({ c: { name: 'Caren' }, piece: { id: 'st' } });
+    expect(kindOf(r)).toBe('keep a');
+  });
+
+  it('уровень одного сабстата другой — другая вещь: годная копия слабее отложенной — Breakthrough для неё', () => {
+    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    const r = w.v(mk('other', 'helmet', 'Penetration', { 'DEF%': 2, CHC: 1, CHD: 1, SPD: 1 }, 0))!;
+    expect(r.same).toBeNull();
+    expect(kindOf(r)).toBe('material now');
+    expect(r.now).toMatchObject([{ piece: { id: 'st' }, worn: false }]);
+  });
+
+  it('надетая запись «той же вещью» не считается: надетое в игре не оценивают', () => {
+    const p = pen();
+    const w = world(['Caren'], { Caren: [p] });
+    expect(w.v(mk('again', 'helmet', 'Penetration', p.lit, 0))!.same).toBeNull();
   });
 });

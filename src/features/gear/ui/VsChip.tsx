@@ -11,6 +11,7 @@ export const gainOf = (x: CharVs): number | null => (x.h.dV >= 0.005 ? x.h.dV : 
 export function chipLabel(t: Texts, x: CharVs): string | null {
   const g = gainOf(x);
   if (x.h.kind === 'keep') return t.fit.chipKeep;
+  if (x.stash) return t.fit.chipReserve;
   if (g !== null) return t.fit.chipGain(t.fit.pts(g));
   return x.h.kind === 'wear' && x.h.rankUp ? t.fit.chipRank(x.slot) : null;
 }
@@ -19,7 +20,7 @@ export function VsChip({ x }: { x: CharVs }) {
   const t = useT();
   const label = chipLabel(t, x);
   if (!label) return null;
-  if (x.h.kind === 'keep') return <span className="vs fill">{label}</span>;
+  if (x.h.kind === 'keep' || x.stash) return <span className="vs fill">{label}</span>;
   return <span className="vs up"><Icon name="trending-up" />{label}</span>;
 }
 

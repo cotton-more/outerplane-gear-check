@@ -13,6 +13,7 @@ import { heroLines } from './outcomeText';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { EquipButton } from './EquipButton';
 import { HeroName } from '@/game/hero/HeroName';
+import { Icon } from '@/game/icons/Img';
 import { usePieceLabel } from './pieceText';
 
 // строки исхода героя (outcomeText heroLines): прирост, половины, вещи пула вместе с ней; у «Оставь» — почему держать
@@ -24,8 +25,10 @@ export function OutcomeLines({ x, item }: { x: CharVs; item: ItemInput }) {
 }
 
 // t4 — на форме нажата «T4»: «· T4» в подписи кнопки; nextNote — «Дальше: Ботинки» под кнопкой (режим героя)
-export function VsSection({ list, item, slot, t4 = false, nextNote = null, onEquip, onOpenChar }: {
-  list: CharVs[]; item: ItemInput; slot: string; t4?: boolean; nextNote?: string | null; onEquip?: (x: CharVs) => void; onOpenChar: (id: string) => void;
+// onStash — «Отложить для X» у «Оставь» и запаса (решение владельца 2026-10-06)
+export function VsSection({ list, item, slot, t4 = false, nextNote = null, onEquip, onStash, onOpenChar }: {
+  list: CharVs[]; item: ItemInput; slot: string; t4?: boolean; nextNote?: string | null; onEquip?: (x: CharVs) => void; onStash?: (x: CharVs) => void;
+  onOpenChar: (id: string) => void;
 }) {
   const t = useT();
   if (!list.length) return null;
@@ -48,6 +51,7 @@ export function VsSection({ list, item, slot, t4 = false, nextNote = null, onEqu
               {x.chain.b.subs.length > 0 && <div className="chains"><Chain m={x.chain} /></div>}
               <OutcomeLines x={x} item={item} />
               {onEquip && x.useful && <EquipButton place="vs-act" x={x} slot={slot} t4={t4} good={x.h.kind === 'wear'} onEquip={onEquip} />}
+              {onStash && x.stash && <button type="button" className="btn vs-stash" onClick={() => onStash(x)}><Icon name="archive" />{t.fit.stash(x.c.name)}</button>}
               {onEquip && x.asWorn && !x.replaces && <p className="muted small vs-wear">{t.ui.equipAsWorn}</p>}
               {onEquip && x.useful && nextNote && <p className="muted small vs-wear vs-next">{nextNote}</p>}
             </li>

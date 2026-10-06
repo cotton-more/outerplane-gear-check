@@ -238,6 +238,17 @@ export const ru = {
     // почему пул держит вещь (список вещей героя)
     why: { worn: 'надета', best: (set: string) => `лучший ${set}`, bestT4: (set: string) => `лучший ${set} на T4`, stats: 'по статам', reserve: 'в запасе' },
     unneeded: 'больше не нужна',
+    // «Отложить для X» (решение владельца 2026-10-06): вещь в пул героя без отметки «надета»
+    stash: (name: string) => `Отложить для ${name}`,
+    stashed: (name: string, slot: string) => `Отложено для ${name}: ${NOM[slot]}.`,
+    chipReserve: 'запас',
+    date: (at: string) => (at ? `${at.slice(8, 10)}.${at.slice(5, 7)}` : ''),
+    // отложенная вещь, которую называет вердикт: как найти её в игре
+    stashedOne: (slot: string, piece: string, subs: string, date: string) =>
+      `Это ${piece} · ${subs}, ${by(slot, 'отложен', 'отложена', 'отложено', 'отложены')}${date ? ' ' + date : ''}.`,
+    // похоже, оценивают ту же отложенную вещь ещё раз
+    same: (slot: string, piece: string, name: string, date: string) =>
+      `Похоже, это ${piece}, ${by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные')} для ${name}${date ? ' ' + date : ''}. Если это ${by(slot, 'он', 'она', 'оно', 'они')} — ничего не делай.`,
   },
 
   // --- интерфейс

@@ -9,7 +9,7 @@ import { dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, und
 import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
-import { planFor, planPut, poolView, putOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
+import { planFor, planPut, poolView, putOn, stashOn, removeFrom, removeUndo, setMark, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
 import type { ItemInput } from '@/game/item/item';
 import { profileOf } from '@/game/build/profile';
 import { poolInfo } from '@/features/gear/pool/info';
@@ -869,5 +869,16 @@ describe('«Надето»: «Надеть» надевает, «Надеть и
       const later = wearFromPool(ctx, { ...r.st, pools: { [CAREN]: [...r.st.pools[CAREN], 'w7'] } }, CAREN, 'w7')!.st;
       expect(undoWearAll(later, CAREN, r).worn).toEqual({ [CAREN]: { helmet: 'w7' } });
     });
+  });
+});
+
+describe('«Отложить для X» (stashOn)', () => {
+  it('новая запись в пуле героя, не надета, с датой; «Вернуть» — как было', () => {
+    const st = v2([], {}, { worn: {} });
+    const r = stashOn(st, CAREN, helmet({ 'DEF%': 2, CHC: 2 }), '2026-10-06');
+    expect(r.st.pools[CAREN]).toEqual(['p1']);
+    expect(r.st.pieces.p1).toMatchObject({ at: '2026-10-06', bt: null, lit: { 'DEF%': 2, CHC: 2 } });
+    expect(isWorn(r.st, CAREN, r.st.pieces.p1)).toBe(false);
+    expect(undoPut(r.st, CAREN, r).pools[CAREN] ?? []).toEqual([]);
   });
 });

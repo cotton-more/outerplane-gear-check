@@ -27,7 +27,7 @@ import { HeroName } from '@/game/hero/HeroName';
 // vs — «Сейчас на персонажах» (features/gear/model/poolVs); onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
 interface Props {
   r: VerdictData; s: FormState; dispatch: Dispatch<FormAction>; onOpenChar: (id: string) => void;
-  vs?: CharVs[]; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void;
+  vs?: CharVs[]; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void; onStash?: (vs: CharVs) => void;
   nextNote?: string | null; // «Дальше: Ботинки» под кнопкой «Надеть» (режим героя, ввод надетого)
   offNote?: string | null; // режим «для героя»: строка про героя (features/tryon/tryon heroNote) — не носит, не нужна, «По статам»
 }
@@ -40,7 +40,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEquipPick, offNote, nextNote }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEquipPick, onStash, offNote, nextNote }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -65,7 +65,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEq
         {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
-      {onEquip && <VsSection list={vs} item={input} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} nextNote={nextNote} onEquip={onEquip} onOpenChar={onOpenChar} />}
+      {onEquip && <VsSection list={vs} item={input} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} nextNote={nextNote} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>

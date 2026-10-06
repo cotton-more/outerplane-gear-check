@@ -19,7 +19,7 @@ import { blocksOf, itemMains as mainLines } from '@/game/item/mains';
 import type { Verdict as VerdictData } from '@/features/eval/verdict/verdict';
 import type { FormAction, FormState } from '@/features/eval/form/formState';
 import { tour, tourItem } from '@/tour/anchors';
-import { Frame, GradeFrame, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
+import { Frame, GradeFrame, Icon, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
 import { Sheet, type Point } from '@/shared/ui/Sheet';
 import { BtChip } from '@/features/eval/form/BtChip';
 import { ItemPicker } from '@/features/eval/form/ItemPicker';
@@ -47,11 +47,12 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих. Кнопка только ради ввода надетого
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: куда встанет форма после неё
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
+  onStash?: (vs: CharVs) => void; // «Отложить для X» под карточкой (у «Оставь» и запаса)
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -144,8 +145,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
             ? <>
               <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!hero} />
               {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
-              {((vs && onEquip) || (other && onEquipOther)) && (
+              {((vs && onEquip) || (other && onEquipOther) || (vs && onStash)) && (
                 <div className="vc-acts">
+                  {vs && onStash && <button type="button" className="btn vc-stash" onClick={() => onStash(vs)}><Icon name="archive" />{t.fit.stash(vs.c.name)}</button>}
                   {vs && onEquip && (
                     <EquipButton place="vc-equip" x={vs} slot={t.ui.slotAcc[s.slot]} t4={!!t4} good={vs.h.kind === 'wear'} onEquip={onEquip} />
                   )}
