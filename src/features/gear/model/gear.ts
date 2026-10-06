@@ -6,7 +6,8 @@
 import type { Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { subAllowed } from '@/game/item/mains';
-import { pinOf } from '@/game/build/profile';
+import { pinOf, pinOptions } from '@/game/build/profile';
+import { comboSig } from '@/game/build/variants';
 import { DROP_LEVEL, MAX_LIT, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
 import { type Bt, type ItemInput } from '@/game/item/item';
 
@@ -202,4 +203,24 @@ export const undoPin = (st: GearStore, charId: string, r: Pick<PinResult, 'was' 
 // данных — не трогаем (его пул лежит, как лежал)
 export function stalePins(idx: Index, st: Pick<GearStore, 'pin'>): Record<string, string> {
   return Object.fromEntries(Object.entries(st.pin ?? {}).filter(([c, key]) => idx.CHAR[c] && !pinOf(idx.CHAR[c], key)));
+}
+
+// Устаревшие закрепления (В5 ревью этапа 10): билда с ключа нет, а тот же набор с той же цепочкой есть в другом билде —
+// закрепление молча переходит на первый такой (порядок outerpedia); нет — снимается (gone — для сообщения). Цепочку
+// пропавшего билда ключ не хранит: если билд пропал целиком, переносим, только когда цепочка у героя одна
+export function fixPins(idx: Index, st: GearStore): { st: GearStore; gone: [string, string][] } {
+  const gone: [string, string][] = [];
+  let next = st;
+  for (const [id, key] of Object.entries(stalePins(idx, st))) {
+    const c = idx.CHAR[id];
+    const sig = key.slice(key.lastIndexOf('#') + 1);
+    const name = key.slice(id.length + 1, key.lastIndexOf('#'));
+    const had = c.builds.find((b) => b.name === name);
+    const chains = new Set(c.builds.map((b) => JSON.stringify(b.subs)));
+    const chain = had ? JSON.stringify(had.subs) : chains.size === 1 ? [...chains][0] : null;
+    const to = chain === null ? undefined : pinOptions(c).find((p) => comboSig(p.combo) === sig && JSON.stringify(p.build.subs) === chain);
+    if (!to) gone.push([id, key]);
+    next = setPin(next, id, to ? to.key : null).st;
+  }
+  return { st: next, gone };
 }

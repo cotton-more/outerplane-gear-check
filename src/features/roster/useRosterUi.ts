@@ -4,6 +4,8 @@
 import { useEffect, useState } from 'react';
 import type { Index } from '@/game/data';
 import { heroName } from '@/game/hero/HeroName';
+import { comboText } from '@/game/build/builds';
+import { pinCombo } from '@/game/build/profile';
 import type { Texts } from '@/i18n';
 import { dropChar, gearedChars, undoDrop, type GearStore } from '@/features/gear/model/gear';
 import { gateOf, normalizeStored, switchFusion, type FusionFix } from '@/features/gear/model/fusion';
@@ -31,13 +33,15 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   // Core Fusion (features/gear/model/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
   const fixesNote = (fixes: FusionFix[]) => fixes.map((f) => t.ui.fusionFixed(charName(f.base), f.kind)).join(' ');
   // после загрузки: нормализация что-то поменяла (features/gear/store/stored — уже записано, Р17) — сказать один раз: кого добавили
-  // в ростер (у них есть вещи, Р16) и что стало с X при Core Fusion X
+  // в ростер (у них есть вещи, Р16), что стало с X при Core Fusion X и чьё закрепление снято
   useEffect(() => {
     const n = takeLoadNote(idx);
     if (!n) return;
     const names = n.added.map(charName).join(', ');
-    const fx = fixesNote(n.fixes);
-    say({ text: names ? t.ui.gearRosterAdded(names) : fx, note: names ? fx : '', tab });
+    // закрепления, чей набор пропал из outerpedia (stored fixPins)
+    const pins = n.pins.map(([id, key]) => t.card.pinGone(charName(id), comboText(idx, pinCombo(key)))).join(' ');
+    const [text, ...rest] = [names ? t.ui.gearRosterAdded(names) : '', fixesNote(n.fixes), pins].filter(Boolean);
+    say({ text, note: rest.join(' '), tab });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // «Вернуть» ростера после перехода, пакетного добавления и импорта — ростер, каким был (тот же порядок)
   const rosterBack = (prev: string[], next: string[]) => (prev.join() === next.join() ? undefined : () => rosterApi.replace(prev));

@@ -108,8 +108,8 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
   }
   return out;
 }
-// закрепление (.x/0085 FORMULA §6) — герой → ключ, только строки; ключ, которого больше нет в данных, снимает stalePins с
-// сообщением
+// закрепление (.x/0085 FORMULA §6) — герой → ключ, только строки; ключ, которого больше нет в данных, переносит или снимает
+// с сообщением разбор хранилища (stored, fixPins)
 const restorePin = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
 

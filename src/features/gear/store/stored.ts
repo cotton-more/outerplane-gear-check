@@ -7,16 +7,21 @@
 // данных иначе стёрла бы то, что понимает новая). Во время обучения не пишем ничего (holdStoredWrites).
 // Хранилище прежней версии (v1, v2) пишем в v3 сразу — так же, один раз (.x/0085 PLAN Д11). Игроку прежней модели (были
 // вещи) — разовое сообщение о переносе (takeModelNote, флаг 'ogc.modelNote').
+// Устаревшие закрепления (билд пропал из outerpedia) переносятся или снимаются здесь же (fixPins, В3 и В5 ревью этапа 10) —
+// только при целом чтении и данных страницы не старше уже виденных ('ogc.dataSeen' — дата коммита outerpedia): у старой
+// закэшированной PWA билда из новых данных нет, а закрепление на него — не устаревшее. Иначе ключ лежит как был (профиль
+// и так считает такого героя «По статам»). Сообщение — вместе с остальными после загрузки (takeLoadNote).
 // Один разбор на одно содержимое хранилища: его читают оба хука.
 import type { Index } from '@/game/data';
 import { changed } from '@/features/gear/model/fusion';
+import { fixPins } from '@/features/gear/model/gear';
 import { loadGear, newerGear, oldModel, readsWhole, type Loaded } from './gearStore';
 import { storage } from '@/shared/storage';
 
 export interface Stored extends Loaded { newer: boolean }
 
 // note — что поменяла нормализация этого разбора, для сообщения после загрузки; забирается один раз (takeLoadNote)
-type Note = Pick<Loaded, 'fixes' | 'added'>;
+type Note = Pick<Loaded, 'fixes' | 'added'> & { pins: [string, string][] };
 // model — прочитано хранилище прежней модели, а сообщения о переносе ещё не было (takeModelNote)
 let last: { key: string; idx: Index; r: Stored; note: Note | null; model: boolean } | null = null;
 let held = false;
@@ -36,11 +41,19 @@ export function readStored(idx: Index): Stored {
   const whole = readsWhole(raw, idx) && !unreadable('gear', raw) && !unreadable('roster', list)
     && (list === null || (Array.isArray(list) && list.length === roster.length));
   const migrated = raw !== null && typeof raw === 'object' && ((raw as { v?: unknown }).v === 1 || (raw as { v?: unknown }).v === 2);
-  if ((changed(r) || migrated) && !r.newer && !held && whole && storage.available()) {
+  const page = idx.D.meta?.commitDate ?? '';
+  const seen = storage.get<unknown>('dataSeen', null);
+  const fresh = !page || typeof seen !== 'string' || page >= seen;
+  if (page && fresh && seen !== page && storage.available()) storage.set('dataSeen', page);
+  const pins = whole && fresh && !r.newer ? fixPins(idx, r.st) : { st: r.st, gone: [] };
+  const pinsMoved = pins.st !== r.st;
+  r.st = pins.st;
+  if ((changed(r) || migrated || pinsMoved) && !r.newer && !held && whole && storage.available()) {
     storage.set('roster', r.roster);
     storage.set('gear', r.st);
   }
-  last = { key: keyNow(), idx, r, note: changed(r) ? { fixes: r.fixes, added: r.added } : null, model: oldModel(raw) && !storage.get('modelNote', false) };
+  const note = changed(r) || pins.gone.length ? { fixes: r.fixes, added: r.added, pins: pins.gone } : null;
+  last = { key: keyNow(), idx, r, note, model: oldModel(raw) && !storage.get('modelNote', false) };
   return r;
 }
 

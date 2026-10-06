@@ -21,9 +21,7 @@ import { fitsData } from '@/features/eval/form/formState';
 import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
 import { replacedX } from '@/features/gear/model/fusion';
-import { setPin, stalePins, type GearStore } from '@/features/gear/model/gear';
-import { pinCombo } from '@/game/build/profile';
-import { comboText } from '@/game/build/builds';
+import type { GearStore } from '@/features/gear/model/gear';
 import { gearBadges } from '@/features/gear/model/poolVs';
 import { poolView } from '@/features/gear/pool';
 import { useGear, type GearApi } from '@/features/gear/store/useGear';
@@ -164,13 +162,6 @@ export function App() {
   });
   const { onReset, doEquip, doStash, nextNote } = flow;
   useHotkeys(s, dispatch, layout, onReset);
-  // закреплённый набор пропал из outerpedia (билд переименовали, PLAN Д9) — закрепление снято, одно сообщение
-  useEffect(() => {
-    const stale = Object.entries(stalePins(idx, gear.store));
-    if (!stale.length || touring || gear.newer) return;
-    gear.set(stale.reduce((st, [id]) => setPin(st, id, null).st, gear.store));
-    say({ text: stale.map(([id, key]) => t.card.pinGone(charName(id), comboText(idx, pinCombo(key)))).join(' '), note: '', tab: s.tab });
-  }, [idx, gear, touring]); // eslint-disable-line react-hooks/exhaustive-deps
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });

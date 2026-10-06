@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { dropChar, EMPTY_GEAR, gc, gearedChars, holdersOf, isWorn, newPiece, setPin, stalePins, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { dropChar, EMPTY_GEAR, fixPins, gc, gearedChars, holdersOf, isWorn, newPiece, setPin, stalePins, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
@@ -707,6 +707,23 @@ describe('закрепление (pin, .x/0085 FORMULA §6)', () => {
     const st = setPin(base(), CAREN, a.key).st;
     expect(poolView(ctx, st).hero(CAREN)!.P.pin?.key).toBe(a.key);
     expect(poolView(ctx, base()).hero(CAREN)!.P.pin).toBeUndefined();
+  });
+
+  it('В5 ревью: билд переименовали, тот же набор с той же цепочкой есть — закрепление молча переходит; нет — снято', () => {
+    const renamed = a.key.replace(a.build.name, a.build.name + ' old');
+    const moved = fixPins(idx, setPin(base(), CAREN, renamed).st);
+    expect([moved.st.pin, moved.gone]).toEqual([{ [CAREN]: a.key }, []]);
+    // набора нет нигде — снято
+    const lost = `${CAREN}/${a.build.name}#999x4`;
+    const r = fixPins(idx, setPin(base(), CAREN, lost).st);
+    expect([r.st.pin, r.gone]).toEqual([undefined, [[CAREN, lost]]]);
+    // у Anarky две цепочки: цепочку пропавшего билда ключ не хранит — снято, а не перенесено наугад
+    const anarky = idx.D.chars.find((c) => c.name === 'Anarky')!;
+    const ak = pinOptions(anarky)[0].key.replace(pinOptions(anarky)[0].build.name, 'gone');
+    expect(fixPins(idx, setPin(base(), anarky.id, ak).st).gone).toEqual([[anarky.id, ak]]);
+    // живое закрепление — тот же объект
+    const ok = setPin(base(), CAREN, a.key).st;
+    expect(fixPins(idx, ok).st).toBe(ok);
   });
 });
 
