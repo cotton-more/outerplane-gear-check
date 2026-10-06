@@ -10,7 +10,7 @@ works in the browser, installs on a phone as an app, works offline. English and 
 <table>
 <tr>
 <td width="50%"><img src="screenshots/en/1-grid.png" alt="Attack Set picked: the stats it needs are highlighted"></td>
-<td width="50%"><img src="screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
+<td width="50%"><img src="screenshots/en/2-verdict.png" alt="Keep verdict: whom to equip it on and how many points it adds"></td>
 </tr>
 <tr>
 <td>Pick the set — the stats it needs light up. 0–1 bright stats on the piece? Dismantle without entering anything.</td>

@@ -19,7 +19,7 @@ are remembered, "To dress" isn't. **Trade** opens [team trade](Trading-gear).
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
 next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on
-outerpedia in a new tab. For a roster hero the first tab is "Worn": what they wear in the game and which build they're dressed for ([Equipment](Equipment#worn-and-the-heros-build)).
+outerpedia in a new tab. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
 has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,
@@ -36,14 +36,13 @@ with "Undo". More — [Equipment](Equipment#core-fusion).
 ## Backup
 
 Everything you mark stays in your browser only — nothing is sent anywhere. To keep it safe or move it to another device
-there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code holds
-the whole roster, each hero's pieces in order, what's worn, picked builds, "Filling" / "Not filling" and "Keep worn
-gear". "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
+there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code
+(**OGC-GEAR4**) holds the whole roster, each hero's pieces in order, what's worn and the hero's pinned set. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
 the same field and tap **"Replace"**: the roster and gear are replaced by the code, and the message's "Undo" brings the
 old ones back. The code may be split into lines — spaces and line breaks don't matter; a cut or damaged code won't load
 ("The code is damaged or cut off — copy all of it").
 
-"Replace" also reads the older codes: gear (`OGC-GEAR2 …`) and roster (comma-separated slugs, e.g.
+"Replace" also reads the older codes: gear (`OGC-GEAR1`, `OGC-GEAR2`, `OGC-GEAR3` — the old model's "Filling", chosen build and "Keep worn gear" marks in them are skipped) and roster (comma-separated slugs, e.g.
 `caren, demiurge-stella`) — heroes with gear stay in the roster. During a tutorial there's no backup: the page shows an
 example.
 
@@ -51,15 +50,15 @@ example.
 
 On the "Worn" tab of a hero with at least one piece marked worn there's **"Share"**. On a phone it opens the system
 share sheet — send the link in a messenger; on a computer the link is copied. Your friend opens it and sees a
-**"Shared · view only"** card: the hero's portrait and name, the build they're dressed for, "Worn · N of 6", set
+**"Shared · view only"** card: the hero's portrait and name, the pinned set, "Worn · N of 6", set
 bonuses and the pieces by slot with Breakthrough and substats. Substats are colored by your friend's settings. Only ✕
 and "outerpedia ↗" are clickable; nothing changes on their side — neither the roster nor the gear nor the open page.
 The link can also go into More → "Enter code". The hero code is after `#` in the address and never reaches the server.
 
 If your friend's data is older: the hero is missing — "This hero isn't in your data — reload the page"; a set or item
-is missing — "not in your data" in that piece's row; a renamed build — the card picks a build itself.
+is missing — "not in your data" in that piece's row; a renamed or removed build — the card shows the hero with no pinned set.
 
-A character's pieces and how builds assemble from them — see [Equipment](Equipment).
+A character's pieces and how the evaluation weighs stats and sets — see [Equipment](Equipment).
 
 ## Item code for your guild
 

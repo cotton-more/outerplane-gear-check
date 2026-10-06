@@ -5,51 +5,34 @@
 The app remembers your characters' pieces — and for a new piece it tells you whether any of them needs it. Nothing is
 sent anywhere: everything stays in your browser.
 
-## Pieces belong to the character, builds assemble themselves
+## Pieces belong to the character, stats and sets are weighed together
 
 Each character has their own **gear**: the pieces you keep for them in the inventory — worn by them, by someone else or
-by no one. Outerpedia builds **assemble themselves from it**: each slot gets the best piece for that build. One Speed
-helmet counts in both Speed and Speed/Immu — it is one piece, not a copy. Different characters' gear is independent: the
-same piece with Caren and with Rin is two records, and editing Caren's leaves Rin's alone.
+by no one. Different characters' gear is independent: the same piece with Caren and with Rin is two records, and
+editing Caren's leaves Rin's alone.
 
-**Set combos.** When a build has several set combos (Anarky "Defense mix": Defense ×2 + Penetration ×2, Swiftness ×2
-or Immunity ×2), each combo is filled as its own variant: "Defense mix · Penetration". The card shows the most complete
-variant, the others are in the chips under the tab, and **"N more ▾"** lists them all with progress and "Filling".
+There is **no build to pick**. The app takes the best of the hero's pieces itself, and stats and sets count together:
 
-**A set from any slots.** The app picks which pieces to use and gives advice. A set is broken only when the overall
-result is still a gain: say, much better gloves of another set against the last piece of Defense ×4. A set with an effect
-bonus (Immunity, Penetration, Swiftness…) is never traded for stats.
+- **Points.** A segment of the first stat in the hero's substat chain is worth 1 point, a segment of later places is
+  worth less (0.8; 0.65; 0.5; 0.4…); a perfect line is 6 points. The chain is the most common one among the hero's
+  outerpedia builds ("By stats"). Main stats give no points; Reforge and Enhance are not forecast — the piece counts
+  as entered.
+- **Sets.** Every set from any of the hero's builds is "on the menu". A half of a set (2 pieces) is worth the hero's best
+  stat bonus for 2 pieces — as if it were points. A set with an effect bonus (Immunity, Penetration…) gives no points of
+  its own, only its half's price, so it is traded for stats only when the stats win.
+- **Layout.** The hero's best layout is the combination of their pieces with the most points plus set value. A
+  weapon or accessory is decided first by rank (recommended > stopgap > not from builds), then by points.
+- **A good piece.** Armor counts for a hero when it passes the old bar (usually 3 useful substats) or is worth 6+
+  points. A weak piece they don't wear never enters the layout.
 
 **Set bonuses follow the pieces' Breakthrough.** ×2 at T4 when at least two pieces of the set are T4, otherwise ×2
 T0–T3; ×4 at T4 when all four are T4, otherwise ×4 T0–T3. Speed, Penetration and Bursting have no ×2 below T4, and their
 ×4 T0–T3 is the whole bonus. Examples: Speed T4 T4 → +13%; Speed T4 T4 T0 → +13%; Speed T4 T4 T0 T0 → +25%; Speed T4 ×4
-→ 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A stat set's bonus converts into that stat's segments and is weighed
-against the pieces; an incidental set (Effectiveness ×2 on a Speed build) counts too. A piece's Breakthrough is the
-**"T4"** button next to the set (on a Legendary weapon or accessory — next to the item, on an Epic one — next to the
-main stat) on the form and on the piece card: on — T4, off — T0–T3. Weapons and accessories have no set — there "T4" is
-only about material: no more copies are needed for its Breakthrough. **"T?"** shows on old records with no
-Breakthrough set: such a piece counts as below T4 (T0–T3), and the set-bonus advice says "mark Breakthrough" — in the
-game it may already be T4.
-
-## "Filling"
-
-Pieces are asked for only by the builds you're **filling**:
-- marked **"Filling"**;
-- started ones — with at least one piece of the build's sets or a listed weapon or accessory (with a listed main), at
-  any Breakthrough (one Speed helmet starts both Speed and Speed/Immu);
-- **"By stats"**, while no build is started.
-
-Whether a build is started depends on what can be assembled from the character's gear, not on the layout shown. If the
-layout gave a Speed piece's slot to a piece of another set for its stats, Speed is still filled: "— Speed ×2 can be made
-from Caren's pieces, but the layout is better without it".
-
-Not filling a build? Turn off "Filling": its pieces stop holding the verdict but don't leave — the character keeps the pieces of every build's best layout and of what's worn. Turn it back on and it's filled by the rules again. "Equip" never
-sets "Filling" — only you flip it.
-
-**"By stats".** Every character with builds has a "By stats" build — the last tab: all the character's pieces by the
-substat chain, no sets, and incidental set bonuses count. While no build is started (Eternal in Effectiveness, Stella in
-Attack and Critical Hit), "By stats" fills itself and holds the stamp. The first piece of a build's set or a listed
-weapon or accessory (with a listed main) starts that build, and the "By stats" line turns quiet: it neither holds nor lowers the stamp. "By stats" doesn't hold pieces: a piece only it needs becomes "no longer needed" — unless it's worn. An off-build piece reaches a character only on purpose — a name search in "Equip on whom?" or rating for a character ("Rate a piece for Caren"): it is recorded as worn and held while worn.
+→ 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A piece's Breakthrough is the **"T4"** button next to the set (on a
+Legendary weapon or accessory — next to the item, on an Epic one — next to the main stat) on the form and on the piece
+card: on — T4, off — T0–T3. Weapons and accessories have no set — there "T4" is only about material: no more copies are
+needed for its Breakthrough. **"T?"** shows on old records with no Breakthrough set: such a piece counts as below T4
+(T0–T3) — in the game it may already be T4.
 
 ## How a piece reaches a character
 
@@ -57,29 +40,25 @@ weapon or accessory (with a listed main) starts that build, and the "By stats" l
 the segments that are lit and "T4": Reforges still ahead don't count.
 
 Only from a verdict: enter a piece as usual, open the details and press **"Equip on…"** — or the button under the card
-on a phone. **"Equip" records the piece as worn in its slot.** A verdict offers it to those whose build it fits. Off-build pieces aren't offered by themselves — search the character by name in "Equip on whom?" or tap "Rate a piece for Caren": there "Equip" is on every piece, even a useless one — that's how you record what the hero wears in the game. "Equip on whom?" has a row
-per roster character saying what happens: "Equip — completes Speed", "Equip — Speed/Immu: set 3 of 4", "Replace helmet —
-the new one is better · Speed", "Replace helmet — completes Speed", "Equip — starts Speed". Name search covers all
-characters, not just the roster — except those replaced by Core Fusion.
+on a phone. **"Equip" records the piece as worn in its slot.** A verdict offers it to the heroes who gain the most
+points. Another hero — search by name in "Equip on whom?" or tap "Rate a piece for Caren": there "Equip" is on every
+piece, even a useless one — that's how you record what the hero wears in the game. "Equip on whom?" has a row per
+roster hero saying what happens: "Equip — +4.2 pts", "Replace helmet — +1.8 pts · turns on Speed ×2". Name search covers
+all characters, not just the roster — except those replaced by Core Fusion.
 
-Under the verdict card: **"Equip on Caren"** or **"Replace Caren's helmet"**, and **"or — Rin · Speed ▸"** when someone
-else needs the piece too. The button is there only when the outcome holds the stamp and the piece goes into the
-assembly — or when the piece starts a new build. The card's third line is the outcome: "▲ set 3 of 4 Caren ·
-Speed/Immu", "▲ +25% Caren · Speed +1" ("+1" — the same in one more build). With "T4" on, the button and the message
-say " · T4".
+Under the verdict card: **"Equip on Caren"** or **"Replace Caren's helmet"**, and **"or — Rin"** when someone else
+gains too. If other pieces of the hero's layout change with it (the new piece completes a set), the verdict names
+them: "Also put on from Caren's pieces: …".
 
-**"Equip" records the piece as worn, reassembles the builds and removes what it pushed out.** The slot's old worn piece leaves only if no build holds it; elsewhere — a piece that sat in the assembly before "Equip" and in none after it, and isn't worn. If the slot has a worn piece (or "Equip" removes the slot's piece), the button says "Replace". Pieces that became unneeded earlier (new data, an edit on the piece card, "Remove") are left alone by "Equip":
-on the card they get a "no longer needs it" line and "Remove from Caren".
+**"Equip" records the piece as worn and removes what the hero no longer needs** — a piece the new layout pushed out
+that nothing holds any more. The message says what went: "Extras removed — Caren no longer needs them." If the slot has
+a worn piece, the button says "Replace". After "Equip" the form clears as on "Next": slot, grade and set stay. "Undo"
+(8 seconds) puts everything back, the piece onto the form too. The app never offers the removed piece to other
+characters: take it off in the game and check it like a new one.
 
-After "Equip" the message says where the piece went ("Counts in Speed, Speed/Immu") and which build it started
-("Started filling Speed"); after "Replace" — what to do with the old one: the same Epic — "The old weapon can feed the
-new one's Breakthrough" (an Epic is no loss, even at T4); the same Legendary — "Old helmet — evaluate it first: it may
-suit another hero": don't feed it to Breakthrough before you check it on the form. The new one at T4 — no material
-line. What was removed —
-there too: "Replaced: Caren's boots — the old Speed and Immunity ones are removed.", "Extras removed — not in any
-build.". After "Equip" the form clears as on "Next": slot, grade and set stay. "Undo" (8 seconds) puts everything back,
-the piece onto the form too. The app never offers the removed piece to other characters: take it off in the game and
-check it like a new one.
+**Set aside.** "Keep it for Caren, don't wear it yet": **"Set aside for Caren"** records the piece for the hero
+without "worn". It sits in their Pool and later pieces are compared with it. Enter the same piece again and the verdict
+says "Looks like the … set aside for Caren — if it is, do nothing."
 
 **Upgraded a worn piece in the game** (Reforge, Breakthrough)? Fix its segments and "T4" on the piece card (see below).
 Or tap "Try a replacement" there, enter the piece as it is now and "Replace": to the app it's a new piece, and the old
@@ -87,127 +66,117 @@ record goes.
 
 ## Rating for a character
 
-A check for one character — across all their builds. It starts from the character card: **"Rate a piece for Caren"**
-next to "Caren's gear · N"; **"Gear up this build"** (no pieces yet), **"Try on"** on an empty slot (the slot and the
-missing set go onto the form), **"Try a replacement"** on a piece, **"Try on pieces"** under "The weakest" — they put the
-slot and set on the form and turn on the same mode.
+A check for one character. It starts from the character card: **"Rate a piece for Caren"** at the bottom of the Pool
+tab, **"Enter"** on an empty slot of the Worn tab (the slot goes onto the form), **"Try a replacement"** on a piece
+(the slot and set go onto the form) — they turn on the same mode.
 
 Above the form — the **"Only for · Caren ✕"** strip. While it's there: the card line, "On your characters now" and
-"Equip" are only about Caren, across all of Caren's builds; the stamp is shared, over the whole roster. "Next" keeps the
-mode; ✕ — everyone again. The title after " — " talks about others and about this character: "completes Speed/Immu on
-Caren", "Caren · Speed/Immu: set 3 of 4", "on Caren — on par: Speed ×2 at T4". The piece's set is in none of Caren's
-builds — the line "Caren doesn't need it: Attack isn't in Caren's builds.". With useful stats — "It fits Caren by stats, not by build." and the "Equip on Caren" button. A piece with no useful stats gets the line "This piece gives Caren nothing: no useful stats." — and the "Equip on Caren" button is still there, with "Wears it in game? Tap to record it as worn" under it. Tap it if Caren wears the piece in the game. If the slot already has a worn piece, it says "Replace Caren's {slot}". When you enter worn pieces, after "Equip" the form moves to the next empty slot; the button says "Next: {slot}".
+"Equip" are only about Caren; the stamp is shared, over the whole roster. "Next" keeps the mode; ✕ — everyone again.
+The title speaks about Caren: "equip on Caren", "better than on Caren", "keep for Caren", "Caren already has as good" or
+"weak for Caren" — and the "Equip on Caren" button stays even on a useless piece: tap it if Caren wears it in the game. If the slot already has a worn piece, it says "Replace Caren's
+{slot}". When you enter worn pieces, after "Equip" the form moves to the next empty slot; the button says
+"Next: {slot}".
 
 **"Try a replacement"** on a piece — the "Replace" button is always there and removes exactly that piece, whether the new
-one is better or worse — for the piece you enter next; "Next" drops the replacement.
+one is better or worse; "Next" drops the replacement.
 
-## On the character card
+## The hero card
 
-At the top — **"Best assembled: Speed · set 4 of 4"** or **"Closest to done: …"**, then "Also assembled: …". The first tab is **"Worn · k/6"** — see the section below; the card opens on it when the hero has something worn, otherwise on the best build's tab; the build tab shows "Speed 6/6": pieces working for the build; "By stats" is the last tab.
-Under the tab — variant chips, "Filling" and the set bonuses with their tier.
+Three tabs: **Worn · N/6**, **Pool · N** and **Builds**. The card opens on "Worn" when the hero has something worn; a
+hero outside the roster or with no pieces opens on "Builds". At the top of the card is the **"Pin a set"** button (see
+below) next to "Trade ▸".
 
-The slots show how the variant is assembled: substats colored by its chain, Breakthrough next to them ("T4",
-"T0–T3"); marks "also in Speed/Immu", "not a build set". **"The weakest"** — which piece to replace first
-and what to look for. **"Missing: Immunity — 1 more, armor, gloves or boots."** — with "Try on".
+### Worn
 
-**"Caren's gear · N"** — a collapsed list of all her pieces by slot ("Helmet · 2", "Armor · 1"…) and where each one
-sits: "in Speed, Speed/Immu", "in every build"; each piece also shows its Breakthrough ("T4", "T0–T3"). A piece she no longer needs (the builds use better ones) gets a line and
-**"Remove from Caren"**. Such a piece isn't removed by itself; only the "Equip" that pushed it out removes it — with a message. A worn piece is marked "worn": while worn, it is "needed".
+What the hero wears in the game now: six slots with substats colored by the hero's points, Breakthrough ("T4",
+"T0–T3") and only the set bonuses that are turned on. An empty slot has **"Enter"**: "Rate" opens for that slot, and
+after "Equip" the form moves to the next empty one. If the hero has at most one piece per slot, "Yes, all worn"
+replaces the entry.
+
+**"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
+worn by 1+ point. The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed
+gloves" with "Equip", and **"Equip all N"**. In the game you do the same yourself — the app only counts.
+
+**"What to look for"** under the slots — sets from the hero's builds where they have 1–3 of 4 pieces, the nearest
+first: "Speed ×4: 2 of 4 — need helmet, boots". Complete sets and sets with 0 of 4 aren't listed. Each set is counted
+from the hero's best layout for it: if two pieces compete for a slot (Swiftness and Immunity boots), the layout decides.
+A pinned hero sees only their set.
+
+**"Share"** sits by the "Worn · N of 6" heading when at least one piece is marked worn. On a phone it opens the system
+share sheet with a link (send it in a messenger); on a computer the link is copied — "Link copied". Your friend opens it
+and sees a **"Shared · view only"** card: the hero, the pinned set, the worn pieces with substats colored by their own
+settings. Nothing on the card is clickable except ✕ and "outerpedia ↗", and nothing changes on their side — neither the
+roster nor the gear. More — [Characters and guild code](Characters-and-guild-code).
+
+### Pool
+
+All the hero's pieces by slot, and on the right the reason each is kept (one, by seniority): **worn**, **best {set} at
+T4**, **best {set}**, **by stats**, **reserve**. The rest is **"no longer needed"**: the layouts use better ones. Such a
+piece isn't removed by itself: dismantle it in the game and press **"Remove from Caren"**. The app never deletes a piece
+silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). "Rate a piece for Caren" sits at the bottom.
 
 **Only roster characters have gear.** "Equip" on a character outside the roster adds the character to the roster;
 importing a gear code and starting the app add everyone who has gear. Unstar Caren while Caren has gear — a window
 "Remove Caren from the roster? Caren's gear (N) is removed from the app.": "Yes, remove" — the message "Caren is out of
-the roster." with "Undo", "Cancel" — nothing.
-"Replace" with a roster code keeps characters who have gear — message "Kept in the roster — they have
-gear: Caren.".
+the roster." with "Undo", "Cancel" — nothing. "Replace" with a roster code keeps characters who have gear.
 
 Tap a piece to fix it after upgrading in the game. The edit is narrow — only what upgrading changes:
-- **segments** — how many are lit on the substat in the game, 1–6, with no yellow/orange split. A tap sets the number,
-  tapping it again lowers it by one. A piece's segments add up to at most 22 on a Legendary and 17 on an Epic;
+- **segments** — how many are lit on the substat in the game, 1–6, with no yellow/orange split. A piece's segments add
+  up to at most 22 on a Legendary and 17 on an Epic;
 - **"T4"** — you did Breakthrough T4; off — T0–T3 (on any piece, Epic weapons and accessories too);
 - **"+ 4th substat"** on an Epic with three — the first Reforge added a fourth;
 - **Transistone** changed a stat — that's not an edit: enter the piece again and "Equip", and "Remove from Caren" this
   one;
 - **"Try a replacement"** — rating for Caren: "Replace" removes exactly this piece;
-- **"Remove from Caren"** — dismantled it, used it for Breakthrough, or she doesn't need it: builds reassemble.
+- **"Remove from Caren"** — dismantled it, used it for Breakthrough, or she doesn't need it.
 
 The card also has the **item code for chat** and "Copy", as in the verdict: show the piece to your guild without
-entering it again. A piece with 5–6 segments has no code.
+entering it again. A piece with 5–6 segments has no code. An edit removes nothing by itself: if another piece is no
+longer needed, it gets "no longer needed". Enhance isn't tracked: pieces are assumed to be +10.
 
-An edit removes nothing by itself: if another piece is no longer needed, it gets a "no longer needs it" line and "Remove
-from Caren".
+### Builds
 
-Enhance isn't tracked: pieces are assumed to be +10.
+The outerpedia builds of the hero — sets with alternatives, weapon and accessory, substat priority, talismans, a note.
+This is a reference, **view only**: nothing is selected here and nothing is assembled.
 
-## Worn and the hero's build
+### Pin a set
 
-The build the hero is dressed for is outlined among the tabs. On another build's tab, under the tabs, there is
-**"Re-dress for DPS ▸"** (for the variant shown). The hero's build is saved (with "Undo") and the **"Re-dress"** screen
-opens: what to wear from your own (one piece or "Wear all"), what you take off, what's missing. In the game you do the same yourself — the app only counts.
-
-After the update, heroes with gear get a notice "Picked builds from your pieces for N heroes — please check". "Check"
-opens "Heroes' builds" with the reasons; "All correct" saves. The rule: only one build → the one marked "Filling" → the
-one with more of the combo's bonuses on → the one with more of the combo's pieces → the first. A build marked "Not
-filling" is never picked.
-
-The card's first tab is **"Worn"**: the line "Build — Speed · set 3 of 4", six slots and the bonuses of the
-worn sets. For a build with several set combos, this line and every other place that names the hero's build show the combo: "Defense mix · Penetration". If one of the hero's pieces is better for their build (by at least 1 point, or it turns on a set, or gives a recommended weapon), the slot shows "Better in own pieces: … · Wear". An
-empty slot has "Enter": "Rate" opens for that slot, and after "Equip" the form moves to the next empty one ("Next:
-{slot}"). If the hero has at most one piece per slot, "Yes, all worn" replaces the entry.
-
-**"Share"** sits by the "Worn · N of 6" heading when at least one piece is marked worn. On a phone it opens the system
-share sheet with a link (send it in a messenger); on a computer the link is copied — "Link copied". Your friend opens it
-and sees a **"Shared · view only"** card: the hero, the build, the worn pieces with substats colored by their own
-settings. Nothing on the card is clickable except ✕ and "outerpedia ↗", and nothing changes on their side — neither the
-roster nor the gear. More — [Characters and guild code](Characters-and-guild-code).
+By default the hero is evaluated "By stats". If you want one specific set, press **"Pin a set"** and choose from the
+sets of their builds (the label says the build and "k of 4" — how many pieces of it the hero already has). The sheet
+warns: armor of other sets won't be taken, even with good stats. To undo — "By stats — not pinned". The pinned set is in
+the blue "Pinned: …" plate where the button was. What's worn from other sets stays until a piece of the set takes the
+slot. A pinned hero's order in a trade is one: the pin ([Trading gear](Trading-gear)). If outerpedia drops the pinned
+set, the app unpins it and tells you.
 
 ## "On your characters now" in the verdict
 
-A row per character (among those the piece suits — in the roster) — their best outcome, with the variant name
-("Defense mix · Swiftness"). The "Equip" / "Replace" button on a row works as under the card: only for an outcome that
-holds the stamp and where the piece goes into the assembly, or when the piece starts a build.
+A row per roster hero who gains from the piece — the biggest gain first, up to three heroes.
 
-- **completes** — the combo gets complete; **set 3 of 4** — the build gets closer to done;
-- **empty slot** — takes a free slot (e.g. "beyond Speed ×2");
-- **▲ +25%** / **▼ −14%** — better or worse than what's in the build (or the character's piece of its set in that slot —
-  then it's not "breaks a set"): two chains side by side, places "+CHD (3rd) · −SPD (4th)", the percentage is useful
-  segments weighted by chain place, both pieces as they are: Reforges still ahead don't count;
-- **on par** — including "on par: Speed ×2 at T4", when the new piece, until it's T4, would switch the bonus off;
-- **breaks a set** — better by segments, but it fits only in a set piece's place and the set falls apart. A line says
-  which piece would fix it — only if the new one would then really get "Equip": "Fits once you find another Immunity
-  piece: gloves or boots" (or "…Penetration piece at T4: helmet or armor") — even the plainest such piece would do. If
-  the character already has such a piece below T4 — "Fits once the Speed gloves reach Breakthrough T4" (or "the
-  Penetration armor and gloves"); an old record with no Breakthrough set ("T?") — "…are marked Breakthrough T4". Several
-  such pieces in the slot
-  and only one helps — its substats in brackets. In a "Pen mix" without T4, four Penetration pieces make Penetration ×4
-  (×4 has a bonus at T0 too, ×2 only at T4), and a piece of the other half doesn't fit — the line names the two
-  Penetration pieces to bring to T4. The other half's pieces don't get a "no longer needs it" line meanwhile. No advice
-  — neither a mark nor the plainest found piece would put it in;
-- **stats only** — the piece is not from the build's sets: better than the slot's piece, but it breaks a set — don't equip.
+- **+N pts** — how much stronger the hero gets with the piece; **turns on / turns off** — a set bonus;
+- **Equip** / **Replace** — as under the card; "Replace" when the slot already has a worn piece;
+- for a weapon or accessory the **passive matters more than substats**: recommended against not recommended is better,
+  stopgap against recommended is worse (rank decides before points).
 
-Below — "More: …" with the character's other builds (tap to expand), "Leaves Speed as is", "Also counts toward … — which
-you don't fill" or "— it starts filling". For weapons and accessories the passive matters more than substats:
-**recommended** against a non-recommended one is better, **stopgap** against a recommended one is worse.
+A piece that is **weak** for a hero but would be better than what's worn is never offered to wear. A quiet line says
+whom it would help most and what to look for: "Caren has no helmet — this one is weak; a good one has ATK and CHC."
+Equipping it anyway is your call ("Rate a piece for Caren" → "Equip").
 
 ### The stamp
 
-- **"Keep" and "Stopgap" → "Dismantle"** (a Legendary weapon or accessory "Keep" becomes "Fodder"; armor — "Dismantle") when all
-  substats are entered and the piece gives nothing to anyone it suits: "on par", "worse". What keeps the stamp: a
-  character with no gear, the piece starts a build for them ("Equip — starts …"), "completes", "set 3 of 4", an empty
-  slot, "better", "breaks a set" and "on par because of T4" when better by segments, a different recommended passive,
-  for weapons and accessories an off-build piece in the slot, Breakthrough material that beats its piece. "Stats only"
-  and the quiet "By stats" line decide nothing either way. "Maybe" is never lowered.
-- **"Dismantle" → "Fodder"** when the same piece (armor — the same set, slot and grade; a Legendary weapon or accessory
-  — the same item; an Epic weapon — any Epic weapon, in the game always a Steel Sword, an Epic accessory — any Steel
-  Necklace, with any main stat) sits below T4 (or "T?") in a build a character is filling: "…worn below T4 — helmet on
-  Caren · Speed" (an old record at T1–T3 — "helmet on Caren · Speed — T2, 2 more to T4"). If a new Epic beats it —
-  **"Keep — better than the helmet on Caren: wear it and feed the old one to it"**; a new Legendary that beats the same
-  worn one, or a new piece already at T4 — "…: wear it": a removed Legendary gets evaluated first, it may suit someone
-  else. An exact copy of the worn one: that one below T4 —
-  "Fodder", at T4 — "Dismantle — already as good". "Maybe" with the same piece worn below T4: the new one beats it —
-  also "Keep — better than the…", otherwise the stamp stays, with a "Material: …" line.
+The stamp is always about **the piece being rated**:
 
-Dismantled a piece in the game? Remove it on the character card and the verdict follows.
+- **Keep** — worth wearing: put it on the named hero or keep it for them ("Set aside"). **Stopgap** — a piece that
+  passed only as a temporary one: Epic armor under the temporary rule, a weapon or accessory without the needed passive.
+- **Fodder** — this piece **is** material: Breakthrough with it now ("Fodder — Breakthrough for Caren's boots") or keep it
+  in reserve for a future strong one. A reserve piece goes to Breakthrough as soon as a good piece of the same set and
+  slot arrives: the verdict says "Feed the weak … from Caren's reserve into this one". A piece already at T4 is never
+  material. A Legendary weapon or accessory that is the wrong main for a hero whose builds recommend it is kept in
+  reserve too.
+- **Maybe** — suits only heroes outside your roster (the line says who).
+- **Dismantle** — nobody needs it: everyone already has as good, or it's weak. Dismantled a piece in the game? Remove
+  it on the character card.
+
+With an empty roster (or "only my characters" off) the verdict is by the bar alone: no "Equip" or "Keep for…" is given.
 
 ## Core Fusion
 
@@ -216,17 +185,18 @@ Core Fusion has its own builds and its own priority chain. The same goes for Sno
 Epsilon.
 
 - **Star Core Fusion Eternal** while Eternal is there (in the roster or with gear) — a window "Mark Core Fusion
-  Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn, and Eternal turns inactive. The same window comes
-  up for "Equip on Core Fusion Eternal" and "Rate a piece for Core Fusion Eternal".
-- **Inactive Eternal** keeps its place in the list, Core Fusion Eternal right after it (whichever of the pair is in the roster), marked "replaced by Core Fusion Eternal": the
-  verdict doesn't consider Eternal, and Eternal isn't in "Equip on whom?" or in rating for a character.
+  Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn, and Eternal turns
+  inactive. The same window comes up for "Equip on Core Fusion Eternal" and "Rate a piece for Core Fusion Eternal".
+- **Inactive Eternal** keeps its place in the list, Core Fusion Eternal right after it (whichever of the pair is in the
+  roster), marked "replaced by Core Fusion Eternal": the verdict doesn't consider Eternal, and Eternal isn't in "Equip
+  on whom?" or in rating for a character.
 - **The star on Eternal** — a window "Switch back to Eternal?": Core Fusion Eternal leaves the roster, Core Fusion
   Eternal's gear moves to Eternal.
-- After "Yes" — a message with "Undo"; "Cancel" changes nothing. "Filling" marks don't carry over: the heroes' builds
+- After "Yes" — a message with "Undo"; "Cancel" changes nothing. The pinned set doesn't move over: the heroes' builds
   differ.
-- **Both at once** — in data saved by an older version, in a gear code or in a roster code: Core
-  Fusion stays, with no window, in one message. Core Fusion Eternal has no gear — Eternal's gear moves to Core Fusion
-  Eternal; it has its own — Eternal's gear is removed.
+- **Both at once** — in data saved by an older version, in a gear code or in a roster code: Core Fusion stays, with no
+  window, in one message. Core Fusion Eternal has no gear — Eternal's gear moves to Core Fusion Eternal; it has its
+  own — Eternal's gear is removed.
 
 ## Who still needs gear
 
@@ -238,18 +208,21 @@ Everyone dressed — "Everyone is fully equipped — 6/6 each."
 
 ## Tutorial
 
-More → "Tutorial" → **"Gear · 1 min"**: five steps on the example of Caren · Speed — the piece card, rating for Caren
-("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode and roster don't change.
+More → "Tutorial" → **"Gear · 1 min"**: five steps on the example of Caren · Speed — the Worn tab, the piece card, rating
+for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode and roster don't change.
 
 ## Backup
 
-More → "Backup": the **OGC-GEAR2** code — all pieces, what's worn, the chosen builds and "Filling" marks. Copy it to keep a
-backup or move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the
-roster), and "Undo" brings the previous gear back. An old OGC-GEAR1 code still reads: pieces go to their characters, and
-builds with pieces become "Filling". During a tutorial there's no code: the page shows an example, not your pieces.
+More → "Backup": the **OGC-GEAR4** code — all pieces, what's worn and each hero's pinned set. Copy it to keep a backup or
+move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
+and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
+The older codes still read — OGC-GEAR1, 2 and 3; marks of the old model ("Filling", the chosen build, "Keep worn
+gear") in them are skipped. During a tutorial there's no code: the page shows an example, not your pieces.
 
-The first launch of the new version moves your saved gear the same way — no piece is lost, except the regular hero's
-gear when Core Fusion has gear of its own (see [Core Fusion](#core-fusion)). Builds that now assemble themselves but
-weren't started before are shown once on the card: "Speed/Immu now assembles itself from Caren's gear". If something
-had to be fixed at launch (roster, Core Fusion), the fixed data is saved right away and the message shows once. If the
-saved data has something this version doesn't understand, nothing is overwritten at launch.
+**The first launch after the update.** Your saved gear moves to the new model: no piece is lost, except the regular
+hero's gear when Core Fusion has gear of its own (see [Core Fusion](#core-fusion)). "Filling", the chosen builds and
+"Keep worn gear" are removed; every hero is evaluated "By stats". You see one message once: "Evaluation updated: no build
+to pick per hero — stats and the sets from outerpedia builds now count together. Need a specific set? Pin it on the hero
+card." — with "Got it". New players and those who already moved don't see it. If something had to be fixed at launch
+(roster, Core Fusion), the fixed data is saved right away. If the saved data has something this version doesn't
+understand, nothing is overwritten at launch.

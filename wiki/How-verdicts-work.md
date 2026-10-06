@@ -26,7 +26,7 @@ game). So:
   So on helmets, boots and HP%-main pieces the HP place of such characters is taken by the main: for Delta
   (`HP › CHC › CHD › SPD`) a helmet's substats are `CHC › CHD › SPD`.
 
-- **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ segments.
+- **Keep:** 3+ useful, or 2 useful if one of them is SPD with 2+ segments, **or the piece is worth 6+ points** for a hero (see "Points" below).
 - **Epic is stricter:** Transistones aren't spent on Epics (outerpedia guide), and an Epic can't be Breakthrough fodder
   for a Legendary, so the key stats — the first two places of the chain — and their roll decide:
   - "Keep" — three useful, if one of them is SPD or a key stat, or 5+ segments on useful ones; or two key stats
@@ -45,6 +45,19 @@ game). So:
   boots), there is no hint: only flat rolls as a substat there.
 - **Sets that aren't in any outerpedia build** (Critical Hit, Resilience, Fortification, Mitigation, Lifesteal,
   Bursting, Pulverization, Weakness) — "rather dismantle", with an explanation.
+
+## Points
+
+With a roster every hero is looked at separately, and the verdict depends not only on the bar above but on **points**:
+
+- **A point** is the unit of value. A segment of the first stat in the hero's chain = 1, later places less: 0.8; 0.65;
+  0.5; 0.4… **Every** place of the chain counts, not only the first four. A perfect line (6 segments of the first stat)
+  = 6 points. The main gives no points.
+- **A good piece** for a hero passes the old bar or is worth 6+ points. Example: a helmet with ATK% 5 and CHC 5 is
+  11.2 points for Rin; it didn't pass the old bar, now it's "Equip".
+- **Sets** are in points too: a half of a set from the hero's builds (2 pieces) is worth the hero's best stat bonus for
+  2 pieces.
+- Then comes the outcome per hero: "Equip", "Keep for…", material, "Maybe", "Dismantle" ([Equipment](Equipment#the-stamp)).
 
 ## Flat ATK/DEF/HP vs %
 

@@ -76,7 +76,7 @@ There is no footer under the page.
 <table>
 <tr>
 <td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/1-grid.png" alt="Attack Set picked: the stats it needs are highlighted"></td>
-<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: whom to equip it on and how many points it adds"></td>
 </tr>
 <tr>
 <td>Pick the set — the stats it needs light up.</td>
