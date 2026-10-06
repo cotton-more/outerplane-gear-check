@@ -11,7 +11,9 @@ import { poolView } from '@/features/gear/pool';
 import type { Subs } from '@/game/item/subs';
 import { comboSig } from '@/game/build/variants';
 import { pinOptions } from '@/game/build/profile';
-import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { pinChoices, redressOf, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { heroPool } from '@/features/gear/verdict';
+import { char as ch, ctx as c2, D as data, mk, prof } from '../gear/statSets';
 import { reasonOf } from '@/features/gear/pool/info';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
@@ -145,5 +147,22 @@ describe('слоты «Надето» и причины в списке веще
     expect(reasonOf(hp.info, worn)).toEqual({ kind: 'worn' });
     expect(reasonOf(hp.info, best)?.kind).toMatch(/best|stats/);
     expect(reasonOf(hp.info, junk)).toBeNull();
+  });
+});
+
+// ревью этапа 10, находка 4: «Переодеть» только по пассивке — rankUp, очки могут упасть (кнопка без «+N»)
+describe('«Переодеть» по рангу оружия', () => {
+  it('рекомендованное оружие на 0 очков вместо надетого не из билдов на 9,65 — rankUp, pts −9,65', () => {
+    const rin = ch('Rin');
+    const listed = prof(rin).chain.weapons[0];
+    const item = data.weapons.find((i) => i.key === listed.key)!;
+    const other = data.weapons.find((i) => i.grade === 'unique' && i.key !== listed.key && !rin.builds.some((b) => b.weapons.some((w) => w.key === i.key))
+      && (!i.classLimits.length || i.classLimits.includes(rin.class)) && i.mains.includes('HP%'))!;
+    const rec = mk('p1', 'weapon', null, { RES: 1, EFF: 1, 'HP%': 1, 'DEF%': 1 }, 4, { itemKey: item.key, main: listed.mains[0] ?? item.mains[0] });
+    const non = mk('p2', 'weapon', null, { CHC: 4, CHD: 3, SPD: 3, 'ATK%': 3 }, 4, { itemKey: other.key, main: 'HP%' });
+    const r = redressOf(heroPool(c2, rin, [rec, non], new Set(['p2']))!, { weapon: non })!;
+    expect(r.rankUp).toBe(true);
+    expect(r.pts).toBeCloseTo(-9.65, 6);
+    expect(r.wear.map((x) => x.piece.id)).toEqual(['p1']);
   });
 });

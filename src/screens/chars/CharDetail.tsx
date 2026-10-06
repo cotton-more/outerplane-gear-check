@@ -179,7 +179,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           )}
           {redress && (
             <button type="button" className="redress" onClick={() => setSheet('redress')}>
-              <Icon name="hanger" /><span>{t.card.redress(t.fit.pts(redress.pts))}</span>▸
+              <Icon name="hanger" /><span>{redress.pts >= 0.005 ? t.card.redress(t.fit.pts(redress.pts)) : t.card.redressRank}</span>▸
             </button>
           )}
           {shownTab === 'worn' && wv && (

@@ -94,7 +94,8 @@ after "Equip" the form moves to the next empty one. If the hero has at most one 
 replaces the entry.
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
-worn by 1+ point. The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed
+worn by 1+ point, turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
+"Re-dress: better passive"). The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed
 gloves" with "Wear", and **"Wear all N"**. In the game you do the same yourself — the app only counts.
 
 **"What to look for"** under the slots — sets from the hero's builds where they have 1–3 of 4 pieces, the nearest

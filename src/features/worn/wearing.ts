@@ -31,8 +31,9 @@ export function tokensOf(ctx: Ctx, c: Char, P: Profile | null, p: Piece | null |
   return Object.keys(p.lit).map((key) => ({ key, lit: p.lit[key], credit: W?.get(key)?.credit ?? 0 }));
 }
 
-// «Переодеть»: вещи лучшей раскладки, которые не надеты (replaces — что сейчас в её слоте), прирост V и половины
-export interface Redress { pts: number; on: PartChange[]; off: PartChange[]; wear: { piece: Piece; replaces: Piece | null }[] }
+// «Переодеть»: вещи лучшей раскладки, которые не надеты (replaces — что сейчас в её слоте), прирост V и половины; rankUp —
+// встаёт рекомендованное оружие или аксессуар (§3 п. 3: ранг раньше очков) — тогда pts бывает и меньше нуля
+export interface Redress { pts: number; rankUp: boolean; on: PartChange[]; off: PartChange[]; wear: { piece: Piece; replaces: Piece | null }[] }
 // «Что искать»: набор, сколько его вещей в лучшей раскладке под него (k из n) и каких слотов не хватает — с сетом части
 // (set null — в наборе из одного сета)
 export interface Need { slot: ArmorSlot; set: string | null }
@@ -77,7 +78,7 @@ export function redressOf(hp: HeroPool, worn: Layout): Redress | null {
   if (!better(vb, vw)) return null;
   const wear = SLOTS.map(({ id }) => ({ piece: best[id], replaces: worn[id] ?? null }))
     .filter((x): x is { piece: Piece; replaces: Piece | null } => !!x.piece && !(x.replaces && samePiece(x.replaces, x.piece)));
-  return wear.length ? { pts: vb.v - vw.v, ...partsDiff(vw, vb), wear } : null;
+  return wear.length ? { pts: vb.v - vw.v, rankUp: vb.rank > vw.rank, ...partsDiff(vw, vb), wear } : null;
 }
 
 // лучшая раскладка брони под набор (как при закреплении: цепочка его билда, броня только его сетов, надетое остаётся):

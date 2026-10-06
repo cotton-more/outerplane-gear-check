@@ -1,6 +1,7 @@
 // Шторка «X: из своих вещей» — «Переодеть» (.x/0085 FORMULA §3 п. 3, макет 6.0 решение 2): прирост в очках, какие
 // половины сетов включатся и выключатся, вещи лучшей раскладки, которых на герое нет, — «вместо …» и «Надеть» у каждой,
-// «Надеть все N». Данные — features/worn/wearing (redressOf); запись и тост с «Вернуть» — у родителя (CharDetail).
+// «Надеть все N». Только по пассивке (ранг) — вместо прироста строка о пассивке и, если очки падают, «слабее на N».
+// Данные — features/worn/wearing (redressOf); запись и тост с «Вернуть» — у родителя (CharDetail).
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
@@ -26,7 +27,9 @@ export function Redress({ c, ctx, P, plan, onClose, onWear, onWearAll }: {
     <Sheet title={t.card.redressTitle(c.name)} onClose={onClose} className="aimsheet">
       <div className="vsheet">
         <div className="rd-gain">
-          <b>{t.fit.chipGain(t.fit.pts(plan.pts))}</b>
+          {plan.pts >= 0.005 && <b>{t.fit.chipGain(t.fit.pts(plan.pts))}</b>}
+          {plan.rankUp && <p>{t.fit.rankUp(c.name)}</p>}
+          {plan.pts <= -0.05 && <p>{t.trade.weaker(-plan.pts)}</p>}
           {parts && <p>{parts}</p>}
         </div>
         <ul className="bgear-list">
