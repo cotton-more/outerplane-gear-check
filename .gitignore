@@ -1,6 +1,6 @@
 # зависимости и локальные сборки (приложение без данных, одиночная страница, вариант для Claude Artifact)
 node_modules/
-build/
+/build/
 outerplane-gear.html
 *.artifact.html
 # старое место кэша иконок (теперь он в ~/Library/Caches/outerplane-gear)

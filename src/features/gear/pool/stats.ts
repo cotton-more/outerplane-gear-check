@@ -5,6 +5,7 @@ import type { ItemInput } from '@/game/item/item';
 import type { Variant } from '@/game/build/variants';
 import { itemValue, wearable } from '@/features/gear/model/vs';
 import { EPS } from './base';
+import { defaultChain } from '@/game/build/profile';
 
 // «По статам»: вариант без связки с цепочкой, которая у большинства билдов персонажа (при равенстве — первого)
 export const STATS = '#stats';
@@ -21,10 +22,7 @@ export function statVariant(c: Char): Variant | null {
   if (!c.builds.length) return null;
   const hit = statMemo.get(c);
   if (hit) return hit;
-  const count = new Map<string, number>();
-  for (const b of c.builds) count.set(JSON.stringify(b.subs), (count.get(JSON.stringify(b.subs)) ?? 0) + 1);
-  const top = Math.max(...count.values());
-  const parent = c.builds.find((b) => count.get(JSON.stringify(b.subs)) === top)!;
+  const parent = defaultChain(c)!;
   const key = `${c.id}/${STATS}`;
   const v: Variant = { key, name: STATS, parent, parentKey: key, b: { ...parent, name: STATS, sets: [[]] }, sig: null };
   statMemo.set(c, v);

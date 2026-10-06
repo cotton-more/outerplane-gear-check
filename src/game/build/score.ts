@@ -62,7 +62,8 @@ export const topTokens = (build: Build, n: number, im: ItemMains = NO_MAINS, use
   return build.subs.filter((_, i) => place[i] < n).flat().map((k) => k.trim()).filter(Boolean);
 };
 
-export function subWeights(ctx: Ctx, build: Build, c: Char, im: ItemMains = NO_MAINS): Map<string, SubWeight> {
+// allPlaces — очки «статов + сетов» (.x/0085 FORMULA §1 п. 2): засчитывается каждое место цепочки, без отсечки после 4-го
+export function subWeights(ctx: Ctx, build: Build, c: Char, im: ItemMains = NO_MAINS, allPlaces = false): Map<string, SubWeight> {
   // «ключ сабстата предмета → вес / ступень / засчитывается (1, ½, 0)» по приоритету билда
   const out = new Map<string, SubWeight>();
   const put = (key: string, w: number, tier: number, credit: number) => {
@@ -77,7 +78,7 @@ export function subWeights(ctx: Ctx, build: Build, c: Char, im: ItemMains = NO_M
   build.subs.forEach((tier, i) => {
     const t = place[i];
     const w = CFG.tierWeights[Math.min(t, CFG.tierWeights.length - 1)];
-    const tc = CFG.tierCredit[t] ?? 0;
+    const tc = allPlaces ? 1 : CFG.tierCredit[t] ?? 0;
     for (const raw of tier) {
       const tok = raw.trim();
       if (takenByMain(tok, im, no)) continue;
@@ -115,6 +116,14 @@ export function scoreBuild(ctx: Ctx, grade: Grade, c: Char, build: Build, subs: 
     return { key: k, ok: !!(w && w.credit), half: !!(w && w.credit > 0 && w.credit < 1), tier: w ? w.tier : null };
   });
   return { ratio: got / max, good, yellow, spd: !!(W.get('SPD') && 'SPD' in subs), parts, im, useless: uselessFor(ctx, c) };
+}
+
+// Временная замена (оружие и аксессуар без нужной пассивки) годится только с хорошим роллом: 3 полезных или 2 с 5+
+// сегментами. «2 полезных» — только для 3 сабстатов (Epic); Legendary с 4 сабстатами нужно 3 полезных. Считаем по
+// грейду, а не по числу отмеченных: иначе недовведённый Legendary проходил бы по правилу Epic
+export function tempOk(grade: Grade, m: Pick<Score, 'good' | 'yellow'>): boolean {
+  const tempNeed = Math.max(CFG.tempGood2, dropSubs(grade) - 1);
+  return m.good != null && (m.good >= CFG.tempGood || (m.good >= tempNeed && m.yellow >= CFG.tempYellow));
 }
 
 // Строка списка «кому подходит»: билд, его оценка и доп. поля ветки (комбо сета, main stat).
