@@ -1,5 +1,5 @@
 // Заказ героя в обмене (.x/0085 FORMULA §7 п. 1): «Заказ: По статам ▾» у героя плана и под плиткой в ромбе — шторка с
-// вариантами: «По статам» и наборы из его билдов (combosOf). Выбор живёт в шторке обмена, как «Не брать»: закрыл обмен —
+// вариантами: «По статам» и наборы из его билдов (combosOf); у закреплённого — один вариант «Закреплено: …» (жёстко, §6). Выбор живёт в шторке обмена, как «Не брать»: закрыл обмен —
 // заказы забыты. Смена — пересчёт; на другой заказ обмен сам не переключается.
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
@@ -27,12 +27,13 @@ export function OrderButton({ name, short, onClick }: { name: string; short?: bo
   );
 }
 
-export function OrderSheet({ c, ctx, order, onClose, onChoose }: {
-  c: Char; ctx: Ctx; order: string; onClose: () => void; onChoose: (order: string) => void;
+export function OrderSheet({ c, ctx, order, pinned = null, onClose, onChoose }: {
+  c: Char; ctx: Ctx; order: string; pinned?: string | null; onClose: () => void; onChoose: (order: string) => void;
 }) {
   const t = useT();
-  const options = [{ key: STATS, name: t.ui.byStats }, ...combosOf(c).map((x) => ({ key: comboSig(x), name: comboText(ctx.idx, x) }))];
-  const now = options.some((o) => o.key === order) ? order : STATS;
+  const options = pinned ? [{ key: order, name: pinned }]
+    : [{ key: STATS, name: t.ui.byStats }, ...combosOf(c).map((x) => ({ key: comboSig(x), name: comboText(ctx.idx, x) }))];
+  const now = pinned ? order : options.some((o) => o.key === order) ? order : STATS;
   return (
     <Sheet title={c.name} onClose={onClose} className="aimsheet">
       <div className="vsheet">

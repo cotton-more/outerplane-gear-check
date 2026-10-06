@@ -1,76 +1,51 @@
-// Экран «Переодеть» («Надето», шаг 7): подвид карточки героя — что надеть из его вещей под выбранный билд (features/worn/wearing
-// redressPlan): какие бонусы включатся и выключатся, «Надень из своих» («Надеть все» и «Надеть» у каждой, оружие и аксессуар
-// тоже), «Снимешь», «Не хватает». Запись и тост с «Вернуть» — у родителя (CharDetail); onWear/onWearAll нет — только показ.
-import type { ReactNode } from 'react';
+// Шторка «X: из своих вещей» — «Переодеть» (.x/0085 FORMULA §3 п. 3, макет 6.0 решение 2): прирост в очках, какие
+// половины сетов включатся и выключатся, вещи лучшей раскладки, которых на герое нет, — «вместо …» и «Надеть» у каждой,
+// «Надеть все N». Данные — features/worn/wearing (redressOf); запись и тост с «Вернуть» — у родителя (CharDetail).
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { type Piece } from '@/features/gear/model/gear';
-import { tokensOf, type RedressPlan } from './wearing';
+import type { Piece } from '@/features/gear/model/gear';
+import type { Profile } from '@/game/build/profile';
+import { tokensOf, type Redress as Plan } from './wearing';
 import { SlotIcon } from '@/game/icons/Img';
-import { PieceName, pieceText } from '@/features/gear/ui/pieceText';
+import { BtLabel, PieceName, pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
-import { variantName } from '@/features/gear/ui/pieceText';
 import { SubToken } from '@/game/item/SubToken';
-import { BtLabel } from '@/features/gear/ui/pieceText';
+import { Sheet } from '@/shared/ui/Sheet';
 
-export function Redress({ c, ctx, plan, onBack, onWear, onWearAll }: {
-  c: Char; ctx: Ctx; plan: RedressPlan; onBack: () => void; onWear?: (id: string) => void; onWearAll?: (ids: string[]) => void;
+export function Redress({ c, ctx, P, plan, onClose, onWear, onWearAll }: {
+  c: Char; ctx: Ctx; P: Profile; plan: Plan; onClose: () => void; onWear?: (id: string) => void; onWearAll?: (ids: string[]) => void;
 }) {
   const t = useT();
-  const build = variantName(t, plan.v);
-  // toWear — вещь, которую надевают: со статами; снимаемая — одной строкой
-  const row = (p: Piece, toWear: boolean, act?: ReactNode) => (
-    <li key={p.id} className="rd-row">
-      <SlotIcon slot={p.slot} />
-      <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-      {act}
-      <span className="bgear-meta rd-m"><BtLabel p={p} /><span>{t.ui.slotNames[p.slot]}</span></span>
-      {toWear && (
-        <span className="bgear-t">
-          {tokensOf(ctx, c, plan.v, p).map((k) => (
-            <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />
-          ))}
-        </span>
-      )}
-    </li>
-  );
+  const { idx } = ctx;
+  // «вместо Speed-перчаток»; оружие и аксессуар — по имени
+  const was = (p: Piece) => t.card.instead(p.setId ? t.card.insteadPiece(setName(idx, p.setId), p.slot) : pieceText(ctx, p));
+  const parts = t.fit.parts(plan.on.map((x) => partText(idx, x)), plan.off.map((x) => partText(idx, x)));
   const ids = plan.wear.map((w) => w.piece.id);
   return (
-    <div className="redress">
-      <div className="rd-top"><button type="button" className="btn" onClick={onBack}>{t.ui.redressBack(c.name)}</button></div>
-      <div className="bgear">
-        <h3 className="rd-title">{t.ui.redressTitle(c.name, build)}</h3>
-        {(plan.on.length > 0 || plan.off.length > 0) && (
-          <div className="rd-chips">
-            {plan.on.map((r) => <span key={'on' + r.set + r.n} className="rchip on">{t.ui.redressOn(partText(ctx.idx, r))}</span>)}
-            {plan.off.map((r) => <span key={'off' + r.set + r.n} className="rchip off">{t.ui.redressOff(partText(ctx.idx, r))}</span>)}
-          </div>
-        )}
-        {plan.wear.length > 0 && (
-          <>
-            <h4>{t.ui.redressWear(plan.wear.length)}</h4>
-            {onWearAll && plan.wear.length > 1 && <button type="button" className="btn primary" onClick={() => onWearAll(ids)}>{t.ui.redressWearAll(plan.wear.length)}</button>}
-            <ul className="bgear-list">
-              {plan.wear.map((w) => row(w.piece, true, onWear && (
-                <button type="button" className="btn small" aria-label={t.ui.wornWearAria(pieceText(ctx, w.piece))} onClick={() => onWear(w.piece.id)}>{t.ui.wornWear}</button>
-              )))}
-            </ul>
-          </>
-        )}
-        {plan.remove.length > 0 && (
-          <>
-            <h4>{t.ui.redressTake(plan.remove.length)}</h4>
-            <ul className="bgear-list">{plan.remove.map((p) => row(p, false))}</ul>
-          </>
-        )}
-        {plan.missing.length > 0 && (
-          <div className="bgear-need">
-            {plan.missing.map((m) => <p key={m.set}>{t.ui.missing(setName(ctx.idx, m.set), m.need, m.slots, m.t4)}</p>)}
-          </div>
-        )}
-        <p className="muted small rd-foot">{t.ui.redressFooter}</p>
+    <Sheet title={t.card.redressTitle(c.name)} onClose={onClose} className="aimsheet">
+      <div className="vsheet">
+        <div className="rd-gain">
+          <b>{t.fit.chipGain(t.fit.pts(plan.pts))}</b>
+          {parts && <p>{parts}</p>}
+        </div>
+        <ul className="bgear-list">
+          {plan.wear.map(({ piece: p, replaces }) => (
+            <li key={p.id} className="rd-row">
+              <SlotIcon slot={p.slot} />
+              <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
+              {onWear
+                ? <button type="button" className="btn small" aria-label={t.ui.wornWearAria(pieceText(ctx, p))} onClick={() => onWear(p.id)}>{t.ui.wornWear}</button>
+                : <BtLabel p={p} />}
+              <span className="bgear-t">
+                {tokensOf(ctx, c, P, p).map((k) => <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />)}
+              </span>
+              {replaces && <span className="rd-was">{was(replaces)}</span>}
+            </li>
+          ))}
+        </ul>
+        {onWearAll && ids.length > 1 && <button type="button" className="btn primary aim-go" onClick={() => onWearAll(ids)}>{t.ui.redressWearAll(ids.length)}</button>}
       </div>
-    </div>
+    </Sheet>
   );
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Вкладка «Надето» в карточке персонажа (шаг 6): порядок вкладок и вкладка по умолчанию, «Ввести» у пустого слота, «Да, всё
-// надето», совет «из своих» и «Надеть» (в совете и в карточке вещи), «надета» в списке вещей. Данные — только из
+// Вкладка «Надето» в карточке персонажа (шаг 6, .x/0085 этап 6): вкладки и вкладка по умолчанию, «Ввести» у пустого слота,
+// «Да, всё надето», «Переодеть» и «Надеть» (в шторке и в карточке вещи), «надета» во вкладке «Пул». Данные — только из
 // test/fixtures, не владельца. Логика — test/worn/wearing.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -72,39 +72,24 @@ describe('вкладка «Надето»: порядок и вкладка по
   it('что-то надето — вкладка «Надето» открывается сама', async () => {
     await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
     expect(selected()).toBe('Worn1/6');
-    expect($('.worn-aim')?.textContent).toContain('Build — ');
   });
 
-  it('ничего не надето — открывается билд героя, как раньше; «Надето 0/6» первая', async () => {
+  // .x/0085 этап 6: вкладки «Надето · Пул · Билды» — карточка открывается на «Надето» всегда
+  it('ничего не надето — тоже «Надето 0/6»', async () => {
     await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }) });
-    expect(tabs()[0]).toBe('Worn0/6');
-    expect(selected()).not.toContain('Worn');
+    expect(tabs()).toEqual(['Worn0/6', 'Pool1', 'Builds']);
+    expect(selected()).toBe('Worn0/6');
   });
 
-  it('героя нет в ростере — вкладки «Надето» нет', async () => {
+  it('героя нет в ростере и вещей нет — открыты «Билды»', async () => {
     await mount({ roster: [] });
-    expect(tabs().some((x) => x?.includes('Worn'))).toBe(false);
+    expect(selected()).toBe('Builds');
   });
 
-  it('пустая вкладка: подсказка и строка билда есть всегда', async () => {
+  it('пустая вкладка: подсказка, строки билда нет', async () => {
     await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }) });
-    await click(byText('.btabs [role="tab"]', 'Worn'));
     expect($('.worn-hint')?.textContent).toBe('Mark what Caren wears in game now.');
-    expect($('.worn-aim')?.textContent).toContain('Build — ');
-    expect($('.cd-dress')).toBeNull(); // на «Надето» «Переодеть» нет
-  });
-});
-
-describe('заголовок сборки над вкладками', () => {
-  // «Лучше всего собран…» / «По статам — ни один билд не начат» — про сборку билдов, а не про надетое
-  it('на вкладке «Надето» его нет, на вкладке билда — есть', async () => {
-    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
-    expect(selected()).toBe('Worn1/6');
-    expect($('.cd-lead')).toBeNull();
-
-    await click($$('.btabs [role="tab"]').find((b) => !b.textContent?.includes('Worn')));
-
-    expect($('.cd-lead')).not.toBeNull();
+    expect($('.worn-aim')).toBeNull();
   });
 });
 
@@ -127,7 +112,6 @@ describe('«Да, всё надето»', () => {
 
   it('по одной вещи на слот: кнопка есть, нажатие надевает всё, тост и «Вернуть»', async () => {
     await mount({ gear: G(six, { [caren.id]: six.map((p) => p.id as string) }) });
-    await click(byText('.btabs [role="tab"]', 'Worn'));
     expect($('.bgear-none p')?.textContent).toBe('Caren has 6 pieces, at most one per slot. Are all of them worn now?');
     await click(byText('.bgear-none button', 'Yes, all worn'));
 
@@ -156,38 +140,45 @@ describe('«Да, всё надето»', () => {
   });
 });
 
-describe('совет «из своих» и «Надеть»', () => {
-  it('лучший шлем в вещах: «Лучше из своих» с ▲, «Надеть» ставит его, тост, «Вернуть» — прежний', async () => {
+describe('«Переодеть» и «Надеть»', () => {
+  it('лучший шлем в вещах: «Re-dress: +N pts», в шторке «Wear» ставит его, тост, «Вернуть» — прежний', async () => {
     await mount({ gear: G([WEAK, BETTER], { [caren.id]: ['p1', 'p2'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
-    const advice = $('.worn-advice')!;
-    expect(advice.textContent).toMatch(/^Better in own pieces: Speed Set ▲ (\+\d+%|×\d+)Wear$/);
-    await click(advice.querySelector('button'));
+    expect($('.redress')?.textContent).toMatch(/^Re-dress: \+[\d.]+ pts▸$/);
+    await click($('.redress'));
+    expect($('.rd-was')?.textContent).toBe('instead of the Speed helmet');
+    await click(byText('.drawer .rd-row button', 'Wear'));
 
     expect(stored().worn[caren.id].helmet).toBe('p2');
     expect($('.gear-toast')?.textContent).toContain('Now worn by Caren: Helmet');
+    expect($('.redress')).toBeNull();
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().worn[caren.id].helmet).toBe('p1');
   });
 
-  it('пустой слот, вещь в пуле есть: «Из своих», без процента', async () => {
-    const gloves = P('g', 'gloves', speed, { CHC: 2, SPD: 2 });
+  it('пустой слот, своя вещь есть: в «Переодеть» — без «instead of»', async () => {
+    const gloves = P('g', 'gloves', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
     await mount({ gear: G([WEAK, BETTER, gloves], { [caren.id]: ['p1', 'p2', 'g'] }, { worn: { [caren.id]: { helmet: 'p2' } } }) });
-    expect($('.worn-advice')?.textContent).toMatch(/^From own pieces: Speed Set/);
+    await click($('.redress'));
+    expect($$('.drawer .rd-row')).toHaveLength(1);
+    expect($('.drawer .rd-was')).toBeNull();
   });
 });
 
-describe('«Надеть» в карточке вещи и «надета» в списке', () => {
+describe('«Надеть» в карточке вещи и «надета» в «Пуле»', () => {
   const pool = () => G([WEAK, BETTER], { [caren.id]: ['p1', 'p2'] }, { worn: { [caren.id]: { helmet: 'p1' } } });
+  const toPool = () => click(byText('.btabs [role="tab"]', 'Pool'));
 
-  it('у надетой вещи в списке — «worn», у ненадетой — где стоит', async () => {
+  it('у надетой вещи в «Пуле» — «worn», у ненадетой — своя причина', async () => {
     await mount({ gear: pool() });
-    const rows = $$('.pool-list li');
-    expect(rows[0].querySelector('.pool-w')?.textContent).toBe('worn');
-    expect(rows[1].querySelector('.pool-w')?.textContent).not.toBe('worn');
+    await toPool();
+    const why = $$('.pool-why').map((w) => w.textContent);
+    expect(why[0]).toBe('worn');
+    expect(why[1]).not.toBe('worn');
   });
 
   it('ненадетая вещь: «Wear» в карточке надевает её, тост, «Вернуть»', async () => {
     await mount({ gear: pool() });
+    await toPool();
     await click($$('.pool-row')[1]);
     await click(byText('.piece-act button', 'Wear'));
 
@@ -199,23 +190,8 @@ describe('«Надеть» в карточке вещи и «надета» в �
 
   it('надетая вещь: кнопки «Wear» в карточке нет', async () => {
     await mount({ gear: pool() });
+    await toPool();
     await click($$('.pool-row')[0]);
     expect(byText('.piece-act button', 'Wear')).toBeUndefined();
-  });
-});
-
-describe('выбранный билд называется именем варианта (Р-1, решение владельца 2026-10-05)', () => {
-  it('у билда с несколькими связками «Надето» говорит связку, а не только имя билда', async () => {
-    const { createIndex } = await import('@/game/data');
-    const { variantsOf } = await import('@/game/build/variants');
-    const idx = createIndex(D);
-    const hero = D.chars.find((c) => variantsOf(idx, c).some((v) => v.sig))!;
-    const v = variantsOf(idx, hero).find((x) => x.sig)!;
-    const helm = P('h', 'helmet', v.b.sets[0][0].set, { CHC: 2, SPD: 2 });
-    await mount({ roster: [hero.id], gear: G([helm], { [hero.id]: ['h'] }, { worn: { [hero.id]: { helmet: 'h' } }, aim: { [hero.id]: v.key } }) },
-      { charId: hero.id });
-
-    expect(v.name).not.toBe(v.parent.name);
-    expect($('.worn-aim')?.textContent).toContain(`Build — ${v.name}`);
   });
 });

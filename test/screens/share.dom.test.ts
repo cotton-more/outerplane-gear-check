@@ -8,6 +8,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { pinOptions } from '@/game/build/profile';
 import { encodeHero } from '@/features/gear/store/heroCode';
 import type { Piece } from '@/features/gear/model/gear';
 import { openMore, startTour } from '../app/more';
@@ -210,9 +211,14 @@ describe('3.3 ссылка и карточка', () => {
     expect(card()?.querySelectorAll('.bgear-row')).toHaveLength(1);
   });
 
-  it('3.6 билд отправителя переименован — «не найден — выбран сам»', async () => {
-    await mount(STD(), codeOf([HELM], caren.id, `${caren.id}/No such build`));
-    expect(card()?.textContent).toContain("The sender's build wasn't found — picked one here.");
+  // .x/0085 этап 6: вместо билда — закреплённый набор (PLAN Д9); набора в данных смотрящего нет — строки нет
+  it('3.6 закреплённый набор отправителя — «Pinned: …»; набора нет в данных — без строки', async () => {
+    const pin = pinOptions(caren)[0];
+    await mount(STD(), codeOf([HELM], caren.id, pin.key));
+    expect(card()?.querySelector('.worn-aim')?.textContent).toBe('Pinned: Speed ×4');
+    await closeCard();
+    await goHash(codeOf([HELM], caren.id, `${caren.id}/No such build#1x4`));
+    expect(card()?.querySelector('.worn-aim')).toBeNull();
   });
 
   it('3.15 ссылка повреждена — «попроси ещё раз», карточки героя нет; новее — «обнови»', async () => {

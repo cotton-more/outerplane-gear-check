@@ -21,6 +21,8 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { TeamPick } from './TeamPick';
 import { TradePlan } from './TradePlan';
 import { OrderSheet, orderName } from './OrderSheet';
+import { pinOf } from '@/game/build/profile';
+import { comboText } from '@/game/build/builds';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { heroName, HeroName } from '@/game/hero/HeroName';
 
@@ -126,7 +128,9 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
     fresh();
   };
   const orderOf = (id: string) => orders[id] ?? STATS;
-  const nameOfOrder = (id: string) => orderName(ctx, idx.CHAR[id], orderOf(id), t.ui.byStats);
+  // закреплённый (FORMULA §7 п. 1) — его закрепление, жёстко: «Закреплено: Speed ×4»
+  const pinnedName = (id: string) => { const p = idx.CHAR[id] ? pinOf(idx.CHAR[id], st.pin?.[id]) : null; return p ? t.card.pinned(comboText(idx, p.combo)) : null; };
+  const nameOfOrder = (id: string) => pinnedName(id) ?? orderName(ctx, idx.CHAR[id], orderOf(id), t.ui.byStats);
   const orderC = orderFor ? idx.CHAR[orderFor] : undefined;
 
   const picker = (exclude: readonly string[], onPick: (id: string) => void, title: string) => (
@@ -183,7 +187,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
         )}
       </div>
       {orderC && (
-        <OrderSheet c={orderC} ctx={ctx} order={orderOf(orderC.id)} onClose={() => setOrderFor(null)}
+        <OrderSheet c={orderC} ctx={ctx} order={orderOf(orderC.id)} pinned={pinnedName(orderC.id)} onClose={() => setOrderFor(null)}
           onChoose={(o) => { setOrders((x) => ({ ...x, [orderC.id]: o })); setStale(false); setOrderFor(null); }} />
       )}
     </Sheet>

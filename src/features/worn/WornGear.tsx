@@ -1,106 +1,94 @@
-// Вкладка «Надето» (шаг 6): что на герое сейчас в игре — билд героя (aimOf; сменить — «Speed ▾» рядом с вкладкой, CharDetail), бонусы надетых сетов и 6 слотов
-// как в «Собрано» (BuildGear). Пустой слот — «Ввести»: режим героя на этот слот, форма — только слот. Совет у слота: вещь
-// раскладки билда из вещей героя лучше надетой («Лучше из своих») или слот пуст («Из своих») — «Надеть» ставит её надетой.
-// Пустая вкладка: «Да, всё надето» — когда в вещах героя не больше одной на слот. Данные — features/worn/wearing (wornView); запись —
-// CharDetail (onWear, onWearAll), у него же тост с «Вернуть».
+// Вкладка «Надето» (.x/0085 макет 6.0, решения 3–4): что на герое сейчас в игре — включённые бонусы надетых сетов, 6 слотов
+// (цвет сабстата — засчитан ли он герою, PLAN Д1), пустой слот — «Ввести» (режим героя на этот слот, форма — только слот),
+// ниже — «Что искать»: наборы из билдов, где у героя 1–3 из 4, и каких слотов не хватает. Пустая вкладка: «Да, всё
+// надето» — когда в вещах героя не больше одной на слот. «Переодеть» — кнопкой над вкладкой (CharDetail). Данные —
+// features/worn/wearing (wornView); запись — CharDetail (onWearAll), у него же тост с «Вернуть».
 import type { ReactNode } from 'react';
 import { SLOTS } from '@/game/data';
 import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { isStats, wearAll } from '@/features/gear/pool';
-import { vsFigure } from '@/features/gear/model/vs';
-import type { WornAdvice, WornView } from './wearing';
+import { comboText } from '@/game/build/builds';
+import { wearAll } from '@/features/gear/pool';
+import type { WornView } from './wearing';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
-import { Rich } from '@/shared/ui/Rich';
-import { tour } from '@/tour/anchors';
-import { PieceName, bonusLinesOf, pieceText } from '@/features/gear/ui/pieceText';
+import { tour, tourItem } from '@/tour/anchors';
+import { BtLabel, PieceName, bonusLinesOf } from '@/features/gear/ui/pieceText';
 import { setName } from '@/game/set/setName';
-import { variantName } from '@/features/gear/ui/pieceText';
 import { SubToken } from '@/game/item/SubToken';
-import { BtLabel } from '@/features/gear/ui/pieceText';
+import { Rich } from '@/shared/ui/Rich';
 
 // строка вещи: нажатие открывает шторку вещи; в карточке показа — не кнопка
-const Row = ({ onClick, children }: { onClick?: () => void; children: ReactNode }) => (onClick
-  ? <button type="button" className="bgear-row" onClick={onClick}>{children}</button>
+const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: SlotId; shown: boolean; children: ReactNode }) => (onClick
+  ? <button type="button" className="bgear-row" onClick={onClick} {...(shown ? {} : tourItem(slot))}>{children}</button>
   : <div className="bgear-row">{children}</div>);
 
-// «▲ +25%», «▲ ×3»; выигрыша нет (пустой слот, вещь лишь включит бонус сета) — ничего
-function deltaText(a: WornAdvice): string {
-  const f = a.delta === null ? null : vsFigure({ delta: a.delta, wornEmpty: false });
-  if (!f || f.kind === 'empty') return '';
-  const body = f.kind === 'times' ? `×${f.n}` : `${f.n >= 0 ? '+' : '−'}${Math.abs(f.n)}%`;
-  return a.up ? `▲ ${body}` : body;
-}
-
-// onEnter — «Ввести» у пустого слота; onWear — надеть вещь пула; onWearAll — «Да, всё надето». Нет onEnter/onWear —
-// обучение и новая версия страницы: слоты показываются, действий нет. share — «Поделиться» у заголовка (ShareButton).
-// shown — карточка показа чужого героя (.x/0060 SPEC 3.4): строки вещей не кнопки, якорей обучения нет, билда в данных
-// смотрящего нет — строки билда нет
-export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWear, onWearAll, share, shown = false }: {
+// onEnter — «Ввести» у пустого слота; onWearAll — «Да, всё надето». Нет их — обучение и новая версия страницы: слоты
+// показываются, действий нет. share — «Поделиться» у заголовка (ShareButton). shown — карточка показа чужого героя
+// (.x/0060 SPEC 3.4): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор
+export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, share, shown = false, pinned }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece?: (id: string) => void;
-  onEnter?: (slot: SlotId) => void; onWear?: (id: string) => void; onWearAll?: () => void; share?: ReactNode; shown?: boolean;
+  onEnter?: (slot: SlotId) => void; onWearAll?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;
 }) {
   const t = useT();
   const { idx } = ctx;
-  const anchor = shown ? {} : tour('wtab');
-  if (gear.newer) return <div className="bgear" {...anchor}><p className="muted small">{t.ui.gearNewer}</p></div>;
-  const v = wv.variant;
-  const build = v ? variantName(t, v) : t.ui.byStats;
-  const aim = wv.set && v && !isStats(v) ? t.ui.wornBuild(build, wv.set.k, wv.set.n) : t.ui.wornBuildPlain(build);
+  if (gear.newer) return <div className="bgear" {...(shown ? {} : tour('wtab'))}><p className="muted small">{t.ui.gearNewer}</p></div>;
   const empty = wv.count === 0;
   const all = empty && !!onWearAll && wearAll(gear.store, c.id) !== null;
-  const lines = [...bonusLinesOf(t, idx, c, wv.bonuses, v?.b.sets[0] ?? []), ...wv.t4.map((p) => t.ui.partT4(setName(idx, p.set), p.k, p.n))];
+  const lines = bonusLinesOf(t, idx, wv.bonuses);
+  const title = <h4>{t.ui.wornTitle(wv.count)}</h4>;
   return (
-    <div className="bgear worn" {...anchor}>
-      {!(shown && !v) && <p className="worn-aim"><Rich text={aim} /></p>}
-      {empty && <p className="worn-hint">{t.ui.wornEmpty(c.name)}</p>}
-      {all && (
-        <div className="bgear-none">
-          <p>{t.ui.wornAllAsk(c.name, wv.pool)}</p>
-          <button type="button" className="btn primary" onClick={onWearAll}>{t.ui.wornAllYes}</button>
+    <>
+      <div className="bgear worn" {...(shown ? {} : tour('wtab'))}>
+        {pinned && <p className="worn-aim">{t.card.pinned(pinned)}</p>}
+        {empty && !shown && <p className="worn-hint">{t.ui.wornEmpty(c.name)}</p>}
+        {all && (
+          <div className="bgear-none">
+            <p>{t.ui.wornAllAsk(c.name, wv.pool)}</p>
+            <button type="button" className="btn primary" onClick={onWearAll}>{t.ui.wornAllYes}</button>
+          </div>
+        )}
+        <div className="worn-h" {...(shown ? {} : tour('bgear'))}>{title}{share}</div>
+        {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}</p>)}</div>}
+        <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
+          {SLOTS.map(({ id: slot }) => {
+            const s = wv.slots.find((x) => x.slot === slot)!;
+            const p = s.piece;
+            return (
+              <li key={slot}>
+                {p ? (
+                  <Row onClick={onOpenPiece && (() => onOpenPiece(p.id))} slot={slot} shown={shown}>
+                    <SlotIcon slot={slot} />
+                    <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
+                    <BtLabel p={p} />
+                    <span className="bgear-t">
+                      {s.tokens.map((k) => <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />)}
+                    </span>
+                  </Row>
+                ) : (
+                  <div className="bgear-empty">
+                    <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
+                    <span className="bgear-act">
+                      {onEnter && <button type="button" className="btn small" onClick={() => onEnter(slot)}>{t.ui.wornEnter}</button>}
+                    </span>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      {!shown && wv.seek.length > 0 && (
+        <div className="seek">
+          <h4>{t.card.seekTitle}</h4>
+          {wv.seek.map((f) => (
+            <p key={f.pin.key} className="seek-row">
+              <Rich text={t.card.seek(`**${comboText(idx, f.pin.combo)}**`, f.k, f.n, f.need.map((x) => ({ slot: x.slot, set: x.set && setName(idx, x.set) })))} />
+            </p>
+          ))}
         </div>
       )}
-      {share ? <div className="worn-h"><h4>{t.ui.wornTitle(wv.count)}</h4>{share}</div> : <h4>{t.ui.wornTitle(wv.count)}</h4>}
-      {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}</p>)}</div>}
-      <ul className="bgear-list">
-        {SLOTS.map(({ id: slot }) => {
-          const s = wv.slots.find((x) => x.slot === slot)!;
-          const p = s.piece;
-          const adv = s.advice && onWear && !all ? s.advice : null;
-          const label = adv ? pieceText(ctx, adv.piece) : '';
-          return (
-            <li key={slot}>
-              {p ? (
-                <Row onClick={onOpenPiece && (() => onOpenPiece(p.id))}>
-                  <SlotIcon slot={slot} />
-                  <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                  <BtLabel p={p} />
-                  <span className="bgear-t">
-                    {s.tokens.map((k) => (
-                      <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />
-                    ))}
-                  </span>
-                </Row>
-              ) : (
-                <div className="bgear-empty">
-                  <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
-                  <span className="bgear-act">
-                    {onEnter && <button type="button" className="btn small" onClick={() => onEnter(slot)}>{t.ui.wornEnter}</button>}
-                  </span>
-                </div>
-              )}
-              {adv && (
-                <p className="worn-advice">
-                  <span>{p ? t.ui.wornBetter(label, deltaText(adv)) : t.ui.wornFrom(label)}</span>
-                  <button type="button" className="btn small" aria-label={t.ui.wornWearAria(label)} onClick={() => onWear!(adv.piece.id)}>{t.ui.wornWear}</button>
-                </p>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    </>
   );
 }

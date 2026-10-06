@@ -34,7 +34,7 @@ export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySe
 
 // половины частей меню, которые включаются и выключаются: «Speed ×2», «Speed ×4»
 export interface PartChange { set: string; n: 2 | 4 }
-function partsDiff(a: LayoutValue, z: LayoutValue): { on: PartChange[]; off: PartChange[] } {
+export function partsDiff(a: LayoutValue, z: LayoutValue): { on: PartChange[]; off: PartChange[] } {
   const halves = (v: LayoutValue) => new Map(v.sets.map((s) => [s.set, s.halves]));
   const ha = halves(a), hz = halves(z);
   const on: PartChange[] = [], off: PartChange[] = [];

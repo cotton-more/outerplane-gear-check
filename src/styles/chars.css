@@ -113,14 +113,7 @@ html:not(.sheet) .cd-top { display: none; }
 .btabs button { border: 1px solid var(--line); background: var(--surface-2); padding: 7px 12px; min-height: 36px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .btabs button[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 /* вкладки растягиваются на всю ширину карточки: ряд заполнен, пустого места справа нет */
-.btabs > button, .bt-split { flex: 1 1 auto; }
-/* «Переодеть в …» под вкладками — у показанного билда, если герой одет не в него */
-.cd-dress { padding: 10px 16px 0; }
-.cd-dress .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
-.cd-dress .ico { width: 17px; height: 17px; flex: none; color: var(--accent); }
-/* билд героя (под что он одет) — акцентной рамкой; у выбранной — кольцом поверх тёмной заливки */
-.btabs button.bt-aim { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.btabs button.bt-aim[aria-selected="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.btabs > button { flex: 1 1 auto; }
 /* кнопка «… ▾» (заказ в обмене, features/trade/ui/OrderSheet): план и ромб обмена */
 .aimb { display: inline-flex; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-height: 30px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--ink); font: 600 12.5px var(--font-body); white-space: nowrap; }
 .aimb-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -204,57 +197,19 @@ html.xs .bgear-t { grid-row: 3; }
 /* окно перехода Core Fusion (FusionAsk): текст и «Да» / «Отмена» */
 .twin { display: grid; gap: 10px; }
 .twin p { margin: 0; font-size: 13.5px; }
-/* «Слабее всех» — что менять первым и «Примерить вещи» */
-.bgear-weak { display: grid; gap: 6px; justify-items: start; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); font-size: 13px; }
-.bgear-weak p { margin: 0; color: var(--ink-2); }
-.bgear-weak .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 /* сколько надето: «6/6» на плитке и на вкладке билда */
 .ctile .gearb { position: absolute; top: 58px; left: 8px; font: 700 9.5px/1 var(--font-mono); padding: 2px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
 .btabs .bt-n { margin-left: 6px; font: 700 10.5px/1 var(--font-mono); opacity: .75; }
-/* GEARPOOL: заголовок карточки «Лучше всего собран», подсказка после переноса */
-.cd-lead { margin: 4px 16px 0; display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--keep-soft); font-size: 13px; }
-.cd-rate { margin: 8px 16px 0; }
-.cd-rate .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
-.cd-note { margin: 8px 16px 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; }
-.cd-note span { flex: 1; min-width: 0; }
-/* варианты связок: чипы и шторка «ещё N» */
-.vchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 16px 0; }
-.vchip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 3px 10px; border: 1px solid var(--line-2); border-radius: 999px; background: transparent; color: var(--ink-2); font-weight: 600; font-size: 12.5px; line-height: 1.2; max-width: 100%; }
-.vchip[aria-pressed="true"] { border-color: var(--ink-2); background: var(--surface-3); color: var(--ink); }
-.vchip .n, .vrow .n { font: 700 11px/1 var(--font-mono); color: var(--ink-3); }
 .vsheet { display: grid; gap: 10px; }
 .vsheet p { margin: 0; }
-.vlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.vlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
-.vlist li > .muted { grid-column: 1 / -1; }
-.vrow { border: 0; background: none; padding: 0; text-align: left; color: var(--ink); font: inherit; min-width: 0; }
-.vrow[aria-pressed="true"] b { text-decoration: underline; }
-/* «Собираю» */
-.want-row { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.want-btn { min-height: 32px; padding: 4px 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-weight: 600; font-size: 12.5px; line-height: 1.2; }
-.want-btn[aria-pressed="true"] { background: var(--keep-soft); border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
-.want-btn[aria-pressed="true"]::before { content: '✓ '; }
 .bgear-set { display: grid; gap: 2px; }
 .bgear-set p { margin: 0; }
-.bgear-mark { grid-column: 2 / 4; font-size: 11.5px; color: var(--accent); }
-.bgear-need { display: grid; gap: 6px; justify-items: start; padding: 8px 10px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); font-size: 13px; }
-.bgear-need p { margin: 0; color: var(--ink-2); }
-.bgear-need .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
-/* «Вещи Caren · N» */
-.pool { margin: 12px 16px 16px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); container-type: inline-size; }
-.pool summary { padding: 10px 12px; font-weight: 700; font-size: 13px; cursor: pointer; }
-/* «Оценить вещь для Caren» — справа от заголовка; где рядом с ним не помещается (280–360px), — своей строкой над ним */
-.pool-rate { float: right; margin: 5px 6px 0 8px; min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
-@container (max-width: 380px) {
-  .pool-rate { float: none; display: block; margin: 8px 8px 0; }
-}
-/* группы по слотам: «Шлем · 2» */
-.pool-g { padding: 0 8px 8px; }
-.pool-gh { margin: 2px 4px 4px; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
-.pool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.pool-row { width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 2px 8px; align-items: center; padding: 6px 8px; border: 0; border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
-.pool-row .ico, .pool-row img, .pool-row .noimg { width: 22px; height: 22px; }
-.pool-w { grid-column: 2; font-size: 12px; color: var(--ink-3); }
+/* вкладка «Пул»: строка вещи, справа — почему держится; внизу — «Оценить вещь для Caren» */
+.pool { padding: 14px 16px 0; display: grid; gap: 14px; }
+.pool-rate { width: 100%; min-height: 44px; margin-bottom: 20px; }
+.pool-why { font-size: 12px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.pool-why.worn { color: var(--keep); }
+.pool .unused .pool-why { color: var(--junk); }
 .pool-unused { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); font-size: 12.5px; }
 .pool-unused .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 .twin-act .btn { display: grid; gap: 2px; text-align: left; justify-items: start; }
@@ -264,9 +219,6 @@ html.xs .bgear-t { grid-row: 3; }
 .worn-aim { margin: 0; font-size: 13px; color: var(--ink-2); }
 .worn-aim b { color: var(--ink); }
 .worn-hint { margin: 0; font-size: 13px; color: var(--ink-2); }
-.worn-advice { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 7px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; color: var(--ink); }
-.worn-advice > span { min-width: 0; flex: 1 1 160px; }
-.worn-advice .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 /* «Поделиться» у заголовка «Надето · N из 6» (.x/0060-share-code): нет системного «Поделиться» и буфера — ссылка строкой */
 .worn-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
 .worn-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; min-width: 0; }
@@ -284,29 +236,35 @@ html.xs .bgear-t { grid-row: 3; }
 .arow[aria-checked="true"]::before { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 38%, transparent 42%); }
 .arow-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
 .arow-h b { min-width: 0; font-size: 14px; }
-.arow-c { display: flex; flex-wrap: wrap; gap: 4px; }
-.achip, .rchip { display: inline-block; padding: 2px 8px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
-.achip.now, .rchip.on { background: var(--keep-soft); border-color: color-mix(in srgb, var(--keep) 50%, transparent); color: var(--keep); }
-.achip.can { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }
-.rchip { font-size: 12.5px; padding: 4px 10px; white-space: normal; }
-.rchip.off { background: var(--junk-soft); border-color: color-mix(in srgb, var(--junk) 50%, transparent); color: var(--junk); }
 .arow-l { font-size: 12.5px; color: var(--ink-2); }
 .aim-go { position: sticky; bottom: 0; width: 100%; box-shadow: 0 0 0 6px var(--surface), 0 14px 0 0 var(--surface); } /* плотная подложка: строки под кнопкой не просвечивают */
-.rd-top { position: sticky; top: 0; z-index: 2; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
-.rd-title { margin: 4px 0 0; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
-.rd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .rd-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .rd-row img, .rd-row .noimg, .rd-row .ico { width: 22px; height: 22px; object-fit: contain; color: var(--ink-2); }
 .rd-row .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 .rd-row .bgear-n { align-items: flex-start; white-space: normal; } /* узко: имя сета переносится, а не обрезается */
 .rd-row .bgear-n .pn { overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
-.rd-row .rd-m { grid-column: 2 / 4; grid-row: 2; font: 600 11px var(--font-mono); color: var(--ink-3); }
-.rd-row .bgear-t { grid-column: 2 / 4; grid-row: 3; }
-.rd-foot { margin: 0; padding-bottom: 16px; }
-.tlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.tlist li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
-.tlist img.face, .tlist .noimg.face { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
-.tl-t { min-width: 0; display: grid; gap: 1px; font-size: 14px; }
-.tl-t b { overflow-wrap: anywhere; }
-.tl-n { font: 700 11px/1 var(--font-mono); color: var(--ink-3); }
-.tlist .btn { min-height: 34px; padding: 4px 12px; }
+html .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 2; } /* и на узком (html.xs) — под именем, строка «вместо …» ниже */
+/* карточка героя (.x/0085 макет 6.0): «К обмену ▸» и закрепление под шапкой, «Переодеть», «Что искать», «Билды» */
+.cd-acts { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 0 16px; }
+.cd-acts .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.pinb { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.pinb .ico, .pinned .ico { width: 16px; height: 16px; flex: none; }
+.pinned { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 36px; padding: 6px 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: var(--radius-s); background: var(--accent-soft); color: var(--accent); font: 600 12.5px var(--font-body); text-align: left; }
+.pinned span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.redress { display: flex; align-items: center; gap: 8px; width: calc(100% - 32px); margin: 12px 16px 0; min-height: 44px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: var(--radius-s); background: var(--accent-soft); color: var(--accent); font: 700 14px var(--font-body); text-align: left; }
+.redress .ico { width: 18px; height: 18px; flex: none; }
+.redress span { flex: 1; min-width: 0; }
+.seek { padding: 18px 16px 20px; display: grid; gap: 8px; }
+.seek h4 { margin: 0; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.seek-row { margin: 0; padding: 8px 10px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); font-size: 13px; line-height: 1.35; color: var(--ink-2); }
+.seek-row b { color: var(--ink); font-weight: 600; }
+.bsel { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 16px 0; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+.bsel button { flex: 1 1 auto; min-height: 36px; padding: 6px 10px; border: 0; border-radius: 6px; background: none; font: 600 13px var(--font-body); color: var(--ink-2); text-align: center; }
+.bsel button[aria-pressed="true"] { background: var(--surface-3); color: var(--ink); }
+/* шторки «Переодеть» и «Набор для X» */
+.rd-gain { display: grid; gap: 2px; }
+.rd-gain b { font: 700 20px/1.2 var(--font-display); color: var(--keep); }
+.rd-gain p { margin: 0; font-size: 13px; color: var(--ink-2); }
+.rd-was { grid-column: 2 / 4; grid-row: 3; font-size: 12.5px; color: var(--ink-3); }
+.pin-k { font: 700 12px/1.3 var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.pin-warn { padding: 10px 12px; border-radius: var(--radius-s); background: var(--temp-soft); color: var(--temp); font-size: 13px; line-height: 1.4; }

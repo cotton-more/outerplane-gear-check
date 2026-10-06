@@ -1,19 +1,16 @@
-// «Показать героя» (.x/0060-share-code SPEC 3.2): код героя туда и обратно, билд по имени, длина, целостность.
+// «Показать героя» (.x/0060-share-code SPEC 3.2): код героя туда и обратно, закреплённый набор по отпечатку (.x/0085 этап 6),
+// длина, целостность.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset, SlotId } from '@/game/data/types';
-import { makeCtx } from '@/game/context';
-import { variantsOf } from '@/game/build/variants';
+import { pinOptions } from '@/game/build/profile';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { poolView } from '@/features/gear/pool';
 import { decodeHero, encodeHero, heroCodeIn, type HeroShare } from '@/features/gear/store/heroCode';
-import { aimOf } from '@/features/worn/aim';
 import { shareCodeOf, shownStore } from '@/features/worn/share';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const char = (name: string) => D.chars.find((c) => c.name === name)!;
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const [caren, anarky, cfEternal] = ['Caren', 'Anarky', 'Core Fusion Eternal'].map(char);
@@ -25,24 +22,24 @@ const SIX = (): Piece[] => [
   P('p2', 'accessory', { itemKey: '1798:mage', main: 'PEN%', lit: { SPD: 6, CHC: 5, CHD: 4, 'ATK%': 3 }, yellow: { SPD: 4, CHC: 4, CHD: 4, 'ATK%': 3 }, bt: 0 }),
   ...(['helmet', 'armor', 'gloves', 'shoes'] as const).map((s, i) => P('p' + (3 + i), s, { setId: set('Speed'), lit: { 'DEF%': 2, CHC: 3, CHD: 1, SPD: i + 1 }, yellow: { 'DEF%': 2, CHC: 3, CHD: 1, SPD: i + 1 }, bt: i % 2 ? 4 : null })),
 ];
-const wearing = (c: { id: string }, pieces: Piece[], aim?: string): GearStore => ({
+const wearing = (c: { id: string }, pieces: Piece[]): GearStore => ({
   v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools: { [c.id]: pieces.map((p) => p.id) },
-  worn: { [c.id]: Object.fromEntries(pieces.map((p) => [p.slot, p.id])) }, ...(aim ? { aim: { [c.id]: aim } } : {}),
+  worn: { [c.id]: Object.fromEntries(pieces.map((p) => [p.slot, p.id])) },
 });
-const codeOf = (c: { id: string }, st: GearStore) => shareCodeOf(idx.CHAR[c.id], st, poolView(ctx, st).of(c.id)!)!;
+const codeOf = (c: { id: string }, st: GearStore, pin: string | null = null) => shareCodeOf(idx.CHAR[c.id], st, Object.values(st.pieces), pin)!;
 const back = (code: string) => decodeHero(code) as HeroShare;
 const body = ({ id: _i, at: _a, ...p }: Piece) => p;
 
 describe('3.2 код героя', () => {
-  it('3.3 шесть надетых всех видов (Epic оружие на T4, Legendary аксессуар с классом), билд выбран явно — всё совпадает', () => {
-    const st = wearing(caren, SIX(), `${caren.id}/Pen`);
-
-    const s = back(codeOf(caren, st));
+  it('3.3 шесть надетых всех видов (Epic оружие на T4, Legendary аксессуар с классом), набор закреплён — всё совпадает', () => {
+    const pin = pinOptions(caren)[1];
+    const s = back(codeOf(caren, wearing(caren, SIX()), pin.key));
     const shown = shownStore(idx, s);
 
     expect(s.heroId).toBe(caren.id);
     expect(Object.fromEntries(Object.entries(s.slots).map(([k, p]) => [k, p]))).toEqual(Object.fromEntries(SIX().map((p) => [p.slot, body(p)])));
-    expect([shown.st.aim, shown.lost]).toEqual([{ [caren.id]: `${caren.id}/Pen` }, false]);
+    expect(shown.pin).toEqual({ [caren.id]: pin.key });
+    expect(shown.worn?.[caren.id]).toBeTruthy();
   });
 
   it('3.4 надето 4 из 6 — два слота пустые', () => {
@@ -50,33 +47,24 @@ describe('3.2 код героя', () => {
     expect(Object.keys(s.slots).sort()).toEqual(['armor', 'gloves', 'helmet', 'shoes']);
   });
 
-  it('3.5 билд не выбран — в коде тот, что «Надето» показывает по правилу; вариант связки — тот же', () => {
-    const st = wearing(caren, SIX());
-    const ruled = aimOf(caren, st, poolView(ctx, st).of(caren.id)!).key;
-    expect(shownStore(idx, back(codeOf(caren, st))).st.aim).toEqual({ [caren.id]: ruled });
-
-    const combo = variantsOf(idx, anarky).filter((v) => v.sig)[1];
-    const a = wearing(anarky, SIX(), combo.key);
-    expect(shownStore(idx, back(codeOf(anarky, a))).st.aim).toEqual({ [anarky.id]: combo.key });
+  it('3.5 не закреплён — в коде «По статам», карточка без набора; вариант связки — тот же набор', () => {
+    expect(shownStore(idx, back(codeOf(caren, wearing(caren, SIX())))).pin).toBeUndefined();
+    const combo = pinOptions(anarky)[2];
+    expect(shownStore(idx, back(codeOf(anarky, wearing(anarky, SIX()), combo.key))).pin).toEqual({ [anarky.id]: combo.key });
   });
 
-  it('«По статам» — тот же', () => {
-    const st = wearing(caren, SIX(), `${caren.id}/#stats`);
-    expect(shownStore(idx, back(codeOf(caren, st))).st.aim).toEqual({ [caren.id]: `${caren.id}/#stats` });
-  });
-
-  it('3.6 билды героя переставлены — билд тот же; переименован — выбран правилом и «не найден»', () => {
-    const code = codeOf(caren, wearing(caren, SIX(), `${caren.id}/Def`));
+  it('3.6 билды героя переставлены — набор тот же; билд переименован — без набора', () => {
+    const pin = pinOptions(caren).find((o) => o.build.name === 'Def')!;
+    const code = codeOf(caren, wearing(caren, SIX()), pin.key);
     const swapped: Dataset = { ...D, chars: D.chars.map((c) => (c.id === caren.id ? { ...c, builds: [...c.builds].reverse() } : c)) };
     const renamed: Dataset = { ...D, chars: D.chars.map((c) => (c.id === caren.id ? { ...c, builds: c.builds.map((b) => (b.name === 'Def' ? { ...b, name: 'Defense' } : b)) } : c)) };
 
-    expect(shownStore(createIndex(swapped), back(code))).toMatchObject({ st: { aim: { [caren.id]: `${caren.id}/Def` } }, lost: false });
-    const r = shownStore(createIndex(renamed), back(code));
-    expect([r.st.aim, r.lost]).toEqual([undefined, true]);
+    expect(shownStore(createIndex(swapped), back(code)).pin).toEqual({ [caren.id]: pin.key });
+    expect(shownStore(createIndex(renamed), back(code)).pin).toBeUndefined();
   });
 
   it('3.7 шесть вещей и самое длинное имя билда — после # не больше 64 знаков; Core Fusion — тоже', () => {
-    const longest = D.chars.flatMap((c) => variantsOf(idx, c).map((v) => ({ c, v }))).sort((a, z) => z.v.key.length - a.v.key.length)[0];
+    const longest = D.chars.flatMap((c) => pinOptions(c).map((v) => ({ c, v }))).sort((a, z) => z.v.key.length - a.v.key.length)[0];
     const code = encodeHero(longest.c.id, Object.fromEntries(SIX().map((p) => [p.slot, p])), longest.v.key)!;
     const cf = encodeHero(cfEternal.id, Object.fromEntries(SIX().map((p) => [p.slot, p])), `${cfEternal.id}/${cfEternal.builds[0].name}`)!;
     expect(code.length).toBeLessThanOrEqual(64);
@@ -85,7 +73,7 @@ describe('3.2 код героя', () => {
   });
 
   it('ничего не надето — кода нет', () => {
-    expect(shareCodeOf(caren, { ...wearing(caren, SIX()), worn: {} }, poolView(ctx, wearing(caren, SIX())).of(caren.id)!)).toBeNull();
+    expect(shareCodeOf(caren, { ...wearing(caren, SIX()), worn: {} }, SIX(), null)).toBeNull();
   });
 
   describe('3.15 целостность', () => {

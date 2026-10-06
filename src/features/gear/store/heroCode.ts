@@ -1,11 +1,12 @@
 // Код героя для показа по ссылке (.x/0060-share-code SPEC 3.2): «OGH» и base62 с CRC-32 (shared/bits). Ссылка — адрес
 // сайта и код после «#»: всё после «#» браузер на сервер не шлёт. В коде — номер формата, герой, по слоту — надетая
-// вещь (запись SPEC 1, без даты) или «пусто», и билд, который показывает «Надето». Билд — отпечатком имени и подписи
-// связки (24 бита): узнаётся, даже если outerpedia переставила билды, и код не растёт от длины имени (≤ 64 знаков).
+// вещь (запись SPEC 1, без даты) или «пусто», и закреплённый набор (.x/0085 PLAN Д9; «По статам» — не закреплён).
+// Набор — отпечатком имени билда и подписи (24 бита): узнаётся, даже если outerpedia переставила билды, и код не растёт
+// от длины имени (≤ 64 знаков). Коды до закрепления несли отпечаток выбранного билда — он ни с одним набором не
+// совпадает, карточка показывается без набора.
 import { SLOTS, type Index } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
-import { variantsOf } from '@/game/build/variants';
-import { STATS } from '@/features/gear/pool';
+import { pinOptions } from '@/game/build/profile';
 import { BitReader, BitWriter, seal, unseal } from '@/shared/bits';
 import type { Piece } from '@/features/gear/model/gear';
 import { readBody, writeBody, type PieceBody } from './pieceCode';
@@ -36,8 +37,8 @@ const tail = (key: string) => key.slice(key.indexOf('/') + 1);
 export type HeroBuild = { kind: 'stats' } | { kind: 'named'; hash: number } | { kind: 'none' };
 export interface HeroShare { heroId: string; slots: Partial<Record<SlotId, PieceBody>>; build: HeroBuild }
 
-// null — героя таким номером не записать (id не число)
-export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>, aimKey: string | null): string | null {
+// pin — ключ закрепления (profile pinKey), null — «По статам». null — героя таким номером не записать (id не число)
+export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>, pin: string | null): string | null {
   if (!/^[1-9]\d{0,14}$/.test(heroId)) return null;
   const n = Number(heroId);
   const base = BASES.findIndex((b, i) => n >= b && (i === BASES.length - 1 || n - b < 700000));
@@ -47,10 +48,8 @@ export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>,
     w.put(p ? 1 : 0, 1);
     if (p) writeBody(w, p);
   }
-  const t = aimKey === null ? null : tail(aimKey);
-  if (t === null) w.put(0, 2);
-  else if (t === STATS) w.put(1, 2);
-  else w.put(2, 2).put(hashOf(t), HASH_BITS);
+  if (pin === null) w.put(1, 2);
+  else w.put(2, 2).put(hashOf(tail(pin)), HASH_BITS);
   return HERO_PREFIX + seal(w.bits);
 }
 
@@ -77,10 +76,9 @@ export function decodeHero(code: string): HeroShare | 'newer' | 'broken' {
   }
 }
 
-// ключ варианта героя по отпечатку; null — такого билда в этих данных нет (переименовали, убрали) или не было
-export function aimKeyOf(idx: Index, heroId: string, build: HeroBuild): string | null {
+// ключ закрепления по отпечатку; null — не закреплён или такого набора в этих данных нет (переименовали, убрали)
+export function pinKeyOf(idx: Index, heroId: string, build: HeroBuild): string | null {
   const c = idx.CHAR[heroId];
-  if (!c || build.kind === 'none') return null;
-  if (build.kind === 'stats') return `${heroId}/${STATS}`;
-  return variantsOf(idx, c).find((v) => hashOf(tail(v.key)) === build.hash)?.key ?? null;
+  if (!c || build.kind !== 'named') return null;
+  return pinOptions(c).find((o) => hashOf(tail(o.key)) === build.hash)?.key ?? null;
 }

@@ -73,7 +73,7 @@ const hero = (n: string) => byText('.trade-hero', n);
 describe('J. обмен вещами', () => {
   it('J1: «Trade ▸» на карточке Caren открывает шторку сразу с её планом', async () => {
     await mount({ gear: gear(), roster: ROSTER });
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
 
     expect($('.drawer.trade')).not.toBeNull();
     expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
@@ -128,7 +128,7 @@ describe('J. обмен вещами', () => {
 
   it('J3: у вещи в плане — ключ поиска, источник, «Не брать»; у героя — заказ и очки статов; «Не брать» пересчитывает', async () => {
     await mount({ gear: gear(), roster: ROSTER });
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
 
     expect($('.tmove .bgear-row')).not.toBeNull();
     expect($('.tmove .tsrc')?.textContent).toBe('on Aer');
@@ -143,10 +143,21 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tmove .tsrc')).toBeNull();
   });
 
+  // .x/0085 FORMULA §7 п. 1: у закреплённого заказ — его закрепление, жёстко; в шторке заказа — один вариант
+  it('T7.5: закреплённый — «Order: Pinned: Speed ×4 ▾», в шторке только он', async () => {
+    const { pinOptions } = await import('@/game/build/profile');
+    const pin = pinOptions(caren as never)[0];
+    await mount({ gear: gear({ pin: { [caren.id]: pin.key } }), roster: ROSTER });
+    await click(byText('.cd-acts button', 'Trade'));
+    expect($('.tline.to .aimb')?.textContent).toBe('Order: Pinned: Speed ×4 ▾');
+    await click($('.tline.to .aimb'));
+    expect($$('.aimsheet .arow').map((r) => r.textContent)).toEqual(['Pinned: Speed ×4']);
+  });
+
   it('J4: «Done» сохраняет обмен; «Undo» возвращает ogc.gear байт в байт', async () => {
     await mount({ gear: gear(), roster: ROSTER });
     const before = localStorage.getItem('ogc.gear');
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
     await click($('.tact .btn.primary'));
 
     const after = stored();
@@ -161,7 +172,7 @@ describe('J. обмен вещами', () => {
 
   it('T7.4: после «Done» Caren следующий герой в том же окне не берёт её надетое; строка о сеансе', async () => {
     await mount({ gear: gear(), roster: ROSTER });
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
     expect($('.trade-session')).toBeNull();
     await click($('.tact .btn.primary'));
 

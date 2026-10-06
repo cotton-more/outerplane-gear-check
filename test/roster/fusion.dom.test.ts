@@ -94,11 +94,13 @@ describe('обновление: загрузка и перенос v1', () => {
     await mount({ tab: 'chars', charId: eps.id }, {}, { gear: v1, roster: [eps.id, cfEps.id] });
 
     expect($('.gear-toast span')?.textContent).toBe('Core Fusion Epsilon kept in the roster: Epsilon is replaced, their gear moved to Core Fusion Epsilon.');
-    expect({ line: $('.own-row .linkbtn')?.textContent, pool: $('.pool summary')?.textContent }).toEqual({
-      line: 'Epsilon is replaced by Core Fusion Epsilon: Core Fusion Epsilon is in the roster and has the gear.', pool: undefined,
+    const pool = () => $$('.btabs [role="tab"]').find((b) => b.textContent?.startsWith('Pool'))?.textContent;
+    expect({ line: $('.own-row .linkbtn')?.textContent, pool: pool() }).toEqual({
+      line: 'Epsilon is replaced by Core Fusion Epsilon: Core Fusion Epsilon is in the roster and has the gear.', pool: 'Pool0',
     });
     await click($('.own-row .linkbtn'));
-    expect($('.pool summary')?.textContent).toContain('Core Fusion Epsilon');
+    expect($('.cd-head')?.textContent).toContain('Core Fusion');
+    expect(pool()).toBe('Pool1');
   });
 
   // было (a2-app «подсказка autoNew»): подсказка оставалась у X, у которого вещей больше нет (находка 16)
@@ -220,7 +222,8 @@ describe('окна перехода', () => {
 
   it('режим героя Core Fusion, X в ростере — окно; «Да» — режим героя Core Fusion, в ростере он', async () => {
     await mount({ tab: 'chars', charId: cfEternal.id }, {}, { roster: [eternal.id] });
-    await click(byText('.bgear-none .btn', 'Gear up this build'));
+    await click(byText('.btabs [role="tab"]', 'Pool'));
+    await click(byText('.pool .btn', 'Rate a piece for Core Fusion Eternal'));
     await click(askBtn('Yes, Core Fusion Eternal'));
     expect(roster()).toEqual([cfEternal.id]);
     expect($('.tryon .tryon-n b')?.textContent).toBe('Core Fusion Eternal');

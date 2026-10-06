@@ -127,3 +127,16 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
 // планка для чужого сета (A12): очки лучшей держащейся вещи слота, вещам сетов меню — с надбавкой U/2
 export const offBar = (P: Profile, held: readonly Piece[]): number =>
   Math.max(...held.map((q) => piecePoints(P, q) + (q.setId && P.menuSets.has(q.setId) ? P.U / 2 : 0)));
+
+// причина в списке вещей (TEXTS 28): одна, по старшинству — надета › лучшая на T4 › лучшая своего сета › по статам ›
+// в запасе; в раскладке, но ни то ни другое — «по статам». Не держится — null («больше не нужна»)
+export type Reason = { kind: 'worn' | 'stats' | 'reserve' } | { kind: 'best' | 'bestT4'; set: string };
+export function reasonOf(info: Pick<PoolInfo, 'why'>, p: Piece): Reason | null {
+  const why: Why[] = info.why.get(p.id) ?? [];
+  if (!why.length) return null;
+  if (why.includes('worn')) return { kind: 'worn' };
+  if (why.includes('menu-t4') && p.setId) return { kind: 'bestT4', set: p.setId };
+  if (why.includes('menu-best') && p.setId) return { kind: 'best', set: p.setId };
+  if (why.includes('offmenu') || why.includes('layout')) return { kind: 'stats' };
+  return { kind: 'reserve' };
+}

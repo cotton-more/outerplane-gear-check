@@ -21,12 +21,12 @@ import { fitsData } from '@/features/eval/form/formState';
 import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
 import { replacedX } from '@/features/gear/model/fusion';
-import type { GearStore } from '@/features/gear/model/gear';
+import { setPin, stalePins, type GearStore } from '@/features/gear/model/gear';
+import { pinCombo } from '@/game/build/profile';
+import { comboText } from '@/game/build/builds';
 import { gearBadges } from '@/features/gear/model/poolVs';
 import { poolView } from '@/features/gear/pool';
 import { useGear, type GearApi } from '@/features/gear/store/useGear';
-import { AimsSheet } from '@/features/worn/AimsSheet';
-import { useAims } from '@/features/worn/useAims';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
@@ -160,7 +160,13 @@ export function App() {
   });
   const { onReset, doEquip, doStash, nextNote } = flow;
   useHotkeys(s, dispatch, layout, onReset);
-  const aims = useAims({ idx, t, ctx, gear, view, touring, demo: !!demo, charId: s.charId, tab: s.tab, say, openChar });
+  // закреплённый набор пропал из outerpedia (билд переименовали, PLAN Д9) — закрепление снято, одно сообщение
+  useEffect(() => {
+    const stale = Object.entries(stalePins(idx, gear.store));
+    if (!stale.length || touring || gear.newer) return;
+    gear.set(stale.reduce((st, [id]) => setPin(st, id, null).st, gear.store));
+    say({ text: stale.map(([id, key]) => t.card.pinGone(charName(id), comboText(idx, pinCombo(key)))).join(' '), note: '', tab: s.tab });
+  }, [idx, gear, touring]); // eslint-disable-line react-hooks/exhaustive-deps
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });
@@ -184,11 +190,6 @@ export function App() {
       <div className="app">
         <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} news={news.length > 0} onMore={() => setMoreOpen(true)} />
         {pwa.update === 'data' && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
-        {aims.aimsPending.length > 0 && (
-          <div id="aimsnote">
-            <Notice text={t.ui.aimsNotice(aims.aimsPending.length)} action={t.ui.aimsCheck} onAction={aims.openAims} onClose={aims.hideAims} />
-          </div>
-        )}
         {layout.desktopModeOnPhone && !fitHidden && (
           <div id="fitnote">
             <Notice text={t.ui.desktopModeNotice}
@@ -212,7 +213,7 @@ export function App() {
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? heroMode.start : undefined}
               onRateFor={canEquip ? (c) => heroMode.start(c) : undefined}
               onPieceOpen={setPieceOpen} onTrade={canEquip ? (c) => setTrade({ hero: c.id }) : undefined}
-              redress={aims.redressKey} onRedress={aims.onRedress} onChooseAim={aims.chooseAim} canShare={!tour.run && !gear.newer} />
+              canShare={!tour.run && !gear.newer} />
           </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
@@ -223,9 +224,6 @@ export function App() {
         {msg && gearToast && (
           <Toast className="gear-toast" style={toastAt} text={msg.text} note={msg.note} action={t.ui.undoAction}
             onAction={msg.undo || msg.after ? ros.undoMsg : undefined} />
-        )}
-        {aims.aimsOpen && aims.aimsPending.length > 0 && !tour.run && (
-          <AimsSheet ctx={ctx} view={view} st={gear.store} ids={aims.aimsPending} onClose={aims.closeAims} onConfirm={aims.confirmAll} onChoose={aims.chooseAim} />
         )}
         {ros.removeAsk && !tour.run && (
           <RosterRemoveAsk name={charName(ros.removeAsk.id)} n={ros.removeAsk.n} onYes={ros.doRemove} onClose={ros.closeRemoveAsk} />

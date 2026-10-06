@@ -30,15 +30,13 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/eval/form/SetPicker.tsx': 'core',          // окно сетов — шаг «сет»
   'features/gear/ui/EquipButton.tsx': 'helper',        // кнопка «Надеть»: её объясняют подсказки вердикта и тур «Экипировка»
   'features/gear/ui/VsChip.tsx': 'helper',             // чип исхода в «Сейчас на персонажах» и карточке вердикта: их подсказки его объясняют
-  'features/gear/ui/WantToggle.tsx': 'helper',         // «Собираю»: его объясняет подсказка want карточки билда
   'features/gear/ui/pieceText.tsx': 'helper',          // подписи вещи в строках экипировки
   'features/roster/BackupIO.tsx': 'helper',            // «Резервная копия» в «Ещё»: подпись говорит, что это
   'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть · Все», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
   'features/roster/CharFilterSheet.tsx': 'helper',     // шторка фильтра: стихии и классы кнопками, «Сбросить»
   'features/roster/CharTile.tsx': 'helper',            // плитка героя: её объясняют подсказки списка персонажей
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
-  'features/worn/AimsSheet.tsx': 'helper',             // list of heroes with picked builds, opened from the notice button: the notice explains it
-  'features/worn/Redress.tsx': 'helper',               // re-dress screen, opens from the build sheet whose tip explains it; sections name themselves
+  'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet

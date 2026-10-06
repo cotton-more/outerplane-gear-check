@@ -1,15 +1,13 @@
-// Подписи вещи и билда в строках экипировки: название вещи и main, Breakthrough, текст бонуса сета, «почему собираю».
-// Их берут карточка билда (screens/chars/BuildGear), пул, «Надето», «Переодеть» и план обмена.
+// Подписи вещи в строках экипировки: название вещи и main, Breakthrough, текст бонуса сета.
+// Их берут «Надето», «Пул», «Переодеть», шторка вещи и план обмена.
 import type { Index } from '@/game/data';
-import type { Char, GearKind } from '@/game/data/types';
+import type { GearKind } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
 import { tierLabel, type BonusRow } from '@/game/set/setBonus';
-import { buildOfKey, type Variant } from '@/game/build/variants';
 import type { Texts } from '@/i18n';
-import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { isStats, markOfVariant, type CharPool } from '@/features/gear/pool';
-import { partText, setName } from '@/game/set/setName';
+import type { Piece } from '@/features/gear/model/gear';
+import { setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
 import { useIndex } from '@/game/data/IndexContext';
 
@@ -53,41 +51,13 @@ export const bonusText = (idx: Index, r: BonusRow): string => {
   return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
 };
 
-// Собираю: почему вариант собирается (или нет) — строка рядом с переключателем. Всё — по показанной раскладке, как чип
-// и слоты. Собирается он потому, что часть связки можно собрать из пула, а раскладка ради статов её не взяла (Р1), —
-// «— Speed ×2 собирается из вещей Caren, но сейчас выгоднее без неё»: «готова» противоречило бы слотам
-export function wantWhy(t: Texts, idx: Index, cp: CharPool, st: GearStore, v: Variant): string {
-  if (!cp.inPlay.includes(v)) return t.ui.fillingOff;
-  if (isStats(v)) return '';
-  const a = cp.asm.get(v.key)!;
-  if (a.need && a.progress === a.need) return t.ui.fillingWhy.done;
-  const mark = markOfVariant(st.marks, v);
-  if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
-  if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
-  const reach = cp.reach.get(v.key) ?? a;
-  if (reach !== a) {
-    const part = reach.complete.find((p) => !a.complete.some((q) => q.set === p.set));
-    return part ? t.ui.fillingReach(partText(idx, part), cp.c.name) : '';
-  }
-  // начат (Р14), но не ближе всех — строки нет: «ближе всех» было бы неправдой
-  const top = Math.max(0, ...cp.inPlay.filter((x) => !isStats(x)).map((x) => (cp.reach.get(x.key) ?? cp.asm.get(x.key)!).progress));
-  return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
-}
-
-// бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
-export function bonusLinesOf(t: Texts, idx: Index, c: Char, rows: readonly BonusRow[], combo: readonly { set: string }[]): string[] {
+// включённые бонусы с уровнем; «T?» — отметь Breakthrough (макет 6.0 решение 3: строки «не из билдов» нет)
+export function bonusLinesOf(t: Texts, idx: Index, rows: readonly BonusRow[]): string[] {
   return rows.map((r) => {
     const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
-    const own = combo.some((p) => p.set === r.set);
-    return t.ui.bonusRow(setName(idx, r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
+    return t.ui.bonusRow(setName(idx, r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '');
   });
 }
-
-// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ.
-// Выбранный билд героя — везде им (решение владельца 2026-10-05, Р-1): карточка, «Надето», обмен, режим героя, вердикт
-export const variantName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.name);
-// имя билда по ключу во фразе: «Идёт в …», «остаётся в …» — у «По статам» в кавычках
-export const buildName = (t: Texts, key: string) => buildOfKey(key, t.ui.byStatsQ);
 
 // вещь во фразе: броня — «Speed-ботинки», оружие и аксессуар — имя предмета (Epic — main)
 export const pieceLabel = (t: Texts, idx: Index) => (p: Piece): string => (p.setId ? t.fit.piece(setName(idx, p.setId), p.slot)

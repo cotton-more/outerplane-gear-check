@@ -97,11 +97,6 @@ describe('строки GEARPOOL', () => {
     expect(enUi.oldMaterial('shoes', 'Speed')).toBe("The Speed boots can feed the new ones' Breakthrough.");
   });
 
-  it('подпись «Собираю», когда часть собирается из пула, а раскладка её не взяла — по имени персонажа', () => {
-    expect(ru.fillingReach('Speed ×4', 'Caren')).toBe('— Speed ×4 собирается из вещей Caren, но сейчас выгоднее без неё');
-    expect(enUi.fillingReach('Speed ×4', 'Caren')).toBe("— Speed ×4 can be made from Caren's pieces, but the layout is better without it");
-  });
-
   it('«сейчас» у надетой: bt 0 — «ниже T4», bt 1–3 и 4 — как есть, null — «не указан»', () => {
     expect(ru.vsWorn('Legendary', 0)).toBe('сейчас: Legendary, Breakthrough T0–T3');
     expect(ru.vsWorn('Legendary', 2)).toBe('сейчас: Legendary, Breakthrough T2');
