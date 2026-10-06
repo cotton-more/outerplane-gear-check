@@ -728,7 +728,7 @@ describe('закрепление (pin, .x/0085 FORMULA §6)', () => {
 });
 
 // «Надето», шаг 2: «Надеть» = надел в игре — вещь в пул и в надетое своего слота; «Надеть из пула», «Да, всё надето»;
-// «Вернуть» — точечно (пул и надетое этого слота этого героя), не снимок worn/aim
+// «Вернуть» — точечно (пул и надетое этого слота этого героя), не снимок worn
 describe('«Надето»: «Надеть» надевает, «Надеть из пула», «Да, всё надето», «Вернуть»', () => {
   const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
   const STRONG = { 'DEF%': 6, CHC: 6, CHD: 6, SPD: 6 }, NOTHING = { RES: 1, EFF: 1 };

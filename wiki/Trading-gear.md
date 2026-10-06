@@ -38,12 +38,12 @@ can be. Close the window — no restrictions remain. Members of one team still s
 
 For each receiver:
 
-- **the gain** — how many points stronger the hero gets ("+4.2 pts"), or weaker ("Stats get weaker by N pts"); sets that
-  turn on or off are named ("Speed ×4 turns on");
-- an honest line when the order can't be met: "Immunity ×2 doesn't come together: no Immunity gloves";
-- **what to put on**, by slot; under each piece, small — where it comes from ("Caren", "inventory · Caren's spare",
-  "inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓;
-- **"Skip"** — the app offers another piece;
+- **the gain** — how many points stronger the hero gets ("+4.2 pts"), or weaker ("Stats drop by N pts"); sets that
+  turn on or off are named ("Speed ×4 activates");
+- an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves";
+- **what to put on**, by slot; under each piece, small — where it comes from ("on Caren", "in inventory · Caren's stock",
+  "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓;
+- **"Don't take"** — the app offers another piece;
 - **an empty slot** — "Search:" with a hint of what to look for.
 
 The pieces taken as candidates are good ones for the receiver; what they wear themselves is a candidate always. The

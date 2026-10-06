@@ -82,8 +82,8 @@ one is better or worse; "Next" drops the replacement.
 
 ## The hero card
 
-Three tabs: **Worn · N/6**, **Pool · N** and **Builds**. The card opens on "Worn" when the hero has something worn; a
-hero outside the roster or with no pieces opens on "Builds". At the top of the card is the **"Pin a set"** button (see
+Three tabs: **Worn · N/6**, **Pool · N** and **Builds**. The card opens on "Worn"; a hero outside the roster and with
+no pieces opens on "Builds". At the top of the card is the **"Pin a set"** button (see
 below) next to "Trade ▸".
 
 ### Worn
@@ -95,7 +95,7 @@ replaces the entry.
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point. The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed
-gloves" with "Equip", and **"Equip all N"**. In the game you do the same yourself — the app only counts.
+gloves" with "Wear", and **"Wear all N"**. In the game you do the same yourself — the app only counts.
 
 **"What to look for"** under the slots — sets from the hero's builds where they have 1–3 of 4 pieces, the nearest
 first: "Speed ×4: 2 of 4 — need helmet, boots". Complete sets and sets with 0 of 4 aren't listed. Each set is counted

@@ -51,6 +51,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'shared/ui/Expand.tsx': 'helper',                    // строка, раскрывающаяся на месте («Ещё»)
   'shared/ui/FilterChips.tsx': 'helper',               // фильтр кнопками
   'shared/ui/Notice.tsx': 'helper',                    // плашка с одной кнопкой
+  'shared/ui/RadioRow.tsx': 'helper',                  // строка-радио в шторке выбора: учат шторки, где она стоит
   'shared/ui/Rich.tsx': 'helper',                      // жирный текст в фразах
   'shared/ui/SegSwitch.tsx': 'helper',                 // переключатель сегментами
   'shared/ui/Sheet.tsx': 'helper',                     // шторка для окон

@@ -7,6 +7,7 @@ import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import type { Fill } from './wearing';
+import { RadioRow } from '@/shared/ui/RadioRow';
 import { Sheet } from '@/shared/ui/Sheet';
 
 export function PinSheet({ c, ctx, choices, now, onClose, onPin }: {
@@ -15,12 +16,7 @@ export function PinSheet({ c, ctx, choices, now, onClose, onPin }: {
   const t = useT();
   const [sel, setSel] = useState<string | null>(now);
   const opt = (key: string | null, name: string, k?: string, sub?: string) => (
-    <li key={key ?? ''}>
-      <button type="button" role="radio" aria-checked={sel === key} className="arow" onClick={() => setSel(key)}>
-        <span className="arow-h"><b>{name}</b>{k && <span className="pin-k">{k}</span>}</span>
-        {sub && <span className="arow-l">{sub}</span>}
-      </button>
-    </li>
+    <RadioRow key={key ?? ''} checked={sel === key} name={name} k={k} sub={sub} onClick={() => setSel(key)} />
   );
   return (
     <Sheet title={t.card.pinTitle(c.name)} onClose={onClose} className="aimsheet">

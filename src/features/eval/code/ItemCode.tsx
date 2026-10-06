@@ -6,7 +6,7 @@ import type { ItemInput } from '@/game/item/item';
 import { tour } from '@/tour/anchors';
 import { copyText } from '@/shared/copyText';
 
-// строка в вердикте и в карточке вещи персонажа (BuildGear PieceSheet): код предмета и «Скопировать» — вставить в чат
+// строка в вердикте и в карточке вещи персонажа (screens/chars PieceSheet): код предмета и «Скопировать» — вставить в чат
 // игры. У вещи с 5–6 сегментами кода нет (codec) — строки нет. anchor = false — без якоря подсказки «code»: он у вердикта
 export function ShareCode({ item, anchor = true }: { item: ItemInput; anchor?: boolean }) {
   const t = useT();

@@ -384,7 +384,7 @@ export const ru = {
     segCap: (max: number) => `Больше ${max} сегментов на вещи не бывает — проверь сабстаты.`,
     subRemove: (k: string) => `Убрать ${k}`,
     chainTail: (k: string) => `${k} есть на вещи, но дальше четвёртого места — для порога «годная» не считается, очки за него идут`,
-    // экипировка: что надето в билдах (features/gear/model/gear, features/gear/model/vs; features/gear/ui/VsSection, EquipSheet, chars/BuildGear)
+    // экипировка: слоты и надетое (features/gear/model/gear, features/gear/model/vs; features/gear/ui/VsSection, EquipSheet, features/worn)
     slotNames: { weapon: 'Оружие', accessory: 'Аксессуар', helmet: 'Шлем', armor: 'Броня', gloves: 'Перчатки', shoes: 'Ботинки' } as Record<string, string>,
     slotAcc: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
     slotNom: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
@@ -648,7 +648,7 @@ export const ru = {
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',
   },
 
-  // --- штамп по надетому (features/gear/model/stamp): всем, кому подходит, уже надето не хуже; вещь уже в билде
+  // --- «Разобрать» с ростером (screens/eval useVerdictModel): всем, кому она годная, уже надето не хуже
   worn: {
     line: '**Никого не улучшит**: всем, кому она подходит, уже надето не хуже. Сама по себе вещь неплохая.',
     stale: 'Разобрал вещь в игре — убери её в карточке персонажа, и вердикт пересчитается.',
@@ -677,9 +677,7 @@ export const ru = {
     noStats: (name: string) => `${name} эта вещь ничего не даст: полезных статов нет.`,
     // оружие или аксессуар не для класса героя (classLimits): дело не в статах
     noClass: (name: string) => `${name} не носит этот предмет: он для другого класса.`,
-    slot: 'Примерить',
     replace: 'Примерить замену',
-    empty: (build: string, name: string) => `Собери билд ${build}: вводи вещи ${name} из инвентаря — и вердикт начнёт сравнивать новые вещи с ними.`,
   },
 
   // «Обмен вещами» (.x/0040-trade/SPEC.md R10): шторка обмена, план, закрепление героя

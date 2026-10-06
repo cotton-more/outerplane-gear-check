@@ -8,6 +8,7 @@ import { combosOf } from '@/game/build/profile';
 import { comboText } from '@/game/build/builds';
 import { comboSig } from '@/game/build/variants';
 import { STATS } from '@/features/trade/model/world';
+import { RadioRow } from '@/shared/ui/RadioRow';
 import { Sheet } from '@/shared/ui/Sheet';
 
 // подпись заказа: «По статам» или набор «Speed ×2 + Immunity ×2»; подписи, которой у героя нет, — «По статам»
@@ -39,11 +40,7 @@ export function OrderSheet({ c, ctx, order, pinned = null, onClose, onChoose }: 
       <div className="vsheet">
         <ul className="alist" role="radiogroup" aria-label={c.name}>
           {options.map((o) => (
-            <li key={o.key}>
-              <button type="button" role="radio" aria-checked={o.key === now} className="arow" onClick={() => (o.key === now ? onClose() : onChoose(o.key))}>
-                <span className="arow-h"><b>{o.name}</b></span>
-              </button>
-            </li>
+            <RadioRow key={o.key} checked={o.key === now} name={o.name} onClick={() => (o.key === now ? onClose() : onChoose(o.key))} />
           ))}
         </ul>
       </div>
