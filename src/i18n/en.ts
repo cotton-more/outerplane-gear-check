@@ -733,6 +733,7 @@ export const en: Texts = {
       piece: 'Did a Reforge or Breakthrough in the game? Fix the segments and “T4” here, as on the piece in the game: comparisons use what\'s there.',
       tryStrip: 'Rating for this character only: the card line and “Equip” are for this character; the stamp is shared. ✕ — everyone again.',
       vs: '▲ better than what\'s in the build, ▼ worse; “set 3 of 4” — the build gets closer to done. The button equips or replaces.',
+      stash: 'Keep it but don\'t equip yet? Tap Set aside — it\'s recorded for the hero, and new pieces get compared with it.',
       cardEquip: 'Equip with one tap below the card: it’s recorded as worn. Whatever is neither worn nor in any build leaves the character\'s gear.',
       equipAll: 'Here: characters whose builds can use the piece. Off-build? Search a name — “Equip” records it as worn.',
       material: 'Fodder, not dismantle: the same piece is in a build being assembled and is below T4 — this one feeds its Breakthrough.',

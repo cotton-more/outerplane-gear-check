@@ -12,4 +12,6 @@ export default defineTips(
   { id: 'cardEquip', rev: 6, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
   { id: 'material', rev: 2, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.material },
   { id: 'worn', rev: 2, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
+  // «Отложить для X» (решение владельца 2026-10-06): без «Что нового» — владелец так решил
+  { id: 'stash', rev: 1, at: 'stash', when: (c) => c.s.tab === 'eval' },
 );

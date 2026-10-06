@@ -147,7 +147,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
               {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
               {((vs && onEquip) || (other && onEquipOther) || (vs && onStash)) && (
                 <div className="vc-acts">
-                  {vs && onStash && <button type="button" className="btn vc-stash" onClick={() => onStash(vs)}><Icon name="archive" />{t.fit.stash(vs.c.name)}</button>}
+                  {vs && onStash && <button type="button" className="btn vc-stash" onClick={() => onStash(vs)} {...tour('stash')}><Icon name="archive" />{t.fit.stash(vs.c.name)}</button>}
                   {vs && onEquip && (
                     <EquipButton place="vc-equip" x={vs} slot={t.ui.slotAcc[s.slot]} t4={!!t4} good={vs.h.kind === 'wear'} onEquip={onEquip} />
                   )}

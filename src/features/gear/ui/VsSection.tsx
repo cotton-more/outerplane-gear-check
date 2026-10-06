@@ -51,7 +51,7 @@ export function VsSection({ list, item, slot, t4 = false, nextNote = null, onEqu
               {x.chain.b.subs.length > 0 && <div className="chains"><Chain m={x.chain} /></div>}
               <OutcomeLines x={x} item={item} />
               {onEquip && x.useful && <EquipButton place="vs-act" x={x} slot={slot} t4={t4} good={x.h.kind === 'wear'} onEquip={onEquip} />}
-              {onStash && x.stash && <button type="button" className="btn vs-stash" onClick={() => onStash(x)}><Icon name="archive" />{t.fit.stash(x.c.name)}</button>}
+              {onStash && x.stash && <button type="button" className="btn vs-stash" onClick={() => onStash(x)} {...tour('stash')}><Icon name="archive" />{t.fit.stash(x.c.name)}</button>}
               {onEquip && x.asWorn && !x.replaces && <p className="muted small vs-wear">{t.ui.equipAsWorn}</p>}
               {onEquip && x.useful && nextNote && <p className="muted small vs-wear vs-next">{nextNote}</p>}
             </li>
