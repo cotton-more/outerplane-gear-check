@@ -170,11 +170,13 @@ The stamp is always about **the piece being rated**:
 - **Keep** — worth wearing: put it on the named hero or keep it for them ("Set aside"). **Stopgap** — a piece that
   passed only as a temporary one: Epic armor under the temporary rule, a weapon or accessory without the needed passive.
 - **Fodder** — this piece **is** material: Breakthrough with it now ("Fodder — Breakthrough for Caren's boots") or keep it
-  in reserve for a future strong one, or let it sit in inventory: an Epic is already set aside for that set and slot
-  ("Fodder — let it sit in inventory"). A reserve piece goes to Breakthrough as soon as a good piece of the same set and
-  slot arrives: the verdict says "Feed the weak … from Caren's reserve into this one". A piece already at T4 is never
-  material. A Legendary weapon or accessory that is the wrong main for a hero whose builds recommend it is kept in
-  reserve too.
+  in reserve for a future strong one ("Fodder — reserve for Caren's Speed helmet", "Set aside for Caren"). Legendary
+  armor takes only Legendary material, so Epic and Legendary reserves are separate: a weak Legendary is kept even when
+  the hero wears a good Epic of that set and slot — "Caren's Speed helmet is Epic. Keep this one until a good Legendary
+  one drops: wear that and feed this one to it." A reserve piece goes to Breakthrough as soon as a good piece of the same
+  set, slot and grade arrives: the verdict says "Feed the weak … from Caren's reserve into this one" and names the
+  piece with its substats, so you can find it in the game. A piece already at T4 is never material. A Legendary weapon
+  or accessory that is the wrong main for a hero whose builds recommend it is kept in reserve too.
 - **Maybe** — suits only heroes outside your roster (the line says who).
 - **Dismantle** — nobody needs it: everyone already has as good, or it's weak. Dismantled a piece in the game? Remove
   it on the character card.

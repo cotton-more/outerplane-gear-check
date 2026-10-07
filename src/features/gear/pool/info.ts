@@ -72,13 +72,21 @@ export interface PoolInfo {
   layout: Layout;                  // нынешняя раскладка (D3): лучшая раскладка из надетого и годных, не хранится
   value: LayoutValue;
   why: Map<string, Why[]>;         // держится → почему
-  reserve: Map<string, string>;    // 'сет:слот' (у оружия и аксессуара — 'item:ключ') → id запасной
+  reserve: Map<string, string>;    // reserveKey → id запасной
   strong: Set<string>;             // держится не как запас
   unneeded: Piece[];               // §5 п. 6: «больше не нужна»
 }
 
-export const reserveKey = (p: Pick<Piece, 'slot' | 'setId' | 'itemKey'>): string =>
-  (isArmor(p.slot) ? `${p.setId}:${p.slot}` : `item:${p.itemKey}`);
+// Reserve key: armor — 'set:slot:grade' (Legendary armor takes only Legendary material, so each grade keeps its own
+// reserve); weapon and accessory — 'item:key'
+export const reserveKey = (p: Pick<Piece, 'slot' | 'setId' | 'itemKey' | 'grade'>): string =>
+  (isArmor(p.slot) ? `${p.setId}:${p.slot}:${p.grade}` : `item:${p.itemKey}`);
+
+// A held piece q of the same set and slot makes reserve p pointless. For an Epic reserve any piece does (an Epic won't
+// replace a good Legendary); for a Legendary one only a Legendary: a good Epic is worn until a good Legendary drops,
+// and that one will need Legendary material (owner, 2026-10-07: Rin's Epic helmet)
+export const coversSlot = (q: Pick<Piece, 'slot' | 'setId' | 'grade'>, p: Pick<Piece, 'slot' | 'setId' | 'grade'>): boolean =>
+  q.slot === p.slot && q.setId === p.setId && (p.grade !== 'unique' || q.grade === 'unique');
 
 const byPoints = (P: Profile) => (a: Piece, z: Piece) => piecePoints(P, z) - piecePoints(P, a) || numOf(a.id) - numOf(z.id);
 
@@ -108,14 +116,15 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   }
   const strong = new Set(why.keys());
   // 5: впрок — одна слабая на «сет + слот», когда сет начат держащейся вещью, а в этом слоте его держащейся нет; на T4
-  // материалом не бывает (D6). Оружие и аксессуар (п. 3в) — одна копия рекомендованного предмета, пока годной нет
+  // материалом не бывает (D6). Оружие и аксессуар (п. 3в) — одна копия рекомендованного предмета, пока годной нет.
+  // Armor: one reserve per grade; a held Epic doesn't cancel a Legendary reserve (coversSlot)
   const reserve = new Map<string, string>();
   for (const p of sorted) {
     if (strong.has(p.id) || p.bt === 4 || pass(p) || reserve.has(reserveKey(p))) continue;
     if (isArmor(p.slot)) {
       if (!p.setId || (P.pin && !P.menuSets.has(p.setId))) continue; // закреплённому — запас только сетов набора
       const started = pool.some((q) => q.setId === p.setId && strong.has(q.id));
-      const slotHas = pool.some((q) => q.slot === p.slot && q.setId === p.setId && strong.has(q.id));
+      const slotHas = pool.some((q) => strong.has(q.id) && coversSlot(q, p));
       if (!started || slotHas) continue;
     } else if (!listedFor(P, p) || pool.some((q) => q !== p && strong.has(q.id) && sameForBt(q, p))) continue;
     reserve.set(reserveKey(p), p.id);

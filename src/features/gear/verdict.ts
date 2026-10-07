@@ -14,7 +14,7 @@ import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
 import { better, bestLayout, NEW_ID, piecePoints, type Layout, type LayoutValue } from './layout';
-import { eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
+import { coversSlot, eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
 
 // вещь с формы как запись: id NEW_ID — новее всех записанных
 export const formPiece = (x: ItemInput): Piece => ({
@@ -120,9 +120,14 @@ function reserveFor(hp: HeroPool, x: Piece, h: HeroRes): boolean {
   if (!isArmor(x.slot)) return listedFor(hp.P, x) && !pieces.some((q) => q.id !== x.id && sameForBt(q, x));
   if (!x.setId || (hp.P.pin && !hp.P.menuSets.has(x.setId))) return false;
   const started = pieces.some((q) => q.setId === x.setId && info.strong.has(q.id));
-  const slotHas = pieces.some((q) => q.slot === x.slot && q.setId === x.setId && info.strong.has(q.id));
+  const slotHas = pieces.some((q) => info.strong.has(q.id) && coversSlot(q, x));
   return started && !slotHas;
 }
+
+// Legendary reserve while the hero holds a good Epic of that set and slot: wear the Epic until a good Legendary drops,
+// then this one is its material (owner, 2026-10-07)
+const overEpic = (hp: HeroPool, x: Piece): boolean =>
+  x.grade === 'unique' && hp.pieces.some((q) => q.grade === 'rare' && q.slot === x.slot && q.setId === x.setId && hp.info.strong.has(q.id));
 
 // «Спорно»: герои не из ростера, чьи билды берут этот сет (этот предмет) и кому вещь проходит порог — как в evaluate
 export function maybeFor(ctx: Ctx, x: Piece): Char[] {
@@ -197,11 +202,12 @@ function sameOf(hps: HeroPool[], x: Piece): Same | null {
 export type Kind = 'wear' | 'keep' | 'material' | 'maybe' | 'junk';
 export interface Result {
   kind: Kind;
-  sub?: 'a' | 'b' | 'now' | 'reserve' | 'inventory';
+  sub?: 'a' | 'b' | 'now' | 'reserve';
   heroes: HeroRes[];          // все герои ростера с билдами
   named: HeroRes[];           // A10: герой с наибольшей пользой первым, ещё до двух
   now: Target[];              // материал сейчас (§4 п. 3а), лучшие цели первыми
-  reserve: Char[];            // запас (п. 3б, 3в); у 'inventory' — герой, у которого лежит Epic-запас
+  reserve: Char[];            // запас (п. 3б, 3в)
+  overEpic?: boolean;         // reserve: reserve[0] holds a good Epic of this set and slot, this Legendary waits for a good Legendary
   maybe: Char[];              // «Спорно»
   quiet: Quiet | null;        // тихая строка у материала, запаса и «Разобрать»
   same: Same | null;          // похоже, это отложенная раньше вещь (её запись в расчёт не входит)
@@ -231,17 +237,9 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput): Result | nu
   const ptsOf = (t: Target) => piecePoints(hps.find((hp) => hp.c === t.c)!.P, t.piece);
   const now = hps.flatMap((hp) => materialTargets(hp, x)).sort((a, z) => ptsOf(z) - ptsOf(a));
   if (now.length) return res('material', { sub: 'now', now, quiet });
-  const reserve = hps.filter((hp, i) => reserveFor(hp, x, heroes[i])).map((hp) => hp.c);
-  if (reserve.length) return res('material', { sub: 'reserve', reserve, quiet });
-  // В1а ревью этапа 10: слабая Legendary-броня, а для её сета и слота у героя уже лежит запас другого грейда (Epic ей не
-  // материал) — не «Разобрать» и не «Отложить»: пусть лежит в инвентаре игры
-  const lie = isArmor(x.slot) && x.grade === 'unique' && x.bt !== 4
-    ? hps.find((hp, i) => {
-      const rid = hp.info.reserve.get(reserveKey(x));
-      return !heroes[i].bar && !!rid && hp.pieces.some((p) => p.id === rid && p.grade !== x.grade);
-    })
-    : undefined;
-  if (lie) return res('material', { sub: 'inventory', reserve: [lie.c], quiet });
+  // a Legendary reserve no longer waits behind an Epic one (grade-aware reserveKey): В1а «пусть лежит» is gone
+  const rh = hps.filter((hp, i) => reserveFor(hp, x, heroes[i]));
+  if (rh.length) return res('material', { sub: 'reserve', reserve: rh.map((hp) => hp.c), overEpic: overEpic(rh[0], x), quiet });
   const maybe = maybeFor(ctx, x);
   if (maybe.length) return res('maybe', { maybe, quiet });
   return res('junk', { quiet });

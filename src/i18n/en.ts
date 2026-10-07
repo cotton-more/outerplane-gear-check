@@ -183,8 +183,9 @@ export const en: Texts = {
     btNowWhy: (slot, name) => `Do it now: ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? "aren't" : "isn't"} T4 yet. One piece — one step.`,
     reserve: (set, slot, name) => `Fodder — reserve for ${name}'s ${set} ${SLOT_EN[slot]}`,
     reserveWhy: (name, set, slot) => `${name} has started ${set} but no ${set} ${SLOT_EN[slot]}. When a strong one drops, feed this one to it.`,
-    inventory: 'Fodder — let it sit in inventory',
-    inventoryWhy: (name, set, slot) => `${name} already has an Epic ${set} ${SLOT_EN[slot]} set aside. Don't set this Legendary aside for anyone, but don't dismantle it either: it'll be material once a good Legendary ${set} ${SLOT_EN[slot]} drops.`,
+    reserveOverEpic: (name, set, slot) => (plEn(slot)
+      ? `${name}'s ${set} ${SLOT_EN[slot]} are Epic. Keep these until good Legendary ones drop: wear those and feed these to them.`
+      : `${name}'s ${set} ${SLOT_EN[slot]} is Epic. Keep this one until a good Legendary one drops: wear that and feed this one to it.`),
     reserveItem: (item, name) => `Fodder — reserve for ${name}'s ${item}`,
     reserveItemWhy: (name, item, mains) => `${name}'s builds ask for ${item} with ${mains}, and ${name} has none. When one drops, feed this one to it.`,
     feed: (set, slot, name) => `Feed the weak ${set} ${SLOT_EN[slot]} from ${name}'s reserve into this one.`,
@@ -535,7 +536,7 @@ export const en: Texts = {
     helpVerdicts: [
       '**Keep** — worth wearing: equip it on the named hero or keep it for them. What to upgrade — in the "Upgrading" block in the details.',
       '**Stopgap** — wear it until a good one drops: a weapon or accessory without the needed passive, or Epic armor with only one key stat.',
-      '**Fodder** — this piece is the material: Breakthrough with it now, or keep it in reserve for a future strong one. Don\'t feed a Legendary you replaced to Breakthrough: evaluate it first — it may suit another hero.',
+      '**Fodder** — this piece is the material: Breakthrough with it now, or keep it in reserve for a future strong one. Legendary armor takes only Legendary material: keep a weak Legendary in reserve even when a good Epic of that set and slot is worn. Don\'t feed a Legendary you replaced to Breakthrough: evaluate it first — it may suit another hero.',
       "**Maybe** — your call: the details say what's in doubt (e.g. it's good for a character outside your roster).",
       '**Dismantle** — nobody needs it: everyone already has as good, or it\'s weak.',
       '**Points** — a segment of the chain\'s first stat = 1, later places less (0.8; 0.65; 0.5; 0.4…), a perfect line = 6. Half a set from the hero\'s builds is worth the hero\'s best stat bonus for 2 pieces.',

@@ -66,15 +66,12 @@ export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput, lab
     const stashed = n.worn ? [] : [stashedLine(t, n.piece, label)];
     return { v: 'fodder', title: F.btNow(item.slot, n.c.name), lines: [F.btNowWhy(item.slot, n.c.name), ...stashed] };
   }
-  if (r.kind === 'material' && r.sub === 'inventory' && item.setId) {
-    const set = setName(idx, item.setId);
-    return { v: 'fodder', title: F.inventory, lines: [F.inventoryWhy(r.reserve[0].name, set, item.slot)] };
-  }
   if (r.kind === 'material') {
     const c = r.reserve[0];
     if (isArmor(item.slot) && item.setId) {
       const set = setName(idx, item.setId);
-      return { v: 'fodder', title: F.reserve(set, item.slot, c.name), lines: [F.reserveWhy(c.name, set, item.slot)] };
+      const why = r.overEpic ? F.reserveOverEpic : F.reserveWhy;
+      return { v: 'fodder', title: F.reserve(set, item.slot, c.name), lines: [why(c.name, set, item.slot)] };
     }
     const name = itemName(idx, item);
     const mains = [...new Set(c.builds.flatMap((b) => (item.slot === 'weapon' ? b.weapons : b.amulets).filter((g) => g.key === item.itemKey).flatMap((g) => g.mains)))];
