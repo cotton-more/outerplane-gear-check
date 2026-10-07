@@ -34,6 +34,26 @@ function norm(plan: Plan, f: Fate): string {
   }
 }
 const fatesOf = (plan: Plan) => plan.lines.filter((l) => !l.off).map((l) => key(l.input) + ' → ' + norm(plan, l.fate)).sort();
+// one physical piece — one line, and the lines match the final store: a «wear» line's piece is worn by its hero, a
+// «keep» (not held) / «reserve» line's piece is in its hero's pool, a taken-off / set-aside line is a recorded piece
+const same = (p: Piece, x: ItemInput) => key(inputOfPiece(p)) === key({ ...x, bt: inputOfPiece(p).bt });
+function problems(base: GearStore, plan: Plan): string[] {
+  const out: string[] = [];
+  const offs = plan.lines.filter((l) => l.off).map((l) => l.off!.piece.id);
+  if (new Set(offs).size !== offs.length) out.push('a piece on two lines');
+  for (const l of plan.lines) {
+    const f = l.fate;
+    if (l.off && !base.pieces[l.off.piece.id]) out.push(`${l.id}: off line for a piece the plan made`);
+    if (f.kind === 'wear') {
+      const w = plan.st.worn?.[f.c.id]?.[l.input.slot];
+      if (!w || !same(plan.st.pieces[w], l.input)) out.push(`${l.id}: «wear ${f.c.name}», not worn at the end`);
+    }
+    if ((f.kind === 'keep' && !f.held) || f.kind === 'reserve') {
+      if (!(plan.st.pools[f.c.id] ?? []).some((id) => same(plan.st.pieces[id], l.input))) out.push(`${l.id}: «${f.kind} ${f.c.name}», not in the pool at the end`);
+    }
+  }
+  return out;
+}
 
 const sG = (id = 'sG') => mk(id, 'gloves', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
 const sB = (id = 'sB') => mk(id, 'shoes', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
@@ -141,6 +161,42 @@ describe('plan of a batch', () => {
     const fed = plan.lines.filter((l) => l.fate.kind === 'feed' && 'entry' in l.fate.to && l.fate.to.entry === 1);
     expect(fed).toHaveLength(4);
     expect(plan.lines.filter((l) => l.fate.kind === 'feed')).toHaveLength(4);
+  });
+
+  it('a piece the plan put on and a later «Надень» took off has one line — its own, matching the final store (seed 358)', () => {
+    const { ctx, st } = world(['Caren', 'Rin'], {
+      Caren: [mk('Ch', 'helmet', 'Revenge', { CHD: 4, SPD: 3, DEF: 5, 'DMG UP%': 3 })],
+      Rin: [
+        mk('Rh', 'helmet', 'Speed', { 'DMG RED%': 1, CHD: 3, SPD: 4, ATK: 6 }),
+        mk('Ra', 'armor', 'Resilience', { 'DMG UP%': 5, 'DEF%': 5, 'ATK%': 3, CHC: 2 }),
+        mk('Rg', 'gloves', 'Speed', { 'DEF%': 4, RES: 2, CHC: 1 }, 4, { grade: 'rare' }),
+      ],
+    });
+    const plan = planBatch(ctx, st, [
+      E(mk('b1', 'armor', 'Penetration', { 'DMG UP%': 6, 'HP%': 5, ATK: 5, SPD: 6 }, 0)),
+      E(mk('b2', 'armor', 'Speed', { SPD: 3, 'ATK%': 5, 'HP%': 6, CHD: 4 }, 0)),
+    ]);
+    expect(plan.lines.filter((l) => l.n === 2)).toHaveLength(1);
+    expect(problems(st, plan)).toEqual([]);
+    // Rin's old armor goes on Caren over #2: #2 is set aside for Caren (held), not «wear» plus a taken-off line
+    expect(plan.lines.map((l) => [l.id, l.fate.kind, 'c' in l.fate ? l.fate.c.name : ''])).toEqual([['1', 'wear', 'Rin'], ['1~1', 'wear', 'Caren'], ['2', 'keep', 'Caren']]);
+    expect(plan.lines[1].off).toMatchObject({ piece: { id: 'Ra' }, was: 'worn' });
+  });
+
+  it('a reserve the plan made that a later «Надень» eats feeds that piece — not planned again', () => {
+    // #1 goes on Aer («Не брать» Caren), Aer's old helmet comes off and goes on Caren's empty slot; #2, the weak one, is
+    // Caren's reserve by then («Не брать» Aer) — the moved helmet eats it
+    const { ctx, st } = world(['Caren', 'Aer'], { Caren: [sG(), sB()], Aer: [sG('aG'), sB('aB'), mk('aH', 'helmet', 'Speed', { CHC: 2, CHD: 2, SPD: 1, HP: 1 }, 0)] });
+    const best = mk('L3', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }, 0);
+    const plan = planBatch(ctx, st, [E(best), E(weak('L1'))], new Set([skipKey('1', char('Caren').id), skipKey('2', char('Aer').id)]));
+    expect(plan.lines.map((l) => [l.id, l.fate.kind])).toEqual([['1', 'wear'], ['1~1', 'wear'], ['2', 'feed']]);
+    const caren = char('Caren').id;
+    // #2 was set aside first (its record is the one the moved helmet's «Надень» removed), now it feeds that helmet
+    const eaten = plan.ops.flatMap((o) => ('r' in o && o.c === caren ? o.r.removed : []));
+    expect(eaten).toHaveLength(1);
+    expect(plan.lines[2].fate).toMatchObject({ kind: 'feed', to: { c: { name: 'Caren' }, piece: { id: plan.st.worn?.[caren]?.helmet } } });
+    expect(plan.wornFed).toBe(true);
+    expect(problems(st, plan)).toEqual([]);
   });
 
   it('random batches: the same fates in any entered order; one line per piece; at most 4 feeds per target', () => {

@@ -69,11 +69,36 @@ const scoreOf = (r: Result | null): [number, number] =>
   !r ? [-1, 0] : [RANK[r.kind], r.kind === 'wear' ? r.named[0].dV : r.kind === 'keep' ? r.named[0].margin : 0];
 const contentKey = (x: ItemInput): string =>
   JSON.stringify([x.slot, x.grade, x.setId, x.itemKey, x.main, Object.entries(x.subs), x.bt ?? null, !!x.unlisted]);
+// «Вернуть» for another hero's reserve the plan removed: back into that pool at its old place
+function dropBack(before: GearStore, c: string, p: Piece): (x: GearStore) => GearStore {
+  const undo = removeUndo(before, c, p), was = before.pools[c] ?? [];
+  return (x) => {
+    const y = undo(x);
+    const pool = (y.pools[c] ?? []).filter((id) => id !== p.id);
+    const after = was.slice(0, was.indexOf(p.id)).reverse().find((id) => pool.includes(id));
+    pool.splice(after === undefined ? 0 : pool.indexOf(after) + 1, 0, p.id);
+    return { ...y, pools: { ...y.pools, [c]: pool } };
+  };
+}
 // a recorded piece as a form input (its own «T4»)
 export const inputOfPiece = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt === 4 ? 4 : p.bt === null ? null : 0 });
 
+// One physical piece — one line: a later «Надень» may take off or drop a record the plan itself made for line L. Such a
+// record never gets a taken-off line; L is fixed instead — eaten as a reserve → «Корм» for the piece that ate it (in
+// the pass); after the pass: still in the pool, no longer worn → «Отложи» (held); gone → the plan is made again without
+// that hero for L (an internal «Не брать», not saved, not shown). Each round adds exclusions only, so it ends; at most
+// one round per entry
 export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], skip: ReadonlySet<string> = new Set()): Plan {
   const pools = poolsOf(ctx);
+  const out = new Set(skip);
+  for (let round = 0; ; round++) {
+    const { plan, gone } = pass(ctx, pools, base, entries, out);
+    if (!gone.length || round >= entries.length) return plan;
+    for (const k of gone) out.add(k);
+  }
+}
+
+function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entries: readonly Entry[], skip: ReadonlySet<string>): { plan: Plan; gone: string[] } {
   const skipOf = (line: string): Set<string> =>
     new Set([...skip].filter((k) => k.startsWith(line + '>')).map((k) => k.slice(line.length + 1)));
   const order = entries
@@ -83,6 +108,7 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
   let st = base;
   const ops: Op[] = [];
   const made = new Map<string, number>();       // record made by the plan for an entry → #n
+  const madeBy = new Map<string, string>();     // every record the plan made → its line
   const feeds = new Map<string, number>();      // target record → pieces it gets
   const full = new Set<string>();
   let wornFed = false;
@@ -95,7 +121,7 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
   const decide = (line: string, n: number, input: ItemInput, twin: boolean, entry: boolean): Fate => {
     let r = verdictOf(ctx, pools(st), input, { twin, skip: skipOf(line), full });
     // a look-alike made by this very plan is another piece of the batch, not a set-aside one
-    if (r?.same && [...made.keys()].includes(r.same.piece.id)) r = verdictOf(ctx, pools(st), input, { twin: true, skip: skipOf(line), full });
+    if (r?.same && madeBy.has(r.same.piece.id)) r = verdictOf(ctx, pools(st), input, { twin: true, skip: skipOf(line), full });
     if (!r) return { kind: 'none' };
     if (r.same) return { kind: 'same', same: r.same };
     if (r.kind === 'wear') {
@@ -105,25 +131,41 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
       st = res.st;
       ops.push({ c: c.id, r: res });
       if (entry) made.set(res.id, n);
+      madeBy.set(res.id, line);
       const was = res.wasWorn ? before.pieces[res.wasWorn] ?? null : null;
-      // the worn piece of its slot comes off in the game: a line of its own (Q4) — the pool dropped it, or still keeps it
-      if (was) {
+      // the worn piece of its slot comes off in the game: a line of its own (Q4) — the pool dropped it, or still keeps it.
+      // A record the plan made is not a new piece: its own line is fixed after the pass
+      if (was && !madeBy.has(was.id)) {
         const id = offId(n);
         offs.push({ id, n, c, piece: was, was: 'worn' });
         if (!res.removed.some((p) => p.id === was.id)) fates.set(id, { kind: 'keep', c, t4: false, held: true });
       }
+      // a reserve this new piece eats (its verdict's reserveBt — the hero's own or another hero's, feedFrom): one the plan
+      // made for line L is fed to it — L says so (owner 2026-10-07: not planned again), one of its four feeds
+      const h = r.named[0];
+      const eaten = (p: Piece) => {
+        const L = madeBy.get(p.id);
+        const k = (feeds.get(res.id) ?? 0) + 1;
+        if (!L || p.id !== h.reserveBt?.id || fates.get(L)?.kind !== 'reserve' || k > FEEDS) return;
+        feeds.set(res.id, k);
+        if (k >= FEEDS) full.add(res.id);
+        if (!entry) wornFed = true;
+        fates.set(L, { kind: 'feed', to: entry ? { entry: n } : { c, piece: res.piece } });
+      };
       // a set-aside record of its slot the new one pushes out (the hero's weak reserve) is a piece in the game too: a line
       for (const p of res.removed) {
-        if (p.slot === res.slot && p.id !== res.wasWorn && base.pieces[p.id]) offs.push({ id: offId(n), n, c, piece: p, was: 'stash' });
+        if (p.slot !== res.slot || p.id === res.wasWorn) continue;
+        if (madeBy.has(p.id)) eaten(p);
+        else offs.push({ id: offId(n), n, c, piece: p, was: 'stash' });
       }
-      // another hero's reserve goes to this one's Breakthrough (verdict feedFrom): it leaves that pool, as with a single
-      // «Надеть» (useFormFlow equipOn), before it is decided — it must not look like its own record
-      const h = r.named[0];
-      if (h.reserveOf && h.reserveBt && h.reserveOf.id !== c.id && st.pools[h.reserveOf.id]?.includes(h.reserveBt.id)) {
-        const of = h.reserveOf, p = h.reserveBt;
-        ops.push({ c: of.id, drop: p, back: removeUndo(st, of.id, p) });
+      // another hero's reserve goes to this one's Breakthrough: it leaves that pool, as with a single «Надеть»
+      // (useFormFlow equipOn), before it is decided — it must not look like its own record
+      const of = h.reserveOf, p = h.reserveBt;
+      if (of && p && of.id !== c.id && st.pools[of.id]?.includes(p.id)) {
+        ops.push({ c: of.id, drop: p, back: dropBack(st, of.id, p) });
         st = removeFrom(st, of.id, p.id);
-        offs.push({ id: offId(n), n, c: of, piece: p, was: 'stash' });
+        if (madeBy.has(p.id)) eaten(p);
+        else offs.push({ id: offId(n), n, c: of, piece: p, was: 'stash' });
       }
       return { kind: 'wear', c, instead: was, t4: false };
     }
@@ -133,6 +175,7 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
       st = res.st;
       ops.push({ c: c.id, r: res });
       if (entry) made.set(res.id, n);
+      madeBy.set(res.id, line);
       return r.kind === 'keep' ? { kind: 'keep', c, t4: false } : { kind: 'reserve', c };
     }
     if (r.kind === 'material' && r.sub === 'now') {
@@ -153,6 +196,15 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
   for (let i = 0; i < offs.length && i < entries.length * 3; i++) {
     const o = offs[i];
     if (!fates.has(o.id)) fates.set(o.id, decide(o.id, o.n, inputOfPiece(o.piece), false, false));
+  }
+
+  // records the plan made that a later «Надень» took off (held: «Отложи» instead of «Надень») or dropped (gone)
+  const gone: string[] = [];
+  for (const [id, line] of madeBy) {
+    const f = fates.get(line);
+    if (!f || (f.kind !== 'wear' && f.kind !== 'keep' && f.kind !== 'reserve')) continue;
+    if (!st.pools[f.c.id]?.includes(id)) gone.push(skipKey(line, f.c.id));
+    else if (f.kind === 'wear' && st.worn?.[f.c.id]?.[st.pieces[id].slot] !== id) fates.set(line, { kind: 'keep', c: f.c, t4: false });
   }
 
   // «T4»: a new piece the plan feeds four times (Q6); feeds to recorded pieces — the player marks it in the game
@@ -177,7 +229,7 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
     else if (f.kind === 'feed') counts.feed++;
     else if (f.kind === 'junk') counts.junk++;
   }
-  return { lines, st, ops, t4, wornFed, counts };
+  return { plan: { lines, st, ops, t4, wornFed, counts }, gone };
 }
 
 // «Вернуть» после «Сделал»: the operations' own undos, newest first — not a snapshot (it would wipe what was done
