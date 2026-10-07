@@ -53,4 +53,4 @@ outerpedia's authors; the tool is not affiliated with VA Games or with outerpedi
 and the flat/% formula come from [outerpedia](https://github.com/Sevih/outerpedia) under the MIT license; the page
 also bundles React (MIT) and Tabler Icons (MIT). Full license texts: the app's "More" → "About" → "Licenses (MIT)" and [`src/app/shell/licenses.ts`](src/app/shell/licenses.ts).
 
-Development notes (in Russian): [DEVELOPMENT.md](DEVELOPMENT.md).
+Development notes: [DEVELOPMENT.md](DEVELOPMENT.md).

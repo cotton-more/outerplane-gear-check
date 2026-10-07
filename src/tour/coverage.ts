@@ -32,7 +32,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/gear/ui/VsChip.tsx': 'helper',             // чип исхода в «Сейчас на персонажах» и карточке вердикта: их подсказки его объясняют
   'features/gear/ui/pieceText.tsx': 'helper',          // подписи вещи в строках экипировки
   'features/roster/BackupIO.tsx': 'helper',            // «Резервная копия» в «Ещё»: подпись говорит, что это
-  'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть · Все», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
+  'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
   'features/roster/CharFilterSheet.tsx': 'helper',     // шторка фильтра: стихии и классы кнопками, «Сбросить»
   'features/roster/CharTile.tsx': 'helper',            // плитка героя: её объясняют подсказки списка персонажей
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само

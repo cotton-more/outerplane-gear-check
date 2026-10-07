@@ -142,7 +142,7 @@ describe('справка и обучение после «Ещё»', () => {
   it.each(['ru', 'en'] as const)('%s: Справка называет «Ещё», «Доодеть», резервную копию и «Обмен»', (lang) => {
     const u = TEXTS[lang].ui;
     const chars = u.helpChars.join('\n');
-    for (const word of [u.more, u.modeMine, u.modeToDress, u.modeAll, u.backup, u.moreSettings]) expect(chars).toContain(word);
+    for (const word of [u.more, u.modeMine, u.modeToDress, u.backup, u.moreSettings]) expect(chars).toContain(word);
     expect(u.helpTradeItems.join('\n')).toContain(u.tradeBtn);
     expect(u.helpInputItems.join('\n')).toContain(u.more);
   });

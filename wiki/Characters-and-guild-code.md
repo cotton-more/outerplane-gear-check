@@ -11,11 +11,11 @@ roster; with "only my characters" checked (More → Settings), the evaluation co
 
 Above the grid are two rows: search with the filter button, and the list mode with the **Trade** button. The mode is
 **Mine** (everyone you star, with builds and without, alphabetical; a hero without builds has a grey portrait),
-**To dress** (yours with builds who wear fewer than 6 of 6) or **All** (everyone with builds; a hero without builds is
-found by name). The numbers are the roster size and how many are left to dress. While the roster is empty there is only
-"All" and a hint about the star. Element and class are under the filter button (the number on it is how many are
-chosen); the chosen ones show as chips above the grid, ✕ clears one, "Reset" in the filter clears both. "Mine" and "All"
-are remembered, "To dress" isn't. **Trade** opens [team trade](Trading-gear).
+**To dress** (yours with builds who wear fewer than 6 of 6); with neither pressed the list shows everyone with builds (a
+hero without builds is found by name). Pressing the pressed mode again unpresses it. The numbers are the roster size and
+how many are left to dress. While the roster is empty there is no mode, only a hint about the star. Element and class
+are under the filter button (the number on it is how many are chosen); the chosen ones show as chips above the grid, ✕
+clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are remembered, "To dress" isn't. **Trade** opens [team trade](Trading-gear).
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
 next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on

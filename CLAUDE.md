@@ -1,40 +1,48 @@
 # Outerplane Gear Check
 
-Помощник «оставить или разобрать» для снаряжения Outerplane: PWA на React + TypeScript, данные — outerpedia.
-Устройство, сборка и тесты — [DEVELOPMENT.md](DEVELOPMENT.md). Для игроков — `wiki/` (GitHub Wiki, пары EN/RU) и README.
+"Keep or salvage" helper for Outerplane gear: a React + TypeScript PWA, data from outerpedia.
+Architecture, build and tests — [DEVELOPMENT.md](DEVELOPMENT.md). For players — `wiki/` (GitHub Wiki, EN/RU pairs) and README.
 
-## Команды
+## Language
 
-- `task test` — типы и все тесты; перед каждым коммитом.
-- `task preview` — сайт как на Pages на текущем коде (`build/preview`), `docs/` не трогает.
-- `task golden:update` — только если вердикты поменялись намеренно; потом просмотреть diff `test/golden.json`.
-- `task tour:check` — после правок вёрстки формы и вердикта: тур в Chrome на пяти размерах и в двух темах.
+- Reply in English, even when the owner writes in Russian. Rephrase in Russian only when asked, then continue in English.
+- English for everything developer-facing: docs, plans, code comments, commit messages.
+- The product is bilingual: player-facing text (`src/i18n/ru.ts` + `en.ts`, wiki pairs, in-app Help) is always written in
+  both languages. Existing Russian comments and docs may stay; write new ones in English.
 
-## Правила
+## Commands
 
-- Основной сценарий — телефон в разделённом экране рядом с игрой: 280–420px в ширину, бывает ландшафт 812×375 и
-  420×390. Вёрстку проверять на этих размерах и в тёмной теме.
-- Код — по фичам: `src/features/<фича>`, зависимости только вниз — `shared` → `game` → `features` → `screens` → `app`;
-  вёрстку разных фич собирает `screens/`. Какая папка за что — таблица «Где что» в DEVELOPMENT.md.
-- Портрет героя, чип сабстата, галочка, переключатель, ✕, окно-вопрос и подписи вещи уже есть — список «Общие элементы»
-  в DEVELOPMENT.md. Кусок вёрстки повторился второй раз — вынеси туда же.
-- Фразы — только в `src/i18n/ru.ts` и `en.ts` (один тип `Texts`). Русского текста в остальном `src` быть не должно,
-  кроме комментариев (`test/i18n.test.ts`).
-- Анимации — только в `src/styles/motion.css`: появление, до 200 мс, `transform` и `opacity`; ввод (сетка, строки,
-  слот, грейд) не анимировать.
-- `docs/` после push собирает робот — не коммитить сборку вместе с кодом.
-- Поменялось то, что видит игрок, — обновить Wiki на обоих языках и Справку (`t.ui.help…`).
+- `task test` — types and all tests; run before every commit.
+- `task preview` — the site as it would be on Pages, from current code (`build/preview`); does not touch `docs/`.
+- `task golden:update` — only when verdicts changed on purpose; then review the `test/golden.json` diff.
+- `task tour:check` — after layout changes to the form or verdict: runs the tour in Chrome at five sizes and both themes.
 
-## Обучение (`src/tour/`)
+## Rules
 
-- Новая заметная игроку функция — подсказка в `Компонент.tour.ts` рядом с компонентом и строка в `TIP_ORDER`
-  (`src/tour/registry.ts`, порядок показа), тексты в `ru.ts` и `en.ts`.
-  Служебный компонент или тот, что объясняет главный тур, — запись в `src/tour/coverage.ts` с причиной.
-  `test/tour/tour.test.ts` падает на компоненте без того и другого и пишет, что сделать.
-- Поменялось поведение, которое объясняет подсказка, — `rev + 1`; шаг тура (`core.ts`, `gear.ts`) — поправь его текст. Если давним
-  игрокам стоит сказать о новом — подсказка с `news: true` и строка в `tour.news`. Дата выпуска не нужна: новое — то, чего
-  не было у игрока при первом запуске (`ogc.tour.known`).
-- Перенёс или переименовал элемент с `data-tour` — перенеси якорь (`anchors.ts`).
-- Текст подсказки сначала предложи владельцу на двух языках и спроси, показывать ли его как «Что нового».
-- В конце ответа с правкой в `src/app`, `src/screens`, `src/features`, `src/game` или `src/shared` — строка «Обучение: добавлено /
-  обновлено (rev) / не нужно — почему». Та же строка — в теле коммита.
+- Main use case: a phone in split screen next to the game, 280–420px wide; also landscape 812×375 and 420×390.
+  Check layout at these sizes and in the dark theme.
+- Code is organized by feature: `src/features/<feature>`, dependencies only point down — `shared` → `game` → `features` →
+  `screens` → `app`; `screens/` composes layouts from different features. Which folder owns what — the "Where things are"
+  table in DEVELOPMENT.md.
+- Hero portrait, substat chip, checkmark, toggle, ✕, confirm dialog and item captions already exist — see "Shared
+  elements" in DEVELOPMENT.md. When a piece of layout repeats a second time, move it there.
+- UI strings only in `src/i18n/ru.ts` and `en.ts` (one `Texts` type). No Russian text elsewhere in `src` except comments
+  (`test/i18n.test.ts`).
+- Animations only in `src/styles/motion.css`: entrance only, ≤200 ms, `transform` and `opacity`; never animate inputs
+  (grid, rows, slot, grade).
+- `docs/` is built by the bot after push — never commit the build together with code.
+- If something the player sees changed — update the Wiki in both languages and Help (`t.ui.help…`).
+
+## Tour (`src/tour/`)
+
+- New player-visible feature — a tip in `Component.tour.ts` next to the component and an entry in `TIP_ORDER`
+  (`src/tour/registry.ts`, display order), texts in `ru.ts` and `en.ts`.
+  A utility component, or one the main tour already explains — an entry in `src/tour/coverage.ts` with the reason.
+  `test/tour/tour.test.ts` fails on a component with neither and says what to do.
+- Behavior a tip explains changed — `rev + 1`; a tour step changed (`core.ts`, `gear.ts`) — fix its text. If long-time
+  players should hear about it — a tip with `news: true` and an entry in `tour.news`. No release date needed: "new" means
+  what the player didn't have at first launch (`ogc.tour.known`).
+- Moved or renamed an element with `data-tour` — move the anchor (`anchors.ts`).
+- Propose tip text to the owner first, in both languages, and ask whether to show it as "What's new".
+- End every reply that changes `src/app`, `src/screens`, `src/features`, `src/game` or `src/shared` with the line
+  "Tour: added / updated (rev) / not needed — why". Put the same line in the commit body.

@@ -4,7 +4,7 @@ import type { Char } from '@/game/data/types';
 
 // Кого показывать (.x/0070-more-sheet SPEC 5): «Мои» — все свои, с билдами и без; «Доодеть» — свои с билдами, у кого надето
 // меньше 6 из 6; «Все» — с билдами, а героя без билдов находит только поиск
-export type CharMode = 'mine' | 'todress' | 'all';
+export type CharMode = 'mine' | 'todress' | 'all'; // 'all' — в переключателе ничего не нажато
 
 export interface CharFilter {
   cq: string;      // поиск по имени

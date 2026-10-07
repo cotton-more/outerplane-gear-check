@@ -1,4 +1,4 @@
-// Раскладка src по фичам (DEVELOPMENT.md → «Устройство src/»): зависимости только вниз —
+// Раскладка src по фичам (DEVELOPMENT.md → "`src/` layout"): зависимости только вниз —
 // shared → game → features → screens → app; фичи — в порядке eval → gear → roster → worn → tryon → trade.
 // Сквозные i18n и tour берёт кто угодно; сами они берут нижние слои, а app — только типы.
 import { readdirSync, readFileSync, statSync } from 'node:fs';

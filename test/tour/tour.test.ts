@@ -34,7 +34,7 @@ describe('у каждого компонента — обучение или п�
       `  Игрок это видит → создай src/${f.replace(/\.tsx$/, '.tour.ts')} рядом (export default defineTips(...), src/tour/types.ts),`,
       '  тексты — в ru.ts и en.ts. Сначала предложи текст подсказки владельцу и спроси, показывать ли как «Что нового».',
       `  Объясняет главный тур или служебный → впиши в src/tour/coverage.ts: '${f}': 'core' | 'helper' с причиной в комментарии.`,
-      '  Подробно: DEVELOPMENT.md → «Обучение».',
+      '  Подробно: DEVELOPMENT.md → "Tour".',
     ].join('\n');
     expect(missing.map(how).join('\n\n')).toBe('');
   });

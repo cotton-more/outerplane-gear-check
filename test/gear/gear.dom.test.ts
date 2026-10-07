@@ -793,8 +793,9 @@ describe('меню, плитки, код копии, другая вкладка
     expect($('.cmode [aria-pressed="true"]')?.textContent).toBe('To dress 2');
     expect($$('#cgrid .ctile .cn').map((e) => e.textContent).sort()).toEqual(['Caren', 'Kappa']);
     expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']); // у Kappa вещей нет — ничего не надето
-    await click(byText('.cmode button', 'All'));
-    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // в «All» — и не из ростера: у них не надето ничего
+    await click(byText('.cmode button', 'To dress')); // повторное нажатие — ничего не нажато, все с билдами
+    expect($('.cmode [aria-pressed="true"]')).toBeNull();
+    expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // без режима — и не из ростера: у них не надето ничего
   });
 
   it('панель списка: «Trade» — сразу команда; «mark all shown», «clear roster», «export / import» нет', async () => {
