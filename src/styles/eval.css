@@ -112,7 +112,7 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .drawer .unlisted { margin-left: auto; }
 .picked-item { margin-bottom: 10px; }
 .picked-item p { margin: 0 0 4px; }
-[aria-pressed="true"].slot, [aria-pressed="true"].grade, [aria-pressed="true"].set, [aria-pressed="true"].item, [aria-pressed="true"].chip, [aria-pressed="true"].subopt, [aria-pressed="true"].deadchip, [aria-pressed="true"].ctile {
+[aria-pressed="true"].slot, [aria-pressed="true"].grade, [aria-pressed="true"].set, [aria-pressed="true"].item, .item.soon, [aria-pressed="true"].chip, [aria-pressed="true"].subopt, [aria-pressed="true"].deadchip, [aria-pressed="true"].ctile {
   border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--ink);
 }
 

@@ -414,13 +414,27 @@ describe('окно предмета: поиск', () => {
     expect(document.activeElement).not.toBe($('#item-q'));
   });
 
-  it('осталось несколько — окно открыто; остался один — он выбран, окно закрыто', async () => {
+  const wait = (ms: number) => act(() => new Promise((r) => setTimeout(r, ms)));
+
+  it('осталось несколько — окно открыто; остался один — подсвечен, через 300 мс выбран, окно закрыто', async () => {
     await open();
     await type('gorgon');
     expect(names()).toHaveLength(5);
-    expect($('.drawer')).toBeTruthy();
+    expect($('.drawer .item.soon')).toBeNull();
     await type('twin b');
+    expect($('.drawer .item.soon b')?.textContent).toBe('Twin B');
+    await wait(150);
+    expect($('.drawer')).toBeTruthy();
+    await wait(200);
     expect($('.drawer')).toBeNull();
     expect($('[data-tour="item"]')?.textContent).toContain('Twin B');
+  });
+
+  it('стёр, и совпадений снова несколько — выбор отменён', async () => {
+    await open();
+    await type('twin b');
+    await type('b');
+    await wait(400);
+    expect($('.drawer')).toBeTruthy();
   });
 });
