@@ -43,9 +43,9 @@ in the same batch and can still take it (up to four).
    reaches T4 ("· T4 after feeding"). Feeding a worn piece — stop at T4 and tap "T4" on its card. A piece that looks
    like one already set aside says so; if you have two of them, tap "It's a different one".
 4. **"Don't take"** on a line — plan it again without that hero.
-5. Walk down the game's list once and do what each line says. Then **"Done"**: equips and set-asides are recorded at
-   once ("Batch recorded: 3 equipped, 2 set aside."), "Undo" reverts all and brings the batch back. "Cancel" — back to
-   the list.
+5. Walk down the game's list once and do what each line says. Then **"Record the plan"** and "Record" in the question
+   "All done in the game?": equips and set-asides are recorded at once ("Batch recorded: 3 equipped, 2 set aside."),
+   "Undo" reverts all and brings the batch back. Back to the list — "List ▸" on the "Batch" strip.
 
-The batch is kept until "Done" or ✕, even if the phone unloads the page. Pieces worn by heroes don't move between
+The batch is kept until "Record the plan" or ✕, even if the phone unloads the page. Pieces worn by heroes don't move between
 them — that's [Trading gear](Trading-gear).

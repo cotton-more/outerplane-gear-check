@@ -8,7 +8,7 @@ import { BatchPlan } from './BatchPlan';
 
 export function BatchPanel({ ctx, m }: { ctx: Ctx; m: BatchMode }) {
   if (m.view === 'plan' && m.plan) {
-    return <BatchPlan ctx={ctx} plan={m.plan} onSkip={m.skip} onTwin={m.twin} onDone={m.done} onCancel={() => m.show('list')} />;
+    return <BatchPlan ctx={ctx} plan={m.plan} onSkip={m.skip} onTwin={m.twin} onDone={m.done} />;
   }
   return <BatchList ctx={ctx} items={m.batch.items} editing={m.editing} onFix={m.fix} onRemove={m.remove} onPlan={() => m.show('plan')} />;
 }

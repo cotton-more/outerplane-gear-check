@@ -1,6 +1,8 @@
 // The batch plan (.x/0110-batch/PLAN.md §1 p. 4): a line per entry in the entered order, a piece the plan takes off a hero
-// right under its entry; «Не брать» on a line with a hero, «Это другой» on a look-alike of a set-aside piece; «Сделал» —
-// record it all, «Отмена» — back to the list.
+// right under its entry; «Не брать» on a line with a hero, «Это другой» on a look-alike of a set-aside piece.
+// «Записать план» — record it all, only after a confirm: an accidental tap changes many heroes at once (owner, 2026-10-07).
+// The button is alone and outlined in the dismantle colour; back to the list — «Список ▸» on the strip.
+import { useState } from 'react';
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Texts } from '@/i18n';
@@ -8,6 +10,7 @@ import { useT } from '@/i18n';
 import { subsText } from '@/game/text';
 import type { Fate, Line, Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
+import { AskSheet } from '@/shared/ui/AskSheet';
 
 export function fateText(t: Texts, f: Fate): string {
   switch (f.kind) {
@@ -34,12 +37,13 @@ function heroOf(plan: Plan, l: Line): Char | null {
   return g && (g.kind === 'wear' || g.kind === 'keep') ? g.c : null;
 }
 
-export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone, onCancel }: {
+export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone }: {
   ctx: Ctx; plan: Plan;
-  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onDone: () => void; onCancel: () => void;
+  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onDone: () => void;
 }) {
   const t = useT();
   const c = plan.counts;
+  const [asking, setAsking] = useState(false);
   return (
     <div className="batch">
       <p className="batch-sum">{t.batch.summary(c.wear, c.keep, c.feed, c.junk)}</p>
@@ -62,9 +66,12 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone, onCancel }: {
       </ol>
       {plan.wornFed && <p className="muted small">{t.batch.wornNote}</p>}
       <div className="batch-acts">
-        <button type="button" className="btn primary" onClick={onDone}>{t.trade.done}</button>
-        <button type="button" className="btn" onClick={onCancel}>{t.trade.cancel}</button>
+        <button type="button" className="btn brec" onClick={() => setAsking(true)}>{t.batch.record}</button>
       </div>
+      {asking && (
+        <AskSheet title={t.batch.recordAsk} text={t.batch.recordText(c.wear, c.keep)} yes={t.batch.recordYes} kind="batch-ask"
+          onYes={() => { setAsking(false); onDone(); }} onClose={() => setAsking(false)} />
+      )}
     </div>
   );
 }

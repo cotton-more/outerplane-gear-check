@@ -132,7 +132,7 @@ describe('«Партия» on a phone', () => {
     expect(batch().items).toHaveLength(0);
   });
 
-  it('the plan: the good Legendary goes on Caren, the weak one feeds it; «Done» records it, «Undo» brings all back', async () => {
+  it('the plan: the good Legendary goes on Caren, the weak one feeds it; «Record the plan» asks, then records it, «Undo» brings all back', async () => {
     const items = [WEAK, GOOD].map((x) => ({ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x }));
     await mount({ setId: speed, subs: {} }, { batch: { v: 1, items, skip: [], twin: [] } });
     await click($('.batch-strip .batch-list'));
@@ -141,7 +141,13 @@ describe('«Партия» on a phone', () => {
     expect(lines.slice(0, 2)).toEqual(['Feed to #2', 'Equip on Caren — instead of the helmet']);
     expect($('.batch-sum')?.textContent).toMatch(/^equip 1 · set aside 0 · Breakthrough 1 · dismantle \d$/);
     const before = gear();
-    await click(byText('.batch button', 'Done'));
+    await click(byText('.batch button', 'Record the plan'));
+    expect(batch()).not.toBeNull();                       // asks first: an accidental tap records nothing
+    expect($('.drawer.ask')?.textContent).toContain('equip 1, set aside 0');
+    await click(byText('.drawer.ask button', 'Cancel'));
+    expect(gear()).toEqual(before);
+    await click(byText('.batch button', 'Record the plan'));
+    await click(byText('.drawer.ask button', 'Record'));
     expect(batch()).toBeNull();
     expect($('.batch-strip')).toBeNull();
     const after = gear();
