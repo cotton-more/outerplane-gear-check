@@ -125,6 +125,17 @@ describe('«Партия» on a phone', () => {
     expect(batch().items).toHaveLength(2);                // the batch is back
   });
 
+  it('a set-aside reserve the new piece eats has its own line: «Caren\'s set-aside helmet (…)» — «Feed to #1»', async () => {
+    const gear = { ...GEAR, seq: 4, pieces: { ...GEAR.pieces, r: P('r', 'helmet', WEAK.subs, { bt: 0 }) }, pools: { [caren.id]: ['g', 'b', 'h', 'r'] } };
+    const items = [{ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...GOOD }];
+    await mount({ setId: speed, subs: {} }, { gear, batch: { v: 1, items, skip: [], twin: [] } });
+    await click($('.batch-strip .batch-list'));
+    await click(byText('.batch button', 'Plan it'));
+    const row = byText('.batch-plan .brow', "Caren's set-aside helmet (SPD 1, RES% 1, EFF% 1, HP 1)");
+    expect(row?.querySelector('.bfate')?.textContent).toBe('Feed to #1');
+    expect($('.batch-sum')?.textContent).toMatch(/· Breakthrough 1 ·/);
+  });
+
   it('«Don\'t take» plans the line again without that hero', async () => {
     const items = [{ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...GOOD }];
     await mount({ setId: speed, subs: {} }, { batch: { v: 1, items, skip: [], twin: [] } });

@@ -35,9 +35,9 @@ function norm(plan: Plan, f: Fate): string {
 }
 const fatesOf = (plan: Plan) => plan.lines.filter((l) => !l.off).map((l) => key(l.input) + ' → ' + norm(plan, l.fate)).sort();
 
-const sG = () => mk('sG', 'gloves', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
-const sB = () => mk('sB', 'shoes', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
-const epicHelm = () => mk('eH', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2 }, 0, { grade: 'rare' });
+const sG = (id = 'sG') => mk(id, 'gloves', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+const sB = (id = 'sB') => mk(id, 'shoes', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
+const epicHelm = (id = 'eH') => mk(id, 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2 }, 0, { grade: 'rare' });
 const weak = (id: string) => mk(id, 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1, HP: 1 }, 0);
 const good = (id: string) => mk(id, 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0);
 
@@ -100,6 +100,47 @@ describe('plan of a batch', () => {
     const back = undoPlan(plan.st, plan);
     expect(back.pools).toEqual(st.pools);
     expect(back.worn).toEqual(st.worn);
+  });
+
+  it("the hero's own weak reserve the new piece pushes out gets its own line: feed to the new one", () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm(), weak('L1')] }, { Caren: ['sG', 'sB', 'eH'] });
+    const plan = planBatch(ctx, st, [E(good('L2'))]);
+    expect(plan.lines[0].fate).toMatchObject({ kind: 'wear', c: { name: 'Caren' }, instead: { id: 'eH' } });
+    const res = plan.lines.find((l) => l.off?.piece.id === 'L1')!;
+    expect(res.off).toMatchObject({ c: { name: 'Caren' }, was: 'stash' });
+    expect(res.fate).toEqual({ kind: 'feed', to: { entry: 1 } });
+    expect(plan.lines.find((l) => l.off?.piece.id === 'eH')?.off?.was).toBe('worn');
+    expect(plan.lines).toHaveLength(3);
+    expect(plan.counts.feed).toBe(1);
+    const back = undoPlan(plan.st, plan);
+    expect(back.pools).toEqual(st.pools);
+    expect(back.worn).toEqual(st.worn);
+  });
+
+  it("another hero's reserve the new piece eats leaves that hero's pool, with its own line; «Вернуть» puts it back", () => {
+    const { ctx, st } = world(['Caren', 'Aer'], {
+      Caren: [sG('cG'), sB('cB')],
+      Aer: [sG('aG'), sB('aB'), epicHelm('aH'), weak('L1')],
+    }, { Caren: ['cG', 'cB'], Aer: ['aG', 'aB', 'aH'] });
+    const plan = planBatch(ctx, st, [E(good('L2'))]);
+    expect(plan.lines[0].fate).toMatchObject({ kind: 'wear', c: { name: 'Caren' }, instead: null });
+    const res = plan.lines.find((l) => l.off?.piece.id === 'L1')!;
+    expect(res.off).toMatchObject({ c: { name: 'Aer' }, was: 'stash' });
+    expect(res.fate).toEqual({ kind: 'feed', to: { entry: 1 } });
+    expect(plan.st.pools[char('Aer').id]).not.toContain('L1');
+    const back = undoPlan(plan.st, plan);
+    expect(back.pools).toEqual(st.pools);
+    expect(back.worn).toEqual(st.worn);
+  });
+
+  it('the eaten reserve counts against the four feeds of the new piece', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), weak('L1')] }, { Caren: ['sG', 'sB'] });
+    const weaks = ['w1', 'w2', 'w3', 'w4'].map((id, i) => E({ ...weak(id), lit: { SPD: 1, RES: 1, EFF: 1 + (i >> 1), HP: 1 + (i % 2) } }));
+    const plan = planBatch(ctx, st, [E(good('L2')), ...weaks]);
+    expect(plan.lines.find((l) => l.off?.piece.id === 'L1')?.off?.was).toBe('stash');
+    const fed = plan.lines.filter((l) => l.fate.kind === 'feed' && 'entry' in l.fate.to && l.fate.to.entry === 1);
+    expect(fed).toHaveLength(4);
+    expect(plan.lines.filter((l) => l.fate.kind === 'feed')).toHaveLength(4);
   });
 
   it('random batches: the same fates in any entered order; one line per piece; at most 4 feeds per target', () => {

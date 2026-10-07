@@ -6,7 +6,7 @@ import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { putOn, stashOn, undoPut, type PutResult } from '@/features/gear/pool';
+import { putOn, removeFrom, removeUndo, stashOn, undoPut, type PutResult } from '@/features/gear/pool';
 import { heroPool, verdictOf, type HeroPool, type Pools, type Result, type Same } from '@/features/gear/verdict';
 
 // a piece as entered; #n = index + 1. twin — «Это другой»: it only looks like a set-aside record
@@ -23,9 +23,13 @@ export type Fate =
   | { kind: 'maybe'; heroes: Char[] }
   | { kind: 'junk' }
   | { kind: 'none' };                                               // no verdict: the item isn't in outerpedia data
+// a piece the plan takes from a hero: was — how the hero held it, 'worn' (taken off) or 'stash' (a set-aside record)
+export interface Off { c: Char; piece: Piece; was: 'worn' | 'stash' }
 // n — the entry; a taken-off piece (off) sits right under the entry that replaced it. id — key for «Не брать»
-export interface Line { id: string; n: number; off?: { c: Char; piece: Piece }; input: ItemInput; fate: Fate }
-export interface Op { c: string; r: PutResult }                    // «Надень» (putOn) or «Отложи» (stashOn)
+export interface Line { id: string; n: number; off?: Off; input: ItemInput; fate: Fate }
+export type Op =
+  | { c: string; r: PutResult }                                          // «Надень» (putOn) or «Отложи» (stashOn)
+  | { c: string; drop: Piece; back: (x: GearStore) => GearStore };       // another hero's reserve leaves (removeFrom)
 export interface Counts { wear: number; keep: number; feed: number; junk: number }
 export interface Plan {
   lines: Line[];
@@ -83,7 +87,7 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
   const full = new Set<string>();
   let wornFed = false;
   const fates = new Map<string, Fate>();
-  const offs: { id: string; n: number; c: Char; piece: Piece }[] = [];
+  const offs: ({ id: string; n: number } & Off)[] = [];
   const offId = (n: number) => `${n}~${offs.filter((o) => o.n === n).length + 1}`;
 
   // one piece: its verdict on the current copy, the decision applied to it. n — the entry (for a taken-off piece — the
@@ -105,8 +109,21 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
       // the worn piece of its slot comes off in the game: a line of its own (Q4) — the pool dropped it, or still keeps it
       if (was) {
         const id = offId(n);
-        offs.push({ id, n, c, piece: was });
+        offs.push({ id, n, c, piece: was, was: 'worn' });
         if (!res.removed.some((p) => p.id === was.id)) fates.set(id, { kind: 'keep', c, t4: false, held: true });
+      }
+      // a set-aside record of its slot the new one pushes out (the hero's weak reserve) is a piece in the game too: a line
+      for (const p of res.removed) {
+        if (p.slot === res.slot && p.id !== res.wasWorn && base.pieces[p.id]) offs.push({ id: offId(n), n, c, piece: p, was: 'stash' });
+      }
+      // another hero's reserve goes to this one's Breakthrough (verdict feedFrom): it leaves that pool, as with a single
+      // «Надеть» (useFormFlow equipOn), before it is decided — it must not look like its own record
+      const h = r.named[0];
+      if (h.reserveOf && h.reserveBt && h.reserveOf.id !== c.id && st.pools[h.reserveOf.id]?.includes(h.reserveBt.id)) {
+        const of = h.reserveOf, p = h.reserveBt;
+        ops.push({ c: of.id, drop: p, back: removeUndo(st, of.id, p) });
+        st = removeFrom(st, of.id, p.id);
+        offs.push({ id: offId(n), n, c: of, piece: p, was: 'stash' });
       }
       return { kind: 'wear', c, instead: was, t4: false };
     }
@@ -150,7 +167,7 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
     if ((fate.kind === 'wear' || fate.kind === 'keep') && t4Of.has(n)) fate = { ...fate, t4: true };
     lines.push({ id: String(n), n, input: e.input, fate });
     for (const o of offs.filter((x) => x.n === n && fates.has(x.id))) {
-      lines.push({ id: o.id, n, off: { c: o.c, piece: o.piece }, input: inputOfPiece(o.piece), fate: fates.get(o.id)! });
+      lines.push({ id: o.id, n, off: { c: o.c, piece: o.piece, was: o.was }, input: inputOfPiece(o.piece), fate: fates.get(o.id)! });
     }
   });
   const counts: Counts = { wear: 0, keep: 0, feed: 0, junk: 0 };
@@ -167,6 +184,6 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
 // during these seconds). «T4» marks sit on records the plan made: undoing them removes the marks too
 export function undoPlan(st: GearStore, plan: Pick<Plan, 'ops'>): GearStore {
   let x = st;
-  for (const op of [...plan.ops].reverse()) x = undoPut(x, op.c, op.r);
+  for (const op of [...plan.ops].reverse()) x = 'drop' in op ? op.back(x) : undoPut(x, op.c, op.r);
   return x;
 }

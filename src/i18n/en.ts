@@ -671,6 +671,7 @@ export const en: Texts = {
     none: "Can't plan: the item isn't in outerpedia data",
     same: (_slot, name, date) => `Looks already set aside for ${name}${date ? ' ' + date : ''} — if it is, do nothing`,
     off: (slot, name) => `${name}'s removed ${SLOT_EN[slot]}`,
+    offStash: (slot, name, subs) => `${name}'s set-aside ${SLOT_EN[slot]} (${subs})`,
     recorded: (a, b) => `Batch recorded: ${a} equipped, ${b} set aside.`,
   },
 

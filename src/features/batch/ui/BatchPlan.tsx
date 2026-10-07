@@ -5,6 +5,7 @@ import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Texts } from '@/i18n';
 import { useT } from '@/i18n';
+import { subsText } from '@/game/text';
 import type { Fate, Line, Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 
@@ -48,7 +49,9 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone, onCancel }: {
           return (
             <li key={l.id} className={`bgear-row brow b-${l.fate.kind}${l.off ? ' boff' : ''}`}>
               {l.off
-                ? <span className="boff-n">{t.batch.off(l.off.piece.slot, l.off.c.name)}</span>
+                ? <span className="boff-n">{l.off.was === 'stash'
+                  ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit))
+                  : t.batch.off(l.off.piece.slot, l.off.c.name)}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
               <span className="bfate">{fateText(t, l.fate)}</span>
               {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}

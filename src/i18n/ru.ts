@@ -770,6 +770,7 @@ export const ru = {
     same: (slot: string, name: string, date: string) =>
       `Похоже, уже ${by(slot, 'отложен', 'отложена', 'отложено', 'отложены')} для ${name}${date ? ' ' + date : ''} — если это ${by(slot, 'он', 'она', 'оно', 'они')}, ничего не делай`,
     off: (slot: string, name: string) => `${by(slot, 'Снятый', 'Снятая', 'Снятое', 'Снятые')} ${NOM[slot]} ${name}`,
+    offStash: (slot: string, name: string, subs: string) => `${by(slot, 'Отложенный', 'Отложенная', 'Отложенное', 'Отложенные')} ${NOM[slot]} ${name} (${subs})`,
     recorded: (a: number, b: number) => `Партия записана: надето ${a}, отложено ${b}.`,
   },
 
