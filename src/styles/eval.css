@@ -163,17 +163,20 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: var(--seg-lit-ink); }
 .roll-b button[aria-pressed="true"] { background: var(--seg-y); color: #1b1300; }
 /* окно уровня нового сабстата (LevelAsk): у нажатой клетки и на телефоне (Sheet at — место считает popPlace), кнопки
-   1–6 — 3×2, крупно; 5–6 (после Reforge) приглушены, но не блёклые: их можно нажать. Заголовок переносится:
-   «DMG RED% — сколько сегментов?» на 280px в строку не влезает */
+   1–6 — 3×2; 5–6 (после Reforge) приглушены, но не блёклые: их можно нажать.
+   Compact: the window is as wide as the 3×2 keys (finger-sized, ~54×40 each), so it covers little of the form.
+   The title wraps: «DMG RED% — сколько сегментов?» doesn't fit one line at this width */
 .drawer-back.pop { display: block; }
 .drawer-back.pop > .drawer { position: absolute; width: min(300px, calc(100% - 16px)); }
-.drawer.lvl { border-radius: 14px; box-shadow: 0 8px 24px rgb(0 0 0 / .25); }
-.drawer.lvl .drawer-h h3 { white-space: normal; text-wrap: balance; }
-.drawer.lvl .roll-b { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border: 0; border-radius: 0; background: none; overflow: visible; }
-.drawer.lvl .roll-b button { min-width: 0; height: 52px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface-2); font-size: 18px; color: var(--ink); }
+.drawer-back.pop > .drawer.lvl { width: 200px; border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .25); }
+.drawer.lvl .drawer-h { padding: 4px 4px 4px 10px; }
+.drawer.lvl .drawer-x { width: 32px; height: 32px; }
+.drawer.lvl .drawer-h h3 { font-size: 13px; line-height: 1.25; white-space: normal; text-wrap: balance; }
+.drawer.lvl .drawer-b { padding: 8px 10px 10px; }
+.drawer.lvl .roll-b { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; border: 0; border-radius: 0; background: none; overflow: visible; }
+.drawer.lvl .roll-b button { min-width: 0; height: 40px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface-2); font-size: 16px; color: var(--ink); }
 .drawer.lvl .roll-b button.after { background: transparent; color: var(--ink-3); font-weight: 500; }
-.drawer.lvl .seg-cap { margin: 10px 0 0; }
-@media (max-height: 460px) { .drawer.lvl .roll-b button { height: 44px; } }
+.drawer.lvl .seg-cap { margin: 8px 0 0; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); }
 .actions .hk { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }

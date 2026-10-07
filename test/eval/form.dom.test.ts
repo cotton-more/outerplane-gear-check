@@ -392,3 +392,35 @@ describe('окно уровня после сетки', () => {
     expect(rows()).toEqual([['SPD', '2'], ['CHC', '2'], ['CHD', '2'], ['ATK%', '1']]);
   });
 });
+
+// Legendary item picker: typing that leaves exactly one item picks it; no auto-focus without a mouse (phone keyboard)
+describe('окно предмета: поиск', () => {
+  const click = async (el: HTMLElement | null) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
+  const type = (v: string) => act(async () => {
+    const input = $('#item-q') as HTMLInputElement;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, v);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const names = () => [...document.querySelectorAll('.drawer .item b')].map((el) => el.textContent);
+  const open = async () => {
+    const a = D.weapons.find((i) => i.grade === 'unique' && i.star === 6)!;
+    await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: a.key, main: a.mains[0] });
+    await click($('[data-tour="item"]'));
+  };
+
+  it('по алфавиту; на телефоне поле поиска без фокуса', async () => {
+    await open();
+    expect(names()).toEqual([...names()].sort((a, b) => a!.localeCompare(b!)));
+    expect(document.activeElement).not.toBe($('#item-q'));
+  });
+
+  it('осталось несколько — окно открыто; остался один — он выбран, окно закрыто', async () => {
+    await open();
+    await type('gorgon');
+    expect(names()).toHaveLength(5);
+    expect($('.drawer')).toBeTruthy();
+    await type('twin b');
+    expect($('.drawer')).toBeNull();
+    expect($('[data-tour="item"]')?.textContent).toContain('Twin B');
+  });
+});
