@@ -233,6 +233,8 @@ html.xs .bgear-t { grid-row: 3; }
 .wchain .pill b { font-weight: 800; }
 .wchain .pill.ok { color: color-mix(in srgb, var(--keep) 55%, var(--ink)); background: color-mix(in srgb, var(--keep) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--keep) calc(35% + 65% * var(--k, 1)), transparent); }
 .wchain .pill.half { color: color-mix(in srgb, var(--temp) 55%, var(--ink)); background: color-mix(in srgb, var(--temp) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--temp) calc(35% + 65% * var(--k, 1)), transparent); }
+/* «Надето» without «Что искать» after it: the last piece doesn't touch the card's edge (.seek brings its own 20px) */
+.bgear.worn:last-child { padding-bottom: 20px; }
 .worn-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
 .worn-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; min-width: 0; }
 .worn-share .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
