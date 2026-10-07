@@ -41,11 +41,11 @@ const kOf = (chain: ChainSum[]) => {
   };
 };
 
-function WornChain({ chain }: { chain: ChainSum[] }) {
+function WornChain({ chain, anchor }: { chain: ChainSum[]; anchor: boolean }) {
   const t = useT();
   const k = kOf(chain);
   return (
-    <span className="chain wchain" aria-label={t.ui.wornChain}>
+    <span className="chain wchain" aria-label={t.ui.wornChain} {...(anchor ? tour('wchain') : {})}>
       {chain.map((x) => (
         <span key={x.key} className="wch">
           {x.sep && <i className="sep">{x.sep}</i>}
@@ -97,7 +97,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
           </div>
         )}
         <div className="worn-h" {...(shown ? {} : tour('bgear'))}>{title}{share}</div>
-        {shownPts && wv.chain.length > 0 && <WornChain chain={wv.chain} />}
+        {shownPts && wv.chain.length > 0 && <WornChain chain={wv.chain} anchor={!shown} />}
         {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}{setPts(i)}</p>)}</div>}
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {

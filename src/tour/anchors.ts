@@ -6,6 +6,7 @@ export const ANCHORS = [
   'tryon', 'gequip', 'gslots', 'gpiece', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
   'pool', // вкладка «Пул» в карточке героя
   'wtab', // вкладка «Надето» в карточке героя
+  'wchain', // the chain with segment sums on «Надето»
   'pin', // «Закрепить набор» / «Закреплено: …» в карточке героя
   'fusion', // пометка «заменён Core Fusion X» на плитке X
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
