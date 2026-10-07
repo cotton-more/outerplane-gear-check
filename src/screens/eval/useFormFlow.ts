@@ -7,8 +7,9 @@ import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import type { Texts } from '@/i18n';
 import { itemInput, type FormAction, type FormState } from '@/features/eval/form/formState';
-import type { Piece } from '@/features/gear/model/gear';
-import { putOn, stashOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
+import type { GearStore, Piece } from '@/features/gear/model/gear';
+import { putOn, removeFrom, removeUndo, stashOn, undoPut, undoWear, wearFromPool, type PoolView, type PutResult } from '@/features/gear/pool';
+import type { Same } from '@/features/gear/verdict';
 import { nextToWear, type CharVs } from '@/features/gear/model/poolVs';
 import { oldFate } from '@/features/gear/model/material';
 import type { GearApi } from '@/features/gear/store/useGear';
@@ -19,11 +20,12 @@ import { setName } from '@/game/set/setName';
 
 const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
 
-export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroVs, replace, tview, vsList, canEquip, touring, narrow,
+export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroVs, replace, tview, vsList, same, canEquip, touring, narrow,
   dropReplace, backReplace, formUndo, setFormUndo, closeVerdict, closeEquip, fusionGate, joinRoster, say }: {
   idx: Index; t: Texts; ctx: Ctx;
   s: FormState; dispatch: Dispatch<FormAction>; gear: GearApi; input: ItemInput;
   hero: Hero | null; heroVs: CharVs | null; replace: string | null; tview: PoolView; vsList: CharVs[];
+  same: Same | null;                     // the piece looks like one set aside for same.c (guard, useVerdictModel)
   canEquip: boolean;                     // не во время обучения (кроме примера) и не на чужой версии экипировки
   touring: boolean; narrow: boolean;
   dropReplace: () => void; backReplace: (charId: string, rep: string | null) => void;
@@ -90,13 +92,26 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   // героя из «Примерить замену» запись replace уходит в любом случае (features/gear/pool planPut)
   const equipOn = (c: Char, sw: Switched | null) => {
     const rep = hero?.c.id === c.id ? replace : null;
-    const r = putOn(ctx, sw?.st ?? gear.store, c.id, input, { replace: rep });
+    const base = sw?.st ?? gear.store;
+    // it looks like the piece set aside for this very hero (guard): «Надеть» wears that record, no second one
+    const wore = same?.c.id === c.id && !rep ? wearFromPool(ctx, base, c.id, same.piece.id) : null;
+    const r: PutResult = wore ? { ...wore, piece: wore.st.pieces[wore.id] } : putOn(ctx, base, c.id, input, { replace: rep });
+    // the feed line named another hero's reserve («из запаса Aer»): it goes to this one's Breakthrough — its record leaves
+    // with this «Надеть», as the hero's own reserve does (planPut); «Вернуть» brings it back
+    const h = wore ? undefined : vsList.find((v) => v.c.id === c.id)?.h;
+    const fed = h?.reserveOf && h.reserveBt && h.reserveOf.id !== c.id ? { of: h.reserveOf, piece: h.reserveBt } : null;
+    const fedBack = fed ? removeUndo(r.st, fed.of.id, fed.piece) : null;
+    const undo = (x: GearStore) => {
+      const y = wore ? undoWear(x, c.id, wore) : undoPut(x, c.id, r);
+      const z = fedBack ? fedBack(y) : y;
+      return sw ? sw.undo(z) : z;
+    };
     // после «Надеть» форма — как после «Следующий» (решение владельца, refute-10 п. 6): иначе та же вещь на форме
     // сравнивается со своей записью («на уровне», штамп ниже) и «Надеть» на другого клал бы её вторым героям. Шторку
     // вердикта закрыть, как «Следующий»; режим героя остаётся. «Вернуть» — и пул, и вещь на форму (с «T4»)
     // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока
     const joined = joinRoster(c.id);
-    const st = r.st;
+    const st = fed ? removeFrom(r.st, fed.of.id, fed.piece.id) : r.st;
     gear.set(st);
     const was = input;
     closeVerdict();
@@ -121,10 +136,11 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     notes.push(...removedNotes(r, mine, rep));
     // вопрос 6, PLAN Д7: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
     if (pruned.length) notes.push(t.fit.pruned(c.name));
+    if (fed) notes.push(t.fit.fed(fed.piece.slot, pieceLabel(fed.piece), fed.of.name, !!fed.piece.setId));
     if (sw) notes.push(sw.note);
     say({
       text, note: notes.join(' '), tab: 'eval',
-      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)),
+      undo,
       after: both(both(joined, sw?.after), () => { dispatch({ type: 'load', item: was }); backReplace(c.id, rep); }),
     });
   };

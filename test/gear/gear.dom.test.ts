@@ -265,6 +265,9 @@ describe('такая же вещь у другого (окна «Это шлем
   it('«Надеть» на Caren точной копии вещи Kappa — окна нет, у Caren своя запись, у Kappa её — без изменений', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, subs: lit }, { gear: same() });
     await click($('.vcard'));
+    // owner 2026-10-07: it looks like Kappa's set-aside helmet — «Кому надеть?» only after «Это другой»
+    expect($('.v-equip')).toBeNull();
+    await click($('.v-twin'));
     await click($('.v-equip'));
     await click(byText('.equip-row', 'Caren') as HTMLElement);
 
@@ -507,6 +510,7 @@ describe('«Кому надеть?»', () => {
   it('точная копия записи Caren — строки «Уже есть» нет: на уровне, Caren в «Кому надеть?» нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: WEAK.lit }, { gear: G([WEAK], { [caren.id]: ['p1'] }), roster: [caren.id, kappa.id] });
     await click($('.vcard'));
+    await click($('.v-twin')); // it looks like Caren's set-aside one (guard, owner 2026-10-07)
     await click($('.v-equip'));
     expect(byText('.equip-row', 'Caren')).toBeUndefined();
     expect($$('.equip-row').some((r) => r.textContent?.includes('Already has'))).toBe(false);
@@ -1224,6 +1228,60 @@ describe('вердикт «статы + сеты»', () => {
     expect($('.vc-stash')?.textContent).toBe('Set aside for Caren');
     await click($('.vcard'));
     expect($('.v-reasons')?.textContent).toContain("Caren's Speed helmet is Epic. Keep this one until a good Legendary one drops: wear that and feed this one to it.");
+  });
+
+  // owner 2026-10-07: Caren and Aer both wear a good Epic Speed helmet; a weak Legendary one is set aside for Aer
+  describe('set aside for one hero, rated again', () => {
+    const aer = char('Aer');
+    const ok = { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, weak = { SPD: 1, RES: 1, EFF: 1, HP: 1 };
+    const kit = (k: string, helmet = true) => [P(k + 'g', 'gloves', speed, ok, { bt: 4 }), P(k + 's', 'shoes', speed, ok, { bt: 4 }),
+      ...(helmet ? [P(k + 'h', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 2 }, { grade: 'rare', bt: 0 })] : [])];
+    const team = (carenHelmet = true) => {
+      const c = kit('c', carenHelmet), a = kit('a'), l1 = P('L1', 'helmet', speed, weak, { bt: 0, at: '2026-10-07' });
+      const on = (ps: Pc[]) => Object.fromEntries(ps.map((p) => [p.slot, p.id]));
+      return G([...c, ...a, l1], { [caren.id]: c.map((p) => p.id as string), [aer.id]: [...a.map((p) => p.id as string), 'L1'] },
+        { worn: { [caren.id]: on(c), [aer.id]: on(a) } });
+    };
+
+    it('no «Set aside» for another hero until «It\'s a different one»', async () => {
+      await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: weak }, { gear: team(), roster: [caren.id, aer.id] });
+      expect($('.vcard .vc-title')?.textContent).toBe("reserve for Aer's Speed helmet");
+      expect($('.vcard .vc-line')?.textContent).toMatch(/^Looks like the Speed helmet set aside for Aer \d\d\/\d\d\. If it is — do nothing\.$/);
+      expect($('.vc-stash')).toBeNull();
+      await click(byText('.vc-twin', "It's a different one"));
+      // a second copy: Aer already has hers, so only Caren may take it
+      expect($('.vcard .vc-title')?.textContent).toBe("reserve for Caren's Speed helmet");
+      expect($('.vc-stash')?.textContent).toBe('Set aside for Caren');
+      expect($('.vc-twin')).toBeNull();
+    });
+
+    it('same stats in another order — another piece, no guard', async () => {
+      await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { RES: 1, SPD: 1, EFF: 1, HP: 1 } }, { gear: team(), roster: [caren.id, aer.id] });
+      expect($('.vc-twin')).toBeNull();
+      expect($('.vc-stash')?.textContent).toBe('Set aside for Caren');
+    });
+
+    it('«Equip on Aer» in hero mode wears the set-aside record, no second one', async () => {
+      await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: weak }, { gear: team(), roster: [caren.id, aer.id], tryon: { charId: aer.id } });
+      await click($('.vc-equip'));
+      const st = stored();
+      expect(st.seq).toBe(7); // no new record
+      expect(st.pools[aer.id]).toEqual(['ag', 'as', 'ah', 'L1']);
+      expect(st.worn[aer.id].helmet).toBe('L1');
+    });
+
+    it('a good Legendary for Caren feeds on Aer\'s reserve; «Equip» removes it, «Undo» brings it back', async () => {
+      await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 } }, { gear: team(false), roster: [caren.id, aer.id] });
+      await click($('.vcard'));
+      expect($('.v-vs')?.textContent).toContain("Feed the weak Speed helmet from Aer's reserve into this one.");
+      await click($('.vdrawer .drawer-x'));
+      await click(byText('.vc-equip', 'Caren'));
+      expect(stored().pools[aer.id]).toEqual(['ag', 'as', 'ah']);
+      expect($('.gear-toast')?.textContent).toContain("Removed the weak Speed helmet from Aer's reserve — it goes to Breakthrough.");
+      await click(byText('.gear-toast button', 'Undo'));
+      expect(stored().pools[aer.id]).toEqual(['ag', 'as', 'ah', 'L1']);
+      expect(stored().pools[caren.id]).toEqual(['cg', 'cs']);
+    });
   });
 
   it('В6 ревью этапа 10: запас и в режиме героя — «Отложить для Caren»', async () => {

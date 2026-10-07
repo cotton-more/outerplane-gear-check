@@ -258,10 +258,14 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
   });
 
   // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — после перехода она ему ничего не даёт; найден по
-  // имени — «Надеть» без прироста (TEXTS 23)
+  // имени — «Надеть» без прироста (TEXTS 23). It looks like X's set-aside piece: «Кому надеть?» only after «Это другой»
+  // (owner, 2026-10-07)
   it('у X та же вещь: строка без прироста — после перехода она ему ничего не даёт', async () => {
     const gear = G([P('e1', 'helmet', speed, HIT.subs)], { [eternal.id]: ['e1'] });
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
+    await click($('.vcard'));
+    expect($('.v-equip')).toBeNull();
+    await click($('.v-twin'));
     const row = await pick();
     expect(row.querySelector('.act')?.textContent).toBe('Equip');
   });

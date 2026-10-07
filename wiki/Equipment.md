@@ -57,8 +57,15 @@ a worn piece, the button says "Replace". After "Equip" the form clears as on "Ne
 characters: take it off in the game and check it like a new one.
 
 **Set aside.** "Keep it for Caren, don't wear it yet": **"Set aside for Caren"** records the piece for the hero
-without "worn". It sits in their Pool and later pieces are compared with it. Enter the same piece again and the verdict
-says "Looks like the … set aside for Caren — if it is, do nothing."
+without "worn". It sits in their Pool and later pieces are compared with it.
+
+**The same piece rated again.** The game shows no date or id on a piece, so after a day you may rate a set-aside piece
+once more. The verdict recognizes it — same set, slot, grade, main and the same substats **in the same order** — and
+says "Looks like the … set aside for Caren 10/07. If it is — do nothing." Then nobody else gets "Equip" or "Set aside":
+one helmet would become two records. Only Caren keeps "Equip" — it wears that very record, no second one appears. If
+the game has two such pieces (a filter by set and slot shows both), tap **"It's a different one"**: the verdict counts
+Caren's as a separate piece and the usual buttons come back. The same stats in another order are another piece
+anyway — type substats in the game's order.
 
 **Upgraded a worn piece in the game** (Reforge, Breakthrough)? Fix its segments and "T4" on the piece card (see below).
 Or tap "Try a replacement" there, enter the piece as it is now and "Replace": to the app it's a new piece, and the old
@@ -174,8 +181,10 @@ The stamp is always about **the piece being rated**:
   armor takes only Legendary material, so Epic and Legendary reserves are separate: a weak Legendary is kept even when
   the hero wears a good Epic of that set and slot — "Caren's Speed helmet is Epic. Keep this one until a good Legendary
   one drops: wear that and feed this one to it." A reserve piece goes to Breakthrough as soon as a good piece of the same
-  set, slot and grade arrives: the verdict says "Feed the weak … from Caren's reserve into this one" and names the
-  piece with its substats, so you can find it in the game. A piece already at T4 is never material. A Legendary weapon
+  set, slot and grade arrives — for any hero, not only the one who holds it: the verdict says "Feed the weak … from
+  Caren's reserve into this one" and names the piece with its substats, so you can find it in the game. "Equip" then
+  removes that reserve record ("Removed the weak … from Caren's reserve — it goes to Breakthrough.", with "Undo"). A
+  piece already at T4 is never material. A Legendary weapon
   or accessory that is the wrong main for a hero whose builds recommend it is kept in reserve too.
 - **Maybe** — suits only heroes outside your roster (the line says who).
 - **Dismantle** — nobody needs it: everyone already has as good, or it's weak. Dismantled a piece in the game? Remove

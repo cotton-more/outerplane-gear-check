@@ -143,7 +143,7 @@ export function App() {
   const vm = useVerdictModel({
     idx, t, ctx, s, store: gear.store, roster, view, hero, replace, touring, narrow: layout.narrow, onEval: s.tab === 'eval',
   });
-  const { input, shown, vsList, tview, offNote, cardShown, hint } = vm;
+  const { input, shown, vsList, tview, offNote, cardShown, hint, sameLine, onTwin } = vm;
   const onb = useOnboarding({
     idx, s, dispatch, roster, layout, nSubs: vm.nSubs, shown, material: vm.res?.kind === 'material',
     worn: vm.res?.kind === 'junk' && vm.res.heroes.some((h) => h.bar),
@@ -155,7 +155,7 @@ export function App() {
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
   const flow = useFormFlow({
-    idx, t, ctx, s, dispatch, gear, input, hero, heroVs: vm.heroVs, replace, tview, vsList, canEquip, touring, narrow: layout.narrow,
+    idx, t, ctx, s, dispatch, gear, input, hero, heroVs: vm.heroVs, replace, tview, vsList, same: vm.same, canEquip, touring, narrow: layout.narrow,
     dropReplace, backReplace: heroMode.backReplace, formUndo, setFormUndo,
     closeVerdict: () => setVerdictOpen(false), closeEquip: () => setEquipOpen(false),
     fusionGate: ros.fusionGate, joinRoster: ros.joinRoster, say,
@@ -168,7 +168,8 @@ export function App() {
   // правка в карточке вещи снимает висящее «Вернуть» любого прежнего действия (В3: одно на все): откаты возвращают
   // запись по id, а её за эти секунды поправили или скопировали (gear updateIn, REFUTE-5); replace режима героя — за копией
   const onPieceEdit = (charId: string, was: string, now: string) => { say(null); heroMode.followEdit(charId, was, now); };
-  const onEquipPick = !canEquip || hero ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); };
+  // «Кому надеть?» — not while the piece looks like one already set aside (guard): it would add a second record
+  const onEquipPick = !canEquip || hero || vm.same ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); };
   // сообщения с «Вернуть»: экипировки — на вкладке, где сделано; формы — на «Оценке», если нет первого
   const gearToast = !!msg && msg.tab === s.tab && !tour.run;
   const formToast = !!formUndo && s.tab === 'eval' && !tour.run && !gearToast;
@@ -198,8 +199,8 @@ export function App() {
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
-              onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} />
-            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} />}
+              onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin} />
+            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
@@ -261,7 +262,7 @@ export function App() {
         {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); onb.clearHelpNews(); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={onb.openTours} tips={<TipsHelp tour={tour} news={onb.helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

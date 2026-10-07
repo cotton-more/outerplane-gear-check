@@ -243,6 +243,16 @@ describe('T5 вердикт новой вещи', () => {
     expect(kindOf(legWorn.v(mk('eW', 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1 }, 0, { grade: 'rare' })))).toBe('junk');
   });
 
+  it('owner 2026-10-07: a good piece for Caren feeds on Aer\'s reserve; rated again, the weak one names Aer first', () => {
+    const [, sG, sB] = speedCaren();
+    const aer = [{ ...sG, id: 'aG' }, { ...sB, id: 'aB' }, mk('aE', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2 }, 0, { grade: 'rare' })];
+    const w = world(['Caren', 'Aer'], { Caren: [sG, sB], Aer: [...aer, weakSpd('L1')] }, { Caren: ['sG', 'sB'], Aer: ['aG', 'aB', 'aE'] });
+    const h = w.hero('Caren', w.v(mk('L2', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0))!);
+    expect([h.kind, h.reserveBt?.id, h.reserveOf?.name]).toEqual(['wear', 'L1', 'Aer']);
+    const again = w.v(weakSpd('x'))!;
+    expect([kindOf(again), again.same?.c.name, names(again.reserve)]).toEqual(['material reserve', 'Aer', ['Aer', 'Caren']]);
+  });
+
   it('T5.7а (вопрос 14): аксессуар Fran не с тем main → запас; второй → «Разобрать»; годный → «Надень» и запасной ему в Breakthrough', () => {
     const acc = (id: string, main: string, bt: 0 | 4 = 0) => mk(id, 'accessory', null, { CHD: 2, 'ATK%': 2, RES: 2, 'HP%': 2 }, bt, { itemKey: '1017', main });
     const bad = acc('xBad', 'CHC');
@@ -416,9 +426,18 @@ describe('отложенная вещь', () => {
 
   it('та же вещь ещё раз — same называет Caren и запись; вердикт как без неё («Оставь» снова)', () => {
     const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
-    const r = w.v(mk('again', 'helmet', 'Penetration', { SPD: 1, CHD: 1, CHC: 1, 'DEF%': 3 }, 0))!;
+    const r = w.v(mk('again', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, 0))!;
     expect(r.same).toMatchObject({ c: { name: 'Caren' }, piece: { id: 'st' } });
     expect(kindOf(r)).toBe('keep a');
+  });
+
+  it('owner 2026-10-07: same stats in another order — another piece; «Это другой» (twin) — the record stays', () => {
+    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    const other = w.v(mk('again', 'helmet', 'Penetration', { SPD: 1, CHD: 1, CHC: 1, 'DEF%': 3 }, 0))!;
+    expect(other.same).toBeNull();
+    const twin = verdictOf(w.ctx, w.view.hero, inputOf(mk('again', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, 0)), { twin: true })!;
+    expect(twin.same).toBeNull();
+    expect(kindOf(twin)).toBe(kindOf(other)); // compared with the set-aside one as with any other piece
   });
 
   it('уровень одного сабстата другой — другая вещь: годная копия слабее отложенной — Breakthrough для неё', () => {

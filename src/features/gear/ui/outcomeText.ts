@@ -17,10 +17,11 @@ const itemName = (idx: Index, x: Pick<ItemInput, 'slot' | 'itemKey' | 'main'>): 
 // отложенная вещь во фразе — как найти её в игре: «Это Speed-шлем · DEF 1, SPD 2, RES 2, отложен 06.10.»
 export const stashedLine = (t: Texts, p: Piece, label: Label): string => t.fit.stashedOne(p.slot, label(p), subsText(p.lit), t.fit.date(p.at));
 
-// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 п. 3б, 3в) и какой он
+// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 п. 3б, 3в) и какой он; the reserve may be another hero's
 function feedLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Label): string[] {
   if (!h.reserveBt) return [];
-  const feed = item.setId ? t.fit.feed(setName(idx, item.setId), item.slot, h.c.name) : t.fit.feedItem(itemName(idx, item), h.c.name);
+  const of = (h.reserveOf ?? h.c).name;
+  const feed = item.setId ? t.fit.feed(setName(idx, item.setId), item.slot, of) : t.fit.feedItem(itemName(idx, item), of);
   return [feed, stashedLine(t, h.reserveBt, label)];
 }
 

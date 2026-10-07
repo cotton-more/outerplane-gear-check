@@ -15,8 +15,9 @@ export const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(
 // Штамп, коротко — почему, и третья строка — по порядку, что есть: герой, которого назвал вердикт («▲ +2,5 очк. Caren»,
 // «держи Caren») → цепочка → первая причина. Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
 // named — назвать героя; в режиме героя (named false) имя уже на полосе над формой, третьей строки нет: про героя —
-// строка под карточкой (heroNote), чужие цепочки здесь не показываем
-export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; onOpen: () => void; vs?: CharVs | null; named?: boolean }) {
+// строка под карточкой (heroNote), чужие цепочки здесь не показываем. note — the piece looks like one already set aside:
+// that line goes third instead
+export function VerdictCard({ r, onOpen, vs, named = true, note = null }: { r: VerdictData; onOpen: () => void; vs?: CharVs | null; named?: boolean; note?: string | null }) {
   const t = useT();
   const best = bestRow(r)?.row;
   const chip = vs ? chipLabel(t, vs) : null;
@@ -29,7 +30,8 @@ export function VerdictCard({ r, onOpen, vs, named = true }: { r: VerdictData; o
         <span className="vc-more"><span className="vc-more-t">{t.ui.details}</span> ▸</span>
       </span>
       <span className="vc-title">{barTitle(r)}</span>
-      {vs && chip
+      {note ? <span className="vc-line"><Rich text={note} /></span>
+        : vs && chip
         ? <span className="vc-vs"><VsChip x={vs} />{named && <b><HeroName c={vs.c} /></b>}</span>
         : !named ? null
         : best && best.good != null

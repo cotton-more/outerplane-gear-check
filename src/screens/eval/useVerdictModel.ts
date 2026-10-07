@@ -2,7 +2,7 @@
 // сабстаты (A20, A21); с ростером — исход по «статам + сетам» (features/gear/verdict): штамп, заголовок и строки
 // (features/gear/ui/outcomeText), до трёх героев в «Сейчас на персонажах», тихая строка (вопрос 12). В режиме героя
 // (features/tryon) — его строка, «Надеть» и заголовок про него.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { FLAT, isArmor, type Index } from '@/game/data';
 import type { Ctx } from '@/game/context';
 import { dropSubs } from '@/game/item/subs';
@@ -17,7 +17,7 @@ import type { GearStore } from '@/features/gear/model/gear';
 import { storeFor } from '@/features/gear/model/fusion';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { charVs, type CharVs } from '@/features/gear/model/poolVs';
-import { verdictOf, type Result } from '@/features/gear/verdict';
+import { verdictOf, type Result, type Same } from '@/features/gear/verdict';
 import { resultHead } from '@/features/gear/ui/outcomeText';
 import { pieceLabel } from '@/features/gear/ui/pieceText';
 import { heroNote, heroTitle, type Hero } from '@/features/tryon/tryon';
@@ -46,9 +46,13 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
       : { ...raw, v: 'junk', title: armor ? t.armor.junkTitle : t.gear.junkRosterTitle, lines: hints, sections: [] };
   }
   // похоже, это отложенная раньше вещь — первой строкой (решение владельца 2026-10-06)
-  const same = r.same ? [t.fit.same(r.same.piece.slot, pieceLabel(t, idx)(r.same.piece), r.same.c.name, t.fit.date(r.same.piece.at))] : [];
+  const same = r.same ? [sameText(t, idx, r.same)] : [];
   return { ...out, lines: [...same, ...out.lines], plan: upgradePlan(ctx, input, out) };
 }
+
+// «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»
+const sameText = (t: Texts, idx: Index, same: Same): string =>
+  t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
 
 // тихая строка (вопрос 12): слабая вещь дала бы герою больше, чем есть
 const quietLine = (t: Texts, r: Result | null, slot: string): string | null => {
@@ -86,26 +90,37 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
     };
   }, [idx, ctx, roster, store, view, touring]);
   const tview = hero ? viewOf(hero.c.id) : view;
+  // «Это другой» (owner, 2026-10-07): the piece looks like one already set aside and the player says it's a second copy —
+  // for this very input only, any change on the form asks again
+  const [twinAt, setTwinAt] = useState<string | null>(null);
+  const twin = twinAt === key;
   // исход по ростеру; null — по порогам (ростера нет) или введены не все сабстаты
-  const res = useMemo(() => verdictOf(ctx, (id) => viewOf(id).hero(id), input), [ctx, viewOf, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const res = useMemo(() => verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin }), [ctx, viewOf, key, twin]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Guard: while it looks like a set-aside piece, only the hero who has it keeps a button — «Надеть» wears that very
+  // record (useFormFlow). Others get no «Надеть» or «Отложить» until «Это другой»: one helmet, two records otherwise
+  const same = res?.same ?? null;
+  const quietRow = (x: CharVs): CharVs => ({ ...x, useful: false, stash: false });
   const verdict = useMemo(() => (res && raw.v !== 'idle' ? fromResult(ctx, raw, res, input) : raw), [ctx, raw, res]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Сейчас на персонажах»: герои, которых назвал вердикт (до трёх); в режиме героя — одна строка героя: «Надеть на X»
   // есть всегда («Надето»: ввод надетого в игре), с «Примерить замену» — «Заменить»
   const heroVs = useMemo(() => {
     if (!hero) return null;
     const x = charVs(ctx, tview, hero.c.id, input, { replace, wear: true });
+    if (x && same && same.c.id !== hero.c.id) return quietRow(x);
     // «Отложить для X» и в режиме героя: вещь ему «Оставь» или запас (В6 ревью этапа 10), и она, похоже, у него ещё не
     // отложена
     const forHim = x && (x.h.kind === 'keep' || (res?.kind === 'material' && res.sub === 'reserve' && res.reserve.some((c) => c.id === hero.c.id)));
-    return x && forHim && res?.same?.c.id !== hero.c.id ? { ...x, stash: true } : x;
+    return x && forHim && !same ? { ...x, stash: true } : x;
   }, [ctx, tview, hero, key, replace, res]); // eslint-disable-line react-hooks/exhaustive-deps
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
     if (hero) return heroVs ? [heroVs] : [];
-    // «Отложить для X» — у «Оставь» и запаса, кроме героя, у которого она, похоже, уже отложена
-    const stash = (c: { id: string }) => res?.same?.c.id !== c.id;
-    const named = (res?.named ?? []).map((h) => charVs(ctx, viewOf(h.c.id), h.c.id, input, { h, stash: h.kind === 'keep' && stash(h.c) }));
-    const reserve = res?.kind === 'material' && res.sub === 'reserve' ? res.reserve.filter(stash).map((c) => charVs(ctx, viewOf(c.id), c.id, input, { stash: true })) : [];
+    // «Отложить для X» — у «Оставь» и запаса, пока она не похожа на уже отложенную (guard)
+    const named = (res?.named ?? []).map((h) => {
+      const x = charVs(ctx, viewOf(h.c.id), h.c.id, input, { h, stash: h.kind === 'keep' && !same });
+      return x && same && same.c.id !== h.c.id ? quietRow(x) : x;
+    });
+    const reserve = res?.kind === 'material' && res.sub === 'reserve' && !same ? res.reserve.map((c) => charVs(ctx, viewOf(c.id), c.id, input, { stash: true })) : [];
     return [...named, ...reserve].filter((x): x is CharVs => !!x);
   }, [ctx, viewOf, verdict, hero, heroVs, res]); // eslint-disable-line react-hooks/exhaustive-deps
   // строка под карточкой: в режиме героя — про героя (features/tryon/tryon heroNote), иначе — тихая строка (вопрос 12)
@@ -120,5 +135,8 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const cardShown = narrow && onEval && verdict.v !== 'idle' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint : null;
-  return { input, raw, res, viewOf, tview, heroVs, verdict, vsList, offNote, shown, nSubs, cardShown, hint };
+  // the guard's line on the phone card and «Это другой» on the card and in the details
+  const sameLine = same ? sameText(t, idx, same) : null;
+  const onTwin = same ? () => setTwinAt(key) : undefined;
+  return { input, raw, res, viewOf, tview, heroVs, verdict, vsList, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin };
 }
