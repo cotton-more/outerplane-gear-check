@@ -2,7 +2,7 @@
 .batch-strip .batch-list { margin-left: 4px; }
 .batch-note { margin: 4px 2px 0; }
 .batch { display: grid; gap: 10px; font-size: 12.5px; }
-.batch-col { padding: 12px 14px; }
+.batch-col { padding: 12px 14px 0; }
 .batch-sheet .batch { padding: 4px 14px 16px; }
 .batch-h { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
 .batch .bgear-list { list-style: none; }
@@ -20,5 +20,8 @@
 .boff-n { grid-column: 1 / 3; color: var(--ink-2); }
 .batch-sum { margin: 0; color: var(--ink-2); }
 .batch-acts { display: flex; flex-wrap: wrap; gap: 8px; }
-/* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet */
-.batch-sheet .batch-acts { position: sticky; bottom: 0; padding: 8px 0 4px; background: var(--surface); }
+/* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
+   the same --surface) */
+.batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; padding: 8px 0 4px; background: var(--surface); }
+/* the column's bottom padding is the bar's own: rows don't show through under it */
+.batch-col .batch-acts { padding-bottom: 12px; }

@@ -32,9 +32,11 @@ import { CharHead } from './CharHead';
 // персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren», «Надеть», закрепление).
 // onPieceEdit — правка в карточке вещи (герой, прежний id, id после правки): висящее «Вернуть» прежнего действия (одно
 // на все, В3) App снимает — откаты возвращают запись по id, а её поправили или скопировали (gear updateIn); копия — и
-// replace режима героя переходит на неё. onRateFor — «Оценить вещь для Caren» (режим «для героя» без предустановки)
+// replace режима героя переходит на неё. onRateFor — «Оценить вещь для Caren» (режим «для героя» без предустановки).
+// canWear — wear actions («Да, всё надето», «Надеть», «Переодеть»): separate from onTryOn, which a batch turns off
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
+  canWear?: boolean;
   onTryOn?: (c: Char, slot?: SlotId, from?: Piece, replacing?: boolean, slotOnly?: boolean) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
@@ -48,7 +50,7 @@ interface Props {
 type Tab = 'worn' | 'pool' | 'builds';
 
 // Родитель задаёт key={charId}: смена персонажа сбрасывает вкладку и прокрутку.
-export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, onTrade, canShare = false }: Props) {
+export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, canWear, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, onTrade, canShare = false }: Props) {
   const { CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
@@ -83,7 +85,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   const hasBuilds = c.builds.length > 0;
   const wv = hasBuilds ? wornView(ctx, c, gear.store, hp) : null;
   const pin = hp?.P.pin ?? null;
-  const live = !!onTryOn && !!onGearToast && !gear.newer;
+  const live = !!canWear && !!onGearToast && !gear.newer;
   const b = c.builds[Math.min(bi, c.builds.length - 1)];
   const shownTab: Tab = tab;
 

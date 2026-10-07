@@ -38,6 +38,7 @@ import { useIndex } from '@/game/data/IndexContext';
 import { heroName } from '@/game/hero/HeroName';
 import { GameIconsContext } from '@/game/icons/Img';
 import type { ItemInput } from '@/game/item/item';
+import { dropSubs } from '@/game/item/subs';
 import { LangContext, TEXTS, savedLang, type Lang } from '@/i18n';
 import { useLayout } from '@/shared/layout/useLayout';
 import { useToastPlace } from '@/shared/layout/useToastPlace';
@@ -125,8 +126,9 @@ export function App() {
   const [msg, say] = useTimed<GearMsg>(GEAR_MSG_MS);
   const [formUndo, setFormUndo] = useTimed<ItemInput>(6000);
   // «Партия» (features/batch, .x/0110-batch): a filter of pieces in a row, no verdict on the way, one plan; not during a tour
+  // and not without a roster scope (the plan is about the player's heroes) — the saved batch waits for it
   const batch = useBatchMode({ idx, t, ctx, gear, dispatch, persist: !touring, narrow: layout.narrow, say });
-  const batchOn = batch.on && !touring;
+  const batchOn = batch.on && !touring && ctx.scoped;
 
   // обновление: новые данные — плашка сверху; только приложение — «Готова новая версия» в «Ещё» (app/usePwa)
   const pwa = usePwa(idx.D.meta.commit);
@@ -170,9 +172,10 @@ export function App() {
   });
   const { doEquip, doStash, nextNote } = flow;
   // the batch mode: «Следующий» (and Esc) add the piece to the batch — «В партию · #8» / «Сохранить #3»
-  const onReset = batchOn ? () => batch.add(input, vm.raw.v !== 'idle') : flow.onReset;
+  // only a complete piece goes in: all its substats entered (the plain-threshold verdict may decide earlier)
+  const onReset = batchOn ? () => batch.add(input, vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle') : flow.onReset;
   const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1)) : undefined;
-  const onBatch = canEquip && !hero && !batchOn && !tour.run ? batch.start : undefined;
+  const onBatch = canEquip && ctx.scoped && !hero && !batchOn && !tour.run ? batch.start : undefined;
   useHotkeys(s, dispatch, layout, onReset);
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
@@ -215,7 +218,7 @@ export function App() {
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} note={batch.note} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} />
             {!layout.narrow && (batchOn
-              ? <aside className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
+              ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
               : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />)}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
@@ -223,7 +226,7 @@ export function App() {
               onTrade={canEquip ? () => setTrade('team') : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
-              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip && !batchOn ? heroMode.start : undefined}
+              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} canWear={canEquip} onTryOn={canEquip && !batchOn ? heroMode.start : undefined}
               onRateFor={canEquip && !batchOn ? (c) => heroMode.start(c) : undefined}
               onPieceOpen={setPieceOpen} onTrade={canEquip ? (c) => setTrade({ hero: c.id }) : undefined}
               canShare={!tour.run && !gear.newer} />

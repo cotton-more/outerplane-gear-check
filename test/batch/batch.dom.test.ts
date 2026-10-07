@@ -43,6 +43,7 @@ afterEach(async () => {
   root = null;
   document.body.innerHTML = '';
   localStorage.clear();
+  history.replaceState(null, '', location.pathname);   // the character card wrote its #slug
 });
 
 async function mount(item: Record<string, unknown>, extra: Record<string, unknown> = {}) {
@@ -89,6 +90,34 @@ describe('«Партия» on a phone', () => {
     await click($('.vbar .vb-reset'));
     expect(batch().items).toHaveLength(0);
     expect($('.batch-note')?.textContent).toBe('Not all substats entered — not added.');
+  });
+
+  it('a piece with an early verdict but not all substats is not added either', async () => {
+    await mount({ setId: speed, subs: { CHC: 3, CHD: 3, SPD: 3 } });   // a Legendary: 3 of 4, already «Keep» by thresholds
+    await start();
+    await click($('.vbar .vb-reset'));
+    expect(batch().items).toHaveLength(0);
+    expect($('.batch-note')?.textContent).toBe('Not all substats entered — not added.');
+  });
+
+  it('no roster: no «Batch» in «More»; a saved batch waits — no strip, the usual verdict', async () => {
+    await mount(GOOD, { roster: [], gear: { v: 3, seq: 0, pieces: {}, pools: {} } });
+    await openMore();
+    expect(moreButton('Batch')).toBeFalsy();
+    await act(async () => root?.unmount());
+    document.body.innerHTML = '';
+    const saved = { v: 1, items: [{ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK }], skip: [], twin: [] };
+    await mount(GOOD, { roster: [], gear: { v: 3, seq: 0, pieces: {}, pools: {} }, batch: saved });
+    expect($('.batch-strip')).toBeNull();
+    expect($('.vcard')).toBeTruthy();
+    expect(batch()).toEqual(saved);
+  });
+
+  it('during a batch the character card keeps «Yes, all worn»; hero-mode «Enter» is off', async () => {
+    const items = [{ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK }];
+    await mount(GOOD, { gear: { ...GEAR, worn: {} }, state: { tab: 'chars', slot: 'helmet', grade: 'unique', charId: caren.id }, batch: { v: 1, items, skip: [], twin: [] } });
+    expect(byText('button', 'Yes, all worn')).toBeTruthy();
+    expect($$('button').filter((b) => b.textContent === 'Enter')).toHaveLength(0);
   });
 
   it('the list: a tap loads the piece to fix it («Save #1»), ✕ removes it', async () => {
