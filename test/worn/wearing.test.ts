@@ -179,6 +179,12 @@ describe('цепочка с суммой сегментов надетого', (
     ]);
     expect(v.chain.find((x) => x.key === 'ATK%')!.credit).toBe(1);
     expect(v.chain.find((x) => x.key === 'ATK')!.credit).toBeLessThan(1);
+    // the second chain (Priority Support/PvP: SPD › CHC › ATK › CHD › DMG UP%) — same sums, its own order
+    expect(v.build).toBe('DPS');
+    expect(v.alt.map((a) => a.build)).toEqual(['Priority Support/PvP']);
+    expect(v.alt[0].chain.map((x) => [x.sep, x.key, x.seg])).toEqual([
+      ['', 'SPD', 5], ['›', 'CHC', 6], ['›', 'ATK%', 3], ['/', 'ATK', 4], ['›', 'CHD', 4], ['›', 'DMG UP%', 0],
+    ]);
   });
 
   it('очки надетого — вещи плюс сеты, у каждой вещи свои', () => {

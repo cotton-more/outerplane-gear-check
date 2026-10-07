@@ -3,7 +3,7 @@
 // искать» (наборы меню, где у героя 1–3 из 4, — по лучшей раскладке под набор, как при закреплении); варианты шторки
 // закрепления. Только данные — вещи, числа, части; подписи делает интерфейс.
 import { FLAT, SLOTS } from '@/game/data';
-import type { ArmorSlot, Char, SlotId } from '@/game/data/types';
+import type { ArmorSlot, Build, Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { pinnedProfile, pinOptions, profileOf, type Pin, type Profile } from '@/game/build/profile';
 import { pointWeights } from '@/game/build/points';
@@ -25,9 +25,12 @@ export const samePiece = (a: Piece, b: Piece): boolean => a.id === b.id || stuff
 
 // сабстат вещи и засчитан ли он герою (PLAN Д1): 1 — целиком на любом месте цепочки, ½ или 0 — flat
 export interface WornToken { key: string; lit: number; credit: number }
-export function tokensOf(ctx: Ctx, c: Char, P: Profile | null, p: Piece | null | undefined): WornToken[] {
+export const tokensOf = (ctx: Ctx, c: Char, P: Profile | null, p: Piece | null | undefined): WornToken[] =>
+  chainTokens(ctx, c, P?.chain ?? null, p);
+// the same against any chain of the hero (the second chain on «Надето»)
+function chainTokens(ctx: Ctx, c: Char, chain: Build | null, p: Piece | null | undefined): WornToken[] {
   if (!p) return [];
-  const W = P ? pointWeights(ctx, c, P.chain, itemMains(ctx.idx, pieceInput(p))) : null;
+  const W = chain ? pointWeights(ctx, c, chain, itemMains(ctx.idx, pieceInput(p))) : null;
   return Object.keys(p.lit).map((key) => ({ key, lit: p.lit[key], credit: W?.get(key)?.credit ?? 0 }));
 }
 
@@ -44,11 +47,15 @@ export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken
 // side, % first: ATK% counts in full, flat ATK at ½ (a flat form that counts 0 is left out). seg 0 — nothing worn gives
 // the stat: the UI draws it dashed. sep — before the stat: '›' next place, '=' same place, '/' another form of the axis.
 export interface ChainSum { key: string; seg: number; credit: number; sep: '' | '›' | '=' | '/' }
+// another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
+export interface AltChain { build: string; chain: ChainSum[] }
 export interface WornView {
   count: number;           // надето слотов из 6
   slots: WornSlot[];       // все 6, порядок — SLOTS
   value: LayoutValue | null; // points of the worn gear (V: pieces + sets); null — hero without builds
   chain: ChainSum[];       // the chain with segment sums; empty — hero without builds
+  build: string;           // the build the chain comes from — named on the card only next to another chain
+  alt: AltChain[];         // the hero's other chains (Heatwave Cop Delta: DPS and Support), same sums, for reference
   bonuses: BonusRow[];     // включённые бонусы надетых сетов
   redress: Redress | null; // лучшая раскладка лучше надетой (§3 п. 3)
   seek: Fill[];            // «Что искать»: 1–3 из 4, от ближнего; закреплён — только его набор
@@ -74,7 +81,9 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     count: Object.keys(worn).length,
     slots,
     value: P ? layoutValue(P, worn) : null,
-    chain: P ? chainSums(ctx, P, slots) : [],
+    chain: P ? chainSums(ctx, P.chain, slots.map((s) => s.tokens)) : [],
+    build: P?.chain.name ?? '',
+    alt: P ? altChains(ctx, c, P.chain, slots.map((s) => s.piece)) : [],
     bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp) : [],
@@ -82,9 +91,22 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
   };
 }
 
-export function chainSums(ctx: Ctx, P: Profile, slots: readonly WornSlot[]): ChainSum[] {
+// chains of the hero's builds other than the one points use, each once, in outerpedia order
+function altChains(ctx: Ctx, c: Char, main: Build, worn: readonly (Piece | null)[]): AltChain[] {
+  const seen = new Set([JSON.stringify(main.subs)]);
+  const out: AltChain[] = [];
+  for (const b of c.builds) {
+    const sig = JSON.stringify(b.subs);
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    out.push({ build: b.name, chain: chainSums(ctx, b, worn.map((p) => chainTokens(ctx, c, b, p))) });
+  }
+  return out;
+}
+
+export function chainSums(ctx: Ctx, chain: Pick<Build, 'subs'>, tokens: readonly WornToken[][]): ChainSum[] {
   const got = new Map<string, { seg: number; credit: number }>();
-  for (const s of slots) for (const k of s.tokens) {
+  for (const ts of tokens) for (const k of ts) {
     if (!k.credit) continue;
     const x = got.get(k.key) ?? { seg: 0, credit: k.credit };
     x.seg += k.lit;
@@ -92,7 +114,7 @@ export function chainSums(ctx: Ctx, P: Profile, slots: readonly WornSlot[]): Cha
   }
   const out: ChainSum[] = [];
   const used = new Set<string>();
-  P.chain.subs.forEach((tier) => {
+  chain.subs.forEach((tier) => {
     let first = true;
     for (const raw of tier) {
       const tok = raw.trim(), axis = tok.replace(/%$/, ''), flat = FLAT.has(axis);
