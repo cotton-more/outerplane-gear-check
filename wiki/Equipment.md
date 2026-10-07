@@ -147,7 +147,7 @@ Tap a piece to fix it after upgrading in the game. The edit is narrow — only w
 - **"Remove from Caren"** — dismantled it, used it for Breakthrough, or she doesn't need it.
 
 The card also has the **item code for chat** and "Copy", as in the verdict: show the piece to your guild without
-entering it again. A piece with 5–6 segments has no code. An edit removes nothing by itself: if another piece is no
+entering it again. A piece with 5–6 segments gets a code 1–2 letters longer. An edit removes nothing by itself: if another piece is no
 longer needed, it gets "no longer needed". Enhance isn't tracked: pieces are assumed to be +10.
 
 ### Builds

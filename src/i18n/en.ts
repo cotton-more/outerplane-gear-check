@@ -568,7 +568,7 @@ export const en: Texts = {
       '**"Re-dress"** on the Worn tab uses the same threshold as the trade: the best layout from the hero\'s own pieces beats what\'s worn by at least 1 point, turns on an effect-set bonus or puts on a recommended weapon or accessory.',
     ],
     helpCode: 'Code for your guild',
-    helpCodeText: (example) => `The verdict details and a character's piece card show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster. A piece with 5–6 segments has no code.`,
+    helpCodeText: (example) => `The verdict details and a character's piece card show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster. A piece with 5–6 segments gets a code 1–2 letters longer.`,
     helpInstall: 'Installing',
     helpInstallItems: [
       '**Android (Chrome):** menu ⋮ → "Install app" or "Add to Home screen".',

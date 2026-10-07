@@ -9,6 +9,13 @@
 //   слот и грейд (12) → main, кроме брони (16) → 4 строки сабстатов (по 53) → сет или предмет.
 // Сет или предмет — старший разряд, без верхней границы: новые id просто удлиняют код.
 // Броня — 8 букв, Legendary оружие или аксессуар — 11.
+//
+// Levels 5–6 (after Reforge; owner, 2026-10-07): a piece with such a level gets the second form, every other piece keeps
+// its old code letter for letter. The second form: rows in radix 79 (1 + 13·6), then a control letter (weighted sum
+// mod 24, weights are units mod 24 — any single wrong letter changes it), and the last letter is Luhn shifted by 12.
+// The reader tries Luhn as is (first form), then shifted (second form) and wants the control letter and at least one
+// level 5–6: a single typo in an old code passes as the second form about once in 550, and then still has to parse.
+// An app from before this change reads a second-form code as «код с ошибкой».
 import { GRADES, SLOTS, isArmor } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';
@@ -24,6 +31,10 @@ const ROWS = 4;
 const SLOT_GRADE = SLOTS.length * GRADES.length;
 const MAIN_R = 16;
 const SUB_R = 1 + SUBS.length * 4;
+const LV6 = 6;
+const SUB_R6 = 1 + SUBS.length * LV6; // the second form
+const SHIFT = 12;                     // the second form's Luhn shift
+const WEIGHTS = [1, 5, 7, 11, 13, 17, 19, 23]; // units mod 24
 const CLASS_R = 1 + CLASSES.length;
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // чётное число знаков — иначе Luhn mod N не работает
 const N = ALPHABET.length;
@@ -42,6 +53,9 @@ function checkDigit(digits: number[]): number {
   }
   return (N - (sum % N)) % N;
 }
+
+// the second form's control letter
+const control = (digits: number[]): number => digits.reduce((s, d, i) => (s + d * WEIGHTS[i % WEIGHTS.length]) % N, 0);
 
 // предмет → код вида «KXRM TPWA»; null, если в предмете есть что-то, чего нет в таблицах формата
 export function encodeItem(item: ItemInput): string | null {
@@ -65,13 +79,15 @@ export function encodeItem(item: ItemInput): string | null {
   if (!Number.isSafeInteger(top)) return null;
   const keys = Object.keys(item.subs);
   if (keys.length > ROWS) return null;
+  const wide = keys.some((k) => item.subs[k] > 4);
+  const lv = wide ? LV6 : 4, radix = wide ? SUB_R6 : SUB_R;
   for (let i = 0; i < ROWS; i++) {
     const k = keys[i];
-    if (k === undefined) { parts.push([0, SUB_R]); continue; }
+    if (k === undefined) { parts.push([0, radix]); continue; }
     const stat = SUBS.indexOf(k);
     const roll = item.subs[k];
-    if (stat < 0 || !Number.isInteger(roll) || roll < 1 || roll > 4) return null;
-    parts.push([1 + stat * 4 + roll - 1, SUB_R]);
+    if (stat < 0 || !Number.isInteger(roll) || roll < 1 || roll > lv) return null;
+    parts.push([1 + stat * lv + roll - 1, radix]);
   }
   let n = top;
   for (let i = parts.length - 1; i >= 0; i--) n = n * parts[i][1] + parts[i][0];
@@ -79,7 +95,8 @@ export function encodeItem(item: ItemInput): string | null {
 
   const digits: number[] = [];
   do { digits.unshift(n % N); n = Math.floor(n / N); } while (n > 0);
-  digits.push(checkDigit(digits));
+  if (wide) digits.push(control(digits));
+  digits.push(wide ? (checkDigit(digits) + SHIFT) % N : checkDigit(digits));
   return digits.map((d) => ALPHABET[d]).join('').replace(/(.{4})(?=.)/g, '$1 ');
 }
 
@@ -100,9 +117,12 @@ export function decodeItem(text: string): Decoded {
     if (d < 0) return fail('chars');
     digits.push(d);
   }
-  if (digits.length < 2 || checkDigit(digits.slice(0, -1)) !== digits[digits.length - 1]) return fail('check');
+  if (digits.length < 2) return fail('check');
+  const body = digits.slice(0, -1), last = digits[digits.length - 1], luhn = checkDigit(body);
+  const wide = luhn !== last;
+  if (wide && ((luhn + SHIFT) % N !== last || body.length < 2 || control(body.slice(0, -1)) !== body[body.length - 1])) return fail('check');
   let n = 0;
-  for (const d of digits.slice(0, -1)) n = n * N + d;
+  for (const d of wide ? body.slice(0, -1) : body) n = n * N + d;
   if (!Number.isSafeInteger(n)) return fail('format');
 
   const take = (radix: number) => { const v = n % radix; n = Math.floor(n / radix); return v; };
@@ -113,14 +133,17 @@ export function decodeItem(text: string): Decoded {
   const mainIdx = armor ? 0 : take(MAIN_R);
   if (mainIdx > MAINS.length) return fail('format');
   const subs: Subs = {};
+  const lv = wide ? LV6 : 4;
   let ended = false;
   for (let i = 0; i < ROWS; i++) {
-    const v = take(SUB_R);
+    const v = take(wide ? SUB_R6 : SUB_R);
     if (v === 0) { ended = true; continue; }
-    const k = SUBS[Math.floor((v - 1) / 4)];
+    const k = SUBS[Math.floor((v - 1) / lv)];
     if (ended || k in subs) return fail('format'); // пустая строка посередине или стат дважды
-    subs[k] = ((v - 1) % 4) + 1;
+    subs[k] = ((v - 1) % lv) + 1;
   }
+  // the second form is only for a level 5–6: without one it is a typo that happened to pass
+  if (wide && !Object.values(subs).some((x) => x > 4)) return fail('check');
   const item: ItemInput = { slot, grade, setId: null, itemKey: null, main: mainIdx ? MAINS[mainIdx - 1] : null, unlisted: false, subs };
   if (armor) {
     if (n) item.setId = String(n);

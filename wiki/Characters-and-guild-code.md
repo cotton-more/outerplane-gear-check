@@ -65,4 +65,5 @@ A character's pieces and how the evaluation weighs stats and sets — see [Equip
 The verdict details and a character's piece card have a code, for example `OGC KXRM TPWA`. "Copy" — and paste it
 into the game chat (8–11 letters, the chat limit is 50 characters). Whoever gets it opens More → "Enter code" and types it in: the code has only letters,
 case and spaces don't matter, and a check letter catches typos. Everyone gets the evaluation for their own roster and
-settings. A piece with 5–6 segments has no code; "T4" isn't part of the code.
+settings. A piece with 5–6 segments (after Reforge) gets a code 1–2 letters longer; app versions from October 2026 read
+it, an older one says the code has an error until it updates. "T4" isn't part of the code.

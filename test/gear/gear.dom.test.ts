@@ -619,7 +619,7 @@ describe('карточка персонажа', () => {
     expect($('.piece')?.textContent).toContain('Transistone changed a stat? Enter the piece again');
   });
 
-  it('код вещи для чата и «Скопировать», как в вердикте; уровень 5 (после Reforge) — кода нет', async () => {
+  it('код вещи для чата и «Скопировать», как в вердикте; уровень 5 (после Reforge) — код второй формы', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 3, SPD: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
     await openPiece();
@@ -631,7 +631,9 @@ describe('карточка персонажа', () => {
 
     await click($$('.piece .roll-b')[1].querySelectorAll<HTMLElement>('button')[4]); // CHC — уровень 5
 
-    expect($('.piece .v-share')).toBeNull();
+    const wide = encodeItem({ slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 5, SPD: 1 } });
+    expect(wide).toBeTruthy();
+    expect($('.piece .v-share .code')?.textContent).toBe(wide);
   });
 
   it('нажатие ставит уровень; на текущий — на один меньше, но не ниже 1', async () => {
