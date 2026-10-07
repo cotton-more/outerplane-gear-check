@@ -5,6 +5,8 @@ import { makeCtx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
 import { inputOfPiece, planBatch, skipKey, undoPlan, type Entry, type Fate, type Plan } from '@/features/batch/plan';
+import { poolView } from '@/features/gear/pool';
+import { verdictOf } from '@/features/gear/verdict';
 import { char, gen, idx, mk, prof, randArmor } from '../gear/statSets';
 
 // store: pools by hero name; worn — by default everything in the pool is worn
@@ -48,6 +50,7 @@ function problems(base: GearStore, plan: Plan): string[] {
       const w = plan.st.worn?.[f.c.id]?.[l.input.slot];
       if (!w || !same(plan.st.pieces[w], l.input)) out.push(`${l.id}: «wear ${f.c.name}», not worn at the end`);
     }
+    if (f.kind === 'keep' && f.held && !plan.st.pools[l.off!.c.id]?.includes(l.off!.piece.id)) out.push(`${l.id}: held, but gone from the pool`);
     if ((f.kind === 'keep' && !f.held) || f.kind === 'reserve') {
       if (!(plan.st.pools[f.c.id] ?? []).some((id) => same(plan.st.pieces[id], l.input))) out.push(`${l.id}: «${f.kind} ${f.c.name}», not in the pool at the end`);
     }
@@ -199,22 +202,61 @@ describe('plan of a batch', () => {
     expect(problems(st, plan)).toEqual([]);
   });
 
-  it('random batches: the same fates in any entered order; one line per piece; at most 4 feeds per target', () => {
-    const names = ['Caren', 'Rin', 'Aer', 'Kappa'];
-    for (let seed = 1; seed <= 12; seed++) {
+  // random batches on the fixture: 8 heroes, some slots empty, some pieces set aside; 8–12 pieces, mostly one set
+  it('random batches: one line per piece, lines match the final store, nothing silent, any order, capacity, «Вернуть»', () => {
+    const names = ['Caren', 'Rin', 'Aer', 'Kappa', 'Maxwell', 'Tamamo-no-Mae', 'Monad Eva', 'Hilde'];
+    const slots = ['helmet', 'armor', 'gloves', 'shoes'] as const;
+    const pools0 = (st: GearStore) => JSON.stringify([
+      Object.fromEntries(Object.entries(st.pools).filter(([, v]) => v.length).sort()),
+      Object.fromEntries(Object.entries(st.worn ?? {}).filter(([, v]) => Object.keys(v).length).sort()),
+    ]);
+    for (let seed = 1; seed <= 100; seed++) {
       const g = gen(seed);
-      const pools: Record<string, Piece[]> = {};
-      for (const n of names) pools[n] = ['helmet', 'armor', 'gloves', 'shoes'].map((s) => ({ ...randArmor(g, prof(n), s as Piece['slot']), id: `${n}-${s}-${seed}` }));
-      const { ctx, st } = world(names, pools);
-      const batch = Array.from({ length: 10 }, () => E({ ...randArmor(g, prof(g.pick(names)), g.pick(['helmet', 'armor', 'gloves', 'shoes'] as const)), bt: 0 }));
-      const a = planBatch(ctx, st, batch);
-      const shuffled = [...batch].reverse();
-      const b = planBatch(ctx, st, shuffled);
-      expect(fatesOf(b), `seed ${seed}`).toEqual(fatesOf(a));
-      expect(a.lines.filter((l) => !l.off)).toHaveLength(batch.length);
+      const pools: Record<string, Piece[]> = {}, worn: Record<string, string[]> = {};
+      for (const n of names) {
+        pools[n] = slots.filter(() => g.rnd() < 0.8).map((s) => ({ ...randArmor(g, prof(n), s), id: `${n}-${s}` }));
+        worn[n] = pools[n].filter(() => g.rnd() < 0.8).map((p) => p.id);
+      }
+      const { ctx, st } = world(names, pools, worn);
+      const set = g.pick([...prof(g.pick(names)).menuSets]);
+      const batch = Array.from({ length: 8 + g.int(5) }, () => {
+        const p = randArmor(g, prof(g.pick(names)), g.pick(slots));
+        return E({ ...p, setId: g.rnd() < 0.7 ? set : p.setId, bt: 0 });
+      });
+      const at = `seed ${seed}`;
+      const plan = planBatch(ctx, st, batch);
+
+      // one piece — one line; wear / keep / reserve lines match the final store; no line for a record the plan made
+      expect(plan.lines.filter((l) => !l.off), at).toHaveLength(batch.length);
+      expect(problems(st, plan), at).toEqual([]);
+
+      // nothing silent: a recorded piece that leaves a hero's pool has its own line, or «Надень» dropped it in another
+      // slot (the «Лишнее убрано» note on «Сделал»)
+      for (const [c, ids] of Object.entries(st.pools)) {
+        for (const id of ids.filter((x) => !plan.st.pools[c]?.includes(x))) {
+          const line = plan.lines.some((l) => l.off?.piece.id === id && l.off.c.id === c);
+          const pruned = plan.ops.some((o) => 'r' in o && o.c === c && o.r.removed.some((p) => p.id === id && p.slot !== o.r.slot));
+          expect(line || pruned, `${at}: ${id} left ${c} silently`).toBe(true);
+        }
+      }
+
+      // the entered order never decides a fate
+      const order = batch.map((e) => [g.rnd(), e] as const).sort((x, y) => x[0] - y[0]).map(([, e]) => e);
+      expect(fatesOf(planBatch(ctx, st, order)), at).toEqual(fatesOf(plan));
+
+      // capacity: no «Разобрать» while the usual verdict on the final store (targets fed four times left out) says
+      // «material now»
       const per = new Map<string, number>();
-      for (const l of a.lines) if (l.fate.kind === 'feed') { const k = JSON.stringify(l.fate.to); per.set(k, (per.get(k) ?? 0) + 1); }
-      expect(Math.max(0, ...per.values()), `seed ${seed}`).toBeLessThanOrEqual(4);
+      for (const l of plan.lines) if (l.fate.kind === 'feed' && !('entry' in l.fate.to)) per.set(l.fate.to.piece.id, (per.get(l.fate.to.piece.id) ?? 0) + 1);
+      const full = new Set([...per].filter(([, k]) => k >= 4).map(([id]) => id));
+      const view = poolView(ctx, plan.st);
+      for (const l of plan.lines.filter((x) => x.fate.kind === 'junk')) {
+        const r = verdictOf(ctx, (id) => view.hero(id), l.input, { twin: true, full });
+        expect(r?.kind === 'material' && r.sub === 'now', `${at}: ${l.id} «Разобрать», but material now`).toBe(false);
+      }
+
+      // «Вернуть»: pools and worn as before
+      expect(pools0(undoPlan(plan.st, plan)), at).toBe(pools0(st));
     }
   });
 });

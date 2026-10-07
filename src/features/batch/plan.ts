@@ -113,8 +113,19 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   const full = new Set<string>();
   let wornFed = false;
   const fates = new Map<string, Fate>();
-  const offs: ({ id: string; n: number } & Off)[] = [];
+  type OffLine = { id: string; n: number } & Off;
+  const offs: OffLine[] = [];                   // lines of pieces the plan takes from heroes
+  const todo: OffLine[] = [];                   // …to decide after the batch, in the order they came off
   const offId = (n: number) => `${n}~${offs.filter((o) => o.n === n).length + 1}`;
+  const held = (o: OffLine) => { const f = fates.get(o.id); return f?.kind === 'keep' && !!f.held; };
+  // a recorded piece the plan takes: its line under entry n. One piece — one line: if it has one already and the pool
+  // kept it (held), a later «Надень» took it after all — that line is decided again
+  const takeOff = (n: number, c: Char, piece: Piece, was: Off['was']): OffLine => {
+    const o = offs.find((x) => x.piece.id === piece.id);
+    if (!o) { const x = { id: offId(n), n, c, piece, was }; offs.push(x); todo.push(x); return x; }
+    if (held(o)) { fates.delete(o.id); todo.push(o); }
+    return o;
+  };
 
   // one piece: its verdict on the current copy, the decision applied to it. n — the entry (for a taken-off piece — the
   // entry that took it off); entry — false for a taken-off piece (its records aren't «#n»)
@@ -136,9 +147,8 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       // the worn piece of its slot comes off in the game: a line of its own (Q4) — the pool dropped it, or still keeps it.
       // A record the plan made is not a new piece: its own line is fixed after the pass
       if (was && !madeBy.has(was.id)) {
-        const id = offId(n);
-        offs.push({ id, n, c, piece: was, was: 'worn' });
-        if (!res.removed.some((p) => p.id === was.id)) fates.set(id, { kind: 'keep', c, t4: false, held: true });
+        const o = takeOff(n, c, was, 'worn');
+        if (!res.removed.some((p) => p.id === was.id)) fates.set(o.id, { kind: 'keep', c, t4: false, held: true });
       }
       // a reserve this new piece eats (its verdict's reserveBt — the hero's own or another hero's, feedFrom): one the plan
       // made for line L is fed to it — L says so (owner 2026-10-07: not planned again), one of its four feeds
@@ -153,10 +163,11 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         fates.set(L, { kind: 'feed', to: entry ? { entry: n } : { c, piece: res.piece } });
       };
       // a set-aside record of its slot the new one pushes out (the hero's weak reserve) is a piece in the game too: a line
+      // (other slots: the «Лишнее убрано» note on «Сделал»; only a taken-off piece the pool kept is decided again)
       for (const p of res.removed) {
-        if (p.slot !== res.slot || p.id === res.wasWorn) continue;
-        if (madeBy.has(p.id)) eaten(p);
-        else offs.push({ id: offId(n), n, c, piece: p, was: 'stash' });
+        if (p.id === res.wasWorn) continue;
+        if (madeBy.has(p.id)) { if (p.slot === res.slot) eaten(p); }
+        else if (p.slot === res.slot || offs.some((o) => o.piece.id === p.id && held(o))) takeOff(n, c, p, 'stash');
       }
       // another hero's reserve goes to this one's Breakthrough: it leaves that pool, as with a single «Надеть»
       // (useFormFlow equipOn), before it is decided — it must not look like its own record
@@ -165,7 +176,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         ops.push({ c: of.id, drop: p, back: dropBack(st, of.id, p) });
         st = removeFrom(st, of.id, p.id);
         if (madeBy.has(p.id)) eaten(p);
-        else offs.push({ id: offId(n), n, c: of, piece: p, was: 'stash' });
+        else takeOff(n, of, p, 'stash');
       }
       return { kind: 'wear', c, instead: was, t4: false };
     }
@@ -193,8 +204,8 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
 
   for (const { n, e } of order) fates.set(String(n), decide(String(n), n, e.input, !!e.twin, true));
   // taken-off pieces after the batch, in the order they came off; one may take another off (chain, bounded)
-  for (let i = 0; i < offs.length && i < entries.length * 3; i++) {
-    const o = offs[i];
+  for (let i = 0; i < todo.length && i < entries.length * 3; i++) {
+    const o = todo[i];
     if (!fates.has(o.id)) fates.set(o.id, decide(o.id, o.n, inputOfPiece(o.piece), false, false));
   }
 
