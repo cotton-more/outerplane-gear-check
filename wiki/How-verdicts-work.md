@@ -57,7 +57,7 @@ counts in full if it gives 0.9+ of the % version, for ½ at 0.6+, otherwise not 
 even when its segment is bigger with a base under 1000: % grows with the base (level, Awakening, Monad Gate), flat
 doesn't. On average flat ATK ≈ 0.9 of ATK%, flat DEF ≈ 1.0 of DEF%, flat HP ≈ 0.6 of HP%; for a fully built character
 (lv 120 and Quirks) flat is weaker. Level (100/120) and
-Quirks are in the settings (☰ menu).
+Quirks are in the settings (More → Settings → Evaluation).
 
 ## Weapons and accessories
 

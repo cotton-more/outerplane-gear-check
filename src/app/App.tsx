@@ -48,11 +48,11 @@ import { TipLayer } from '@/tour/TipLayer';
 import { TipsHelp } from '@/tour/TipsHelp';
 import { TourLayer } from '@/tour/TourLayer';
 import { openCharAction, reducer } from './appState';
-import { isBare } from '@/features/roster/charFilter';
-import { Footer, LangSwitch } from './shell/Footer';
+import { countToDress } from '@/features/roster/charFilter';
+import { LangSwitch } from './shell/Switches';
 import { Help, Welcome, type InstallInfo } from './shell/Guide';
 import { Header } from './shell/Header';
-import { Menu } from './shell/Menu';
+import { More } from './shell/More';
 import { OnboardingStrips } from './shell/OnboardingStrips';
 import { useAppState } from './useAppState';
 import { heroFromHash, slugFromHash, useHashRoute } from './useHashRoute';
@@ -75,12 +75,14 @@ export function App() {
     const c = idx.CHAR_BY_SLUG[slugFromHash()];
     return c ? reducer(init, openCharAction(idx, init, roster, c.id)) : init;
   }, !touring);
+  // пока ростер пуст, режим списка «Все» — и первая звёздочка его не меняет: список не схлопывается под рукой (SPEC 6)
+  useEffect(() => { if (roster.size === 0 && s.cMode !== 'all') dispatch({ type: 'charFilter', patch: { cMode: 'all' } }); }, [roster.size, s.cMode, dispatch]);
   const [lang, setLang] = useState<Lang>(savedLang);
   const t = TEXTS[lang];
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   const changeLang = (l: Lang) => { storage.set('lang', l); setLang(l); };
-  // значки из игры вместо своих — только для сравнения, пока свои не утверждены
-  const [gameIcons, setGameIcons] = useState(() => storage.get('gameIcons', false));
+  // значки из игры или свои (Ещё → Настройки); кто выбрал сам, остаётся при своём, без выбора — из игры
+  const [gameIcons, setGameIcons] = useState(() => storage.get('gameIcons', true));
   const changeIcons = (game: boolean) => { storage.set('gameIcons', game); setGameIcons(game); };
   // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
   // Вещь — материал Breakthrough для надетой не на T4: «Разобрать» поднимается до «Фоддер» (features/gear/model/material)
@@ -97,17 +99,19 @@ export function App() {
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off), [idx, s.settings, roster, t, off]);
   // экипировка по пулу (features/gear/pool): вид — один раз на хранилище
   const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
-  // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, меню и фильтр «не всё надето»)
+  // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, «Доодеть» в списке и в «Ещё»)
   const geared = useMemo(() => gearBadges(view), [view]);
+  // сколько своих доодеть: число у «Доодеть» в списке и в «Ещё»
+  const todressN = useMemo(() => countToDress(idx.D.chars, roster, geared, off), [idx, roster, geared, off]);
 
   // открытые шторки и окна
   const [verdictOpen, setVerdictOpen] = useState(false);
   const [equipOpen, setEquipOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
   // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
-  // или меню ☰ «Обмен для команды», сразу в режиме «Команда»
+  // или «Ещё» → «Обмен для команды», сразу в режиме «Команда»
   const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
   const [pieceOpen, setPieceOpen] = useState(false); // карточка вещи в блоке билда (для тура «Экипировка»)
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
@@ -115,7 +119,7 @@ export function App() {
   const [msg, say] = useTimed<GearMsg>(GEAR_MSG_MS);
   const [formUndo, setFormUndo] = useTimed<ItemInput>(6000);
 
-  // обновление: новые данные — плашка сверху; только приложение — строка в подвале (app/usePwa)
+  // обновление: новые данные — плашка сверху; только приложение — «Готова новая версия» в «Ещё» (app/usePwa)
   const pwa = usePwa(idx.D.meta.commit);
   const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
   const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
@@ -177,7 +181,7 @@ export function App() {
     <LangContext.Provider value={t}>
     <GameIconsContext.Provider value={gameIcons}>
       <div className="app">
-        <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} />
+        <Header tab={s.tab} onTab={onTab} rosterSize={roster.size} news={news.length > 0} onMore={() => setMoreOpen(true)} />
         {pwa.update === 'data' && <div id="updnote"><Notice text={t.ui.updateNotice} action={t.ui.updateAction} onAction={pwa.applyUpdate} /></div>}
         {aims.aimsPending.length > 0 && (
           <div id="aimsnote">
@@ -196,11 +200,11 @@ export function App() {
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined}
-              onReset={onReset} nextNote={nextNote} onHelp={() => setHelpOpen(true)} onCode={() => setCodeOpen(true)} onTour={onb.openTours} news={news.length > 0} onOpenVerdict={() => setVerdictOpen(true)} />
+              onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} />
             {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} view={tview} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onEquipPick={onEquipPick} />}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} onBackup={ros.onBackup} touring={!!tour.run}
+            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} gear={gear} geared={geared} off={off} todressN={todressN}
               onTrade={canEquip ? () => setTrade('team') : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
@@ -210,9 +214,8 @@ export function App() {
               redress={aims.redressKey} onRedress={aims.onRedress} onChooseAim={aims.chooseAim} canShare={!tour.run && !gear.newer} />
           </section>
         </main>
-        <Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
-          onTab={onTab} onMenu={() => setMenuOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
+          onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
         <OnboardingStrips onb={onb} />
         <TipLayer tour={tour} c={onb.tourCtx} enabled={onb.tipsOn} forced={shownCode ? null : onb.forcedTip} onForced={onb.onForced} />
         <TourLayer tour={tour} c={onb.tourCtx} rosterEmpty={roster.size === 0} tours={onb.tours} onTab={onTab} onRoster={() => onTab('chars')} />
@@ -232,17 +235,18 @@ export function App() {
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} viewOf={vm.viewOf} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
-        {menuOpen && (
-          <Menu s={s} dispatch={dispatch} rosterSize={roster.size} news={news.length > 0} onClose={() => setMenuOpen(false)} onChars={() => onTab('chars')}
-            bareN={idx.D.chars.filter((c) => roster.has(c.id) && isBare(c, geared, off)).length}
-            // список ровно тех, кого считает N: «только мои» и «не всё надето», прочие фильтры (стихия, класс, поиск) — сбросить
-            onBare={() => {
-              dispatch({ type: 'charFilter', patch: { cBare: true, cOwned: true, cq: '', cel: '', ccl: '' } });
+        {moreOpen && (
+          <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
+            rosterApi={ros.rosterUi} gear={gear} onBackup={ros.onBackup}
+            lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} install={install} onAppUpdate={appUpdate}
+            onClose={() => setMoreOpen(false)} onChars={() => onTab('chars')}
+            // список ровно тех, кого считает N: режим «Доодеть», прочие фильтры (стихия, класс, поиск) — сбросить, карточку героя закрыть
+            onTodress={() => {
+              dispatch({ type: 'charFilter', patch: { cMode: 'todress', cq: '', cel: '', ccl: '' } });
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined}
-            footer={<Footer install={install} lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} onAppUpdate={appUpdate} />} />
+            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined} />
         )}
         {trade && canEquip && (
           <TradeSheet ctx={ctx} view={view} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}

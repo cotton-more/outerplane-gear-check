@@ -134,7 +134,7 @@ export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
           <button type="button" className="btn primary" onClick={() => tour.finish(true)}>{t.tour.keepItem}</button>
           <button type="button" className="btn" onClick={() => tour.finish(false)}>{t.tour.restoreItem}</button>
         </div></>
-      : <><p className="tour-t">{t.tour.endText(!rosterEmpty, c.narrow)}</p>
+      : <><p className="tour-t">{t.tour.endText(!rosterEmpty)}</p>
         <div className="tour-b">
           {rosterEmpty && <button type="button" className="btn primary" onClick={() => { tour.close(); onRoster(); }}>{t.ui.markChars}</button>}
           <button type="button" className={rosterEmpty ? 'btn' : 'btn primary'} onClick={tour.close}>{t.tour.done}</button>

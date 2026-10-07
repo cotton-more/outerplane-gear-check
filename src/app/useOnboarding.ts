@@ -84,7 +84,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   const openTours = () => startTour();
   const welcomeShown = s.tab === 'eval' && !welcomeHidden && roster.size === 0 && !tour.run && !paused;
   // Обучение само предлагаем только в окне повыше (layout.tall): в полоске разделённого экрана места мало — подождём,
-  // пока приложение откроют крупнее. Кнопка «Обучение» в меню и Справке работает всегда.
+  // пока приложение откроют крупнее. Кнопка «Обучение» в «Ещё» и Справке работает всегда.
   // «Появилось обучение» — один раз: давнему игроку и новичку, который отметил персонажей раньше, чем прошёл тур
   // (закрыл карточку «Понятно» — от тура уже отказался). Показали — отмечено; до закрытия полоса видна в этом запуске
   const inviteDue = tour.available && !tour.store.invited
@@ -94,7 +94,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   useEffect(() => {
     if (inviteShown && !inviteOpen) { setInviteOpen(true); tour.markInvited(); }
   }, [inviteShown]); // eslint-disable-line react-hooks/exhaustive-deps
-  // «Что нового» после обновления: полоса сама, «Позже» — до следующего запуска; точка на ☰ и «Справке», пока не просмотрено
+  // «Что нового» после обновления: полоса сама, «Позже» — до следующего запуска; точка на ☰ («⋯»), «Ещё» и «Справке», пока не просмотрено
   const news = useMemo(() => newsOf(TIPS, tour.store), [tour.store]);
   const [newsLater, setNewsLater] = useState(false);
   const [forcedTip, setForcedTip] = useState<Tip | null>(null);

@@ -5,7 +5,7 @@ and see the verdict right away: **Keep, Stopgap, Fodder, Maybe or Dismantle**, w
 suits. Builds come from [outerpedia](https://github.com/Sevih/outerpedia)'s curated recommendations.
 
 **▶ Open: [cotton-more.github.io/outerplane-gear-check](https://cotton-more.github.io/outerplane-gear-check/)** —
-works in the browser, installs on a phone as an app, works offline. English and Russian (☰ menu → language).
+works in the browser, installs on a phone as an app, works offline. English and Russian (More → language).
 
 <table>
 <tr>
@@ -41,16 +41,16 @@ The full guide is in the **[Wiki](https://github.com/cotton-more/outerplane-gear
 [Upgrading](https://github.com/cotton-more/outerplane-gear-check/wiki/Upgrading) ·
 [Equipment](https://github.com/cotton-more/outerplane-gear-check/wiki/Equipment) ·
 [Trading gear](https://github.com/cotton-more/outerplane-gear-check/wiki/Trading-gear).
-The app has a short one too: ☰ → Help.
+The app has a short one too: More → Help.
 
 **По-русски:** руководство — в [Wiki](https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы),
-язык приложения — меню ☰.
+язык приложения — «Ещё».
 
 ## Credits
 
 This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of
 outerpedia's authors; the tool is not affiliated with VA Games or with outerpedia. Build recommendations, game tables
 and the flat/% formula come from [outerpedia](https://github.com/Sevih/outerpedia) under the MIT license; the page
-also bundles React (MIT) and Tabler Icons (MIT). Full license texts: the app footer ("Licenses") and [`src/app/shell/licenses.ts`](src/app/shell/licenses.ts).
+also bundles React (MIT) and Tabler Icons (MIT). Full license texts: the app's "More" → "About" → "Licenses (MIT)" and [`src/app/shell/licenses.ts`](src/app/shell/licenses.ts).
 
 Development notes (in Russian): [DEVELOPMENT.md](DEVELOPMENT.md).

@@ -37,9 +37,7 @@ import type { Char } from '@/game/data/types';
 import type { CharVs } from '@/features/gear/model/poolVs';
 import { holds } from '@/features/gear/pool';
 import { variantName } from '@/features/gear/ui/pieceText';
-import { RosterOnlyToggle } from '@/features/eval/form/RosterOnlyToggle';
 import { EquipButton } from '@/features/gear/ui/EquipButton';
-import { EvalSettings } from '@/features/eval/form/EvalSettings';
 
 // sub: какой стат заменяем; level: какой стат добавляем — окно уровня у центра нажатой клетки (at); fourth — 4-й у Epic
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { level: string; at: Point };
@@ -50,9 +48,9 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих. Кнопка только ради ввода надетого
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: куда встанет форма после неё
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onHelp, onCode, onTour, news, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
-  onReset: () => void; nextNote?: string | null; onHelp: () => void; onCode: () => void; onTour: () => void; news: boolean; onOpenVerdict: () => void;
+  onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
 }) {
@@ -174,15 +172,10 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
 
       <div className="actions">
         <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>
-        <button type="button" className="btn" onClick={onCode}>{t.ui.enterCode}</button>
-        <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={onHelp}>{t.ui.help}</button>
-        <button type="button" className="btn" onClick={onTour}>{t.tour.start}</button>
-        <RosterOnlyToggle id="opt-roster" s={s} dispatch={dispatch} rosterSize={ctx.roster.size} />
         <span className="hk">
           {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> {t.ui.hkSlot} · <kbd>L</kbd>/<kbd>E</kbd> {t.ui.hkGrade} · <kbd>Esc</kbd> {t.ui.hkReset}</>}
         </span>
       </div>
-      <EvalSettings s={s} dispatch={dispatch} />
 
       {open === 'set' && (
         <Sheet title={t.ui.setSheet} onClose={close}>

@@ -7,7 +7,7 @@ import { tour } from '@/tour/anchors';
 import { barTitle } from './VerdictCard';
 
 // Узкий экран (телефон, разделённый экран с игрой): шапки нет, внизу одна плашка на обе вкладки.
-//   Оценка:    [☰ меню, ★ ростер] [вердикт или подсказка — нажми, подробности шторкой] [Следующий]
+//   Оценка:    [☰ «Ещё», ★ ростер] [вердикт или подсказка — нажми, подробности шторкой] [Следующий]
 //   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
 // compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету.
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
@@ -37,7 +37,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
     <div className={`vbar v-${r.v}${compact ? ' compact' : ''}`} id="vbar">
       {flash > 0 && <span key={flash} className="vb-flash" aria-hidden="true" />}
       {evalTab
-        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.menu} onClick={onMenu}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
+        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
       <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
         onClick={evalTab ? onOpen : () => onTab('eval')}>

@@ -9,10 +9,10 @@ export type Coverage = 'core' | 'helper' | 'todo';
 
 export const COVERAGE: Record<string, Coverage> = {
   'app/App.tsx': 'helper',                             // корень: собирает экраны и шторки, своего на экране нет
-  'app/shell/Footer.tsx': 'helper',                    // подвал: версия данных, лицензии, язык
+  'app/shell/About.tsx': 'helper',                     // «О приложении» в «Ещё»: откуда данные, версия, лицензии
   'app/shell/Guide.tsx': 'core',                       // карточка первого запуска и Справка — отсюда начинается тур
   'app/shell/Header.tsx': 'helper',                    // вкладки на широком экране
-  'app/shell/Menu.tsx': 'helper',                      // меню ☰: те же кнопки, что под формой на ПК; «Экипировка» называет конец тура gear
+  'app/shell/Switches.tsx': 'helper',                  // язык и значки в «Ещё»: подписи говорят сами за себя
   'app/shell/OnboardingStrips.tsx': 'helper',          // полосы «Появилось обучение» и «Что нового»: говорят сами за себя
   'screens/chars/BuildView.tsx': 'helper',             // билд из outerpedia в карточке: его объясняет подсказка карточки персонажа
   'screens/chars/CharHead.tsx': 'helper',              // шапка героя: портрет, имя, тиры — только показ
@@ -33,6 +33,9 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/gear/ui/VsChip.tsx': 'helper',             // чип исхода в «Сейчас на персонажах» и карточке вердикта: их подсказки его объясняют
   'features/gear/ui/WantToggle.tsx': 'helper',         // «Собираю»: его объясняет подсказка want карточки билда
   'features/gear/ui/pieceText.tsx': 'helper',          // подписи вещи в строках экипировки
+  'features/roster/BackupIO.tsx': 'helper',            // «Резервная копия» в «Ещё»: подпись говорит, что это
+  'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть · Все», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
+  'features/roster/CharFilterSheet.tsx': 'helper',     // шторка фильтра: стихии и классы кнопками, «Сбросить»
   'features/roster/CharTile.tsx': 'helper',            // плитка героя: её объясняют подсказки списка персонажей
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'features/worn/AimsSheet.tsx': 'helper',             // list of heroes with picked builds, opened from the notice button: the notice explains it
@@ -47,6 +50,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'shared/ui/AskSheet.tsx': 'helper',                  // окно-вопрос с «Да» и «Отмена»
   'shared/ui/CloseButton.tsx': 'helper',               // кнопка ✕
   'shared/ui/CodeBox.tsx': 'helper',                   // поле кода для переноса: подпись говорит, что это
+  'shared/ui/Expand.tsx': 'helper',                    // строка, раскрывающаяся на месте («Ещё»)
   'shared/ui/FilterChips.tsx': 'helper',               // фильтр кнопками
   'shared/ui/Notice.tsx': 'helper',                    // плашка с одной кнопкой
   'shared/ui/Rich.tsx': 'helper',                      // жирный текст в фразах

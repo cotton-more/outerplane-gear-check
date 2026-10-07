@@ -55,7 +55,7 @@ export const today = () => new Date().toISOString().slice(0, 10);
 export const pieceInput = (p: Piece): ItemInput =>
   ({ slot: p.slot, grade: p.grade, setId: p.setId, itemKey: p.itemKey, main: p.main, unlisted: p.unlisted, subs: p.lit });
 
-// у кого есть вещи: персонаж → сколько вещей в пуле (фильтр «с экипировкой», меню «Экипировка · N»)
+// у кого есть вещи: персонаж → сколько вещей в пуле (кнопка «Обмен» в списке)
 export function gearedChars(st: GearStore): Map<string, number> {
   const out = new Map<string, number>();
   for (const [id, ids] of Object.entries(st.pools)) if (ids.length) out.set(id, ids.length);

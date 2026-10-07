@@ -116,7 +116,7 @@ export const badgeOf = (a: Assembly): number =>
   isStats(a.v) ? a.filled : Object.values(a.roles).filter((r) => r === 'set' || r === 'rec' || r === 'stopgap').length;
 
 // у кого есть вещи: персонаж → сколько из них отмечено надетым (плитка «надето N из 6», как «Надето · N» на вкладке героя).
-// Ключи — все герои с вещами (меню, фильтр «с экипировкой»); число — 0, пока ничего не отмечено
+// Ключи — все герои с вещами (кнопка «Обмен» в списке); число — 0, пока ничего не отмечено
 export function gearBadges(view: PoolView): Map<string, number> {
   const out = new Map<string, number>();
   for (const id of Object.keys(view.st.pools)) {

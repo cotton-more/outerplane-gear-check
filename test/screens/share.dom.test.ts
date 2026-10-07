@@ -10,6 +10,7 @@ import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 import { encodeHero } from '@/features/gear/store/heroCode';
 import type { Piece } from '@/features/gear/model/gear';
+import { openMore, startTour } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -86,12 +87,11 @@ describe('3.1 «Поделиться»', () => {
   // в обучении на странице пример или пусто: «Поделиться» не показываем вовсе (canShare)
   it('обучение идёт — кнопки нет', async () => {
     await mount(STD({ state: { tab: 'eval' } }));
-    await click($('.vb-tab'));
-    await click(byText('.menu button', 'Tutorial'));
+    await startTour();
     await click(byText('.tour-strip button', 'Checking a piece'));
     await click(byText('.tour-strip button', 'Example'));
-    await click($('.vb-tab'));
-    await click(byText('.menu button', 'Characters'));
+    await openMore();
+    await click(byText('.more button', 'Characters'));
     await click($$('#cgrid .ctile').find((b) => b.textContent?.includes('Caren')));
     expect(byText('#char-detail .btabs [role="tab"]', 'Worn')).toBeTruthy();
     expect(shareBtn()).toBeUndefined();
@@ -225,8 +225,8 @@ describe('3.3 ссылка и карточка', () => {
 
 describe('3.11 «Ввести код»', () => {
   const enter = async (text: string) => {
-    await click($('.vb-tab'));
-    await click(byText('.menu button', 'Enter code'));
+    await openMore();
+    await click(byText('.more button', 'Enter code'));
     const input = $('.codein input') as HTMLInputElement;
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, text);
@@ -249,11 +249,12 @@ describe('3.11 «Ввести код»', () => {
     expect(localStorage.getItem('ogc.item')).toBe(item);
   });
 
-  it('резервная копия — «загрузи её на «Персонажах»»', async () => {
+  // 25. код резервной копии в «Ввести код» — отсылка в «Ещё → Резервная копия»
+  it('25. резервная копия — «загрузи её в «Ещё» → «Резервная копия»»', async () => {
     await mount(STD({ state: { tab: 'eval' } }));
     const { encodeBackup } = await import('@/features/roster/backup');
     await enter(encodeBackup(WORN as never, [caren.id]));
-    expect($('.codein .err')?.textContent).toBe('This is a backup — load it in Characters → export / import.');
+    expect($('.codein .err')?.textContent).toBe('This is a backup — load it in More → Backup.');
   });
 });
 

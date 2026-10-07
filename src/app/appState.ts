@@ -3,7 +3,7 @@
 import { GRADES, SLOTS, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Stage } from '@/game/context';
-import { charMatches, type CharFilter, type ListAction } from '@/features/roster/charFilter';
+import { charMatches, effectiveMode, type CharFilter, type ListAction } from '@/features/roster/charFilter';
 import { EMPTY_ITEM, formReducer, type FormAction, type FormState } from '@/features/eval/form/formState';
 import type { Tab } from '@/shared/tab';
 
@@ -18,15 +18,17 @@ export type Action =
   | { type: 'tab'; tab: Tab }
   | FormAction
   | ListAction
-  | { type: 'openChar'; id: string; reveal: 'keep' | 'filters' | 'filters+all' };
+  // reveal: список его и так показывает — фильтры не трогаем; прячет герой с билдами — сбросить стихию, класс, поиск, режим «Все»;
+  // прячет герой без билдов — то же, но в поиске его имя (name): в «Все» без поиска такого героя нет (SPEC 7)
+  | { type: 'openChar'; id: string; reveal: 'keep' | 'filters' | 'filters+name'; name?: string };
 
-// открыть персонажа; если фильтры списка его прячут — сбросить их (у персонажа без билдов — ещё и «показать без билдов»)
+// открыть персонажа; если фильтры списка его прячут — сбросить их, чтобы плитка была видна
 export function openCharAction(
   idx: Index, s: AppState, roster: ReadonlySet<string>, id: string, geared?: ReadonlyMap<string, number>, off?: Pick<ReadonlyMap<string, string>, 'has'>,
 ): Action {
   const c = idx.CHAR[id];
-  const reveal = !c || charMatches(c, s, roster, geared, off) ? 'keep' : c.builds.length ? 'filters' : 'filters+all';
-  return { type: 'openChar', id, reveal };
+  if (!c || charMatches(c, { ...s, cMode: effectiveMode(s.cMode, roster.size) }, roster, geared, off)) return { type: 'openChar', id, reveal: 'keep' };
+  return c.builds.length ? { type: 'openChar', id, reveal: 'filters' } : { type: 'openChar', id, reveal: 'filters+name', name: c.name };
 }
 
 export function reducer(s: AppState, a: Action): AppState {
@@ -37,10 +39,10 @@ export function reducer(s: AppState, a: Action): AppState {
       // вещь на форму (код гильдии, «Вернуть», обучение) — и сразу к оценке
       return { ...formReducer(s, a), tab: 'eval' };
     case 'openChar': {
-      // персонаж из вердикта: если фильтры списка его прячут — сбрасываем их
+      // персонаж из вердикта, «Сейчас на персонажах», адреса #slug: карточка открывается всегда
       const next: AppState = { ...s, tab: 'chars', charId: a.id };
       if (a.reveal === 'keep') return next;
-      return { ...next, cel: '', ccl: '', cq: '', cOwned: false, cBare: false, ...(a.reveal === 'filters+all' ? { cAll: true } : {}) };
+      return { ...next, cel: '', ccl: '', cq: a.reveal === 'filters+name' ? a.name ?? '' : '', cMode: 'all' };
     }
     case 'selectChar':
       return { ...s, charId: a.id };
@@ -56,13 +58,14 @@ export function reducer(s: AppState, a: Action): AppState {
 export interface Persisted {
   tab: Tab; slot: SlotId; grade: Grade;
   rosterOnly: boolean; fodder: boolean; stage: Stage; lv120: boolean; quirks: boolean; settingsOpen: boolean;
-  charId: string | null; cel: string; ccl: string; cOwned: boolean; cAll: boolean;
+  // cOwned — «Мои» (и «Доодеть», который после перезапуска «Мои»): имя прежнее, чтобы прежняя версия страницы читала его как «только мои»
+  charId: string | null; cel: string; ccl: string; cOwned: boolean;
 }
 
 export const toPersisted = (s: AppState): Persisted => ({
   tab: s.tab, slot: s.slot, grade: s.grade, rosterOnly: s.settings.rosterOnly, fodder: s.settings.fodder,
   stage: s.settings.stage, lv120: s.settings.lv120, quirks: s.settings.quirks, settingsOpen: s.settingsOpen,
-  charId: s.charId, cel: s.cel, ccl: s.ccl, cOwned: s.cOwned, cAll: s.cAll,
+  charId: s.charId, cel: s.cel, ccl: s.ccl, cOwned: s.cMode !== 'all',
 });
 
 const oneOf = <T,>(v: unknown, allowed: readonly T[], d: T): T => (allowed.includes(v as T) ? (v as T) : d);
@@ -89,8 +92,6 @@ export function fromPersisted(saved: Partial<Record<keyof Persisted, unknown>> |
     cq: '',
     cel: oneOf(p.cel, ['', ...Object.keys(idx.D.elements)], ''),
     ccl: oneOf(p.ccl, ['', ...Object.keys(idx.D.classes)], ''),
-    cOwned: bool(p.cOwned, false),
-    cAll: bool(p.cAll, false),
-    cBare: false,
+    cMode: bool(p.cOwned, false) ? 'mine' : 'all', // прежнее «показать и без билдов» (cAll) не читаем: такой галочки больше нет
   };
 }

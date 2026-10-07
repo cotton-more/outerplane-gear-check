@@ -7,11 +7,11 @@ split-screen mode — enter a gear piece in a few taps and see the verdict right
 or Dismantle**, why, and which of your characters it suits.
 
 **Open: [cotton-more.github.io/outerplane-gear-check](https://cotton-more.github.io/outerplane-gear-check/)** —
-works in the browser, installs on a phone as an app, works offline too. Language — in the ☰ menu.
+works in the browser, installs on a phone as an app, works offline too. Language — in "More" (☰ on a phone, "⋯" in the header on a computer).
 
 ## Install on your phone
 
-- **Android (Chrome):** open the link, menu ⋮ → "Install app" (or the "Install" button in the ☰ menu).
+- **Android (Chrome):** open the link, menu ⋮ → "Install app" (or the "Install" button in "More").
 - **iPhone and iPad:** in Safari, "Share" → "Add to Home Screen".
 
 You get an icon: the app opens without the address bar and fits a split screen next to the game.
@@ -25,8 +25,7 @@ slot and grade, set or main, substats, the verdict and "Next". Take it on the ex
 game. On the example, the frame points at the exact buttons and the rest of the screen is dimmed but still works:
 a step counts only when you pick what the example asks for, and a wrong pick gets a hint on how to fix it. Each step
 waits until you do it, "Continue" skips it, ✕ closes the tutorial. Whatever was on the form goes aside and
-comes back at the end. To take it again: ☰ → "Tutorial", or "Tutorial" under the form on a computer, or the top of
-Help; the second tour, **"Gear · 1 min"**, is there too (see [Equipment](Equipment)). In a low window (a split-screen strip) the tutorial isn't offered by itself — only through the menu. The idea came
+comes back at the end. To take it again: More → "Tutorial", or the top of Help; the second tour, **"Gear · 1 min"**, is there too (see [Equipment](Equipment)). In a low window (a split-screen strip) the tutorial isn't offered by itself — only through "More". The idea came
 from Sevih, who runs outerpedia.
 
 ## Tips and what's new
@@ -34,13 +33,25 @@ from Sevih, who runs outerpedia.
 Some things are easy to miss: the first tap in the grid for an accessory, the 4th substat on an Epic, replacing a
 stat in its row. The app shows a short tip once, when you first get there: one at a time, at most three per launch, and
 only after a pause in tapping. "Got it", or a tap on what the tip points at, and it won't come back. After an update, a
-"New: …" strip lists what changed; "Later" keeps a dot on ☰ and Help until you look. Tips are listed in Help, where they
+"New: …" strip lists what changed; "Later" keeps a dot on ☰ ("⋯" on a computer) and on Help until you look. Tips are listed in Help, where they
 can be turned off or shown again. Like the tutorial, they only appear by themselves in a taller window.
+
+## "More"
+
+Everything that isn't the form and the verdict is in one sheet, **More**: ☰ on the bottom bar on a phone, "⋯" next to the
+tabs on a computer. From top to bottom: on a phone, "Characters", "To dress · N" and "Team trade"; a line "A new
+version is ready · Update" or "Install as an app" when there is one; "Enter code", "Help", "Tutorial"; **Settings** —
+"only my characters", "Evaluation" (Progression / Endgame, fodder, level and Quirks; the row shows the current ones),
+language and icons (from the game or own outlines; without a choice — from the game); **Data** — "Backup" (the roster
+and gear in one code, see [Characters and guild code](Characters-and-guild-code#backup)) and "About" (where the data
+comes from, game version, snapshot date, how many characters and builds, the app build, "Licenses (MIT)"). At the
+bottom, as the last line, is the fan-content notice from [Limitations and credits](Limitations-and-credits#licenses-and-rights).
+There is no footer under the page.
 
 ## First steps
 
-1. **Mark your characters:** ☰ → "Characters", the star on each one you own. While the roster is empty, the evaluation
-   uses every character in the game. The roster moves to another device with a code ("export / import"). Marked a hero? Open them and use the "Worn" tab to record what they wear in the game now.
+1. **Mark your characters:** "Characters", the star on each one you own. While the roster is empty, the evaluation
+   uses every character in the game. The roster moves to another device with a code (More → "Backup"). Marked a hero? Open them and use the "Worn" tab to record what they wear in the game now.
 2. **Split the screen:** the game in one half, Gear Check in the other.
 3. **Enter the piece:**
    - the slot (row of icons) and grade: `L` — Legendary (Etheric), `E` — Epic (Steel);

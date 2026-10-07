@@ -4,10 +4,18 @@
 
 ## Characters
 
-The second tab (☰ → "Characters"): search by name and every outerpedia build — sets with alternatives, weapon and
+The second tab ("Characters" in the header on a computer, ☰ → "Characters" on a phone): search by name and every outerpedia build — sets with alternatives, weapon and
 accessory with the main stat, substat priority with a flat/% hint, talismans, a note. The star adds a character to your
-roster; with "only my characters" checked, the evaluation considers only them. A link like `…/#demiurge-stella` opens
-a character directly.
+roster; with "only my characters" checked (More → Settings), the evaluation considers only them. A link like
+`…/#demiurge-stella` opens a character directly.
+
+Above the grid are two rows: search with the filter button, and the list mode with the **Trade** button. The mode is
+**Mine** (everyone you star, with builds and without, alphabetical; a hero without builds has a grey portrait),
+**To dress** (yours with builds who wear fewer than 6 of 6) or **All** (everyone with builds; a hero without builds is
+found by name). The numbers are the roster size and how many are left to dress. While the roster is empty there is only
+"All" and a hint about the star. Element and class are under the filter button (the number on it is how many are
+chosen); the chosen ones show as chips above the grid, ✕ clears one, "Reset" in the filter clears both. "Mine" and "All"
+are remembered, "To dress" isn't. **Trade** opens [team trade](Trading-gear).
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
 next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on
@@ -28,7 +36,7 @@ with "Undo". More — [Equipment](Equipment#core-fusion).
 ## Backup
 
 Everything you mark stays in your browser only — nothing is sent anywhere. To keep it safe or move it to another device
-there's a **backup**: "export / import" on the characters tab → "Backup — roster and gear in one code". The code holds
+there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code holds
 the whole roster, each hero's pieces in order, what's worn, picked builds, "Filling" / "Not filling" and "Keep worn
 gear". "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
 the same field and tap **"Replace"**: the roster and gear are replaced by the code, and the message's "Undo" brings the
@@ -46,7 +54,7 @@ share sheet — send the link in a messenger; on a computer the link is copied. 
 **"Shared · view only"** card: the hero's portrait and name, the build they're dressed for, "Worn · N of 6", set
 bonuses and the pieces by slot with Breakthrough and substats. Substats are colored by your friend's settings. Only ✕
 and "outerpedia ↗" are clickable; nothing changes on their side — neither the roster nor the gear nor the open page.
-The link can also go into ☰ → "Enter code". The hero code is after `#` in the address and never reaches the server.
+The link can also go into More → "Enter code". The hero code is after `#` in the address and never reaches the server.
 
 If your friend's data is older: the hero is missing — "This hero isn't in your data — reload the page"; a set or item
 is missing — "not in your data" in that piece's row; a renamed build — the card picks a build itself.
@@ -56,6 +64,6 @@ A character's pieces and how builds assemble from them — see [Equipment](Equip
 ## Item code for your guild
 
 The verdict details and a character's piece card have a code, for example `OGC KXRM TPWA`. "Copy" — and paste it
-into the game chat (8–11 letters, the chat limit is 50 characters). Whoever gets it opens ☰ → "Enter code" and types it in: the code has only letters,
+into the game chat (8–11 letters, the chat limit is 50 characters). Whoever gets it opens More → "Enter code" and types it in: the code has only letters,
 case and spaces don't matter, and a check letter catches typos. Everyone gets the evaluation for their own roster and
 settings. A piece with 5–6 segments has no code; "T4" isn't part of the code.
