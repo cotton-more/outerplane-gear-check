@@ -25,3 +25,26 @@
 Two useless substats — the verdict comes right away, no need to enter the third.
 
 Evaluation settings (Progression / Endgame, level and Quirks) are in More → Settings → Evaluation.
+
+## A whole filter at once: Batch
+
+Many pieces from one filter in the game — one set, or weapons, or accessories? Rate them as a **batch**: the app sees
+the whole group before deciding, so a weak piece never goes to dismantle while a good one of its grade, set and slot is
+in the same batch.
+
+1. **"Batch"** — next to "Next item" on a computer, in More on a phone. A strip "Batch · 0 · List ▸ ✕" sits above the
+   form; there is no verdict on the way.
+2. Enter the pieces **in the order the game's filter shows them**. "Add · #N" adds a piece (not all substats — not
+   added). "List ▸" — fix a piece (tap it, then "Save #N") or remove it (✕).
+3. **"Plan it"** — a line per piece, in your order: "Equip on Caren", "Equip on Caren — instead of the helmet", "Set
+   aside for Rin", "Feed to #4", "Feed to Kappa's helmet", "Dismantle". A piece the plan takes off a hero gets its own
+   line right under it ("Caren's removed helmet …"). One target takes up to four pieces; a new piece fed four times
+   reaches T4 ("· T4 after feeding"). Feeding a worn piece — stop at T4 and tap "T4" on its card. A piece that looks
+   like one already set aside says so; if you have two of them, tap "It's a different one".
+4. **"Don't take"** on a line — plan it again without that hero.
+5. Walk down the game's list once and do what each line says. Then **"Done"**: equips and set-asides are recorded at
+   once ("Batch recorded: 3 equipped, 2 set aside."), "Undo" reverts all and brings the batch back. "Cancel" — back to
+   the list.
+
+The batch is kept until "Done" or ✕, even if the phone unloads the page. Pieces worn by heroes don't move between
+them — that's [Trading gear](Trading-gear).

@@ -37,6 +37,7 @@ import type { Char } from '@/game/data/types';
 import type { CharVs } from '@/features/gear/model/poolVs';
 import { chipLabel } from '@/features/gear/ui/VsChip';
 import { EquipButton } from '@/features/gear/ui/EquipButton';
+import { BatchButton } from '@/features/batch/ui/BatchButton';
 
 // sub: какой стат заменяем; level: какой стат добавляем — окно уровня у центра нажатой клетки (at); fourth — 4-й у Epic
 type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { level: string; at: Point };
@@ -48,13 +49,16 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: куда встанет форма после неё. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
   onStash?: (vs: CharVs) => void; // «Отложить для X» под карточкой (у «Оставь» и запаса)
   sameLine?: string | null; onTwin?: () => void;
+  strip?: React.ReactNode;        // «Партия · 7 · Список ▸ ✕» instead of the hero strip (features/batch)
+  nextLabel?: string;             // «В партию · #8» / «Сохранить #3» instead of «Следующий»
+  onBatch?: () => void;           // «Партия» next to «Следующий» (wide screen)
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -112,7 +116,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   return (
     <div className="panel eval-in" id="eval-in">
       <div className="form">
-        {hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />}
+        {strip ?? (hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />)}
         <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
             <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
@@ -175,7 +179,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
       </div>
 
       <div className="actions">
-        <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{t.ui.resetItem}</button>
+        <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{nextLabel ?? t.ui.resetItem}</button>
+        {onBatch && <BatchButton onStart={onBatch} />}
         <span className="hk">
           {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> {t.ui.hkSlot} · <kbd>L</kbd>/<kbd>E</kbd> {t.ui.hkGrade} · <kbd>Esc</kbd> {t.ui.hkReset}</>}
         </span>

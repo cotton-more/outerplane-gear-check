@@ -1,0 +1,24 @@
+/* «Партия» (features/batch, .x/0110-batch): the strip over the form, the list and the plan — piece rows like the trade plan */
+.batch-strip .batch-list { margin-left: 4px; }
+.batch-note { margin: 4px 2px 0; }
+.batch { display: grid; gap: 10px; font-size: 12.5px; }
+.batch-col { padding: 12px 14px; }
+.batch-sheet .batch { padding: 4px 14px 16px; }
+.batch-h { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.batch .bgear-list { list-style: none; }
+.batch .bgear-row { position: relative; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 2px 6px; padding: 5px 8px; }
+.batch .bgear-row.editing { border-color: var(--accent); }
+.bnum { font: 700 11.5px var(--font-mono); color: var(--ink-2); }
+.brow-fix { position: absolute; inset: 0; border: 0; background: none; border-radius: inherit; }
+.brow-x { position: relative; z-index: 1; min-width: 36px; min-height: 30px; border: 0; background: none; color: var(--ink-2); }
+.batch .bgear-meta { grid-column: 2 / 4; }
+.bfate { grid-column: 2 / 3; font-weight: 600; color: var(--ink); }
+.b-wear .bfate, .b-keep .bfate, .b-reserve .bfate { color: var(--keep); }
+.b-feed .bfate { color: var(--fodder, var(--accent)); }
+.b-junk .bfate { color: var(--junk); }
+.boff { margin-left: 18px; width: calc(100% - 18px); }
+.boff-n { grid-column: 1 / 3; color: var(--ink-2); }
+.batch-sum { margin: 0; color: var(--ink-2); }
+.batch-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+/* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet */
+.batch-sheet .batch-acts { position: sticky; bottom: 0; padding: 8px 0 4px; background: var(--surface); }

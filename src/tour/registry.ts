@@ -15,6 +15,7 @@ export const TIP_ORDER = [
   'features/eval/form/StatGrid', 'features/eval/form/SubPicker', 'features/eval/form/SubRows', 'features/tryon/TryOnStrip',
   'screens/eval/VerdictPanel', 'features/gear/ui/VsSection',
   'features/trade/ui/TradeSheet',
+  'features/batch/ui/BatchButton',
 ].map((f) => f + '.tour.ts');
 const rank = (f: string) => { const i = TIP_ORDER.indexOf(f); return i < 0 ? TIP_ORDER.length : i; };
 const files = Object.keys(mods).map(fileOf).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));

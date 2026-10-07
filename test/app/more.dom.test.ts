@@ -68,7 +68,7 @@ describe('1. шторка «Ещё» на телефоне', () => {
     await mount({ roster: [caren.id, kappa.id], gear: GEAR });
     await openMore();
     expect($('.more')?.firstElementChild?.classList.contains('more-nav')).toBe(true);
-    expect(nav()).toEqual(['★ Characters 2', 'To dress · 2', 'Team trade']);
+    expect(nav()).toEqual(['★ Characters 2', 'To dress · 2', 'Team trade', 'Batch']);
     expect($$('.more-acts button').map((b) => b.textContent)).toEqual(['Enter code', 'Help', 'Tutorial']);
   });
 
@@ -134,7 +134,7 @@ describe('1.4, 2.2 «Ещё» на ПК', () => {
     setWidth(1280);
     await mount();
     const row = $('.actions')!;
-    expect($$('.actions button').map((b) => b.textContent)).toEqual(['Next item']);
+    expect($$('.actions button').map((b) => b.textContent)).toEqual(['Next item', 'Batch']); // «Партия» next to «Следующий» (.x/0110-batch)
     for (const text of ['Enter code', 'Help', 'Tutorial', 'only my', 'settings', 'Evaluation']) expect(row.textContent).not.toContain(text);
     expect($('#eval-in .toggle')).toBeNull();
     expect($('#eval-in details')).toBeNull();

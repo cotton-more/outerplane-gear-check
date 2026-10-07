@@ -29,6 +29,10 @@ import { takeModelNote } from '@/features/gear/store/stored';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
+import { useBatchMode } from '@/features/batch/useBatchMode';
+import { BatchStrip } from '@/features/batch/ui/BatchStrip';
+import { BatchPanel, batchTitle } from '@/features/batch/ui/BatchPanel';
+import { AskSheet } from '@/shared/ui/AskSheet';
 import { makeCtx } from '@/game/context';
 import { useIndex } from '@/game/data/IndexContext';
 import { heroName } from '@/game/hero/HeroName';
@@ -120,6 +124,9 @@ export function App() {
   // сообщения с «Вернуть»: экипировки (features/gear/ui/gearMsg) и формы — «Следующий» убрал предмет по ошибке
   const [msg, say] = useTimed<GearMsg>(GEAR_MSG_MS);
   const [formUndo, setFormUndo] = useTimed<ItemInput>(6000);
+  // «Партия» (features/batch, .x/0110-batch): a filter of pieces in a row, no verdict on the way, one plan; not during a tour
+  const batch = useBatchMode({ idx, t, ctx, gear, dispatch, persist: !touring, narrow: layout.narrow, say });
+  const batchOn = batch.on && !touring;
 
   // обновление: новые данные — плашка сверху; только приложение — «Готова новая версия» в «Ещё» (app/usePwa)
   const pwa = usePwa(idx.D.meta.commit);
@@ -141,7 +148,8 @@ export function App() {
   });
   const { hero, replace, dropReplace } = heroMode;
   const vm = useVerdictModel({
-    idx, t, ctx, s, store: gear.store, roster, view, hero, replace, touring, narrow: layout.narrow, onEval: s.tab === 'eval',
+    idx, t, ctx, s, store: gear.store, roster, view, hero: batchOn ? null : hero, replace, touring, narrow: layout.narrow, onEval: s.tab === 'eval',
+    batch: batchOn,
   });
   const { input, shown, vsList, tview, offNote, cardShown, hint, sameLine, onTwin } = vm;
   const onb = useOnboarding({
@@ -160,7 +168,11 @@ export function App() {
     closeVerdict: () => setVerdictOpen(false), closeEquip: () => setEquipOpen(false),
     fusionGate: ros.fusionGate, joinRoster: ros.joinRoster, say,
   });
-  const { onReset, doEquip, doStash, nextNote } = flow;
+  const { doEquip, doStash, nextNote } = flow;
+  // the batch mode: «Следующий» (and Esc) add the piece to the batch — «В партию · #8» / «Сохранить #3»
+  const onReset = batchOn ? () => batch.add(input, vm.raw.v !== 'idle') : flow.onReset;
+  const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1)) : undefined;
+  const onBatch = canEquip && !hero && !batchOn && !tour.run ? batch.start : undefined;
   useHotkeys(s, dispatch, layout, onReset);
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
@@ -199,22 +211,28 @@ export function App() {
             <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
-              onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin} />
-            {!layout.narrow && <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />}
+              onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
+              strip={batchOn ? <BatchStrip n={batch.batch.items.length} note={batch.note} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
+              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} />
+            {!layout.narrow && (batchOn
+              ? <aside className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
+              : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />)}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
               onTrade={canEquip ? () => setTrade('team') : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
-              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip ? heroMode.start : undefined}
-              onRateFor={canEquip ? (c) => heroMode.start(c) : undefined}
+              sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} onTryOn={canEquip && !batchOn ? heroMode.start : undefined}
+              onRateFor={canEquip && !batchOn ? (c) => heroMode.start(c) : undefined}
               onPieceOpen={setPieceOpen} onTrade={canEquip ? (c) => setTrade({ hero: c.id }) : undefined}
               canShare={!tour.run && !gear.newer} />
           </section>
         </main>
-        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} hint={hint} tab={s.tab} rosterSize={roster.size}
-          onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset} onOpen={() => setVerdictOpen(true)} />
+        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
+          hint={batchOn ? batch.note ?? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length) : t.batch.empty) : hint}
+          resetLabel={batchNext} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
+          onOpen={batchOn ? () => batch.show('list') : () => setVerdictOpen(true)} />
         <OnboardingStrips onb={onb} />
         <TipLayer tour={tour} c={onb.tourCtx} enabled={onb.tipsOn} forced={shownCode ? null : onb.forcedTip} onForced={onb.onForced} />
         <TourLayer tour={tour} c={onb.tourCtx} rosterEmpty={roster.size === 0} tours={onb.tours} onTab={onTab} onRoster={() => onTab('chars')} />
@@ -242,7 +260,14 @@ export function App() {
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined} />
+            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined}
+            onBatch={onBatch ? () => { onTab('eval'); onBatch(); } : undefined} />
+        )}
+        {batchOn && layout.narrow && batch.view && s.tab === 'eval' && (
+          <Sheet title={batchTitle(t, batch)} onClose={() => batch.show(null)} className="vdrawer batch-sheet"><BatchPanel ctx={ctx} m={batch} /></Sheet>
+        )}
+        {batchOn && batch.asking && (
+          <AskSheet title={t.batch.end} text={t.batch.endAsk(batch.batch.items.length)} yes={t.batch.endYes} kind="batch-ask" onYes={batch.endNow} onClose={batch.cancelEnd} />
         )}
         {trade && canEquip && (
           <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}

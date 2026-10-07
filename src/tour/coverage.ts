@@ -40,6 +40,10 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
+  'features/batch/ui/BatchStrip.tsx': 'helper',        // batch strip over the form: the batch tip explains the mode
+  'features/batch/ui/BatchList.tsx': 'helper',         // pieces of the batch: the batch tip explains the mode
+  'features/batch/ui/BatchPlan.tsx': 'helper',         // the batch plan: its lines say what to do, the batch tip explains the mode
+  'features/batch/ui/BatchPanel.tsx': 'helper',        // list or plan in the sheet / column: the batch tip explains the mode
   'game/hero/HeroFace.tsx': 'helper',                  // портрет героя
   'game/hero/HeroName.tsx': 'helper',                  // имя героя одной строкой: приставка режется первой
   'game/icons/Img.tsx': 'helper',                      // картинки и значки

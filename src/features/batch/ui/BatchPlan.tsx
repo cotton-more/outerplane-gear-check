@@ -1,0 +1,67 @@
+// The batch plan (.x/0110-batch/PLAN.md §1 p. 4): a line per entry in the entered order, a piece the plan takes off a hero
+// right under its entry; «Не брать» on a line with a hero, «Это другой» on a look-alike of a set-aside piece; «Сделал» —
+// record it all, «Отмена» — back to the list.
+import type { Char } from '@/game/data/types';
+import type { Ctx } from '@/game/context';
+import type { Texts } from '@/i18n';
+import { useT } from '@/i18n';
+import type { Fate, Line, Plan } from '@/features/batch/plan';
+import { BatchPiece } from './BatchList';
+
+export function fateText(t: Texts, f: Fate): string {
+  switch (f.kind) {
+    case 'wear': return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + (f.t4 ? t.batch.t4 : '');
+    case 'keep': return t.batch.keep(f.c.name) + (f.t4 ? t.batch.t4 : '');
+    case 'reserve': return t.batch.reserve(f.c.name);
+    case 'feed': return 'entry' in f.to ? t.batch.feedEntry(f.to.entry) : t.batch.feedWorn(f.to.piece.slot, f.to.c.name);
+    case 'same': return t.batch.same(f.same.piece.slot, f.same.c.name, t.fit.date(f.same.piece.at));
+    case 'maybe': return t.batch.maybe(f.heroes.slice(0, 3).map((c) => c.name).join(', '));
+    case 'junk': return t.batch.junk;
+    default: return t.batch.none;
+  }
+}
+
+// whose line it is for «Не брать»: the hero who gets the piece, or whose piece it feeds
+function heroOf(plan: Plan, l: Line): Char | null {
+  const f = l.fate;
+  if (f.kind === 'keep' && f.held) return null;
+  if (f.kind === 'wear' || f.kind === 'keep' || f.kind === 'reserve') return f.c;
+  if (f.kind !== 'feed') return null;
+  if (!('entry' in f.to)) return f.to.c;
+  const n = f.to.entry;
+  const g = plan.lines.find((x) => x.n === n && !x.off)?.fate;
+  return g && (g.kind === 'wear' || g.kind === 'keep') ? g.c : null;
+}
+
+export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone, onCancel }: {
+  ctx: Ctx; plan: Plan;
+  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onDone: () => void; onCancel: () => void;
+}) {
+  const t = useT();
+  const c = plan.counts;
+  return (
+    <div className="batch">
+      <p className="batch-sum">{t.batch.summary(c.wear, c.keep, c.feed, c.junk)}</p>
+      <ol className="bgear-list batch-plan">
+        {plan.lines.map((l) => {
+          const hero = heroOf(plan, l);
+          return (
+            <li key={l.id} className={`bgear-row brow b-${l.fate.kind}${l.off ? ' boff' : ''}`}>
+              {l.off
+                ? <span className="boff-n">{t.batch.off(l.off.piece.slot, l.off.c.name)}</span>
+                : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
+              <span className="bfate">{fateText(t, l.fate)}</span>
+              {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
+              {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
+            </li>
+          );
+        })}
+      </ol>
+      {plan.wornFed && <p className="muted small">{t.batch.wornNote}</p>}
+      <div className="batch-acts">
+        <button type="button" className="btn primary" onClick={onDone}>{t.trade.done}</button>
+        <button type="button" className="btn" onClick={onCancel}>{t.trade.cancel}</button>
+      </div>
+    </div>
+  );
+}

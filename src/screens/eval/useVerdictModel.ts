@@ -61,13 +61,14 @@ const quietLine = (t: Texts, r: Result | null, slot: string): string | null => {
   return q.slotEmpty ? t.fit.quietEmpty(q.c.name, slot, q.stats) : t.fit.quietBetter(q.c.name, t.fit.pts(q.dV), q.stats);
 };
 
-export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval }: {
+export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false }: {
   idx: Index; t: Texts; ctx: Ctx;
   s: FormState; store: GearStore; roster: ReadonlySet<string>;
   view: PoolView;                 // вид пула на хранилище — один раз на хранилище
   hero: Hero | null; replace: string | null; // режим «для героя» и запись «Примерить замену»
   touring: boolean;
   narrow: boolean; onEval: boolean; // телефон; вкладка «Оценка» открыта
+  batch?: boolean;                // «Партия»: pieces are entered without a verdict (.x/0110-batch)
 }) {
   // вердикт зависит только от предмета, настроек и пулов — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
@@ -95,7 +96,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const [twinAt, setTwinAt] = useState<string | null>(null);
   const twin = twinAt === key;
   // исход по ростеру; null — по порогам (ростера нет) или введены не все сабстаты
-  const res = useMemo(() => verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin }), [ctx, viewOf, key, twin]); // eslint-disable-line react-hooks/exhaustive-deps
+  const res = useMemo(() => (batch ? null : verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin })), [ctx, viewOf, key, twin, batch]); // eslint-disable-line react-hooks/exhaustive-deps
   // Guard: while it looks like a set-aside piece, only the hero who has it keeps a button — «Надеть» wears that very
   // record (useFormFlow). Others get no «Надеть» or «Отложить» until «Это другой»: one helmet, two records otherwise
   const same = res?.same ?? null;
@@ -132,7 +133,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const nSubs = Object.keys(s.subs).length;
   // Без вердикта (не выбран сет, main или предмет) карточка не встаёт: на её месте остаётся сетка, а то, чего не хватает,
   // выделено на форме (EvalPanel need); вопрос — на плашке внизу
-  const cardShown = narrow && onEval && verdict.v !== 'idle' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
+  const cardShown = narrow && onEval && !batch && verdict.v !== 'idle' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint : null;
   // the guard's line on the phone card and «Это другой» on the card and in the details
