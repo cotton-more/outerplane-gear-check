@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // «Обмен вещами»: открытие шторки с карточки героя и с панели ростера, команда из четырёх, заказ героя, план героя
-// (вещь, ключ поиска, источник, «Не брать», очки статов), «Сделал» с «Вернуть», сеанс (.x/0085 T7.4) и отмена расчёта
+// (вещь, ключ поиска, источник, цена вещи, «Не брать», очки статов), «Сделал» с «Вернуть», сеанс (.x/0085 T7.4) и отмена расчёта
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -132,6 +132,7 @@ describe('J. обмен вещами', () => {
 
     expect($('.tmove .bgear-row')).not.toBeNull();
     expect($('.tmove .tsrc')?.textContent).toBe('on Aer');
+    expect($('.tmove .tpts')?.textContent).toMatch(/^\+[\d.]+ pts$/); // шлем Aer против надетого шлема Caren
     expect($('.tline.to .aimb')?.textContent).toBe('Order: By stats ▾'); // заказ — его можно сменить
     expect($('.tline.to .tline-s')?.textContent).toMatch(/^Stats: [\d.]+ → [\d.]+ pts$/);
     expect(byText('.tmove button', "Don't take")).toBeTruthy();

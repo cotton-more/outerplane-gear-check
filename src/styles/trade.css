@@ -56,5 +56,8 @@
 /* карточка героя и плитка */
 .cd-trade { margin: 8px 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 .cd-trade .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
+.tpts { font: 600 11px var(--font-mono); color: var(--ink-3); }
+.tpts.up { color: var(--keep); }
+.tpts.down { color: var(--junk); }
 .tsrc { grid-column: 2 / 4; font-size: 11px; color: var(--ink-3); }
 .tplan .bgear-t .tok.sort { box-shadow: inset 0 0 0 1px var(--accent); }

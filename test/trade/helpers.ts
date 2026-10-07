@@ -7,6 +7,7 @@ import { makeCtx, type Ctx } from '@/game/context';
 import { replacedX } from '@/features/gear/model/fusion';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { loadGear, readGearCode } from '@/features/gear/store/gearStore';
+import { decodeBackup } from '@/features/roster/backup';
 import type { Subs } from '@/game/item/subs';
 import { cmpKit, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '@/features/trade/model/model';
 import { milli } from '@/features/gear/model/vs';
@@ -128,11 +129,15 @@ export const realWorld = (st: GearStore, roster: readonly string[] = Object.keys
 export interface Owner { st: GearStore; roster: string[]; ctx: Ctx }
 export const OWNER_FILE = new URL('../../.x/00-equip.md', import.meta.url);
 export const hasOwner = (): boolean => existsSync(OWNER_FILE);
-// .x/00-equip.md → readGearCode → loadGear: то, что делает приложение при импорте кода (как .x/0020-custom-build/proto/lib.ts)
+// .x/00-equip.md → loadGear: то, что делает приложение при импорте кода — резервная копия (OGC-GEAR3+, с ростером) или
+// старый код вещей (OGC-GEAR1/2, readGearCode)
 export function loadOwner(): Owner {
-  const raw = readGearCode(readFileSync(OWNER_FILE, 'utf8').trim());
-  if (raw === null || raw === 'newer') throw new Error('.x/00-equip.md: не код OGC-GEAR2');
-  const { st, roster } = loadGear(raw, idx, []);
+  const text = readFileSync(OWNER_FILE, 'utf8').trim();
+  const b = decodeBackup(text);
+  if (b === 'newer' || b === 'broken') throw new Error(`.x/00-equip.md: резервная копия ${b}`);
+  const raw = b ? b.raw : readGearCode(text);
+  if (raw === null || raw === 'newer') throw new Error('.x/00-equip.md: не код OGC-GEAR');
+  const { st, roster } = loadGear(raw, idx, b ? b.roster : []);
   const settings = { rosterOnly: true, stage: 'grow' as const, lv120: false, quirks: true };
   return { st, roster, ctx: makeCtx(idx, settings, new Set(roster), undefined, replacedX(idx, roster, st.pools)) };
 }

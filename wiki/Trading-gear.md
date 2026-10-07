@@ -42,8 +42,11 @@ For each receiver:
   turn on or off are named ("Speed ×4 activates");
 - an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
   pieces are there but below T4, "Speed ×2 won't come together: needs T4";
-- **what to put on**, by slot; under each piece, small — where it comes from ("on Caren", "in inventory · Caren's stock",
-  "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓;
+- **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6
+  pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Caren's
+  stock", "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓. The
+  plan takes a recommended weapon or accessory even with fewer points — for its passive; such a piece shows "−4.4 pts ·
+  better passive"; if you don't want it — "Don't take";
 - **"Don't take"** — the app offers another piece;
 - **an empty slot** — "Search:" with a hint of what to look for.
 

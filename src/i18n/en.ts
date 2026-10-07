@@ -558,7 +558,7 @@ export const en: Texts = {
       'Works out how to re-dress a hero (or a team of four) from the pieces already in your roster and inventory. Open it with "Trade ▸" on a hero card (that hero\'s plan) or "Trade" above the character list and "Team trade" in More on a phone (straight to the team). In the game you do it yourself — the app only calculates.',
       '**Hero** — whom to re-dress; **Team** — four places in a diamond: they swap pieces among themselves and take from everyone else. A member is a tile; tap it to put another hero there or "Remove from team". Under the tile — the hero\'s order ("Order: … ▾"): "By stats" or one of the sets from their builds; tap to change. A hero with a pinned set has one order — "Pinned".',
       '**Session:** while the trade window is open, what already re-dressed heroes wear is not taken by the next ones; their spares can be. Close the window — no restrictions.',
-      'The plan: for each receiver — how many points stronger ("+4.2 pts") or weaker ("Stats drop by N pts") they get, which set bonuses turn on, what to put on, where each piece comes from (a hero or the inventory) and how to find it in the game — the source is small under the piece, weapons and accessories also get Secondary ↓. If the order lacks pieces of its set, a line says so. "Don\'t take" looks for another piece. An empty slot shows "Search:" with a hint. The plan shows only whom you re-dress; heroes you take pieces from are not shown.',
+      'The plan: for each receiver — how many points stronger ("+4.2 pts") or weaker ("Stats drop by N pts") they get, which set bonuses turn on, what to put on, how many points each piece gives over the worn one ("+1.6 pts"; a recommended weapon or accessory says "better passive", even with fewer points), where each piece comes from (a hero or the inventory) and how to find it in the game — the source is small under the piece, weapons and accessories also get Secondary ↓. If the order lacks pieces of its set, a line says so. "Don\'t take" looks for another piece. An empty slot shows "Search:" with a hint. The plan shows only whom you re-dress; heroes you take pieces from are not shown.',
       '**Holes are not filled:** a piece taken off stays off until you enter a new one through evaluation.',
       '**Done** — all done in the game: the plan is saved. **Cancel** — nothing changed. Right after "Done" there is "Undo". A copy that is in no pool leaves the app but stays in your game inventory.',
       '**"Re-dress"** on the Worn tab uses the same threshold as the trade: the best layout from the hero\'s own pieces beats what\'s worn by at least 1 point, turns on an effect-set bonus or puts on a recommended weapon or accessory.',
@@ -616,6 +616,9 @@ export const en: Texts = {
     ok: 'OK',
     nothing: 'Nothing to change',
     gainPts: (n: number) => (n > 0 ? `▲ +${dec(n)} pts` : n < 0 ? `▼ −${dec(-n)} pts` : '0 pts'),
+    // цена вещи в плане: очки против надетой в слоте; passive — рекомендованное оружие или аксессуар
+    itemPts: (n: number) => (n > 0 ? `+${dec(n)} pts` : n < 0 ? `−${dec(-n)} pts` : '0 pts'),
+    passive: 'better passive',
     setOn: (set: string, n: number) => `${set} ×${n} activates`,
     setOff: (set: string, n: number) => `${set} ×${n} deactivates`,
     fromWorn: (name: string) => `on ${name}`,

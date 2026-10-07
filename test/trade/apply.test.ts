@@ -167,6 +167,13 @@ describe('F. дыры: применение', () => {
   });
 });
 
+// лишние копии в пуле героя (вещей одного кода сверх одной): план новых не добавляет, а введённые игроком дубли
+// (две одинаковые записи у одного героя) — его ввод, они остаются
+const dups = (st: GearStore, c: string): number => {
+  const codes = (st.pools[c] ?? []).map((id) => codeOf(st.pieces[id]));
+  return codes.length - new Set(codes).size;
+};
+
 describe('X5: сквозной «Сделал» на вещах владельца', () => {
   it.skipIf(!hasOwner())('X5: план каждого героя применяется: надетое ⊂ пул, слот — одна вещь, у героя нет двух вещей одного кода, снятая вещь не пропала', () => {
     const o = loadOwner();
@@ -181,8 +188,7 @@ describe('X5: сквозной «Сделал» на вещах владельц
       for (const c of hp.plan.changes) if (c.was && !gone.has(c.was.item.id)) expect(Object.values(x.pools).flat()).toContain(c.was.item.id);
       for (const [c, ids] of Object.entries(x.pools)) {
         for (const id of Object.values(x.worn?.[c] ?? {})) expect(ids).toContain(id);
-        const codes = ids.map((id) => codeOf(x.pieces[id]));
-        expect(new Set(codes).size, `${h.id} → ${c}`).toBe(codes.length);
+        expect(dups(x, c), `${h.id} → ${c}`).toBeLessThanOrEqual(dups(o.st, c));
       }
     }
     expect(changes).toBeGreaterThan(0);
@@ -251,8 +257,7 @@ describe('X6: сквозной «Сделал» команды на вещах �
       expect(clean(game)).toEqual(clean(x.worn ?? {}));
       for (const [c, list] of Object.entries(x.pools)) {
         for (const id of Object.values(x.worn?.[c] ?? {})) expect(list).toContain(id);
-        const codes = list.map((id) => codeOf(x.pieces[id]));
-        expect(new Set(codes).size, c).toBe(codes.length);
+        expect(dups(x, c), c).toBeLessThanOrEqual(dups(o.st, c));
       }
     }
     expect(moved).toBeGreaterThan(0);

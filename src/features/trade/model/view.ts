@@ -1,10 +1,11 @@
 // Что показывает план (R6.3, R6.4, R8.4, .x/0040-trade/SPEC.md; «было → станет» — .x/0085 FORMULA §7 п. 3): по героям —
 // V и очки статов (без сетов) до и после по заказу, половины сетов, которые включились и выключились, что надеть (moves)
-// и какие слоты опустели; копии, которые после «Сделал» не будут ни в одном пуле («из приложения уйдёт»). Данные, не
+// с ценой каждой вещи, и какие слоты опустели; копии, которые после «Сделал» не будут ни в одном пуле («из приложения уйдёт»). Данные, не
 // подписи: подписи — компоненты и i18n.
 import type { SlotId } from '@/game/data/types';
 import { halvesIn } from './holes';
-import { SLOT_ORDER, type Part, type World } from './model';
+import { FIT } from './kit';
+import { GEAR_SLOTS, SLOT_ORDER, type Part, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 import type { Move, Moves } from './moves';
 import { kitIn } from './team';
@@ -19,9 +20,23 @@ export interface HeroLine {
   on: Part[];               // половины сетов, которые включились: «S ×2» (1 половина) или «S ×4» (2)
   off: Part[];              // и выключились
   moves: Move[];
+  worth: Partial<Record<SlotId, Worth>>; // что даёт вещь хода против надетой в слоте
   emptied: SlotId[];        // было надето — стало пусто
   empty: SlotId[];          // получатель: все пустые слоты после плана (подсказка R8.4)
   gone: string[];           // получатель: копии, которые уйдут из приложения (R6.6)
+}
+
+// Цена хода по заказу героя: очки вещи минус очки надетой в этом слоте до плана (сеты — строкой героя, не тут);
+// passive — оружие или аксессуар выше рангом (рекомендованный предмет): ради него план берёт вещь и с меньшими очками
+export interface Worth { d: Milli; passive: boolean }
+
+function worthOf(w0: World, hero: string, m: Move): Worth | null {
+  const g = w0.gauge(hero);
+  const now = g?.value(m.item);
+  if (!g || !now) return null;
+  const was = w0.heroes.find((h) => h.id === hero)?.worn[m.slot];
+  const old = was ? g.value(was) : null;
+  return { d: now.v - (old?.v ?? 0), passive: GEAR_SLOTS.includes(m.slot) && FIT[now.fit] > FIT[old?.fit ?? 'no'] };
 }
 
 // половины сетов в надетом героя
@@ -52,6 +67,10 @@ export function linesOf(w0: World, w1: World, receivers: readonly string[], m: M
       before: k0?.total ?? 0, after: k1?.total ?? 0, ptsBefore: k0?.pts ?? 0, ptsAfter: k1?.pts ?? 0,
       on: grown(b, a), off: grown(a, b),
       moves: m.moves.filter((x) => x.hero === hero),
+      worth: Object.fromEntries(m.moves.filter((x) => x.hero === hero).flatMap((x) => {
+        const v = worthOf(w0, hero, x);
+        return v ? [[x.slot, v]] : [];
+      })),
       emptied: m.emptied.filter((x) => x.hero === hero).map((x) => x.slot),
       empty: receiver ? SLOT_ORDER.filter((s) => !worn[s]) : [],
       gone: receiver ? gone.filter((id) => was.get(id) === hero) : [],

@@ -4,6 +4,7 @@
 // сортировки отмечен ↓ (R9.1). Под вещью — откуда взять («у Ноа», «в инвентаре», владелец 2026-10-04: строки «Искать»
 // нет). Только получатели, в порядке выполнения: тех, у кого забрали надетое, не показываем (владелец, 2026-10-04 и
 // 2026-10-05). У героя — прирост ценности по заказу в очках, очки статов «было → станет» (упали — «станут слабее на N»),
+// у каждой вещи — сколько очков она даёт против надетой (у рекомендованного оружия или аксессуара — «пассивка лучше»),
 // половины сетов, которые включатся и выключатся, и части заказа, которым не хватает вещей. Заказ «Заказ: … ▾» — шторка
 // OrderSheet, смена — пересчёт. «Не брать» — пересчёт без этой вещи у этого героя. Изменений нет — «Менять нечего» и «Ок».
 import { GRADE_NAME, isArmor, subLabel } from '@/game/data';
@@ -30,8 +31,9 @@ import { OrderButton } from './OrderSheet';
 
 type T = Texts;
 const pts = (m: number) => m / 1000;
-// очки так, как их пишет план (до десятых): «+0 очк.» и «слабее на 0 очк.» не бывает (ревью этапа 10)
-const tenths = (m: number) => Math.round(m / 100) / 10;
+// очки так, как их пишет план (до десятых): «+0 очк.» и «слабее на 0 очк.» не бывает (ревью этапа 10); половина — от
+// нуля в обе стороны, иначе −1,05 у прироста было «−1», а у «слабее на» — «1,1»
+const tenths = (m: number) => Math.sign(m) * Math.round(Math.abs(m) / 100) / 10;
 
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
   return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && setName(ctx.idx, k.set),
@@ -57,7 +59,18 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
   const from = (m: Move) => (m.from.kind === 'worn' ? t.trade.fromWorn(name(m.from.hero))
     : m.from.kind === 'stock' ? t.trade.fromStock(name(m.from.hero)) : t.trade.fromInventory);
 
-  const moveRow = (m: Move) => {
+  // цена вещи: очки против надетой в слоте; ради рекомендованного оружия или аксессуара — «пассивка лучше»
+  const worthRow = (l: HeroLine, m: Move) => {
+    const v = l.worth[m.slot];
+    if (!v) return null;
+    const n = tenths(v.d);
+    return (
+      <span className={`tpts${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>
+        {[t.trade.itemPts(n), v.passive && t.trade.passive].filter(Boolean).join(' · ')}
+      </span>
+    );
+  };
+  const moveRow = (l: HeroLine) => (m: Move) => {
     const p = st.pieces[m.item], P = profile(m.hero);
     if (!p || !P) return null;
     const W = subWeights(ctx, P.chain, P.c, itemMains(idx, pieceInput(p)));
@@ -69,7 +82,7 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
           <SlotIcon slot={m.slot} />
           <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
           <button type="button" className="linkbtn small tskip" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>
-          <span className="bgear-meta"><BtLabel p={p} /><span className="tsrc">{from(m)}</span></span>
+          <span className="bgear-meta"><BtLabel p={p} />{worthRow(l, m)}<span className="tsrc">{from(m)}</span></span>
           <span className="bgear-t">
             {Object.keys(p.lit).map((k) => {
               const s2 = k === sort;
@@ -119,7 +132,7 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
                 : t.trade.missing(partText(idx, m.part), setName(idx, m.part.set), m.slots.map((s) => t.ui.slotNom[s]).join(', '))}</p>
             ))}
             <ul className="tmoves">
-              {l.moves.map(moveRow)}
+              {l.moves.map(moveRow(l))}
               {l.empty.filter((s) => !shown.has(s)).map((s) => holeRow(l.hero, s, t.trade.emptySlot(s)))}
             </ul>
             {l.gone.map((id) => st.pieces[id] && <p key={id} className="muted small">{t.trade.gone(pieceText(ctx, st.pieces[id]))}</p>)}

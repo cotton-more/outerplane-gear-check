@@ -48,3 +48,22 @@ describe('T7.3: было → станет', () => {
     expect(r.off).toEqual([]);
   });
 });
+
+describe('цена каждой вещи плана', () => {
+  // Рин: надет меч old (6, не рекомендован), запас — рекомендованный rec (2); шлем S (2) вместо rh (5) включает S ×2
+  const w = synthWorld({
+    items: { old: { slot: 'weapon' }, rec: { slot: 'weapon' }, rh: { slot: 'helmet' }, ra: { slot: 'armor', set: 'S' }, h1: { slot: 'helmet', set: 'S' } },
+    heroes: {
+      R: {
+        worn: { weapon: 'old', helmet: 'rh', armor: 'ra' }, pool: ['rec', 'h1'],
+        value: { old: { v: 6, fit: 'stopgap' }, rec: { v: 2, fit: 'rec' }, rh: 5, ra: 1, h1: 2 }, bonus: { S: { 2: 10 } },
+      },
+    },
+  });
+  it('очки вещи против надетой в слоте, без сетов; рекомендованное оружие — passive', () => {
+    const hp = heroPlan(w, { to: 'R' });
+    const step = { plans: [{ to: 'R', plan: hp.plan }], fills: hp.holes.fills };
+    const [r] = linesOf(w, advance(w, step), ['R'], heroMoves(w, 'R', step));
+    expect(r.worth).toEqual({ weapon: { d: -4000, passive: true }, helmet: { d: -3000, passive: false } });
+  });
+});
