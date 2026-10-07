@@ -26,18 +26,31 @@ import type { ChainSum } from './wearing';
 const pt = (t: ReturnType<typeof useT>, x: number) => t.fit.pts(Math.round(x * 10) / 10);
 
 // The hero's chain with segment sums from the worn pieces (wearing chainSums): green — counts in full, yellow — at ½
-// (flat), paler — fewer segments (--k: share of the biggest sum), but the colour stays recognisable; dashed — nothing
-// worn gives the stat
+// (flat), paler — fewer segments, but the colour stays recognisable; dashed — nothing worn gives the stat.
+// --k — the place between the smallest and the biggest sum of the same colour (owner: a yellow 10 must not make a green
+// 2 pale); one pill of a colour, or all equal — full
+const kOf = (chain: ChainSum[]) => {
+  const range = (full: boolean) => {
+    const v = chain.filter((x) => x.seg && (x.credit >= 1) === full).map((x) => x.seg);
+    return [Math.min(...v), Math.max(...v)];
+  };
+  const r = { ok: range(true), half: range(false) };
+  return (x: ChainSum) => {
+    const [lo, hi] = x.credit >= 1 ? r.ok : r.half;
+    return hi > lo ? (x.seg - lo) / (hi - lo) : 1;
+  };
+};
+
 function WornChain({ chain }: { chain: ChainSum[] }) {
   const t = useT();
-  const top = Math.max(1, ...chain.map((x) => x.seg));
+  const k = kOf(chain);
   return (
     <span className="chain wchain" aria-label={t.ui.wornChain}>
       {chain.map((x) => (
         <span key={x.key} className="wch">
           {x.sep && <i className="sep">{x.sep}</i>}
           {x.seg
-            ? <span className={`pill ${x.credit >= 1 ? 'ok' : 'half'}`} style={{ '--k': x.seg / top } as CSSProperties}>{subLabel(x.key)} <b>{x.seg}</b></span>
+            ? <span className={`pill ${x.credit >= 1 ? 'ok' : 'half'}`} style={{ '--k': k(x) } as CSSProperties}>{subLabel(x.key)} <b>{x.seg}</b></span>
             : <span className="pill miss">{subLabel(x.key)}</span>}
         </span>
       ))}

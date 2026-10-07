@@ -224,11 +224,13 @@ html.xs .bgear-t { grid-row: 3; }
 /* points of a worn piece — at the end of its substat row; of a set — after its last bonus line */
 .wpts { font: 600 12px var(--font-mono); color: var(--ink-2); }
 .bgear-pts { margin-left: auto; align-self: center; }
-/* the chain with segment sums (WornGear WornChain): the chain's colours, the fill weaker with fewer segments (--k) */
+/* the chain with segment sums (WornGear WornChain): the chain's colours, the fill and border weaker with fewer segments
+   (--k, 0…1 within one colour). Text is the colour mixed with ink: contrast ≥ 4.5 on the strongest fill in both themes
+   (on the plain colour it fell to ~3 — owner: CHD 13, HP 5 blended into the fill) */
 .wchain .wch { display: inline-flex; align-items: center; gap: 3px; }
 .wchain .pill b { font-weight: 800; }
-.wchain .pill.ok { background: color-mix(in srgb, var(--keep) calc(3% + 47% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--keep) calc(30% + 70% * var(--k, 1)), transparent); }
-.wchain .pill.half { background: color-mix(in srgb, var(--temp) calc(3% + 47% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--temp) calc(30% + 70% * var(--k, 1)), transparent); }
+.wchain .pill.ok { color: color-mix(in srgb, var(--keep) 55%, var(--ink)); background: color-mix(in srgb, var(--keep) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--keep) calc(35% + 65% * var(--k, 1)), transparent); }
+.wchain .pill.half { color: color-mix(in srgb, var(--temp) 55%, var(--ink)); background: color-mix(in srgb, var(--temp) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--temp) calc(35% + 65% * var(--k, 1)), transparent); }
 .worn-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
 .worn-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; min-width: 0; }
 .worn-share .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }

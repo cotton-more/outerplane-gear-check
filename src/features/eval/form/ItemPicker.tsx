@@ -9,9 +9,10 @@ import { fineHover } from '@/shared/layout/useLayout';
 // Окно выбора Legendary оружия/аксессуара.
 // Search gets focus only with a mouse and keyboard (fineHover): on a phone the on-screen keyboard would cover most of
 // the sheet in split screen. Typing that leaves exactly one item picks it, as if it were tapped: first it lights up
-// (motion.css m-pick), then after SOON ms it is picked — an instant pick looks like a glitch. Typing on cancels it;
+// (motion.css m-pick), then after SOON ms it is picked (owner: 300 ms was too short to notice) — an instant pick looks like a glitch. Typing on cancels it;
 // the class filter alone never picks.
-const SOON = 300;
+export const SOON = 750;
+
 export function ItemPicker({ ctx, kind, current, onPick, onUnlisted }: {
   ctx: Ctx; kind: GearKind; current: string | null; onPick: (key: string) => void; onUnlisted: () => void;
 }) {

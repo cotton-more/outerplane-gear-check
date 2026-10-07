@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 
@@ -414,27 +414,31 @@ describe('окно предмета: поиск', () => {
     expect(document.activeElement).not.toBe($('#item-q'));
   });
 
-  const wait = (ms: number) => act(() => new Promise((r) => setTimeout(r, ms)));
+  // fake timers: the 750 ms pause before the pick costs the test nothing
+  const wait = (ms: number) => act(async () => { vi.advanceTimersByTime(ms); });
+  afterEach(() => { vi.useRealTimers(); });
 
-  it('осталось несколько — окно открыто; остался один — подсвечен, через 300 мс выбран, окно закрыто', async () => {
+  it('осталось несколько — окно открыто; остался один — подсвечен, через 750 мс выбран, окно закрыто', async () => {
     await open();
+    vi.useFakeTimers();
     await type('gorgon');
     expect(names()).toHaveLength(5);
     expect($('.drawer .item.soon')).toBeNull();
     await type('twin b');
     expect($('.drawer .item.soon b')?.textContent).toBe('Twin B');
-    await wait(150);
+    await wait(700);
     expect($('.drawer')).toBeTruthy();
-    await wait(200);
+    await wait(50);
     expect($('.drawer')).toBeNull();
     expect($('[data-tour="item"]')?.textContent).toContain('Twin B');
   });
 
   it('стёр, и совпадений снова несколько — выбор отменён', async () => {
     await open();
+    vi.useFakeTimers();
     await type('twin b');
     await type('b');
-    await wait(400);
+    await wait(1000);
     expect($('.drawer')).toBeTruthy();
   });
 });
