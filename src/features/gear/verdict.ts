@@ -234,11 +234,14 @@ function feedFrom(hps: HeroPool[], x: Piece, h: HeroRes): HeroRes {
 // Вердикт по ростеру; null — не считается: ростера нет («только мои» выключено или он пуст — по порогам, A21), введены
 // не все сабстаты (A20), предмета нет в данных outerpedia (его пассивки и рекомендаций не знаем — как прежде, по
 // порогам). pools — пул героя (у Core Fusion X при X — тот, что будет после окна перехода). twin — the player said
-// «Это другой»: the look-alike set-aside record is another piece, so it stays in its pool and there is no same
-export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: { twin?: boolean } = {}): Result | null {
+// «Это другой»: the look-alike set-aside record is another piece, so it stays in its pool and there is no same.
+// Batch plan (features/batch): skip — heroes left out for this piece («Не брать»); full — material targets that already
+// get four pieces in the plan
+export interface VerdictOpts { twin?: boolean; skip?: ReadonlySet<string>; full?: ReadonlySet<string> }
+export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: VerdictOpts = {}): Result | null {
   if (!ctx.scoped || input.unlisted || Object.keys(input.subs).length < dropSubs(input.grade)) return null;
   const x = formPiece(input);
-  const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
+  const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x) && !opts.skip?.has(c.id)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
   const same = opts.twin ? null : sameOf(all, x);
   const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds, hp.P.pin?.key)! : hp)) : all;
   const heroes = hps.map((hp) => feedFrom(hps, x, heroOutcome(hp, x)));
@@ -250,7 +253,7 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: { twin
   if (keep.length) return res('keep', { sub: keep[0].sub, named: keep.slice(0, 3) });
   const quiet = quietOf(hps, x, heroes);
   const ptsOf = (t: Target) => piecePoints(hps.find((hp) => hp.c === t.c)!.P, t.piece);
-  const now = hps.flatMap((hp) => materialTargets(hp, x)).sort((a, z) => ptsOf(z) - ptsOf(a));
+  const now = hps.flatMap((hp) => materialTargets(hp, x)).filter((n) => !opts.full?.has(n.piece.id)).sort((a, z) => ptsOf(z) - ptsOf(a));
   if (now.length) return res('material', { sub: 'now', now, quiet });
   // a Legendary reserve no longer waits behind an Epic one (grade-aware reserveKey): В1а «пусть лежит» is gone
   // the hero who already has it set aside goes first: the title names them
