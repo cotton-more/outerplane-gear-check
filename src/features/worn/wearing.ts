@@ -2,7 +2,7 @@
 // слоты, включённые бонусы, «Переодеть» (лучшая раскладка из своих вещей против надетого, +1 очко по §3 п. 3) и «Что
 // искать» (наборы меню, где у героя 1–3 из 4, — по лучшей раскладке под набор, как при закреплении); варианты шторки
 // закрепления. Только данные — вещи, числа, части; подписи делает интерфейс.
-import { SLOTS } from '@/game/data';
+import { FLAT, SLOTS } from '@/game/data';
 import type { ArmorSlot, Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { pinnedProfile, pinOptions, profileOf, type Pin, type Profile } from '@/game/build/profile';
@@ -11,7 +11,7 @@ import { comboSig } from '@/game/build/variants';
 import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { better, bestLayout, layoutValue, type Layout } from '@/features/gear/layout';
+import { better, bestLayout, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { eligibleIn } from '@/features/gear/pool/info';
 import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
 import { undoWear, wearFromPool, type WearResult } from '@/features/gear/pool';
@@ -39,9 +39,16 @@ export interface Redress { pts: number; rankUp: boolean; on: PartChange[]; off: 
 export interface Need { slot: ArmorSlot; set: string | null }
 export interface Fill { pin: Pin; k: number; n: number; need: Need[] }
 export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken[] }
+// The hero's chain with what the worn pieces give each stat (owner, 2026-10-07): the chain's own order (first — the most
+// valuable), a stat — the sum of its segments over the worn pieces. A flat axis (ATK, HP, DEF) shows its forms side by
+// side, % first: ATK% counts in full, flat ATK at ½ (a flat form that counts 0 is left out). seg 0 — nothing worn gives
+// the stat: the UI draws it dashed. sep — before the stat: '›' next place, '=' same place, '/' another form of the axis.
+export interface ChainSum { key: string; seg: number; credit: number; sep: '' | '›' | '=' | '/' }
 export interface WornView {
   count: number;           // надето слотов из 6
   slots: WornSlot[];       // все 6, порядок — SLOTS
+  value: LayoutValue | null; // points of the worn gear (V: pieces + sets); null — hero without builds
+  chain: ChainSum[];       // the chain with segment sums; empty — hero without builds
   bonuses: BonusRow[];     // включённые бонусы надетых сетов
   redress: Redress | null; // лучшая раскладка лучше надетой (§3 п. 3)
   seek: Fill[];            // «Что искать»: 1–3 из 4, от ближнего; закреплён — только его набор
@@ -62,14 +69,45 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
   const pieces = hp?.pieces ?? (st.pools[c.id] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
   const worn = wornOf(st, c, pieces);
   const P = hp?.P ?? null;
+  const slots = SLOTS.map(({ id }) => ({ slot: id, piece: worn[id] ?? null, tokens: tokensOf(ctx, c, P, worn[id]) }));
   return {
     count: Object.keys(worn).length,
-    slots: SLOTS.map(({ id }) => ({ slot: id, piece: worn[id] ?? null, tokens: tokensOf(ctx, c, P, worn[id]) })),
+    slots,
+    value: P ? layoutValue(P, worn) : null,
+    chain: P ? chainSums(ctx, P, slots) : [],
     bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp) : [],
     pool: pieces.length,
   };
+}
+
+export function chainSums(ctx: Ctx, P: Profile, slots: readonly WornSlot[]): ChainSum[] {
+  const got = new Map<string, { seg: number; credit: number }>();
+  for (const s of slots) for (const k of s.tokens) {
+    if (!k.credit) continue;
+    const x = got.get(k.key) ?? { seg: 0, credit: k.credit };
+    x.seg += k.lit;
+    got.set(k.key, x);
+  }
+  const out: ChainSum[] = [];
+  const used = new Set<string>();
+  P.chain.subs.forEach((tier) => {
+    let first = true;
+    for (const raw of tier) {
+      const tok = raw.trim(), axis = tok.replace(/%$/, ''), flat = FLAT.has(axis);
+      if (!flat && !ctx.idx.SUB[tok]) continue; // not a substat
+      const forms = (flat ? [axis + '%', axis] : [tok]).filter((k) => !used.has(k));
+      if (!forms.length) continue;
+      forms.forEach((k) => used.add(k));
+      const sep = !out.length ? '' : first ? '›' : '=';
+      first = false;
+      const hits = forms.filter((k) => got.has(k));
+      if (!hits.length) out.push({ key: forms[0], seg: 0, credit: 0, sep });
+      hits.forEach((k, j) => out.push({ key: k, ...got.get(k)!, sep: j ? '/' : sep }));
+    }
+  });
+  return out;
 }
 
 // лучшая раскладка (нынешняя, D3) против надетого: лучше по §3 п. 3 — что надеть

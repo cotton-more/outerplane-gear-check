@@ -166,3 +166,26 @@ describe('«Переодеть» по рангу оружия', () => {
     expect(r.wear.map((x) => x.piece.id)).toEqual(['p1']);
   });
 });
+
+// The chain on «Надето» (owner, 2026-10-07): the chain's own order, a stat — its segments summed over worn pieces
+describe('цепочка с суммой сегментов надетого', () => {
+  it('порядок цепочки, ATK% и flat ATK рядом через «/», стат, которого нет на вещах, — 0', () => {
+    const helm = piece('helmet', 'Speed', { SPD: 4, CHC: 4, CHD: 4, ATK: 4 });
+    const glov = piece('gloves', 'Speed', { CHC: 2, 'ATK%': 3, RES: 1, SPD: 1 });
+    const v = view(store([helm, glov], [helm, glov]));
+    // «По статам» у Delta — CHC › ATK › SPD = CHD › DMG UP%
+    expect(v.chain.map((x) => [x.sep, x.key, x.seg])).toEqual([
+      ['', 'CHC', 6], ['›', 'ATK%', 3], ['/', 'ATK', 4], ['›', 'SPD', 5], ['=', 'CHD', 4], ['›', 'DMG UP%', 0],
+    ]);
+    expect(v.chain.find((x) => x.key === 'ATK%')!.credit).toBe(1);
+    expect(v.chain.find((x) => x.key === 'ATK')!.credit).toBeLessThan(1);
+  });
+
+  it('очки надетого — вещи плюс сеты, у каждой вещи свои', () => {
+    const speed = armorOf('Speed');
+    const v = view(store(speed, speed)).value!;
+    expect(v.ptsBySlot.helmet).toBeGreaterThan(0);
+    expect(v.v).toBeCloseTo(v.ptsSum + v.setSum, 9);
+    expect(v.ptsSum).toBeCloseTo(Object.values(v.ptsBySlot).reduce((a, b) => a + b!, 0), 9);
+  });
+});

@@ -100,6 +100,13 @@ What the hero wears in the game now: six slots with substats colored by the hero
 after "Equip" the form moves to the next empty one. If the hero has at most one piece per slot, "Yes, all worn"
 replaces the entry.
 
+Next to the heading are the **points of what is worn** ("Worn · 6 of 6 · 37.7 pts"): the pieces' points plus the sets'.
+Each piece shows its points on the right under its substats, a set — after its bonus line ("+6.7"). Under the heading is
+the hero's **stat chain** in its order (first — the most valuable) and how many segments all worn pieces give each stat:
+`ATK% 6 / ATK 8 › CHC 8 › CHD 12 › SPD 9 › DMG UP% 4`. Green counts in full, yellow (flat) at half, paler — fewer
+segments; dashed — a chain stat no worn piece gives. It's the chain the points are counted on: the pinned set's or
+"By stats".
+
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point, turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
 "Re-dress: better passive"). The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed

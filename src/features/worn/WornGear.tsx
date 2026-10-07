@@ -17,7 +17,33 @@ import { tour, tourItem } from '@/tour/anchors';
 import { BtLabel, PieceName, bonusLinesOf } from '@/features/gear/ui/pieceText';
 import { setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
+import { subLabel } from '@/game/data';
 import { Rich } from '@/shared/ui/Rich';
+import type { CSSProperties } from 'react';
+import type { ChainSum } from './wearing';
+
+// points to one decimal: «37,7», «3,4»
+const pt = (t: ReturnType<typeof useT>, x: number) => t.fit.pts(Math.round(x * 10) / 10);
+
+// The hero's chain with segment sums from the worn pieces (wearing chainSums): green — counts in full, yellow — at ½
+// (flat), paler — fewer segments (--k: share of the biggest sum), but the colour stays recognisable; dashed — nothing
+// worn gives the stat
+function WornChain({ chain }: { chain: ChainSum[] }) {
+  const t = useT();
+  const top = Math.max(1, ...chain.map((x) => x.seg));
+  return (
+    <span className="chain wchain" aria-label={t.ui.wornChain}>
+      {chain.map((x) => (
+        <span key={x.key} className="wch">
+          {x.sep && <i className="sep">{x.sep}</i>}
+          {x.seg
+            ? <span className={`pill ${x.credit >= 1 ? 'ok' : 'half'}`} style={{ '--k': x.seg / top } as CSSProperties}>{subLabel(x.key)} <b>{x.seg}</b></span>
+            : <span className="pill miss">{subLabel(x.key)}</span>}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 // строка вещи: нажатие открывает шторку вещи; в карточке показа — не кнопка
 const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: SlotId; shown: boolean; children: ReactNode }) => (onClick
@@ -37,7 +63,15 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
   const empty = wv.count === 0;
   const all = empty && !!onWearAll && wearAll(gear.store, c.id) !== null;
   const lines = bonusLinesOf(t, idx, wv.bonuses);
-  const title = <h4>{t.ui.wornTitle(wv.count)}</h4>;
+  // a set's points go on its last bonus line
+  const setPts = (i: number) => {
+    const r = wv.bonuses[i];
+    if (wv.bonuses[i + 1]?.set === r.set) return null;
+    const v = wv.value?.sets.find((x) => x.set === r.set)?.value;
+    return v ? <span className="wpts"> +{pt(t, v)}</span> : null;
+  };
+  const shownPts = !empty && wv.value !== null;
+  const title = <h4>{t.ui.wornTitle(wv.count)}{shownPts && <span className="wtotal"> · {t.ui.wornPts(pt(t, wv.value!.v))}</span>}</h4>;
   return (
     <>
       <div className="bgear worn" {...(shown ? {} : tour('wtab'))}>
@@ -50,7 +84,8 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
           </div>
         )}
         <div className="worn-h" {...(shown ? {} : tour('bgear'))}>{title}{share}</div>
-        {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}</p>)}</div>}
+        {shownPts && wv.chain.length > 0 && <WornChain chain={wv.chain} />}
+        {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}{setPts(i)}</p>)}</div>}
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {
             const s = wv.slots.find((x) => x.slot === slot)!;
@@ -64,6 +99,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
                     <BtLabel p={p} />
                     <span className="bgear-t">
                       {s.tokens.map((k) => <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />)}
+                      {wv.value && <b className="wpts bgear-pts">{pt(t, wv.value.ptsBySlot[slot] ?? 0)}</b>}
                     </span>
                   </Row>
                 ) : (
