@@ -60,3 +60,4 @@ html.narrow .batch-marks + .tryon-x { margin-left: auto; }
    error, but it should catch the eye (owner 2026-10-08) */
 .toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center; text-wrap: balance;
   border-color: var(--temp); background: var(--temp-soft); }
+.bstep-k { font-weight: 600; }

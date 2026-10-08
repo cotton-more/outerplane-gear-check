@@ -13,6 +13,7 @@
 import type { Char, SlotId } from '@/game/data/types';
 import type { Index } from '@/game/data';
 import type { Piece } from '@/features/gear/model/gear';
+import type { ItemInput } from '@/game/item/item';
 import { slotOf, type Batch } from './batch';
 import type { Fate, Line, Plan } from './plan';
 
@@ -21,11 +22,15 @@ export const rowOf = (n: number): { r: number; p: number } => ({ r: Math.ceil(n 
 
 // where a piece is: a position in the game list (n), or only a description (piece + its hero — taken off or set aside)
 export type Where = { n: number } | { off: Piece; c: Char; was: 'worn' | 'stash' };
+// a kept piece of the batch — why it stays (owner 2026-10-08: «Замок: ряд 3, 1-й» alone didn't say what or for whom):
+// keep — set aside to wear later, reserve — Breakthrough material, maybe — «Спорно → Отложить» (no hero), same — a
+// look-alike of a piece already set aside
+export interface Kept { n: number; input: ItemInput; c: Char | null; why: 'keep' | 'reserve' | 'maybe' | 'same' }
 export type Step =
   | { key: string; stage: 1; c: Char; slot: SlotId; k: number | null; where: Where; subs: Record<string, number> }
-  | { key: string; stage: 2; where: Where }
+  | { key: string; stage: 2; where: Where; kept: Kept | null }
   | { key: string; stage: 3; where: Where[] }        // one step: the game's dismantle is one multi-select
-  | { key: string; stage: 4; target: { worn: Char; slot: SlotId } | { where: Where }; n: number; unlock: number };
+  | { key: string; stage: 4; target: { worn: Char; slot: SlotId } | { where: Where; kept: Kept | null }; n: number; unlock: number };
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
   undecided: number;   // «Спорно» lines without a choice — the walk waits for them
@@ -67,6 +72,17 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   const junk: Where[] = [];
   const feeds = new Map<string, { target: Extract<Step, { stage: 4 }>['target']; n: number; unlock: number }>();
   const lineOf = (n: number) => plan.lines.find((l) => l.n === n && !l.off);
+  // why an entry line's piece stays; a taken-off piece has its description instead (no number)
+  const keptOf = (l: Line | undefined, f: Fate | { kind: 'lock' } | undefined): Kept | null => {
+    if (!l || l.off || !f) return null;
+    switch (f.kind) {
+      case 'keep': return { n: l.n, input: l.input, c: f.c, why: 'keep' };
+      case 'reserve': return { n: l.n, input: l.input, c: f.c, why: 'reserve' };
+      case 'same': return { n: l.n, input: l.input, c: f.same.c, why: 'same' };
+      case 'lock': return { n: l.n, input: l.input, c: null, why: 'maybe' };
+      default: return null;
+    }
+  };
 
   for (const l of plan.lines) {
     const f = fateOf(l);
@@ -79,7 +95,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
       }
       case 'keep': case 'reserve': case 'same': case 'lock':
         // a taken-off piece its hero's pool still holds stays where it is — a lock keeps it out of the dismantle
-        lock.push({ key: `lk:${l.id}`, stage: 2, where });
+        lock.push({ key: `lk:${l.id}`, stage: 2, where, kept: keptOf(l, f) });
         break;
       case 'junk':
         junk.push(where);
@@ -92,7 +108,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
           const target: Extract<Step, { stage: 4 }>['target'] = 'entry' in to
             ? (() => {
               const t = lineOf(to.entry);
-              return t && t.fate.kind === 'wear' ? { worn: t.fate.c, slot: t.input.slot } : { where: { n: to.entry } };
+              return t && t.fate.kind === 'wear' ? { worn: t.fate.c, slot: t.input.slot } : { where: { n: to.entry }, kept: t ? keptOf(t, fateOf(t)) : null };
             })()
             : { worn: to.c, slot: to.piece.slot };
           feeds.set(tk, (x = { target, n: 0, unlock: 0 }));

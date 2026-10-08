@@ -799,6 +799,10 @@ export const ru = {
     equipStep: (hero: string, slot: string, k: number) => `${hero} → ${NOM[slot]} → № ${k} в списке`,
     equipStepAt: (hero: string, slot: string, piece: string) => `${hero} → ${NOM[slot]} → ${piece}`,
     lockStepAt: (piece: string) => `Замок: ${piece}`,
+    // what a kept piece is and for whom (lock and Breakthrough steps): «#21 Patience-перчатки — для Gnosis Domine»
+    keptFor: (n: number, piece: string, name: string) => `#${n} ${piece} — для ${name}`,
+    keptReserve: (n: number, piece: string, name: string) => `#${n} ${piece} — для ${name} (запас)`,
+    keptMaybe: (n: number, piece: string) => `#${n} ${piece} — Спорно, отложено`,
     lockStep: (r: number, p: number) => `Замок: ряд ${r}, ${p}-й`,
     junkRow: (r: number, ps: number[]) => `ряд ${r} — ${ps.map((p) => `${p}-й`).join(', ')}`,
     btWorn: (slot: string, hero: string) => `${NOM[slot][0].toUpperCase()}${NOM[slot].slice(1)} ${hero}`,

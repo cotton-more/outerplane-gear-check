@@ -10,15 +10,24 @@ import { subsText } from '@/game/text';
 import { AskSheet } from '@/shared/ui/AskSheet';
 import type { Batch } from '@/features/batch/batch';
 import type { Plan } from '@/features/batch/plan';
-import { gameSubs, rowOf, type Step, type Walk, type Where } from '@/features/batch/walk';
+import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
+import { pieceLabel } from '@/features/gear/ui/pieceText';
+import { formPiece } from '@/features/gear/verdict';
 
 // a piece with no position: «Снятый шлем Caren (SPD 1, …)», «Отложенный шлем Caren (…)»
 const desc = (t: Texts, w: Exclude<Where, { n: number }>): string =>
   (w.was === 'stash' ? t.batch.offStash(w.off.slot, w.c.name, subsText(w.off.lit)) : `${t.batch.off(w.off.slot, w.c.name)} (${subsText(w.off.lit)})`);
 
-// a step: its title (with the hero to find, tagged), lines under it, and — for an equip — the substats as a column,
-// line for line as the game's middle panel shows them (owner 2026-10-08: no «сверь», no wrapping inside a line)
-interface StepText { title: string; hero: Char | null; more: string[]; subs?: string[] }
+// a step: its title (with the hero to find, tagged), what the kept piece is and for whom, lines under it, and — for an
+// equip and a lock — the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
+interface StepText { title: string; hero: Char | null; kept?: { text: string; c: Char | null }; more: string[]; subs?: string[] }
+
+// «#21 Patience-перчатки — для Gnosis Domine», «… (запас)», «… — Спорно, отложено»
+function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null } {
+  const piece = pieceLabel(t, ctx.idx)(formPiece(k.input));
+  if (k.why === 'maybe' || !k.c) return { text: t.batch.keptMaybe(k.n, piece), c: null };
+  return { text: k.why === 'reserve' ? t.batch.keptReserve(k.n, piece, k.c.name) : t.batch.keptFor(k.n, piece, k.c.name), c: k.c };
+}
 function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
     case 1: return {
@@ -28,7 +37,8 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
     case 2: {
       if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(t, s.where)), hero: s.where.c, more: [] };
       const { r, p } = rowOf(s.where.n);
-      return { title: t.batch.lockStep(r, p), hero: null, more: [] };
+      return { title: t.batch.lockStep(r, p), hero: null, kept: s.kept ? keptText(ctx, t, s.kept) : undefined, more: [],
+        subs: s.kept ? gameSubs(ctx.idx, s.kept.input.subs) : undefined };
     }
     case 3: {
       const rows = new Map<number, number[]>();
@@ -44,7 +54,8 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const where = 'worn' in s.target ? t.batch.btWorn(s.target.slot, s.target.worn.name)
         : 'n' in s.target.where ? t.batch.btAt(rowOf(s.target.where.n).r, rowOf(s.target.where.n).p) : desc(t, s.target.where);
       const hero = 'worn' in s.target ? s.target.worn : 'n' in s.target.where ? null : s.target.where.c;
-      return { title: t.batch.btStep(where, s.n), hero, more: s.unlock ? [t.batch.btUnlock(s.unlock)] : [] };
+      const kept = 'kept' in s.target && s.target.kept ? keptText(ctx, t, s.target.kept) : undefined;
+      return { title: t.batch.btStep(where, s.n), hero, kept, more: s.unlock ? [t.batch.btUnlock(s.unlock)] : [] };
     }
   }
 }
@@ -67,13 +78,14 @@ export function BatchWalk({ ctx, batch, plan, walk, onTick, onDone }: {
             {st !== 3 && <h4>{t.batch.stages[st - 1]}</h4>}
             <ol className="bgear-list">
               {steps.map((s) => {
-                const { title, hero, more, subs } = stepText(ctx, t, s);
+                const { title, hero, kept, more, subs } = stepText(ctx, t, s);
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
                     <button type="button" className="bcheck" role="checkbox" aria-checked={done} aria-label={title} onClick={() => onTick(s.key)}>{done ? '✓' : ''}</button>
                     <span className="bstep-t">
                       <b>{withHero(title, hero)}</b>
+                      {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
                       {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
                       {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}
                     </span>

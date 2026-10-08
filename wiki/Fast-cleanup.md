@@ -57,7 +57,10 @@ accessory) and other sets can't be picked on the form — start a new batch for 
    1. **Equip — at the heroes:** "Caren → helmet → No. 7 in the list" — the number in the hero's slot list; the class
       icon by the name and the name's colour (the element) help find the hero with the game's roster filters. Below, in
       a column, the substats as the game shows them after a tap: "LV 3 Crit Chance +9.0%" — check them.
-   2. **Lock** what you keep: "Lock: row 4, no. 3" (10 pieces per row).
+   2. **Lock** what you keep: "Lock: row 3, no. 1" (10 pieces per row), below — what it is and for whom: "#21
+      Patience gloves — for Gnosis Domine" (set aside to wear when the set comes together), "… (reserve)" —
+      Breakthrough material, "… — Maybe, set aside", and the substats to check. A lock means "in someone's Pool":
+      whose — on the hero's card, the Pool tab.
    3. **Dismantle — in one selection:** "row 2 — no. 3, no. 7 · row 5 — no. 1". Pieces locked in step 2 can't be
       dismantled even by mistake.
    4. **Breakthrough:** "Caren's helmet → Breakthrough: 4 from the list, any" — material is interchangeable, worn and
