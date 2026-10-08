@@ -34,8 +34,8 @@ the whole group before deciding, then walks you through the inventory **step by 
 in the app never drift apart.
 
 **In the game:** the filter is one armor set (any slot and grade), or weapons, or accessories; **show worn pieces**;
-sort by date received. The batch keeps the same filter: a piece of another set isn't added ("This batch is Speed
-armor. Anything else — a new batch.").
+sort by date received. The batch keeps the same filter: after the first piece, other slots (armor ↔ weapon ↔
+accessory) and other sets can't be picked on the form — start a new batch for them.
 
 1. **"Batch"** — next to "Next item" on a computer, in More on a phone; it's there once you've marked your heroes
    (the plan is about them). A strip "Batch · 0 · List ▸ ✕" sits above the form; there is no verdict on the way.

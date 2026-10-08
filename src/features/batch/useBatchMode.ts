@@ -17,6 +17,9 @@ import { planBatch, skipKey, undoPlan, type Plan } from './plan';
 import { walkOf, type Walk } from './walk';
 
 export type BatchView = 'list' | 'plan' | 'walk' | null;
+// the form under a batch of a known kind (owner 2026-10-08): other slots and sets can't be picked — a new batch for them
+export interface BatchLock { slots: SlotId[]; set: string | null }
+const ARMOR_SLOTS: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
 export interface BatchMode {
   on: boolean;
@@ -26,6 +29,7 @@ export interface BatchMode {
   view: BatchView;                 // phone: the sheet; wide screen: what the right column shows
   plan: Plan | null;               // only while view is 'plan' or 'walk'
   walk: Walk | null;               // the step-by-step walk of that plan
+  lock: BatchLock | null;          // one filter per batch: what the form may still pick (null — anything)
   asking: boolean;                 // ✕ with pieces: «Закончить партию?»
   start: () => void;
   add: (input: ItemInput, complete: boolean) => void; // «В партию» / «Сохранить #n»; complete — entered far enough for a verdict
@@ -84,12 +88,16 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     setNote(null);
     return true;
   };
+  // fixing the only entry may change the kind — no lock then
+  const lock: BatchLock | null = !kind || (editing !== null && batch.items.length === 1) ? null
+    : kind === 'weapon' || kind === 'accessory' ? { slots: [kind], set: null }
+    : { slots: ARMOR_SLOTS, set: kind.startsWith('set:') ? kind.slice(4) : null };
   const slotKind = (slot: SlotId): BatchKind => (isArmor(slot) ? 'armor' : (slot as 'weapon' | 'accessory'));
 
   const toForm = () => { if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }); };
   const close = () => { setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setAsking(false); };
   return {
-    on: !!value, batch, editing, note, view, plan, walk, asking,
+    on: !!value, batch, editing, note, view, plan, walk, lock, asking,
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
     add: (input, complete) => {
       if (!value) return;

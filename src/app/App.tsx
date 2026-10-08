@@ -51,7 +51,7 @@ import { useTimed } from '@/shared/useTimed';
 import { TipLayer } from '@/tour/TipLayer';
 import { TipsHelp } from '@/tour/TipsHelp';
 import { TourLayer } from '@/tour/TourLayer';
-import { openCharAction, reducer } from './appState';
+import { openCharAction, reducer, type Action } from './appState';
 import { countToDress } from '@/features/roster/charFilter';
 import { LangSwitch } from './shell/Switches';
 import { Help, Welcome, type InstallInfo } from './shell/Guide';
@@ -176,7 +176,15 @@ export function App() {
   const onReset = batchOn ? () => batch.add(input, vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle') : flow.onReset;
   const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1)) : undefined;
   const onBatch = canEquip && ctx.scoped && !hero && !batchOn && !tour.run ? batch.start : undefined;
-  useHotkeys(s, dispatch, layout, onReset);
+  // a batch of one kind (owner 2026-10-08): the form can't switch to another slot or set — a new batch for those;
+  // the batch's own actions (reset, load for a fix) go straight to dispatch
+  const lock = batchOn ? batch.lock : null;
+  const formDispatch = useCallback((a: Action) => {
+    if (lock && a.type === 'slot' && !lock.slots.includes(a.slot)) return;
+    if (lock?.set && a.type === 'set' && a.setId !== lock.set) return;
+    dispatch(a);
+  }, [lock, dispatch]);
+  useHotkeys(s, formDispatch, layout, onReset);
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });
@@ -211,13 +219,13 @@ export function App() {
         {onb.welcomeShown && <Welcome install={install} onTour={layout.tall ? () => onb.startTour('core') : undefined} onRoster={() => onTab('chars')} onClose={onb.hideWelcome} />}
         <main>
           <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-            <EvalPanel s={s} dispatch={dispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
+            <EvalPanel s={s} dispatch={formDispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} note={batch.note} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
                 onWorn={(c) => batch.addWorn(c, s.slot)} onLock={() => batch.addLock(s.slot)} /> : null}
-              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} />
+              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} />
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
               : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />)}

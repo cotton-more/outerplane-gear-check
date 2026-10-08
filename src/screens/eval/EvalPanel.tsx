@@ -27,6 +27,7 @@ import { MainButtons } from '@/features/eval/form/MainButtons';
 import { MainPicker } from '@/features/eval/form/MainPicker';
 import { PickField } from '@/features/eval/form/PickField';
 import { SetPicker } from '@/features/eval/form/SetPicker';
+import type { BatchLock } from '@/features/batch/useBatchMode';
 import { SubPicker } from '@/features/eval/form/SubPicker';
 import { LevelAsk } from '@/features/eval/form/LevelAsk';
 import { StatGrid } from '@/features/eval/form/StatGrid';
@@ -49,7 +50,7 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: куда встанет форма после неё. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch, lock = null }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
@@ -59,6 +60,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   strip?: React.ReactNode;        // «Партия · 7 · Список ▸ ✕» instead of the hero strip (features/batch)
   nextLabel?: string;             // «В партию · #8» / «Сохранить #3» instead of «Следующий»
   onBatch?: () => void;           // «Партия» next to «Следующий» (wide screen)
+  lock?: BatchLock | null;        // a batch of one kind: other slots and sets are off (features/batch)
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -119,7 +121,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         {strip ?? (hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />)}
         <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
-            <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
+            <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name} disabled={!!lock && !lock.slots.includes(sl.id)}
               onClick={() => dispatch({ type: 'slot', slot: sl.id })} {...tourItem(sl.id)}>
               <SlotIcon slot={sl.id} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
             </button>
@@ -188,7 +190,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
 
       {open === 'set' && (
         <Sheet title={t.ui.setSheet} onClose={close}>
-          <SetPicker ctx={ctx} current={s.setId} onPick={(setId) => { dispatch({ type: 'set', setId }); close(); }} />
+          <SetPicker ctx={ctx} current={s.setId} only={lock?.set} onPick={(setId) => { dispatch({ type: 'set', setId }); close(); }} />
         </Sheet>
       )}
       {open === 'item' && (

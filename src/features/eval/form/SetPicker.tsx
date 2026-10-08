@@ -7,14 +7,15 @@ import { tour, tourItem } from '@/tour/anchors';
 import { SetIcon } from '@/game/icons/Img';
 
 // Окно выбора сета: плотная сетка, сначала те, что нужны большему числу персонажей (в ростере, если он включён).
-export function SetPicker({ ctx, current, onPick }: { ctx: Ctx; current: string | null; onPick: (setId: string) => void }) {
+// only — a batch of one set (features/batch): the other sets can't be picked
+export function SetPicker({ ctx, current, only = null, onPick }: { ctx: Ctx; current: string | null; only?: string | null; onPick: (setId: string) => void }) {
   const t = useT();
   const { live, dead } = useMemo(() => setOptions(ctx), [ctx]);
   return (
     <>
       <div className="sets" {...tour('sets')}>
         {live.map(({ set, n }) => (
-          <button key={set.id} type="button" className="set" aria-pressed={current === set.id} title={setTitle(set)} onClick={() => onPick(set.id)} {...tourItem(set.short)}>
+          <button key={set.id} type="button" className="set" aria-pressed={current === set.id} disabled={!!only && only !== set.id} title={setTitle(set)} onClick={() => onPick(set.id)} {...tourItem(set.short)}>
             <SetIcon set={set} /><b>{set.short}</b><span>{n}</span>
           </button>
         ))}
@@ -25,7 +26,7 @@ export function SetPicker({ ctx, current, onPick }: { ctx: Ctx; current: string 
           <p className="dead-h">{t.ui.deadSets}</p>
           <div className="dead">
             {dead.map((set) => (
-              <button key={set.id} type="button" className="deadchip" aria-pressed={current === set.id} title={setTitle(set)} onClick={() => onPick(set.id)}>
+              <button key={set.id} type="button" className="deadchip" aria-pressed={current === set.id} disabled={!!only && only !== set.id} title={setTitle(set)} onClick={() => onPick(set.id)}>
                 <SetIcon set={set} />{set.short}
               </button>
             ))}

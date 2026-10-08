@@ -215,6 +215,18 @@ describe('«Партия»: обход по шагам', () => {
     expect($('.vbar')?.textContent).toContain('This batch is Speed armor.');
   });
 
+  it('the form is locked to the batch: in a Speed armor batch weapon slots and other sets are off, hotkeys too', async () => {
+    const items = [{ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK } }];
+    await mount({ setId: speed, subs: {} }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
+    const slot = (id: string) => $(`[data-tour="slot"] [data-tour-item="${id}"]`) as HTMLButtonElement;
+    expect([slot('weapon').disabled, slot('accessory').disabled, slot('gloves').disabled]).toEqual([true, true, false]);
+    await act(async () => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true })); });
+    expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');   // «1» (weapon) did nothing
+    await click($('[data-tour="pick"]'));
+    const sets = $$('.drawer .set') as HTMLButtonElement[];
+    expect(sets.filter((b) => !b.disabled).map((b) => b.textContent)).toEqual([expect.stringContaining('Speed')]);
+  });
+
   it('the walk: equip at Caren by her slot list (E entry counts), substats as in the game, Breakthrough with the weak one; ✓ is saved', async () => {
     const piece = (x: Record<string, unknown>) => ({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x } });
     const items = [{ kind: 'worn', c: caren.id, slot: 'helmet' }, piece(WEAK), piece(GOOD)];
