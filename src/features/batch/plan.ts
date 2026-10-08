@@ -150,13 +150,13 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         const o = takeOff(n, c, was, 'worn');
         if (!res.removed.some((p) => p.id === was.id)) fates.set(o.id, { kind: 'keep', c, t4: false, held: true });
       }
-      // a reserve this new piece eats (its verdict's reserveBt — the hero's own or another hero's, feedFrom): one the plan
+      // a reserve this new piece eats (its verdict's reserveBt — the hero's own or other heroes', feedFrom): one the plan
       // made for line L is fed to it — L says so (owner 2026-10-07: not planned again), one of its four feeds
       const h = r.named[0];
       const eaten = (p: Piece) => {
         const L = madeBy.get(p.id);
         const k = (feeds.get(res.id) ?? 0) + 1;
-        if (!L || p.id !== h.reserveBt?.id || fates.get(L)?.kind !== 'reserve' || k > FEEDS) return;
+        if (!L || !h.reserveBt.some((f) => f.piece.id === p.id) || fates.get(L)?.kind !== 'reserve' || k > FEEDS) return;
         feeds.set(res.id, k);
         if (k >= FEEDS) full.add(res.id);
         if (!entry) wornFed = true;
@@ -169,10 +169,10 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         if (madeBy.has(p.id)) { if (p.slot === res.slot) eaten(p); }
         else if (p.slot === res.slot || offs.some((o) => o.piece.id === p.id && held(o))) takeOff(n, c, p, 'stash');
       }
-      // another hero's reserve goes to this one's Breakthrough: it leaves that pool, as with a single «Надеть»
-      // (useFormFlow equipOn), before it is decided — it must not look like its own record
-      const of = h.reserveOf, p = h.reserveBt;
-      if (of && p && of.id !== c.id && st.pools[of.id]?.includes(p.id)) {
+      // other heroes' reserves go to this one's Breakthrough: they leave those pools, as with a single «Надеть»
+      // (useFormFlow equipOn), before they are decided — they must not look like their own records
+      for (const { piece: p, of } of h.reserveBt) {
+        if (!of || of.id === c.id || !st.pools[of.id]?.includes(p.id)) continue;
         ops.push({ c: of.id, drop: p, back: dropBack(st, of.id, p) });
         st = removeFrom(st, of.id, p.id);
         if (madeBy.has(p.id)) eaten(p);

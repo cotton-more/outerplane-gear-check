@@ -15,6 +15,10 @@ export const CFG = {
   spdKeep: 2,        // …или 2 полезных, если среди них SPD
   goodPoints: 6,     // …или очки вещи для героя не меньше 6 (одна идеальная строка главного стата; ровно 6 годится)
   spdRoll: 2,        // …с хотя бы 2 сегментами
+  // reserves of weak pieces as Breakthrough material (owner, 2026-10-08): up to 4 per hero who needs that set + slot +
+  // grade (a full T0 → T4), at most 8 of one kind over all heroes; the rest is dismantled
+  reservePerHero: 4,
+  reserveMax: 8,
   // Epic-броня: Transistone на неё не тратят (гайд outerpedia), в Breakthrough для Legendary она не годится —
   // 3 полезных засчитываем, только если среди них SPD или стат с верхних ступеней приоритета, либо ролл хороший
   epicTopTiers: 2,   // «верхние ступени» — первые два места в цепочке приоритета (связка делит место)

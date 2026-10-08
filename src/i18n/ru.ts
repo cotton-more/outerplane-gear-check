@@ -223,6 +223,7 @@ export const ru = {
     reserveItemWhy: (name: string, item: string, mains: string) => `Билды ${name} просят ${item} с ${mains}, а у ${name} его нет. Придёт такой — эта пойдёт ему в Breakthrough.`,
     feed: (set: string, slot: string, name: string) => `${by(slot, 'Слабый', 'Слабая', 'Слабое', 'Слабые')} ${set}-${NOM[slot]} из запаса ${name} — в Breakthrough этой.`,
     feedItem: (item: string, name: string) => `Слабый ${item} из запаса ${name} — в Breakthrough этой.`,
+    feedMany: (n: number, names: string[]) => `В Breakthrough этой — ${n} из запаса ${andList(names)} (любые из отложенных).`,
     quietBetter: (name: string, pts: string, stats: string[]) => `На ${name} сейчас хуже (+${pts} очк.), но и эта слабая — годная будет с ${andList(stats)}.`,
     quietEmpty: (name: string, slot: string, stats: string[]) => `У ${name} нет ${GEN[slot]} — эта слабая, годная будет с ${andList(stats)}.`,
     junkBy: (names: string[]) => `Разбирай — уже не хуже у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
@@ -243,6 +244,7 @@ export const ru = {
     fed: (slot: string, what: string, name: string, armor: boolean) => (armor
       ? `${by(slot, 'Слабый', 'Слабая', 'Слабое', 'Слабые')} ${what}-${NOM[slot]} из запаса ${name} — в Breakthrough: ${by(slot, 'убран', 'убрана', 'убрано', 'убраны')}.`
       : `Слабый ${what} из запаса ${name} — в Breakthrough: убран.`),
+    fedMany: (n: number, names: string[]) => `Из запаса ${andList(names)} — в Breakthrough: убрано ${n}.`,
     // почему пул держит вещь (список вещей героя)
     why: { worn: 'надета', best: (set: string) => `лучший ${set}`, bestT4: (set: string) => `лучший ${set} на T4`, stats: 'по статам', reserve: 'в запасе' },
     unneeded: 'больше не нужна',

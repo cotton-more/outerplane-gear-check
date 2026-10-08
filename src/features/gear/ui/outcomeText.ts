@@ -17,12 +17,15 @@ const itemName = (idx: Index, x: Pick<ItemInput, 'slot' | 'itemKey' | 'main'>): 
 // отложенная вещь во фразе — как найти её в игре: «Это Speed-шлем · DEF 1, SPD 2, RES 2, отложен 06.10.»
 export const stashedLine = (t: Texts, p: Piece, label: Label): string => t.fit.stashedOne(p.slot, label(p), subsText(p.lit), t.fit.date(p.at));
 
-// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 п. 3б, 3в) и какой он; the reserve may be another hero's
+// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 п. 3б, 3в) и какой он; the reserve may be another hero's.
+// Several (up to T4, owner 2026-10-08): «В Breakthrough этой — 3 из запаса Caren, Rin» — any of them, they're alike
 function feedLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Label): string[] {
-  if (!h.reserveBt) return [];
-  const of = (h.reserveOf ?? h.c).name;
-  const feed = item.setId ? t.fit.feed(setName(idx, item.setId), item.slot, of) : t.fit.feedItem(itemName(idx, item), of);
-  return [feed, stashedLine(t, h.reserveBt, label)];
+  if (!h.reserveBt.length) return [];
+  const names = [...new Set(h.reserveBt.map((f) => (f.of ?? h.c).name))];
+  if (h.reserveBt.length > 1) return [t.fit.feedMany(h.reserveBt.length, names)];
+  const [{ piece }] = h.reserveBt;
+  const feed = item.setId ? t.fit.feed(setName(idx, item.setId), item.slot, names[0]) : t.fit.feedItem(itemName(idx, item), names[0]);
+  return [feed, stashedLine(t, piece, label)];
 }
 
 // строки героя: «Надень» — прирост, половины, вещи пула вместе с ней; «Оставь» — почему держать; запасная — ей в Breakthrough

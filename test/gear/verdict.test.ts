@@ -184,8 +184,9 @@ describe('T5 вердикт новой вещи', () => {
       expect(kindOf(r1)).toBe('material reserve');
       expect(names(r1.reserve)).toEqual(['Caren']);
       const w2 = world(['Caren'], { Caren: [...base, w1] }, { Caren: base.map((p) => p.id) });
-      // второй такой же, но другой (уровень RES 2) — «Разобрать»; точная копия — «похоже, это отложенный» (решение 2026-10-06)
-      expect(kindOf(w2.v(mk('weakB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('junk');
+      // второй такой же, но другой (уровень RES 2) — тоже запас (owner 2026-10-08: up to 4); точная копия — «похоже, это
+      // отложенный» (решение 2026-10-06)
+      expect(kindOf(w2.v(mk('weakB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('material reserve');
       expect(w2.v(weakSpd('weakC'))!.same?.piece.id).toBe('weakA');
     }
   });
@@ -198,7 +199,7 @@ describe('T5 вердикт новой вещи', () => {
     const good = mk('sH0b', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 0);
     const r = w.v(good)!;
     expect(kindOf(r)).toBe('keep a');
-    expect(r.named[0].reserveBt?.id).toBe('weakA');
+    expect(r.named[0].reserveBt.map((f) => f.piece.id)).toEqual(['weakA']);
     const after = poolInfo(prof('Caren'), [sG, sB, dHelm, weakA, good], new Set(['sG', 'sB', 'dHelm']));
     expect(after.unneeded.map((p) => p.id)).toContain('weakA');
   });
@@ -212,16 +213,19 @@ describe('T5 вердикт новой вещи', () => {
     const w = world(['Caren'], { Caren: [...base, epic] }, { Caren: base.map((p) => p.id) });
     const good = mk('g', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 0);
     const r = w.v(good)!;
-    expect([kindOf(r), r.named[0].reserveBt]).toEqual(['keep a', null]); // Epic Legendary-шлему не материал
+    expect([kindOf(r), r.named[0].reserveBt]).toEqual(['keep a', []]); // Epic Legendary-шлему не материал
     expect(poolInfo(prof('Caren'), [...base, epic, good], new Set(base.map((p) => p.id))).unneeded.map((p) => p.id)).toEqual(['eW']);
     // the weak Epic reserve no longer blocks a Legendary one (was «пусть лежит в инвентаре»)
     const lw = w.v(weakSpd('lW'))!;
     expect([kindOf(lw), names(lw.reserve), lw.overEpic]).toEqual(['material reserve', ['Caren'], false]);
     const info = poolInfo(prof('Caren'), [...base, epic, weakSpd('lW')], new Set(base.map((p) => p.id)));
-    expect([...info.reserve.values()].sort()).toEqual(['eW', 'lW']);
-    // a second weak Legendary — «Разобрать», as before (T5.7)
+    expect([...info.reserve.values()].flat().sort()).toEqual(['eW', 'lW']);
+    // a second weak Legendary — reserve too (owner 2026-10-08: up to 4 per hero), a fifth — «Разобрать»
     const w2 = world(['Caren'], { Caren: [...base, weakSpd('wA')] }, { Caren: base.map((p) => p.id) });
-    expect(kindOf(w2.v(mk('wB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('junk');
+    expect(kindOf(w2.v(mk('wB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('material reserve');
+    const four = ['wA', 'wB', 'wC', 'wD'].map((id, i) => mk(id, 'helmet', 'Speed', { SPD: 1, RES: 1 + i, EFF: 1, HP: 1 }, 0));
+    const w4 = world(['Caren'], { Caren: [...base, ...four] }, { Caren: base.map((p) => p.id) });
+    expect(kindOf(w4.v(mk('wE', 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1, HP: 2 }, 0)))).toBe('junk');
   });
 
   it('owner 2026-10-07 (Rin case): a good Epic helmet is worn — weak Legendary is reserve, a good Legendary later feeds on it', () => {
@@ -237,10 +241,45 @@ describe('T5 вердикт новой вещи', () => {
     // set aside, then a good Legendary drops: wear it and feed L1 into it
     const w = world(['Caren'], { Caren: [...base, weak] }, { Caren: base.map((p) => p.id) });
     const r2 = w.v(mk('L2', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0))!;
-    expect([r2.kind, r2.named[0].reserveBt?.id]).toEqual(['wear', 'L1']);
+    expect([r2.kind, r2.named[0].reserveBt.map((f) => f.piece.id)]).toEqual(['wear', ['L1']]);
     // a weak Epic behind a good Legendary stays «Разобрать»: Epic is no material for it
     const legWorn = world(['Caren'], { Caren: [sG, sB, mk('LG', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0)] });
     expect(kindOf(legWorn.v(mk('eW', 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1 }, 0, { grade: 'rare' })))).toBe('junk');
+  });
+
+  // owner 2026-10-08: reserves — up to 4 per hero who needs that set + slot + grade, at most 8 of one kind over all heroes
+  describe('запасы: до 4 на героя, не больше 8 одного вида', () => {
+    const [, sG, sB] = speedCaren();
+    const aer = [{ ...sG, id: 'aG' }, { ...sB, id: 'aB' }, mk('aE', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2 }, 0, { grade: 'rare' })];
+    // weak Legendary Speed helmets that differ (no «same» look-alike)
+    const weak = (i: number) => mk(`L${i}`, 'helmet', 'Speed', { SPD: 1, RES: 1 + (i % 3), EFF: 1 + Math.floor(i / 3), HP: 1 }, 0);
+    const wearing = { Caren: ['sG', 'sB'], Aer: ['aG', 'aB', 'aE'] };
+
+    it('Caren и Aer на Epic, 7 слабых Legendary подряд → 4 Caren, 3 Aer; день за днём — то же самое', () => {
+      const pools: Record<string, Piece[]> = { Caren: [sG, sB], Aer: [...aer] };
+      const to: string[] = [];
+      for (let i = 0; i < 7; i++) {
+        const r = world(['Caren', 'Aer'], pools, wearing).v(weak(i))!;
+        expect(kindOf(r)).toBe('material reserve');
+        const who = r.reserve[0].name;
+        to.push(who);
+        pools[who] = [...pools[who], weak(i)];
+      }
+      expect(to).toEqual(['Caren', 'Caren', 'Caren', 'Caren', 'Aer', 'Aer', 'Aer']);
+    });
+
+    it('8 запасов одного вида у двух героев — девятый «Разобрать»', () => {
+      const pools = { Caren: [sG, sB, weak(0), weak(1), weak(2), weak(3)], Aer: [...aer, weak(4), weak(5), weak(6), weak(7)] };
+      expect(kindOf(world(['Caren', 'Aer'], pools, wearing).v(weak(8)))).toBe('junk');
+    });
+
+    it('годный шлем Caren съедает до T4: свои 2 запаса, затем 2 из запаса Aer', () => {
+      const pools = { Caren: [sG, sB, weak(0), weak(1)], Aer: [...aer, weak(2), weak(3), weak(4)] };
+      const w = world(['Caren', 'Aer'], pools, wearing);
+      const h = w.hero('Caren', w.v(mk('G', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0))!);
+      expect(h.kind).toBe('wear');
+      expect(h.reserveBt.map((f) => f.of?.name ?? 'own')).toEqual(['own', 'own', 'Aer', 'Aer']);
+    });
   });
 
   it('owner 2026-10-07: a good piece for Caren feeds on Aer\'s reserve; rated again, the weak one names Aer first', () => {
@@ -248,12 +287,12 @@ describe('T5 вердикт новой вещи', () => {
     const aer = [{ ...sG, id: 'aG' }, { ...sB, id: 'aB' }, mk('aE', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2 }, 0, { grade: 'rare' })];
     const w = world(['Caren', 'Aer'], { Caren: [sG, sB], Aer: [...aer, weakSpd('L1')] }, { Caren: ['sG', 'sB'], Aer: ['aG', 'aB', 'aE'] });
     const h = w.hero('Caren', w.v(mk('L2', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0))!);
-    expect([h.kind, h.reserveBt?.id, h.reserveOf?.name]).toEqual(['wear', 'L1', 'Aer']);
+    expect([h.kind, h.reserveBt.map((f) => [f.piece.id, f.of?.name])]).toEqual(['wear', [['L1', 'Aer']]]);
     const again = w.v(weakSpd('x'))!;
     expect([kindOf(again), again.same?.c.name, names(again.reserve)]).toEqual(['material reserve', 'Aer', ['Aer', 'Caren']]);
   });
 
-  it('T5.7а (вопрос 14): аксессуар Fran не с тем main → запас; второй → «Разобрать»; годный → «Надень» и запасной ему в Breakthrough', () => {
+  it('T5.7а (вопрос 14): аксессуар Fran не с тем main → запас; второй — тоже (до 4); годный → «Надень» и запасные ему в Breakthrough', () => {
     const acc = (id: string, main: string, bt: 0 | 4 = 0) => mk(id, 'accessory', null, { CHD: 2, 'ATK%': 2, RES: 2, 'HP%': 2 }, bt, { itemKey: '1017', main });
     const bad = acc('xBad', 'CHC');
     expect(pieceBar(prof('Fran'), bad).pass).toBe(false);
@@ -261,10 +300,10 @@ describe('T5 вердикт новой вещи', () => {
     expect(kindOf(r1)).toBe('material reserve');
     expect(names(r1.reserve)).toEqual(['Fran']);
     const w2 = world(['Fran'], { Fran: [bad] }, { Fran: [] });
-    expect(kindOf(w2.v({ ...acc('xBad2', 'CHC'), lit: { CHD: 3, 'ATK%': 2, RES: 2, 'HP%': 2 } }))).toBe('junk');
+    expect(kindOf(w2.v({ ...acc('xBad2', 'CHC'), lit: { CHD: 3, 'ATK%': 2, RES: 2, 'HP%': 2 } }))).toBe('material reserve');
     const r3 = w2.v(acc('xGood', 'SPD'))!;
     expect(r3.kind).toBe('wear');
-    expect(r3.named[0].reserveBt?.id).toBe('xBad');
+    expect(r3.named[0].reserveBt.map((f) => f.piece.id)).toEqual(['xBad']);
     // X уже есть у Fran ниже T4 (годный) → материал сейчас, не запас
     const w4 = world(['Fran'], { Fran: [acc('xHeld', 'SPD')] });
     const r4 = w4.v(acc('xBad3', 'CHC'))!;
@@ -350,9 +389,9 @@ describe('T6 пул героя', () => {
       mk('wOff', 'shoes', 'Attack', { SPD: 1, RES: 1, EFF: 1, HP: 1 }), mk('gOff', 'shoes', 'Life', { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
       mk('dS', 'shoes', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 })];
     const info = poolInfo(prof('Caren'), pool, new Set(['dA']));
-    expect(info.unneeded.map((p) => p.id).sort()).toEqual(['gOff', 'wGl2', 'wOff']);
+    expect(info.unneeded.map((p) => p.id).sort()).toEqual(['gOff', 'wOff']);
     expect(info.why.get('wGl')).toEqual(['reserve']);
-    expect([...info.reserve.values()]).toEqual(['wGl']);
+    expect([...info.reserve.values()]).toEqual([['wGl', 'wGl2']]); // up to 4 per hero (owner 2026-10-08)
   });
 
   it('T6.4: запись в пулах двух героев держится, если нужна хотя бы одному', () => {

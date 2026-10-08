@@ -72,7 +72,7 @@ export interface PoolInfo {
   layout: Layout;                  // нынешняя раскладка (D3): лучшая раскладка из надетого и годных, не хранится
   value: LayoutValue;
   why: Map<string, Why[]>;         // держится → почему
-  reserve: Map<string, string>;    // reserveKey → id запасной
+  reserve: Map<string, string[]>;  // reserveKey → ids of the reserves (up to CFG.reservePerHero), strongest first
   strong: Set<string>;             // держится не как запас
   unneeded: Piece[];               // §5 п. 6: «больше не нужна»
 }
@@ -115,19 +115,20 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
     if (off && (!held.length || geq1(piecePoints(P, off), offBar(P, held)))) add(off, 'offmenu');
   }
   const strong = new Set(why.keys());
-  // 5: впрок — одна слабая на «сет + слот», когда сет начат держащейся вещью, а в этом слоте его держащейся нет; на T4
-  // материалом не бывает (D6). Оружие и аксессуар (п. 3в) — одна копия рекомендованного предмета, пока годной нет.
-  // Armor: one reserve per grade; a held Epic doesn't cancel a Legendary reserve (coversSlot)
-  const reserve = new Map<string, string>();
+  // 5: впрок — слабые на «сет + слот», когда сет начат держащейся вещью, а в этом слоте его держащейся нет; на T4
+  // материалом не бывает (D6). Оружие и аксессуар (п. 3в) — копии рекомендованного предмета, пока годной нет.
+  // Armor: reserves per grade; a held Epic doesn't cancel a Legendary reserve (coversSlot). Up to CFG.reservePerHero of
+  // one kind (owner, 2026-10-08: a full T0 → T4); the ceiling over all heroes is the verdict's (verdictOf)
+  const reserve = new Map<string, string[]>();
   for (const p of sorted) {
-    if (strong.has(p.id) || p.bt === 4 || pass(p) || reserve.has(reserveKey(p))) continue;
+    if (strong.has(p.id) || p.bt === 4 || pass(p) || (reserve.get(reserveKey(p))?.length ?? 0) >= CFG.reservePerHero) continue;
     if (isArmor(p.slot)) {
       if (!p.setId || (P.pin && !P.menuSets.has(p.setId))) continue; // закреплённому — запас только сетов набора
       const started = pool.some((q) => q.setId === p.setId && strong.has(q.id));
       const slotHas = pool.some((q) => strong.has(q.id) && coversSlot(q, p));
       if (!started || slotHas) continue;
     } else if (!listedFor(P, p) || pool.some((q) => q !== p && strong.has(q.id) && sameForBt(q, p))) continue;
-    reserve.set(reserveKey(p), p.id);
+    reserve.set(reserveKey(p), [...(reserve.get(reserveKey(p)) ?? []), p.id]);
     add(p, 'reserve');
   }
   return { worn, layout: best.layout, value: best.value, why, reserve, strong, unneeded: pool.filter((p) => !why.has(p.id)) };

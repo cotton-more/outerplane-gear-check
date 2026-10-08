@@ -96,14 +96,16 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     // it looks like the piece set aside for this very hero (guard): «Надеть» wears that record, no second one
     const wore = same?.c.id === c.id && !rep ? wearFromPool(ctx, base, c.id, same.piece.id) : null;
     const r: PutResult = wore ? { ...wore, piece: wore.st.pieces[wore.id] } : putOn(ctx, base, c.id, input, { replace: rep });
-    // the feed line named another hero's reserve («из запаса Aer»): it goes to this one's Breakthrough — its record leaves
-    // with this «Надеть», as the hero's own reserve does (planPut); «Вернуть» brings it back
+    // the feed line named other heroes' reserves («из запаса Aer»): they go to this one's Breakthrough — their records
+    // leave with this «Надеть», as the hero's own reserves do (planPut); «Вернуть» brings them back
     const h = wore ? undefined : vsList.find((v) => v.c.id === c.id)?.h;
-    const fed = h?.reserveOf && h.reserveBt && h.reserveOf.id !== c.id ? { of: h.reserveOf, piece: h.reserveBt } : null;
-    const fedBack = fed ? removeUndo(r.st, fed.of.id, fed.piece) : null;
+    const fed = (h?.reserveBt ?? []).filter((f) => f.of && f.of.id !== c.id).map((f) => ({ of: f.of!, piece: f.piece }));
+    let st = r.st;
+    const backs: ((x: GearStore) => GearStore)[] = [];
+    for (const f of fed) { backs.unshift(removeUndo(st, f.of.id, f.piece)); st = removeFrom(st, f.of.id, f.piece.id); }
     const undo = (x: GearStore) => {
       const y = wore ? undoWear(x, c.id, wore) : undoPut(x, c.id, r);
-      const z = fedBack ? fedBack(y) : y;
+      const z = backs.reduce((acc, b) => b(acc), y);
       return sw ? sw.undo(z) : z;
     };
     // после «Надеть» форма — как после «Следующий» (решение владельца, refute-10 п. 6): иначе та же вещь на форме
@@ -111,7 +113,6 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     // вердикта закрыть, как «Следующий»; режим героя остаётся. «Вернуть» — и пул, и вещь на форму (с «T4»)
     // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока
     const joined = joinRoster(c.id);
-    const st = fed ? removeFrom(r.st, fed.of.id, fed.piece.id) : r.st;
     gear.set(st);
     const was = input;
     closeVerdict();
@@ -136,7 +137,8 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     notes.push(...removedNotes(r, mine, rep));
     // вопрос 6, PLAN Д7: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
     if (pruned.length) notes.push(t.fit.pruned(c.name));
-    if (fed) notes.push(t.fit.fed(fed.piece.slot, pieceLabel(fed.piece), fed.of.name, !!fed.piece.setId));
+    if (fed.length === 1) notes.push(t.fit.fed(fed[0].piece.slot, pieceLabel(fed[0].piece), fed[0].of.name, !!fed[0].piece.setId));
+    else if (fed.length) notes.push(t.fit.fedMany(fed.length, [...new Set(fed.map((f) => f.of.name))]));
     if (sw) notes.push(sw.note);
     say({
       text, note: notes.join(' '), tab: 'eval',

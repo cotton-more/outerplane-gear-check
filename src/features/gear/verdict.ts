@@ -1,6 +1,7 @@
 // Вердикт новой вещи по «статам + сетам» (.x/0085 FORMULA §4): для каждого героя ростера — что она ему даст, итог вещи —
 // лучший из исходов по героям в порядке «Надень» → «Оставь» → материал (Breakthrough сейчас, запас) → «Спорно» →
 // «Разобрать». Пул героя — features/gear/pool/info (§5). Тексты — screens/eval (useVerdictModel).
+import { CFG } from '@/game/config';
 import { isArmor } from '@/game/data';
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
@@ -21,6 +22,11 @@ export const formPiece = (x: ItemInput): Piece => ({
   id: NEW_ID, slot: x.slot, grade: x.grade, setId: x.setId, itemKey: x.itemKey, main: x.main,
   ...(x.unlisted ? { unlisted: true } : {}), yellow: x.subs, lit: x.subs, bt: x.bt ?? null, at: '',
 });
+
+// a reserve the new piece eats in its Breakthrough; of — whose it is when it's another hero's, null — the hero's own
+export interface Fed { piece: Piece; of: Char | null }
+// how many feeds a piece still takes to T4
+const feedsLeft = (x: Pick<Piece, 'bt'>): number => Math.max(0, CFG.reservePerHero - (x.bt ?? 0));
 
 // пул героя: вещи, надетое и что из них держится
 export interface HeroPool { c: Char; P: Profile; pieces: Piece[]; wornIds: ReadonlySet<string>; info: PoolInfo }
@@ -61,8 +67,8 @@ export interface HeroRes {
   alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней (в нынешней раскладке их в этом слоте не было)
   parts: { on: PartChange[]; off: PartChange[] };
   needT4: PartChange | null;     // «Оставь (а)»: сделай Breakthrough до T4 — без него эта часть не включится (A11)
-  reserveBt: Piece | null;       // запасная из пула героя — в Breakthrough новой (§4 п. 3б)
-  reserveOf: Char | null;        // whose reserve reserveBt is when it's another hero's (verdictOf); null — the hero's own
+  reserveBt: Fed[];              // reserves fed to the new piece (§4 п. 3б): the hero's own first, then other heroes'
+                                 // (verdictOf, feedFrom) — as many as it takes to T4
   layoutWith: Layout;            // лучшая раскладка с ней — что будет надето после «Надеть»
 }
 
@@ -75,14 +81,14 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const top = heldHere.length ? Math.max(...heldHere.map((p) => piecePoints(P, p))) : 0;
   const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds) });
   const uses = withBest.layout[x.slot]?.id === x.id;
-  const rid = info.reserve.get(reserveKey(x));
-  const rp = rid ? pool.find((p) => p.id === rid) ?? null : null;
+  const own = bar.pass ? (info.reserve.get(reserveKey(x)) ?? []).map((id) => pool.find((p) => p.id === id))
+    .filter((p): p is Piece => !!p && sameForBt(x, p)).slice(0, feedsLeft(x)) : [];
   const base: HeroRes = {
     c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: px - top,
     slotEmpty: !info.layout[x.slot], replaced: null, rankUp: withBest.value.rank > info.value.rank,
     alsoWear: Object.values(withBest.layout).filter((p) => p.id !== x.id && !wornIds.has(p.id) && info.layout[p.slot]?.id !== p.id),
     parts: partsDiff(info.value, withBest.value), needT4: null,
-    reserveBt: rp && bar.pass && (x.bt ?? 0) < 4 && sameForBt(x, rp) ? rp : null, reserveOf: null,
+    reserveBt: own.map((piece) => ({ piece, of: null })),
     layoutWith: withBest.layout,
   };
   // 1. «Надень» (вопросы 10, 11): прошла порог, встаёт в лучшую раскладку, и та лучше нынешней (§3 п. 3)
@@ -113,12 +119,12 @@ function materialTargets(hp: HeroPool, x: Piece): Target[] {
     .map((piece) => ({ c: hp.c, piece, worn: hp.wornIds.has(piece.id) }));
 }
 
-// §4 п. 3б, 3в: запас — слабая (не прошла порог) и не на T4. Броня: сет начат, в слоте его нет, запаса ещё нет. Оружие и
-// аксессуар: Legendary, который рекомендуют билды героя, а у него этого предмета нет ни с каким main
+// §4 п. 3б, 3в: запас — слабая (не прошла порог) и не на T4. Броня: сет начат, в слоте его нет, запасов этого вида меньше
+// CFG.reservePerHero. Оружие и аксессуар: Legendary, который рекомендуют билды героя, а годной копии у него нет
 function reserveFor(hp: HeroPool, x: Piece, h: HeroRes): boolean {
-  if (h.bar || x.bt === 4 || hp.info.reserve.has(reserveKey(x))) return false;
+  if (h.bar || x.bt === 4 || (hp.info.reserve.get(reserveKey(x))?.length ?? 0) >= CFG.reservePerHero) return false;
   const { info, pieces } = hp;
-  if (!isArmor(x.slot)) return listedFor(hp.P, x) && !pieces.some((q) => q.id !== x.id && sameForBt(q, x));
+  if (!isArmor(x.slot)) return listedFor(hp.P, x) && !pieces.some((q) => q.id !== x.id && info.strong.has(q.id) && sameForBt(q, x));
   if (!x.setId || (hp.P.pin && !hp.P.menuSets.has(x.setId))) return false;
   const started = pieces.some((q) => q.setId === x.setId && info.strong.has(q.id));
   const slotHas = pieces.some((q) => info.strong.has(q.id) && coversSlot(q, x));
@@ -220,16 +226,26 @@ export const rosterChars = (ctx: Ctx): Char[] =>
   [...ctx.roster].map((id) => ctx.idx.CHAR[id]).filter((c): c is Char => !!c && c.builds.length > 0 && !ctx.off.has(c.id));
 
 // A weak reserve piece feeds whoever gets a good piece of its set, slot and grade first, not only its holder (owner,
-// 2026-10-07): with no own reserve, the first roster hero's reserve that fits
+// 2026-10-07): after the hero's own reserves, other roster heroes' reserves of that kind fill the feeds up to T4.
+// Reserves of one kind are interchangeable (owner, 2026-10-08: any locked one in the game)
 function feedFrom(hps: HeroPool[], x: Piece, h: HeroRes): HeroRes {
-  if (h.reserveBt || !h.bar || (x.bt ?? 0) >= 4) return h;
+  let left = feedsLeft(x) - h.reserveBt.length;
+  if (!h.bar || left <= 0) return h;
+  const fed = [...h.reserveBt];
   for (const hp of hps) {
-    const rid = hp.c === h.c ? undefined : hp.info.reserve.get(reserveKey(x));
-    const rp = rid ? hp.pieces.find((p) => p.id === rid) : undefined;
-    if (rp && sameForBt(x, rp)) return { ...h, reserveBt: rp, reserveOf: hp.c };
+    if (hp.c === h.c) continue;
+    for (const id of hp.info.reserve.get(reserveKey(x)) ?? []) {
+      const p = hp.pieces.find((q) => q.id === id);
+      if (!p || !sameForBt(x, p) || left <= 0) continue;
+      fed.push({ piece: p, of: hp.c });
+      left--;
+    }
   }
-  return h;
+  return fed.length === h.reserveBt.length ? h : { ...h, reserveBt: fed };
 }
+
+// reserves of the piece's kind over all heroes — the ceiling CFG.reserveMax (owner, 2026-10-08)
+const reservesOf = (hps: HeroPool[], x: Piece): number => hps.reduce((n, hp) => n + (hp.info.reserve.get(reserveKey(x))?.length ?? 0), 0);
 
 // Вердикт по ростеру; null — не считается: ростера нет («только мои» выключено или он пуст — по порогам, A21), введены
 // не все сабстаты (A20), предмета нет в данных outerpedia (его пассивки и рекомендаций не знаем — как прежде, по
@@ -257,7 +273,7 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: Verdic
   if (now.length) return res('material', { sub: 'now', now, quiet });
   // a Legendary reserve no longer waits behind an Epic one (grade-aware reserveKey): В1а «пусть лежит» is gone
   // the hero who already has it set aside goes first: the title names them
-  const rh = hps.filter((hp, i) => reserveFor(hp, x, heroes[i])).sort((a, z) => Number(z.c === same?.c) - Number(a.c === same?.c));
+  const rh = reservesOf(hps, x) >= CFG.reserveMax ? [] : hps.filter((hp, i) => reserveFor(hp, x, heroes[i])).sort((a, z) => Number(z.c === same?.c) - Number(a.c === same?.c));
   if (rh.length) return res('material', { sub: 'reserve', reserve: rh.map((hp) => hp.c), overEpic: overEpic(rh[0], x), quiet });
   const maybe = maybeFor(ctx, x);
   if (maybe.length) return res('maybe', { maybe, quiet });
