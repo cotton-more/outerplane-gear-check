@@ -54,7 +54,8 @@ accessory) and other sets can't be picked on the form — start a new batch for 
    "Set aside" or "Dismantle" — the walk waits for it.
 4. **"Walk ▸"** — steps by game screen, in an order where the numbers don't drift (equipping and taking off don't move
    a piece — it only gains or loses its E):
-   1. **Equip — at the heroes:** "Caren → helmet → No. 7 in the list" — the number in the hero's slot list; the class
+   1. **Equip — at the heroes:** "Caren → helmet → No. 7 in the helmet list · #24" — the number in the hero's list of
+      that slot (in the game it holds only helmets, with the same filter), #24 — this piece in the batch; the class
       icon by the name and the name's colour (the element) help find the hero with the game's roster filters. Below, in
       a column, the substats as the game shows them after a tap: "LV 3 Crit Chance +9.0%" — check them.
    2. **Lock** what you keep: "Lock: row 3, no. 1" (10 pieces per row), below — what it is and for whom: "#21

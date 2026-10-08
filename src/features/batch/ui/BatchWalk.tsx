@@ -31,7 +31,7 @@ function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null }
 function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
     case 1: return {
-      title: s.k !== null ? t.batch.equipStep(s.c.name, s.slot, s.k) : t.batch.equipStepAt(s.c.name, s.slot, 'n' in s.where ? `#${s.where.n}` : desc(t, s.where)),
+      title: s.k !== null && 'n' in s.where ? t.batch.equipStep(s.c.name, s.slot, s.k, s.where.n) : t.batch.equipStepAt(s.c.name, s.slot, 'n' in s.where ? `#${s.where.n}` : desc(t, s.where)),
       hero: s.c, more: [], subs: gameSubs(ctx.idx, s.subs),
     };
     case 2: {

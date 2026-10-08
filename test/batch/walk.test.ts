@@ -88,6 +88,14 @@ describe('the walk', () => {
     expect(walk.steps[2]).toMatchObject({ stage: 4, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0 });
   });
 
+  it('the equip number is in the hero\'s list of that slot: boots first, then armor — the armor is No. 1 among armor, #2 in the batch', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
+    const armor = mk('ga', 'armor', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0);
+    const b = batchOf([piece(mk('wb', 'shoes', 'Speed', { SPD: 1, RES: 1, EFF: 1, HP: 1 }, 0)), piece(armor)]);
+    const eq = walkOf(b, planBatch(ctx, st, entriesOf(b))).steps.find((s) => s.stage === 1 && s.slot === 'armor')!;
+    expect(eq).toMatchObject({ k: 1, where: { n: 2 } });
+  });
+
   it('a lock step says what the piece is and for whom: a weak one set aside for Caren is her reserve', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([piece(weak('w'))]);
