@@ -9,8 +9,9 @@ import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/ge
 import { putOn, removeFrom, removeUndo, stashOn, undoPut, type PutResult } from '@/features/gear/pool';
 import { heroPool, verdictOf, type HeroPool, type Pools, type Result, type Same } from '@/features/gear/verdict';
 
-// a piece as entered; #n = index + 1. twin — «Это другой»: it only looks like a set-aside record
-export interface Entry { input: ItemInput; twin?: boolean }
+// a piece as entered; n — its position in the game list (E and 🔒 entries count too, batch.ts entriesOf), default
+// index + 1. twin — «Это другой»: it only looks like a set-aside record
+export interface Entry { input: ItemInput; twin?: boolean; n?: number }
 
 // what a feed line points at: a piece of this batch (#n) or a recorded piece of a hero
 export type Target = { entry: number } | { c: Char; piece: Piece };
@@ -102,7 +103,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   const skipOf = (line: string): Set<string> =>
     new Set([...skip].filter((k) => k.startsWith(line + '>')).map((k) => k.slice(line.length + 1)));
   const order = entries
-    .map((e, i) => ({ n: i + 1, e, s: scoreOf(verdictOf(ctx, pools(base), e.input, { twin: e.twin, skip: skipOf(String(i + 1)) })), k: contentKey(e.input) }))
+    .map((e, i) => ({ n: e.n ?? i + 1, e, s: scoreOf(verdictOf(ctx, pools(base), e.input, { twin: e.twin, skip: skipOf(String(e.n ?? i + 1)) })), k: contentKey(e.input) }))
     .sort((a, z) => z.s[0] - a.s[0] || z.s[1] - a.s[1] || (a.k < z.k ? -1 : a.k > z.k ? 1 : 0) || a.n - z.n);
 
   let st = base;
@@ -225,7 +226,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
 
   const lines: Line[] = [];
   entries.forEach((e, i) => {
-    const n = i + 1;
+    const n = e.n ?? i + 1;
     let fate = fates.get(String(n))!;
     if ((fate.kind === 'wear' || fate.kind === 'keep') && t4Of.has(n)) fate = { ...fate, t4: true };
     lines.push({ id: String(n), n, input: e.input, fate });

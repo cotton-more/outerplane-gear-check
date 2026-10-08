@@ -6,35 +6,74 @@ import { MAX_LIT, MAX_SUBS, type Subs } from '@/game/item/subs';
 import type { ItemInput } from '@/game/item/item';
 import type { Entry } from './plan';
 
-export interface Batch { v: 1; items: ItemInput[]; skip: string[]; twin: number[] }
-export const NEW_BATCH: Batch = { v: 1, items: [], skip: [], twin: [] };
+// An entry is one piece of the game list, in its order (.x/0140-batch-walk §1): a piece as entered; «E» — a piece worn
+// by hero c (the app knows it from c's worn record, no substats); «🔒» — a locked unworn piece, someone's reserve. #n —
+// the position in the game list, all kinds counted: plan lines and walk steps use it
+export type BatchEntry =
+  | { kind: 'piece'; input: ItemInput }
+  | { kind: 'worn'; c: string; slot: SlotId }
+  | { kind: 'lock'; slot: SlotId };
+// choice — «Спорно» lines decided before the walk (line id → keep / junk); done — walk steps ticked ✓
+export interface Batch { v: 2; items: BatchEntry[]; skip: string[]; twin: number[]; choice: Record<string, 'keep' | 'junk'>; done: string[] }
+export const NEW_BATCH: Batch = { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] };
 
-export const entriesOf = (b: Batch): Entry[] => b.items.map((input, i) => ({ input, twin: b.twin.includes(i + 1) }));
+// the pieces the plan computes, with their positions; E and 🔒 entries are in the store already (worn, reserves)
+export const entriesOf = (b: Batch): Entry[] => b.items.flatMap((e, i) => (e.kind === 'piece' ? [{ n: i + 1, input: e.input, twin: b.twin.includes(i + 1) }] : []));
+export const slotOf = (e: BatchEntry): SlotId => (e.kind === 'piece' ? e.input.slot : e.slot);
+
+// One filter per batch (owner, 2026-10-08, W1): weapons, accessories, or armor of one set. kind — 'weapon',
+// 'accessory', 'set:<id>' or 'armor' (armor with no set known yet: only E / 🔒 entries so far); null — empty
+export type BatchKind = 'weapon' | 'accessory' | 'armor' | `set:${string}`;
+export const kindOfInput = (x: Pick<ItemInput, 'slot' | 'setId'>): BatchKind =>
+  (isArmor(x.slot) ? (x.setId ? `set:${x.setId}` : 'armor') : (x.slot as 'weapon' | 'accessory'));
+export function kindOf(b: Batch, setOf: (e: BatchEntry) => string | null = () => null): BatchKind | null {
+  let kind: BatchKind | null = null;
+  for (const e of b.items) {
+    const k: BatchKind = e.kind === 'piece' ? kindOfInput(e.input) : isArmor(e.slot) ? (setOf(e) ? `set:${setOf(e)}` : 'armor') : (e.slot as 'weapon' | 'accessory');
+    if (k.startsWith('set:')) return k;
+    kind ??= k;
+  }
+  return kind;
+}
+// does an entry of kind k fit a batch of kind `of`: armor with no set yet takes any armor set
+export const fitsKind = (of: BatchKind | null, k: BatchKind): boolean =>
+  !of || of === k || (of === 'armor' && (k === 'armor' || k.startsWith('set:'))) || (k === 'armor' && of.startsWith('set:'));
 
 // the entry a plan line or a «Не брать» key belongs to: «12», «12~1», «12>hero» → 12
 const entryOf = (key: string): number => parseInt(key, 10);
 
-// add, or replace #at while fixing an entry: a fixed entry is another piece — its «Не брать» and «Это другой» go
-export function putItem(b: Batch, input: ItemInput, at: number | null = null): Batch {
-  if (at === null || at < 1 || at > b.items.length) return { ...b, items: [...b.items, input] };
+// add, or replace #at while fixing an entry: a fixed entry is another piece — its «Не брать», «Это другой» and «Спорно»
+// choice go; the walk's ticks go (the plan changed)
+export function putItem(b: Batch, entry: BatchEntry, at: number | null = null): Batch {
+  if (at === null || at < 1 || at > b.items.length) return { ...b, items: [...b.items, entry], done: [] };
   const items = b.items.slice();
-  items[at - 1] = input;
-  return { ...b, items, skip: b.skip.filter((k) => entryOf(k) !== at), twin: b.twin.filter((n) => n !== at) };
+  items[at - 1] = entry;
+  return { ...b, items, skip: b.skip.filter((k) => entryOf(k) !== at), twin: b.twin.filter((n) => n !== at), choice: dropKeys(b.choice, (k) => entryOf(k) === at), done: [] };
 }
 
-// remove #n: later entries move up a number, their «Не брать» and «Это другой» move with them
+const dropKeys = <T>(o: Record<string, T>, drop: (k: string) => boolean): Record<string, T> =>
+  Object.fromEntries(Object.entries(o).filter(([k]) => !drop(k)));
+
+// remove #n: later entries move up a number, their «Не брать», «Это другой» and «Спорно» choice move with them
 export function removeItem(b: Batch, n: number): Batch {
   const shift = (m: number) => (m > n ? m - 1 : m);
+  const move = (k: string) => k.replace(/^\d+/, (d) => String(shift(Number(d))));
   return {
     ...b,
     items: b.items.filter((_, i) => i !== n - 1),
-    skip: b.skip.filter((k) => entryOf(k) !== n).map((k) => k.replace(/^\d+/, (d) => String(shift(Number(d))))),
+    skip: b.skip.filter((k) => entryOf(k) !== n).map(move),
     twin: b.twin.filter((m) => m !== n).map(shift),
+    choice: Object.fromEntries(Object.entries(b.choice).filter(([k]) => entryOf(k) !== n).map(([k, v]) => [move(k), v])),
+    done: [],
   };
 }
 
-export const setTwin = (b: Batch, n: number): Batch => (b.twin.includes(n) ? b : { ...b, twin: [...b.twin, n] });
-export const addSkip = (b: Batch, key: string): Batch => (b.skip.includes(key) ? b : { ...b, skip: [...b.skip, key] });
+export const setTwin = (b: Batch, n: number): Batch => (b.twin.includes(n) ? b : { ...b, twin: [...b.twin, n], done: [] });
+export const addSkip = (b: Batch, key: string): Batch => (b.skip.includes(key) ? b : { ...b, skip: [...b.skip, key], done: [] });
+export const setChoice = (b: Batch, line: string, c: 'keep' | 'junk' | null): Batch =>
+  ({ ...b, choice: c ? { ...b.choice, [line]: c } : dropKeys(b.choice, (k) => k === line), done: [] });
+export const toggleDone = (b: Batch, step: string): Batch =>
+  ({ ...b, done: b.done.includes(step) ? b.done.filter((x) => x !== step) : [...b.done, step] });
 
 // a saved entry → the piece, or null when it doesn't fit the current data (a set, item or stat this data doesn't have)
 function inputOf(raw: unknown, idx: Index): ItemInput | null {
@@ -59,21 +98,38 @@ function inputOf(raw: unknown, idx: Index): ItemInput | null {
   return { slot, grade, setId, itemKey, main, unlisted: r.unlisted === true, subs, bt };
 }
 
-// what 'ogc.batch' holds → the batch; entries that don't fit the data are dropped with their marks
+// what 'ogc.batch' holds → the batch; entries that don't fit the data are dropped with their marks. v1 — pieces only
 export function restoreBatch(raw: unknown, idx: Index): Batch | null {
-  if (!raw || typeof raw !== 'object' || (raw as { v?: unknown }).v !== 1) return null;
+  const v = (raw as { v?: unknown } | null)?.v;
+  if (!raw || typeof raw !== 'object' || (v !== 1 && v !== 2)) return null;
   const r = raw as Record<string, unknown>;
+  const strings = (x: unknown) => (Array.isArray(x) ? x.filter((k): k is string => typeof k === 'string') : []);
   let b: Batch = {
-    v: 1,
-    items: [],
-    skip: Array.isArray(r.skip) ? r.skip.filter((k): k is string => typeof k === 'string' && /^\d+(~\d+)?>\d+$/.test(k)) : [],
+    ...NEW_BATCH,
+    skip: strings(r.skip).filter((k) => /^\d+(~\d+)?>\d+$/.test(k)),
     twin: Array.isArray(r.twin) ? r.twin.filter((n): n is number => Number.isInteger(n) && n >= 1) : [],
+    choice: v === 2 && r.choice && typeof r.choice === 'object'
+      ? Object.fromEntries(Object.entries(r.choice as Record<string, unknown>).filter(([k, c]) => /^\d+(~\d+)?$/.test(k) && (c === 'keep' || c === 'junk'))) as Batch['choice']
+      : {},
+    done: v === 2 ? strings(r.done) : [],
   };
   const raws = Array.isArray(r.items) ? r.items : [];
-  const kept = raws.map((x) => inputOf(x, idx));
-  b = { ...b, items: kept.map((x) => x ?? { slot: 'helmet', grade: 'rare', setId: null, itemKey: null, main: null, subs: {} }) };
+  const kept = raws.map((x) => (v === 1 ? pieceOf(inputOf(x, idx)) : entryOfRaw(x, idx)));
+  b = { ...b, items: kept.map((x) => x ?? { kind: 'lock', slot: 'helmet' }) };
   // drop the broken ones from the end, so the numbers of the others shift like a removal
   for (let n = kept.length; n >= 1; n--) if (!kept[n - 1]) b = removeItem(b, n);
-  b = { ...b, twin: b.twin.filter((n) => n <= b.items.length), skip: b.skip.filter((k) => entryOf(k) <= b.items.length) };
+  const done = v === 2 ? strings(r.done) : [];
+  b = { ...b, done, twin: b.twin.filter((n) => n <= b.items.length), skip: b.skip.filter((k) => entryOf(k) <= b.items.length) };
   return b;
+}
+const pieceOf = (input: ItemInput | null): BatchEntry | null => (input ? { kind: 'piece', input } : null);
+function entryOfRaw(raw: unknown, idx: Index): BatchEntry | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const slot = r.slot as SlotId;
+  if (r.kind === 'piece') return pieceOf(inputOf(r.input, idx));
+  if (typeof r.slot !== 'string' || !SLOT[slot]) return null;
+  if (r.kind === 'lock') return { kind: 'lock', slot };
+  if (r.kind === 'worn' && typeof r.c === 'string' && idx.CHAR[r.c]) return { kind: 'worn', c: r.c, slot };
+  return null;
 }

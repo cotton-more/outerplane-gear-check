@@ -78,7 +78,7 @@ describe('«Партия» on a phone', () => {
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #1');
     await click($('.vbar .vb-reset'));
     expect(batch().items).toHaveLength(1);
-    expect(batch().items[0]).toMatchObject({ slot: 'helmet', grade: 'unique', setId: speed, subs: GOOD.subs, bt: 0 });
+    expect(batch().items[0]).toMatchObject({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', setId: speed, subs: GOOD.subs, bt: 0 } });
     expect($('.batch-strip .tryon-k')?.textContent).toBe('Batch · 1');
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2');
     expect(JSON.parse(localStorage.getItem('ogc.item') ?? '{}').subs ?? {}).toEqual({});
@@ -191,5 +191,51 @@ describe('«Партия» on a phone', () => {
     expect(batch()).toBeNull();
     expect($('.batch-strip')).toBeNull();
     expect($('.vcard')).toBeTruthy();                     // the verdict is back
+  });
+});
+
+// The step-by-step walk (.x/0140-batch-walk): «E» and «🔒» entries, one filter per batch, «Спорно» decided first, steps
+describe('«Партия»: обход по шагам', () => {
+  it('«E · worn» → «Whose piece?» lists Caren (she wears a Speed helmet) → an «E · Caren» row; «🔒» adds a locked helmet', async () => {
+    await mount({ setId: speed, subs: {} }, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
+    await click(byText('.batch-marks button', 'E · worn'));
+    await click(byText('.batch-whose button', 'Caren'));
+    await click(byText('.batch-marks button', 'set aside'));
+    expect(batch().items).toEqual([{ kind: 'worn', c: caren.id, slot: 'helmet' }, { kind: 'lock', slot: 'helmet' }]);
+    await click($('.batch-strip .batch-list'));
+    expect($$('.batch-items .brow').map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual(['#1E · Caren', '#2🔒 helmet']);
+  });
+
+  it('one filter per batch: an Attack piece in a Speed batch is not added, the note says why', async () => {
+    const attack = D.sets.find((s) => s.short === 'Attack')!.id;
+    const items = [{ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK } }];
+    await mount({ setId: attack, subs: GOOD.subs }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
+    await click($('.vbar .vb-reset'));
+    expect(batch().items).toHaveLength(1);
+    expect($('.vbar')?.textContent).toContain('This batch is Speed armor.');
+  });
+
+  it('the walk: equip at Caren by her slot list (E entry counts), substats as in the game, Breakthrough with the weak one; ✓ is saved', async () => {
+    const piece = (x: Record<string, unknown>) => ({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x } });
+    const items = [{ kind: 'worn', c: caren.id, slot: 'helmet' }, piece(WEAK), piece(GOOD)];
+    await mount({ setId: speed, subs: {} }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
+    await click($('.batch-strip .batch-list'));
+    await click(byText('.batch button', 'Plan it'));
+    // Caren's removed Epic helmet is «Maybe»: the walk waits until it is decided
+    expect(byText('.batch button', 'Walk ▸')?.hasAttribute('disabled')).toBe(true);
+    await click(byText('.bdecide button', 'Dismantle'));
+    expect(batch().choice).toEqual({ '3~1': 'junk' });
+    await click(byText('.batch button', 'Walk ▸'));
+    const steps = $$('.bwalk .bstep');
+    expect(steps.map((s) => s.querySelector('b')?.textContent)).toEqual([
+      'Caren → helmet → No. 3 in the list',               // her slot list: the «E» entry (#1), the weak one (#2), this (#3)
+      '3. Dismantle — in one selection',
+      "Caren's helmet → Breakthrough: 1 from the list, any",
+    ]);
+    expect(steps[0].textContent).toContain('LV 3 Defense +');
+    expect(steps[1].textContent).toContain('row 1 — no. 1'); // the taken-off helmet sits where its «E» entry is
+    await click(steps[0].querySelector('.bcheck'));
+    expect(batch().done).toEqual(['eq:3']);
+    expect($('.bwalk .bcheck')?.getAttribute('aria-checked')).toBe('true');
   });
 });

@@ -215,7 +215,8 @@ export function App() {
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
-              strip={batchOn ? <BatchStrip n={batch.batch.items.length} note={batch.note} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
+              strip={batchOn ? <BatchStrip n={batch.batch.items.length} note={batch.note} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
+                onWorn={(c) => batch.addWorn(c, s.slot)} onLock={() => batch.addLock(s.slot)} /> : null}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} />
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>

@@ -1,0 +1,86 @@
+// «Обход» (.x/0140-batch-walk §1 p. 4): the plan as steps to do in the game, four stages by game screen; each step has
+// a ✓ (saved in the batch: the walk survives a reload). A piece the batch has no number for is named by its description.
+// At the end — «Всё сделано — Записать план» with the same confirm as on the plan.
+import { useState } from 'react';
+import type { Ctx } from '@/game/context';
+import { useT, type Texts } from '@/i18n';
+import { subsText } from '@/game/text';
+import { AskSheet } from '@/shared/ui/AskSheet';
+import type { Batch } from '@/features/batch/batch';
+import type { Plan } from '@/features/batch/plan';
+import { gameSubs, rowOf, type Step, type Walk, type Where } from '@/features/batch/walk';
+
+// a piece with no position: «Снятый шлем Caren (SPD 1, …)», «Отложенный шлем Caren (…)»
+const desc = (t: Texts, w: Exclude<Where, { n: number }>): string =>
+  (w.was === 'stash' ? t.batch.offStash(w.off.slot, w.c.name, subsText(w.off.lit)) : `${t.batch.off(w.off.slot, w.c.name)} (${subsText(w.off.lit)})`);
+
+function stepText(ctx: Ctx, t: Texts, s: Step): { title: string; more: string[] } {
+  switch (s.stage) {
+    case 1: return {
+      title: s.k !== null ? t.batch.equipStep(s.c.name, s.slot, s.k) : t.batch.equipStepAt(s.c.name, s.slot, 'n' in s.where ? `#${s.where.n}` : desc(t, s.where)),
+      more: [`${t.batch.check} ${gameSubs(ctx.idx, s.subs).join(', ')}`],
+    };
+    case 2: {
+      if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(t, s.where)), more: [] };
+      const { r, p } = rowOf(s.where.n);
+      return { title: t.batch.lockStep(r, p), more: [] };
+    }
+    case 3: {
+      const rows = new Map<number, number[]>();
+      const loose: string[] = [];
+      for (const w of s.where) {
+        if (!('n' in w)) { loose.push(desc(t, w)); continue; }
+        const { r, p } = rowOf(w.n);
+        rows.set(r, [...(rows.get(r) ?? []), p]);
+      }
+      return { title: t.batch.stages[2], more: [...[...rows].map(([r, ps]) => t.batch.junkRow(r, ps)), ...loose] };
+    }
+    case 4: {
+      const where = 'worn' in s.target ? t.batch.btWorn(s.target.slot, s.target.worn.name)
+        : 'n' in s.target.where ? t.batch.btAt(rowOf(s.target.where.n).r, rowOf(s.target.where.n).p) : desc(t, s.target.where);
+      return { title: t.batch.btStep(where, s.n), more: s.unlock ? [t.batch.btUnlock(s.unlock)] : [] };
+    }
+  }
+}
+
+export function BatchWalk({ ctx, batch, plan, walk, onTick, onDone }: {
+  ctx: Ctx; batch: Batch; plan: Plan; walk: Walk; onTick: (step: string) => void; onDone: () => void;
+}) {
+  const t = useT();
+  const [asking, setAsking] = useState(false);
+  const c = plan.counts;
+  const stages = [1, 2, 3, 4] as const;
+  return (
+    <div className="batch bwalk">
+      <p className="muted small">{t.batch.walkNote}</p>
+      {stages.map((st) => {
+        const steps = walk.steps.filter((s) => s.stage === st);
+        if (!steps.length) return null;
+        return (
+          <section key={st} className="bstage">
+            {st !== 3 && <h4>{t.batch.stages[st - 1]}</h4>}
+            <ol className="bgear-list">
+              {steps.map((s) => {
+                const { title, more } = stepText(ctx, t, s);
+                const done = batch.done.includes(s.key);
+                return (
+                  <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
+                    <button type="button" className="bcheck" role="checkbox" aria-checked={done} aria-label={title} onClick={() => onTick(s.key)}>{done ? '✓' : ''}</button>
+                    <span className="bstep-t"><b>{title}</b>{more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        );
+      })}
+      <div className="batch-acts">
+        <button type="button" className="btn brec" onClick={() => setAsking(true)}>{t.batch.walkEnd}</button>
+      </div>
+      {asking && (
+        <AskSheet title={t.batch.recordAsk} text={t.batch.recordText(c.wear, c.keep)} yes={t.batch.recordYes} kind="batch-ask"
+          onYes={() => { setAsking(false); onDone(); }} onClose={() => setAsking(false)} />
+      )}
+    </div>
+  );
+}

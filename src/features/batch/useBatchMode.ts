@@ -2,7 +2,8 @@
 // plan view shows, and the actions — start, «В партию», fix, remove, «Посчитать», «Не брать», «Это другой», «Сделал»
 // with «Вернуть», ✕. The plan is computed only while it is shown, always on the current store.
 import { useMemo, useState, type Dispatch } from 'react';
-import type { Index } from '@/game/data';
+import { isArmor, type Index } from '@/game/data';
+import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import type { Texts } from '@/i18n';
@@ -11,10 +12,11 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import { useTimed } from '@/shared/useTimed';
-import { addSkip, entriesOf, NEW_BATCH, putItem, removeItem, restoreBatch, setTwin, type Batch } from './batch';
+import { addSkip, entriesOf, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, restoreBatch, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
 import { planBatch, skipKey, undoPlan, type Plan } from './plan';
+import { walkOf, type Walk } from './walk';
 
-export type BatchView = 'list' | 'plan' | null;
+export type BatchView = 'list' | 'plan' | 'walk' | null;
 
 export interface BatchMode {
   on: boolean;
@@ -22,7 +24,8 @@ export interface BatchMode {
   editing: number | null;          // #n being fixed on the form («Сохранить #n»)
   note: string | null;             // «Введены не все сабстаты…» for a few seconds
   view: BatchView;                 // phone: the sheet; wide screen: what the right column shows
-  plan: Plan | null;               // only while view === 'plan'
+  plan: Plan | null;               // only while view is 'plan' or 'walk'
+  walk: Walk | null;               // the step-by-step walk of that plan
   asking: boolean;                 // ✕ with pieces: «Закончить партию?»
   start: () => void;
   add: (input: ItemInput, complete: boolean) => void; // «В партию» / «Сохранить #n»; complete — entered far enough for a verdict
@@ -32,6 +35,11 @@ export interface BatchMode {
   skip: (line: string, hero: string) => void;
   twin: (n: number) => void;
   done: () => void;
+  wornCands: (slot: SlotId) => Char[]; // «E»: roster heroes wearing a piece of this slot that fits the batch
+  addWorn: (c: string, slot: SlotId) => void;
+  addLock: (slot: SlotId) => void;
+  choose: (line: string, c: 'keep' | 'junk' | null) => void; // «Спорно»: decided before the walk
+  tick: (step: string) => void;    // ✓ a walk step
   end: () => void;                 // ✕: asks when the batch has pieces
   endNow: () => void;
   cancelEnd: () => void;
@@ -53,27 +61,47 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const [asking, setAsking] = useState(false);
   const [note, setNote] = useTimed<string>(4000);
   const batch = value ?? NEW_BATCH;
-  const plan = useMemo(() => (value && view === 'plan' ? planBatch(ctx, gear.store, entriesOf(value), new Set(value.skip)) : null),
-    [ctx, gear.store, value, view]);
+  const planned = view === 'plan' || view === 'walk';
+  const plan = useMemo(() => (value && planned ? planBatch(ctx, gear.store, entriesOf(value), new Set(value.skip)) : null),
+    [ctx, gear.store, value?.items, value?.skip, value?.twin, planned]); // eslint-disable-line react-hooks/exhaustive-deps
+  const walk = useMemo(() => (value && plan ? walkOf(value, plan) : null), [value, plan]);
+  // one filter per batch (W1): the set of an «E» entry — its hero's worn record
+  const wornSet = (e: BatchEntry): string | null => {
+    if (e.kind !== 'worn') return null;
+    const id = gear.store.worn?.[e.c]?.[e.slot];
+    return id ? gear.store.pieces[id]?.setId ?? null : null;
+  };
+  const kind = value ? kindOf(value, wornSet) : null;
+  const kindText = (k: BatchKind) => t.batch.otherKind(k.startsWith('set:') ? { set: idx.SET[k.slice(4)]?.short ?? '' } : k === 'weapon' ? 'weapon' : k === 'accessory' ? 'accessory' : { set: '' });
+  // an entry of another kind isn't added: the note says what this batch is
+  const put = (e: BatchEntry, k: BatchKind): boolean => {
+    if (!value) return false;
+    // fixing the only entry may change the kind
+    const rest = editing !== null && value.items.length === 1 ? null : kind;
+    if (!fitsKind(rest, k)) { setNote(kindText(rest!)); return false; }
+    set(putItem(value, e, editing));
+    setEditing(null);
+    setNote(null);
+    return true;
+  };
+  const slotKind = (slot: SlotId): BatchKind => (isArmor(slot) ? 'armor' : (slot as 'weapon' | 'accessory'));
 
   const toForm = () => { if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }); };
   const close = () => { setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setAsking(false); };
   return {
-    on: !!value, batch, editing, note, view, plan, asking,
+    on: !!value, batch, editing, note, view, plan, walk, asking,
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
     add: (input, complete) => {
       if (!value) return;
       if (!complete) { setNote(t.batch.incomplete); return; }
-      set(putItem(value, input, editing));
-      setEditing(null);
-      setNote(null);
+      if (!put({ kind: 'piece', input }, kindOfInput(input))) return;
       dispatch({ type: 'reset' });
       toForm();
     },
     fix: (n) => {
       const x = value?.items[n - 1];
-      if (!x) return;
-      dispatch({ type: 'load', item: x });
+      if (x?.kind !== 'piece') return;
+      dispatch({ type: 'load', item: x.input });
       setEditing(n);
       if (narrow) setView(null);
       toForm();
@@ -102,6 +130,20 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
         after: () => { set(was); setView(narrow ? null : 'list'); },
       });
     },
+    wornCands: (slot) => {
+      if (!value) return [];
+      const taken = new Set(value.items.filter((e) => e.kind === 'worn' && e.slot === slot).map((e) => e.kind === 'worn' ? e.c : ''));
+      return [...ctx.roster].map((id) => idx.CHAR[id]).filter((c): c is Char => {
+        if (!c || taken.has(c.id)) return false;
+        const id = gear.store.worn?.[c.id]?.[slot];
+        const p = id ? gear.store.pieces[id] : null;
+        return !!p && fitsKind(kind, kindOfInput(p));
+      });
+    },
+    addWorn: (c, slot) => { put({ kind: 'worn', c, slot }, slotKind(slot)); },
+    addLock: (slot) => { put({ kind: 'lock', slot }, slotKind(slot)); },
+    choose: (line, c) => { if (value) set(setChoice(value, line, c)); },
+    tick: (step) => { if (value) set(toggleDone(value, step)); },
     end: () => { if (value?.items.length) setAsking(true); else close(); },
     endNow: close,
     cancelEnd: () => setAsking(false),

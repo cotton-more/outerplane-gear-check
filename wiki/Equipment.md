@@ -188,9 +188,11 @@ The stamp is always about **the piece being rated**:
   in reserve for a future strong one ("Fodder — reserve for Caren's Speed helmet", "Set aside for Caren"). Legendary
   armor takes only Legendary material, so Epic and Legendary reserves are separate: a weak Legendary is kept even when
   the hero wears a good Epic of that set and slot — "Caren's Speed helmet is Epic. Keep this one until a good Legendary
-  one drops: wear that and feed this one to it." A reserve piece goes to Breakthrough as soon as a good piece of the same
-  set, slot and grade arrives — for any hero, not only the one who holds it: the verdict says "Feed the weak … from
-  Caren's reserve into this one" and names the piece with its substats, so you can find it in the game. "Equip" then
+  one drops: wear that and feed this one to it." A hero keeps up to four reserves of one kind (exactly T0 → T4), and
+  all heroes together at most eight of one kind; the rest is "Dismantle". In the game, lock the reserves. Reserves go
+  to Breakthrough as soon as a good piece of the same set, slot and grade arrives — as many as it takes to T4: that
+  hero's own first, then other heroes': the verdict says "Feed the weak … from Caren's reserve into this one" and names
+  the piece with its substats (or "Feed 3 from Caren and Rin's reserve into this one (any of the set-aside ones)"). "Equip" then
   removes that reserve record ("Removed the weak … from Caren's reserve — it goes to Breakthrough.", with "Undo"). A
   piece already at T4 is never material. A Legendary weapon
   or accessory that is the wrong main for a hero whose builds recommend it is kept in reserve too.

@@ -21,9 +21,36 @@
 .batch-sum { margin: 0; color: var(--ink-2); }
 .batch-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 /* «Записать план» changes many heroes at once: outlined in the dismantle colour, not the inviting filled primary */
-.batch-acts .brec { border-color: var(--junk); color: var(--junk); background: transparent; }
+.batch-acts .brec { margin-left: auto; border-color: var(--junk); color: var(--junk); background: transparent; } /* away from «Обход ▸» */
 /* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
    the same --surface) */
 .batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; padding: 8px 0 4px; background: var(--surface); }
 /* the column's bottom padding is the bar's own: rows don't show through under it */
 .batch-col .batch-acts { padding-bottom: 12px; }
+/* the step-by-step walk (.x/0140-batch-walk): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
+.batch-strip { flex-wrap: wrap; }
+.batch-marks { display: flex; gap: 6px; margin-left: auto; }
+.batch-marks .btn { min-height: 30px; padding: 3px 10px; font-size: 13px; }
+.batch-marks + .tryon-x { margin-left: 0; }
+/* a tall phone: the two buttons on a second line inside the strip; a short window: one line, «E» / «🔒» only */
+html.narrow .batch-marks { order: 3; flex-basis: 100%; margin: 0 0 4px; }
+html.narrow .batch-marks + .tryon-x { margin-left: auto; }
+@media (max-height: 460px) {
+  html.narrow .batch-marks { order: 0; flex-basis: auto; margin: 0 0 0 auto; }
+  html.narrow .batch-marks + .tryon-x { margin-left: 0; }
+  .batch-marks .bm-long { display: none; }
+}
+.batch-whose { display: grid; gap: 6px; }
+.bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
+.bwho .face { width: 32px; height: 32px; border-radius: 6px; }
+.bmark .bgear-n { font-weight: 600; }
+.bdecide { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.bdecide .chip { min-height: 32px; padding: 4px 10px; font-family: inherit; font-size: 13px; }
+.bstage { display: grid; gap: 6px; }
+.bstage h4 { margin: 4px 0 0; font-size: 13px; }
+.batch .bstep { display: flex; align-items: flex-start; gap: 10px; }
+.bcheck { flex: none; width: 28px; height: 28px; padding: 0; border: 1.5px solid var(--line-2); border-radius: 6px; background: var(--surface); color: var(--keep); font-weight: 800; }
+.bcheck[aria-checked="true"] { border-color: var(--keep); background: var(--keep-soft); }
+.bstep-t { min-width: 0; display: grid; gap: 2px; padding-top: 3px; }
+.bstep-m { color: var(--ink-2); }
+.bstep.done .bstep-t { opacity: .6; }

@@ -1,7 +1,8 @@
 // The batch plan (.x/0110-batch/PLAN.md §1 p. 4): a line per entry in the entered order, a piece the plan takes off a hero
 // right under its entry; «Не брать» on a line with a hero, «Это другой» on a look-alike of a set-aside piece.
 // «Записать план» — record it all, only after a confirm: an accidental tap changes many heroes at once (owner, 2026-10-07).
-// The button is alone and outlined in the dismantle colour; back to the list — «Список ▸» on the strip.
+// The button is outlined in the dismantle colour; back to the list — «Список ▸» on the strip. «Спорно» lines get
+// «Отложить» / «Разобрать» — decided before the walk (owner 2026-10-08); «Обход ▸» waits for them.
 import { useState } from 'react';
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
@@ -37,9 +38,10 @@ function heroOf(plan: Plan, l: Line): Char | null {
   return g && (g.kind === 'wear' || g.kind === 'keep') ? g.c : null;
 }
 
-export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone }: {
-  ctx: Ctx; plan: Plan;
-  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onDone: () => void;
+export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoose, onWalk, onDone }: {
+  ctx: Ctx; plan: Plan; choice: Record<string, 'keep' | 'junk'>; undecided: number;
+  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onChoose: (line: string, c: 'keep' | 'junk' | null) => void;
+  onWalk: () => void; onDone: () => void;
 }) {
   const t = useT();
   const c = plan.counts;
@@ -60,12 +62,24 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onDone }: {
               <span className="bfate">{fateText(t, l.fate)}</span>
               {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
+              {l.fate.kind === 'maybe' && (
+                <span className="bdecide">
+                  <span className="muted">{t.batch.decide}</span>
+                  {(['keep', 'junk'] as const).map((c) => (
+                    <button key={c} type="button" className="chip" aria-pressed={choice[l.id] === c} onClick={() => onChoose(l.id, choice[l.id] === c ? null : c)}>
+                      {c === 'keep' ? t.batch.keepIt : t.batch.junkIt}
+                    </button>
+                  ))}
+                </span>
+              )}
             </li>
           );
         })}
       </ol>
       {plan.wornFed && <p className="muted small">{t.batch.wornNote}</p>}
       <div className="batch-acts">
+        <button type="button" className="btn primary" disabled={undecided > 0} onClick={onWalk}>{t.batch.walk}</button>
+        {undecided > 0 && <span className="muted small">{t.batch.walkOff(undecided)}</span>}
         <button type="button" className="btn brec" onClick={() => setAsking(true)}>{t.batch.record}</button>
       </div>
       {asking && (

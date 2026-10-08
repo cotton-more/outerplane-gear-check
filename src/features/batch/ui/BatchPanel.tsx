@@ -5,13 +5,22 @@ import { useT } from '@/i18n';
 import type { BatchMode } from '@/features/batch/useBatchMode';
 import { BatchList } from './BatchList';
 import { BatchPlan } from './BatchPlan';
+import { BatchWalk } from './BatchWalk';
 
 export function BatchPanel({ ctx, m }: { ctx: Ctx; m: BatchMode }) {
+  if (m.view === 'walk' && m.plan && m.walk) return <BatchWalk ctx={ctx} batch={m.batch} plan={m.plan} walk={m.walk} onTick={m.tick} onDone={m.done} />;
   if (m.view === 'plan' && m.plan) {
-    return <BatchPlan ctx={ctx} plan={m.plan} onSkip={m.skip} onTwin={m.twin} onDone={m.done} />;
+    return <BatchPlan ctx={ctx} plan={m.plan} choice={m.batch.choice} undecided={m.walk?.undecided ?? 0} onSkip={m.skip} onTwin={m.twin}
+      onChoose={m.choose} onWalk={() => m.show('walk')} onDone={m.done} />;
   }
   return <BatchList ctx={ctx} items={m.batch.items} editing={m.editing} onFix={m.fix} onRemove={m.remove} onPlan={() => m.show('plan')} />;
 }
 
 // heading of the panel and of the sheet
-export const batchTitle = (t: ReturnType<typeof useT>, m: BatchMode): string => (m.view === 'plan' ? t.batch.title : t.batch.strip(m.batch.items.length));
+export const batchTitle = (t: ReturnType<typeof useT>, m: BatchMode): string => {
+  if (m.view === 'walk' && m.walk) {
+    const at = m.walk.steps.findIndex((x) => !m.batch.done.includes(x.key));
+    return t.batch.walkTitle(at < 0 ? m.walk.steps.length : at + 1, m.walk.steps.length);
+  }
+  return m.view === 'plan' ? t.batch.title : t.batch.strip(m.batch.items.length);
+};

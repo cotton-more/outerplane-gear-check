@@ -44,6 +44,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/batch/ui/BatchList.tsx': 'helper',         // pieces of the batch: the batch tip explains the mode
   'features/batch/ui/BatchPlan.tsx': 'helper',         // the batch plan: its lines say what to do, the batch tip explains the mode
   'features/batch/ui/BatchPanel.tsx': 'helper',        // list or plan in the sheet / column: the batch tip explains the mode
+  'features/batch/ui/BatchWalk.tsx': 'helper',         // the step-by-step walk: its steps say what to do, the batch tip (rev 2) names it
   'game/hero/HeroFace.tsx': 'helper',                  // портрет героя
   'game/hero/HeroName.tsx': 'helper',                  // имя героя одной строкой: приставка режется первой
   'game/icons/Img.tsx': 'helper',                      // картинки и значки
