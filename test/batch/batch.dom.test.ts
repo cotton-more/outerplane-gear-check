@@ -89,7 +89,7 @@ describe('«Партия» on a phone', () => {
     await start();
     await click($('.vbar .vb-reset'));
     expect(batch().items).toHaveLength(0);
-    expect($('.batch-note')?.textContent).toBe('Not all substats entered — not added.');
+    expect($('.batch-toast')?.textContent).toBe('Not all substats entered — not added.');
   });
 
   it('a piece with an early verdict but not all substats is not added either', async () => {
@@ -97,7 +97,7 @@ describe('«Партия» on a phone', () => {
     await start();
     await click($('.vbar .vb-reset'));
     expect(batch().items).toHaveLength(0);
-    expect($('.batch-note')?.textContent).toBe('Not all substats entered — not added.');
+    expect($('.batch-toast')?.textContent).toBe('Not all substats entered — not added.');
   });
 
   it('no roster: no «Batch» in «More»; a saved batch waits — no strip, the usual verdict', async () => {
@@ -206,25 +206,29 @@ describe('«Партия»: обход по шагам', () => {
     expect($$('.batch-items .brow').map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual(['#1E · Caren', '#2🔒 helmet']);
   });
 
-  it('one filter per batch: an Attack piece in a Speed batch is not added, the note says why', async () => {
+  it('one filter per batch: a form with another set takes the batch\'s set by itself', async () => {
     const attack = D.sets.find((s) => s.short === 'Attack')!.id;
     const items = [{ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK } }];
     await mount({ setId: attack, subs: GOOD.subs }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
+    expect($('[data-tour="pick"]')?.textContent).toContain('Speed');
     await click($('.vbar .vb-reset'));
-    expect(batch().items).toHaveLength(1);
-    expect($('.vbar')?.textContent).toContain('This batch is Speed armor.');
+    expect(batch().items[1].input.setId).toBe(speed);
   });
 
   it('the form is locked to the batch: in a Speed armor batch weapon slots and other sets are off, hotkeys too', async () => {
     const items = [{ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK } }];
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
     const slot = (id: string) => $(`[data-tour="slot"] [data-tour-item="${id}"]`) as HTMLButtonElement;
-    expect([slot('weapon').disabled, slot('accessory').disabled, slot('gloves').disabled]).toEqual([true, true, false]);
+    expect(['weapon', 'accessory', 'gloves'].map((id) => slot(id).getAttribute('aria-disabled'))).toEqual(['true', 'true', null]);
     await act(async () => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true })); });
     expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');   // «1» (weapon) did nothing
+    await click(slot('weapon'));                                        // a tap says why, the slot stays
+    expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');
+    expect($('.batch-toast')?.textContent).toBe('This batch is Speed armor. Anything else — a new batch.');
+    // the set is fixed: no ▾, a tap opens nothing
+    expect($('[data-tour="pick"]')?.classList.contains('locked')).toBe(true);
     await click($('[data-tour="pick"]'));
-    const sets = $$('.drawer .set') as HTMLButtonElement[];
-    expect(sets.filter((b) => !b.disabled).map((b) => b.textContent)).toEqual([expect.stringContaining('Speed')]);
+    expect($('.drawer .sets')).toBeNull();
   });
 
   it('the walk: equip at Caren by her slot list (E entry counts), substats as in the game, Breakthrough with the weak one; ✓ is saved', async () => {

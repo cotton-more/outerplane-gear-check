@@ -18,7 +18,7 @@ import { walkOf, type Walk } from './walk';
 
 export type BatchView = 'list' | 'plan' | 'walk' | null;
 // the form under a batch of a known kind (owner 2026-10-08): other slots and sets can't be picked — a new batch for them
-export interface BatchLock { slots: SlotId[]; set: string | null }
+export interface BatchLock { slots: SlotId[]; set: string | null; explain: () => void } // explain — a tap on a locked one: the note says why
 const ARMOR_SLOTS: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
 export interface BatchMode {
@@ -90,8 +90,8 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   };
   // fixing the only entry may change the kind — no lock then
   const lock: BatchLock | null = !kind || (editing !== null && batch.items.length === 1) ? null
-    : kind === 'weapon' || kind === 'accessory' ? { slots: [kind], set: null }
-    : { slots: ARMOR_SLOTS, set: kind.startsWith('set:') ? kind.slice(4) : null };
+    : kind === 'weapon' || kind === 'accessory' ? { slots: [kind], set: null, explain: () => setNote(kindText(kind)) }
+    : { slots: ARMOR_SLOTS, set: kind.startsWith('set:') ? kind.slice(4) : null, explain: () => setNote(kindText(kind)) };
   const slotKind = (slot: SlotId): BatchKind => (isArmor(slot) ? 'armor' : (slot as 'weapon' | 'accessory'));
 
   const toForm = () => { if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }); };

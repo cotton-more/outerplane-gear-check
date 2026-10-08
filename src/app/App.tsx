@@ -52,6 +52,7 @@ import { TipLayer } from '@/tour/TipLayer';
 import { TipsHelp } from '@/tour/TipsHelp';
 import { TourLayer } from '@/tour/TourLayer';
 import { openCharAction, reducer, type Action } from './appState';
+import { isArmor } from '@/game/data';
 import { countToDress } from '@/features/roster/charFilter';
 import { LangSwitch } from './shell/Switches';
 import { Help, Welcome, type InstallInfo } from './shell/Guide';
@@ -185,6 +186,10 @@ export function App() {
     dispatch(a);
   }, [lock, dispatch]);
   useHotkeys(s, formDispatch, layout, onReset);
+  // the batch's set goes onto the form by itself: the set field is fixed then (features/batch)
+  useEffect(() => {
+    if (lock?.set && isArmor(s.slot) && s.setId !== lock.set) dispatch({ type: 'set', setId: lock.set });
+  }, [lock?.set, s.slot, s.setId]); // eslint-disable-line react-hooks/exhaustive-deps
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });
@@ -196,7 +201,10 @@ export function App() {
   // сообщения с «Вернуть»: экипировки — на вкладке, где сделано; формы — на «Оценке», если нет первого
   const gearToast = !!msg && msg.tab === s.tab && !tour.run;
   const formToast = !!formUndo && s.tab === 'eval' && !tour.run && !gearToast;
-  const toastAt = useToastPlace((gearToast || formToast) && !layout.narrow, s.tab === 'eval' ? 'eval-in' : 'char-list');
+  // the batch's short notes («В этой партии — Attack-броня…», «Введены не все сабстаты…») — a toast: a line in the page
+  // made the form jump (owner 2026-10-08)
+  const batchToast = batchOn && !!batch.note && s.tab === 'eval' && !gearToast && !formToast;
+  const toastAt = useToastPlace((gearToast || formToast || batchToast) && !layout.narrow, s.tab === 'eval' ? 'eval-in' : 'char-list');
   // телефон: сообщение экипировки лежит и поверх шторки вердикта — внизу шторки место, чтобы строку под ним прокрутить
   useEffect(() => {
     document.body.classList.toggle('toast-on', gearToast && layout.narrow);
@@ -223,7 +231,7 @@ export function App() {
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
-              strip={batchOn ? <BatchStrip n={batch.batch.items.length} note={batch.note} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
+              strip={batchOn ? <BatchStrip n={batch.batch.items.length} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
                 onWorn={(c) => batch.addWorn(c, s.slot)} onLock={() => batch.addLock(s.slot)} /> : null}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} />
             {!layout.narrow && (batchOn
@@ -242,7 +250,7 @@ export function App() {
           </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
-          hint={batchOn ? batch.note ?? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length) : t.batch.empty) : hint}
+          hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length) : t.batch.empty) : hint}
           resetLabel={batchNext} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
           onOpen={batchOn ? () => batch.show('list') : () => setVerdictOpen(true)} />
         <OnboardingStrips onb={onb} />
@@ -261,6 +269,7 @@ export function App() {
         )}
         {equipOpen && !tour.run && <EquipSheet ctx={ctx} viewOf={vm.viewOf} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
+        {batchToast && <Toast className="batch-toast" style={toastAt} text={batch.note!} action="" />}
         {moreOpen && (
           <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
             rosterApi={ros.rosterUi} gear={gear} onBackup={ros.onBackup}

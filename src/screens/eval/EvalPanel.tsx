@@ -121,8 +121,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         {strip ?? (hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />)}
         <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
-            <button key={sl.id} type="button" className="slot" aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name} disabled={!!lock && !lock.slots.includes(sl.id)}
-              onClick={() => dispatch({ type: 'slot', slot: sl.id })} {...tourItem(sl.id)}>
+            <button key={sl.id} type="button" className={lock && !lock.slots.includes(sl.id) ? 'slot off' : 'slot'} aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
+              aria-disabled={(lock && !lock.slots.includes(sl.id)) || undefined}
+              onClick={() => (lock && !lock.slots.includes(sl.id) ? lock.explain() : dispatch({ type: 'slot', slot: sl.id }))} {...tourItem(sl.id)}>
               <SlotIcon slot={sl.id} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
             </button>
           ))}
@@ -138,7 +139,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           </div>
           {armor
             ? <>
-              <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet} onClick={() => setOpen('set')} at="pick" need={need === 'set'} />
+              <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet}
+                onClick={() => (lock?.set && s.setId === lock.set ? lock.explain() : setOpen('set'))} locked={!!lock?.set && s.setId === lock.set} at="pick" need={need === 'set'} />
               {btChip}
             </>
             : <>

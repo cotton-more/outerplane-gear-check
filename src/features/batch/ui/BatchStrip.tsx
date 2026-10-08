@@ -1,5 +1,5 @@
 // The strip above the form in the batch mode, like «Только для · Caren»: «Партия · 7», «Список ▸», ✕. One line: in
-// landscape 812×375 and in a 420×390 window the form must not slide down. note — «Введены не все сабстаты…».
+// landscape 812×375 and in a 420×390 window the form must not slide down. Its short notes are a toast (App).
 // In it (.x/0140-batch-walk): «E · надето» — a piece worn by a hero (picker: heroes wearing this slot that fits the
 // batch) and «🔒 · отложено» — a locked piece of the form's slot; neither needs substats. A tall phone wraps them to a
 // second line inside the strip; a short window (landscape, split screen) keeps one line with «E» / «🔒» only (batch.css)
@@ -11,8 +11,8 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
-export function BatchStrip({ n, note, cands, onList, onEnd, onWorn, onLock }: {
-  n: number; note: string | null; cands: () => Char[];
+export function BatchStrip({ n, cands, onList, onEnd, onWorn, onLock }: {
+  n: number; cands: () => Char[];
   onList: () => void; onEnd: () => void; onWorn: (c: string) => void; onLock: () => void;
 }) {
   const t = useT();
@@ -32,7 +32,7 @@ export function BatchStrip({ n, note, cands, onList, onEnd, onWorn, onLock }: {
         </span>
         <CloseButton className="tryon-x" label={t.batch.end} title={t.batch.end} onClick={onEnd} />
       </div>
-      {(note || n === 0) && <p className="batch-note muted small">{note ?? t.batch.empty}</p>}
+      {n === 0 && <p className="batch-note muted small">{t.batch.empty}</p>}
       {pick && (
         <Sheet title={t.batch.whose} onClose={() => setPick(null)}>
           <div className="batch-whose">
