@@ -18,9 +18,10 @@ export function BatchPanel({ ctx, m }: { ctx: Ctx; m: BatchMode }) {
 
 // heading of the panel and of the sheet
 export const batchTitle = (t: ReturnType<typeof useT>, m: BatchMode): string => {
+  // «Обход · 2 из 3» — steps ticked ✓ of all (owner 2026-10-08: «1 из 3» with nothing ticked read as a bug)
   if (m.view === 'walk' && m.walk) {
-    const at = m.walk.steps.findIndex((x) => !m.batch.done.includes(x.key));
-    return t.batch.walkTitle(at < 0 ? m.walk.steps.length : at + 1, m.walk.steps.length);
+    const keys = new Set(m.walk.steps.map((x) => x.key));
+    return t.batch.walkTitle(m.batch.done.filter((k) => keys.has(k)).length, m.walk.steps.length);
   }
   return m.view === 'plan' ? t.batch.title : t.batch.strip(m.batch.items.length);
 };

@@ -246,8 +246,10 @@ describe('«Партия»: обход по шагам', () => {
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
     expect(steps[1].textContent).toContain('row 1 — no. 1'); // the taken-off helmet sits where its «E» entry is
+    expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
     await click(steps[0].querySelector('.bcheck'));
     expect(batch().done).toEqual(['eq:3']);
+    expect($('.drawer-h h3')?.textContent).toBe('Walk · 1 of 3');
     expect($('.bwalk .bcheck')?.getAttribute('aria-checked')).toBe('true');
   });
 });
