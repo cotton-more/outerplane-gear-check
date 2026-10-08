@@ -30,14 +30,16 @@ export interface Off { c: Char; piece: Piece; was: 'worn' | 'stash' }
 export interface Line { id: string; n: number; off?: Off; input: ItemInput; fate: Fate }
 export type Op =
   | { c: string; r: PutResult }                                          // «Надень» (putOn) or «Отложи» (stashOn)
-  | { c: string; drop: Piece; back: (x: GearStore) => GearStore };       // another hero's reserve leaves (removeFrom)
+  | { c: string; drop: Piece; back: (x: GearStore) => GearStore }        // another hero's reserve leaves (removeFrom)
+  | { bt: string; was: Piece['bt'] };                                    // a recorded piece fed four times gets «T4»
 export interface Counts { wear: number; keep: number; feed: number; junk: number }
 export interface Plan {
   lines: Line[];
   st: GearStore;                     // the store after the plan, «T4» marks included
   ops: Op[];                         // in the order made; «Вернуть» undoes them newest first
-  t4: string[];                      // records the plan feeds four times — «T4» on «Сделал» (Q6)
-  wornFed: boolean;                  // a feed goes to a recorded piece: the «до 4 — остановись на T4» footnote
+  t4: string[];                      // records the plan feeds four times — «T4» on «Записать план»: any tier below T4 + 4
+                                     // feeds is T4 (owner 2026-10-08: Viella's worn gloves weren't marked)
+  wornFed: boolean;                  // a recorded piece gets fewer than 4: the «до 4 — остановись на T4» footnote
   counts: Counts;
 }
 
@@ -219,9 +221,12 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     else if (f.kind === 'wear' && st.worn?.[f.c.id]?.[st.pieces[id].slot] !== id) fates.set(line, { kind: 'keep', c: f.c, t4: false });
   }
 
-  // «T4»: a new piece the plan feeds four times (Q6); feeds to recorded pieces — the player marks it in the game
-  const t4 = [...made.keys()].filter((id) => (feeds.get(id) ?? 0) >= FEEDS && st.pieces[id] && st.pieces[id].bt !== 4);
+  // «T4»: a piece the plan feeds four times — a new one (Q6) or a recorded one: from any tier below T4, four feeds reach
+  // T4 (the game takes no more than it needs). A recorded one's mark is an op of its own, for «Вернуть»
+  const t4 = [...feeds].filter(([id, k]) => k >= FEEDS && st.pieces[id] && st.pieces[id].bt !== 4).map(([id]) => id);
+  for (const id of t4) if (!made.has(id)) ops.push({ bt: id, was: st.pieces[id].bt });
   if (t4.length) st = { ...st, pieces: { ...st.pieces, ...Object.fromEntries(t4.map((id) => [id, { ...st.pieces[id], bt: 4 as const }])) } };
+  wornFed = [...feeds].some(([id, k]) => !made.has(id) && k < FEEDS);
   const t4Of = new Set(t4.map((id) => made.get(id)!));
 
   const lines: Line[] = [];
@@ -248,6 +253,9 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
 // during these seconds). «T4» marks sit on records the plan made: undoing them removes the marks too
 export function undoPlan(st: GearStore, plan: Pick<Plan, 'ops'>): GearStore {
   let x = st;
-  for (const op of [...plan.ops].reverse()) x = 'drop' in op ? op.back(x) : undoPut(x, op.c, op.r);
+  for (const op of [...plan.ops].reverse()) {
+    if ('bt' in op) x = x.pieces[op.bt] ? { ...x, pieces: { ...x.pieces, [op.bt]: { ...x.pieces[op.bt], bt: op.was } } } : x;
+    else x = 'drop' in op ? op.back(x) : undoPut(x, op.c, op.r);
+  }
   return x;
 }

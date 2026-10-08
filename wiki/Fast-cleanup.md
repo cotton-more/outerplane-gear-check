@@ -49,7 +49,8 @@ accessory) and other sets can't be picked on the form — start a new batch for 
 3. **"Plan it"** — a line per piece: "Equip on Caren", "Equip on Caren — instead of the helmet", "Set aside for Rin",
    "Feed to #4", "Feed to Kappa's helmet", "Dismantle". A piece the plan takes off a hero gets its own line right
    under it ("Caren's removed helmet …"). One target takes up to four pieces; a new piece fed four times reaches T4
-   ("· T4 after feeding"). A piece that looks like one already set aside says so; if you have two of them, tap "It's
+   ("· T4 after feeding"). Four feeds take a worn piece to T4 too — "Record the plan" marks "T4" itself; fewer than
+   four — once it's at T4, tap "T4" on its card. A piece that looks like one already set aside says so; if you have two of them, tap "It's
    a different one". **"Don't take"** on a line — plan it again without that hero. Decide **"Maybe"** right away:
    "Set aside" or "Dismantle" — the walk waits for it.
 4. **"Walk ▸"** — steps by game screen, in an order where the numbers don't drift (equipping and taking off don't move

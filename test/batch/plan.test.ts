@@ -260,3 +260,23 @@ describe('plan of a batch', () => {
     }
   });
 });
+
+// owner 2026-10-08 (Viella's gloves): a recorded piece below T4 fed four times is T4 — from any tier, the game takes no more
+describe('«T4» on a recorded piece fed four times', () => {
+  it('Caren\'s worn T0 helmet gets four weak copies — marked T4; «Вернуть» takes the mark back', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), good('cH')] });
+    const plan = planBatch(ctx, st, ['w1', 'w2', 'w3', 'w4'].map((id, i) => E({ ...weak(id), lit: { SPD: 1, RES: 1 + (i % 2), EFF: 1 + (i >> 1), HP: 1 } })));
+    expect(plan.lines.filter((l) => l.fate.kind === 'feed')).toHaveLength(4);
+    expect(plan.t4).toEqual(['cH']);
+    expect(plan.st.pieces.cH.bt).toBe(4);
+    expect(plan.wornFed).toBe(false);                    // fed four — no «отметь T4» footnote
+    expect(undoPlan(plan.st, plan).pieces.cH.bt).toBe(0);
+  });
+
+  it('fed fewer than four — not marked, the footnote stays', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), good('cH')] });
+    const plan = planBatch(ctx, st, [E(weak('w1'))]);
+    expect(plan.t4).toEqual([]);
+    expect(plan.wornFed).toBe(true);
+  });
+});

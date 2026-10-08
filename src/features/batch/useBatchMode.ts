@@ -131,7 +131,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
       close();
       dispatch({ type: 'reset' });
       // records «Надеть» dropped in other slots (no longer needed) — said, as after a single «Надеть», never silently
-      const pruned = [...new Set(p.ops.filter((o) => 'r' in o && o.r.removed.some((x) => x.slot !== o.r.slot)).map((o) => ctx.idx.CHAR[o.c]?.name ?? ''))];
+      const pruned = [...new Set(p.ops.flatMap((o) => ('r' in o && o.r.removed.some((x) => x.slot !== o.r.slot) ? [ctx.idx.CHAR[o.c]?.name ?? ''] : [])))];
       say({
         text: t.batch.recorded(p.counts.wear, p.counts.keep), note: pruned.length ? t.fit.pruned(pruned.join(', ')) : '', tab: 'eval',
         undo: (x) => undoPlan(x, p),
