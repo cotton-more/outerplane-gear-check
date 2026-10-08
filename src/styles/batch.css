@@ -56,5 +56,7 @@ html.narrow .batch-marks + .tryon-x { margin-left: auto; }
 .bstep.done .bstep-t { opacity: .6; }
 .bstep-subs { display: grid; gap: 1px; font-size: 12.5px; color: var(--ink-2); }
 .bstep-subs span { white-space: nowrap; }
-/* the batch's short notes as a toast (App batchToast): no button, the text wraps within the screen */
-.toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center; text-wrap: balance; }
+/* the batch's short notes as a toast (App batchToast): no button, the text wraps within the screen; yellow — not an
+   error, but it should catch the eye (owner 2026-10-08) */
+.toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center; text-wrap: balance;
+  border-color: var(--temp); background: var(--temp-soft); }
