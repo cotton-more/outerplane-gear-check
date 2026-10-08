@@ -65,7 +65,8 @@ accessory) and other sets can't be picked on the form — start a new batch for 
       whose — on the hero's card, the Pool tab.
    3. **Dismantle — in one selection:** "row 2 — no. 3, no. 7 · row 5 — no. 1". Pieces locked in step 2 can't be
       dismantled even by mistake.
-   4. **Breakthrough:** "Caren's helmet → Breakthrough: 4 from the list, any" — material is interchangeable, worn and
+   4. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4 from the list, any — dismantle what doesn't fit" (the app doesn't
+      know the exact tier below T4, the game takes no more than it needs) — material is interchangeable, worn and
       locked pieces aren't in that list; "first unlock 2 set-aside" — when the plan feeds a reserve.
 
    Tick steps ✓ — the walk is saved, even if the phone unloads the page. Substats don't match — the batch and the game
