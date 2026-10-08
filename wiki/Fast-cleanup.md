@@ -54,8 +54,9 @@ armor. Anything else — a new batch.").
    "Set aside" or "Dismantle" — the walk waits for it.
 4. **"Walk ▸"** — steps by game screen, in an order where the numbers don't drift (equipping and taking off don't move
    a piece — it only gains or loses its E):
-   1. **Equip — at the heroes:** "Caren → helmet → No. 7 in the list" — the number in the hero's slot list; below,
-      the substats as the game shows them after a tap: "check: LV 3 Crit Chance +9.0%, …".
+   1. **Equip — at the heroes:** "Caren → helmet → No. 7 in the list" — the number in the hero's slot list; the class
+      icon by the name and the name's colour (the element) help find the hero with the game's roster filters. Below, in
+      a column, the substats as the game shows them after a tap: "LV 3 Crit Chance +9.0%" — check them.
    2. **Lock** what you keep: "Lock: row 4, no. 3" (10 pieces per row).
    3. **Dismantle — in one selection:** "row 2 — no. 3, no. 7 · row 5 — no. 1". Pieces locked in step 2 can't be
       dismantled even by mistake.

@@ -11,6 +11,7 @@ import { useT } from '@/i18n';
 import { subsText } from '@/game/text';
 import type { Fate, Line, Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
+import { withHero } from '@/game/hero/HeroTag';
 import { AskSheet } from '@/shared/ui/AskSheet';
 
 export function fateText(t: Texts, f: Fate): string {
@@ -23,6 +24,16 @@ export function fateText(t: Texts, f: Fate): string {
     case 'maybe': return t.batch.maybe(f.heroes.slice(0, 3).map((c) => c.name).join(', '));
     case 'junk': return t.batch.junk;
     default: return t.batch.none;
+  }
+}
+
+// the hero a fate sends the player to (tagged in the line: class icon, element colour)
+function heroIn(f: Fate): Char | null {
+  switch (f.kind) {
+    case 'wear': case 'keep': case 'reserve': return f.c;
+    case 'feed': return 'entry' in f.to ? null : f.to.c;
+    case 'same': return f.same.c;
+    default: return null;
   }
 }
 
@@ -59,7 +70,7 @@ export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoo
                   ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit))
                   : t.batch.off(l.off.piece.slot, l.off.c.name)}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
-              <span className="bfate">{fateText(t, l.fate)}</span>
+              <span className="bfate">{withHero(fateText(t, l.fate), heroIn(l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
               {l.fate.kind === 'maybe' && (

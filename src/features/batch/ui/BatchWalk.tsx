@@ -2,6 +2,8 @@
 // a ✓ (saved in the batch: the walk survives a reload). A piece the batch has no number for is named by its description.
 // At the end — «Всё сделано — Записать план» with the same confirm as on the plan.
 import { useState } from 'react';
+import type { Char } from '@/game/data/types';
+import { withHero } from '@/game/hero/HeroTag';
 import type { Ctx } from '@/game/context';
 import { useT, type Texts } from '@/i18n';
 import { subsText } from '@/game/text';
@@ -14,16 +16,19 @@ import { gameSubs, rowOf, type Step, type Walk, type Where } from '@/features/ba
 const desc = (t: Texts, w: Exclude<Where, { n: number }>): string =>
   (w.was === 'stash' ? t.batch.offStash(w.off.slot, w.c.name, subsText(w.off.lit)) : `${t.batch.off(w.off.slot, w.c.name)} (${subsText(w.off.lit)})`);
 
-function stepText(ctx: Ctx, t: Texts, s: Step): { title: string; more: string[] } {
+// a step: its title (with the hero to find, tagged), lines under it, and — for an equip — the substats as a column,
+// line for line as the game's middle panel shows them (owner 2026-10-08: no «сверь», no wrapping inside a line)
+interface StepText { title: string; hero: Char | null; more: string[]; subs?: string[] }
+function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
     case 1: return {
       title: s.k !== null ? t.batch.equipStep(s.c.name, s.slot, s.k) : t.batch.equipStepAt(s.c.name, s.slot, 'n' in s.where ? `#${s.where.n}` : desc(t, s.where)),
-      more: [`${t.batch.check} ${gameSubs(ctx.idx, s.subs).join(', ')}`],
+      hero: s.c, more: [], subs: gameSubs(ctx.idx, s.subs),
     };
     case 2: {
-      if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(t, s.where)), more: [] };
+      if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(t, s.where)), hero: s.where.c, more: [] };
       const { r, p } = rowOf(s.where.n);
-      return { title: t.batch.lockStep(r, p), more: [] };
+      return { title: t.batch.lockStep(r, p), hero: null, more: [] };
     }
     case 3: {
       const rows = new Map<number, number[]>();
@@ -33,12 +38,13 @@ function stepText(ctx: Ctx, t: Texts, s: Step): { title: string; more: string[] 
         const { r, p } = rowOf(w.n);
         rows.set(r, [...(rows.get(r) ?? []), p]);
       }
-      return { title: t.batch.stages[2], more: [...[...rows].map(([r, ps]) => t.batch.junkRow(r, ps)), ...loose] };
+      return { title: t.batch.stages[2], hero: null, more: [...[...rows].map(([r, ps]) => t.batch.junkRow(r, ps)), ...loose] };
     }
     case 4: {
       const where = 'worn' in s.target ? t.batch.btWorn(s.target.slot, s.target.worn.name)
         : 'n' in s.target.where ? t.batch.btAt(rowOf(s.target.where.n).r, rowOf(s.target.where.n).p) : desc(t, s.target.where);
-      return { title: t.batch.btStep(where, s.n), more: s.unlock ? [t.batch.btUnlock(s.unlock)] : [] };
+      const hero = 'worn' in s.target ? s.target.worn : 'n' in s.target.where ? null : s.target.where.c;
+      return { title: t.batch.btStep(where, s.n), hero, more: s.unlock ? [t.batch.btUnlock(s.unlock)] : [] };
     }
   }
 }
@@ -61,12 +67,16 @@ export function BatchWalk({ ctx, batch, plan, walk, onTick, onDone }: {
             {st !== 3 && <h4>{t.batch.stages[st - 1]}</h4>}
             <ol className="bgear-list">
               {steps.map((s) => {
-                const { title, more } = stepText(ctx, t, s);
+                const { title, hero, more, subs } = stepText(ctx, t, s);
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
                     <button type="button" className="bcheck" role="checkbox" aria-checked={done} aria-label={title} onClick={() => onTick(s.key)}>{done ? '✓' : ''}</button>
-                    <span className="bstep-t"><b>{title}</b>{more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}</span>
+                    <span className="bstep-t">
+                      <b>{withHero(title, hero)}</b>
+                      {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
+                      {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}
+                    </span>
                   </li>
                 );
               })}

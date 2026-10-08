@@ -139,7 +139,7 @@ and verdict — gear rows and hero mode), it's a screen — `screens/`. `i18n` a
 
 | What | Where |
 |---|---|
-| hero portrait; name on one line (prefix dimmed and truncated first), on two lines (`stacked`: tile, card header) and name by id | `game/hero/HeroFace`, `game/hero/HeroName` (`HeroName`, `heroName`) |
+| hero portrait; name on one line (prefix dimmed and truncated first), on two lines (`stacked`: tile, card header) and name by id | `game/hero/HeroFace`, `game/hero/HeroName` (`HeroName`, `heroName`); a hero to find in the game — class icon + name in the element's colour: `game/hero/HeroTag` (`HeroTag`, `withHero`) |
 | substat chip "ATK 3" (color — whether it counts for the hero), level buttons 1–6 and the "can't be more than N" row | `game/item/SubToken`, `game/item/SubLevels` |
 | set name, "Speed ×4" | `game/set/setName` (`setName`, `partText`) |
 | piece name and main, Breakthrough label (`BtLabel` — one for all piece rows), bonus text, piece caption | `features/gear/ui/pieceText` |

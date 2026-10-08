@@ -238,3 +238,11 @@ html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
 
 /* текст только для экранного диктора */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* a hero to find in the game (game/hero/HeroTag): class icon + name in the element's colour */
+.htag { display: inline-flex; align-items: center; gap: 3px; vertical-align: bottom; }
+.htag .ico, .htag img { width: 16px; height: 16px; flex: none; }
+.htag.el-fire b { color: var(--el-fire); }
+.htag.el-water b { color: var(--el-water); }
+.htag.el-earth b { color: var(--el-earth); }
+.htag.el-light b { color: var(--el-light); }
+.htag.el-dark b { color: var(--el-dark); }

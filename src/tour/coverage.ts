@@ -47,6 +47,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/batch/ui/BatchWalk.tsx': 'helper',         // the step-by-step walk: its steps say what to do, the batch tip (rev 2) names it
   'game/hero/HeroFace.tsx': 'helper',                  // портрет героя
   'game/hero/HeroName.tsx': 'helper',                  // имя героя одной строкой: приставка режется первой
+  'game/hero/HeroTag.tsx': 'helper',                   // hero to find in the game: class icon + element colour
   'game/icons/Img.tsx': 'helper',                      // картинки и значки
   'game/item/SubLevels.tsx': 'helper',                 // кнопки уровня сабстата и строка предела: их объясняют подсказки формы и карточки вещи
   'game/item/SubToken.tsx': 'helper',                  // сабстат вещи чипом в строках экипировки

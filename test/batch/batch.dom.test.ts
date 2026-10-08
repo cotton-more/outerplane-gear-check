@@ -227,7 +227,7 @@ describe('«Партия»: обход по шагам', () => {
     expect(batch().choice).toEqual({ '3~1': 'junk' });
     await click(byText('.batch button', 'Walk ▸'));
     const steps = $$('.bwalk .bstep');
-    expect(steps.map((s) => s.querySelector('b')?.textContent)).toEqual([
+    expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
       'Caren → helmet → No. 3 in the list',               // her slot list: the «E» entry (#1), the weak one (#2), this (#3)
       '3. Dismantle — in one selection',
       "Caren's helmet → Breakthrough: 1 from the list, any",
