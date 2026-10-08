@@ -29,6 +29,8 @@ const P = (id: string, slot: string, setId: string | null, yellow: Record<string
   ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: null, at: '', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
   ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+// a pinned set (owner 2026-10-08, (c)): only then are build-set pieces kept by set («best Speed», «Оставь (а)»)
+const pinned = (build: string, set: string) => ({ [caren.id]: `${caren.id}/${build}#${set}x4` });
 const WEAK = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4 });
 
 beforeAll(() => {
@@ -88,12 +90,12 @@ describe('«Надеть» и «Вернуть»', () => {
   // доработка 2 шага 10 (решение владельца, refute-10 п. 6): было — после «Заменить» вещь оставалась на форме и
   // сравнивалась со своей записью («на уровне», кнопки нет). Теперь форма — как после «Следующий»
   it('карточка: «▲ +1.95 pts Caren», кнопка под ней — «Заменить шлем Caren»; после — форма пуста (как «Следующий»)', async () => {
-    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
+    await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } }, pin: pinned('Speed', speed) }) });
     expect($('.vcard .vc-title')?.textContent).toBe('better than on Caren');
     expect($('.vcard .vc-vs')?.textContent).toBe('+1.95 ptsCaren');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
-    // прежний шлем на T4 — лучший Speed-шлем Caren на T4 (.x/0085 FORMULA §5 п. 3): в пуле остаётся
+    // прежний шлем на T4 — лучший Speed-шлем Caren на T4 (.x/0085 FORMULA §5 п. 3, Speed закреплён): в пуле остаётся
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2']);
     expect($('.vcard')).toBeNull();
     expect($('.vc-equip')).toBeNull();
@@ -579,7 +581,7 @@ describe('карточка персонажа', () => {
 
   it('«Пул»: вещи по слотам, справа — почему держится; ненужная — «no longer needed» и «Убрать у Caren» с «Вернуть»; внизу — «Rate a piece for Caren»', async () => {
     const weak = P('p1', 'helmet', speed, { RES: 1 }), strong = P('p2', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 3 }), glove = P('p3', 'gloves', speed, { CHC: 1 });
-    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([glove, weak, strong], { [caren.id]: ['p3', 'p1', 'p2'], [rin.id]: ['p2'] }, { worn: { [caren.id]: { gloves: 'p3' } } }), roster: [caren.id, rin.id] });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([glove, weak, strong], { [caren.id]: ['p3', 'p1', 'p2'], [rin.id]: ['p2'] }, { worn: { [caren.id]: { gloves: 'p3' } }, pin: pinned('Speed', speed) }), roster: [caren.id, rin.id] });
     await click(byText('.btabs [role="tab"]', 'Pool'));
     expect($$('.pool-row .pool-why').map((w) => w.textContent)).toEqual(['no longer needed', 'best Speed', 'worn']);
     expect($('.pool')?.textContent).not.toContain('Rin');
@@ -593,7 +595,7 @@ describe('карточка персонажа', () => {
 
   it('шторка общей вещи: причина без «и у Kappa»; «Убрать у Caren» — у Kappa остаётся', async () => {
     const helm = P('p1', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
-    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }) });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }, { pin: pinned('Speed', speed) }) });
     await openPiece();
     expect($('.piece')?.textContent).toContain('best Speed');
     expect($('.piece')?.textContent).not.toContain('Kappa');
@@ -1154,12 +1156,12 @@ describe('вердикт «статы + сеты»', () => {
     expect(byText('.v-vs .vs-row', 'Rin')?.textContent).toContain('Rin gets +2.95 pts');
   });
 
-  it('T5.3: Pen-шлем у Caren в Def ×4 — «Оставь (а)»: строка «пока не надевай», вместо «Надеть» — «Отложить»', async () => {
+  it('T5.3: Pen-шлем у Caren в Def ×4, Penetration закреплён — «Оставь (а)»: строка «пока не надевай», вместо «Надеть» — «Отложить»', async () => {
     const def = set('Defense');
     const pcs = [P('c1', 'helmet', def, { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c2', 'armor', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }),
       P('c3', 'gloves', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c4', 'shoes', def, { 'DEF%': 3, CHC: 3, CHD: 1, SPD: 1 }, { bt: 4 })];
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Penetration'), subs: { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, t4: true },
-      { gear: G(pcs, { [caren.id]: ['c1', 'c2', 'c3', 'c4'] }, { worn: { [caren.id]: { helmet: 'c1', armor: 'c2', gloves: 'c3', shoes: 'c4' } } }) });
+      { gear: G(pcs, { [caren.id]: ['c1', 'c2', 'c3', 'c4'] }, { worn: { [caren.id]: { helmet: 'c1', armor: 'c2', gloves: 'c3', shoes: 'c4' } }, pin: pinned('Pen', set('Penetration')) }) });
     expect($('.vcard .stamp')?.textContent).toBe('Keep');
     expect($('.vcard .vc-title')?.textContent).toBe("Caren's best Penetration helmet");
     expect($('.vc-equip')).toBeNull();
@@ -1177,7 +1179,7 @@ describe('вердикт «статы + сеты»', () => {
       P('c3', 'gloves', def, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('c4', 'shoes', def, { 'DEF%': 3, CHC: 3, CHD: 1, SPD: 1 }, { bt: 4 })];
     const PEN = { setId: set('Penetration'), subs: { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 } };
     await mount({ slot: 'helmet', grade: 'unique' }, PEN,
-      { gear: G(pcs, { [caren.id]: ['c1', 'c2', 'c3', 'c4'] }, { worn: { [caren.id]: { helmet: 'c1', armor: 'c2', gloves: 'c3', shoes: 'c4' } } }) });
+      { gear: G(pcs, { [caren.id]: ['c1', 'c2', 'c3', 'c4'] }, { worn: { [caren.id]: { helmet: 'c1', armor: 'c2', gloves: 'c3', shoes: 'c4' } }, pin: pinned('Pen', set('Penetration')) }) });
     expect($('.vc-stash')?.textContent).toBe('Set aside for Caren');
     await click($('.vc-stash'));
     expect($('.gear-toast')?.textContent).toBe('Set aside for Caren: helmet.Undo');

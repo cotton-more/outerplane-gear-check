@@ -157,8 +157,10 @@ This is a reference, **view only**: nothing is selected here and nothing is asse
 
 ### Pin a set
 
-By default the hero is evaluated "By stats". If you want one specific set, press **"Pin a set"** and choose from the
-sets of their builds (the label says the build and "k of 4" — how many pieces of it the hero already has). The sheet
+By default the hero is evaluated "By stats": a piece is kept for them only if it's worn, in their best layout or strong
+by stats — "best of its set" alone is no reason. If you want one specific set, press **"Pin a set"** and choose from the
+sets of their builds (the label says the build and "k of 4" — how many pieces of it the hero already has). Then the best
+piece of that set in each slot is kept for them, from the very first one (**best {set}**, **best {set} at T4**). The sheet
 warns: armor of other sets won't be taken, even with good stats. To undo — "By stats — not pinned". The pinned set is in
 the blue "Pinned: …" plate where the button was. What's worn from other sets stays until a piece of the set takes the
 slot. A pinned hero's order in a trade is one: the pin ([Trading gear](Trading-gear)). If outerpedia renames the build and the

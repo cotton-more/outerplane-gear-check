@@ -449,7 +449,9 @@ describe('replace — на одну введённую вещь', () => {
 
     await click($('.vc-equip'));
 
-    expect(stored('gear').pools[caren.id]).toEqual(['p1', 'p3']);
+    // p0 (weak Defense, not worn) is already «больше не нужна» before this «Надеть» — no pin, so no «best Defense» (owner
+    // 2026-10-08, (c)); «Надеть» removes only what it displaces itself, so p0 stays for the player's «Убрать»
+    expect(stored('gear').pools[caren.id]).toEqual(['p0', 'p1', 'p3']);
   });
 
   it('смена слота снимает replace: на перчатках и снова на шлеме — «Надеть», не «Заменить»', async () => {

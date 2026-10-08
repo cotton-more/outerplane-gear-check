@@ -10,14 +10,22 @@ import { poolInfo, pieceBar } from '@/features/gear/pool/info';
 import { piecePoints } from '@/features/gear/layout';
 import { verdictOf, type HeroRes, type Result } from '@/features/gear/verdict';
 import { ARMOR, char, gen, idx, mk, prof, randArmor, randPool, setId, twenty, type Gen } from './statSets';
+import { pinnedProfile, pinOf, pinOptions, type Profile } from '@/game/build/profile';
 
 const inputOf = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt === 4 ? 4 : p.bt === null ? null : 0 });
 
 // мир: ростер (имена), пулы по именам и надетое (по умолчанию — все вещи пула надеты)
 interface World { ctx: Ctx; view: PoolView; v: (x: Piece) => Result | null; hero: (name: string, r: Result) => HeroRes }
-function world(roster: string[], pools: Record<string, Piece[]> = {}, worn?: Record<string, string[]>): World {
+// pins — hero name → a set short: that hero's first set combo with it is pinned (owner 2026-10-08, (c): build-set pieces
+// are kept only for a pinned set)
+// 'Penetration+Defense' — a combo with all of them
+const pinFor = (name: string, short: string): string =>
+  pinOptions(char(name)).find((o) => short.split('+').every((s) => o.combo.some((p) => idx.SET[p.set]?.short === s)))!.key;
+const pinned = (name: string, short: string): Profile => pinnedProfile(prof(name), pinOf(char(name), pinFor(name, short))!);
+function world(roster: string[], pools: Record<string, Piece[]> = {}, worn?: Record<string, string[]>, pins: Record<string, string> = {}): World {
   const ctx = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster.map((n) => char(n).id)));
-  const st = { pieces: {} as Record<string, Piece>, pools: {} as Record<string, string[]>, worn: {} as Record<string, Worn> };
+  const st = { pieces: {} as Record<string, Piece>, pools: {} as Record<string, string[]>, worn: {} as Record<string, Worn>,
+    pin: Object.fromEntries(Object.entries(pins).map(([n, short]) => [char(n).id, pinFor(n, short)])) };
   for (const [name, list] of Object.entries(pools)) {
     const id = char(name).id;
     for (const p of list) st.pieces[p.id] = p;
@@ -115,13 +123,14 @@ describe('T5 вердикт новой вещи', () => {
     expect(w.hero('Rin', r).alsoWear.map((p) => p.id)).toEqual([]);
   });
 
-  it('T5.3: Pen-шлем 4,95 у Caren в Def ×4 → «Оставь (а)»', () => {
-    const w = world(['Caren'], { Caren: cDefs() });
+  it('T5.3: Pen-шлем 4,95 у Caren в Def ×4 → «Оставь (а)», если Penetration закреплён; без закрепления — по статам, не «Оставь (а)»', () => {
     const x = mk('penH', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 });
     expect(piecePoints(prof('Caren'), x)).toBeCloseTo(4.95, 9);
-    const r = w.v(x)!;
+    const r = world(['Caren'], { Caren: cDefs() }, undefined, { Caren: 'Penetration' }).v(x)!;
     expect(kindOf(r)).toBe('keep a');
     expect(r.named[0].c.name).toBe('Caren');
+    // owner 2026-10-08, (c): no pin — the hero is wanted by stats; 4,95 is no stronger than the worn Defense helmet
+    expect(kindOf(world(['Caren'], { Caren: cDefs() }).v(x))).not.toBe('keep a');
   });
 
   it('T5.4: Pen-шлем Anarky на T0 → «Оставь (а)» + «сделай Breakthrough до T4»; на T4 — без строки', () => {
@@ -131,7 +140,7 @@ describe('T5 вердикт новой вещи', () => {
       mk('pG', 'gloves', 'Penetration', { 'DEF%': 2, CHC: 3, CHD: 1, SPD: 2 }),
       mk('pB', 'shoes', 'Penetration', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }),
     ];
-    const w = world(['Anarky'], { Anarky: pool });
+    const w = world(['Anarky'], { Anarky: pool }, undefined, { Anarky: 'Penetration' });
     const r0 = w.v(mk('pH0', 'helmet', 'Penetration', { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }, 0))!;
     expect(kindOf(r0)).toBe('keep a');
     expect(r0.named[0].needT4).toEqual({ set: setId('Penetration'), n: 2 });
@@ -191,16 +200,16 @@ describe('T5 вердикт новой вещи', () => {
     }
   });
 
-  it('T5.7b: годный Speed-шлем при запасе в пуле → «Оставь (а)» и запасная — ему в Breakthrough; потом она «больше не нужна»', () => {
+  it('T5.7b: годный Speed-шлем при запасе в пуле → «Оставь (а)» (Speed закреплён) и запасная — ему в Breakthrough; потом она «больше не нужна»', () => {
     const [, sG, sB] = speedCaren();
     const dHelm = mk('dHelm', 'helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
     const weakA = weakSpd('weakA');
-    const w = world(['Caren'], { Caren: [sG, sB, dHelm, weakA] }, { Caren: ['sG', 'sB', 'dHelm'] });
+    const w = world(['Caren'], { Caren: [sG, sB, dHelm, weakA] }, { Caren: ['sG', 'sB', 'dHelm'] }, { Caren: 'Speed' });
     const good = mk('sH0b', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 0);
     const r = w.v(good)!;
     expect(kindOf(r)).toBe('keep a');
     expect(r.named[0].reserveBt.map((f) => f.piece.id)).toEqual(['weakA']);
-    const after = poolInfo(prof('Caren'), [sG, sB, dHelm, weakA, good], new Set(['sG', 'sB', 'dHelm']));
+    const after = poolInfo(pinned('Caren', 'Speed'), [sG, sB, dHelm, weakA, good], new Set(['sG', 'sB', 'dHelm']));
     expect(after.unneeded.map((p) => p.id)).toContain('weakA');
   });
 
@@ -209,22 +218,22 @@ describe('T5 вердикт новой вещи', () => {
     const dHelm = mk('dHelm', 'helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
     const epic = mk('eW', 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1 }, 0, { grade: 'rare' });
     const base = [sG, sB, dHelm];
-    expect(kindOf(world(['Caren'], { Caren: base }).v(epic))).toBe('material reserve');
-    const w = world(['Caren'], { Caren: [...base, epic] }, { Caren: base.map((p) => p.id) });
+    expect(kindOf(world(['Caren'], { Caren: base }, undefined, { Caren: 'Speed' }).v(epic))).toBe('material reserve');
+    const w = world(['Caren'], { Caren: [...base, epic] }, { Caren: base.map((p) => p.id) }, { Caren: 'Speed' });
     const good = mk('g', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 0);
     const r = w.v(good)!;
     expect([kindOf(r), r.named[0].reserveBt]).toEqual(['keep a', []]); // Epic Legendary-шлему не материал
-    expect(poolInfo(prof('Caren'), [...base, epic, good], new Set(base.map((p) => p.id))).unneeded.map((p) => p.id)).toEqual(['eW']);
+    expect(poolInfo(pinned('Caren', 'Speed'), [...base, epic, good], new Set(base.map((p) => p.id))).unneeded.map((p) => p.id)).toEqual(['eW']);
     // the weak Epic reserve no longer blocks a Legendary one (was «пусть лежит в инвентаре»)
     const lw = w.v(weakSpd('lW'))!;
     expect([kindOf(lw), names(lw.reserve), lw.overEpic]).toEqual(['material reserve', ['Caren'], false]);
-    const info = poolInfo(prof('Caren'), [...base, epic, weakSpd('lW')], new Set(base.map((p) => p.id)));
+    const info = poolInfo(pinned('Caren', 'Speed'), [...base, epic, weakSpd('lW')], new Set(base.map((p) => p.id)));
     expect([...info.reserve.values()].flat().sort()).toEqual(['eW', 'lW']);
     // a second weak Legendary — reserve too (owner 2026-10-08: up to 4 per hero), a fifth — «Разобрать»
-    const w2 = world(['Caren'], { Caren: [...base, weakSpd('wA')] }, { Caren: base.map((p) => p.id) });
+    const w2 = world(['Caren'], { Caren: [...base, weakSpd('wA')] }, { Caren: base.map((p) => p.id) }, { Caren: 'Speed' });
     expect(kindOf(w2.v(mk('wB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('material reserve');
     const four = ['wA', 'wB', 'wC', 'wD'].map((id, i) => mk(id, 'helmet', 'Speed', { SPD: 1, RES: 1 + i, EFF: 1, HP: 1 }, 0));
-    const w4 = world(['Caren'], { Caren: [...base, ...four] }, { Caren: base.map((p) => p.id) });
+    const w4 = world(['Caren'], { Caren: [...base, ...four] }, { Caren: base.map((p) => p.id) }, { Caren: 'Speed' });
     expect(kindOf(w4.v(mk('wE', 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1, HP: 2 }, 0)))).toBe('junk');
   });
 
@@ -322,7 +331,7 @@ describe('T5 вердикт новой вещи', () => {
   });
 
   it('T5.10 (A15): «Надень» сильнее «Оставь» — Pen-шлем: Caren «Оставь», голый Rin «Надень» → «Надень» на Rin', () => {
-    const w = world(['Caren', 'Rin'], { Caren: cDefs() });
+    const w = world(['Caren', 'Rin'], { Caren: cDefs() }, undefined, { Caren: 'Penetration' });
     const r = w.v(mk('penG', 'helmet', 'Penetration', { CHC: 1, CHD: 1, SPD: 1, 'ATK%': 1 }))!;
     expect(w.hero('Caren', r).kind).toBe('keep');
     expect(w.hero('Rin', r).kind).toBe('wear');
@@ -352,7 +361,7 @@ describe('T5 вердикт новой вещи', () => {
 });
 
 describe('T6 пул героя', () => {
-  it('T6.1: после истории Anarky держатся 6 вещей', () => {
+  it('T6.1: после истории Anarky (закреплён Penetration ×2 + Defense ×2) держатся 6 вещей', () => {
     const pool = [
       mk('hD', 'helmet', 'Defense', { 'DEF%': 2, CHC: 3, CHD: 2, SPD: 1 }),
       mk('aD', 'armor', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }),
@@ -361,7 +370,7 @@ describe('T6 пул героя', () => {
       mk('pH', 'helmet', 'Penetration', { 'DEF%': 4, CHC: 3, CHD: 2, SPD: 1 }),
       mk('dB', 'shoes', 'Defense', { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }),
     ];
-    const info = poolInfo(prof('Anarky'), pool, new Set(['pH', 'aD', 'pG', 'dB']));
+    const info = poolInfo(pinned('Anarky', 'Penetration+Defense'), pool, new Set(['pH', 'aD', 'pG', 'dB']));
     expect(info.why.size).toBe(6);
     expect(info.unneeded).toEqual([]);
     expect(info.why.get('hD')).toEqual(['menu-best']);
@@ -371,15 +380,15 @@ describe('T6 пул героя', () => {
   const sT0 = () => mk('sT0', 'helmet', 'Speed', { 'DEF%': 4, CHC: 4, CHD: 2, SPD: 2 }, 0);
   const sT4 = () => mk('sT4', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, 4);
 
-  it('T6.2: Speed-шлемы Caren — держатся лучший (T0) и лучший на T4, остальные «больше не нужна»', () => {
+  it('T6.2: Speed-шлемы Caren (Speed закреплён) — держатся лучший (T0) и лучший на T4, остальные «больше не нужна»', () => {
     const pool = [sT0(), sT4(), mk('sT4b', 'helmet', 'Speed', { 'DEF%': 2, CHC: 3, CHD: 1, SPD: 1 }, 4),
       mk('sT0b', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 1, SPD: 1 }, 0), mk('dA', 'armor', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 })];
-    const P = prof('Caren');
+    const P = pinned('Caren', 'Speed');
     expect(pool.slice(0, 4).map((p) => +piecePoints(P, p).toFixed(2))).toEqual([9.5, 7.2, 5.55, 6.55]);
     const info = poolInfo(P, pool, new Set());
     expect(info.why.get('sT0')).toContain('menu-best');
     expect(info.why.get('sT4')).toEqual(['menu-t4']);
-    expect(info.unneeded.map((p) => p.id).sort()).toEqual(['sT0b', 'sT4b']);
+    expect(info.unneeded.map((p) => p.id).sort()).toEqual(['dA', 'sT0b', 'sT4b']); // pinned Speed: Defense armor doesn't fit
   });
 
   it('T6.3: смешанный пул — помечены вторая слабая впрок, слабая несобранного сета и чужой сет ниже планки', () => {
@@ -389,7 +398,8 @@ describe('T6 пул героя', () => {
       mk('wOff', 'shoes', 'Attack', { SPD: 1, RES: 1, EFF: 1, HP: 1 }), mk('gOff', 'shoes', 'Life', { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
       mk('dS', 'shoes', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 })];
     const info = poolInfo(prof('Caren'), pool, new Set(['dA']));
-    expect(info.unneeded.map((p) => p.id).sort()).toEqual(['gOff', 'wOff']);
+    // no pin (owner 2026-10-08, (c)): the best Speed helmet at T4 isn't kept for the set any more — sT0 is in the layout
+    expect(info.unneeded.map((p) => p.id).sort()).toEqual(['gOff', 'sT4', 'wOff']);
     expect(info.why.get('wGl')).toEqual(['reserve']);
     expect([...info.reserve.values()]).toEqual([['wGl', 'wGl2']]); // up to 4 per hero (owner 2026-10-08)
   });
@@ -464,14 +474,14 @@ describe('отложенная вещь', () => {
   const pen = () => mk('st', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, 0, { at: '2026-10-06' });
 
   it('та же вещь ещё раз — same называет Caren и запись; вердикт как без неё («Оставь» снова)', () => {
-    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] }, { Caren: 'Penetration' });
     const r = w.v(mk('again', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, 0))!;
     expect(r.same).toMatchObject({ c: { name: 'Caren' }, piece: { id: 'st' } });
     expect(kindOf(r)).toBe('keep a');
   });
 
   it('owner 2026-10-07: same stats in another order — another piece; «Это другой» (twin) — the record stays', () => {
-    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] }, { Caren: 'Penetration' });
     const other = w.v(mk('again', 'helmet', 'Penetration', { SPD: 1, CHD: 1, CHC: 1, 'DEF%': 3 }, 0))!;
     expect(other.same).toBeNull();
     const twin = verdictOf(w.ctx, w.view.hero, inputOf(mk('again', 'helmet', 'Penetration', { 'DEF%': 3, CHC: 1, CHD: 1, SPD: 1 }, 0)), { twin: true })!;
@@ -480,7 +490,7 @@ describe('отложенная вещь', () => {
   });
 
   it('уровень одного сабстата другой — другая вещь: годная копия слабее отложенной — Breakthrough для неё', () => {
-    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    const w = world(['Caren'], { Caren: [...cDefs(), pen()] }, { Caren: ['cH', 'cA', 'cG', 'cS'] }, { Caren: 'Penetration' });
     const r = w.v(mk('other', 'helmet', 'Penetration', { 'DEF%': 2, CHC: 1, CHD: 1, SPD: 1 }, 0))!;
     expect(r.same).toBeNull();
     expect(kindOf(r)).toBe('material now');

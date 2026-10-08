@@ -99,8 +99,9 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   for (const p of pool) if (wornIds.has(p.id)) { worn[p.slot] = p; add(p, 'worn'); }                     // 1
   for (const p of Object.values(best.layout)) add(p, 'layout');                                         // 2
   const sorted = [...pool].sort(byPoints(P));
-  // 3: в слоте брони для каждого сета меню — лучшая годная и лучшая годная на T4, если лучшая не на T4
-  for (const slot of ARMOR) {
+  // 3: в слоте брони для каждого сета меню — лучшая годная и лучшая годная на T4, если лучшая не на T4. Only for a pinned
+  // set (owner 2026-10-08, (c)): a hero with no pin is wanted by stats — set pieces stay only by 1, 2, 4
+  if (P.pin) for (const slot of ARMOR) {
     for (const s of P.menuSets) {
       const top = sorted.find((p) => p.slot === slot && p.setId === s && pass(p));
       if (!top) continue;
@@ -111,7 +112,7 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   // 4 (A12): лучшая годная чужого сета — если хотя бы на 1 очко выше каждой держащейся вещи слота (вещам сетов меню +U/2)
   for (const slot of ARMOR) {
     const held = pool.filter((p) => p.slot === slot && why.has(p.id));
-    const off = sorted.find((p) => p.slot === slot && !!p.setId && !P.menuSets.has(p.setId) && !why.has(p.id) && pass(p));
+    const off = sorted.find((p) => p.slot === slot && !!p.setId && (!P.pin || !P.menuSets.has(p.setId)) && !why.has(p.id) && pass(p));
     if (off && (!held.length || geq1(piecePoints(P, off), offBar(P, held)))) add(off, 'offmenu');
   }
   const strong = new Set(why.keys());

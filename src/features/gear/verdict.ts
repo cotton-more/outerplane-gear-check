@@ -95,8 +95,8 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   if (bar.pass && uses && better(withBest.value, info.value)) return { ...base, kind: 'wear', replaced: info.layout[x.slot] ?? null };
   // 2. «Оставь» — только броня, порог прошла
   if (!bar.pass || !isArmor(x.slot)) return base;
-  if (x.setId && P.menuSets.has(x.setId)) {
-    // а) сет из меню: лучше хотя бы на 1 очко той, что держится для слота и сета (T4-вещь — лучшей на T4)
+  if (x.setId && P.pin && P.menuSets.has(x.setId)) {
+    // а) a pinned set (owner 2026-10-08, (c): with no pin the hero is wanted by stats — every set goes by б): лучше хотя бы на 1 очко той, что держится для слота и сета (T4-вещь — лучшей на T4)
     const pair = heldHere.filter((p) => p.setId === x.setId && (x.bt !== 4 || p.bt === 4));
     const ref = pair.length ? Math.max(...pair.map((p) => piecePoints(P, p))) : null;
     if (ref === null || geq1(px, ref)) return { ...base, kind: 'keep', sub: 'a', needT4: (x.bt ?? 0) < 4 && needsT4(P, x.setId) ? menuPart(P, x.setId) : null };

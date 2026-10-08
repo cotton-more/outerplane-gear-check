@@ -179,11 +179,11 @@ describe('plan of a batch', () => {
       E(mk('b1', 'armor', 'Penetration', { 'DMG UP%': 6, 'HP%': 5, ATK: 5, SPD: 6 }, 0)),
       E(mk('b2', 'armor', 'Speed', { SPD: 3, 'ATK%': 5, 'HP%': 6, CHD: 4 }, 0)),
     ]);
-    expect(plan.lines.filter((l) => l.n === 2)).toHaveLength(1);
     expect(problems(st, plan)).toEqual([]);
-    // Rin's old armor goes on Caren over #2: #2 is set aside for Caren (held), not «wear» plus a taken-off line
-    expect(plan.lines.map((l) => [l.id, l.fate.kind, 'c' in l.fate ? l.fate.c.name : ''])).toEqual([['1', 'wear', 'Rin'], ['1~1', 'wear', 'Caren'], ['2', 'keep', 'Caren']]);
-    expect(plan.lines[1].off).toMatchObject({ piece: { id: 'Ra' }, was: 'worn' });
+    // owner 2026-10-08, (c): with no pin the Speed armor (#2) goes on Rin first; Rin's old armor goes on Caren's empty
+    // slot under it, and #1 is left «Спорно» — no piece on two lines (was: #1 on Rin, #2 set aside for Caren)
+    expect(plan.lines.map((l) => [l.id, l.fate.kind, 'c' in l.fate ? l.fate.c.name : ''])).toEqual([['1', 'maybe', ''], ['2', 'wear', 'Rin'], ['2~1', 'wear', 'Caren']]);
+    expect(plan.lines[2].off).toMatchObject({ piece: { id: 'Ra' }, was: 'worn' });
   });
 
   it('a reserve the plan made that a later «Надень» eats feeds that piece — not planned again', () => {
