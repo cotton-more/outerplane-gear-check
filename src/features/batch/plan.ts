@@ -226,11 +226,18 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     const e = order.find((x) => String(x.n) === id);
     return e ? { input: e.e.input, twin: !!e.e.twin } : null;
   };
+  // The same for a «Корм» whose target a later «Надень» took out of the pool: the target is gone (fed away, or no longer
+  // the hero's), so its feeds are decided again and the count it had goes with it — «T4» must not land on a gone record
+  const strandedTo = (f: Fate): string | null =>
+    f.kind === 'feed' && !('entry' in f.to) && !st.pools[f.to.c.id]?.includes(f.to.piece.id) ? f.to.piece.id : null;
   for (const [id, f] of [...fates]) {
-    if (f.kind !== 'junk' && f.kind !== 'maybe') continue;
+    const stranded = strandedTo(f);
+    if (f.kind !== 'junk' && f.kind !== 'maybe' && !stranded) continue;
     const x = inputOfLine(id);
     const r = x && verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: skipOf(id), full });
+    if (stranded && x) feeds.delete(stranded);
     if (x && r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r, x.input));
+    else if (stranded && x) fates.set(id, { kind: 'junk' });
   }
 
   // records the plan made that a later «Надень» took off (held: «Отложи» instead of «Надень») or dropped (gone)
