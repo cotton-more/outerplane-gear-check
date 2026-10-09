@@ -22,7 +22,7 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 | Verdict | What to invest |
 |---|---|
 | **Keep** | Enhance to +10 right away; Breakthrough to T4 — a must for a Legendary weapon (the passive grows); on an Epic — no Transistone |
-| **Stopgap** | Enhance right away; no Breakthrough: it's a stopgap until the right piece drops. An Epic weapon or accessory gets only dismantle fodder: any Steel Sword (Steel Necklace) with any main stat is one tier; don't spend Glunite |
+| **Stopgap** | Enhance right away; no Breakthrough: it's a stopgap until the right piece drops. Epic weapons and accessories too: dismantle their copies |
 | **Fodder** | nothing: it's a Breakthrough step for the same piece (now or from reserve) |
 | **Dismantle** on Epic armor | a reminder: if you have an Epic "Keep" of the same set and slot below T4, this is material for it |
 

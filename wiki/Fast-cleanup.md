@@ -18,7 +18,7 @@
    step: "Fodder" says where to feed this one now, or keeps it in reserve — up to four per hero (exactly T0 → T4), at
    most eight of one kind for everyone.
 8. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
-   grey, no one needs that main — dismantle.
+   grey, no one needs that main — dismantle. They are stopgaps: no Breakthrough, spare copies go to dismantle.
 9. **Legendary:** the verdict shows which to upgrade; with weak substats — dismantle.
 
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/5-early-junk.png" width="360" alt="Dismantle after just two substats">

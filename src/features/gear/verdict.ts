@@ -27,6 +27,10 @@ export const formPiece = (x: ItemInput): Piece => ({
 export interface Fed { piece: Piece; of: Char | null }
 // how many feeds a piece still takes to T4
 const feedsLeft = (x: Pick<Piece, 'bt'>): number => Math.max(0, CFG.reservePerHero - (x.bt ?? 0));
+// worth a Breakthrough (owner 2026-10-09): armor that passes the bar; a weapon or accessory only when it is «Оставить» —
+// a Legendary from the hero's list with the right main. A stopgap (any Epic, a Legendary off the list) gets replaced:
+// the verdict says «не вкладывай», so nothing feeds it and its spare copies are dismantled
+const btWorth = (P: Profile, p: Piece): boolean => (isArmor(p.slot) ? pieceBar(P, p).pass : pieceBar(P, p).keep);
 
 // пул героя: вещи, надетое и что из них держится
 export interface HeroPool { c: Char; P: Profile; pieces: Piece[]; wornIds: ReadonlySet<string>; info: PoolInfo }
@@ -81,7 +85,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const top = heldHere.length ? Math.max(...heldHere.map((p) => piecePoints(P, p))) : 0;
   const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds) });
   const uses = withBest.layout[x.slot]?.id === x.id;
-  const own = bar.pass ? (info.reserve.get(reserveKey(x)) ?? []).map((id) => pool.find((p) => p.id === id))
+  const own = btWorth(P, x) ? (info.reserve.get(reserveKey(x)) ?? []).map((id) => pool.find((p) => p.id === id))
     .filter((p): p is Piece => !!p && sameForBt(x, p)).slice(0, feedsLeft(x)) : [];
   const base: HeroRes = {
     c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: px - top,
@@ -110,12 +114,12 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
 // часть меню героя с этим сетом — меньшая («Penetration ×2»)
 const menuPart = (P: Profile, set: string): PartChange => ({ set, n: P.parts.has(partKey(set, 2)) ? 2 : 4 });
 
-// §4 п. 3а: держащиеся годные вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough; запас и слабые — не
+// §4 п. 3а: держащиеся годные (btWorth) вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough; запас и слабые — не
 // цели (A2). A piece at T4 is material too (owner 2026-10-09, was D6 «never»): it reaches this only when nobody wears or
 // keeps it, and one Breakthrough step for a hero beats dismantling it (#62 Ether Blade T4 → Hilde's Ether Blade)
 export interface Target { c: Char; piece: Piece; worn: boolean }
 function materialTargets(hp: HeroPool, x: Piece): Target[] {
-  return hp.pieces.filter((q) => q.id !== x.id && hp.info.strong.has(q.id) && (q.bt ?? 0) < 4 && sameForBt(x, q) && pieceBar(hp.P, q).pass)
+  return hp.pieces.filter((q) => q.id !== x.id && hp.info.strong.has(q.id) && (q.bt ?? 0) < 4 && sameForBt(x, q) && btWorth(hp.P, q))
     .map((piece) => ({ c: hp.c, piece, worn: hp.wornIds.has(piece.id) }));
 }
 
@@ -230,7 +234,7 @@ export const rosterChars = (ctx: Ctx): Char[] =>
 // Reserves of one kind are interchangeable (owner, 2026-10-08: any locked one in the game)
 function feedFrom(hps: HeroPool[], x: Piece, h: HeroRes): HeroRes {
   let left = feedsLeft(x) - h.reserveBt.length;
-  if (!h.bar || left <= 0) return h;
+  if (!h.bar || (!isArmor(x.slot) && h.temp) || left <= 0) return h; // a stopgap weapon or accessory isn't fed
   const fed = [...h.reserveBt];
   for (const hp of hps) {
     if (hp.c === h.c) continue;

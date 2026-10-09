@@ -59,11 +59,22 @@ describe('4.2 шторка надетого Epic оружия', () => {
 });
 
 describe('4.3 материал для Epic оружия', () => {
-  it.each([[0, 'material'], [null, 'material'], [4, 'junk']] as const)('надето годное Epic оружие bt %s, новое с другим main и мусором → %s', (bt, kind) => {
+  // owner 2026-10-09: a weapon or accessory gets a Breakthrough only when it is «Оставить»; an Epic one is a stopgap
+  it.each([0, null, 4] as const)('надето годное Epic оружие bt %s, новое с другим main и мусором → junk: стопгап не кормим', (bt) => {
     const r = judge(JUNK_W, wearing(WORN_W, bt));
+    expect(r.kind).toBe('junk');
+    expect(r.now).toEqual([]);
+  });
 
-    expect(r.kind).toBe(kind);
-    if (kind === 'material') expect(r.now.map((n) => n.c.name)).toEqual(['Caren']);
+  it('Legendary из списка героя с нужным main — копия с мусором её корм; с не тем main (стопгап) — нет', () => {
+    const ref = caren.builds.flatMap((b) => b.weapons).find((g) => g.mains.length)!;
+    const leg = (main: string, subs: Record<string, number>): ItemInput => ({ slot: 'weapon', grade: 'unique', setId: null, itemKey: ref.key, main, subs });
+    const junk = { HP: 1, RES: 1, EFF: 1, 'DMG RED%': 1 };
+    const good = { CHC: 3, CHD: 3, SPD: 2, 'ATK%': 1 };
+    const r = judge(leg(ref.mains[0], junk), wearing(leg(ref.mains[0], good), 0));
+    expect(r.now.map((n) => n.c.name)).toEqual(['Caren']);
+    const off = ['ATK%', 'DEF%', 'HP%', 'CHC', 'CHD', 'EFF', 'RES', 'SPD'].find((m) => !ref.mains.includes(m))!;
+    expect(judge(leg(ref.mains[0], junk), wearing(leg(off, good), 0)).now).toEqual([]);
   });
 
   it('4.4 Epic аксессуар не материал для Epic оружия, и наоборот', () => {
@@ -102,8 +113,8 @@ describe('4.5 лучше надетой такой же', () => {
 describe('4.5а/4.5в что сказать о снятой с формы', () => {
   const P = (x: Partial<Piece>): Piece => ({ id: 'p', slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', yellow: {}, lit: {}, bt: 0, at: '', ...x });
 
-  it.each([0, 4, null] as const)('снято Epic оружие (bt %s), новое без «T4» — материал нового', (bt) => {
-    expect(oldFate(P({ bt }), P({ main: 'DEF%', bt: 0 }))).toBe('material');
+  it.each([0, 4, null] as const)('снято Epic оружие (bt %s) — строки нет: Epic оружие не кормим', (bt) => {
+    expect(oldFate(P({ bt }), P({ main: 'DEF%', bt: 0 }))).toBe(null);
   });
 
   it('новое Epic оружие на T4 — строки нет', () => {
@@ -141,10 +152,9 @@ describe('4.5а/4.5в что сказать о снятой с формы', () =
 
 describe('4.6 «Прокачка»', () => {
   const temp = { v: 'temp' } as Verdict;
-  it('Epic оружие «Временно» — строка со Steel Sword, аксессуар — со Steel Necklace', () => {
-    expect(upgradePlan(ctx, JUNK_W, temp)).toEqual([ru.plan.enhance, ru.plan.btTempEpic('Steel Sword')]);
-    expect(upgradePlan(ctx, epic('accessory', 'ATK%', {}), temp)).toEqual([ru.plan.enhance, ru.plan.btTempEpic('Steel Necklace')]);
-    expect(ru.plan.btTempEpic('Steel Sword')).toBe('**Breakthrough** — только вещами из разбора: любой Steel Sword с любым main — ступень. Glunite не трать: вещь на замену.');
+  it('Epic оружие и аксессуар «Временно» — Breakthrough не вкладывай (владелец 2026-10-09)', () => {
+    expect(upgradePlan(ctx, JUNK_W, temp)).toEqual([ru.plan.enhance, ru.plan.tempNoInvest]);
+    expect(upgradePlan(ctx, epic('accessory', 'ATK%', {}), temp)).toEqual([ru.plan.enhance, ru.plan.tempNoInvest]);
   });
 
   it('броня и Legendary «Временно» — прежняя строка; Epic оружие «Разобрать» — без новой', () => {
