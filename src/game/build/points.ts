@@ -10,6 +10,13 @@ import { itemMains, NO_MAINS, type ItemMains } from '@/game/item/mains';
 import { MAX_LIT } from '@/game/item/subs';
 import { subWeights, type SubWeight } from './score';
 
+// Очки целыми тысячными: сравнение без дробного шума (6 очков по сумме долей бывают 5,999999999999999), округление — один
+// раз. Общая валюта порогов (годная вещь, «Обмен вещами», «Надето»)
+export type Milli = number;
+export const milli = (points: number): Milli => Math.round(points * 1000);
+// очки вещи достаточны для порога «годная» (CFG.goodPoints; ровно 6 годится)
+export const goodPoints = (points: number): boolean => milli(points) >= milli(CFG.goodPoints);
+
 // вес места (0 — первое): 1; 0,8; 0,65; 0,5; 0,4; 0,32; 0,26; 0,2; дальше 0,2
 export const weightOfPlace = (place: number): number => CFG.tierWeights[Math.min(place, CFG.tierWeights.length - 1)];
 

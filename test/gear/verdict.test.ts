@@ -8,6 +8,10 @@ import { pieceInput, type Piece, type Worn } from '@/features/gear/model/gear';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { poolInfo, pieceBar } from '@/features/gear/pool/info';
 import { piecePoints } from '@/features/gear/layout';
+import { milli } from '@/features/gear/model/vs';
+import { armorBar } from '@/features/eval/verdict/bar';
+import { scoreBuild } from '@/game/build/score';
+import { itemMains } from '@/game/item/mains';
 import { verdictOf, type HeroRes, type Result } from '@/features/gear/verdict';
 import { ARMOR, char, gen, idx, mk, prof, randArmor, randPool, setId, twenty, type Gen } from './statSets';
 import { pinnedProfile, pinOf, pinOptions, type Profile } from '@/game/build/profile';
@@ -504,5 +508,23 @@ describe('отложенная вещь', () => {
     const p = pen();
     const w = world(['Caren'], { Caren: [p] });
     expect(w.v(mk('again', 'helmet', 'Penetration', p.lit, 0))!.same).toBeNull();
+  });
+});
+
+describe('порог «годная» ≥ 6 очков — в тысячных, без дробного шума', () => {
+  // Epsilon: DEF% 1 CHC 3 HP% 6 DMG RED% 2 — ровно 6 очков, но сумма долей даёт 5,999999999999999
+  it('броня с суммой ровно 6 годится: пул и форма согласны (было 5,999… < 6)', () => {
+    const P = prof('Core Fusion Epsilon');
+    for (const set of [...P.menuSets].slice(0, 3)) {
+      const short = idx.SET[set].short;
+      const p = mk('f6', 'armor', short, { 'DEF%': 1, CHC: 3, 'HP%': 6, 'DMG RED%': 2 }, 4);
+      const pts = piecePoints(P, p);
+      expect(pts).not.toBeGreaterThanOrEqual(6); // the raw float sum is below 6
+      expect(milli(pts)).toBe(6000);
+      expect(pieceBar(P, p)).toEqual({ pass: true, keep: true, temp: false });
+      const sc = { ...scoreBuild(P.ctx, p.grade, P.c, P.chain, p.lit, itemMains(idx, pieceInput(p))), c: P.c, b: P.chain, i: 0 };
+      expect(armorBar(P.ctx, pieceInput(p)).passesPoints(sc)).toBe(true);
+      expect(armorBar(P.ctx, pieceInput(p)).passesOld(sc)).toBe(false); // passes by points only
+    }
   });
 });

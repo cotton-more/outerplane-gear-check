@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Char, Dataset, SlotId } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { CFG } from '@/game/config';
-import { pointsOf } from '@/game/build/points';
+import { goodPoints, pointsOf } from '@/game/build/points';
 import { profileOf } from '@/game/build/profile';
 import { rows } from '@/game/build/score';
 import { itemMains } from '@/game/item/mains';
@@ -77,7 +76,7 @@ describe('T5.1в. порог «прежний ИЛИ очки ≥ 6»', () => {
       while (Object.keys(subs).length < (grade === 'unique' ? 4 : 3)) subs[keys[Math.floor(rnd() * keys.length)]] = 1 + Math.floor(rnd() * 5);
       const c = heroes[Math.floor(rnd() * heroes.length)];
       const g = gate(c, item(c, 'helmet', subs, grade));
-      expect(g.qualifies).toBe(g.old || g.pts >= CFG.goodPoints);
+      expect(g.qualifies).toBe(g.old || goodPoints(g.pts));
       if (g.old) { expect(g.qualifies).toBe(true); old++; } else if (g.qualifies) extra++;
     }
     expect(old).toBeGreaterThan(0);

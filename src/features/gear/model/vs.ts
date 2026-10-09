@@ -5,11 +5,12 @@ import type { Build, Char, GearKind } from '@/game/data/types';
 import { combosWith, gearList, slotMains } from '@/game/build/builds';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
+import { milli, type Milli } from '@/game/build/points';
+
+export { milli, type Milli };
 
 // Очки целыми тысячными (R2.2 «Обмена вещами»): сравнение без дробного шума, округление — один раз. Заметный выигрыш —
 // хотя бы на 1 очк. (R6.2): так решают «Обмен вещами» (trade) и «Переодеть» («Надето», worn/wearing)
-export type Milli = number;
-export const milli = (points: number): Milli => Math.round(points * 1000);
 export const THRESHOLD: Milli = milli(1);
 
 // может ли персонаж надеть вещь: у оружия и аксессуара из списка бывает класс (classLimits) — как в вердикте (evalGear).

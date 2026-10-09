@@ -4,6 +4,7 @@ import { CFG } from '@/game/config';
 import { isArmor } from '@/game/data';
 import type { ArmorSlot } from '@/game/data/types';
 import type { Profile } from '@/game/build/profile';
+import { goodPoints } from '@/game/build/points';
 import { scoreBuild } from '@/game/build/score';
 import { itemMains } from '@/game/item/mains';
 import { sameForBt } from '@/game/item/item';
@@ -35,7 +36,7 @@ export function pieceBar(P: Profile, p: Piece): Bar {
     const input = pieceInput(p);
     const sc = { ...scoreBuild(P.ctx, p.grade, P.c, P.chain, p.lit, itemMains(P.ctx.idx, input)), c: P.c, b: P.chain, i: 0 };
     const bar = armorBar(P.ctx, input);
-    const keep = bar.passesOld(sc) || piecePoints(P, p) >= CFG.goodPoints, temp = !keep && bar.tempOk(sc);
+    const keep = bar.passesOld(sc) || goodPoints(piecePoints(P, p)), temp = !keep && bar.tempOk(sc);
     r = { pass: keep || temp, keep, temp };
   } else {
     const f = gearRank(P, p);

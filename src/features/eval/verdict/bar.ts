@@ -4,7 +4,7 @@ import { CFG } from '@/game/config';
 import type { Grade } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
-import { pointsOf } from '@/game/build/points';
+import { goodPoints, pointsOf } from '@/game/build/points';
 import { profileOf } from '@/game/build/profile';
 import { tempOk as tempOkFor, type Part, type Row } from '@/game/build/score';
 
@@ -30,7 +30,7 @@ export function armorBar(ctx: Ctx, s: ItemInput) {
   // очки считаются по цепочке «По статам» героя, а не по билду строки: у 8 героев две цепочки
   const passesPoints = (m: Scored) => {
     const P = profileOf(ctx, m.c);
-    return !!P && pointsOf(ctx, m.c, P.chain, s) >= CFG.goodPoints;
+    return !!P && goodPoints(pointsOf(ctx, m.c, P.chain, s));
   };
   // «Временно» у Epic: главный стат с хорошим роллом и ещё полезный, вместе 5+ сегментов — носить, пока не выпадет вещь с недостающим
   const tempOk = (m: Scored) => !legend && mains(m).some((p) => (subs[p.key] || 1) >= CFG.epicTempRoll) && full(m).length >= 2 && yellowOf(full(m)) >= CFG.tempYellow;
