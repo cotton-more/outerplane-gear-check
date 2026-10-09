@@ -243,7 +243,7 @@ export function App() {
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
-              strip={batchOn ? <BatchStrip n={batch.batch.items.length} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
+              strip={batchOn ? <BatchStrip n={batch.batch.items.length} cands={() => batch.wornCands(s.slot)} what={batch.what || t.ui.slotNames[s.slot]} onList={() => batch.show('list')} onEnd={batch.end}
                 onWorn={(c) => batch.addWorn(c, s.slot)} onLock={() => batch.addLock(s.slot)} /> : null}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} ask={batchOn ? batch.ask : null} />}
             {!layout.narrow && (batchOn

@@ -791,6 +791,7 @@ export const ru = {
       grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : null].filter(Boolean).join(', ')}. Другое — новой партией.`,
     wornAdd: 'E · надето',
     whose: 'Чья вещь?',
+    whoseNone: (what: string) => `Никто из твоих героев не носит здесь ${what}.`,
     lockAdd: '🔒 · отложено',
     wornRow: (name: string) => `E · ${name}`,
     lockRow: (slot: string) => `🔒 ${NOM[slot]}`,

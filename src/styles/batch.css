@@ -42,11 +42,12 @@ html.narrow .batch-marks + .tryon-x { margin-left: auto; }
 }
 .batch-whose { display: grid; gap: 6px; }
 .bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
-/* a worn piece's owner — a round portrait with a light rim, as in the game's item panel */
-.bwho .face, .bface .face { border-radius: 50%; border: 2px solid color-mix(in srgb, var(--ink) 15%, #fff); object-fit: cover; background: var(--surface-3); }
-.bwho .face { width: 36px; height: 36px; }
-.bface { display: inline-flex; flex: none; }
-.bface .face { width: 26px; height: 26px; }
+/* a worn piece's owner — a round portrait like the game's item panel (owner 2026-10-09): a light rim and the face zoomed
+   in — the game crops its face icon to about 70 % around the eyes (measured on Bryn: ×1.43, centre at 48 % / 41 %) */
+.bface { position: relative; display: inline-block; flex: none; width: 26px; height: 26px; overflow: hidden; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--ink) 15%, #fff); background: var(--surface-3); }
+.bface .face { position: absolute; width: 143%; height: 143%; max-width: none; left: -18.6%; top: -8.6%; border: 0; border-radius: 0; object-fit: cover; }
+.bwho .bface { width: 36px; height: 36px; }
 .bmark .bgear-n { font-weight: 600; }
 .bdecide { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .bdecide .chip { min-height: 32px; padding: 4px 10px; font-family: inherit; font-size: 13px; }

@@ -11,8 +11,9 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
-export function BatchStrip({ n, cands, onList, onEnd, onWorn, onLock }: {
-  n: number; cands: () => Char[] | null;
+// what — the batch's kind for «Никто из твоих героев не носит здесь Legendary Speed»
+export function BatchStrip({ n, cands, what, onList, onEnd, onWorn, onLock }: {
+  n: number; cands: () => Char[] | null; what: string;
   onList: () => void; onEnd: () => void; onWorn: (c: string) => void; onLock: () => void;
 }) {
   const t = useT();
@@ -38,9 +39,9 @@ export function BatchStrip({ n, cands, onList, onEnd, onWorn, onLock }: {
           <div className="batch-whose">
             {pick.length ? pick.map((c) => (
               <button key={c.id} type="button" className="btn bwho" onClick={() => { setPick(null); onWorn(c.id); }}>
-                <HeroFace c={c} /><HeroName c={c} />
+                <span className="bface"><HeroFace c={c} /></span><HeroName c={c} />
               </button>
-            )) : <p className="muted small">—</p>}
+            )) : <p className="muted small">{t.batch.whoseNone(what)}</p>}
           </div>
         </Sheet>
       )}

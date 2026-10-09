@@ -688,6 +688,7 @@ export const en: Texts = {
       grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : null].filter(Boolean).join(', ')}. Anything else — a new batch.`,
     wornAdd: 'E · worn',
     whose: 'Whose piece?',
+    whoseNone: (what) => `None of your heroes wears ${what} here.`,
     lockAdd: '🔒 · set aside',
     wornRow: (name) => `E · ${name}`,
     lockRow: (slot) => `🔒 ${SLOT_EN[slot]}`,

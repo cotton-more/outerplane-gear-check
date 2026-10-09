@@ -35,6 +35,7 @@ export interface BatchMode {
   plan: Plan | null;               // only while view is 'plan' or 'walk'
   walk: Walk | null;               // the step-by-step walk of that plan
   lock: BatchLock | null;          // one filter per batch: what the form may still pick (null — anything)
+  what: string;                    // «Legendary Speed», «Epic» … — the batch's kind in a phrase
   ask: BatchAsk | null;            // after «В партию»: what the next piece must pick again (owner 2026-10-09)
   answer: (what: 'slot' | 'grade') => void;
   asking: boolean;                 // ✕ with pieces: «Закончить партию?»
@@ -109,6 +110,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const close = () => { setAsk(null); setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setAsking(false); };
   return {
     on: !!value, batch, editing, note, view, plan, walk, lock, asking,
+    what: [grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : '', kind?.startsWith('set:') ? idx.SET[kind.slice(4)]?.short ?? '' : ''].filter(Boolean).join(' '),
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
     add: (input, complete) => {
       if (!value) return;
