@@ -135,12 +135,6 @@ export function epicToLegend(from: Layout, to: Layout): boolean {
 }
 // at equal points a Legendary goes before an Epic: its main stat is bigger (the main stat has no points)
 const gradeFirst = (a: Piece, z: Piece): number => Number(z.grade === 'unique') - Number(a.grade === 'unique');
-// строгий порядок (ранг, V) без порога — его максимизирует лучшая раскладка
-export function cmpLex(a: Pick<Ranked, 'rank' | 'v'>, z: Pick<Ranked, 'rank' | 'v'>): number {
-  if (a.rank !== z.rank) return Math.sign(a.rank - z.rank);
-  return Math.abs(a.v - z.v) <= EPS ? 0 : Math.sign(a.v - z.v);
-}
-
 function gearBetter(P: Profile, a: Piece, z: Piece): boolean {
   const ra = RANK[gearRank(P, a)], rz = RANK[gearRank(P, z)];
   if (ra !== rz) return ra > rz;

@@ -32,7 +32,6 @@ describe('A. понятия', () => {
     const got = (c.helmet ?? []).filter((x) => x.item.id === shared.id);
     expect(got.map((x) => x.holder).sort()).toEqual([HERO.noa, HERO.rin].sort());
   });
-  it.todo('A2: взяли у Ноа — у Рин осталась (применение, этап 4)');
 
   it('A3 (ревью этапа 10): запись в пулах Карен (надета) и Рин (не надета) — это надетое Карен, не запас Рин', () => {
     const shared = piece('helmet', 'Speed', GOOD);

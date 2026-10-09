@@ -9,10 +9,16 @@ import { partKey, pinCombo, pinKey, pinnedProfile, pinOf, pinOptions, profileFor
 import { eligibleIn, pieceBar, poolInfo } from '@/features/gear/pool/info';
 import { heroOutcome, heroPool } from '@/features/gear/verdict';
 import { setValue } from '@/game/set/setValue';
-import { better, bestLayout, cmpLex, gearRank, layoutValue, NEW_ID, piecePoints, type Layout } from '@/features/gear/layout';
+import { better, bestLayout, gearRank, layoutValue, NEW_ID, piecePoints, type Layout } from '@/features/gear/layout';
 import { ARMOR, char, ctx, D, EPS, GEAR, gen, heroes, mk, prof, randArmor, randGear, randPool, setId, twenty } from './statSets';
 
 const RANK: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
+
+// strict (rank, V) order with no threshold — what the best layout maximises
+const cmpLex = (a: { rank: number; v: number }, z: { rank: number; v: number }): number => {
+  if (a.rank !== z.rank) return Math.sign(a.rank - z.rank);
+  return Math.abs(a.v - z.v) <= EPS ? 0 : Math.sign(a.v - z.v);
+};
 
 // --- оракул: полный перебор. Броня: пусто | любая вещь слота; V заново из bonusRows по конкретным вещам (без setValue и мемо),
 // половины A4 написаны независимо. Оружие и аксессуар: все пары (пусто | годная вещь), порядок (ранг, очки) ---

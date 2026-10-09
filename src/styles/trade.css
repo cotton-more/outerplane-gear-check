@@ -10,7 +10,6 @@
 .trade-hero .face { width: 32px; height: 32px; border-radius: 6px; flex: none; }
 .tline-h .face { width: 26px; height: 26px; border-radius: 5px; flex: none; }
 .trade-hn { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cd-trade .ico { width: 15px; height: 15px; display: inline-block; vertical-align: -2px; color: var(--accent); }
 .trade-count { justify-self: start; }
 .trade-session { margin: 0; }
 .trade-busy { margin: 0; display: flex; align-items: center; gap: 12px; font-weight: 600; }
@@ -53,8 +52,6 @@
 .tact { display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: -14px; padding: 8px 0 2px; background: var(--surface); }
 
 /* карточка героя и плитка */
-.cd-trade { margin: 8px 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
-.cd-trade .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 .tpts { font: 600 11px var(--font-mono); color: var(--ink-3); }
 .tpts.up { color: var(--keep); }
 .tpts.down { color: var(--junk); }

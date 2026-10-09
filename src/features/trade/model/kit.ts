@@ -5,7 +5,7 @@
 // Отсечение брони точное: в слоте из вещей одного ключа (сет, T4) остаётся лучшая по (очки, цена, потеря, ростер,
 // старшинство) — сеты и их ценность у них одни и те же.
 import type { SlotId } from '@/game/data/types';
-import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit, type KitKey } from './model';
+import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, type Cand, type Cands, type Fit, type Gauge, type Kit, type KitKey } from './model';
 
 export const FIT: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
 const EMPTY = Number.POSITIVE_INFINITY; // ранг и номер пустого слота — после любых вещей
@@ -151,4 +151,3 @@ export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
   return { ...k, rank, ranks: [...ranks, ...k.ranks], ords: [...ords, ...k.ords] };
 }
 
-export const kitSlots = (k: Kit): SlotId[] => SLOT_ORDER.filter((s) => !!k.slots[s]);

@@ -168,7 +168,7 @@ describe('3.3 ссылка и карточка', () => {
     await mount(STD({ roster: [], state: { tab: 'eval' } }), codeOf([HELM, ARM]));
     const c = card()!;
     expect(c.querySelector('.drawer-h h3')?.textContent).toBe('Shared · view only');
-    for (const sel of ['.cd-star', '.cd-top', '.cd-trade', '.btabs', '.pool', '.cd-rate', '.bgear-empty .btn', '.worn-advice', '.worn-share']) {
+    for (const sel of ['.cd-star', '.cd-top', '.btabs', '.pool', '.cd-rate', '.bgear-empty .btn', '.worn-advice', '.worn-share']) {
       expect(c.querySelector(sel), sel).toBeNull();
     }
     expect([...c.querySelectorAll('button')].map((b) => b.className)).toEqual(['drawer-x']);
