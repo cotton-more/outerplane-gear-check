@@ -15,15 +15,16 @@
 import type { Index } from '@/game/data';
 import { changed } from '@/features/gear/model/fusion';
 import { fixPins } from '@/features/gear/model/gear';
-import { loadGear, newerGear, oldModel, readsWhole, type Loaded } from './gearStore';
+import { loadGear, newerGear, oldMarks, oldModel, readsWhole, type Loaded } from './gearStore';
 import { storage } from '@/shared/storage';
 
 export interface Stored extends Loaded { newer: boolean }
 
 // note — что поменяла нормализация этого разбора, для сообщения после загрузки; забирается один раз (takeLoadNote)
 type Note = Pick<Loaded, 'fixes' | 'added'> & { pins: [string, string][] };
-// model — прочитано хранилище прежней модели, а сообщения о переносе ещё не было (takeModelNote)
-let last: { key: string; idx: Index; r: Stored; note: Note | null; model: boolean } | null = null;
+// model — the store of the old model was read and the upgrade notice has not been shown yet (takeModelNote);
+// marks — it had marks / «Не отдавать надетое» / a chosen build (the notice then adds a sentence about the reset)
+let last: { key: string; idx: Index; r: Stored; note: Note | null; model: boolean; marks: boolean } | null = null;
 let held = false;
 // идёт обучение — запись нормализации при чтении не срабатывает (App, onRunning)
 export const holdStoredWrites = (on: boolean) => { held = on; };
@@ -53,7 +54,8 @@ export function readStored(idx: Index): Stored {
     storage.set('gear', r.st);
   }
   const note = changed(r) || pins.gone.length ? { fixes: r.fixes, added: r.added, pins: pins.gone } : null;
-  last = { key: keyNow(), idx, r, note, model: oldModel(raw) && !storage.get('modelNote', false) };
+  const model = oldModel(raw) && !storage.get('modelNote', false);
+  last = { key: keyNow(), idx, r, note, model, marks: model && oldMarks(raw) };
   return r;
 }
 
@@ -65,11 +67,14 @@ export function takeLoadNote(idx: Index): Note | null {
   return n;
 }
 
-// сообщение о переносе на новую модель (TEXTS 41): true — один раз за всё время; флаг пишется сразу
-export function takeModelNote(idx: Index): boolean {
+// the upgrade notice (TEXTS 41): non-null once in a lifetime, the flag is written at once; marks — add the sentence about
+// the cleared marks (TEXTS 15)
+export function takeModelNote(idx: Index): { marks: boolean } | null {
   readStored(idx);
-  if (!last!.model) return false;
+  if (!last!.model) return null;
+  const marks = last!.marks;
   last!.model = false;
+  last!.marks = false;
   storage.set('modelNote', true);
-  return true;
+  return { marks };
 }

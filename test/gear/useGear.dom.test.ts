@@ -87,18 +87,40 @@ describe('useGear', () => {
   it('сообщение о переносе: игроку прежней модели — один раз за всё время; новому и v3 — нет', async () => {
     localStorage.setItem('ogc.gear', JSON.stringify(V2));
     await render(true);
-    expect([takeModelNote(idx), takeModelNote(idx)]).toEqual([true, false]);
+    expect([takeModelNote(idx), takeModelNote(idx)]).toEqual([{ marks: true }, null]);
     expect(localStorage.getItem('ogc.modelNote')).toBe('true');
     localStorage.setItem('ogc.gear', JSON.stringify(V2)); // хранилище снова v2 (другая вкладка): флаг уже стоит
-    expect(takeModelNote(idx)).toBe(false);
+    expect(takeModelNote(idx)).toBeNull();
     localStorage.clear();
     localStorage.setItem('ogc.gear', JSON.stringify(RAW));
-    expect(takeModelNote(idx)).toBe(false);
+    expect(takeModelNote(idx)).toBeNull();
     localStorage.clear();
-    expect(takeModelNote(idx)).toBe(false);
+    expect(takeModelNote(idx)).toBeNull();
     // v2 без вещей — прежней модели игрок не видел: сообщения нет (ревью этапа 10)
     localStorage.setItem('ogc.gear', JSON.stringify({ ...V2, seq: 0, pieces: {}, pools: {} }));
-    expect(takeModelNote(idx)).toBe(false);
+    expect(takeModelNote(idx)).toBeNull();
+  });
+
+  it('upgrade note: the «marks were cleared» sentence only when the old v2 store had marks, aim or «Не отдавать надетое»', async () => {
+    const plain = { ...V2 } as Record<string, unknown>;
+    for (const k of ['marks', 'autoNew', 'aim', 'pinned', 'v1builds']) delete plain[k];
+    const note = (raw: unknown) => {
+      localStorage.clear();
+      localStorage.setItem('ogc.gear', JSON.stringify(raw));
+      return takeModelNote(idx);
+    };
+    expect(note(V2)).toEqual({ marks: true });
+    expect(note({ ...plain, marks: { '2000089/Speed': 'skip' } })).toEqual({ marks: true });
+    expect(note({ ...plain, pinned: ['2000089'] })).toEqual({ marks: true });
+    expect(note({ ...plain, aim: { '2000089': '2000089/Speed' } })).toEqual({ marks: true });
+    // v2 without marks / aim / «Не отдавать» (empty ones too, and autoNew alone): the note without the sentence
+    expect(note(plain)).toEqual({ marks: false });
+    expect(note({ ...plain, marks: {}, aim: {}, pinned: [], autoNew: ['2000089/Speed'] })).toEqual({ marks: false });
+    // v1 never had marks; fresh v3 has no note at all
+    expect(note(V1)).toEqual({ marks: false });
+    expect(note(RAW)).toBeNull();
+    // the sentence is part of the flag: shown once, a second call has nothing
+    expect([note(V2), takeModelNote(idx)]).toEqual([{ marks: true }, null]);
   });
 
   it('во время обучения: на странице пусто, запись ничего не делает; после тура не пишется, на странице — хранилище', async () => {

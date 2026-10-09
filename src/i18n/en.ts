@@ -252,6 +252,7 @@ export const en: Texts = {
     close: 'Close',
     gotIt: 'Got it',
     modelNote: 'Evaluation updated: no build to pick per hero — stats and the sets from outerpedia builds now count together. Need a specific set? Pin it on the hero card.',
+    modelNoteMarks: 'The «Filling» marks and «Keep worn gear» aren\'t used by the new evaluation — they were cleared.',
     copy: 'Copy',
     copied: 'Copied',
     tagline: 'Outerplane · what to keep, what to dismantle',

@@ -121,8 +121,8 @@ export function App() {
   const [pieceOpen, setPieceOpen] = useState(false); // карточка вещи в блоке билда (для тура «Экипировка»)
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   // перенос на новую модель (.x/0085 PLAN Д11): игроку прежней модели — одно сообщение за всё время (флаг пишется сразу)
-  const [modelNote, setModelNote] = useState(false);
-  useEffect(() => { if (takeModelNote(idx)) setModelNote(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [modelNote, setModelNote] = useState<{ marks: boolean } | null>(null);
+  useEffect(() => { const n = takeModelNote(idx); if (n) setModelNote(n); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // сообщения с «Вернуть»: экипировки (features/gear/ui/gearMsg) и формы — «Следующий» убрал предмет по ошибке
   const [msg, say] = useTimed<GearMsg>(GEAR_MSG_MS);
   const [formUndo, setFormUndo] = useTimed<ItemInput>(6000);
@@ -235,7 +235,7 @@ export function App() {
               action={t.ui.gotIt} onAction={() => { storage.set('fitnoteHidden', true); setFitHidden(true); }} />
           </div>
         )}
-        {modelNote && <div id="modelnote"><Notice text={t.ui.modelNote} action={t.ui.gotIt} onAction={() => setModelNote(false)} /></div>}
+        {modelNote && <div id="modelnote"><Notice text={modelNote.marks ? `${t.ui.modelNote} ${t.ui.modelNoteMarks}` : t.ui.modelNote} action={t.ui.gotIt} onAction={() => setModelNote(null)} /></div>}
         {onb.welcomeShown && <Welcome install={install} onTour={layout.tall ? () => onb.startTour('core') : undefined} onRoster={() => onTab('chars')} onClose={onb.hideWelcome} />}
         <main>
           <section id="view-eval" className={batchResult && !layout.narrow ? 'view eval batch-result' : 'view eval'} role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>

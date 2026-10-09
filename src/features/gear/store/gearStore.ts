@@ -172,6 +172,14 @@ export const oldModel = (raw: unknown): boolean => {
   const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown; pieces?: unknown };
   return (r.v === 1 || r.v === 2) && Object.keys(record(r.pieces)).length > 0;
 };
+// the old v2 store carried «Собираю / Не собираю» marks, «Не отдавать надетое» or a chosen build (aim) — the upgrade notice then
+// adds a sentence that they were cleared. v1 never had marks (the v1 → v2 step made them up), so it never counts
+export const oldMarks = (raw: unknown): boolean => {
+  const r = record(raw);
+  if (r.v !== 2) return false;
+  return Object.keys(record(r.marks)).length > 0 || Object.keys(record(r.aim)).length > 0
+    || (Array.isArray(r.pinned) && r.pinned.length > 0);
+};
 
 // старая резервная копия кодом (JSON): OGC-GEAR1 (v1) и OGC-GEAR2 (v2) читаются и переносятся; номер больше — код копии
 // (features/roster/backup), здесь 'newer'. Страница такой код больше не пишет: encodeGear — для тестов
