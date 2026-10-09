@@ -293,14 +293,14 @@ describe('«Партия»: обход по шагам', () => {
     const steps = $$('.bwalk .bstep');
     expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
       'Caren → helmet → No. 3 in the helmet list · #3',   // her slot list: the «E» entry (#1), the weak one (#2), this (#3)
-      'Select in the game and dismantle: 1',
       "Caren's helmet → Breakthrough: up to 1 from the list, any — dismantle what doesn't fit",
+      'Select in the game and dismantle: 1',               // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
-    expect(steps[2].textContent).toContain('feed:#2 Speed helmet · SPD 1');                  // the feed, piece by piece
-    expect(steps[2].querySelector('.gname.legend')?.textContent).toBe('Speed helmet');      // name in the grade's colour
-    expect(steps[1].textContent).toContain('#1 Speed helmet · DEF% 3');  // the taken-off helmet, its «E» entry's number
-    expect(steps[1].querySelector('.gname.epic')).toBeTruthy();
+    expect(steps[1].textContent).toContain('feed:#2 Speed helmet · SPD 1');                  // the feed, piece by piece
+    expect(steps[1].querySelector('.gname.legend')?.textContent).toBe('Speed helmet');      // name in the grade's colour
+    expect(steps[2].textContent).toContain('#1 Speed helmet · DEF% 3');  // the taken-off helmet, its «E» entry's number
+    expect(steps[2].querySelector('.gname.epic')).toBeTruthy();
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
     await click(steps[0].querySelector('.bcheck'));
     expect(batch().done).toEqual(['eq:3']);

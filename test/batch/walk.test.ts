@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { makeCtx } from '@/game/context';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
 import { entriesOf, fitsKind, kindOf, NEW_BATCH, putItem, removeItem, restoreBatch, setChoice, type Batch, type BatchEntry } from '@/features/batch/batch';
-import { inputOfPiece, planBatch } from '@/features/batch/plan';
+import { inputOfPiece, planBatch, type Plan } from '@/features/batch/plan';
 import { gameSubs, rowOf, walkOf } from '@/features/batch/walk';
 import { char, idx, mk } from '../gear/statSets';
 
@@ -82,10 +82,10 @@ describe('the walk', () => {
     const off = plan.lines.find((l) => l.off)!;
     const walk = walkOf(off.fate.kind === 'maybe' ? setChoice(b, off.id, 'keep') : b, plan);
     expect(walk.undecided).toBe(0);
-    expect(walk.steps.map((s) => s.stage)).toEqual([1, 2, 4]);
+    expect(walk.steps.map((s) => s.stage)).toEqual([1, 2, 3]);
     expect(walk.steps[0]).toMatchObject({ stage: 1, c: { name: 'Caren' }, slot: 'helmet', k: 3 });
     expect(walk.steps[1]).toMatchObject({ stage: 2, where: { n: 1 } });     // the taken-off Epic — where its «E» is
-    expect(walk.steps[2]).toMatchObject({ stage: 4, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
+    expect(walk.steps[2]).toMatchObject({ stage: 3, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
   });
 
   it('the equip number is in the hero\'s list of that slot: boots first, then armor — the armor is No. 1 among armor, #2 in the batch', () => {
@@ -125,6 +125,19 @@ describe('the walk', () => {
     expect(walkOf(b, plan).undecided).toBe(maybe.length);
     const w = walkOf(maybe.reduce((x, l) => setChoice(x, l.id, 'junk'), b), plan);
     expect(w.undecided).toBe(0);
-    expect(w.steps.filter((s) => s.stage === 3)).toHaveLength(1);
+    expect(w.steps.filter((s) => s.stage === 4)).toHaveLength(1);
+  });
+
+  it('Breakthrough before the dismantle (owner 2026-10-09); a later target in the inventory moves up by the feed eaten before it', () => {
+    const caren = char('Caren');
+    const line = (n: number, fate: Plan['lines'][number]['fate']) => ({ id: `${n}`, n, input: inputOfPiece(weak(`p${n}`, n)), fate });
+    const plan = {
+      lines: [line(1, { kind: 'keep', c: caren, t4: false }), line(2, { kind: 'feed', to: { entry: 1 } }), line(3, { kind: 'feed', to: { entry: 4 } }),
+        line(4, { kind: 'keep', c: caren, t4: false }), line(5, { kind: 'junk' })],
+    } as unknown as Plan;
+    const b = batchOf([1, 2, 3, 4, 5].map((n) => piece(weak(`p${n}`, n))));
+    const steps = walkOf(b, plan).steps;
+    expect(steps.map((s) => s.stage)).toEqual([2, 2, 3, 3, 4]);
+    expect(steps.filter((s) => s.stage === 3).map((s) => s.stage === 3 && s.at)).toEqual([1, 3]); // #4 is 3rd once #2 is eaten
   });
 });

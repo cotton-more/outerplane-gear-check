@@ -69,14 +69,14 @@ anything else. Both grades? Legendary first, then Epic: the second batch then se
       Patience gloves — for Gnosis Domine" (set aside to wear when the set comes together), "… (reserve)" —
       Breakthrough material, "… — Maybe, set aside", and the substats to check. A lock means "in someone's Pool":
       whose — on the hero's card, the Pool tab.
-   3. **Dismantle — in one selection:** each piece on a line — its batch number, name and main (Epic blue, Legendary
-      red) and substats: "#18 Sublime Melody · HP% · DMG UP% 3, EFF% 1, …". Pieces locked in step 2 can't be
-      dismantled even by mistake.
-   4. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4 from the list, any — dismantle what doesn't fit" (the app doesn't
+   3. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4 from the list, any — dismantle what doesn't fit" (the app doesn't
       know the exact tier below T4, the game takes no more than it needs) — material is interchangeable, worn and
-      locked pieces aren't in that list; "first unlock 2 set-aside" — when the plan feeds a reserve. Below —
+      locked pieces aren't in that list, so a set-aside piece can't be fed by mistake; "first unlock 2 set-aside" — when the plan feeds a reserve. Below —
       which piece it is and each piece of feed: "#9 Noblewoman's Guile · DEF% · HP% 3, …". A Legendary weapon
       or accessory takes only copies of the same item, so heroes get different amounts of feed.
+   4. **Dismantle — in one selection, last:** after the Breakthrough, so nothing meant as feed is dismantled. Each piece on a line — its batch number, name and main (Epic blue, Legendary
+      red) and substats: "#18 Sublime Melody · HP% · DMG UP% 3, EFF% 1, …". Pieces locked in step 2 can't be
+      dismantled even by mistake; feed a Breakthrough didn't take — dismantle it too.
 
    Tick steps ✓ — the walk is saved, even if the phone unloads the page. Substats don't match — the batch and the game
    list differ: fix it in "List ▸".

@@ -61,23 +61,23 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
         subs: s.kept ? gameSubs(ctx.idx, s.kept.input.subs) : undefined };
     }
     case 3: {
-      // each piece on its own line: where it is, then what it is — «ряд 2, 8-й · #18 Epic · ATK% · SPD 1, CHC 2, …»
-      const lines = s.where.map((w, i) => {
-        if (!('n' in w)) return desc(ctx, t, w);
-        const x = s.inputs[i];
-        return x ? <PieceLine ctx={ctx} t={t} n={w.n} x={x} /> : `#${w.n}`;
-      });
-      return { title: t.batch.junkTitle(s.where.length), hero: null, more: lines };
-    }
-    case 4: {
       const where = 'worn' in s.target ? t.batch.btWorn(s.target.slot, s.target.worn.name)
-        : 'n' in s.target.where ? t.batch.btAt(rowOf(s.target.where.n).r, rowOf(s.target.where.n).p) : desc(ctx, t, s.target.where);
+        : 'n' in s.target.where ? t.batch.btAt(rowOf(s.at ?? s.target.where.n).r, rowOf(s.at ?? s.target.where.n).p) : desc(ctx, t, s.target.where);
       const hero = 'worn' in s.target ? s.target.worn : 'n' in s.target.where ? null : s.target.where.c;
       const kept = 'kept' in s.target && s.target.kept ? keptText(ctx, t, s.target.kept) : undefined;
       const label = (x: ItemInput) => nameOf(ctx, t, x);
       // the feed, piece by piece: «ряд 1, 9-й · #9 Noblewoman's Guile · HP% 3, …»; a taken-off or set-aside one — its description
       const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <PieceLine ctx={ctx} t={t} n={w.n} x={x} /> : desc(ctx, t, w)));
       return { title: t.batch.btStep(where, s.n), hero, kept, more: [...(s.piece && !kept ? [t.batch.btPiece(label(s.piece))] : []), ...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
+    }
+    case 4: {
+      // each piece on its own line, what it is — «#18 Sublime Melody · HP% · SPD 1, CHC 2, …»
+      const lines = s.where.map((w, i) => {
+        if (!('n' in w)) return desc(ctx, t, w);
+        const x = s.inputs[i];
+        return x ? <PieceLine ctx={ctx} t={t} n={w.n} x={x} /> : `#${w.n}`;
+      });
+      return { title: t.batch.junkTitle(s.where.length), hero: null, more: lines };
     }
   }
 }

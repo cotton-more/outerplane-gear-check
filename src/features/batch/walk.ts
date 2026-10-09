@@ -1,13 +1,15 @@
 // The step-by-step walk of a batch plan (.x/0140-batch-walk §1, owner 2026-10-08): four stages by game screen, in an
 // order where the numbers never drift — worn pieces are shown in the game filter, so equipping and taking off move
-// nothing; locking moves nothing; the dismantle is one multi-select; Breakthrough needs no numbers (material is
-// interchangeable, worn pieces aren't listed, locked ones can't be picked).
+// nothing; locking moves nothing; Breakthrough needs no numbers (material is interchangeable, worn pieces aren't
+// listed, locked ones can't be picked); the dismantle comes last, so nothing meant for a Breakthrough is dismantled by
+// mistake (owner 2026-10-09).
 //   1 equip — at the hero: «Caren → шлем → № 7 в списке» (the hero's slot list: the batch's entries of that slot) +
 //     substats as the game shows them, to check after a tap. A piece taken off one hero and put on another — after the
 //     equip that takes it off.
 //   2 lock — what is kept: set aside, reserves, «Спорно → Отложить», a set-aside look-alike («same»).
-//   3 dismantle — all at once, by rows of the inventory grid (10 per row).
-//   4 Breakthrough — per target: how many from the list, and how many set-aside ones to unlock first.
+//   3 Breakthrough — per target: how many from the list, and how many set-aside ones to unlock first. A target lying
+//     in the inventory is found by its row and place, less the feed eaten by the steps before it.
+//   4 dismantle — what is left, all at once; each piece by its batch number, name and substats.
 // Positions come from the batch entries (#n — position in the game list, all kinds). A piece the batch doesn't hold
 // (a taken-off piece with no «E» entry, a set-aside record) is named by its description instead of a number.
 import type { Char, SlotId } from '@/game/data/types';
@@ -29,11 +31,11 @@ export interface Kept { n: number; input: ItemInput; c: Char | null; why: 'keep'
 export type Step =
   | { key: string; stage: 1; c: Char; slot: SlotId; k: number | null; where: Where; subs: Record<string, number>; input: ItemInput }
   | { key: string; stage: 2; where: Where; kept: Kept | null }
-  | { key: string; stage: 3; where: Where[]; inputs: (ItemInput | null)[] } // one step: the game's dismantle is one multi-select; inputs — each piece, to check (owner 2026-10-09)
+  | { key: string; stage: 4; where: Where[]; inputs: (ItemInput | null)[] } // one step: the game's dismantle is one multi-select; inputs — each piece, to check (owner 2026-10-09)
   // piece — the target's own record (its name in the step), mats — the planned feed, each to check (owner 2026-10-09:
   // a Legendary item takes only copies of itself — «#9, #45 Noblewoman's Guile» says why «до 2»)
-  | { key: string; stage: 4; target: { worn: Char; slot: SlotId } | { where: Where; kept: Kept | null }; piece: ItemInput | null; n: number; unlock: number;
-      mats: { where: Where; input: ItemInput }[] };
+  | { key: string; stage: 3; target: { worn: Char; slot: SlotId } | { where: Where; kept: Kept | null }; piece: ItemInput | null; n: number; unlock: number;
+      mats: { where: Where; input: ItemInput }[]; at: number | null }; // at — the target's place in the game list now
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
   undecided: number;   // «Спорно» lines without a choice — the walk waits for them
@@ -73,7 +75,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   const equip: Extract<Step, { stage: 1 }>[] = [];
   const lock: Extract<Step, { stage: 2 }>[] = [];
   const junk: { where: Where; input: ItemInput | null }[] = [];
-  const feeds = new Map<string, Omit<Extract<Step, { stage: 4 }>, 'key' | 'stage'>>();
+  const feeds = new Map<string, Omit<Extract<Step, { stage: 3 }>, 'key' | 'stage'>>();
   const lineOf = (n: number) => plan.lines.find((l) => l.n === n && !l.off);
   // why an entry line's piece stays; a taken-off piece has its description instead (no number)
   const keptOf = (l: Line | undefined, f: Fate | { kind: 'lock' } | undefined): Kept | null => {
@@ -108,14 +110,14 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
         const tk = 'entry' in to ? `e${to.entry}` : `p${to.piece.id}`;
         let x = feeds.get(tk);
         if (!x) {
-          const target: Extract<Step, { stage: 4 }>['target'] = 'entry' in to
+          const target: Extract<Step, { stage: 3 }>['target'] = 'entry' in to
             ? (() => {
               const t = lineOf(to.entry);
               return t && t.fate.kind === 'wear' ? { worn: t.fate.c, slot: t.input.slot } : { where: { n: to.entry }, kept: t ? keptOf(t, fateOf(t)) : null };
             })()
             : { worn: to.c, slot: to.piece.slot };
           const piece = 'entry' in to ? lineOf(to.entry)?.input ?? null : inputOfPiece(to.piece);
-          feeds.set(tk, (x = { target, piece, n: 0, unlock: 0, mats: [] }));
+          feeds.set(tk, (x = { target, piece, n: 0, unlock: 0, mats: [], at: null }));
         }
         x.n++;
         x.mats.push({ where, input: l.input });
@@ -130,9 +132,15 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   const first = equip.filter((s) => !takesOff(s)), second = equip.filter((s) => takesOff(s));
   const heroes = [...new Set(first.map((s) => s.c.id))];
   first.sort((a, z) => heroes.indexOf(a.c.id) - heroes.indexOf(z.c.id));
-  const bt: Extract<Step, { stage: 4 }>[] = [...feeds].map(([k, x]) => ({ key: `bt:${k}`, stage: 4, ...x }));
+  const bt: Extract<Step, { stage: 3 }>[] = [...feeds].map(([k, x]) => ({ key: `bt:${k}`, stage: 3, ...x }));
+  // the feed of each step leaves the list: a later target in the inventory moves up by what was eaten before it
+  const eaten: number[] = [];
+  for (const s of bt) {
+    if ('where' in s.target && 'n' in s.target.where) { const n = s.target.where.n; s.at = n - eaten.filter((m) => m < n).length; }
+    for (const m of s.mats) if ('n' in m.where) eaten.push(m.where.n);
+  }
   // dismantle: by position, rows of the grid top down; pieces with no number after them
   junk.sort((a, z) => ('n' in a.where ? a.where.n : Infinity) - ('n' in z.where ? z.where.n : Infinity));
-  const dz: Extract<Step, { stage: 3 }>[] = junk.length ? [{ key: 'dz', stage: 3, where: junk.map((x) => x.where), inputs: junk.map((x) => x.input) }] : [];
-  return { steps: [...first, ...second, ...lock, ...dz, ...bt], undecided };
+  const dz: Extract<Step, { stage: 4 }>[] = junk.length ? [{ key: 'dz', stage: 4, where: junk.map((x) => x.where), inputs: junk.map((x) => x.input) }] : [];
+  return { steps: [...first, ...second, ...lock, ...bt, ...dz], undecided };
 }
