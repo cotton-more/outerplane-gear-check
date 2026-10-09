@@ -80,7 +80,16 @@ describe('«Партия» on a phone', () => {
     expect(batch().items).toHaveLength(1);
     expect(batch().items[0]).toMatchObject({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', setId: speed, subs: GOOD.subs, bt: 0 } });
     expect($('.batch-strip .tryon-k')?.textContent).toBe('Batch · 1');
+    // the next piece asks its slot and grade again (owner 2026-10-09): nothing pressed, «Add» waits
+    expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2');
+    expect($('.slotrow.need')).toBeTruthy();
+    expect($('.gradesw.need')).toBeTruthy();
+    await click($('.vbar .vb-reset'));
+    expect($('.batch-toast')?.textContent).toBe('Pick the slot and grade first — as on the piece in the game.');
+    await click($('[data-tour="slot"] [data-tour-item="helmet"]'));
+    await click($('[data-tour="grade"] [data-tour-item="unique"]'));
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · helmet');
+    expect($('.slotrow.need')).toBeNull();
     expect(JSON.parse(localStorage.getItem('ogc.item') ?? '{}').subs ?? {}).toEqual({});
   });
 
@@ -204,6 +213,9 @@ describe('«Партия»: обход по шагам', () => {
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
     await click(byText('.batch-marks button', 'E · worn'));
     await click(byText('.batch-whose button', 'Caren'));
+    await click(byText('.batch-marks button', 'set aside'));             // the slot is asked first after «E»
+    expect(batch().items).toHaveLength(1);
+    await click($('[data-tour="slot"] [data-tour-item="helmet"]'));
     await click(byText('.batch-marks button', 'set aside'));
     expect(batch().items).toEqual([{ kind: 'worn', c: caren.id, slot: 'helmet' }, { kind: 'lock', slot: 'helmet' }]);
     await click($('.batch-strip .batch-list'));
@@ -217,6 +229,20 @@ describe('«Партия»: обход по шагам', () => {
     expect($('[data-tour="pick"]')?.textContent).toContain('Speed');
     await click($('.vbar .vb-reset'));
     expect(batch().items[1].input.setId).toBe(speed);
+  });
+
+  it('a weapon batch: after «Add» the main and the item clear, the slot stays weapon, only the grade is asked', async () => {
+    const w = D.weapons.find((i) => i.grade === 'unique' && i.star === 6)!;
+    await mount({ itemKey: w.key, main: w.mains[0], subs: { SPD: 2, CHC: 2, CHD: 1, 'DMG UP%': 1 } },
+      { state: { tab: 'eval', slot: 'weapon', grade: 'unique' }, batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
+    await click($('.vbar .vb-reset'));
+    expect(batch().items).toHaveLength(1);
+    const form = JSON.parse(localStorage.getItem('ogc.item') ?? '{}');
+    expect([form.main ?? null, form.itemKey ?? null]).toEqual([null, null]);
+    expect($('.slotrow.need')).toBeNull();
+    expect($('[data-tour="slot"] [data-tour-item="weapon"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect($('.gradesw.need')).toBeTruthy();
+    expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · weapon');
   });
 
   it('the form is locked to the batch: in a Speed armor batch weapon slots and other sets are off, hotkeys too', async () => {

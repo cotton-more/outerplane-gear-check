@@ -177,7 +177,7 @@ export function App() {
   const onReset = batchOn
     ? () => { if (batch.view !== 'plan' && batch.view !== 'walk') batch.add(input, vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle'); }
     : flow.onReset;
-  const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1, s.slot)) : undefined;
+  const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1, batch.ask?.slot ? null : s.slot)) : undefined;
   // the plan and the walk take the screen (owner 2026-10-09): no form — nothing is entered any more; on a phone the sheet
   // is full height, on a wide screen the batch column takes the form's place
   const batchResult = batchOn && (batch.view === 'plan' || batch.view === 'walk');
@@ -188,8 +188,10 @@ export function App() {
   const formDispatch = useCallback((a: Action) => {
     if (lock && a.type === 'slot' && !lock.slots.includes(a.slot)) return;
     if (lock?.set && a.type === 'set' && a.setId !== lock.set) return;
+    // a slot or grade picked for the next batch piece (even the same one) — the ask is answered
+    if (batchOn && (a.type === 'slot' || a.type === 'grade')) batch.answer(a.type);
     dispatch(a);
-  }, [lock, dispatch]);
+  }, [lock, dispatch, batchOn, batch.answer]); // eslint-disable-line react-hooks/exhaustive-deps
   useHotkeys(s, formDispatch, layout, onReset);
   // the batch's set goes onto the form by itself: the set field is fixed then (features/batch)
   useEffect(() => {
@@ -238,7 +240,7 @@ export function App() {
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
                 onWorn={(c) => batch.addWorn(c, s.slot)} onLock={() => batch.addLock(s.slot)} /> : null}
-              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} />}
+              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} ask={batchOn ? batch.ask : null} />}
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
               : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />)}

@@ -27,7 +27,7 @@ import { MainButtons } from '@/features/eval/form/MainButtons';
 import { MainPicker } from '@/features/eval/form/MainPicker';
 import { PickField } from '@/features/eval/form/PickField';
 import { SetPicker } from '@/features/eval/form/SetPicker';
-import type { BatchLock } from '@/features/batch/useBatchMode';
+import type { BatchAsk, BatchLock } from '@/features/batch/useBatchMode';
 import { SubPicker } from '@/features/eval/form/SubPicker';
 import { LevelAsk } from '@/features/eval/form/LevelAsk';
 import { StatGrid } from '@/features/eval/form/StatGrid';
@@ -50,7 +50,7 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: куда встанет форма после неё. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch, lock = null }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch, lock = null, ask = null }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
@@ -61,6 +61,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   nextLabel?: string;             // «В партию · #8» / «Сохранить #3» instead of «Следующий»
   onBatch?: () => void;           // «Партия» next to «Следующий» (wide screen)
   lock?: BatchLock | null;        // a batch of one kind: other slots and sets are off (features/batch)
+  ask?: BatchAsk | null;          // the next batch piece picks its slot / grade again: none pressed, the row highlighted
 }) {
   const { SET, ITEM } = ctx.idx;
   const t = useT();
@@ -119,9 +120,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
     <div className="panel eval-in" id="eval-in">
       <div className="form">
         {strip ?? (hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />)}
-        <div className="slotrow" role="group" aria-label={t.ui.slot} {...tour('slot')}>
+        <div className={ask?.slot ? 'slotrow need' : 'slotrow'} role="group" aria-label={t.ui.slot} {...tour('slot')}>
           {SLOTS.map((sl, i) => (
-            <button key={sl.id} type="button" className={lock && !lock.slots.includes(sl.id) ? 'slot off' : 'slot'} aria-pressed={s.slot === sl.id} aria-label={sl.name} title={sl.name}
+            <button key={sl.id} type="button" className={lock && !lock.slots.includes(sl.id) ? 'slot off' : 'slot'} aria-pressed={!ask?.slot && s.slot === sl.id} aria-label={sl.name} title={sl.name}
               aria-disabled={(lock && !lock.slots.includes(sl.id)) || undefined}
               onClick={() => (lock && !lock.slots.includes(sl.id) ? lock.explain() : dispatch({ type: 'slot', slot: sl.id }))} {...tourItem(sl.id)}>
               <SlotIcon slot={sl.id} /><span>{sl.name}</span><kbd>{i + 1}</kbd>
@@ -129,9 +130,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
           ))}
         </div>
         <div className="formrow">
-          <div className="gradesw" role="group" aria-label={t.ui.gradeGroup} {...tour('grade')}>
+          <div className={ask?.grade ? 'gradesw need' : 'gradesw'} role="group" aria-label={t.ui.gradeGroup} {...tour('grade')}>
             {GRADES.map((g) => (
-              <button key={g} type="button" className={`grade ${g}`} aria-pressed={s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
+              <button key={g} type="button" className={`grade ${g}`} aria-pressed={!ask?.grade && s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
                 onClick={() => dispatch({ type: 'grade', grade: g })} {...tourItem(g)}>
                 <GradeFrame grade={g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
               </button>

@@ -12,7 +12,7 @@ import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
 export function BatchStrip({ n, cands, onList, onEnd, onWorn, onLock }: {
-  n: number; cands: () => Char[];
+  n: number; cands: () => Char[] | null;
   onList: () => void; onEnd: () => void; onWorn: (c: string) => void; onLock: () => void;
 }) {
   const t = useT();
@@ -23,7 +23,7 @@ export function BatchStrip({ n, cands, onList, onEnd, onWorn, onLock }: {
         <span className="tryon-k">{t.batch.strip(n)}</span>
         <button type="button" className="linkbtn batch-list" onClick={onList}>{t.batch.list}</button>
         <span className="batch-marks">
-          <button type="button" className="btn small" aria-label={t.batch.wornAdd} title={t.batch.wornAdd} onClick={() => setPick(cands())}>
+          <button type="button" className="btn small" aria-label={t.batch.wornAdd} title={t.batch.wornAdd} onClick={() => { const c = cands(); if (c) setPick(c); }}>
             <span aria-hidden="true">{t.batch.wornAdd.split(' · ')[0]}</span><span className="bm-long" aria-hidden="true"> · {t.batch.wornAdd.split(' · ')[1]}</span>
           </button>
           <button type="button" className="btn small" aria-label={t.batch.lockAdd} title={t.batch.lockAdd} onClick={onLock}>

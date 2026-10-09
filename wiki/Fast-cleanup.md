@@ -44,6 +44,10 @@ accessory) and other sets can't be picked on the form — start a new batch for 
    - a **worn** one (E mark) — "E · worn" and pick the hero: the app knows its substats;
    - a **locked** one (a lock means someone's reserve) — "🔒 · set aside" with the slot on the form.
 
+   After "Add" the form gets ready for the next piece of the list: substats, main and item name clear, the grade
+   has to be picked again, and for armor the slot too (the set stays). Until then the slot and grade buttons are
+   highlighted, and "Add" says: "Pick the slot and grade first — as on the piece in the game".
+
    Worn and locked entries hold the numbers: without them "No. 7" in the app and in the game would differ. "List ▸" —
    fix a piece (tap it, then "Save #N") or remove it (✕).
 3. **"Plan it"** — a line per piece: "Equip on Caren", "Equip on Caren — instead of the helmet", "Set aside for Rin",

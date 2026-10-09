@@ -754,8 +754,9 @@ export const ru = {
     list: 'Список ▸',
     end: 'Закончить партию',
     // the slot on the button: twelve «gloves» in a row are easy to miss otherwise (owner 2026-10-09)
-    add: (n: number, slot: string) => `В партию · #${n} · ${NOM[slot]}`,
+    add: (n: number, slot: string | null) => `В партию · #${n}${slot ? ` · ${NOM[slot]}` : ''}`,
     back: '← К списку',
+    askFirst: (slot: boolean, grade: boolean) => `Сначала выбери ${slot && grade ? 'слот и грейд' : slot ? 'слот' : 'грейд'} — как у вещи в игре.`,
     save: (n: number) => `Сохранить #${n}`,
     incomplete: 'Введены не все сабстаты — в партию не добавлено.',
     empty: 'Фильтр в игре: один сет (или оружие, или аксессуары), надетые показывать, по дате. Вводи подряд, как в списке.',

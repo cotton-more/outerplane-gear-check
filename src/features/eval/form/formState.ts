@@ -36,7 +36,7 @@ export type FormAction =
   | { type: 'roll'; key: string; n: number }
   | { type: 't4' }
   | { type: 'clearSubs' }
-  | { type: 'reset'; slot?: SlotId } // slot — «Дальше: {слот}» после «Надеть» при вводе надетого
+  | { type: 'reset'; slot?: SlotId; batch?: boolean } // slot — «Дальше: {слот}» после «Надеть» при вводе надетого; batch — after «В партию»
   | { type: 'load'; item: ItemInput }
   | { type: 'expand'; key: string }
   | { type: 'settings'; patch: Partial<Settings> }
@@ -118,6 +118,9 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       // С другим слотом (ввод надетого: следующий ненадетый слот героя) — та же вещь другого слота не ждёт: остаётся
       // только грейд, сет, main и прочее пустые (форму не предзаполняем)
       if (a.slot && a.slot !== s.slot) return { ...s, ...EMPTY_ITEM, slot: a.slot };
+      // a batch (owner 2026-10-09): the next piece of the game list may have another main — only the armor set stays
+      // (the batch's one); slot and grade are asked again by the batch (useBatchMode ask)
+      if (a.batch) return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null };
       return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null, main: s.main };
     case 'load': {
       // Breakthrough входа — в «T4»; само поле bt в состояние не попадает

@@ -108,6 +108,8 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .subopt:disabled { opacity: .3; cursor: not-allowed; }
 /* a batch of one kind (features/batch): other slots and the fixed set look off; a tap says why */
 .slot.off { opacity: .3; cursor: not-allowed; }
+/* the next batch piece picks its slot / grade again (useBatchMode ask): nothing pressed, the row highlighted like .pick.need */
+.slotrow.need .slot:not(.off), .gradesw.need .grade { border-color: var(--accent); background: var(--accent-soft); }
 .pick.locked { cursor: default; border-style: solid; background: transparent; }
 /* стат уже стоит в другой строке: номер строки — выберешь, и он переедет сюда */
 .subopt { position: relative; }
