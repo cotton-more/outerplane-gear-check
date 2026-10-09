@@ -164,3 +164,18 @@ describe('the confirm of the walk (TEXTS §6)', () => {
     expect([ru.removed(5), en.removed(5)]).toEqual(['Убрано #5', 'Removed #5']);
   });
 });
+
+describe('Help: «Партия» is two items; Breakthrough and dismantle are found by stats', () => {
+  for (const lang of ['ru', 'en'] as const) {
+    it(lang, () => {
+      const items = TEXTS[lang].ui.helpRoutineItems;
+      const at = items.findIndex((x) => x.startsWith(lang === 'ru' ? '**Партия**' : '**Batch**'));
+      expect(at).toBeGreaterThan(0);
+      const walk = items[at + 1];
+      expect(walk.startsWith(lang === 'ru' ? '**Обход ▸**' : '**Walk ▸**')).toBe(true);
+      expect(walk).toContain(lang === 'ru' ? 'ищи вещи по сабстатам; одинаковых несколько — бери первую' : 'find the pieces by their substats; several identical — take the first');
+      expect(walk).not.toMatch(/#18|#9\b/);                       // no batch numbers in the Breakthrough and dismantle examples
+      expect(TEXTS[lang].ui.helpVerdicts.some((x) => /до 4|up to 4/.test(x) && /не больше 8|at most 8/.test(x) && /T4/.test(x))).toBe(true);   // Fodder: the reserve caps, T4 = material
+    });
+  }
+});
