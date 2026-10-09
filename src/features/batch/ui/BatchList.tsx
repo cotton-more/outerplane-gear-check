@@ -6,6 +6,7 @@ import type { BatchEntry } from '@/features/batch/batch';
 import { useT } from '@/i18n';
 import { SlotIcon } from '@/game/icons/Img';
 import { SubToken } from '@/game/item/SubToken';
+import { HeroFace } from '@/game/hero/HeroFace';
 import { CloseButton } from '@/shared/ui/CloseButton';
 import { formPiece } from '@/features/gear/verdict';
 import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
@@ -43,7 +44,10 @@ export function BatchList({ ctx, items, editing, onFix, onRemove, onPlan }: {
           ) : (
             <li key={i} className="bgear-row brow bmark">
               <SlotIcon slot={e.slot} />
-              <span className="bgear-n"><b className="bnum">#{i + 1}</b>{e.kind === 'worn' ? t.batch.wornRow(ctx.idx.CHAR[e.c]?.name ?? '') : t.batch.lockRow(e.slot)}</span>
+              <span className="bgear-n"><b className="bnum">#{i + 1}</b>
+                {/* the hero's round portrait, as the game shows a worn piece's owner (owner 2026-10-09) */}
+                {e.kind === 'worn' && ctx.idx.CHAR[e.c] && <span className="bface"><HeroFace c={ctx.idx.CHAR[e.c]} /></span>}
+                {e.kind === 'worn' ? t.batch.wornRow(ctx.idx.CHAR[e.c]?.name ?? '') : t.batch.lockRow(e.slot)}</span>
               {x}
             </li>
           );

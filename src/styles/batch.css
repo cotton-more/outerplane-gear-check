@@ -42,7 +42,11 @@ html.narrow .batch-marks + .tryon-x { margin-left: auto; }
 }
 .batch-whose { display: grid; gap: 6px; }
 .bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
-.bwho .face { width: 32px; height: 32px; border-radius: 6px; }
+/* a worn piece's owner — a round portrait with a light rim, as in the game's item panel */
+.bwho .face, .bface .face { border-radius: 50%; border: 2px solid color-mix(in srgb, var(--ink) 15%, #fff); object-fit: cover; background: var(--surface-3); }
+.bwho .face { width: 36px; height: 36px; }
+.bface { display: inline-flex; flex: none; }
+.bface .face { width: 26px; height: 26px; }
 .bmark .bgear-n { font-weight: 600; }
 .bdecide { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .bdecide .chip { min-height: 32px; padding: 4px 10px; font-family: inherit; font-size: 13px; }
