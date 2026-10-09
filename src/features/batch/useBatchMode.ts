@@ -6,6 +6,7 @@ import { isArmor, type Index } from '@/game/data';
 import type { Char, Grade, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
+import type { Piece } from '@/features/gear/model/gear';
 import type { Texts } from '@/i18n';
 import type { FormAction } from '@/features/eval/form/formState';
 import type { GearApi } from '@/features/gear/store/useGear';
@@ -36,6 +37,7 @@ export interface BatchMode {
   walk: Walk | null;               // the step-by-step walk of that plan
   lock: BatchLock | null;          // one filter per batch: what the form may still pick (null — anything)
   what: string;                    // «Legendary Speed», «Epic» … — the batch's kind in a phrase
+  wornOf: (c: string, slot: SlotId) => Piece | null; // an «E» entry's piece: the hero's worn record of that slot
   ask: BatchAsk | null;            // after «В партию»: what the next piece must pick again (owner 2026-10-09)
   answer: (what: 'slot' | 'grade') => void;
   asking: boolean;                 // ✕ with pieces: «Закончить партию?»
@@ -110,6 +112,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const close = () => { setAsk(null); setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setAsking(false); };
   return {
     on: !!value, batch, editing, note, view, plan, walk, lock, asking,
+    wornOf: (c, slot) => { const id = gear.store.worn?.[c]?.[slot]; return id ? gear.store.pieces[id] ?? null : null; },
     what: [grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : '', kind?.startsWith('set:') ? idx.SET[kind.slice(4)]?.short ?? '' : ''].filter(Boolean).join(' '),
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
     add: (input, complete) => {

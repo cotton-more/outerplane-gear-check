@@ -3,6 +3,10 @@
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import type { BatchEntry } from '@/features/batch/batch';
+import type { SlotId } from '@/game/data/types';
+import type { Piece } from '@/features/gear/model/gear';
+import { inputOfPiece } from '@/features/batch/plan';
+import { HeroName } from '@/game/hero/HeroName';
 import { useT } from '@/i18n';
 import { SlotIcon } from '@/game/icons/Img';
 import { SubToken } from '@/game/item/SubToken';
@@ -25,8 +29,10 @@ export function BatchPiece({ ctx, n, x, children }: { ctx: Ctx; n: number; x: It
   );
 }
 
-export function BatchList({ ctx, items, editing, onFix, onRemove, onPlan }: {
-  ctx: Ctx; items: readonly BatchEntry[]; editing: number | null;
+// wornOf — an «E» entry's piece (the hero's worn record): shown like a free piece plus a line with the hero's round
+// portrait and name (owner 2026-10-09); no record — the hero line alone
+export function BatchList({ ctx, items, editing, wornOf, onFix, onRemove, onPlan }: {
+  ctx: Ctx; items: readonly BatchEntry[]; editing: number | null; wornOf: (c: string, slot: SlotId) => Piece | null;
   onFix: (n: number) => void; onRemove: (n: number) => void; onPlan: () => void;
 }) {
   const t = useT();
@@ -41,13 +47,26 @@ export function BatchList({ ctx, items, editing, onFix, onRemove, onPlan }: {
               <button type="button" className="brow-fix" onClick={() => onFix(i + 1)} aria-label={`#${i + 1}`} />
               <BatchPiece ctx={ctx} n={i + 1} x={e.input}>{x}</BatchPiece>
             </li>
-          ) : (
+          ) : e.kind === 'worn' ? (() => {
+            const c = ctx.idx.CHAR[e.c];
+            const p = wornOf(e.c, e.slot);
+            const hero = c && <span className="bworn"><span className="bface"><HeroFace c={c} /></span><HeroName c={c} /></span>;
+            return p ? (
+              <li key={i} className="bgear-row brow bmark">
+                <BatchPiece ctx={ctx} n={i + 1} x={inputOfPiece(p)}>{x}</BatchPiece>
+                {hero}
+              </li>
+            ) : (
+              <li key={i} className="bgear-row brow bmark">
+                <SlotIcon slot={e.slot} />
+                <span className="bgear-n"><b className="bnum">#{i + 1}</b>{hero}</span>
+                {x}
+              </li>
+            );
+          })() : (
             <li key={i} className="bgear-row brow bmark">
               <SlotIcon slot={e.slot} />
-              <span className="bgear-n"><b className="bnum">#{i + 1}</b>
-                {/* the hero's round portrait, as the game shows a worn piece's owner (owner 2026-10-09) */}
-                {e.kind === 'worn' && ctx.idx.CHAR[e.c] && <span className="bface"><HeroFace c={ctx.idx.CHAR[e.c]} /></span>}
-                {e.kind === 'worn' ? t.batch.wornRow(ctx.idx.CHAR[e.c]?.name ?? '') : t.batch.lockRow(e.slot)}</span>
+              <span className="bgear-n"><b className="bnum">#{i + 1}</b>{t.batch.lockRow(e.slot)}</span>
               {x}
             </li>
           );

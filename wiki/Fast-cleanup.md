@@ -42,7 +42,8 @@ anything else. Both grades? Legendary first, then Epic: the second batch then se
    (the plan is about them). A strip "Batch · 0 · List ▸ ✕" sits above the form; there is no verdict on the way.
 2. Enter the pieces **in a row, as the game lists them**:
    - a usual piece — as always, "Add · #N" (not all substats — not added);
-   - a **worn** one (E mark) — "E · worn" and pick the hero: the app knows its substats;
+   - a **worn** one (E mark) — "E · worn" and pick the hero: the app knows its substats — the list shows it as a usual
+     piece with the hero's round portrait and name under it;
    - a **locked** one (a lock means someone's reserve) — "🔒 · set aside" with the slot on the form.
 
    After "Add" the form gets ready for the next piece of the list: substats, main and item name clear, the grade

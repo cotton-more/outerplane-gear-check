@@ -793,7 +793,6 @@ export const ru = {
     whose: 'Чья вещь?',
     whoseNone: (what: string) => `Никто из твоих героев не носит здесь ${what}.`,
     lockAdd: '🔒 · отложено',
-    wornRow: (name: string) => `E · ${name}`,
     lockRow: (slot: string) => `🔒 ${NOM[slot]}`,
     decide: 'Реши до обхода:',
     keepIt: 'Отложить',

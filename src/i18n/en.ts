@@ -690,7 +690,6 @@ export const en: Texts = {
     whose: 'Whose piece?',
     whoseNone: (what) => `None of your heroes wears ${what} here.`,
     lockAdd: '🔒 · set aside',
-    wornRow: (name) => `E · ${name}`,
     lockRow: (slot) => `🔒 ${SLOT_EN[slot]}`,
     decide: 'Decide before the walk:',
     keepIt: 'Set aside',

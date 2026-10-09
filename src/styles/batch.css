@@ -73,3 +73,4 @@ html:not(.narrow) .eval.batch-result { grid-template-columns: minmax(0, 1fr); }
 html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: none; width: 100%; max-width: 900px; margin: 0 auto; }
 .batch-back { justify-self: start; margin: 0 0 6px; }
 .batch-sheet .batch-back { margin: 4px 14px 0; }
+.bworn { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
