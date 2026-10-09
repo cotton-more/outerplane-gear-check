@@ -21,7 +21,7 @@ export function BatchPiece({ ctx, n, x, children }: { ctx: Ctx; n: number; x: It
   return (
     <>
       <SlotIcon slot={x.slot} />
-      <span className="bgear-n"><b className="bnum">#{n}</b><PieceName ctx={ctx} p={p} batch /></span>
+      <span className="bgear-n"><b className="bnum">#{n}</b><span className="bgear-nm"><PieceName ctx={ctx} p={p} batch /></span></span>
       {children}
       <span className="bgear-t">{Object.entries(x.subs).map(([k, v]) => <SubToken key={k} stat={k} lit={v} />)}</span>
       <span className="bgear-meta"><BtLabel p={p} t4Only /></span>
@@ -41,7 +41,7 @@ export function BatchList({ ctx, items, editing, wornOf, onFix, onRemove, onPlan
       {!items.length && <p className="muted small">{t.batch.empty}</p>}
       <ol className="bgear-list batch-items">
         {items.map((e, i) => {
-          const x = <CloseButton className="brow-x" label={t.batch.remove(i + 1)} title={t.batch.remove(i + 1)} onClick={() => onRemove(i + 1)} />;
+          const x = <CloseButton className="brow-x hit" label={t.batch.remove(i + 1)} title={t.batch.remove(i + 1)} onClick={() => onRemove(i + 1)} />;
           return e.kind === 'piece' ? (
             <li key={i} className={`bgear-row brow${editing === i + 1 ? ' editing' : ''}`}>
               <button type="button" className="brow-fix" onClick={() => onFix(i + 1)} aria-label={`#${i + 1}`} />
@@ -50,7 +50,7 @@ export function BatchList({ ctx, items, editing, wornOf, onFix, onRemove, onPlan
           ) : e.kind === 'worn' ? (() => {
             const c = ctx.idx.CHAR[e.c];
             const p = wornOf(e.c, e.slot);
-            const hero = c && <span className="bworn"><span className="bface"><HeroFace c={c} /></span><HeroName c={c} /></span>;
+            const hero = c && <span className="bworn"><HeroFace c={c} round /><HeroName c={c} /></span>;
             return p ? (
               <li key={i} className="bgear-row brow bmark">
                 <BatchPiece ctx={ctx} n={i + 1} x={inputOfPiece(p)}>{x}</BatchPiece>

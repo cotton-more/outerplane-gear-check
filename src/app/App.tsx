@@ -262,7 +262,7 @@ export function App() {
           </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
-          hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length) : t.batch.empty) : hint}
+          hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length).replace(/ /g, '\u00A0') : t.batch.empty) : hint}
           resetLabel={batchNext} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
           onOpen={batchOn ? () => batch.show('list') : () => setVerdictOpen(true)} />
         <OnboardingStrips onb={onb} />

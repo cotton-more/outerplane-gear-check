@@ -6,22 +6,32 @@
 .batch-sheet .batch { padding: 4px 14px 16px; }
 .batch-h { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
 .batch .bgear-list { list-style: none; }
-.batch .bgear-row { position: relative; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 2px 6px; padding: 5px 8px; }
+.batch .bgear-row { position: relative; }
 .batch .bgear-row.editing { border-color: var(--accent); }
 .bnum { font: 700 11.5px var(--font-mono); color: var(--ink-2); }
 .brow-fix { position: absolute; inset: 0; border: 0; background: none; border-radius: inherit; }
-.brow-x { position: relative; z-index: 1; min-width: 36px; min-height: 30px; border: 0; background: none; color: var(--ink-2); }
+.brow-x { --hit: 44px; z-index: 1; min-width: 36px; min-height: 30px; border: 0; background: none; color: var(--ink-2); } /* the ✕ removes at once: a 44px tap area, the Undo toast is the net */
 .batch .bgear-meta { grid-column: 2 / 4; }
+/* a piece's name wraps instead of «Meteo…» — the name is what identifies a weapon or an accessory (the hero card's rows keep one line) */
+.batch .bgear-nm { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.batch .bgear-n:has(> .bgear-nm) { align-items: baseline; }
+.batch .bgear-nm .pn { overflow: visible; text-overflow: clip; }
+.batch .bgear-nm .pm { display: inline-block; margin-left: .3em; white-space: nowrap; }
 .bfate { grid-column: 2 / 3; font-weight: 600; color: var(--ink); }
 .b-wear .bfate, .b-keep .bfate, .b-reserve .bfate { color: var(--keep); }
 .b-feed .bfate { color: var(--fodder, var(--accent)); }
+/* «Same as Hilde's set-aside (Oct 5)? Then do nothing.» — the text takes the row's width, «It's a different pair» goes under it */
+.b-same .bfate { grid-column: 2 / -1; }
+.btwin { grid-column: 2 / -1; justify-self: start; }
 .b-junk .bfate { color: var(--junk); }
 .boff { margin-left: 18px; width: calc(100% - 18px); }
-.boff-n { grid-column: 1 / 3; color: var(--ink-2); }
+.boff-n { grid-column: 1 / -1; color: var(--ink-2); }
+.boff .bfate { grid-column: 1 / 3; }
 .batch-sum { margin: 0; color: var(--ink-2); }
 .batch-acts { display: flex; flex-wrap: wrap; gap: 8px; }
-/* «Записать план» changes many heroes at once: outlined in the dismantle colour, not the inviting filled primary */
-.batch-acts .brec { margin-left: auto; border-color: var(--junk); color: var(--junk); background: transparent; } /* away from «Обход ▸» */
+/* «Записать план» is the plain button: not the filled primary (it must not invite recording before the game is done) and
+   not the dismantle red (it dismantles nothing) */
+.batch-acts .brec { margin-left: auto; }
 /* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
    the same --surface) */
 .batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; padding: 8px 0 4px; background: var(--surface); }
@@ -42,37 +52,45 @@ html.narrow .batch-marks + .tryon-x { margin-left: auto; }
 }
 .batch-whose { display: grid; gap: 6px; }
 .bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
-/* a worn piece's owner — a round portrait like the game's item panel (owner 2026-10-09): a light rim and the face zoomed
-   in — the game crops its face icon to about 70 % around the eyes (measured on Bryn: ×1.43, centre at 48 % / 41 %) */
-.bface { position: relative; display: inline-block; flex: none; width: 26px; height: 26px; overflow: hidden; border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--ink) 15%, #fff); background: var(--surface-3); }
-.bface .face { position: absolute; width: 143%; height: 143%; max-width: none; left: -18.6%; top: -8.6%; border: 0; border-radius: 0; object-fit: cover; }
-.bwho .bface { width: 36px; height: 36px; }
+/* a worn piece's owner: the round portrait (HeroFace round, base.css); the picker's is bigger */
+.bwho .face-round { width: 36px; height: 36px; }
 .bmark .bgear-n { font-weight: 600; }
 .bdecide { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.bdecide .chip { min-height: 32px; padding: 4px 10px; font-family: inherit; font-size: 13px; }
+.bdecide .chip { min-height: 40px; padding: 4px 12px; font-family: inherit; font-size: 13px; }
 .bstage { display: grid; gap: 6px; }
 .bstage h4 { margin: 4px 0 0; font-size: 13px; }
-.batch .bstep { display: flex; align-items: flex-start; gap: 10px; }
-.bcheck { flex: none; width: 28px; height: 28px; padding: 0; border: 1.5px solid var(--line-2); border-radius: 6px; background: var(--surface); color: var(--keep); font-weight: 800; }
-.bcheck[aria-checked="true"] { border-color: var(--keep); background: var(--keep-soft); }
-.bstep-t { min-width: 0; display: grid; gap: 2px; padding-top: 3px; }
+/* a walk step: the card is a label of its checkbox (shared Toggle) — a tap anywhere on it ticks the step */
+.batch .bstep { display: block; padding: 0; }
+.bstep-l { display: flex; align-items: flex-start; gap: 10px; box-sizing: border-box; width: 100%; min-height: 40px; padding: 6px 8px; font-size: inherit; color: inherit; }
+.bstep-l input { flex: none; width: 22px; height: 22px; margin: 0; }
+.bstep:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bstep-t { min-width: 0; display: grid; gap: 2px; padding-top: 2px; }
 .bstep-m { color: var(--ink-2); }
 .bstep.done .bstep-t { opacity: .6; }
 .bstep-subs { display: grid; gap: 1px; font-size: 12.5px; color: var(--ink-2); }
 .bstep-subs span { white-space: nowrap; }
 /* the batch's short notes as a toast (App batchToast): no button, the text wraps within the screen; yellow — not an
    error, but it should catch the eye (owner 2026-10-08) */
-.toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center; text-wrap: balance;
+.toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center;
   border-color: var(--temp); background: var(--temp-soft); }
 .bstep-k { font-weight: 600; }
 /* the plan and the walk take the screen (owner 2026-10-09): a full-height sheet on a phone, the form's column on a wide
    screen (App batchResult); «← К списку» on top */
 .drawer.batch-full { height: 100dvh; max-height: 100dvh; border-radius: 0; }
+/* the title carries the batch's kind («Batch · 11 · Legendary weapon»): it wraps at 280px instead of ending with «…» */
+.batch-sheet .drawer-h h3 { white-space: normal; text-wrap: balance; line-height: 1.25; }
 html:not(.narrow) .eval.batch-result { grid-template-columns: minmax(0, 1fr); }
 html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: none; width: 100%; max-width: 900px; margin: 0 auto; }
 .batch-back { justify-self: start; margin: 0 0 6px; }
-.batch-sheet .batch-back { margin: 4px 14px 0; }
+/* a short window (landscape, 420×390 split screen): the title bar is tighter and the action bar goes to the end of the
+   content instead of staying over it — the title bar plus the bar took 28% of 390px and cut the first step */
+@media (max-height: 460px) {
+  .drawer.batch-full .drawer-h { padding-block: 2px; }
+  .batch-sheet .batch-acts, .batch-col .batch-acts { position: static; padding: 2px 0 6px; }
+  .batch { gap: 8px; }
+  .batch-back { margin-bottom: 0; }
+}
+.batch-sheet .batch-back { margin: 6px 14px 0; } /* the tap area above it (.hit) is clipped by the sheet's scroll box: room for it */
 .bworn { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
 .gname { font-weight: 600; }
 .gname.legend { color: var(--legend); }

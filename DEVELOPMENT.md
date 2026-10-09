@@ -139,13 +139,14 @@ and verdict — gear rows and hero mode), it's a screen — `screens/`. `i18n` a
 
 | What | Where |
 |---|---|
-| hero portrait; name on one line (prefix dimmed and truncated first), on two lines (`stacked`: tile, card header) and name by id | `game/hero/HeroFace`, `game/hero/HeroName` (`HeroName`, `heroName`); a hero to find in the game — class icon + name in the element's colour: `game/hero/HeroTag` (`HeroTag`, `withHero`) |
+| hero portrait (square; `round` — the round one of the game's item panel: batch rows, «E · worn» picker); name on one line (prefix dimmed and truncated first), on two lines (`stacked`: tile, card header) and name by id | `game/hero/HeroFace`, `game/hero/HeroName` (`HeroName`, `heroName`); a hero to find in the game — class icon + name in the element's colour: `game/hero/HeroTag` (`HeroTag`, `withHero`) |
 | substat chip "ATK 3" (color — whether it counts for the hero), level buttons 1–6 and the "can't be more than N" row | `game/item/SubToken`, `game/item/SubLevels` |
 | set name, "Speed ×4" | `game/set/setName` (`setName`, `partText`) |
 | piece name and main, Breakthrough label (`BtLabel` — one for all piece rows), bonus text, piece caption | `features/gear/ui/pieceText` |
 | outcome chip («+N очк.», «Надень» (+N pts, Equip)), «Надеть / Заменить» (Equip / Replace) button, «Отложить» | `features/gear/ui/VsChip`, `EquipButton`, `VsSection` |
 | radio row in a picker sheet (set pinning, trade order) | `shared/ui/RadioRow` |
 | sheet, confirm dialog, ✕ button, checkmark, segmented switch, button filter, row that expands in place, code field, message with «Вернуть», banner | `shared/ui/` (`Sheet`, `AskSheet`, `CloseButton`, `Toggle`, `SegSwitch`, `FilterChips`, `Expand`, `CodeBox`, `Toast`, `Notice`) |
+| invisible tap area ≥ 40px around a small control (text link, chip, ✕ in a row) without moving the layout; `--hit` sets another size | class `hit` (`styles/base.css`) |
 | copy to clipboard, self-expiring value | `shared/copyText`, `shared/useTimed` |
 | hero header (portrait with element and class, name, tiers, outerpedia ↗) | `screens/chars/CharHead` |
 | bit stream for short codes, CRC-32, base62; piece in a code (one record for backup and hero code) | `shared/bits`, `features/gear/store/pieceCode` |

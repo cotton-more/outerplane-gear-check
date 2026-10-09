@@ -85,8 +85,8 @@ export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoo
                   : t.batch.off(l.off.piece.slot, l.off.c.name, capLine(t, ctx.idx, l.off.piece))}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
               <span className="bfate">{withHero(fateText(t, l.fate, plan), heroIn(plan, l.fate))}</span>
-              {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
-              {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
+              {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
+              {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small btwin hit" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
               {l.fate.kind === 'maybe' && (
                 <span className="bdecide">
                   {(['keep', 'junk'] as const).map((c) => (

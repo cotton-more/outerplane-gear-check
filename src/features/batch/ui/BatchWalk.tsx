@@ -10,6 +10,7 @@ import { isArmor } from '@/game/data';
 import { useT, type Texts } from '@/i18n';
 import { subsText } from '@/game/text';
 import { AskSheet } from '@/shared/ui/AskSheet';
+import { Toggle } from '@/shared/ui/Toggle';
 import type { Batch } from '@/features/batch/batch';
 import type { Plan } from '@/features/batch/plan';
 import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
@@ -112,14 +113,16 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
-                    <button type="button" className="bcheck" role="checkbox" aria-checked={done} aria-label={title} onClick={() => onTick(s.key)}>{done ? '✓' : ''}</button>
-                    <span className="bstep-t">
-                      <b>{withHero(title, hero)}</b>
-                      {cap && <span className="bstep-m">{cap}</span>}
-                      {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
-                      {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
-                      {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}
-                    </span>
+                    {/* the whole card is the checkbox's label: a tap anywhere ticks the step (a phone, a thumb) */}
+                    <Toggle className="bstep-l" checked={done} label={title} onChange={() => onTick(s.key)}>
+                      <span className="bstep-t">
+                        <b>{withHero(title, hero)}</b>
+                        {cap && <span className="bstep-m">{cap}</span>}
+                        {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
+                        {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
+                        {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}
+                      </span>
+                    </Toggle>
                   </li>
                 );
               })}

@@ -9,7 +9,7 @@ import { BatchWalk } from './BatchWalk';
 
 export function BatchPanel({ ctx, m }: { ctx: Ctx; m: BatchMode }) {
   const t = useT();
-  const back = <button type="button" className="linkbtn batch-back" onClick={() => m.show('list')}>{t.batch.back}</button>;
+  const back = <button type="button" className="linkbtn batch-back hit" onClick={() => m.show('list')}>{t.batch.back}</button>;
   if (m.view === 'walk' && m.plan && m.walk) return <>{back}<BatchWalk ctx={ctx} batch={m.batch} plan={m.plan} walk={m.walk} what={m.what} onTick={m.tick} onDone={m.done} /></>;
   if (m.view === 'plan' && m.plan) {
     return <>{back}<BatchPlan ctx={ctx} plan={m.plan} choice={m.batch.choice} undecided={m.walk?.undecided ?? 0} onSkip={m.skip} onTwin={m.twin}

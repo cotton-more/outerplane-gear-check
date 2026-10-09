@@ -185,7 +185,7 @@ describe('«Партия» on a phone', () => {
     expect($('.drawer.ask p')?.textContent).toBe(`Not ticked: ${steps} of ${steps} step${steps === 1 ? '' : 's'}. I'll record on the heroes: equipped 1, set aside 0. Right after, you can "Undo" in the message.`);
     await click(byText('.drawer.ask button', 'Cancel'));
     expect(gear()).toEqual(before);
-    for (const b of $$('.bwalk .bcheck')) await click(b);
+    for (const b of $$('.bwalk .bstep input')) await click(b);
     await click(byText('.batch button', 'All done — Record the plan'));
     expect($('.drawer.ask p')?.textContent).toBe('I\'ll record on the heroes: equipped 1, set aside 0. Right after, you can "Undo" in the message.');   // all ticked: no first sentence
     await click(byText('.drawer.ask button', 'Record'));
@@ -328,9 +328,14 @@ describe('«Партия»: обход по шагам', () => {
     expect(steps[2].textContent).not.toContain('#');
     expect(steps[2].textContent?.endsWith("+ feed the Breakthrough didn't take")).toBe(true);
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
-    await click(steps[0].querySelector('.bcheck'));
+    // the whole card is the checkbox's label: a tap on the step's text ticks it, a second one unticks it
+    await click(steps[0].querySelector('.bstep-t > b'));
     expect(batch().done).toEqual(['eq:3']);
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 1 of 3');
-    expect($('.bwalk .bcheck')?.getAttribute('aria-checked')).toBe('true');
+    expect((document.querySelector('.bwalk .bstep input') as HTMLInputElement).checked).toBe(true);
+    expect($('.bwalk .bstep input')?.getAttribute('aria-label')).toBe(steps[0].querySelector('.bstep-t > b')?.textContent);
+    await click(steps[0].querySelector('.bstep-t > b'));
+    expect(batch().done).toEqual([]);
+    await click(steps[0].querySelector('.bstep-t > b'));
   });
 });

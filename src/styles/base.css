@@ -22,11 +22,12 @@
   --idle: #566174;
   --idle-soft: #e5e9f0;
   --epic: #2f6bd8;
-  --legend: #cf3a31;
-  --el-fire: #d9480f;
+  --legend: #c4352c; /* ≥ 4.5:1 on --surface-2 (was #cf3a31, 4.51) */
+  /* hero names (.htag) on --surface-2, all ≥ 4.5:1: fire 4.78, water 4.64, earth 4.96, light 5.12, dark 5.13 */
+  --el-fire: #c2410c;
   --el-water: #1971c2;
-  --el-earth: #2f9e44;
-  --el-light: #b07d00;
+  --el-earth: #237a37;
+  --el-light: #8a6100;
   --el-dark: #7048e8;
   --seg-y: #e5a00f;
   --seg-lit-ink: #1b1300; /* цифра на горящем сегменте (eval.css .roll-b .lit); в тёмной теме — светлая: 5.8:1, тёмная была 2.6:1 */
@@ -181,6 +182,10 @@ html.xs .tabs button { flex: 1; }
 .linkbtn { border: 0; background: none; padding: 4px 0; color: var(--accent); font-size: 13px; font-weight: 600; flex: none; }
 .linkbtn:hover { text-decoration: underline; }
 .linkbtn.ghost { visibility: hidden; }
+/* an invisible tap area around a small control (the layout does not move): at least --hit (40px by default) high and wide, centred
+   on the control; one that is already bigger is not shrunk. For text links, chips and ✕ in rows */
+.hit { position: relative; }
+.hit::after { content: ''; position: absolute; inset: min(0px, calc(50% - var(--hit, 40px) / 2)); }
 .note-line { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-3); }
 .empty { padding: 12px; color: var(--ink-3); font-size: 13px; }
 
@@ -238,6 +243,11 @@ html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
 
 /* текст только для экранного диктора */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* round portrait (HeroFace round), like the game's item panel: a light rim and the face zoomed in — the game crops its face icon
+   to about 70 % around the eyes (measured on Bryn: ×1.43, centre at 48 % / 41 %); the size comes from the place (26px by default) */
+.face-round { position: relative; display: inline-block; flex: none; width: 26px; height: 26px; overflow: hidden; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--ink) 20%, var(--surface)); background: var(--surface-3); }
+.face-round .face { position: absolute; width: 143%; height: 143%; max-width: none; left: -18.6%; top: -8.6%; border: 0; border-radius: 0; object-fit: cover; }
 /* a hero to find in the game (game/hero/HeroTag): class icon + name in the element's colour */
 .htag { display: inline-flex; align-items: center; gap: 3px; vertical-align: bottom; }
 .htag .ico, .htag img { width: 16px; height: 16px; flex: none; }

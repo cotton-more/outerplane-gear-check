@@ -22,16 +22,16 @@ export function BatchStrip({ n, cands, what, onList, onEnd, onWorn, onLock }: {
     <>
       <div className="tryon batch-strip" role="status">
         <span className="tryon-k">{t.batch.strip(n)}</span>
-        <button type="button" className="linkbtn batch-list" onClick={onList}>{t.batch.list}</button>
+        <button type="button" className="linkbtn batch-list hit" onClick={onList}>{t.batch.list}</button>
         <span className="batch-marks">
-          <button type="button" className="btn small" aria-label={t.batch.wornAdd} title={t.batch.wornAdd} onClick={() => { const c = cands(); if (c) setPick(c); }}>
+          <button type="button" className="btn small hit" aria-label={t.batch.wornAdd} title={t.batch.wornAdd} onClick={() => { const c = cands(); if (c) setPick(c); }}>
             <span aria-hidden="true">{t.batch.wornAdd.split(' · ')[0]}</span><span className="bm-long" aria-hidden="true"> · {t.batch.wornAdd.split(' · ')[1]}</span>
           </button>
-          <button type="button" className="btn small" aria-label={t.batch.lockAdd} title={t.batch.lockAdd} onClick={onLock}>
+          <button type="button" className="btn small hit" aria-label={t.batch.lockAdd} title={t.batch.lockAdd} onClick={onLock}>
             <span aria-hidden="true">{t.batch.lockAdd.split(' · ')[0]}</span><span className="bm-long" aria-hidden="true"> · {t.batch.lockAdd.split(' · ')[1]}</span>
           </button>
         </span>
-        <CloseButton className="tryon-x" label={t.batch.end} title={t.batch.end} onClick={onEnd} />
+        <CloseButton className="tryon-x hit" label={t.batch.end} title={t.batch.end} onClick={onEnd} />
       </div>
       {n === 0 && <p className="batch-note muted small">{t.batch.empty}</p>}
       {pick && (
@@ -39,7 +39,7 @@ export function BatchStrip({ n, cands, what, onList, onEnd, onWorn, onLock }: {
           <div className="batch-whose">
             {pick.length ? pick.map((c) => (
               <button key={c.id} type="button" className="btn bwho" onClick={() => { setPick(null); onWorn(c.id); }}>
-                <span className="bface"><HeroFace c={c} /></span><HeroName c={c} />
+                <HeroFace c={c} round /><HeroName c={c} />
               </button>
             )) : <p className="muted small">{t.batch.whoseNone(what)}</p>}
           </div>

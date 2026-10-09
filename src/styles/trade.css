@@ -26,7 +26,6 @@
 
 /* план */
 .tplan { display: grid; gap: 10px; font-size: 12.5px; }
-.tplan .bgear-row { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 2px 6px; padding: 5px 8px; }
 .tplan .bgear-row .ico, .tplan .bgear-row img { width: 18px; height: 18px; }
 .tplan .bgear-n { font-size: 12.5px; }
 .tplan .bgear-t .tok { font-size: 10.5px; padding: 1px 4px; }
