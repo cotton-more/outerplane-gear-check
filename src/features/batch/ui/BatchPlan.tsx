@@ -8,16 +8,17 @@ import type { Ctx } from '@/game/context';
 import type { Texts } from '@/i18n';
 import { useT } from '@/i18n';
 import { subsText } from '@/game/text';
-import type { Fate, Line, Plan } from '@/features/batch/plan';
+import type { GearStore } from '@/features/gear/model/gear';
+import { wornAtEnd, type Fate, type Line, type Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 import { withHero } from '@/game/hero/HeroTag';
 
-export function fateText(t: Texts, f: Fate): string {
+export function fateText(t: Texts, f: Fate, st: GearStore): string {
   switch (f.kind) {
     case 'wear': return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + (f.t4 ? t.batch.t4 : '');
     case 'keep': return t.batch.keep(f.c.name) + (f.t4 ? t.batch.t4 : '');
     case 'reserve': return t.batch.reserve(f.c.name);
-    case 'feed': return 'entry' in f.to ? t.batch.feedEntry(f.to.entry) : t.batch.feedWorn(f.to.piece.slot, f.to.c.name);
+    case 'feed': return 'entry' in f.to ? t.batch.feedEntry(f.to.entry) : wornAtEnd(st, f.to) ? t.batch.feedWorn(f.to.piece.slot, f.to.c.name) : t.batch.feedStash(f.to.piece.slot, f.to.c.name);
     case 'same': return t.batch.same(f.same.piece.slot, f.same.c.name, t.fit.date(f.same.piece.at));
     case 'maybe': return t.batch.maybe(f.heroes.slice(0, 3).map((c) => c.name).join(', '));
     case 'junk': return t.batch.junk;
@@ -67,7 +68,7 @@ export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoo
                   ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit))
                   : t.batch.off(l.off.piece.slot, l.off.c.name)}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
-              <span className="bfate">{withHero(fateText(t, l.fate), heroIn(l.fate))}</span>
+              <span className="bfate">{withHero(fateText(t, l.fate, plan.st), heroIn(l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
               {l.fate.kind === 'maybe' && (

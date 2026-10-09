@@ -773,6 +773,8 @@ export const ru = {
     reserve: (name: string) => `Отложи для ${name} — запас`,
     feedEntry: (n: number) => `Корм для #${n}`,
     feedWorn: (slot: string, name: string) => `Корм для ${GEN[slot]} ${name}`,
+    // the target is a set-aside piece: the hero wears another one in the game
+    feedStash: (slot: string, name: string) => `Корм для ${by(slot, 'отложенного', 'отложенной', 'отложенного', 'отложенных')} ${GEN[slot]} ${name}`,
     wornNote: 'Корм надетым: до 4 на вещь — дошла до T4, отметь «T4» в карточке вещи.',
     maybe: (names: string) => `Спорно — подходит ${names}`,
     junk: 'Разобрать',
@@ -814,13 +816,15 @@ export const ru = {
     keptMaybe: (n: number, piece: string) => `#${n} ${piece} — Спорно, отложено`,
     lockStep: (r: number, p: number) => `Замок: ряд ${r}, ${p}-й`,
     junkTitle: (n: number) => `Отметь в игре и разбери: ${n}`,
-    btPiece: (piece: string) => `это ${piece}`,
     btFeed: 'корм:',
     btWorn: (slot: string, hero: string) => `${NOM[slot][0].toUpperCase()}${NOM[slot].slice(1)} ${hero}`,
-    btAt: (r: number, p: number) => `Ряд ${r}, ${p}-й`,
+    // under the «Breakthrough» heading, once per stage
+    btNote: 'Подойдёт любая вещь из списка игры. Что не вошло — в разбор.',
     // «до N»: the piece's exact tier below T4 isn't known — the game takes no more than it needs (owner 2026-10-08)
-    btStep: (where: string, n: number) => `${where} → Breakthrough: до ${n} из списка, любые — что не войдёт, разбери`,
-    btUnlock: (k: number) => `сначала сними замок с ${k} отложенных`,
+    btStep: (where: string, n: number) => `${where} → Breakthrough: до ${n}`,
+    btUnlock: (k: number) => `сначала сними замок с ${k} ${plural(k, 'отложенной', 'отложенных', 'отложенных')}`,
+    // the last line of the dismantle step, when a Breakthrough step comes before it
+    dzLeft: '+ корм, который Breakthrough не взял',
     walkEnd: 'Всё сделано — Записать план',
   },
 

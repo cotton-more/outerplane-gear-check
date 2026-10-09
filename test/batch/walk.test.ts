@@ -128,7 +128,7 @@ describe('the walk', () => {
     expect(w.steps.filter((s) => s.stage === 4)).toHaveLength(1);
   });
 
-  it('Breakthrough before the dismantle (owner 2026-10-09); a later target in the inventory moves up by the feed eaten before it', () => {
+  it('Breakthrough before the dismantle (owner 2026-10-09); a target of this batch that is kept is named as a set-aside piece of its hero — no position', () => {
     const caren = char('Caren');
     const line = (n: number, fate: Plan['lines'][number]['fate']) => ({ id: `${n}`, n, input: inputOfPiece(weak(`p${n}`, n)), fate });
     const plan = {
@@ -138,6 +138,8 @@ describe('the walk', () => {
     const b = batchOf([1, 2, 3, 4, 5].map((n) => piece(weak(`p${n}`, n))));
     const steps = walkOf(b, plan).steps;
     expect(steps.map((s) => s.stage)).toEqual([2, 2, 3, 3, 4]);
-    expect(steps.filter((s) => s.stage === 3).map((s) => s.stage === 3 && s.at)).toEqual([1, 3]); // #4 is 3rd once #2 is eaten
+    // the targets are #1 and #4: each is «Caren's set-aside helmet (its substats)», found by those — not by a row and place
+    const targets = steps.filter((s) => s.stage === 3).map((s) => s.stage === 3 && 'where' in s.target && 'off' in s.target.where ? [s.target.where.c.name, s.target.where.was, s.target.where.off.lit] : null);
+    expect(targets).toEqual([['Caren', 'stash', inputOfPiece(weak('p1', 1)).subs], ['Caren', 'stash', inputOfPiece(weak('p4', 4)).subs]]);
   });
 });
