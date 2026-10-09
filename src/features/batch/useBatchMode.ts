@@ -36,7 +36,7 @@ export interface BatchMode {
   plan: Plan | null;               // only while view is 'plan' or 'walk'
   walk: Walk | null;               // the step-by-step walk of that plan
   lock: BatchLock | null;          // one filter per batch: what the form may still pick (null — anything)
-  what: string;                    // «Legendary Speed», «Epic» … — the batch's kind in a phrase
+  what: string;                    // «Legendary Speed», «Epic оружие» … — the batch's kind in a phrase (batch.what)
   wornOf: (c: string, slot: SlotId) => Piece | null; // an «E» entry's piece: the hero's worn record of that slot
   ask: BatchAsk | null;            // after «В партию»: what the next piece must pick again (owner 2026-10-09)
   answer: (what: 'slot' | 'grade') => void;
@@ -91,7 +91,9 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   // fixing the only entry may change the kind and the grade — no lock then
   const free = editing !== null && batch.items.length === 1;
   const grade: Grade | null = free ? null : (value?.items.find((e) => e.kind === 'piece') as { input: ItemInput } | undefined)?.input.grade ?? null;
-  const kindText = (k: BatchKind | null) => t.batch.otherKind(!k ? null : k.startsWith('set:') ? { set: idx.SET[k.slice(4)]?.short ?? '' } : k === 'weapon' ? 'weapon' : k === 'accessory' ? 'accessory' : null, grade);
+  // the batch's kind in a phrase («Epic Speed», «Legendary оружие»): the titles, the walk's filter note, the notes
+  const whatOf = (k: BatchKind | null) => t.batch.what(!k ? null : k.startsWith('set:') ? { set: idx.SET[k.slice(4)]?.short ?? '' } : k === 'weapon' ? 'weapon' : k === 'accessory' ? 'accessory' : null, grade);
+  const kindText = (k: BatchKind | null) => t.batch.otherKind(whatOf(k));
   // an entry of another kind isn't added: the note says what this batch is
   const put = (e: BatchEntry, k: BatchKind): boolean => {
     if (!value) return false;
@@ -113,7 +115,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   return {
     on: !!value, batch, editing, note, view, plan, walk, lock, asking,
     wornOf: (c, slot) => { const id = gear.store.worn?.[c]?.[slot]; return id ? gear.store.pieces[id] ?? null : null; },
-    what: [grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : '', kind?.startsWith('set:') ? idx.SET[kind.slice(4)]?.short ?? '' : ''].filter(Boolean).join(' '),
+    what: whatOf(kind),
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
     add: (input, complete) => {
       if (!value) return;

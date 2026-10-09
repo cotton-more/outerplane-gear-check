@@ -10,7 +10,7 @@ import { BatchWalk } from './BatchWalk';
 export function BatchPanel({ ctx, m }: { ctx: Ctx; m: BatchMode }) {
   const t = useT();
   const back = <button type="button" className="linkbtn batch-back" onClick={() => m.show('list')}>{t.batch.back}</button>;
-  if (m.view === 'walk' && m.plan && m.walk) return <>{back}<BatchWalk ctx={ctx} batch={m.batch} plan={m.plan} walk={m.walk} onTick={m.tick} onDone={m.done} /></>;
+  if (m.view === 'walk' && m.plan && m.walk) return <>{back}<BatchWalk ctx={ctx} batch={m.batch} plan={m.plan} walk={m.walk} what={m.what} onTick={m.tick} onDone={m.done} /></>;
   if (m.view === 'plan' && m.plan) {
     return <>{back}<BatchPlan ctx={ctx} plan={m.plan} choice={m.batch.choice} undecided={m.walk?.undecided ?? 0} onSkip={m.skip} onTwin={m.twin}
       onChoose={m.choose} onWalk={() => m.show('walk')} /></>;
@@ -25,5 +25,5 @@ export const batchTitle = (t: ReturnType<typeof useT>, m: BatchMode): string => 
     const keys = new Set(m.walk.steps.map((x) => x.key));
     return t.batch.walkTitle(m.batch.done.filter((k) => keys.has(k)).length, m.walk.steps.length);
   }
-  return m.view === 'plan' ? t.batch.title : t.batch.strip(m.batch.items.length);
+  return m.view === 'plan' ? t.batch.title(m.what) : t.batch.listTitle(m.batch.items.length, m.what);
 };

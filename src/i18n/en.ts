@@ -1,5 +1,6 @@
 // English texts: the same keys as ru.ts (type Texts) — TypeScript won't let a translation go missing.
 // **like this** — bold (shared/ui/Rich.tsx). Game terms are as in the English client.
+import { GRADE_NAME } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import type { StepText } from '@/tour/types';
 import type { Texts } from './ru';
@@ -665,7 +666,9 @@ export const en: Texts = {
     endAsk: (n) => `End the batch? Pieces not planned: ${n}.`,
     endYes: 'End',
     remove: (n) => `Remove #${n}`,
-    title: 'Batch plan',
+    what: (kind, grade) => [grade ? GRADE_NAME[grade] : '', typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'weapons' : kind === 'accessory' ? 'accessories' : ''].filter(Boolean).join(' '),
+    listTitle: (n, what) => `Batch · ${n}${what ? ` · ${what}` : ''}`,
+    title: (what) => `Batch plan${what ? ` · ${what}` : ''}`,
     summary: (a, b, c, d) => `equip ${a} · set aside ${b} · Breakthrough ${c} · dismantle ${d}`,
     wear: (name) => `Equip on ${name}`,
     replace: (name, slot) => `Equip on ${name} — instead of the ${SLOT_EN[slot]}`,
@@ -686,9 +689,7 @@ export const en: Texts = {
     recordAsk: 'All done in the game?',
     recordText: (a, b) => `I'll record it on the heroes: equip ${a}, set aside ${b}. You can undo it right after — "Undo" in the message.`,
     recordYes: 'Record',
-    otherKind: (what, grade) => `This batch is ${[
-      what === null ? null : typeof what === 'object' ? (what.set ? `${what.set} armor` : 'armor') : what === 'weapon' ? 'weapons' : 'accessories',
-      grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : null].filter(Boolean).join(', ')}. Anything else — a new batch.`,
+    otherKind: (what) => `This batch is ${what || 'armor'}. Anything else — a new batch.`,
     wornAdd: 'E · worn',
     whose: 'Whose piece?',
     whoseNone: (what) => `None of your heroes wears ${what} here.`,
@@ -700,7 +701,7 @@ export const en: Texts = {
     walk: 'Walk ▸',
     walkOff: (n) => `Decide «Maybe» first: ${n}`,
     walkTitle: (k, n) => `Walk · ${k} of ${n}`,
-    walkNote: "Numbers are in the game's list with the same filter. Substats don't match — fix the batch.",
+    walkNote: (what) => `${what ? `Game filter: ${what} · worn shown · by date. ` : ''}Substats differ — fix the batch.`,
     stages: ['Equip — at the heroes', 'Lock', 'Breakthrough', 'Dismantle — in one selection'],
     equipStep: (hero, slot, k, n) => `${hero} → ${SLOT_EN[slot]} → No. ${k} in the ${SLOT_EN[slot]} list · #${n}`,
     equipStepAt: (hero, slot, piece) => `${hero} → ${SLOT_EN[slot]} → ${piece}`,

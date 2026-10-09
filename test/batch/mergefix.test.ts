@@ -46,7 +46,7 @@ function screens(lang: Lang, ctx: Ctx, b: Batch, p: Plan, walk: Walk): { plan: s
   };
   const noop = () => {};
   const pl = wrap(createElement(BatchPlan, { ctx, plan: p, choice: {}, undecided: 0, onSkip: noop, onTwin: noop, onChoose: noop, onWalk: noop }));
-  const wk = wrap(createElement(BatchWalk, { ctx, batch: b, plan: p, walk, onTick: noop, onDone: noop }));
+  const wk = wrap(createElement(BatchWalk, { ctx, batch: b, plan: p, walk, what: '', onTick: noop, onDone: noop }));
   return {
     plan: [...pl.querySelectorAll('.brow')].map((r) => r.textContent ?? ''),
     walk: [...wk.querySelectorAll('.bstep-t')].map((s) => [...s.children].map((c) => c.textContent ?? '')),

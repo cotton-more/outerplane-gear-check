@@ -77,3 +77,30 @@ describe('batch rows', () => {
     expect([ew, lw, g0, g4].map((r) => r.querySelector('.bgear-m')?.textContent ?? null)).toEqual([null, 'T4', null, 'T4']);
   });
 });
+
+describe('the batch\'s kind in titles and notes (TEXTS §5, §9)', () => {
+  const set = { set: 'Speed' };
+  it.each([
+    ['Epic Speed armor', set, 'rare', 'Epic Speed', 'Epic Speed'],
+    ['Legendary Swiftness armor', { set: 'Swiftness' }, 'unique', 'Legendary Swiftness', 'Legendary Swiftness'],
+    ['Legendary weapons', 'weapon', 'unique', 'Legendary оружие', 'Legendary weapons'],
+    ['Epic accessories', 'accessory', 'rare', 'Epic аксессуары', 'Epic accessories'],
+    ['no grade yet', set, null, 'Speed', 'Speed'],
+    ['nothing known', null, null, '', ''],
+  ] as const)('%s', (_name, kind, grade, ru, en) => {
+    expect([TEXTS.ru.batch.what(kind, grade), TEXTS.en.batch.what(kind, grade)]).toEqual([ru, en]);
+  });
+  it('list title, plan title, walk note and the notes use it', () => {
+    const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
+    expect([ru.listTitle(20, 'Epic Speed'), ru.listTitle(8, 'Legendary оружие'), ru.listTitle(2, '')]).toEqual(['Партия · 20 · Epic Speed', 'Партия · 8 · Legendary оружие', 'Партия · 2']);
+    expect([en.listTitle(20, 'Epic Speed'), en.listTitle(8, 'Legendary weapons'), en.listTitle(2, '')]).toEqual(['Batch · 20 · Epic Speed', 'Batch · 8 · Legendary weapons', 'Batch · 2']);
+    expect([ru.title('Epic Speed'), ru.title(''), en.title('Epic Speed'), en.title('')]).toEqual(['План партии · Epic Speed', 'План партии', 'Batch plan · Epic Speed', 'Batch plan']);
+    expect(ru.walkNote('Epic Speed')).toBe('Фильтр в игре: Epic Speed · надетые показывать · по дате. Сабстаты не те — исправь партию.');
+    expect(en.walkNote('Epic Speed')).toBe('Game filter: Epic Speed · worn shown · by date. Substats differ — fix the batch.');
+    expect(ru.walkNote('')).toBe('Сабстаты не те — исправь партию.');
+    expect(ru.otherKind('Legendary Speed')).toBe('В этой партии — Legendary Speed. Другое — новой партией.');
+    expect(en.otherKind('Legendary Speed')).toBe('This batch is Legendary Speed. Anything else — a new batch.');
+    expect(ru.whoseNone('Epic оружие')).toBe('Никто из твоих героев не носит здесь Epic оружие.');
+    expect(en.whoseNone('Epic weapons')).toBe('None of your heroes wears Epic weapons here.');
+  });
+});

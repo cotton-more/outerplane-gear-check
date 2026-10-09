@@ -1,6 +1,7 @@
 // Русские тексты: вердикты (logic/) и интерфейс (components/). en.ts — тот же набор ключей (тип Texts):
 // TypeScript не даст пропустить перевод. **так** — жирным (shared/ui/Rich.tsx).
-import type { GearKind } from '@/game/data/types';
+import { GRADE_NAME } from '@/game/data';
+import type { GearKind, Grade } from '@/game/data/types';
 import type { StepText } from '@/tour/types';
 
 const plural = (n: number, one: string, few: string, many: string): string => {
@@ -766,7 +767,11 @@ export const ru = {
     endAsk: (n: number) => `Закончить партию? Вещей не посчитано: ${n}.`,
     endYes: 'Закончить',
     remove: (n: number) => `Убрать #${n}`,
-    title: 'План партии',
+    // the batch's kind in a phrase, grade first: «Epic Speed», «Legendary оружие»; nothing known yet — empty
+    what: (kind: { set: string } | 'weapon' | 'accessory' | null, grade: Grade | null) => [grade ? GRADE_NAME[grade] : '',
+      typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'оружие' : kind === 'accessory' ? 'аксессуары' : ''].filter(Boolean).join(' '),
+    listTitle: (n: number, what: string) => `Партия · ${n}${what ? ` · ${what}` : ''}`,
+    title: (what: string) => `План партии${what ? ` · ${what}` : ''}`,
     summary: (a: number, b: number, c: number, d: number) => `надеть ${a} · отложить ${b} · в Breakthrough ${c} · разобрать ${d}`,
     wear: (name: string) => `Надень на ${name}`,
     replace: (name: string, slot: string) => `Надень на ${name} — вместо ${GEN[slot]}`,
@@ -790,9 +795,7 @@ export const ru = {
     recordText: (a: number, b: number) => `Запишу у героев: надеть ${a}, отложить ${b}. Отменить можно сразу после — «Вернуть» в сообщении.`,
     recordYes: 'Записать',
     // step-by-step walk (.x/0140-batch-walk §6, approved by the owner 2026-10-08)
-    otherKind: (what: { set: string } | 'weapon' | 'accessory' | null, grade: string | null) => `В этой партии — ${[
-      what === null ? null : typeof what === 'object' ? (what.set ? `${what.set}-броня` : 'броня') : what === 'weapon' ? 'оружие' : 'аксессуары',
-      grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : null].filter(Boolean).join(', ')}. Другое — новой партией.`,
+    otherKind: (what: string) => `В этой партии — ${what || 'броня'}. Другое — новой партией.`,
     wornAdd: 'E · надето',
     whose: 'Чья вещь?',
     whoseNone: (what: string) => `Никто из твоих героев не носит здесь ${what}.`,
@@ -804,7 +807,7 @@ export const ru = {
     walk: 'Обход ▸',
     walkOff: (n: number) => `Сначала реши «Спорно»: ${n}`,
     walkTitle: (k: number, n: number) => `Обход · ${k} из ${n}`,
-    walkNote: 'Номера — в списке игры с тем же фильтром. Не совпало по сабстатам — исправь партию.',
+    walkNote: (what: string) => `${what ? `Фильтр в игре: ${what} · надетые показывать · по дате. ` : ''}Сабстаты не те — исправь партию.`,
     // no numbers: a batch without a dismantle would read 1, 2, 4 (owner 2026-10-09)
     stages: ['Надеть — у героев', 'Замок', 'Breakthrough', 'Разобрать — одним выбором'],
     // the number is in the hero's list of that slot (only that slot, same filter), #n — the piece in the batch (owner

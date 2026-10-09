@@ -79,8 +79,8 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   }
 }
 
-export function BatchWalk({ ctx, batch, plan, walk, onTick, onDone }: {
-  ctx: Ctx; batch: Batch; plan: Plan; walk: Walk; onTick: (step: string) => void; onDone: () => void;
+export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
+  ctx: Ctx; batch: Batch; plan: Plan; walk: Walk; what: string; onTick: (step: string) => void; onDone: () => void;
 }) {
   const t = useT();
   const [asking, setAsking] = useState(false);
@@ -88,7 +88,7 @@ export function BatchWalk({ ctx, batch, plan, walk, onTick, onDone }: {
   const stages = [1, 2, 3, 4] as const;
   return (
     <div className="batch bwalk">
-      <p className="muted small">{t.batch.walkNote}</p>
+      <p className="muted small">{t.batch.walkNote(what)}</p>
       {stages.map((st) => {
         const steps = walk.steps.filter((s) => s.stage === st);
         if (!steps.length) return null;

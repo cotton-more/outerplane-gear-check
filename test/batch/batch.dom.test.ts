@@ -89,7 +89,7 @@ describe('«Партия» on a phone', () => {
     await click($('.vbar .vb-reset'));
     expect($('.batch-toast')?.textContent).toBe('Pick the slot first — as on the piece in the game.');
     await click($('[data-tour="grade"] [data-tour-item="rare"]'));
-    expect($('.batch-toast')?.textContent).toBe('This batch is Speed armor, Legendary. Anything else — a new batch.');
+    expect($('.batch-toast')?.textContent).toBe('This batch is Legendary Speed. Anything else — a new batch.');
     await click($('[data-tour="slot"] [data-tour-item="helmet"]'));
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · helmet');
     expect($('.slotrow.need')).toBeNull();
@@ -148,7 +148,9 @@ describe('«Партия» on a phone', () => {
     const items = [WEAK, GOOD].map((x) => ({ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x }));
     await mount({ setId: speed, subs: {} }, { batch: { v: 1, items, skip: [], twin: [] } });
     await click($('.batch-strip .batch-list'));
+    expect($('.drawer-h h3')?.textContent).toBe('Batch · 2 · Legendary Speed');       // the kind once, in the title (Q4)
     await click(byText('.batch button', 'Plan it'));
+    expect($('.drawer-h h3')?.textContent).toBe('Batch plan · Legendary Speed');
     const lines = $$('.batch-plan .brow').map((l) => l.querySelector('.bfate')?.textContent);
     expect(lines.slice(0, 2)).toEqual(['Feed to #2', 'Equip on Caren — instead of the helmet']);
     expect($('.batch-sum')?.textContent).toMatch(/^equip 1 · set aside 0 · Breakthrough 1 · dismantle \d$/);
@@ -157,6 +159,7 @@ describe('«Партия» on a phone', () => {
     for (const b of $$('.bdecide button').filter((x) => x.textContent === 'Dismantle')) await click(b);
     await click(byText('.batch button', 'Walk ▸'));
     expect($('.batch-full')).toBeTruthy();                // the walk takes the whole screen
+    expect($('.bwalk > p')?.textContent).toBe('Game filter: Legendary Speed · worn shown · by date. Substats differ — fix the batch.');
     await click(byText('.batch button', 'All done — Record the plan'));
     expect(batch()).not.toBeNull();                       // asks first: an accidental tap records nothing
     expect($('.drawer.ask')?.textContent).toContain('equip 1, set aside 0');
@@ -272,7 +275,7 @@ describe('«Партия»: обход по шагам', () => {
     expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');   // «1» (weapon) did nothing
     await click(slot('weapon'));                                        // a tap says why, the slot stays
     expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');
-    expect($('.batch-toast')?.textContent).toBe('This batch is Speed armor, Legendary. Anything else — a new batch.');
+    expect($('.batch-toast')?.textContent).toBe('This batch is Legendary Speed. Anything else — a new batch.');
     // the set is fixed: no ▾, a tap opens nothing
     expect($('[data-tour="pick"]')?.classList.contains('locked')).toBe(true);
     await click($('[data-tour="pick"]'));
