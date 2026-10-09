@@ -280,3 +280,23 @@ describe('«T4» on a recorded piece fed four times', () => {
     expect(plan.wornFed).toBe(true);
   });
 });
+
+// owner 2026-10-09 (#48 Ether Blade): a piece taken off one hero goes on another and becomes a feed target only after the
+// entries are decided — a copy of it decided «Разобрать» before then is looked at again and feeds it
+describe('a junk piece feeds a piece that reached a hero later', () => {
+  it('Aer\'s Snow-white DEF% comes off and goes on Caren; the batch\'s weak copy feeds it, not «Разобрать»', () => {
+    const W = (id: string, key: string, main: string, lit: Record<string, number>) => mk(id, 'weapon', null, lit, 0, { itemKey: key, main });
+    const { ctx, st } = world(['Aer', 'Caren'], {
+      Aer: [W('aSw', '19', 'DEF%', { DEF: 4, RES: 1, EFF: 1, HP: 1 })],            // not Aer's item — a stopgap at best
+      Caren: [sG('cG'), sB('cB'), W('cSl', '14', 'DEF%', { RES: 1, EFF: 1, HP: 1, 'HP%': 1 })], // her Sledgehammer, weak
+    });
+    const plan = planBatch(ctx, st, [
+      E(W('sure', '4', 'ATK%', { CHC: 3, CHD: 3, SPD: 2, 'DMG UP%': 2 })),       // Aer's own — goes on her
+      E(W('copy', '19', 'DEF%', { DEF: 1, RES: 1, EFF: 1, HP: 1 })),             // a weak copy of the one coming off
+    ]);
+    const lines = plan.lines.map((l) => [l.id, l.fate.kind, 'c' in l.fate ? (l.fate as { c: { name: string } }).c.name : '']);
+    expect(lines).toContainEqual(['1~1', 'wear', 'Caren']);
+    expect(plan.lines.find((l) => l.n === 2 && !l.off)!.fate).toMatchObject({ kind: 'feed', to: { c: { name: 'Caren' } } });
+    expect(problems(st, plan)).toEqual([]);
+  });
+});

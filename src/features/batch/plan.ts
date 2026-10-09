@@ -130,6 +130,17 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     return o;
   };
 
+  // feed the best target of a «material now» verdict (one of its four)
+  const feedTo = (r: Result): Fate => {
+    const tg = r.now[0];
+    const k = (feeds.get(tg.piece.id) ?? 0) + 1;
+    feeds.set(tg.piece.id, k);
+    if (k >= FEEDS) full.add(tg.piece.id);
+    const of = made.get(tg.piece.id);
+    if (of === undefined) wornFed = true;
+    return { kind: 'feed', to: of !== undefined ? { entry: of } : { c: tg.c, piece: tg.piece } };
+  };
+
   // one piece: its verdict on the current copy, the decision applied to it. n — the entry (for a taken-off piece — the
   // entry that took it off); entry — false for a taken-off piece (its records aren't «#n»)
   const decide = (line: string, n: number, input: ItemInput, twin: boolean, entry: boolean): Fate => {
@@ -192,15 +203,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       madeBy.set(res.id, line);
       return r.kind === 'keep' ? { kind: 'keep', c, t4: false } : { kind: 'reserve', c };
     }
-    if (r.kind === 'material' && r.sub === 'now') {
-      const tg = r.now[0];
-      const k = (feeds.get(tg.piece.id) ?? 0) + 1;
-      feeds.set(tg.piece.id, k);
-      if (k >= FEEDS) full.add(tg.piece.id);
-      const of = made.get(tg.piece.id);
-      if (of === undefined) wornFed = true;
-      return { kind: 'feed', to: of !== undefined ? { entry: of } : { c: tg.c, piece: tg.piece } };
-    }
+    if (r.kind === 'material' && r.sub === 'now') return feedTo(r);
     if (r.kind === 'maybe') return { kind: 'maybe', heroes: r.maybe };
     return { kind: 'junk' };
   };
@@ -210,6 +213,21 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   for (let i = 0; i < todo.length && i < entries.length * 3; i++) {
     const o = todo[i];
     if (!fates.has(o.id)) fates.set(o.id, decide(o.id, o.n, inputOfPiece(o.piece), false, false));
+  }
+
+  // a «Разобрать» or «Спорно» piece decided before a piece of its kind reached a hero — taken off one hero and worn by
+  // another after the entries (owner 2026-10-09: #48 Ether Blade vs the Ether Blade Fran gave Hilde) — feeds it if it can
+  const inputOfLine = (id: string): { input: ItemInput; twin: boolean } | null => {
+    const o = offs.find((x) => x.id === id);
+    if (o) return { input: inputOfPiece(o.piece), twin: false };
+    const e = order.find((x) => String(x.n) === id);
+    return e ? { input: e.e.input, twin: !!e.e.twin } : null;
+  };
+  for (const [id, f] of [...fates]) {
+    if (f.kind !== 'junk' && f.kind !== 'maybe') continue;
+    const x = inputOfLine(id);
+    const r = x && verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: skipOf(id), full });
+    if (r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r));
   }
 
   // records the plan made that a later «Надень» took off (held: «Отложи» instead of «Надень») or dropped (gone)
