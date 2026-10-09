@@ -35,7 +35,7 @@ const SUB_ORDER = ['SPD', 'ATK%', 'CHC', 'CHD', 'DMG UP%', 'HP%', 'DEF%', 'DMG R
 export const FLAT = new Set(['ATK', 'DEF', 'HP']);
 // Подпись сабстата на вещи. EFF и RES сабстатом бывают только rate — в игре со знаком %, как ATK%; flat EFF и flat RES
 // бывают только main (перчатки, ботинки, аксессуар). Ключи остаются 'EFF' и 'RES': так их пишут билды,
-// так они лежат в коде предмета и в сохранённых вещах. Main (MainButtons, main в сетке и в цепочке) — без %.
+// так они лежат в коде предмета и в сохранённых вещах. Main (поле main, main в сетке и в цепочке) — без %.
 const SUB_LABEL: Record<string, string> = { EFF: 'EFF%', RES: 'RES%' };
 export const subLabel = (k: string): string => SUB_LABEL[k] ?? k;
 // main аксессуара в сетке (StatGrid), по строкам 7×2; null — пустая клетка. Те же места, что у сабстатов, а на местах

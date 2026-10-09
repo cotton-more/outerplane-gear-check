@@ -522,7 +522,7 @@ export const en: Texts = {
       '**T4** next to the set, item or main stat (on an Epic weapon or accessory) — the piece is already at Breakthrough T4. For armor its set bonus (Speed ×2 and others) counts at T4; for any piece, no more copies are needed for its Breakthrough. A fresh drop is T0 — leave it off. "T?" on an older record means Breakthrough isn\'t set: it counts as below T4.',
       '**Legendary weapon and accessory** — find the item and mark the main stat. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
-      '**Main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the grid, after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
+      '**Main stat** on a weapon or accessory — the first tap in the grid (a weapon: ATK%, DEF% or HP%), after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. Stats sit in pairs by parameter, one above the other: ATK% over ATK, HP% over HP, DEF% over DEF, CHC over CHD, DMG UP% over DMG RED%, EFF% over RES%. A cell marked main never rolls as a substat on this piece — it is already in the main (HP% on helmets and boots, flat DEF on chest armor and gloves, flat ATK on weapons). A flat EFF or flat RES main doesn\'t block EFF% and RES% substats — in the game they are different stats. The grid has all 13 substats in the game; PEN%, CDMG RED%, flat EFF and flat RES never roll as substats — only as mains.',
       '**Segments** — how many are lit on the substat in the game, 1–6 (yellow and orange together). You pick them in the window right after tapping the grid; tap outside the window and the stat isn\'t added. To fix them — the buttons in the row. A fresh drop has up to 4. The verdict takes the piece as it is: Reforges still ahead don\'t count.',
       '**4th substat on an Epic** — usually an Epic drops with three and the first Reforge adds a fourth; some drop with four. If the piece has one — "+ 4th substat" under the rows.',
@@ -799,7 +799,7 @@ export const en: Texts = {
       pick: (x: StepText) => x.demo ? 'Tap the set field and pick **Speed Set**.' : x.kind === 'armor'
         ? 'Pick the set — it is in the item name after “of”.'
         : x.kind === 'weapon'
-          ? `Main stat — one of the buttons next to the grade${x.legend ? '; below, find the weapon by name: the passive depends on it' : ''}.`
+          ? `Mark the main stat: the first tap in the grid — ATK%, DEF% or HP%${x.legend ? '; then find the weapon by name: the passive depends on it' : ''}.`
           : x.legend
             ? 'Find the accessory by name — the passive and possible mains depend on it.'
             : 'Mark the main stat: the first tap in the grid is the main, then come the substats.',

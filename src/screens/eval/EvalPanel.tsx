@@ -23,7 +23,6 @@ import { Frame, GradeFrame, Icon, SetIcon, SlotIcon, StatIcon } from '@/game/ico
 import { Sheet, type Point } from '@/shared/ui/Sheet';
 import { BtChip } from '@/features/eval/form/BtChip';
 import { ItemPicker } from '@/features/eval/form/ItemPicker';
-import { MainButtons } from '@/features/eval/form/MainButtons';
 import { MainPicker } from '@/features/eval/form/MainPicker';
 import { PickField } from '@/features/eval/form/PickField';
 import { SetPicker } from '@/features/eval/form/SetPicker';
@@ -98,9 +97,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const weapon = s.slot === 'weapon';
   const mainValue = s.main ? <><StatIcon stat={s.main} main />{s.main}</> : undefined;
   const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
-  const allMains = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic) : []), [ctx, weapon, kind, epic]);
-  // у аксессуара без main сетка сначала выбирает main — в игре он сверху предмета
-  const mainMode = s.slot === 'accessory' && !s.main && opts.length > 0 ? opts : null;
+  // у аксессуара и оружия (owner 2026-10-09) без main сетка сначала выбирает main — в игре он сверху предмета; у оружия
+  // это только ATK%, DEF% или HP% — остальное в сетке выключено
+  const mainMode = !armor && !s.main && opts.length > 0 ? opts : null;
   const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
   // сабстаты уже вводят, а сет, main или предмет не выбран — без него вердикта нет: выделяем, чего не хватает
   const started = Object.keys(s.subs).length > 0;
@@ -146,7 +145,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
               {btChip}
             </>
             : <>
-              {weapon ? <MainButtons all={allMains} opts={opts} current={s.main} need={need === 'main'} onPick={pickMain} /> : mainField}
+              {mainField}
               {/* у Epic предмета на форме нет — «T4» рядом с main (.x/0060 SPEC 4.1) */}
               {epic && btChip}
             </>}

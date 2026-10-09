@@ -58,8 +58,9 @@ There is no footer under the page.
    - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set);
      **Legendary weapon and accessory** — find the item and mark the main stat; **Epic weapon and accessory** — just the main stat;
      a piece already at Breakthrough T4 — tap **"T4"** next to the set or item (a fresh drop is T0, leave it off);
-   - **main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the
-     grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Grey —
+   - **main stat** on a weapon or accessory — the first tap in the grid: until the main is chosen, the grid picks it (in
+     the game it's on top of the piece; a weapon: ATK%, DEF% or HP%), then the substats. Tap the "main" cell to remove
+     it and pick another. Grey —
      no one needs that main;
    - **substats** — tap them in the grid in order, as in the game; each tap opens a window with buttons 1–6 — pick how
      many segments are lit in the game (a fresh drop has up to 4). Tap outside the window and the stat isn't added;

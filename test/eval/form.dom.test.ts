@@ -44,13 +44,15 @@ async function mount(state: Record<string, unknown>, item: Record<string, unknow
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 
 describe('без вердикта карточки нет, нужное поле выделено', () => {
-  it('Epic оружие: сабстаты есть, main нет — сетка на месте, кнопки main выделены; выбрал main — карточка', async () => {
+  // owner 2026-10-09: a weapon's main is picked in the grid, like an accessory's — only ATK%, DEF%, HP% are on
+  it('Epic оружие: сабстаты есть, main нет — сетка выбирает main (ATK% / DEF% / HP%), поле main выделено; выбрал main — карточка', async () => {
     await mount({ slot: 'weapon', grade: 'rare' }, { subs: { SPD: 1, CHC: 1, CHD: 1 } });
     expect($('.vcard')).toBeNull();
-    expect($('.statgrid')).toBeTruthy();
-    expect($('.mainsw.need')).toBeTruthy();
-    await act(async () => $('.mainsw .msw')!.click());
-    expect($('.mainsw.need')).toBeNull();
+    expect($('.statgrid.main-mode')).toBeTruthy();
+    expect([...document.querySelectorAll<HTMLButtonElement>('.statgrid.main-mode .sg:not([disabled])')].map((b) => b.getAttribute('aria-label')).sort()).toEqual(['ATK%', 'DEF%', 'HP%']);
+    expect($('[data-tour="pick"].need')).toBeTruthy();
+    await act(async () => $('.statgrid.main-mode .sg[aria-label="ATK%"]')!.click());
+    expect($('[data-tour="pick"].need')).toBeNull();
     expect($('.vcard')).toBeTruthy();
     expect($('.vcard .stamp')?.textContent).not.toBe('…');
   });
@@ -65,12 +67,22 @@ describe('без вердикта карточки нет, нужное поле
     expect($('[data-tour="pick"].need')).toBeTruthy();
   });
 
+  it('оружие: main ATK% выбран в сетке — клетка ATK% становится «main» и сабстатом не бывает; нажатие снимает main', async () => {
+    await mount({ slot: 'weapon', grade: 'rare' }, {});
+    await act(async () => $('.statgrid.main-mode .sg[aria-label="ATK%"]')!.click());
+    expect($('.statgrid.main-mode')).toBeNull();
+    const cell = $('.statgrid .sg.is-main');
+    expect(cell?.textContent).toContain('ATK%');
+    await act(async () => cell!.click());
+    expect($('.statgrid.main-mode')).toBeTruthy();
+  });
+
   it('Legendary оружие с main, но без предмета: выделено поле предмета', async () => {
     await mount({ slot: 'weapon', grade: 'unique' }, { subs: { SPD: 1 } });
-    expect($('.mainsw.need')).toBeTruthy(); // сначала main
-    await act(async () => $('.mainsw .msw:not([disabled])')!.click());
+    expect($('[data-tour="pick"].need')).toBeTruthy(); // сначала main — в сетке
+    await act(async () => $('.statgrid.main-mode .sg:not([disabled])')!.click());
     expect($('[data-tour="item"].need')).toBeTruthy();
-    expect($('.mainsw.need')).toBeNull();
+    expect($('[data-tour="pick"].need')).toBeNull();
   });
 });
 
