@@ -342,59 +342,44 @@ describe('«Надеть»: вариант, где она встала, — на
   });
 });
 
-describe('«Надеть»: отметки и начало сборки', () => {
+describe('«Надеть»: начало сборки и «Вернуть»', () => {
   // у Caren собран Speed ×4, Defense-вещей нет; новый Defense-шлем в Speed не встаёт
   const A = (slot: Piece['slot'], s: string, subs: Record<string, number>): ItemInput => ({ slot, grade: 'unique', setId: set(s), itemKey: null, main: null, subs });
   const mid = { CHC: 2, CHD: 2, 'DEF%': 1, HP: 1 };
   const pcs = (['helmet', 'armor', 'gloves', 'shoes'] as const).map((sl, i) => rec('p' + (i + 1), A(sl, 'Speed', mid)));
   const st = v2(pcs, { [CAREN]: pcs.map((p) => p.id) });
   const DEF = A('helmet', 'Defense', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 });
-  const K3 = buildKey(CAREN, 'Def');
+  const unused = (s: GearStore) => poolView(ctx, s).of(CAREN)!.unused.map((p) => p.id);
 
-
-  it('старый Defense-шлем уже начал Def (Р14): новый его заменяет, отметок нет', () => {
+  it('старый Defense-шлем уже начал Def (Р14): новый его заменяет', () => {
     const old = rec('p5', A('helmet', 'Defense', { HP: 1, RES: 1 }));
     const r = putOn(ctx, v2([...pcs, old], { [CAREN]: [...pcs, old].map((p) => p.id) }), CAREN, DEF);
     // слабый старый шлем пул не держал и до «Надеть» («больше не нужна») — «Надеть» его не трогает (PLAN Д7)
-    expect({ marks: r.st.marks ?? {}, removed: r.removed.map((p) => p.id) }).toEqual({ marks: {}, removed: [] });
+    expect(r.removed.map((p) => p.id)).toEqual([]);
   });
 
   it('новый шлем не «ненужный»: Def начат им и собирается сам', () => {
     const r = putOn(ctx, st, CAREN, DEF);
-    expect(poolView(ctx, r.st).of(CAREN)!.unused).toEqual([]);
+    expect(unused(r.st)).toEqual([]);
   });
 
-  // было: цель «Не собираю» становилась «Собираю» (и Def/Immu). Р18, Р19: шлем держит Def/Immu, который собирается сам, —
-  // вещь не только в цели, «Не собираю» у Def остаётся
-  it('у Def «Не собираю», вещь стоит и в собираемом Def/Immu — отметки нет, «Не собираю» остаётся', () => {
-    const r = putOn(ctx, { ...st, marks: { [K3]: 'skip' } }, CAREN, DEF);
-    expect(r.st.marks).toEqual({ [K3]: 'skip' });
+  // Pen-шлем со слабыми статами встаёт только в Pen: ни в Speed-вариантах, ни в «По статам» (там Speed-шлем лучше) его
+  // нет, но пул держит сборку каждого варианта (В2, «что держит пул» — (а)) — шлем нужен
+  it('встала только в Pen — шлем нужен', () => {
+    const r = putOn(ctx, st, CAREN, A('helmet', 'Penetration', { RES: 1, EFF: 1 }));
+    expect(unused(r.st)).not.toContain(r.id);
   });
 
-  // Pen-шлем со слабыми статами встаёт только в Pen (цель, «Не собираю»): ни в Speed-вариантах, ни в «По статам» (там
-  // Speed-шлем лучше) его нет. Было (Р19, исключение): цель становилась «Собираю», иначе после примерки шлем «больше не
-  // нужна». Теперь пул держит сборку каждого варианта и с «Не собираю» (В2, «что держит пул» — (а)) — отметка не нужна
-  const PEN = buildKey(CAREN, 'Pen');
-  const PENH = A('helmet', 'Penetration', { RES: 1, EFF: 1 });
-  it('встала только в Pen («Не собираю») — отметок нет, «Не собираю» остаётся, шлем нужен', () => {
-    const r = putOn(ctx, { ...st, marks: { [PEN]: 'skip' } }, CAREN, PENH);
-    expect(r.st.marks).toEqual({ [PEN]: 'skip' });
-    expect(poolView(ctx, r.st).of(CAREN)!.unused.map((p) => p.id)).not.toContain(r.id);
-  });
-
-  // было: «Вернуть» снимало отметку совсем — «Не собираю» пропадало
-  it('«Вернуть» при «Не собираю» у Pen — хранилище как до «Надеть», «Не собираю» байт в байт', () => {
-    const skip: GearStore = { ...st, marks: { [PEN]: 'skip' } };
-    const r = putOn(ctx, skip, CAREN, PENH);
+  it('«Вернуть» после «Надеть» — хранилище как до неё (seq не откатывается: номер вещи не переиспользуется)', () => {
+    const r = putOn(ctx, st, CAREN, A('helmet', 'Penetration', { RES: 1, EFF: 1 }));
     const back = undoPut(r.st, CAREN, r);
-    // seq не откатывается (как всегда у «Вернуть»): номер вещи не переиспользуется
-    expect({ back: JSON.stringify(back.marks), st: { ...back, seq: 0 } }).toEqual({ back: JSON.stringify(skip.marks), st: { ...skip, seq: 0 } });
+    expect({ ...back, seq: 0 }).toEqual({ ...st, seq: 0 });
   });
 
-  it('встала и в собираемый вариант — отметки нет', () => {
+  it('встала и в собираемый вариант — шлем нужен', () => {
     // Immunity-шлем встаёт в Speed/Immu, который собирается сам (Speed ×2 из четырёх Speed)
     const r = putOn(ctx, st, CAREN, A('helmet', 'Immunity', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }));
-    expect(r.st.marks ?? {}).toEqual({});
+    expect(unused(r.st)).not.toContain(r.id);
   });
 });
 
