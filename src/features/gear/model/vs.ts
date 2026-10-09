@@ -12,6 +12,8 @@ export { milli, type Milli };
 // Очки целыми тысячными (R2.2 «Обмена вещами»): сравнение без дробного шума, округление — один раз. Заметный выигрыш —
 // хотя бы на 1 очк. (R6.2): так решают «Обмен вещами» (trade) и «Переодеть» («Надето», worn/wearing)
 export const THRESHOLD: Milli = milli(1);
+// a gain worth naming in the text: from 0.05 points, so that the one-decimal number («+0,1 очк.») is never zero
+export const namedGain = (points: number): boolean => points >= 0.05;
 
 // может ли персонаж надеть вещь: у оружия и аксессуара из списка бывает класс (classLimits) — как в вердикте (evalGear).
 // Нельзя — вещь ему не кандидат нигде: ни в билде, ни в «По статам», ни в режиме героя (fit — «нет»,

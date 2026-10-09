@@ -105,11 +105,12 @@ describe('строки GEARPOOL', () => {
     expect(enUi.vsWorn('Legendary', 4)).toBe('now: Legendary, Breakthrough T4');
   });
 
-  // .x/0085 TEXTS.md: очки — до сотых без хвоста нулей, запятая в RU; род слота во фразах запаса
+  // .x/0085 TEXTS.md: очки — до десятых без хвоста нулей (как в «Надето» и «Обмене»), запятая в RU; род слота во фразах запаса
   it('«статы + сеты»: очки «2,5 / 2.5», запас по роду слота, «A и B» в тихой строке, RU/EN', () => {
     const F = TEXTS.ru.fit, E = TEXTS.en.fit;
-    expect([F.pts(2.5), F.pts(8.25), F.pts(2.954), E.pts(2.5)]).toEqual(['2,5', '8,25', '2,95', '2.5']);
-    expect(F.gain('Caren', F.pts(1.95))).toBe('Caren станет сильнее на 1,95 очк.');
+    expect([F.pts(2.5), F.pts(8.25), F.pts(2.954), F.pts(1), F.pts(4.87), E.pts(2.5), E.pts(4.87), E.pts(1)]).toEqual(['2,5', '8,3', '3', '1', '4,9', '2.5', '4.9', '1']);
+    expect(F.gain('Caren', F.pts(1.95))).toBe('Caren станет сильнее на 2 очк.');
+    expect(F.gain('Caren', F.pts(1.64))).toBe('Caren станет сильнее на 1,6 очк.');
     expect(['helmet', 'armor', 'gloves'].map((sl) => F.reserveWhy('Caren', 'Speed', sl))).toEqual([
       'У Caren начат Speed, а Speed-шлема нет. Придёт сильный — этот пойдёт ему в Breakthrough.',
       'У Caren начат Speed, а Speed-брони нет. Придёт сильная — эта пойдёт ей в Breakthrough.',

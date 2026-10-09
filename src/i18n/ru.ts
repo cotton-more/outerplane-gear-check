@@ -193,7 +193,7 @@ export const ru = {
   // --- вердикт по «статам + сетам» (.x/0085 TEXTS.md, согласовано 2026-10-06): штамп — про оцениваемую вещь, причина —
   // раньше имени (на 280px длинное имя режется, а не причина). pts — очки формулы («2,5»), part — «Speed ×2»
   fit: {
-    pts: (x: number) => String(Math.round(x * 100) / 100).replace('.', ','),
+    pts: (x: number) => dec(x),
     // вещь во фразе: «Speed-ботинки»
     piece: (set: string, slot: string) => `${set}-${NOM[slot]}`,
     wearEmpty: (name: string) => `Оставляй — надень на ${name}`,

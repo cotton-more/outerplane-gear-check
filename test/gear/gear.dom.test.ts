@@ -75,7 +75,7 @@ describe('«Надеть» и «Вернуть»', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
     await click($('.v-equip'));
-    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Equip — +6.55 pts');
+    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Equip — +6.6 pts');
     await click(byText('.equip-row', 'Caren') as HTMLElement);
 
     expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');
@@ -89,10 +89,10 @@ describe('«Надеть» и «Вернуть»', () => {
 
   // доработка 2 шага 10 (решение владельца, refute-10 п. 6): было — после «Заменить» вещь оставалась на форме и
   // сравнивалась со своей записью («на уровне», кнопки нет). Теперь форма — как после «Следующий»
-  it('карточка: «▲ +1.95 pts Caren», кнопка под ней — «Заменить шлем Caren»; после — форма пуста (как «Следующий»)', async () => {
+  it('карточка: «▲ +2 pts Caren», кнопка под ней — «Заменить шлем Caren»; после — форма пуста (как «Следующий»)', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } }, pin: pinned('Speed', speed) }) });
     expect($('.vcard .vc-title')?.textContent).toBe('better than on Caren');
-    expect($('.vcard .vc-vs')?.textContent).toBe('+1.95 ptsCaren');
+    expect($('.vcard .vc-vs')?.textContent).toBe('+2 ptsCaren');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
     // прежний шлем на T4 — лучший Speed-шлем Caren на T4 (.x/0085 FORMULA §5 п. 3, Speed закреплён): в пуле остаётся
@@ -170,13 +170,13 @@ describe('«Надеть» и «Вернуть»', () => {
   });
 
   // было: «или — Caren · Speed ▸», хотя кнопка заменяет её шлем (П8: подпись = действие, Р7)
-  it('вторая кнопка «или — заменить шлем Caren · +1.95 pts ▸»: другому герою тоже «Надень» — сразу ему, с «Вернуть»', async () => {
+  it('вторая кнопка «или — заменить шлем Caren · +2 pts ▸»: другому герою тоже «Надень» — сразу ему, с «Вернуть»', async () => {
     // у Kappa три Speed-вещи — шлем соберёт ей Speed ×4 (первая кнопка); у Caren шлем слабее — новая лучше
     const kap = ['armor', 'gloves', 'shoes'].map((slot, i) => P('k' + (i + 1), slot, speed, { 'DEF%': 1, CHC: 1 }));
     await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, t4: true },
       { gear: G([WEAK, ...kap], { [caren.id]: ['p1'], [kappa.id]: ['k1', 'k2', 'k3'] }, { worn: { [caren.id]: { helmet: 'p1' } } }), roster: [caren.id, kappa.id] });
     expect($('.vc-equip')?.textContent).toBe('Equip on Kappa · T4');
-    expect($('.vc-other')?.textContent).toBe("or — replace Caren's helmet · +1.95 pts · T4 ▸");
+    expect($('.vc-other')?.textContent).toBe("or — replace Caren's helmet · +2 pts · T4 ▸");
     await click($('.vc-other'));
     expect(stored().pools[caren.id]).toHaveLength(1);
     expect(stored().pools[caren.id]).not.toContain('p1');
@@ -437,7 +437,7 @@ describe('«Кому надеть?»', () => {
 
     expect($('.equip-item')?.textContent).toContain('Helmet · Speed Set · L');
     expect($('.equip-subs')?.textContent).toBe('DEF%3CHC2CHD3HP1');
-    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace helmet — +1.95 pts');
+    expect(byText('.equip-row', 'Caren')?.querySelector('.act')?.textContent).toBe('Replace helmet — +2 pts');
     expect($$('.equip-row')).toHaveLength(1);
     expect($('.equip')?.textContent).toContain('Here — who gains most from it now. Find anyone else by name: Equip records it on them.');
     expect($('.equip .toggle')).toBeNull(); // «показать и не по билду» больше нет
@@ -1151,9 +1151,9 @@ describe('вердикт «статы + сеты»', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, RIN_GOOD, { roster: [rin.id, valentine.id, delta.id, caren.id] });
     expect($('.vcard .vc-title')?.textContent).toBe('equip on Rin');
     await click($('.vcard'));
-    expect(rows()).toEqual([['Rin', '+2.95 pts'], ['Valentine', '+2.95 pts'], ['Delta', '+2.45 pts']]);
+    expect(rows()).toEqual([['Rin', '+3 pts'], ['Valentine', '+3 pts'], ['Delta', '+2.5 pts']]);
     expect($$('.v-vs .vs-act').map((b) => b.textContent)).toEqual(['Equip on Rin', 'Equip on Valentine', 'Equip on Delta']);
-    expect(byText('.v-vs .vs-row', 'Rin')?.textContent).toContain('Rin gets +2.95 pts');
+    expect(byText('.v-vs .vs-row', 'Rin')?.textContent).toContain('Rin gets +3 pts');
   });
 
   it('T5.3: Pen-шлем у Caren в Def ×4, Penetration закреплён — «Оставь (а)»: строка «пока не надевай», вместо «Надеть» — «Отложить»', async () => {

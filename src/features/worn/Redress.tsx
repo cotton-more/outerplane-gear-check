@@ -6,6 +6,7 @@ import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import type { Piece } from '@/features/gear/model/gear';
+import { namedGain } from '@/features/gear/model/vs';
 import type { Profile } from '@/game/build/profile';
 import { tokensOf, type Redress as Plan } from './wearing';
 import { SlotIcon } from '@/game/icons/Img';
@@ -27,7 +28,7 @@ export function Redress({ c, ctx, P, plan, onClose, onWear, onWearAll }: {
     <Sheet title={t.card.redressTitle(c.name)} onClose={onClose} className="aimsheet">
       <div className="vsheet">
         <div className="rd-gain">
-          {plan.pts >= 0.005 && <b>{t.fit.chipGain(t.fit.pts(plan.pts))}</b>}
+          {namedGain(plan.pts) && <b>{t.fit.chipGain(t.fit.pts(plan.pts))}</b>}
           {plan.rankUp && <p>{t.fit.rankUp(c.name)}</p>}
           {plan.pts <= -0.05 && <p>{t.trade.weaker(-plan.pts)}</p>}
           {parts && <p>{parts}</p>}

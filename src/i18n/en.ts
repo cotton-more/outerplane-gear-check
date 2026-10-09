@@ -165,7 +165,7 @@ export const en: Texts = {
   },
 
   fit: {
-    pts: (x) => String(Math.round(x * 100) / 100),
+    pts: (x) => dec(x),
     piece: (set, slot) => `${set} ${SLOT_EN[slot]}`,
     wearEmpty: (name) => `Keep — equip on ${name}`,
     wearBetter: (name) => `Keep — better than on ${name}`,

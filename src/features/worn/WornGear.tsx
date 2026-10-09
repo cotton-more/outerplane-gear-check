@@ -22,8 +22,8 @@ import { Rich } from '@/shared/ui/Rich';
 import type { CSSProperties } from 'react';
 import type { ChainSum } from './wearing';
 
-// points to one decimal: «37,7», «3,4»
-const pt = (t: ReturnType<typeof useT>, x: number) => t.fit.pts(Math.round(x * 10) / 10);
+// points to one decimal («37,7», «3,4») — fit.pts rounds itself
+const pt = (t: ReturnType<typeof useT>, x: number) => t.fit.pts(x);
 
 // The hero's chain with segment sums from the worn pieces (wearing chainSums): green — counts in full, yellow — at ½
 // (flat), paler — fewer segments, but the colour stays recognisable; dashed — nothing worn gives the stat.

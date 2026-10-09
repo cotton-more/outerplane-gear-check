@@ -67,4 +67,12 @@ describe('chipLabel', () => {
     expect([chipLabel(TEXTS.ru, x({})), chipLabel(TEXTS.ru, x({ kind: 'keep' })), chipLabel(TEXTS.ru, x({ dV: -3, rankUp: true }, 'accessory')), chipLabel(TEXTS.ru, x({ kind: 'none', dV: 0 }))])
       .toEqual(['+2,5 очк.', 'держи', 'рекомендованный', null]);
   });
+
+  it('прирост называют от 0,05 очка: «+0,1 очк.» есть, «+0 очк.» не бывает; одна цифра после запятой', () => {
+    expect(chipLabel(TEXTS.ru, x({ dV: 0.04 }))).toBeNull();
+    expect(chipLabel(TEXTS.ru, x({ dV: 0.05 }))).toBe('+0,1 очк.');
+    expect(chipLabel(TEXTS.ru, x({ dV: 4.87 }))).toBe('+4,9 очк.');
+    expect(chipLabel(TEXTS.en, x({ dV: 4.87 }))).toBe('+4.9 pts');
+    expect(chipLabel(TEXTS.ru, x({ dV: 0.04, rankUp: true }))).toBe(TEXTS.ru.fit.chipRank('helmet'));
+  });
 });

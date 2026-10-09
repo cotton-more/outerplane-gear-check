@@ -2,10 +2,11 @@
 // «Надеть на X» / «Заменить шлем X». Карточка вердикта, «Сейчас на персонажах», «Кому надеть?».
 import { useT, type Texts } from '@/i18n';
 import type { CharVs } from '@/features/gear/model/poolVs';
+import { namedGain } from '@/features/gear/model/vs';
 import { Icon } from '@/game/icons/Img';
 
-// прирост, который стоит назвать: от сотой очка (ранг оружия бывает и при V ниже — тогда числа нет)
-export const gainOf = (x: CharVs): number | null => (x.h.dV >= 0.005 ? x.h.dV : null);
+// прирост, который стоит назвать: от 0,05 очка (ранг оружия бывает и при V ниже — тогда числа нет)
+export const gainOf = (x: CharVs): number | null => (namedGain(x.h.dV) ? x.h.dV : null);
 
 // слова чипа, как их прочтёт диктор; null — чипа нет
 export function chipLabel(t: Texts, x: CharVs): string | null {

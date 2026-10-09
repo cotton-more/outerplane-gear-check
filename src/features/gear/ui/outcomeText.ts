@@ -9,6 +9,7 @@ import { subsText } from '@/game/text';
 import type { Piece } from '@/features/gear/model/gear';
 import type { VerdictKind } from '@/features/eval/verdict/verdict';
 import type { HeroRes, Result } from '@/features/gear/verdict';
+import { namedGain } from '@/features/gear/model/vs';
 
 type Label = (p: Piece) => string;
 const itemName = (idx: Index, x: Pick<ItemInput, 'slot' | 'itemKey' | 'main'>): string =>
@@ -34,7 +35,7 @@ export function heroLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, lab
   const out: string[] = [];
   const name = h.c.name;
   if (h.kind === 'wear') {
-    if (h.dV >= 0.005) out.push(F.gain(name, F.pts(h.dV)));
+    if (namedGain(h.dV)) out.push(F.gain(name, F.pts(h.dV)));
     if (h.rankUp) out.push(F.rankUp(name));
     const parts = F.parts(h.parts.on.map((p) => partText(idx, p)), h.parts.off.map((p) => partText(idx, p)));
     if (parts) out.push(parts);
