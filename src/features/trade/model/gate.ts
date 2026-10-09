@@ -6,7 +6,7 @@
 // Принятое — в fix; комплект пересчитывается с ним, поэтому «уже принятые замены» учитываются у следующих слотов.
 import type { SlotId } from '@/game/data/types';
 import { bestKit, FIT, keyOf, type Fix } from './kit';
-import { gains, GEAR_SLOTS, SLOT_ORDER, type Cand, type Cands, type Gauge, type Kit } from './model';
+import { gains, GEAR_SLOTS, legendOverEpic, SLOT_ORDER, type Cand, type Cands, type Gauge, type Kit } from './model';
 import { THRESHOLD, type Milli } from '@/features/gear/model/vs';
 
 const isGear = (slot: SlotId) => GEAR_SLOTS.includes(slot);
@@ -17,7 +17,7 @@ export interface Plan { kit: Kit; changes: Change[]; losses: Loss[] }
 
 // Порог: вещь `to` вместо надетой `from` при остальном комплекте `rest`
 export function passesThreshold(g: Gauge, rest: Partial<Record<SlotId, Cand>>, slot: SlotId, from: Cand, to: Cand): boolean {
-  return gains(keyOf(g, { ...rest, [slot]: from }), keyOf(g, { ...rest, [slot]: to }));
+  return gains(keyOf(g, { ...rest, [slot]: from }), keyOf(g, { ...rest, [slot]: to }), legendOverEpic(from, to));
 }
 
 // меньшая цена источника, потом больше очков, дальше R6.1
@@ -38,7 +38,8 @@ export function planFor(g: Gauge, cands: Cands): Plan {
       if (window < 0 || window >= THRESHOLD) return false;
       if (k.halves !== best.key.halves || k.eff !== best.key.eff) return false;
       if (isGear(slot) && FIT[c.fit] < FIT[b.fit]) return false;
-      return c.item.id === w.item.id || passesThreshold(g, best.slots, slot, w, c);
+      // the worn Epic does not hold its place against a Legendary that is not worse (Q7)
+      return c.item.id === w.item.id ? !legendOverEpic(w, b) : passesThreshold(g, best.slots, slot, w, c);
     });
     fix[slot] = opts.sort(cheaper)[0] ?? w;
   }

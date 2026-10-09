@@ -113,11 +113,28 @@ export function layoutValue(P: Profile, layout: Layout): LayoutValue {
 type Ranked = Pick<LayoutValue, 'rank' | 'v' | 'effHalves'>;
 // §3 п. 3: a лучше z — выше ранг оружия или аксессуара; или при том же ранге V больше хотя бы на 1 очко (в тысячных);
 // или при том же ранге включается половина сета-эффекта при не меньшем V
-export function better(a: Ranked, z: Ranked): boolean {
+// legendOverEpic (owner Q7, 2026-10-09): the layouts differ only by Legendary pieces taking the place of Epic ones — then
+// V not lower is enough, no +1: the Legendary's bigger main stat breaks the tie (see epicToLegend)
+export function better(a: Ranked, z: Ranked, legendOverEpic = false): boolean {
   if (a.rank !== z.rank) return a.rank > z.rank;
-  if (milli(a.v) - milli(z.v) >= THRESHOLD) return true;
+  if (milli(a.v) - milli(z.v) >= (legendOverEpic ? 0 : THRESHOLD)) return true;
   return a.effHalves > z.effHalves && milli(a.v) >= milli(z.v);
 }
+
+// every slot where `to` differs from `from` is a Legendary in place of an Epic (and there is at least one such slot):
+// the swap that needs no +1 point margin. The same grade comparison is the tie-break of bestLayout
+export function epicToLegend(from: Layout, to: Layout): boolean {
+  let swaps = 0;
+  for (const slot of ALL) {
+    const a = from[slot], b = to[slot];
+    if (a?.id === b?.id) continue;
+    if (a?.grade !== 'rare' || b?.grade !== 'unique') return false;
+    swaps++;
+  }
+  return swaps > 0;
+}
+// at equal points a Legendary goes before an Epic: its main stat is bigger (the main stat has no points)
+const gradeFirst = (a: Piece, z: Piece): number => Number(z.grade === 'unique') - Number(a.grade === 'unique');
 // строгий порядок (ранг, V) без порога — его максимизирует лучшая раскладка
 export function cmpLex(a: Pick<Ranked, 'rank' | 'v'>, z: Pick<Ranked, 'rank' | 'v'>): number {
   if (a.rank !== z.rank) return Math.sign(a.rank - z.rank);
@@ -129,7 +146,7 @@ function gearBetter(P: Profile, a: Piece, z: Piece): boolean {
   if (ra !== rz) return ra > rz;
   const pa = piecePoints(P, a), pz = piecePoints(P, z);
   if (Math.abs(pa - pz) > EPS) return pa > pz;
-  return ageOf(a) < ageOf(z);
+  return gradeFirst(a, z) < 0 || (gradeFirst(a, z) === 0 && ageOf(a) < ageOf(z));
 }
 
 export interface LayoutOpts {
@@ -139,7 +156,7 @@ export interface LayoutOpts {
 }
 
 // Лучшая раскладка пула. Отсечка точная: V = Σ очков + Σ ценностей сетов по (сет, n, n4), поэтому в слоте важна только
-// лучшая вещь на (сет, T4 или нет). При равной V — больше заполненных слотов, потом более старые записи
+// лучшая вещь на (сет, T4 или нет). При равной V — больше заполненных слотов, потом больше Legendary (Q7), потом более старые записи
 export function bestLayout(P: Profile, pool: readonly Piece[], opts: LayoutOpts = {}): { layout: Layout; value: LayoutValue } {
   const { prune = true, eligible } = opts;
   const cands = pool.filter((p) => wearable(P.ctx, P.c, p) && (!eligible || eligible(p)));
@@ -160,12 +177,12 @@ export function bestLayout(P: Profile, pool: readonly Piece[], opts: LayoutOpts 
       const k = `${p.setId}:${p.bt === 4}`;
       const b = best.get(k);
       const d = b ? piecePoints(P, p) - piecePoints(P, b) : 0;
-      if (!b || d > EPS || (Math.abs(d) <= EPS && ageOf(p) < ageOf(b))) best.set(k, p);
+      if (!b || d > EPS || (Math.abs(d) <= EPS && (gradeFirst(p, b) < 0 || (gradeFirst(p, b) === 0 && ageOf(p) < ageOf(b))))) best.set(k, p);
     }
     return [null, ...best.values()];
   });
 
-  let top: { arm: (Piece | null)[]; v: number; filled: number; age: number } | null = null;
+  let top: { arm: (Piece | null)[]; v: number; filled: number; legends: number; age: number } | null = null;
   const cur: (Piece | null)[] = [null, null, null, null];
   const cnt = new Map<string, [number, number]>();
   let ptsSum = 0;
@@ -174,9 +191,11 @@ export function bestLayout(P: Profile, pool: readonly Piece[], opts: LayoutOpts 
       let v = ptsSum + gearPts;
       for (const [set, [n, n4]] of cnt) if (n >= 2) v += setValue(P, set, n, n4).value;
       const filled = cur.filter(Boolean).length;
+      const legends = cur.filter((p) => p?.grade === 'unique').length;
       const age = cur.reduce((s, p) => s + (p ? ageOf(p) : 0), 0);
-      if (!top || v > top.v + EPS || (Math.abs(v - top.v) <= EPS && (filled > top.filled || (filled === top.filled && age < top.age)))) {
-        top = { arm: [...cur], v, filled, age };
+      if (!top || v > top.v + EPS || (Math.abs(v - top.v) <= EPS && (filled > top.filled || (filled === top.filled
+        && (legends > top.legends || (legends === top.legends && age < top.age)))))) {
+        top = { arm: [...cur], v, filled, legends, age };
       }
       return;
     }

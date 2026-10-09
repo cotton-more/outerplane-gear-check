@@ -5,14 +5,14 @@
 // Отсечение брони точное: в слоте из вещей одного ключа (сет, T4) остаётся лучшая по (очки, цена, потеря, ростер,
 // старшинство) — сеты и их ценность у них одни и те же.
 import type { SlotId } from '@/game/data/types';
-import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit, type KitKey } from './model';
+import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit, type KitKey } from './model';
 
 export const FIT: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
 const EMPTY = Number.POSITIVE_INFINITY; // ранг и номер пустого слота — после любых вещей
 
-// вещь a лучше z в одном слоте при тех же сетах: очки, цена источника, потеря держателя, ростер, старшинство
+// вещь a лучше z в одном слоте при тех же сетах: очки, Legendary (Q7), цена источника, потеря держателя, ростер, старшинство
 const betterInSlot = (a: Cand, z: Cand) =>
-  a.v !== z.v ? a.v > z.v : a.cost !== z.cost ? a.cost < z.cost : a.loss !== z.loss ? a.loss < z.loss
+  a.v !== z.v ? a.v > z.v : isLegend(a) !== isLegend(z) ? isLegend(a) : a.cost !== z.cost ? a.cost < z.cost : a.loss !== z.loss ? a.loss < z.loss
     : a.rank !== z.rank ? a.rank < z.rank : a.item.ord < z.item.ord;
 // оружие и аксессуар: сначала ранг (§3 п. 2)
 const betterGear = (a: Cand, z: Cand) => (FIT[a.fit] !== FIT[z.fit] ? FIT[a.fit] > FIT[z.fit] : betterInSlot(a, z));
@@ -118,11 +118,11 @@ function bestArmor(g: Gauge, cands: Cands, fix: Fix): (Cand | null)[] {
 // ключ брони: очки, ценность сетов, половины, ничьи
 function armorKey(g: Gauge, arm: readonly (Cand | null)[]): KitKey {
   const n = new Map<string, number>(), n4 = new Map<string, number>();
-  let pts = 0, filled = 0, cost = 0, loss = 0;
+  let pts = 0, filled = 0, cost = 0, loss = 0, legends = 0;
   const ranks: number[] = [], ords: number[] = [];
   for (const c of arm) {
     if (!c) { ranks.push(EMPTY); ords.push(EMPTY); continue; }
-    pts += c.v; filled++; cost += c.cost; loss += c.loss;
+    pts += c.v; filled++; cost += c.cost; loss += c.loss; legends += Number(isLegend(c));
     ranks.push(c.rank); ords.push(c.item.ord);
     const s = c.item.set;
     if (s) { n.set(s, (n.get(s) ?? 0) + 1); if (c.item.t4) n4.set(s, (n4.get(s) ?? 0) + 1); }
@@ -133,7 +133,7 @@ function armorKey(g: Gauge, arm: readonly (Cand | null)[]): KitKey {
     const b = g.bonus(s, k, n4.get(s) ?? 0);
     total += b.v; halves += b.halves; eff += b.eff;
   }
-  return { rank: 0, total, pts, halves, eff, filled, cost, loss, ranks, ords };
+  return { rank: 0, total, pts, halves, eff, filled, legends, cost, loss, ranks, ords };
 }
 
 // ключ всего комплекта (польза §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры)
@@ -146,7 +146,7 @@ export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
     ranks.push(c ? c.rank : EMPTY); ords.push(c ? c.item.ord : EMPTY);
     if (!c) continue;
     rank += FIT[c.fit];
-    k.total += c.v; k.pts += c.v; k.filled++; k.cost += c.cost; k.loss += c.loss;
+    k.total += c.v; k.pts += c.v; k.filled++; k.legends += Number(isLegend(c)); k.cost += c.cost; k.loss += c.loss;
   }
   return { ...k, rank, ranks: [...ranks, ...k.ranks], ords: [...ords, ...k.ords] };
 }

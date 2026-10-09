@@ -528,3 +528,59 @@ describe('порог «годная» ≥ 6 очков — в тысячных, 
     }
   });
 });
+
+// Q7 (owner, 2026-10-09): a Legendary not worse by points than the worn Epic of its slot gets «Надень» (dV >= 0, the
+// bigger main stat breaks the tie); Epic-vs-Epic and Legendary-vs-Legendary keep the +1.00 margin
+describe('Q7: Legendary вместо надетого Epic', () => {
+  const E = () => mk('e1', 'helmet', 'Speed', { SPD: 3, CHC: 3, ATK: 2 }, 4, { grade: 'rare' }); // Caren: 3,9 очка
+  const L = (id: string, lit: Record<string, number>) => mk(id, 'helmet', 'Speed', lit, 4);
+  const run = (worn: Piece, x: Piece) => {
+    const w = world(['Caren'], { Caren: [worn] });
+    const r = w.v(x)!;
+    const h = w.hero('Caren', r);
+    return { kind: kindOf(r), dV: +h.dV.toFixed(2), hk: h.kind, replaced: h.replaced?.id ?? null };
+  };
+
+  it('dV = 0: тот же набор полезных, Legendary — «Надень» (было «Спорно»)', () => {
+    const P = prof('Caren');
+    const x = L('x', { SPD: 3, CHC: 3, ATK: 2, RES: 2 });
+    expect(piecePoints(P, x)).toBeCloseTo(piecePoints(P, E()), 9);
+    expect(run(E(), x)).toEqual({ kind: 'wear', dV: 0, hk: 'wear', replaced: 'e1' });
+  });
+
+  it('dV = +0,5 (меньше 1): «Надень»', () => {
+    expect(run(E(), L('x', { SPD: 4, CHC: 3, ATK: 2, RES: 1 }))).toEqual({ kind: 'wear', dV: 0.5, hk: 'wear', replaced: 'e1' });
+  });
+
+  it('dV = −0,1: хуже надетого Epic — не «Надень»', () => {
+    const x = L('x', { SPD: 2, CHC: 3, 'DMG UP%': 1, RES: 1 });
+    const P = prof('Caren');
+    expect(piecePoints(P, x) - piecePoints(P, E())).toBeCloseTo(-0.1, 9);
+    const r = run(E(), x);
+    expect(r.hk).not.toBe('wear');
+    expect(r.kind).not.toBe('wear');
+  });
+
+  it('Epic против Epic: +0,5 — порог 1 очк. прежний; +1,6 — «Надень»', () => {
+    const e = (id: string, lit: Record<string, number>) => mk(id, 'helmet', 'Speed', lit, 4, { grade: 'rare' });
+    expect(run(E(), e('x', { SPD: 4, CHC: 3, ATK: 2 })).hk).not.toBe('wear'); // +0,5
+    expect(run(E(), e('y', { SPD: 3, CHC: 4, 'DMG UP%': 2 })).hk).toBe('wear'); // 3,2 + 1,5 + 0,8 = 5,5
+  });
+
+  it('Legendary против Legendary: +0,5 — порог 1 очк. прежний; +1,6 — «Надень»', () => {
+    const w = L('l1', { SPD: 3, CHC: 3, ATK: 2, RES: 2 });
+    expect(run(w, L('x', { SPD: 4, CHC: 3, ATK: 2, RES: 1 })).hk).not.toBe('wear');
+    expect(run(w, L('y', { SPD: 3, CHC: 4, 'DMG UP%': 2, RES: 1 })).hk).toBe('wear');
+  });
+
+  it('Legendary вместо Legendary при равных очках — по-прежнему не «Надень» (замены нет)', () => {
+    const w = L('l1', { SPD: 3, CHC: 3, ATK: 2, RES: 2 });
+    expect(run(w, L('x', { SPD: 3, CHC: 3, ATK: 2, RES: 2 })).hk).not.toBe('wear');
+  });
+
+  it('«Переодеть»: в пуле Epic надет, равный по очкам Legendary лежит — раскладка берёт Legendary', () => {
+    const w = world(['Caren'], { Caren: [E(), L('l1', { SPD: 3, CHC: 3, ATK: 2, RES: 2 })] }, { Caren: ['e1'] });
+    const hp = w.view.hero(char('Caren').id)!;
+    expect(hp.info.layout.helmet?.id).toBe('l1');
+  });
+});

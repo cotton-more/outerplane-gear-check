@@ -11,7 +11,7 @@ import { comboSig } from '@/game/build/variants';
 import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { better, bestLayout, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { better, bestLayout, epicToLegend, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { eligibleIn } from '@/features/gear/pool/info';
 import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
 import { undoWear, wearFromPool, type WearResult } from '@/features/gear/pool';
@@ -135,7 +135,7 @@ export function chainSums(ctx: Ctx, chain: Pick<Build, 'subs'>, tokens: readonly
 // лучшая раскладка (нынешняя, D3) против надетого: лучше по §3 п. 3 — что надеть
 export function redressOf(hp: HeroPool, worn: Layout): Redress | null {
   const best = hp.info.layout, vb = hp.info.value, vw = layoutValue(hp.P, worn);
-  if (!better(vb, vw)) return null;
+  if (!better(vb, vw, epicToLegend(worn, best))) return null; // Q7: Legendary in place of Epic — no +1
   const wear = SLOTS.map(({ id }) => ({ piece: best[id], replaces: worn[id] ?? null }))
     .filter((x): x is { piece: Piece; replaces: Piece | null } => !!x.piece && !(x.replaces && samePiece(x.replaces, x.piece)));
   return wear.length ? { pts: vb.v - vw.v, rankUp: vb.rank > vw.rank, ...partsDiff(vw, vb), wear } : null;

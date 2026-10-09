@@ -17,7 +17,7 @@ import { codeOf, type Gauge, type Hero, type Item, type Worth, type World } from
 export const STATS = 'stats';
 
 export const itemOf = (p: Piece): Item =>
-  ({ id: p.id, slot: p.slot, code: codeOf(p), bt: p.bt, set: p.setId, t4: p.bt === 4, ord: numOf(p.id) });
+  ({ id: p.id, slot: p.slot, code: codeOf(p), bt: p.bt, set: p.setId, t4: p.bt === 4, ord: numOf(p.id), grade: p.grade });
 
 // набор заказа; «По статам» и подпись, которой у героя нет (данные обновились), — null
 export const orderCombo = (c: Char, order: string): Combo | null =>

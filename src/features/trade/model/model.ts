@@ -20,6 +20,7 @@ export interface Item {
   set: string | null;       // сет брони
   t4: boolean;              // bt === 4
   ord: number;              // номер записи: меньше — старше
+  grade?: Grade;            // Epic ('rare') or Legendary ('unique'); synthetic worlds leave it out (Q7 then never applies)
 }
 
 export interface Hero {
@@ -70,6 +71,7 @@ export type Cands = Partial<Record<SlotId, readonly Cand[]>>;
 // сетов-эффектов); дальше — ничьи R6.1
 export interface KitKey {
   rank: number; total: Milli; pts: Milli; halves: number; eff: number; filled: number;
+  legends: number;          // slots held by a Legendary that nobody else wears (cost < 3): at equal V it wins (Q7)
   cost: number; loss: Milli; ranks: number[]; ords: number[];
 }
 export interface Kit { slots: Partial<Record<SlotId, Cand>>; key: KitKey }
@@ -86,12 +88,19 @@ export function cmpUse(a: KitKey, z: KitKey): number {
 
 // §3 п. 3 и §7 п. 5: b лучше a по порогу — выше ранг, или V больше хотя бы на 1 очко, или включилась половина
 // сета-эффекта при не меньшем V
-export const gains = (a: KitKey, b: KitKey): boolean =>
-  b.rank > a.rank || b.total - a.total >= THRESHOLD || (b.eff > a.eff && b.total >= a.total);
+// legendOverEpic (Q7): V not lower is enough, no +1 — see legendOverEpic
+export const gains = (a: KitKey, b: KitKey, soft = false): boolean =>
+  b.rank > a.rank || b.total - a.total >= (soft ? 0 : THRESHOLD) || (b.eff > a.eff && b.total >= a.total);
+
+// Q7 (owner, 2026-10-09): a Legendary from the hero's own pool, a reserve or the inventory in place of the worn Epic of the
+// slot needs no +1 point margin, V not lower is enough (its bigger main stat breaks the tie, as in the verdict). A piece
+// that another hero wears (cost 3) is not taken for nothing
+export const isLegend = (c: Cand): boolean => c.item.grade === 'unique' && c.cost < 3;
+export const legendOverEpic = (from: Cand | null | undefined, to: Cand): boolean => !!from && from.item.grade === 'rare' && isLegend(to);
 
 // полный порядок (R2.5, потом ничьи R6.1): > 0 — a лучше
 export function cmpKit(a: KitKey, z: KitKey): number {
-  return cmpUse(a, z) || z.cost - a.cost || z.loss - a.loss || -lex(a.ranks, z.ranks) || -lex(a.ords, z.ords);
+  return cmpUse(a, z) || a.legends - z.legends || z.cost - a.cost || z.loss - a.loss || -lex(a.ranks, z.ranks) || -lex(a.ords, z.ords);
 }
 
 // R1.2: код вещи — содержимое без BT

@@ -149,3 +149,35 @@ describe('порог: дешёвая альтернатива в окне 0–1 
     });
   });
 });
+
+// Q7 (owner, 2026-10-09): a Legendary in place of the worn Epic needs V not lower, no +1 — unless another hero wears it
+describe('Q7: Legendary вместо надетого Epic — без порога в 1 очк.', () => {
+  const epic = (v: number) => cand({ id: 'w', slot: 'helmet', v, cost: 0, grade: 'rare' });
+  const leg = (id: string, v: number, cost: 0 | 1 | 2 | 3 = 2, o: { loss?: number; holder?: string | null } = {}) =>
+    cand({ id, slot: 'helmet', v, cost, grade: 'unique', ...o });
+
+  it('из запаса: ровно столько же очков — берём Legendary', () => {
+    expect(took([epic(5), leg('L', 5, 1)])).toEqual({ helmet: 'L' });
+  });
+  it('из инвентаря: на 0,5 лучше — берём (раньше не хватало 1 очк.)', () => {
+    expect(took([epic(5), leg('L', 5.5, 2)])).toEqual({ helmet: 'L' });
+  });
+  it('на 0,1 хуже — не берём', () => {
+    expect(took([epic(5), leg('L', 4.9, 2)])).toEqual({});
+  });
+  it('Epic против Epic: на 0,5 лучше — порог 1 очк. прежний', () => {
+    const e2 = cand({ id: 'e2', slot: 'helmet', v: 5.5, cost: 2, grade: 'rare' });
+    expect(took([epic(5), e2])).toEqual({});
+  });
+  it('Legendary против Legendary: на 0,5 лучше — порог 1 очк. прежний', () => {
+    const w = cand({ id: 'w', slot: 'helmet', v: 5, cost: 0, grade: 'unique' });
+    expect(took([w, leg('L', 5.5, 2)])).toEqual({});
+  });
+  it('надетое другим героем (цена 3) — не берём за те же очки; на +1 — берём, как раньше', () => {
+    expect(took([epic(5), leg('K', 5, 3, { loss: 4, holder: 'K' })])).toEqual({});
+    expect(took([epic(5), leg('K', 6, 3, { loss: 4, holder: 'K' })])).toEqual({ helmet: 'K' });
+  });
+  it('без оценки grade (синтетический мир) правило не действует', () => {
+    expect(took([worn('w', 'helmet', 5), cand({ id: 'L', slot: 'helmet', v: 5, cost: 2 })])).toEqual({});
+  });
+});

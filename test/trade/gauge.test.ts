@@ -241,3 +241,25 @@ describe('T7.6: команда — у каждого свой заказ', () =>
     expect(set(SPEED4)).toEqual([SPEED, SPEED, SPEED, SPEED]);
   });
 });
+
+// Q7 (owner, 2026-10-09): through the real world — a Legendary of the hero's own pool takes the worn Epic's place at equal
+// points, one worn by another hero does not move for nothing
+describe('Q7: Legendary вместо надетого Epic в плане героя', () => {
+  const lit: Subs = { SPD: 4, CHC: 4, CHD: 4, ATK: 4 };
+  const swaps = (st: GearStore) => heroPlan(realWorld(st), { to: D }).plan.changes.map((c) => [c.slot, c.cand.item.id, c.was?.item.id]);
+
+  it('своя Legendary в пуле, очки те же — план надевает её', () => {
+    const epic = piece('helmet', 'Speed', lit, { grade: 'rare' }), leg = piece('helmet', 'Speed', lit);
+    expect(swaps(store({ [D]: { pool: [epic, leg], worn: [epic] } }))).toEqual([['helmet', leg.id, epic.id]]);
+  });
+
+  it('Legendary у другого героя (надета), очки те же — не забираем', () => {
+    const epic = piece('helmet', 'Speed', lit, { grade: 'rare' }), leg = piece('helmet', 'Speed', lit);
+    expect(swaps(store({ [D]: { pool: [epic], worn: [epic] }, [K]: { pool: [leg], worn: [leg] } }))).toEqual([]);
+  });
+
+  it('Epic в пуле, очки те же — план не меняет надетое', () => {
+    const e1 = piece('helmet', 'Speed', lit, { grade: 'rare' }), e2 = piece('helmet', 'Speed', lit, { grade: 'rare' });
+    expect(swaps(store({ [D]: { pool: [e1, e2], worn: [e1] } }))).toEqual([]);
+  });
+});

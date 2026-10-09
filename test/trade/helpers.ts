@@ -47,12 +47,12 @@ export function synthGauge(o: {
 let ordSeq = 0;
 export function cand(o: {
   id?: string; slot: SlotId; v: number; set?: string | null; t4?: boolean; fit?: Fit; cost?: 0 | 1 | 2 | 3;
-  loss?: number; holder?: string | null; rank?: number; ord?: number; code?: string; bt?: number | null;
+  loss?: number; holder?: string | null; rank?: number; ord?: number; code?: string; bt?: number | null; grade?: Grade;
 }): Cand {
   const ord = o.ord ?? ++ordSeq;
   const id = o.id ?? `s${ord}`;
   return {
-    item: { id, slot: o.slot, code: o.code ?? id, bt: o.bt ?? (o.t4 ? 4 : 0), set: o.set ?? null, t4: !!o.t4, ord },
+    item: { id, slot: o.slot, code: o.code ?? id, bt: o.bt ?? (o.t4 ? 4 : 0), set: o.set ?? null, t4: !!o.t4, ord, ...(o.grade ? { grade: o.grade } : {}) },
     v: milli(o.v), fit: o.fit ?? 'no', cost: o.cost ?? 1, loss: milli(o.loss ?? 0),
     holder: o.holder === undefined ? 'R' : o.holder, rank: o.rank ?? 0,
   };

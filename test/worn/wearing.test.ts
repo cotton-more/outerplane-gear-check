@@ -1,5 +1,5 @@
 // Данные карточки героя (features/worn/wearing, .x/0085 этап 6): «Переодеть» — лучшая раскладка против надетого (+1 очко,
-// FORMULA §3 п. 3), «Что искать» и варианты закрепления — по лучшей раскладке под набор, цвет сабстата по очкам (PLAN Д1),
+// FORMULA §3 п. 3; Legendary вместо Epic того же слота — без +1, Q7), «Что искать» и варианты закрепления — по лучшей раскладке под набор, цвет сабстата по очкам (PLAN Д1),
 // причины в списке вещей. Герои — из эталонных данных, вещи — синтетические.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -61,6 +61,34 @@ describe('«Переодеть»: лучшая раскладка из свои�
     const st = store([...worn, up], worn);
     expect(poolView(ctx, st).hero(delta.id)!.info.layout.helmet?.id).toBe(up.id);
     expect(view(st).redress).toBeNull();
+  });
+
+  // Q7 (owner, 2026-10-09): a Legendary not worse by points than the worn Epic of that slot — «Переодеть» without +1
+  it('Q7: Legendary в пуле не хуже надетого Epic того же слота — «Переодеть» есть (равные очки и +0,65)', () => {
+    const rest = armorOf('Speed').slice(1);
+    const lit = { SPD: 3, CHC: 4, CHD: 4, ATK: 4 };
+    const worn = [piece('helmet', 'Speed', lit, { grade: 'rare' }), ...rest];
+    const same = piece('helmet', 'Speed', lit);
+    const r0 = view(store([...worn, same], worn)).redress!;
+    expect(r0.wear.map((w) => [w.piece.id, w.replaces?.id])).toEqual([[same.id, worn[0].id]]);
+    expect(r0.pts).toBeCloseTo(0, 9);
+    const up = piece('helmet', 'Speed', { ...lit, SPD: 4 });
+    const r1 = view(store([...worn, up], worn)).redress!;
+    expect(r1.wear[0].piece.id).toBe(up.id);
+    expect(r1.pts).toBeCloseTo(0.65, 9);
+  });
+
+  it('Q7: Epic вместо Epic — порог 1 очко прежний (+0,65 — «Переодеть» нет)', () => {
+    const lit = { SPD: 3, CHC: 4, CHD: 4, ATK: 4 };
+    const worn = [piece('helmet', 'Speed', lit, { grade: 'rare' }), ...armorOf('Speed').slice(1)];
+    const up = piece('helmet', 'Speed', { ...lit, SPD: 4 }, { grade: 'rare' });
+    expect(view(store([...worn, up], worn)).redress).toBeNull();
+  });
+
+  it('Q7: Legendary вместо надетого Legendary при равных очках — «Переодеть» нет', () => {
+    const lit = { SPD: 3, CHC: 4, CHD: 4, ATK: 4 };
+    const worn = [piece('helmet', 'Speed', lit), ...armorOf('Speed').slice(1)];
+    expect(view(store([...worn, piece('helmet', 'Speed', lit)], worn)).redress).toBeNull();
   });
 
   it('такая же по содержимому запись — не «надеть»', () => {

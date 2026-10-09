@@ -14,7 +14,7 @@ import { sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
-import { better, bestLayout, NEW_ID, piecePoints, type Layout, type LayoutValue } from './layout';
+import { better, bestLayout, epicToLegend, NEW_ID, piecePoints, type Layout, type LayoutValue } from './layout';
 import { coversSlot, eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
 
 // вещь с формы как запись: id NEW_ID — новее всех записанных
@@ -96,7 +96,8 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
     layoutWith: withBest.layout,
   };
   // 1. «Надень» (вопросы 10, 11): прошла порог, встаёт в лучшую раскладку, и та лучше нынешней (§3 п. 3)
-  if (bar.pass && uses && better(withBest.value, info.value)) return { ...base, kind: 'wear', replaced: info.layout[x.slot] ?? null };
+  // Q7: a Legendary in place of the Epic of its slot needs no +1 — not worse by points is enough
+  if (bar.pass && uses && better(withBest.value, info.value, epicToLegend(info.layout, withBest.layout))) return { ...base, kind: 'wear', replaced: info.layout[x.slot] ?? null };
   // 2. «Оставь» — только броня, порог прошла
   if (!bar.pass || !isArmor(x.slot)) return base;
   if (x.setId && P.pin && P.menuSets.has(x.setId)) {

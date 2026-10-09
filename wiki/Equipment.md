@@ -184,7 +184,8 @@ Equipping it anyway is your call ("Rate a piece for Caren" → "Equip").
 
 The stamp is always about **the piece being rated**:
 
-- **Keep** — worth wearing: put it on the named hero or keep it for them ("Set aside"). **Stopgap** — a piece that
+- **Keep** — worth wearing: put it on the named hero or keep it for them ("Set aside"). A Legendary no worse by points
+  than the worn Epic of that slot gets "Equip" too: its main stat is bigger. **Stopgap** — a piece that
   passed only as a temporary one: Epic armor under the temporary rule, a weapon or accessory without the needed passive.
 - **Fodder** — this piece **is** material: Breakthrough with it now ("Fodder — Breakthrough for Caren's boots") or keep it
   in reserve for a future strong one ("Fodder — reserve for Caren's Speed helmet", "Set aside for Caren"). Legendary
