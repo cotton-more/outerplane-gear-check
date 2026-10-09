@@ -225,3 +225,20 @@ describe('«Кому подходит»: вторая цепочка у перс
     expect(lambda?.other ?? []).toEqual([]);
   });
 });
+
+describe('«SPD вытягивает» — только у вещи, что прошла прежние правила', () => {
+  const evalIn = (slot: 'gloves' | 'shoes', setId: string, rosterOnly: boolean, subs: Record<string, number>) =>
+    evaluate(makeCtx(idx, { rosterOnly, stage: 'grow', lv120: false, quirks: true }, new Set()), { slot, grade: 'unique', setId, itemKey: null, main: null, subs });
+
+  it('прошла по очкам, 0 сегментов SPD — строки нет (golden #179)', () => {
+    const r = evalIn('gloves', '13', true, { 'DMG UP%': 2, CHD: 3, EFF: 3, 'HP%': 2 });
+    expect(r.v).toBe('keep');
+    expect(r.lines.some((l) => l.includes('SPD'))).toBe(false);
+  });
+
+  it('прошла по SPD с 2 сегментами — строка есть (golden #5)', () => {
+    const r = evalIn('shoes', '21', true, { 'HP%': 2, SPD: 2, CHD: 3 });
+    expect(r.v).toBe('keep');
+    expect(r.lines).toContain(ru.armor.spdCarries('2', 2));
+  });
+});

@@ -37,7 +37,7 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
   }
   const judged = all.filter((x) => x.b.subs.some((tier) => tier.length));
   const spdRoll = subs.SPD || 0;
-  const { yellowOf, full, mains, twoMain, qualifies, tempOk } = armorBar(ctx, s);
+  const { yellowOf, full, mains, twoMain, qualifies, passesOld, tempOk } = armorBar(ctx, s);
   res.qualifies = qualifies;
   // сет основной, если он в первой связке билда, — дальше идут запасные варианты
   const primary = (r: Scored) => r.b.sets[0]?.some((p) => p.set === set.id) ?? false;
@@ -93,7 +93,8 @@ export function evalArmor(ctx: Ctx, s: ItemInput, res: Verdict): Verdict {
     res.v = 'keep';
     res.title = A.keepTitle(keepers.length);
     res.lines.push(A.best(who, fmtGood(bestGood), nSubs, okList));
-    if (bestGood < CFG.keepCount) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => subLabel(p.key)), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
+    // the line is about the old rules; a piece that passes by points only does not get it
+    if (bestGood < CFG.keepCount && passesOld(best)) res.lines.push(twoMain(best) ? A.twoMainCarries(mains(best).map((p) => subLabel(p.key)), yellowOf(mains(best))) : A.spdCarries(fmtGood(bestGood), spdRoll));
     // Legendary с одним лишним сабстатом: Transistone (Individual) меняет только его, остальные закрепляются
     const extra = best.parts.filter((p) => !p.ok);
     if (legend && nSubs === 4 && extra.length === 1) res.lines.push(A.rerollOne(subLabel(extra[0].key)));
