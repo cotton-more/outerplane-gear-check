@@ -27,8 +27,6 @@ type G = 'm' | 'f' | 'n' | 'p';
 const GENUS: Record<string, G> = { weapon: 'n', accessory: 'm', helmet: 'm', armor: 'f', gloves: 'p', shoes: 'p' };
 const by = (slot: string, m: string, f: string, n: string, p: string) => ({ m, f, n, p })[GENUS[slot] ?? 'm'];
 const NOM: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' };
-// «в списке брони / шлемов / ботинок» — the hero's slot list in the game
-const LIST_GEN: Record<string, string> = { weapon: 'оружия', accessory: 'аксессуаров', helmet: 'шлемов', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' };
 const GEN: Record<string, string> = { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // «A и B», «A, B и C»
@@ -788,8 +786,10 @@ export const ru = {
     none: 'Не посчитать: предмета нет в данных outerpedia',
     same: (slot: string, name: string, date: string) =>
       `Похоже, уже ${by(slot, 'отложен', 'отложена', 'отложено', 'отложены')} для ${name}${date ? ' ' + date : ''} — если это ${by(slot, 'он', 'она', 'оно', 'они')}, ничего не делай`,
-    off: (slot: string, name: string) => `${by(slot, 'Снятый', 'Снятая', 'Снятое', 'Снятые')} ${NOM[slot]} ${name}`,
-    offStash: (slot: string, name: string, subs: string) => `${by(slot, 'Отложенный', 'Отложенная', 'Отложенное', 'Отложенные')} ${NOM[slot]} ${name} (${subs})`,
+    // what — the item of a weapon or accessory («Steel Sword · ATK%»): which piece it is, not only whose
+    off: (slot: string, name: string, what = '') => `${by(slot, 'Снятый', 'Снятая', 'Снятое', 'Снятые')} ${NOM[slot]} ${name}${what ? ` — ${what}` : ''}`,
+    offStash: (slot: string, name: string, subs: string, what = '') =>
+      `${by(slot, 'Отложенный', 'Отложенная', 'Отложенное', 'Отложенные')} ${NOM[slot]} ${name}${what ? ` — ${what}` : ''} (${subs})`,
     recorded: (a: number, b: number) => `Партия записана: надето ${a}, отложено ${b}.`,
     recordAsk: 'Всё сделано в игре?',
     recordText: (a: number, b: number) => `Запишу у героев: надеть ${a}, отложить ${b}. Отменить можно сразу после — «Вернуть» в сообщении.`,
@@ -811,16 +811,21 @@ export const ru = {
     // no numbers: a batch without a dismantle would read 1, 2, 4 (owner 2026-10-09)
     stages: ['Надеть — у героев', 'Замок', 'Breakthrough', 'Разобрать — одним выбором'],
     // the number is in the hero's list of that slot (only that slot, same filter), #n — the piece in the batch (owner
-    // 2026-10-08: «№ 1» read as the first piece of the batch)
-    equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → № ${k} в списке ${LIST_GEN[slot]} · #${n}`,
+    // 2026-10-08: «№ 1» read as the first piece of the batch). The no-break space keeps «· #6» together
+    equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → № ${k} в списке ·\u00A0#${n}`,
+    // the two numbers are equal: said once
+    equipStepN: (hero: string, slot: string, n: number) => `${hero} → ${NOM[slot]} → № ${n}`,
     equipStepAt: (hero: string, slot: string, piece: string) => `${hero} → ${NOM[slot]} → ${piece}`,
-    lockStepAt: (piece: string) => `Замок: ${piece}`,
-    // what a kept piece is and for whom (lock and Breakthrough steps): «#21 Patience-перчатки — для Gnosis Domine»
-    keptFor: (n: number, piece: string, name: string) => `#${n} ${piece} — для ${name}`,
-    keptReserve: (n: number, piece: string, name: string) => `#${n} ${piece} — для ${name} (запас)`,
-    keptMaybe: (n: number, piece: string) => `#${n} ${piece} — Спорно, отложено`,
-    lockStep: (r: number, p: number) => `Замок: ряд ${r}, ${p}-й`,
-    junkTitle: (n: number) => `Отметь в игре и разбери: ${n}`,
+    // a piece taken off another hero (or set aside), put on in this step: «снятое оружие Tamara»
+    offAt: (slot: string, name: string, stash: boolean) =>
+      `${stash ? by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные') : by(slot, 'снятый', 'снятая', 'снятое', 'снятые')} ${NOM[slot]} ${name}`,
+    lockStepAt: (piece: string) => piece,
+    // for whom a kept piece stays (lock and Breakthrough steps); the number and the piece are in the title and the caption
+    keptFor: (name: string) => `для ${name}`,
+    keptReserve: (name: string) => `для ${name} · запас`,
+    keptMaybe: 'Спорно, отложено',
+    lockStep: (r: number, p: number, n: number) => `Ряд ${r}, ${p}-й ·\u00A0#${n}`,
+    junkTitle: (n: number) => `Отметь в игре: ${n}`,
     btFeed: 'корм:',
     btWorn: (slot: string, hero: string) => `${NOM[slot][0].toUpperCase()}${NOM[slot].slice(1)} ${hero}`,
     // under the «Breakthrough» heading, once per stage

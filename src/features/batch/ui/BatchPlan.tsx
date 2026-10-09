@@ -12,6 +12,7 @@ import type { GearStore } from '@/features/gear/model/gear';
 import { wornAtEnd, type Fate, type Line, type Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 import { withHero } from '@/game/hero/HeroTag';
+import { capLine } from '@/features/gear/ui/pieceText';
 
 export function fateText(t: Texts, f: Fate, st: GearStore): string {
   switch (f.kind) {
@@ -65,8 +66,8 @@ export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoo
             <li key={l.id} className={`bgear-row brow b-${l.fate.kind}${l.off ? ' boff' : ''}`}>
               {l.off
                 ? <span className="boff-n">{l.off.was === 'stash'
-                  ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit))
-                  : t.batch.off(l.off.piece.slot, l.off.c.name)}</span>
+                  ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit), capLine(t, ctx.idx, l.off.piece))
+                  : t.batch.off(l.off.piece.slot, l.off.c.name, capLine(t, ctx.idx, l.off.piece))}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
               <span className="bfate">{withHero(fateText(t, l.fate, plan.st), heroIn(l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}

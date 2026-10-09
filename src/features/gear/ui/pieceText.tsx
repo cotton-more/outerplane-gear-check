@@ -24,6 +24,10 @@ const nameOf = (ctx: Ctx, p: Piece): string => p.setId ? `${setName(ctx.idx, p.s
 export const pieceText = (ctx: Ctx, p: Pick<Piece, 'slot' | 'grade' | 'itemKey' | 'main' | 'setId'>): string =>
   p.setId ? `${setName(ctx.idx, p.setId)} Set` : itemCaption(ctx.idx, p);
 
+// The caption line a weapon or accessory gets under a step title or after a taken-off piece's hero; armor has none:
+// its title says the slot, the hero and the set are known (batch title)
+export const capLine = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string => (isArmor(p.slot) ? '' : batchCaption(t, idx, p));
+
 // The piece in a batch line (Q4): the grade and the set are in the batch's title, so armor is its slot word alone, a
 // weapon or accessory its caption; «T4» only at T4 (armor: the word, then T4)
 export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string =>

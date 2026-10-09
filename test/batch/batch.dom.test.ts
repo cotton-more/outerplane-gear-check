@@ -295,9 +295,9 @@ describe('«Партия»: обход по шагам', () => {
     await click(byText('.batch button', 'Walk ▸'));
     const steps = $$('.bwalk .bstep');
     expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
-      'Caren → helmet → No. 3 in the helmet list · #3',   // her slot list: the «E» entry (#1), the weak one (#2), this (#3)
+      'Caren → helmet → No. 3',                           // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — the same as #3: said once
       "Caren's helmet → Breakthrough: up to 1",
-      'Select in the game and dismantle: 1',               // last: nothing meant as feed is dismantled (owner 2026-10-09)
+      'Select in the game: 1',                             // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
     expect(steps[1].textContent).toContain('feed:SPD 1');                                    // the feed, piece by piece: its stats — no number, armor has no name
