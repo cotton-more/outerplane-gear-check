@@ -13,21 +13,18 @@ import { AskSheet } from '@/shared/ui/AskSheet';
 import type { Batch } from '@/features/batch/batch';
 import type { Plan } from '@/features/batch/plan';
 import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
-import { pieceLabel } from '@/features/gear/ui/pieceText';
+import { batchCaption, itemCaption } from '@/features/gear/ui/pieceText';
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 
-// the piece in a phrase: armor «Speed-шлем», a Legendary item «Noblewoman's Guile · HP%», an Epic one — its main
-// (owner 2026-10-09: the item name and, for a weapon or accessory, the main in every step)
-const nameOf = (ctx: Ctx, t: Texts, x: ItemInput): string => {
-  const label = pieceLabel(t, ctx.idx)(formPiece(x));
-  return !isArmor(x.slot) && x.itemKey && x.main ? `${label} · ${x.main}` : label;
-};
+// the caption line of a weapon or accessory: «Noblewoman's Guile · HP%», «Steel Sword · ATK% · T4» (Q4); armor has none —
+// the title says the slot and the hero, the grade and set are in the batch's title
+const capOf = (ctx: Ctx, t: Texts, x: ItemInput): string => (isArmor(x.slot) ? '' : batchCaption(t, ctx.idx, formPiece(x)));
 
 // a piece with no position: «Снятый шлем Caren (SPD 1, …)», «Отложенный шлем Caren (…)»
 // a weapon or accessory adds what it is: «Снятое оружие Delta — Noblewoman's Guile · HP% (SPD 2, …)»
 const desc = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>): string => {
-  const what = isArmor(w.off.slot) ? '' : ` — ${nameOf(ctx, t, inputOfPiece(w.off))}`;
+  const what = isArmor(w.off.slot) ? '' : ` — ${capOf(ctx, t, inputOfPiece(w.off))}`;
   return w.was === 'stash' ? t.batch.offStash(w.off.slot, w.c.name + what, subsText(w.off.lit)) : `${t.batch.off(w.off.slot, w.c.name)}${what} (${subsText(w.off.lit)})`;
 };
 
@@ -38,14 +35,16 @@ interface StepText { title: string; hero: Char | null; kept?: { text: string; c:
 // a piece of the dismantle or the feed (owner 2026-10-09): «Fire Grimoire · HP% · ATK% 2, DMG UP% 2, …» — name and main
 // in the grade's colour (Epic blue, Legendary red), then the substats; no number, row or place: after the feed the
 // game's list has moved, the piece is found by its stats (several identical — the first)
-function PieceLine({ ctx, t, x }: { ctx: Ctx; t: Texts; x: ItemInput }) {
-  // a T4 one says so: as feed it lifts the target straight to T4
-  return <><span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{nameOf(ctx, t, x)}</span>{x.bt === 4 && <b> · T4</b>} · {subsText(x.subs)}</>;
+function PieceLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
+  const t4 = x.bt === 4;
+  // armor: the substats alone («T4 · HP 1, EFF% 2»); a weapon or accessory: «Sublime Melody · HP% · T4 · DMG UP% 3, …»
+  if (isArmor(x.slot)) return <>{t4 && <b>T4 · </b>}{subsText(x.subs)}</>;
+  return <><span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}</span>{t4 && <b> · T4</b>} · {subsText(x.subs)}</>;
 }
 
 // «#21 Patience-перчатки — для Gnosis Domine», «… (запас)», «… — Спорно, отложено»
 function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null } {
-  const piece = nameOf(ctx, t, k.input);
+  const piece = capOf(ctx, t, k.input);
   if (k.why === 'maybe' || !k.c) return { text: t.batch.keptMaybe(k.n, piece), c: null };
   return { text: k.why === 'reserve' ? t.batch.keptReserve(k.n, piece, k.c.name) : t.batch.keptFor(k.n, piece, k.c.name), c: k.c };
 }
@@ -53,7 +52,7 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
     case 1: return {
       title: s.k !== null && 'n' in s.where ? t.batch.equipStep(s.c.name, s.slot, s.k, s.where.n) : t.batch.equipStepAt(s.c.name, s.slot, 'n' in s.where ? `#${s.where.n}` : desc(ctx, t, s.where)),
-      hero: s.c, more: [nameOf(ctx, t, s.input)], subs: gameSubs(ctx.idx, s.subs),
+      hero: s.c, more: [capOf(ctx, t, s.input)].filter(Boolean), subs: gameSubs(ctx.idx, s.subs),
     };
     case 2: {
       if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(ctx, t, s.where)), hero: s.where.c, more: [] };
@@ -67,14 +66,14 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const where = 'worn' in tg ? t.batch.btWorn(tg.slot, tg.worn.name) : 'n' in tg.where ? `#${tg.where.n}` : desc(ctx, t, tg.where);
       const hero = 'worn' in tg ? tg.worn : 'n' in tg.where ? null : tg.where.c;
       // the item of a worn weapon or accessory (armor: the title says it all; a set-aside target names it in the title)
-      const what = 'worn' in tg && s.piece && !isArmor(tg.slot) ? [nameOf(ctx, t, s.piece)] : [];
+      const what = 'worn' in tg && s.piece && !isArmor(tg.slot) ? [capOf(ctx, t, s.piece)] : [];
       // the feed, piece by piece: «Noblewoman's Guile · HP% · HP 3, …»; a taken-off or set-aside one — its description
-      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <PieceLine ctx={ctx} t={t} x={x} /> : desc(ctx, t, w)));
+      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <PieceLine ctx={ctx} x={x} /> : desc(ctx, t, w)));
       return { title: t.batch.btStep(where, s.n), hero, more: [...what, ...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
     }
     case 4: {
       // each piece on its own line, what it is — «Sublime Melody · HP% · SPD 1, CHC 2, …»; the locked ones first need unlocking
-      const lines = s.where.map((w, i) => ('n' in w ? <PieceLine ctx={ctx} t={t} x={s.inputs[i]} /> : desc(ctx, t, w)));
+      const lines = s.where.map((w, i) => ('n' in w ? <PieceLine ctx={ctx} x={s.inputs[i]} /> : desc(ctx, t, w)));
       return { title: t.batch.junkTitle(s.where.length), hero: null, more: [...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), ...lines, ...(s.left ? [t.batch.dzLeft] : [])] };
     }
   }

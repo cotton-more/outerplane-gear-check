@@ -2,7 +2,7 @@
 // надеть?» — новая запись в пуле героя (features/gear/pool putOn), сообщение с «Вернуть», форма — как после «Следующий».
 import type { Dispatch } from 'react';
 import type { Index } from '@/game/data';
-import type { Char, GearKind, SlotId } from '@/game/data/types';
+import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import type { Texts } from '@/i18n';
@@ -14,6 +14,7 @@ import { nextToWear, type CharVs } from '@/features/gear/model/poolVs';
 import { oldFate } from '@/features/gear/model/material';
 import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
+import { itemCaption } from '@/features/gear/ui/pieceText';
 import type { Switched } from '@/features/roster/useRosterUi';
 import type { Hero } from '@/features/tryon/tryon';
 import { setName } from '@/game/set/setName';
@@ -59,8 +60,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   // стало с вытесненной, с «Вернуть». Всегда новая запись — и при такой же у него или у другого: в Оценку вводят новую
   // вещь из инвентаря, пулы независимы (В9; окна «Это шлем Rin?» нет)
   // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
-  const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId)
-    : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
+  const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId) : itemCaption(idx, p));
   // «Надеть на CF», когда есть X, — сначала окно перехода (в). Строка и кнопка CF посчитаны по этому же хранилищу
   // (viewOf, П9)
   const doEquip = (c: Char) => {

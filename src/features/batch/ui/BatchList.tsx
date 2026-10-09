@@ -15,16 +15,16 @@ import { CloseButton } from '@/shared/ui/CloseButton';
 import { formPiece } from '@/features/gear/verdict';
 import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
 
-// a batch piece as a row: number, slot, name, Breakthrough, substats
+// a batch piece as a row: number, slot, caption (Q4: no grade chip, the grade and set are in the title), substats, T4
 export function BatchPiece({ ctx, n, x, children }: { ctx: Ctx; n: number; x: ItemInput; children?: React.ReactNode }) {
   const p = formPiece(x);
   return (
     <>
       <SlotIcon slot={x.slot} />
-      <span className="bgear-n"><b className="bnum">#{n}</b><PieceName ctx={ctx} p={p} /></span>
+      <span className="bgear-n"><b className="bnum">#{n}</b><PieceName ctx={ctx} p={p} batch /></span>
       {children}
       <span className="bgear-t">{Object.entries(x.subs).map(([k, v]) => <SubToken key={k} stat={k} lit={v} />)}</span>
-      <span className="bgear-meta"><BtLabel p={p} /></span>
+      <span className="bgear-meta"><BtLabel p={p} t4Only /></span>
     </>
   );
 }

@@ -171,7 +171,7 @@ describe('A2 / A3: the dismantle step', () => {
     expect(stage(/ → helmet → No\. \d+ in the helmet list · #\d/)).toHaveLength(1);
     const bt = stage(/→ Breakthrough/)[0];
     expect(bt.slice(1, 2)).toEqual(['feed:']);
-    expect(bt.slice(2).every((x) => /^Speed helmet · [A-Z%]+ \d/.test(x))).toBe(true);
+    expect(bt.slice(2).every((x) => /^[A-Z%]+ \d/.test(x))).toBe(true);   // armor: the substats alone
   });
 });
 

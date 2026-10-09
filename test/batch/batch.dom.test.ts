@@ -223,7 +223,7 @@ describe('«Партия»: обход по шагам', () => {
     expect(batch().items).toEqual([{ kind: 'worn', c: caren.id, slot: 'helmet' }, { kind: 'lock', slot: 'helmet' }]);
     await click($('.batch-strip .batch-list'));
     const rows = $$('.batch-items .brow');
-    expect(rows.map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual(['#1ESpeed Set', '#2🔒 helmet']); // E — the grade (Epic helmet)
+    expect(rows.map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual(['#1helmet', '#2🔒 helmet']); // armor in a batch row: the slot word alone — no grade chip, no set (Q4)
     expect(rows[0].querySelector('.bworn')?.textContent).toBe('Caren');
     expect(rows[0].querySelectorAll('.bgear-t .tok')).toHaveLength(3);                                         // her helmet's substats
   });
@@ -297,13 +297,11 @@ describe('«Партия»: обход по шагам', () => {
       'Select in the game and dismantle: 1',               // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
-    expect(steps[1].textContent).toContain('feed:Speed helmet · SPD 1');                     // the feed, piece by piece — no number
+    expect(steps[1].textContent).toContain('feed:SPD 1');                                    // the feed, piece by piece: its stats — no number, armor has no name
     expect($$('.bwalk .bstage > p').map((x) => x.textContent)).toEqual(["Any piece from the game's list works. What the game doesn't take — dismantle."]);   // once, under «Breakthrough»
-    expect(steps[1].querySelector('.gname.legend')?.textContent).toBe('Speed helmet');      // name in the grade's colour
-    expect(steps[2].textContent).toContain('Speed helmet · DEF% 3');     // the taken-off helmet, by its stats (no «#n» at this stage)
+    expect(steps[2].textContent).toContain('DEF% 3');                    // the taken-off helmet, by its stats (no «#n» at this stage)
     expect(steps[2].textContent).not.toContain('#');
     expect(steps[2].textContent?.endsWith("+ feed the Breakthrough didn't take")).toBe(true);
-    expect(steps[2].querySelector('.gname.epic')).toBeTruthy();
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
     await click(steps[0].querySelector('.bcheck'));
     expect(batch().done).toEqual(['eq:3']);
