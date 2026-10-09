@@ -174,8 +174,13 @@ export function App() {
   const { doEquip, doStash, nextNote } = flow;
   // the batch mode: «Следующий» (and Esc) add the piece to the batch — «В партию · #8» / «Сохранить #3»
   // only a complete piece goes in: all its substats entered (the plain-threshold verdict may decide earlier)
-  const onReset = batchOn ? () => batch.add(input, vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle') : flow.onReset;
-  const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1)) : undefined;
+  const onReset = batchOn
+    ? () => { if (batch.view !== 'plan' && batch.view !== 'walk') batch.add(input, vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle'); }
+    : flow.onReset;
+  const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1, s.slot)) : undefined;
+  // the plan and the walk take the screen (owner 2026-10-09): no form — nothing is entered any more; on a phone the sheet
+  // is full height, on a wide screen the batch column takes the form's place
+  const batchResult = batchOn && (batch.view === 'plan' || batch.view === 'walk');
   const onBatch = canEquip && ctx.scoped && !hero && !batchOn && !tour.run ? batch.start : undefined;
   // a batch of one kind (owner 2026-10-08): the form can't switch to another slot or set — a new batch for those;
   // the batch's own actions (reset, load for a fix) go straight to dispatch
@@ -226,14 +231,14 @@ export function App() {
         {modelNote && <div id="modelnote"><Notice text={t.ui.modelNote} action={t.ui.gotIt} onAction={() => setModelNote(false)} /></div>}
         {onb.welcomeShown && <Welcome install={install} onTour={layout.tall ? () => onb.startTour('core') : undefined} onRoster={() => onTab('chars')} onClose={onb.hideWelcome} />}
         <main>
-          <section id="view-eval" className="view eval" role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
-            <EvalPanel s={s} dispatch={formDispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
+          <section id="view-eval" className={batchResult && !layout.narrow ? 'view eval batch-result' : 'view eval'} role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
+            {!(batchResult && !layout.narrow) && <EvalPanel s={s} dispatch={formDispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} cands={() => batch.wornCands(s.slot)} onList={() => batch.show('list')} onEnd={batch.end}
                 onWorn={(c) => batch.addWorn(c, s.slot)} onLock={() => batch.addLock(s.slot)} /> : null}
-              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} />
+              nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} />}
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
               : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />)}
@@ -285,7 +290,7 @@ export function App() {
             onBatch={onBatch ? () => { onTab('eval'); onBatch(); } : undefined} />
         )}
         {batchOn && layout.narrow && batch.view && s.tab === 'eval' && (
-          <Sheet title={batchTitle(t, batch)} onClose={() => batch.show(null)} className="vdrawer batch-sheet"><BatchPanel ctx={ctx} m={batch} /></Sheet>
+          <Sheet title={batchTitle(t, batch)} onClose={() => batch.show(null)} className={batchResult ? 'vdrawer batch-sheet batch-full' : 'vdrawer batch-sheet'}><BatchPanel ctx={ctx} m={batch} /></Sheet>
         )}
         {batchOn && batch.asking && (
           <AskSheet title={t.batch.end} text={t.batch.endAsk(batch.batch.items.length)} yes={t.batch.endYes} kind="batch-ask" onYes={batch.endNow} onClose={batch.cancelEnd} />

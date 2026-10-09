@@ -75,12 +75,12 @@ describe('«Партия» on a phone', () => {
     await start();
     expect($('.batch-strip .tryon-k')?.textContent).toBe('Batch · 0');
     expect($('.vcard')).toBeNull();                       // no verdict in the mode
-    expect($('.vbar .vb-reset')?.textContent).toBe('Add · #1');
+    expect($('.vbar .vb-reset')?.textContent).toBe('Add · #1 · helmet');
     await click($('.vbar .vb-reset'));
     expect(batch().items).toHaveLength(1);
     expect(batch().items[0]).toMatchObject({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', setId: speed, subs: GOOD.subs, bt: 0 } });
     expect($('.batch-strip .tryon-k')?.textContent).toBe('Batch · 1');
-    expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2');
+    expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · helmet');
     expect(JSON.parse(localStorage.getItem('ogc.item') ?? '{}').subs ?? {}).toEqual({});
   });
 
@@ -132,7 +132,7 @@ describe('«Партия» on a phone', () => {
     expect(batch().items).toHaveLength(0);
   });
 
-  it('the plan: the good Legendary goes on Caren, the weak one feeds it; «Record the plan» asks, then records it, «Undo» brings all back', async () => {
+  it('the plan: the good Legendary goes on Caren, the weak one feeds it; recorded only at the walk\'s end, after a confirm; «Undo» brings all back', async () => {
     const items = [WEAK, GOOD].map((x) => ({ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x }));
     await mount({ setId: speed, subs: {} }, { batch: { v: 1, items, skip: [], twin: [] } });
     await click($('.batch-strip .batch-list'));
@@ -141,12 +141,16 @@ describe('«Партия» on a phone', () => {
     expect(lines.slice(0, 2)).toEqual(['Feed to #2', 'Equip on Caren — instead of the helmet']);
     expect($('.batch-sum')?.textContent).toMatch(/^equip 1 · set aside 0 · Breakthrough 1 · dismantle \d$/);
     const before = gear();
-    await click(byText('.batch button', 'Record the plan'));
+    expect(byText('.batch button', 'Record the plan')).toBeUndefined(); // no recording from the plan (owner 2026-10-09)
+    for (const b of $$('.bdecide button').filter((x) => x.textContent === 'Dismantle')) await click(b);
+    await click(byText('.batch button', 'Walk ▸'));
+    expect($('.batch-full')).toBeTruthy();                // the walk takes the whole screen
+    await click(byText('.batch button', 'All done — Record the plan'));
     expect(batch()).not.toBeNull();                       // asks first: an accidental tap records nothing
     expect($('.drawer.ask')?.textContent).toContain('equip 1, set aside 0');
     await click(byText('.drawer.ask button', 'Cancel'));
     expect(gear()).toEqual(before);
-    await click(byText('.batch button', 'Record the plan'));
+    await click(byText('.batch button', 'All done — Record the plan'));
     await click(byText('.drawer.ask button', 'Record'));
     expect(batch()).toBeNull();
     expect($('.batch-strip')).toBeNull();

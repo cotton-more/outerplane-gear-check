@@ -73,7 +73,10 @@ accessory) and other sets can't be picked on the form — start a new batch for 
    list differ: fix it in "List ▸".
 5. At the end **"All done — Record the plan"** and "Record" in the question "All done in the game?": equips and
    set-asides are recorded at once ("Batch recorded: 3 equipped, 2 set aside."), "Undo" reverts all and brings the
-   batch back. Without the walk — "Record the plan" on the plan itself.
+   batch back. Recording happens only at the end of the walk — after you've done it all in the game.
+
+The plan and the walk take the whole screen: there's nothing to enter meanwhile. Back to entering — "← To the list".
+The add button shows the piece's slot ("Add · #7 · gloves") — easier to notice the slot left from the previous piece.
 
 The batch is kept until "Record the plan" or ✕. Pieces worn by heroes don't move between them — that's
 [Trading gear](Trading-gear).

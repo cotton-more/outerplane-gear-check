@@ -753,7 +753,9 @@ export const ru = {
     strip: (n: number) => `Партия · ${n}`,
     list: 'Список ▸',
     end: 'Закончить партию',
-    add: (n: number) => `В партию · #${n}`,
+    // the slot on the button: twelve «gloves» in a row are easy to miss otherwise (owner 2026-10-09)
+    add: (n: number, slot: string) => `В партию · #${n} · ${NOM[slot]}`,
+    back: '← К списку',
     save: (n: number) => `Сохранить #${n}`,
     incomplete: 'Введены не все сабстаты — в партию не добавлено.',
     empty: 'Фильтр в игре: один сет (или оружие, или аксессуары), надетые показывать, по дате. Вводи подряд, как в списке.',
@@ -779,7 +781,6 @@ export const ru = {
     off: (slot: string, name: string) => `${by(slot, 'Снятый', 'Снятая', 'Снятое', 'Снятые')} ${NOM[slot]} ${name}`,
     offStash: (slot: string, name: string, subs: string) => `${by(slot, 'Отложенный', 'Отложенная', 'Отложенное', 'Отложенные')} ${NOM[slot]} ${name} (${subs})`,
     recorded: (a: number, b: number) => `Партия записана: надето ${a}, отложено ${b}.`,
-    record: 'Записать план',
     recordAsk: 'Всё сделано в игре?',
     recordText: (a: number, b: number) => `Запишу у героев: надеть ${a}, отложить ${b}. Отменить можно сразу после — «Вернуть» в сообщении.`,
     recordYes: 'Записать',
