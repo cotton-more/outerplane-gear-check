@@ -29,9 +29,10 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       return out;
     }
     case 'temp':
-      // a stopgap, Epic weapons and accessories too, gets no Breakthrough: their copies are dismantled (owner 2026-10-09,
-      // was .x/0060 SPEC 4.3 «ступени из разбора»)
-      return [P.enhance, P.tempNoInvest];
+      // a stopgap weapon or accessory (Epic too) gets no Breakthrough: their copies are dismantled (owner 2026-10-09,
+      // was .x/0060 SPEC 4.3 «ступени из разбора»). A stopgap armor piece may take it: T4 counts toward the set bonus
+      // (owner Q1, 2026-10-09)
+      return [P.enhance, armor ? P.tempArmor : P.tempNoInvest];
     case 'fodder':
       if (set) return [P.fodderArmor(piece, set.short)];
       return item ? [P.fodderGear(item.name)] : [];

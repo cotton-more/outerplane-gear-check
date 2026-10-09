@@ -111,13 +111,13 @@ describe('свежая Epic с тремя сабстатами — без Reforg
     expect(['ATK%', 'CHC', 'RES', 'CHD'].map((k) => opt(k)?.disabled)).toEqual([true, true, true, false]);
   });
 
-  it('«Временно», подробности: в «Прокачке» — Enhance и «не вкладывай», строк Reforge нет', async () => {
+  it('«Временно», подробности: в «Прокачке» — Enhance и «Breakthrough можно», строк Reforge нет', async () => {
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'DMG UP%': 2, 'ATK%': 3, CHD: 3 } });
     await act(async () => $('.vcard')!.click());
 
     expect($('.vcard .stamp')?.textContent).toBe('Stopgap');
     const plan = [...document.querySelectorAll('.v-plan li')].map((li) => li.textContent);
-    expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', "Breakthrough — don't invest: it's a stopgap until the right piece drops."]);
+    expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', 'Breakthrough — optional: T4 counts toward the set bonus.']);
   });
 });
 

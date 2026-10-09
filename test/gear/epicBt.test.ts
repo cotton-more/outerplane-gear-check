@@ -157,9 +157,9 @@ describe('4.6 «Прокачка»', () => {
     expect(upgradePlan(ctx, epic('accessory', 'ATK%', {}), temp)).toEqual([ru.plan.enhance, ru.plan.tempNoInvest]);
   });
 
-  it('броня и Legendary «Временно» — прежняя строка; Epic оружие «Разобрать» — без новой', () => {
+  it('броня «Временно» — Breakthrough можно (Q1); Legendary оружие «Временно» — прежняя строка; Epic оружие «Разобрать» — без новой', () => {
     const helmet: ItemInput = { slot: 'helmet', grade: 'rare', setId: speed, itemKey: null, main: null, subs: {} };
-    expect(upgradePlan(ctx, helmet, temp)).toEqual([ru.plan.enhance, ru.plan.tempNoInvest]);
+    expect(upgradePlan(ctx, helmet, temp)).toEqual([ru.plan.enhance, ru.plan.tempArmor]);
     expect(upgradePlan(ctx, { ...JUNK_W, grade: 'unique', itemKey: '781' }, temp)).toEqual([ru.plan.enhance, ru.plan.tempNoInvest]);
     expect(upgradePlan(ctx, JUNK_W, { v: 'junk' } as Verdict)).toEqual([]);
   });

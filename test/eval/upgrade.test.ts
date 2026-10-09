@@ -62,11 +62,11 @@ const attack = D.sets.find((s) => s.short === 'Attack')!;
 const attackHelmet = (subs: Record<string, number>) => evaluate(ctx, { slot: 'helmet', grade: 'rare', setId: attack.id, itemKey: null, main: null, subs });
 
 describe('Epic: 4-й сабстат от первого Reforge', () => {
-  it('свежая Epic с тремя сабстатами, «Временно»: без кубика и без строк Reforge — Enhance и «не вкладывай»', () => {
+  it('свежая Epic с тремя сабстатами, «Временно»: без кубика и без строк Reforge — Enhance и «Breakthrough можно»', () => {
     const r = attackHelmet({ 'DMG UP%': 2, 'ATK%': 3, CHD: 3 });
     expect(r.v).toBe('temp');
     expect('gamble' in r).toBe(false);
-    expect(r.plan).toEqual([P.enhance, P.tempNoInvest]);
+    expect(r.plan).toEqual([P.enhance, P.tempArmor]);
   });
 
   it('свежая Epic с тремя сабстатами, «Разобрать»: без кубика — в «Прокачке» только напоминание про материал', () => {
