@@ -797,7 +797,8 @@ export const ru = {
     walkOff: (n: number) => `Сначала реши «Спорно»: ${n}`,
     walkTitle: (k: number, n: number) => `Обход · ${k} из ${n}`,
     walkNote: 'Номера — в списке игры с тем же фильтром. Не совпало по сабстатам — исправь партию.',
-    stages: ['1. Надеть — у героев', '2. Замок', '3. Разобрать — одним выбором', '4. Breakthrough'],
+    // no numbers: a batch without a dismantle would read 1, 2, 4 (owner 2026-10-09)
+    stages: ['Надеть — у героев', 'Замок', 'Разобрать — одним выбором', 'Breakthrough'],
     // the number is in the hero's list of that slot (only that slot, same filter), #n — the piece in the batch (owner
     // 2026-10-08: «№ 1» read as the first piece of the batch)
     equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → № ${k} в списке ${LIST_GEN[slot]} · #${n}`,

@@ -695,7 +695,7 @@ export const en: Texts = {
     walkOff: (n) => `Decide «Maybe» first: ${n}`,
     walkTitle: (k, n) => `Walk · ${k} of ${n}`,
     walkNote: "Numbers are in the game's list with the same filter. Substats don't match — fix the batch.",
-    stages: ['1. Equip — at the heroes', '2. Lock', '3. Dismantle — in one selection', '4. Breakthrough'],
+    stages: ['Equip — at the heroes', 'Lock', 'Dismantle — in one selection', 'Breakthrough'],
     equipStep: (hero, slot, k, n) => `${hero} → ${SLOT_EN[slot]} → No. ${k} in the ${SLOT_EN[slot]} list · #${n}`,
     equipStepAt: (hero, slot, piece) => `${hero} → ${SLOT_EN[slot]} → ${piece}`,
     lockStepAt: (piece) => `Lock: ${piece}`,

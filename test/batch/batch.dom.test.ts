@@ -245,7 +245,7 @@ describe('«Партия»: обход по шагам', () => {
     const steps = $$('.bwalk .bstep');
     expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
       'Caren → helmet → No. 3 in the helmet list · #3',   // her slot list: the «E» entry (#1), the weak one (#2), this (#3)
-      '3. Dismantle — in one selection',
+      'Dismantle — in one selection',
       "Caren's helmet → Breakthrough: up to 1 from the list, any — dismantle what doesn't fit",
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
