@@ -132,8 +132,9 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         <div className="formrow">
           <div className={ask?.grade ? 'gradesw need' : 'gradesw'} role="group" aria-label={t.ui.gradeGroup} {...tour('grade')}>
             {GRADES.map((g) => (
-              <button key={g} type="button" className={`grade ${g}`} aria-pressed={!ask?.grade && s.grade === g} aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`}
-                onClick={() => dispatch({ type: 'grade', grade: g })} {...tourItem(g)}>
+              <button key={g} type="button" className={lock?.grade && lock.grade !== g ? `grade ${g} off` : `grade ${g}`} aria-pressed={!ask?.grade && s.grade === g}
+                aria-label={GRADE_NAME[g]} title={`${GRADE_NAME[g]} (${g === 'unique' ? 'Etheric' : 'Steel'})`} aria-disabled={(lock?.grade && lock.grade !== g) || undefined}
+                onClick={() => (lock?.grade && lock.grade !== g ? lock.explain() : dispatch({ type: 'grade', grade: g }))} {...tourItem(g)}>
                 <GradeFrame grade={g} /><span className="gname">{g === 'unique' ? 'L' : 'E'}</span>
               </button>
             ))}

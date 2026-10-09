@@ -188,6 +188,7 @@ export function App() {
   const formDispatch = useCallback((a: Action) => {
     if (lock && a.type === 'slot' && !lock.slots.includes(a.slot)) return;
     if (lock?.set && a.type === 'set' && a.setId !== lock.set) return;
+    if (lock?.grade && a.type === 'grade' && a.grade !== lock.grade) return;
     // a slot or grade picked for the next batch piece (even the same one) — the ask is answered
     if (batchOn && (a.type === 'slot' || a.type === 'grade')) batch.answer(a.type);
     dispatch(a);
@@ -197,6 +198,10 @@ export function App() {
   useEffect(() => {
     if (lock?.set && isArmor(s.slot) && s.setId !== lock.set) dispatch({ type: 'set', setId: lock.set });
   }, [lock?.set, s.slot, s.setId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // …and the batch's grade (the first piece's)
+  useEffect(() => {
+    if (lock?.grade && s.grade !== lock.grade) dispatch({ type: 'grade', grade: lock.grade });
+  }, [lock?.grade, s.grade]); // eslint-disable-line react-hooks/exhaustive-deps
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });

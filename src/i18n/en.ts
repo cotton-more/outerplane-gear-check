@@ -538,7 +538,7 @@ export const en: Texts = {
       '**Epic Breakthrough** takes only the same piece, any substats: for armor an Epic of the same set and slot, for a weapon any Steel Sword, for an accessory any Steel Necklace, with any main stat. One piece — one step; no need to save up four: "Fodder" says which piece to feed this one to now, or keeps it in reserve. An Epic weapon or accessory that is a "Stopgap" gets only dismantle fodder — don\'t spend Glunite.',
       '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: grey — no one needs it, dismantle.',
       '**Legendary:** the verdict shows whom to equip and what to upgrade; a weak one goes to reserve or to dismantle, as the verdict says.',
-      '**Batch** — many pieces from one filter? Tap "Batch" (on a phone — in More) and enter them in a row, as the game lists them: "Add" adds a piece, no verdict on the way. "Plan it" — a plan for each: whom to equip it on, set it aside for, what to feed, what to dismantle; a piece the plan takes off a hero gets its own line. "Don\'t take" — plan again without that hero. One filter per batch: one armor set, or weapons, or accessories; in the game show worn pieces, sorted by date. Enter a worn piece with "E · worn" (pick the hero), a locked one with "🔒 · set aside": no substats, they hold the numbers. Decide "Maybe" before the walk: "Set aside" or "Dismantle". "Walk ▸" — steps by game screen: 1 — equip at the heroes ("Caren → helmet → No. 7 in the helmet list · #24" — the number among the hero\'s helmets, #24 — the piece in the batch; the class icon and element colour by the name help find the hero; check the substats), 2 — lock, 3 — dismantle in one selection (row and place, 10 per row), 4 — Breakthrough ("up to 4 from the list, any" — dismantle what doesn\'t fit). Tick ✓ — the walk is saved. At the end "Record the plan" and confirm: equips and set-asides are recorded at once, "Undo" reverts all.',
+      '**Batch** — many pieces from one filter? Tap "Batch" (on a phone — in More) and enter them in a row, as the game lists them: "Add" adds a piece, no verdict on the way. "Plan it" — a plan for each: whom to equip it on, set it aside for, what to feed, what to dismantle; a piece the plan takes off a hero gets its own line. "Don\'t take" — plan again without that hero. One filter per batch: one armor set, or weapons, or accessories, and one grade — the first piece\'s (both grades — Legendary first, then Epic); in the game show worn pieces, sorted by date. Enter a worn piece with "E · worn" (pick the hero), a locked one with "🔒 · set aside": no substats, they hold the numbers. Decide "Maybe" before the walk: "Set aside" or "Dismantle". "Walk ▸" — steps by game screen: 1 — equip at the heroes ("Caren → helmet → No. 7 in the helmet list · #24" — the number among the hero\'s helmets, #24 — the piece in the batch; the class icon and element colour by the name help find the hero; check the substats), 2 — lock, 3 — dismantle in one selection (row and place, 10 per row), 4 — Breakthrough ("up to 4 from the list, any" — dismantle what doesn\'t fit). Tick ✓ — the walk is saved. At the end "Record the plan" and confirm: equips and set-asides are recorded at once, "Undo" reverts all.',
     ],
     helpVerdicts: [
       '**Keep** — worth wearing: equip it on the named hero or keep it for them. What to upgrade — in the "Upgrading" block in the details.',
@@ -658,7 +658,7 @@ export const en: Texts = {
     askFirst: (slot, grade) => `Pick the ${slot && grade ? 'slot and grade' : slot ? 'slot' : 'grade'} first — as on the piece in the game.`,
     save: (n) => `Save #${n}`,
     incomplete: 'Not all substats entered — not added.',
-    empty: 'Game filter: one set (or weapons, or accessories), worn shown, by date. Enter in a row, as listed.',
+    empty: 'Game filter: one set (or weapons, or accessories), one grade, worn shown, by date. Enter in a row, as listed.',
     plan: 'Plan it',
     endAsk: (n) => `End the batch? Pieces not planned: ${n}.`,
     endYes: 'End',
@@ -683,7 +683,9 @@ export const en: Texts = {
     recordAsk: 'All done in the game?',
     recordText: (a, b) => `I'll record it on the heroes: equip ${a}, set aside ${b}. You can undo it right after — "Undo" in the message.`,
     recordYes: 'Record',
-    otherKind: (what) => `This batch is ${typeof what === 'object' ? `${what.set} armor` : what === 'weapon' ? 'weapons' : 'accessories'}. Anything else — a new batch.`,
+    otherKind: (what, grade) => `This batch is ${[
+      what === null ? null : typeof what === 'object' ? (what.set ? `${what.set} armor` : 'armor') : what === 'weapon' ? 'weapons' : 'accessories',
+      grade === 'unique' ? 'Legendary' : grade === 'rare' ? 'Epic' : null].filter(Boolean).join(', ')}. Anything else — a new batch.`,
     wornAdd: 'E · worn',
     whose: 'Whose piece?',
     lockAdd: '🔒 · set aside',

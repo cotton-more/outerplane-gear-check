@@ -33,9 +33,10 @@ Many pieces from one filter in the game — one set, or weapons, or accessories?
 the whole group before deciding, then walks you through the inventory **step by step**, so the numbers in the game and
 in the app never drift apart.
 
-**In the game:** the filter is one armor set (any slot and grade), or weapons, or accessories; **show worn pieces**;
+**In the game:** the filter is one armor set (any slot), or weapons, or accessories, and **one grade**; **show worn pieces**;
 sort by date received. The batch keeps the same filter: after the first piece, other slots (armor ↔ weapon ↔
-accessory) and other sets can't be picked on the form — start a new batch for them.
+accessory) and other sets can't be picked on the form, and the grade is the first piece's — start a new batch for
+anything else. Both grades? Legendary first, then Epic: the second batch then sees what the first one put on.
 
 1. **"Batch"** — next to "Next item" on a computer, in More on a phone; it's there once you've marked your heroes
    (the plan is about them). A strip "Batch · 0 · List ▸ ✕" sits above the form; there is no verdict on the way.
@@ -45,8 +46,8 @@ accessory) and other sets can't be picked on the form — start a new batch for 
    - a **locked** one (a lock means someone's reserve) — "🔒 · set aside" with the slot on the form.
 
    After "Add" the form gets ready for the next piece of the list: substats, main and item name clear, the grade
-   has to be picked again, and for armor the slot too (the set stays). Until then the slot and grade buttons are
-   highlighted, and "Add" says: "Pick the slot and grade first — as on the piece in the game".
+   and set stay the batch's, for armor the slot has to be picked again. Until then the slot buttons are highlighted,
+   and "Add" says: "Pick the slot first — as on the piece in the game".
 
    Worn and locked entries hold the numbers: without them "No. 7" in the app and in the game would differ. "List ▸" —
    fix a piece (tap it, then "Save #N") or remove it (✕).

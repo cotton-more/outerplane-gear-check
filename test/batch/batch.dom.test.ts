@@ -80,14 +80,17 @@ describe('«Партия» on a phone', () => {
     expect(batch().items).toHaveLength(1);
     expect(batch().items[0]).toMatchObject({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', setId: speed, subs: GOOD.subs, bt: 0 } });
     expect($('.batch-strip .tryon-k')?.textContent).toBe('Batch · 1');
-    // the next piece asks its slot and grade again (owner 2026-10-09): nothing pressed, «Add» waits
+    // the next piece asks its slot again (owner 2026-10-09): nothing pressed, «Add» waits; the grade is the batch's —
+    // the first piece's, the other one is off
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2');
     expect($('.slotrow.need')).toBeTruthy();
-    expect($('.gradesw.need')).toBeTruthy();
+    expect($('.gradesw.need')).toBeNull();
+    expect($('[data-tour="grade"] [data-tour-item="rare"]')?.getAttribute('aria-disabled')).toBe('true');
     await click($('.vbar .vb-reset'));
-    expect($('.batch-toast')?.textContent).toBe('Pick the slot and grade first — as on the piece in the game.');
+    expect($('.batch-toast')?.textContent).toBe('Pick the slot first — as on the piece in the game.');
+    await click($('[data-tour="grade"] [data-tour-item="rare"]'));
+    expect($('.batch-toast')?.textContent).toBe('This batch is Speed armor, Legendary. Anything else — a new batch.');
     await click($('[data-tour="slot"] [data-tour-item="helmet"]'));
-    await click($('[data-tour="grade"] [data-tour-item="unique"]'));
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · helmet');
     expect($('.slotrow.need')).toBeNull();
     expect(JSON.parse(localStorage.getItem('ogc.item') ?? '{}').subs ?? {}).toEqual({});
@@ -231,7 +234,7 @@ describe('«Партия»: обход по шагам', () => {
     expect(batch().items[1].input.setId).toBe(speed);
   });
 
-  it('a weapon batch: after «Add» the main and the item clear, the slot stays weapon, only the grade is asked', async () => {
+  it('a weapon batch: after «Add» the main and the item clear, the slot stays weapon, the grade is locked — nothing to pick', async () => {
     const w = D.weapons.find((i) => i.grade === 'unique' && i.star === 6)!;
     await mount({ itemKey: w.key, main: w.mains[0], subs: { SPD: 2, CHC: 2, CHD: 1, 'DMG UP%': 1 } },
       { state: { tab: 'eval', slot: 'weapon', grade: 'unique' }, batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
@@ -241,7 +244,8 @@ describe('«Партия»: обход по шагам', () => {
     expect([form.main ?? null, form.itemKey ?? null]).toEqual([null, null]);
     expect($('.slotrow.need')).toBeNull();
     expect($('[data-tour="slot"] [data-tour-item="weapon"]')?.getAttribute('aria-pressed')).toBe('true');
-    expect($('.gradesw.need')).toBeTruthy();
+    expect($('.gradesw.need')).toBeNull();
+    expect($('[data-tour="grade"] [data-tour-item="unique"]')?.getAttribute('aria-pressed')).toBe('true');
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · weapon');
   });
 
@@ -254,7 +258,7 @@ describe('«Партия»: обход по шагам', () => {
     expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');   // «1» (weapon) did nothing
     await click(slot('weapon'));                                        // a tap says why, the slot stays
     expect(slot('helmet').getAttribute('aria-pressed')).toBe('true');
-    expect($('.batch-toast')?.textContent).toBe('This batch is Speed armor. Anything else — a new batch.');
+    expect($('.batch-toast')?.textContent).toBe('This batch is Speed armor, Legendary. Anything else — a new batch.');
     // the set is fixed: no ▾, a tap opens nothing
     expect($('[data-tour="pick"]')?.classList.contains('locked')).toBe(true);
     await click($('[data-tour="pick"]'));
