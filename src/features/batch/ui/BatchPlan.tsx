@@ -3,23 +3,38 @@
 // One way on: «Обход ▸» — recording happens at the walk's end, after the game (owner 2026-10-09: «Записать план» here
 // invited recording before anything was done). «Спорно» lines get «Отложить» / «Разобрать» — decided before the walk
 // (owner 2026-10-08); «Обход ▸» waits for them. Back to the list — «← К списку» above.
-import type { Char } from '@/game/data/types';
+import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Texts } from '@/i18n';
 import { useT } from '@/i18n';
 import { subsText } from '@/game/text';
-import type { GearStore } from '@/features/gear/model/gear';
+import { namedGain } from '@/features/gear/model/vs';
 import { wornAtEnd, type Fate, type Line, type Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 import { withHero } from '@/game/hero/HeroTag';
 import { capLine } from '@/features/gear/ui/pieceText';
 
-export function fateText(t: Texts, f: Fate, st: GearStore): string {
+// the piece a «Корм для #n» line feeds, by its line: the hero who gets or keeps it and its slot (owner 2026-10-09: «Корм для
+// #17» didn't say whose)
+function targetOf(plan: Plan, n: number): { c: Char; slot: SlotId } | null {
+  const l = plan.lines.find((x) => x.n === n && !x.off);
+  const f = l?.fate;
+  return l && f && (f.kind === 'wear' || f.kind === 'keep' || f.kind === 'reserve') ? { c: f.c, slot: l.input.slot } : null;
+}
+
+export function fateText(t: Texts, f: Fate, plan: Plan): string {
   switch (f.kind) {
-    case 'wear': return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + (f.t4 ? t.batch.t4 : '');
+    case 'wear': {
+      // a recommended Legendary that wins by its passive and loses points says what it costs, like the trade plan (Q6)
+      const cost = f.rankUp && namedGain(-f.dV) ? ` · ${t.trade.itemPts(f.dV)}, ${t.trade.passive}` : '';
+      return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + cost + (f.t4 ? t.batch.t4 : '');
+    }
     case 'keep': return t.batch.keep(f.c.name) + (f.t4 ? t.batch.t4 : '');
     case 'reserve': return t.batch.reserve(f.c.name);
-    case 'feed': return 'entry' in f.to ? t.batch.feedEntry(f.to.entry) : wornAtEnd(st, f.to) ? t.batch.feedWorn(f.to.piece.slot, f.to.c.name) : t.batch.feedStash(f.to.piece.slot, f.to.c.name);
+    case 'feed': {
+      if ('entry' in f.to) { const g = targetOf(plan, f.to.entry); return t.batch.feedEntry(f.to.entry, g?.slot ?? null, g?.c.name ?? null); }
+      return wornAtEnd(plan.st, f.to) ? t.batch.feedWorn(f.to.piece.slot, f.to.c.name) : t.batch.feedStash(f.to.piece.slot, f.to.c.name);
+    }
     case 'same': return t.batch.same(f.same.piece.slot, f.same.c.name, t.fit.date(f.same.piece.at));
     case 'maybe': return t.batch.maybe(f.heroes.slice(0, 3).map((c) => c.name).join(', '));
     case 'junk': return t.batch.junk;
@@ -28,10 +43,10 @@ export function fateText(t: Texts, f: Fate, st: GearStore): string {
 }
 
 // the hero a fate sends the player to (tagged in the line: class icon, element colour)
-function heroIn(f: Fate): Char | null {
+function heroIn(plan: Plan, f: Fate): Char | null {
   switch (f.kind) {
     case 'wear': case 'keep': case 'reserve': return f.c;
-    case 'feed': return 'entry' in f.to ? null : f.to.c;
+    case 'feed': return 'entry' in f.to ? targetOf(plan, f.to.entry)?.c ?? null : f.to.c;
     case 'same': return f.same.c;
     default: return null;
   }
@@ -69,12 +84,11 @@ export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoo
                   ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit), capLine(t, ctx.idx, l.off.piece))
                   : t.batch.off(l.off.piece.slot, l.off.c.name, capLine(t, ctx.idx, l.off.piece))}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
-              <span className="bfate">{withHero(fateText(t, l.fate, plan.st), heroIn(l.fate))}</span>
+              <span className="bfate">{withHero(fateText(t, l.fate, plan), heroIn(plan, l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
               {l.fate.kind === 'maybe' && (
                 <span className="bdecide">
-                  <span className="muted">{t.batch.decide}</span>
                   {(['keep', 'junk'] as const).map((c) => (
                     <button key={c} type="button" className="chip" aria-pressed={choice[l.id] === c} onClick={() => onChoose(l.id, choice[l.id] === c ? null : c)}>
                       {c === 'keep' ? t.batch.keepIt : t.batch.junkIt}

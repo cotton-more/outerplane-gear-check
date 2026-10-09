@@ -770,13 +770,14 @@ export const ru = {
       typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'оружие' : kind === 'accessory' ? 'аксессуары' : ''].filter(Boolean).join(' '),
     listTitle: (n: number, what: string) => `Партия · ${n}${what ? ` · ${what}` : ''}`,
     title: (what: string) => `План партии${what ? ` · ${what}` : ''}`,
-    summary: (a: number, b: number, c: number, d: number) => `надеть ${a} · отложить ${b} · в Breakthrough ${c} · разобрать ${d}`,
+    summary: (a: number, b: number, c: number, d: number) => `надеть ${a} · отложить ${b} · корм ${c} · разобрать ${d}`,
     wear: (name: string) => `Надень на ${name}`,
     replace: (name: string, slot: string) => `Надень на ${name} — вместо ${GEN[slot]}`,
     t4: ' · T4 после корма',
     keep: (name: string) => `Отложи для ${name}`,
     reserve: (name: string) => `Отложи для ${name} — запас`,
-    feedEntry: (n: number) => `Корм для #${n}`,
+    // whose piece it is: «Корм для #17 · перчатки Saeran»; the hero isn't known — the number alone
+    feedEntry: (n: number, slot: string | null, name: string | null) => (slot && name ? `Корм для #${n} · ${NOM[slot]} ${name}` : `Корм для #${n}`),
     feedWorn: (slot: string, name: string) => `Корм для ${GEN[slot]} ${name}`,
     // the target is a set-aside piece: the hero wears another one in the game
     feedStash: (slot: string, name: string) => `Корм для ${by(slot, 'отложенного', 'отложенной', 'отложенного', 'отложенных')} ${GEN[slot]} ${name}`,
@@ -785,7 +786,7 @@ export const ru = {
     junk: 'Разобрать',
     none: 'Не посчитать: предмета нет в данных outerpedia',
     same: (slot: string, name: string, date: string) =>
-      `Похоже, уже ${by(slot, 'отложен', 'отложена', 'отложено', 'отложены')} для ${name}${date ? ' ' + date : ''} — если это ${by(slot, 'он', 'она', 'оно', 'они')}, ничего не делай`,
+      `Как ${by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные')} для ${name}${date ? ` (${date})` : ''}? Тогда ничего не делай.`,
     // what — the item of a weapon or accessory («Steel Sword · ATK%»): which piece it is, not only whose
     off: (slot: string, name: string, what = '') => `${by(slot, 'Снятый', 'Снятая', 'Снятое', 'Снятые')} ${NOM[slot]} ${name}${what ? ` — ${what}` : ''}`,
     offStash: (slot: string, name: string, subs: string, what = '') =>
@@ -801,7 +802,6 @@ export const ru = {
     whoseNone: (what: string) => `Никто из твоих героев не носит здесь ${what}.`,
     lockAdd: '🔒 · отложено',
     lockRow: (slot: string) => `🔒 ${NOM[slot]}`,
-    decide: 'Реши до обхода:',
     keepIt: 'Отложить',
     junkIt: 'Разобрать',
     walk: 'Обход ▸',

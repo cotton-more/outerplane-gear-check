@@ -13,6 +13,7 @@ const dec = (x: number) => String(Math.round(x * 10) / 10);
 
 // slot names for GEARPOOL lines: «boots» for shoes
 const SLOT_EN: Record<string, string> = { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' };
+const MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const plEn = (slot: string) => slot === 'gloves' || slot === 'shoes';
 // «A and B», «A, B and C»
 const andEn = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
@@ -212,9 +213,9 @@ export const en: Texts = {
     stash: (name) => `Set aside for ${name}`,
     stashed: (name, slot) => `Set aside for ${name}: ${SLOT_EN[slot]}.`,
     chipReserve: 'reserve',
-    date: (at) => (at ? `${at.slice(5, 7)}/${at.slice(8, 10)}` : ''),
-    stashedOne: (_slot, piece, subs, date) => `It's the ${piece} · ${subs}, set aside${date ? ' ' + date : ''}.`,
-    same: (_slot, piece, name, date) => `Looks like the ${piece} set aside for ${name}${date ? ' ' + date : ''}. If it is — do nothing.`,
+    date: (at) => (at ? `${MONTH_EN[+at.slice(5, 7) - 1]} ${+at.slice(8, 10)}` : ''),
+    stashedOne: (_slot, piece, subs, date) => `It's the ${piece} · ${subs}, set aside${date ? ` (${date})` : ''}.`,
+    same: (_slot, piece, name, date) => `Looks like the ${piece} set aside for ${name}${date ? ` (${date})` : ''}. If it is — do nothing.`,
     twin: (slot) => (plEn(slot) ? "It's a different pair" : "It's a different one"),
   },
 
@@ -669,20 +670,20 @@ export const en: Texts = {
     what: (kind, grade) => [grade ? GRADE_NAME[grade] : '', typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'weapons' : kind === 'accessory' ? 'accessories' : ''].filter(Boolean).join(' '),
     listTitle: (n, what) => `Batch · ${n}${what ? ` · ${what}` : ''}`,
     title: (what) => `Batch plan${what ? ` · ${what}` : ''}`,
-    summary: (a, b, c, d) => `equip ${a} · set aside ${b} · Breakthrough ${c} · dismantle ${d}`,
+    summary: (a, b, c, d) => `equip ${a} · set aside ${b} · feed ${c} · dismantle ${d}`,
     wear: (name) => `Equip on ${name}`,
     replace: (name, slot) => `Equip on ${name} — instead of the ${SLOT_EN[slot]}`,
     t4: ' · T4 after feeding',
     keep: (name) => `Set aside for ${name}`,
     reserve: (name) => `Set aside for ${name} — reserve`,
-    feedEntry: (n) => `Feed to #${n}`,
+    feedEntry: (n, slot, name) => (slot && name ? `Feed to #${n} · ${name}'s ${SLOT_EN[slot]}` : `Feed to #${n}`),
     feedWorn: (slot, name) => `Feed to ${name}'s ${SLOT_EN[slot]}`,
     feedStash: (slot, name) => `Feed to ${name}'s set-aside ${SLOT_EN[slot]}`,
     wornNote: 'Feeding worn pieces: up to 4 each — at T4, tap "T4" on the piece card.',
     maybe: (names) => `Maybe — suits ${names}`,
     junk: 'Dismantle',
     none: "Can't plan: the item isn't in outerpedia data",
-    same: (_slot, name, date) => `Looks already set aside for ${name}${date ? ' ' + date : ''} — if it is, do nothing`,
+    same: (_slot, name, date) => `Same as ${name}'s set-aside${date ? ` (${date})` : ''}? Then do nothing.`,
     off: (slot, name, what = '') => `${name}'s removed ${SLOT_EN[slot]}${what ? ` — ${what}` : ''}`,
     offStash: (slot, name, subs, what = '') => `${name}'s set-aside ${SLOT_EN[slot]}${what ? ` — ${what}` : ''} (${subs})`,
     recorded: (a, b) => `Batch recorded: ${a} equipped, ${b} set aside.`,
@@ -695,11 +696,10 @@ export const en: Texts = {
     whoseNone: (what) => `None of your heroes wears ${what} here.`,
     lockAdd: '🔒 · set aside',
     lockRow: (slot) => `🔒 ${SLOT_EN[slot]}`,
-    decide: 'Decide before the walk:',
     keepIt: 'Set aside',
     junkIt: 'Dismantle',
     walk: 'Walk ▸',
-    walkOff: (n) => `Decide «Maybe» first: ${n}`,
+    walkOff: (n) => `Decide "Maybe" first: ${n}`,
     walkTitle: (k, n) => `Walk · ${k} of ${n}`,
     walkNote: (what) => `${what ? `Game filter: ${what} · worn shown · by date. ` : ''}Substats differ — fix the batch.`,
     stages: ['Equip — at the heroes', 'Lock', 'Breakthrough', 'Dismantle — in one selection'],

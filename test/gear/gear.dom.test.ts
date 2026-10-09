@@ -1200,7 +1200,7 @@ describe('вердикт «статы + сеты»', () => {
     await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
     expect($('.vc-stash')).toBeNull();
     await click($('.vcard'));
-    expect($('.v-reasons')?.textContent).toMatch(/^Looks like the Penetration helmet set aside for Caren \d\d\/\d\d\. If it is — do nothing\./);
+    expect($('.v-reasons')?.textContent).toMatch(/^Looks like the Penetration helmet set aside for Caren \((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}\)\. If it is — do nothing\./);
   });
 
   it('T5.7: слабый Speed-шлем при начатом Speed — «Фоддер — запас для Speed-шлема Caren»', async () => {
@@ -1250,7 +1250,7 @@ describe('вердикт «статы + сеты»', () => {
     it('no «Set aside» for another hero until «It\'s a different one»', async () => {
       await mount({ slot: 'helmet', grade: 'unique' }, { setId: speed, subs: weak }, { gear: team(), roster: [caren.id, aer.id] });
       expect($('.vcard .vc-title')?.textContent).toBe("reserve for Aer's Speed helmet");
-      expect($('.vcard .vc-line')?.textContent).toMatch(/^Looks like the Speed helmet set aside for Aer \d\d\/\d\d\. If it is — do nothing\.$/);
+      expect($('.vcard .vc-line')?.textContent).toMatch(/^Looks like the Speed helmet set aside for Aer \((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}\)\. If it is — do nothing\.$/);
       expect($('.vc-stash')).toBeNull();
       await click(byText('.vc-twin', "It's a different one"));
       // a second copy: Aer already has hers, so only Caren may take it

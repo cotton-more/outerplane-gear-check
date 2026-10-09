@@ -16,7 +16,9 @@ export interface Entry { input: ItemInput; twin?: boolean; n?: number }
 // what a feed line points at: a piece of this batch (#n) or a recorded piece of a hero
 export type Target = { entry: number } | { c: Char; piece: Piece };
 export type Fate =
-  | { kind: 'wear'; c: Char; instead: Piece | null; t4: boolean }   // instead — the worn piece of the slot it replaces
+  // instead — the worn piece of the slot it replaces; rankUp — it goes on for its passive (a recommended weapon or accessory),
+  // dV — the points it adds (negative when the passive wins at a cost: the row names the cost, owner Q6)
+  | { kind: 'wear'; c: Char; instead: Piece | null; t4: boolean; rankUp: boolean; dV: number }
   | { kind: 'keep'; c: Char; t4: boolean; held?: boolean }          // held — a taken-off piece the hero's pool still keeps
   | { kind: 'reserve'; c: Char }
   | { kind: 'feed'; to: Target }
@@ -197,7 +199,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         if (madeBy.has(p.id)) eaten(p);
         else takeOff(n, of, p, 'stash');
       }
-      return { kind: 'wear', c, instead: was, t4: false };
+      return { kind: 'wear', c, instead: was, t4: false, rankUp: h.rankUp, dV: h.dV };
     }
     if (r.kind === 'keep' || (r.kind === 'material' && r.sub === 'reserve')) {
       const c = r.kind === 'keep' ? r.named[0].c : r.reserve[0];

@@ -111,7 +111,7 @@ describe('a piece taken off another hero', () => {
     const { ctx, st } = world(['Roxie'], { Roxie: [W('w1', 'ATK%', { CHD: 3, SPD: 5, CHC: 4, HP: 3 }), W('w2', 'ATK%', { CHD: 4, SPD: 5, CHC: 5, HP: 3 })] }, { Roxie: ['w1'] });
     const b = batchOf([piece(W('a', 'DEF%', { 'ATK%': 1, RES: 1, CHC: 2, SPD: 2 })), piece(W('b', 'ATK%', { CHC: 1, 'DMG UP%': 4, SPD: 1, 'DMG RED%': 2 }))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p).find((s) => s[0].includes('→ Breakthrough'))![0])
+    expect(steps('en', ctx, b, p).find((s) => s[0].includes('→ Breakthrough'))![0].replace(/\u00A0/g, ' '))
       .toBe("Roxie's set-aside weapon — Thumping Odyssey · ATK% (CHD 4, SPD 5, CHC 5, HP 3) → Breakthrough: up to 2");
     expect(TEXTS.en.batch.offStash('weapon', 'Roxie', 'CHD 4', 'Thumping Odyssey · ATK%')).toBe("Roxie's set-aside weapon — Thumping Odyssey · ATK% (CHD 4)");
     expect(TEXTS.en.batch.off('helmet', 'Caren')).toBe("Caren's removed helmet");          // armor: no caption, as before

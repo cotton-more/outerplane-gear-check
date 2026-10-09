@@ -152,8 +152,8 @@ describe('«Партия» on a phone', () => {
     await click(byText('.batch button', 'Plan it'));
     expect($('.drawer-h h3')?.textContent).toBe('Batch plan · Legendary Speed');
     const lines = $$('.batch-plan .brow').map((l) => l.querySelector('.bfate')?.textContent);
-    expect(lines.slice(0, 2)).toEqual(['Feed to #2', 'Equip on Caren — instead of the helmet']);
-    expect($('.batch-sum')?.textContent).toMatch(/^equip 1 · set aside 0 · Breakthrough 1 · dismantle \d$/);
+    expect(lines.slice(0, 2)).toEqual(["Feed to #2 · Caren's helmet", 'Equip on Caren — instead of the helmet']);   // the feed row says whose piece
+    expect($('.batch-sum')?.textContent).toMatch(/^equip 1 · set aside 0 · feed 1 · dismantle \d$/);
     const before = gear();
     expect(byText('.batch button', 'Record the plan')).toBeUndefined(); // no recording from the plan (owner 2026-10-09)
     for (const b of $$('.bdecide button').filter((x) => x.textContent === 'Dismantle')) await click(b);
@@ -185,9 +185,9 @@ describe('«Партия» on a phone', () => {
     await mount({ setId: speed, subs: {} }, { gear, batch: { v: 1, items, skip: [], twin: [] } });
     await click($('.batch-strip .batch-list'));
     await click(byText('.batch button', 'Plan it'));
-    const row = byText('.batch-plan .brow', "Caren's set-aside helmet (SPD 1, RES% 1, EFF% 1, HP 1)");
-    expect(row?.querySelector('.bfate')?.textContent).toBe('Feed to #1');
-    expect($('.batch-sum')?.textContent).toMatch(/· Breakthrough 1 ·/);
+    const row = byText('.batch-plan .brow', "Caren's set-aside helmet (SPD\u00A01, RES%\u00A01, EFF%\u00A01, HP\u00A01)");
+    expect(row?.querySelector('.bfate')?.textContent).toBe("Feed to #1 · Caren's helmet");
+    expect($('.batch-sum')?.textContent).toMatch(/· feed 1 ·/);
   });
 
   it('«Don\'t take» plans the line again without that hero', async () => {
@@ -300,9 +300,9 @@ describe('«Партия»: обход по шагам', () => {
       'Select in the game: 1',                             // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
-    expect(steps[1].textContent).toContain('feed:SPD 1');                                    // the feed, piece by piece: its stats — no number, armor has no name
+    expect(steps[1].textContent).toContain('feed:SPD\u00A01');                                    // the feed, piece by piece: its stats — no number, armor has no name
     expect($$('.bwalk .bstage > p').map((x) => x.textContent)).toEqual(["Any piece from the game's list works. What the game doesn't take — dismantle."]);   // once, under «Breakthrough»
-    expect(steps[2].textContent).toContain('DEF% 3');                    // the taken-off helmet, by its stats (no «#n» at this stage)
+    expect(steps[2].textContent).toContain('DEF%\u00A03');                    // the taken-off helmet, by its stats (no «#n» at this stage)
     expect(steps[2].textContent).not.toContain('#');
     expect(steps[2].textContent?.endsWith("+ feed the Breakthrough didn't take")).toBe(true);
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
