@@ -92,6 +92,10 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
   const [asking, setAsking] = useState(false);
   const c = plan.counts;
   const stages = [1, 2, 3, 4] as const;
+  // the confirm: how many steps are not ticked (only when some are), what will be recorded, the undo hint — one paragraph
+  const keys = new Set(walk.steps.map((x) => x.key));
+  const open = walk.steps.length - batch.done.filter((k) => keys.has(k)).length;
+  const ask = [open > 0 ? t.batch.recordUnticked(open, walk.steps.length) : '', t.batch.recordText(c.wear, c.keep), t.batch.recordUndo].filter(Boolean).join(' ');
   return (
     <div className="batch bwalk">
       <p className="muted small">{t.batch.walkNote(what)}</p>
@@ -127,7 +131,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
         <button type="button" className="btn brec" onClick={() => setAsking(true)}>{t.batch.walkEnd}</button>
       </div>
       {asking && (
-        <AskSheet title={t.batch.recordAsk} text={t.batch.recordText(c.wear, c.keep)} yes={t.batch.recordYes} kind="batch-ask"
+        <AskSheet title={t.batch.recordAsk} text={ask} yes={t.batch.recordYes} kind="batch-ask"
           onYes={() => { setAsking(false); onDone(); }} onClose={() => setAsking(false)} />
       )}
     </div>

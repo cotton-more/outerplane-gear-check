@@ -1,7 +1,7 @@
 // «Партия» on the page (.x/0110-batch/PLAN.md §1, §4): the batch in 'ogc.batch', the entry being fixed, what the list /
 // plan view shows, and the actions — start, «В партию», fix, remove, «Посчитать», «Не брать», «Это другой», «Сделал»
 // with «Вернуть», ✕. The plan is computed only while it is shown, always on the current store.
-import { useMemo, useState, type Dispatch } from 'react';
+import { useMemo, useRef, useState, type Dispatch } from 'react';
 import { isArmor, type Index } from '@/game/data';
 import type { Char, Grade, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
@@ -13,7 +13,7 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import { useTimed } from '@/shared/useTimed';
-import { addSkip, entriesOf, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, restoreBatch, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
+import { addSkip, entriesOf, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
 import { planBatch, skipKey, undoPlan, type Plan } from './plan';
 import { walkOf, type Walk } from './walk';
 
@@ -77,6 +77,8 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const [ask, setAsk] = useState<BatchAsk | null>(null);
   const askNote = (a: BatchAsk) => setNote(t.batch.askFirst(a.slot, a.grade));
   const batch = value ?? NEW_BATCH;
+  const current = useRef(value);          // the batch as it is when «Вернуть» is tapped, not as it was at ✕
+  current.current = value;
   const planned = view === 'plan' || view === 'walk';
   const plan = useMemo(() => (value && planned ? planBatch(ctx, gear.store, entriesOf(value), new Set(value.skip)) : null),
     [ctx, gear.store, value?.items, value?.skip, value?.twin, planned]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -135,10 +137,13 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
       if (narrow) setView(null);
       toForm();
     },
+    // ✕ removes at once and every later #n moves up: a message with «Вернуть» puts the entry back at its place with its marks
     remove: (n) => {
       if (!value) return;
+      const gone = removedOf(value, n);
       set(removeItem(value, n));
       setEditing((e) => (e === n ? null : e !== null && e > n ? e - 1 : e));
+      if (gone) say({ text: t.batch.removed(n), note: '', tab: 'eval', after: () => { if (current.current) set(restoreItem(current.current, gone)); } });
     },
     show: setView,
     skip: (line, hero) => { if (value) set(addSkip(value, skipKey(line, hero))); },

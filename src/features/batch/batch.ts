@@ -68,6 +68,33 @@ export function removeItem(b: Batch, n: number): Batch {
   };
 }
 
+// what ✕ takes with an entry: the entry and its own marks — «Не брать», «Это другой», «Спорно»; the keys keep its number
+export interface Removed { n: number; entry: BatchEntry; skip: string[]; twin: boolean; choice: Record<string, 'keep' | 'junk'> }
+export function removedOf(b: Batch, n: number): Removed | null {
+  const entry = b.items[n - 1];
+  if (!entry) return null;
+  return { n, entry, skip: b.skip.filter((k) => entryOf(k) === n), twin: b.twin.includes(n),
+    choice: Object.fromEntries(Object.entries(b.choice).filter(([k]) => entryOf(k) === n)) };
+}
+// the undo of removeItem: the entry goes back to its place (later ones move down a number, their marks with them) with
+// its marks; the walk's ticks are cleared, as after any change of the batch
+export function restoreItem(b: Batch, r: Removed): Batch {
+  const n = Math.min(r.n, b.items.length + 1);
+  const shift = (m: number) => (m >= n ? m + 1 : m);
+  const move = (k: string) => k.replace(/^\d+/, (d) => String(shift(Number(d))));
+  const back = (k: string) => k.replace(/^\d+/, String(n));
+  const items = b.items.slice();
+  items.splice(n - 1, 0, r.entry);
+  return {
+    ...b,
+    items,
+    skip: [...b.skip.map(move), ...r.skip.map(back)],
+    twin: [...b.twin.map(shift), ...(r.twin ? [n] : [])],
+    choice: { ...Object.fromEntries(Object.entries(b.choice).map(([k, v]) => [move(k), v])), ...Object.fromEntries(Object.entries(r.choice).map(([k, v]) => [back(k), v])) },
+    done: [],
+  };
+}
+
 export const setTwin = (b: Batch, n: number): Batch => (b.twin.includes(n) ? b : { ...b, twin: [...b.twin, n], done: [] });
 export const addSkip = (b: Batch, key: string): Batch => (b.skip.includes(key) ? b : { ...b, skip: [...b.skip, key], done: [] });
 export const setChoice = (b: Batch, line: string, c: 'keep' | 'junk' | null): Batch =>

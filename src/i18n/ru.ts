@@ -765,6 +765,8 @@ export const ru = {
     endAsk: (n: number) => `Закончить партию? Вещей не посчитано: ${n}.`,
     endYes: 'Закончить',
     remove: (n: number) => `Убрать #${n}`,
+    // the message after ✕ in the list, with «Вернуть»
+    removed: (n: number) => `Убрано #${n}`,
     // the batch's kind in a phrase, grade first: «Epic Speed», «Legendary оружие»; nothing known yet — empty
     what: (kind: { set: string } | 'weapon' | 'accessory' | null, grade: Grade | null) => [grade ? GRADE_NAME[grade] : '',
       typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'оружие' : kind === 'accessory' ? 'аксессуары' : ''].filter(Boolean).join(' '),
@@ -793,7 +795,10 @@ export const ru = {
       `${by(slot, 'Отложенный', 'Отложенная', 'Отложенное', 'Отложенные')} ${NOM[slot]} ${name}${what ? ` — ${what}` : ''} (${subs})`,
     recorded: (a: number, b: number) => `Партия записана: надето ${a}, отложено ${b}.`,
     recordAsk: 'Всё сделано в игре?',
-    recordText: (a: number, b: number) => `Запишу у героев: надеть ${a}, отложить ${b}. Отменить можно сразу после — «Вернуть» в сообщении.`,
+    // the confirm is one paragraph: [not ticked — only when some are, what will be recorded, the undo hint]
+    recordUnticked: (k: number, n: number) => `Не отмечено: ${k} из ${n} ${plural(n, 'шага', 'шагов', 'шагов')}.`,
+    recordText: (a: number, b: number) => `Запишу у героев: надето ${a}, отложено ${b}.`,
+    recordUndo: 'Сразу после можно «Вернуть» в сообщении.',
     recordYes: 'Записать',
     // step-by-step walk (.x/0140-batch-walk §6, approved by the owner 2026-10-08)
     otherKind: (what: string) => `В этой партии — ${what || 'броня'}. Другое — новой партией.`,

@@ -144,6 +144,24 @@ describe('«Партия» on a phone', () => {
     expect(batch().items).toHaveLength(0);
   });
 
+  it('✕ removes at once, the message «Removed #1 · Undo» puts the entry back at its place with its marks', async () => {
+    const piece = (x: Record<string, unknown>) => ({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x } });
+    const marks = { skip: [`1>${caren.id}`, `2>${caren.id}`], twin: [1, 3], choice: { '1': 'keep', '3~1': 'junk' }, done: [] };
+    const saved = { v: 2, items: [piece(WEAK), piece(GOOD), piece(WEAK)], ...marks };
+    await mount(GOOD, { batch: saved });
+    await click($('.batch-strip .batch-list'));
+    await click($('.batch-items .brow-x'));
+    expect(batch().items).toHaveLength(2);
+    expect(batch()).toMatchObject({ skip: [`1>${caren.id}`], twin: [2], choice: { '2~1': 'junk' } });   // #1's marks are gone, the others moved up
+    expect($('.gear-toast')?.textContent).toBe('Removed #1Undo');
+    await click(byText('.gear-toast button', 'Undo'));
+    const back = batch();                                 // the entry at its place, every mark back, the later ones moved down again
+    expect(back.items.map((e: { input: { subs: unknown } }) => e.input.subs)).toEqual([WEAK.subs, GOOD.subs, WEAK.subs]);
+    expect({ skip: [...back.skip].sort(), twin: [...back.twin].sort(), choice: back.choice }).toEqual({ skip: [...marks.skip].sort(), twin: marks.twin, choice: marks.choice });
+    expect($$('.batch-items .brow')).toHaveLength(3);
+    expect($('.gear-toast')).toBeNull();
+  });
+
   it('the plan: the good Legendary goes on Caren, the weak one feeds it; recorded only at the walk\'s end, after a confirm; «Undo» brings all back', async () => {
     const items = [WEAK, GOOD].map((x) => ({ slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x }));
     await mount({ setId: speed, subs: {} }, { batch: { v: 1, items, skip: [], twin: [] } });
@@ -162,10 +180,14 @@ describe('«Партия» on a phone', () => {
     expect($('.bwalk > p')?.textContent).toBe('Game filter: Legendary Speed · worn shown · by date. Substats differ — fix the batch.');
     await click(byText('.batch button', 'All done — Record the plan'));
     expect(batch()).not.toBeNull();                       // asks first: an accidental tap records nothing
-    expect($('.drawer.ask')?.textContent).toContain('equip 1, set aside 0');
+    // one paragraph: how many steps are not ticked, what will be recorded, the undo hint
+    const steps = $$('.bwalk .bstep').length;
+    expect($('.drawer.ask p')?.textContent).toBe(`Not ticked: ${steps} of ${steps} step${steps === 1 ? '' : 's'}. I'll record on the heroes: equipped 1, set aside 0. Right after, you can "Undo" in the message.`);
     await click(byText('.drawer.ask button', 'Cancel'));
     expect(gear()).toEqual(before);
+    for (const b of $$('.bwalk .bcheck')) await click(b);
     await click(byText('.batch button', 'All done — Record the plan'));
+    expect($('.drawer.ask p')?.textContent).toBe('I\'ll record on the heroes: equipped 1, set aside 0. Right after, you can "Undo" in the message.');   // all ticked: no first sentence
     await click(byText('.drawer.ask button', 'Record'));
     expect(batch()).toBeNull();
     expect($('.batch-strip')).toBeNull();

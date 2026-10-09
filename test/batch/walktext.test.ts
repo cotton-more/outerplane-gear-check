@@ -146,3 +146,21 @@ describe('the lock step', () => {
     expect([TEXTS.en.batch.keptFor('Gnosis Domine'), TEXTS.en.batch.keptReserve('Valentine'), TEXTS.en.batch.keptMaybe]).toEqual(['for Gnosis Domine', 'for Valentine · reserve', 'Maybe, set aside']);
   });
 });
+
+describe('the confirm of the walk (TEXTS §6)', () => {
+  it('«Не отмечено: k из n шагов» — the noun agrees with the total: 1 of 1, 3 of 11, 5 of 21, 2 of 3', () => {
+    const ru = TEXTS.ru.batch.recordUnticked, en = TEXTS.en.batch.recordUnticked;
+    expect([ru(1, 1), ru(3, 11), ru(5, 21), ru(2, 3), ru(7, 22)]).toEqual([
+      'Не отмечено: 1 из 1 шага.', 'Не отмечено: 3 из 11 шагов.', 'Не отмечено: 5 из 21 шага.', 'Не отмечено: 2 из 3 шагов.', 'Не отмечено: 7 из 22 шагов.']);
+    expect([en(1, 1), en(3, 11), en(5, 21)]).toEqual(['Not ticked: 1 of 1 step.', 'Not ticked: 3 of 11 steps.', 'Not ticked: 5 of 21 steps.']);
+  });
+  it('the other two sentences use participles, like the toast', () => {
+    const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
+    expect(ru.recordText(1, 8)).toBe('Запишу у героев: надето 1, отложено 8.');
+    expect(en.recordText(1, 8)).toBe("I'll record on the heroes: equipped 1, set aside 8.");
+    expect(ru.recordUndo).toBe('Сразу после можно «Вернуть» в сообщении.');
+    expect(en.recordUndo).toBe('Right after, you can "Undo" in the message.');
+    expect(ru.recorded(1, 8)).toBe('Партия записана: надето 1, отложено 8.');
+    expect([ru.removed(5), en.removed(5)]).toEqual(['Убрано #5', 'Removed #5']);
+  });
+});
