@@ -544,6 +544,20 @@ describe('карточка персонажа', () => {
     expect($('.piece')?.textContent).toContain('worn');
   });
 
+  // Worn tab: the heading carries the points of what is worn (one decimal), the chain pills run in the hero's chain order
+  // (Caren: DEF › CHC › CHD › SPD › DMG UP%), never sorted by the segment sums (CHC 12 is bigger than DEF% 8)
+  it('Worn tab: the heading shows the points with one decimal, the chain pills run in chain order', async () => {
+    const ps = four({ 'DEF%': 2, SPD: 1, CHC: 3, 'DMG UP%': 1 });
+    await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: wornOf(ps) }) });
+
+    expect($('.worn-h h4')?.textContent).toBe('Worn · 4 of 6 · 36.2 pts');
+    expect($$('.bgear-pts').map((e) => e.textContent)).toEqual(['5.3', '5.3', '5.3', '5.3']);
+    expect($$('.wchain .pill').map((e) => [e.className.replace('pill ', ''), e.textContent])).toEqual([
+      ['ok', 'DEF% 8'], ['ok', 'CHC 12'], ['miss', 'CHD'], ['ok', 'SPD 4'], ['ok', 'DMG UP% 4'],
+    ]);
+    expect($$('.wchain-alt')).toHaveLength(0); // the builds share one chain: no second line
+  });
+
   it('«Билды» — справка outerpedia: переключатель билдов и их сеты, без «N/6» и «Собираю»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {});
     await click(byText('.btabs [role="tab"]', 'Builds'));
