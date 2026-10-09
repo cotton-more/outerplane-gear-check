@@ -747,7 +747,7 @@ export const en: Texts = {
     tips: {
       more: 'Evaluation settings, backup, language and help are in “More”.',
       star: 'Star your characters — the check will use them instead of every hero in the game.',
-      accMain: 'For an accessory, the first tap in the grid is the main stat, as at the top of the piece in the game. Then come the substats.',
+      accMain: 'On a weapon or accessory, the first tap in the grid is the main stat, as at the top of the piece in the game. Then come the substats.',
       mainCell: 'A “main” cell is a stat in the main line: it never rolls as a substat.',
       fourth: 'An Epic can have a 4th substat — from the first Reforge or straight from the drop. Mark it, it may save the piece.',
       replace: 'Tap a stat in its row to replace or remove it. Handy for entering the next piece over the last one.',
