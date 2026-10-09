@@ -55,10 +55,72 @@ function sources(dir: string): string[] {
   });
 }
 
-const stripComments = (src: string) => src
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')     // {/* JSX */}
-  .replace(/\/\*[\s\S]*?\*\//g, '')         // /* блок */
-  .replace(/(^|[\s;,(){}])\/\/.*$/gm, '$1'); // // строка (но не https://)
+// Source with the comments removed, string-aware: `//` or `/*` inside a '…', "…" or `…` literal (a URL, a glob) does not
+// start a comment, so Cyrillic in a string after it is still seen. A quote string ends at a newline (JSX text may hold a
+// lone apostrophe); template literals nest through `${…}`. Regex literals are not understood — none holds a quote or `//`.
+function stripComments(src: string): string {
+  let out = '', i = 0, depth = 0;
+  const tpl: number[] = []; // brace depth at each open `${`
+  let mode: 'code' | 'tpl' = 'code';
+  while (i < src.length) {
+    const c = src[i], two = src.slice(i, i + 2);
+    if (mode === 'tpl') {
+      if (c === '\\') { out += src.slice(i, i + 2); i += 2; continue; }
+      if (c === '`') mode = 'code';
+      else if (two === '${') { tpl.push(depth++); out += two; i += 2; mode = 'code'; continue; }
+      out += c; i++;
+      continue;
+    }
+    if (two === '//') { while (i < src.length && src[i] !== '\n') i++; continue; }
+    if (two === '/*') {
+      const end = src.indexOf('*/', i + 2);
+      const stop = end < 0 ? src.length : end + 2;
+      out += src.slice(i, stop).replace(/[^\n]/g, '');
+      i = stop;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c && src[j] !== '\n') j += src[j] === '\\' ? 2 : 1;
+      out += src.slice(i, j + 1);
+      i = j + 1;
+      continue;
+    }
+    if (c === '`') mode = 'tpl';
+    else if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (tpl.length && tpl[tpl.length - 1] === depth) { tpl.pop(); mode = 'tpl'; }
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+describe('stripComments', () => {
+  const left = (src: string) => CYR.test(stripComments(src));
+  it('drops Cyrillic in line, block and JSX comments', () => {
+    expect(left('const a = 1; // Привет')).toBe(false);
+    expect(left('/* Привет\n   ещё */ const a = 1;')).toBe(false);
+    expect(left('<p>{/* Привет */}</p>')).toBe(false);
+    expect(left('const a = 1; /* Привет */ const b = 2; // Пока')).toBe(false);
+  });
+  it('keeps Cyrillic in strings, also after a string that holds // or /*', () => {
+    expect(left('const a = "Привет";')).toBe(true);
+    expect(left('const a = "https://x.test", b = "Привет";')).toBe(true);
+    expect(left("const a = 'x //y', b = 'Привет';")).toBe(true);
+    expect(left('const a = "/*", b = "Привет"; /* коммент */')).toBe(true);
+    expect(left('const a = `//${x}`, b = `Привет ${"/* y"} ещё`;')).toBe(true);
+    expect(left('const a = `${`//`}`; const b = "Привет";')).toBe(true);
+  });
+  it('a comment after such a string is still dropped', () => {
+    expect(left('const a = "https://x.test"; // Привет')).toBe(false);
+    expect(left('const a = `${"x"} //`; // Привет\nconst b = 1;')).toBe(false);
+  });
+  it('line numbers survive block comments', () => {
+    expect(stripComments('a /* x\ny */ b').split('\n')).toHaveLength(2);
+  });
+});
 
 describe('исходники', () => {
   it('русские фразы — только в src/i18n/ru.ts', () => {
