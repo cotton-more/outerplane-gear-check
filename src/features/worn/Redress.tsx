@@ -15,6 +15,14 @@ import { partText, setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
 import { Sheet } from '@/shared/ui/Sheet';
 
+// the «Переодеть» button: the gain when it is named (from 0.05); otherwise «пассивка лучше» only for a real rank-up
+// (a recommended weapon or accessory goes on); a swap with neither (a Legendary for an Epic at equal points, an effect-set
+// half at equal V) is plain «Переодеть»
+export function redressLabel(t: ReturnType<typeof useT>, plan: Plan): string {
+  if (namedGain(plan.pts)) return t.card.redress(t.fit.pts(plan.pts));
+  return plan.rankUp ? t.card.redressRank : t.card.redressPlain;
+}
+
 export function Redress({ c, ctx, P, plan, onClose, onWear, onWearAll }: {
   c: Char; ctx: Ctx; P: Profile; plan: Plan; onClose: () => void; onWear?: (id: string) => void; onWearAll?: (ids: string[]) => void;
 }) {

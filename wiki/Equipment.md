@@ -109,7 +109,7 @@ segments; dashed — a chain stat no worn piece gives. It's the chain the points
 each named by its build: the same sums in its own order; points follow the first.
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
-worn by 1+ point, turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
+worn by 1+ point (a Legendary in place of an Epic — already at equal points), turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
 "Re-dress: better passive"). The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed
 gloves" with "Wear", and **"Wear all N"**. In the game you do the same yourself — the app only counts.
 

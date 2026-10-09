@@ -13,6 +13,8 @@ import { comboSig } from '@/game/build/variants';
 import { pinOptions } from '@/game/build/profile';
 import { pinChoices, redressOf, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 import { heroPool } from '@/features/gear/verdict';
+import { redressLabel } from '@/features/worn/Redress';
+import { TEXTS } from '@/i18n';
 import { char as ch, ctx as c2, D as data, mk, prof } from '../gear/statSets';
 import { reasonOf } from '@/features/gear/pool/info';
 
@@ -72,10 +74,14 @@ describe('«Переодеть»: лучшая раскладка из свои�
     const r0 = view(store([...worn, same], worn)).redress!;
     expect(r0.wear.map((w) => [w.piece.id, w.replaces?.id])).toEqual([[same.id, worn[0].id]]);
     expect(r0.pts).toBeCloseTo(0, 9);
+    expect(r0.rankUp).toBe(false);
+    // no named gain and no better passive: plain «Переодеть», not «пассивка лучше»
+    expect([redressLabel(TEXTS.ru, r0), redressLabel(TEXTS.en, r0)]).toEqual(['Переодеть', 'Re-dress']);
     const up = piece('helmet', 'Speed', { ...lit, SPD: 4 });
     const r1 = view(store([...worn, up], worn)).redress!;
     expect(r1.wear[0].piece.id).toBe(up.id);
     expect(r1.pts).toBeCloseTo(0.65, 9);
+    expect([redressLabel(TEXTS.ru, r1), redressLabel(TEXTS.en, r1)]).toEqual(['Переодеть: +0,6 очк.', 'Re-dress: +0.6 pts']);
   });
 
   it('Q7: Epic вместо Epic — порог 1 очко прежний (+0,65 — «Переодеть» нет)', () => {
@@ -191,6 +197,7 @@ describe('«Переодеть» по рангу оружия', () => {
     const r = redressOf(heroPool(c2, rin, [rec, non], new Set(['p2']))!, { weapon: non })!;
     expect(r.rankUp).toBe(true);
     expect(r.pts).toBeCloseTo(-9.65, 6);
+    expect([redressLabel(TEXTS.ru, r), redressLabel(TEXTS.en, r)]).toEqual(['Переодеть: пассивка лучше', 'Re-dress: better passive']);
     expect(r.wear.map((x) => x.piece.id)).toEqual(['p1']);
   });
 });

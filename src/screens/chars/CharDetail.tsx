@@ -13,10 +13,9 @@ import { setPin, undoPin, updateIn, type GearStore, type Piece, type PieceEdit }
 import { undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
 import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 import { reasonOf } from '@/features/gear/pool/info';
-import { namedGain } from '@/features/gear/model/vs';
 import { PieceSheet } from './PieceSheet';
 import { PoolList, reasonText } from '@/features/gear/ui/PoolList';
-import { Redress } from '@/features/worn/Redress';
+import { Redress, redressLabel } from '@/features/worn/Redress';
 import { PinSheet } from '@/features/worn/PinSheet';
 import { WornGear } from '@/features/worn/WornGear';
 import { ShareButton } from '@/features/worn/ShareButton';
@@ -182,7 +181,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           )}
           {redress && (
             <button type="button" className="redress" onClick={() => setSheet('redress')}>
-              <Icon name="hanger" /><span>{namedGain(redress.pts) ? t.card.redress(t.fit.pts(redress.pts)) : t.card.redressRank}</span>▸
+              <Icon name="hanger" /><span>{redressLabel(t, redress)}</span>▸
             </button>
           )}
           {shownTab === 'worn' && wv && (
