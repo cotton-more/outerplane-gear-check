@@ -29,7 +29,7 @@ export interface Kept { n: number; input: ItemInput; c: Char | null; why: 'keep'
 export type Step =
   | { key: string; stage: 1; c: Char; slot: SlotId; k: number | null; where: Where; subs: Record<string, number> }
   | { key: string; stage: 2; where: Where; kept: Kept | null }
-  | { key: string; stage: 3; where: Where[] }        // one step: the game's dismantle is one multi-select
+  | { key: string; stage: 3; where: Where[]; inputs: (ItemInput | null)[] } // one step: the game's dismantle is one multi-select; inputs — each piece, to check (owner 2026-10-09)
   | { key: string; stage: 4; target: { worn: Char; slot: SlotId } | { where: Where; kept: Kept | null }; n: number; unlock: number };
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
@@ -69,7 +69,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
 
   const equip: Extract<Step, { stage: 1 }>[] = [];
   const lock: Extract<Step, { stage: 2 }>[] = [];
-  const junk: Where[] = [];
+  const junk: { where: Where; input: ItemInput | null }[] = [];
   const feeds = new Map<string, { target: Extract<Step, { stage: 4 }>['target']; n: number; unlock: number }>();
   const lineOf = (n: number) => plan.lines.find((l) => l.n === n && !l.off);
   // why an entry line's piece stays; a taken-off piece has its description instead (no number)
@@ -98,7 +98,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
         lock.push({ key: `lk:${l.id}`, stage: 2, where, kept: keptOf(l, f) });
         break;
       case 'junk':
-        junk.push(where);
+        junk.push({ where, input: l.input }); // a taken-off piece's line carries its record as input too
         break;
       case 'feed': {
         const to = f.to;
@@ -127,7 +127,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   first.sort((a, z) => heroes.indexOf(a.c.id) - heroes.indexOf(z.c.id));
   const bt: Extract<Step, { stage: 4 }>[] = [...feeds].map(([k, x]) => ({ key: `bt:${k}`, stage: 4, ...x }));
   // dismantle: by position, rows of the grid top down; pieces with no number after them
-  junk.sort((a, z) => ('n' in a ? a.n : Infinity) - ('n' in z ? z.n : Infinity));
-  const dz: Extract<Step, { stage: 3 }>[] = junk.length ? [{ key: 'dz', stage: 3, where: junk }] : [];
+  junk.sort((a, z) => ('n' in a.where ? a.where.n : Infinity) - ('n' in z.where ? z.where.n : Infinity));
+  const dz: Extract<Step, { stage: 3 }>[] = junk.length ? [{ key: 'dz', stage: 3, where: junk.map((x) => x.where), inputs: junk.map((x) => x.input) }] : [];
   return { steps: [...first, ...second, ...lock, ...dz, ...bt], undecided };
 }

@@ -282,11 +282,11 @@ describe('«Партия»: обход по шагам', () => {
     const steps = $$('.bwalk .bstep');
     expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
       'Caren → helmet → No. 3 in the helmet list · #3',   // her slot list: the «E» entry (#1), the weak one (#2), this (#3)
-      'Dismantle — in one selection',
+      'Select in the game and dismantle: 1',
       "Caren's helmet → Breakthrough: up to 1 from the list, any — dismantle what doesn't fit",
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
-    expect(steps[1].textContent).toContain('row 1 — no. 1'); // the taken-off helmet sits where its «E» entry is
+    expect(steps[1].textContent).toContain('row 1, no. 1 · #1 Speed helmet · DEF% 3'); // the taken-off helmet, where its «E» entry is
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
     await click(steps[0].querySelector('.bcheck'));
     expect(batch().done).toEqual(['eq:3']);

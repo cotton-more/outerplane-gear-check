@@ -41,14 +41,14 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
         subs: s.kept ? gameSubs(ctx.idx, s.kept.input.subs) : undefined };
     }
     case 3: {
-      const rows = new Map<number, number[]>();
-      const loose: string[] = [];
-      for (const w of s.where) {
-        if (!('n' in w)) { loose.push(desc(t, w)); continue; }
+      // each piece on its own line: where it is, then what it is — «ряд 2, 8-й · #18 Epic · ATK% · SPD 1, CHC 2, …»
+      const lines = s.where.map((w, i) => {
+        if (!('n' in w)) return desc(t, w);
         const { r, p } = rowOf(w.n);
-        rows.set(r, [...(rows.get(r) ?? []), p]);
-      }
-      return { title: t.batch.stages[2], hero: null, more: [...[...rows].map(([r, ps]) => t.batch.junkRow(r, ps)), ...loose] };
+        const x = s.inputs[i];
+        return x ? t.batch.junkPiece(r, p, w.n, pieceLabel(t, ctx.idx)(formPiece(x)), subsText(x.subs)) : t.batch.btAt(r, p);
+      });
+      return { title: t.batch.junkTitle(s.where.length), hero: null, more: lines };
     }
     case 4: {
       const where = 'worn' in s.target ? t.batch.btWorn(s.target.slot, s.target.worn.name)
@@ -75,7 +75,7 @@ export function BatchWalk({ ctx, batch, plan, walk, onTick, onDone }: {
         if (!steps.length) return null;
         return (
           <section key={st} className="bstage">
-            {st !== 3 && <h4>{t.batch.stages[st - 1]}</h4>}
+            <h4>{t.batch.stages[st - 1]}</h4>
             <ol className="bgear-list">
               {steps.map((s) => {
                 const { title, hero, kept, more, subs } = stepText(ctx, t, s);

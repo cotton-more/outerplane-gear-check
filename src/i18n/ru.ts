@@ -813,7 +813,8 @@ export const ru = {
     keptReserve: (n: number, piece: string, name: string) => `#${n} ${piece} — для ${name} (запас)`,
     keptMaybe: (n: number, piece: string) => `#${n} ${piece} — Спорно, отложено`,
     lockStep: (r: number, p: number) => `Замок: ряд ${r}, ${p}-й`,
-    junkRow: (r: number, ps: number[]) => `ряд ${r} — ${ps.map((p) => `${p}-й`).join(', ')}`,
+    junkTitle: (n: number) => `Отметь в игре и разбери: ${n}`,
+    junkPiece: (r: number, p: number, n: number, piece: string, subs: string) => `ряд ${r}, ${p}-й · #${n} ${piece} · ${subs}`,
     btWorn: (slot: string, hero: string) => `${NOM[slot][0].toUpperCase()}${NOM[slot].slice(1)} ${hero}`,
     btAt: (r: number, p: number) => `Ряд ${r}, ${p}-й`,
     // «до N»: the piece's exact tier below T4 isn't known — the game takes no more than it needs (owner 2026-10-08)
