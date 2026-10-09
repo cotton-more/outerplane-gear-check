@@ -15,7 +15,7 @@ import type { Index } from '@/game/data';
 import type { Piece } from '@/features/gear/model/gear';
 import type { ItemInput } from '@/game/item/item';
 import { slotOf, type Batch } from './batch';
-import type { Fate, Line, Plan } from './plan';
+import { inputOfPiece, type Fate, type Line, type Plan } from './plan';
 
 export const PER_ROW = 10;                       // the game's inventory grid (owner, 2026-10-08)
 export const rowOf = (n: number): { r: number; p: number } => ({ r: Math.ceil(n / PER_ROW), p: ((n - 1) % PER_ROW) + 1 });
@@ -30,7 +30,10 @@ export type Step =
   | { key: string; stage: 1; c: Char; slot: SlotId; k: number | null; where: Where; subs: Record<string, number> }
   | { key: string; stage: 2; where: Where; kept: Kept | null }
   | { key: string; stage: 3; where: Where[]; inputs: (ItemInput | null)[] } // one step: the game's dismantle is one multi-select; inputs — each piece, to check (owner 2026-10-09)
-  | { key: string; stage: 4; target: { worn: Char; slot: SlotId } | { where: Where; kept: Kept | null }; n: number; unlock: number };
+  // piece — the target's own record (its name in the step), mats — the planned feed, each to check (owner 2026-10-09:
+  // a Legendary item takes only copies of itself — «#9, #45 Noblewoman's Guile» says why «до 2»)
+  | { key: string; stage: 4; target: { worn: Char; slot: SlotId } | { where: Where; kept: Kept | null }; piece: ItemInput | null; n: number; unlock: number;
+      mats: { where: Where; input: ItemInput }[] };
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
   undecided: number;   // «Спорно» lines without a choice — the walk waits for them
@@ -70,7 +73,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   const equip: Extract<Step, { stage: 1 }>[] = [];
   const lock: Extract<Step, { stage: 2 }>[] = [];
   const junk: { where: Where; input: ItemInput | null }[] = [];
-  const feeds = new Map<string, { target: Extract<Step, { stage: 4 }>['target']; n: number; unlock: number }>();
+  const feeds = new Map<string, Omit<Extract<Step, { stage: 4 }>, 'key' | 'stage'>>();
   const lineOf = (n: number) => plan.lines.find((l) => l.n === n && !l.off);
   // why an entry line's piece stays; a taken-off piece has its description instead (no number)
   const keptOf = (l: Line | undefined, f: Fate | { kind: 'lock' } | undefined): Kept | null => {
@@ -111,9 +114,11 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
               return t && t.fate.kind === 'wear' ? { worn: t.fate.c, slot: t.input.slot } : { where: { n: to.entry }, kept: t ? keptOf(t, fateOf(t)) : null };
             })()
             : { worn: to.c, slot: to.piece.slot };
-          feeds.set(tk, (x = { target, n: 0, unlock: 0 }));
+          const piece = 'entry' in to ? lineOf(to.entry)?.input ?? null : inputOfPiece(to.piece);
+          feeds.set(tk, (x = { target, piece, n: 0, unlock: 0, mats: [] }));
         }
         x.n++;
+        x.mats.push({ where, input: l.input });
         if (l.off?.was === 'stash') x.unlock++;
         break;
       }

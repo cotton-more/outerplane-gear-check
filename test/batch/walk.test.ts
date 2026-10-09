@@ -85,7 +85,7 @@ describe('the walk', () => {
     expect(walk.steps.map((s) => s.stage)).toEqual([1, 2, 4]);
     expect(walk.steps[0]).toMatchObject({ stage: 1, c: { name: 'Caren' }, slot: 'helmet', k: 3 });
     expect(walk.steps[1]).toMatchObject({ stage: 2, where: { n: 1 } });     // the taken-off Epic — where its «E» is
-    expect(walk.steps[2]).toMatchObject({ stage: 4, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0 });
+    expect(walk.steps[2]).toMatchObject({ stage: 4, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
   });
 
   it('the equip number is in the hero\'s list of that slot: boots first, then armor — the armor is No. 1 among armor, #2 in the batch', () => {

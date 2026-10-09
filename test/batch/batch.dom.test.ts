@@ -286,6 +286,7 @@ describe('«Партия»: обход по шагам', () => {
       "Caren's helmet → Breakthrough: up to 1 from the list, any — dismantle what doesn't fit",
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');
+    expect(steps[2].textContent).toContain('feed:row 1, no. 2 · #2 Speed helmet · SPD 1');   // the feed, piece by piece
     expect(steps[1].textContent).toContain('row 1, no. 1 · #1 Speed helmet · DEF% 3'); // the taken-off helmet, where its «E» entry is
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
     await click(steps[0].querySelector('.bcheck'));

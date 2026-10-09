@@ -73,7 +73,9 @@ anything else. Both grades? Legendary first, then Epic: the second batch then se
       dismantled even by mistake.
    4. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4 from the list, any — dismantle what doesn't fit" (the app doesn't
       know the exact tier below T4, the game takes no more than it needs) — material is interchangeable, worn and
-      locked pieces aren't in that list; "first unlock 2 set-aside" — when the plan feeds a reserve.
+      locked pieces aren't in that list; "first unlock 2 set-aside" — when the plan feeds a reserve. Below —
+      which piece it is and each piece of feed: "row 1, no. 9 · #9 Noblewoman's Guile · HP% 3, …". A Legendary weapon
+      or accessory takes only copies of the same item, so heroes get different amounts of feed.
 
    Tick steps ✓ — the walk is saved, even if the phone unloads the page. Substats don't match — the batch and the game
    list differ: fix it in "List ▸".

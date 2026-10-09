@@ -3,6 +3,7 @@
 // At the end — «Всё сделано — Записать план» with the same confirm as on the plan.
 import { useState } from 'react';
 import type { Char } from '@/game/data/types';
+import type { ItemInput } from '@/game/item/item';
 import { withHero } from '@/game/hero/HeroTag';
 import type { Ctx } from '@/game/context';
 import { useT, type Texts } from '@/i18n';
@@ -46,7 +47,7 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
         if (!('n' in w)) return desc(t, w);
         const { r, p } = rowOf(w.n);
         const x = s.inputs[i];
-        return x ? t.batch.junkPiece(r, p, w.n, pieceLabel(t, ctx.idx)(formPiece(x)), subsText(x.subs)) : t.batch.btAt(r, p);
+        return x ? t.batch.pieceAt(r, p, w.n, pieceLabel(t, ctx.idx)(formPiece(x)), subsText(x.subs)) : t.batch.btAt(r, p);
       });
       return { title: t.batch.junkTitle(s.where.length), hero: null, more: lines };
     }
@@ -55,7 +56,10 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
         : 'n' in s.target.where ? t.batch.btAt(rowOf(s.target.where.n).r, rowOf(s.target.where.n).p) : desc(t, s.target.where);
       const hero = 'worn' in s.target ? s.target.worn : 'n' in s.target.where ? null : s.target.where.c;
       const kept = 'kept' in s.target && s.target.kept ? keptText(ctx, t, s.target.kept) : undefined;
-      return { title: t.batch.btStep(where, s.n), hero, kept, more: s.unlock ? [t.batch.btUnlock(s.unlock)] : [] };
+      const label = (x: ItemInput) => pieceLabel(t, ctx.idx)(formPiece(x));
+      // the feed, piece by piece: «ряд 1, 9-й · #9 Noblewoman's Guile · HP% 3, …»; a taken-off or set-aside one — its description
+      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? t.batch.pieceAt(rowOf(w.n).r, rowOf(w.n).p, w.n, label(x), subsText(x.subs)) : desc(t, w)));
+      return { title: t.batch.btStep(where, s.n), hero, kept, more: [...(s.piece && !kept ? [t.batch.btPiece(label(s.piece))] : []), ...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
     }
   }
 }
