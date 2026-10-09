@@ -71,7 +71,7 @@ export interface HeroRes {
   alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней (в нынешней раскладке их в этом слоте не было)
   parts: { on: PartChange[]; off: PartChange[] };
   needT4: PartChange | null;     // «Оставь (а)»: сделай Breakthrough до T4 — без него эта часть не включится (A11)
-  reserveBt: Fed[];              // reserves fed to the new piece (§4 п. 3б): the hero's own first, then other heroes'
+  reserveBt: Fed[];              // reserves fed to the new piece (§4 item 3b): the hero's own first, then other heroes'
                                  // (verdictOf, feedFrom) — as many as it takes to T4
   layoutWith: Layout;            // лучшая раскладка с ней — что будет надето после «Надеть»
 }
@@ -101,7 +101,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   // 2. «Оставь» — только броня, порог прошла
   if (!bar.pass || !isArmor(x.slot)) return base;
   if (x.setId && P.pin && P.menuSets.has(x.setId)) {
-    // а) a pinned set (owner 2026-10-08, (c): with no pin the hero is wanted by stats — every set goes by б): лучше хотя бы на 1 очко той, что держится для слота и сета (T4-вещь — лучшей на T4)
+    // а) a pinned set (owner 2026-10-08, (c): with no pin the hero is wanted by stats — every set goes by б): better by at least 1 point than the one held for the slot and set (a T4 piece — than the best at T4)
     const pair = heldHere.filter((p) => p.setId === x.setId && (x.bt !== 4 || p.bt === 4));
     const ref = pair.length ? Math.max(...pair.map((p) => piecePoints(P, p))) : null;
     if (ref === null || geq1(px, ref)) return { ...base, kind: 'keep', sub: 'a', needT4: (x.bt ?? 0) < 4 && needsT4(P, x.setId) ? menuPart(P, x.setId) : null };
@@ -115,8 +115,8 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
 // часть меню героя с этим сетом — меньшая («Penetration ×2»)
 const menuPart = (P: Profile, set: string): PartChange => ({ set, n: P.parts.has(partKey(set, 2)) ? 2 : 4 });
 
-// §4 п. 3а: держащиеся годные (btWorth) вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough; запас и слабые — не
-// цели (A2). A piece at T4 is material too (owner 2026-10-09, was D6 «never»): it reaches this only when nobody wears or
+// §4 item 3a: held good (btWorth) pieces of the hero of the same kind below T4 — the new one can give them Breakthrough; reserve and weak ones are not
+// targets (A2). A piece at T4 is material too (owner 2026-10-09, was D6 «never»): it reaches this only when nobody wears or
 // keeps it, and one Breakthrough step for a hero beats dismantling it (#62 Ether Blade T4 → Hilde's Ether Blade)
 export interface Target { c: Char; piece: Piece; worn: boolean }
 function materialTargets(hp: HeroPool, x: Piece): Target[] {
@@ -124,8 +124,8 @@ function materialTargets(hp: HeroPool, x: Piece): Target[] {
     .map((piece) => ({ c: hp.c, piece, worn: hp.wornIds.has(piece.id) }));
 }
 
-// §4 п. 3б, 3в: запас — слабая (не прошла порог) и не на T4. Броня: сет начат, в слоте его нет, запасов этого вида меньше
-// CFG.reservePerHero. Оружие и аксессуар: Legendary, который рекомендуют билды героя, а годной копии у него нет
+// §4 items 3b, 3c: a reserve is weak (below the threshold) and not at T4. Armor: the set is started, the slot has none of it, fewer reserves of this kind than
+// CFG.reservePerHero. Weapon and accessory: a Legendary the hero's builds recommend while the hero has no good copy
 function reserveFor(hp: HeroPool, x: Piece, h: HeroRes): boolean {
   if (h.bar || x.bt === 4 || (hp.info.reserve.get(reserveKey(x))?.length ?? 0) >= CFG.reservePerHero) return false;
   const { info, pieces } = hp;
@@ -195,7 +195,7 @@ function lookFor(P: Profile, x: Piece): string[] {
 }
 
 // Та же вещь, отложенная раньше (решение владельца 2026-10-06): у героя ростера ненадетая запись с тем же сетом или
-// предметом, слотом, грейдом, main и всеми сабстатами тех же уровней. Вердикт считается без неё, а строка говорит:
+// item, slot, grade, main and all substats at the same levels. The verdict is computed without it, and the line says:
 // «похоже, это она — ничего не делай». Substats are compared in the order typed — the form keeps it, Help asks for the
 // game's order, and the same stats in another order are another piece (owner, 2026-10-07)
 export interface Same { c: Char; piece: Piece }
@@ -219,7 +219,7 @@ export interface Result {
   heroes: HeroRes[];          // все герои ростера с билдами
   named: HeroRes[];           // A10: герой с наибольшей пользой первым, ещё до двух
   now: Target[];              // материал сейчас (§4 п. 3а), лучшие цели первыми
-  reserve: Char[];            // запас (п. 3б, 3в)
+  reserve: Char[];            // reserve (items 3b, 3c)
   overEpic?: boolean;         // reserve: reserve[0] holds a good Epic of this set and slot, this Legendary waits for a good Legendary
   maybe: Char[];              // «Спорно»
   quiet: Quiet | null;        // тихая строка у материала, запаса и «Разобрать»
@@ -254,7 +254,7 @@ const reservesOf = (hps: HeroPool[], x: Piece): number => hps.reduce((n, hp) => 
 
 // Вердикт по ростеру; null — не считается: ростера нет («только мои» выключено или он пуст — по порогам, A21), введены
 // не все сабстаты (A20), предмета нет в данных outerpedia (его пассивки и рекомендаций не знаем — как прежде, по
-// порогам). pools — пул героя (у Core Fusion X при X — тот, что будет после окна перехода). twin — the player said
+// thresholds). pools — the hero's pool (for Core Fusion X with X — the one that will be after the transition sheet). twin — the player said
 // «Это другой»: the look-alike set-aside record is another piece, so it stays in its pool and there is no same.
 // Batch plan (features/batch): skip — heroes left out for this piece («Не брать»); full — material targets that already
 // get four pieces in the plan

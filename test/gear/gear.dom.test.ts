@@ -95,7 +95,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.vcard .vc-vs')?.textContent).toBe('+2 ptsCaren');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
-    // прежний шлем на T4 — лучший Speed-шлем Caren на T4 (.x/0085 FORMULA §5 п. 3, Speed закреплён): в пуле остаётся
+    // the old helmet at T4 is Caren's best Speed helmet at T4 (.x/0085 FORMULA §5 item 3, Speed pinned): it stays in the pool
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2']);
     expect($('.vcard')).toBeNull();
     expect($('.vc-equip')).toBeNull();

@@ -1,5 +1,5 @@
 // Данные карточки героя (features/worn/wearing, .x/0085 этап 6): «Переодеть» — лучшая раскладка против надетого (+1 очко,
-// FORMULA §3 п. 3; Legendary вместо Epic того же слота — без +1, Q7), «Что искать» и варианты закрепления — по лучшей раскладке под набор, цвет сабстата по очкам (PLAN Д1),
+// FORMULA §3 item 3; a Legendary instead of an Epic of the same slot — no +1, Q7), «Что искать» and pin variants — by the best layout for the set, the substat colour by points (PLAN Д1),
 // причины в списке вещей. Герои — из эталонных данных, вещи — синтетические.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -208,7 +208,7 @@ describe('цепочка с суммой сегментов надетого', (
     const helm = piece('helmet', 'Speed', { SPD: 4, CHC: 4, CHD: 4, ATK: 4 });
     const glov = piece('gloves', 'Speed', { CHC: 2, 'ATK%': 3, RES: 1, SPD: 1 });
     const v = view(store([helm, glov], [helm, glov]));
-    // «По статам» у Delta — CHC › ATK › SPD = CHD › DMG UP%
+    // Delta's «По статам»: CHC › ATK › SPD = CHD › DMG UP%
     expect(v.chain.map((x) => [x.sep, x.key, x.seg])).toEqual([
       ['', 'CHC', 6], ['›', 'ATK%', 3], ['/', 'ATK', 4], ['›', 'SPD', 5], ['=', 'CHD', 4], ['›', 'DMG UP%', 0],
     ]);

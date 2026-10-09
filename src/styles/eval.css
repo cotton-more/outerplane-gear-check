@@ -160,7 +160,7 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .roll-b button.lit { background: color-mix(in srgb, var(--seg-y) 40%, var(--surface)); color: var(--seg-lit-ink); }
 .roll-b button[aria-pressed="true"] { background: var(--seg-y); color: #1b1300; }
 /* окно уровня нового сабстата (LevelAsk): у нажатой клетки и на телефоне (Sheet at — место считает popPlace), кнопки
-   1–6 — 3×2; 5–6 (после Reforge) приглушены, но не блёклые: их можно нажать.
+   1–6 — 3×2; 5–6 (after Reforge) are muted but not faded: they can be tapped.
    Compact: the window is as wide as the 3×2 keys (finger-sized, ~54×40 each), so it covers little of the form.
    The title wraps: «DMG RED% — сколько сегментов?» doesn't fit one line at this width */
 .drawer-back.pop { display: block; }

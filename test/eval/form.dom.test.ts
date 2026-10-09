@@ -79,7 +79,7 @@ describe('без вердикта карточки нет, нужное поле
 
   it('Legendary оружие с main, но без предмета: выделено поле предмета', async () => {
     await mount({ slot: 'weapon', grade: 'unique' }, { subs: { SPD: 1 } });
-    expect($('[data-tour="pick"].need')).toBeTruthy(); // сначала main — в сетке
+    expect($('[data-tour="pick"].need')).toBeTruthy(); // the main first — in the grid
     await act(async () => $('.statgrid.main-mode .sg:not([disabled])')!.click());
     expect($('[data-tour="item"].need')).toBeTruthy();
     expect($('[data-tour="pick"].need')).toBeNull();

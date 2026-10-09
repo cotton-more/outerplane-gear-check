@@ -105,7 +105,7 @@ describe('строки GEARPOOL', () => {
     expect(enUi.vsWorn('Legendary', 4)).toBe('now: Legendary, Breakthrough T4');
   });
 
-  // .x/0085 TEXTS.md: очки — до десятых без хвоста нулей (как в «Надето» и «Обмене»), запятая в RU; род слота во фразах запаса
+  // .x/0085 TEXTS.md: points — to tenths without trailing zeros (as in «Надето» and «Обмене»), a comma in RU; the slot's gender in reserve phrases
   it('«статы + сеты»: очки «2,5 / 2.5», запас по роду слота, «A и B» в тихой строке, RU/EN', () => {
     const F = TEXTS.ru.fit, E = TEXTS.en.fit;
     expect([F.pts(2.5), F.pts(8.25), F.pts(2.954), F.pts(1), F.pts(4.87), E.pts(2.5), E.pts(4.87), E.pts(1)]).toEqual(['2,5', '8,3', '3', '1', '4,9', '2.5', '4.9', '1']);

@@ -4,7 +4,7 @@
 // сортировки отмечен ↓ (R9.1). Под вещью — откуда взять («у Ноа», «в инвентаре», владелец 2026-10-04: строки «Искать»
 // нет). Только получатели, в порядке выполнения: тех, у кого забрали надетое, не показываем (владелец, 2026-10-04 и
 // 2026-10-05). У героя — прирост ценности по заказу в очках, очки статов «было → станет» (упали — «станут слабее на N»),
-// у каждой вещи — сколько очков она даёт против надетой (у рекомендованного оружия или аксессуара — «пассивка лучше»),
+// for each piece — how many points it gives against the worn one (for a recommended weapon or accessory — «пассивка лучше»),
 // половины сетов, которые включатся и выключатся, и части заказа, которым не хватает вещей. Заказ «Заказ: … ▾» — шторка
 // OrderSheet, смена — пересчёт. «Не брать» — пересчёт без этой вещи у этого героя. Изменений нет — «Менять нечего» и «Ок».
 import { GRADE_NAME, isArmor, subLabel } from '@/game/data';
@@ -31,8 +31,8 @@ import { OrderButton } from './OrderSheet';
 
 type T = Texts;
 const pts = (m: number) => m / 1000;
-// очки так, как их пишет план (до десятых): «+0 очк.» и «слабее на 0 очк.» не бывает (ревью этапа 10); половина — от
-// нуля в обе стороны, иначе −1,05 у прироста было «−1», а у «слабее на» — «1,1»
+// points the way the plan writes them (to tenths): «+0 очк.» and «слабее на 0 очк.» never occur (stage 10 review); halves round
+// away from zero both ways, otherwise a gain of −1.05 read «−1» while «слабее на» read «1,1»
 const tenths = (m: number) => Math.sign(m) * Math.round(Math.abs(m) / 100) / 10;
 
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
@@ -59,7 +59,7 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
   const from = (m: Move) => (m.from.kind === 'worn' ? t.trade.fromWorn(name(m.from.hero))
     : m.from.kind === 'stock' ? t.trade.fromStock(name(m.from.hero)) : t.trade.fromInventory);
 
-  // цена вещи: очки против надетой в слоте; ради рекомендованного оружия или аксессуара — «пассивка лучше»
+  // a piece's cost: points against the one worn in the slot; for a recommended weapon or accessory — «пассивка лучше»
   const worthRow = (l: HeroLine, m: Move) => {
     const v = l.worth[m.slot];
     if (!v) return null;

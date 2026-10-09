@@ -116,7 +116,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const vsList = useMemo((): CharVs[] => {
     if (verdict.v === 'idle') return [];
     if (hero) return heroVs ? [heroVs] : [];
-    // «Отложить для X» — у «Оставь» и запаса, пока она не похожа на уже отложенную (guard)
+    // «Отложить для X» — for «Оставь» and a reserve, while the piece doesn't look like one already set aside (guard)
     const named = (res?.named ?? []).map((h) => {
       const x = charVs(ctx, viewOf(h.c.id), h.c.id, input, { h, stash: h.kind === 'keep' && !same });
       return x && same && same.c.id !== h.c.id ? quietRow(x) : x;

@@ -6,7 +6,7 @@ import { isArmor } from '@/game/data';
 
 // Что сказать о снятой с формы вещи того же слота (сообщение после «Надеть» / «Заменить»): такая же Epic — материал
 // новой, и с T4 (Epic не жалко); новая на T4 — материал ей не нужен. Такая же Legendary — «сначала оцени»: может
-// подойти другому герою (SPEC 4.5). Другая вещь и Epic оружие / аксессуар (стопгап, не кормим) — ничего
+// fit another hero (SPEC 4.5). Another piece, or an Epic weapon / accessory (a stopgap, not fed) — nothing
 export function oldFate(old: Piece, put: Pick<Piece, 'slot' | 'grade' | 'setId' | 'itemKey' | 'bt'>): 'material' | 'evaluate' | null {
   if (!sameForBt(put, old)) return null;
   if (!isArmor(put.slot) && put.grade === 'rare') return null; // an Epic weapon or accessory isn't fed (owner 2026-10-09)

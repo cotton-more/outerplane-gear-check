@@ -100,7 +100,7 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   for (const p of pool) if (wornIds.has(p.id)) { worn[p.slot] = p; add(p, 'worn'); }                     // 1
   for (const p of Object.values(best.layout)) add(p, 'layout');                                         // 2
   const sorted = [...pool].sort(byPoints(P));
-  // 3: в слоте брони для каждого сета меню — лучшая годная и лучшая годная на T4, если лучшая не на T4. Only for a pinned
+  // 3: in an armor slot, for each menu set — the best good piece and the best good one at T4, if the best is not at T4. Only for a pinned
   // set (owner 2026-10-08, (c)): a hero with no pin is wanted by stats — set pieces stay only by 1, 2, 4
   if (P.pin) for (const slot of ARMOR) {
     for (const s of P.menuSets) {
@@ -117,8 +117,8 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
     if (off && (!held.length || geq1(piecePoints(P, off), offBar(P, held)))) add(off, 'offmenu');
   }
   const strong = new Set(why.keys());
-  // 5: впрок — слабые на «сет + слот», когда сет начат держащейся вещью, а в этом слоте его держащейся нет; на T4
-  // материалом не бывает (D6). Оружие и аксессуар (п. 3в) — копии рекомендованного предмета, пока годной нет.
+  // 5: in reserve — weak pieces per «set + slot» when the set is started by a held piece but none is held in this slot; at T4
+  // never material (D6). Weapon and accessory (item 3c) — copies of the recommended item while no good one exists.
   // Armor: reserves per grade; a held Epic doesn't cancel a Legendary reserve (coversSlot). Up to CFG.reservePerHero of
   // one kind (owner, 2026-10-08: a full T0 → T4); the ceiling over all heroes is the verdict's (verdictOf)
   const reserve = new Map<string, string[]>();

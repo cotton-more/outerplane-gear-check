@@ -15,7 +15,7 @@ export const barTitle = (r: VerdictData) => (r.v !== 'idle' && r.title.includes(
 // Штамп, коротко — почему, и третья строка — по порядку, что есть: герой, которого назвал вердикт («▲ +2,5 очк. Caren»,
 // «держи Caren») → цепочка → первая причина. Кнопка «Надеть» — рядом с карточкой (EvalPanel): сама карточка — кнопка.
 // named — назвать героя; в режиме героя (named false) имя уже на полосе над формой, третьей строки нет: про героя —
-// строка под карточкой (heroNote), чужие цепочки здесь не показываем. note — the piece looks like one already set aside:
+// the line under the card (heroNote), other heroes' chains are not shown here. note — the piece looks like one already set aside:
 // that line goes third instead
 export function VerdictCard({ r, onOpen, vs, named = true, note = null }: { r: VerdictData; onOpen: () => void; vs?: CharVs | null; named?: boolean; note?: string | null }) {
   const t = useT();

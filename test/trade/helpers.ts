@@ -129,8 +129,8 @@ export const realWorld = (st: GearStore, roster: readonly string[] = Object.keys
 export interface Owner { st: GearStore; roster: string[]; ctx: Ctx }
 export const OWNER_FILE = new URL('../../.x/00-equip.md', import.meta.url);
 export const hasOwner = (): boolean => existsSync(OWNER_FILE);
-// .x/00-equip.md → loadGear: то, что делает приложение при импорте кода — резервная копия (OGC-GEAR3+, с ростером) или
-// старый код вещей (OGC-GEAR1/2, readGearCode)
+// .x/00-equip.md → loadGear: what the app does when importing a code — a backup (OGC-GEAR3+, with a roster) or
+// an old item code (OGC-GEAR1/2, readGearCode)
 export function loadOwner(): Owner {
   const text = readFileSync(OWNER_FILE, 'utf8').trim();
   const b = decodeBackup(text);

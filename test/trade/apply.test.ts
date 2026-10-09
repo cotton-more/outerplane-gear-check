@@ -167,8 +167,8 @@ describe('F. дыры: применение', () => {
   });
 });
 
-// лишние копии в пуле героя (вещей одного кода сверх одной): план новых не добавляет, а введённые игроком дубли
-// (две одинаковые записи у одного героя) — его ввод, они остаются
+// extra copies in a hero's pool (pieces of one code beyond one): the plan adds no new ones, while duplicates the player entered
+// (two identical records for one hero) are the player's input, they stay
 const dups = (st: GearStore, c: string): number => {
   const codes = (st.pools[c] ?? []).map((id) => codeOf(st.pieces[id]));
   return codes.length - new Set(codes).size;

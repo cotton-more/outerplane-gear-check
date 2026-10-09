@@ -47,7 +47,7 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // onEquip — кнопка «Надеть на Caren» / «Заменить шлем Caren» под карточкой (нет — кнопки нет); other и onEquipOther —
 // вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих. Кнопка только ради ввода надетого
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
-// «Надеть» / «Заменить»: куда встанет форма после неё. sameLine and onTwin — the piece looks like one already set aside
+// «Надеть» / «Заменить»: where the form goes after it. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
 export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch, lock = null, ask = null }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
@@ -97,8 +97,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const weapon = s.slot === 'weapon';
   const mainValue = s.main ? <><StatIcon stat={s.main} main />{s.main}</> : undefined;
   const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
-  // у аксессуара и оружия (owner 2026-10-09) без main сетка сначала выбирает main — в игре он сверху предмета; у оружия
-  // это только ATK%, DEF% или HP% — остальное в сетке выключено
+  // for an accessory and a weapon (owner 2026-10-09) with no main the grid picks the main first — in the game it is at the top of the piece; for a weapon
+  // it is only ATK%, DEF% or HP% — the rest is disabled in the grid
   const mainMode = !armor && !s.main && opts.length > 0 ? opts : null;
   const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
   // сабстаты уже вводят, а сет, main или предмет не выбран — без него вердикта нет: выделяем, чего не хватает

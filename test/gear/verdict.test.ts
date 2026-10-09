@@ -200,8 +200,8 @@ describe('T5 вердикт новой вещи', () => {
       expect(kindOf(r1)).toBe('material reserve');
       expect(names(r1.reserve)).toEqual(['Caren']);
       const w2 = world(['Caren'], { Caren: [...base, w1] }, { Caren: base.map((p) => p.id) });
-      // второй такой же, но другой (уровень RES 2) — тоже запас (owner 2026-10-08: up to 4); точная копия — «похоже, это
-      // отложенный» (решение 2026-10-06)
+      // a second one that is alike but different (RES level 2) — also a reserve (owner 2026-10-08: up to 4); an exact copy — «похоже, это
+      // отложенный» (decision 2026-10-06)
       expect(kindOf(w2.v(mk('weakB', 'helmet', 'Speed', { SPD: 1, RES: 2, EFF: 1, HP: 1 }, 0)))).toBe('material reserve');
       expect(w2.v(weakSpd('weakC'))!.same?.piece.id).toBe('weakA');
     }
@@ -229,7 +229,7 @@ describe('T5 вердикт новой вещи', () => {
     const w = world(['Caren'], { Caren: [...base, epic] }, { Caren: base.map((p) => p.id) }, { Caren: 'Speed' });
     const good = mk('g', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 0);
     const r = w.v(good)!;
-    expect([kindOf(r), r.named[0].reserveBt]).toEqual(['keep a', []]); // Epic Legendary-шлему не материал
+    expect([kindOf(r), r.named[0].reserveBt]).toEqual(['keep a', []]); // an Epic is not material for a Legendary helmet
     expect(poolInfo(pinned('Caren', 'Speed'), [...base, epic, good], new Set(base.map((p) => p.id))).unneeded.map((p) => p.id)).toEqual(['eW']);
     // the weak Epic reserve no longer blocks a Legendary one (was «пусть лежит в инвентаре»)
     const lw = w.v(weakSpd('lW'))!;
@@ -512,7 +512,7 @@ describe('отложенная вещь', () => {
 });
 
 describe('порог «годная» ≥ 6 очков — в тысячных, без дробного шума', () => {
-  // Epsilon: DEF% 1 CHC 3 HP% 6 DMG RED% 2 — ровно 6 очков, но сумма долей даёт 5,999999999999999
+  // Epsilon: DEF% 1 CHC 3 HP% 6 DMG RED% 2 — exactly 6 points, but the sum of shares gives 5.999999999999999
   it('броня с суммой ровно 6 годится: пул и форма согласны (было 5,999… < 6)', () => {
     const P = prof('Core Fusion Epsilon');
     for (const set of [...P.menuSets].slice(0, 3)) {
@@ -532,7 +532,7 @@ describe('порог «годная» ≥ 6 очков — в тысячных, 
 // Q7 (owner, 2026-10-09): a Legendary not worse by points than the worn Epic of its slot gets «Надень» (dV >= 0, the
 // bigger main stat breaks the tie); Epic-vs-Epic and Legendary-vs-Legendary keep the +1.00 margin
 describe('Q7: Legendary вместо надетого Epic', () => {
-  const E = () => mk('e1', 'helmet', 'Speed', { SPD: 3, CHC: 3, ATK: 2 }, 4, { grade: 'rare' }); // Caren: 3,9 очка
+  const E = () => mk('e1', 'helmet', 'Speed', { SPD: 3, CHC: 3, ATK: 2 }, 4, { grade: 'rare' }); // Caren: 3.9 points
   const L = (id: string, lit: Record<string, number>) => mk(id, 'helmet', 'Speed', lit, 4);
   const run = (worn: Piece, x: Piece) => {
     const w = world(['Caren'], { Caren: [worn] });

@@ -76,7 +76,7 @@ export function bonusLinesOf(t: Texts, idx: Index, rows: readonly BonusRow[]): s
   });
 }
 
-// вещь во фразе: броня — «Speed-ботинки», оружие и аксессуар — «Steel Sword · ATK%» (itemCaption)
+// a piece in a phrase: armor — «Speed-ботинки», weapon and accessory — «Steel Sword · ATK%» (itemCaption)
 export const pieceLabel = (t: Texts, idx: Index) => (p: Piece): string => (p.setId ? t.fit.piece(setName(idx, p.setId), p.slot) : itemCaption(idx, p));
 export function usePieceLabel(): (p: Piece) => string {
   return pieceLabel(useT(), useIndex());

@@ -628,7 +628,7 @@ export const en: Texts = {
     ok: 'OK',
     nothing: 'Nothing to change',
     gainPts: (n: number) => (n > 0 ? `▲ +${dec(n)} pts` : n < 0 ? `▼ −${dec(-n)} pts` : '0 pts'),
-    // цена вещи в плане: очки против надетой в слоте; passive — рекомендованное оружие или аксессуар
+    // a piece's cost in the plan: points against the one worn in the slot; passive — a recommended weapon or accessory
     itemPts: (n: number) => (n > 0 ? `+${dec(n)} pts` : n < 0 ? `−${dec(-n)} pts` : '0 pts'),
     passive: 'better passive',
     setOn: (set: string, n: number) => `${set} ×${n} activates`,

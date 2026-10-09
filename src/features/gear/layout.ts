@@ -150,7 +150,7 @@ export interface LayoutOpts {
 }
 
 // Лучшая раскладка пула. Отсечка точная: V = Σ очков + Σ ценностей сетов по (сет, n, n4), поэтому в слоте важна только
-// лучшая вещь на (сет, T4 или нет). При равной V — больше заполненных слотов, потом больше Legendary (Q7), потом более старые записи
+// the best piece per (set, T4 or not). At equal V — more filled slots, then more Legendary (Q7), then older records
 export function bestLayout(P: Profile, pool: readonly Piece[], opts: LayoutOpts = {}): { layout: Layout; value: LayoutValue } {
   const { prune = true, eligible } = opts;
   const cands = pool.filter((p) => wearable(P.ctx, P.c, p) && (!eligible || eligible(p)));

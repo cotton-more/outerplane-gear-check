@@ -281,7 +281,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   return { plan: { lines, st, ops, t4, wornFed, counts }, gone };
 }
 
-// «Вернуть» после «Сделал»: the operations' own undos, newest first — not a snapshot (it would wipe what was done
+// «Вернуть» after «Сделал»: the operations' own undos, newest first — not a snapshot (it would wipe what was done
 // during these seconds). «T4» marks sit on records the plan made: undoing them removes the marks too
 export function undoPlan(st: GearStore, plan: Pick<Plan, 'ops'>): GearStore {
   let x = st;

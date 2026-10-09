@@ -363,8 +363,8 @@ describe('«Надеть»: начало сборки и «Вернуть»', ()
     expect(unused(r.st)).toEqual([]);
   });
 
-  // Pen-шлем со слабыми статами встаёт только в Pen: ни в Speed-вариантах, ни в «По статам» (там Speed-шлем лучше) его
-  // нет, но пул держит сборку каждого варианта (В2, «что держит пул» — (а)) — шлем нужен
+  // A Penetration helmet with weak stats fits only Pen: not the Speed variants, not «По статам» (a Speed helmet is better there)
+  // but the pool keeps each variant's build (В2, "what the pool keeps" — (a)) — the helmet is needed
   it('встала только в Pen — шлем нужен', () => {
     const r = putOn(ctx, st, CAREN, A('helmet', 'Penetration', { RES: 1, EFF: 1 }));
     expect(unused(r.st)).not.toContain(r.id);

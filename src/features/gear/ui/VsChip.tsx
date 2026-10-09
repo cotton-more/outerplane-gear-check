@@ -5,7 +5,7 @@ import type { CharVs } from '@/features/gear/model/poolVs';
 import { namedGain } from '@/features/gear/model/vs';
 import { Icon } from '@/game/icons/Img';
 
-// прирост, который стоит назвать: от 0,05 очка (ранг оружия бывает и при V ниже — тогда числа нет)
+// a gain worth naming: from 0.05 points (a weapon's rank can show at a lower V — then there is no number)
 export const gainOf = (x: CharVs): number | null => (namedGain(x.h.dV) ? x.h.dV : null);
 
 // слова чипа, как их прочтёт диктор; null — чипа нет

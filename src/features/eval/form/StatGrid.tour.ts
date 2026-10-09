@@ -1,5 +1,5 @@
-// Сетка: у оружия и аксессуара первое нажатие — main (rev 2: и у оружия, owner 2026-10-09, не в «Что нового»); клетки
-// «main» — стат из main вещи, сабстатом не бывает
+// Grid: for a weapon and an accessory the first tap is the main (rev 2: weapon too, owner 2026-10-09, not in «Что нового»); the
+// «main» cells are a stat from the piece's main, never a substat
 import { defineTips } from '@/tour/types';
 
 export default defineTips(

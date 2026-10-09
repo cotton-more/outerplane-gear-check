@@ -36,7 +36,7 @@ export type FormAction =
   | { type: 'roll'; key: string; n: number }
   | { type: 't4' }
   | { type: 'clearSubs' }
-  | { type: 'reset'; slot?: SlotId; batch?: boolean } // slot — «Дальше: {слот}» после «Надеть» при вводе надетого; batch — after «В партию»
+  | { type: 'reset'; slot?: SlotId; batch?: boolean } // slot — «Дальше: {слот}» after «Надеть» when a worn piece is entered; batch — after «В партию»
   | { type: 'load'; item: ItemInput }
   | { type: 'expand'; key: string }
   | { type: 'settings'; patch: Partial<Settings> }

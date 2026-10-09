@@ -1,6 +1,6 @@
 // Что показывает план (R6.3, R6.4, R8.4, .x/0040-trade/SPEC.md; «было → станет» — .x/0085 FORMULA §7 п. 3): по героям —
 // V и очки статов (без сетов) до и после по заказу, половины сетов, которые включились и выключились, что надеть (moves)
-// с ценой каждой вещи, и какие слоты опустели; копии, которые после «Сделал» не будут ни в одном пуле («из приложения уйдёт»). Данные, не
+// with each piece's cost, and which slots were emptied; copies that after «Сделал» will be in no pool («из приложения уйдёт»). Data, not
 // подписи: подписи — компоненты и i18n.
 import type { SlotId } from '@/game/data/types';
 import { halvesIn } from './holes';
@@ -20,14 +20,14 @@ export interface HeroLine {
   on: Part[];               // половины сетов, которые включились: «S ×2» (1 половина) или «S ×4» (2)
   off: Part[];              // и выключились
   moves: Move[];
-  worth: Partial<Record<SlotId, Worth>>; // что даёт вещь хода против надетой в слоте
+  worth: Partial<Record<SlotId, Worth>>; // what the move's piece gives against the one worn in the slot
   emptied: SlotId[];        // было надето — стало пусто
   empty: SlotId[];          // получатель: все пустые слоты после плана (подсказка R8.4)
   gone: string[];           // получатель: копии, которые уйдут из приложения (R6.6)
 }
 
-// Цена хода по заказу героя: очки вещи минус очки надетой в этом слоте до плана (сеты — строкой героя, не тут);
-// passive — оружие или аксессуар выше рангом (рекомендованный предмет): ради него план берёт вещь и с меньшими очками
+// The cost of a move by the hero's order: the piece's points minus the points of the one worn in this slot before the plan (sets — in the hero's line, not here);
+// passive — a weapon or accessory of a higher rank (a recommended item): the plan takes it even with fewer points
 export interface Worth { d: Milli; passive: boolean }
 
 function worthOf(w0: World, hero: string, m: Move): Worth | null {

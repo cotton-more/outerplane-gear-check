@@ -50,7 +50,7 @@ describe('T7.3: было → станет', () => {
 });
 
 describe('цена каждой вещи плана', () => {
-  // Рин: надет меч old (6, не рекомендован), запас — рекомендованный rec (2); шлем S (2) вместо rh (5) включает S ×2
+  // Rin: wears sword old (6, not recommended), reserve — recommended rec (2); helmet S (2) instead of rh (5) turns on S ×2
   const w = synthWorld({
     items: { old: { slot: 'weapon' }, rec: { slot: 'weapon' }, rh: { slot: 'helmet' }, ra: { slot: 'armor', set: 'S' }, h1: { slot: 'helmet', set: 'S' } },
     heroes: {
