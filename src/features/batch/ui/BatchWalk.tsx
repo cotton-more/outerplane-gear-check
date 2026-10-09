@@ -32,7 +32,7 @@ const desc = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>): string => {
 // a step: its title (with the hero to find, tagged), the caption line of a weapon or accessory, for whom the kept piece
 // stays, lines under it, and — for an equip and a lock — the substats as a column, line for line as the game's middle
 // panel shows them (owner 2026-10-08)
-interface StepText { title: string; hero: Char | null; cap?: string; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[] }
+interface StepText { title: string; hero: Char | null; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[] }
 
 // a piece of the dismantle or the feed (owner 2026-10-09): «Fire Grimoire · HP% · ATK% 2, DMG UP% 2, …» — name and main
 // in the grade's colour (Epic blue, Legendary red), then the substats; no number, row or place: after the feed the
@@ -59,12 +59,12 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const title = 'n' in w
         ? s.k === null ? t.batch.equipStepAt(s.c.name, s.slot, `#${w.n}`) : s.k === w.n ? t.batch.equipStepN(s.c.name, s.slot, w.n) : t.batch.equipStep(s.c.name, s.slot, s.k, w.n)
         : t.batch.equipStepAt(s.c.name, s.slot, t.batch.offAt(w.off.slot, w.c.name, w.was === 'stash'));
-      return { title, hero: s.c, cap: capOf(ctx, t, s.input), more: [], subs: gameSubs(ctx.idx, s.subs) };
+      return { title, hero: s.c, cap: capOf(ctx, t, s.input), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
     }
     case 2: {
       if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(ctx, t, s.where)), hero: s.where.c, more: [] };
       const { r, p } = rowOf(s.where.n);
-      return { title: t.batch.lockStep(r, p, s.where.n), hero: null, cap: s.kept ? capOf(ctx, t, s.kept.input) : undefined, kept: s.kept ? keptText(t, s.kept) : undefined,
+      return { title: t.batch.lockStep(r, p, s.where.n), hero: null, cap: s.kept ? capOf(ctx, t, s.kept.input) : undefined, grade: s.kept?.input.grade, kept: s.kept ? keptText(t, s.kept) : undefined,
         more: [], subs: s.kept ? gameSubs(ctx.idx, s.kept.input.subs) : undefined };
     }
     case 3: {
@@ -76,7 +76,7 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const cap = 'worn' in tg && s.piece ? capOf(ctx, t, s.piece) : '';
       // the feed, piece by piece: «Noblewoman's Guile · HP% · HP 3, …»; a taken-off or set-aside one — its description
       const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <PieceLine ctx={ctx} x={x} /> : desc(ctx, t, w)));
-      return { title: t.batch.btStep(where, s.n), hero, cap, more: [...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
+      return { title: t.batch.btStep(where, s.n), hero, cap, grade: s.piece?.grade, more: [...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
     }
     case 4: {
       // each piece on its own line, what it is — «Sublime Melody · HP% · SPD 1, CHC 2, …»; the locked ones first need unlocking
@@ -109,7 +109,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
             {st === 3 && <p className="muted small">{t.batch.btNote}</p>}
             <ol className="bgear-list">
               {steps.map((s) => {
-                const { title, hero, cap, kept, more, subs } = stepText(ctx, t, s);
+                const { title, hero, cap, grade, kept, more, subs } = stepText(ctx, t, s);
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
@@ -117,7 +117,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                     <Toggle className="bstep-l" checked={done} label={title} onChange={() => onTick(s.key)}>
                       <span className="bstep-t">
                         <b>{withHero(title, hero)}</b>
-                        {cap && <span className="bstep-m">{cap}</span>}
+                        {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
                         {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
                         {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
                         {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}

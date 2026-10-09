@@ -20,9 +20,9 @@
 .bfate { grid-column: 2 / 3; font-weight: 600; color: var(--ink); }
 .b-wear .bfate, .b-keep .bfate, .b-reserve .bfate { color: var(--keep); }
 .b-feed .bfate { color: var(--fodder, var(--accent)); }
-/* «Same as Hilde's set-aside (Oct 5)? Then do nothing.» — the text takes the row's width, «It's a different pair» goes under it */
-.b-same .bfate { grid-column: 2 / -1; }
-.btwin { grid-column: 2 / -1; justify-self: start; }
+/* a phone: «Same as Hilde's set-aside (Oct 5)? Then do nothing.» takes the row's width, «It's a different pair» goes under it (a wide column keeps both on one line) */
+html.narrow .b-same .bfate { grid-column: 2 / -1; }
+html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 .b-junk .bfate { color: var(--junk); }
 .boff { margin-left: 18px; width: calc(100% - 18px); }
 .boff-n { grid-column: 1 / -1; color: var(--ink-2); }
@@ -34,7 +34,7 @@
 .batch-acts .brec { margin-left: auto; }
 /* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
    the same --surface) */
-.batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; padding: 8px 0 4px; background: var(--surface); }
+.batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 4px; background: var(--surface); } /* above the rows' ✕ (z-index 1) */
 /* the column's bottom padding is the bar's own: rows don't show through under it */
 .batch-col .batch-acts { padding-bottom: 12px; }
 /* the step-by-step walk (.x/0140-batch-walk): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
