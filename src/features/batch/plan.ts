@@ -106,7 +106,9 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     new Set([...skip].filter((k) => k.startsWith(line + '>')).map((k) => k.slice(line.length + 1)));
   const order = entries
     .map((e, i) => ({ n: e.n ?? i + 1, e, s: scoreOf(verdictOf(ctx, pools(base), e.input, { twin: e.twin, skip: skipOf(String(e.n ?? i + 1)) })), k: contentKey(e.input) }))
-    .sort((a, z) => z.s[0] - a.s[0] || z.s[1] - a.s[1] || (a.k < z.k ? -1 : a.k > z.k ? 1 : 0) || a.n - z.n);
+    // a T4 piece first among equals: as feed it fills its target at once, the others go to the next target
+    .sort((a, z) => z.s[0] - a.s[0] || z.s[1] - a.s[1] || Number(z.e.input.bt === 4) - Number(a.e.input.bt === 4)
+      || (a.k < z.k ? -1 : a.k > z.k ? 1 : 0) || a.n - z.n);
 
   let st = base;
   const ops: Op[] = [];
@@ -130,10 +132,11 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     return o;
   };
 
-  // feed the best target of a «material now» verdict (one of its four)
-  const feedTo = (r: Result): Fate => {
+  // feed the best target of a «material now» verdict: one of its four, or all four from a T4 piece — the game lifts the
+  // target straight to T4 (owner 2026-10-09)
+  const feedTo = (r: Result, x: ItemInput): Fate => {
     const tg = r.now[0];
-    const k = (feeds.get(tg.piece.id) ?? 0) + 1;
+    const k = (feeds.get(tg.piece.id) ?? 0) + (x.bt === 4 ? FEEDS : 1);
     feeds.set(tg.piece.id, k);
     if (k >= FEEDS) full.add(tg.piece.id);
     const of = made.get(tg.piece.id);
@@ -203,7 +206,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       madeBy.set(res.id, line);
       return r.kind === 'keep' ? { kind: 'keep', c, t4: false } : { kind: 'reserve', c };
     }
-    if (r.kind === 'material' && r.sub === 'now') return feedTo(r);
+    if (r.kind === 'material' && r.sub === 'now') return feedTo(r, input);
     if (r.kind === 'maybe') return { kind: 'maybe', heroes: r.maybe };
     return { kind: 'junk' };
   };
@@ -227,7 +230,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     if (f.kind !== 'junk' && f.kind !== 'maybe') continue;
     const x = inputOfLine(id);
     const r = x && verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: skipOf(id), full });
-    if (r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r));
+    if (x && r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r, x.input));
   }
 
   // records the plan made that a later «Надень» took off (held: «Отложи» instead of «Надень») or dropped (gone)

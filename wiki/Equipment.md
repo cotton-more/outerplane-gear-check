@@ -196,7 +196,8 @@ The stamp is always about **the piece being rated**:
   hero's own first, then other heroes': the verdict says "Feed the weak … from Caren's reserve into this one" and names
   the piece with its substats (or "Feed 3 from Caren and Rin's reserve into this one (any of the set-aside ones)"). "Equip" then
   removes that reserve record ("Removed the weak … from Caren's reserve — it goes to Breakthrough.", with "Undo"). A
-  piece already at T4 is never material. A Legendary weapon
+  T4 piece nobody wears is material too, and in the game it lifts the target straight to T4: "this one is T4 —
+  Anarky's armor goes straight to T4". A Legendary weapon
   or accessory that is the wrong main for a hero whose builds recommend it is kept in reserve too.
 - **Maybe** — suits only heroes outside your roster (the line says who).
 - **Dismantle** — nobody needs it: everyone already has as good, or it's weak. Dismantled a piece in the game? Remove

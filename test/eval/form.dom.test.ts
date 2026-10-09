@@ -175,7 +175,7 @@ describe('«T4» на форме', () => {
 
   // Anarky: годная Pen-броня Epic T0 в пуле; новая Pen-броня Epic с мусором — материал её Breakthrough. С «T4» новая
   // материалом не бывает (D6, .x/0085 FORMULA §4 п. 3а) — «Разобрать»
-  it('нажатие меняет вход вердикта: без «T4» — Breakthrough для брони Anarky, с «T4» — нет', async () => {
+  it('нажатие меняет вход вердикта: без «T4» — Breakthrough для брони Anarky, с «T4» — тоже, но «сразу станет T4»', async () => {
     const anarky = D.chars.find((c) => c.name === 'Anarky')!;
     const P = (id: string, slot: string, setId: string, yellow: Record<string, number>, o: Record<string, unknown> = {}) =>
       ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: 4, at: '', ...o });
@@ -190,7 +190,9 @@ describe('«T4» на форме', () => {
     await click(chip());
 
     expect(pressed()).toBe('true');
-    expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    await click($('.vcard'));
+    expect($('.v-plan, .vdrawer')?.textContent).toContain("Do it now: this one is T4 — Anarky's armor goes straight to T4.");
   });
 
   it('правка сабстата «T4» не снимает; «Следующий» — снимает', async () => {

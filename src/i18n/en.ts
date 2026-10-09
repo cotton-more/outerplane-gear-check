@@ -181,6 +181,7 @@ export const en: Texts = {
     keepStatsWhy: (set, name) => `${set} isn't in ${name}'s builds, but nothing stronger exists for this slot.`,
     btNow: (slot, name) => `Fodder — Breakthrough for ${name}'s ${SLOT_EN[slot]}`,
     btNowWhy: (slot, name) => `Do it now: ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? "aren't" : "isn't"} T4 yet. One piece — one step.`,
+    btNowT4: (slot, name) => `Do it now: this one is T4 — ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? 'go' : 'goes'} straight to T4.`,
     reserve: (set, slot, name) => `Fodder — reserve for ${name}'s ${set} ${SLOT_EN[slot]}`,
     reserveWhy: (name, set, slot) => `${name} has started ${set} but no ${set} ${SLOT_EN[slot]}. When a strong one drops, feed this one to it.`,
     reserveOverEpic: (name, set, slot) => (plEn(slot)

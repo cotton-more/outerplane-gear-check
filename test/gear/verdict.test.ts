@@ -179,9 +179,12 @@ describe('T5 вердикт новой вещи', () => {
     }
   });
 
-  it('T5.6а (D6): вещь на T4 материалом не бывает', () => {
+  // was D6 «never material» — owner 2026-10-09: a T4 piece nobody wears is feed too, and lifts the target straight to T4
+  it('T5.6а: слабая вещь на T4 — материал: Breakthrough для шлема Caren', () => {
     const w = world(['Caren'], { Caren: speedCaren() });
-    expect(kindOf(w.v(weakSpd('w4', 4)))).toBe('junk');
+    const r = w.v(weakSpd('w4', 4))!;
+    expect(kindOf(r)).toBe('material now');
+    expect(r.now.map((n) => n.piece.id)).toEqual(['sH0']);
   });
 
   it('T5.7 (A2): слабый Speed-шлем у Caren без Speed-шлема → запас; второй такой же → «Разобрать» (и при пустом слоте)', () => {

@@ -110,11 +110,11 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
 // часть меню героя с этим сетом — меньшая («Penetration ×2»)
 const menuPart = (P: Profile, set: string): PartChange => ({ set, n: P.parts.has(partKey(set, 2)) ? 2 : 4 });
 
-// §4 п. 3а: держащиеся годные вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough. Вещь на T4 материалом
-// не бывает (D6); запас и слабые — не цели (A2)
+// §4 п. 3а: держащиеся годные вещи героя того же вида ниже T4 — новой можно сделать им Breakthrough; запас и слабые — не
+// цели (A2). A piece at T4 is material too (owner 2026-10-09, was D6 «never»): it reaches this only when nobody wears or
+// keeps it, and one Breakthrough step for a hero beats dismantling it (#62 Ether Blade T4 → Hilde's Ether Blade)
 export interface Target { c: Char; piece: Piece; worn: boolean }
 function materialTargets(hp: HeroPool, x: Piece): Target[] {
-  if (x.bt === 4) return [];
   return hp.pieces.filter((q) => q.id !== x.id && hp.info.strong.has(q.id) && (q.bt ?? 0) < 4 && sameForBt(x, q) && pieceBar(hp.P, q).pass)
     .map((piece) => ({ c: hp.c, piece, worn: hp.wornIds.has(piece.id) }));
 }

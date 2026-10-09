@@ -211,6 +211,8 @@ export const ru = {
     keepStatsWhy: (set: string, name: string) => `${set} не из билдов ${name}, но в этом слоте ничего сильнее нет.`,
     btNow: (slot: string, name: string) => `Фоддер — Breakthrough для ${GEN[slot]} ${name}`,
     btNowWhy: (slot: string, name: string) => `Сделай сейчас: ${NOM[slot]} ${name} ещё не на T4. Одна вещь — одна ступень.`,
+    // a T4 piece as feed lifts the target straight to T4 (owner 2026-10-09)
+    btNowT4: (slot: string, name: string) => `Сделай сейчас: эта на T4 — ${NOM[slot]} ${name} сразу ${by(slot, 'станет', 'станет', 'станет', 'станут')} T4.`,
     reserve: (set: string, slot: string, name: string) => `Фоддер — запас для ${set}-${GEN[slot]} ${name}`,
     reserveWhy: (name: string, set: string, slot: string) =>
       `У ${name} начат ${set}, а ${set}-${GEN[slot]} нет. ${by(slot, 'Придёт сильный — этот пойдёт ему', 'Придёт сильная — эта пойдёт ей', 'Придёт сильное — это пойдёт ему', 'Придут сильные — эти пойдут им')} в Breakthrough.`,

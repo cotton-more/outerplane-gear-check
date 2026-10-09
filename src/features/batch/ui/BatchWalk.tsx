@@ -38,7 +38,8 @@ interface StepText { title: string; hero: Char | null; kept?: { text: string; c:
 // a piece of the dismantle or the feed (owner 2026-10-09): «#21 Fire Grimoire · HP% · ATK% 2, DMG UP% 2, …» — the
 // batch number, then name and main in the grade's colour (Epic blue, Legendary red), then the substats; no row / place
 function PieceLine({ ctx, t, n, x }: { ctx: Ctx; t: Texts; n: number; x: ItemInput }) {
-  return <>#{n} <span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{nameOf(ctx, t, x)}</span> · {subsText(x.subs)}</>;
+  // a T4 one says so: as feed it lifts the target straight to T4
+  return <>#{n} <span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{nameOf(ctx, t, x)}</span>{x.bt === 4 && <b> · T4</b>} · {subsText(x.subs)}</>;
 }
 
 // «#21 Patience-перчатки — для Gnosis Domine», «… (запас)», «… — Спорно, отложено»

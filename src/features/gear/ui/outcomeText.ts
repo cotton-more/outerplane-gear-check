@@ -68,7 +68,8 @@ export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput, lab
     const n = r.now[0];
     // цель не надета (отложена) — как её найти
     const stashed = n.worn ? [] : [stashedLine(t, n.piece, label)];
-    return { v: 'fodder', title: F.btNow(item.slot, n.c.name), lines: [F.btNowWhy(item.slot, n.c.name), ...stashed] };
+    const why = item.bt === 4 ? F.btNowT4(item.slot, n.c.name) : F.btNowWhy(item.slot, n.c.name);
+    return { v: 'fodder', title: F.btNow(item.slot, n.c.name), lines: [why, ...stashed] };
   }
   if (r.kind === 'material') {
     const c = r.reserve[0];

@@ -300,3 +300,15 @@ describe('a junk piece feeds a piece that reached a hero later', () => {
     expect(problems(st, plan)).toEqual([]);
   });
 });
+
+// owner 2026-10-09: a T4 piece as feed lifts the target straight to T4 — it counts as all four feeds
+describe('a T4 piece as feed', () => {
+  it('fills the target at once: «T4» on it, no other piece is fed to it', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), good('cH')] });
+    const t4 = { ...weak('w4'), bt: 4 as const };
+    const plan = planBatch(ctx, st, [E(t4), E({ ...weak('w1'), lit: { SPD: 1, RES: 2, EFF: 1, HP: 1 } })]);
+    expect(plan.lines[0].fate).toMatchObject({ kind: 'feed', to: { c: { name: 'Caren' }, piece: { id: 'cH' } } });
+    expect(plan.lines[1].fate.kind).not.toBe('feed');
+    expect(plan.st.pieces.cH.bt).toBe(4);
+  });
+});
