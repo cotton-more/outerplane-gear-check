@@ -252,6 +252,17 @@ describe('«Партия»: обход по шагам', () => {
     expect($('.vbar .vb-reset')?.textContent).toBe('Add · #2 · weapon');
   });
 
+  it('a weapon\'s walk step says the item and its main: «Surefire Greatsword · ATK%»', async () => {
+    const ref = caren.builds[0].weapons[0];
+    const w = D.weapons.find((i) => i.key === ref.key)!;
+    const input = { slot: 'weapon', grade: 'unique', setId: null, itemKey: w.key, main: ref.mains[0], unlisted: false, subs: { CHC: 3, CHD: 3, SPD: 2, 'DMG UP%': 2 }, bt: 0 };
+    await mount({ setId: speed, subs: {} }, { state: { tab: 'eval', slot: 'weapon', grade: 'unique' }, batch: { v: 2, items: [{ kind: 'piece', input }], skip: [], twin: [], choice: {}, done: [] } });
+    await click($('.batch-strip .batch-list'));
+    await click(byText('.batch button', 'Plan it'));
+    await click(byText('.batch button', 'Walk ▸'));
+    expect($('.bwalk .bstep')?.textContent).toContain(`${w.name} · ${ref.mains[0]}`);
+  });
+
   it('the form is locked to the batch: in a Speed armor batch weapon slots and other sets are off, hotkeys too', async () => {
     const items = [{ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...WEAK } }];
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });

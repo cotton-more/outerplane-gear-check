@@ -27,7 +27,7 @@ export type Where = { n: number } | { off: Piece; c: Char; was: 'worn' | 'stash'
 // look-alike of a piece already set aside
 export interface Kept { n: number; input: ItemInput; c: Char | null; why: 'keep' | 'reserve' | 'maybe' | 'same' }
 export type Step =
-  | { key: string; stage: 1; c: Char; slot: SlotId; k: number | null; where: Where; subs: Record<string, number> }
+  | { key: string; stage: 1; c: Char; slot: SlotId; k: number | null; where: Where; subs: Record<string, number>; input: ItemInput }
   | { key: string; stage: 2; where: Where; kept: Kept | null }
   | { key: string; stage: 3; where: Where[]; inputs: (ItemInput | null)[] } // one step: the game's dismantle is one multi-select; inputs — each piece, to check (owner 2026-10-09)
   // piece — the target's own record (its name in the step), mats — the planned feed, each to check (owner 2026-10-09:
@@ -93,7 +93,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
     switch (f.kind) {
       case 'wear': {
         const k = 'n' in where && items[where.n - 1] ? slotPos(where.n) : null;
-        equip.push({ key: `eq:${l.id}`, stage: 1, c: f.c, slot: l.input.slot, k, where, subs: l.input.subs });
+        equip.push({ key: `eq:${l.id}`, stage: 1, c: f.c, slot: l.input.slot, k, where, subs: l.input.subs, input: l.input });
         break;
       }
       case 'keep': case 'reserve': case 'same': case 'lock':
