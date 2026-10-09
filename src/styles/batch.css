@@ -74,3 +74,6 @@ html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: 
 .batch-back { justify-self: start; margin: 0 0 6px; }
 .batch-sheet .batch-back { margin: 4px 14px 0; }
 .bworn { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
+.gname { font-weight: 600; }
+.gname.legend { color: var(--legend); }
+.gname.epic { color: var(--epic); }

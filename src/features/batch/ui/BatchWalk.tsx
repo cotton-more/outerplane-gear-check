@@ -1,7 +1,7 @@
 // «Обход» (.x/0140-batch-walk §1 p. 4): the plan as steps to do in the game, four stages by game screen; each step has
 // a ✓ (saved in the batch: the walk survives a reload). A piece the batch has no number for is named by its description.
 // At the end — «Всё сделано — Записать план» with the same confirm as on the plan.
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import type { ItemInput } from '@/game/item/item';
 import { withHero } from '@/game/hero/HeroTag';
@@ -33,7 +33,13 @@ const desc = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>): string => {
 
 // a step: its title (with the hero to find, tagged), what the kept piece is and for whom, lines under it, and — for an
 // equip and a lock — the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
-interface StepText { title: string; hero: Char | null; kept?: { text: string; c: Char | null }; more: string[]; subs?: string[] }
+interface StepText { title: string; hero: Char | null; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[] }
+
+// a piece of the dismantle or the feed (owner 2026-10-09): «#21 Fire Grimoire · HP% · ATK% 2, DMG UP% 2, …» — the
+// batch number, then name and main in the grade's colour (Epic blue, Legendary red), then the substats; no row / place
+function PieceLine({ ctx, t, n, x }: { ctx: Ctx; t: Texts; n: number; x: ItemInput }) {
+  return <>#{n} <span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{nameOf(ctx, t, x)}</span> · {subsText(x.subs)}</>;
+}
 
 // «#21 Patience-перчатки — для Gnosis Domine», «… (запас)», «… — Спорно, отложено»
 function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null } {
@@ -57,9 +63,8 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       // each piece on its own line: where it is, then what it is — «ряд 2, 8-й · #18 Epic · ATK% · SPD 1, CHC 2, …»
       const lines = s.where.map((w, i) => {
         if (!('n' in w)) return desc(ctx, t, w);
-        const { r, p } = rowOf(w.n);
         const x = s.inputs[i];
-        return x ? t.batch.pieceAt(r, p, w.n, nameOf(ctx, t, x), subsText(x.subs)) : t.batch.btAt(r, p);
+        return x ? <PieceLine ctx={ctx} t={t} n={w.n} x={x} /> : `#${w.n}`;
       });
       return { title: t.batch.junkTitle(s.where.length), hero: null, more: lines };
     }
@@ -70,7 +75,7 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const kept = 'kept' in s.target && s.target.kept ? keptText(ctx, t, s.target.kept) : undefined;
       const label = (x: ItemInput) => nameOf(ctx, t, x);
       // the feed, piece by piece: «ряд 1, 9-й · #9 Noblewoman's Guile · HP% 3, …»; a taken-off or set-aside one — its description
-      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? t.batch.pieceAt(rowOf(w.n).r, rowOf(w.n).p, w.n, label(x), subsText(x.subs)) : desc(ctx, t, w)));
+      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <PieceLine ctx={ctx} t={t} n={w.n} x={x} /> : desc(ctx, t, w)));
       return { title: t.batch.btStep(where, s.n), hero, kept, more: [...(s.piece && !kept ? [t.batch.btPiece(label(s.piece))] : []), ...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
     }
   }
