@@ -5,17 +5,26 @@
 // поменялось — не пишем. Чтение что-то отбросило (саб не из данных, отметка или поле новой версии — readsWhole) — тоже
 // не пишем: нормализуем в памяти, пишем после действия игрока, как до Р17 (старая закэшированная PWA с прежним снимком
 // данных иначе стёрла бы то, что понимает новая). Во время обучения не пишем ничего (holdStoredWrites).
+// Хранилище прежней версии (v1, v2) пишем в v3 сразу — так же, один раз (stat-sets PLAN Д11). Игроку прежней модели (были
+// вещи) — разовое сообщение о переносе (takeModelNote, флаг 'ogc.modelNote').
+// Устаревшие закрепления (билд пропал из outerpedia) переносятся или снимаются здесь же (fixPins, В3 и В5 ревью этапа 10) —
+// только при целом чтении и данных страницы не старше уже виденных ('ogc.dataSeen' — дата коммита outerpedia): у старой
+// закэшированной PWA билда из новых данных нет, а закрепление на него — не устаревшее. Иначе ключ лежит как был (профиль
+// и так считает такого героя «По статам»). Сообщение — вместе с остальными после загрузки (takeLoadNote).
 // Один разбор на одно содержимое хранилища: его читают оба хука.
 import type { Index } from '@/game/data';
 import { changed } from '@/features/gear/model/fusion';
-import { loadGear, newerGear, readsWhole, type Loaded } from './gearStore';
+import { fixPins } from '@/features/gear/model/gear';
+import { loadGear, newerGear, oldMarks, oldModel, readsWhole, type Loaded } from './gearStore';
 import { storage } from '@/shared/storage';
 
 export interface Stored extends Loaded { newer: boolean }
 
 // note — что поменяла нормализация этого разбора, для сообщения после загрузки; забирается один раз (takeLoadNote)
-type Note = Pick<Loaded, 'fixes' | 'added'>;
-let last: { key: string; idx: Index; r: Stored; note: Note | null } | null = null;
+type Note = Pick<Loaded, 'fixes' | 'added'> & { pins: [string, string][] };
+// model — the store of the old model was read and the upgrade notice has not been shown yet (takeModelNote);
+// marks — it had marks / «Не отдавать надетое» / a chosen build (the notice then adds a sentence about the reset)
+let last: { key: string; idx: Index; r: Stored; note: Note | null; model: boolean; marks: boolean } | null = null;
 let held = false;
 // идёт обучение — запись нормализации при чтении не срабатывает (App, onRunning)
 export const holdStoredWrites = (on: boolean) => { held = on; };
@@ -32,11 +41,21 @@ export function readStored(idx: Index): Stored {
   const unreadable = (key: string, v: unknown) => v === null && storage.raw(key) !== null;
   const whole = readsWhole(raw, idx) && !unreadable('gear', raw) && !unreadable('roster', list)
     && (list === null || (Array.isArray(list) && list.length === roster.length));
-  if (changed(r) && !r.newer && !held && whole && storage.available()) {
+  const migrated = raw !== null && typeof raw === 'object' && ((raw as { v?: unknown }).v === 1 || (raw as { v?: unknown }).v === 2);
+  const page = idx.D.meta?.commitDate ?? '';
+  const seen = storage.get<unknown>('dataSeen', null);
+  const fresh = !page || typeof seen !== 'string' || page >= seen;
+  if (page && fresh && seen !== page && storage.available()) storage.set('dataSeen', page);
+  const pins = whole && fresh && !r.newer ? fixPins(idx, r.st) : { st: r.st, gone: [] };
+  const pinsMoved = pins.st !== r.st;
+  r.st = pins.st;
+  if ((changed(r) || migrated || pinsMoved) && !r.newer && !held && whole && storage.available()) {
     storage.set('roster', r.roster);
     storage.set('gear', r.st);
   }
-  last = { key: keyNow(), idx, r, note: changed(r) ? { fixes: r.fixes, added: r.added } : null };
+  const note = changed(r) || pins.gone.length ? { fixes: r.fixes, added: r.added, pins: pins.gone } : null;
+  const model = oldModel(raw) && !storage.get('modelNote', false);
+  last = { key: keyNow(), idx, r, note, model, marks: model && oldMarks(raw) };
   return r;
 }
 
@@ -46,4 +65,16 @@ export function takeLoadNote(idx: Index): Note | null {
   const n = last!.note;
   last!.note = null;
   return n;
+}
+
+// the upgrade notice (TEXTS 41): non-null once in a lifetime, the flag is written at once; marks — add the sentence about
+// the cleared marks (TEXTS 15)
+export function takeModelNote(idx: Index): { marks: boolean } | null {
+  readStored(idx);
+  if (!last!.model) return null;
+  const marks = last!.marks;
+  last!.model = false;
+  last!.marks = false;
+  storage.set('modelNote', true);
+  return { marks };
 }

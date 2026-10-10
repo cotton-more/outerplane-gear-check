@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 
@@ -44,13 +44,15 @@ async function mount(state: Record<string, unknown>, item: Record<string, unknow
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 
 describe('без вердикта карточки нет, нужное поле выделено', () => {
-  it('Epic оружие: сабстаты есть, main нет — сетка на месте, кнопки main выделены; выбрал main — карточка', async () => {
+  // owner 2026-10-09: a weapon's main is picked in the grid, like an accessory's — only ATK%, DEF%, HP% are on
+  it('Epic оружие: сабстаты есть, main нет — сетка выбирает main (ATK% / DEF% / HP%), поле main выделено; выбрал main — карточка', async () => {
     await mount({ slot: 'weapon', grade: 'rare' }, { subs: { SPD: 1, CHC: 1, CHD: 1 } });
     expect($('.vcard')).toBeNull();
-    expect($('.statgrid')).toBeTruthy();
-    expect($('.mainsw.need')).toBeTruthy();
-    await act(async () => $('.mainsw .msw')!.click());
-    expect($('.mainsw.need')).toBeNull();
+    expect($('.statgrid.main-mode')).toBeTruthy();
+    expect([...document.querySelectorAll<HTMLButtonElement>('.statgrid.main-mode .sg:not([disabled])')].map((b) => b.getAttribute('aria-label')).sort()).toEqual(['ATK%', 'DEF%', 'HP%']);
+    expect($('[data-tour="pick"].need')).toBeTruthy();
+    await act(async () => $('.statgrid.main-mode .sg[aria-label="ATK%"]')!.click());
+    expect($('[data-tour="pick"].need')).toBeNull();
     expect($('.vcard')).toBeTruthy();
     expect($('.vcard .stamp')?.textContent).not.toBe('…');
   });
@@ -65,12 +67,22 @@ describe('без вердикта карточки нет, нужное поле
     expect($('[data-tour="pick"].need')).toBeTruthy();
   });
 
+  it('оружие: main ATK% выбран в сетке — клетка ATK% становится «main» и сабстатом не бывает; нажатие снимает main', async () => {
+    await mount({ slot: 'weapon', grade: 'rare' }, {});
+    await act(async () => $('.statgrid.main-mode .sg[aria-label="ATK%"]')!.click());
+    expect($('.statgrid.main-mode')).toBeNull();
+    const cell = $('.statgrid .sg.is-main');
+    expect(cell?.textContent).toContain('ATK%');
+    await act(async () => cell!.click());
+    expect($('.statgrid.main-mode')).toBeTruthy();
+  });
+
   it('Legendary оружие с main, но без предмета: выделено поле предмета', async () => {
     await mount({ slot: 'weapon', grade: 'unique' }, { subs: { SPD: 1 } });
-    expect($('.mainsw.need')).toBeTruthy(); // сначала main
-    await act(async () => $('.mainsw .msw:not([disabled])')!.click());
+    expect($('[data-tour="pick"].need')).toBeTruthy(); // the main first — in the grid
+    await act(async () => $('.statgrid.main-mode .sg:not([disabled])')!.click());
     expect($('[data-tour="item"].need')).toBeTruthy();
-    expect($('.mainsw.need')).toBeNull();
+    expect($('[data-tour="pick"].need')).toBeNull();
   });
 });
 
@@ -99,13 +111,13 @@ describe('свежая Epic с тремя сабстатами — без Reforg
     expect(['ATK%', 'CHC', 'RES', 'CHD'].map((k) => opt(k)?.disabled)).toEqual([true, true, true, false]);
   });
 
-  it('«Временно», подробности: в «Прокачке» — Enhance и «не вкладывай», строк Reforge нет', async () => {
-    await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 } });
+  it('«Временно», подробности: в «Прокачке» — Enhance и «Breakthrough можно», строк Reforge нет', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: attack, subs: { 'DMG UP%': 2, 'ATK%': 3, CHD: 3 } });
     await act(async () => $('.vcard')!.click());
 
     expect($('.vcard .stamp')?.textContent).toBe('Stopgap');
     const plan = [...document.querySelectorAll('.v-plan li')].map((li) => li.textContent);
-    expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', "Breakthrough — don't invest: it's a stopgap until the right piece drops."]);
+    expect(plan).toEqual(['Enhance to +10 right away: it raises the main stat.', 'Breakthrough — optional: T4 counts toward the set bonus.']);
   });
 });
 
@@ -161,24 +173,26 @@ describe('«T4» на форме', () => {
     expect(pressed()).toBe('true');
   });
 
-  // Anarky · Defense mix: Pen-броня Epic T0 на ней; новая Pen-броня Epic лучше. Без «T4» новую надевают и кормят ей
-  // старую (Breakthrough новой), с «T4» — только надевают (тот же пример, что в gear.dom «Anarky»)
-  it('нажатие меняет вход вердикта: строка карточки — без «и скорми старую»', async () => {
+  // Anarky: годная Pen-броня Epic T0 в пуле; новая Pen-броня Epic с мусором — материал её Breakthrough. С «T4» новая
+  // с «T4» — тоже: T4-вещь, которую никто не носит, — корм, и цель «сразу станет T4» (MODEL.md §4 item 3a)
+  it('нажатие меняет вход вердикта: без «T4» — Breakthrough для брони Anarky, с «T4» — тоже, но «сразу станет T4»', async () => {
     const anarky = D.chars.find((c) => c.name === 'Anarky')!;
     const P = (id: string, slot: string, setId: string, yellow: Record<string, number>, o: Record<string, unknown> = {}) =>
       ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: 4, at: '', ...o });
-    const good = { DEF: 2, CHC: 2, CHD: 2, SPD: 1 };
+    const good = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
     const pcs = [P('a1', 'helmet', set('Defense'), good), P('a2', 'gloves', set('Defense'), good), P('a3', 'shoes', set('Penetration'), good),
-      P('a4', 'armor', set('Penetration'), { HP: 1, 'DMG RED%': 1, RES: 1 }, { grade: 'rare', bt: 0 })];
-    const gear = { v: 2, seq: 4, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] },
-      marks: { [`${anarky.id}/Defense mix`]: 'want' } };
-    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Penetration'), subs: { CHC: 1, CHD: 1, HP: 1 } }, { gear, roster: [anarky.id] });
-    expect($('.vcard .vc-title')?.textContent).toBe('better than the armor on Anarky · Defense mix: wear it and feed the old one to it');
+      P('a4', 'armor', set('Penetration'), { 'DEF%': 3, CHC: 3, CHD: 2 }, { grade: 'rare', bt: 0 })];
+    const gear = { v: 3, seq: 4, pieces: Object.fromEntries(pcs.map((p) => [p.id, p])), pools: { [anarky.id]: ['a1', 'a2', 'a3', 'a4'] } };
+    await mount({ slot: 'armor', grade: 'rare' }, { setId: set('Penetration'), subs: { HP: 1, 'DMG RED%': 1, RES: 1 } }, { gear, roster: [anarky.id] });
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    expect($('.vcard .vc-title')?.textContent).toBe("Breakthrough for Anarky's armor");
 
     await click(chip());
 
     expect(pressed()).toBe('true');
-    expect($('.vcard .vc-title')?.textContent).toBe('better than the armor on Anarky · Defense mix: wear it');
+    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
+    await click($('.vcard'));
+    expect($('.v-plan, .vdrawer')?.textContent).toContain("Do it now: this one is T4 — Anarky's armor goes straight to T4.");
   });
 
   it('правка сабстата «T4» не снимает; «Следующий» — снимает', async () => {
@@ -390,5 +404,55 @@ describe('окно уровня после сетки', () => {
 
     expect($('.drawer.lvl')).toBeNull();
     expect(rows()).toEqual([['SPD', '2'], ['CHC', '2'], ['CHD', '2'], ['ATK%', '1']]);
+  });
+});
+
+// Legendary item picker: typing that leaves exactly one item picks it; no auto-focus without a mouse (phone keyboard)
+describe('окно предмета: поиск', () => {
+  const click = async (el: HTMLElement | null) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
+  const type = (v: string) => act(async () => {
+    const input = $('#item-q') as HTMLInputElement;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, v);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const names = () => [...document.querySelectorAll('.drawer .item b')].map((el) => el.textContent);
+  const open = async () => {
+    const a = D.weapons.find((i) => i.grade === 'unique' && i.star === 6)!;
+    await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: a.key, main: a.mains[0] });
+    await click($('[data-tour="item"]'));
+  };
+
+  it('по алфавиту; на телефоне поле поиска без фокуса', async () => {
+    await open();
+    expect(names()).toEqual([...names()].sort((a, b) => a!.localeCompare(b!)));
+    expect(document.activeElement).not.toBe($('#item-q'));
+  });
+
+  // fake timers: the 750 ms pause before the pick costs the test nothing
+  const wait = (ms: number) => act(async () => { vi.advanceTimersByTime(ms); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('осталось несколько — окно открыто; остался один — подсвечен, через 750 мс выбран, окно закрыто', async () => {
+    await open();
+    vi.useFakeTimers();
+    await type('gorgon');
+    expect(names()).toHaveLength(5);
+    expect($('.drawer .item.soon')).toBeNull();
+    await type('twin b');
+    expect($('.drawer .item.soon b')?.textContent).toBe('Twin B');
+    await wait(700);
+    expect($('.drawer')).toBeTruthy();
+    await wait(50);
+    expect($('.drawer')).toBeNull();
+    expect($('[data-tour="item"]')?.textContent).toContain('Twin B');
+  });
+
+  it('стёр, и совпадений снова несколько — выбор отменён', async () => {
+    await open();
+    vi.useFakeTimers();
+    await type('twin b');
+    await type('b');
+    await wait(1000);
+    expect($('.drawer')).toBeTruthy();
   });
 });

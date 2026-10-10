@@ -24,7 +24,7 @@ if (base) {
   } catch { /* сборка из коммита, которого нет в этой ветке */ }
   for (const rec of log.split('\x01').map((x) => x.trim()).filter(Boolean)) {
     const [hash, subject, body] = rec.split('\x00');
-    if (/^Обучение:/m.test(body)) continue;
+    if (/^(Tour|Обучение):/m.test(body)) continue; // CLAUDE.md asks for «Tour: …» since 2026-10-07; older commits say «Обучение: …»
     if (touchesTour(git('show', '--name-only', '--format=', hash).split('\n'))) continue;
     warn.push(`${hash} ${subject}`);
   }
@@ -34,9 +34,9 @@ const dirty = git('status', '--porcelain', '--', ...WATCH).split('\n').filter(Bo
 const dirtyTour = git('status', '--porcelain', '--', 'src').split('\n').some((l) => l.endsWith('.tour.ts') || l.includes('src/tour/'));
 
 if (warn.length || (dirty.length && !dirtyTour)) {
-  console.log('\n⚠️  Обучение не решено (CLAUDE.md → «Обучение»):');
+  console.log('\n⚠️  Tour not settled (CLAUDE.md → «Tour»):');
   for (const w of warn) console.log(`  ${w}`);
   if (dirty.length && !dirtyTour) console.log(`  незакоммиченные правки в ${dirty.length} файл(ах) того, что видит игрок`);
   console.log('  Игрок увидит разницу → подсказка или rev + 1 (src/tour, *.tour.ts); не увидит → строка в теле коммита');
-  console.log('  «Обучение: не нужно — почему».\n');
+  console.log('  «Tour: not needed — why».\n');
 }

@@ -74,6 +74,13 @@ async function shoot(lang) {
     const stat = (label) => [...document.querySelectorAll('.sg')].find((b) => b.querySelector(':scope > span:not(.ico):not(.noimg)')?.textContent === label);
     await eval(src)({ wait, tap, stat }); // eslint-disable-line no-eval
   }, fn.toString());
+  // ростер страницы меняется только перезагрузкой: предмет в форме хранится в ogc.item и остаётся
+  const setRoster = async (names) => {
+    await page.evaluate((names) => localStorage.setItem('ogc.roster', JSON.stringify(window.OGC_DATA.chars.filter((c) => names.includes(c.name)).map((c) => c.id))), names);
+    await page.goto('about:blank');
+    await page.goto(url, { waitUntil: 'networkidle0' });
+    await page.addStyleTag({ content: '.vb-flash { display: none; }' });
+  };
   mkdirSync(OUT, { recursive: true });
   const shot = async (name) => { await pause(400); await page.screenshot({ path: join(OUT, `${name}.png`) }); console.log(`screenshots/${lang}/${name}.png`); };
 
@@ -100,16 +107,20 @@ async function shoot(lang) {
     body.scrollTop += plan.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
   });
   await shot('3-upgrade');
-  // 4. подробности: «Кому подходит» с цепочками и разделителем «запасная связка»
-  await step(async () => {
+  // 4. подробности без ростера: вердикт по порогу, «Кому подходит» с цепочками и разделителем «запасная связка»
+  // (с ростером этих секций нет — вещь расписана по героям ростера, «Сейчас на персонажах»)
+  await setRoster([]);
+  await step(async ({ tap, wait }) => {
+    await tap(document.querySelector('.vcard'));
+    await wait(200);
     const body = document.querySelector('.drawer-b');
     const div = body.querySelector('.match-div');
     body.scrollTop = div ? div.offsetTop - 250 : body.querySelector('.v-sec').offsetTop;
   });
   await shot('4-who-fits');
+  await setRoster(ROSTER);
   // 5. «Следующий» и два ненужных сабстата — «Разобрать» сразу, третий можно не вводить
   await step(async ({ tap, stat }) => {
-    await tap(document.querySelector('.drawer-x'));
     await tap(document.querySelector('.vb-reset'));
     // клетка сетки, затем уровень 1 в окне (LevelAsk)
     for (const l of ['RES%', 'DMG↓%']) { await tap(stat(l)); await tap(document.querySelectorAll('.drawer.lvl .roll-b button')[0]); }
@@ -120,6 +131,10 @@ async function shoot(lang) {
   const slug = await page.evaluate(() => { localStorage.setItem('ogc.item', 'null'); return window.OGC_DATA.chars.find((c) => c.name === 'Lambda').slug; });
   await page.goto('about:blank'); // переход, отличающийся только #, страницу не перезагружает — предмет остался бы в памяти
   await page.goto(`${url}#${slug}`, { waitUntil: 'networkidle0' });
+  // герой ростера открывается на «Надето»; в кадре — билды outerpedia
+  await step(async ({ tap }) => {
+    await tap([...document.querySelectorAll('button, [role=tab]')].find((b) => /^(Билды|Builds)$/.test(b.textContent.trim())));
+  });
   await shot('6-character');
   await page.close();
 }

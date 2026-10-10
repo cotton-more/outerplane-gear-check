@@ -8,6 +8,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { pinOptions } from '@/game/build/profile';
 import { encodeHero } from '@/features/gear/store/heroCode';
 import type { Piece } from '@/features/gear/model/gear';
 import { openMore, startTour } from '../app/more';
@@ -24,7 +25,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, lit: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '2026-10-01', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 const HELM = P('p1', 'helmet', { 'DEF%': 2, CHC: 3, CHD: 1, SPD: 2 }, { bt: 4 });
 const ARM = P('p2', 'armor', { CHC: 2, SPD: 1 }, { bt: 0 });
 const WORN = G([HELM, ARM], { [caren.id]: ['p1', 'p2'] }, { worn: { [caren.id]: { helmet: 'p1', armor: 'p2' } } });
@@ -167,7 +168,7 @@ describe('3.3 ссылка и карточка', () => {
     await mount(STD({ roster: [], state: { tab: 'eval' } }), codeOf([HELM, ARM]));
     const c = card()!;
     expect(c.querySelector('.drawer-h h3')?.textContent).toBe('Shared · view only');
-    for (const sel of ['.cd-star', '.cd-top', '.cd-trade', '.btabs', '.pool', '.cd-rate', '.bgear-empty .btn', '.worn-advice', '.worn-share']) {
+    for (const sel of ['.cd-star', '.cd-top', '.btabs', '.pool', '.cd-rate', '.bgear-empty .btn', '.worn-advice', '.worn-share']) {
       expect(c.querySelector(sel), sel).toBeNull();
     }
     expect([...c.querySelectorAll('button')].map((b) => b.className)).toEqual(['drawer-x']);
@@ -210,9 +211,14 @@ describe('3.3 ссылка и карточка', () => {
     expect(card()?.querySelectorAll('.bgear-row')).toHaveLength(1);
   });
 
-  it('3.6 билд отправителя переименован — «не найден — выбран сам»', async () => {
-    await mount(STD(), codeOf([HELM], caren.id, `${caren.id}/No such build`));
-    expect(card()?.textContent).toContain("The sender's build wasn't found — picked one here.");
+  // stat-sets этап 6: вместо билда — закреплённый набор (PLAN Д9); набора в данных смотрящего нет — строки нет
+  it('3.6 закреплённый набор отправителя — «Pinned: …»; набора нет в данных — без строки', async () => {
+    const pin = pinOptions(caren)[0];
+    await mount(STD(), codeOf([HELM], caren.id, pin.key));
+    expect(card()?.querySelector('.worn-aim')?.textContent).toBe('Pinned: Speed ×4');
+    await closeCard();
+    await goHash(codeOf([HELM], caren.id, `${caren.id}/No such build#1x4`));
+    expect(card()?.querySelector('.worn-aim')).toBeNull();
   });
 
   it('3.15 ссылка повреждена — «попроси ещё раз», карточки героя нет; новее — «обнови»', async () => {

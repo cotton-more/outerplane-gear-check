@@ -6,8 +6,6 @@ import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { en } from '@/i18n/en';
 import { TEXTS } from '@/i18n';
-import { tierLabel } from '@/game/set/setBonus';
-import { subsText } from '@/game/text';
 import { makeCtx, type Settings } from '@/game/context';
 import { evaluate } from '@/features/eval/verdict/evaluate';
 import type { Verdict } from '@/features/eval/verdict/verdict';
@@ -23,7 +21,7 @@ describe('английские вердикты', () => {
   it('все случаи эталона считаются на английском без единой русской буквы', () => {
     const leaks: string[] = [];
     for (const { in: inp } of golden.cases) {
-      const settings: Settings = { rosterOnly: inp.rosterOnly, fodder: !!inp.fodder, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true };
+      const settings: Settings = { rosterOnly: inp.rosterOnly, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true };
       const ctx = makeCtx(idx, settings, new Set(golden.meta.rosters[inp.roster]), en);
       const r = evaluate(ctx, { slot: inp.slot, grade: inp.grade, setId: inp.setId, itemKey: inp.itemKey, main: inp.main, subs: Object.fromEntries(inp.subs) });
       const text = verdictText(r);
@@ -57,10 +55,72 @@ function sources(dir: string): string[] {
   });
 }
 
-const stripComments = (src: string) => src
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')     // {/* JSX */}
-  .replace(/\/\*[\s\S]*?\*\//g, '')         // /* блок */
-  .replace(/(^|[\s;,(){}])\/\/.*$/gm, '$1'); // // строка (но не https://)
+// Source with the comments removed, string-aware: `//` or `/*` inside a '…', "…" or `…` literal (a URL, a glob) does not
+// start a comment, so Cyrillic in a string after it is still seen. A quote string ends at a newline (JSX text may hold a
+// lone apostrophe); template literals nest through `${…}`. Regex literals are not understood — none holds a quote or `//`.
+function stripComments(src: string): string {
+  let out = '', i = 0, depth = 0;
+  const tpl: number[] = []; // brace depth at each open `${`
+  let mode: 'code' | 'tpl' = 'code';
+  while (i < src.length) {
+    const c = src[i], two = src.slice(i, i + 2);
+    if (mode === 'tpl') {
+      if (c === '\\') { out += src.slice(i, i + 2); i += 2; continue; }
+      if (c === '`') mode = 'code';
+      else if (two === '${') { tpl.push(depth++); out += two; i += 2; mode = 'code'; continue; }
+      out += c; i++;
+      continue;
+    }
+    if (two === '//') { while (i < src.length && src[i] !== '\n') i++; continue; }
+    if (two === '/*') {
+      const end = src.indexOf('*/', i + 2);
+      const stop = end < 0 ? src.length : end + 2;
+      out += src.slice(i, stop).replace(/[^\n]/g, '');
+      i = stop;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c && src[j] !== '\n') j += src[j] === '\\' ? 2 : 1;
+      out += src.slice(i, j + 1);
+      i = j + 1;
+      continue;
+    }
+    if (c === '`') mode = 'tpl';
+    else if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (tpl.length && tpl[tpl.length - 1] === depth) { tpl.pop(); mode = 'tpl'; }
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+describe('stripComments', () => {
+  const left = (src: string) => CYR.test(stripComments(src));
+  it('drops Cyrillic in line, block and JSX comments', () => {
+    expect(left('const a = 1; // Привет')).toBe(false);
+    expect(left('/* Привет\n   ещё */ const a = 1;')).toBe(false);
+    expect(left('<p>{/* Привет */}</p>')).toBe(false);
+    expect(left('const a = 1; /* Привет */ const b = 2; // Пока')).toBe(false);
+  });
+  it('keeps Cyrillic in strings, also after a string that holds // or /*', () => {
+    expect(left('const a = "Привет";')).toBe(true);
+    expect(left('const a = "https://x.test", b = "Привет";')).toBe(true);
+    expect(left("const a = 'x //y', b = 'Привет';")).toBe(true);
+    expect(left('const a = "/*", b = "Привет"; /* коммент */')).toBe(true);
+    expect(left('const a = `//${x}`, b = `Привет ${"/* y"} ещё`;')).toBe(true);
+    expect(left('const a = `${`//`}`; const b = "Привет";')).toBe(true);
+  });
+  it('a comment after such a string is still dropped', () => {
+    expect(left('const a = "https://x.test"; // Привет')).toBe(false);
+    expect(left('const a = `${"x"} //`; // Привет\nconst b = 1;')).toBe(false);
+  });
+  it('line numbers survive block comments', () => {
+    expect(stripComments('a /* x\ny */ b').split('\n')).toHaveLength(2);
+  });
+});
 
 describe('исходники', () => {
   it('русские фразы — только в src/i18n/ru.ts', () => {
@@ -75,78 +135,7 @@ describe('исходники', () => {
 // строки GEARPOOL: число сегментов форматирует словарь (RU — запятая, EN — точка), «сегмент» склоняется, бонус сета —
 // текстом из данных без лишнего «+», уровень без T4 — «T0–T3», как в карточке персонажа
 describe('строки GEARPOOL', () => {
-  const speed = D.sets.find((s) => s.short === 'Speed')!;
   const ru = TEXTS.ru.ui, enUi = en.ui;
-
-  it('vsSetCost: «это Speed +13%», не «+Speed +»; RU — «1,5 сегмента», EN — «1.5 SPD segments»', () => {
-    const r = ru.vsSetCost('Speed ×2', 'T4', speed.p2!, 1.5, 'SPD', 'gloves');
-    const e = enUi.vsSetCost('Speed ×2', 'T4', speed.p2!, 1.5, 'SPD', 'gloves');
-    expect(r).toBe('Speed ×2 на T4 — это Speed +13%, около 1,5 сегмента SPD. Перчатки дают меньше.');
-    expect(e).toBe('Speed ×2 at T4 is Speed +13%, about 1.5 SPD segments. The gloves add less.');
-  });
-
-  it('«сегмент» по числу: 1 сегмент, 2–4 сегмента, 5+ и 11–14 сегментов, 21 сегмент, дробное — сегмента', () => {
-    const word = (n: number) => ru.vsNetGain('Speed ×2', n, 'SPD', 'shoes').match(/−(\S+ \S+) SPD/)![1];
-    expect([1, 2, 4, 5, 11, 12, 21, 1.5, 0.96].map(word))
-      .toEqual(['1 сегмент', '2 сегмента', '4 сегмента', '5 сегментов', '11 сегментов', '12 сегментов', '21 сегмент', '1,5 сегмента', '1 сегмент']);
-    expect(enUi.vsNetGain('Speed ×2', 1, 'SPD', 'shoes')).toContain('(−1 SPD segment)');
-    expect(enUi.vsNetGain('Speed ×2', 2.25, 'SPD', 'shoes')).toContain('(−2.3 SPD segments)');
-  });
-
-  it('«около N сегментов» — родительный: около 1 сегмента, 4 сегментов, 5 сегментов, 21 сегмента, 1,5 сегмента', () => {
-    const word = (n: number) => ru.vsSetCost('Speed ×4', 'T4', speed.p4!, n, 'SPD', 'shoes').match(/около (\S+ \S+) SPD/)![1];
-    expect([1, 4, 5, 21, 1.5].map(word)).toEqual(['1 сегмента', '4 сегментов', '5 сегментов', '21 сегмента', '1,5 сегмента']);
-  });
-
-  it('сравнение «как есть» (Н3): процент, «в N раз» и «у надетой больше» — без хвоста про Reforge впереди, RU/EN', () => {
-    expect([ru.vsDelta(21), ru.vsDelta(-8), ru.vsTimes(3), ru.vsAhead('DEF%', 6, 2)]).toEqual([
-      '+21% полезных сегментов.', '−8% полезных сегментов.', 'Полезных сегментов в 3 раза больше.', 'На надетой больше сегментов: DEF% — 6 против 2 у новой.']);
-    expect([enUi.vsDelta(21), enUi.vsTimes(3), enUi.vsAhead('DEF%', 6, 2)]).toEqual([
-      '+21% useful segments.', '3× the useful segments.', 'The one on has more segments: DEF% — 6 vs 2 on the new one.']);
-  });
-
-  it('уровень строки без T4 — «T0–T3»', () => {
-    expect([tierLabel('T0'), tierLabel('T4')]).toEqual(['T0–T3', 'T4']);
-    expect(ru.vsBonusLost('Speed ×4', tierLabel('T0'), speed.p4base!)).toBe('Пропадёт: Speed ×4 (T0–T3) — Speed +25%.');
-  });
-
-  it('совет отметить T4 у одной вещи: слот в родительном падеже / is–are', () => {
-    expect(['helmet', 'armor', 'gloves', 'shoes'].map((sl) => ru.vsBreaksMarkOne('Penetration', sl))).toEqual([
-      'Встанет, если отметить Breakthrough T4 у Penetration-шлема.', 'Встанет, если отметить Breakthrough T4 у Penetration-брони.',
-      'Встанет, если отметить Breakthrough T4 у Penetration-перчаток.', 'Встанет, если отметить Breakthrough T4 у Penetration-ботинок.']);
-    expect(['helmet', 'gloves'].map((sl) => enUi.vsBreaksMarkOne('Penetration', sl)))
-      .toEqual(['Fits once the Penetration helmet is marked Breakthrough T4.', 'Fits once the Penetration gloves are marked Breakthrough T4.']);
-  });
-
-  // П6: «у двух» называет слоты (родительный, «-перчаток» без повтора сета); EN — SLOT_EN; сабстаты — в скобках после слота
-  it('совет отметить T4 у двух вещей: слоты по порядку, по 4 слотам, RU/EN', () => {
-    expect([ru.vsBreaksMarkTwo('Penetration', 'helmet', 'armor'), ru.vsBreaksMarkTwo('Penetration', 'gloves', 'shoes')]).toEqual([
-      'Встанет, если отметить Breakthrough T4 у Penetration-шлема и -брони.', 'Встанет, если отметить Breakthrough T4 у Penetration-перчаток и -ботинок.']);
-    expect(ru.vsBreaksMarkTwo('Penetration', 'armor', 'gloves')).toBe('Встанет, если отметить Breakthrough T4 у Penetration-брони и -перчаток.');
-    expect([enUi.vsBreaksMarkTwo('Penetration', 'armor', 'gloves'), enUi.vsBreaksMarkTwo('Penetration', 'helmet', 'shoes')]).toEqual([
-      'Fits once the Penetration armor and gloves are marked Breakthrough T4.', 'Fits once the Penetration helmet and boots are marked Breakthrough T4.']);
-  });
-
-  // П5: Breakthrough у вещей известен (0–3) — «сделать» / "reach"
-  it('совет сделать T4 (Breakthrough известен): у двух и у одной, по 4 слотам, RU/EN', () => {
-    expect(ru.vsBreaksMakeTwo('Penetration', 'armor', 'gloves')).toBe('Встанет, если сделать Breakthrough T4 у Penetration-брони и -перчаток.');
-    expect(enUi.vsBreaksMakeTwo('Penetration', 'armor', 'gloves')).toBe('Fits once the Penetration armor and gloves reach Breakthrough T4.');
-    expect(['helmet', 'armor', 'gloves', 'shoes'].map((sl) => ru.vsBreaksMakeOne('Penetration', sl))).toEqual([
-      'Встанет, если сделать Breakthrough T4 у Penetration-шлема.', 'Встанет, если сделать Breakthrough T4 у Penetration-брони.',
-      'Встанет, если сделать Breakthrough T4 у Penetration-перчаток.', 'Встанет, если сделать Breakthrough T4 у Penetration-ботинок.']);
-    expect(['helmet', 'armor', 'gloves', 'shoes'].map((sl) => enUi.vsBreaksMakeOne('Penetration', sl))).toEqual([
-      'Fits once the Penetration helmet reaches Breakthrough T4.', 'Fits once the Penetration armor reaches Breakthrough T4.',
-      'Fits once the Penetration gloves reach Breakthrough T4.', 'Fits once the Penetration boots reach Breakthrough T4.']);
-  });
-
-  it('несколько вещей сета в слоте — сабстаты нужной в скобках после слота (у одной и у двух), RU/EN', () => {
-    const subs = subsText({ 'DEF%': 2, CHC: 2 });
-    expect(subs).toBe('DEF% 2, CHC 2');
-    expect(ru.vsBreaksMarkOne('Speed', 'gloves', subs)).toBe('Встанет, если отметить Breakthrough T4 у Speed-перчаток (DEF% 2, CHC 2).');
-    expect(enUi.vsBreaksMarkOne('Speed', 'gloves', subs)).toBe('Fits once the Speed gloves (DEF% 2, CHC 2) are marked Breakthrough T4.');
-    expect(ru.vsBreaksMarkTwo('Penetration', 'armor', 'gloves', undefined, subs)).toBe('Встанет, если отметить Breakthrough T4 у Penetration-брони и -перчаток (DEF% 2, CHC 2).');
-    expect(enUi.vsBreaksMakeTwo('Penetration', 'armor', 'gloves', subs, undefined)).toBe('Fits once the Penetration armor (DEF% 2, CHC 2) and gloves reach Breakthrough T4.');
-  });
 
   it('тост двух и трёх убранных — по имени сета или предмета', () => {
     expect(ru.replacedMany('Caren', 'shoes', ['Speed', 'Immunity'])).toBe('Заменено: ботинки Caren — убраны прежние: Speed и Immunity.');
@@ -170,47 +159,29 @@ describe('строки GEARPOOL', () => {
     expect(enUi.oldMaterial('shoes', 'Speed')).toBe("The Speed boots can feed the new ones' Breakthrough.");
   });
 
-  it('«только статы»: «По статам лучше {шлема} на N%, но сломает …» — слот в родительном падеже', () => {
-    expect(ARMOR.map((sl) => ru.vsStatsOnly(25, sl, 'Speed ×4'))).toEqual([
-      'По статам лучше шлема на 25%, но сломает Speed ×4 — не надевай.', 'По статам лучше брони на 25%, но сломает Speed ×4 — не надевай.',
-      'По статам лучше перчаток на 25%, но сломает Speed ×4 — не надевай.', 'По статам лучше ботинок на 25%, но сломает Speed ×4 — не надевай.']);
-    expect(ARMOR.map((sl) => enUi.vsStatsOnly(25, sl, 'Speed ×4'))).toEqual([
-      "Beats the helmet by 25% on stats, but breaks Speed ×4 — don't equip.", "Beats the armor by 25% on stats, but breaks Speed ×4 — don't equip.",
-      "Beats the gloves by 25% on stats, but breaks Speed ×4 — don't equip.", "Beats the boots by 25% on stats, but breaks Speed ×4 — don't equip."]);
-  });
-
-  it('«только статы», у надетой полезных нет: одна строка — «у надетого шлема / надетой брони / надетых перчаток»', () => {
-    expect(ARMOR.map((sl) => ru.vsStatsEmpty(sl, 'Speed ×4'))).toEqual([
-      'По статам лучше: у надетого шлема полезных нет. Но сломает Speed ×4 — не надевай.',
-      'По статам лучше: у надетой брони полезных нет. Но сломает Speed ×4 — не надевай.',
-      'По статам лучше: у надетых перчаток полезных нет. Но сломает Speed ×4 — не надевай.',
-      'По статам лучше: у надетых ботинок полезных нет. Но сломает Speed ×4 — не надевай.']);
-    expect(ARMOR.map((sl) => enUi.vsStatsEmpty(sl, 'Speed ×4'))).toEqual([
-      "Better on stats — the helmet on has nothing useful. But it breaks Speed ×4 — don't equip.",
-      "Better on stats — the armor on has nothing useful. But it breaks Speed ×4 — don't equip.",
-      "Better on stats — the gloves on have nothing useful. But it breaks Speed ×4 — don't equip.",
-      "Better on stats — the boots on have nothing useful. But it breaks Speed ×4 — don't equip."]);
-  });
-
-  it('«Кому надеть?» при замене: «Заменить {шлем/броню/…} — соберёт / сет n из m / начнёт»', () => {
-    expect(ru.equipRowReplaceCompletes(ru.slotAcc.armor, 'Speed')).toBe('Заменить броню — соберёт Speed');
-    expect(ru.equipRowReplaceCloser(ru.slotAcc.gloves, 'Speed', 3, 4)).toBe('Заменить перчатки — Speed: сет 3 из 4');
-    expect(ru.equipRowReplaceStarts(ru.slotAcc.helmet, 'Speed, Speed/Immu')).toBe('Заменить шлем — начнёт Speed, Speed/Immu');
-    expect(enUi.equipRowReplaceCompletes(enUi.slotAcc.shoes, 'Speed')).toBe('Replace boots — completes Speed');
-    expect(enUi.equipRowReplaceStarts(enUi.slotAcc.armor, 'Speed')).toBe('Replace armor — starts Speed');
-  });
-
-  it('подпись «Собираю», когда часть собирается из пула, а раскладка её не взяла — по имени персонажа', () => {
-    expect(ru.fillingReach('Speed ×4', 'Caren')).toBe('— Speed ×4 собирается из вещей Caren, но сейчас выгоднее без неё');
-    expect(enUi.fillingReach('Speed ×4', 'Caren')).toBe("— Speed ×4 can be made from Caren's pieces, but the layout is better without it");
-  });
-
   it('«сейчас» у надетой: bt 0 — «ниже T4», bt 1–3 и 4 — как есть, null — «не указан»', () => {
     expect(ru.vsWorn('Legendary', 0)).toBe('сейчас: Legendary, Breakthrough T0–T3');
     expect(ru.vsWorn('Legendary', 2)).toBe('сейчас: Legendary, Breakthrough T2');
     expect(ru.vsWorn('Legendary', null)).toBe('сейчас: Legendary, Breakthrough не указан');
     expect(enUi.vsWorn('Legendary', 0)).toBe('now: Legendary, Breakthrough T0–T3');
     expect(enUi.vsWorn('Legendary', 4)).toBe('now: Legendary, Breakthrough T4');
+  });
+
+  // stat-sets TEXTS.md: points — to tenths without trailing zeros (as in «Надето» and «Обмене»), a comma in RU; the slot's gender in reserve phrases
+  it('«статы + сеты»: очки «2,5 / 2.5», запас по роду слота, «A и B» в тихой строке, RU/EN', () => {
+    const F = TEXTS.ru.fit, E = TEXTS.en.fit;
+    expect([F.pts(2.5), F.pts(8.25), F.pts(2.954), F.pts(1), F.pts(4.87), E.pts(2.5), E.pts(4.87), E.pts(1)]).toEqual(['2,5', '8,3', '3', '1', '4,9', '2.5', '4.9', '1']);
+    expect(F.gain('Caren', F.pts(1.95))).toBe('Caren станет сильнее на 2 очк.');
+    expect(F.gain('Caren', F.pts(1.64))).toBe('Caren станет сильнее на 1,6 очк.');
+    expect(['helmet', 'armor', 'gloves'].map((sl) => F.reserveWhy('Caren', 'Speed', sl))).toEqual([
+      'У Caren начат Speed, а Speed-шлема нет. Придёт сильный — этот пойдёт ему в Breakthrough.',
+      'У Caren начат Speed, а Speed-брони нет. Придёт сильная — эта пойдёт ей в Breakthrough.',
+      'У Caren начат Speed, а Speed-перчаток нет. Придут сильные — эти пойдут им в Breakthrough.',
+    ]);
+    expect(F.keepBest('Speed', 'gloves', 'Caren')).toBe('Оставляй — лучшие Speed-перчатки у Caren');
+    expect(F.quietEmpty('Rin', 'shoes', ['ATK%', 'CHC'])).toBe('У Rin нет ботинок — эта слабая, годная будет с ATK% и CHC.');
+    expect(E.quietBetter('Rin', '1.8', ['ATK%', 'CHC'])).toBe('Rin wears worse now (+1.8 pts), but this one is weak too — a good one has ATK% and CHC.');
+    expect([F.chipRank('accessory'), F.chipRank('weapon')]).toEqual(['рекомендованный', 'рекомендованное']);
   });
 });
 
@@ -234,7 +205,7 @@ describe('справка и обучение после «Ещё»', () => {
   it.each(['ru', 'en'] as const)('%s: Справка называет «Ещё», «Доодеть», резервную копию и «Обмен»', (lang) => {
     const u = TEXTS[lang].ui;
     const chars = u.helpChars.join('\n');
-    for (const word of [u.more, u.modeMine, u.modeToDress, u.modeAll, u.backup, u.moreSettings]) expect(chars).toContain(word);
+    for (const word of [u.more, u.modeMine, u.modeToDress, u.backup, u.moreSettings]) expect(chars).toContain(word);
     expect(u.helpTradeItems.join('\n')).toContain(u.tradeBtn);
     expect(u.helpInputItems.join('\n')).toContain(u.more);
   });

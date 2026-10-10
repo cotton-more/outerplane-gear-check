@@ -1,6 +1,6 @@
 // Core Fusion (features/gear/model/fusion, правила владельца 2026-09-30): нормализация {ростер, хранилище} — есть X и Core Fusion X,
 // остаётся CF; вещи X переходят к CF, если у CF пусто, иначе убраны (общие записи остаются у других); окно перехода
-// в обе стороны и его «Вернуть»; загрузка v1 и v2 и код копии — через ту же нормализацию.
+// в обе стороны и его «Вернуть»; загрузка v1, v2 и v3 и код копии — через ту же нормализацию.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
@@ -22,7 +22,7 @@ const P = (pid: string, slot: Piece['slot'] = 'helmet'): Piece =>
   ({ id: pid, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { SPD: 1 }, lit: { SPD: 1 }, bt: null, at: '' });
 const v2 = (pools: Record<string, string[]>, extra: Partial<GearStore> = {}): GearStore => {
   const ids = [...new Set(Object.values(pools).flat())];
-  return { v: 2, seq: ids.length, pieces: Object.fromEntries(ids.map((pid) => [pid, P(pid)])), pools, ...extra };
+  return { v: 3, seq: ids.length, pieces: Object.fromEntries(ids.map((pid) => [pid, P(pid)])), pools, ...extra };
 };
 const v1 = (builds: Record<string, Record<string, string>>) => {
   const slots = new Map(Object.values(builds).flatMap((b) => Object.entries(b).map(([slot, pid]) => [pid, slot as Piece['slot']] as const)));
@@ -72,11 +72,10 @@ describe('нормализация: есть X и Core Fusion X — остаёт
     expect(r.roster).toEqual([CAREN]);
   });
 
-  it('отметки «Собираю» X не переносятся к Core Fusion, подсказка autoNew X убрана', () => {
-    const st = v2({ [X]: ['p1'] }, { marks: { [buildKey(X, 'Speed')]: 'want' }, autoNew: [buildKey(X, 'Speed'), buildKey(CAREN, 'Speed')] });
+  it('закрепление X не переносится к Core Fusion (PLAN Д9: билды у героев разные)', () => {
+    const st = v2({ [X]: ['p1'] }, { pin: { [X]: buildKey(X, 'Speed') } });
     const r = normalizeFusion(idx, [CF], st);
-    expect(Object.keys(r.st.marks ?? {}).filter((k) => k.startsWith(CF + '/'))).toEqual([]);
-    expect(r.st.autoNew).toEqual([buildKey(CAREN, 'Speed')]);
+    expect({ pools: r.st.pools, pin: r.st.pin }).toEqual({ pools: { [CF]: ['p1'] }, pin: { [X]: buildKey(X, 'Speed') } });
   });
 
   it('конфликта нет — то же хранилище (без записи), тот же ростер', () => {
@@ -126,12 +125,12 @@ describe('normalizeStored: все с вещами — в ростере, зат�
 
 // Р16: «Да, убрать» в окне снятия звезды и его «Вернуть»
 describe('dropChar / undoDrop', () => {
-  const st = () => v2({ [KAPPA]: ['p2'], [CAREN]: ['p1', 'p2'] }, { marks: { [buildKey(CAREN, 'Speed')]: 'want', [buildKey(KAPPA, 'Speed')]: 'skip' }, autoNew: [buildKey(CAREN, 'Speed')] });
+  const st = () => v2({ [KAPPA]: ['p2'], [CAREN]: ['p1', 'p2'] }, { pin: { [CAREN]: buildKey(CAREN, 'Speed'), [KAPPA]: buildKey(KAPPA, 'Speed') } });
 
-  it('пул, отметки и autoNew героя уходят; общая запись остаётся у другого', () => {
+  it('пул и закрепление героя уходят; общая запись и закрепление другого остаются', () => {
     const r = dropChar(st(), CAREN);
-    expect({ pools: r.st.pools, pieces: Object.keys(r.st.pieces), marks: r.st.marks, autoNew: r.st.autoNew })
-      .toEqual({ pools: { [KAPPA]: ['p2'] }, pieces: ['p2'], marks: { [buildKey(KAPPA, 'Speed')]: 'skip' }, autoNew: undefined });
+    expect({ pools: r.st.pools, pieces: Object.keys(r.st.pieces), pin: r.st.pin })
+      .toEqual({ pools: { [KAPPA]: ['p2'] }, pieces: ['p2'], pin: { [KAPPA]: buildKey(KAPPA, 'Speed') } });
   });
 
   it('«Вернуть» — как было, и пул на прежнем месте', () => {
@@ -150,17 +149,16 @@ describe('dropChar / undoDrop', () => {
 
 // Р17: запись при загрузке — только если чтение ничего не отбросило
 describe('readsWhole', () => {
-  it('чистый v2 — да; счётчик seq ниже номеров вещей и незнакомое поле верхнего уровня — не потеря', () => {
+  it('чистый v3 — да; счётчик seq ниже номеров вещей и незнакомое поле верхнего уровня — не потеря', () => {
     expect([readsWhole(v2({ [CAREN]: ['p1'] }), idx), readsWhole({ ...v2({ [CAREN]: ['p1'] }), seq: 0, extra: { a: 1 } }, idx)]).toEqual([true, true]);
   });
 
-  it('саб не из данных, отметка «maybe», пул с чужим id — отброшено', () => {
+  it('саб не из данных, пул с чужим id — отброшено', () => {
     const st = v2({ [CAREN]: ['p1'] });
     expect([
       readsWhole({ ...st, pieces: { p1: { ...P('p1'), yellow: { SPD: 1, NEWSUB: 2 } } } }, idx),
-      readsWhole({ ...st, marks: { [buildKey(CAREN, 'Speed')]: 'maybe' } }, idx),
       readsWhole({ ...st, pools: { [CAREN]: ['p1', 'p9'] } }, idx),
-    ]).toEqual([false, false, false]);
+    ]).toEqual([false, false]);
   });
 
   it('нет данных — нечего терять; мусор и v1 с вещью не в билде — отброшено; чистый v1 — да', () => {
@@ -181,7 +179,7 @@ describe('кто неактивен', () => {
 });
 
 describe('неактивный X — не кандидат вердикта', () => {
-  const settings = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
+  const settings = { rosterOnly: false, stage: 'grow' as const, lv120: false, quirks: true };
   const item = { slot: 'helmet' as const, grade: 'unique' as const, setId: speed, itemKey: null, main: null, subs: { SPD: 2, CHC: 2, CHD: 2 } };
   const rowsOf = (off: Map<string, string>, roster: string[], rosterOnly: boolean) =>
     evaluate(makeCtx(idx, { ...settings, rosterOnly }, new Set(roster), undefined, off), item).sections.flatMap((x) => x.rows.map((r) => r.c.id));
@@ -237,20 +235,12 @@ describe('загрузка и код: та же нормализация', () =>
     expect(Object.keys(r.st.pieces)).toEqual(['p2']);
   });
 
-  it('перенос v1: autoNew — по итоговым пулам: у X без вещей его нет, у Core Fusion — по перешедшим вещам', () => {
-    const [eps, cfEps] = [id('Epsilon'), id('Core Fusion Epsilon')];
-    const r = loadGear(v1({ [buildKey(eps, 'Speed')]: { helmet: 'p1', armor: 'p2' } }), idx, [cfEps]);
-    const autoNew = r.st.autoNew ?? [];
-    expect(autoNew.filter((k) => k.startsWith(eps + '/'))).toEqual([]);
-    expect(autoNew.some((k) => k.startsWith(cfEps + '/'))).toBe(true);
-  });
-
   it('перенос v1: одна запись в билдах X и Core Fusion — остаётся у Core Fusion', () => {
     const r = loadGear(v1({ [buildKey(X, 'Speed')]: { helmet: 'p1', armor: 'p2' }, [buildKey(CF, 'Speed')]: { helmet: 'p1' } }), idx, [CF]);
     expect({ pools: r.st.pools, pieces: Object.keys(r.st.pieces) }).toEqual({ pools: { [CF]: ['p1'] }, pieces: ['p1'] });
   });
 
-  it('v2 с обоими — вещи X убраны; тот же код копии — тот же итог', () => {
+  it('v3 с обоими — вещи X убраны; тот же код копии — тот же итог', () => {
     const raw = v2({ [X]: ['p1'], [CF]: ['p2'] });
     const r = loadGear(raw, idx, [X]);
     expect({ pools: r.st.pools, roster: r.roster }).toEqual({ pools: { [CF]: ['p2'] }, roster: [CF] });
@@ -259,30 +249,27 @@ describe('загрузка и код: та же нормализация', () =>
   });
 });
 
-// «Надето», шаг 1: надетое X идёт за его вещами к Core Fusion X; выбранный билд (aim) не переходит
+// «Надето», шаг 1: надетое X идёт за его вещами к Core Fusion X
 describe('Core Fusion: надетое идёт за вещами', () => {
-  const xAim = buildKey(X, 'Speed');
   const dressedX = (extra: Partial<GearStore> = {}) =>
-    v2({ [X]: ['p1', 'p2'], ...extra.pools }, { worn: { [X]: { helmet: 'p1' }, ...extra.worn }, aim: { [X]: xAim, ...extra.aim } });
+    v2({ [X]: ['p1', 'p2'], ...extra.pools }, { worn: { [X]: { helmet: 'p1' }, ...extra.worn } });
 
-  it('moved: у Core Fusion пусто — надетое X на нём, билда у него нет, у X — ни того, ни другого', () => {
+  it('moved: у Core Fusion пусто — надетое X на нём, у X — нет', () => {
     const n = normalizeFusion(idx, [X, CF], dressedX());
-    expect({ kind: n.fixes[0].kind, worn: n.st.worn, aim: n.st.aim }).toEqual({ kind: 'moved', worn: { [CF]: { helmet: 'p1' } }, aim: undefined });
+    expect({ kind: n.fixes[0].kind, worn: n.st.worn }).toEqual({ kind: 'moved', worn: { [CF]: { helmet: 'p1' } } });
   });
 
   it('removed: у Core Fusion свои вещи — надетое X убрано, своё надетое Core Fusion — как было', () => {
-    const st = dressedX({ pools: { [CF]: ['p3'] }, worn: { [CF]: { helmet: 'p3' } }, aim: { [CF]: buildKey(CF, 'Speed') } });
+    const st = dressedX({ pools: { [CF]: ['p3'] }, worn: { [CF]: { helmet: 'p3' } } });
     const n = normalizeFusion(idx, [X, CF], st);
-    expect({ kind: n.fixes[0].kind, worn: n.st.worn, aim: n.st.aim })
-      .toEqual({ kind: 'removed', worn: { [CF]: { helmet: 'p3' } }, aim: { [CF]: buildKey(CF, 'Speed') } });
+    expect({ kind: n.fixes[0].kind, worn: n.st.worn }).toEqual({ kind: 'removed', worn: { [CF]: { helmet: 'p3' } } });
   });
 
-  it('«Да, Core Fusion X»: надетое X — на Core Fusion, билда у Core Fusion нет; «Вернуть» — надетое снова на X', () => {
+  it('«Да, Core Fusion X»: надетое X — на Core Fusion; «Вернуть» — надетое снова на X', () => {
     const st = dressedX();
     const sw = switchFusion(idx, [X], st, CF)!;
     const back = unfuseChar(sw.st, sw.from, sw.to, sw);
-    expect({ worn: sw.st.worn, aim: sw.st.aim, back: back.worn, backAim: back.aim })
-      .toEqual({ worn: { [CF]: { helmet: 'p1' } }, aim: undefined, back: st.worn, backAim: undefined });
+    expect({ worn: sw.st.worn, back: back.worn }).toEqual({ worn: { [CF]: { helmet: 'p1' } }, back: st.worn });
   });
 
   it('переход, когда у Core Fusion свой надетый шлем: он остаётся; «Вернуть» — у X снова его шлем', () => {

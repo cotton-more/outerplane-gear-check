@@ -1,0 +1,103 @@
+/* «Партия» (features/batch, .x/0110-batch): the strip over the form, the list and the plan — piece rows like the trade plan */
+.batch-strip .batch-list { margin-left: 4px; }
+.batch-note { margin: 4px 2px 0; }
+.batch { display: grid; gap: 10px; font-size: 12.5px; }
+.batch-col { padding: 12px 14px 0; }
+.batch-sheet .batch { padding: 4px 14px 16px; }
+.batch-h { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.batch .bgear-list { list-style: none; }
+.batch .bgear-row { position: relative; }
+.batch .bgear-row.editing { border-color: var(--accent); }
+.bnum { font: 700 11.5px var(--font-mono); color: var(--ink-2); }
+.brow-fix { position: absolute; inset: 0; border: 0; background: none; border-radius: inherit; }
+.brow-x { --hit: 44px; z-index: 1; min-width: 36px; min-height: 30px; border: 0; background: none; color: var(--ink-2); } /* the ✕ removes at once: a 44px tap area, the Undo toast is the net */
+.batch .bgear-meta { grid-column: 2 / 4; }
+/* a piece's name wraps instead of «Meteo…» — the name is what identifies a weapon or an accessory (the hero card's rows keep one line) */
+.batch .bgear-nm { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.batch .bgear-n:has(> .bgear-nm) { align-items: baseline; }
+.batch .bgear-nm .pn { overflow: visible; text-overflow: clip; }
+.batch .bgear-nm .pm { margin-left: 0; white-space: nowrap; } /* the space before it is a no-break one (PieceName), so it hangs on the name's last word */
+.bfate { grid-column: 2 / 3; font-weight: 600; color: var(--ink); }
+.b-wear .bfate, .b-keep .bfate, .b-reserve .bfate { color: var(--keep); }
+.b-feed .bfate { color: var(--fodder, var(--accent)); }
+/* a phone: «Same as Hilde's set-aside (Oct 5)? Then do nothing.» takes the row's width, «It's a different pair» goes under it (a wide column keeps both on one line) */
+html.narrow .b-same .bfate { grid-column: 2 / -1; }
+html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
+.b-junk .bfate { color: var(--junk); }
+.boff { margin-left: 18px; width: calc(100% - 18px); }
+.boff-n { grid-column: 1 / -1; color: var(--ink-2); }
+.boff .bfate { grid-column: 1 / 3; }
+.batch-sum { margin: 0; color: var(--ink-2); }
+.batch-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+/* «Записать план» is the plain button: not the filled primary (it must not invite recording before the game is done) and
+   not the dismantle red (it dismantles nothing) */
+.batch-acts .brec { margin-left: auto; }
+/* a long batch: «Посчитать» / «Записать план» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
+   the same --surface) */
+.batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 4px; background: var(--surface); } /* above the rows' ✕ (z-index 1) */
+/* the column's bottom padding is the bar's own: rows don't show through under it */
+.batch-col .batch-acts { padding-bottom: 12px; }
+/* the step-by-step walk (.x/0140-batch-walk): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
+.batch-strip { flex-wrap: wrap; }
+.batch-marks { display: flex; gap: 6px; margin-left: auto; }
+.batch-marks .btn { min-height: 30px; padding: 3px 10px; font-size: 13px; }
+.batch-marks + .tryon-x { margin-left: 0; }
+/* a tall phone: the two buttons on a second line inside the strip; a short window: one line, «E» / «🔒» only */
+html.narrow .batch-marks { order: 3; flex-basis: 100%; margin: 0 0 4px; }
+html.narrow .batch-marks + .tryon-x { margin-left: auto; }
+@media (max-height: 460px) {
+  html.narrow .batch-marks { order: 0; flex-basis: auto; margin: 0 0 0 auto; }
+  html.narrow .batch-marks + .tryon-x { margin-left: 0; }
+  .batch-marks .bm-long { display: none; }
+}
+.batch-whose { display: grid; gap: 6px; }
+.bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
+/* a worn piece's owner: the round portrait (HeroFace round, base.css); the picker's is bigger */
+.bwho .face-round { width: 36px; height: 36px; }
+.bmark .bgear-n { font-weight: 600; }
+.bdecide { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.bdecide .chip { min-height: 40px; padding: 4px 12px; font-family: inherit; font-size: 13px; }
+.bstage { display: grid; gap: 6px; }
+.bstage h4 { margin: 4px 0 0; font-size: 13px; }
+/* a walk step: the card is a label of its checkbox (shared Toggle) — a tap anywhere on it ticks the step */
+.batch .bstep { display: block; padding: 0; }
+.bstep-l { display: flex; align-items: flex-start; gap: 10px; box-sizing: border-box; width: 100%; min-height: 40px; padding: 6px 8px; font-size: inherit; color: inherit; }
+.bstep-l input { flex: none; width: 22px; height: 22px; margin: 0; }
+.bstep:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bstep-t { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; padding-top: 2px; }
+.bstep-m { color: var(--ink-2); }
+/* the title of a step: the title, and after it a quiet hint (the position in the hero's slot list) floated to the right —
+   it sits on the title's last line when there is room, else right under it. The caption is one unit: it moves to the
+   next line whole («Stella →» / «Meteor Mashers · ATK%»), and wraps inside only when it is wider than the line */
+.bstep-h { display: flow-root; }
+.bstep-h .gname { display: inline-block; }
+.bstep-no { float: right; margin-left: 8px; padding-top: 2px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.bstep.done .bstep-t { opacity: .6; }
+.bstep-subs { display: grid; gap: 1px; font-size: 12.5px; color: var(--ink-2); }
+.bstep-subs span { white-space: nowrap; }
+/* the batch's short notes as a toast (App batchToast): no button, the text wraps within the screen; yellow — not an
+   error, but it should catch the eye (owner 2026-10-08) */
+.toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center;
+  border-color: var(--temp); background: var(--temp-soft); }
+.bstep-k { font-weight: 600; }
+/* the plan and the walk take the screen (owner 2026-10-09): a full-height sheet on a phone, the form's column on a wide
+   screen (App batchResult); «← К списку» on top */
+.drawer.batch-full { height: 100dvh; max-height: 100dvh; border-radius: 0; }
+/* the title carries the batch's kind («Batch · 11 · Legendary weapon»): it wraps at 280px instead of ending with «…» */
+.batch-sheet .drawer-h h3 { white-space: normal; text-wrap: balance; line-height: 1.25; }
+html:not(.narrow) .eval.batch-result { grid-template-columns: minmax(0, 1fr); }
+html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: none; width: 100%; max-width: 900px; margin: 0 auto; }
+.batch-back { justify-self: start; margin: 0 0 6px; }
+/* a short window (landscape, 420×390 split screen): the title bar is tighter and the action bar goes to the end of the
+   content instead of staying over it — the title bar plus the bar took 28% of 390px and cut the first step */
+@media (max-height: 460px) {
+  .drawer.batch-full .drawer-h { padding-block: 2px; }
+  .batch-sheet .batch-acts, .batch-col .batch-acts { position: static; padding: 2px 0 6px; }
+  .batch { gap: 8px; }
+  .batch-back { margin-bottom: 0; }
+}
+.batch-sheet .batch-back { margin: 6px 14px 0; } /* the tap area above it (.hit) is clipped by the sheet's scroll box: room for it */
+.bworn { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
+.gname { font-weight: 600; }
+.gname.legend { color: var(--legend); }
+.gname.epic { color: var(--epic); }

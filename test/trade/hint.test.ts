@@ -1,12 +1,12 @@
-// «Обмен вещами», как найти вещь в игре (R9): .x/0040-trade/TESTS.md, раздел I. Реальные данные фикстуры; цепочка Рин —
-// ATK › CHC › CHD › SPD › DMG UP% (build 0).
+// «Обмен вещами», как найти вещь в игре (R9): .x/0040-trade/TESTS.md, раздел I. Реальные данные фикстуры; цепочка Рин
+// «По статам» — ATK › CHC › CHD › SPD › DMG UP%.
 import { describe, expect, it } from 'vitest';
 import { keyOfHole, keyOfItem, sourceOf } from '@/features/trade/model/hint';
+import { profileOf } from '@/game/build/profile';
 import { cand, ctx, HERO, idx, piece, setId } from './helpers';
 
-const rin = idx.CHAR[HERO.rin];
-const build = rin.builds[0];
-const key = (p: ReturnType<typeof piece>) => keyOfItem(ctx, rin, build, p);
+const P = profileOf(ctx, idx.CHAR[HERO.rin])!;
+const key = (p: ReturnType<typeof piece>) => keyOfItem(P, p);
 
 describe('ключ поиска вещи (R9.1)', () => {
   it('I1: броня — грейд, сет, сабстат с наибольшим уровнем, сортировка по нему, главного стата нет, T4 помечен', () => {
@@ -19,7 +19,7 @@ describe('ключ поиска вещи (R9.1)', () => {
     expect(k).toMatchObject({ set: null, main: 'ATK%', sub: 'CHD', sort: 'CHD', t4: false });
   });
 
-  it('I3: уровни равны — выше в цепочке мерила получателя', () => {
+  it('I3: уровни равны — выше в цепочке получателя', () => {
     const k = key(piece('helmet', 'Speed', { SPD: 4, CHC: 4, CHD: 4 }));
     expect(k.sub).toBe('CHC'); // CHC › CHD › SPD
   });
@@ -41,22 +41,22 @@ describe('источник (R9.1)', () => {
 });
 
 describe('подсказка для дыры (R9.2)', () => {
-  it('I5: броня — сет, если дыра выключила значимый бонус; иначе без сета; сабстат — первый стат цепочки; грейд 6★', () => {
-    const on = keyOfHole(ctx, rin, build, 'helmet', setId('Speed'));
-    const off = keyOfHole(ctx, rin, build, 'helmet', null);
+  it('I5: броня — сет, если дыра выключила половину сета; иначе без сета; сабстат — первый стат цепочки; грейд 6★', () => {
+    const on = keyOfHole(P, 'helmet', setId('Speed'));
+    const off = keyOfHole(P, 'helmet', null);
     expect(on).toMatchObject({ grade: null, set: setId('Speed'), main: null, sub: 'ATK%', sort: 'ATK%', t4: false });
     expect(off.set).toBeNull();
   });
 
   it('I5: стат, который в этом слоте сабстатом не бывает, пропускается', () => {
     // у перчаток main — не ATK%/ATK: проверяем, что подсказка — стат цепочки, допустимый как сабстат слота
-    const k = keyOfHole(ctx, rin, build, 'gloves', null);
+    const k = keyOfHole(P, 'gloves', null);
     expect(['ATK%', 'ATK', 'CHC', 'CHD', 'SPD', 'DMG UP%']).toContain(k.sub);
   });
 
   it('I6: оружие — главный стат первого рекомендованного предмета, подходящего по классу', () => {
-    const k = keyOfHole(ctx, rin, build, 'weapon', null);
+    const k = keyOfHole(P, 'weapon', null);
     expect(k).toMatchObject({ grade: null, set: null, main: 'ATK%' });
-    expect(keyOfHole(ctx, rin, build, 'accessory', null).main).toBe('PEN%');
+    expect(keyOfHole(P, 'accessory', null).main).toBe('PEN%');
   });
 });

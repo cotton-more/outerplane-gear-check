@@ -23,27 +23,30 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/eval/form/EvalSettings.tsx': 'helper',     // настройки оценки: подписи говорят сами за себя
   'features/eval/form/ItemPicker.tsx': 'core',         // окно выбора Legendary по названию — шаг «сет или предмет»
   'features/eval/form/LevelAsk.tsx': 'core',           // окно уровня после нажатия в сетке — шаг «сетка»; очевидно само (владелец: в «Что нового» не нужно)
-  'features/eval/form/MainButtons.tsx': 'core',        // main оружия кнопками — тот же шаг
   'features/eval/form/MainPicker.tsx': 'core',         // окно main — тот же шаг
   'features/eval/form/PickField.tsx': 'helper',        // поле, открывающее окно выбора
   'features/eval/form/RosterOnlyToggle.tsx': 'helper', // «Только мой ростер» — настройка оценки, подпись говорит сама
   'features/eval/form/SetPicker.tsx': 'core',          // окно сетов — шаг «сет»
   'features/gear/ui/EquipButton.tsx': 'helper',        // кнопка «Надеть»: её объясняют подсказки вердикта и тур «Экипировка»
-  'features/gear/ui/PinMark.tsx': 'helper',            // булавка «Не отдавать надетое»: её объясняет подсказка обмена
   'features/gear/ui/VsChip.tsx': 'helper',             // чип исхода в «Сейчас на персонажах» и карточке вердикта: их подсказки его объясняют
-  'features/gear/ui/WantToggle.tsx': 'helper',         // «Собираю»: его объясняет подсказка want карточки билда
   'features/gear/ui/pieceText.tsx': 'helper',          // подписи вещи в строках экипировки
   'features/roster/BackupIO.tsx': 'helper',            // «Резервная копия» в «Ещё»: подпись говорит, что это
-  'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть · Все», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
+  'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
   'features/roster/CharFilterSheet.tsx': 'helper',     // шторка фильтра: стихии и классы кнопками, «Сбросить»
   'features/roster/CharTile.tsx': 'helper',            // плитка героя: её объясняют подсказки списка персонажей
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
-  'features/worn/AimsSheet.tsx': 'helper',             // list of heroes with picked builds, opened from the notice button: the notice explains it
-  'features/worn/Redress.tsx': 'helper',               // re-dress screen, opens from the build sheet whose tip explains it; sections name themselves
+  'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
+  'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
+  'features/batch/ui/BatchStrip.tsx': 'helper',        // batch strip over the form: the batch tip explains the mode
+  'features/batch/ui/BatchList.tsx': 'helper',         // pieces of the batch: the batch tip explains the mode
+  'features/batch/ui/BatchPlan.tsx': 'helper',         // the batch plan: its lines say what to do, the batch tip explains the mode
+  'features/batch/ui/BatchPanel.tsx': 'helper',        // list or plan in the sheet / column: the batch tip explains the mode
+  'features/batch/ui/BatchWalk.tsx': 'helper',         // the step-by-step walk: its steps say what to do, the batch tip (rev 2) names it
   'game/hero/HeroFace.tsx': 'helper',                  // портрет героя
   'game/hero/HeroName.tsx': 'helper',                  // имя героя одной строкой: приставка режется первой
+  'game/hero/HeroTag.tsx': 'helper',                   // hero to find in the game: class icon + element colour
   'game/icons/Img.tsx': 'helper',                      // картинки и значки
   'game/item/SubLevels.tsx': 'helper',                 // кнопки уровня сабстата и строка предела: их объясняют подсказки формы и карточки вещи
   'game/item/SubToken.tsx': 'helper',                  // сабстат вещи чипом в строках экипировки
@@ -53,6 +56,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'shared/ui/Expand.tsx': 'helper',                    // строка, раскрывающаяся на месте («Ещё»)
   'shared/ui/FilterChips.tsx': 'helper',               // фильтр кнопками
   'shared/ui/Notice.tsx': 'helper',                    // плашка с одной кнопкой
+  'shared/ui/RadioRow.tsx': 'helper',                  // строка-радио в шторке выбора: учат шторки, где она стоит
   'shared/ui/Rich.tsx': 'helper',                      // жирный текст в фразах
   'shared/ui/SegSwitch.tsx': 'helper',                 // переключатель сегментами
   'shared/ui/Sheet.tsx': 'helper',                     // шторка для окон

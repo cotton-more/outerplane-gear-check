@@ -20,8 +20,8 @@ const idx = createIndex(D);
 const rosters: Record<string, string[]> = golden.meta.rosters;
 const UPDATE = process.env.GOLDEN_UPDATE === '1';
 
-function ctxFor(inp: { rosterOnly: boolean; roster: string; fodder?: boolean; stage?: 'grow' | 'end'; lv120?: boolean; quirks?: boolean }) {
-  const settings: Settings = { rosterOnly: inp.rosterOnly, fodder: !!inp.fodder, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true };
+function ctxFor(inp: { rosterOnly: boolean; roster: string; stage?: 'grow' | 'end'; lv120?: boolean; quirks?: boolean }) {
+  const settings: Settings = { rosterOnly: inp.rosterOnly, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true };
   return makeCtx(idx, settings, new Set(rosters[inp.roster]));
 }
 

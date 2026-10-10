@@ -1,24 +1,23 @@
-// Порог и итог плана героя (R6.2–R6.4, .x/0040-trade/SPEC.md). Лучший комплект — bestKit; потом слот за слотом в порядке
-// приложения: слот меняется, только если новая вещь лучше НАДЕТОЙ хотя бы на 1 очк., или включает неконвертируемый сет,
-// или повышает рекомендованность оружия/аксессуара (R6.2). В слоте, где лучший комплект меняет вещь, берётся самая
-// дешёвая по источнику из вещей в окне «хуже лучшей на 0…1 очк.», не меняющих сеты и не понижающих рекомендованность.
+// Порог и итог плана героя (R6.2–R6.4, .x/0040-trade/SPEC.md; порог — MODEL.md §7 item 5). Лучший комплект — bestKit;
+// потом слот за слотом в порядке приложения: слот меняется, только если с новой вещью заказ лучше, чем с НАДЕТОЙ, по
+// порогу gains (+1 очк., половина сета-эффекта, выше ранг оружия/аксессуара). В слоте, где лучший комплект меняет вещь,
+// берётся самая дешёвая по источнику из вещей в окне «хуже лучшей на 0…1 очк.», не меняющих половины сетов и не
+// понижающих ранг.
 // Принятое — в fix; комплект пересчитывается с ним, поэтому «уже принятые замены» учитываются у следующих слотов.
 import type { SlotId } from '@/game/data/types';
-import { bestKit, keyOf, type Fix } from './kit';
-import { GEAR_SLOTS, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Kit } from './model';
+import { bestKit, FIT, keyOf, type Fix } from './kit';
+import { gains, GEAR_SLOTS, legendOverEpic, SLOT_ORDER, type Cand, type Cands, type Gauge, type Kit } from './model';
 import { THRESHOLD, type Milli } from '@/features/gear/model/vs';
 
-const FIT: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
 const isGear = (slot: SlotId) => GEAR_SLOTS.includes(slot);
 
 export interface Change { slot: SlotId; cand: Cand; was: Cand | null }
 export interface Loss { holder: string; slot: SlotId; loss: Milli } // кто отдаёт надетое и сколько теряет (R6.4)
 export interface Plan { kit: Kit; changes: Change[]; losses: Loss[] }
 
-// Порог R6.2: вещь `to` вместо надетой `from` при остальном комплекте `rest`
+// Порог: вещь `to` вместо надетой `from` при остальном комплекте `rest`
 export function passesThreshold(g: Gauge, rest: Partial<Record<SlotId, Cand>>, slot: SlotId, from: Cand, to: Cand): boolean {
-  const a = keyOf(g, { ...rest, [slot]: from }), b = keyOf(g, { ...rest, [slot]: to });
-  return b.total - a.total >= THRESHOLD || b.live > a.live || (isGear(slot) && FIT[to.fit] > FIT[from.fit]);
+  return gains(keyOf(g, { ...rest, [slot]: from }), keyOf(g, { ...rest, [slot]: to }), legendOverEpic(from, to));
 }
 
 // меньшая цена источника, потом больше очков, дальше R6.1
@@ -37,9 +36,10 @@ export function planFor(g: Gauge, cands: Cands): Plan {
       const k = keyOf(g, { ...best.slots, [slot]: c });
       const window = best.key.total - k.total;
       if (window < 0 || window >= THRESHOLD) return false;
-      if (k.hard !== best.key.hard || k.live !== best.key.live || k.soft !== best.key.soft) return false;
+      if (k.halves !== best.key.halves || k.eff !== best.key.eff) return false;
       if (isGear(slot) && FIT[c.fit] < FIT[b.fit]) return false;
-      return c.item.id === w.item.id || passesThreshold(g, best.slots, slot, w, c);
+      // the worn Epic does not hold its place against a Legendary that is not worse (Q7)
+      return c.item.id === w.item.id ? !legendOverEpic(w, b) : passesThreshold(g, best.slots, slot, w, c);
     });
     fix[slot] = opts.sort(cheaper)[0] ?? w;
   }

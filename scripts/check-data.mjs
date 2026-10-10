@@ -95,7 +95,7 @@ function buildOf(html, w) {
 
 // --------------------------------------------------------------------------- оценка
 
-const settingsOf = (inp) => ({ rosterOnly: inp.rosterOnly, fodder: !!inp.fodder, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true });
+const settingsOf = (inp) => ({ rosterOnly: inp.rosterOnly, stage: inp.stage ?? 'grow', lv120: !!inp.lv120, quirks: inp.quirks ?? true });
 
 function describeCase(inp, D) {
   const name = (list, key) => list.find((x) => x.key === key || x.id === key)?.name ?? key;
@@ -145,7 +145,7 @@ function diffCases(was, now, D) {
 function reachability(ogc) {
   const { idx, makeCtx, evaluate, D } = ogc;
   const keys = new Set(D.substats.map((s) => s.key));
-  const settings = { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true };
+  const settings = { rosterOnly: true, stage: 'grow', lv120: false, quirks: true };
   const miss = new Map();
   for (const c of D.chars) {
     for (const b of c.builds) {

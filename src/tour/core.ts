@@ -25,12 +25,13 @@ const demoSet = (c: TourCtx) => demoItem(c) && c.set === DEMO.set;
 const demoSubs = (c: TourCtx) => demoSet(c) && c.nSubs === DEMO.subs.length && DEMO.subs.every((k) => k in c.s.subs);
 const extraSub = (c: TourCtx) => Object.keys(c.s.subs).some((k) => !(DEMO.subs as readonly string[]).includes(k));
 
-// Шаг «сет или предмет»: рамка на том, что осталось сделать. Legendary оружие — сначала main кнопками, потом поле
-// оружия; Legendary аксессуар — поле предмета; Epic аксессуар — сетка (первое нажатие в ней — main, как в тексте)
+// Step «set or item»: the frame is on what is left to do. A weapon — the main in the grid first (owner 2026-10-09: like an
+// accessory), then for a Legendary the weapon field; a Legendary accessory — the item field; an Epic accessory — the grid (the first
+// tap in it is the main, as in the text)
 const pickAt = ({ s }: TourCtx): Anchor[] => {
   if (isArmor(s.slot)) return ['pick'];
   const legend = s.grade === 'unique';
-  if (s.slot === 'weapon') return legend && s.main ? ['item'] : ['pick'];
+  if (s.slot === 'weapon') return legend && s.main ? ['item'] : ['grid'];
   return legend ? ['item'] : ['grid'];
 };
 

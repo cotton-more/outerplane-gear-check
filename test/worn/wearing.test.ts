@@ -1,341 +1,232 @@
-// Данные «Надето» (features/worn/wearing, шаг 4): вкладка (совет «лучше из своих», сет k из n), шторка «Билд для X» (варианты, флаги),
-// экран «Переодеть» (надень, снимешь, не хватает, включится / выключится). Герои — из эталонных данных, вещи — синтетические.
+// Данные карточки героя (features/worn/wearing, stat-sets этап 6): «Переодеть» — лучшая раскладка против надетого (+1 очко,
+// MODEL.md §3 item 3; a Legendary instead of an Epic of the same slot — no +1, Q7), «Что искать» and pin variants — by the best layout for the set, the substat colour by points (PLAN Д1),
+// причины в списке вещей. Герои — из эталонных данных, вещи — синтетические.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
-import type { Dataset, Grade, SlotId } from '@/game/data/types';
+import type { Dataset, SlotId } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { type GearStore, type Piece } from '@/features/gear/model/gear';
-import { poolView, type Mark } from '@/features/gear/pool';
+import { setPin, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { poolView } from '@/features/gear/pool';
 import type { Subs } from '@/game/item/subs';
-import { variantsOf, buildKey } from '@/game/build/variants';
-import { aimOf } from '@/features/worn/aim';
-import { aimOptions, missingParts, reasonOf, redressPlan, t4Parts, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { comboSig } from '@/game/build/variants';
+import { pinOptions } from '@/game/build/profile';
+import { pinChoices, redressOf, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { heroPool } from '@/features/gear/verdict';
+import { redressLabel } from '@/features/worn/Redress';
+import { TEXTS } from '@/i18n';
+import { char as ch, ctx as c2, D as data, mk, prof } from '../gear/statSets';
+import { reasonOf } from '@/features/gear/pool/info';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const char = (name: string) => D.chars.find((c) => c.name === name)!;
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
-const [valentine, delta] = ['Valentine', 'Heatwave Cop Delta'].map(char);
-// Delta: DPS (Penetration ×4 | Attack ×2 + Speed ×2 | Penetration ×2 + Attack ×2) и Priority Support/PvP (Speed ×4)
-const variant = (c: { id: string }, build: string, sig?: string) => `${buildKey(c.id, build)}${sig ? '#' + sig : ''}`;
-const PEN4 = variant(delta, 'DPS', '11x4'), ATK_SPD = variant(delta, 'DPS', '1x2+13x2'), PEN_ATK = variant(delta, 'DPS', '1x2+11x2');
-const SUPPORT = variant(delta, 'Priority Support/PvP');
-const STATS = variant(delta, '#stats');
+// Delta: DPS (CHC › ATK › SPD = CHD › DMG UP%; Penetration ×4 | Attack ×2 + Speed ×2 | Penetration ×2 + Attack ×2) и
+// Priority Support/PvP (SPD › CHC › ATK › CHD › DMG UP%; Speed ×4). «По статам» — цепочка DPS (первый при равенстве)
+const delta = char('Heatwave Cop Delta');
+const SPEED = set('Speed'), ATTACK = set('Attack'), PEN = set('Penetration');
+const pinBy = (sig: string) => pinOptions(delta).find((o) => comboSig(o.combo) === sig)!;
 
 let seq = 0;
 const ARMOR: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 const GOOD: Subs = { SPD: 4, CHC: 4, CHD: 4, ATK: 4 };
+const WEAK: Subs = { RES: 2, EFF: 2, HP: 2, DEF: 2 };
 const piece = (slot: SlotId, short: string | null, lit: Subs = GOOD, extra: Partial<Piece> = {}): Piece =>
-  ({ id: 'p' + ++seq, slot, grade: 'unique', setId: short ? set(short) : null, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '', ...extra });
+  ({ id: 'p' + ++seq, slot, grade: 'unique', setId: short ? set(short) : null, itemKey: null, main: null, yellow: lit, lit, bt: 4, at: '', ...extra });
 const armorOf = (short: string | null, lit?: Subs) => ARMOR.map((slot) => piece(slot, short, lit));
-const weapon = (grade: Grade, itemKey: string | null): Piece => piece('weapon', null, GOOD, { grade, itemKey, main: 'ATK%' });
 
-// pool — вещи героя, worn — надетое (по слотам)
-const store = (c: { id: string }, pool: Piece[], worn: Piece[], extra: Partial<GearStore> = {}): GearStore => ({
-  v: 2, seq: 999, pieces: Object.fromEntries(pool.map((p) => [p.id, p])), pools: { [c.id]: pool.map((p) => p.id) },
-  worn: { [c.id]: Object.fromEntries(worn.map((p) => [p.slot, p.id])) }, ...extra,
+const store = (pool: Piece[], worn: Piece[], extra: Partial<GearStore> = {}): GearStore => ({
+  v: 3, seq: 999, pieces: Object.fromEntries(pool.map((p) => [p.id, p])), pools: { [delta.id]: pool.map((p) => p.id) },
+  worn: { [delta.id]: Object.fromEntries(worn.map((p) => [p.slot, p.id])) }, ...extra,
 });
-const cpOf = (st: GearStore, c: { id: string }) => poolView(ctx, st).of(c.id)!;
-const wornOf = (c: typeof valentine, st: GearStore) => wornView(ctx, c, st, cpOf(st, c));
-const adviceOf = (c: typeof valentine, st: GearStore, slot: SlotId) => wornOf(c, st).slots.find((s) => s.slot === slot)!.advice;
-const options = (st: GearStore) => aimOptions(ctx, delta, st, cpOf(st, delta));
-const optionOf = (st: GearStore, key: string) => options(st).find((o) => o.key === key)!;
-const plan = (st: GearStore, key: string) => redressPlan(ctx, delta, st, cpOf(st, delta), key)!;
-const ids = (ps: Piece[]) => ps.map((p) => p.id);
+const view = (st: GearStore) => wornView(ctx, delta, st, poolView(ctx, st).hero(delta.id));
 
-// Delta носит Speed ×4 (и слабое оружие с чужим аксессуаром), в вещах лежат ещё четыре Penetration
-function deltaStore(extra: Partial<GearStore> = {}, more: Piece[] = []) {
-  const speed = armorOf('Speed'), pen = armorOf('Penetration');
-  const st = store(delta, [...speed, ...pen, ...more], speed, { aim: { [delta.id]: SUPPORT }, ...extra });
-  return { st, speed, pen };
-}
-
-describe('вкладка «Надето»: совет «лучше из своих»', () => {
-  it('M1: вещь раскладки лучше надетой на ≥ 1 очк. — совет со стрелкой вверх и выигрышем', () => {
-    const [h1, ...rest] = armorOf('Speed');
-    const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
-    const weak = { ...h1, lit: { SPD: 1 }, yellow: { SPD: 1 } };
-    const st = store(valentine, [weak, h2, ...rest], [weak, ...rest]);
-
-    const advice = adviceOf(valentine, st, 'helmet');
-
-    expect(advice).toMatchObject({ piece: { id: h2.id }, up: true });
-    expect(advice!.delta).toBeGreaterThan(0);
+describe('«Переодеть»: лучшая раскладка из своих вещей против надетого', () => {
+  it('своя Speed-броня в пуле лучше надетой слабой — все четыре вещи, прирост в очках, включится Speed ×4', () => {
+    const worn = armorOf('Attack', WEAK), speed = armorOf('Speed');
+    const r = view(store([...worn, ...speed], worn)).redress!;
+    expect(r.wear.map((w) => [w.piece.id, w.replaces?.id])).toEqual(speed.map((p, i) => [p.id, worn[i].id]));
+    expect(r.pts).toBeGreaterThan(1);
+    expect(r.on).toContainEqual({ set: SPEED, n: 4 });
   });
 
-  it('M1: вещь раскладки лучше надетой на 0,8 очк. и сет не включает — совета нет', () => {
-    const [h1, ...rest] = armorOf('Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 5 });
-    const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
-    const st = store(valentine, [h1, h2, ...rest], [h1, ...rest]);
-
-    expect(adviceOf(valentine, st, 'helmet')).toBeNull();
+  it('надето = лучшая раскладка — «Переодеть» нет', () => {
+    const speed = armorOf('Speed');
+    expect(view(store(speed, speed)).redress).toBeNull();
   });
 
-  it('M1: лучше надетой на 1,6 очк. (ATK 4 против 6) — совет есть', () => {
-    const [h1, ...rest] = armorOf('Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 4 });
-    const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
-    const st = store(valentine, [h1, h2, ...rest], [h1, ...rest]);
-
-    expect(adviceOf(valentine, st, 'helmet')).toMatchObject({ piece: { id: h2.id }, up: true });
+  it('лучше меньше чем на 1 очко — «Переодеть» нет (в раскладке она есть: честный максимум)', () => {
+    const worn = [piece('helmet', 'Speed', { SPD: 3, CHC: 4, CHD: 4, ATK: 4 }), ...armorOf('Speed').slice(1)];
+    const up = piece('helmet', 'Speed'); // SPD 4: +0,65 очк.
+    const st = store([...worn, up], worn);
+    expect(poolView(ctx, st).hero(delta.id)!.info.layout.helmet?.id).toBe(up.id);
+    expect(view(st).redress).toBeNull();
   });
 
-  it('M2: запасная включает бонус конвертируемого сета (Speed), но очков меньше чем на 1 — совета нет', () => {
-    const [, ...rest] = armorOf('Speed');
-    const stylish = piece('helmet', null, { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
-    const speedHelmet = piece('helmet', 'Speed', { SPD: 1, CHC: 1 });
-    const st = store(valentine, [stylish, speedHelmet, ...rest], [stylish, ...rest]);
-
-    expect(adviceOf(valentine, st, 'helmet')).toBeNull();
+  // Q7 (owner, 2026-10-09): a Legendary not worse by points than the worn Epic of that slot — «Переодеть» without +1
+  it('Q7: Legendary в пуле не хуже надетого Epic того же слота — «Переодеть» есть (равные очки и +0,65)', () => {
+    const rest = armorOf('Speed').slice(1);
+    const lit = { SPD: 3, CHC: 4, CHD: 4, ATK: 4 };
+    const worn = [piece('helmet', 'Speed', lit, { grade: 'rare' }), ...rest];
+    const same = piece('helmet', 'Speed', lit);
+    const r0 = view(store([...worn, same], worn)).redress!;
+    expect(r0.wear.map((w) => [w.piece.id, w.replaces?.id])).toEqual([[same.id, worn[0].id]]);
+    expect(r0.pts).toBeCloseTo(0, 9);
+    expect(r0.rankUp).toBe(false);
+    // no named gain and no better passive: plain «Переодеть», not «пассивка лучше»
+    expect([redressLabel(TEXTS.ru, r0), redressLabel(TEXTS.en, r0)]).toEqual(['Переодеть', 'Re-dress']);
+    const up = piece('helmet', 'Speed', { ...lit, SPD: 4 });
+    const r1 = view(store([...worn, up], worn)).redress!;
+    expect(r1.wear[0].piece.id).toBe(up.id);
+    expect(r1.pts).toBeCloseTo(0.65, 9);
+    expect([redressLabel(TEXTS.ru, r1), redressLabel(TEXTS.en, r1)]).toEqual(['Переодеть: +0,6 очк.', 'Re-dress: +0.6 pts']);
   });
 
-  it('M4: вещь, снятая обменом (хуже надетой), лежит в пуле — вернуть её «Надето» не советует', () => {
-    const [h1, ...rest] = armorOf('Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 4 });
-    const h2 = piece('helmet', 'Speed', { SPD: 6, CHC: 6, CHD: 6, ATK: 6 });
-    const st = store(valentine, [h1, h2, ...rest], [h2, ...rest]);
-
-    expect(adviceOf(valentine, st, 'helmet')).toBeNull();
+  it('Q7: Epic вместо Epic — порог 1 очко прежний (+0,65 — «Переодеть» нет)', () => {
+    const lit = { SPD: 3, CHC: 4, CHD: 4, ATK: 4 };
+    const worn = [piece('helmet', 'Speed', lit, { grade: 'rare' }), ...armorOf('Speed').slice(1)];
+    const up = piece('helmet', 'Speed', { ...lit, SPD: 4 }, { grade: 'rare' });
+    expect(view(store([...worn, up], worn)).redress).toBeNull();
   });
 
-  it('надета такая же по содержимому запись — совета нет', () => {
-    const [h1, ...rest] = armorOf('Speed');
-    const twin = piece('helmet', 'Speed');
-    const st = store(valentine, [h1, twin, ...rest], [twin, ...rest]);
-
-    expect(adviceOf(valentine, st, 'helmet')).toBeNull();
+  it('Q7: Legendary вместо надетого Legendary при равных очках — «Переодеть» нет', () => {
+    const lit = { SPD: 3, CHC: 4, CHD: 4, ATK: 4 };
+    const worn = [piece('helmet', 'Speed', lit), ...armorOf('Speed').slice(1)];
+    expect(view(store([...worn, piece('helmet', 'Speed', lit)], worn)).redress).toBeNull();
   });
 
-  it('M2: вещь хуже по статам, но включает неконвертируемый сет, — совет есть: Penetration ×4 включится', () => {
-    const [, ...pen] = armorOf('Penetration');
-    const stylish = piece('helmet', null, { CHC: 6, CHD: 6, ATK: 6, SPD: 6 });
-    const penHelmet = piece('helmet', 'Penetration', { CHC: 1 });
-    const st = store(delta, [stylish, penHelmet, ...pen], [stylish, ...pen], { aim: { [delta.id]: PEN4 } });
-
-    const advice = adviceOf(delta, st, 'helmet');
-
-    expect(advice).toMatchObject({ piece: { id: penHelmet.id }, up: false, setOn: [{ set: set('Penetration'), n: 4 }] });
+  it('такая же по содержимому запись — не «надеть»', () => {
+    const speed = armorOf('Speed');
+    const twin = { ...speed[0], id: 'twin' };
+    const r = view(store([twin, ...speed], speed));
+    expect(r.redress).toBeNull();
   });
 
-  it('пустой слот — вещь раскладки без выигрыша', () => {
-    const [h, ...rest] = armorOf('Speed');
-    const st = store(valentine, [h, ...rest], rest);
-
-    const advice = adviceOf(valentine, st, 'helmet');
-
-    expect(advice).toEqual({ piece: h, delta: null, up: false, setOn: [], gained: [], lost: [] });
-  });
-
-  it('M3: рекомендованное оружие вместо временного — совет со стрелкой вверх', () => {
-    const epic = weapon('rare', null), rec = weapon('unique', '23');
-    const st = store(delta, [epic, rec], [epic], { aim: { [delta.id]: PEN4 } });
-
-    expect(adviceOf(delta, st, 'weapon')).toMatchObject({ piece: { id: rec.id }, up: true });
+  it('«Надеть все» надевает вещи по очереди, «Вернуть» — как было', () => {
+    const worn = armorOf('Attack', WEAK), speed = armorOf('Speed');
+    const st = store([...worn, ...speed], worn);
+    const r = wearMany(ctx, st, delta.id, view(st).redress!.wear.map((w) => w.piece.id))!;
+    expect(r.st.worn?.[delta.id]).toEqual(Object.fromEntries(speed.map((p) => [p.slot, p.id])));
+    expect(view(r.st).redress).toBeNull();
+    expect(undoWearMany(r.st, delta.id, r)).toEqual(st);
+    expect(wearMany(ctx, r.st, delta.id, speed.map((p) => p.id))).toBeNull();
   });
 });
 
-describe('вкладка «Надето»: раскладка надетого', () => {
-  it('сет k из n по надетому и «надето · k из 6»', () => {
-    const [h, a, g, s] = armorOf('Speed');
-    const st = store(valentine, [h, a, g, s], [h, a, g]);
-
-    const v = wornOf(valentine, st);
-
-    expect({ set: v.set, count: v.count, pool: v.pool }).toEqual({ set: { k: 3, n: 4 }, count: 3, pool: 4 });
+describe('«Что искать» и варианты закрепления — по лучшей раскладке под набор', () => {
+  it('Speed-шлем и Speed-броня: Speed ×4 — 2 из 4, нужны перчатки и ботинки (без сета); Attack ×2 + Speed ×2 — с сетом', () => {
+    const two = [piece('helmet', 'Speed'), piece('armor', 'Speed')];
+    const seek = view(store(two, two)).seek;
+    const speed4 = seek.find((f) => comboSig(f.pin.combo) === `${SPEED}x4`)!;
+    expect({ k: speed4.k, n: speed4.n, need: speed4.need }).toEqual({ k: 2, n: 4, need: [{ slot: 'gloves', set: null }, { slot: 'shoes', set: null }] });
+    const mix = seek.find((f) => f.pin.combo.some((p) => p.set === ATTACK) && f.pin.combo.some((p) => p.set === SPEED))!;
+    expect({ k: mix.k, need: mix.need }).toEqual({ k: 2, need: [{ slot: 'gloves', set: ATTACK }, { slot: 'shoes', set: ATTACK }] });
+    // 0 из 4 (Penetration ×4) — нет
+    expect(seek.some((f) => comboSig(f.pin.combo) === `${PEN}x4`)).toBe(false);
   });
 
-  it('токены: засчитанный стат цепочки билда — 1, чужой — 0', () => {
-    const h = piece('helmet', 'Speed', { SPD: 2, 'RES%': 2 });
-    const st = store(valentine, [h], [h]);
-
-    const tokens = wornOf(valentine, st).slots.find((s) => s.slot === 'helmet')!.tokens;
-
-    expect(tokens).toEqual([{ key: 'SPD', lit: 2, credit: 1 }, { key: 'RES%', lit: 2, credit: 0 }]);
+  it('собранный набор не показывается; от ближнего', () => {
+    const speed = armorOf('Speed');
+    const seek = view(store(speed, speed)).seek;
+    expect(seek.some((f) => comboSig(f.pin.combo) === `${SPEED}x4`)).toBe(false);
+    expect(seek.map((f) => f.k)).toEqual([...seek.map((f) => f.k)].sort((a, z) => z - a));
   });
 
-  it('бонусы надетых сетов и билд героя — выбранный', () => {
-    const { st } = deltaStore();
-
-    const v = wornOf(delta, st);
-
-    expect({ aim: v.aim.key, bonuses: v.bonuses.map((r) => `${r.set}:${r.n}:${r.tier}`) }).toEqual({ aim: SUPPORT, bonuses: [`${set('Speed')}:4:T0`] });
+  it('у недостающей части — свой сет: Penetration ×2 + Attack ×2 при трёх Penetration и одном Attack — нужна Attack-вещь', () => {
+    const pool = [piece('helmet', 'Penetration'), piece('armor', 'Penetration'), piece('gloves', 'Penetration'), piece('shoes', 'Attack')];
+    const f = view(store(pool, pool)).seek.find((x) => comboSig(x.pin.combo) === `${ATTACK}x2+${PEN}x2`)!;
+    expect(f.k).toBe(3);
+    expect(f.need).toHaveLength(1);
+    expect(f.need[0].set).toBe(ATTACK);
   });
 
-  it('часть связки с бонусом только на T4, пока его нет, — в t4', () => {
-    const [h, a] = armorOf('Speed');
-    const st = store(delta, [h, a], [h, a], { aim: { [delta.id]: ATK_SPD } });
-
-    expect(wornOf(delta, st).t4).toEqual([{ set: set('Speed'), n: 2, k: 2 }]);
+  it('закреплён — только его набор', () => {
+    const two = [piece('helmet', 'Speed'), piece('armor', 'Speed')];
+    const st = setPin(store(two, two), delta.id, pinBy(`${SPEED}x4`).key).st;
+    expect(view(st).seek.map((f) => comboSig(f.pin.combo))).toEqual([`${SPEED}x4`]);
   });
 
-  it('у героя без билдов — надетое без билда и без совета', () => {
-    const noBuilds = char('Hanbyul Lee');
-    const h = piece('helmet', 'Speed');
-    const st = store(noBuilds, [h], [h]);
-
-    const v = wornView(ctx, noBuilds, st, cpOf(st, noBuilds));
-
-    expect({ variant: v.variant, set: v.set, advice: v.slots.map((s) => s.advice) }).toEqual({ variant: null, set: null, advice: Array(6).fill(null) });
+  it('варианты закрепления — все наборы, от ближнего; 0 из 4 тоже', () => {
+    const two = [piece('helmet', 'Speed'), piece('armor', 'Speed')];
+    const hp = poolView(ctx, store(two, two)).hero(delta.id)!;
+    const list = pinChoices(hp);
+    expect(list).toHaveLength(pinOptions(delta).length);
+    expect(list.map((f) => f.k)).toEqual([...list.map((f) => f.k)].sort((a, z) => z - a));
+    expect(list.at(-1)!.k).toBe(0);
   });
 });
 
-describe('шторка «Билд для X»', () => {
-  it('Delta: сейчас — первым, три связки DPS и «По статам», не хватает и что можно переодеть', () => {
-    const { st } = deltaStore();
+describe('слоты «Надето» и причины в списке вещей', () => {
+  it('цвет сабстата — по очкам: стат цепочки на 5-м месте засчитан, чужой — нет; закреплённый — по цепочке своего билда', () => {
+    const h = piece('helmet', 'Speed', { 'DMG UP%': 2, RES: 2, CHC: 2, HP: 2 });
+    const credit = (st: GearStore) => Object.fromEntries(view(st).slots.find((s) => s.slot === 'helmet')!.tokens.map((k) => [k.key, k.credit]));
+    expect(credit(store([h], [h]))).toMatchObject({ 'DMG UP%': 1, RES: 0, CHC: 1, HP: 0 });
+    expect(view(store([h], [h])).count).toBe(1);
+  });
 
-    const keys = options(st).map((o) => ({ key: o.key, now: o.now, canRedress: o.canRedress, missing: o.missing }));
+  it('бонусы — только включённые надетыми сетами', () => {
+    const speed = armorOf('Speed');
+    expect(view(store(speed, speed)).bonuses.map((r) => [r.set, r.n])).toContainEqual([SPEED, 4]);
+    expect(view(store([speed[0]], [speed[0]])).bonuses).toEqual([]);
+  });
 
-    expect(keys).toEqual([
-      { key: SUPPORT, now: true, canRedress: false, missing: 0 },
-      { key: PEN4, now: false, canRedress: true, missing: 0 },
-      { key: PEN_ATK, now: false, canRedress: true, missing: 2 },
-      { key: ATK_SPD, now: false, canRedress: false, missing: 2 },
-      { key: STATS, now: false, canRedress: false, missing: 0 },
+  it('причина: надета · лучший сета · по статам · не держится — null', () => {
+    const worn = piece('helmet', 'Speed');
+    const best = piece('armor', 'Speed');
+    const junk = piece('gloves', 'Speed', { RES: 1 });
+    const st = store([worn, best, junk], [worn]);
+    const hp = poolView(ctx, st).hero(delta.id)!;
+    expect(reasonOf(hp.info, worn)).toEqual({ kind: 'worn' });
+    expect(reasonOf(hp.info, best)?.kind).toMatch(/best|stats/);
+    expect(reasonOf(hp.info, junk)).toBeNull();
+  });
+});
+
+// ревью этапа 10, находка 4: «Переодеть» только по пассивке — rankUp, очки могут упасть (кнопка без «+N»)
+describe('«Переодеть» по рангу оружия', () => {
+  it('рекомендованное оружие на 0 очков вместо надетого не из билдов на 9,65 — rankUp, pts −9,65', () => {
+    const rin = ch('Rin');
+    const listed = prof(rin).chain.weapons[0];
+    const item = data.weapons.find((i) => i.key === listed.key)!;
+    const other = data.weapons.find((i) => i.grade === 'unique' && i.key !== listed.key && !rin.builds.some((b) => b.weapons.some((w) => w.key === i.key))
+      && (!i.classLimits.length || i.classLimits.includes(rin.class)) && i.mains.includes('HP%'))!;
+    const rec = mk('p1', 'weapon', null, { RES: 1, EFF: 1, 'HP%': 1, 'DEF%': 1 }, 4, { itemKey: item.key, main: listed.mains[0] ?? item.mains[0] });
+    const non = mk('p2', 'weapon', null, { CHC: 4, CHD: 3, SPD: 3, 'ATK%': 3 }, 4, { itemKey: other.key, main: 'HP%' });
+    const r = redressOf(heroPool(c2, rin, [rec, non], new Set(['p2']))!, { weapon: non })!;
+    expect(r.rankUp).toBe(true);
+    expect(r.pts).toBeCloseTo(-9.65, 6);
+    expect([redressLabel(TEXTS.ru, r), redressLabel(TEXTS.en, r)]).toEqual(['Переодеть: пассивка лучше', 'Re-dress: better passive']);
+    expect(r.wear.map((x) => x.piece.id)).toEqual(['p1']);
+  });
+});
+
+// The chain on «Надето» (owner, 2026-10-07): the chain's own order, a stat — its segments summed over worn pieces
+describe('цепочка с суммой сегментов надетого', () => {
+  it('порядок цепочки, ATK% и flat ATK рядом через «/», стат, которого нет на вещах, — 0', () => {
+    const helm = piece('helmet', 'Speed', { SPD: 4, CHC: 4, CHD: 4, ATK: 4 });
+    const glov = piece('gloves', 'Speed', { CHC: 2, 'ATK%': 3, RES: 1, SPD: 1 });
+    const v = view(store([helm, glov], [helm, glov]));
+    // Delta's «По статам»: CHC › ATK › SPD = CHD › DMG UP%
+    expect(v.chain.map((x) => [x.sep, x.key, x.seg])).toEqual([
+      ['', 'CHC', 6], ['›', 'ATK%', 3], ['/', 'ATK', 4], ['›', 'SPD', 5], ['=', 'CHD', 4], ['›', 'DMG UP%', 0],
+    ]);
+    expect(v.chain.find((x) => x.key === 'ATK%')!.credit).toBe(1);
+    expect(v.chain.find((x) => x.key === 'ATK')!.credit).toBeLessThan(1);
+    // the second chain (Priority Support/PvP: SPD › CHC › ATK › CHD › DMG UP%) — same sums, its own order
+    expect(v.build).toBe('DPS');
+    expect(v.alt.map((a) => a.build)).toEqual(['Priority Support/PvP']);
+    expect(v.alt[0].chain.map((x) => [x.sep, x.key, x.seg])).toEqual([
+      ['', 'SPD', 5], ['›', 'CHC', 6], ['›', 'ATK%', 3], ['/', 'ATK', 4], ['›', 'CHD', 4], ['›', 'DMG UP%', 0],
     ]);
   });
 
-  it('«Не собираю» — последним, после «По статам»', () => {
-    const { st } = deltaStore({ marks: { [PEN4]: 'skip' as Mark } });
-
-    expect(options(st).map((o) => o.key).slice(-2)).toEqual([STATS, PEN4]);
-  });
-
-  it('части связки: надето, в вещах, не хватает, T4 и включён ли бонус', () => {
-    const { st } = deltaStore();
-
-    const parts = (key: string) => optionOf(st, key).parts.map((p) => ({ ...p.part, worn: p.worn, owned: p.owned, missing: p.missing, t4: p.t4, on: p.on }));
-
-    expect({ support: parts(SUPPORT), atkSpeed: parts(ATK_SPD) }).toEqual({
-      support: [{ set: set('Speed'), n: 4, worn: 4, owned: 4, missing: 0, t4: false, on: true }],
-      atkSpeed: [
-        { set: set('Attack'), n: 2, worn: 0, owned: 0, missing: 2, t4: false, on: false },
-        { set: set('Speed'), n: 2, worn: 2, owned: 2, missing: 0, t4: true, on: true },
-      ],
-    });
-  });
-
-  it('«По статам» — вариант без частей связки', () => {
-    const { st } = deltaStore();
-
-    expect(optionOf(st, STATS)).toMatchObject({ stats: true, parts: [], now: false, canRedress: false });
-  });
-
-  it('«По статам»: можно переодеть, когда лучшее по цепочке из вещей не надето', () => {
-    const { st } = deltaStore({}, [piece('helmet', 'Speed', { CHC: 6, CHD: 6, ATK: 6, SPD: 6 })]);
-
-    expect(optionOf(st, STATS).canRedress).toBe(true);
-  });
-
-  it('выбран «По статам» — он первым и «сейчас»', () => {
-    const { st } = deltaStore({ aim: { [delta.id]: STATS } });
-
-    expect(options(st)[0]).toMatchObject({ key: STATS, now: true });
-  });
-});
-
-describe('экран «Переодеть»', () => {
-  it('надень из своих — вещи раскладки, не надетые; снимешь — надетое, которое она заменит', () => {
-    const { st, speed, pen } = deltaStore();
-
-    const p = plan(st, PEN4);
-
-    expect({ wear: ids(p.wear.map((w) => w.piece)), replaces: ids(p.wear.map((w) => w.replaces!)), remove: ids(p.remove) })
-      .toEqual({ wear: ids(pen), replaces: ids(speed), remove: ids(speed) });
-  });
-
-  it('включится и выключится — бонусы до и после «Надеть все»', () => {
-    const { st } = deltaStore();
-
-    const p = plan(st, PEN4);
-
-    expect({ on: p.on.map((r) => `${r.set}:${r.n}`), off: p.off.map((r) => `${r.set}:${r.n}`) })
-      .toEqual({ on: [`${set('Penetration')}:4`], off: [`${set('Speed')}:4`] });
-  });
-
-  it('не хватает — часть связки, которой нет в вещах, как у карточки билда', () => {
-    const { st } = deltaStore();
-
-    const p = plan(st, ATK_SPD);
-
-    expect(p.missing).toMatchObject([{ set: set('Attack'), n: 2, have: 0, need: 2, t4: false }]);
-    expect(p.missing).toEqual(missingParts(ctx, cpOf(st, delta).reach.get(ATK_SPD)!));
-  });
-
-  it('оружие и аксессуар — строками в «Надень из своих», если в раскладке другие', () => {
-    const epic = weapon('rare', null), rec = weapon('unique', '23');
-    const own = piece('accessory', null, GOOD, { itemKey: '1017', main: 'SPD' });
-    const burning = piece('accessory', null, GOOD, { itemKey: '1012', main: 'PEN%' });
-    const { st } = deltaStore({}, [epic, rec, own, burning]);
-    const worn = { ...st, worn: { [delta.id]: { ...st.worn![delta.id], weapon: epic.id, accessory: own.id } } };
-
-    const p = plan(worn, PEN4);
-
-    expect(p.wear.filter((w) => w.piece.slot === 'weapon' || w.piece.slot === 'accessory').map((w) => [w.piece.id, w.replaces!.id]))
-      .toEqual([[rec.id, epic.id], [burning.id, own.id]]);
-  });
-
-  it('раскладка совпадает с надетым — ничего не надеть и не снять', () => {
-    const { st } = deltaStore();
-
-    const p = plan(st, SUPPORT);
-
-    expect({ wear: p.wear, remove: p.remove, on: p.on, off: p.off }).toEqual({ wear: [], remove: [], on: [], off: [] });
-  });
-
-  it('неизвестный ключ — null', () => {
-    const { st } = deltaStore();
-
-    expect(redressPlan(ctx, delta, st, cpOf(st, delta), 'nope')).toBeNull();
-  });
-});
-
-describe('общие с карточкой билда', () => {
-  it('t4Parts совпадает с тем, что считал BuildGear: часть с бонусом только на T4 и без него', () => {
-    const [h, a] = armorOf('Speed');
-    const st = store(delta, [h, a], [h, a]);
-    const asm = cpOf(st, delta).asm.get(ATK_SPD)!;
-
-    expect(t4Parts(ctx, asm)).toEqual([{ set: set('Speed'), n: 2, k: 2 }]);
-  });
-
-  it('вариантов Delta — те, что в тесте (ключи сверены с данными)', () => {
-    expect(variantsOf(idx, delta).map((v) => v.key)).toEqual([PEN4, ATK_SPD, PEN_ATK, SUPPORT]);
-  });
-});
-
-describe('«Надеть все» на «Переодеть»: wearMany', () => {
-  it('надевает вещи раскладки по очереди — надетое = раскладка', () => {
-    const { st, pen } = deltaStore();
-    const r = wearMany(ctx, st, delta.id, ids(plan(st, PEN4).wear.map((w) => w.piece)))!;
-    expect(Object.values(r.st.worn![delta.id]).sort()).toEqual(ids(pen).sort());
-  });
-
-  it('«Вернуть» возвращает прежнее надетое', () => {
-    const { st, speed } = deltaStore();
-    const r = wearMany(ctx, st, delta.id, ids(plan(st, PEN4).wear.map((w) => w.piece)))!;
-    expect(Object.values(undoWearMany(r.st, delta.id, r).worn![delta.id]).sort()).toEqual(ids(speed).sort());
-  });
-
-  it('надевать нечего (всё надето) — null', () => {
-    const { st, speed } = deltaStore();
-    expect(wearMany(ctx, st, delta.id, ids(speed))).toBeNull();
-  });
-});
-
-describe('причина выбора билда: reasonOf', () => {
-  it('«поровну — первый» при вещах билдов в пуле — ничья (tie)', () => {
-    const { st } = deltaStore({ aim: undefined });
-    const cp = cpOf(st, delta);
-    expect(reasonOf(cp, aimOf(delta, st, cp))).toEqual({ kind: 'tie' });
-  });
-
-  it('«поровну — первый», когда вещей билдов нет, — остаётся', () => {
-    const st = store(delta, [piece('helmet', 'Counterattack')], []);
-    const cp = cpOf(st, delta);
-    expect(reasonOf(cp, aimOf(delta, st, cp))?.kind).toBe('first');
-  });
-
-  it('«По статам» — причина stats', () => {
-    expect(reasonOf({ asm: new Map() }, { key: STATS, why: { kind: 'stats' } })).toEqual({ kind: 'stats' });
+  it('очки надетого — вещи плюс сеты, у каждой вещи свои', () => {
+    const speed = armorOf('Speed');
+    const v = view(store(speed, speed)).value!;
+    expect(v.ptsBySlot.helmet).toBeGreaterThan(0);
+    expect(v.v).toBeCloseTo(v.ptsSum + v.setSum, 9);
+    expect(v.ptsSum).toBeCloseTo(Object.values(v.ptsBySlot).reduce((a, b) => a + b!, 0), 9);
   });
 });

@@ -19,12 +19,12 @@ const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/da
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
-const NEW = { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
+const NEW = { setId: speed, subs: { 'DEF%': 3, CHC: 2, CHD: 3, HP: 1 } };
 // у Caren — шлем Speed Set похуже новой, Speed «Собираю»
 const GEAR = {
-  v: 2, seq: 1,
+  v: 3, seq: 1,
   pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4, at: '' } },
-  pools: { [caren.id]: ['p1'] }, marks: { [caren.id + '/Speed']: 'want' },
+  pools: { [caren.id]: ['p1'] },
 };
 let root: Root | null = null;
 
@@ -63,19 +63,22 @@ const click = async (el: HTMLElement | null | undefined) => { if (!el) throw new
 const byText = (sel: string, text: string) => $$(sel).find((e) => e.textContent?.includes(text));
 const stored = (k: string) => JSON.parse(localStorage.getItem('ogc.' + k) ?? 'null');
 const onCard = { tab: 'chars', charId: caren.id, slot: 'helmet', grade: 'unique' };
+// stat-sets этап 6: ненадетая вещь — во вкладке «Пул» карточки
+const toPool = async () => { const t = byText('.btabs [role="tab"]', 'Pool'); if (t?.getAttribute('aria-selected') !== 'true') await click(t); };
+const openSpeed = async () => { await toPool(); await click(byText('.pool-row', 'Speed Set')); };
 
 describe('режим «для героя»', () => {
   it('«Примерить замену» у шлема: оценка для Caren, вещь на форме та же; «Заменить» — сразу ей', async () => {
     await mount(onCard, NEW);
-    await click(byText('.bgear-row', 'Speed Set'));
+    await openSpeed();
     await click(byText('.piece-act button', 'Try a replacement'));
 
     expect(stored('state').tab).toBe('eval');
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
     expect(stored('item').subs).toEqual(NEW.subs);
     // в ростере только Caren — другим вещь не нужна: после « — » только про неё
-    expect($('.vcard .vc-title')?.textContent).toBe('better than what Caren wears');
+    expect($('.vcard .vc-title')?.textContent).toBe('better than on Caren');
 
     await click($('.vcard'));
     expect($$('.v-vs .vs-row')).toHaveLength(1);
@@ -87,8 +90,8 @@ describe('режим «для героя»', () => {
   it('в режиме героя у неё лучше — только «Надеть» (ввод надетого); имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
-    // все, кому подходит (только Caren), уже носят лучше — штамп понижен (features/gear/model/stamp), заголовок уже про неё
-    expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
+    // у Caren не хуже, а вещь «Оставить» для героев не из ростера — «Спорно» (MODEL.md §4 item 4); про Caren — в заголовке
+    expect($('.vcard .vc-title')?.textContent).toMatch(/; Caren already has as good$/);
     expect($('.vcard .vc-vs b')).toBeNull();
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
   });
@@ -119,13 +122,14 @@ describe('режим «для героя»', () => {
     expect($('.tryon')).toBeNull();
   });
 
-  it('«Примерить» на пустом слоте: слот и сет билда, грейд прежний; вещь, которую вводили, — в «Вернуть»; Caren — в ростер', async () => {
+  // stat-sets этап 6: «Примерить» билда ушло — «Ввести» на «Надето» ставит только слот
+  it('«Ввести» на пустом слоте: слот, сета нет, грейд прежний; вещь, которую вводили, — в «Вернуть»; Caren — в ростер', async () => {
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } }, { roster: [] });
     await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
 
     const st = stored('state');
     expect(st).toMatchObject({ tab: 'eval', slot: 'armor', grade: 'rare' });
-    expect(stored('item')).toMatchObject({ setId: speed, subs: {} });
+    expect(stored('item')).toMatchObject({ setId: null, subs: {} });
     expect(stored('roster')).toContain(caren.id);
     expect($('.toast:not(.gear-toast)')?.textContent).toContain('Undo');
 
@@ -135,7 +139,7 @@ describe('режим «для героя»', () => {
     expect($('.tryon')).toBeTruthy();
   });
 
-  it('второй «Примерить» подряд: «Вернуть» — всё ещё та вещь, которую вводили', async () => {
+  it('второй «Ввести» подряд: «Вернуть» — всё ещё та вещь, которую вводили', async () => {
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } });
     await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
     await openMore();
@@ -165,17 +169,6 @@ describe('режим «для героя»', () => {
     }
   });
 
-  it('вещей нет: «Собрать билд» — режим героя без смены вещи на форме', async () => {
-    await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: { CHC: 2 } }, { gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
-    await click(byText('.btabs [role="tab"]', 'Pen'));
-    await click(byText('.bgear-none button', 'Gear up this build'));
-
-    expect($('.tryon .tryon-n')?.textContent).toBe('Caren');
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Pen' });
-    expect(stored('state')).toMatchObject({ tab: 'eval', slot: 'gloves' });
-    expect(stored('item').subs).toEqual({ CHC: 2 });
-  });
-
   // «Надеть всё равно» нет, но вещь с полезными статами «Надеть» кладёт в «По статам» (находка 28, Р11). Было —
   // Defense-перчатки «не по билду Speed»; у героя Defense есть в Def/Immu (исход по всем билдам), поэтому — Attack
   it('сета нет в её билдах, а по статам подходит: строка про «По статам» под карточкой и «Надеть на Caren»', async () => {
@@ -187,7 +180,6 @@ describe('режим «для героя»', () => {
     await click($('.vcard'));
     expect($('.v-off')?.textContent).toBe(fits);
     expect($('.vs-act')?.textContent).toBe('Equip on Caren');
-    expect($('.v-vs .bn')?.textContent).toBe('By stats');
   });
 
   // сет не из её связок: вещь — в «По статам»; Speed (предустановка), где она лишь заняла пустой слот, «Собираю» не
@@ -195,13 +187,12 @@ describe('режим «для героя»', () => {
   it('вещей нет, сет не из её билдов, «Надеть на Caren»: вещь у неё, Speed не отмечен «Собираю»', async () => {
     const atk = D.sets.find((s) => s.short === 'Attack')!.id;
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: atk, subs: { 'DEF%': 2, CHC: 2, CHD: 3, SPD: 1 } },
-      { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 2, seq: 0, pieces: {}, pools: {} } });
+      { tryon: { charId: caren.id, build: 'Speed' }, gear: { v: 3, seq: 0, pieces: {}, pools: {} } });
     await click($('.vc-equip'));
     // прочая в пустой слот Speed — не «засчитано в Speed»; «Надето», В4: и не «в По статам» — он вещи не держит, тост
     // без «Засчитано» (было — «Counts in "By stats".»)
     expect($('.gear-toast')?.textContent).toBe('On Caren: gloves.Undo');
     expect(stored('gear').pools[caren.id]).toHaveLength(1);
-    expect(stored('gear').marks ?? {}).toEqual({});
   });
 
   // было: «не по билду Speed» (Defense); вещь не для героя — offHero (11.1), кнопки нет
@@ -225,6 +216,7 @@ describe('режим «для героя»: вход, одна строка, з�
 
   it('«Оценить вещь для Caren» → полоса «Только для · Caren», одна строка героя; ✕ — снова для всех', async () => {
     await mount(onCard, NEW, { gear: BOTH, roster: [caren.id, kappa.id] });
+    await toPool();
     await click($('.pool-rate'));
 
     expect(stored('state').tab).toBe('eval');
@@ -247,10 +239,10 @@ describe('режим «для героя»: вход, одна строка, з�
   it('«Примерить замену» → вещь хуже (Transistone) → «Заменить шлем Caren» → запись убрана, новая в пуле → «Вернуть»', async () => {
     const worse = { setId: speed, subs: { RES: 2, CHC: 2, SPD: 2, EFF: 3 } };
     await mount(onCard, worse);
-    await click(byText('.bgear-row', 'Speed Set'));
+    await openSpeed();
     await click(byText('.piece-act button', 'Try a replacement'));
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
-    expect($('.vcard .vc-vs .vs.down')).toBeTruthy(); // хуже надетой — строка говорит, что вещь даёт
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
+    expect($('.vcard .vc-vs')).toBeNull(); // хуже записи — прироста нет, чипа нет
 
     await click(byText('.vc-equip', "Replace Caren's helmet"));
 
@@ -266,19 +258,18 @@ describe('режим «для героя»: вход, одна строка, з�
     expect(stored('item').subs).toEqual(worse.subs);
   });
 
-  // «Примерить замену», а у вещи нет ни одного исхода (charVs best null, rows []): кнопка есть, строка под карточкой и
-  // в «Сейчас на персонажах» — существующим текстом «ничего не даст», чипа исхода нет
-  it('замена в любом случае без исходов (оружие не по билду): кнопка «Заменить» и строка «ничего не даст», без чипа', async () => {
+  // «Примерить замену», а вещь герою ничего не прибавит: кнопка есть, чипа нет. DMG UP% у Caren — 5-е место цепочки:
+  // очки есть, «ничего не даст» — неправда, строки нет
+  it('замена в любом случае без прироста (оружие не по билду): кнопка «Заменить», без чипа и без «ничего не даст»', async () => {
     const sword = { id: 'p2', slot: 'weapon', grade: 'unique', setId: null, itemKey: '3', main: 'ATK%', yellow: { CHC: 2, CHD: 2 }, lit: { CHC: 2, CHD: 2 }, bt: null, at: '' };
     const gear = { ...GEAR, seq: 2, pieces: { ...GEAR.pieces, p2: sword }, pools: { [caren.id]: ['p1', 'p2'] } };
     await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: '3', main: 'ATK%', subs: { RES: 1, EFF: 1, 'DMG UP%': 1, ATK: 1 } },
       { gear, tryon: { charId: caren.id, replace: 'p2' } });
-    const none = 'This piece gives Caren nothing: no useful stats.';
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's weapon");
-    expect($('.vc-note')?.textContent).toBe(none);
+    expect($('.vc-note')).toBeNull();
     expect($('.vcard .vc-vs')).toBeNull();
     await click($('.vcard'));
-    expect($('.v-off')?.textContent).toBe(none);
+    expect($('.v-off')).toBeNull();
     expect($$('.v-vs .vs-row')).toHaveLength(1);
     expect($('.v-vs .vs-row .vs')).toBeNull();
     expect($('.v-vs .vs-act')?.textContent).toBe("Replace Caren's weapon");
@@ -302,7 +293,7 @@ describe('режим «для героя»: вход, одна строка, з�
       ['p376', 'shoes', 'unique', '13', { 'ATK%': 1, CHD: 4, RES: 2, 'DEF%': 2 }, null],
     ];
     const pieces = Object.fromEntries(rows.map(([id, slot, grade, setId, lit, bt]) => [id, { id, slot, grade, setId, itemKey: null, main: null, yellow: lit, lit, bt, at: '' }]));
-    const gear = { v: 2, seq: 400, pieces, pools: { [eris.id]: rows.map((r) => r[0]) } };
+    const gear = { v: 3, seq: 400, pieces, pools: { [eris.id]: rows.map((r) => r[0]) } };
     await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { SPD: 1, DEF: 4, 'ATK%': 4, HP: 3 }, t4: true },
       { gear, roster: [eris.id], tryon: { charId: eris.id, build: 'Pen' } });
 
@@ -310,24 +301,23 @@ describe('режим «для героя»: вход, одна строка, з�
     await click($('.vcard'));
     expect($('.v-vs .vs-act')?.textContent).toBe("Replace Eris's helmet · T4");
     await click($('.v-vs .vs-act'));
-    expect($('.gear-toast')?.textContent).toMatch(/^Replaced: Eris's helmet · T4 — /);
+    expect($('.gear-toast')?.textContent).toMatch(/^Replaced: Eris's helmet · T4/);
   });
 });
 
-// Без режима героя (features/gear/model/stamp): штамп по надетому — всем, кому подходит, уже надето не хуже; вещь уже в билде
-describe('штамп по надетому', () => {
+// Без режима героя: исход по ростеру («статы + сеты», features/gear/verdict)
+describe('штамп по вещам героев', () => {
   // на Caren · Speed — шлем заметно лучше новой (сравнение — как есть, по уровням)
   const STRONG = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
 
-  it('Caren носит лучше — Legendary «Фоддер»: у кого лучше, ▼ на карточке, кнопки «Надеть» нет', async () => {
+  // у Caren лучше, а героям не из ростера она «Оставить» — «Спорно» (MODEL.md §4 item 4), строки Caren и кнопки нет
+  it('Caren носит лучше — «Спорно» для тех, кого нет в ростере: строки героя и кнопки «Надеть» нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: STRONG });
-    expect($('.vcard .stamp')?.textContent).toBe('Fodder');
-    expect($('.vcard .vc-title')?.textContent).toBe('already better on Caren');
-    expect($('.vcard .vc-vs .vs.down')).toBeTruthy();
+    expect($('.vcard .stamp')?.textContent).toBe('Maybe');
+    expect($('.vcard .vc-vs')).toBeNull();
     expect($('.vc-equip')).toBeNull();
     await click($('.vcard'));
-    expect($('.v-reasons')?.textContent).toContain("Won't improve anyone");
-    expect($$('.v-vs .vs-row.vs-down')).toHaveLength(1);
+    expect($$('.v-vs .vs-row')).toHaveLength(0);
   });
 
   // Р15: вердикт снятой («Старая: «Разобрать».») больше не пишем — игрок снимет её в игре и оценит сам
@@ -351,22 +341,20 @@ describe('штамп по надетому', () => {
   });
 
   // режим героя (В10): предустановка Speed/Immu исход не сужает — Speed-шлем Caren лучше новой во всех её билдах
-  it('режим героя Caren (предустановка Speed/Immu): её Speed-шлем лучше — «Разобрать», только «Надеть»', async () => {
-    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 2 } },
+  it('режим героя Caren (предустановка Speed/Immu): её Speed-шлем лучше — про неё «уже не хуже», только «Надеть»', async () => {
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { 'DEF%': 2, CHC: 2, SPD: 2 } },
       { gear: STRONG, tryon: { charId: caren.id, build: 'Speed/Immu' } });
-    expect($('.vcard .stamp')?.textContent).toBe('Dismantle');
+    expect($('.vcard .vc-title')?.textContent).toMatch(/Caren already has as good$/);
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
-    await click($('.vcard'));
-    expect($('.v-reasons')?.textContent).toContain("Won't improve anyone");
   });
 
   // «дома» нет (решение владельца 2026-10-01): копия вещи из билда — новая вещь из инвентаря; у записи ниже T4 — материал
-  it('копия вещи из билда, сама по себе «в разбор», — не «Оставить»: у записи T0 — «Фоддер», материал для неё', async () => {
-    const junk = { setId: speed, subs: { HP: 1, RES: 1, EFF: 1 } };
-    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: junk.subs, lit: junk.subs, bt: 0 } } };
-    await mount({ slot: 'helmet', grade: 'rare' }, junk, { gear });
+  it('та же Epic-вещь с мусором при годной записи T0 у Caren — «Фоддер»: Breakthrough для её шлема', async () => {
+    const good = { 'DEF%': 3, CHC: 2, SPD: 2 };
+    const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, grade: 'rare', yellow: good, lit: good, bt: 0 } } };
+    await mount({ slot: 'helmet', grade: 'rare' }, { setId: speed, subs: { HP: 1, RES: 1, EFF: 1 } }, { gear });
     expect($('.vcard .stamp')?.textContent).toBe('Fodder');
-    expect($('.vcard .vc-title')?.textContent).toContain('Breakthrough material for the helmet on Caren');
+    expect($('.vcard .vc-title')?.textContent).toBe("Breakthrough for Caren's helmet");
   });
 });
 
@@ -376,35 +364,16 @@ describe('режим героя и «По статам» (находка 28)', (
   const drakhan = D.chars.find((c) => c.slug === 'demiurge-drakhan')!;
   const revenge = D.sets.find((s) => s.short === 'Revenge')!.id;
   const HLMW = { setId: revenge, subs: { SPD: 3, HP: 1, 'HP%': 1 } };
-  const EMPTY = { v: 2, seq: 0, pieces: {}, pools: {} };
+  const EMPTY = { v: 3, seq: 0, pieces: {}, pools: {} };
 
   // было: «Drakhan · Speed — не по билду» (цель — вариант); у героя — его «По статам», где слот пуст
   it('Drakhan (предустановка Speed), вещей нет: «слот пуст», строка про «По статам» и «Надеть» — вещь у неё', async () => {
     await mount({ slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear: EMPTY, tryon: { charId: drakhan.id, build: 'Speed' } });
-    expect($('.vcard .vc-title')?.textContent).toContain(`${drakhan.name}'s slot is empty`);
+    expect($('.vcard .vc-title')?.textContent).toBe(`equip on ${drakhan.name}`);
     await click($('.vcard'));
     expect($('.v-off')?.textContent).toBe(`It fits ${drakhan.name} by stats, not by build.`);
     await click($('.vs-act'));
     expect(stored('gear').pools[drakhan.id]).toHaveLength(1);
-    expect(stored('gear').marks ?? {}).toEqual({});
-  });
-
-  it('вкладка «По статам» → «Собрать билд»: режим героя Drakhan с предустановкой «По статам»', async () => {
-    await mount({ tab: 'chars', charId: drakhan.id }, {}, { roster: [drakhan.id], gear: EMPTY });
-    await click(byText('.btabs [role="tab"]', 'By stats'));
-    await click($('.bgear-none button'));
-    expect($('.tryon .tryon-n')?.textContent).toBe(drakhan.name);
-    expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
-  });
-
-  it('вкладка «По статам» → «Примерить» у пустого слота: режим героя с «По статам», на форме слот без сета', async () => {
-    const gear = { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'armor', grade: 'rare', setId: revenge, itemKey: null, main: null, yellow: HLMW.subs, lit: HLMW.subs, bt: null, at: '' } }, pools: { [drakhan.id]: ['p1'] } };
-    await mount({ tab: 'chars', charId: drakhan.id, slot: 'armor', grade: 'rare' }, HLMW, { roster: [drakhan.id], gear });
-    expect($('.btabs [role="tab"][aria-selected="true"]')?.textContent).toMatch(/^By stats/); // открыта на лучшем варианте
-    await click(byText('.bgear-empty', 'Helmet')?.querySelector<HTMLElement>('.bgear-act button'));
-    expect(stored('tryon')).toEqual({ charId: drakhan.id, build: '#stats' });
-    expect(stored('state')).toMatchObject({ tab: 'eval', slot: 'helmet' });
-    expect(stored('item').setId ?? null).toBeNull();
   });
 
   // было: «Drakhan · By stats — ничего не даст» в заголовке; у героя Revenge нет в билдах — offHero (11.1)
@@ -438,7 +407,7 @@ describe('replace — на одну введённую вещь', () => {
   const P = (id: string, setId: string, lit: Record<string, number>, o: Pc = {}): Pc =>
     ({ id, slot: 'helmet', grade: 'unique', setId, itemKey: null, main: null, yellow: lit, lit, bt: 4, at: '', ...o });
   const G = (pieces: Pc[], pools: Record<string, string[]>) =>
-    ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools });
+    ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools });
   const strong = P('p1', speed, { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 });
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 };
   const MID = { setId: speed, subs: { 'DEF%': 3, CHC: 3, RES: 2, HP: 1 } }; // хуже p1 — «Заменить» только из replace
@@ -452,7 +421,7 @@ describe('replace — на одну введённую вещь', () => {
     }
   };
   const tryReplace = async () => {
-    await click(byText('.bgear-row', 'Speed Set'));
+    await openSpeed();
     await click(byText('.piece-act button', 'Try a replacement'));
   };
 
@@ -466,7 +435,7 @@ describe('replace — на одну введённую вещь', () => {
 
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+    expect(stored('tryon')).toEqual({ charId: caren.id });
   });
 
   it('«Следующий», хороший шлем другого билда: «Надеть» убирает только вытесненный, p1 из прежнего replace на месте', async () => {
@@ -480,7 +449,9 @@ describe('replace — на одну введённую вещь', () => {
 
     await click($('.vc-equip'));
 
-    expect(stored('gear').pools[caren.id]).toEqual(['p1', 'p3']);
+    // p0 (weak Defense, not worn) is already «больше не нужна» before this «Надеть» — no pin, so no «best Defense» (owner
+    // 2026-10-08, (c)); «Надеть» removes only what it displaces itself, so p0 stays for the player's «Убрать»
+    expect(stored('gear').pools[caren.id]).toEqual(['p0', 'p1', 'p3']);
   });
 
   it('смена слота снимает replace: на перчатках и снова на шлеме — «Надеть», не «Заменить»', async () => {
@@ -488,7 +459,7 @@ describe('replace — на одну введённую вещь', () => {
     await tryReplace();
 
     await click($('.slot[aria-label="Gloves"]'));
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+    expect(stored('tryon')).toEqual({ charId: caren.id });
     await click($('.slot[aria-label="Helmet"]'));
     await enter(MID.subs);
 
@@ -507,18 +478,18 @@ describe('replace — на одну введённую вещь', () => {
     await click($('.set[data-tour-item="Defense"]'));
 
     expect(stored('item').subs.HP).toBe(2);
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
   });
 
   it('«Вернуть» формы (вещь, которую вводили до «Примерить замену») снимает replace', async () => {
     await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: JUNK }, { gear: G([strong], { [caren.id]: ['p1'] }) });
     await tryReplace();
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
 
     await click($('.toast:not(.gear-toast) button'));
 
     expect(stored('state').slot).toBe('gloves');
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+    expect(stored('tryon')).toEqual({ charId: caren.id });
   });
 
   it('«Заменить» снимает replace; «Вернуть» — p1 на месте и та же кнопка «Заменить»', async () => {
@@ -527,11 +498,11 @@ describe('replace — на одну введённую вещь', () => {
 
     await click($('.vc-equip'));
     expect(stored('gear').pools[caren.id]).toEqual(['p2']);
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed' });
+    expect(stored('tryon')).toEqual({ charId: caren.id });
 
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored('gear').pools[caren.id]).toEqual(['p1']);
-    expect(stored('tryon')).toEqual({ charId: caren.id, build: 'Speed', replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
     expect($('.vc-equip')?.textContent).toBe(REPLACE);
   });
 
@@ -541,7 +512,7 @@ describe('replace — на одну введённую вещь', () => {
       { gear: G([shared], { [caren.id]: ['p1'], [rin.id]: ['p1'] }), roster: [caren.id, rin.id] });
     await tryReplace();
     await click($('#tab-chars'));
-    await click(byText('.bgear-row', 'Speed Set'));
+    await openSpeed();
 
     await click($('.piece .btchip'));
     expect(stored('gear').pools).toEqual({ [caren.id]: ['p2'], [rin.id]: ['p1'] });
@@ -668,7 +639,7 @@ describe('«Надето»: режим героя — «Надеть» всег�
 
   it('«Примерить замену» надетой: «Заменить» убирает именно её, надета новая', async () => {
     await mount(onCard, JUNK_HELM, { gear: WORN });
-    await click(byText('.bgear-row', 'Speed Set'));
+    await openSpeed();
     await click(byText('.piece-act button', 'Try a replacement'));
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
 

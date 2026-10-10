@@ -82,7 +82,7 @@ function makeCase() {
   const c = {
     slot, grade, setId: null, itemKey: null, main: null, subs: [],
     rosterOnly: chance(0.6), roster: pick(Object.keys(rosters)),
-    fodder: chance(0.4), stage: chance(0.75) ? 'grow' : 'end', lv120: chance(0.3), quirks: chance(0.7),
+    stage: chance(0.75) ? 'grow' : 'end', lv120: chance(0.3), quirks: chance(0.7),
   };
   if (isArmor(slot)) {
     const live = D.sets.filter((s) => s.users > 0);
@@ -112,7 +112,7 @@ function applyCase(c) {
   Object.assign(state, {
     tab: 'eval', slot: c.slot, grade: c.grade, setId: c.setId, itemKey: c.itemKey, main: c.main,
     subs: Object.fromEntries(c.subs), q: '', cls: '', expand: {},
-    rosterOnly: c.rosterOnly, fodder: c.fodder, stage: c.stage, lv120: c.lv120, quirks: c.quirks,
+    rosterOnly: c.rosterOnly, stage: c.stage, lv120: c.lv120, quirks: c.quirks,
   });
   roster.clear();
   for (const id of rosters[c.roster]) roster.add(id);
@@ -139,7 +139,7 @@ const itemCount = (s) => { const tail = (s || '').split('·').pop(); const m = /
 const lists = [];
 function listCase(inp) {
   applyCase({ slot: inp.slot || 'gloves', grade: inp.grade || 'unique', setId: null, itemKey: null, main: null, subs: [],
-    rosterOnly: inp.rosterOnly, roster: inp.roster, fodder: false, stage: 'grow', lv120: false, quirks: true });
+    rosterOnly: inp.rosterOnly, roster: inp.roster, stage: 'grow', lv120: false, quirks: true });
   Object.assign(state, { q: inp.q || '', cls: inp.cls || '', tab: inp.kind === 'chars' ? 'chars' : 'eval',
     cq: inp.cq || '', cel: inp.cel || '', ccl: inp.ccl || '', cOwned: !!inp.cOwned, cAll: !!inp.cAll, charId: null });
   ogc.renderAll();

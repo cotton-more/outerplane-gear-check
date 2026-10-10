@@ -1,25 +1,28 @@
-// Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 → v2 (GEARPOOL), код OGC-GEAR2.
-// Перенос детерминированный: все вещи v1 — в пул персонажа (запись у двух персонажей — в оба пула, без копии),
-// билды v1 с вещами — «Собираю». Ни одна вещь и ни одно поле не теряются (билды v1 как были — в v1builds, не читается),
-// кроме правила Core Fusion (features/gear/model/fusion): у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16).
+// Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 и v2 → v3 (GEARPOOL, stat-sets PLAN Д11), старый
+// код OGC-GEAR2. Перенос детерминированный: все вещи v1 — в пул персонажа (запись у двух персонажей — в оба пула, без
+// копии). Ни одна вещь и ни одна запись пула и надетого не теряются, кроме правила Core Fusion (features/gear/model/fusion):
+// у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16). Поля прежней модели (LEGACY:
+// «Собираю», autoNew, выбранный билд, булавка обмена, билды v1) перенос снимает — их больше никто не читает.
 import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
-import { makeCtx } from '@/game/context';
 import { normalizeStored, type Normalized } from '@/features/gear/model/fusion';
-import { gc, setPinned, type GearStore, type Mark, type Piece, type Worn } from '@/features/gear/model/gear';
+import { gc, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { Bt } from '@/game/item/item';
-import { buildKey } from '@/game/build/variants';
-import { heroOpts, isStats, play } from '@/features/gear/pool';
 import { MAX_SUBS, type Subs, MAX_LIT } from '@/game/item/subs';
 
 // v1: вещи лежали в билдах («персонаж/билд» → слот → id)
 interface BuildGearV1 { slots: Partial<Record<SlotId, string>>; at: string }
 interface GearStoreV1 { v: 1; seq: number; pieces: Record<string, Piece>; builds: Record<string, BuildGearV1>; [extra: string]: unknown }
 
-// экипировку сохранила более новая версия страницы (v > 2): эта её не понимает — только читает пустой и не пишет,
+// экипировку сохранила более новая версия страницы (v > 3): эта её не понимает — только читает пустой и не пишет,
 // иначе первое же «Надеть» стёрло бы всё (PWA может держать старую версию, пока в другой вкладке уже новая)
 export const newerGear = (raw: unknown): boolean =>
-  !!raw && typeof raw === 'object' && typeof (raw as { v?: unknown }).v === 'number' && (raw as { v: number }).v > 2;
+  !!raw && typeof raw === 'object' && typeof (raw as { v?: unknown }).v === 'number' && (raw as { v: number }).v > 3;
+
+// поля прежней модели (v2 и v1): перенос в v3 их снимает (stat-sets PLAN Д11)
+const LEGACY = ['marks', 'autoNew', 'aim', 'pinned', 'v1builds'] as const;
+const withoutLegacy = <T extends object>(r: T): T =>
+  Object.fromEntries(Object.entries(r).filter(([k]) => !(LEGACY as readonly string[]).includes(k))) as T;
 
 // вещи: неверные значения отбрасываем; незнакомые сеты и поля оставляем (данные могли временно их потерять,
 // следующая версия могла добавить своё) — страница их просто не покажет
@@ -74,37 +77,19 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
   return { ...r, v: 1, seq: seqOf(r, kept), pieces: kept, builds };
 }
 
-// для подсказки «теперь собирается сам»: какие варианты собираются после переноса. Настройки — по умолчанию
-// (от них зависит только «временная» у оружия в «Развитии»)
-const MIGRATE_SETTINGS = { rosterOnly: false, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
-
-// перенос v1 → v2. Ростер и Core Fusion (features/gear/model/fusion normalizeStored) — до подсказки autoNew: она — по итоговым пулам
-// (находка 16)
+// перенос v1 → v3. Ростер и Core Fusion (features/gear/model/fusion normalizeStored)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
-  // надетого и выбранного билда в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
-  const { builds, v: _, worn: _w, aim: _g, pinned: _p, ...rest } = v1;
+  // надетого и закрепления в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
+  const { builds, v: _, worn: _w, pin: _n, ...rest } = withoutLegacy(v1);
   const pools: Record<string, string[]> = {};
-  const marks: Record<string, Mark> = {};
   for (const k of Object.keys(builds).sort()) {
     // ключ v1 — «персонаж/билд»; без «/» весь ключ — персонаж (indexOf −1 обрезал бы у id последнюю цифру)
     const cut = k.indexOf('/');
     const charId = cut < 0 ? k : k.slice(0, cut);
     const pool = (pools[charId] ??= []);
     for (const id of Object.values(builds[k].slots)) if (id && !pool.includes(id)) pool.push(id);
-    const c = idx.CHAR[charId];
-    if (c?.builds.some((b) => buildKey(c.id, b.name) === k)) marks[k] = 'want';
   }
-  const n = normalizeStored(idx, roster, gc({ ...rest, v: 2, seq: v1.seq, pieces: v1.pieces, pools, marks, v1builds: builds }));
-  const ctx = makeCtx(idx, MIGRATE_SETTINGS, new Set());
-  const autoNew: string[] = [];
-  for (const [charId, ids] of Object.entries(n.st.pools)) {
-    const c = idx.CHAR[charId];
-    if (!c) continue;
-    // надетого у v1 нет (worn вырезан выше) — heroOpts ради одного правила с видом пула
-    const p = play(ctx, c, ids.map((id) => n.st.pieces[id]), { ...heroOpts(n.st, charId), marks });
-    for (const v of p.inPlay) if (!isStats(v) && !builds[v.parentKey]) autoNew.push(v.key);
-  }
-  return { ...n, st: autoNew.length ? { ...n.st, autoNew } : n.st };
+  return normalizeStored(idx, roster, gc({ ...rest, v: 3, seq: v1.seq, pieces: v1.pieces, pools }));
 }
 
 // пул в хранилище — массив id. Испорченный пул не выбрасываем целиком: gc стёр бы вещи, которых нет в других пулах.
@@ -112,7 +97,7 @@ function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Load
 const poolIds = (x: unknown): unknown[] =>
   Array.isArray(x) ? x : typeof x === 'string' ? [x] : x && typeof x === 'object' ? Object.values(x) : [];
 
-// надетое и выбранный билд из сырых данных: только строки, слот — из данных; что надето не из пула героя или не в
+// надетое и закрепление из сырых данных: только строки, слот — из данных; что надето не из пула героя или не в
 // своём слоте и герои без пула — отбросит gc (syncWorn). Отброшенное — «прочитано не целиком» (readsWhole)
 const record = (x: unknown): Record<string, unknown> => (x && typeof x === 'object' && !Array.isArray(x) ? x as Record<string, unknown> : {});
 function restoreWorn(raw: unknown): Record<string, Worn> {
@@ -123,52 +108,52 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
   }
   return out;
 }
-// закреплённые (R3.3): не массив — отметок нет; не строки и повторы — долой; герои без пула — уберёт gc (syncWorn)
-const restorePinned = (raw: unknown): string[] =>
-  Array.isArray(raw) ? [...new Set(raw.filter((c): c is string => typeof c === 'string'))] : [];
-const restoreAim = (raw: unknown): Record<string, string> =>
+// закрепление (MODEL.md §6) — герой → ключ, только строки; ключ, которого больше нет в данных, переносит или снимает
+// с сообщением разбор хранилища (stored, fixPins)
+const restorePin = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
 
-// v2: пулы — массивы строк, id только существующих вещей, без повторов; отметки — 'want' / 'skip'; надетое и билд —
-// restoreWorn / restoreAim
-function restoreV2(r: Partial<GearStore>, idx: Index): GearStore {
+// v2 и v3: пулы — массивы строк, id только существующих вещей, без повторов; надетое и закрепление — restoreWorn /
+// restorePin; поля прежней модели (LEGACY) у v2 — снимаем
+function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
   const pieces = restorePieces(r.pieces, idx);
   const pools: Record<string, string[]> = {};
   for (const [id, x] of Object.entries((r.pools && typeof r.pools === 'object' ? r.pools : {}) as Record<string, unknown>)) {
     const ids = [...new Set(poolIds(x).filter((pid): pid is string => typeof pid === 'string' && !!pieces[pid]))];
     if (ids.length) pools[id] = ids;
   }
-  const marks = Object.fromEntries(Object.entries((r.marks && typeof r.marks === 'object' ? r.marks : {}) as Record<string, unknown>)
-    .filter(([, m]) => m === 'want' || m === 'skip')) as Record<string, Mark>;
-  const autoNew = Array.isArray(r.autoNew) ? r.autoNew.filter((k): k is string => typeof k === 'string') : [];
-  const worn = restoreWorn(r.worn), aim = restoreAim(r.aim), pinned = restorePinned(r.pinned);
-  const { marks: _m, autoNew: _a, worn: _w, aim: _g, pinned: _p, ...rest } = r;
+  const worn = restoreWorn(r.worn), pin = restorePin(r.pin);
+  const { worn: _w, pin: _n, ...rest } = withoutLegacy(r);
   return gc({
-    ...rest, v: 2, seq: seqOf(r, pieces), pieces, pools,
-    ...(Object.keys(marks).length ? { marks } : {}), ...(autoNew.length ? { autoNew } : {}),
-    ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(aim).length ? { aim } : {}),
-    ...(pinned.length ? { pinned } : {}),
+    ...rest, v: 3, seq: seqOf(r, pieces), pieces, pools,
+    ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(pin).length ? { pin } : {}),
   });
 }
 
-// из хранилища или кода: v1 — проверка v1 и перенос; v2 — проверка; иначе (мусор, более новая версия) — пусто.
+// из хранилища или кода: v1 — проверка v1 и перенос; v2 и v3 — проверка (у v2 — без полей прежней модели); иначе (мусор, более новая версия) — пусто.
 // Затем ростер и Core Fusion (features/gear/model/fusion normalizeStored): все с вещами — в ростер, есть X и Core Fusion X — остаётся
 // Core Fusion; fixes и added — что поменялось (запись и сообщение после загрузки, импорт)
 export type Loaded = Normalized;
 export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): Loaded {
   const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown };
   if (r.v === 1) return migrateV1(restoreV1(r as Partial<GearStoreV1>, idx), idx, roster);
-  return normalizeStored(idx, roster, r.v === 2 ? restoreV2(r as Partial<GearStore>, idx) : EMPTY);
+  return normalizeStored(idx, roster, r.v === 2 || r.v === 3 ? restoreV3(r as Partial<GearStore>, idx) : EMPTY);
 }
 // Р17: чтение ничего не отбросило — запись нормализации при загрузке не сотрёт того, что эта версия не поняла (саб не из
-// данных — старая закэшированная PWA с прежним снимком, отметка или поле новой версии). Всё из сырых данных есть в
-// прочитанном как было; дописанное (значения по умолчанию) — не потеря, как и счётчик seq выше и пустые пулы и отметки.
-// v1 — сверка с проверкой v1 (сам перенос ничего не теряет: v1builds). Нет данных — нечего терять; мусор — теряется
+// данных — старая закэшированная PWA с прежним снимком или поле новой версии). Всё из сырых данных есть в прочитанном как
+// было; дописанное (значения по умолчанию) — не потеря, как и счётчик seq выше и пустые пулы. Поля прежней модели
+// (LEGACY) — не потеря: перенос снимает их нарочно, иначе нормализацию никогда бы не записали и перенос шёл бы при
+// каждой загрузке (stat-sets IMPACT §8). v1 — сверка с проверкой v1. Нет данных — нечего терять; мусор — теряется
 export function readsWhole(raw: unknown, idx: Index): boolean {
   if (raw == null) return true;
   const r = (typeof raw === 'object' ? raw : {}) as { v?: unknown; seq?: unknown };
-  const read = r.v === 1 ? restoreV1(r as Partial<GearStoreV1>, idx) : r.v === 2 ? restoreV2(r as Partial<GearStore>, idx) : null;
-  return !!read && covers({ ...r, seq: read.seq }, read);
+  if (r.v === 1) {
+    const read = restoreV1(r as Partial<GearStoreV1>, idx);
+    return covers({ ...r, seq: read.seq }, read);
+  }
+  if (r.v !== 2 && r.v !== 3) return false;
+  const read = restoreV3(r as Partial<GearStore>, idx);
+  return covers({ ...withoutLegacy(r), v: 3, seq: read.seq }, read);
 }
 const empty = (x: unknown) => (Array.isArray(x) ? !x.length : !!x && typeof x === 'object' && !Object.keys(x).length);
 function covers(a: unknown, b: unknown): boolean {
@@ -181,10 +166,23 @@ function covers(a: unknown, b: unknown): boolean {
 // хранилище без сообщений нормализации; decodeGear — код копии целиком. Страница берёт loadGear и readGearCode (нужен
 // ростер и что поменяла нормализация), эти два — короткий путь для тестов
 export const restoreGear = (raw: unknown, idx: Index, roster: readonly string[] = []): GearStore => loadGear(raw, idx, roster).st;
-const EMPTY: GearStore = { v: 2, seq: 0, pieces: {}, pools: {} };
+const EMPTY: GearStore = { v: 3, seq: 0, pieces: {}, pools: {} };
+// хранилище прежней модели (v1, v2) с вещами: игрок жил с выбором билда — разовое сообщение о переносе (features/gear/store/stored)
+export const oldModel = (raw: unknown): boolean => {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown; pieces?: unknown };
+  return (r.v === 1 || r.v === 2) && Object.keys(record(r.pieces)).length > 0;
+};
+// the old v2 store carried «Собираю / Не собираю» marks, «Не отдавать надетое» or a chosen build (aim) — the upgrade notice then
+// adds a sentence that they were cleared. v1 never had marks (the v1 → v2 step made them up), so it never counts
+export const oldMarks = (raw: unknown): boolean => {
+  const r = record(raw);
+  if (r.v !== 2) return false;
+  return Object.keys(record(r.marks)).length > 0 || Object.keys(record(r.aim)).length > 0
+    || (Array.isArray(r.pinned) && r.pinned.length > 0);
+};
 
-// резервная копия кодом: браузер могут очистить, а переносить между устройствами иначе нечем.
-// OGC-GEAR1 (v1) читается и переносится; код новее (OGC-GEAR3…, внутри v > 2) — 'newer'
+// старая резервная копия кодом (JSON): OGC-GEAR1 (v1) и OGC-GEAR2 (v2) читаются и переносятся; номер больше — код копии
+// (features/roster/backup), здесь 'newer'. Страница такой код больше не пишет: encodeGear — для тестов
 const PREFIX = 'OGC-GEAR';
 export const encodeGear = (st: GearStore): string =>
   `${PREFIX}2 ` + btoa(unescape(encodeURIComponent(JSON.stringify(st)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -211,16 +209,13 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
 // «Вернуть» перехода (features/gear/model/fusion switchFusion): вещи — снова у base, у fusion — то, что было; base успели дать что-то своё — не трогаем.
 // Надетое base: в слоте, где на fusion надета одна из ушедших к base вещей, — она (выбор за эти секунды); в остальных —
 // r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
-// копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Выбранного билда у base нет —
-// он не переходил, а без пула не хранится. Закрепление base (r.pin) — снова у base; fusion, закреплённый только
-// переходом (r.pinTo нет), — снят
-export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn; pin?: boolean; pinTo?: boolean }): GearStore {
+// копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Закрепление не переходило
+export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;
   const pool = (st.pools[fusion] ?? []).filter((id) => r.had.includes(id) || !r.moved.includes(id));
   const own = st.worn?.[fusion] ?? {};
   const back = Object.entries(own).filter(([, id]) => id && r.moved.includes(id) && !r.had.includes(id));
   const w: Worn = { ...r.worn, ...Object.fromEntries(back) };
   const worn = Object.keys(w).length ? { ...st.worn, [base]: w } : st.worn;
-  const next = gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
-  return r.pin ? setPinned(setPinned(next, base, true), fusion, !!r.pinTo) : next;
+  return gc({ ...st, pools: { ...st.pools, [base]: r.moved.filter((id) => st.pieces[id]), [fusion]: pool }, ...(worn ? { worn } : {}) });
 }

@@ -22,8 +22,8 @@ export interface TourCtx {
   pieceOpen: boolean;   // открыта карточка вещи в блоке билда
   tryOn: boolean;       // режим «для героя» (прежде — примерка билда)
   gearSeq: number;      // счётчик вещей экипировки: растёт, когда вещь надели (не при переносе)
-  material: boolean;    // «Фоддер», потому что вещь — материал Breakthrough для надетой и её отдают (features/gear/model/material)
-  worn: boolean;        // «Разобрать», потому что всем, кому вещь подходит, уже надето не хуже (features/gear/model/stamp)
+  material: boolean;    // «Фоддер»: вещь — материал Breakthrough сейчас или запас (features/gear/verdict)
+  worn: boolean;        // «Разобрать»: всем, кому вещь годная, уже надето не хуже (features/gear/verdict)
 }
 
 // подстановки для текста шага (ru.ts и en.ts, раздел tour.steps)
@@ -66,7 +66,6 @@ export interface Tip {
   at: Anchor;
   when?: (c: TourCtx) => boolean;
   news?: boolean; // попадает в «Что нового»; короткая строка — tour.news[id]
-  tour?: TourId;  // «Показать» в «Что нового» запускает этот тур, а не показывает подсказку
 }
 
 export const defineTips = (...tips: Tip[]): Tip[] => tips;

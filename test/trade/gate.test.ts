@@ -3,11 +3,11 @@
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import { planFor } from '@/features/trade/model/gate';
-import type { Cand, Part } from '@/features/trade/model/model';
+import type { Cand } from '@/features/trade/model/model';
 import { cand, candsOf, synthGauge } from './helpers';
 
-const pen: Part = { set: 'Pen', n: 2, conv: false };
-const speed: Part = { set: 'Speed', n: 2, conv: true };
+// Pen — сет-эффект (его половина проходит порог при не меньшем V), Speed — статовый
+const PEN = synthGauge({ bonus: { Pen: { 2: 0 } }, effect: ['Pen'] });
 const worn = (id: string, slot: SlotId, v: number, o: { set?: string; fit?: 'rec' | 'stopgap' | 'no' } = {}) =>
   cand({ id, slot, v, cost: 0, ...o });
 const plan = (list: Cand[], gauge = synthGauge()) => planFor(gauge, candsOf(list));
@@ -57,11 +57,11 @@ describe('порог: один слот (R6.2)', () => {
       worn('h0', 'helmet', 4), worn('a', 'armor', 4, { set }),
       cand({ id: 'h1', slot: 'helmet', v: 4.3, set, cost: 1 }),
     ];
-    it('+0,3, но включает неконвертируемый сет из связки — берём', () => {
-      expect(took(base('Pen'), synthGauge({ parts: [pen], bonus: { Pen: { 2: 0 } } }))).toEqual({ helmet: 'h1' });
+    it('+0,3, но включает половину сета-эффекта — берём', () => {
+      expect(took(base('Pen'), PEN)).toEqual({ helmet: 'h1' });
     });
-    it('та же вещь с конвертируемым сетом — порог не пройден', () => {
-      expect(took(base('Speed'), synthGauge({ parts: [speed], bonus: { Speed: { 2: 0 } } }))).toEqual({});
+    it('та же вещь со статовым сетом — порог не пройден', () => {
+      expect(took(base('Speed'), synthGauge({ bonus: { Speed: { 2: 0 } } }))).toEqual({});
     });
   });
 
@@ -95,9 +95,9 @@ describe('порог: дешёвая альтернатива в окне 0–1 
     });
   });
 
-  describe('D9: дешёвая альтернатива, выключающая значимый бонус', () => {
+  describe('D9: дешёвая альтернатива, выключающая половину сета', () => {
     it('хуже на 0,2, но выключает бонус — остаётся дорогая', () => {
-      const g = synthGauge({ parts: [pen], bonus: { Pen: { 2: 0 } } });
+      const g = PEN;
       const list = [
         worn('h0', 'helmet', 4), worn('a', 'armor', 4, { set: 'Pen' }),
         cand({ id: 'dear', slot: 'helmet', v: 6, set: 'Pen', cost: 3, holder: 'K', rank: 1 }),
@@ -117,7 +117,7 @@ describe('порог: дешёвая альтернатива в окне 0–1 
   });
 
   it('D15: две дешёвые замены по отдельности сохраняют сет, вместе выключают — делается первая по порядку слотов', () => {
-    const g = synthGauge({ parts: [pen], bonus: { Pen: { 2: 0 } } });
+    const g = PEN;
     const list: Cand[] = [];
     for (const slot of ['helmet', 'armor', 'gloves'] as const) list.push(worn(`w-${slot}`, slot, 3.4));
     for (const slot of ['helmet', 'armor', 'gloves'] as const) list.push(cand({ id: `pen-${slot}`, slot, v: 6, set: 'Pen', cost: 3, holder: 'K', rank: 1 }));
@@ -147,5 +147,37 @@ describe('порог: дешёвая альтернатива в окне 0–1 
     it('альтернатива хуже ровно на 1,0 — недопустима', () => {
       expect(took([worn('w', 'weapon', 3), best, cand({ id: 'low', slot: 'weapon', v: 5, cost: 1 })])).toEqual({ weapon: 'dear' });
     });
+  });
+});
+
+// Q7 (owner, 2026-10-09): a Legendary in place of the worn Epic needs V not lower, no +1 — unless another hero wears it
+describe('Q7: Legendary вместо надетого Epic — без порога в 1 очк.', () => {
+  const epic = (v: number) => cand({ id: 'w', slot: 'helmet', v, cost: 0, grade: 'rare' });
+  const leg = (id: string, v: number, cost: 0 | 1 | 2 | 3 = 2, o: { loss?: number; holder?: string | null } = {}) =>
+    cand({ id, slot: 'helmet', v, cost, grade: 'unique', ...o });
+
+  it('из запаса: ровно столько же очков — берём Legendary', () => {
+    expect(took([epic(5), leg('L', 5, 1)])).toEqual({ helmet: 'L' });
+  });
+  it('из инвентаря: на 0,5 лучше — берём (раньше не хватало 1 очк.)', () => {
+    expect(took([epic(5), leg('L', 5.5, 2)])).toEqual({ helmet: 'L' });
+  });
+  it('на 0,1 хуже — не берём', () => {
+    expect(took([epic(5), leg('L', 4.9, 2)])).toEqual({});
+  });
+  it('Epic против Epic: на 0,5 лучше — порог 1 очк. прежний', () => {
+    const e2 = cand({ id: 'e2', slot: 'helmet', v: 5.5, cost: 2, grade: 'rare' });
+    expect(took([epic(5), e2])).toEqual({});
+  });
+  it('Legendary против Legendary: на 0,5 лучше — порог 1 очк. прежний', () => {
+    const w = cand({ id: 'w', slot: 'helmet', v: 5, cost: 0, grade: 'unique' });
+    expect(took([w, leg('L', 5.5, 2)])).toEqual({});
+  });
+  it('надетое другим героем (цена 3) — не берём за те же очки; на +1 — берём, как раньше', () => {
+    expect(took([epic(5), leg('K', 5, 3, { loss: 4, holder: 'K' })])).toEqual({});
+    expect(took([epic(5), leg('K', 6, 3, { loss: 4, holder: 'K' })])).toEqual({ helmet: 'K' });
+  });
+  it('без оценки grade (синтетический мир) правило не действует', () => {
+    expect(took([worn('w', 'helmet', 5), cand({ id: 'L', slot: 'helmet', v: 5, cost: 2 })])).toEqual({});
   });
 });

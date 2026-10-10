@@ -15,12 +15,13 @@ import type { RosterApi } from '@/features/roster/useRoster';
 import { Expand } from '@/shared/ui/Expand';
 import { Notice } from '@/shared/ui/Notice';
 import { Sheet } from '@/shared/ui/Sheet';
+import { BatchButton } from '@/features/batch/ui/BatchButton';
 import { About } from './About';
 import type { InstallInfo } from './Guide';
 import { IconSwitch, LangSwitch } from './Switches';
 
 export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring, rosterApi, gear, onBackup, lang, onLang, gameIcons, onIcons, install, onAppUpdate,
-  onClose, onChars, onTodress, onTrade, onCode, onHelp, onTour }: {
+  onClose, onChars, onTodress, onTrade, onCode, onHelp, onTour, onBatch }: {
   s: AppState; dispatch: Dispatch<Action>; rosterSize: number; todressN: number; news: boolean;
   narrow: boolean;                       // телефон: сверху переходы (на ПК вкладки в шапке)
   touring: boolean;                      // идёт обучение: вместо поля копии — пояснение (на странице пример, не вещи игрока)
@@ -28,6 +29,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
   lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void;
   install: InstallInfo; onAppUpdate?: () => void;
   onClose: () => void; onChars: () => void; onTodress: () => void; onTrade?: () => void; onCode: () => void; onHelp: () => void; onTour: () => void;
+  onBatch?: () => void;                  // «Партия» (features/batch) — on a phone here, on a wide screen next to «Следующий»
 }) {
   const t = useT();
   const [backupOpen, setBackupOpen] = useState(false);
@@ -43,6 +45,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
             </button>
             <button type="button" className="btn" onClick={go(onTodress)}>{t.ui.menuBare(todressN)}</button>
             {onTrade && <button type="button" className="btn" onClick={go(onTrade)}>{t.trade.teamOpen}</button>}
+            {onBatch && <BatchButton onStart={go(onBatch)} />}
           </div>
         )}
         {(onAppUpdate || install.canInstall || install.ios) && (

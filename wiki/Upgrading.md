@@ -22,8 +22,8 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 | Verdict | What to invest |
 |---|---|
 | **Keep** | Enhance to +10 right away; Breakthrough to T4 — a must for a Legendary weapon (the passive grows); on an Epic — no Transistone |
-| **Stopgap** | Enhance right away; no Breakthrough: it's a stopgap until the right piece drops. An Epic weapon or accessory gets only dismantle fodder: any Steel Sword (Steel Necklace) with any main stat is one tier; don't spend Glunite |
-| **Fodder** | nothing: it's a Breakthrough tier for the same piece |
+| **Stopgap** | Enhance right away. Armor: Breakthrough is optional — T4 counts toward the set bonus. Weapons and accessories: no Breakthrough, it's a stopgap until the right piece drops; dismantle their copies |
+| **Fodder** | nothing: it's a Breakthrough step for the same piece (now or from reserve) |
 | **Dismantle** on Epic armor | a reminder: if you have an Epic "Keep" of the same set and slot below T4, this is material for it |
 
 ## Reforge
@@ -31,8 +31,8 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 When and how much to Reforge is your call: how it lands can't be guessed, and the verdict doesn't count it. A piece is
 rated as it is — by the segments lit right now. Did a Reforge or Breakthrough? Record what you got:
 
-- **a character's piece** — tap it in "Caren's gear" and fix the segments, "T4" and an Epic's 4th substat
-  ([Equipment](Equipment#on-the-character-card)); or tap "Try a replacement" there, enter the piece as it is now and
+- **a character's piece** — tap it in the Pool and fix the segments, "T4" and an Epic's 4th substat
+  ([Equipment](Equipment#pool)); or tap "Try a replacement" there, enter the piece as it is now and
   "Replace";
 - **a piece in the inventory** — enter it again: the verdict updates.
 

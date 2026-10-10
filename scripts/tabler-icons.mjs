@@ -17,8 +17,8 @@ const NAMES = [
   'arrow-back-up', 'wall', 'heart-plus', 'bomb', 'skull', 'hourglass', 'hammer', 'shield-check', 'wind', 'heart-broken', 'hexagon',
   // стихии и классы
   'flame', 'droplet', 'leaf', 'sun', 'moon', 'axe', 'building-castle', 'target-arrow', 'first-aid-kit', 'wand',
-  // экипировка: надеть, заменить, на уровне
-  'check', 'replace', 'equal',
+  // экипировка: надеть, заменить, на уровне, отложить
+  'check', 'replace', 'equal', 'archive',
   // обмен вещами: закреплённый герой; билд героя — под что его одеваем (кнопка «Надето»)
   'pin', 'hanger',
   // список персонажей: кнопка фильтра и «Обмен»

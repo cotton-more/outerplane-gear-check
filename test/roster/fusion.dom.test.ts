@@ -24,7 +24,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, setId: string | null, yellow: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: null, at: '', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 const V1 = (pieces: Pc[], builds: Record<string, Record<string, string>>) => ({
   v: 1, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])),
   builds: Object.fromEntries(Object.entries(builds).map(([k, slots]) => [k, { slots, at: '' }])),
@@ -94,11 +94,13 @@ describe('обновление: загрузка и перенос v1', () => {
     await mount({ tab: 'chars', charId: eps.id }, {}, { gear: v1, roster: [eps.id, cfEps.id] });
 
     expect($('.gear-toast span')?.textContent).toBe('Core Fusion Epsilon kept in the roster: Epsilon is replaced, their gear moved to Core Fusion Epsilon.');
-    expect({ line: $('.own-row .linkbtn')?.textContent, pool: $('.pool summary')?.textContent }).toEqual({
-      line: 'Epsilon is replaced by Core Fusion Epsilon: Core Fusion Epsilon is in the roster and has the gear.', pool: undefined,
+    const pool = () => $$('.btabs [role="tab"]').find((b) => b.textContent?.startsWith('Pool'))?.textContent;
+    expect({ line: $('.own-row .linkbtn')?.textContent, pool: pool() }).toEqual({
+      line: 'Epsilon is replaced by Core Fusion Epsilon: Core Fusion Epsilon is in the roster and has the gear.', pool: 'Pool0',
     });
     await click($('.own-row .linkbtn'));
-    expect($('.pool summary')?.textContent).toContain('Core Fusion Epsilon');
+    expect($('.cd-head')?.textContent).toContain('Core Fusion');
+    expect(pool()).toBe('Pool1');
   });
 
   // было (a2-app «подсказка autoNew»): подсказка оставалась у X, у которого вещей больше нет (находка 16)
@@ -220,7 +222,8 @@ describe('окна перехода', () => {
 
   it('режим героя Core Fusion, X в ростере — окно; «Да» — режим героя Core Fusion, в ростере он', async () => {
     await mount({ tab: 'chars', charId: cfEternal.id }, {}, { roster: [eternal.id] });
-    await click(byText('.bgear-none .btn', 'Gear up this build'));
+    await click(byText('.btabs [role="tab"]', 'Pool'));
+    await click(byText('.pool .btn', 'Rate a piece for Core Fusion Eternal'));
     await click(askBtn('Yes, Core Fusion Eternal'));
     expect(roster()).toEqual([cfEternal.id]);
     expect($('.tryon .tryon-n b')?.textContent).toBe('Core Fusion Eternal');
@@ -228,7 +231,8 @@ describe('окна перехода', () => {
 });
 
 // П9 (мелочь 1 повторного ревью): «Надеть» на Core Fusion при X с вещами — putOn после «Да», по пулу, где вещи X уже у
-// него; строка «Кому надеть?» считается по тому же пулу. Было: «Equip — starts Speed», а после «Да» — «Replaced»
+// него; строка «Кому надеть?» считается по тому же пулу («статы + сеты»: прирост в очках, «Заменить» — если в слоте есть
+// надетая или «Надеть» уберёт вещь слота)
 describe('«Надеть на Core Fusion» при X с вещами: строка — по пулу после перехода (П9)', () => {
   const HIT = { setId: speed, subs: { SPD: 4, 'ATK%': 3, CHC: 3, CHD: 3 } };
   const pick = async () => {
@@ -238,8 +242,9 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     return byText('.equip-row', 'Core Fusion Eternal') as HTMLElement;
   };
 
-  it('у X слабый Speed-шлем: строка «Replace helmet…», после «Да» — «Replaced», шлем X убран', async () => {
-    const gear = G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 }), P('e2', 'armor', set('Attack'), { SPD: 3, EFF: 3, CHC: 3, 'ATK%': 3 })], { [eternal.id]: ['e1', 'e2'] });
+  it('у X надет слабый Speed-шлем: строка «Replace helmet…», после «Да» — «Replaced», шлем X убран', async () => {
+    const gear = { ...G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 }), P('e2', 'armor', set('Attack'), { SPD: 3, EFF: 3, CHC: 3, 'ATK%': 3 })], { [eternal.id]: ['e1', 'e2'] }),
+      worn: { [eternal.id]: { helmet: 'e1', armor: 'e2' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
     const row = await pick();
     const label = row.querySelector('.act')?.textContent;
@@ -252,16 +257,21 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect(stored().pools[cfEternal.id]).not.toContain('e1');
   });
 
-  // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — на уровне, строки Core Fusion X нет
-  it('у X та же вещь: строки «Already has» нет — после перехода она ему ничего не даёт', async () => {
+  // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — после перехода она ему ничего не даёт; найден по
+  // name — «Надеть» with no gain (TEXTS 23). It looks like X's set-aside piece: «Кому надеть?» only after «Это другой»
+  // (owner, 2026-10-07)
+  it('у X та же вещь: строка без прироста — после перехода она ему ничего не даёт', async () => {
     const gear = G([P('e1', 'helmet', speed, HIT.subs)], { [eternal.id]: ['e1'] });
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
+    await click($('.vcard'));
+    expect($('.v-equip')).toBeNull();
+    await click($('.v-twin'));
     const row = await pick();
-    expect(row).toBeUndefined();
+    expect(row.querySelector('.act')?.textContent).toBe('Equip');
   });
 
   it('режим героя Core Fusion, X с вещами появился после его начала: кнопка под карточкой — по пулу после перехода', async () => {
-    const gear = G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 })], { [eternal.id]: ['e1'] });
+    const gear = { ...G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 })], { [eternal.id]: ['e1'] }), worn: { [eternal.id]: { helmet: 'e1' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id], tryon: { charId: cfEternal.id, build: 'Speed' } });
     const btn = $('.vc-equip')?.textContent;
 
@@ -272,14 +282,14 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect($('.gear-toast span')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
   });
 
-  it('X без вещей — строка по пустому пулу, как без Core Fusion: «Equip — starts Speed», тост «Started filling Speed»', async () => {
+  it('X без вещей — строка по пустому пулу, как без Core Fusion: «Equip — +N pts», тост «On Core Fusion Eternal: helmet.»', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { roster: [eternal.id] });
     const row = await pick();
     const label = row.querySelector('.act')?.textContent;
     await click(row);
     await click(askBtn('Yes, Core Fusion Eternal'));
-    expect(label).toMatch(/^Equip — starts Speed/);
-    expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\..*Started filling Speed\./);
+    expect(label).toMatch(/^Equip — \+[\d.]+ pts$/);
+    expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\./);
   });
 });
 
@@ -392,7 +402,6 @@ describe('список и карточка X', () => {
     await click($('.vcard'));
     await click($('.v-equip'));
     const names = () => $$('.equip-row .nm b').map((e) => e.textContent);
-    expect(names()).toContain('Core Fusion Eternal');
     await type($('.equip-q input') as HTMLInputElement, 'eter');
     expect(names().filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
   });

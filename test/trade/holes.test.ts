@@ -26,12 +26,12 @@ describe('F. дыры', () => {
     expect(holes.unfilled).toContain('weapon');
     expect(holes.unfilled).not.toContain('gloves');
   });
-  it('дыра выключила значимый бонус — breaks: этот сет (подсказка R9.2)', () => {
+  it('дыра выключила половину сета — breaks: этот сет (подсказка R9.2)', () => {
     const w = synthWorld({
       items: { h1: { slot: 'helmet', set: 'S' }, a1: { slot: 'armor', set: 'S' }, rh: { slot: 'helmet' } },
       heroes: {
         R: { worn: { helmet: 'rh' }, value: { h1: 20, rh: 1 } },
-        M: { worn: { helmet: 'h1', armor: 'a1' }, value: { h1: 1, a1: 1 }, parts: [{ set: 'S', n: 2, conv: false }], bonus: { S: { 2: 10 } } },
+        M: { worn: { helmet: 'h1', armor: 'a1' }, value: { h1: 1, a1: 1 }, bonus: { S: { 2: 10 } } },
       },
     });
     expect(heroPlan(w, { to: 'R' }).holes.fills).toEqual([{ hero: 'M', slot: 'helmet', breaks: 'S' }]);

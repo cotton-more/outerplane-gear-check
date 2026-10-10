@@ -1,83 +1,70 @@
-// Билды персонажа по outerpedia: сеты, оружие и аксессуар с main stat, приоритет сабстатов, талисманы, заметка.
+// Карточка героя (stat-sets макет 6.0): шапка, «К обмену ▸» и закрепление набора («Закрепить набор» или «Закреплено: … ▾»),
+// вкладки «Надето · Пул · Билды». «Надето» — что на герое в игре, «Переодеть» (лучшая раскладка из своих вещей лучше
+// надетой на 1+ очко) и «Что искать»; «Пул» — все вещи и зачем каждая; «Билды» — справка outerpedia, только просмотр.
 // На узком экране — полноэкранная шторка поверх списка.
-import { useEffect, useState, type Key, type ReactNode } from 'react';
-import type { Build, Char, SlotId } from '@/game/data/types';
+import { useEffect, useState } from 'react';
+import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
+import { comboText } from '@/game/build/builds';
 import type { RosterApi } from '@/features/roster/useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { isPinned, setPinned, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
-import { isStats, play, setMark, undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
-import { badgeOf } from '@/features/gear/model/poolVs';
-import { redressPlan, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
-import type { Variant } from '@/game/build/variants';
-import { BuildGear, PieceSheet } from './BuildGear';
-import { PoolList } from '@/features/gear/ui/PoolList';
-import { Redress } from '@/features/worn/Redress';
+import { setPin, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
+import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { reasonOf } from '@/features/gear/pool/info';
+import { PieceSheet } from './PieceSheet';
+import { PoolList, reasonText } from '@/features/gear/ui/PoolList';
+import { Redress, redressLabel } from '@/features/worn/Redress';
+import { PinSheet } from '@/features/worn/PinSheet';
 import { WornGear } from '@/features/worn/WornGear';
 import { ShareButton } from '@/features/worn/ShareButton';
 import { shareCodeOf } from '@/features/worn/share';
-import { VariantChips } from '@/features/gear/ui/VariantChips';
 import { Icon } from '@/game/icons/Img';
 import { tour } from '@/tour/anchors';
 import { setName } from '@/game/set/setName';
-import { variantName } from '@/features/gear/ui/pieceText';
-import { Toggle } from '@/shared/ui/Toggle';
-import { CloseButton } from '@/shared/ui/CloseButton';
 import { BuildView } from './BuildView';
 import { CharHead } from './CharHead';
 
 // active — вкладка «Персонажи» на экране: карточка вещи (шторка в <body>) закрывается, когда её нет;
-// view — пул (features/gear/pool); onTryOn — режим «для героя» с предустановкой формы по варианту этого персонажа (BuildGear; у
-// «По статам» b — его билд с именем STATS, features/tryon/tryon); onOpenChar — карточка другого
-// персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren»).
+// view — пул (features/gear/pool); onTryOn — режим «для героя» (features/tryon): «Ввести» у пустого слота — только слот
+// (slotOnly), «Примерить замену» — слот и сет этой вещи, «Надеть» заменит её (replacing); onOpenChar — карточка другого
+// персонажа (его Core Fusion); onGearToast — сообщение с «Вернуть» («Убрать у Caren», «Надеть», закрепление).
 // onPieceEdit — правка в карточке вещи (герой, прежний id, id после правки): висящее «Вернуть» прежнего действия (одно
 // на все, В3) App снимает — откаты возвращают запись по id, а её поправили или скопировали (gear updateIn); копия — и
-// replace режима героя переходит на неё. «Ввести» на вкладке «Надето» — onTryOn с slotOnly: на форме только слот. onRateFor — «Оценить вещь для Caren» (режим
-// «для героя» без предустановки). «Примерить замену» — onTryOn с from и replacing: «Надеть» заменит эту запись в любом
-// случае (её id — TryOn.replace); «Слабее всех» тоже отдаёт from, но только для сета на форме
+// the hero mode's replace moves to it. onRateFor — «Оценить вещь для Caren» (the «for hero» mode without a preset).
+// canWear — wear actions («Да, всё надето», «Надеть», «Переодеть»): separate from onTryOn, which a batch turns off
 interface Props {
   charId: string | null; ctx: Ctx; view: PoolView; rosterApi: RosterApi; gear: GearApi; active: boolean; sheetOpen: boolean; onClose: () => void;
-  onTryOn?: (c: Char, b: Build, slot?: SlotId, from?: Piece, combo?: string | null, replacing?: boolean, slotOnly?: boolean) => void;
+  canWear?: boolean;
+  onTryOn?: (c: Char, slot?: SlotId, from?: Piece, replacing?: boolean, slotOnly?: boolean) => void;
   onPieceOpen?: (open: boolean) => void;
   onOpenChar?: (id: string) => void;
   onGearToast?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
   onPieceEdit?: (charId: string, was: string, now: string) => void;
   onRateFor?: (c: Char) => void;
   onTrade?: (c: Char) => void; // «К обмену ▸» — шторка обмена сразу с планом героя
-  redress?: string | null;
-  onRedress?: (key: string | null) => void;
-  onChooseAim?: (charId: string, key: string) => void;
   canShare?: boolean; // «Поделиться» во «Надето» (.x/0060 SPEC 3.1): не в обучении и не при экипировке новой версии
 }
 
-// ранг варианта для заголовка и выбора: доля сборки, потом итог сборки, потом порядок outerpedia
-const rankOf = (cpAsm: Map<string, { progress: number; need: number; total: number }>, v: Variant) => {
-  const a = cpAsm.get(v.key)!;
-  return [a.need ? a.progress / a.need : 0, a.total];
-};
-const byRank = (asm: Map<string, { progress: number; need: number; total: number }>) => (x: Variant, z: Variant) => {
-  const [a1, a2] = rankOf(asm, x), [z1, z2] = rankOf(asm, z);
-  return z1 - a1 || z2 - a2;
-};
+type Tab = 'worn' | 'pool' | 'builds';
 
-// Родитель задаёт key={charId}: смена персонажа сбрасывает выбранный билд и прокрутку.
-export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, onTrade, redress = null, onRedress, onChooseAim, canShare = false }: Props) {
+// Родитель задаёт key={charId}: смена персонажа сбрасывает вкладку и прокрутку.
+export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOpen, onClose, canWear, onTryOn, onPieceOpen, onOpenChar, onGearToast, onPieceEdit, onRateFor, onTrade, canShare = false }: Props) {
   const { CHAR } = ctx.idx;
   const t = useT();
   const c = charId ? CHAR[charId] : undefined;
-  const cp = c ? view.of(c.id) : null;
-  // вкладка: 'worn' — «Надето» (у героев ростера), 'stats' — «По статам», иначе номер билда; при открытии — «Надето», если
-  // на герое что-то надето, иначе билд лучшего варианта
-  const lead = cp ? [...cp.inPlay].filter((v) => !v.dupOf).sort(byRank(cp.asm))[0] ?? null : null;
-  const [tab, setTab] = useState<number | 'stats' | 'worn'>(() => (c && rosterApi.roster.has(c.id) && c.builds.length > 0 && Object.keys(gear.store.worn?.[c.id] ?? {}).length > 0 ? 'worn'
-    : lead ? (isStats(lead) ? 'stats' : Math.max(0, c!.builds.indexOf(lead.parent))) : 0));
-  const [picked, setPicked] = useState<Record<string, string>>({}); // вкладка → выбранный вариант (чипы)
+  // открыта «Надето»; у героя не из ростера и без вещей — «Билды» (смотрит справку)
+  const [tab, setTab] = useState<Tab>(() => (c && !rosterApi.roster.has(c.id) && !view.of(c.id)?.pieces.length ? 'builds' : 'worn'));
+  const [bi, setBi] = useState(0); // билд на вкладке «Билды»
+  const [sheet, setSheet] = useState<'redress' | 'pin' | null>(null);
   const [pieceId, setPieceId] = useState<string | null>(null);
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
-  useEffect(() => { if (!active) setPieceId(null); }, [active]);
+  useEffect(() => { if (!active) { setPieceId(null); setSheet(null); } }, [active]);
+  const hp = c ? view.hero(c.id) : null;
+  const pieces = c ? view.of(c.id)?.pieces ?? [] : [];
   const piece = pieceId ? gear.store.pieces[pieceId] : undefined;
-  const shownPiece = active && !!piece && !!cp?.pieces.some((p) => p.id === pieceId);
+  const shownPiece = active && !!piece && pieces.some((p) => p.id === pieceId);
   useEffect(() => { onPieceOpen?.(shownPiece); }, [shownPiece]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => onPieceOpen?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -95,46 +82,13 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   const own = rosterApi.roster.has(c.id);
   // есть Core Fusion этого героя (features/gear/model/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
   const fusedBy = ctx.off.has(c.id) ? CHAR[ctx.off.get(c.id)!] : null;
-  const asm = cp!.asm;
-  const variantsOfBuild = (b: Build) => cp!.variants.filter((v) => v.parent === b && !isStats(v)).sort(byRank(asm));
-  const has = cp!.pieces.length > 0;
-  // «N/6» на вкладке — у лучшего варианта билда
-  const badge = (b: Build) => (has ? Math.max(0, ...variantsOfBuild(b).map((v) => badgeOf(asm.get(v.key)!))) : 0);
-  const statsTab = tab === 'stats' && cp!.stat;
-  const showWorn = own && c.builds.length > 0;
-  const wornTab = tab === 'worn' && showWorn;
-  const wv = showWorn ? wornView(ctx, c, gear.store, cp!) : null;
-  const bi = typeof tab === 'number' ? Math.min(tab, c.builds.length - 1) : 0;
-  const b = statsTab ? cp!.stat!.parent : c.builds[bi];
-  const list = b && !statsTab ? variantsOfBuild(b) : [];
-  const v = statsTab ? cp!.stat! : list.find((x) => x.key === picked[String(tab)]) ?? list[0];
-  // «Собираю»: нажали — противоположная отметка, а если так было бы и без неё — отметку снять
-  const onWant = (x: Variant) => {
-    const on = cp!.inPlay.includes(x);
-    const { [x.key]: _, ...rest } = gear.store.marks ?? {};
-    const auto = play(ctx, c, cp!.pieces, { ...cp!.opts, marks: rest }).inPlay.some((y) => y.key === x.key);
-    gear.set(setMark(gear.store, x.key, !on === auto ? null : !on ? 'want' : 'skip'));
-  };
-  // заголовок: лучше всего собран / ближе всех к сборке; «Собраны ещё»; «По статам», если ничего не начато (он живой:
-  // ни одной вещи из сетов связок и рекомендованного оружия из списков, Р12, Р18, П3, а не по «Собираю» — иначе «ни один
-  // билд не начат» при «Не собираю»)
-  const shownLead = lead && !isStats(lead) ? lead : null;
-  const done = cp!.inPlay.filter((x) => !isStats(x) && !x.dupOf && asm.get(x.key)!.need && asm.get(x.key)!.progress === asm.get(x.key)!.need);
-  const la = shownLead ? asm.get(shownLead.key)! : null;
-  const headline = !has ? null : cp!.statLive && !cp!.inPlay.some((x) => !isStats(x) && asm.get(x.key)!.progress > 0)
-    ? <p className="cd-lead"><span>{t.ui.cdStats(c.name)}</span></p>
-    : la && shownLead && la.progress > 0
-      ? (
-        <p className="cd-lead">
-          <span>{la.progress === la.need ? t.ui.cdBest(shownLead.name, la.progress, la.need) : t.ui.cdClosest(shownLead.name, la.progress, la.need)}</span>
-          {done.filter((x) => x !== shownLead).length > 0 && <span className="muted small">{t.ui.cdAlso(done.filter((x) => x !== shownLead).map((x) => x.name).join(', '))}</span>}
-        </p>
-      )
-      : null;
-  // разовая подсказка после переноса: вариант теперь собирается сам; закрыл — ключ удалён. Вещей нет (ушли к Core Fusion
-  // или от него) — не о чем
-  const autoNew = has ? (gear.store.autoNew ?? []).filter((k) => k.startsWith(c.id + '/') && cp!.variants.some((x) => x.key === k)) : [];
-  const dismiss = (k: string) => gear.set({ ...gear.store, autoNew: (gear.store.autoNew ?? []).filter((x) => x !== k) });
+  const hasBuilds = c.builds.length > 0;
+  const wv = hasBuilds ? wornView(ctx, c, gear.store, hp) : null;
+  const pin = hp?.P.pin ?? null;
+  const live = !!canWear && !!onGearToast && !gear.newer;
+  const b = c.builds[Math.min(bi, c.builds.length - 1)];
+  const shownTab: Tab = tab;
+
   // правка в карточке вещи — только у этого героя: общая запись делится, и шторка идёт за новым id (иначе закрылась бы
   // на первом нажатии); ничего не поменялось — ни записи, ни снятого «Вернуть»
   const editPiece = (patch: PieceEdit) => {
@@ -145,14 +99,13 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     setPieceId(r.id);
     onPieceEdit?.(c.id, pieceId, r.id);
   };
-  // «Надеть» из совета и из карточки вещи: вещь пула героя — надетая; сообщение с «Вернуть» (App onGearToast); прежняя надетая,
-  // которую больше ничто не держит, уходит — «Лишнее убрано»
-  const live = !!onTryOn && !!onGearToast && !gear.newer;
+  // «Надеть» из «Переодеть» и из карточки вещи: вещь пула героя — надетая; сообщение с «Вернуть» (App onGearToast); прежняя
+  // надетая, которую больше ничто не держит, уходит — «Лишнее убрано»
   const wear = (id: string) => {
     const r = wearFromPool(ctx, gear.store, c.id, id);
     if (!r) return;
     gear.set(r.st);
-    onGearToast?.(t.ui.wornToast(c.name, t.ui.slotNames[r.slot]), r.removed.length ? t.ui.prunedNote : '', (x) => undoWear(x, c.id, r));
+    onGearToast?.(t.ui.wornToast(c.name, t.ui.slotNames[r.slot]), r.removed.length ? t.fit.pruned(c.name) : '', (x) => undoWear(x, c.id, r));
   };
   // «Да, всё надето»: весь пул героя надет (в нём не больше одной вещи на слот)
   const wearEverything = () => {
@@ -161,42 +114,35 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     gear.set(r.st);
     onGearToast?.(t.ui.wornAllToast(c.name, Object.keys(r.worn).length), '', (x) => undoWearAll(x, c.id, r));
   };
-  // «Надеть все N» на «Переодеть»: вещи по очереди, одно сообщение; «Вернуть» — все
+  // «Надеть все N» в «Переодеть»: вещи по очереди, одно сообщение; «Вернуть» — все
   const wearList = (ids: string[]) => {
     const r = wearMany(ctx, gear.store, c.id, ids);
+    setSheet(null);
     if (!r) return;
     gear.set(r.st);
-    onGearToast?.(t.ui.wornAllToast(c.name, r.results.length), r.results.some((x) => x.removed.length) ? t.ui.prunedNote : '', (x) => undoWearMany(x, c.id, r));
+    onGearToast?.(t.ui.wornAllToast(c.name, r.results.length), r.results.some((x) => x.removed.length) ? t.fit.pruned(c.name) : '', (x) => undoWearMany(x, c.id, r));
+  };
+  // закрепить набор или снять («По статам»): сообщение с «Вернуть»
+  const doPin = (key: string | null) => {
+    const r = setPin(gear.store, c.id, key);
+    setSheet(null);
+    if (r.st === gear.store) return;
+    gear.set(r.st);
+    const now = key ? pinChoices(hp!).find((f) => f.pin.key === key)?.pin : null;
+    onGearToast?.(now ? t.card.pinned(comboText(ctx.idx, now.combo)) : t.card.pinNone, '', (x) => undoPin(x, c.id, r));
   };
   // «Поделиться»: надета хоть одна вещь (SPEC 3.1)
-  const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, cp!) : null;
-  // билд героя на «Надето» (aimOf): «Ввести» и «Примерить замену» идут с ним, на других вкладках — с показанным
-  const cur = wornTab && wv?.variant ? wv.variant : v;
-  const aimName = wv?.variant ? variantName(t, wv.variant) : t.ui.byStats;
-  // вкладка билда: билд героя (aimOf) обведён; x null — «По статам»
-  const tabOf = (x: Build | null, selected: boolean, onClick: () => void, body: ReactNode, key: Key) => {
-    const av = wv?.variant;
-    const aim = !!av && (x ? !isStats(av) && av.parent === x : isStats(av));
-    return (
-      <button key={key} type="button" role="tab" aria-selected={selected} onClick={onClick}
-        {...(aim ? { className: 'bt-aim', title: t.ui.aimTab(aimName) } : {})}>{body}</button>
-    );
+  const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, pieces, pin?.key ?? null) : null;
+  const enter = onTryOn ? (slot: SlotId) => onTryOn(c, slot, undefined, false, true) : undefined;
+  const rateFor = onRateFor && !gear.newer && hasBuilds ? () => onRateFor(c) : undefined;
+  const why = (p: Piece) => {
+    if (!hp) return '';
+    const r = reasonOf(hp.info, p);
+    return r ? reasonText(t, ctx.idx, r) : t.fit.unneeded;
   };
-  // «Переодеть в …» под вкладками: показан не билд героя — запись билда с «Вернуть» и экран «Переодеть» (App, onChooseAim).
-  // Не во вкладках: иначе ширина выбранной меняется и ряды перескакивают
-  const dressTo = !wornTab && wv && live && onChooseAim && v && wv.variant?.key !== v.key ? v : null;
-  const enter = onTryOn && wv?.variant ? (slot: SlotId) => onTryOn(c, isStats(wv.variant!) ? wv.variant!.b : wv.variant!.parent, slot, undefined, wv.variant!.sig, false, true) : undefined;
-  // «Оценить вещь для Caren»: есть вещи — у заголовка «Вещи Caren · N», нет — под шапкой (одна кнопка на экране)
-  const rateFor = onRateFor && !gear.newer && c.builds.length > 0 ? () => onRateFor(c) : undefined;
-  // «Переодеть»: подвид карточки (App держит выбор — к нему же ведёт «Билды героев»); вариант пропал — обычная карточка
-  const plan = redress && showWorn && b ? redressPlan(ctx, c, gear.store, cp!, redress) : null;
-  if (plan) {
-    return (
-      <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
-        <Redress c={c} ctx={ctx} plan={plan} onBack={() => onRedress?.(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
-      </aside>
-    );
-  }
+  const pinName = pin ? comboText(ctx.idx, pin.combo) : '';
+  const canPin = own && hasBuilds && !gear.newer && !!hp;
+  const redress = shownTab === 'worn' ? wv?.redress ?? null : null;
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
       <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
@@ -210,60 +156,58 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name, fusedBy.name)}</button>
         </div>
       )}
-      {/* «Обмен вещами» (R10.1): «К обмену ▸» и «Не отдавать надетое» (у героя без вещей отметки нет, R3.4) */}
-      {c.builds.length > 0 && !gear.newer && (onTrade || has) && (
-        <div className="cd-trade">
+      {/* «К обмену ▸» (R10.1) и закрепление (MODEL.md §6): закреплено — плашка на месте кнопки, первой */}
+      {hasBuilds && !gear.newer && (onTrade || canPin) && (
+        <div className="cd-acts">
+          {canPin && pin && (
+            <button type="button" className="pinned" aria-label={t.card.pinnedAria(pinName)} onClick={() => setSheet('pin')} {...tour('pin')}>
+              <Icon name="pin" /><span>{t.card.pinned(pinName)}</span>▾
+            </button>
+          )}
           {onTrade && <button type="button" className="btn small" onClick={() => onTrade(c)} {...tour('trade')}>{t.trade.open}</button>}
-          {has && (
-            <Toggle checked={isPinned(gear.store, c.id)} onChange={(on) => gear.set(setPinned(gear.store, c.id, on))}><Icon name="pin" />{t.trade.pin}</Toggle>
+          {canPin && !pin && (
+            <button type="button" className="btn small pinb" onClick={() => setSheet('pin')} {...tour('pin')}><Icon name="pin" />{t.card.pin}</button>
           )}
         </div>
       )}
-      {rateFor && !has && <div className="cd-rate"><button type="button" className="btn small" onClick={rateFor}>{t.tryon.rateFor(c.name)}</button></div>}
-      {/* «Лучше всего собран…» — про сборку билдов; на «Надето» про надетое, не про неё */}
-      {!wornTab && headline}
-      {autoNew.map((k) => (
-        <p key={k} className="cd-note">
-          <span>{t.ui.autoNew(cp!.variants.find((x) => x.key === k)!.name, c.name)}</span>
-          <CloseButton className="tour-x" label={t.ui.close} onClick={() => dismiss(k)} />
-        </p>
-      ))}
-      {b && v ? (
+      {hasBuilds ? (
         <>
-          {/* «По статам» — отдельный билд у каждого персонажа с билдами (находка 28): вкладка последней */}
-          <div className="btabs" role="tablist" aria-label={t.ui.builds} {...((c.builds.length > 1 || cp!.stat) && tour('btabs'))}>
-            {wv && (
-              <button type="button" role="tab" aria-selected={wornTab} onClick={() => setTab('worn')}>
-                {t.ui.tabWorn}<span className="bt-n">{wv.count}/6</span>
-              </button>
-            )}
-            {c.builds.map((x, i) => {
-              const one = variantsOfBuild(x);
-              const dup = one.length === 1 && one[0].dupOf ? cp!.variants.find((y) => y.key === one[0].dupOf) : null;
-              return tabOf(x, !statsTab && !wornTab && x === b, () => setTab(i),
-                <>{x.name}{dup ? <span className="bt-n">{t.ui.dupOf(dup.name)}</span> : badge(x) > 0 && <span className="bt-n">{badge(x)}/6</span>}</>, i);
-            })}
-            {cp!.stat && tabOf(null, !!statsTab, () => setTab('stats'),
-              <>{t.ui.byStats}{has && <span className="bt-n">{badgeOf(asm.get(cp!.stat.key)!)}/6</span>}</>, 'stats')}
-          </div>
-          {list.length > 1 && !wornTab && <VariantChips list={list} cur={v} cp={cp!} ctx={ctx} st={gear.store} onPick={(x) => setPicked((p) => ({ ...p, [String(tab)]: x.key }))} onWant={onWant} />}
-          {dressTo && (
-            <div className="cd-dress">
-              <button type="button" className="btn small" onClick={() => onChooseAim!(c.id, dressTo.key)} {...tour('wchange')}>
-                <Icon name="hanger" />{t.ui.aimRedress(variantName(t, dressTo))}
-              </button>
+          {wv && (
+            <div className="btabs" role="tablist" aria-label={t.card.tabs} {...tour('btabs')}>
+              <button type="button" role="tab" aria-selected={shownTab === 'worn'} onClick={() => setTab('worn')}>{t.card.tabWorn}<span className="bt-n">{wv.count}/6</span></button>
+              <button type="button" role="tab" aria-selected={shownTab === 'pool'} onClick={() => setTab('pool')}>{t.card.tabPool}<span className="bt-n">{pieces.length}</span></button>
+              <button type="button" role="tab" aria-selected={shownTab === 'builds'} onClick={() => setTab('builds')}>{t.card.tabBuilds}</button>
             </div>
           )}
-          {wornTab && wv
-            ? <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={enter} onWear={live ? wear : undefined} onWearAll={live ? wearEverything : undefined}
+          {redress && (
+            <button type="button" className="redress" onClick={() => setSheet('redress')}>
+              <Icon name="hanger" /><span>{redressLabel(t, redress)}</span>▸
+            </button>
+          )}
+          {shownTab === 'worn' && wv && (
+            <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={live ? enter : undefined} onWearAll={live ? wearEverything : undefined}
               share={shareCode ? <ShareButton code={shareCode} /> : undefined} />
-            : <BuildGear c={c} v={v} cp={cp!} ctx={ctx} gear={gear} view={view} onOpenPiece={setPieceId} onWant={onWant}
-              onTryOn={onTryOn && ((x, slot, from, combo) => onTryOn(c, x, slot, from, combo))} />}
-          <PoolList cp={cp!} ctx={ctx} gear={gear} view={view} own={own} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />
-          {shownPiece && piece && <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} view={view} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
-            onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, isStats(cur) ? cur.b : cur.parent, piece.slot, piece, cur.sig, true); } : undefined}
-            onWear={live ? () => { setPieceId(null); wear(piece.id); } : undefined} />}
-          {!statsTab && !wornTab && <BuildView c={c} b={b} ctx={ctx} />}
+          )}
+          {shownTab === 'pool' && <PoolList c={c} pieces={pieces} hp={hp} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />}
+          {shownTab === 'builds' && (
+            <>
+              {c.builds.length > 1 && (
+                <div className="bsel" role="group" aria-label={t.ui.builds}>
+                  {c.builds.map((x, i) => <button key={i} type="button" aria-pressed={x === b} onClick={() => setBi(i)}>{x.name}</button>)}
+                </div>
+              )}
+              <BuildView c={c} b={b} ctx={ctx} />
+            </>
+          )}
+          {shownPiece && piece && (
+            <PieceSheet c={c} p={piece} ctx={ctx} gear={gear} why={why(piece)} worn={!!hp?.wornIds.has(piece.id)} onClose={() => setPieceId(null)} onRemoved={onGearToast} onEdit={editPiece}
+              onTry={onTryOn ? () => { setPieceId(null); onTryOn(c, piece.slot, piece, true); } : undefined}
+              onWear={live ? () => { setPieceId(null); wear(piece.id); } : undefined} />
+          )}
+          {sheet === 'redress' && wv?.redress && hp && (
+            <Redress c={c} ctx={ctx} P={hp.P} plan={wv.redress} onClose={() => setSheet(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
+          )}
+          {sheet === 'pin' && hp && <PinSheet c={c} ctx={ctx} choices={pinChoices(hp)} now={pin?.key ?? null} onClose={() => setSheet(null)} onPin={doPin} />}
         </>
       ) : (
         <div className="cd-empty">
@@ -274,4 +218,3 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     </aside>
   );
 }
-

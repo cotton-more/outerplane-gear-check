@@ -17,7 +17,6 @@ import { useIndex } from '@/game/data/IndexContext';
 import { Rich } from '@/shared/ui/Rich';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Chain } from '@/features/eval/verdict/Chain';
-import type { PoolView } from '@/features/gear/pool';
 import type { CharVs } from '@/features/gear/model/poolVs';
 import { Icon } from '@/game/icons/Img';
 import { VsSection } from '@/features/gear/ui/VsSection';
@@ -25,12 +24,13 @@ import { ShareCode } from '@/features/eval/code/ItemCode';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
-// vs — «Сейчас на персонажах» (features/gear/model/poolVs), view — пул; onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
+// vs — «Сейчас на персонажах» (features/gear/model/poolVs); onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
 interface Props {
   r: VerdictData; s: FormState; dispatch: Dispatch<FormAction>; onOpenChar: (id: string) => void;
-  vs?: CharVs[]; view?: PoolView; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void;
+  vs?: CharVs[]; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void; onStash?: (vs: CharVs) => void;
   nextNote?: string | null; // «Дальше: Ботинки» под кнопкой «Надеть» (режим героя, ввод надетого)
   offNote?: string | null; // режим «для героя»: строка про героя (features/tryon/tryon heroNote) — не носит, не нужна, «По статам»
+  onTwin?: () => void;      // the piece looks like one already set aside: «Это другой» under the reasons (guard)
 }
 
 // Широкий экран: вердикт липкой колонкой справа от формы — во всю высоту до низа окна.
@@ -41,7 +41,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip, onEquipPick, offNote, nextNote }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEquipPick, onStash, offNote, nextNote, onTwin }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -63,10 +63,11 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], view, onEquip
         </div>
         <p className="v-summary">{r.title}</p>
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
+        {r.v !== 'idle' && onTwin && <button type="button" className="btn v-twin" onClick={onTwin}>{t.fit.twin(s.slot)}</button>}
         {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
-      {onEquip && view && <VsSection list={vs} view={view} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} nextNote={nextNote} onEquip={onEquip} onOpenChar={onOpenChar} />}
+      {onEquip && <VsSection list={vs} item={input} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} nextNote={nextNote} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>

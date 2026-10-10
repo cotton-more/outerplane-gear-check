@@ -11,13 +11,13 @@ import { evaluate } from '@/features/eval/verdict/evaluate';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = (fodder = false) => makeCtx(idx, { rosterOnly: false, fodder, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const P = ru.plan;
 
 // Speed Set — самый частый; SPD на любой ступени полезен, поэтому «Оставить» получить легко
 const speed = D.sets.find((s) => s.short === 'Speed')!;
-const helmet = (grade: Grade, subs: Record<string, number>, fodder = false) =>
-  evaluate(ctx(fodder), { slot: 'helmet', grade, setId: speed.id, itemKey: null, main: null, subs });
+const helmet = (grade: Grade, subs: Record<string, number>) =>
+  evaluate(ctx, { slot: 'helmet', grade, setId: speed.id, itemKey: null, main: null, subs });
 
 describe('«Прокачка»: броня', () => {
   it('Epic «Оставить»: Enhance, Breakthrough такой же Epic-вещью, без Transistone — строки Reforge нет', () => {
@@ -38,10 +38,10 @@ describe('«Прокачка»: броня', () => {
     expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
   });
 
-  it('фоддер: не прокачивать — это ступень Breakthrough для такой же вещи', () => {
-    const r = helmet('unique', { RES: 1, 'DEF%': 1, HP: 1, DEF: 1 }, true);
-    expect(r.v).toBe('fodder');
-    expect(r.plan).toEqual([P.fodderArmor('Helmet', 'Speed')]);
+  it('слабая Legendary-броня без ростера — «Разобрать», не фоддер (Д6)', () => {
+    const r = helmet('unique', { RES: 1, 'DEF%': 1, HP: 1, DEF: 1 });
+    expect(r.v).toBe('junk');
+    expect(r.plan).toEqual([]);
   });
 
   it('Epic в разбор из сета, который носят: напоминание, что это материал для Epic-«Оставить» того же сета и слота', () => {
@@ -52,21 +52,21 @@ describe('«Прокачка»: броня', () => {
 
   it('сет без билдов — никакой прокачки и никаких напоминаний', () => {
     const dead = D.sets.find((s) => !s.users)!;
-    const r = evaluate(ctx(), { slot: 'helmet', grade: 'rare', setId: dead.id, itemKey: null, main: null, subs: { SPD: 3 } });
+    const r = evaluate(ctx, { slot: 'helmet', grade: 'rare', setId: dead.id, itemKey: null, main: null, subs: { SPD: 3 } });
     expect([r.v, r.plan]).toEqual(['junk', []]);
   });
 });
 
 // Attack Set: у атакеров главные статы — CHC и ATK%
 const attack = D.sets.find((s) => s.short === 'Attack')!;
-const attackHelmet = (subs: Record<string, number>) => evaluate(ctx(), { slot: 'helmet', grade: 'rare', setId: attack.id, itemKey: null, main: null, subs });
+const attackHelmet = (subs: Record<string, number>) => evaluate(ctx, { slot: 'helmet', grade: 'rare', setId: attack.id, itemKey: null, main: null, subs });
 
 describe('Epic: 4-й сабстат от первого Reforge', () => {
-  it('свежая Epic с тремя сабстатами, «Временно»: без кубика и без строк Reforge — Enhance и «не вкладывай»', () => {
-    const r = attackHelmet({ 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+  it('свежая Epic с тремя сабстатами, «Временно»: без кубика и без строк Reforge — Enhance и «Breakthrough можно»', () => {
+    const r = attackHelmet({ 'DMG UP%': 2, 'ATK%': 3, CHD: 3 });
     expect(r.v).toBe('temp');
     expect('gamble' in r).toBe(false);
-    expect(r.plan).toEqual([P.enhance, P.tempNoInvest]);
+    expect(r.plan).toEqual([P.enhance, P.tempArmor]);
   });
 
   it('свежая Epic с тремя сабстатами, «Разобрать»: без кубика — в «Прокачке» только напоминание про материал', () => {
@@ -103,19 +103,19 @@ const wanted = new Set(D.chars.flatMap((c) => c.builds.flatMap((b) => b.weapons.
 
 describe('«Прокачка»: оружие', () => {
   it('Legendary с нужной пассивкой и main: Breakthrough до T4 обязателен — растёт пассивка', () => {
-    const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: {} });
+    const r = evaluate(ctx, { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: {} });
     expect(r.v).toBe('keep');
     expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
   });
 
   it('со слабыми сабстатами — строкой «кандидат на реролл», а «Прокачка» без Reforge', () => {
-    const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { EFF: 1, RES: 1, 'DMG RED%': 1, DEF: 1 } });
+    const r = evaluate(ctx, { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { EFF: 1, RES: 1, 'DMG RED%': 1, DEF: 1 } });
     expect(r.lines).toContain(ru.gear.weakReroll);
     expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
   });
 
   it('Legendary с SPD 6: без «Стоит Reforge» и строки «Ролл» — как есть', () => {
-    const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { SPD: 6, CHC: 4, CHD: 4, 'ATK%': 4 } });
+    const r = evaluate(ctx, { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main: ref.mains[0], subs: { SPD: 6, CHC: 4, CHD: 4, 'ATK%': 4 } });
     expect(r.v).toBe('keep');
     expect(r.lines.some((l) => l.startsWith('Ролл:'))).toBe(false);
     expect(r.plan).toEqual([P.enhance, P.btGear(weapon.name)]);
@@ -123,14 +123,14 @@ describe('«Прокачка»: оружие', () => {
 
   it('с ненужным main stat — фоддер: копия для Breakthrough экземпляра с нужным main', () => {
     const main = weapon.mains.find((m) => !wanted.has(m))!;
-    const r = evaluate(ctx(), { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main, subs: {} });
+    const r = evaluate(ctx, { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon.key, main, subs: {} });
     expect(r.v).toBe('fodder');
     expect(r.plan).toEqual([P.fodderGear(weapon.name)]);
   });
 
   // .x/0060 SPEC 4.3: у Epic — Breakthrough только вещами из разбора (любой Steel Sword), Glunite не тратить
   it('временная замена — только Enhance, Breakthrough — вещами из разбора, сколько бы ни было сегментов', () => {
-    const plan = (n: number) => evaluate(ctx(), { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: n, CHC: n, CHD: n } });
-    expect([1, 3].map((n) => [plan(n).v, plan(n).plan])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.btTempEpic('Steel Sword')]]));
+    const plan = (n: number) => evaluate(ctx, { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { SPD: n, CHC: n, CHD: n } });
+    expect([1, 3].map((n) => [plan(n).v, plan(n).plan])).toEqual([1, 3].map(() => ['temp', [P.enhance, P.tempNoInvest]]));
   });
 });

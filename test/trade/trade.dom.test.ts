@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-// «Обмен вещами»: открытие шторки с карточки героя и с панели ростера, команда из четырёх, закрепление, план героя
-// (вещь, ключ поиска, источник, «Не брать»), «Сделал» с «Вернуть» и отмена расчёта команды. Данные — только из
-// test/fixtures, не владельца. Логика — test/trade.*.test.ts.
+// «Обмен вещами»: открытие шторки с карточки героя и с панели ростера, команда из четырёх, заказ героя, план героя
+// (piece, search key, source, piece cost, «Не брать», stats points), «Сделал» with «Вернуть», the session (stat-sets T7.4) and cancelling the calculation
+// команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -25,7 +25,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, setId: string | null, yellow: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: null, at: '', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 const WEAK = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4 });
 // лучше WEAK больше чем на 1 очк. (порог совета, R10.8)
 const BETTER = P('p2', 'helmet', speed, NEW, { lit: { 'DEF%': 6, CHC: 6, CHD: 6, HP: 6 } });
@@ -73,13 +73,13 @@ const hero = (n: string) => byText('.trade-hero', n);
 describe('J. обмен вещами', () => {
   it('J1: «Trade ▸» на карточке Caren открывает шторку сразу с её планом', async () => {
     await mount({ gear: gear(), roster: ROSTER });
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
 
     expect($('.drawer.trade')).not.toBeNull();
     expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
   });
 
-  it('J2: список героев, вкладка «Team» из четырёх мест, закрепление и строка «Pinned:»', async () => {
+  it('J2: список героев, вкладка «Team» из четырёх мест, у члена — заказ; смена заказа — шторка с наборами', async () => {
     const roster = [caren.id, aer.id, ais.id, akari.id, bare.id];
     await mount({ roster, gear: G([WEAK, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] }) }, { charId: null });
     // «Trade» на панели списка — сразу режим «Team» (для одного героя — «Trade ▸» на карточке)
@@ -95,19 +95,22 @@ describe('J. обмен вещами', () => {
       await click($$('.team-add')[0]);
       await click(hero(D.chars.find((c) => c.id === id)!.name));
     }
-    expect($$('.team .aimb')).toHaveLength(4);
-    expect($$('.team-pin').length).toBeGreaterThan(0);
+    expect($$('.team .aimb').map((b) => b.textContent)).toEqual(Array(4).fill('By stats ▾'));
+    expect($$('.team .aimb')[0].getAttribute('aria-label')).toBe('Order: By stats ▾');
 
-    expect($('.trade-pinned')).toBeNull();
-    await click($$('.team-pin')[0]);
-    expect($('.trade-pinned')).not.toBeNull();
-    expect(stored().pinned).toHaveLength(1);
-    await click($('.trade-pinned .tour-x'));
-    expect($('.trade-pinned')).toBeNull();
-    expect(stored().pinned).toBeUndefined();
+    await click($$('.team .aimb')[0]);
+    const radios = $$('.aimsheet [role="radio"]');
+    expect(radios[0].textContent).toBe('By stats');
+    expect(radios[0].getAttribute('aria-checked')).toBe('true');
+    expect(radios.length).toBeGreaterThan(1);
+    const combo = radios[1].textContent!;
+    await click(radios[1]);
+    expect($('.aimsheet')).toBeNull();
+    expect($$('.team .aimb')[0].textContent).toBe(`${combo} ▾`);
+    expect(stored().pin).toBeUndefined(); // заказ живёт в шторке, не в хранилище
   });
 
-  it('команда: член — плитка как в списке с булавкой вместо звезды; нажатие — «Убрать из команды» под ромбом', async () => {
+  it('команда: член — плитка как в списке, без звезды; нажатие — «Убрать из команды» под ромбом', async () => {
     await mount({ roster: [caren.id, aer.id], gear: gear() }, { charId: null });
     await click(byText('.cbar button', 'Trade'));
     await click($$('.team-add')[0]);
@@ -115,7 +118,6 @@ describe('J. обмен вещами', () => {
 
     expect($('.team .ctile .cn')?.textContent).toBe('Caren');
     expect($('.team .star')).toBeNull();
-    expect($('.team .cwrap .team-pin')).not.toBeNull();
 
     await click($('.team .ctile'));
     await click(byText('.trade-out', 'Caren'));
@@ -124,15 +126,17 @@ describe('J. обмен вещами', () => {
     expect($$('.team-add')).toHaveLength(4);
   });
 
-  it('J3: у вещи в плане — ключ поиска, источник, «Не брать», переключатель закрепления; «Не брать» пересчитывает', async () => {
+  it('J3: у вещи в плане — ключ поиска, источник, «Не брать»; у героя — заказ и очки статов; «Не брать» пересчитывает', async () => {
     await mount({ gear: gear(), roster: ROSTER });
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
 
     expect($('.tmove .bgear-row')).not.toBeNull();
     expect($('.tmove .tsrc')?.textContent).toBe('on Aer');
-    expect($('.tline.to .aimb')?.textContent).toMatch(/▾$/); // билд мерила — его можно сменить (R4.2)
+    expect($('.tmove .tpts')?.textContent).toMatch(/^\+[\d.]+ pts$/); // Aer's helmet against Caren's worn helmet
+    expect($('.tline.to .aimb')?.textContent).toBe('Order: By stats ▾'); // заказ — его можно сменить
+    expect($('.tline.to .tline-s')?.textContent).toMatch(/^Stats: [\d.]+ → [\d.]+ pts$/);
     expect(byText('.tmove button', "Don't take")).toBeTruthy();
-    expect(($('.tpin input') as HTMLInputElement).checked).toBe(true);
+    expect($('.tpin')).toBeNull();
     expect($('.tline:not(.to)')).toBeNull(); // только сам герой: у Aer забирают шлем, его строки нет (владелец, 2026-10-05)
 
     await click(byText('.tmove button', "Don't take"));
@@ -140,20 +144,42 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tmove .tsrc')).toBeNull();
   });
 
-  it('J4: «Done» сохраняет обмен и закрепляет Caren; «Undo» возвращает ogc.gear байт в байт', async () => {
+  // MODEL.md §7 item 1: у закреплённого заказ — его закрепление, жёстко; в шторке заказа — один вариант
+  it('T7.5: закреплённый — «Order: Pinned: Speed ×4 ▾», в шторке только он', async () => {
+    const { pinOptions } = await import('@/game/build/profile');
+    const pin = pinOptions(caren as never)[0];
+    await mount({ gear: gear({ pin: { [caren.id]: pin.key } }), roster: ROSTER });
+    await click(byText('.cd-acts button', 'Trade'));
+    expect($('.tline.to .aimb')?.textContent).toBe('Order: Pinned: Speed ×4 ▾');
+    await click($('.tline.to .aimb'));
+    expect($$('.aimsheet .arow').map((r) => r.textContent)).toEqual(['Pinned: Speed ×4']);
+  });
+
+  it('J4: «Done» сохраняет обмен; «Undo» возвращает ogc.gear байт в байт', async () => {
     await mount({ gear: gear(), roster: ROSTER });
     const before = localStorage.getItem('ogc.gear');
-    await click(byText('.cd-trade button', 'Trade'));
+    await click(byText('.cd-acts button', 'Trade'));
     await click($('.tact .btn.primary'));
 
     const after = stored();
     expect(localStorage.getItem('ogc.gear')).not.toBe(before);
     expect(after.worn[caren.id].helmet).toBe('p2');
-    expect(after.pinned).toContain(caren.id);
     expect($('.gear-toast')?.textContent).toContain('Undo');
 
     await click(byText('.gear-toast button', 'Undo'));
     expect(localStorage.getItem('ogc.gear')).toBe(before);
+  });
+
+  it('T7.4: после «Done» Caren следующий герой в том же окне не берёт её надетое; строка о сеансе', async () => {
+    await mount({ gear: gear(), roster: ROSTER });
+    await click(byText('.cd-acts button', 'Trade'));
+    expect($('.trade-session')).toBeNull();
+    await click($('.tact .btn.primary'));
+
+    expect(stored().worn[caren.id].helmet).toBe('p2');
+    expect($('.trade-session')?.textContent).toBe("Heroes you've re-dressed in this trade keep their gear while the window is open.");
+    await click(hero('Aer'));
+    expect($$('.tmove .tsrc').map((x) => x.textContent)).not.toContain('on Caren');
   });
 
   it('J7: «Calculate» → «Calculating…», «Cancel» гасит расчёт, ничего не записано', async () => {

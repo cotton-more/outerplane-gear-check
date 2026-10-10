@@ -1,7 +1,7 @@
-// Скорость пула экипировки (features/gear/pool, GEARPOOL): не в CI — цифры для решения, считать ли на телефоне сразу.
+// Скорость пула и вердикта («статы + сеты»: features/gear/pool, features/gear/verdict): не в CI — цифры для решения, считать ли на телефоне сразу.
 //   node scripts/bench-pool.mjs
 // Ростер 60 персонажей с билдами, у каждого пул по 1–3 вещи на слот (броня — в основном сеты его связок);
-// замеры: один вердикт (исходы у всех 60), «Кому надеть?» по всем 95 с билдами.
+// замеры: вид пула (профиль и «что держится» у всех 60), один вердикт по ростеру, строки героев по вещи с формы.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'vite';
 
@@ -9,7 +9,8 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 const load = (p) => server.ssrLoadModule(p);
 const { createIndex } = await load('/src/game/data/index.ts');
 const { makeCtx } = await load('/src/game/context.ts');
-const { poolView, outcomeFor } = await load('/src/features/gear/pool/index.ts');
+const { poolView } = await load('/src/features/gear/pool/index.ts');
+const { verdictOf } = await load('/src/features/gear/verdict.ts');
 const { variantsOf } = await load('/src/game/build/variants.ts');
 
 const D = JSON.parse(readFileSync(new URL('../test/fixtures/data.json', import.meta.url), 'utf8'));
@@ -42,7 +43,7 @@ for (const c of roster) {
   }
   pools[c.id] = ids;
 }
-const ctx = makeCtx(idx, { rosterOnly: true, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster.map((c) => c.id)));
+const ctx = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster.map((c) => c.id)));
 const speed = D.sets.find((s) => s.short === 'Speed').id;
 const item = (i) => ({ slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs: { 'DEF%': 2, CHC: 2, SPD: 1 + (i % 3), CHD: 1 } });
 
@@ -54,9 +55,11 @@ const time = (label, f, runs = 5) => {
   console.log(`${label}: медиана ${ms[Math.floor(runs / 2)].toFixed(1)} мс (мин ${ms[0].toFixed(1)}, макс ${ms[runs - 1].toFixed(1)})`);
 };
 
+const worn = Object.fromEntries(roster.map((c) => [c.id, Object.fromEntries(['weapon', 'accessory', 'helmet', 'armor', 'gloves', 'shoes'].map((slot) => [slot, pools[c.id].find((id) => pieces[id].slot === slot)]))]));
+const store = { pieces, pools, worn };
+
 console.log(`ростер ${roster.length}, вещей ${seq}, вариантов у ростера ${roster.reduce((n, c) => n + variantsOf(idx, c).length, 0)}`);
-// новый вид пула на каждый вердикт — как после любой правки хранилища; ценности вещей запоминаются на ctx
-time('вид пула: все 60 персонажей', () => { const v = poolView(ctx, { pieces, pools }); for (const c of roster) v.of(c.id); });
-time('один вердикт: исходы у всех 60', () => { const v = poolView(ctx, { pieces, pools }); for (const c of roster) outcomeFor(ctx, v, c.id, item(0)); });
-time(`«Кому надеть?»: все ${withBuilds.length} с билдами`, () => { const v = poolView(ctx, { pieces, pools }); for (const c of withBuilds) outcomeFor(ctx, v, c.id, item(0)); });
+// новый вид пула на каждый вердикт — как после любой правки хранилища; профили героев запоминаются на ctx
+time('вид пула: все 60 персонажей', () => { const v = poolView(ctx, store); for (const c of roster) v.hero(c.id); });
+time('один вердикт: исходы у всех 60', () => { const v = poolView(ctx, store); verdictOf(ctx, v.hero, item(0)); });
 await server.close();

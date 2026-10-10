@@ -14,8 +14,9 @@ export const namesLine = (list: { c: Char }[], more: (n: number) => string, max 
   return u.slice(0, max).join(', ') + (u.length > max ? more(u.length - max) : '');
 };
 
-// сабстаты вещи строкой — как в строке вещи карточки персонажа (BuildGear): «DEF% 2, CHC 2»
-export const subsText = (lit: Subs): string => Object.keys(lit).map((k) => `${subLabel(k)} ${lit[k]}`).join(', ');
+// сабстаты вещи строкой — как в строке вещи карточки персонажа («Надето», «Пул»): «DEF% 2, CHC 2»
+// no-break spaces inside a token — «DMG RED% 1» wraps only between tokens, never in the middle of one
+export const subsText = (lit: Subs): string => Object.keys(lit).map((k) => `${subLabel(k)} ${lit[k]}`.replace(/ /g, '\u00A0')).join(', ');
 
 // эффект сета на T4 (и на T0, если отличается) — для подсказки на кнопке
 export function setTitle(set: GearSet): string {

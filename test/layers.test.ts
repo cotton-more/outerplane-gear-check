@@ -1,5 +1,5 @@
-// Раскладка src по фичам (DEVELOPMENT.md → «Устройство src/»): зависимости только вниз —
-// shared → game → features → screens → app; фичи — в порядке eval → gear → roster → worn → tryon → trade.
+// Раскладка src по фичам (DEVELOPMENT.md → "`src/` layout"): зависимости только вниз —
+// shared → game → features → screens → app; фичи — в порядке eval → gear → roster → worn → tryon → trade → batch.
 // Сквозные i18n и tour берёт кто угодно; сами они берут нижние слои, а app — только типы.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix, relative } from 'node:path';
@@ -20,7 +20,7 @@ const resolveSpec = (from: string, spec: string): string | null => {
 };
 
 const LAYER: Record<string, number> = { shared: 0, game: 1, features: 2, screens: 3, app: 4 };
-const FEATURES = ['eval', 'gear', 'roster', 'worn', 'tryon', 'trade'];
+const FEATURES = ['eval', 'gear', 'roster', 'worn', 'tryon', 'trade', 'batch'];
 const CROSS = new Set(['i18n', 'tour']);
 const area = (f: string) => f.split('/')[0];
 

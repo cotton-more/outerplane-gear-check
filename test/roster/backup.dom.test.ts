@@ -22,7 +22,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, lit: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '2026-10-01', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 
 beforeAll(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -120,7 +120,7 @@ describe('поле «Резервная копия»', () => {
     ['код героя', 'OGH1abcdef', 'This is a hero code — open it with "Enter code".'],
     ['ссылка показа', 'https://x.github.io/outerplane-gear/#OGH1abcdef', 'This is a hero code — open it with "Enter code".'],
     ['мусор', '!!! что-то ???', "Can't read the code."],
-    ['код новее', 'OGC-GEAR4-abc', 'A newer page saved this code — reload the page.'],
+    ['код новее', 'OGC-GEAR5-abc', 'A newer page saved this code — reload the page.'],
   ])('%s → строка под полем, ничего не меняется', async (_, code, msg) => {
     await mount(MINE);
     const before = { roster: raw('roster'), gear: raw('gear') };
@@ -143,7 +143,7 @@ describe('поле «Резервная копия»', () => {
   });
 
   it('2.16 экипировку сохранила более новая версия — подпись «обнови», «Заменить» недоступна', async () => {
-    await mount({ gear: { v: 3, seq: 0, pieces: {}, pools: {} } });
+    await mount({ gear: { v: 4, seq: 0, pieces: {}, pools: {} } });
     expect(box().closest('.roster-io')!.querySelector('label')?.textContent).toContain('reload the page');
     expect(([...box().closest('.roster-io')!.querySelectorAll('.btn')].find((b) => b.textContent === 'Replace') as HTMLButtonElement).disabled).toBe(true);
   });

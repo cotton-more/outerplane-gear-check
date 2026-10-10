@@ -50,13 +50,6 @@ describe('варианты билдов', () => {
       .toEqual(['DPS · Penetration ×4', 'DPS · Attack ×2 + Speed ×2', 'DPS · Penetration ×2 + Attack ×2']);
   });
 
-  it('одинаковые варианты персонажа (Sigma «Speed» и «Support») — второй ссылается на первый', () => {
-    const sigma = variantsOf(idx, char('Sigma'));
-    const speed = sigma.find((v) => v.name === 'Speed')!, support = sigma.find((v) => v.name === 'Support')!;
-    expect(speed.dupOf).toBeUndefined();
-    expect(support.dupOf).toBe(speed.key);
-  });
-
   it('варианты не меняют данные: в D.chars те же билды', () => {
     const anarky = char('Anarky');
     variantsOf(idx, anarky);

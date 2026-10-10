@@ -5,7 +5,7 @@ export const CFG = {
   // вес места в цепочке приоритета сабстатов (для сортировки и процента); связка SPD=CHD делит одно место
   tierWeights: [1, 0.8, 0.65, 0.5, 0.4, 0.32, 0.26, 0.2],
   // сколько «полезности» даёт стат на месте в цепочке: 1–3 — целиком, 4-е — половина, дальше — ничего
-  tierCredit: [1, 1, 1, 0.5],
+  tierCredit: [1, 1, 1, 0.5], // old keep rules only; points (MODEL.md §1) count every place
   // flat-стат против %-версии у конкретного персонажа: ≥0.9 — целиком, ≥0.6 — половина, ниже — не считается
   flatFull: 0.9,
   flatHalf: 0.6,
@@ -13,7 +13,12 @@ export const CFG = {
   rollMult: [1, 1, 1.15, 1.3, 1.45],
   keepCount: 3,      // полезных сабстатов для «Оставить» (Legendary из 4, Epic из 3)
   spdKeep: 2,        // …или 2 полезных, если среди них SPD
+  goodPoints: 6,     // …или очки вещи для героя не меньше 6 (одна идеальная строка главного стата; ровно 6 годится)
   spdRoll: 2,        // …с хотя бы 2 сегментами
+  // reserves of weak pieces as Breakthrough material (owner, 2026-10-08): up to 4 per hero who needs that set + slot +
+  // grade (a full T0 → T4), at most 8 of one kind over all heroes; the rest is dismantled
+  reservePerHero: 4,
+  reserveMax: 8,
   // Epic-броня: Transistone на неё не тратят (гайд outerpedia), в Breakthrough для Legendary она не годится —
   // 3 полезных засчитываем, только если среди них SPD или стат с верхних ступеней приоритета, либо ролл хороший
   epicTopTiers: 2,   // «верхние ступени» — первые два места в цепочке приоритета (связка делит место)

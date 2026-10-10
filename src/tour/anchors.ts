@@ -3,15 +3,18 @@
 export const ANCHORS = [
   'slot', 'grade', 'pick', 'item', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', // подсказки модулей
-  'tryon', 'gequip', 'gslots', 'gpiece', 'gtry', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
-  'pool', 'variants', 'want', 'stats', // вещи персонажа, варианты связок, «Собираю», «По статам» (GEARPOOL)
-  'wtab', // вкладка «Надето» в карточке персонажа
-  'wchange', // «Переодеть в … ▸» под вкладками, когда показан не билд героя
+  'tryon', 'gequip', 'gslots', 'gpiece', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
+  'pool', // вкладка «Пул» в карточке героя
+  'wtab', // вкладка «Надето» в карточке героя
+  'wchain', // the chain with segment sums on «Надето»
+  'pin', // «Закрепить набор» / «Закреплено: …» в карточке героя
   'fusion', // пометка «заменён Core Fusion X» на плитке X
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
   'trade', // «К обмену ▸» в карточке персонажа
+  'batch', // «Партия»: next to «Следующий» on a wide screen, in «Ещё» on a phone
   'share', // «Поделиться» во вкладке «Надето»
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
+  'stash', // «Отложить для X» под карточкой вердикта и в строке героя
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];
 

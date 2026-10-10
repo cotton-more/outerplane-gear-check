@@ -36,13 +36,14 @@ export const itemPool = (idx: Index, kind: GearKind): Item[] => idx.ITEMS[kind].
 export const itemUsersInScope = (ctx: Ctx, kind: GearKind, item: Item): number =>
   uniqChars(buildsOf(ctx.idx, (b) => gearList(b, kind).some((g) => g.key === item.key)).filter((x) => ctx.inScope(x.c))).length;
 
+// alphabetical, the way the eye searches; items no build needs are dimmed in the sheet but keep their place
 export function itemOptions(ctx: Ctx, kind: GearKind, query: string, cls: string): { i: Item; n: number }[] {
   const q = query.trim().toLowerCase();
   return itemPool(ctx.idx, kind)
     .filter((i) => !cls || !i.classLimits.length || i.classLimits.includes(cls))
     .filter((i) => !q || i.name.toLowerCase().includes(q) || i.passives.some((p) => p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)))
     .map((i) => ({ i, n: ctx.scoped ? itemUsersInScope(ctx, kind, i) : i.users }))
-    .sort((a, b) => Number(b.i.users > 0) - Number(a.i.users > 0) || b.n - a.n || a.i.name.localeCompare(b.i.name));
+    .sort((a, b) => a.i.name.localeCompare(b.i.name));
 }
 
 // скольким персонажам нужен такой main stat в этом слоте

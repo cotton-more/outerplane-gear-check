@@ -1,243 +1,179 @@
-// Данные для вкладки «Надето», шторки «Билд для X» и экрана «Переодеть» (шаг 4 «Надето»). Только данные — ключи, числа, вещи;
-// подписи делает интерфейс. Сборки и бонусы — не новый расчёт: раскладка надетого — assembleFixed (pool), бонусы — bonusRows,
-// ценность и выигрыш — как у исхода вещи (outcomeOf: итог после замены против надетого, делённый на цену вытесненного),
-// «не хватает» и «бонус только на T4» — те же функции, что у карточки билда (BuildGear).
-//   - Надетое героя — st.worn[c.id] (записи его пула). Билд героя — aimOf (выбранный или по правилу на лету).
-//   - Совет «лучше из своих» считается по сборке, а не парой «вещь против вещи» (vs.against не видит сетов): надетое с
-//     заменой слота на вещь раскладки билда из вещей героя против надетого.
-//   - Две записи с одинаковым содержимым в игре одна и та же вещь: «надеть» одну вместо другой — не действие.
-import { isArmor, SLOTS } from '@/game/data';
-import type { ArmorSlot, Char, SetPiece, SlotId } from '@/game/data/types';
-import { t4Only } from '@/game/build/builds';
+// Данные карточки героя по «статам + сетам» (MODEL.md §3, §6; макет этапа 6.0, решения 1–5): вкладка «Надето» —
+// слоты, включённые бонусы, «Переодеть» (лучшая раскладка из своих вещей против надетого, +1 очко по MODEL.md §3 item 3) и «Что
+// искать» (наборы меню, где у героя 1–3 из 4, — по лучшей раскладке под набор, как при закреплении); варианты шторки
+// закрепления. Только данные — вещи, числа, части; подписи делает интерфейс.
+import { FLAT, SLOTS } from '@/game/data';
+import type { ArmorSlot, Build, Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import { aimOf, type AimShown, type AimWhy } from './aim';
-import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { pinnedProfile, pinOptions, profileOf, type Pin, type Profile } from '@/game/build/profile';
+import { pointWeights } from '@/game/build/points';
+import { comboSig } from '@/game/build/variants';
 import { itemMains } from '@/game/item/mains';
-import {
-  assembleFixed, entriesFor, isStats, LOST_MIN, lostBonusValue, markOfVariant, rowKey, undoWear, wearFromPool,
-  type Assembly, type CharPool, type Entry, type WearResult,
-} from '@/features/gear/pool';
-import { subWeights } from '@/game/build/score';
-import { bonusRows, bonusWeights, convertible, type BonusRow } from '@/game/set/setBonus';
-import type { Variant } from '@/game/build/variants';
-import { against, milli, THRESHOLD } from '@/features/gear/model/vs';
+import { bonusRows, type BonusRow } from '@/game/set/setBonus';
+import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { better, bestLayout, epicToLegend, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { eligibleIn } from '@/features/gear/pool/info';
+import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
+import { undoWear, wearFromPool, type WearResult } from '@/features/gear/pool';
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
-const SLOT_IDS: SlotId[] = SLOTS.map((s) => s.id);
 
-// --------------------------------------------------------------------------- общее: «не хватает» и T4 (и BuildGear)
+// та же вещь по содержимому: в игре две одинаковые записи — одна вещь, «надеть» одну вместо другой — не действие
+const stuff = (p: Piece): string =>
+  JSON.stringify([p.slot, p.grade, p.setId, p.itemKey, p.main, p.bt, Object.entries(p.lit).sort(([a], [z]) => (a < z ? -1 : a > z ? 1 : 0))]);
+export const samePiece = (a: Piece, b: Piece): boolean => a.id === b.id || stuff(a) === stuff(b);
 
-// слоты брони, которые раскладка отдаёт не под часть связки: куда искать недостающее
-export const freeSlots = (a: Pick<Assembly, 'roles'>): ArmorSlot[] => ARMOR.filter((slot) => a.roles[slot] !== 'set');
-
-// «Не хватает»: часть связки, ещё нужно need вещей её сета (в слоты slots; t4 — часть с бонусом только на T4). По достижимой
-// сборке (CharPool.reach): что уже есть в пуле, не просим, даже если раскладка ради статов его не взяла
-export interface MissingPart { set: string; n: number; have: number; need: number; slots: ArmorSlot[]; t4: boolean }
-export function missingParts(ctx: Pick<Ctx, 'idx'>, reach: Pick<Assembly, 'missing' | 'roles'>): MissingPart[] {
-  const slots = freeSlots(reach);
-  return reach.missing.map((m) => ({ set: m.set, n: m.n, have: m.have, need: m.n - m.have, slots, t4: t4Only(ctx.idx.SET[m.set], m.n) }));
+// сабстат вещи и засчитан ли он герою (PLAN Д1): 1 — целиком на любом месте цепочки, ½ или 0 — flat
+export interface WornToken { key: string; lit: number; credit: number }
+export const tokensOf = (ctx: Ctx, c: Char, P: Profile | null, p: Piece | null | undefined): WornToken[] =>
+  chainTokens(ctx, c, P?.chain ?? null, p);
+// the same against any chain of the hero (the second chain on «Надето»)
+function chainTokens(ctx: Ctx, c: Char, chain: Build | null, p: Piece | null | undefined): WornToken[] {
+  if (!p) return [];
+  const W = chain ? pointWeights(ctx, c, chain, itemMains(ctx.idx, pieceInput(p))) : null;
+  return Object.keys(p.lit).map((key) => ({ key, lit: p.lit[key], credit: W?.get(key)?.credit ?? 0 }));
 }
 
-// часть связки с бонусом только на T4, а его нет: «Speed — 1 из 2 · бонус ×2 только на T4»
-export interface T4Part { set: string; n: number; k: number }
-export function t4Parts(ctx: Pick<Ctx, 'idx'>, a: Pick<Assembly, 'v' | 'slots' | 'bonuses'>): T4Part[] {
-  const cnt = (set: string) => ARMOR.filter((slot) => a.slots[slot]?.setId === set).length;
-  return (a.v.b.sets[0] ?? [])
-    .filter((p) => t4Only(ctx.idx.SET[p.set], p.n) && !a.bonuses.some((r) => r.set === p.set && r.n >= p.n))
-    .map((p) => ({ set: p.set, n: p.n, k: Math.min(cnt(p.set), p.n) }));
+// «Переодеть»: вещи лучшей раскладки, которые не надеты (replaces — что сейчас в её слоте), прирост V и половины; rankUp —
+// встаёт рекомендованное оружие или аксессуар (MODEL.md §3 item 3: ранг раньше очков) — тогда pts бывает и меньше нуля
+export interface Redress { pts: number; rankUp: boolean; on: PartChange[]; off: PartChange[]; wear: { piece: Piece; replaces: Piece | null }[] }
+// «Что искать»: набор, сколько его вещей в лучшей раскладке под него (k из n) и каких слотов не хватает — с сетом части
+// (set null — в наборе из одного сета)
+export interface Need { slot: ArmorSlot; set: string | null }
+export interface Fill { pin: Pin; k: number; n: number; need: Need[] }
+export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken[] }
+// The hero's chain with what the worn pieces give each stat (owner, 2026-10-07): the chain's own order (first — the most
+// valuable), a stat — the sum of its segments over the worn pieces. A flat axis (ATK, HP, DEF) shows its forms side by
+// side, % first: ATK% counts in full, flat ATK at ½ (a flat form that counts 0 is left out). seg 0 — nothing worn gives
+// the stat: the UI draws it dashed. sep — before the stat: '›' next place, '=' same place, '/' another form of the axis.
+export interface ChainSum { key: string; seg: number; credit: number; sep: '' | '›' | '=' | '/' }
+// another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
+export interface AltChain { build: string; chain: ChainSum[] }
+export interface WornView {
+  count: number;           // надето слотов из 6
+  slots: WornSlot[];       // все 6, порядок — SLOTS
+  value: LayoutValue | null; // points of the worn gear (V: pieces + sets); null — hero without builds
+  chain: ChainSum[];       // the chain with segment sums; empty — hero without builds
+  build: string;           // the build the chain comes from — named on the card only next to another chain
+  alt: AltChain[];         // the hero's other chains (Heatwave Cop Delta: DPS and Support), same sums, for reference
+  bonuses: BonusRow[];     // включённые бонусы надетых сетов
+  redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
+  seek: Fill[];            // «Что искать»: 1–3 из 4, от ближнего; закреплён — только его набор
+  pool: number;            // вещей в пуле героя
 }
 
-// --------------------------------------------------------------------------- общее: надетое и вещи
-
-// надетое героя: слот → запись его пула
-function wornPieces(st: Pick<GearStore, 'worn'>, c: Char, cp: Pick<CharPool, 'pieces'>): Partial<Record<SlotId, Piece>> {
-  const out: Partial<Record<SlotId, Piece>> = {};
+function wornOf(st: Pick<GearStore, 'worn'>, c: Char, pieces: readonly Piece[]): Layout {
+  const out: Layout = {};
   for (const [slot, id] of Object.entries(st.worn?.[c.id] ?? {}) as [SlotId, string][]) {
-    const p = cp.pieces.find((x) => x.id === id);
+    const p = pieces.find((x) => x.id === id);
     if (p) out[slot] = p;
   }
   return out;
 }
 
-// та же вещь по содержимому: слот, предмет, сет, main, Breakthrough, сегменты
-const stuff = (p: Piece): string =>
-  JSON.stringify([p.slot, p.grade, p.setId, p.itemKey, p.main, p.bt, Object.entries(p.lit).sort(([a], [z]) => (a < z ? -1 : a > z ? 1 : 0))]);
-const same = (a: Piece, b: Piece): boolean => a.id === b.id || stuff(a) === stuff(b);
-
-const entryMap = (ctx: Ctx, c: Char, v: Variant, cp: Pick<CharPool, 'pieces'>): Map<string, Entry> =>
-  new Map(entriesFor(ctx, c, v, cp.pieces).map((e) => [e.id!, e]));
-const entriesOf = (m: ReadonlyMap<string, Entry>, worn: Partial<Record<SlotId, Piece>>): Entry[] =>
-  Object.values(worn).map((p) => m.get(p.id)).filter((e): e is Entry => !!e);
-
-const combo = (v: Variant | null) => v?.b.sets[0] ?? [];
-const variantOf = (cp: Pick<CharPool, 'variants'>, key: string): Variant | null => cp.variants.find((v) => v.key === key) ?? null;
-// сколько вещей сета в броне и бонусы по ним — не зависят от билда
-const armorOf = (worn: Partial<Record<SlotId, Piece>>): Piece[] => ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p);
-const countSet = (armor: readonly { setId: string | null }[], set: string): number => armor.filter((p) => p.setId === set).length;
-const progressOf = (armor: readonly { setId: string | null }[], parts: readonly SetPiece[]): number =>
-  parts.reduce((n, p) => n + Math.min(countSet(armor, p.set), p.n), 0);
-// бонус части связки включён (как в aim): активная строка её сета не меньше n
-const enabled = (rows: readonly BonusRow[], p: SetPiece): boolean => rows.some((r) => r.set === p.set && r.n >= p.n);
-
-// --------------------------------------------------------------------------- вкладка «Надето»
-
-export interface WornToken { key: string; lit: number; credit: number } // credit — как засчитывается стат в цепочке билда: 1, ½, 0
-export interface WornAdvice {
-  piece: Piece;                // вещь раскладки билда из вещей героя
-  delta: number | null;        // выигрыш итога к цене вытесненного (outcomeOf); у пустого слота — null
-  up: boolean;                 // «▲»: очков больше хотя бы на 1 (R6.2 обмена; у оружия и аксессуара — ещё рекомендованная вместо нерекомендованной)
-  setOn: SetPiece[];           // части связки, бонус которых с ней включится
-  gained: BonusRow[];
-  lost: BonusRow[];
-}
-export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken[]; advice: WornAdvice | null }
-export interface WornView {
-  aim: AimShown;               // билд героя (aimOf)
-  variant: Variant | null;     // его вариант; null — у героя нет билдов (и «По статам» не из чего собрать)
-  count: number;               // надето слотов из 6
-  slots: WornSlot[];           // все 6, порядок — SLOTS
-  bonuses: BonusRow[];         // бонусы надетых сетов
-  set: { k: number; n: number } | null; // «сет k из n» связки билда по надетому; null — у билда связки нет («По статам»)
-  t4: T4Part[];                // части связки с бонусом только на T4, пока его нет
-  pool: number;                // вещей в пуле героя: «Вещи Valentine · N»
-}
-
-export function wornView(ctx: Ctx, c: Char, st: GearStore, cp: CharPool): WornView {
-  const aim = aimOf(c, st, cp);
-  const variant = variantOf(cp, aim.key);
-  const worn = wornPieces(st, c, cp);
-  const armor = armorOf(worn);
-  const bonuses = bonusRows(ctx.idx.SET, armor);
-  const base = { aim, variant, count: Object.keys(worn).length, bonuses, pool: cp.pieces.length };
-  if (!variant) {
-    return { ...base, slots: SLOTS.map(({ id }) => ({ slot: id, piece: worn[id] ?? null, tokens: tokensOf(ctx, c, null, worn[id]), advice: null })), set: null, t4: [] };
-  }
-  const em = entryMap(ctx, c, variant, cp);
-  const before = assembleFixed(ctx, c, variant, entriesOf(em, worn));
-  const layout = cp.asm.get(variant.key)!;
-  const parts = combo(variant);
-  const slots = SLOTS.map(({ id }): WornSlot => {
-    const p = worn[id] ?? null;
-    return { slot: id, piece: p, tokens: tokensOf(ctx, c, variant, p), advice: adviceFor(ctx, c, variant, em, worn, before, layout.slots[id]?.piece ?? null, id) };
-  });
-  return { ...base, slots, set: parts.length ? { k: progressOf(armor, parts), n: parts.reduce((n, p) => n + p.n, 0) } : null, t4: t4Parts(ctx, before) };
-}
-
-export function tokensOf(ctx: Ctx, c: Char, v: Variant | null, p: Piece | undefined | null): WornToken[] {
-  if (!p) return [];
-  const W = v ? subWeights(ctx, v.b, c, itemMains(ctx.idx, pieceInput(p))) : null;
-  return Object.keys(p.lit).map((key) => ({ key, lit: p.lit[key], credit: W?.get(key)?.credit ?? 0 }));
-}
-
-// Совет по слоту: вещь раскладки билда против надетого (по сборке). Пустой слот — вещь раскладки без выигрыша. Нет совета,
-// когда вещь та же (или такая же по содержимому), и когда она не лучше по порогу обмена (R6.2, .x/0040-trade): очков больше
-// хотя бы на 1 (округлённых до тысячных), или включается бонус неконвертируемого сета, или рекомендованность выше
-function adviceFor(ctx: Ctx, c: Char, v: Variant, em: ReadonlyMap<string, Entry>, worn: Partial<Record<SlotId, Piece>>, before: Assembly, pick: Piece | null, slot: SlotId): WornAdvice | null {
-  if (!pick) return null;
-  const old = worn[slot];
-  if (!old) return { piece: pick, delta: null, up: false, setOn: [], gained: [], lost: [] };
-  if (same(old, pick)) return null;
-  const entry = em.get(pick.id), out = em.get(old.id);
-  if (!entry) return null;
-  const after = assembleFixed(ctx, c, v, entriesOf(em, { ...worn, [slot]: pick }));
-  const was = new Set(before.bonuses.map(rowKey)), now = new Set(after.bonuses.map(rowKey));
-  const gained = after.bonuses.filter((r) => !was.has(rowKey(r)));
-  const lost = before.bonuses.filter((r) => !now.has(rowKey(r)));
-  // как outcomeOf: итог после замены минус итог до, на цену вытесненного (вещь и чистая убыль бонусов)
-  const lostValue = (out?.v ?? 0) + lostBonusValue(ctx, c, bonusWeights(ctx, c, v.b), lost, gained);
-  const delta = out || lost.length ? (after.total - before.total) / Math.max(lostValue, LOST_MIN) : null;
-  const rec = !isArmor(slot) && against(ctx, c, v.b, pieceInput(pick), old, entry.fit).why === 'rec';
-  const up = rec || milli(after.total) - milli(before.total) >= THRESHOLD;
-  const setOn = combo(v).filter((p) => enabled(after.bonuses, p) && !enabled(before.bonuses, p));
-  return up || setOn.some((p) => !convertible(ctx, c, p.set)) ? { piece: pick, delta, up, setOn, gained, lost } : null;
-}
-
-// --------------------------------------------------------------------------- шторка «Билд для X»
-
-export interface AimPart {
-  part: SetPiece;
-  worn: number;      // надето вещей сета (не больше n)
-  owned: number;     // в вещах героя — по достижимой сборке (не больше n)
-  missing: number;   // n − owned
-  t4: boolean;       // бонус этой части есть только на T4
-  on: boolean;       // бонус части сейчас включён надетым
-}
-export interface AimOption {
-  key: string;
-  variant: Variant;
-  stats: boolean;       // «По статам»
-  skip: boolean;        // отмечен «Не собираю»
-  now: boolean;         // выбран сейчас (aimOf)
-  canRedress: boolean;  // можно переодеть: в вещах героя связки больше, чем надето (или полная); у «По статам» — раскладка отличается от надетого
-  parts: AimPart[];     // части связки; у «По статам» пусто
-  missing: number;      // Σ missing: «не хватает N»
-}
-
-// Порядок: выбранный сейчас, потом настоящие билды (можно переодеть, меньше не хватает, как в списке героя), «По статам»,
-// «Не собираю» — последними. Одинаковые для игры варианты (dupOf) — один, первый
-export function aimOptions(ctx: Ctx, c: Char, st: GearStore, cp: CharPool): AimOption[] {
-  const now = aimOf(c, st, cp).key;
-  const worn = wornPieces(st, c, cp);
-  const armor = armorOf(worn);
-  const rows = bonusRows(ctx.idx.SET, armor);
-  const out = cp.variants.filter((v) => v.key === now || !(v.dupOf && cp.variants.some((x) => x.key === v.dupOf))).map((v, i) => {
-    const stats = isStats(v);
-    const reach = cp.reach.get(v.key) ?? cp.asm.get(v.key)!;
-    const parts = stats ? [] : combo(v).map((p): AimPart => {
-      const owned = Math.min(countSet(ARMOR.map((s) => reach.slots[s]).filter((e): e is Entry => !!e), p.set), p.n);
-      return { part: p, worn: Math.min(countSet(armor, p.set), p.n), owned, missing: p.n - owned, t4: t4Only(ctx.idx.SET[p.set], p.n), on: enabled(rows, p) };
-    });
-    const canRedress = v.key !== now && (stats
-      ? Object.entries(cp.asm.get(v.key)!.slots).some(([slot, e]) => !!e?.piece && !(worn[slot as SlotId] && same(worn[slot as SlotId]!, e.piece)))
-      : reach.progress > progressOf(armor, combo(v)));
-    const option: AimOption = {
-      key: v.key, variant: v, stats, skip: !stats && markOfVariant(cp.opts.marks, v) === 'skip',
-      now: v.key === now, canRedress, parts, missing: parts.reduce((n, p) => n + p.missing, 0),
-    };
-    return { option, i };
-  });
-  const group = (o: AimOption) => (o.now ? 0 : o.skip ? 3 : o.stats ? 2 : 1);
-  return out.sort((a, z) =>
-    group(a.option) - group(z.option)
-    || Number(z.option.canRedress) - Number(a.option.canRedress)
-    || a.option.missing - z.option.missing
-    || a.i - z.i).map((x) => x.option);
-}
-
-// --------------------------------------------------------------------------- экран «Переодеть»
-
-export interface RedressPlan {
-  v: Variant;
-  wear: { piece: Piece; replaces: Piece | null }[];  // «Надень из своих»: вещи раскладки варианта, которые не надеты, по слотам (все 6)
-  remove: Piece[];                                   // «Снимешь»: надетое, которое заменят вещи из «wear»
-  missing: MissingPart[];                            // «Не хватает» (как у BuildGear)
-  on: BonusRow[];                                    // бонусы, которые включатся: после «Надеть все», а сейчас нет
-  off: BonusRow[];                                   // и которые выключатся
-}
-
-export function redressPlan(ctx: Ctx, c: Char, st: GearStore, cp: CharPool, key: string): RedressPlan | null {
-  const v = variantOf(cp, key);
-  if (!v) return null;
-  const layout = cp.asm.get(key)!;
-  const worn = wornPieces(st, c, cp);
-  const wear: RedressPlan['wear'] = [], remove: Piece[] = [];
-  for (const slot of SLOT_IDS) {
-    const to = layout.slots[slot]?.piece ?? null, was = worn[slot] ?? null;
-    if (was && to && same(was, to)) continue;
-    // «Снимешь» — только надетое, которое заменит раскладка; слот без вещи в раскладке остаётся как есть
-    if (to) wear.push({ piece: to, replaces: was });
-    if (to && was) remove.push(was);
-  }
-  const wornRows = bonusRows(ctx.idx.SET, armorOf(worn));
-  const was = new Set(wornRows.map(rowKey)), will = new Set(layout.bonuses.map(rowKey));
+// hp — пул героя (features/gear/verdict heroPool; у героя без билдов — null: только слоты, без цвета, «Переодеть» и наборов)
+export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null): WornView {
+  const pieces = hp?.pieces ?? (st.pools[c.id] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
+  const worn = wornOf(st, c, pieces);
+  const P = hp?.P ?? null;
+  const slots = SLOTS.map(({ id }) => ({ slot: id, piece: worn[id] ?? null, tokens: tokensOf(ctx, c, P, worn[id]) }));
   return {
-    v, wear, remove, missing: missingParts(ctx, cp.reach.get(key) ?? layout),
-    on: layout.bonuses.filter((r) => !was.has(rowKey(r))), off: wornRows.filter((r) => !will.has(rowKey(r))),
+    count: Object.keys(worn).length,
+    slots,
+    value: P ? layoutValue(P, worn) : null,
+    chain: P ? chainSums(ctx, P.chain, slots.map((s) => s.tokens)) : [],
+    build: P?.chain.name ?? '',
+    alt: P ? altChains(ctx, c, P.chain, slots.map((s) => s.piece)) : [],
+    bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
+    redress: hp ? redressOf(hp, worn) : null,
+    seek: hp ? seekOf(hp) : [],
+    pool: pieces.length,
   };
 }
 
-// «Надеть все N» на экране «Переодеть»: вещи по очереди (каждая — wearFromPool: прежняя надетая слота уходит, если её не
-// держит билд). Не надето ничего — null. results — по порядку, для «Вернуть» (undoWearMany — с конца)
+// chains of the hero's builds other than the one points use, each once, in outerpedia order
+function altChains(ctx: Ctx, c: Char, main: Build, worn: readonly (Piece | null)[]): AltChain[] {
+  const seen = new Set([JSON.stringify(main.subs)]);
+  const out: AltChain[] = [];
+  for (const b of c.builds) {
+    const sig = JSON.stringify(b.subs);
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    out.push({ build: b.name, chain: chainSums(ctx, b, worn.map((p) => chainTokens(ctx, c, b, p))) });
+  }
+  return out;
+}
+
+export function chainSums(ctx: Ctx, chain: Pick<Build, 'subs'>, tokens: readonly WornToken[][]): ChainSum[] {
+  const got = new Map<string, { seg: number; credit: number }>();
+  for (const ts of tokens) for (const k of ts) {
+    if (!k.credit) continue;
+    const x = got.get(k.key) ?? { seg: 0, credit: k.credit };
+    x.seg += k.lit;
+    got.set(k.key, x);
+  }
+  const out: ChainSum[] = [];
+  const used = new Set<string>();
+  chain.subs.forEach((tier) => {
+    let first = true;
+    for (const raw of tier) {
+      const tok = raw.trim(), axis = tok.replace(/%$/, ''), flat = FLAT.has(axis);
+      if (!flat && !ctx.idx.SUB[tok]) continue; // not a substat
+      const forms = (flat ? [axis + '%', axis] : [tok]).filter((k) => !used.has(k));
+      if (!forms.length) continue;
+      forms.forEach((k) => used.add(k));
+      const sep = !out.length ? '' : first ? '›' : '=';
+      first = false;
+      const hits = forms.filter((k) => got.has(k));
+      if (!hits.length) out.push({ key: forms[0], seg: 0, credit: 0, sep });
+      hits.forEach((k, j) => out.push({ key: k, ...got.get(k)!, sep: j ? '/' : sep }));
+    }
+  });
+  return out;
+}
+
+// лучшая раскладка (нынешняя, D3) против надетого: лучше по MODEL.md §3 item 3 — что надеть
+export function redressOf(hp: HeroPool, worn: Layout): Redress | null {
+  const best = hp.info.layout, vb = hp.info.value, vw = layoutValue(hp.P, worn);
+  if (!better(vb, vw, epicToLegend(worn, best))) return null; // Q7: Legendary in place of Epic — no +1
+  const wear = SLOTS.map(({ id }) => ({ piece: best[id], replaces: worn[id] ?? null }))
+    .filter((x): x is { piece: Piece; replaces: Piece | null } => !!x.piece && !(x.replaces && samePiece(x.replaces, x.piece)));
+  return wear.length ? { pts: vb.v - vw.v, rankUp: vb.rank > vw.rank, ...partsDiff(vw, vb), wear } : null;
+}
+
+// лучшая раскладка брони под набор (как при закреплении: цепочка его билда, броня только его сетов, надетое остаётся):
+// k — вещей набора в ней (по части не больше n), недостающее — в слоты, где вещь набора не засчитана
+export function fillOf(hp: HeroPool, pin: Pin): Fill {
+  const base = hp.P.pin ? profileOf(hp.P.ctx, hp.c)! : hp.P;
+  const Pc = pinnedProfile(base, pin);
+  const { layout } = bestLayout(Pc, hp.pieces, { eligible: eligibleIn(Pc, hp.wornIds), armorOnly: true });
+  const counted = new Set<ArmorSlot>();
+  const short: { set: string; d: number }[] = [];
+  let k = 0;
+  for (const part of pin.combo) {
+    const mine = ARMOR.filter((s) => layout[s]?.setId === part.set && !counted.has(s)).slice(0, part.n);
+    mine.forEach((s) => counted.add(s));
+    k += mine.length;
+    if (mine.length < part.n) short.push({ set: part.set, d: part.n - mine.length });
+  }
+  const free = ARMOR.filter((s) => !counted.has(s));
+  const need: Need[] = [];
+  for (const { set, d } of short) for (let i = 0; i < d && free.length; i++) need.push({ slot: free.shift()!, set: pin.combo.length > 1 ? set : null });
+  return { pin, k, n: pin.combo.reduce((x, p) => x + p.n, 0), need };
+}
+
+// варианты шторки закрепления: наборы героя (pinOptions) с заполнением, от ближнего; ничья — порядок outerpedia
+export const pinChoices = (hp: HeroPool): Fill[] => pinOptions(hp.c).map((pin) => fillOf(hp, pin)).sort((a, z) => z.k - a.k);
+
+// «Что искать» (решение макета 4): закреплён — только его набор; иначе наборы меню (тот же набор у двух ролей — один раз)
+function seekOf(hp: HeroPool): Fill[] {
+  const seen = new Set<string>();
+  const pins = hp.P.pin ? [hp.P.pin] : pinOptions(hp.c).filter((p) => !seen.has(comboSig(p.combo)) && !!seen.add(comboSig(p.combo)));
+  return pins.map((pin) => fillOf(hp, pin)).filter((f) => f.k > 0 && f.k < f.n).sort((a, z) => z.k - a.k);
+}
+
+// «Надеть все N» в «Переодеть»: вещи по очереди (каждая — wearFromPool: прежняя надетая слота уходит, если её не держит
+// пул). Не надето ничего — null. results — по порядку, для «Вернуть» (undoWearMany — с конца)
 export interface WearManyResult { st: GearStore; results: WearResult[] }
 export function wearMany(ctx: Ctx, st: GearStore, charId: string, ids: readonly string[]): WearManyResult | null {
   const results: WearResult[] = [];
@@ -252,15 +188,3 @@ export function wearMany(ctx: Ctx, st: GearStore, charId: string, ids: readonly 
 }
 export const undoWearMany = (st: GearStore, charId: string, r: Pick<WearManyResult, 'results'>): GearStore =>
   [...r.results].reverse().reduce((x, one) => undoWear(x, charId, one), st);
-
-// --------------------------------------------------------------------------- причина выбора билда («Билды героев»)
-
-// Что показать как причину выбора по правилу: «first» честно читается «вещей билдов нет» только когда у выбранного билда
-// в вещах героя нет ни одной вещи его сетов; иначе ничья с вещами — «tie». Ключ сохранён игроком — null
-export type Reason = AimWhy | { kind: 'tie' };
-export function reasonOf(cp: Pick<CharPool, 'asm'>, aim: AimShown): Reason | null {
-  const w = aim.why;
-  if (!w) return null;
-  if (w.kind === 'first' && (cp.asm.get(aim.key)?.progress ?? 0) > 0) return { kind: 'tie' };
-  return w;
-}

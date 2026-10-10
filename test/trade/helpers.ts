@@ -7,6 +7,7 @@ import { makeCtx, type Ctx } from '@/game/context';
 import { replacedX } from '@/features/gear/model/fusion';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { loadGear, readGearCode } from '@/features/gear/store/gearStore';
+import { decodeBackup } from '@/features/roster/backup';
 import type { Subs } from '@/game/item/subs';
 import { cmpKit, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '@/features/trade/model/model';
 import { milli } from '@/features/gear/model/vs';
@@ -15,11 +16,12 @@ import { worldOf } from '@/features/trade/model/world';
 
 // ----------------------------------------------------------------------------------------------- синтетика
 
-// Мерило из чисел. bonus — очки бонусов сета по числу вещей: { Speed: { 2: 3, 4: 8 } } — при 2–3 вещах 3, при 4 — 3 + 8;
-// top — наибольшая активная строка. value — очки вещей (для кандидатов из мира); у кандидатов из cand() не нужен
+// Мерило из чисел. bonus — ценность сета по числу вещей: { Speed: { 2: 3, 4: 8 } } — при 2–3 вещах 3 (одна половина),
+// при 4 — 3 + 8 (две); effect — сеты-эффекты (их половины — eff). value — очки вещей (для кандидатов из мира; ok по
+// умолчанию — годная); у кандидатов из cand() не нужен
 export function synthGauge(o: {
-  key?: string; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>;
-  value?: Record<string, number | { v: number; fit: Fit } | null>; bonusFn?: (set: string, n: number, n4: number) => SetGain;
+  key?: string; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>; effect?: readonly string[];
+  value?: Record<string, number | { v: number; fit: Fit; ok?: boolean } | null>; bonusFn?: (set: string, n: number, n4: number) => SetGain;
 } = {}): Gauge {
   return {
     key: o.key ?? 'synth',
@@ -27,16 +29,16 @@ export function synthGauge(o: {
     value(id) {
       const x = o.value?.[id];
       if (x === undefined || x === null) return null;
-      return typeof x === 'number' ? { v: milli(x), fit: 'no' } : { v: milli(x.v), fit: x.fit };
+      return typeof x === 'number' ? { v: milli(x), fit: 'no', ok: true } : { v: milli(x.v), fit: x.fit, ok: x.ok ?? true };
     },
     bonus(set, n, n4) {
       if (o.bonusFn) return o.bonusFn(set, n, n4);
       const t = o.bonus?.[set];
-      if (!t) return { v: 0, top: 0 };
-      let v = 0, top = 0;
-      if (n >= 2 && t[2] !== undefined) { v += t[2]; top = 2; }
-      if (n >= 4 && t[4] !== undefined) { v += t[4]; top = 4; }
-      return { v: milli(v), top };
+      if (!t) return { v: 0, halves: 0, eff: 0 };
+      let v = 0, halves = 0;
+      if (n >= 2 && t[2] !== undefined) { v += t[2]; halves = 1; }
+      if (n >= 4 && t[4] !== undefined) { v += t[4]; halves = 2; }
+      return { v: milli(v), halves, eff: o.effect?.includes(set) ? halves : 0 };
     },
   };
 }
@@ -45,12 +47,12 @@ export function synthGauge(o: {
 let ordSeq = 0;
 export function cand(o: {
   id?: string; slot: SlotId; v: number; set?: string | null; t4?: boolean; fit?: Fit; cost?: 0 | 1 | 2 | 3;
-  loss?: number; holder?: string | null; rank?: number; ord?: number; code?: string; bt?: number | null;
+  loss?: number; holder?: string | null; rank?: number; ord?: number; code?: string; bt?: number | null; grade?: Grade;
 }): Cand {
   const ord = o.ord ?? ++ordSeq;
   const id = o.id ?? `s${ord}`;
   return {
-    item: { id, slot: o.slot, code: o.code ?? id, bt: o.bt ?? (o.t4 ? 4 : 0), set: o.set ?? null, t4: !!o.t4, ord },
+    item: { id, slot: o.slot, code: o.code ?? id, bt: o.bt ?? (o.t4 ? 4 : 0), set: o.set ?? null, t4: !!o.t4, ord, ...(o.grade ? { grade: o.grade } : {}) },
     v: milli(o.v), fit: o.fit ?? 'no', cost: o.cost ?? 1, loss: milli(o.loss ?? 0),
     holder: o.holder === undefined ? 'R' : o.holder, rank: o.rank ?? 0,
   };
@@ -93,7 +95,7 @@ export const lcg = (seed: number) => () => {
 
 export const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 export const idx = createIndex(D);
-export const ctx: Ctx = makeCtx(idx, { rosterOnly: false, fodder: true, stage: 'grow', lv120: false, quirks: true }, new Set());
+export const ctx: Ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 
 // роли тестов (TESTS.md) → герои фикстуры. Рин, Карен, Ноа, Лея — striker; Дельта, Майя — ranger; NOBUILD — без билдов
 export const HERO = {
@@ -107,7 +109,7 @@ export const GOOD: Subs = { SPD: 4, CHC: 4, CHD: 4, ATK: 4 };
 export const piece = (slot: SlotId, short: string | null, lit: Subs = GOOD, extra: Partial<Piece> = {}): Piece =>
   ({ id: 'p' + ++seq, slot, grade: 'unique' as Grade, setId: short ? setId(short) : null, itemKey: null, main: null, yellow: lit, lit, bt: 0, at: '', ...extra });
 
-// хранилище: герой → { pool, worn (вещи из pool, надетые) }; aim — выбранные билды
+// хранилище: герой → { pool, worn (вещи из pool, надетые) }
 export function store(heroes: Record<string, { pool: Piece[]; worn?: Piece[] }>, extra: Partial<GearStore> = {}): GearStore {
   const pieces: Record<string, Piece> = {}, pools: Record<string, string[]> = {}, worn: Record<string, Partial<Record<SlotId, string>>> = {};
   for (const [id, h] of Object.entries(heroes)) {
@@ -115,24 +117,28 @@ export function store(heroes: Record<string, { pool: Piece[]; worn?: Piece[] }>,
     pools[id] = h.pool.map((p) => p.id);
     if (h.worn?.length) worn[id] = Object.fromEntries(h.worn.map((p) => [p.slot, p.id]));
   }
-  return { v: 2, seq: 999, pieces, pools, worn, ...extra };
+  return { v: 3, seq: 999, pieces, pools, worn, ...extra };
 }
 
-// мир из хранилища: ростер — порядок героев в хранилище, если не задан
-export const realWorld = (st: GearStore, roster: readonly string[] = Object.keys(st.pools), pinned: readonly string[] = []): World =>
-  worldOf(ctx, st, roster, new Set(pinned));
+// мир из хранилища: ростер — порядок героев в хранилище, если не задан; locked — переодетые в этом окне, orders — заказы
+export const realWorld = (st: GearStore, roster: readonly string[] = Object.keys(st.pools), locked: readonly string[] = [], orders: Record<string, string> = {}): World =>
+  worldOf(ctx, st, roster, { locked: new Set(locked), orders });
 
 // ----------------------------------------------------------------------------------------------- снимок владельца
 
 export interface Owner { st: GearStore; roster: string[]; ctx: Ctx }
 export const OWNER_FILE = new URL('../../.x/00-equip.md', import.meta.url);
 export const hasOwner = (): boolean => existsSync(OWNER_FILE);
-// .x/00-equip.md → readGearCode → loadGear: то, что делает приложение при импорте кода (как .x/0020-custom-build/proto/lib.ts)
+// .x/00-equip.md → loadGear: what the app does when importing a code — a backup (OGC-GEAR3+, with a roster) or
+// an old item code (OGC-GEAR1/2, readGearCode)
 export function loadOwner(): Owner {
-  const raw = readGearCode(readFileSync(OWNER_FILE, 'utf8').trim());
-  if (raw === null || raw === 'newer') throw new Error('.x/00-equip.md: не код OGC-GEAR2');
-  const { st, roster } = loadGear(raw, idx, []);
-  const settings = { rosterOnly: true, fodder: true, stage: 'grow' as const, lv120: false, quirks: true };
+  const text = readFileSync(OWNER_FILE, 'utf8').trim();
+  const b = decodeBackup(text);
+  if (b === 'newer' || b === 'broken') throw new Error(`.x/00-equip.md: резервная копия ${b}`);
+  const raw = b ? b.raw : readGearCode(text);
+  if (raw === null || raw === 'newer') throw new Error('.x/00-equip.md: не код OGC-GEAR');
+  const { st, roster } = loadGear(raw, idx, b ? b.roster : []);
+  const settings = { rosterOnly: true, stage: 'grow' as const, lv120: false, quirks: true };
   return { st, roster, ctx: makeCtx(idx, settings, new Set(roster), undefined, replacedX(idx, roster, st.pools)) };
 }
 
@@ -141,8 +147,9 @@ export function loadOwner(): Owner {
 // Мир из чисел: героям — вещи (слот, код, сет), надетое, запас и очки каждой вещи по его мерилу (null/нет — не носит).
 // Порядок героев = ростер. Ключ вещи в value — id; значение — очки или { v, fit }
 export interface SynthHero {
-  worn?: Partial<Record<SlotId, string>>; pool?: string[]; pinned?: boolean;
-  value?: Record<string, number | { v: number; fit: Fit } | null>; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>;
+  worn?: Partial<Record<SlotId, string>>; pool?: string[]; locked?: boolean;
+  value?: Record<string, number | { v: number; fit: Fit; ok?: boolean } | null>; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>;
+  effect?: string[];
 }
 export function synthWorld(o: { items: Record<string, { slot: SlotId; set?: string; code?: string; bt?: number; t4?: boolean }>; heroes: Record<string, SynthHero> }): World {
   const items: Record<string, Item> = {};
@@ -153,8 +160,8 @@ export function synthWorld(o: { items: Record<string, { slot: SlotId; set?: stri
   const heroes = ids.map((id, rank) => {
     const h = o.heroes[id];
     const worn = h.worn ?? {};
-    return { id, rank, pinned: !!h.pinned, worn, pool: [...new Set([...(h.pool ?? []), ...Object.values(worn)])] };
+    return { id, rank, locked: !!h.locked, worn, pool: [...new Set([...(h.pool ?? []), ...Object.values(worn)])] };
   });
-  const gauges = new Map(ids.map((id) => [id, synthGauge({ parts: o.heroes[id].parts, bonus: o.heroes[id].bonus, value: o.heroes[id].value ?? {} })]));
+  const gauges = new Map(ids.map((id) => [id, synthGauge({ parts: o.heroes[id].parts, bonus: o.heroes[id].bonus, effect: o.heroes[id].effect, value: o.heroes[id].value ?? {} })]));
   return { heroes, items, gauge: (id) => gauges.get(id) ?? null };
 }

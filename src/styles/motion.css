@@ -25,6 +25,11 @@ html.sheet .char-detail.open { animation: m-sheet .2s cubic-bezier(.2, .8, .2, 1
 /* плашка вердикта внизу: вердикт сменился — короткая вспышка его цветом (Verdict.tsx, VBar) */
 .vb-flash { position: absolute; inset: 0; z-index: -1; background: var(--v, var(--idle)); pointer-events: none; animation: m-flash .4s ease-out forwards; }
 
+/* Legendary picker: the only item left after typing lights up with a short pulse before it is picked (ItemPicker SOON, 750 ms).
+   Not an entrance — the owner asked for it, so an instant pick doesn't look like a glitch */
+@keyframes m-pick { 50% { transform: scale(1.03); } }
+.item.soon { animation: m-pick .2s ease-out; }
+
 /* «Уменьшить движение»: base.css снимает все анимации, а вспышка — единственная, у которой конечный кадр (opacity 0)
    не совпадает с базовым стилем; без анимации слой залил бы плашку навсегда — убираем его */
 @media (prefers-reduced-motion: reduce) { .vb-flash { display: none; } }

@@ -34,7 +34,7 @@ describe('у каждого компонента — обучение или п�
       `  Игрок это видит → создай src/${f.replace(/\.tsx$/, '.tour.ts')} рядом (export default defineTips(...), src/tour/types.ts),`,
       '  тексты — в ru.ts и en.ts. Сначала предложи текст подсказки владельцу и спроси, показывать ли как «Что нового».',
       `  Объясняет главный тур или служебный → впиши в src/tour/coverage.ts: '${f}': 'core' | 'helper' с причиной в комментарии.`,
-      '  Подробно: DEVELOPMENT.md → «Обучение».',
+      '  Подробно: DEVELOPMENT.md → "Tour".',
     ].join('\n');
     expect(missing.map(how).join('\n\n')).toBe('');
   });
@@ -63,10 +63,6 @@ describe('туры', () => {
       [null, 'ATK%'].map((main) => ({ narrow: true, s: { slot, grade, main } }) as unknown as TourCtx)));
     const used = [...CORE_ANCHORS, ...ctxs.flatMap((c) => ALL.flatMap((s) => [...s.at(c), ...(s.pin?.(c) ?? []).map((p) => p.slice(0, p.indexOf(':')) as never)]))];
     expect(used.filter((a) => !ANCHORS.includes(a))).toEqual([]);
-  });
-
-  it('у подсказки с туром — тур из списка, и она в «Что нового»', () => {
-    expect(TIPS.filter((tp) => tp.tour && (!TOURS[tp.tour] || !tp.news)).map((tp) => tp.id)).toEqual([]);
   });
 
   // полоса на телефоне — 3–4 строки: длиннее — закроет полэкрана в разделённом экране

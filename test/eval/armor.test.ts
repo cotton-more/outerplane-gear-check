@@ -13,7 +13,7 @@ import { setSubDemand } from '@/features/eval/form/lists';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
-const ctx = makeCtx(idx, { rosterOnly: false, fodder: false, stage: 'grow', lv120: false, quirks: true }, new Set());
+const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 const life = D.sets.find((s) => s.short === 'Life')!;
 // у танков с Life (Liselotte и др.) приоритет SPD > HP > DEF = DMG RED% = RES
 const lifeGloves = (grade: Grade, subs: Record<string, number>) => evaluate(ctx, { slot: 'gloves', grade, setId: life.id, itemKey: null, main: null, subs });
@@ -62,7 +62,7 @@ describe('Epic-броня: решают главные статы (1–2 сту�
   });
 
   it('один главный стат с хорошим роллом и ещё полезный — «Временно», в тексте — чего не хватает', () => {
-    const r = attackHelmet('rare', { 'DMG UP%': 3, 'ATK%': 3, CHD: 3 });
+    const r = attackHelmet('rare', { 'DMG UP%': 2, 'ATK%': 3, CHD: 3 }); // с 3/3/3 — уже 6+ очков: «Оставить»
     expect(r.v).toBe('temp');
     expect(r.lines[0]).toContain('нет CHC');
   });
@@ -77,7 +77,7 @@ describe('Epic-броня: решают главные статы (1–2 сту�
   });
 
   it('Legendary эти пути не трогают: два главных из четырёх — по-прежнему не «Оставить»', () => {
-    expect(attackHelmet('unique', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3, RES: 1 }).v).not.toBe('keep');
+    expect(attackHelmet('unique', { CHC: 2, 'ATK%': 3, 'DMG UP%': 3, RES: 1 }).v).not.toBe('keep');
   });
 });
 
@@ -223,5 +223,22 @@ describe('«Кому подходит»: вторая цепочка у перс
     const r = attackHelmet('rare', { CHC: 3, 'ATK%': 3, 'DMG UP%': 3 });
     const lambda = r.sections.flatMap((s) => s.rows).find((m) => m.c.name === 'Lambda');
     expect(lambda?.other ?? []).toEqual([]);
+  });
+});
+
+describe('«SPD вытягивает» — только у вещи, что прошла прежние правила', () => {
+  const evalIn = (slot: 'gloves' | 'shoes', setId: string, rosterOnly: boolean, subs: Record<string, number>) =>
+    evaluate(makeCtx(idx, { rosterOnly, stage: 'grow', lv120: false, quirks: true }, new Set()), { slot, grade: 'unique', setId, itemKey: null, main: null, subs });
+
+  it('прошла по очкам, 0 сегментов SPD — строки нет (golden #179)', () => {
+    const r = evalIn('gloves', '13', true, { 'DMG UP%': 2, CHD: 3, EFF: 3, 'HP%': 2 });
+    expect(r.v).toBe('keep');
+    expect(r.lines.some((l) => l.includes('SPD'))).toBe(false);
+  });
+
+  it('прошла по SPD с 2 сегментами — строка есть (golden #5)', () => {
+    const r = evalIn('shoes', '21', true, { 'HP%': 2, SPD: 2, CHD: 3 });
+    expect(r.v).toBe('keep');
+    expect(r.lines).toContain(ru.armor.spdCarries('2', 2));
   });
 });

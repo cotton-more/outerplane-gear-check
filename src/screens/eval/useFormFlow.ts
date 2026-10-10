@@ -2,29 +2,31 @@
 // надеть?» — новая запись в пуле героя (features/gear/pool putOn), сообщение с «Вернуть», форма — как после «Следующий».
 import type { Dispatch } from 'react';
 import type { Index } from '@/game/data';
-import type { Char, GearKind, SlotId } from '@/game/data/types';
+import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
-import { buildOfKey } from '@/game/build/variants';
 import type { Texts } from '@/i18n';
 import { itemInput, type FormAction, type FormState } from '@/features/eval/form/formState';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { holds, poolView, putOn, undoPut, type PoolView, type PutResult } from '@/features/gear/pool';
-import { nextToWear, whereUsed, type CharVs } from '@/features/gear/model/poolVs';
+import { putOn, removeFrom, removeUndo, stashOn, undoPut, undoWear, wearFromPool, type PoolView, type PutResult } from '@/features/gear/pool';
+import type { Same } from '@/features/gear/verdict';
+import { nextToWear, type CharVs } from '@/features/gear/model/poolVs';
 import { oldFate } from '@/features/gear/model/material';
 import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
+import { itemCaption } from '@/features/gear/ui/pieceText';
 import type { Switched } from '@/features/roster/useRosterUi';
 import type { Hero } from '@/features/tryon/tryon';
 import { setName } from '@/game/set/setName';
 
 const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
 
-export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroVs, replace, tview, vsList, canEquip, touring, narrow,
+export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroVs, replace, tview, vsList, same, canEquip, touring, narrow,
   dropReplace, backReplace, formUndo, setFormUndo, closeVerdict, closeEquip, fusionGate, joinRoster, say }: {
   idx: Index; t: Texts; ctx: Ctx;
   s: FormState; dispatch: Dispatch<FormAction>; gear: GearApi; input: ItemInput;
   hero: Hero | null; heroVs: CharVs | null; replace: string | null; tview: PoolView; vsList: CharVs[];
+  same: Same | null;                     // the piece looks like one set aside for same.c (guard, useVerdictModel)
   canEquip: boolean;                     // не во время обучения (кроме примера) и не на чужой версии экипировки
   touring: boolean; narrow: boolean;
   dropReplace: () => void; backReplace: (charId: string, rep: string | null) => void;
@@ -48,37 +50,69 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   // «Заменить» всегда); вторая — «или — Rin · Speed ▸», если такой исход есть и у другого (в режиме героя других нет)
   const cardVs = vsList[0];
   const cardEquip = canEquip && !!cardVs?.useful;
+  // «Отложить для X» под карточкой — когда первый названный герой её держит («Оставь») или она ему запас
+  const cardStash = canEquip && !!cardVs?.stash;
   // «Дальше: {слот}» — ввод надетого: режим героя, «Надеть» есть, слот формы у героя не надет и есть ещё ненадетые
   const wearNext: SlotId | null = hero && canEquip && heroVs?.useful ? nextToWear(tview, hero.c.id, s.slot) : null;
   const nextNote = wearNext ? t.ui.nextWear(t.ui.slotNames[wearNext]) : null;
-  const cardOther = cardEquip && !hero ? vsList.slice(1).find((x) => x.useful && x.best && holds(x.best)) ?? null : null;
+  const cardOther = cardEquip && !hero ? vsList.slice(1).find((x) => x.useful && x.h.kind === 'wear') ?? null : null;
   // надеть вещь с формы на персонажа (features/gear/pool putOn); персонаж попадает в ростер; сообщение — куда она встала и что
   // стало с вытесненной, с «Вернуть». Всегда новая запись — и при такой же у него или у другого: в Оценку вводят новую
   // вещь из инвентаря, пулы независимы (В9; окна «Это шлем Rin?» нет)
-  const buildName = (key: string) => buildOfKey(key, t.ui.byStatsQ); // во фразе: «Идёт в …», «(в …)»
-  // где запись стоит у персонажа: имена билдов (родителей вариантов) его собираемых сборок
-  const usedFor = (st: GearStore, charId: string, id: string) =>
-    [...new Set(whereUsed(poolView(ctx, st), charId, id).map((v) => buildName(v.key)))];
   // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
-  const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId)
-    : (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? p.main ?? '');
+  const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId) : itemCaption(idx, p));
   // «Надеть на CF», когда есть X, — сначала окно перехода (в). Строка и кнопка CF посчитаны по этому же хранилищу
   // (viewOf, П9)
   const doEquip = (c: Char) => {
     closeEquip();
     if (!fusionGate(c.id, (sw) => equipOn(c, sw))) equipOn(c, null);
   };
+  // «Отложить для X» (features/gear/pool stashOn): вещь в пул героя без отметки «надета»; форма — как после «Следующий»
+  const doStash = (c: Char) => {
+    if (!fusionGate(c.id, (sw) => stashFor(c, sw))) stashFor(c, null);
+  };
+  const stashFor = (c: Char, sw: Switched | null) => {
+    const r = stashOn(sw?.st ?? gear.store, c.id, input);
+    const joined = joinRoster(c.id);
+    gear.set(r.st);
+    const was = input;
+    closeVerdict();
+    dispatch({ type: 'reset' });
+    dropReplace();
+    setFormUndo(null);
+    if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
+    if (touring) return;
+    say({
+      text: t.fit.stashed(c.name, r.slot), note: sw ? sw.note : '', tab: 'eval',
+      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)),
+      after: both(both(joined, sw?.after), () => dispatch({ type: 'load', item: was })),
+    });
+  };
   // sw — переход Core Fusion перед этим «Надеть»: его строка — в сообщение, его «Вернуть» — вместе с этим. В режиме
   // героя из «Примерить замену» запись replace уходит в любом случае (features/gear/pool planPut)
   const equipOn = (c: Char, sw: Switched | null) => {
     const rep = hero?.c.id === c.id ? replace : null;
-    const r = putOn(ctx, sw?.st ?? gear.store, c.id, input, { replace: rep });
+    const base = sw?.st ?? gear.store;
+    // it looks like the piece set aside for this very hero (guard): «Надеть» wears that record, no second one
+    const wore = same?.c.id === c.id && !rep ? wearFromPool(ctx, base, c.id, same.piece.id) : null;
+    const r: PutResult = wore ? { ...wore, piece: wore.st.pieces[wore.id] } : putOn(ctx, base, c.id, input, { replace: rep });
+    // the feed line named other heroes' reserves («из запаса Aer»): they go to this one's Breakthrough — their records
+    // leave with this «Надеть», as the hero's own reserves do (planPut); «Вернуть» brings them back
+    const h = wore ? undefined : vsList.find((v) => v.c.id === c.id)?.h;
+    const fed = (h?.reserveBt ?? []).filter((f) => f.of && f.of.id !== c.id).map((f) => ({ of: f.of!, piece: f.piece }));
+    let st = r.st;
+    const backs: ((x: GearStore) => GearStore)[] = [];
+    for (const f of fed) { backs.unshift(removeUndo(st, f.of.id, f.piece)); st = removeFrom(st, f.of.id, f.piece.id); }
+    const undo = (x: GearStore) => {
+      const y = wore ? undoWear(x, c.id, wore) : undoPut(x, c.id, r);
+      const z = backs.reduce((acc, b) => b(acc), y);
+      return sw ? sw.undo(z) : z;
+    };
     // после «Надеть» форма — как после «Следующий» (решение владельца, refute-10 п. 6): иначе та же вещь на форме
     // сравнивается со своей записью («на уровне», штамп ниже) и «Надеть» на другого клал бы её вторым героям. Шторку
     // вердикта закрыть, как «Следующий»; режим героя остаётся. «Вернуть» — и пул, и вещь на форму (с «T4»)
     // в обучении — ни ростера, ни сообщения: его «Вернуть» после тура отменило бы что-то в записях игрока
     const joined = joinRoster(c.id);
-    const st = r.st;
     gear.set(st);
     const was = input;
     closeVerdict();
@@ -89,7 +123,6 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     setFormUndo(null);
     if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
     if (touring) return;
-    const used = usedFor(st, c.id, r.id);
     // «· T4» — нажата «T4» на форме (В4): с каким Breakthrough вещь легла в пул
     const t4 = input.bt === 4 ? t.ui.withT4 : '';
     // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote (без
@@ -99,17 +132,17 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
     const wasOn = !!r.wasWorn && r.was.includes(r.wasWorn);
     const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
-      : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : [t.ui.equipped(c.name, r.piece.slot, t4), used.length ? t.ui.countsIn(used.join(', ')) : ''].filter(Boolean).join(' ');
+      : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : t.ui.equipped(c.name, r.piece.slot, t4);
     const notes: string[] = [];
-    // «Начал собирать …» — билды, которые эта вещь начала (Р19: по вещам, не по отметке)
-    if (r.began.length) notes.push(t.ui.startedFilling([...new Set(r.began.map(buildName))].join(', ')));
     notes.push(...removedNotes(r, mine, rep));
-    // вопрос 6: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
-    if (pruned.length) notes.push(t.ui.prunedNote);
+    // вопрос 6, PLAN Д7: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
+    if (pruned.length) notes.push(t.fit.pruned(c.name));
+    if (fed.length === 1) notes.push(t.fit.fed(fed[0].piece.slot, pieceLabel(fed[0].piece), fed[0].of.name, !!fed[0].piece.setId));
+    else if (fed.length) notes.push(t.fit.fedMany(fed.length, [...new Set(fed.map((f) => f.of.name))]));
     if (sw) notes.push(sw.note);
     say({
       text, note: notes.join(' '), tab: 'eval',
-      undo: (x) => (sw ? sw.undo(undoPut(x, c.id, r)) : undoPut(x, c.id, r)),
+      undo,
       after: both(both(joined, sw?.after), () => { dispatch({ type: 'load', item: was }); backReplace(c.id, rep); }),
     });
   };
@@ -126,5 +159,5 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
       return fate === 'material' ? [t.ui.oldMaterial(old.slot, what)] : fate === 'evaluate' ? [t.ui.oldEvaluate(old.slot, what)] : [];
     });
   };
-  return { onReset, onUndo, doEquip, cardEquip, cardOther, nextNote };
+  return { onReset, onUndo, doEquip, doStash, cardEquip, cardStash, cardOther, nextNote };
 }

@@ -4,8 +4,10 @@
 import { useEffect, useState } from 'react';
 import type { Index } from '@/game/data';
 import { heroName } from '@/game/hero/HeroName';
+import { comboText } from '@/game/build/builds';
+import { pinCombo } from '@/game/build/profile';
 import type { Texts } from '@/i18n';
-import { dropChar, gearedChars, undoDrop, type GearStore } from '@/features/gear/model/gear';
+import { dropChar, gearedChars, setPin, undoDrop, undoPin, type GearStore } from '@/features/gear/model/gear';
 import { gateOf, normalizeStored, switchFusion, type FusionFix } from '@/features/gear/model/fusion';
 import { loadGear, unfuseChar } from '@/features/gear/store/gearStore';
 import { readStored, takeLoadNote } from '@/features/gear/store/stored';
@@ -31,13 +33,15 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   // Core Fusion (features/gear/model/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком
   const fixesNote = (fixes: FusionFix[]) => fixes.map((f) => t.ui.fusionFixed(charName(f.base), f.kind)).join(' ');
   // после загрузки: нормализация что-то поменяла (features/gear/store/stored — уже записано, Р17) — сказать один раз: кого добавили
-  // в ростер (у них есть вещи, Р16) и что стало с X при Core Fusion X
+  // в ростер (у них есть вещи, Р16), что стало с X при Core Fusion X и чьё закрепление снято
   useEffect(() => {
     const n = takeLoadNote(idx);
     if (!n) return;
     const names = n.added.map(charName).join(', ');
-    const fx = fixesNote(n.fixes);
-    say({ text: names ? t.ui.gearRosterAdded(names) : fx, note: names ? fx : '', tab });
+    // закрепления, чей набор пропал из outerpedia (stored fixPins)
+    const pins = n.pins.map(([id, key]) => t.card.pinGone(charName(id), comboText(idx, pinCombo(key)))).join(' ');
+    const [text, ...rest] = [names ? t.ui.gearRosterAdded(names) : '', fixesNote(n.fixes), pins].filter(Boolean);
+    say({ text, note: rest.join(' '), tab });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // «Вернуть» ростера после перехода, пакетного добавления и импорта — ростер, каким был (тот же порядок)
   const rosterBack = (prev: string[], next: string[]) => (prev.join() === next.join() ? undefined : () => rosterApi.replace(prev));
@@ -128,10 +132,26 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   // его пула (общие записи остаются у других), «Вернуть» — вещи, отметки и место в ростере. В обучении окна нет и вещи
   // не убираются: звезда такого героя не снимается (на странице — экипировка тура, записи игрока не трогаем)
   const [removeAsk, setRemoveAsk] = useState<{ id: string; n: number } | null>(null);
+  // «Вернуть» звезды: герой — снова в ростере на прежнем месте (за тем, за кем стоял), если его туда ещё не вернули
+  const putBack = (prev: readonly string[], id: string) => () => {
+    const cur = rosterApi.list();
+    if (cur.includes(id)) return;
+    const after = prev.slice(prev.indexOf(id) + 1).find((x) => cur.includes(x));
+    const at = after ? cur.indexOf(after) : cur.length;
+    rosterApi.replace([...cur.slice(0, at), id, ...cur.slice(at)]);
+  };
   const unstar = (id: string) => {
     const n = realStore().pools[id]?.length ?? 0;
-    if (!n) rosterApi.toggle(id);
-    else if (!touring) setRemoveAsk({ id, n });
+    if (n) { if (!touring) setRemoveAsk({ id, n }); return; }
+    const key = touring ? undefined : gear.store.pin?.[id];
+    if (!key) { rosterApi.toggle(id); return; }
+    // В4 ревью этапа 10: у героя без вещей было закрепление — снимается вместе со звездой (иначе невидимое, но действует);
+    // «Вернуть» — и звезду на прежнее место, и закрепление
+    const prev = rosterApi.list();
+    const r = setPin(gear.store, id, null);
+    gear.set(r.st);
+    rosterApi.remove([id]);
+    say({ text: t.card.unpinned(charName(id), comboText(idx, pinCombo(key))), note: '', tab: 'chars', undo: (x) => undoPin(x, id, r), after: putBack(prev, id) });
   };
   const doRemove = () => {
     const a = removeAsk;
@@ -144,17 +164,10 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     rosterApi.remove([a.id]);
     // «Вернуть»: хранилище с тех пор не менялось (и перечитанное из него — тот же объект по смыслу) — прежний объект
     // целиком, байт в байт; иначе — только это действие
-    const back = () => {
-      const cur = rosterApi.list();
-      if (cur.includes(a.id)) return;
-      const after = prev.slice(prev.indexOf(a.id) + 1).find((id) => cur.includes(id));
-      const at = after ? cur.indexOf(after) : cur.length;
-      rosterApi.replace([...cur.slice(0, at), a.id, ...cur.slice(at)]);
-    };
     // тост — только о герое: у кого ещё остались те же записи, не говорим (они здесь просто не используются)
     say({
       text: t.ui.rosterRemoved(charName(a.id)), note: '', tab: 'chars',
-      undo: (x) => (x === r.st || (wrote !== null && storage.raw('gear') === wrote) ? st : undoDrop(x, r.dropped)), after: back,
+      undo: (x) => (x === r.st || (wrote !== null && storage.raw('gear') === wrote) ? st : undoDrop(x, r.dropped)), after: putBack(prev, a.id),
     });
   };
   // список и карточка персонажа: звезда — с окнами перехода и снятия; «Отметить показанных», код ростера, «Очистить» —

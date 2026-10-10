@@ -47,6 +47,22 @@ function everyItem(): ItemInput[] {
   return out;
 }
 
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+// codes one typo (or one swap of neighbours) away from the item's code that still read as a piece from the data —
+// what the player would see on the form instead of an error
+function slipped(items: ItemInput[], swap: boolean): { n: number; read: number } {
+  const S = fromPersisted(null, idx);
+  let n = 0, read = 0;
+  for (const x of items) {
+    const c = encodeItem(x)!.replace(/ /g, '');
+    const vs: string[] = [];
+    if (swap) { for (let i = 0; i + 1 < c.length; i++) if (c[i] !== c[i + 1]) vs.push(c.slice(0, i) + c[i + 1] + c[i] + c.slice(i + 2)); }
+    else for (let i = 0; i < c.length; i++) for (const ch of ALPHABET) if (ch !== c[i]) vs.push(c.slice(0, i) + ch + c.slice(i + 1));
+    for (const v of vs) { n++; const d = decodeItem(v); if (d.ok && fitsData(S, d.item, idx)) read++; }
+  }
+  return { n, read };
+}
+
 describe('код предмета', () => {
   const all = everyItem();
 
@@ -92,7 +108,6 @@ describe('код предмета', () => {
 
   it('опечатка в любом одном символе ловится', () => {
     const code = encodeItem(item({ setId: '13', subs: { SPD: 2, CHC: 1, CHD: 3, 'ATK%': 1 } }))!.replace(/ /g, '');
-    const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     for (let i = 0; i < code.length; i++) {
       for (const ch of ALPHABET) {
         if (ch === code[i]) continue;
@@ -101,21 +116,52 @@ describe('код предмета', () => {
     }
   });
 
-  it('перестановка двух соседних символов ловится', () => {
-    for (const x of all.slice(0, 200)) {
-      const code = encodeItem(x)!.replace(/ /g, '');
-      for (let i = 0; i + 1 < code.length; i++) {
-        const a = code[i], b = code[i + 1];
-        if (a === b || (a === 'A' && b === 'Z') || (a === 'Z' && b === 'A')) continue; // единственная пара, которую Luhn mod 24 не различает
-        expect(decodeItem(code.slice(0, i) + b + a + code.slice(i + 2)).ok).toBe(false);
-      }
-    }
+  // Luhn mod 24 alone caught every swap but A/Z; since the second form (levels 5–6) a swap can pass its shifted check —
+  // measured on the data: about 1 in 1500 swaps reads as another piece
+  it('перестановка двух соседних символов почти всегда ловится', () => {
+    const { n, read } = slipped(all, true);
+    expect(n).toBeGreaterThan(4000);
+    expect(read / n).toBeLessThan(1 / 1000);
   });
 
-  // формат тот же (уровни 1–4): вещь с уровнем 5–6 (после Reforge) кода не получает — «Поделиться» нет
-  it('уровень 5 или 6 — кода нет (null)', () => {
-    expect(encodeItem(item({ setId: '13', subs: { SPD: 5, CHC: 1 } }))).toBeNull();
-    expect(encodeItem(item({ setId: '13', subs: { SPD: 4, CHC: 6 } }))).toBeNull();
+  // Levels 5–6 (after Reforge): the second form of the code (owner, 2026-10-07); levels 1–4 keep the old code
+  describe('уровни 5–6 — вторая форма кода', () => {
+    // every item from the data with one row raised to 5 or 6
+    const wide = all.map((x, i) => {
+      const keys = Object.keys(x.subs);
+      return { ...x, subs: { ...x.subs, [keys[i % keys.length]]: 5 + (i % 2) } };
+    });
+
+    it('старые коды не изменились ни на букву', () => {
+      expect(encodeItem(item({ slot: 'helmet', grade: 'rare', setId: '1', subs: { SPD: 2, CHC: 2, CHD: 1, 'ATK%': 1 } }))).toBe('PEDJ XTA');
+      expect(encodeItem(item({ slot: 'weapon', grade: 'rare', main: 'ATK%', subs: { SPD: 2, CHC: 2, CHD: 1, 'ATK%': 1 } }))).toBe('WMZY APH');
+    });
+
+    it('любой предмет с 5–6 читается обратно без потерь', () => {
+      for (const x of wide) expect(decodeItem(encodeItem(x)!)).toEqual({ ok: true, item: x });
+      const x = item({ setId: '13', subs: { SPD: 6, CHC: 5, CHD: 1, 'ATK%': 4 } });
+      expect(decodeItem(encodeItem(x)!)).toEqual({ ok: true, item: x });
+    });
+
+    it('длиннее не больше чем на 2 буквы: броня — до 10, всё — до 13', () => {
+      const len = (x: ItemInput) => encodeItem(x)!.replace(/ /g, '').length;
+      expect(Math.max(...wide.filter((x) => isArmor(x.slot)).map(len))).toBeLessThanOrEqual(10);
+      expect(Math.max(...wide.map(len))).toBeLessThanOrEqual(13);
+    });
+
+    // measured on the data (2026-10-07): a typo reads as another piece from the data — old codes about 1 in 6500,
+    // second-form codes about 1 in 3800 (it can pass as an old code; the data check stops most); swaps — 1 in 2500
+    it('опечатка в старом коде почти никогда не читается чужой вещью', () => {
+      const { n, read } = slipped(all, false);
+      expect(n).toBeGreaterThan(50_000);
+      expect(read / n).toBeLessThan(1 / 3000);
+    });
+
+    it('опечатка и перестановка во второй форме почти всегда ловятся', () => {
+      const typo = slipped(wide, false), swap = slipped(wide, true);
+      expect(typo.read / typo.n).toBeLessThan(1 / 2000);
+      expect(swap.read / swap.n).toBeLessThan(1 / 1000);
+    });
   });
 
   it('Breakthrough в код не попадает: T4 и ниже T4 — один и тот же код', () => {

@@ -1,37 +1,53 @@
-// Подписи вещи и билда в строках экипировки: название вещи и main, Breakthrough, текст бонуса сета, «почему собираю».
-// Их берут карточка билда (screens/chars/BuildGear), пул, «Надето», «Переодеть» и план обмена.
-import type { Index } from '@/game/data';
-import type { Char, GearKind } from '@/game/data/types';
+// Подписи вещи в строках экипировки: название вещи и main, Breakthrough, текст бонуса сета.
+// Их берут «Надето», «Пул», «Переодеть», шторка вещи и план обмена.
+import { EPIC_NAME, isArmor, type Index } from '@/game/data';
+import type { GearKind } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
 import { tierLabel, type BonusRow } from '@/game/set/setBonus';
-import { buildOfKey, type Variant } from '@/game/build/variants';
 import type { Texts } from '@/i18n';
-import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { isStats, markOfVariant, type CharPool } from '@/features/gear/pool';
-import { partText, setName } from '@/game/set/setName';
+import type { Piece } from '@/features/gear/model/gear';
+import { setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
+import { useIndex } from '@/game/data/IndexContext';
+
+// A weapon or accessory named in a phrase, one rule everywhere (owner 2026-10-09, Q4): a Legendary — its item, an Epic —
+// the game's name (EPIC_NAME), then the main: «Noblewoman's Guile · HP%», «Steel Sword · ATK%»; main unknown — «Steel Sword»
+type Named = Pick<Piece, 'slot' | 'grade' | 'itemKey' | 'main'>;
+const itemName = (idx: Index, p: Named): string =>
+  (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? EPIC_NAME[p.slot as GearKind] : '');
+// The «·» and the main hang on the name's last word with no-break spaces: a wrapped name never leaves «· ATK%» leading the next line
+export const itemCaption = (idx: Index, p: Named): string => [itemName(idx, p), p.main].filter(Boolean).join('\u00A0·\u00A0');
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
-const nameOf = (ctx: Ctx, p: Piece): string => p.setId
-  ? `${setName(ctx.idx, p.setId)} Set`
-  : (p.itemKey ? ctx.idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? 'Epic' : '');
+const nameOf = (ctx: Ctx, p: Piece): string => p.setId ? `${setName(ctx.idx, p.setId)} Set` : itemName(ctx.idx, p);
 // то же одной строкой («Speed Set», «Combination Simulator · SPD») — для фраз вроде совета «Лучше из своих: …»
-export const pieceText = (ctx: Ctx, p: Piece): string => {
-  const name = nameOf(ctx, p);
-  return p.setId || !p.main ? name : `${name ? name + ' · ' : ''}${p.main}`;
-};
+export const pieceText = (ctx: Ctx, p: Pick<Piece, 'slot' | 'grade' | 'itemKey' | 'main' | 'setId'>): string =>
+  p.setId ? `${setName(ctx.idx, p.setId)} Set` : itemCaption(ctx.idx, p);
+
+// The caption line a weapon or accessory gets under a step title or after a taken-off piece's hero; armor has none:
+// its title says the slot, the hero and the set are known (batch title)
+export const capLine = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string => (isArmor(p.slot) ? '' : batchCaption(t, idx, p));
+
+// The piece in a batch line (Q4): the grade and the set are in the batch's title, so armor is its slot word alone, a
+// weapon or accessory its caption; «T4» only at T4 (armor: the word, then T4)
+export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string =>
+  (isArmor(p.slot) ? t.ui.slotNom[p.slot] : itemCaption(idx, p)) + (p.bt === 4 ? '\u00A0·\u00A0T4' : '');
 // сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных» (.x/0060 SPEC 3.6)
-export function PieceName({ ctx, p }: { ctx: Ctx; p: Piece }) {
+// batch — a row of the batch (Q4): no grade chip, the caption in the grade's colour, armor is its slot word alone
+export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boolean }) {
   const t = useT();
+  const armor = isArmor(p.slot);
   const unknown = p.setId ? !ctx.idx.SET[p.setId] : !!p.itemKey && !ctx.idx.ITEM[p.slot as GearKind]?.[p.itemKey];
-  const name = unknown ? t.ui.notInData : nameOf(ctx, p);
+  const name = batch && armor ? t.ui.slotNom[p.slot] : unknown ? t.ui.notInData : nameOf(ctx, p);
   const main = p.setId ? null : p.main;
+  const tone = batch ? ` gname ${p.grade === 'unique' ? 'legend' : 'epic'}` : '';
   return (
     <>
-      <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>
-      {name && <span className="pn">{name}</span>}
-      {main && <span className="pm">{name ? '· ' : ''}{main}</span>}
+      {!batch && <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>}
+      {name && <span className={`pn${tone}`}>{name}</span>}
+      {/* batch: a no-break space glues «· ATK%» to the name's last word, so a wrapped name never leaves it leading a line */}
+      {main && <span className={`pm${tone}`}>{name ? `${batch ? '\u00A0' : ''}· ` : ''}{main}</span>}
     </>
   );
 }
@@ -41,8 +57,10 @@ export const btText = (t: Texts, bt: Bt | null): string => (bt === null ? 'T?' :
 // Breakthrough отдельной меткой — во всех строках вещей одинаково (Р-3, решение владельца 2026-10-05): в карточке билда и на
 // «Надето» — своей колонкой (на телефоне — второй строкой), в списке вещей, плане обмена и «Переодеть» — первой во второй
 // строке (.bgear-meta), метки идут столбиком. У любой вещи, и у Epic оружия и аксессуара (.x/0060)
-export function BtLabel({ p }: { p: Pick<Piece, 'slot' | 'grade' | 'bt'> }) {
+// t4Only — a batch row (Q4): the tier only at T4, nothing for T0–T3 or an unknown one
+export function BtLabel({ p, t4Only }: { p: Pick<Piece, 'slot' | 'grade' | 'bt'>; t4Only?: boolean }) {
   const t = useT();
+  if (t4Only && p.bt !== 4) return null;
   return <span className="bgear-m">{btText(t, p.bt)}</span>;
 }
 
@@ -52,38 +70,16 @@ export const bonusText = (idx: Index, r: BonusRow): string => {
   return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
 };
 
-// Собираю: почему вариант собирается (или нет) — строка рядом с переключателем. Всё — по показанной раскладке, как чип
-// и слоты. Собирается он потому, что часть связки можно собрать из пула, а раскладка ради статов её не взяла (Р1), —
-// «— Speed ×2 собирается из вещей Caren, но сейчас выгоднее без неё»: «готова» противоречило бы слотам
-export function wantWhy(t: Texts, idx: Index, cp: CharPool, st: GearStore, v: Variant): string {
-  if (!cp.inPlay.includes(v)) return t.ui.fillingOff;
-  if (isStats(v)) return '';
-  const a = cp.asm.get(v.key)!;
-  if (a.need && a.progress === a.need) return t.ui.fillingWhy.done;
-  const mark = markOfVariant(st.marks, v);
-  if (mark === 'want') return (st.v1builds as Record<string, unknown> | undefined)?.[v.parentKey] ? t.ui.fillingWhy.prev : '';
-  if (a.complete.length) return t.ui.fillingHalf(`${idx.SET[a.complete[0].set]?.short ?? a.complete[0].set} ×${a.complete[0].n}`);
-  const reach = cp.reach.get(v.key) ?? a;
-  if (reach !== a) {
-    const part = reach.complete.find((p) => !a.complete.some((q) => q.set === p.set));
-    return part ? t.ui.fillingReach(partText(idx, part), cp.c.name) : '';
-  }
-  // начат (Р14), но не ближе всех — строки нет: «ближе всех» было бы неправдой
-  const top = Math.max(0, ...cp.inPlay.filter((x) => !isStats(x)).map((x) => (cp.reach.get(x.key) ?? cp.asm.get(x.key)!).progress));
-  return a.progress && a.progress === top ? t.ui.fillingWhy.closest : '';
-}
-
-// бонусы: все активные с уровнем; «T?» — отметь Breakthrough; сет не из связки — бонус всё равно считается
-export function bonusLinesOf(t: Texts, idx: Index, c: Char, rows: readonly BonusRow[], combo: readonly { set: string }[]): string[] {
+// включённые бонусы с уровнем; «T?» — отметь Breakthrough (макет 6.0 решение 3: строки «не из билдов» нет)
+export function bonusLinesOf(t: Texts, idx: Index, rows: readonly BonusRow[]): string[] {
   return rows.map((r) => {
     const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
-    const own = combo.some((p) => p.set === r.set);
-    return t.ui.bonusRow(setName(idx, r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '') + (own ? '' : ` · ${t.ui.incidental(c.name)}`);
+    return t.ui.bonusRow(setName(idx, r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '');
   });
 }
 
-// имя варианта для показа (Р5: «Defense mix · Swiftness», а не имя родителя): у «По статам» — «По статам», не его ключ.
-// Выбранный билд героя — везде им (решение владельца 2026-10-05, Р-1): карточка, «Надето», обмен, режим героя, вердикт
-export const variantName = (t: Texts, v: Variant) => (isStats(v) ? t.ui.byStats : v.name);
-// имя билда по ключу во фразе: «Идёт в …», «остаётся в …» — у «По статам» в кавычках
-export const buildName = (t: Texts, key: string) => buildOfKey(key, t.ui.byStatsQ);
+// a piece in a phrase: armor — «Speed-ботинки», weapon and accessory — «Steel Sword · ATK%» (itemCaption)
+export const pieceLabel = (t: Texts, idx: Index) => (p: Piece): string => (p.setId ? t.fit.piece(setName(idx, p.setId), p.slot) : itemCaption(idx, p));
+export function usePieceLabel(): (p: Piece) => string {
+  return pieceLabel(useT(), useIndex());
+}

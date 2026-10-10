@@ -1,17 +1,18 @@
 // Код героя для показа по ссылке (.x/0060-share-code SPEC 3.2): «OGH» и base62 с CRC-32 (shared/bits). Ссылка — адрес
 // сайта и код после «#»: всё после «#» браузер на сервер не шлёт. В коде — номер формата, герой, по слоту — надетая
-// вещь (запись SPEC 1, без даты) или «пусто», и билд, который показывает «Надето». Билд — отпечатком имени и подписи
-// связки (24 бита): узнаётся, даже если outerpedia переставила билды, и код не растёт от длины имени (≤ 64 знаков).
+// вещь (запись SPEC 1, без даты) или «пусто», и закреплённый набор (stat-sets PLAN Д9; «По статам» — не закреплён).
+// Набор — отпечатком имени билда и подписи (24 бита): узнаётся, даже если outerpedia переставила билды, и код не растёт
+// от длины имени (≤ 64 знаков). Версия 2 (stat-sets PLAN Д11); код версии 1 нёс на том же месте выбранный билд — поле
+// читается и пропускается, карточка — без набора.
 import { SLOTS, type Index } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
-import { variantsOf } from '@/game/build/variants';
-import { STATS } from '@/features/gear/pool';
+import { pinOptions } from '@/game/build/profile';
 import { BitReader, BitWriter, seal, unseal } from '@/shared/bits';
 import type { Piece } from '@/features/gear/model/gear';
 import { readBody, writeBody, type PieceBody } from './pieceCode';
 
 export const HERO_PREFIX = 'OGH';
-const VERSION = 1;
+const VERSION = 2;
 // герой: обычный (2000000 + n), Core Fusion (2700000 + n) или любой номер как есть
 const BASES = [2000000, 2700000, 0];
 const HASH_BITS = 24;
@@ -33,11 +34,11 @@ function hashOf(s: string): number {
 }
 const tail = (key: string) => key.slice(key.indexOf('/') + 1);
 
-export type HeroBuild = { kind: 'stats' } | { kind: 'named'; hash: number } | { kind: 'none' };
-export interface HeroShare { heroId: string; slots: Partial<Record<SlotId, PieceBody>>; build: HeroBuild }
+// pin — отпечаток закреплённого набора; null — не закреплён (или код версии 1)
+export interface HeroShare { heroId: string; slots: Partial<Record<SlotId, PieceBody>>; pin: number | null }
 
-// null — героя таким номером не записать (id не число)
-export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>, aimKey: string | null): string | null {
+// pin — ключ закрепления (profile pinKey), null — «По статам». null — героя таким номером не записать (id не число)
+export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>, pin: string | null): string | null {
   if (!/^[1-9]\d{0,14}$/.test(heroId)) return null;
   const n = Number(heroId);
   const base = BASES.findIndex((b, i) => n >= b && (i === BASES.length - 1 || n - b < 700000));
@@ -47,10 +48,8 @@ export function encodeHero(heroId: string, worn: Partial<Record<SlotId, Piece>>,
     w.put(p ? 1 : 0, 1);
     if (p) writeBody(w, p);
   }
-  const t = aimKey === null ? null : tail(aimKey);
-  if (t === null) w.put(0, 2);
-  else if (t === STATS) w.put(1, 2);
-  else w.put(2, 2).put(hashOf(t), HASH_BITS);
+  if (pin === null) w.put(1, 2);
+  else w.put(2, 2).put(hashOf(tail(pin)), HASH_BITS);
   return HERO_PREFIX + seal(w.bits);
 }
 
@@ -62,25 +61,25 @@ export function decodeHero(code: string): HeroShare | 'newer' | 'broken' {
     const r = new BitReader(bits);
     const v = r.get(4);
     if (v > VERSION) return 'newer';
-    if (v !== VERSION) return 'broken';
+    if (v !== VERSION && v !== 1) return 'broken';
     const base = BASES[r.get(2)];
     if (base === undefined) return 'broken';
     const heroId = String(base + r.vlq(7));
     const slots: HeroShare['slots'] = {};
     for (const { id: slot } of SLOTS) if (r.get(1)) slots[slot] = readBody(r, slot);
+    // поле набора: 0 — нет (v1), 1 — «По статам» (не закреплён), 2 — отпечаток; у v1 — выбранного билда, пропускаем
     const k = r.get(2);
-    const build: HeroBuild = k === 1 ? { kind: 'stats' } : k === 2 ? { kind: 'named', hash: r.get(HASH_BITS) } : { kind: 'none' };
+    const hash = k === 2 ? r.get(HASH_BITS) : null;
     if (k === 3 || r.left) return 'broken';
-    return { heroId, slots, build };
+    return { heroId, slots, pin: v === VERSION ? hash : null };
   } catch {
     return 'broken';
   }
 }
 
-// ключ варианта героя по отпечатку; null — такого билда в этих данных нет (переименовали, убрали) или не было
-export function aimKeyOf(idx: Index, heroId: string, build: HeroBuild): string | null {
+// ключ закрепления по отпечатку; null — не закреплён или такого набора в этих данных нет (переименовали, убрали)
+export function pinKeyOf(idx: Index, heroId: string, pin: number | null): string | null {
   const c = idx.CHAR[heroId];
-  if (!c || build.kind === 'none') return null;
-  if (build.kind === 'stats') return `${heroId}/${STATS}`;
-  return variantsOf(idx, c).find((v) => hashOf(tail(v.key)) === build.hash)?.key ?? null;
+  if (!c || pin === null) return null;
+  return pinOptions(c).find((o) => hashOf(tail(o.key)) === pin)?.key ?? null;
 }

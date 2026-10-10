@@ -266,47 +266,46 @@ describe('вещь игрока не теряется', () => {
 });
 
 // Главный тур и «Какое обучение?» идут на пустой экипировке: ничто в них не пишет в ogc.gear — ни во время, ни после.
-// Раньше «Собираю» в шторке вариантов записывал отметку в пустой стор, и после ✕ он ложился поверх всех вещей игрока
+// Раньше «Собираю» в шторке вариантов записывал отметку в пустой стор, и после ✕ он ложился поверх всех вещей игрока;
+// теперь то же проверяем на закреплении набора (stat-sets этап 6)
 describe('обучение не пишет в экипировку игрока', () => {
   const caren = D.chars.find((c) => c.name === 'Caren')!, luna = D.chars.find((c) => c.name === 'Demiurge Luna')!;
   const speed = D.sets.find((x) => x.short === 'Speed')!.id;
   const MINE = {
     welcomeHidden: true, tour: DONE, roster: [caren.id, luna.id], state: { tab: 'eval', charId: luna.id },
-    gear: { v: 2, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2, SPD: 1 }, lit: { CHC: 2, SPD: 1 }, bt: null, at: '' } }, pools: { [caren.id]: ['p1'] } },
+    gear: { v: 3, seq: 1, pieces: { p1: { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2, SPD: 1 }, lit: { CHC: 2, SPD: 1 }, bt: null, at: '' } }, pools: { [caren.id]: ['p1'] } },
   };
-  // карточка Luna → «Pen mix» → «ещё 2»: шторка со всеми связками
-  const lunaVariants = async () => {
+  // карточка Luna → «Pin a set» → набор → «Pin»
+  const lunaPin = async () => {
     await openMore();
     await click(byText('.more button', 'Characters'));
     expect($('#char-detail h2')?.textContent).toBe(luna.name);
-    await click(byText('.btabs [role="tab"]', 'Pen mix'));
-    await click(byText('.vchips .vchip', 'more'));
-    expect(document.querySelectorAll('.vlist li').length).toBeGreaterThan(0);
+    await click($('.pinb'));
+    await click(document.querySelectorAll<HTMLElement>('.drawer .arow')[1]);
+    await click(byText('.drawer .btn', 'Pin'));
   };
 
-  it('главный тур → Luna → «ещё 2»: «Собираю» нет (на странице пусто); ✕ — ogc.gear байт в байт прежний', async () => {
+  it('главный тур → Luna → «Закрепить»: ✕ — ogc.gear байт в байт прежний', async () => {
     await mount(MINE);
     const before = localStorage.getItem('ogc.gear');
     await startTour();
     await pickCore();
     await click(byText('.tour-strip button', 'Example'));
 
-    await lunaVariants();
-    expect($('.vlist .want-btn')).toBeNull();
+    await lunaPin();
     await click($('.tour-x'));
 
     expect($('.tour-strip')).toBeNull();
     expect(localStorage.getItem('ogc.gear')).toBe(before);
   });
 
-  it('«Какое обучение?» → Luna → «ещё 2» → ✕: ogc.gear байт в байт прежний', async () => {
+  it('«Какое обучение?» → Luna → «Закрепить» → ✕: ogc.gear байт в байт прежний', async () => {
     await mount(MINE);
     const before = localStorage.getItem('ogc.gear');
     await startTour();
     expect(strip()).toContain(T.pick);
 
-    await lunaVariants();
-    expect($('.vlist .want-btn')).toBeNull();
+    await lunaPin();
     await click($('.tour-x'));
 
     expect($('.tour-strip')).toBeNull();
@@ -352,7 +351,7 @@ describe('давний игрок', () => {
     await mount();
     // вместо неё теперь «Новое»: давнему игроку подсказки с news — новые
     expect($('.tour-invite')?.textContent).not.toContain(T.invite);
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 6)); // и ещё gear, move, bt, wornTab, trade, share
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 5)); // and also pin, move, bt, batch, wornChain
   });
 
   it('новичок закрыл карточку «Понятно» — от тура отказался, полосы «Появилось обучение» нет', async () => {
@@ -401,14 +400,14 @@ describe('подсказки по ходу и «Что нового»', () => {
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, known: {} } }); // вышли после его первого запуска
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 6)); // и ещё gear, move, bt, wornTab, trade, share
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 5)); // and also pin, move, bt, batch, wornChain
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
     expect($('.vb-tab.has-news')).toBeTruthy();
     await click($('.vb-tab'));
     await click($('.more .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known).toMatchObject({ move: 1, gear: 2 }); // gear rev 2 — GEARPOOL
+    expect(stored('tour').known).toMatchObject({ move: 1, pin: 1 }); // pin — новость «статов + сетов» (stat-sets Д12)
     expect($('.vb-tab.has-news')).toBeNull();
   });
 
@@ -469,13 +468,11 @@ describe('тур «Экипировка» на примере', () => {
     expect(stored('tour').seen['tour.gear']).toBe(1);
   });
 
-  it('давнему игроку «Что нового» — экипировка; «Показать» запускает тур', async () => {
-    // всё остальное новое уже знакомо: первой в «Новом» — экипировка (первой по порядку была бы «Ещё»)
-    const known = Object.fromEntries(TIPS.filter((tp) => tp.id !== 'gear').map((tp) => [tp.id, tp.rev]));
+  // stat-sets этап 6 (PLAN Д12): новость этапа одна — закрепление; тур «Экипировка» — из «Какое обучение?»
+  it('давнему игроку «Что нового» — оценка и закрепление набора', async () => {
+    const known = Object.fromEntries(TIPS.filter((tp) => tp.id !== 'pin').map((tp) => [tp.id, tp.rev]));
     await mount({ welcomeHidden: true, tour: { ...DONE, known } });
-    expect($('.tour-invite')?.textContent).toContain(T.news.gear);
-    await click(byText('.tour-invite button', 'Show'));
-    expect(strip()).toContain(T.gearStepOf(1, 5));
+    expect($('.tour-invite')?.textContent).toContain(T.news.pin);
   });
 
   it('✕ посреди тура — всё как было: примерки примера нет, форма игрока', async () => {
@@ -521,9 +518,8 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
     await click($('.vcard'));
     expect($('.drawer')).toBeTruthy();
-    // ▲ лучше надетого T2-шлема: сколько Breakthrough у надетой, а не «эта — ступень её Breakthrough»
-    expect($('.v-vs')?.textContent).toContain(TEXTS.en.ui.vsBt(2));
-    expect($('.v-vs')?.textContent).not.toContain(TEXTS.en.ui.vsMaterial(2));
+    // ▲ лучше шлема Caren: строка героя — прирост в очках («статы + сеты»)
+    expect($('.v-vs')?.textContent).toMatch(/Caren gets \+[\d.]+ pts/);
     expect(strip()).toContain(T.gearStepOf(3, 5));
     expect(strip()).not.toContain(T.inSheet);
     await click(byText('.tour-strip button', T.next));
@@ -531,13 +527,6 @@ describe('тур «Экипировка» на примере', () => {
     await click($('.drawer [data-tour="gequip"]'));
     expect($('.drawer')).toBeNull(); // шторка закрылась: ✕ режима героя был бы под ней
     expect(strip()).toContain(T.gearStepOf(5, 5));
-  });
-
-  it('у пустого билда подсказка «Примерить» не встаёт на «Собрать билд»: он слот и сет не ставит', async () => {
-    const caren = D.chars.find((c) => c.name === 'Caren')!;
-    await mount({ welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'chars', charId: caren.id } });
-    expect(byText('.bgear-none button', 'Gear up this build')).toBeTruthy();
-    expect($('.bgear-none [data-tour="gtry"]')).toBeNull();
   });
 
   // на странице во время тура — экипировка тура: у «Экипировки» пример, у главного пусто (useGear persist = false).

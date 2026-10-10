@@ -1,6 +1,6 @@
 // Панель над сеткой персонажей (.x/0070-more-sheet SPEC 4): две строки управления и, если выбран фильтр, строка чипов.
 // Строка 1 — поиск по имени и кнопка фильтра (стихии и классы — в шторке, на кнопке — сколько выбрано). Строка 2 —
-// «★ Мои N · Доодеть N · Все» и «⇄ Обмен» (когда обмен доступен и у кого-то есть вещи; сразу в режиме «Команда»); на самой
+// «★ Мои N · Доодеть N» (ни один не нажат — все с билдами; нажатый повторно отжимается) и «⇄ Обмен» (когда обмен доступен и у кого-то есть вещи; сразу в режиме «Команда»); на самой
 // узкой ширине «Обмен» — один значок (подпись остаётся для диктора). Пустой ростер — вместо строки 2 подсказка про звёздочку.
 import { useState, type Dispatch, type ReactNode } from 'react';
 import { useT } from '@/i18n';
@@ -31,11 +31,10 @@ export function CharBar({ s, dispatch, rosterSize, todressN, onTrade }: {
       </div>
       {rosterSize > 0 ? (
         <div className="cbar-row">
-          <SegSwitch<CharMode> className="cmode" label="" group={t.ui.modeGroup} value={mode} onChange={(cMode) => filter({ cMode })}
+          <SegSwitch<CharMode> className="cmode" label="" group={t.ui.modeGroup} value={mode} onChange={(v) => filter({ cMode: v === mode ? 'all' : v })}
             options={[
               { value: 'mine', label: <><span className="vb-star">★</span> {t.ui.modeMine} {rosterSize}</> },
               { value: 'todress', label: <>{t.ui.modeToDress} {todressN}</> },
-              { value: 'all', label: t.ui.modeAll },
             ]} />
           {onTrade && (
             <button type="button" className="btn cbar-trade" onClick={onTrade}>

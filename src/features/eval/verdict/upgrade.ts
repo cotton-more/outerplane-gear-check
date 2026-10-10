@@ -4,7 +4,7 @@
 // такая же вещь (тот же грейд, эффект и слот; у брони — тот же сет) или Glunite. Transistone по гайду тратят только
 // на Irregular и красную броню. Когда и сколько Reforge — решение игрока: как он ляжет, не угадать, после него вещь
 // вводят заново (решение владельца 2026-10-01).
-import { EPIC_NAME, isArmor, SLOT } from '@/game/data';
+import { isArmor, SLOT } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import { buildsOf, combosWith } from '@/game/build/builds';
 import type { Ctx } from '@/game/context';
@@ -29,8 +29,10 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       return out;
     }
     case 'temp':
-      // Epic оружие и аксессуар — ступени из разбора: любой Steel Sword (Steel Necklace) с любым main (.x/0060 SPEC 4.3)
-      return [P.enhance, epic && !armor ? P.btTempEpic(EPIC_NAME[s.slot as GearKind]) : P.tempNoInvest];
+      // a stopgap weapon or accessory (Epic too) gets no Breakthrough: their copies are dismantled (owner 2026-10-09,
+      // was .x/0060 SPEC 4.3 «ступени из разбора»). A stopgap armor piece may take it: T4 counts toward the set bonus
+      // (owner Q1, 2026-10-09)
+      return [P.enhance, armor ? P.tempArmor : P.tempNoInvest];
     case 'fodder':
       if (set) return [P.fodderArmor(piece, set.short)];
       return item ? [P.fodderGear(item.name)] : [];

@@ -1,7 +1,7 @@
-// «Вещи Caren · N» (GEARPOOL): что это за вещи и что убирать разобранное. rev 2 — «Оценка — единственный ввод»: пул по
-// слотам, «Убрать» — в шторке вещи
+// Вкладка «Пул»: все вещи героя и зачем каждая; «больше не нужна» — разобрать в игре и убрать здесь. rev 3 — stat-sets
+// этап 6: причины вместо билдов
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'pool', rev: 2, at: 'pool', when: (c) => c.s.tab === 'chars' },
+  { id: 'pool', rev: 3, at: 'pool', when: (c) => c.s.tab === 'chars' },
 );

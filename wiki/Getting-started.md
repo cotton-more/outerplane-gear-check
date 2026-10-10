@@ -41,7 +41,7 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 Everything that isn't the form and the verdict is in one sheet, **More**: ☰ on the bottom bar on a phone, "⋯" next to the
 tabs on a computer. From top to bottom: on a phone, "Characters", "To dress · N" and "Team trade"; a line "A new
 version is ready · Update" or "Install as an app" when there is one; "Enter code", "Help", "Tutorial"; **Settings** —
-"only my characters", "Evaluation" (Progression / Endgame, fodder, level and Quirks; the row shows the current ones),
+"only my characters", "Evaluation" (Progression / Endgame, level and Quirks; the row shows the current ones),
 language and icons (from the game or own outlines; without a choice — from the game); **Data** — "Backup" (the roster
 and gear in one code, see [Characters and guild code](Characters-and-guild-code#backup)) and "About" (where the data
 comes from, game version, snapshot date, how many characters and builds, the app build, "Licenses (MIT)"). At the
@@ -56,10 +56,12 @@ There is no footer under the page.
 3. **Enter the piece:**
    - the slot (row of icons) and grade: `L` — Legendary (Etheric), `E` — Epic (Steel);
    - **armor** — the set, it's in the name after "of" (`Etheric Gloves of Speed` → Speed Set);
-     **Legendary weapon and accessory** — find the item and mark the main stat; **Epic weapon and accessory** — just the main stat;
+     **Legendary weapon and accessory** — find the item and mark the main stat (the list is alphabetical; when the search leaves
+     one item, it lights up and gets picked by itself; brand new and not listed yet — "not listed"); **Epic weapon and accessory** — just the main stat;
      a piece already at Breakthrough T4 — tap **"T4"** next to the set or item (a fresh drop is T0, leave it off);
-   - **main stat** on a weapon — the ATK% / DEF% / HP% buttons next to the grade; on an accessory — the first tap in the
-     grid: until the main is chosen, the grid picks it (in the game it's on top of the piece), then the substats. Grey —
+   - **main stat** on a weapon or accessory — the first tap in the grid: until the main is chosen, the grid picks it (in
+     the game it's on top of the piece; a weapon: ATK%, DEF% or HP%), then the substats. Tap the "main" cell to remove
+     it and pick another. Grey —
      no one needs that main;
    - **substats** — tap them in the grid in order, as in the game; each tap opens a window with buttons 1–6 — pick how
      many segments are lit in the game (a fresh drop has up to 4). Tap outside the window and the stat isn't added;
@@ -76,7 +78,7 @@ There is no footer under the page.
 <table>
 <tr>
 <td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/1-grid.png" alt="Attack Set picked: the stats it needs are highlighted"></td>
-<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/2-verdict.png" alt="Keep verdict: whom to equip it on and how many points it adds"></td>
 </tr>
 <tr>
 <td>Pick the set — the stats it needs light up.</td>

@@ -10,7 +10,7 @@ works in the browser, installs on a phone as an app, works offline. English and 
 <table>
 <tr>
 <td width="50%"><img src="screenshots/en/1-grid.png" alt="Attack Set picked: the stats it needs are highlighted"></td>
-<td width="50%"><img src="screenshots/en/2-verdict.png" alt="Keep verdict: who it suits and who it starts"></td>
+<td width="50%"><img src="screenshots/en/2-verdict.png" alt="Keep verdict: whom to equip it on and how many points it adds"></td>
 </tr>
 <tr>
 <td>Pick the set — the stats it needs light up. 0–1 bright stats on the piece? Dismantle without entering anything.</td>
@@ -53,4 +53,4 @@ outerpedia's authors; the tool is not affiliated with VA Games or with outerpedi
 and the flat/% formula come from [outerpedia](https://github.com/Sevih/outerpedia) under the MIT license; the page
 also bundles React (MIT) and Tabler Icons (MIT). Full license texts: the app's "More" → "About" → "Licenses (MIT)" and [`src/app/shell/licenses.ts`](src/app/shell/licenses.ts).
 
-Development notes (in Russian): [DEVELOPMENT.md](DEVELOPMENT.md).
+Development notes: [DEVELOPMENT.md](DEVELOPMENT.md).

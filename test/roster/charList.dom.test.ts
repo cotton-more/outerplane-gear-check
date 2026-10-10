@@ -19,7 +19,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, lit: Record<string, number>): Pc =>
   ({ id, slot, grade: 'unique', setId: speed, itemKey: null, main: null, yellow: lit, lit, bt: null, at: '' });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 2, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
 
 beforeAll(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -66,6 +66,8 @@ const type = async (el: HTMLInputElement, v: string) => {
 };
 const names = () => $$('#cgrid .ctile').map((e) => e.getAttribute('title')?.split(' — ')[0]);
 const mode = () => $('.cmode [aria-pressed="true"]')?.textContent;
+// «Все» — ничего не нажато: нажатый режим нажать ещё раз
+const pick = async (m: string) => (m === 'All' ? (mode() ? click(byText('.cmode button', mode()!)) : undefined) : click(byText('.cmode button', m)));
 const saved = () => JSON.parse(localStorage.getItem('ogc.state')!);
 
 describe('режимы списка на странице', () => {
@@ -76,8 +78,8 @@ describe('режимы списка на странице', () => {
     expect($$('#cgrid .ctile').map((e) => e.classList.contains('nob'))).toEqual([true, false]);
   });
 
-  // 2. «Все» — без билдов только поиском
-  it('2. «All»: герой без билдов не виден; поиск по его имени — виден', async () => {
+  // 2. ничего не нажато — все с билдами, без билдов только поиском
+  it('2. ничего не нажато: герой без билдов не виден; поиск по его имени — виден', async () => {
     await mount({ roster: [caren.id], state: { tab: 'chars', cOwned: false } });
     expect(names()).not.toContain('Adelie');
     await type($('#char-q') as HTMLInputElement, 'adelie');
@@ -102,32 +104,34 @@ describe('режимы списка на странице', () => {
     expect(names().length).toBe(D.chars.filter((c) => c.builds.length).length);
   });
 
-  it('6. пустой ростер, сохранено «Mine» → режим «All»; первая звёздочка режим не меняет', async () => {
+  it('6. пустой ростер, сохранено «Mine» → ничего не нажато; первая звёздочка режим не меняет', async () => {
     await mount({ roster: [], state: { tab: 'chars', cOwned: true } });
     const all = names().length;
     expect(saved().cOwned).toBe(false); // «Все» записано: после первой звёздочки список не схлопывается
     await click($('#cgrid .star'));
-    expect(mode()).toContain('All');
+    expect(mode()).toBeUndefined(); // ничего не нажато
     expect(names().length).toBe(all);
   });
 
   it('7. «Mine N» = размер ростера; «To dress N» = число из меню «To dress · N»', async () => {
     await mount({ roster: [caren.id, kappa.id], state: { tab: 'chars', cOwned: true } });
-    expect($$('.cmode button').map((b) => b.textContent)).toEqual(['★ Mine 2', 'To dress 2', 'All']);
+    expect($$('.cmode button').map((b) => b.textContent)).toEqual(['★ Mine 2', 'To dress 2']);
     await click($('.vb-tab')); // ← Оценка
     await click($('.vb-tab')); // ☰
     expect(byText('.more-nav button', 'To dress · 2')).toBeTruthy();
   });
 
-  // 8. «Мои» и «Все» запоминаются, «Доодеть» — нет
-  it('8. «Mine» и «All» переживают перезапуск; «To dress» после него — «Mine»', async () => {
+  // 8. «Мои» и «ничего не нажато» запоминаются, «Доодеть» — нет
+  it('8. «Mine» и «ничего не нажато» переживают перезапуск; «To dress» после него — «Mine»', async () => {
     await mount({ roster: [caren.id, kappa.id], state: { tab: 'chars', cOwned: false } });
+    expect(mode()).toBeUndefined();
     await click(byText('.cmode button', 'Mine'));
     await restart();
     expect(mode()).toContain('Mine');
-    await click(byText('.cmode button', 'All'));
+    await click(byText('.cmode button', 'Mine')); // повторное нажатие снимает выбор
+    expect(mode()).toBeUndefined();
     await restart();
-    expect(mode()).toBe('All');
+    expect(mode()).toBeUndefined();
     await click(byText('.cmode button', 'To dress'));
     expect(mode()).toContain('To dress');
     await restart();
@@ -154,7 +158,7 @@ describe('панель над сеткой (SPEC 4)', () => {
     await mount({ roster: [caren.id, kappa.id], gear: GEAR, state: { tab: 'chars', cOwned: true } });
     expect(rows()).toHaveLength(2);
     expect([...bar().querySelectorAll('.cbar-row')[0].children].map((e) => e.id || e.className)).toEqual(['char-q', 'char-filter']);
-    expect($$('.cmode button').map((b) => b.textContent)).toEqual(['★ Mine 2', 'To dress 2', 'All']);
+    expect($$('.cmode button').map((b) => b.textContent)).toEqual(['★ Mine 2', 'To dress 2']);
     expect($('.cbar-trade')?.textContent).toBe('Trade');
     expect($('.cbar-trade')?.closest('.cbar-row')).toBe($('.cmode')?.closest('.cbar-row'));
   });
@@ -192,17 +196,17 @@ describe('панель над сеткой (SPEC 4)', () => {
     expect(byText('.cbar-chip', 'Healer')?.getAttribute('aria-label')).toBe('Healer — clear filter');
   });
 
-  it('4. стихия и класс сужают список в «Mine», «To dress» и «All»', async () => {
+  it('4. стихия и класс сужают список в «Mine», «To dress» и без режима', async () => {
     const rosterIds = D.chars.filter((c) => c.builds.length).slice(0, 30).map((c) => c.id);
     const el = D.chars.find((c) => c.id === rosterIds[0])!.element;
     await mount({ roster: rosterIds, state: { tab: 'chars', cOwned: true } });
     const all = new Map<string, number>();
-    for (const m of ['Mine', 'To dress', 'All']) { await click(byText('.cmode button', m)); all.set(m, names().length); }
+    for (const m of ['Mine', 'To dress', 'All']) { await pick(m); all.set(m, names().length); }
     await click($('#char-filter'));
     await click(filterBtn(el.charAt(0).toUpperCase() + el.slice(1)));
     await click($('.drawer-x'));
     for (const m of ['Mine', 'To dress', 'All']) {
-      await click(byText('.cmode button', m));
+      await pick(m);
       const shown = $$('#cgrid .ctile');
       expect(shown.length).toBeGreaterThan(0);
       expect(shown.length).toBeLessThan(all.get(m)!);
@@ -257,5 +261,29 @@ describe('панель над сеткой (SPEC 4)', () => {
   it('при выбранном фильтре над сеткой не больше двух строк управления и строка чипов', async () => {
     await mount({ roster: [caren.id], state: { tab: 'chars', cel: 'water' } });
     expect($$('.cbar > *').map((e) => e.className)).toEqual(['cbar-row', 'cbar-row', 'cbar-chips']);
+  });
+});
+
+describe('В4 ревью этапа 10: звезда с героя без вещей снимает закрепление', () => {
+  it('сообщение «Caren: … unpinned.» с «Undo» — звезда и закрепление снова на месте', async () => {
+    const { pinOptions } = await import('@/game/build/profile');
+    const key = pinOptions(caren)[0].key;
+    await mount({ gear: G([], {}, { pin: { [caren.id]: key } }), state: { tab: 'chars', cOwned: false } });
+    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
+    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('ogc.gear') ?? '{}').pin).toBeUndefined();
+    expect($('.gear-toast span')?.textContent).toMatch(/^Caren: .+ unpinned\.$/);
+    await click($$('.gear-toast button').find((b) => b.textContent === 'Undo'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id]);
+    expect(JSON.parse(localStorage.getItem('ogc.gear')!).pin).toEqual({ [caren.id]: key });
+  });
+
+  it('без закрепления — как раньше: без сообщения', async () => {
+    await mount({ state: { tab: 'chars', cOwned: false } });
+    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
+    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]);
+    expect($('.gear-toast')).toBeNull();
   });
 });

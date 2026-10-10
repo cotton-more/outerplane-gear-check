@@ -1,6 +1,7 @@
 // Русские тексты: вердикты (logic/) и интерфейс (components/). en.ts — тот же набор ключей (тип Texts):
 // TypeScript не даст пропустить перевод. **так** — жирным (shared/ui/Rich.tsx).
-import type { GearKind } from '@/game/data/types';
+import { GRADE_NAME } from '@/game/data';
+import type { GearKind, Grade } from '@/game/data/types';
 import type { StepText } from '@/tour/types';
 
 const plural = (n: number, one: string, few: string, many: string): string => {
@@ -21,32 +22,17 @@ const prep = (k: GearKind) => NOUN[k][2];
 const Gear = (k: GearKind) => (k === 'weapon' ? 'Оружие' : 'Аксессуар');
 // дробь для среднего: одна цифра после запятой, без «,0»
 const dec = (x: number) => String(Math.round(x * 10) / 10).replace('.', ',');
-// «сегмент» к числу dec: 1 сегмент, 2–4 сегмента, 5+ сегментов; дробное — «1,5 сегмента»
-const segWord = (x: number) => {
-  const r = Math.round(x * 10) / 10;
-  return Number.isInteger(r) ? plural(r, 'сегмент', 'сегмента', 'сегментов') : 'сегмента';
-};
-// то же после «около» — родительный: около 1 сегмента, 4 сегментов, 21 сегмента; дробное — «1,5 сегмента»
-const segWordGen = (x: number) => {
-  const r = Math.round(x * 10) / 10;
-  return Number.isInteger(r) ? plural(r, 'сегмента', 'сегментов', 'сегментов') : 'сегмента';
-};
 // слот в нужной форме (GEARPOOL): шлем — м. р., броня — ж. р., оружие — ср. р., перчатки и ботинки — мн. ч.
 type G = 'm' | 'f' | 'n' | 'p';
 const GENUS: Record<string, G> = { weapon: 'n', accessory: 'm', helmet: 'm', armor: 'f', gloves: 'p', shoes: 'p' };
 const by = (slot: string, m: string, f: string, n: string, p: string) => ({ m, f, n, p })[GENUS[slot] ?? 'm'];
 const NOM: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' };
 const GEN: Record<string, string> = { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' };
-const ACC: Record<string, string> = { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const inBr = (s?: string) => (s ? ` (${s})` : '');
 // «A и B», «A, B и C»
 const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} и ${xs[xs.length - 1]}` : xs.join(''));
 // вещь по имени: броня — «Speed-ботинки», оружие и аксессуар — «Оружие Caracal»
 const named = (slot: string, what: string) => (slot === 'weapon' || slot === 'accessory' ? `${cap(NOM[slot])} ${what}` : `${what}-${NOM[slot]}`);
-// «в броню, перчатки или ботинки»
-const inSlots = (slots: string[]) => (slots.length ? 'в ' + (slots.length > 1 ? `${slots.slice(0, -1).map((x) => ACC[x]).join(', ')} или ${ACC[slots[slots.length - 1]]}` : ACC[slots[0]]) : '');
-const orSlots = (slots: string[]) => (slots.length > 1 ? `${slots.slice(0, -1).map((x) => ACC[x]).join(', ')} или ${ACC[slots[slots.length - 1]]}` : ACC[slots[0]] ?? '');
 
 export const ru = {
   // общее для вердиктов и интерфейса
@@ -79,8 +65,7 @@ export const ru = {
       `**Breakthrough** до T4 — обязательно: к T4 усиливается пассивка, и +20% к main stat. Материал — копии ${name} (годятся и с другим main stat) или Refined Glunite.`,
     noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.',
     tempNoInvest: '**Breakthrough** — не вкладывай: вещь на замену, её сменит нужная.',
-    // Epic оружие и аксессуар «Временно» (.x/0060 SPEC 4.3): name — Steel Sword или Steel Necklace
-    btTempEpic: (name: string) => `**Breakthrough** — только вещами из разбора: любой ${name} с любым main — ступень. Glunite не трать: вещь на замену.`,
+    tempArmor: '**Breakthrough** — можно: T4 засчитывается в бонус сета.',
     fodderArmor: (piece: string, set: string) =>
       `**Не прокачивай** — это материал: одна вещь — одна ступень Breakthrough для Legendary ${piece} ${set} Set, которую оставляешь. Исключение — если перебросишь ей сабстаты Transistone (Total).`,
     fodderGear: (name: string) =>
@@ -129,16 +114,11 @@ export const ru = {
       `Все ${n} сабстата полезны для ${who}, но это нижние ступени приоритета: главного (${top.join(', ')}) нет, сегментов — ${yellow} из ${max}. Вкладываться в такой Epic невыгодно: Transistone на Epic не тратят (гайд outerpedia), а в Breakthrough для Legendary он не годится.`,
     weakEpicKeepIf: (top: string[], yellow: number) => `Оставить стоило бы с ${top.join(' или ')} либо с ${yellow}+ сегментами на полезных статах.`,
     wrongSubs: (set: string) => `Носят ${set} Set, но сабстаты не те`,
-    fodderTitle: 'Фоддер — сабстаты не дотянули',
-    fodderBest: (who: string, good: string, list: string) => `Лучший вариант: ${who}, полезны только ${good}: ${list}.`,
     noneNeeded: (set: string) => `Ни один сабстат не нужен билдам с ${set} Set.`,
-    fodderWhy: (piece: string, set: string) =>
-      `Для Breakthrough и реролла Transistone (Total) сабстаты не важны — годится любой Legendary ${piece} ${set} Set. Держи не больше 4 на сет и слот: столько нужно, чтобы довести один предмет до T4.`,
     junkPartialTitle: 'Разбирай — даже с последним сабстатом не вытянет',
     junkTitle: 'Разбирай — сабстаты мимо',
     junkBest: (who: string, good: string, list: string) => `Даже лучшему варианту (${who}) полезны только ${good}: ${list}.`,
     epicTwo: 'Для Epic двух полезных мало, если это не два главных стата с хорошим роллом: Transistone на Epic не тратят, а в Breakthrough для Legendary он не годится.',
-    enableFodder: (set: string) => `Копишь фоддер для T4 ${set} Set? Включи это в «Настройках оценки» — такие предметы станут «Фоддер».`,
     checkSpd: (roll: number) => `Проверь SPD: если у него ${roll}+ сегмента — отметь, это уже «Оставить».`,
     maybeTitle: 'Твоим не подходит, но предмет хороший',
     maybeOthers: (names: string) => `Для персонажей не из ростера это «Оставить»: ${names}. Если планируешь их качать — не разбирай.`,
@@ -209,11 +189,122 @@ export const ru = {
     othersMain: (names: string) => `С этим main stat его берут персонажи не из ростера: ${names}.`,
   },
 
+  // --- вердикт по «статам + сетам» (stat-sets TEXTS.md, согласовано 2026-10-06): штамп — про оцениваемую вещь, причина —
+  // раньше имени (на 280px длинное имя режется, а не причина). pts — очки формулы («2,5»), part — «Speed ×2»
+  fit: {
+    pts: (x: number) => dec(x),
+    // вещь во фразе: «Speed-ботинки»
+    piece: (set: string, slot: string) => `${set}-${NOM[slot]}`,
+    wearEmpty: (name: string) => `Оставляй — надень на ${name}`,
+    wearBetter: (name: string) => `Оставляй — лучше, чем на ${name}`,
+    tempEmpty: (name: string) => `Временно — надень на ${name}, пока нет лучше`,
+    tempBetter: (name: string) => `Временно — лучше, чем на ${name}, пока нет лучше`,
+    gain: (name: string, pts: string) => `${name} станет сильнее на ${pts} очк.`,
+    parts: (on: string[], off: string[]) => [on.length ? `включится: ${on.join(', ')}` : '', off.length ? `выключится: ${off.join(', ')}` : ''].filter(Boolean).join(' · '),
+    alsoWear: (name: string, pieces: string[]) => `Вместе с ней надень из вещей ${name}: ${pieces.join(', ')}.`,
+    keepBest: (set: string, slot: string, name: string, temp = false) => `${temp ? 'Временно' : 'Оставляй'} — ${by(slot, 'лучший', 'лучшая', 'лучшее', 'лучшие')} ${set}-${NOM[slot]} у ${name}`,
+    keepWait: (name: string, set: string) => `Пока не надевай: держи для ${name} — подойдёт, когда соберётся ${set}.`,
+    keepT4: (part: string) => `Сделай Breakthrough до T4 — без него ${part} не включится.`,
+    keepStats: (name: string, temp = false) => `${temp ? 'Временно' : 'Оставляй'} — по статам сильнее всего у ${name}`,
+    keepStatsWhy: (set: string, name: string) => `${set} не из билдов ${name}, но в этом слоте ничего сильнее нет.`,
+    btNow: (slot: string, name: string) => `Фоддер — Breakthrough для ${GEN[slot]} ${name}`,
+    btNowWhy: (slot: string, name: string) => `Сделай сейчас: ${NOM[slot]} ${name} ещё не на T4. Одна вещь — одна ступень.`,
+    // a T4 piece as feed lifts the target straight to T4 (owner 2026-10-09)
+    btNowT4: (slot: string, name: string) => `Сделай сейчас: эта на T4 — ${NOM[slot]} ${name} сразу ${by(slot, 'станет', 'станет', 'станет', 'станут')} T4.`,
+    reserve: (set: string, slot: string, name: string) => `Фоддер — запас для ${set}-${GEN[slot]} ${name}`,
+    reserveWhy: (name: string, set: string, slot: string) =>
+      `У ${name} начат ${set}, а ${set}-${GEN[slot]} нет. ${by(slot, 'Придёт сильный — этот пойдёт ему', 'Придёт сильная — эта пойдёт ей', 'Придёт сильное — это пойдёт ему', 'Придут сильные — эти пойдут им')} в Breakthrough.`,
+    // Legendary reserve while the hero holds a good Epic of that set and slot (owner, 2026-10-07)
+    reserveOverEpic: (name: string, set: string, slot: string) =>
+      `У ${name} ${set}-${NOM[slot]} — Epic. ${by(slot,
+        'Держи, пока не найдёшь годный Legendary: наденешь тот, а этот пустишь ему',
+        'Держи, пока не найдёшь годную Legendary: наденешь ту, а эту пустишь ей',
+        'Держи, пока не найдёшь годное Legendary: наденешь то, а это пустишь ему',
+        'Держи, пока не найдёшь годные Legendary: наденешь те, а эти пустишь им')} в Breakthrough.`,
+    reserveItem: (item: string, name: string) => `Фоддер — запас для ${item} ${name}`,
+    reserveItemWhy: (name: string, item: string, mains: string) => `Билды ${name} просят ${item} с ${mains}, а у ${name} его нет. Придёт такой — эта пойдёт ему в Breakthrough.`,
+    feed: (set: string, slot: string, name: string) => `${by(slot, 'Слабый', 'Слабая', 'Слабое', 'Слабые')} ${set}-${NOM[slot]} из запаса ${name} — в Breakthrough этой.`,
+    feedItem: (item: string, name: string) => `Слабый ${item} из запаса ${name} — в Breakthrough этой.`,
+    feedMany: (n: number, names: string[]) => `В Breakthrough этой — ${n} из запаса ${andList(names)} (любые из отложенных).`,
+    quietBetter: (name: string, pts: string, stats: string[]) => `На ${name} сейчас хуже (+${pts} очк.), но и эта слабая — годная будет с ${andList(stats)}.`,
+    quietEmpty: (name: string, slot: string, stats: string[]) => `У ${name} нет ${GEN[slot]} — эта слабая, годная будет с ${andList(stats)}.`,
+    junkBy: (names: string[]) => `Разбирай — уже не хуже у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
+    // чип героя в «Сейчас на персонажах» и на карточке
+    chipGain: (pts: string) => `+${pts} очк.`,
+    chipKeep: 'держи',
+    chipRank: (slot: string) => by(slot, 'рекомендованный', 'рекомендованная', 'рекомендованное', 'рекомендованные'),
+    // «Надень» по рангу: пассивка важнее сабстатов (MODEL.md §3 item 3)
+    rankUp: (name: string) => `Этот предмет рекомендуют билды ${name}, надетый — нет: пассивка важнее сабстатов.`,
+    // «Кому надеть?»: строка героя (pts null — прироста нет: герой найден по имени)
+    rowEquip: (pts: string | null) => (pts ? `Надеть — +${pts} очк.` : 'Надеть'),
+    rowReplace: (slot: string, pts: string | null) => (pts ? `Заменить ${slot} — +${pts} очк.` : `Заменить ${slot}`),
+    rowOn: (part: string) => ` · включит ${part}`,
+    rowNote: 'Здесь — кому вещь сейчас даст больше всего. Другого героя найди по имени: «Надеть» запишет её на нём.',
+    // тост после «Надеть»: лишнее в пуле убрано (PLAN Д7)
+    pruned: (name: string) => `Лишнее убрано — ${name} это больше не нужно.`,
+    // another hero's reserve went to Breakthrough of the equipped piece (feed line «из запаса Aer»): its record is removed
+    fed: (slot: string, what: string, name: string, armor: boolean) => (armor
+      ? `${by(slot, 'Слабый', 'Слабая', 'Слабое', 'Слабые')} ${what}-${NOM[slot]} из запаса ${name} — в Breakthrough: ${by(slot, 'убран', 'убрана', 'убрано', 'убраны')}.`
+      : `Слабый ${what} из запаса ${name} — в Breakthrough: убран.`),
+    fedMany: (n: number, names: string[]) => `Из запаса ${andList(names)} — в Breakthrough: убрано ${n}.`,
+    // почему пул держит вещь (список вещей героя)
+    why: { worn: 'надета', best: (set: string) => `лучший ${set}`, bestT4: (set: string) => `лучший ${set} на T4`, stats: 'по статам', reserve: 'в запасе' },
+    unneeded: 'больше не нужна',
+    // «Отложить для X» (решение владельца 2026-10-06): вещь в пул героя без отметки «надета»
+    stash: (name: string) => `Отложить для ${name}`,
+    stashed: (name: string, slot: string) => `Отложено для ${name}: ${NOM[slot]}.`,
+    chipReserve: 'запас',
+    date: (at: string) => (at ? `${at.slice(8, 10)}.${at.slice(5, 7)}` : ''),
+    // отложенная вещь, которую называет вердикт: как найти её в игре
+    stashedOne: (slot: string, piece: string, subs: string, date: string) =>
+      `Это ${piece} · ${subs}, ${by(slot, 'отложен', 'отложена', 'отложено', 'отложены')}${date ? ' ' + date : ''}.`,
+    // похоже, оценивают ту же отложенную вещь ещё раз
+    same: (slot: string, piece: string, name: string, date: string) =>
+      `Похоже, это ${piece}, ${by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные')} для ${name}${date ? ' ' + date : ''}. Если это ${by(slot, 'он', 'она', 'оно', 'они')} — ничего не делай.`,
+    // the piece only looks like a set-aside one: it's a second copy — offers come back (owner, 2026-10-07)
+    twin: (slot: string) => by(slot, 'Это другой', 'Это другая', 'Это другое', 'Это другие'),
+  },
+
+  // карточка героя (stat-sets TEXTS §3, §9): вкладки, «Переодеть», «Что искать», закрепление набора
+  card: {
+    tabs: 'Карточка героя',
+    tabWorn: 'Надето',
+    tabPool: 'Пул',
+    tabBuilds: 'Билды',
+    redress: (pts: string) => `Переодеть: +${pts} очк.`,
+    redressRank: 'Переодеть: пассивка лучше',
+    redressPlain: 'Переодеть',
+    redressTitle: (name: string) => `${name}: из своих вещей`,
+    instead: (piece: string) => `вместо ${piece}`,
+    // «вместо Speed-перчаток»: броня — сет и слот в родительном, оружие и аксессуар — имя
+    insteadPiece: (set: string, slot: string) => `${set}-${GEN[slot]}`,
+    seekTitle: 'Что искать',
+    // «Speed ×4: 2 из 4 — нужны шлем, ботинки»; в наборе из двух сетов — с сетом: «нужна Swiftness-броня»
+    seek: (combo: string, k: number, n: number, need: { slot: string; set: string | null }[]) => {
+      const one = need.length === 1 ? need[0].slot : '';
+      const verb = one ? by(one, 'нужен', 'нужна', 'нужно', 'нужны') : 'нужны';
+      return `${combo}: ${k} из ${n} — ${verb} ${need.map((x) => (x.set ? `${x.set}-${NOM[x.slot]}` : NOM[x.slot])).join(', ')}`;
+    },
+    pin: 'Закрепить набор',
+    pinTitle: (name: string) => `Набор для ${name}`,
+    pinNone: 'По статам — не закреплять',
+    pinWarn: (name: string) => `Броню других сетов ${name} не беру, даже с хорошими статами. Снять — «По статам».`,
+    pinned: (combo: string) => `Закреплено: ${combo}`,
+    pinnedAria: (combo: string) => `Закреплено: ${combo} — изменить`,
+    unpinned: (name: string, combo: string) => `${name}: закрепление ${combo} снято.`,
+    pinGone: (name: string, combo: string) => `${name}: набор ${combo} пропал из outerpedia — закрепление снято.`,
+    pinGo: 'Закрепить',
+    pinFill: (k: number, n: number) => `${k} из ${n}`,
+  },
+
   // --- интерфейс
   ui: {
     noData: 'Нет данных. Собери страницу:',
     close: 'Закрыть',
     gotIt: 'Понятно',
+    // перенос на новую модель (stat-sets TEXTS 41), один раз
+    modelNote: 'Оценка обновилась: билд для героя больше не выбирается — статы и сеты из билдов outerpedia считаются вместе. Нужен конкретный набор — закрепи его в карточке героя.',
+    modelNoteMarks: 'Отметки «Собираю / Не собираю» и «Не отдавать надетое» в новой оценке не нужны — они сброшены.',
     copy: 'Скопировать',
     copied: 'Скопировано',
     // шапка и вкладки
@@ -276,14 +367,12 @@ export const ru = {
     fourthSheet: 'Какой 4-й сабстат?',
     levelSheet: (k: string) => `${k} — сколько сегментов?`, // окно уровня после нажатия в сетке
     // настройки оценки
-    settingsNow: (end: boolean, fodder: boolean, lv120: boolean, quirks: boolean) =>
-      [end ? 'эндгейм' : 'развитие', fodder ? 'коплю фоддер' : 'без фоддера брони', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'без Quirks'],
+    settingsNow: (end: boolean, lv120: boolean, quirks: boolean) =>
+      [end ? 'эндгейм' : 'развитие', lv120 ? 'lv 120' : 'lv 100', quirks ? 'Quirks' : 'без Quirks'],
     stageGroup: 'Этап аккаунта',
     stage: 'Этап:',
     stageGrow: 'Развитие — держу временные замены',
     stageEnd: 'Эндгейм — только рекомендованное',
-    fodder: 'коплю Legendary броню для Breakthrough',
-    fodderNote: '(не дотянувшие по сабстатам станут «Фоддер», а не «Разобрать»)',
     levelGroup: 'Уровень персонажей',
     level: 'Уровень персонажей:',
     quirks: 'Quirks прокачаны',
@@ -315,34 +404,13 @@ export const ru = {
     segAfter: '5–6 — после Reforge',
     segCap: (max: number) => `Больше ${max} сегментов на вещи не бывает — проверь сабстаты.`,
     subRemove: (k: string) => `Убрать ${k}`,
-    chainTail: (k: string) => `${k} есть на вещи, но в приоритете дальше четвёртого места — в счёт не идёт`,
-    // экипировка: что надето в билдах (features/gear/model/gear, features/gear/model/vs; features/gear/ui/VsSection, EquipSheet, chars/BuildGear)
+    chainTail: (k: string) => `${k} есть на вещи, но дальше четвёртого места — для порога «годная» не считается, очки за него идут`,
+    // экипировка: слоты и надетое (features/gear/model/gear, features/gear/model/vs; features/gear/ui/VsSection, EquipSheet, features/worn)
     slotNames: { weapon: 'Оружие', accessory: 'Аксессуар', helmet: 'Шлем', armor: 'Броня', gloves: 'Перчатки', shoes: 'Ботинки' } as Record<string, string>,
     slotAcc: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
     slotNom: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
     vsTitle: 'Сейчас на персонажах',
-    vsNow: 'сейчас',
-    vsNew: 'новая',
     vsWorn: (grade: string, bt: number | null) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : bt === 0 ? 'T0–T3' : 'T' + bt}`,
-    vsKind: { fill: 'пустой слот', eq: 'на уровне', capped: 'на уровне', breaks: 'ломает сет', completes: 'соберёт', stats: 'только статы', starts: 'начнёт', rec: 'рекомендованная', stopgap: 'временная', better: 'лучше' } as Record<string, string>,
-    vsSr: { up: 'лучше надетой: ', down: 'хуже надетой: ' } as Record<string, string>,
-    vsPlaces: (gained: { key: string; place: number }[], lost: { key: string; place: number }[]) =>
-      [...gained.map((x) => `+${x.key} (${x.place}-е)`), ...lost.map((x) => `−${x.key} (${x.place}-е)`)].join(' · '),
-    vsDelta: (pct: number) => `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${Math.abs(pct)}% полезных сегментов.`,
-    vsTimes: (n: number) => `Полезных сегментов в ${n} ${plural(n, 'раз', 'раза', 'раз')} больше.`,
-    vsEmpty: 'У надетой полезных нет: ни один её сабстат этому билду не засчитывается.',
-    vsAhead: (k: string, worn: number, next: number) => `На надетой больше сегментов: ${k} — ${dec(worn)} против ${dec(next)} у новой.`,
-    // оружие и аксессуар: решила пассивка, а не сегменты (features/gear/model/vs, Vs.why)
-    vsWhy: {
-      rec: 'Эта вещь — из рекомендованных билду, надетая — нет: пассивка важнее сабстатов.',
-      stopgap: 'Надета рекомендованная, а эта — временная: пассивка важнее сабстатов, менять не нужно.',
-    } as Record<string, string>,
-    vsBt: (bt: number) => `Сейчас надетая — на Breakthrough T${bt}: новой до T${bt} нужно ${bt} ${plural(bt, 'материал', 'материала', 'материалов')}.`,
-    vsMaterial: (bt: number) => `Та же вещь, что надета (T${bt}): эта — ступень её Breakthrough, T${bt} → T${bt + 1}.`,
-    vsMaterialBelow: 'Та же вещь, что надета (ниже T4): эта — ступень её Breakthrough.',
-    vsPassive: 'Другая пассивка: сравниваю только сабстаты, а какая пассивка лучше — решает билд.',
-    // Speed ×2 и Penetration ×2 дают бонус только на T4 (game/build/builds t4Only)
-    vsT4: (set: string, n: number, capped: boolean) => `${set} ×${n} даёт бонус только на T4: пока новая не на T4, бонуса не будет${capped ? ' — поэтому не выше «на уровне»' : ''}.`,
     equipTo: (name: string) => `Надеть на ${name}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,
     // режим героя: кнопка есть только чтобы записать надетое (вещь сама ему ничего не даёт)
@@ -354,82 +422,15 @@ export const ru = {
     equipSearch: 'Имя персонажа',
     equipNone: 'Ни одному билду она ничего не даст. Найди персонажа по имени — «Надеть» запишет её как надетую.',
     equipNoneQ: 'Никому с таким именем она ничего не даст.',
-    // «Кому надеть?» (GEARPOOL): строка на персонажа
-    equipRowCompletes: (build: string) => `Надеть — соберёт ${build}`,
-    equipRowCloser: (build: string, n: number, m: number) => `Надеть — ${build}: сет ${n} из ${m}`,
-    equipRowStarts: (builds: string) => `Надеть — начнёт ${builds}`,
-    equipRowEq: (build: string) => `Надеть — ${build}`,
-    // исходы вещи по пулу (features/gear/pool): чип, строки «Сейчас на персонажах» и карточки
-    vsCloser: (n: number, m: number) => `сет ${n} из ${m}`,
-    vsProgress: (build: string, n: number, m: number, set: string, k: number, of: number) => `${build}: будет ${n} из ${m} — ${set} ${k} из ${of}.`,
-    vsNeed: (set: string, slots: string[]) => `Ещё одна ${set} — ${inSlots(slots)} — соберёт его.`,
-    vsHalf: (part: string) => `Соберёт половину: ${part}.`,
-    vsStays: (set: string, slot: string, build: string) => `${set}-${NOM[slot]} ${by(slot, 'остаётся', 'остаётся', 'остаётся', 'остаются')} в ${build}.`,
-    vsShuffle: (slot: string, a: string, b: string) => `Переставит: ${NOM[slot]} — ${a} вместо ${b}.`,
-    vsSurplus: (part: string) => `Сверх ${part}: займёт пустой слот, сет не продвинет.`,
-    vsSafe: (build: string) => `${build} она не тронет.`,
-    vsBreaksBy: (set: string, slot: string, pct: number, part: string) => `Лучше ${set}-${GEN[slot]} на ${pct}%, но встанет только вместо ${by(slot, 'него', 'неё', 'него', 'них')} — ${part} распадётся.`,
-    vsBreaksFix: (set: string, t4: boolean, slots: string[]) => `Встанет, если найдёшь ещё ${set}-вещь${t4 ? ' на T4' : ''}: ${orSlots(slots)}.`,
-    // отметить одну: другая вещь сета уже на T4. subs — сабстаты вещи («DEF% 2, CHC 2»), когда в слоте их несколько (П6)
-    vsBreaksMarkOne: (set: string, slot: string, subs?: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[slot]}${inBr(subs)}.`,
-    vsBreaksMarkTwo: (set: string, a: string, b: string, subsA?: string, subsB?: string) => `Встанет, если отметить Breakthrough T4 у ${set}-${GEN[a]}${inBr(subsA)} и -${GEN[b]}${inBr(subsB)}.`,
-    // Breakthrough у вещей известен (0–3; любой сет — Р20 (б), Pen mix — П5): «сделать», не «отметить»
-    vsBreaksMakeOne: (set: string, slot: string, subs?: string) => `Встанет, если сделать Breakthrough T4 у ${set}-${GEN[slot]}${inBr(subs)}.`,
-    vsBreaksMakeTwo: (set: string, a: string, b: string, subsA?: string, subsB?: string) => `Встанет, если сделать Breakthrough T4 у ${set}-${GEN[a]}${inBr(subsA)} и -${GEN[b]}${inBr(subsB)}.`,
-    vsNoTrade: (set: string) => `Бонус ${set} в статах не выразить — ради статов его не ломаю.`,
-    vsNetGain: (part: string, segs: number, stat: string, slot: string) => `${part} распадётся (−${dec(segs)} ${segWord(segs)} ${stat}), но ${NOM[slot]} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} больше — в итоге выгоднее.`,
-    vsStatsOnly: (pct: number, slot: string, part: string) => `По статам лучше ${GEN[slot]} на ${pct}%, но сломает ${part} — не надевай.`,
-    // «только статы», а у надетой полезных нет: процента нет — одна строка вместо vsEmpty и vsStatsOnly
-    vsStatsEmpty: (slot: string, part: string) => `По статам лучше: у ${by(slot, 'надетого', 'надетой', 'надетого', 'надетых')} ${GEN[slot]} полезных нет. Но сломает ${part} — не надевай.`,
-    // bonus — текст сета из данных («Speed +13%»), segs — числом: запятую ставит dec
-    vsSetCost: (part: string, tier: string, bonus: string, segs: number, stat: string, slot: string) => `${part} на ${tier} — это ${bonus}, около ${dec(segs)} ${segWordGen(segs)} ${stat}. ${cap(NOM[slot])} ${by(slot, 'даёт', 'даёт', 'даёт', 'дают')} меньше.`,
-    vsBonusGain: (part: string, bonus: string) => `С ней: + ${part} — ${bonus}.`,
-    vsBonusLost: (part: string, tier: string, bonus: string) => `Пропадёт: ${part} (${tier}) — ${bonus}.`,
-    vsAlso: (builds: string, n: number) => `Пойдёт и в: ${builds} — ${n > 1 ? 'их' : 'его'} ты не собираешь.`,
-    vsStarts: (builds: string) => `Пойдёт и в: ${builds} — начнёт собираться.`,
-    vsMore: (list: string) => `Ещё: ${list}`,
     orOther: (name: string, build: string) => `или — ${name} · ${build} ▸`,
     // вторая кнопка заменяет вещь героя (Р7): slot — в винительном («шлем», «броню», «перчатки»)
     orReplace: (slot: string, name: string, build: string) => `или — заменить ${slot} ${name} · ${build} ▸`,
-    // тосты «Надеть» / «Заменить» / «Убрать»
-    countsIn: (builds: string) => `Идёт в ${builds}.`,
-    startedFilling: (build: string) => `Начал собирать ${build}.`,
     removedFrom: (name: string) => `Убрано у ${name}.`,
     // карточка персонажа (GEARPOOL)
     byStats: 'По статам',
-    // то же имя внутри фразы («Идёт в …», «в …») — в кавычках, как в остальных строках
-    byStatsQ: '«По статам»',
-    cdBest: (build: string, n: number, m: number) => `Лучше всего собран: ${build} · сет ${n} из ${m}`,
-    cdClosest: (build: string, n: number, m: number) => `Ближе всех к сборке: ${build} · сет ${n} из ${m}`,
-    cdAlso: (list: string) => `Собраны ещё: ${list}`,
-    cdStats: (name: string) => `По статам — ни один билд пока не начат: вещи разложены по цепочке ${name}.`,
-    slotOffSet: 'не из сетов билда',
-    slotAlsoIn: (builds: string) => `и в ${builds}`,
-    incidental: (name: string) => `этого сета нет в билдах ${name}, но бонус считается`,
     bonusRow: (set: string, n: number, tier: string, bonus: string) => `${set} ×${n} · ${tier} — ${bonus}`,
     markBt: ' · отметь Breakthrough',
-    partT4: (set: string, k: number, n: number) => `${set} — ${k} из ${n} · бонус ×2 только на T4`,
-    missing: (set: string, k: number, slots: string[], t4: boolean) => `Не хватает: ${set} — ещё ${k}, ${inSlots(slots)}${t4 ? ', на T4' : ''}.`,
-    missingStats: (set: string, build: string) => `Не хватает: вещи ${set} Set — первая же начнёт билд ${build}, а эти встанут в него статами.`,
-    poolTitle: (name: string, n: number) => `Вещи ${name} · ${n}`,
-    poolNotInRoster: (name: string, n: number) => `Вещи ${name} · ${n} — ${name} не в ростере.`,
-    poolIn: (builds: string) => `в ${builds}`,
-    poolEverywhere: 'во всех билдах',
-    poolUnused: (name: string) => `${name} больше не нужна: в билдах стоят лучше.`,
-    filling: 'Собираю',
-    fillingWhy: { done: '— собран', closest: '— ближе всех к сборке', prev: '— отмечен в прошлой версии', want: '', tryon: '', stats: '' } as Record<string, string>,
-    fillingHalf: (part: string) => `— готова ${part}`,
-    // часть собирается из пула (достижимая сборка), а показанная раскладка ради статов её не взяла (Р1)
-    fillingReach: (part: string, name: string) => `— ${part} собирается из вещей ${name}, но сейчас выгоднее без неё`,
-    fillingOff: 'не собираю — вещи для него не держат вердикт',
-    chipsMore: (n: number) => `ещё ${n} ▾`,
-    variantsTitle: (build: string, n: number) => `${build} · ${n} ${plural(n, 'связка', 'связки', 'связок')}`,
-    variantsNote: (set: string) => `Везде ${set} ×2, вторая половина — своя. Каждая связка собирается как отдельный билд.`,
-    variantsNoteAny: 'Каждая связка собирается как отдельный билд.',
-    dupOf: (build: string) => `= ${build}`,
-    autoNew: (build: string, name: string) => `${build} теперь собирается сам из вещей ${name}. Не собираешь его — выключи «Собираю».`,
     pieceRemoveNote: (name: string) => `Разобрал её, пустил на Breakthrough или она не нужна ${name} — убери: билды соберутся заново.`,
-    pieceNowhere: 'Ни в одном билде: в каждом стоит лучше.',
     gearNewerCode: 'Код сохранила более новая версия страницы — обнови страницу.',
     fusionGear: (base: string, fusion: string) => `Вещи ${base} перешли к ${fusion}.`,
     // Core Fusion X заменил X или X заменил Core Fusion X (features/gear/model/fusion): пометка в списке, строка карточки, окна перехода
@@ -455,86 +456,30 @@ export const ru = {
     rosterRemoveYes: 'Да, убрать',
     // тост после «Да, убрать»: только о герое — вещи, что есть у других, просто не используются здесь
     rosterRemoved: (name: string) => `${name} — не в ростере.`,
-    // строка окна «Кому надеть?»: что будет по нажатию
-    slotGen: { weapon: 'оружия', accessory: 'аксессуара', helmet: 'шлема', armor: 'брони', gloves: 'перчаток', shoes: 'ботинок' } as Record<string, string>,
-    equipRowFill: (build: string) => `Надеть — пустой слот · ${build}`,
-    equipRowReplace: (acc: string, build: string) => `Заменить ${acc} — новая лучше · ${build}`,
-    // «Надеть» заменит вещь её слота (poolVs replaces): подпись — действие
-    equipRowReplaceCompletes: (acc: string, build: string) => `Заменить ${acc} — соберёт ${build}`,
-    equipRowReplaceCloser: (acc: string, build: string, n: number, m: number) => `Заменить ${acc} — ${build}: сет ${n} из ${m}`,
-    equipRowReplaceStarts: (acc: string, builds: string) => `Заменить ${acc} — начнёт ${builds}`,
-    equipNote: 'Здесь — те, кому вещь встанет в билд. Не по билду — найди персонажа по имени: «Надеть» запишет её как надетую.',
     equipped: (name: string, slot: string, t4 = '') => `Надето на ${name}: ${NOM[slot]}${t4}.`,
     replaced: (name: string, slot: string, t4 = '') => `Заменено: ${NOM[slot]} ${name}${t4}.`,
     // убраны 2+ вещи её слота: olds — имя сета у брони, предмета у оружия и аксессуара
     replacedMany: (name: string, slot: string, olds: string[], t4 = '') => `Заменено: ${NOM[slot]} ${name}${t4} — убраны прежние: ${andList(olds)}.`,
-    // «Надеть» убрало и вещи других слотов — их вытеснила новая из всех билдов (В1): what — имя сета у брони, предмета
-    // у оружия и аксессуара
-    prunedNote: 'Лишнее убрано — не вошло ни в один билд.',
     // what — имя сета или предмета, когда убраны 2+ (replacedMany): вместо «Старые»
     oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
     // снята такая же Legendary (.x/0060 SPEC 4.5): не материал — может быть лучшей для другого героя
     oldEvaluate: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — сначала оцени ${by(slot, 'его', 'её', 'его', 'их')}: может подойти другому герою.`,
-    gearTitle: (n: number) => `Собрано · ${n} из 6`,
-    // вкладка «Надето» (шаг 6): «Билд — Speed · сет 3 из 4», блок слотов, совет «из своих»
-    tabWorn: 'Надето',
-    wornBuild: (build: string, k: number, n: number) => `Билд — **${build}** · сет ${k} из ${n}`,
-    wornBuildPlain: (build: string) => `Билд — **${build}**`,
-    wornChangeAria: (name: string) => `Сменить билд ${name}`,
     wornTitle: (k: number) => `Надето · ${k} из 6`,
+    wornPts: (pts: string) => `${pts} очк.`, // очки надетого: вещи + сеты
+    wornChain: 'Цепочка статов героя: сколько сегментов дают надетые вещи',
     wornEnter: 'Ввести',
     wornEmpty: (name: string) => `Отметь, что надето на ${name} сейчас в игре.`,
     wornAllAsk: (name: string, k: number) => `Вещи ${name} — ${k} шт., не больше одной на слот. Всё это сейчас надето?`,
     wornAllYes: 'Да, всё надето',
-    wornBetter: (piece: string, delta: string) => `Лучше из своих: ${piece}${delta ? ` ${delta}` : ''}`,
-    wornFrom: (piece: string) => `Из своих: ${piece}`,
     wornWear: 'Надеть',
     wornWearAria: (piece: string) => `Надеть ${piece}`,
     wornToast: (name: string, slot: string) => `Надето на ${name}: ${slot}`,
     wornAllToast: (name: string, n: number) => `Надето на ${name}: ${n} ${plural(n, 'вещь', 'вещи', 'вещей')}`,
-    // шторка «Билд для X», «Переодеть», «Билды героев» (шаг 7)
-    aimTitle: (name: string) => `Билд для ${name}`,
-    aimPartWorn: (part: string, k: number, n: number) => `${part} · надето ${k} из ${n}`,
-    aimPartHave: (part: string, k: number, n: number) => `${part} · в вещах ${k} из ${n}`,
-    aimPartMissing: (part: string, m: number) => `${part} — не хватает ${m}`,
-    aimNow: 'сейчас',
-    aimTab: (build: string) => `${build} — билд героя: под него он одет`,
-    aimCan: 'можно переодеть',
-    aimMissing: (m: number) => `не хватает ${m}`,
-    aimStatsLine: (name: string) => `лучшее по цепочке из вещей ${name}`,
-    aimRedress: (build: string) => `Переодеть в ${build} ▸`,
-    redressTitle: (name: string, build: string) => `${name} → ${build}`,
-    redressBack: (name: string) => `← ${name}`,
-    redressOn: (part: string) => `включится: ${part}`,
-    redressOff: (part: string) => `выключится: ${part}`,
-    redressWear: (n: number) => `Надень из своих · ${n}`,
     redressWearAll: (n: number) => `Надеть все ${n}`,
-    redressTake: (n: number) => `Снимешь · ${n}`,
-    redressFooter: 'Сделай то же в игре.',
-    aimsNotice: (n: number) => `Выбрал билды по твоим вещам у ${n} ${plural(n, 'героя', 'героев', 'героев')} — проверь.`,
-    aimsCheck: 'Проверить',
-    aimsTitle: 'Билды героев',
-    aimsOk: 'Всё верно',
-    aimToast: (name: string, build: string) => `Билд ${name}: ${build}`,
-    aimsSaved: 'Билды героев сохранены',
-    aimWhy: {
-      only: 'единственный',
-      want: '«Собираю»',
-      on: (part: string) => `${part} включён`,
-      more: (set: string) => `больше вещей ${set}`,
-      first: 'вещей билдов нет — первый',
-      tie: 'поровну — первый',
-      stats: 'билды выключены — По статам',
-    },
-    poolWorn: 'надета',
     // «Ещё» и список персонажей: кого доодеть (надето меньше 6 из 6)
     menuBare: (n: number) => `Доодеть · ${n}`,
     allDressed: 'Все одеты полностью — у каждого 6/6.',
     gearTile: (n: number) => `надето ${n} из 6`,
-    // «Слабее всех» — самая слабая вещь брони в билде и что искать ей на замену
-    weakest: (slot: string, grade: string, bt: number | null) => `Слабее всех — ${slot} (${grade}, Breakthrough ${bt === null ? 'не указан' : bt === 0 ? 'T0–T3' : 'T' + bt}).`,
-    weakestLook: (piece: string, stats: string[]) => `Ищи ${piece} с ${stats.join(' и ')}: «Примерить вещи» — и вердикт покажет, лучше ли она надетой.`,
-    weakestTry: 'Примерить вещи',
     pieceTitle: (slot: string, name: string) => `${slot} · ${name}`,
     btChip: 'T4',
     btAria: 'Вещь на Breakthrough T4',
@@ -564,7 +509,6 @@ export const ru = {
     linkCopied: 'Ссылка скопирована',
     shownStrip: 'Показ · только просмотр',
     shownNoHero: 'Этого героя нет в твоих данных — обнови страницу.',
-    shownLost: 'Билд отправителя не найден — выбран сам.',
     shownBroken: 'Ссылка повреждена — попроси прислать её ещё раз.',
     shownNewer: 'Ссылку сделала более новая версия — обнови страницу.',
     notInData: 'нет в твоих данных',
@@ -583,9 +527,7 @@ export const ru = {
     mainCell: (k: string) => `Main stat ${k} — нажми, чтобы убрать`,
     fixedMainCell: (k: string) => `${k} — main этого слота: сабстатом здесь не бывает`,
     usefulTitle: (k: string, credit: number) => `${k}${credit >= 1 ? ' — нужен билдам этого сета' : credit > 0 ? ' — нужен, но далеко в приоритете (за ½)' : ' — билдам этого сета не нужен'}`,
-    triageHint: (legend: boolean, fodder: boolean) => (legend
-      ? `Ярких статов на вещи 0–1 — ${fodder ? 'в фоддер, не прокачивай' : 'в разбор'}`
-      : 'Ярких статов на вещи 0–1 — сразу в разбор'),
+    triageHint: 'Ярких статов на вещи 0–1 — сразу в разбор',
     // код предмета
     codeForChat: 'Код для чата',
     codeSelected: 'Выделено — скопируй',
@@ -601,7 +543,7 @@ export const ru = {
     // вердикт
     verdictLabel: { keep: 'Оставить', temp: 'Временно', maybe: 'Спорно', fodder: 'Фоддер', junk: 'Разобрать', idle: '…' },
     verdict: 'Вердикт',
-    tierLegend: 'Цепочка — приоритет сабстатов билда, слева важнее. Зелёный — есть на предмете и засчитан, жёлтый — за ½, серый — есть, но далеко в цепочке (места с 5-го не считаются, кроме SPD) или это flat, который персонажу почти ничего не даёт, пунктир — нет на предмете. Flat и % — разные статы одного параметра: % засчитывается целиком, flat — по своей ценности для персонажа, но не выше %. С пометкой main — параметр есть в main предмета (растёт от Enhance, а не от Reforge); если сабстатом ещё бывает второй стат пары (flat ATK при main ATK%, EFF% при flat EFF) — он рядом через «/», а пунктиром, если его нет: в счёт идёт только сабстат. Зачёркнут — билду не нужен.',
+    tierLegend: 'Цепочка — приоритет сабстатов билда, слева важнее. Зелёный — есть на предмете и засчитан, жёлтый — за ½, серый — есть, но дальше четвёртого места цепочки (для порога «годная» не считается, кроме SPD; очки идут) или это flat, который персонажу почти ничего не даёт, пунктир — нет на предмете. Flat и % — разные статы одного параметра: % засчитывается целиком, flat — по своей ценности для персонажа, но не выше %. С пометкой main — параметр есть в main предмета (растёт от Enhance, а не от Reforge); если сабстатом ещё бывает второй стат пары (flat ATK при main ATK%, EFF% при flat EFF) — он рядом через «/», а пунктиром, если его нет: в счёт идёт только сабстат. Зачёркнут — билду не нужен.',
     altGroup: 'Дальше — у кого сет только в запасной связке билда',
     showAll: (n: number) => `показать всех (${n})`,
     scoreTitle: (good: string, n: number, pct: number) => `Полезных сабстатов ${good} из ${n}; взвешенно по приоритету — ${pct}%`,
@@ -618,11 +560,10 @@ export const ru = {
     // персонажи
     charsHint: '☆ — отметь своих: оценка будет учитывать только их',
     charSearch: 'Имя: Stella, Demiurge, Gnosis…',
-    // кого показывать: свои / свои, кого есть кому доодеть / все с билдами
+    // кого показывать: свои / свои, кого есть кому доодеть; ничего не нажато — все с билдами
     modeGroup: 'Кого показывать',
     modeMine: 'Мои',
     modeToDress: 'Доодеть',
-    modeAll: 'Все',
     filter: 'Фильтр',
     filterReset: 'Сбросить',
     filterOff: (name: string) => `${name} — снять фильтр`,
@@ -670,9 +611,9 @@ export const ru = {
     helpInputItems: [
       '**Броня** — сет: он в названии после «of» (Etheric Gloves of Speed → Speed Set).',
       '**T4** рядом с сетом, предметом или main (у Epic оружия и аксессуара) — вещь уже на Breakthrough T4. У брони бонус сета (Speed ×2 и другие) считается на T4; у любой вещи такие же ей в Breakthrough больше не нужны. Свежий дроп — T0, не отмечай. «T?» у старой записи — Breakthrough не указан: считается ниже T4.',
-      '**Legendary оружие и аксессуар** — найди предмет и отметь main stat. Совсем новый, которого нет в списке, — «нет в списке».',
+      '**Legendary оружие и аксессуар** — найди предмет и отметь main stat. Список по алфавиту; остался один подходящий по поиску — он подсветится и выберется сам. Совсем новый, которого нет в списке, — «нет в списке».',
       '**Epic оружие и аксессуар** (Steel…) — пассивки нет, сразу main stat.',
-      '**Main stat** у оружия — кнопки ATK% / DEF% / HP% рядом с грейдом; у аксессуара — первое нажатие в сетке, дальше сетка отмечает сабстаты. Ярче — main, который кому-то нужен. Нажми выбранный ещё раз, чтобы убрать.',
+      '**Main stat** у оружия и аксессуара — первое нажатие в сетке (у оружия — ATK%, DEF% или HP%), дальше сетка отмечает сабстаты. Ярче — main, который кому-то нужен. Нажми выбранный ещё раз, чтобы убрать.',
       '**Сабстаты** — нажми в сетке; ярче — статы, нужные билдам выбранного сета. Статы стоят парами по параметру, один над другим: ATK% над ATK, HP% над HP, DEF% над DEF, CHC над CHD, DMG UP% над DMG RED%, EFF% над RES%. Клетка с пометкой main — такого сабстата на этой вещи не бывает: он уже в main (HP% у шлема и ботинок, flat DEF у брони и перчаток, flat ATK у оружия). Flat EFF и flat RES в main сабстатам EFF% и RES% не мешают — в игре это разные статы. В сетке все 13 сабстатов игры; PEN%, CDMG RED%, flat EFF и flat RES сабстатами не бывают — только main.',
       '**Сегменты** — сколько горит у сабстата в игре, 1–6 (жёлтые и оранжевые вместе). Их выбираешь в окне сразу после нажатия в сетке; нажал мимо окна — стат не добавится. Поправить — кнопками в строке. Свежий дроп — до 4. Вердикт — по вещи как есть: Reforge, которые впереди, не считаются.',
       '**4-й сабстат у Epic** — обычно Epic выпадает с тремя, четвёртый добавляет первый Reforge; бывает и сразу с четырьмя. Есть он на вещи — «+ 4-й сабстат» под строками.',
@@ -682,40 +623,46 @@ export const ru = {
     helpRoutineItems: [
       'Всё ниже 6★ и ниже Epic — сразу в разбор.',
       'Иди по инвентарю по дате получения: подряд обычно дропы одного забега, и сет остаётся с прошлой вещи.',
-      '**Epic-броня:** выбери слот и сет и посмотри на сетку. Ярких статов на вещи 0–1 — в разбор, ничего не вводя: «Оставить» и «Временно» так не бывает. У Speed, Immunity и Swiftness ярко почти всё — там вводи.',
+      '**Epic-броня:** выбери слот и сет и посмотри на сетку. Ярких статов на вещи 0–1 — в разбор, ничего не вводя: «Оставить» и «Временно» так почти не бывает. У Speed, Immunity и Swiftness ярко почти всё — там вводи.',
       'У Epic после двух ненужных сабстатов вердикт появляется сразу — третий можно не вводить.',
       '«Оставить» — поставь замок, чтобы не разобрать случайно; «Временно» — носи, пока не найдёшь лучше.',
-      '**Breakthrough у Epic** — только такой же вещью, сабстаты не важны: броня — Epic того же сета и слота, оружие — любой Steel Sword, аксессуар — любой Steel Necklace, с любым main. Есть Epic-«Оставить» не на T4 — такие Epic из разбора откладывай ему, нужно 4 штуки. Epic оружию и аксессуару «Временно» — только вещами из разбора, Glunite не трать.',
+      '**Breakthrough у Epic** — только у брони и только такой же вещью, сабстаты не важны: Epic того же сета и слота. Одна вещь — одна ступень; копить до 4 не нужно: «Фоддер» скажет, какой вещи отдать эту сейчас, или оставит в запасе. Броне «Временно» Breakthrough тоже можно: T4 засчитывается в бонус сета. Epic оружие и аксессуар — вещи на замену: Breakthrough не делай, их копии — в разбор. Оружию и аксессуару Breakthrough — только если они «Оставить»: Legendary из билдов героя с нужным main.',
       '**Epic оружие и аксессуар:** на «Эндгейме» — в разбор; на «Развитии» сначала main stat: серый — он никому не нужен, в разбор.',
-      '**Legendary** с «коплю фоддер»: вердикт покажет, какие прокачивать, а какие оставить на Breakthrough.',
+      '**Legendary:** вердикт покажет, кому её надеть и что прокачивать; слабую — в запас или в разбор, как скажет вердикт.',
+      '**Партия** — много вещей одного фильтра? Нажми «Партия» (на телефоне — в «Ещё»; она есть, когда отмечены твои герои и включено «только мои персонажи») и вводи вещи подряд, как в игре: «В партию» добавляет вещь, вердикта по дороге нет. В партии — один фильтр: один сет брони, или оружие, или аксессуары, и один грейд — как у первой вещи (оба грейда — двумя партиями: сначала Legendary, потом Epic); в игре надетые показывай, сортировка по дате. Надетую вещь вводи кнопкой «E · надето» (выбери героя), заблокированную — «🔒 · отложено»: сабстаты не нужны, они держат номера. ✕ в списке убирает вещь, «Вернуть» в сообщении — возвращает. «Посчитать» — план на каждую: кому надеть, кому отложить, чем кого кормить, что разобрать; вещь, которую план снимает с героя, получает свою строку; у рекомендованного Legendary, который проигрывает по очкам, на строке цена: «−4,9 очк., пассивка лучше». «Не брать» — пересчитать без этого героя. «Спорно» реши до обхода: «Отложить» или «Разобрать».',
+      '**Обход ▸** — шаги по экранам игры; вверху — фильтр игры, например «Epic Speed · надетые показывать · по дате». 1 — надеть у героев («Caren → шлем», справа серым «№ 7» — место в списке шлемов героя в игре; значок класса и цвет стихии у имени помогают найти героя; сверь сабстаты), 2 — замок («Ряд 3, 1-й · #21», ниже — для кого и «запас»), 3 — Breakthrough («Шлем Caren → Breakthrough: до 4»: подойдёт любая вещь из списка игры; цель, которую ты отложил, названа «Отложенный шлем Caren» с сабстатами), 4 — разобрать одним выбором, в самом конце, чтобы не разобрать корм (сабстаты каждой вещи, у оружия и аксессуара ещё название и main; если был шаг Breakthrough — внизу «+ корм, который Breakthrough не взял»; закрытые замком сначала разблокируй). В шагах 3 и 4 нет номеров и мест — ищи вещи по сабстатам; одинаковых несколько — бери первую. Отмечай ✓ — обход сохраняется. В конце «Записать план» и подтверди: надетое и отложенное запишутся разом, «Вернуть» отменит всё.',
     ],
     helpVerdicts: [
-      '**Оставить** — вещь нужна: носи и прокачивай, что именно — в блоке «Прокачка» в подробностях.',
-      '**Временно** — носи, пока не найдёшь лучше: у оружия и аксессуара нет нужной пассивки, у Epic-брони только один главный стат.',
-      '**Фоддер** — оставь на Breakthrough такой же вещи с правильным main stat — или такой же вещи персонажа не на T4 (см. «Экипировка»). Так же — у Legendary, которая никого не улучшит: всем, кому подходит, она ничего не даёт. Снятую при замене Legendary в Breakthrough не отдавай: сначала оцени её — может подойти другому герою.',
+      '**Оставить** — вещь стоит носить: надень на названного героя или держи для него. Legendary не хуже по очкам, чем надетый Epic того же слота, тоже «Надеть»: main у неё больше. Что прокачивать — в блоке «Прокачка» в подробностях.',
+      '**Временно** — носи, пока не найдёшь годную: у оружия и аксессуара нет нужной пассивки, у Epic-брони только один главный стат.',
+      '**Фоддер** — эта вещь и есть материал: сделай ею Breakthrough сейчас или держи в запасе для будущей сильной. В запасе — до 4 вещей одного вида на героя и не больше 8 одного вида на всех героев, остальное — «Разобрать»; в игре ставь на запасные замок. Вещь на T4, которую никто не носит, — тоже материал: цель сразу станет T4. Legendary-броне материал — только Legendary: слабый Legendary держи в запасе, даже если надет годный Epic того же сета и слота. Снятую при замене Legendary в Breakthrough не отдавай: сначала оцени её — может подойти другому герою.',
       '**Спорно** — решай сам: в подробностях написано, в чём сомнение (например, вещь хороша для персонажа не из твоего ростера).',
-      '**Разобрать** — твоим персонажам не подходит, ролл слабый или всем, кому она подходит, она ничего не даёт (см. «Экипировка»).',
+      '**Разобрать** — никому не нужна: у всех уже не хуже, или она слабая.',
+      '**Очки** — сегмент первого стата цепочки = 1, дальше меньше (0,8; 0,65; 0,5; 0,4…), идеальная строка = 6. Половина сета из билдов героя стоит как его лучший статовый бонус на 2 вещи.',
+      '**Годная** — проходит прежний порог (обычно 3 полезных сабстата) или стоит 6+ очков.',
     ],
     helpChars: [
-      'Звёздочка отмечает персонажа в ростере; с галочкой «только мои персонажи» («Ещё» → «Настройки») оценка учитывает только их. Список показывает «Мои» (все твои, с билдами и без), «Доодеть» (твои, у кого надето меньше 6 из 6) или «Все» (с билдами; героя без билдов найдёшь по имени); стихия и класс — под кнопкой фильтра, выбранные видны чипами над списком. «Ещё» → «Резервная копия» — ростер и вещи одним кодом, для переноса на другое устройство; «Заменить» понимает и прежние коды ростера и экипировки. Вещи бывают только у персонажей ростера: «Надеть» добавляет в ростер, загрузка копии — всех, у кого есть вещи; снимешь звезду с персонажа с вещами — приложение спросит, убрать ли их. Core Fusion заменяет героя: отметишь Core Fusion Eternal — вещи Eternal перейдут к Core Fusion Eternal, а Eternal станет неактивным (в списке пара на прежнем месте: Core Fusion Eternal сразу за Eternal); звезда на Eternal вернёт всё назад.',
-      'Нажми на персонажа — откроются его билды: сеты, оружие, приоритет сабстатов. Звёздочка есть и в карточке, рядом с именем; стихия и класс — значками на портрете, «outerpedia ↗» открывает страницу персонажа на outerpedia. У героя ростера первая вкладка — «Надето»: что на нём в игре; билд, в который он одет, обведён; на вкладке другого билда — «Переодеть в … ▸».',
-      '**Экипировка** — вещи у персонажа, а билды собираются из них сами: один Speed-шлем идёт и в Speed, и в Speed/Immu. У билда с несколькими связками сетов каждая связка — отдельный вариант: показан самый собранный, остальные — в чипах и «ещё N». Вещь к персонажу кладёт «Надеть» — в подробностях вердикта, на телефоне ещё и кнопка под карточкой: вещь записывается надетой в своём слоте. Вердикт предлагает её тем, кому она встанет в билд. Вещь не по билду сама не предлагается — найди персонажа по имени в «Надеть на…» или нажми «Оценить вещь для Caren»: там «Надеть» есть у любой вещи, чтобы записать, что носит герой. «Надеть» пересобирает билды; прежняя вещь слота уходит, если её не держит ни один билд, и что не надето и не вошло ни в один билд — убирается. Вещь персонажа правится только в сегментах, «T4» и 4-м сабстате у Epic: сделал Reforge или Breakthrough — нажми её в «Вещи Caren» и поправь. Transistone сменил стат — введи вещь заново и «Надеть», а эту — «Убрать у Caren». Enhance не отмечается: считаем, что вещь на +10. Бонус сета — по Breakthrough вещей: ×2 на T4, если хотя бы две вещи сета на T4; ×4 на T4 — если все четыре. Разобрал вещь или пустил на Breakthrough — «Убрать у Caren» в карточке вещи. Кого доодеть — «Доодеть» над списком (на телефоне ещё «Ещё» → «Доодеть · N»). «Поделиться» во вкладке «Надето» даёт ссылку: друг увидит, что на герое надето и под какой билд, — только просмотр, у него ничего не изменится. Во время обучения резервной копии нет: на странице пример.',
-      '**Собираю** — какие билды ждут вещи: отмеченные «Собираю» и все начатые — где стоит хоть одна вещь из сетов билда или оружие либо аксессуар из его списка с нужным main, при любом Breakthrough. По ним — штамп и «Сейчас на персонажах». Не собираешь — выключи «Собираю»: вещи для него перестанут держать штамп, но не уйдут — у персонажа остаются вещи лучшей раскладки каждого билда и надетое. «По статам» — отдельный билд у каждого персонажа: все его вещи по цепочке, без сетов. Штамп он держит, пока ни один билд не начат; потом его строка — тихая. Сам вещи он не держит: вещь, которая нужна только ему, «больше не нужна», если она не надета.',
-      '**Оценить вещь для Caren** — в карточке персонажа: над формой «Только для · Caren». Строка карточки, «Сейчас на персонажах» и «Надеть» — только про Caren, по всем билдам; «Надеть» есть и у вещи без пользы — записать, что носит герой; штамп — общий. «Следующий» режим не сбрасывает, ✕ — снова для всех. «Примерить» у пустого слота сразу ставит на форму слот и сет. «Примерить замену» у вещи — «Заменить» уберёт именно её, лучше новая или хуже.',
-      '**Сейчас на персонажах** — в подробностях вердикта, строка на персонажа ростера: что с вещью станет с его билдами — «соберёт», «сет 3 из 4», «пустой слот», ▲ лучше или ▼ хуже того, что стоит в билде, или такой же вещи её сета у персонажа (две цепочки рядом и на сколько по полезным сегментам), «ломает сет», «только статы»; остальные билды — строкой «Ещё». Сет можно сломать, только если в итоге выгоднее; сет с бонусом-эффектом (Immunity, Penetration) ради статов не ломается. «Заменить» вместо «Надеть» — в слоте уже есть вещь; она уйдёт, если её не держит ни один билд. Штамп: «Разобрать» → «Фоддер», если такая же вещь (тот же слот, сет и грейд; у оружия и аксессуара — тот же предмет и грейд) стоит в собираемом билде персонажа ниже T4 — эта ей материал; а если эта лучше — «Оставить»: надень её. «Оставить» и «Временно» → «Разобрать», если введены все сабстаты и никому из тех, кому вещь подходит, она ничего не даёт (Legendary «Оставить» — «Фоддер», броня — если копишь фоддер). Штамп держат: персонаж без вещей, вещь начнёт ему билд, «соберёт», «сет 3 из 4», пустой слот, «лучше», «ломает сет» и «на уровне из-за T4», когда по сегментам лучше, другая рекомендованная пассивка; у оружия и аксессуара — ещё и вещь не по билду в слоте. Резервная копия — код OGC-GEAR2 в «Ещё» → «Резервная копия».',
+      'Звёздочка отмечает персонажа в ростере; с галочкой «только мои персонажи» («Ещё» → «Настройки») оценка учитывает только их. Список показывает «Мои» (все твои, с билдами и без), «Доодеть» (твои, у кого надето меньше 6 из 6); ничего не нажато — все с билдами (героя без билдов найдёшь по имени), повторное нажатие снимает выбор; стихия и класс — под кнопкой фильтра, выбранные видны чипами над списком. «Ещё» → «Резервная копия» — ростер и вещи одним кодом, для переноса на другое устройство; «Заменить» понимает и прежние коды ростера и экипировки. Вещи бывают только у персонажей ростера: «Надеть» добавляет в ростер, загрузка копии — всех, у кого есть вещи; снимешь звезду с персонажа с вещами — приложение спросит, убрать ли их. Core Fusion заменяет героя: отметишь Core Fusion Eternal — вещи Eternal перейдут к Core Fusion Eternal, а Eternal станет неактивным (в списке пара на прежнем месте: Core Fusion Eternal сразу за Eternal); звезда на Eternal вернёт всё назад.',
+      'Нажми на персонажа — откроется его карточка. Звёздочка есть и в карточке, рядом с именем; стихия и класс — значками на портрете, «outerpedia ↗» открывает страницу персонажа на outerpedia. Три вкладки: «Надето» — что на нём в игре; «Пул» — все его вещи и зачем каждая; «Билды» — справка outerpedia, только посмотреть.',
+      '**Экипировка** — вещи у персонажа. Оценка сама берёт из них лучшее: статы и сеты из билдов outerpedia считаются вместе, билд выбирать не нужно. Вещь к персонажу кладёт «Надеть» — в подробностях вердикта, на телефоне ещё и кнопка под карточкой: вещь записывается надетой в своём слоте. Вердикт предлагает её тем, кому она даст больше всего очков. Другого героя найди по имени в «Надеть на…» или нажми «Оценить вещь для Caren»: там «Надеть» есть у любой вещи, чтобы записать, что носит герой. «Надеть» убирает из вещей героя то, что ему больше не нужно, и говорит об этом. «Отложить для Caren» — записать вещь герою, не надевая: она остаётся в «Пуле» и участвует в следующих оценках. Ввёл отложенную вещь ещё раз (те же статы в том же порядке) — вердикт скажет «Похоже, это …» и не даст другим ни «Надеть», ни «Отложить»; в игре таких две — «Это другой». Вещь персонажа правится только в сегментах, «T4» и 4-м сабстате у Epic: сделал Reforge или Breakthrough — нажми её в «Пуле» и поправь. Transistone сменил стат — введи вещь заново и «Надеть», а эту — «Убрать у Caren». Enhance не отмечается: считаем, что вещь на +10. Бонус сета — по Breakthrough вещей: ×2 на T4, если хотя бы две вещи сета на T4; ×4 на T4 — если все четыре. Разобрал вещь или пустил на Breakthrough — «Убрать у Caren» в карточке вещи. Кого доодеть — «Доодеть» над списком (на телефоне ещё «Ещё» → «Доодеть · N»). «Поделиться» во вкладке «Надето» даёт ссылку: друг увидит, что на герое надето и какой набор закреплён, — только просмотр, у него ничего не изменится. Во время обучения резервной копии нет: на странице пример.',
+      '**Надето** — рядом с заголовком очки надетого: вещи плюс сеты; у каждой вещи — её очки, у сета — после строки бонуса. Под заголовком — цепочка статов героя в её порядке (первый — самый ценный) и сколько сегментов каждому стату дают надетые вещи: зелёный засчитан целиком, жёлтый (flat) — наполовину, бледнее — меньше сегментов, пунктир — ни одна вещь стат не даёт. У героя с двумя цепочками (разные билды) — обе, с именем билда; очки — по первой.',
+      '**Пул и «Переодеть»** — «Пул» показывает все вещи героя и справа причину, почему она держится: «надета», «лучший {сет}» (в том числе «на T4»; только у закреплённого набора), «по статам», «в запасе»; остальное — «больше не нужна»: разбери в игре и убери кнопкой «Убрать у Caren» (молча приложение ничего не удаляет). На «Надето» кнопка «Переодеть: +N очк.» появляется, когда из своих вещей героя можно собрать на 1+ очко лучше надетого; Legendary на место Epic — уже при равных очках (или с рекомендованным оружием или аксессуаром — «Переодеть: пассивка лучше»): шторка покажет итог, что включится и выключится, и «Надеть» у каждой вещи или «Надеть все». Под слотами — «Что искать»: наборы из билдов, где у героя 1–3 вещи из 4, и каких слотов не хватает. В игре всё делаешь сам — приложение только считает.',
+      '**Закрепить набор** — по умолчанию герой оценивается «По статам»: цепочка его билдов и все наборы из них вместе. Нужен конкретный набор — «Закрепить набор» в карточке: вещи других сетов с хорошими статами будут отбрасываться (надетое остаётся, пока слот не займёт вещь набора). Сменить или снять — та же кнопка, «По статам — не закреплять».',
+      '**Оценить вещь для Caren** — в карточке персонажа: над формой «Только для · Caren». Строка карточки, «Сейчас на персонажах» и «Надеть» — только про Caren; «Надеть» есть и у вещи без пользы — записать, что носит герой; штамп — общий. «Следующий» режим не сбрасывает, ✕ — снова для всех. «Ввести» у пустого слота ставит на форму слот, «Примерить замену» у вещи — слот и сет вещи; «Заменить» уберёт именно её, лучше новая или хуже.',
+      '**Сейчас на персонажах** — в подробностях вердикта, строка на героя ростера, кому вещь даст больше всего: «+N очк.» — на сколько он станет сильнее с ней, «включится / выключится» — бонусы сетов. «Заменить» вместо «Надеть» — в слоте уже есть вещь. Штамп говорит про саму вещь. Слабая вещь, которая лучше надетой, остаётся «Фоддер» или «Разобрать» — тихая строка скажет, кому она дала бы больше и что искать. Резервная копия — код OGC-GEAR4 в «Ещё» → «Резервная копия»: вещи, надетое и закреплённые наборы; прежние коды читаются.',
     ],
     helpTrade: 'Обмен вещами',
     helpTradeItems: [
       'Считает, как переодеть героя (или команду из четырёх) вещами, что уже есть в ростере и инвентаре. Вход — «К обмену ▸» на карточке героя (план для него) или «Обмен» над списком персонажей и «Обмен для команды» в «Ещё» на телефоне (сразу команда). В игре всё делаешь сам — приложение только считает.',
-      '**Герой** — кого переодеть; **Команда** — четыре места ромбом: они меняются вещами между собой и берут у остальных. Член — плитка с булавкой в углу; нажми — поставить другого или «Убрать из команды». Под плиткой — мерило («Имя ▾» — билд или «по статам»), нажми — сменить.',
-      '**Булавка «Не отдавать надетое»** — у карточки героя и плитки: надетое на нём другие не берут (запас берут). Члены команды между собой меняться могут.',
-      'План: у каждого получателя — выигрыш в очках билда («▲ +13%», у героя без надетого — «▲ +41 очк.»), что надеть, откуда вещь (у кого или в инвентаре) и как её найти в игре — источник мелко под вещью, у оружия и аксессуара ещё Secondary ↓. «Не брать» — искать другую вещь. У пустого слота — «Искать:» с подсказкой. В плане — только те, кого переодеваешь (герой или члены команды); у кого забираешь, не показываем.',
+      '**Герой** — кого переодеть; **Команда** — четыре места ромбом: они меняются вещами между собой и берут у остальных. Член — плитка; нажми — поставить другого или «Убрать из команды». Под плиткой — заказ героя («Заказ: … ▾»): «По статам» или один из наборов его билдов; нажми — сменить. У закреплённого набора заказ один — «Закреплено».',
+      '**Сеанс:** пока окно обмена открыто, надетое на уже переодетых героях следующие не берут; их запас — можно. Закрыл окно — ограничений нет.',
+      'План: у каждого получателя — на сколько очков он станет сильнее («+4,2 очк.») или слабее («Статы станут слабее на N очк.»), какие бонусы сетов включатся, что надеть, сколько очков даёт каждая вещь против надетой («+1,6 очк.»; рекомендованное оружие или аксессуар — «пассивка лучше», даже если очков меньше), откуда вещь (у кого или в инвентаре) и как её найти в игре — источник мелко под вещью, у оружия и аксессуара ещё Secondary ↓. Если для заказа не хватает вещей набора — строка об этом честно. «Не брать» — искать другую вещь. У пустого слота — «Искать:» с подсказкой. В плане — только те, кого переодеваешь; у кого забираешь, не показываем.',
       '**Дыры не закрываются:** снятая вещь остаётся снятой, пока не введёшь новую через оценку.',
-      '**Сделал** — в игре всё сделано: план сохраняется (после него «После обмена не отдавать надетое» у получателя, по умолчанию вкл.). **Отмена** — ничего не менялось. Сразу после «Сделал» — «Вернуть». Копия, которой нет ни в одном пуле, из приложения уйдёт, в инвентаре игры останется.',
-      '**«Лучше из своих»** на вкладке «Надето» — тот же порог, что и в обмене: своя запасная вещь лучше надетой хотя бы на 1 очко по билду, либо включает сет, либо даёт рекомендованное оружие.',
+      '**Сделал** — в игре всё сделано: план сохраняется. **Отмена** — ничего не менялось. Сразу после «Сделал» — «Вернуть». Копия, которой нет ни в одном пуле, из приложения уйдёт, в инвентаре игры останется.',
+      '**«Переодеть»** на вкладке «Надето» — тот же порог, что и в обмене: лучшая раскладка из своих вещей лучше надетой хотя бы на 1 очко (Legendary на место Epic — не хуже по очкам), включает бонус сета-эффекта или ставит рекомендованное оружие или аксессуар.',
     ],
     helpCode: 'Код для гильдии',
-    helpCodeText: (example: string) => `В подробностях вердикта и в карточке вещи персонажа есть код вещи, например ${example}. Скопируй его в чат игры; кто получил — нажимает «Ввести код» и перепечатывает. Оценка у каждого — по своему ростеру. У вещи с 5–6 сегментами кода нет.`,
+    helpCodeText: (example: string) => `В подробностях вердикта и в карточке вещи персонажа есть код вещи, например ${example}. Скопируй его в чат игры; кто получил — нажимает «Ввести код» и перепечатывает. Оценка у каждого — по своему ростеру. У вещи с 5–6 сегментами код на 1–2 буквы длиннее.`,
     helpInstall: 'Установка',
     helpInstallItems: [
       '**Android (Chrome):** меню ⋮ → «Установить приложение» или «Добавить на главный экран».',
@@ -725,32 +672,9 @@ export const ru = {
     wikiLink: 'Подробное руководство — в Wiki ↗',
     wikiUrl: 'https://github.com/cotton-more/outerplane-gear-check/wiki/Начало-работы',
   },
-  // --- обучение (src/tour): кнопки, полосы и шаги главного тура; шаг — функция от StepText (src/tour/types.ts)
-  // --- материал Breakthrough для надетой вещи (features/gear/model/material): «Разобрать» → «Фоддер»
-  material: {
-    title: (slotGen: string, who: string) => `Фоддер — материал Breakthrough для ${slotGen} ${who}`,
-    need: (slot: string, who: string, bt: number, left: number) => `${slot} ${who} — T${bt}, ещё ${left} шт. до T4`,
-    needBelow: (slot: string, who: string) => `${slot} ${who}`, // «ниже T4» уже в самой строке (line, lineWear)
-    line: (list: string) => `**Материал**: такая же вещь надета не на T4 — ${list}. Одна вещь — одна ступень Breakthrough, сабстаты не важны.`,
-    plan: '**Не прокачивай и не разбирай** — отдай в Breakthrough надетой: одна вещь — одна ступень.',
-    // вещь лучше надетой, для которой она материал: надеть её, старую — ей в Breakthrough. Штамп — про неё: «Оставляй»
-    // (решение владельца). slot — id слота: «надетого шлема», «надетой брони», «надетых перчаток»
-    titleWear: (slot: string, who: string) => `Оставляй — лучше ${by(slot, 'надетого', 'надетой', 'надетого', 'надетых')} ${GEN[slot]} ${who}: надень её, а старую — ей в Breakthrough`,
-    lineWear: (list: string) => `**Лучше надетой**: такая же вещь надета не на T4, но слабее этой — ${list}. Надень эту, а старую отдай ей в Breakthrough.`,
-    // новая уже на T4: старую ей в Breakthrough не отдать — только надеть
-    titleWearT4: (slot: string, who: string) => `Оставляй — лучше ${by(slot, 'надетого', 'надетой', 'надетого', 'надетых')} ${GEN[slot]} ${who}: надень её`,
-    lineWearT4: (list: string) => `**Лучше надетой**: такая же вещь надета не на T4 и слабее этой — ${list}. Надень эту.`,
-    planReplace: (who: string) => `**Надень её** на ${who}: она лучше надетой, а старая — такая же вещь: отдай её новой в Breakthrough, одна вещь — одна ступень.`,
-    // в режиме героя у него слот пуст или вещь лучше надетой; новая на T4 и лучше надетой — тоже
-    planWear: (who: string) => `**Надень её** на ${who}, пока нет лучше, — в Breakthrough надетой не отдавай.`,
-  },
 
-  // --- штамп по надетому (features/gear/model/stamp): всем, кому подходит, уже надето не хуже; вещь уже в билде
+  // --- «Разобрать» с ростером (screens/eval useVerdictModel): всем, кому она годная, уже надето не хуже
   worn: {
-    // eq — у кого-то «на уровне»: «не хуже», а не «лучше». Причина — первой: на карточке (280px) заголовок в одну
-    // строку, длинное имя («Kitsune of Eternity Tamamo-no-Mae») съело бы «уже лучше»
-    title: (v: 'junk' | 'fodder', names: string[], eq: boolean) =>
-      `${v === 'fodder' ? 'Фоддер' : 'Разбирай'} — уже ${eq ? 'не хуже' : 'лучше'} у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
     line: '**Никого не улучшит**: всем, кому она подходит, уже надето не хуже. Сама по себе вещь неплохая.',
     stale: 'Разобрал вещь в игре — убери её в карточке персонажа, и вердикт пересчитается.',
   },
@@ -760,18 +684,13 @@ export const ru = {
     label: 'Только для',
     end: 'Оценивать для всех',
     rateFor: (name: string) => `Оценить вещь для ${name}`,
-    // заголовок вердикта после « — »: кому ещё нужна и что с ней у этого персонажа (temp — вердикт «Временно»)
-    others: (names: string[], armor = true) => `${armor ? 'нужна' : 'нужен'} ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
-    clause: (kind: string, name: string, build: string, temp: boolean, x: { n?: number; m?: number; part?: string } = {}): string => ({
-      fill: temp ? `${name}: пустой слот — пока сойдёт` : `у ${name} слот пуст`,
-      up: `лучше, чем на ${name}`,
-      eq: `на ${name} — на уровне`,
-      down: `на ${name} уже лучше`,
-      breaks: `на ${name} сломает сет`,
-      completes: `у ${name} соберёт ${build}`,
-      closer: `${name} · ${build}: сет ${x.n} из ${x.m}`,
-      capped: `на ${name} — на уровне: ${x.part} на T4`,
-      surplus: `у ${name} — сверх ${x.part}`,
+    // заголовок вердикта после « — »: исход героя (features/tryon/tryon heroTitle; temp — вердикт «Временно»)
+    clause: (kind: string, name: string, temp = false): string => ({
+      wearEmpty: temp ? `${name}: пустой слот — пока сойдёт` : `надень на ${name}`,
+      wear: `лучше, чем на ${name}`,
+      keep: `держи для ${name}`,
+      none: `на ${name} уже не хуже`,
+      weak: `для ${name} слабая`,
     } as Record<string, string>)[kind] ?? '',
     // «Разобрать», а ей вещь лучше надетого или слот пуст
     butWear: (kind: string, name: string) => `но ${kind === 'fill' ? `у ${name} слот пуст` : `лучше, чем на ${name}`}: надень, пока нет лучше`,
@@ -783,12 +702,7 @@ export const ru = {
     noStats: (name: string) => `${name} эта вещь ничего не даст: полезных статов нет.`,
     // оружие или аксессуар не для класса героя (classLimits): дело не в статах
     noClass: (name: string) => `${name} не носит этот предмет: он для другого класса.`,
-    slot: 'Примерить',
     replace: 'Примерить замену',
-    build: 'Собрать билд',
-    empty: (build: string, name: string) => `Собери билд ${build}: вводи вещи ${name} из инвентаря — и вердикт начнёт сравнивать новые вещи с ними.`,
-    emptyOr: 'Или жми «Надеть» в вердикте — вещь сама добавится к вещам персонажа.',
-    emptyStats: (name: string) => `«По статам» — вещи ${name} по цепочке, без сетов. Что ${name} носит в игре не по билду, отметь на вкладке «Надето».`,
   },
 
   // «Обмен вещами» (.x/0040-trade/SPEC.md R10): шторка обмена, план, закрепление героя
@@ -796,10 +710,6 @@ export const ru = {
     title: 'Обмен вещами',
     open: 'К обмену ▸',
     teamOpen: 'Обмен для команды',
-    pin: 'Не отдавать надетое',
-    pinTile: (name: string) => `${name}: надетое не отдаёт`,
-    pinned: 'Закреплены:',
-    unpin: (name: string) => `Снять закрепление: ${name}`,
     modeHero: 'Герой',
     modeTeam: 'Команда',
     pickHero: 'Кого переодеть?',
@@ -814,9 +724,10 @@ export const ru = {
     done: 'Сделал',
     ok: 'Ок',
     nothing: 'Менять нечего',
-    pinAfter: 'После обмена не отдавать надетое',
-    gainPct: (n: number) => (n > 0 ? `▲ +${n}%` : n < 0 ? `▼ −${-n}%` : '0%'),
     gainPts: (n: number) => (n > 0 ? `▲ +${dec(n)} очк.` : n < 0 ? `▼ −${dec(-n)} очк.` : '0 очк.'),
+    // цена вещи в плане: очки против надетой в слоте; passive — рекомендованное оружие или аксессуар
+    itemPts: (n: number) => (n > 0 ? `+${dec(n)} очк.` : n < 0 ? `−${dec(-n)} очк.` : '0 очк.'),
+    passive: 'пассивка лучше',
     setOn: (set: string, n: number) => `включится ${set} ×${n}`,
     setOff: (set: string, n: number) => `выключится ${set} ×${n}`,
     fromWorn: (name: string) => `у ${name}`,
@@ -829,13 +740,109 @@ export const ru = {
     keySub: (sub: string) => `${sub} ↓`, // Secondary и сортировка по нему
     emptySlot: (slot: string) => `${cap(NOM[slot] ?? slot)}: пусто`,
     gone: (what: string) => `Старая копия ${what} останется в инвентаре, из приложения уйдёт.`,
-    pinnedBetter: (names: string, pts: number) => `У ${names} (закреплены) лучше: +${dec(pts)} очк.`,
-    take: 'Взять',
     stale: 'Вещи поменялись — план пересчитан. Проверь и нажми «Сделал» ещё раз.',
     savedHero: (name: string) => `Обмен для ${name} сохранён.`,
     savedTeam: 'Обмен команды сохранён.',
-    savedPin: (name: string, on: boolean) => (on ? `${name}: надетое не отдаёт.` : `${name}: надетое можно брать.`),
+    order: (order: string) => `Заказ: ${order} ▾`,
+    stats: (a: number, b: number) => `Статы: ${dec(a)} → ${dec(b)} очк.`,
+    missing: (part: string, set: string, slots: string) => `${part} не собирается: нет ${set} — ${slots}.`,
+    needT4: (part: string) => `${part} не собирается: нужен T4.`,
+    weaker: (pts: number) => `Статы станут слабее на ${dec(pts)} очк.`,
+    session: 'Кого уже переодел в этом обмене, того не трогаю, пока окно открыто.',
   },
+  // «Партия» (.x/0110-batch/PLAN.md §5, тексты утверждены владельцем 2026-10-07)
+  batch: {
+    button: 'Партия',
+    strip: (n: number) => `Партия · ${n}`,
+    list: 'Список ▸',
+    end: 'Закончить партию',
+    // the slot on the button: twelve «gloves» in a row are easy to miss otherwise (owner 2026-10-09)
+    add: (n: number, slot: string | null) => `В партию · #${n}${slot ? ` · ${NOM[slot]}` : ''}`,
+    back: '← К списку',
+    askFirst: (slot: boolean, grade: boolean) => `Сначала выбери ${slot && grade ? 'слот и грейд' : slot ? 'слот' : 'грейд'} — как у вещи в игре.`,
+    save: (n: number) => `Сохранить #${n}`,
+    incomplete: 'Введены не все сабстаты — в партию не добавлено.',
+    empty: 'Фильтр в игре: один сет (или оружие, или аксессуары), один грейд, надетые показывать, по дате. Вводи подряд, как в списке.',
+    plan: 'Посчитать',
+    endAsk: (n: number) => `Закончить партию? Вещей не посчитано: ${n}.`,
+    endYes: 'Закончить',
+    remove: (n: number) => `Убрать #${n}`,
+    // the message after ✕ in the list, with «Вернуть»
+    removed: (n: number) => `Убрано #${n}`,
+    // the batch's kind in a phrase, grade first: «Epic Speed», «Legendary оружие»; nothing known yet — empty
+    what: (kind: { set: string } | 'weapon' | 'accessory' | null, grade: Grade | null) => [grade ? GRADE_NAME[grade] : '',
+      typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'оружие' : kind === 'accessory' ? 'аксессуары' : ''].filter(Boolean).join(' '),
+    listTitle: (n: number, what: string) => `Партия · ${n}${what ? ` · ${what}` : ''}`,
+    title: (what: string) => `План партии${what ? ` · ${what}` : ''}`,
+    summary: (a: number, b: number, c: number, d: number) => `надеть\u00A0${a} · отложить\u00A0${b} · корм\u00A0${c} · разобрать\u00A0${d}`,
+    wear: (name: string) => `Надень на ${name}`,
+    replace: (name: string, slot: string) => `Надень на ${name} — вместо ${GEN[slot]}`,
+    t4: ' · T4 после корма',
+    keep: (name: string) => `Отложи для ${name}`,
+    reserve: (name: string) => `Отложи для ${name} — запас`,
+    // whose piece it is: «Корм для #17 · перчатки Saeran»; the hero isn't known — the number alone
+    feedEntry: (n: number, slot: string | null, name: string | null) => (slot && name ? `Корм для #${n} · ${NOM[slot]} ${name}` : `Корм для #${n}`),
+    feedWorn: (slot: string, name: string) => `Корм для ${GEN[slot]} ${name}`,
+    // the target is a set-aside piece: the hero wears another one in the game
+    feedStash: (slot: string, name: string) => `Корм для ${by(slot, 'отложенного', 'отложенной', 'отложенного', 'отложенных')} ${GEN[slot]} ${name}`,
+    wornNote: 'Корм надетым: до 4 на вещь — дошла до T4, отметь «T4» в карточке вещи.',
+    maybe: (names: string) => `Спорно — подходит ${names}`,
+    junk: 'Разобрать',
+    none: 'Не посчитать: предмета нет в данных outerpedia',
+    same: (slot: string, name: string, date: string) =>
+      `Как ${by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные')} для ${name}${date ? ` (${date})` : ''}? Тогда ничего не делай.`,
+    // what — the item of a weapon or accessory («Steel Sword · ATK%»): which piece it is, not only whose
+    off: (slot: string, name: string, what = '') => `${by(slot, 'Снятый', 'Снятая', 'Снятое', 'Снятые')} ${NOM[slot]} ${name}${what ? ` — ${what}` : ''}`,
+    offStash: (slot: string, name: string, subs: string, what = '') =>
+      `${by(slot, 'Отложенный', 'Отложенная', 'Отложенное', 'Отложенные')} ${NOM[slot]} ${name}${what ? ` — ${what}` : ''} (${subs})`,
+    recorded: (a: number, b: number) => `Партия записана: надето ${a}, отложено ${b}.`,
+    recordAsk: 'Всё сделано в игре?',
+    // the confirm is one paragraph: [not ticked — only when some are, what will be recorded, the undo hint]
+    recordUnticked: (k: number, n: number) => `Не отмечено: ${k} из ${n} ${plural(n, 'шага', 'шагов', 'шагов')}.`,
+    recordText: (a: number, b: number) => `Запишу у героев: надето ${a}, отложено ${b}.`,
+    recordUndo: 'Сразу после можно «Вернуть» в сообщении.',
+    recordYes: 'Записать',
+    // step-by-step walk (.x/0140-batch-walk §6, approved by the owner 2026-10-08)
+    otherKind: (what: string) => `В этой партии — ${what || 'броня'}. Другое — новой партией.`,
+    wornAdd: 'E · надето',
+    whose: 'Чья вещь?',
+    whoseNone: (what: string) => `Никто из твоих героев не носит здесь ${what}.`,
+    lockAdd: '🔒 · отложено',
+    lockRow: (slot: string) => `🔒 ${NOM[slot]}`,
+    keepIt: 'Отложить',
+    junkIt: 'Разобрать',
+    walk: 'Обход ▸',
+    walkOff: (n: number) => `Сначала реши «Спорно»: ${n}`,
+    walkTitle: (k: number, n: number) => `Обход · ${k} из ${n}`,
+    walkNote: (what: string) => `${what ? `Фильтр в игре: ${what} · надетые показывать · по дате. ` : ''}Сабстаты не те — исправь партию.`,
+    // no numbers: a batch without a dismantle would read 1, 2, 4 (owner 2026-10-09)
+    stages: ['Надеть — у героев', 'Замок', 'Breakthrough', 'Разобрать — одним выбором'],
+    // the equip title (owner 2026-10-10, variant B): «Hero → caption»; the position in the hero's slot list is a quiet
+    // hint on the right of the title line («№ 1»; the no-break space keeps № with its number)
+    equipTo: (hero: string, what: string) => `${hero} → ${what}`,
+    equipNo: (k: number) => `№\u00A0${k}`,
+    // a piece taken off another hero (or set aside), put on in this step: «снятое оружие Tamara»
+    offAt: (slot: string, name: string, stash: boolean) =>
+      `${stash ? by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные') : by(slot, 'снятый', 'снятая', 'снятое', 'снятые')} ${NOM[slot]} ${name}`,
+    lockStepAt: (piece: string) => piece,
+    // for whom a kept piece stays (lock and Breakthrough steps); the number and the piece are in the title and the caption
+    keptFor: (name: string) => `для ${name}`,
+    keptReserve: (name: string) => `для ${name}\u00A0·\u00A0запас`,
+    keptMaybe: 'Спорно, отложено',
+    lockStep: (r: number, p: number, n: number) => `Ряд ${r}, ${p}-й\u00A0·\u00A0#${n}`,
+    junkTitle: (n: number) => `Отметь в игре: ${n}`,
+    btFeed: 'корм:',
+    btWorn: (slot: string, hero: string) => `${NOM[slot][0].toUpperCase()}${NOM[slot].slice(1)} ${hero}`,
+    // under the «Breakthrough» heading, once per stage
+    btNote: 'Подойдёт любая вещь из списка игры. Что не вошло — в разбор.',
+    // «до N»: the piece's exact tier below T4 isn't known — the game takes no more than it needs (owner 2026-10-08)
+    btStep: (where: string, n: number) => `${where} → Breakthrough: до\u00A0${n}`,
+    btUnlock: (k: number) => `сначала сними замок с ${k} ${plural(k, 'отложенной', 'отложенных', 'отложенных')}`,
+    // the last line of the dismantle step, when a Breakthrough step comes before it
+    dzLeft: '+ корм, который Breakthrough не взял',
+    walkEnd: 'Всё сделано — Записать план',
+  },
+
   tour: {
     start: 'Обучение',
     startLong: 'Пройти обучение',
@@ -871,7 +878,7 @@ export const ru = {
     tips: {
       more: 'Настройки оценки, резервная копия, язык и справка — в «Ещё».',
       star: 'Отметь звёздочкой своих персонажей — оценка будет по ним, а не по всем героям игры.',
-      accMain: 'У аксессуара первое нажатие в сетке — это main stat, как сверху на вещи в игре. Дальше идут сабстаты.',
+      accMain: 'У оружия и аксессуара первое нажатие в сетке — это main stat, как сверху на вещи в игре. Дальше идут сабстаты.',
       mainCell: 'Клетка «main» — стат из main вещи: сабстатом такой не выпадает.',
       fourth: 'У Epic бывает 4-й сабстат — от первого Reforge или сразу с дропа. Есть — отметь его, он может вытянуть вещь.',
       replace: 'Нажми на стат в строке, чтобы заменить его или убрать. Так удобно вводить следующую вещь поверх прошлой.',
@@ -880,36 +887,34 @@ export const ru = {
       code: 'Код вещи — для чата гильдии: там его вводят через «Ввести код» и видят оценку по своему ростеру.',
       temp: '«Временно» — вещь пойдёт, пока не найдёшь лучше. В разбор её не торопись.',
       prio: 'Приоритет сабстатов: › — по порядку, = — одно место, зачёркнутые на 6★ сабстатом не выпадают. По этой строке считается цепочка в вердикте.',
-      builds: 'Билды собираются из вещей персонажа сами — каждый из всего пула. Штамп держат начатые (начинает одна вещь сета или оружие из списка) и отмеченные «Собираю».',
-      gear: 'Вещи — у персонажа, а билды собираются из них сами: один Speed-шлем идёт и в Speed, и в Speed/Immu.',
-      tryOn: '«Примерить» — оценка только для этого персонажа, слот и сет уже на форме. «Надеть» — сразу этому персонажу.',
+      builds: 'Надето — что на герое в игре. Пул — все его вещи и зачем каждая. Билды — справка outerpedia, только посмотреть.',
+      gear: 'Оценка сама берёт лучшее из вещей героя — статы и сеты вместе. Из своих можно на 1+ очко лучше — появится «Переодеть».',
       piece: 'Сделал в игре Reforge или Breakthrough — поправь здесь сегменты и «T4», как на вещи в игре: сравнение идёт по тому, что есть.',
       tryStrip: 'Оценка только для этого персонажа: строка карточки и «Надеть» — про этого персонажа, штамп — общий. ✕ — снова для всех.',
-      vs: '▲ — лучше того, что стоит в билде, ▼ — хуже; «сет 3 из 4» — билд станет ближе к сборке. Кнопка — надеть или заменить.',
-      cardEquip: 'Надень одной кнопкой под карточкой: вещь запишется надетой. Что не надето и не вошло ни в один билд, уйдёт из вещей персонажа.',
-      equipAll: 'Здесь — те, кому вещь встанет в билд. Не по билду — найди персонажа по имени: «Надеть» запишет её как надетую.',
-      material: 'Фоддер, а не разбор: такая же вещь стоит в собираемом билде не на T4 — эта пойдёт ей в Breakthrough.',
+      vs: 'Сколько очков герой выиграет с вещью. «Включится / выключится» — бонусы сетов. Кнопка — надеть или заменить.',
+      stash: 'Оставляй, но пока не надевать? Нажми «Отложить» — вещь запишется герою, и следующие вещи будут сравниваться с ней.',
+      cardEquip: 'Надень одной кнопкой под карточкой: вещь запишется надетой. Что герою больше не нужно, уйдёт из его вещей — приложение скажет.',
+      equipAll: 'Здесь — кому вещь даст больше всего очков. Другого героя найди по имени: «Надеть» запишет её как надетую.',
+      material: 'Фоддер, а не разбор: вещь пойдёт в Breakthrough такой же вещи героя не на T4 или ляжет в запас, пока не придёт сильная.',
       worn: 'Вещь неплохая, но всем, кому она подходит, уже надето не хуже — поэтому «Разобрать». Разобрал вещь в игре — убери её в карточке персонажа.',
-      pool: 'Все вещи персонажа по слотам. Разобрал вещь или пустил на Breakthrough — нажми на неё и «Убрать»: билды соберутся заново.',
-      want: 'Не собираешь этот билд — выключи «Собираю»: вещи для него перестанут держать вердикт.',
-      variants: 'У билда несколько связок сетов — показываю самую собранную. Другие — в чипах, «ещё N» — весь список.',
-      stats: '«По статам» — все вещи по цепочке, без сетов. Вещей не держит. Вещь не по билду: «Надеть на…» → поиск по имени.',
+      pool: 'Все вещи героя и зачем каждая: надета, лучшая своего сета, запас. «Больше не нужна» — разбери в игре и убери здесь.',
       fusion: 'Отметишь Core Fusion Eternal — Eternal станет неактивным, а его вещи перейдут к Core Fusion Eternal. Звезда на Eternal вернёт всё назад.',
       bt: 'Вещь уже на Breakthrough T4 — нажми «T4»: бонус сета и материал для Breakthrough посчитаются как в игре. Свежий дроп — T0, отмечать не нужно.',
-      wornTab: 'Здесь — что на герое сейчас в игре. Пустой слот — «Ввести»: откроется оценка для этого слота.',
-      trade: 'Обмен вещами: кто что наденет из всех вещей — у других, запасных, из инвентаря. «Сделал» — когда переоделся в игре. Булавка — вещи героя другим не отдаём.',
-      aimChange: 'Переодеть в … — покажу, что надеть из своих. Билд, в который герой одет, обведён.',
-      share: 'Поделись героем: по ссылке друг увидит, что на нём надето и под какой билд. Только просмотр — у друга ничего не изменится.',
+      wornChain: 'Очки надетого и цепочка героя: у каждого стата — сколько сегментов дают надетые вещи. Ярче — больше, пунктир — нет ни на одной.',
+      wornTab: 'Здесь — что на герое сейчас в игре. Пустой слот — «Ввести». Внизу — чего не хватает до наборов из билдов.',
+      trade: 'Обмен вещами: кто что наденет из всех вещей — у других, запасных, из инвентаря. «Заказ ▾» — что собирать герою. «Сделал» — когда переоделся в игре.',
+      batch: 'Много вещей одного сета? «Партия»: введи их подряд, как в игре, — приложение скажет про каждую, и обход по шагам: надеть, замок, Breakthrough, разобрать.',
+      share: 'Поделись героем: по ссылке друг увидит, что на нём надето, и закреплённый набор. Только просмотр — у друга ничего не изменится.',
+      pin: 'Оценка считает статы и сеты вместе — билд выбирать не нужно. Нужен конкретный набор — закрепи в карточке героя.',
     },
     // строка «Что нового» — у подсказок с news
     news: {
+      pin: 'оценка: статы и сеты вместе, закрепление набора',
       more: 'настройки, резервная копия, язык и справка — в «Ещё»',
-      wornTab: 'вкладка «Надето»: отметь, что сейчас на героях',
-      trade: 'Обмен вещами — переодеть героя или команду из всех вещей',
       move: 'при замене стат из другой строки переезжает',
-      gear: 'вещи персонажа — билды собираются сами',
       bt: 'отметка «T4» на форме',
-      share: '«Поделиться» героем — ссылка только для просмотра',
+      batch: 'партия: обход по шагам — надеть, замок, Breakthrough, разобрать',
+      wornChain: 'очки надетого и цепочка героя на «Надето»',
     },
     newsStrip: (first: string, more: number) => `Новое: ${first}${more ? ` и ещё ${more}` : ''}.`,
     newsShow: 'Показать',
@@ -927,7 +932,7 @@ export const ru = {
       pick: (x: StepText): string => x.demo ? 'Нажми на поле сета и выбери **Speed Set**.' : x.kind === 'armor'
         ? 'Выбери сет — он в названии вещи после «of».'
         : x.kind === 'weapon'
-          ? `Main stat — одной из кнопок рядом с грейдом${x.legend ? ', а ниже найди оружие по названию: от него зависит пассивка' : ''}.`
+          ? `Отметь main stat: первое нажатие в сетке — ATK%, DEF% или HP%${x.legend ? ', а потом найди оружие по названию: от него зависит пассивка' : ''}.`
           : x.legend
             ? 'Найди аксессуар по названию — от него зависят пассивка и то, какие main бывают.'
             : 'Отметь main stat: первое нажатие в сетке — это main, дальше идут сабстаты.',
@@ -937,12 +942,10 @@ export const ru = {
         ? 'Вердикт готов. Нажми на карточку: кому вещь подходит, что качать и код для гильдии.'
         : 'Справа — вердикт: кому вещь подходит, что качать и код для гильдии. Посмотри и нажми «Дальше».',
       // тур «Экипировка» (gear.ts): на примере — Caren · Speed
-      gBuild: (): string => 'Это Caren · Speed: билд собран из вещей Caren сам. У пустого слота — «Примерить». Нажми на **шлем**.',
+      gBuild: (): string => 'Это «Надето» у Caren — что на ней в игре. Цвет сабстата — засчитан ли он ей. Нажми на **шлем**.',
       gPiece: (): string => 'Прокачал вещь в игре — поправь сегменты и «T4» здесь. А новую на её место ищут так: нажми **Примерить замену**.',
-      gCard: (x: StepText): string => `Оценка только для Caren: карточка сравнивает вещь с формы с билдами Caren. ${x.narrow
-        ? 'На карточке — насколько она лучше надетого шлема. Посмотри и нажми «Дальше».'
-        : 'В вердикте справа — насколько она лучше надетого шлема. Посмотри и нажми «Дальше».'}`,
-      gEquip: (): string => 'Лучше, чем на Caren, — нажми **Заменить шлем Caren**: новый встанет в билд, а старый — такой же Speed-шлем — пойдёт ему на Breakthrough.',
+      gCard: (x: StepText): string => `Оценка только для Caren: ${x.narrow ? 'на карточке' : 'в вердикте справа'} — на сколько очков Caren станет сильнее с этим шлемом. Посмотри и нажми «Дальше».`,
+      gEquip: (): string => 'Лучше, чем на Caren, — нажми **Заменить шлем Caren**: новый запишется надетым, а старый Speed-шлем пойдёт ему на Breakthrough.',
       gNext: (): string => '«Следующий» оценку для Caren не сбрасывает — вводи вещи для Caren подряд. Закончил — ✕ на полосе «Только для», и оценка снова для всех.',
       next: (x: StepText): string => `«Следующий» — к новой вещи: слот, грейд, сет и main останутся, сабстаты очистятся. Нажатый случайно «Следующий» несколько секунд можно отменить кнопкой «Вернуть» — кроме обучения.${
         x.keys ? ' Клавиша — Esc.' : ''}`,

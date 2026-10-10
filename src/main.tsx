@@ -18,6 +18,7 @@ import './styles/verdict.css';
 import './styles/chars.css';
 import './styles/more.css';
 import './styles/trade.css';
+import './styles/batch.css';
 import './styles/tour.css';
 import './styles/motion.css';
 

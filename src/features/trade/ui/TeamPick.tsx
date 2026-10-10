@@ -1,17 +1,15 @@
 // Команда обмена — четыре места ромбом, как в игре (R4.2, R10.3). Пустое место — «+»: нажатие открывает выбор героя под
 // ромбом. Член — плитка как в списке персонажей (CharTile): нажатие — выбор на его место (там же «Убрать из команды»,
-// TradeSheet), в углу вместо звезды — булавка «Не отдавать надетое» (у героя без вещей её нет, R3.4); под плиткой — билд
-// мерила «Speed ▾», как на карточке героя (шторка «Билд для X»). Выбор героя, запись мерила и закрепления — у TradeSheet.
+// TradeSheet); под плиткой — его заказ «По статам ▾» (шторка OrderSheet). Выбор героя и заказа — у TradeSheet.
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { isPinned, type GearStore } from '@/features/gear/model/gear';
-import { AimButton } from '@/features/worn/AimSheet';
+import type { GearStore } from '@/features/gear/model/gear';
 import { CharTile } from '@/features/roster/CharTile';
-import { Icon } from '@/game/icons/Img';
+import { OrderButton } from './OrderSheet';
 
-export function TeamPick({ team, ctx, st, place, gaugeName, onPlace, onAim, onPin }: {
-  team: readonly (string | null)[]; ctx: Ctx; st: GearStore; place: number | null; gaugeName: (id: string) => string;
-  onPlace: (i: number) => void; onAim: (id: string) => void; onPin: (id: string) => void;
+export function TeamPick({ team, ctx, st, place, orderName, onPlace, onOrder }: {
+  team: readonly (string | null)[]; ctx: Ctx; st: GearStore; place: number | null; orderName: (id: string) => string;
+  onPlace: (i: number) => void; onOrder: (id: string) => void;
 }) {
   const t = useT();
   return (
@@ -25,17 +23,11 @@ export function TeamPick({ team, ctx, st, place, gaugeName, onPlace, onAim, onPi
             </div>
           );
         }
-        const pinned = isPinned(st, id);
         const n = st.pools[id]?.length ?? 0;
         return (
           <div key={i} className={`team-p team-${i}`}>
-            <CharTile c={c} selected={place === i} isNew={ctx.idx.NEW.has(id)} gear={n || undefined} off={false} pinned={false} onSelect={() => onPlace(i)}
-              corner={n ? (
-                <button type="button" className="team-pin" aria-pressed={pinned} aria-label={t.trade.pin} title={t.trade.pin} onClick={() => onPin(id)}>
-                  <Icon name="pin" />
-                </button>
-              ) : null} />
-            <AimButton name={gaugeName(id)} aria={t.ui.wornChangeAria(c.name)} onClick={() => onAim(id)} />
+            <CharTile c={c} selected={place === i} isNew={ctx.idx.NEW.has(id)} gear={n || undefined} off={false} onSelect={() => onPlace(i)} corner={null} />
+            <OrderButton name={orderName(id)} short onClick={() => onOrder(id)} />
           </div>
         );
       })}

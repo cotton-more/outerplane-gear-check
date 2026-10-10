@@ -1,22 +1,20 @@
-// Окно «Кому надеть?» (GEARPOOL): вещь с формы — в вещи персонажа. Строка на персонажа, без выбора билда: только те,
-// кому вещь встанет в билд (соберёт, сет 3 из 4, пустой слот, новая лучше) или начнёт новый, и неактивная «Уже есть».
-// Без поиска — по сету, как вердикт (Р11). Поиск по имени — явный выбор: вещь не по билду, но с полезными статами
-// встанет персонажу в «По статам» (находка 28). Вещь без полезных статов не попадает никому (Р13). Сначала держащие
-// исходы, потом «начнёт»; имя ищется среди всех персонажей (без X, когда есть Core Fusion X: features/gear/model/fusion). В шапке —
-// сама вещь.
+// Окно «Кому надеть?» («статы + сеты»): вещь с формы — в вещи героя. Без поиска — те из ростера (без ростера — все с
+// билдами), кому она «Надень», по приросту очков. Поиск по имени — явный выбор: «Надеть» запишет её на любом найденном
+// (TEXTS 23), с приростом, если он есть. Имя ищется среди всех персонажей (без X, когда есть Core Fusion X:
+// features/gear/model/fusion). В шапке — сама вещь.
 import { useMemo, useState } from 'react';
-import type { Char } from '@/game/data/types';
+import type { Char, Grade } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
-import { holds, shownKind, type PoolView } from '@/features/gear/pool';
-import { charsVs, type CharVs } from '@/features/gear/model/poolVs';
-import { buildOfKey } from '@/game/build/variants';
+import type { PoolView } from '@/features/gear/pool';
+import { charVs, type CharVs } from '@/features/gear/model/poolVs';
+import { partText } from '@/game/set/setName';
 import type { ItemInput } from '@/game/item/item';
 import { SlotIcon } from '@/game/icons/Img';
 import { Sheet } from '@/shared/ui/Sheet';
-import { VsChip } from './VsChip';
+import { gainOf, VsChip } from './VsChip';
+import { pieceText } from './pieceText';
 import { tour } from '@/tour/anchors';
-import { setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { SubToken } from '@/game/item/SubToken';
 import { HeroName } from '@/game/hero/HeroName';
@@ -27,7 +25,7 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   ctx: Ctx; viewOf: (charId: string) => PoolView; item: ItemInput; onEquip: (c: Char) => void; onClose: () => void;
 }) {
   const t = useT();
-  const { ITEM, D } = ctx.idx;
+  const { D } = ctx.idx;
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   const chars = useMemo(() => {
@@ -36,33 +34,16 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
     const own = withBuilds.filter((c) => ctx.roster.has(c.id));
     return needle ? withBuilds.filter((c) => c.name.toLowerCase().includes(needle)) : own.length ? own : withBuilds;
   }, [ctx, D, needle]);
-  const list = useMemo(() => charsVs(ctx, viewOf, item, chars, { explicit: !!needle }).filter((x) => x.useful)
-    .sort((a, z) => rank(a) - rank(z)), [ctx, viewOf, item, chars, needle]);
+  const list = useMemo(() => chars.map((c) => charVs(ctx, viewOf(c.id), c.id, item, { any: !!needle }))
+    .filter((x): x is CharVs => !!x?.useful).sort((a, z) => z.h.dV - a.h.dV), [ctx, viewOf, item, chars, needle]);
   const acc = t.ui.slotAcc[item.slot];
-  const nameOf = (x: Pick<ItemInput, 'slot' | 'setId' | 'itemKey' | 'main'> & { grade: string }) => {
-    const what = x.setId ? `${setName(ctx.idx, x.setId)} Set` : [x.itemKey ? ITEM[x.slot as 'weapon' | 'accessory'][x.itemKey]?.name : x.grade === 'rare' ? 'Epic' : '', x.main].filter(Boolean).join(' · ');
-    return `${what} · ${x.grade === 'unique' ? 'L' : 'E'}`;
-  };
-  const bn = (key: string) => buildOfKey(key, t.ui.byStats);
-  // что будет по нажатию: «Надеть — соберёт Speed», «Заменить шлем — новая лучше · Speed», «Надеть — начнёт Speed»;
-  // «Надеть» уберёт вещь её слота (x.replaces) — «Заменить шлем — соберёт Speed» и т. п.: подпись = действие.
-  // Нажата «T4» — «· T4» в конце (В4)
-  const t4 = item.bt === 4 ? t.ui.withT4 : '';
-  const action = (x: CharVs) => what(x) + t4;
-  const what = (x: CharVs) => {
-    const o = x.best;
-    if (!o || o.entering || !o.used) {
-      const builds = [...new Set(x.starts.map((v) => v.name))].join(', ') || (o ? bn(o.v.key) : '');
-      return x.replaces ? t.ui.equipRowReplaceStarts(acc, builds) : t.ui.equipRowStarts(builds);
-    }
-    if (shownKind(o) === 'completes') return x.replaces ? t.ui.equipRowReplaceCompletes(acc, bn(o.v.key)) : t.ui.equipRowCompletes(bn(o.v.key));
-    if (shownKind(o) === 'closer') {
-      return x.replaces
-        ? t.ui.equipRowReplaceCloser(acc, bn(o.v.key), o.after.progress, o.after.need)
-        : t.ui.equipRowCloser(bn(o.v.key), o.after.progress, o.after.need);
-    }
-    if (x.replaces) return t.ui.equipRowReplace(acc, bn(o.v.key));
-    return o.kind === 'fill' ? t.ui.equipRowFill(bn(o.v.key)) : t.ui.equipRowEq(bn(o.v.key));
+  const nameOf = (x: Pick<ItemInput, 'slot' | 'setId' | 'itemKey' | 'main'> & { grade: Grade }) => `${pieceText(ctx, x)} · ${x.grade === 'unique' ? 'L' : 'E'}`;
+  // что будет по нажатию: «Надеть — +2,5 очк.», «Заменить шлем — +2,5 очк. · включит Speed ×2»; нажата «T4» — «· T4» (В4)
+  const action = (x: CharVs) => {
+    const g = gainOf(x);
+    const pts = g === null ? null : t.fit.pts(g);
+    const on = x.h.kind === 'wear' && x.h.parts.on.length ? t.fit.rowOn(partText(ctx.idx, x.h.parts.on[0])) : '';
+    return (x.replaces ? t.fit.rowReplace(acc, pts) : t.fit.rowEquip(pts)) + on + (item.bt === 4 ? t.ui.withT4 : '');
   };
   return (
     <Sheet title={t.ui.equipSheet} onClose={onClose}>
@@ -82,17 +63,15 @@ export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
                     <b><HeroName c={x.c} /></b>
                     <span className="act">{action(x)}</span>
                   </span>
-                  <VsChip o={x.best} starts={!x.best || x.best.entering || !x.best.used} />
+                  <VsChip x={x} />
                 </button>
               </li>
             ))}
           </ul>
         ) : <p className="muted">{needle ? t.ui.equipNoneQ : t.ui.equipNone}</p>}
-        <p className="muted small">{t.ui.equipNote}</p>
+        <p className="muted small">{t.fit.rowNote}</p>
       </div>
     </Sheet>
   );
 }
 
-// держащие исходы на собираемых вариантах, потом «начнёт»
-const rank = (x: CharVs) => (x.best && holds(x.best) && x.best.used && !x.best.entering ? 0 : 1);

@@ -4,8 +4,6 @@ import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import { charMatches, compareChars, effectiveMode, type ListAction, type ListState } from './charFilter';
 import type { RosterApi } from './useRoster';
-import type { GearApi } from '@/features/gear/store/useGear';
-import { isPinned } from '@/features/gear/model/gear';
 import { useIndex } from '@/game/data/IndexContext';
 import { CharBar } from './CharBar';
 import { CharTile } from './CharTile';
@@ -14,7 +12,7 @@ import { CharTile } from './CharTile';
 // рядом с ним (пара всегда в одном порядке, fusionOrder), с пометкой и приглушённый; звезда на нём — окно «Вернуться к X?» (App);
 // todressN — сколько своих доодеть (у «Доодеть»)
 interface Props {
-  s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; gear: GearApi; geared: ReadonlyMap<string, number>;
+  s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; geared: ReadonlyMap<string, number>;
   off: ReadonlyMap<string, string>; todressN: number;
   onTrade?: () => void; // «Обмен» (features/trade, сразу режим «Команда») — кнопка на панели, когда у кого-то есть вещи
 }
@@ -34,7 +32,7 @@ function fusionOrder(list: Char[], partner: (id: string) => string | undefined, 
   return out;
 }
 
-export function CharList({ s, dispatch, rosterApi, gear, geared, off, todressN, onTrade }: Props) {
+export function CharList({ s, dispatch, rosterApi, geared, off, todressN, onTrade }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -54,7 +52,7 @@ export function CharList({ s, dispatch, rosterApi, gear, geared, off, todressN, 
       <CharBar s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} onTrade={onTrade && nGeared > 0 ? onTrade : undefined} />
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
-          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)} pinned={isPinned(gear.store, c.id)}
+          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)}
             partnerName={idx.CHAR[partner(c.id) ?? '']?.name}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
         )) : <p className="empty">{allDressed ? t.ui.allDressed : t.ui.nobodyFound}</p>}
