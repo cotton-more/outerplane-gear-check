@@ -1,4 +1,4 @@
-// Резервная копия одним кодом (.x/0060-share-code SPEC 1, 2, 5): вещь в коде, ростер и экипировка туда и обратно,
+// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
 // размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';

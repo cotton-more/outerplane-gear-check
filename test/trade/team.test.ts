@@ -1,4 +1,4 @@
-// «Обмен вещами», этап 5: командный обмен (R7.1–R7.3): .x/0040-trade/TESTS.md, H1–H5, H7, H8, H10–H17, J7; у каждого
+// «Обмен вещами», этап 5: командный обмен (R7.1–R7.3; MODEL.md §10): H1–H5, H7, H8, H10–H17, J7; у каждого
 // свой заказ — stat-sets TESTS T7.6. H6, H9 (применение) — в тестах применения; H10 — отдельно.
 import { describe, expect, it } from 'vitest';
 import { moveStep } from '@/features/trade/model/apply';

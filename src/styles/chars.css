@@ -220,7 +220,7 @@ html.xs .bgear-t { grid-row: 3; }
 .worn-aim { margin: 0; font-size: 13px; color: var(--ink-2); }
 .worn-aim b { color: var(--ink); }
 .worn-hint { margin: 0; font-size: 13px; color: var(--ink-2); }
-/* «Поделиться» у заголовка «Надето · N из 6» (.x/0060-share-code): нет системного «Поделиться» и буфера — ссылка строкой */
+/* «Поделиться» у заголовка «Надето · N из 6»: нет системного «Поделиться» и буфера — ссылка строкой */
 .bgear h4 .wtotal { letter-spacing: normal; text-transform: none; color: var(--ink-2); }
 /* points of a worn piece — at the end of its substat row; of a set — after its last bonus line */
 .wpts { font: 600 12px var(--font-mono); color: var(--ink-2); }

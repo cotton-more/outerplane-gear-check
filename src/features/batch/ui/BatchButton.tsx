@@ -1,4 +1,4 @@
-// «Партия» — turns the batch mode on (.x/0110-batch/PLAN.md §1): next to «Следующий» on a wide screen, in «Ещё» on a phone.
+// «Партия» — turns the batch mode on (DEVELOPMENT.md "features/batch"): next to «Следующий» on a wide screen, in «Ещё» on a phone.
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 

@@ -1,4 +1,4 @@
-/* «Партия» (features/batch, .x/0110-batch): the strip over the form, the list and the plan — piece rows like the trade plan */
+/* «Партия» (features/batch, MODEL.md §8): the strip over the form, the list and the plan — piece rows like the trade plan */
 .batch-strip .batch-list { margin-left: 4px; }
 .batch-note { margin: 4px 2px 0; }
 .batch { display: grid; gap: 10px; font-size: 12.5px; }
@@ -37,7 +37,7 @@ html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 .batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 4px; background: var(--surface); } /* above the rows' ✕ (z-index 1) */
 /* the column's bottom padding is the bar's own: rows don't show through under it */
 .batch-col .batch-acts { padding-bottom: 12px; }
-/* the step-by-step walk (.x/0140-batch-walk): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
+/* the step-by-step walk (MODEL.md §8 item 7): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
 .batch-strip { flex-wrap: wrap; }
 .batch-marks { display: flex; gap: 6px; margin-left: auto; }
 .batch-marks .btn { min-height: 30px; padding: 3px 10px; font-size: 13px; }

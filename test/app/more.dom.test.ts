@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// «Ещё» (.x/0070-more-sheet SPEC 1–3, 8, 9): одна шторка — на телефоне с нижней плашки (☰), на ПК из шапки (⋯); переходы
+// «Ещё»: одна шторка — на телефоне с нижней плашки (☰), на ПК из шапки (⋯); переходы
 // только на узком экране; уведомления, настройки, данные; фраза VA Games внизу; подвала и кнопок под формой на ПК нет.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -134,7 +134,7 @@ describe('1.4, 2.2 «Ещё» на ПК', () => {
     setWidth(1280);
     await mount();
     const row = $('.actions')!;
-    expect($$('.actions button').map((b) => b.textContent)).toEqual(['Next item', 'Batch']); // «Партия» next to «Следующий» (.x/0110-batch)
+    expect($$('.actions button').map((b) => b.textContent)).toEqual(['Next item', 'Batch']); // «Партия» next to «Следующий»
     for (const text of ['Enter code', 'Help', 'Tutorial', 'only my', 'settings', 'Evaluation']) expect(row.textContent).not.toContain(text);
     expect($('#eval-in .toggle')).toBeNull();
     expect($('#eval-in details')).toBeNull();

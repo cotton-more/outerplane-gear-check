@@ -29,7 +29,7 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   hero: boolean; gearSeq: number;
   verdictOpen: boolean; pieceOpen: boolean; helpOpen: boolean;
   formUndo: ItemInput | null;            // на экране «Вернуть» формы — полосы не показываем
-  paused?: boolean;                      // открыта карточка показа героя (.x/0060 SPEC 3.5): ни карточки новичка, ни полос, ни подсказок — и не отмечаем их показанными
+  paused?: boolean;                      // открыта карточка показа героя: ни карточки новичка, ни полос, ни подсказок — и не отмечаем их показанными
   setDemo: Dispatch<SetStateAction<Demo>>;
   setTouring: (on: boolean) => void;
   onTourRunning: () => void;             // тур начался или кончился: снять «Вернуть» формы и экипировки

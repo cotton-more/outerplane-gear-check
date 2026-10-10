@@ -156,7 +156,7 @@ describe('reducer: «T4» (Breakthrough брони, В4; у Legendary оружи
     expect(reducer(on, { type: 't4' }).t4).toBe(false);
   });
 
-  // было: у Epic оружия и аксессуара «T4» нет. .x/0060 SPEC 4.1: есть — материал любой Steel Sword / Steel Necklace
+  // было: у Epic оружия и аксессуара «T4» нет. Теперь: есть — материал любой Steel Sword / Steel Necklace
   it.each(['weapon', 'accessory'] as const)('у Epic %s нажатие включает и снимает «T4»', (slot) => {
     const on = reducer(fresh({ slot, grade: 'rare', main: 'ATK%' }), { type: 't4' });
     expect(on.t4).toBe(true);
@@ -438,7 +438,7 @@ describe('недовведённый предмет переживает пер�
     expect(restoreItem(fresh({ slot: 'gloves' }), { t4: 'yes' }, idx).t4).toBe(false);
   });
 
-  // вопрос 7 (б): у Legendary оружия «T4» переживает перезапуск, как у брони
+  // решение владельца 2026-10-01/02: у Legendary оружия «T4» переживает перезапуск, как у брони
   it('Legendary оружие: нажатая «T4» сохраняется и возвращается вместе с предметом', () => {
     const w = D.weapons.find((i) => i.grade === 'unique' && i.star === 6)!;
     const s = reducer(fresh({ slot: 'weapon', grade: 'unique', itemKey: w.key, main: w.mains[0], subs: { SPD: 2 } }), { type: 't4' });

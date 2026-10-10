@@ -44,7 +44,7 @@ interface Props {
   onPieceEdit?: (charId: string, was: string, now: string) => void;
   onRateFor?: (c: Char) => void;
   onTrade?: (c: Char) => void; // «К обмену ▸» — шторка обмена сразу с планом героя
-  canShare?: boolean; // «Поделиться» во «Надето» (.x/0060 SPEC 3.1): не в обучении и не при экипировке новой версии
+  canShare?: boolean; // «Поделиться» во «Надето» (DEVELOPMENT.md "features/worn"): не в обучении и не при экипировке новой версии
 }
 
 type Tab = 'worn' | 'pool' | 'builds';

@@ -220,7 +220,7 @@ is guarded by `test/layers.test.ts`: every file in its folder, imports only down
 **The owner's real data never goes into `test/`** (the repo is public). The owner's snapshot (`.x/00-equip.md`, with its siblings
 `.x/00-roster.md` and `.x/00-notes.md`, outside git) is read at runtime by `test/trade/helpers.ts` (`hasOwner`, `loadOwner`);
 tests that use it (X1, X5, X6) are `it.skipIf(!hasOwner())` and skip silently without the file. Probes on real data live in
-`build/` or `.x/`, never in the tests.
+`build/` or in the owner's working folder outside git, never in the tests.
 
 Phrases — only in `src/i18n`: the golden compares Russian texts verbatim, and `test/i18n.test.ts` checks the English version —
 all golden cases in English without a single Cyrillic letter, and no Russian phrases in code bypassing the dictionary. New phrase —

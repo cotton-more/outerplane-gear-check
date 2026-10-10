@@ -383,7 +383,7 @@ describe('подсказки по ходу и «Что нового»', () => {
     }
   }, 10_000);
 
-  // вопрос 7 (б) ревью eval-only: «T4» и у Legendary оружия — подсказка bt (одна на все вещи) встаёт у его кнопки
+  // решение владельца 2026-10-01/02: «T4» и у Legendary оружия — подсказка bt (одна на все вещи) встаёт у его кнопки
   it('первая вещь — Legendary оружие: подсказка «T4» у кнопки в строке предмета', async () => {
     const orig = Element.prototype.getClientRects;
     Element.prototype.getClientRects = function () { return [{}] as unknown as DOMRectList; };

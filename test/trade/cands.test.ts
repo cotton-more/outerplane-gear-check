@@ -1,4 +1,4 @@
-// «Обмен вещами»: понятия (A1, A2) и кандидаты получателя (C1–C9), .x/0040-trade/TESTS.md; сеанс и источники —
+// «Обмен вещами»: понятия (A1, A2) и кандидаты получателя (C1–C9; case tags — MODEL.md §10); сеанс и источники —
 // stat-sets TESTS T7.4, вопрос 15
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';

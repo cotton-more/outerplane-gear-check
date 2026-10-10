@@ -1,4 +1,4 @@
-// Режимы списка персонажей «Мои · Доодеть · Все» (features/roster/charFilter): кого показывать (.x/0070-more-sheet SPEC 5)
+// Режимы списка персонажей «Мои · Доодеть · Все» (features/roster/charFilter): кого показывать (DEVELOPMENT.md "features/roster")
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

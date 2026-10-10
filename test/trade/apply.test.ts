@@ -1,4 +1,4 @@
-// «Обмен вещами», применение плана героя (этап 4): .x/0040-trade/TESTS.md, E1–E12 и F8.
+// «Обмен вещами», применение плана героя (этап 4): E1–E12 и F8 (MODEL.md §10).
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import type { GearStore, Piece } from '@/features/gear/model/gear';

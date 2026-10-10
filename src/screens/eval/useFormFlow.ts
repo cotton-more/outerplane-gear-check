@@ -62,7 +62,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   // вещь по имени для тоста «Заменить»: сет у брони, предмет у оружия и аксессуара (Epic без предмета — main)
   const pieceLabel = (p: Piece) => (p.setId ? setName(idx, p.setId) : itemCaption(idx, p));
   // «Надеть на CF», когда есть X, — сначала окно перехода (в). Строка и кнопка CF посчитаны по этому же хранилищу
-  // (viewOf, П9)
+  // (viewOf)
   const doEquip = (c: Char) => {
     closeEquip();
     if (!fusionGate(c.id, (sw) => equipOn(c, sw))) equipOn(c, null);
@@ -147,7 +147,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     });
   };
   // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote): такая же Epic — материал новой,
-  // такая же Legendary — «сначала оцени» (features/gear/model/material oldFate, .x/0060 SPEC 4.5). Кому отдать снятую —
+  // такая же Legendary — «сначала оцени» (features/gear/model/material oldFate, MODEL.md §4). Кому отдать снятую —
   // не предлагаем никогда (Р15): игрок снимет её в игре и оценит сам. Запись из «Примерить замену» (rep) — та же вещь в
   // игре, введённая заново (Reforge, Transistone): ни то, ни другое. Убраны 2+ — в строках имя сета или предмета вместо
   // «Старые» (заголовок replacedMany их уже перечислил)

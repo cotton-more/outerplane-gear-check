@@ -65,7 +65,7 @@ const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: S
 
 // onEnter — «Ввести» у пустого слота; onWearAll — «Да, всё надето». Нет их — обучение и новая версия страницы: слоты
 // показываются, действий нет. share — «Поделиться» у заголовка (ShareButton). shown — карточка показа чужого героя
-// (.x/0060 SPEC 3.4): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор
+// (DEVELOPMENT.md "features/worn"): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор
 export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, share, shown = false, pinned }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece?: (id: string) => void;
   onEnter?: (slot: SlotId) => void; onWearAll?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;

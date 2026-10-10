@@ -1,4 +1,4 @@
-// The step-by-step walk of a batch plan (.x/0140-batch-walk §1, owner 2026-10-08): four stages by game screen, in an
+// The step-by-step walk of a batch plan (MODEL.md §8 item 7, owner 2026-10-08): four stages by game screen, in an
 // order where the numbers never drift — worn pieces are shown in the game filter, so equipping and taking off move
 // nothing; locking moves nothing; Breakthrough needs no numbers (material is interchangeable, worn pieces aren't
 // listed, locked ones can't be picked); the dismantle comes last, so nothing meant for a Breakthrough is dismantled by

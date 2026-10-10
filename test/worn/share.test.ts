@@ -1,4 +1,4 @@
-// «Показать героя» (.x/0060-share-code SPEC 3.2): код героя туда и обратно, закреплённый набор по отпечатку (stat-sets этап 6),
+// «Показать героя» (DEVELOPMENT.md "features/worn"): код героя туда и обратно, закреплённый набор по отпечатку (stat-sets этап 6),
 // длина, целостность.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';

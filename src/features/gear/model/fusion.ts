@@ -104,8 +104,8 @@ export function gateOf(idx: Index, roster: ReadonlySet<string>, pools: GearStore
   return from && exists(roster, pools, from) ? from : null;
 }
 
-// хранилище, на котором «Надеть» на героя сделает putOn: после «Да» в окне перехода — вещи второго уже у него (П9:
-// строка и кнопка — по нему). Окна не будет или вещи не переходят — то же хранилище
+// хранилище, на котором «Надеть» на героя сделает putOn: после «Да» в окне перехода — вещи второго уже у него: строка и
+// кнопка — по нему. Окна не будет или вещи не переходят — то же хранилище
 export function storeFor(idx: Index, roster: ReadonlySet<string>, st: GearStore, to: string): GearStore {
   return gateOf(idx, roster, st.pools, to) ? switchFusion(idx, [...roster], st, to)?.st ?? st : st;
 }

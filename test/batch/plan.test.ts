@@ -1,4 +1,4 @@
-// «Партия» — the plan for a batch (.x/0110-batch/PLAN.md §3): the usual verdict, strongest first, decisions applied to
+// «Партия» — the plan for a batch (MODEL.md §8): the usual verdict, strongest first, decisions applied to
 // a copy of the store; one piece — one fate; the entered order never decides a fate.
 import { describe, expect, it } from 'vitest';
 import { makeCtx } from '@/game/context';

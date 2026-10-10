@@ -1,4 +1,4 @@
-// «Обмен вещами», как найти вещь в игре (R9): .x/0040-trade/TESTS.md, раздел I. Реальные данные фикстуры; цепочка Рин
+// «Обмен вещами», как найти вещь в игре (R9; MODEL.md §10): раздел I. Реальные данные фикстуры; цепочка Рин
 // «По статам» — ATK › CHC › CHD › SPD › DMG UP%.
 import { describe, expect, it } from 'vitest';
 import { keyOfHole, keyOfItem, sourceOf } from '@/features/trade/model/hint';

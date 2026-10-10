@@ -1,6 +1,6 @@
 // The strip above the form in the batch mode, like «Только для · Caren»: «Партия · 7», «Список ▸», ✕. One line: in
 // landscape 812×375 and in a 420×390 window the form must not slide down. Its short notes are a toast (App).
-// In it (.x/0140-batch-walk): «E · надето» — a piece worn by a hero (picker: heroes wearing this slot that fits the
+// In it: «E · надето» — a piece worn by a hero (picker: heroes wearing this slot that fits the
 // batch) and «🔒 · отложено» — a locked piece of the form's slot; neither needs substats. A tall phone wraps them to a
 // second line inside the strip; a short window (landscape, split screen) keeps one line with «E» / «🔒» only (batch.css)
 import { useState } from 'react';

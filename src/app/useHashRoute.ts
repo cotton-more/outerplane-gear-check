@@ -6,7 +6,7 @@ export const slugFromHash = (): string => {
   try { return decodeURIComponent(location.hash.slice(1)); } catch { return ''; }
 };
 
-// код героя в адресе при запуске (ссылка показа, .x/0060-share-code SPEC 3.3): читается до того, как адрес перепишут
+// код героя в адресе при запуске (ссылка показа, DEVELOPMENT.md "Storage and URLs"): читается до того, как адрес перепишут
 export const heroFromHash = (): string | null => heroCodeIn(location.hash);
 
 // Адрес ↔ открытый персонаж: #demiurge-stella открывает его билды, открытый персонаж пишется в адрес. Ссылка показа

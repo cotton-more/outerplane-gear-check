@@ -121,7 +121,7 @@ describe('свежая Epic с тремя сабстатами — без Reforg
   });
 });
 
-// «T4» рядом с сетом (шаг 8): бонус сета считается по Breakthrough — у каждой вещи свой. Вопрос 7 (б) ревью eval-only:
+// «T4» рядом с сетом (шаг 8): бонус сета считается по Breakthrough — у каждой вещи свой. Решение владельца 2026-10-01/02:
 // и рядом с предметом Legendary оружия и аксессуара — материал такого же предмета
 describe('«T4» на форме', () => {
   const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
@@ -146,7 +146,7 @@ describe('«T4» на форме', () => {
     expect(chip()?.getAttribute('title')).toBe('Already at T4 — no more copies needed for its Breakthrough');
   });
 
-  // было: у Epic «T4» нет. .x/0060 SPEC 4.1: есть, в одном ряду с грейдом и main (предмета у Epic нет)
+  // было: у Epic «T4» нет. Теперь: есть, в одном ряду с грейдом и main (предмета у Epic нет)
   it.each(['weapon', 'accessory'])('Epic %s: «T4» — в ряду грейда, после main', async (slot) => {
     await mount({ slot, grade: 'rare' }, {});
     const rows = [...document.querySelectorAll('.form .formrow')];

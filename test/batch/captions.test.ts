@@ -1,4 +1,4 @@
-// One caption rule everywhere a piece is named (.x/0165-merge-fixes TEXTS.md §12, owner Q4): a Legendary weapon or
+// One caption rule everywhere a piece is named (DEVELOPMENT.md "Shared elements", owner Q4): a Legendary weapon or
 // accessory «item · main», an Epic one «Steel Sword · ATK%» (the game's name, EPIC_NAME), armor in a batch — its slot word.
 import { JSDOM } from 'jsdom';
 import { createElement } from 'react';

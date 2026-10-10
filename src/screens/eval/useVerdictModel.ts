@@ -68,13 +68,13 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   hero: Hero | null; replace: string | null; // режим «для героя» и запись «Примерить замену»
   touring: boolean;
   narrow: boolean; onEval: boolean; // телефон; вкладка «Оценка» открыта
-  batch?: boolean;                // «Партия»: pieces are entered without a verdict (.x/0110-batch)
+  batch?: boolean;                // «Партия»: pieces are entered without a verdict (MODEL.md §8)
 }) {
   // вердикт зависит только от предмета, настроек и пулов — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
   const key = JSON.stringify(input);
   const raw = useMemo(() => evaluate(ctx, input), [ctx, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  // П9: «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
+  // «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
   // «Да» — на хранилище, где вещи X уже у него (features/gear/model/fusion storeFor): его исход и кнопка — по этому виду пула.
   // Окна не будет или вещи не переходят — общий вид. В обучении окон нет (fusionGate)
   const viewOf = useMemo(() => {

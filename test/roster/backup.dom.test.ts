@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Поле «Резервная копия» в «Ещё» (.x/0060-share-code SPEC 2.3–2.4, .x/0070-more-sheet SPEC 1.3): что вставили — что происходит.
+// Поле «Резервная копия» в «Ещё» (DEVELOPMENT.md "Storage and URLs"): что вставили — что происходит.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';

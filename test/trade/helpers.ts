@@ -1,4 +1,4 @@
-// Хелперы тестов «Обмен вещами» (.x/0040-trade/DESIGN.md): синтетика — модель прямо из чисел; реальные данные —
+// Хелперы тестов «Обмен вещами» (MODEL.md §7): синтетика — модель прямо из чисел; реальные данные —
 // фикстура, роли героев, фабрики вещей и хранилища; снимок вещей владельца (.x/00-equip.md).
 import { existsSync, readFileSync } from 'node:fs';
 import { createIndex } from '@/game/data';
@@ -97,7 +97,7 @@ export const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json
 export const idx = createIndex(D);
 export const ctx: Ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
 
-// роли тестов (TESTS.md) → герои фикстуры. Рин, Карен, Ноа, Лея — striker; Дельта, Майя — ranger; NOBUILD — без билдов
+// роли тестов → герои фикстуры. Рин, Карен, Ноа, Лея — striker; Дельта, Майя — ranger; NOBUILD — без билдов
 export const HERO = {
   rin: '2000019', karen: '2000089', noa: '2000022', delta: '2000121', maya: '2000012', leah: '2000055', nobuild: '2000021',
 } as const;

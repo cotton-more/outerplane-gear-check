@@ -1,4 +1,4 @@
-// «Обход» (.x/0140-batch-walk §1 p. 4): the plan as steps to do in the game, four stages by game screen; each step has
+// «Обход» (MODEL.md §8 item 7): the plan as steps to do in the game, four stages by game screen; each step has
 // a ✓ (saved in the batch: the walk survives a reload). A piece the batch has no number for is named by its description.
 // At the end — «Всё сделано — Записать план» with the same confirm as on the plan.
 import { useState, type ReactNode } from 'react';

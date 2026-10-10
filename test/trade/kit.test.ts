@@ -1,4 +1,4 @@
-// «Обмен вещами», лучший комплект получателя (R6.1; польза — MODEL.md §3): .x/0040-trade/TESTS.md, раздел D, и
+// «Обмен вещами», лучший комплект получателя (R6.1; польза — MODEL.md §3; MODEL.md §10): раздел D, и
 // сверка с перебором (X2).
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';

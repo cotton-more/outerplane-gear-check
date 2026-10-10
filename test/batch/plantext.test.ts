@@ -1,4 +1,4 @@
-// The plan rows and the small texts around them (.x/0165-merge-fixes TEXTS.md §7, §10, §14, §18): a feed row says whose piece
+// The plan rows and the small texts around them (merge review fixes, MODEL.md §8): a feed row says whose piece
 // it is; a recommended Legendary that wins by its passive and loses points shows the cost (owner Q6) — only when it does;
 // the summary says «корм»; the look-alike question; the EN date; no-break spaces inside substat tokens.
 import { JSDOM } from 'jsdom';

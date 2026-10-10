@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// «Показать героя» на живой странице 360px (.x/0060-share-code SPEC 3): «Поделиться» во «Надето», ссылка при запуске и в
+// «Показать героя» на живой странице 360px (DEVELOPMENT.md "features/worn"): «Поделиться» во «Надето», ссылка при запуске и в
 // открытом приложении, «Ввести код», карточка показа — только просмотр, ничего не меняет.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

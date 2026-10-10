@@ -33,7 +33,7 @@ export const capLine = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): str
 // weapon or accessory its caption; «T4» only at T4 (armor: the word, then T4)
 export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string =>
   (isArmor(p.slot) ? t.ui.slotNom[p.slot] : itemCaption(idx, p)) + (p.bt === 4 ? '\u00A0·\u00A0T4' : '');
-// сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных» (.x/0060 SPEC 3.6)
+// сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных»
 // batch — a row of the batch (Q4): no grade chip, the caption in the grade's colour, armor is its slot word alone
 export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boolean }) {
   const t = useT();
@@ -56,7 +56,7 @@ export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boole
 export const btText = (t: Texts, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
 // Breakthrough отдельной меткой — во всех строках вещей одинаково (Р-3, решение владельца 2026-10-05): в карточке билда и на
 // «Надето» — своей колонкой (на телефоне — второй строкой), в списке вещей, плане обмена и «Переодеть» — первой во второй
-// строке (.bgear-meta), метки идут столбиком. У любой вещи, и у Epic оружия и аксессуара (.x/0060)
+// строке (.bgear-meta), метки идут столбиком. У любой вещи, и у Epic оружия и аксессуара
 // t4Only — a batch row (Q4): the tier only at T4, nothing for T0–T3 or an unknown one
 export function BtLabel({ p, t4Only }: { p: Pick<Piece, 'slot' | 'grade' | 'bt'>; t4Only?: boolean }) {
   const t = useT();

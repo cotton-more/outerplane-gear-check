@@ -1,4 +1,4 @@
-// Breakthrough у Epic оружия и аксессуара (.x/0060-share-code SPEC 4): «T4» как у Legendary, материал — любой Steel Sword
+// Breakthrough у Epic оружия и аксессуара (MODEL.md §4): «T4» как у Legendary, материал — любой Steel Sword
 // (Steel Necklace) с любым main; «не указан» — ниже T4 у любой вещи; снятая Legendary — не материал, «сначала оцени».
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';

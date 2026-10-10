@@ -1,5 +1,5 @@
-// What is in the batch (.x/0110-batch/PLAN.md §1 p. 3): #1…#N in the entered order — the game filter's order; a tap loads
-// the piece into the form to fix it, ✕ removes it. «E · Caren» and «🔒 шлем» rows (.x/0140-batch-walk) — only ✕. «Посчитать» — the plan.
+// What is in the batch (DEVELOPMENT.md "features/batch"): #1…#N in the entered order — the game filter's order; a tap loads
+// the piece into the form to fix it, ✕ removes it. «E · Caren» and «🔒 шлем» rows — only ✕. «Посчитать» — the plan.
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import type { BatchEntry } from '@/features/batch/batch';

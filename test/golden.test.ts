@@ -37,7 +37,7 @@ function runList(inp: any) {
     case 'items': return itemOptions(ctx, inp.slot as GearKind, inp.q || '', inp.cls || '').map(({ i, n }) => [i.key, n]);
     case 'mains': return epicMains(idx, inp.slot).map((m) => [m, mainDemand(ctx, inp.slot, m)]);
     // входы эталона — прежние (снят со старой страницы): cOwned — «Мои», иначе «Все»; cAll («показать и без билдов») больше
-    // ничего не значит: без билдов в «Все» — только поиском, в «Мои» — всегда (.x/0070-more-sheet SPEC 5.1–5.3)
+    // ничего не значит: без билдов в «Все» — только поиском, в «Мои» — всегда (DEVELOPMENT.md "features/roster")
     default: return D.chars.filter((c) => charMatches(c, { cq: inp.cq || '', cel: inp.cel || '', ccl: inp.ccl || '', cMode: inp.cOwned ? 'mine' : 'all' }, ctx.roster)).map((c) => c.id);
   }
 }

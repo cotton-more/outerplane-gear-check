@@ -20,7 +20,7 @@ import { SubToken } from '@/game/item/SubToken';
 import { HeroName } from '@/game/hero/HeroName';
 
 // viewOf — вид пула героя, на котором «Надеть» сделает putOn: у Core Fusion X при X — после окна перехода, вещи X уже
-// у него (П9); у прочих — общий вид
+// у него; у прочих — общий вид
 export function EquipSheet({ ctx, viewOf, item, onEquip, onClose }: {
   ctx: Ctx; viewOf: (charId: string) => PoolView; item: ItemInput; onEquip: (c: Char) => void; onClose: () => void;
 }) {

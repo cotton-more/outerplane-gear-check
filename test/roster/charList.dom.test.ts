@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Вкладка «Персонажи» (.x/0070-more-sheet SPEC 4–6): режимы «Мои · Доодеть · Все», что запоминается, пустой ростер.
+// Вкладка «Персонажи» (DEVELOPMENT.md "features/roster"): режимы «Мои · Доодеть · Все», что запоминается, пустой ростер.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';

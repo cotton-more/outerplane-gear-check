@@ -70,7 +70,7 @@ export function App() {
   const layout = useLayout();
   const rosterApi = useRoster(idx);
   const { roster } = rosterApi;
-  // карточка показа героя по ссылке (screens/share, .x/0060 SPEC 3.3): код из адреса читается до того, как useHashRoute
+  // карточка показа героя по ссылке (screens/share, DEVELOPMENT.md "Storage and URLs"): код из адреса читается до того, как useHashRoute
   // его перепишет; пока она открыта, обучение и «Что нового» молчат (3.5)
   const [shownCode, setShown] = useState<string | null>(heroFromHash);
   // #slug в адресе при загрузке важнее сохранённой вкладки
@@ -126,7 +126,7 @@ export function App() {
   // сообщения с «Вернуть»: экипировки (features/gear/ui/gearMsg) и формы — «Следующий» убрал предмет по ошибке
   const [msg, say] = useTimed<GearMsg>(GEAR_MSG_MS);
   const [formUndo, setFormUndo] = useTimed<ItemInput>(6000);
-  // «Партия» (features/batch, .x/0110-batch): a filter of pieces in a row, no verdict on the way, one plan; not during a tour
+  // «Партия» (features/batch, MODEL.md §8): a filter of pieces in a row, no verdict on the way, one plan; not during a tour
   // and not without a roster scope (the plan is about the player's heroes) — the saved batch waits for it
   const batch = useBatchMode({ idx, t, ctx, gear, dispatch, persist: !touring, narrow: layout.narrow, say });
   const batchOn = batch.on && !touring && ctx.scoped;

@@ -30,7 +30,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
     }
     case 'temp':
       // a stopgap weapon or accessory (Epic too) gets no Breakthrough: their copies are dismantled (owner 2026-10-09,
-      // was .x/0060 SPEC 4.3 «ступени из разбора»). A stopgap armor piece may take it: T4 counts toward the set bonus
+      // was «ступени из разбора»). A stopgap armor piece may take it: T4 counts toward the set bonus
       // (owner Q1, 2026-10-09)
       return [P.enhance, armor ? P.tempArmor : P.tempNoInvest];
     case 'fodder':

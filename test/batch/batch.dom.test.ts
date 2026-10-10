@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// «Партия» on a phone (360px, .x/0110-batch): «Ещё» → «Партия», pieces in a row without a verdict, the list (fix,
+// «Партия» on a phone (360px, MODEL.md §8): «Ещё» → «Партия», pieces in a row without a verdict, the list (fix,
 // remove), the plan («Не брать»), «Записать план» with «Вернуть», the batch saved across a reload, ✕ asks.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -235,7 +235,7 @@ describe('«Партия» on a phone', () => {
   });
 });
 
-// The step-by-step walk (.x/0140-batch-walk): «E» and «🔒» entries, one filter per batch, «Спорно» decided first, steps
+// The step-by-step walk (MODEL.md §8 item 7): «E» and «🔒» entries, one filter per batch, «Спорно» decided first, steps
 describe('«Партия»: обход по шагам', () => {
   it('«E · worn» → «Whose piece?» lists Caren (she wears a Speed helmet) → a row of her helmet + her portrait and name; «🔒» adds a locked helmet', async () => {
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });

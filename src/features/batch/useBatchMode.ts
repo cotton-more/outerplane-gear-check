@@ -1,4 +1,4 @@
-// «Партия» on the page (.x/0110-batch/PLAN.md §1, §4): the batch in 'ogc.batch', the entry being fixed, what the list /
+// «Партия» on the page (MODEL.md §8): the batch in 'ogc.batch', the entry being fixed, what the list /
 // plan view shows, and the actions — start, «В партию», fix, remove, «Посчитать», «Не брать», «Это другой», «Записать план»
 // with «Вернуть», ✕. The plan is computed only while it is shown, always on the current store.
 import { useMemo, useRef, useState, type Dispatch } from 'react';

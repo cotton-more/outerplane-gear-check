@@ -68,7 +68,7 @@ html.xs .subrow .roll-b button { min-width: 30px; }
    — узкие */
 html.xs .subrow .subkey { padding: 4px 6px; gap: 5px; }
 html.xs .subrow .roll-b button.after { min-width: 26px; }
-/* шесть кнопок и «DMG RED%» целиком (замеры build/review-eval-only/fix-5). Строка уже 280px (окно ≤ 338px): у поля стата
+/* шесть кнопок и «DMG RED%» целиком. Строка уже 280px (окно ≤ 338px): у поля стата
    нет значка, шрифт чуть мельче — со значком «DMG RED%» на 252–272px вылезал за рамку. Уже 250px (разделённый экран
    280px: строка 222px) — ещё и кнопки 25/22px: 222 − 6 − (4×25 + 2×22 + 2) = 70, «DMG RED%» 12px ≈ 58 + рамка и
    отступы 10. Селекторы с html — чтобы перебить html.xs выше */

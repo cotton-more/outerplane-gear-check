@@ -1,4 +1,4 @@
-// «Партия» (.x/0110-batch/PLAN.md §3): one plan for pieces entered as a batch. No new rules: every piece goes through the
+// «Партия» (MODEL.md §8): one plan for pieces entered as a batch. No new rules: every piece goes through the
 // usual verdict (features/gear/verdict), strongest first, against a copy of the store where earlier decisions are already
 // applied with the usual operations (features/gear/pool putOn, stashOn) — later pieces see the earlier keepers, a weak
 // piece feeds a keeper of its grade, set and slot instead of going to dismantle. One piece — one fate.

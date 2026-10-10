@@ -1,4 +1,4 @@
-// «Обмен вещами», порог и итог плана героя (R6.2–R6.4): .x/0040-trade/TESTS.md, раздел D (D1–D4, D6–D11, D14–D18).
+// «Обмен вещами», порог и итог плана героя (R6.2–R6.4; MODEL.md §10): раздел D (D1–D4, D6–D11, D14–D18).
 // Надетое — кандидат с ценой 0 (cand({ cost: 0 })), как его даёт candidates().
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';

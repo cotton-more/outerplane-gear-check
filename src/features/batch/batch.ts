@@ -1,4 +1,4 @@
-// «Партия» — what is entered (.x/0110-batch/PLAN.md §4): pieces in the game filter's order, «Не брать» per plan line,
+// «Партия» — what is entered (MODEL.md §8): pieces in the game filter's order, «Не брать» per plan line,
 // «Это другой» per entry. Saved in 'ogc.batch' until «Записать план» or ✕ — Android unloads the page in split screen.
 import { GRADES, SLOT, isArmor, type Index } from '@/game/data';
 import type { GearKind, Grade, SlotId } from '@/game/data/types';
@@ -6,7 +6,7 @@ import { MAX_LIT, MAX_SUBS, type Subs } from '@/game/item/subs';
 import type { ItemInput } from '@/game/item/item';
 import type { Entry } from './plan';
 
-// An entry is one piece of the game list, in its order (.x/0140-batch-walk §1): a piece as entered; «E» — a piece worn
+// An entry is one piece of the game list, in its order (MODEL.md §8): a piece as entered; «E» — a piece worn
 // by hero c (the app knows it from c's worn record, no substats); «🔒» — a locked unworn piece, someone's reserve. #n —
 // the position in the game list, all kinds counted: plan lines and walk steps use it
 export type BatchEntry =

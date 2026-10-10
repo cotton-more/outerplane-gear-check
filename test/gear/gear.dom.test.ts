@@ -169,7 +169,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect(stored().pools[caren.id]).toEqual(pool);
   });
 
-  // было: «или — Caren · Speed ▸», хотя кнопка заменяет её шлем (П8: подпись = действие, Р7)
+  // было: «или — Caren · Speed ▸», хотя кнопка заменяет её шлем (подпись = действие, Р7)
   it('вторая кнопка «или — заменить шлем Caren · +2 pts ▸»: другому герою тоже «Надень» — сразу ему, с «Вернуть»', async () => {
     // у Kappa три Speed-вещи — шлем соберёт ей Speed ×4 (первая кнопка); у Caren шлем слабее — новая лучше
     const kap = ['armor', 'gloves', 'shoes'].map((slot, i) => P('k' + (i + 1), slot, speed, { 'DEF%': 1, CHC: 1 }));
@@ -292,7 +292,7 @@ describe('«Заменить»: что со старой', () => {
     P('p2', 'armor', speed, { 'ATK%': 2, CHC: 2 }), P('p3', 'gloves', speed, { 'ATK%': 2, CHC: 2 }), P('p4', 'shoes', speed, { 'ATK%': 2, CHC: 2 }),
   ], { [caren.id]: ['p1'], [rin.id]: ['p2', 'p3', 'p4'] });
 
-  // .x/0060 SPEC 4.5: снятая Legendary — не материал (было «материал новой»): «сначала оцени», может подойти другому
+  // MODEL.md §4: снятая Legendary — не материал (было «материал новой»): «сначала оцени», может подойти другому
   it('старый шлем пригодился бы Rin — ни кнопки «Отдать», ни строки про Rin; та же Legendary — «сначала оцени»', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: gear(), roster: [caren.id, rin.id] });
 
@@ -305,7 +305,7 @@ describe('«Заменить»: что со старой', () => {
   });
 
   // доработка шага 10 (refute-10 п. 3): новая на T4 — Breakthrough уже полный, «старый — материал для нового» неправда.
-  // Снятой Legendary «сначала оцени» — и при новой на T4: она может подойти другому (.x/0060 SPEC 4.5)
+  // Снятой Legendary «сначала оцени» — и при новой на T4: она может подойти другому (MODEL.md §4)
   it('«Заменить» с нажатой «T4»: «Заменено: шлем Caren · T4.», строки про материал нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { ...NEW, t4: true }, { gear: gear(), roster: [caren.id, rin.id] });
 
@@ -585,7 +585,7 @@ describe('карточка персонажа', () => {
     expect($('.bsel')?.textContent).not.toMatch(/\d\/6/);
   });
 
-  // вопрос 7 (б) ревью eval-only: у Legendary оружия «T4» — тоже (материал такого же предмета); у Epic — как у всех
+  // решение владельца 2026-10-01/02: у Legendary оружия «T4» — тоже (материал такого же предмета); у Epic — как у всех
   it('шторка Legendary оружия: «T4» правится, метка в слоте — «T0–T3» → «T4»', async () => {
     const w = caren.builds[0].weapons[0];
     const ps = [P('p1', 'weapon', null, { CHC: 2, SPD: 1 }, { itemKey: w.key, main: w.mains[0], bt: 0 })];
@@ -849,7 +849,7 @@ describe('меню, плитки, код копии, другая вкладка
     expect($$('#cgrid .gearb').map((e) => e.textContent)).toEqual(['1 of 6 equipped1/6']);
   });
 
-  // .x/0060 SPEC 2: одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
+  // DEVELOPMENT.md "Storage and URLs": одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
   it('резервная копия в «Ещё» → «Backup» — OGC-GEAR4, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 4 })], { [caren.id]: ['p1'] }) });
     const ta = await openBackup();
@@ -991,7 +991,7 @@ describe('вещи только у героев ростера (Р16)', () => {
         .toEqual({ roster: [kappa.id, caren.id], toast: expect.stringMatching(/^Replaced: 1/), note: 'Kept in the roster — they have gear: Caren.' });
     });
 
-    // .x/0060 SPEC 2.4: код ростера в поле копии — теперь всегда с «Вернуть» (было: без героев с вещами тоста нет)
+    // DEVELOPMENT.md "Storage and URLs": код ростера в поле копии — теперь всегда с «Вернуть» (было: без героев с вещами тоста нет)
     it('код ростера «Заменить» без героев с вещами — сообщение с «Вернуть»: ростер как был', async () => {
       await mount({ tab: 'chars' }, {}, { roster: [rin.id, kappa.id], gear: G([], {}) });
       const ta = await openBackup();
@@ -1042,7 +1042,7 @@ describe('вещи только у героев ростера (Р16)', () => {
       expect({ roster: roster(), gear: localStorage.getItem('ogc.gear') }).toEqual({ roster: [caren.id, eternal.id, kappa.id], gear: text() });
     });
 
-    // .x/0060 SPEC 2.3: в обучении резервной копии нет — ни кода, ни «Заменить» (было: код ростера «Заменить» ничего не делал)
+    // DEVELOPMENT.md "Storage and URLs": в обучении резервной копии нет — ни кода, ни «Заменить» (было: код ростера «Заменить» ничего не делал)
     it('поля копии нет — только строка «после обучения»', async () => {
       await toTourChars();
       await openMore();

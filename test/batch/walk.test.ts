@@ -1,4 +1,4 @@
-// The step-by-step walk of a batch (.x/0140-batch-walk): batch v2 entries (piece, «E», «🔒»), one filter per batch,
+// The step-by-step walk of a batch (MODEL.md §8 item 7): batch v2 entries (piece, «E», «🔒»), one filter per batch,
 // positions in the game list and in the hero's slot list, stages, the order «taken off one hero → worn by another».
 import { describe, expect, it } from 'vitest';
 import { makeCtx } from '@/game/context';

@@ -462,7 +462,7 @@ export const ru = {
     replacedMany: (name: string, slot: string, olds: string[], t4 = '') => `Заменено: ${NOM[slot]} ${name}${t4} — убраны прежние: ${andList(olds)}.`,
     // what — имя сета или предмета, когда убраны 2+ (replacedMany): вместо «Старые»
     oldMaterial: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — материал для Breakthrough ${by(slot, 'нового', 'новой', 'нового', 'новых')}.`,
-    // снята такая же Legendary (.x/0060 SPEC 4.5): не материал — может быть лучшей для другого героя
+    // снята такая же Legendary (MODEL.md §4): не материал — может быть лучшей для другого героя
     oldEvaluate: (slot: string, what?: string) => `${what ? named(slot, what) : `${cap(by(slot, 'старый', 'старая', 'старое', 'старые'))} ${NOM[slot]}`} — сначала оцени ${by(slot, 'его', 'её', 'его', 'их')}: может подойти другому герою.`,
     wornTitle: (k: number) => `Надето · ${k} из 6`,
     wornPts: (pts: string) => `${pts} очк.`, // очки надетого: вещи + сеты
@@ -484,7 +484,7 @@ export const ru = {
     btChip: 'T4',
     btAria: 'Вещь на Breakthrough T4',
     btTitle: 'Вещь уже на T4 — бонус сета посчитается как у T4',
-    // у Legendary оружия и аксессуара сета нет — «T4» только про материал такого же предмета (вопрос 7 ревью eval-only)
+    // у Legendary оружия и аксессуара сета нет — «T4» только про материал такого же предмета (решение владельца 2026-10-01/02)
     btTitleItem: 'Вещь уже на T4 — такие же ей в Breakthrough больше не нужны',
     btBelow: 'T0–T3',
     withT4: ' · T4',
@@ -503,8 +503,8 @@ export const ru = {
     // после загрузки, импорта и пакетного добавления: есть оба — остаётся Core Fusion (features/gear/model/fusion normalizeFusion)
     fusionFixed: (base: string, how: 'moved' | 'removed' | 'none') =>
       `В ростере оставлен Core Fusion ${base}: ${base} заменён${how === 'moved' ? `, его вещи перешли к Core Fusion ${base}` : how === 'removed' ? ', его вещи убраны' : ''}.`,
-    // поле «Резервная копия» (.x/0060 SPEC 2.3–2.4)
-    // «Показать героя» (.x/0060 SPEC 3, 6)
+    // поле «Резервная копия»
+    // «Показать героя»
     share: 'Поделиться',
     linkCopied: 'Ссылка скопирована',
     shownStrip: 'Показ · только просмотр',
@@ -705,7 +705,7 @@ export const ru = {
     replace: 'Примерить замену',
   },
 
-  // «Обмен вещами» (.x/0040-trade/SPEC.md R10): шторка обмена, план, закрепление героя
+  // «Обмен вещами» (R10 — MODEL.md §10): шторка обмена, план, закрепление героя
   trade: {
     title: 'Обмен вещами',
     open: 'К обмену ▸',
@@ -750,7 +750,7 @@ export const ru = {
     weaker: (pts: number) => `Статы станут слабее на ${dec(pts)} очк.`,
     session: 'Кого уже переодел в этом обмене, того не трогаю, пока окно открыто.',
   },
-  // «Партия» (.x/0110-batch/PLAN.md §5, тексты утверждены владельцем 2026-10-07)
+  // «Партия» (тексты утверждены владельцем 2026-10-07)
   batch: {
     button: 'Партия',
     strip: (n: number) => `Партия · ${n}`,
@@ -802,7 +802,7 @@ export const ru = {
     recordText: (a: number, b: number) => `Запишу у героев: надето ${a}, отложено ${b}.`,
     recordUndo: 'Сразу после можно «Вернуть» в сообщении.',
     recordYes: 'Записать',
-    // step-by-step walk (.x/0140-batch-walk §6, approved by the owner 2026-10-08)
+    // step-by-step walk (approved by the owner 2026-10-08)
     otherKind: (what: string) => `В этой партии — ${what || 'броня'}. Другое — новой партией.`,
     wornAdd: 'E · надето',
     whose: 'Чья вещь?',

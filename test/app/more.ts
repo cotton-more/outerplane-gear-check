@@ -1,4 +1,4 @@
-// Общее для DOM-тестов: открыть «Ещё» (.x/0070-more-sheet) — на телефоне ☰ на нижней плашке, на ПК ⋯ в шапке.
+// Общее для DOM-тестов: открыть «Ещё» — на телефоне ☰ на нижней плашке, на ПК ⋯ в шапке.
 import { act } from 'react';
 
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);

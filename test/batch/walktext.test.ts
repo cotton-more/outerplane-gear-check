@@ -1,4 +1,4 @@
-// The texts of the walk's steps (.x/0165-merge-fixes TEXTS.md §4, §11, D «Equip step title», variant B): the equip title is
+// The texts of the walk's steps (MODEL.md §8 item 7; owner decision 2026-10-10, equip title variant B): the equip title is
 // «Hero → caption» with the position in the hero's slot list as a quiet hint on the right; a taken-off piece is named by
 // its hero and described once; the lock step carries the position and the piece's caption, then for whom.
 import { JSDOM } from 'jsdom';

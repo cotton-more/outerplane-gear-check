@@ -28,7 +28,7 @@ export function ShareCode({ item, anchor = true }: { item: ItemInput; anchor?: b
 }
 
 // окно «Ввести код»: код из чата гильдии → предмет на панели оценки. other — сначала другие коды (код героя, резервная
-// копия, .x/0060 SPEC 3.3): true — разобрался сам, строка — что сказать, null — это не они, читаем код предмета
+// копия): true — разобрался сам, строка — что сказать, null — это не они, читаем код предмета
 export function CodeInput({ fits, onLoad, other }: {
   fits: (item: ItemInput) => boolean; onLoad: (item: ItemInput) => void; other?: (text: string) => true | string | null;
 }) {

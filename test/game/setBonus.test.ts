@@ -60,7 +60,7 @@ describe('бонус в сегментах сабстата', () => {
     expect(D.sets.find((s) => s.short === 'Critical Strike')!.bonus).toMatchObject({ t4: { p2: { stat: 'CHD', value: 33 }, p4: { value: 22 } }, t0: { p2: { value: 20 }, p4: { value: 15 } } });
   });
 
-  // на этом стоит П7 (features/gear/pool rivalOf): вещь сета в том же слоте на T4 не хуже такой же не на T4
+  // на этом стоит MODEL.md §5 (menu-t4): вещь сета в том же слоте на T4 не хуже такой же не на T4
   it('ещё одна вещь на T4 бонус сета не уменьшает: сумма по стату и самая большая строка (2P/4P) не меньше', () => {
     const bad: string[] = [];
     for (const s of D.sets) {

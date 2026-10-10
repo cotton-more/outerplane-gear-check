@@ -39,7 +39,7 @@ export function useHeroMode({ idx, gear, form, demoTry, touring, off, narrow, fu
   // «Примерить замену»: запись, которую «Надеть» заменит в любом случае (features/gear/pool planPut); её уже нет в пуле или она
   // другого слота — как без неё
   const replace = hero ? tryOn.value?.replace ?? null : null;
-  // replace — на одну введённую вещь (вопрос 1 (б) ревью eval-only): снимают «Следующий», load другой вещи (код,
+  // replace — на одну введённую вещь (решение владельца 2026-10-01/02): снимают «Следующий», load другой вещи (код,
   // «Вернуть» формы), смена слота на форме (ниже) и «Надеть»; режим героя остаётся. tryOn.set пишет и ogc.tryon — иначе
   // после перезапуска замена вернулась бы. Режима героя нет (обучение, X при Core Fusion) — не трогаем
   const dropReplace = () => { if (replace && tryOn.value) tryOn.set(noReplace(tryOn.value)); };

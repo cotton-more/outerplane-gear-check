@@ -4,7 +4,7 @@ The spec of the "stats + sets" model: how a gear piece is valued for a hero, how
 that becomes a verdict (keep / equip / feed to Breakthrough / dismantle). Players read the Wiki; this file is for
 people changing the code. The code is the final word — where a comment disagrees with it, the code wins.
 
-History: this spec was `.x/0085-stat-set-model/FORMULA.md` (lost); it was rebuilt from the code, the tests, the Wiki and
+History: this spec was `FORMULA.md` of the stat-set-model working folder (lost); it was rebuilt from the code, the tests, the Wiki and
 the commit bodies on 2026-10-10. The numbering below keeps the old section numbers, so a comment that says
 «§3 п. 3» / "§3 item 3" now means **MODEL.md §3 item 3** (see §10 for the other tags that survive in comments).
 Product background — [GEARPOOL.md](GEARPOOL.md) (obsolete, history) and the Wiki pages `Equipment`, `Upgrading`,
@@ -397,7 +397,7 @@ All in `game/config:CFG` unless noted.
 
 ## §10 Tags that survive in comments
 
-`PLAN Д#`, `TEXTS`, `TESTS T#`, «этап N», «макет 6.0» refer to sibling files of the lost `.x/0085-stat-set-model/` folder;
+`PLAN Д#`, `TEXTS`, `TESTS T#`, «этап N», «макет 6.0» refer to sibling files of that lost working folder;
 they are history. Short keys still readable in code: **A4** set rows for Speed/Penetration/Bursting (§2.4); **A5** gear
 rank by any build (§1.6); **A10** name the hero with the biggest gain first; **A11** `needsT4`; **A12** off-menu bar with
 +U/2 (§5.4); **A20/A21** no verdict without all substats / roster (§4); **D2** stopgap needs good substats; **D3** current
@@ -411,6 +411,11 @@ only when the old v2 store had marks, «Не отдавать надетое» o
 rule wherever a piece is named — a Legendary weapon or accessory «item · main», an Epic «Steel Sword» / «Steel Necklace ·
 main», armor in batch rows the slot word alone, «T4» only at T4, the caption coloured by grade (DEVELOPMENT.md "Shared
 elements").
+
+**Review tags.** «Р1…Р20» are decisions of [GEARPOOL.md](GEARPOOL.md) (still in the repo). «В#», «П#», «вопрос N», «находка N»,
+«ревью этапа 10» and «ревью eval-only» name numbered questions, findings and owner decisions of review documents that no
+longer exist; each comment that carries one still states the rule, and the rules are in this file and in DEVELOPMENT.md.
+Comments that say «решение владельца 2026-10-01/02» come from the eval-only feature review.
 
 **Trade tags** (`features/trade`, `test/trade`; history — the rules are in §7). `R#.#` are requirement numbers of the lost
 trade `SPEC.md`, as far as the code shows: R1 piece identity (R1.2 the code without Breakthrough, R1.7 the cost

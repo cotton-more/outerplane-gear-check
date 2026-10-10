@@ -1,4 +1,4 @@
-// Merge review fixes on the batch walk (.x/0160-merge-review REVIEW A1, A2, A3, A5; .x/0165-merge-fixes TEXTS.md): a
+// Merge review fixes on the batch walk (merge review fixes A1, A2, A3, A5; MODEL.md §8 item 7): a
 // set-aside Breakthrough target is named as set aside; the dismantle step says to unlock locked pieces and lists the
 // leftover feed; the Breakthrough and dismantle stages name pieces by stats, no «#n»; the RU plural of «отложенных».
 import { JSDOM } from 'jsdom';

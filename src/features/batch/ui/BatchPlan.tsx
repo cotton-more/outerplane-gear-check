@@ -1,4 +1,4 @@
-// The batch plan (.x/0110-batch/PLAN.md §1 p. 4): a line per entry in the entered order, a piece the plan takes off a hero
+// The batch plan (MODEL.md §8 item 10): a line per entry in the entered order, a piece the plan takes off a hero
 // right under its entry; «Не брать» on a line with a hero, «Это другой» on a look-alike of a set-aside piece.
 // One way on: «Обход ▸» — recording happens at the walk's end, after the game (owner 2026-10-09: «Записать план» here
 // invited recording before anything was done). «Спорно» lines get «Отложить» / «Разобрать» — decided before the walk

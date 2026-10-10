@@ -1,4 +1,4 @@
-// The undo of ✕ in the list (.x/0165-merge-fixes TEXTS.md §8): the entry comes back at its place with its marks
+// The undo of ✕ in the list (merge review fix): the entry comes back at its place with its marks
 // («Не брать», «Это другой», «Спорно»); later entries and their marks move down again.
 import { describe, expect, it } from 'vitest';
 import { NEW_BATCH, removeItem, removedOf, restoreItem, type Batch, type BatchEntry } from '@/features/batch/batch';

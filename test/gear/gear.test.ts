@@ -434,7 +434,7 @@ describe('правка в шторке (updateIn)', () => {
     expect(updateIn(idx, on.st, CAREN, 'p2', { bt: 0 }, AT).st.pieces.p2.bt).toBe(0);
   });
 
-  // было (В4): у оружия не применялась. Вопрос 7 (б) ревью eval-only: «T4» у Legendary оружия и аксессуара — материал
+  // было (В4): у оружия не применялась. Решение владельца 2026-10-01/02: «T4» у Legendary оружия и аксессуара — материал
   // такого же предмета
   it.each(['weapon', 'accessory'] as const)('«T4» у Legendary %s → 4 и обратно → 0; не указан тоже становится 4', (slot) => {
     const w = rec('p1', { slot, grade: 'unique', setId: null, itemKey: 'x', main: 'ATK%', subs: { CHC: 2 } });
@@ -443,7 +443,7 @@ describe('правка в шторке (updateIn)', () => {
     expect(updateIn(idx, on.st, CAREN, 'p1', { bt: 0 }, AT).st.pieces.p1.bt).toBe(0);
   });
 
-  // было: не применяется. .x/0060 SPEC 4.2: у Epic оружия «T4» есть, старая запись «не указан» — тоже переключается
+  // было: не применяется. Теперь: у Epic оружия «T4» есть, старая запись «не указан» — тоже переключается
   it('«T4» у Epic оружия → 4 и обратно → 0', () => {
     const w = rec('p1', { slot: 'weapon', grade: 'rare', setId: null, itemKey: null, main: 'ATK%', subs: { CHC: 2 } });
     const on = updateIn(idx, v2([w], { [CAREN]: ['p1'] }), CAREN, 'p1', { bt: 4 }, AT);
@@ -776,7 +776,7 @@ describe('«Надето»: «Надеть» надевает, «Надеть и
       expect(undoPut(other, CAREN, r).worn).toEqual({ [CAREN]: { helmet: 'p1' } });
     });
 
-    // перенос из шага 1 (проба build/worn/refute1a «putOn replacing worn then undoPut»): была в пуле, но не надета
+    // перенос из шага 1 (проба «putOn replacing worn then undoPut»): была в пуле, но не надета
     it('«Надеть» с replace надетой записи, потом «Вернуть» — она снова в пуле и надета', () => {
       const st = dressed({ helmet: 'p1' }, [S()]);
       const r = putOn(ctx, st, CAREN, SPEED, { replace: 'p1' });
