@@ -785,7 +785,10 @@ export const ru = {
     replace: (name: string, slot: string) => `Надень на ${name} — вместо ${GEN[slot]}`,
     t4: ' · T4 после корма',
     keep: (name: string) => `Отложи для ${name}`,
-    reserve: (name: string) => `Отложи для ${name} — запас`,
+    // a reserve says what it waits for (owner 2026-10-10, variant A): «…: корм, когда выпадет Spirit of Unification с PEN%»
+    reserve: (name: string, wait = '') => `Отложи для ${name} — запас${wait ? `: корм, когда выпадет ${wait}` : ''}`,
+    waitItem: (item: string, mains: string[]) => `${item} с ${mains.join(' или ')}`,
+    waitArmor: (set: string, slot: string) => `${by(slot, 'хороший', 'хорошая', 'хорошее', 'хорошие')} ${NOM[slot]} ${set}`,
     // whose piece it is: «Корм для #17 · перчатки Saeran»; the hero isn't known — the number alone
     feedEntry: (n: number, slot: string | null, name: string | null) => (slot && name ? `Корм для #${n} · ${NOM[slot]} ${name}` : `Корм для #${n}`),
     feedWorn: (slot: string, name: string) => `Корм для ${GEN[slot]} ${name}`,
@@ -830,7 +833,7 @@ export const ru = {
     lockStepAt: (piece: string) => piece,
     // for whom a kept piece stays (lock and Breakthrough steps); the number and the piece are in the title and the caption
     keptFor: (name: string) => `для ${name}`,
-    keptReserve: (name: string) => `для ${name}\u00A0·\u00A0запас`,
+    keptReserve: (name: string, wait = '') => `для ${name}\u00A0·\u00A0запас${wait ? `: корм, когда выпадет ${wait}` : ''}`,
     lockStep: (r: number, p: number, n: number) => `Ряд ${r}, ${p}-й\u00A0·\u00A0#${n}`,
     junkTitle: (n: number) => `Отметь в игре: ${n}`,
     btFeed: 'корм:',

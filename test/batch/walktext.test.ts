@@ -171,8 +171,8 @@ describe('the lock step', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([piece(weak('w'))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Row'))!.slice(0, 2)).toEqual([`Row 1, no.${NB}1${NB}·${NB}#1`, `for Caren${NB}·${NB}reserve`]);
-    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Ряд'))!.slice(0, 2)).toEqual([`Ряд 1, 1-й${NB}·${NB}#1`, `для Caren${NB}·${NB}запас`]);
+    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Row'))!.slice(0, 2)).toEqual([`Row 1, no.${NB}1${NB}·${NB}#1`, `for Caren${NB}·${NB}reserve: feed once a good Speed helmet drops`]);
+    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Ряд'))!.slice(0, 2)).toEqual([`Ряд 1, 1-й${NB}·${NB}#1`, `для Caren${NB}·${NB}запас: корм, когда выпадет хороший шлем Speed`]);
   });
   it('a weapon: the caption line sits between the position and for whom', () => {
     const { ctx, st } = world(['Roxie'], { Roxie: [W('w1', 'ATK%', { CHD: 5, SPD: 6, CHC: 5, HP: 3 })] });

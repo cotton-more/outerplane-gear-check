@@ -12,7 +12,17 @@ import { namedGain } from '@/features/gear/model/vs';
 import { wornAtEnd, type Fate, type Line, type Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 import { withHero } from '@/game/hero/HeroTag';
-import { capLine } from '@/features/gear/ui/pieceText';
+import { capLine, itemCaption } from '@/features/gear/ui/pieceText';
+import type { ItemInput } from '@/game/item/item';
+import { isArmor } from '@/game/data';
+
+// what a reserve waits for (MODEL.md §4 items 3b, 3c): a weapon or accessory — the item with the mains the hero's builds
+// want («Spirit of Unification с PEN%»); armor — a good piece of its set and slot («хороший шлем Speed»)
+export function waitText(t: Texts, ctx: Ctx, c: Char, x: ItemInput): string {
+  if (isArmor(x.slot)) return x.setId ? t.batch.waitArmor(ctx.idx.SET[x.setId]?.short ?? '', x.slot) : '';
+  const mains = [...new Set(c.builds.flatMap((b) => (x.slot === 'weapon' ? b.weapons : b.amulets)).filter((g) => g.key === x.itemKey).flatMap((g) => g.mains))];
+  return mains.length ? t.batch.waitItem(itemCaption(ctx.idx, { ...x, main: null }), mains) : '';
+}
 
 // the piece a «Корм для #n» line feeds, by its line: the hero who gets or keeps it and its slot (owner 2026-10-09: «Корм для
 // #17» didn't say whose)
@@ -22,7 +32,7 @@ function targetOf(plan: Plan, n: number): { c: Char; slot: SlotId } | null {
   return l && f && (f.kind === 'wear' || f.kind === 'keep' || f.kind === 'reserve') ? { c: f.c, slot: l.input.slot } : null;
 }
 
-export function fateText(t: Texts, f: Fate, plan: Plan): string {
+export function fateText(t: Texts, f: Fate, plan: Plan, ctx: Ctx, x: ItemInput): string {
   switch (f.kind) {
     case 'wear': {
       // a recommended Legendary that wins by its passive and loses points says what it costs, like the trade plan (Q6)
@@ -30,7 +40,7 @@ export function fateText(t: Texts, f: Fate, plan: Plan): string {
       return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + cost + (f.t4 ? t.batch.t4 : '');
     }
     case 'keep': return t.batch.keep(f.c.name) + (f.t4 ? t.batch.t4 : '');
-    case 'reserve': return t.batch.reserve(f.c.name);
+    case 'reserve': return t.batch.reserve(f.c.name, waitText(t, ctx, f.c, x));
     case 'feed': {
       if ('entry' in f.to) { const g = targetOf(plan, f.to.entry); return t.batch.feedEntry(f.to.entry, g?.slot ?? null, g?.c.name ?? null); }
       return wornAtEnd(plan.st, f.to) ? t.batch.feedWorn(f.to.piece.slot, f.to.c.name) : t.batch.feedStash(f.to.piece.slot, f.to.c.name);
@@ -82,7 +92,7 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onWalk }: {
                   ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit), capLine(t, ctx.idx, l.off.piece))
                   : t.batch.off(l.off.piece.slot, l.off.c.name, capLine(t, ctx.idx, l.off.piece))}</span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
-              <span className="bfate">{withHero(fateText(t, l.fate, plan), heroIn(plan, l.fate))}</span>
+              <span className="bfate">{withHero(fateText(t, l.fate, plan, ctx, l.input), heroIn(plan, l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small btwin hit" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
             </li>

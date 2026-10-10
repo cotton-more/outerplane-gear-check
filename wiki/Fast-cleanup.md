@@ -76,7 +76,8 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
       +9.0%" — check them. A piece taken off another hero: "Maxie → Tamara's removed weapon".
    2. **Lock** what you keep: "Row 3, no. 1 · #21" (10 pieces per row), for a weapon or accessory the item below it,
       then for whom: "for Gnosis Domine" (set aside to wear when the set comes together), "for Gnosis Domine ·
-      reserve" — Breakthrough material, and the substats to check. A lock means "in someone's
+      reserve: feed once a good Speed helmet drops" — Breakthrough material for a piece the hero doesn't have yet (a
+      weapon or accessory names the main stat it waits for: "…once a Spirit of Unification with PEN% drops"), and the substats to check. A lock means "in someone's
       Pool": whose — on the hero's card, the Pool tab.
    3. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4" — any piece from the game's list works (the app
       doesn't know the exact tier below T4, the game takes no more than it needs); what the game doesn't take goes to

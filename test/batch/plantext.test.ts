@@ -63,10 +63,25 @@ describe('Q6: a recommended Legendary that wins by rank and loses points names t
     expect(render('en', ctx, p).rows[0]).toBe(`Equip on Roxie — instead of the weapon · −${n} pts, better passive`);
     expect(render('ru', ctx, p).rows[0]).toBe(`Надень на Roxie — вместо оружия · −${String(n).replace('.', ',')} очк., пассивка лучше`);
   });
+  it('a reserve says what it waits for: the item with the mains the hero\'s builds want; armor — a good piece of its set and slot (owner 2026-10-10, A)', () => {
+    const { ctx, p } = make();
+    const maxwell = char('Maxwell');
+    const ref = maxwell.builds.flatMap((b) => b.amulets)[0];
+    const name = idx.ITEM.accessory[ref.key].name;
+    const x = { ...p.lines[0].input, slot: 'accessory' as const, itemKey: ref.key, main: 'HP%' };
+    const mains = [...new Set(maxwell.builds.flatMap((b) => b.amulets).filter((g) => g.key === ref.key).flatMap((g) => g.mains))];
+    expect(fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, x)).toBe(`Отложи для Maxwell — запас: корм, когда выпадет ${name} с ${mains.join(' или ')}`);
+    expect(fateText(TEXTS.en, { kind: 'reserve', c: maxwell }, p, ctx, x)).toBe(`Set aside for Maxwell — reserve: feed once a ${name} with ${mains.join(' or ')} drops`);
+    const speed = idx.D.sets.find((s) => s.short === 'Speed')!.id;
+    const helm = { ...x, slot: 'helmet' as const, itemKey: null, main: null, setId: speed };
+    expect(fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, helm)).toBe('Отложи для Maxwell — запас: корм, когда выпадет хороший шлем Speed');
+    expect(TEXTS.ru.batch.waitArmor('Speed', 'armor')).toBe('хорошая броня Speed');
+    expect(TEXTS.en.batch.keptReserve('Caren', 'good Speed helmet')).toBe('for Caren\u00A0·\u00A0reserve: feed once a good Speed helmet drops');
+  });
   it('no cost for a tie, a gain, or a loss that rounds to zero; the T4 suffix still follows', () => {
-    const { p } = make();
+    const { ctx, p } = make();
     const base = p.lines[0].fate as Extract<Fate, { kind: 'wear' }>;
-    const row = (lang: Lang, o: Partial<typeof base>) => fateText(TEXTS[lang], { ...base, ...o }, p);
+    const row = (lang: Lang, o: Partial<typeof base>) => fateText(TEXTS[lang], { ...base, ...o }, p, ctx, p.lines[0].input);
     expect(row('ru', { dV: 0 })).toBe('Надень на Roxie — вместо оружия');
     expect(row('ru', { dV: 2.4 })).toBe('Надень на Roxie — вместо оружия');
     expect(row('en', { dV: -0.03 })).toBe('Equip on Roxie — instead of the weapon');

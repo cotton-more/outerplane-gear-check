@@ -18,6 +18,7 @@ import { batchCaption, capLine, itemCaption } from '@/features/gear/ui/pieceText
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 import { SubToken } from '@/game/item/SubToken';
+import { waitText } from './BatchPlan';
 
 // the caption line of a weapon or accessory: «Noblewoman's Guile · HP%», «Steel Sword · ATK% · T4» (Q4); armor has none —
 // the title says the slot and the hero, the grade and set are in the batch's title (an equip with a position has its
@@ -85,8 +86,8 @@ function PieceLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
 
 // for whom a kept piece stays: «для Gnosis Domine», «для Valentine · запас»; the piece is in the title (row, place, #n)
 // and, for a weapon or accessory, in the caption line above
-function keptText(t: Texts, k: Kept): { text: string; c: Char | null } {
-  return { text: k.why === 'reserve' ? t.batch.keptReserve(k.c.name) : t.batch.keptFor(k.c.name), c: k.c };
+function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null } {
+  return { text: k.why === 'reserve' ? t.batch.keptReserve(k.c.name, waitText(t, ctx, k.c, k.input)) : t.batch.keptFor(k.c.name), c: k.c };
 }
 function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
@@ -104,7 +105,7 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
     case 2: {
       if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(ctx, t, s.where)), hero: s.where.c, more: [] };
       const { r, p } = rowOf(s.where.n);
-      return { title: t.batch.lockStep(r, p, s.where.n), hero: null, cap: s.kept ? capOf(ctx, t, s.kept.input) : undefined, grade: s.kept?.input.grade, kept: s.kept ? keptText(t, s.kept) : undefined,
+      return { title: t.batch.lockStep(r, p, s.where.n), hero: null, cap: s.kept ? capOf(ctx, t, s.kept.input) : undefined, grade: s.kept?.input.grade, kept: s.kept ? keptText(ctx, t, s.kept) : undefined,
         more: [], subs: s.kept ? gameSubs(ctx.idx, s.kept.input.subs) : undefined };
     }
     case 3: {
