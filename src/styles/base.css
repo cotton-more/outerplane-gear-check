@@ -3,6 +3,7 @@
   --bg: #eceff4;
   --surface: #ffffff;
   --surface-2: #f4f6f9;
+  --gstat-bg: #3b4252; /* game stat icons are white: a dark square under them (img.gstat) */
   --surface-3: #e5e9f0;
   --ink: #121722;
   --ink-2: #454f60;
@@ -45,6 +46,7 @@
     --bg: #0c0f14;
     --surface: #151a22;
     --surface-2: #1a2029;
+    --gstat-bg: transparent;
     --surface-3: #232b36;
     --ink: #e7ebf1;
     --ink-2: #b0bacb;
@@ -81,6 +83,7 @@
   --bg: #0c0f14;
   --surface: #151a22;
   --surface-2: #1a2029;
+  --gstat-bg: transparent;
   --surface-3: #232b36;
   --ink: #e7ebf1;
   --ink-2: #b0bacb;
@@ -142,6 +145,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .small { font-size: 13px; }
 kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-2); background: var(--surface-2); }
 .noimg { display: inline-block; background: var(--surface-3); border-radius: 6px; }
+/* game stat icons (StatIcon) are white with light grey: on a light cell they vanish (owner 2026-10-10) — a dark rounded
+   square like the game's; dark theme — none (--gstat-bg), the padding stays so the size is the same in both */
+img.gstat { box-sizing: content-box; padding: 2px; border-radius: 4px; background: var(--gstat-bg); }
 /* свои значки (Img.tsx, Icon): контур цветом текста; размер — те же правила, что картинкам (… img, … .ico) */
 .ico { position: relative; display: inline-flex; flex: none; width: 1em; height: 1em; vertical-align: middle; }
 .ico > svg { display: block; width: 100%; height: 100%; }

@@ -35,7 +35,7 @@ export function Icon({ name, badge, className }: { name: IconName; badge?: strin
 // main — стат как строка main: там EFF и RES — flat, без «%»
 export function StatIcon({ stat, main = false }: { stat: string; main?: boolean }) {
   const game = useGameIcons();
-  if (game) return <Img k={'stat:' + (STAT_ICON[stat] || '')} alt={stat} />;
+  if (game) return <Img k={'stat:' + (STAT_ICON[stat] || '')} alt={stat} className="gstat" />;
   const own = statIcon(stat, main);
   return own ? <Icon name={own.name} badge={own.badge} /> : <span className="noimg" aria-hidden="true" />;
 }
