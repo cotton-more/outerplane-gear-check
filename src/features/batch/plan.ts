@@ -184,7 +184,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         fates.set(L, { kind: 'feed', to: entry ? { entry: n } : { c, piece: res.piece } });
       };
       // a set-aside record of its slot the new one pushes out (the hero's weak reserve) is a piece in the game too: a line
-      // (other slots: the «Лишнее убрано» note on «Сделал»; only a taken-off piece the pool kept is decided again)
+      // (other slots: the «Лишнее убрано» note on «Записать план»; only a taken-off piece the pool kept is decided again)
       for (const p of res.removed) {
         if (p.id === res.wasWorn) continue;
         if (madeBy.has(p.id)) { if (p.slot === res.slot) eaten(p); }
@@ -281,7 +281,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   return { plan: { lines, st, ops, t4, wornFed, counts }, gone };
 }
 
-// «Вернуть» after «Сделал»: the operations' own undos, newest first — not a snapshot (it would wipe what was done
+// «Вернуть» after «Записать план»: the operations' own undos, newest first — not a snapshot (it would wipe what was done
 // during these seconds). «T4» marks sit on records the plan made: undoing them removes the marks too
 export function undoPlan(st: GearStore, plan: Pick<Plan, 'ops'>): GearStore {
   let x = st;

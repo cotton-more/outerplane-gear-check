@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // «Партия» on a phone (360px, .x/0110-batch): «Ещё» → «Партия», pieces in a row without a verdict, the list (fix,
-// remove), the plan («Не брать»), «Сделал» with «Вернуть», the batch saved across a reload, ✕ asks.
+// remove), the plan («Не брать»), «Записать план» with «Вернуть», the batch saved across a reload, ✕ asks.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';

@@ -66,7 +66,6 @@ export interface Tip {
   at: Anchor;
   when?: (c: TourCtx) => boolean;
   news?: boolean; // попадает в «Что нового»; короткая строка — tour.news[id]
-  tour?: TourId;  // «Показать» в «Что нового» запускает этот тур, а не показывает подсказку
 }
 
 export const defineTips = (...tips: Tip[]): Tip[] => tips;

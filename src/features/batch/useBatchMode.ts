@@ -1,5 +1,5 @@
 // «Партия» on the page (.x/0110-batch/PLAN.md §1, §4): the batch in 'ogc.batch', the entry being fixed, what the list /
-// plan view shows, and the actions — start, «В партию», fix, remove, «Посчитать», «Не брать», «Это другой», «Сделал»
+// plan view shows, and the actions — start, «В партию», fix, remove, «Посчитать», «Не брать», «Это другой», «Записать план»
 // with «Вернуть», ✕. The plan is computed only while it is shown, always on the current store.
 import { useMemo, useRef, useState, type Dispatch } from 'react';
 import { isArmor, type Index } from '@/game/data';
@@ -148,7 +148,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     show: setView,
     skip: (line, hero) => { if (value) set(addSkip(value, skipKey(line, hero))); },
     twin: (n) => { if (value) set(setTwin(value, n)); },
-    // «Сделал»: the plan on the current store — never a stale one; «Вернуть» undoes its operations and brings the batch back
+    // «Записать план»: the plan on the current store — never a stale one; «Вернуть» undoes its operations and brings the batch back
     done: () => {
       if (!value) return;
       const was = value;

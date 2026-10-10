@@ -32,7 +32,7 @@ html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 /* «Записать план» is the plain button: not the filled primary (it must not invite recording before the game is done) and
    not the dismantle red (it dismantles nothing) */
 .batch-acts .brec { margin-left: auto; }
-/* a long batch: «Посчитать» / «Сделал» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
+/* a long batch: «Посчитать» / «Записать план» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
    the same --surface) */
 .batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 4px; background: var(--surface); } /* above the rows' ✕ (z-index 1) */
 /* the column's bottom padding is the bar's own: rows don't show through under it */

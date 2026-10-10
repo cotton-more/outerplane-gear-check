@@ -174,7 +174,7 @@ describe('«T4» на форме', () => {
   });
 
   // Anarky: годная Pen-броня Epic T0 в пуле; новая Pen-броня Epic с мусором — материал её Breakthrough. С «T4» новая
-  // материалом не бывает (D6, MODEL.md §4 item 3a) — «Разобрать»
+  // с «T4» — тоже: T4-вещь, которую никто не носит, — корм, и цель «сразу станет T4» (MODEL.md §4 item 3a)
   it('нажатие меняет вход вердикта: без «T4» — Breakthrough для брони Anarky, с «T4» — тоже, но «сразу станет T4»', async () => {
     const anarky = D.chars.find((c) => c.name === 'Anarky')!;
     const P = (id: string, slot: string, setId: string, yellow: Record<string, number>, o: Record<string, unknown> = {}) =>

@@ -231,7 +231,7 @@ describe('plan of a batch', () => {
       expect(problems(st, plan), at).toEqual([]);
 
       // nothing silent: a recorded piece that leaves a hero's pool has its own line, or «Надень» dropped it in another
-      // slot (the «Лишнее убрано» note on «Сделал»)
+      // slot (the «Лишнее убрано» note on «Записать план»)
       for (const [c, ids] of Object.entries(st.pools)) {
         for (const id of ids.filter((x) => !plan.st.pools[c]?.includes(x))) {
           const line = plan.lines.some((l) => l.off?.piece.id === id && l.off.c.id === c);

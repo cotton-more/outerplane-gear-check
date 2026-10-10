@@ -1,5 +1,5 @@
 // «Партия» — what is entered (.x/0110-batch/PLAN.md §4): pieces in the game filter's order, «Не брать» per plan line,
-// «Это другой» per entry. Saved in 'ogc.batch' until «Сделал» or ✕ — Android unloads the page in split screen.
+// «Это другой» per entry. Saved in 'ogc.batch' until «Записать план» or ✕ — Android unloads the page in split screen.
 import { GRADES, SLOT, isArmor, type Index } from '@/game/data';
 import type { GearKind, Grade, SlotId } from '@/game/data/types';
 import { MAX_LIT, MAX_SUBS, type Subs } from '@/game/item/subs';

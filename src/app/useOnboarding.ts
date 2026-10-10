@@ -99,10 +99,10 @@ export function useOnboarding({ idx, s, dispatch, roster, layout, nSubs, shown, 
   const [forcedTip, setForcedTip] = useState<Tip | null>(null);
   const newsShown = layout.tall && tour.available && news.length > 0 && !newsLater && !tour.run && !welcomeShown && !inviteShown
     && s.tab === 'eval' && !formUndo && !paused;
-  // «Показать»: у новости с туром — тур («Экипировка»), иначе — сама подсказка
+  // «Показать»: сама подсказка
   const showNews = () => {
     tour.knowTips(news);
-    if (news[0].tour) startTour(news[0].tour); else setForcedTip(news[0]);
+    setForcedTip(news[0]);
   };
   useEffect(() => {
     if (!helpOpen || !news.length) return;

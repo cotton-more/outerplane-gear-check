@@ -28,8 +28,9 @@ export interface Fed { piece: Piece; of: Char | null }
 // how many feeds a piece still takes to T4
 const feedsLeft = (x: Pick<Piece, 'bt'>): number => Math.max(0, CFG.reservePerHero - (x.bt ?? 0));
 // worth a Breakthrough (owner 2026-10-09): armor that passes the bar; a weapon or accessory only when it is «Оставить» —
-// a Legendary from the hero's list with the right main. A stopgap (any Epic, a Legendary off the list) gets replaced:
-// the verdict says «не вкладывай», so nothing feeds it and its spare copies are dismantled
+// a Legendary from the hero's list with the right main. A weapon or accessory stopgap (any Epic, a Legendary off the list)
+// gets replaced: the verdict says «не вкладывай», so nothing feeds it and its spare copies are dismantled. An Epic armor
+// stopgap passes the bar and is fed (owner Q1, MODEL.md §4 item 3a): its T4 counts toward the set bonus
 const btWorth = (P: Profile, p: Piece): boolean => (isArmor(p.slot) ? pieceBar(P, p).pass : pieceBar(P, p).keep);
 
 // пул героя: вещи, надетое и что из них держится

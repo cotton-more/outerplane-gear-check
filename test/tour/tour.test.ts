@@ -65,10 +65,6 @@ describe('туры', () => {
     expect(used.filter((a) => !ANCHORS.includes(a))).toEqual([]);
   });
 
-  it('у подсказки с туром — тур из списка, и она в «Что нового»', () => {
-    expect(TIPS.filter((tp) => tp.tour && (!TOURS[tp.tour] || !tp.news)).map((tp) => tp.id)).toEqual([]);
-  });
-
   // полоса на телефоне — 3–4 строки: длиннее — закроет полэкрана в разделённом экране
   it('каждый вариант текста шага на обоих языках — не длиннее 200 знаков', () => {
     const variants: StepText[] = [];
