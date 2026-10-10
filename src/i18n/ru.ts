@@ -819,7 +819,7 @@ export const ru = {
     stages: ['Надеть — у героев', 'Замок', 'Breakthrough', 'Разобрать — одним выбором'],
     // the number is in the hero's list of that slot (only that slot, same filter), #n — the piece in the batch (owner
     // 2026-10-08: «№ 1» read as the first piece of the batch). The no-break spaces keep «№ 2», «· #6» together
-    equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → №\u00A0${k} в списке\u00A0·\u00A0#${n}`,
+    equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → №\u00A0${k} в\u00A0списке\u00A0·\u00A0#${n}`,
     // the two numbers are equal: said once
     equipStepN: (hero: string, slot: string, n: number) => `${hero} → ${NOM[slot]} → №\u00A0${n}`,
     equipStepAt: (hero: string, slot: string, piece: string) => `${hero} → ${NOM[slot]} → ${piece}`,

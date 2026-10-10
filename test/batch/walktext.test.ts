@@ -60,8 +60,8 @@ describe('equip title: the number once when it is the same', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([{ kind: 'lock', slot: 'gloves' }, piece(good('g'))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → helmet → No.${NB}1 in the list${NB}·${NB}#2`);
-    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → шлем → №${NB}1 в списке${NB}·${NB}#2`);
+    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → helmet → No.${NB}1 in${NB}the${NB}list${NB}·${NB}#2`);
+    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → шлем → №${NB}1 в${NB}списке${NB}·${NB}#2`);
   });
   it('k = n: «№ 1», no «в списке» and no «#n»', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
@@ -72,8 +72,8 @@ describe('equip title: the number once when it is the same', () => {
   });
   it('the title texts: both languages, no-break spaces around «·» before «#n», no slot word repeated', () => {
     const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
-    expect(ru.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → шлем → №${NB}2 в списке${NB}·${NB}#6`);
-    expect(en.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → helmet → No.${NB}2 in the list${NB}·${NB}#6`);
+    expect(ru.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → шлем → №${NB}2 в${NB}списке${NB}·${NB}#6`);
+    expect(en.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → helmet → No.${NB}2 in${NB}the${NB}list${NB}·${NB}#6`);
     expect(ru.equipStepN('Saeran', 'gloves', 17)).toBe(`Saeran → перчатки → №${NB}17`);
     expect(en.equipStepN('Saeran', 'gloves', 17)).toBe(`Saeran → gloves → No.${NB}17`);
     expect(ru.lockStep(2, 5, 15)).toBe(`Ряд 2, 5-й${NB}·${NB}#15`);

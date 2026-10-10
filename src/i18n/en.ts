@@ -708,7 +708,7 @@ export const en: Texts = {
     walkTitle: (k, n) => `Walk · ${k} of ${n}`,
     walkNote: (what) => `${what ? `Game filter: ${what} · worn shown · by date. ` : ''}Substats differ — fix the batch.`,
     stages: ['Equip — at the heroes', 'Lock', 'Breakthrough', 'Dismantle — in one selection'],
-    equipStep: (hero, slot, k, n) => `${hero} → ${SLOT_EN[slot]} → No.\u00A0${k} in the list\u00A0·\u00A0#${n}`,
+    equipStep: (hero, slot, k, n) => `${hero} → ${SLOT_EN[slot]} → No.\u00A0${k} in\u00A0the\u00A0list\u00A0·\u00A0#${n}`,
     equipStepN: (hero, slot, n) => `${hero} → ${SLOT_EN[slot]} → No.\u00A0${n}`,
     equipStepAt: (hero, slot, piece) => `${hero} → ${SLOT_EN[slot]} → ${piece}`,
     offAt: (slot, name, stash) => `${name}'s ${stash ? 'set-aside' : 'removed'} ${SLOT_EN[slot]}`,
