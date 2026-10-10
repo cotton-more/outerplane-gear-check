@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
-import { ClassIcon, ElementIcon } from '@/game/icons/Img';
+import { ClassIcon } from '@/game/icons/Img';
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 
@@ -19,7 +19,7 @@ export function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSe
     <div className="cwrap">
       <button type="button" className={`ctile${c.builds.length ? '' : ' nob'}${off ? ' off' : ''}`} aria-pressed={selected} onClick={onSelect}
         title={c.name + (c.nick && c.nick !== c.prefix ? ' — ' + c.nick : '')}>
-        <span className="badges"><ElementIcon el={c.element} /><ClassIcon cls={c.class} /></span>
+        <span className="badges"><ClassIcon cls={c.class} el={c.element} /></span>
         <HeroFace c={c} />{isNew && <span className="newb">NEW</span>}
         {gear !== undefined && <span className="gearb" title={t.ui.gearTile(gear)}><span className="sr-only">{t.ui.gearTile(gear)}</span><span aria-hidden="true">{gear}/6</span></span>}
         <span className="cn"><HeroName c={c} stacked /></span>

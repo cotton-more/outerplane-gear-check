@@ -5,7 +5,7 @@ import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { cap } from '@/game/text';
-import { ClassIcon, ElementIcon } from '@/game/icons/Img';
+import { ClassIcon } from '@/game/icons/Img';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
@@ -22,11 +22,10 @@ export function CharHead({ c, ctx, star }: { c: Char; ctx: Ctx; star?: ReactNode
   const clsName = D.classes[c.class] || c.class;
   return (
     <div className="cd-head">
-      {/* стихия и класс — значками на подложке поверх портрета: названия класса и стихии на экране нет, поэтому aria-label */}
+      {/* класс в цвете стихии — один значок на подложке поверх портрета: названий на экране нет, поэтому aria-label «Mage · Water» */}
       <span className="cd-face">
         <HeroFace c={c} />
-        <span className="cd-badge el" role="img" aria-label={elName} title={elName}><ElementIcon el={c.element} /></span>
-        <span className="cd-badge cls" role="img" aria-label={clsName} title={clsName}><ClassIcon cls={c.class} /></span>
+        <span className="cd-badge" role="img" aria-label={`${clsName} · ${elName}`} title={`${clsName} · ${elName}`}><ClassIcon cls={c.class} el={c.element} /></span>
       </span>
       <div>
         <div className="cd-name">

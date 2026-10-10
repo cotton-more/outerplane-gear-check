@@ -73,8 +73,15 @@ export function ElementIcon({ el }: { el: string }) {
   return useGameIcons() ? <Img k={'elem:' + el} /> : <Icon name={ELEMENT_ICON[el] ?? 'hexagon'} className={`el-${el}`} />;
 }
 
-export function ClassIcon({ cls }: { cls: string }) {
-  return useGameIcons() ? <Img k={'class:' + cls} /> : <Icon name={CLASS_ICON[cls] ?? 'hexagon'} />;
+// el — the class icon in its element's colour, one icon instead of the element + class pair (owner 2026-10-10): the
+// game's icon is a white symbol on a black diamond, so a diamond of the element's colour under it and the icon in
+// «screen» blend turn the black the element's colour and keep the white (base.css .ce); our own — the outline in it
+export function ClassIcon({ cls, el }: { cls: string; el?: string }) {
+  if (useGameIcons()) {
+    const img = <Img k={'class:' + cls} />;
+    return el ? <span className={`ce el-${el}`}>{img}</span> : img;
+  }
+  return <Icon name={CLASS_ICON[cls] ?? 'hexagon'} className={el ? `el-${el}` : undefined} />;
 }
 
 export function TalismanIcon({ icon }: { icon: string }) {

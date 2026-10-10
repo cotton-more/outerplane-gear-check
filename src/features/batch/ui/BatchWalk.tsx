@@ -167,7 +167,8 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                         {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
                         {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
                         {bt && <BtCard ctx={ctx} t={t} bt={bt} />}
-                        {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}
+                        {/* «LV 2 Effectiveness» on the left, «+5.0%» on the right — as the game's item panel lays them out (owner 2026-10-10) */}
+                        {subs && <span className="bstep-subs">{subs.map((m) => { const i = m.lastIndexOf(' '); return <span key={m}><span>{m.slice(0, i)}</span>{' '}<span className="sv">{m.slice(i + 1)}</span></span>; })}</span>}
                       </span>
                     </Toggle>
                   </li>

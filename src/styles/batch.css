@@ -77,7 +77,8 @@ html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 .bstep-no { float: right; margin-left: 8px; padding-top: 2px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
 .bstep.done .bstep-t { opacity: .6; }
 .bstep-subs { display: grid; gap: 1px; font-size: 12.5px; color: var(--ink-2); }
-.bstep-subs span { white-space: nowrap; }
+.bstep-subs > span { display: flex; justify-content: space-between; gap: 12px; max-width: 300px; white-space: nowrap; }
+.bstep-subs .sv { font-variant-numeric: tabular-nums; }
 /* the batch's short notes as a toast (App batchToast): no button, the text wraps within the screen; yellow — not an
    error, but it should catch the eye (owner 2026-10-08) */
 .toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center;

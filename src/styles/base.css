@@ -24,7 +24,8 @@
   --idle-soft: #e5e9f0;
   --epic: #2f6bd8;
   --legend: #c4352c; /* ≥ 4.5:1 on --surface-2 (was #cf3a31, 4.51) */
-  /* hero names (.htag) on --surface-2, all ≥ 4.5:1: fire 4.78, water 4.64, earth 4.96, light 5.12, dark 5.13 */
+  /* element colours for text and our own outline icons (.ico.el-*) on --surface-2, all ≥ 4.5:1: fire 4.78, water 4.64,
+     earth 4.96, light 5.12, dark 5.13 */
   --el-fire: #c2410c;
   --el-water: #1971c2;
   --el-earth: #237a37;
@@ -264,9 +265,17 @@ html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
 /* inline, not flex: the name sits on the phrase's own baseline (a flex box aligned by its bottom put it a pixel or two
    lower — owner 2026-10-10); the icon is centred on the lowercase letters, its margins keep the line from growing */
 .htag { white-space: nowrap; }
-.htag .ico, .htag img { width: 16px; height: 16px; margin: -3px 3px -2px 0; vertical-align: -3px; }
-.htag.el-fire b { color: var(--el-fire); }
-.htag.el-water b { color: var(--el-water); }
-.htag.el-earth b { color: var(--el-earth); }
-.htag.el-light b { color: var(--el-light); }
-.htag.el-dark b { color: var(--el-dark); }
+.htag .ico, .htag img, .htag .ce { width: 16px; height: 16px; margin: -3px 3px -2px 0; vertical-align: -3px; }
+.htag .ce > img { margin: 0; }
+/* the class in its element's colour (Img.tsx ClassIcon el): a diamond of the element's colour under the game's icon,
+   the icon in «screen» blend — its black diamond takes the colour, the white symbol and outline stay white; the
+   outline parts it from the light and the dark surface alike. Mid tones close to the game's element icons, the same
+   in both themes (white on each ≥ 3:1) */
+.ce { position: relative; display: inline-block; flex: none; line-height: 0; isolation: isolate; }
+.ce::before { content: ''; position: absolute; inset: 18%; border-radius: 2px; background: var(--el-bg); transform: rotate(45deg); }
+.ce > img { position: relative; display: block; width: 100%; height: 100%; mix-blend-mode: screen; }
+.ce.el-fire { --el-bg: #d9480f; }
+.ce.el-water { --el-bg: #1c7ed6; }
+.ce.el-earth { --el-bg: #2b8a3e; }
+.ce.el-light { --el-bg: #c98a00; }
+.ce.el-dark { --el-bg: #7048e8; }

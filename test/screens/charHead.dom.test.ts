@@ -68,7 +68,7 @@ describe('шапка карточки персонажа', () => {
     expect(meta).toBe('Bruiser · DPS');
   });
 
-  it('значки стихии и класса на портрете подписаны для экранного диктора', async () => {
+  it('класс в цвете стихии — один значок на портрете, подписан для экранного диктора', async () => {
     // Arrange
     await mountCard(caren.id, [caren.id]);
 
@@ -76,7 +76,7 @@ describe('шапка карточки персонажа', () => {
     const labels = $$('.cd-face .cd-badge').map((b) => [b.getAttribute('role'), b.getAttribute('aria-label')]);
 
     // Assert
-    expect(labels).toEqual([['img', 'Water'], ['img', 'Striker']]);
+    expect(labels).toEqual([['img', 'Striker · Water']]);
   });
 
   it('оценки PvE и PvP и прозвище — в нижней строке шапки', async () => {

@@ -70,7 +70,7 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
    a piece — it only gains or loses its E). At the top — the game filter to set: "Game filter: Epic Speed · worn
    shown · by date."
    1. **Equip — at the heroes:** "Caren → helmet", on the right in grey "No. 7" — its place in the hero's helmet list in the game (it holds
-      only helmets, with the same filter). The class icon by the name and the name's colour (the element) help find the
+      only helmets, with the same filter). The class icon by the name, in the element's colour, helps find the
       hero with the game's roster filters. For a weapon or accessory the item and its main stand in the title ("Lambda →
       Steel Sword · ATK%"). Below, in a column, the substats as the game shows them after a tap: "LV 3 Crit Chance
       +9.0%" — check them. A piece taken off another hero: "Maxie → Tamara's removed weapon".

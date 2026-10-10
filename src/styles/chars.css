@@ -65,15 +65,14 @@ html:not(.sheet) .cd-top { display: none; }
 .cd-head img.face, .cd-head .noimg.face { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
 .cd-head h2 { margin: 0; font: 700 18px/1.2 var(--font-display); text-wrap: balance; }
 .cd-head .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; font-size: 13px; color: var(--ink-2); align-items: center; }
-/* стихия и класс — значками на портрете: подложка --surface отделяет цветную картинку от лица в обеих темах;
+/* класс в цвете стихии — значком на портрете: подложка --surface отделяет цветную картинку от лица в обеих темах;
    сдвиг наружу — чтобы закрывать минимум портрета */
 .cd-face { position: relative; display: block; width: 64px; height: 64px; }
 .cd-badge {
   position: absolute; left: -4px; width: 24px; height: 24px; display: grid; place-items: center;
   background: var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px var(--line-2);
 }
-.cd-badge.el { top: -4px; }
-.cd-badge.cls { bottom: -4px; }
+.cd-badge { top: -4px; }
 .cd-badge img, .cd-badge .ico { width: 16px; height: 16px; }
 /* звезда ростера у имени — как .star в списке, но в потоке; 40px зоны нажатия не раздувают строку имени */
 .cd-name { display: flex; align-items: flex-start; gap: 2px; min-width: 0; }
