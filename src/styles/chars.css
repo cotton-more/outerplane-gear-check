@@ -210,6 +210,8 @@ html.xs .bgear-t { grid-row: 3; }
 .wset-h > span:first-child { min-width: 0; }
 .wset-h b { color: var(--ink); font-weight: 600; }
 .wset-h .wpts { flex: none; white-space: nowrap; }
+.wset.pot { color: var(--ink-3); } /* what T4 would add: a faint block, not a button */
+.wset.pot .wset-h b, .wset.pot .wpts { color: inherit; }
 /* вкладка «Пул»: строка вещи, справа — почему держится; внизу — «Оценить вещь для Caren» */
 .pool { padding: 14px 16px 20px; display: grid; gap: 14px; } /* the bottom 20px as on «Worn» (.bgear.worn:last-child), with or without the rate button */
 .pool-rate { width: 100%; min-height: 44px; }

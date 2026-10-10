@@ -10,9 +10,10 @@ import { pointWeights } from '@/game/build/points';
 import { comboSig } from '@/game/build/variants';
 import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
+import { setValue } from '@/game/set/setValue';
 import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { better, bestLayout, epicToLegend, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
-import { namedGain } from '@/features/gear/model/vs';
+import { milli, namedGain, THRESHOLD } from '@/features/gear/model/vs';
 import { eligibleIn } from '@/features/gear/pool/info';
 import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
 import { undoWear, wearFromPool, type WearResult } from '@/features/gear/pool';
@@ -46,6 +47,10 @@ export interface Fill { pin: Pin; k: number; n: number; need: Need[] }
 // (the set part of V after the row is completed minus before) — the pieces keep their own stats, so the number is only what the
 // set adds, net of the set bonus the replaced pieces give today
 export interface SeekRow extends Fill { gain: number }
+// What Breakthrough T4 on worn armor would add to a worn set (owner 2026-10-10): the smallest group of the set's worn pieces that
+// are not T4 yet whose T4 reaches the set's full-T4 value (sets are independent in V, so each set is decided alone), the
+// bonus rows that group turns on, and the gain in points. Only from 1 point. A piece with Breakthrough unknown counts as not T4
+export interface T4Line { set: string; rows: BonusRow[]; gain: number; slots: ArmorSlot[] }
 export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken[] }
 // The hero's chain with what the worn pieces give each stat (owner, 2026-10-07): the chain's own order (first — the most
 // valuable), a stat — the sum of its segments over the worn pieces. A flat axis (ATK, HP, DEF) shows its forms side by
@@ -62,6 +67,7 @@ export interface WornView {
   build: string;           // the build the chain comes from — named on the card only next to another chain
   alt: AltChain[];         // the hero's other chains (Heatwave Cop Delta: DPS and Support), same sums, for reference
   bonuses: BonusRow[];     // включённые бонусы надетых сетов
+  t4: T4Line[];            // what T4 on worn armor would add to each set, from 1 point; [] — a hero without builds
   redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
   seek: SeekRow[];         // «Что искать»: 1–3 из 4, от ближнего, ничего не добавляющие скрыты; закреплён — только его набор
   pool: number;            // вещей в пуле героя
@@ -90,10 +96,31 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     build: P?.chain.name ?? '',
     alt: P ? altChains(ctx, c, P.chain, slots.map((s) => s.piece)) : [],
     bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
+    t4: P ? t4Of(ctx, P, worn) : [],
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],
     pool: pieces.length,
   };
+}
+
+function t4Of(ctx: Ctx, P: Profile, worn: Layout): T4Line[] {
+  const out: T4Line[] = [];
+  for (const { set, n } of layoutValue(P, worn).sets) {
+    const mine = ARMOR.filter((s) => worn[s]?.setId === set);
+    const n4 = mine.filter((s) => worn[s]!.bt === 4).length;
+    const cands = mine.filter((s) => worn[s]!.bt !== 4);
+    if (!cands.length) continue;
+    const now = setValue(P, set, n, n4).value, full = setValue(P, set, n, n).value;
+    if (milli(full - now) < THRESHOLD) continue;
+    let k = 1;
+    while (setValue(P, set, n, n4 + k).value < full - 1e-9) k++;
+    const slots = cands.slice(0, k);
+    const pieces = (up: readonly ArmorSlot[]) => mine.map((s) => ({ setId: set, bt: up.includes(s) ? 4 : worn[s]!.bt }));
+    const was = bonusRows(ctx.idx.SET, pieces([]));
+    const rows = bonusRows(ctx.idx.SET, pieces(slots)).filter((r) => !was.some((w) => w.n === r.n && w.tier === r.tier));
+    if (rows.length) out.push({ set, rows, gain: full - now, slots });
+  }
+  return out;
 }
 
 // chains of the hero's builds other than the one points use, each once, in outerpedia order

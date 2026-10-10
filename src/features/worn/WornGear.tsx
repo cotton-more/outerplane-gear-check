@@ -98,7 +98,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
         {shownPts && wv.alt.map((a) => (
           <div key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}</span><WornChain chain={a.chain} anchor={false} /></div>
         ))}
-        <WornSets idx={idx} wv={wv} />
+        <WornSets idx={idx} wv={wv} t4={!shown} />
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {
             const s = wv.slots.find((x) => x.slot === slot)!;

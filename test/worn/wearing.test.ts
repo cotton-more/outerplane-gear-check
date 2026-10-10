@@ -224,6 +224,52 @@ describe('«What to look for»: what a row is worth', () => {
   });
 });
 
+// What Breakthrough T4 on worn armor would add to a worn set (owner 2026-10-10): per set, the smallest group of its worn pieces
+// that are not T4 yet whose T4 reaches the set's full-T4 value; only from 1 point
+describe('T4 line: what T4 on worn armor would add', () => {
+  const sp = (slot: SlotId, bt: 0 | 4 | null) => piece(slot, 'Speed', GOOD, { bt });
+  const t4 = (worn: Piece[]) => view(store(worn, worn)).t4;
+  const line = (worn: Piece[]) => { const l = t4(worn); return l.map((x) => ({ set: x.set, slots: x.slots, rows: x.rows.map((r) => [r.n, r.tier]) })); };
+
+  it('Speed ×2 on T0–T3 (helmet, armor): T4 on both turns on the 2P row — +13% Speed, from the set value', () => {
+    const worn = [sp('helmet', 0), sp('armor', 0)];
+    expect(line(worn)).toEqual([{ set: SPEED, slots: ['helmet', 'armor'], rows: [[2, 'T4']] }]);
+    const l = t4(worn)[0];
+    const v = view(store(worn, worn)).value!;
+    expect(l.gain).toBeGreaterThanOrEqual(1);
+    // the same pieces at T4: the set's value rises by exactly the line's gain
+    const up = worn.map((p) => ({ ...p, bt: 4 as const }));
+    expect(view(store(up, up)).value!.setSum - v.setSum).toBeCloseTo(l.gain, 9);
+  });
+
+  it('Speed ×3 at T0–T3 (Kuro): two pieces are enough — the first two in slot order', () => {
+    expect(line([sp('helmet', 0), sp('armor', 0), sp('gloves', 0)])).toEqual([{ set: SPEED, slots: ['helmet', 'armor'], rows: [[2, 'T4']] }]);
+  });
+
+  it('a piece already at T4 is not asked again; one more T4 completes the pair', () => {
+    expect(line([sp('helmet', 4), sp('armor', 0)])).toEqual([{ set: SPEED, slots: ['armor'], rows: [[2, 'T4']] }]);
+  });
+
+  it('Breakthrough unknown counts as not T4', () => {
+    expect(line([sp('helmet', null), sp('armor', null)]).map((x) => x.slots)).toEqual([['helmet', 'armor']]);
+  });
+
+  it('everything already at T4, or T4 adds nothing (Speed ×4: 4P at T0–T3 already holds the 2P): no line', () => {
+    expect(t4([sp('helmet', 4), sp('armor', 4)])).toEqual([]);
+    expect(t4(ARMOR.map((s) => sp(s, 0)))).toEqual([]);
+  });
+
+  it('T4 adds nothing: no line (Attack ×2 is worth the same at T4 — a half of U either way); a line only from 1 point', () => {
+    expect(t4([piece('helmet', 'Attack', GOOD, { bt: 0 }), piece('armor', 'Attack', GOOD, { bt: 0 })])).toEqual([]);
+    for (const l of t4([piece('helmet', 'Critical Strike', GOOD, { bt: 0 }), piece('armor', 'Critical Strike', GOOD, { bt: 0 })])) expect(l.gain).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a hero without builds has no line', () => {
+    const worn = [sp('helmet', 0), sp('armor', 0)];
+    expect(wornView(ctx, delta, store(worn, worn), null).t4).toEqual([]);
+  });
+});
+
 describe('слоты «Надето» и причины в списке вещей', () => {
   it('цвет сабстата — по очкам: стат цепочки на 5-м месте засчитан, чужой — нет; закреплённый — по цепочке своего билда', () => {
     const h = piece('helmet', 'Speed', { 'DMG UP%': 2, RES: 2, CHC: 2, HP: 2 });

@@ -241,7 +241,7 @@ describe('worn sets: header line and rows', () => {
 
   it('no active row (two Speed pieces) — no set block', async () => {
     await mount({ gear: worn(four(speed, 0).slice(0, 2)) });
-    expect($('.bgear-set')).toBeNull();
+    expect($('.bgear-set .wset:not(.pot)')).toBeNull();
   });
 });
 
@@ -264,5 +264,32 @@ describe('«What to look for»: value of the row', () => {
     const lifesteal = D.sets.find((s) => s.short === 'Lifesteal')!.id;
     await mount({ gear: worn(ARMOR2.map((slot, i) => P('l' + i, slot, lifesteal, { CHC: 2 }, { bt: 0 }))) });
     expect($('.seek')).toBeNull();
+  });
+});
+
+// What Breakthrough T4 on worn armor would add: a faint two-line block after the sets, not on the shared card (share.dom.test.ts)
+describe('T4 line', () => {
+  const pair = (bt: number) => ['helmet', 'armor'].map((slot, i) => P('t' + i, slot, speed, { CHC: 2, CHD: 2 }, { bt }));
+  const worn = (ps: Pc[]) => G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: { [caren.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } });
+
+  it('Speed ×2 at T0–T3: head with the bonus and the value, then the pieces that need T4', async () => {
+    await mount({ gear: worn(pair(0)) });
+    const pot = $('.bgear-set .pot')!;
+    expect(pot.querySelector('.wset-h span')?.textContent).toBe('Speed ×2 at T4 · Speed +13%');
+    expect(pot.querySelector('.wpts')?.textContent).toMatch(/^\+\d+(\.\d)?$/);
+    expect(pot.querySelector('.wset-b')?.textContent).toBe('needs T4 on helmet and armor');
+    expect(pot.querySelector('button, a')).toBeNull(); // not tappable
+  });
+
+  it('in Russian: «на T4» and «нужен T4 у шлема и брони»', async () => {
+    await mount({ gear: worn(pair(0)), lang: 'ru' });
+    const pot = $('.bgear-set .pot')!;
+    expect(pot.querySelector('.wset-h span')?.textContent).toBe('Speed ×2 на T4 · Speed +13%');
+    expect(pot.querySelector('.wset-b')?.textContent).toBe('нужен T4 у шлема и брони');
+  });
+
+  it('all pieces at T4 — no line', async () => {
+    await mount({ gear: worn(pair(4)) });
+    expect($('.pot')).toBeNull();
   });
 });

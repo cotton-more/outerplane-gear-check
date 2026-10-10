@@ -109,7 +109,8 @@ segments; dashed — a chain stat no worn piece gives. It's the chain the points
 each named by its build, the name above its chain: the same sums in its own order; points follow the first. Below the
 chain every **set** stands on its own line with what it adds on the right — the points of its bonus on top of the
 pieces' ("Life ×4 +23.3") — and its bonuses under it ("Health +30% · Health +20%"); a set with a single bonus line keeps
-it on the same line ("Attack ×2 · Attack +30% +7.5").
+it on the same line ("Attack ×2 · Attack +30% +7.5"). When Breakthrough T4 on worn armor would add 1+ points of set
+bonus, a faint line says so and on which pieces: "Speed ×2 at T4 · Speed +13% +6.7 — needs T4 on helmet and armor".
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point (a Legendary in place of an Epic — already at equal points), turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
