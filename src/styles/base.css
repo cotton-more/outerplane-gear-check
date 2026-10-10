@@ -266,14 +266,15 @@ html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
    lower — owner 2026-10-10); the icon is centred on the lowercase letters, its margins keep the line from growing */
 .htag { white-space: nowrap; }
 .htag .ico, .htag img, .htag .ce { width: 16px; height: 16px; margin: -3px 3px -2px 0; vertical-align: -3px; }
-.htag .ce > img { margin: 0; }
 /* the class in its element's colour (Img.tsx ClassIcon el): a diamond of the element's colour under the game's icon,
    the icon in «screen» blend — its black diamond takes the colour, the white symbol and outline stay white; the
    outline parts it from the light and the dark surface alike. Mid tones close to the game's element icons, the same
    in both themes (white on each ≥ 3:1) */
 .ce { position: relative; display: inline-block; flex: none; line-height: 0; isolation: isolate; }
 .ce::before { content: ''; position: absolute; inset: 18%; border-radius: 2px; background: var(--el-bg); transform: rotate(45deg); }
-.ce > img { position: relative; display: block; width: 100%; height: 100%; mix-blend-mode: screen; }
+/* the icon's size is the .ce box (set per place: .htag, .ctile .badges, .cd-badge); the image always fills it exactly —
+   a place's own img rule (.bgear-row img: 22px) would push its black diamond off the colour one (owner 2026-10-10) */
+.ce > img { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; margin: 0 !important; mix-blend-mode: screen; }
 .ce.el-fire { --el-bg: #d9480f; }
 .ce.el-water { --el-bg: #1c7ed6; }
 .ce.el-earth { --el-bg: #2b8a3e; }
