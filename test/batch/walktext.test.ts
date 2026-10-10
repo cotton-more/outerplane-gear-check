@@ -146,6 +146,11 @@ describe('a piece taken off another hero', () => {
     const { ctx, p } = make();
     expect(planRows('en', ctx, p).filter((x) => x.includes('removed'))).toEqual([nb("Roxie's removed weapon — Thumping Odyssey · DEF%")]);
     expect(planRows('ru', ctx, p).filter((x) => x.includes('Снятое'))).toEqual([nb('Снятое оружие Roxie — Thumping Odyssey · DEF%')]);
+    // the caption in the grade's colour, like the batch rows (owner 2026-10-10)
+    const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS.ru },
+      createElement(BatchPlan, { ctx, plan: p, onSkip: () => {}, onTwin: () => {}, onWalk: () => {} }))));
+    const cap = new JSDOM(`<body>${html}</body>`).window.document.querySelector('.boff-n .gname');
+    expect([cap?.className, cap?.textContent]).toEqual(['gname legend', nb('Thumping Odyssey · DEF%')]);
   });
   it('offAt: removed and set aside, by gender in RU', () => {
     const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];

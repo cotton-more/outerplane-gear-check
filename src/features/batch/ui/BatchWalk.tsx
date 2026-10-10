@@ -14,7 +14,7 @@ import { Toggle } from '@/shared/ui/Toggle';
 import type { Batch } from '@/features/batch/batch';
 import type { Plan } from '@/features/batch/plan';
 import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
-import { batchCaption, capLine, itemCaption } from '@/features/gear/ui/pieceText';
+import { batchCaption, capLine, itemCaption, Painted } from '@/features/gear/ui/pieceText';
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 import { SubToken } from '@/game/item/SubToken';
@@ -35,9 +35,7 @@ const desc = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>): string => {
 // the same as a line of its own (the feed, the dismantle): the item's name and main in the grade's colour, like a PieceLine
 // (owner 2026-10-10: «Снятый аксессуар Luna — Steel Necklace · HP%» — the item didn't stand out)
 function DescLine({ ctx, t, w }: { ctx: Ctx; t: Texts; w: Exclude<Where, { n: number }> }) {
-  const text = desc(ctx, t, w), what = capOf(ctx, t, inputOfPiece(w.off)), i = what ? text.indexOf(what) : -1;
-  if (i < 0) return <>{text}</>;
-  return <>{text.slice(0, i)}<span className={w.off.grade === 'unique' ? 'gname legend' : 'gname epic'}>{what}</span>{text.slice(i + what.length)}</>;
+  return <Painted text={desc(ctx, t, w)} what={capOf(ctx, t, inputOfPiece(w.off))} grade={w.off.grade} />;
 }
 
 // a step: its title (with the hero to find, tagged), the piece's caption at the end of the title in the grade's colour

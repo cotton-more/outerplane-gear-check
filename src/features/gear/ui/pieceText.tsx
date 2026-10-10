@@ -52,6 +52,14 @@ export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boole
   );
 }
 
+// a phrase with a piece's caption inside («Снятое оружие Ember — Steel Sword · ATK%»): the caption in the grade's colour,
+// like the batch rows (owner 2026-10-10); no caption in the text — the text as is
+export function Painted({ text, what, grade }: { text: string; what: string; grade: Piece['grade'] }) {
+  const i = what ? text.indexOf(what) : -1;
+  if (i < 0) return <>{text}</>;
+  return <>{text.slice(0, i)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{what}</span>{text.slice(i + what.length)}</>;
+}
+
 // Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
 export const btText = (t: Texts, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
 // Breakthrough отдельной меткой — во всех строках вещей одинаково (Р-3, решение владельца 2026-10-05): в карточке билда и на

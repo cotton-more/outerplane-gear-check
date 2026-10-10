@@ -9,10 +9,10 @@ import type { Texts } from '@/i18n';
 import { useT } from '@/i18n';
 import { subsText } from '@/game/text';
 import { namedGain } from '@/features/gear/model/vs';
-import { wornAtEnd, type Fate, type Line, type Plan } from '@/features/batch/plan';
+import { wornAtEnd, type Fate, type Line, type Off, type Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 import { withHero } from '@/game/hero/HeroTag';
-import { capLine, itemCaption } from '@/features/gear/ui/pieceText';
+import { capLine, itemCaption, Painted } from '@/features/gear/ui/pieceText';
 import type { ItemInput } from '@/game/item/item';
 import { isArmor } from '@/game/data';
 
@@ -49,6 +49,13 @@ export function fateText(t: Texts, f: Fate, plan: Plan, ctx: Ctx, x: ItemInput):
     case 'junk': return t.batch.junk;
     default: return t.batch.none;
   }
+}
+
+// a taken-off piece's line: «Снятое оружие Ember — Steel Sword · ATK%», the caption in the grade's colour
+function OffText({ ctx, t, off }: { ctx: Ctx; t: Texts; off: Off }) {
+  const cap = capLine(t, ctx.idx, off.piece);
+  const text = off.was === 'stash' ? t.batch.offStash(off.piece.slot, off.c.name, subsText(off.piece.lit), cap) : t.batch.off(off.piece.slot, off.c.name, cap);
+  return <Painted text={text} what={cap} grade={off.piece.grade} />;
 }
 
 // the hero a fate sends the player to (tagged in the line: class icon, element colour)
@@ -88,9 +95,7 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onWalk }: {
           return (
             <li key={l.id} className={`bgear-row brow b-${l.fate.kind}${l.off ? ' boff' : ''}`}>
               {l.off
-                ? <span className="boff-n">{l.off.was === 'stash'
-                  ? t.batch.offStash(l.off.piece.slot, l.off.c.name, subsText(l.off.piece.lit), capLine(t, ctx.idx, l.off.piece))
-                  : t.batch.off(l.off.piece.slot, l.off.c.name, capLine(t, ctx.idx, l.off.piece))}</span>
+                ? <span className="boff-n"><OffText ctx={ctx} t={t} off={l.off} /></span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
               <span className="bfate">{withHero(fateText(t, l.fate, plan, ctx, l.input), heroIn(plan, l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
