@@ -11,7 +11,7 @@ import { LangContext, TEXTS, type Lang } from '@/i18n';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
 import { entriesOf, NEW_BATCH, type Batch, type BatchEntry } from '@/features/batch/batch';
 import { inputOfPiece, planBatch, type Fate, type Plan } from '@/features/batch/plan';
-import { BatchPlan, fateText } from '@/features/batch/ui/BatchPlan';
+import { BatchPlan, fateText, withWait } from '@/features/batch/ui/BatchPlan';
 import { subsText } from '@/game/text';
 import { char, idx, mk } from '../gear/statSets';
 
@@ -70,8 +70,13 @@ describe('Q6: a recommended Legendary that wins by rank and loses points names t
     const name = idx.ITEM.accessory[ref.key].name;
     const x = { ...p.lines[0].input, slot: 'accessory' as const, itemKey: ref.key, main: 'HP%' };
     const mains = [...new Set(maxwell.builds.flatMap((b) => b.amulets).filter((g) => g.key === ref.key).flatMap((g) => g.mains))];
-    expect(fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, x)).toBe(`Отложи для Maxwell — запас: корм, когда выпадет ${name} с ${mains.join(' или ')}`);
-    expect(fateText(TEXTS.en, { kind: 'reserve', c: maxwell }, p, ctx, x)).toBe(`Set aside for Maxwell — reserve: feed once a ${name} with ${mains.join(' or ')} drops`);
+    expect(fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, x)).toBe(`Отложи для Maxwell — запас: корм, когда выпадет ${name}\u00A0·\u00A0${mains.join('/')}`);
+    expect(fateText(TEXTS.en, { kind: 'reserve', c: maxwell }, p, ctx, x)).toBe(`Set aside for Maxwell — reserve: feed once a ${name}\u00A0·\u00A0${mains.join('/')} drops`);
+    // the awaited item in the Legendary colour, the hero still tagged (owner 2026-10-10)
+    const text = fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, x);
+    const doc = new JSDOM(`<body>${renderToStaticMarkup(createElement('span', null, withWait(text, maxwell, TEXTS.ru, ctx, x)))}</body>`).window.document;
+    expect([doc.querySelector('.gname')?.className, doc.querySelector('.gname')?.textContent, doc.querySelector('.htag')?.textContent])
+      .toEqual(['gname legend', `${name}\u00A0·\u00A0${mains.join('/')}`, 'Maxwell']);
     const speed = idx.D.sets.find((s) => s.short === 'Speed')!.id;
     const helm = { ...x, slot: 'helmet' as const, itemKey: null, main: null, setId: speed };
     expect(fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, helm)).toBe('Отложи для Maxwell — запас: корм, когда выпадет хороший шлем Speed');

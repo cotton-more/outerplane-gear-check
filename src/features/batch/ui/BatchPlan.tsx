@@ -3,6 +3,7 @@
 // One way on: «Обход ▸» — recording happens at the walk's end, after the game (owner 2026-10-09: «Записать план» here
 // invited recording before anything was done). «Спорно» lines get «Отложить» / «Разобрать» — decided before the walk
 // (owner 2026-10-08); «Обход ▸» waits for them. Back to the list — «← К списку» above.
+import type { ReactNode } from 'react';
 import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Texts } from '@/i18n';
@@ -17,11 +18,21 @@ import type { ItemInput } from '@/game/item/item';
 import { isArmor } from '@/game/data';
 
 // what a reserve waits for (MODEL.md §4 items 3b, 3c): a weapon or accessory — the item with the mains the hero's builds
-// want («Spirit of Unification с PEN%»); armor — a good piece of its set and slot («хороший шлем Speed»)
+// want, as a caption («Spirit of Unification · PEN%», PEN%/ATK% for two); armor — a good piece of its set and slot
+// («хороший шлем Speed»)
 export function waitText(t: Texts, ctx: Ctx, c: Char, x: ItemInput): string {
   if (isArmor(x.slot)) return x.setId ? t.batch.waitArmor(ctx.idx.SET[x.setId]?.short ?? '', x.slot) : '';
   const mains = [...new Set(c.builds.flatMap((b) => (x.slot === 'weapon' ? b.weapons : b.amulets)).filter((g) => g.key === x.itemKey).flatMap((g) => g.mains))];
   return mains.length ? t.batch.waitItem(itemCaption(ctx.idx, { ...x, main: null }), mains) : '';
+}
+
+// a line with a hero and a reserve's wait: the hero tagged, the awaited item in the Legendary colour (owner 2026-10-10: a
+// listed item is Legendary — «Token of the Supreme Witch · ATK%» red, not the line's green); armor's «хороший шлем Speed»
+// has no grade — plain
+export function withWait(text: string, c: Char | null, t: Texts, ctx: Ctx, x: ItemInput): ReactNode {
+  const what = isArmor(x.slot) || !c ? '' : waitText(t, ctx, c, x), i = what ? text.indexOf(what) : -1;
+  if (i < 0) return withHero(text, c);
+  return <>{withHero(text.slice(0, i), c)}<span className="gname legend">{what}</span>{text.slice(i + what.length)}</>;
 }
 
 // the piece a «Корм для #n» line feeds, by its line: the hero who gets or keeps it and its slot (owner 2026-10-09: «Корм для
@@ -97,7 +108,9 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onWalk }: {
               {l.off
                 ? <span className="boff-n"><OffText ctx={ctx} t={t} off={l.off} /></span>
                 : <BatchPiece ctx={ctx} n={l.n} x={l.input} />}
-              <span className="bfate">{withHero(fateText(t, l.fate, plan, ctx, l.input), heroIn(plan, l.fate))}</span>
+              <span className="bfate">{l.fate.kind === 'reserve'
+                ? withWait(fateText(t, l.fate, plan, ctx, l.input), l.fate.c, t, ctx, l.input)
+                : withHero(fateText(t, l.fate, plan, ctx, l.input), heroIn(plan, l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small btwin hit" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
             </li>

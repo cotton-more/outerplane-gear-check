@@ -18,7 +18,7 @@ import { batchCaption, capLine, itemCaption, Painted } from '@/features/gear/ui/
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 import { SubToken } from '@/game/item/SubToken';
-import { waitText } from './BatchPlan';
+import { waitText, withWait } from './BatchPlan';
 
 // the caption line of a weapon or accessory: «Noblewoman's Guile · HP%», «Steel Sword · ATK% · T4» (Q4); armor has none —
 // the title says the slot and the hero, the grade and set are in the batch's title (an equip with a position has its
@@ -42,7 +42,7 @@ function DescLine({ ctx, t, w }: { ctx: Ctx; t: Texts; w: Exclude<Where, { n: nu
 // (`tail`, an equip of a piece with a position), the quiet position hint on the right of the title line (`no`), the
 // caption line of a weapon or accessory, for whom the kept piece stays, lines under it, and — for an equip and a lock —
 // the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
-interface StepText { title: string; hero: Char | null; tail?: string; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[]; bt?: Bt }
+interface StepText { title: string; hero: Char | null; tail?: string; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null; x: ItemInput }; more: ReactNode[]; subs?: string[]; bt?: Bt }
 // a Breakthrough step (owner 2026-10-10, «target card + pips»): the target as a card — its item, all its substats and how
 // many tiers this feed adds (◆ per piece, «+2»; four always reach T4 — «T4»: the app knows only T4 or not, so no «T0 →»)
 // — and the feed hanging under it
@@ -84,8 +84,8 @@ function PieceLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
 
 // for whom a kept piece stays: «для Gnosis Domine», «для Valentine · запас»; the piece is in the title (row, place, #n)
 // and, for a weapon or accessory, in the caption line above
-function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null } {
-  return { text: k.why === 'reserve' ? t.batch.keptReserve(k.c.name, waitText(t, ctx, k.c, k.input)) : t.batch.keptFor(k.c.name), c: k.c };
+function keptText(ctx: Ctx, t: Texts, k: Kept): { text: string; c: Char | null; x: ItemInput } {
+  return { text: k.why === 'reserve' ? t.batch.keptReserve(k.c.name, waitText(t, ctx, k.c, k.input)) : t.batch.keptFor(k.c.name), c: k.c, x: k.input };
 }
 function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
@@ -162,7 +162,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                           <b>{tail ? <>{withHero(title.slice(0, title.length - tail.length), hero)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{tail}</span></> : withHero(title, hero)}</b>
                         </span>
                         {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
-                        {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
+                        {kept && <span className="bstep-k">{withWait(kept.text, kept.c, t, ctx, kept.x)}</span>}
                         {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
                         {bt && <BtCard ctx={ctx} t={t} bt={bt} />}
                         {/* «LV 2 Effectiveness» on the left, «+5.0%» on the right — as the game's item panel lays them out (owner 2026-10-10) */}

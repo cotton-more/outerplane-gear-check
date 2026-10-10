@@ -785,9 +785,9 @@ export const ru = {
     replace: (name: string, slot: string) => `Надень на ${name} — вместо ${GEN[slot]}`,
     t4: ' · T4 после корма',
     keep: (name: string) => `Отложи для ${name}`,
-    // a reserve says what it waits for (owner 2026-10-10, variant A): «…: корм, когда выпадет Spirit of Unification с PEN%»
+    // a reserve says what it waits for (owner 2026-10-10, variant A): «…: корм, когда выпадет Spirit of Unification · PEN%»
     reserve: (name: string, wait = '') => `Отложи для ${name} — запас${wait ? `: корм, когда выпадет ${wait}` : ''}`,
-    waitItem: (item: string, mains: string[]) => `${item} с ${mains.join(' или ')}`,
+    waitItem: (item: string, mains: string[]) => `${item}\u00A0·\u00A0${mains.join('/')}`,
     waitArmor: (set: string, slot: string) => `${by(slot, 'хороший', 'хорошая', 'хорошее', 'хорошие')} ${NOM[slot]} ${set}`,
     // whose piece it is: «Корм для #17 · перчатки Saeran»; the hero isn't known — the number alone
     feedEntry: (n: number, slot: string | null, name: string | null) => (slot && name ? `Корм для #${n} · ${NOM[slot]} ${name}` : `Корм для #${n}`),

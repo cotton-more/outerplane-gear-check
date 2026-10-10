@@ -683,7 +683,7 @@ export const en: Texts = {
     t4: ' · T4 after feeding',
     keep: (name) => `Set aside for ${name}`,
     reserve: (name, wait = '') => `Set aside for ${name} — reserve${wait ? `: feed once a ${wait} drops` : ''}`,
-    waitItem: (item, mains) => `${item} with ${mains.join(' or ')}`,
+    waitItem: (item, mains) => `${item}\u00A0·\u00A0${mains.join('/')}`,
     waitArmor: (set, slot) => `good ${set} ${SLOT_EN[slot]}`,
     feedEntry: (n, slot, name) => (slot && name ? `Feed to #${n} · ${name}'s ${SLOT_EN[slot]}` : `Feed to #${n}`),
     feedWorn: (slot, name) => `Feed to ${name}'s ${SLOT_EN[slot]}`,
