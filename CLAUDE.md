@@ -28,10 +28,20 @@ Architecture, build and tests — [DEVELOPMENT.md](DEVELOPMENT.md). For players 
   elements" in DEVELOPMENT.md. When a piece of layout repeats a second time, move it there.
 - UI strings only in `src/i18n/ru.ts` and `en.ts` (one `Texts` type). No Russian text elsewhere in `src` except comments
   (`test/i18n.test.ts`).
-- Animations only in `src/styles/motion.css`: entrance only, ≤200 ms, `transform` and `opacity`; never animate inputs
-  (grid, rows, slot, grade).
+- Animations only in `src/styles/motion.css`: entrance only, plus a short pulse that marks an automatic choice
+  (`m-pick`); ≤200 ms, `transform` and `opacity`; never animate inputs (grid, rows, slot, grade).
 - `docs/` is built by the bot after push — never commit the build together with code.
 - If something the player sees changed — update the Wiki in both languages and Help (`t.ui.help…`).
+
+## Working folders (`.x/`)
+
+Research, plans, reviews and handoffs go in `.x/NNNN-slug` (outside git; numbers step 10, a follow-up takes a number
+in between). `.x/README.md` is the index:
+- New folder — add a row right away: folder, one line on what it is about, status.
+- Work moved — update the status: **active**, **deferred** (owner postponed it), **done** (shipped or answered). For
+  done, say where it landed (merged commit or branch) and whether the folder can be deleted ("can delete" /
+  "delete after merge").
+- Don't delete folders yourself — the owner does, or asks you to.
 
 ## Tour (`src/tour/`)
 
