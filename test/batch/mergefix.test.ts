@@ -51,7 +51,7 @@ function screens(lang: Lang, ctx: Ctx, b: Batch, p: Plan, walk: Walk): { plan: s
   const flat = (x: string | null) => (x ?? '').replace(/\u00A0/g, ' ');
   return {
     plan: [...pl.querySelectorAll('.brow')].map((r) => flat(r.textContent)),
-    walk: [...wk.querySelectorAll('.bstep-t')].map((s) => [...s.children].map((c) => flat(c.textContent))),
+    walk: [...wk.querySelectorAll('.bstep-t')].map((s) => [...s.children].map((c) => flat((c.classList.contains('bstep-h') ? c.querySelector('b') : c)?.textContent ?? ''))),
     notes: [...wk.querySelectorAll('.bstage > p')].map((x) => flat(x.textContent)),
   };
 }
@@ -170,7 +170,7 @@ describe('A2 / A3: the dismantle step', () => {
     const stage = (re: RegExp) => en.walk.filter((s) => re.test(s[0]));
     expect(stage(/→ Breakthrough/).flat().join('\n')).not.toMatch(/#\d/);
     expect(stage(/^Select in the game/).flat().join('\n')).not.toMatch(/#\d/);
-    expect(stage(/ → helmet → No\. 1$/)).toHaveLength(1);                     // #1 is also her first helmet: the number once
+    expect(stage(/^Caren → helmet$/)).toHaveLength(1);                        // «Caren → helmet» + the grey hint «No. 1»; no «#n» in the title
     const bt = stage(/→ Breakthrough/)[0];
     expect(bt.slice(1, 2)).toEqual(['feed:']);
     expect(bt.slice(2).every((x) => /^[A-Z%]+ \d/.test(x))).toBe(true);   // armor: the substats alone

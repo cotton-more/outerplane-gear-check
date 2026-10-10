@@ -14,12 +14,13 @@ import { Toggle } from '@/shared/ui/Toggle';
 import type { Batch } from '@/features/batch/batch';
 import type { Plan } from '@/features/batch/plan';
 import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
-import { capLine, itemCaption } from '@/features/gear/ui/pieceText';
+import { batchCaption, capLine, itemCaption } from '@/features/gear/ui/pieceText';
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 
 // the caption line of a weapon or accessory: «Noblewoman's Guile · HP%», «Steel Sword · ATK% · T4» (Q4); armor has none —
-// the title says the slot and the hero, the grade and set are in the batch's title
+// the title says the slot and the hero, the grade and set are in the batch's title (an equip with a position has its
+// caption in the title, so this line is only for a taken-off or set-aside piece)
 const capOf = (ctx: Ctx, t: Texts, x: ItemInput): string => capLine(t, ctx.idx, formPiece(x));
 
 // a piece with no position, described once (no number to name it by): «Снятый шлем Caren (SPD 1, …)», «Отложенный шлем
@@ -29,10 +30,11 @@ const desc = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>): string => {
   return w.was === 'stash' ? t.batch.offStash(w.off.slot, w.c.name, subsText(w.off.lit), what) : `${t.batch.off(w.off.slot, w.c.name, what)} (${subsText(w.off.lit)})`;
 };
 
-// a step: its title (with the hero to find, tagged), the caption line of a weapon or accessory, for whom the kept piece
-// stays, lines under it, and — for an equip and a lock — the substats as a column, line for line as the game's middle
-// panel shows them (owner 2026-10-08)
-interface StepText { title: string; hero: Char | null; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[] }
+// a step: its title (with the hero to find, tagged), the piece's caption at the end of the title in the grade's colour
+// (`tail`, an equip of a piece with a position), the quiet position hint on the right of the title line (`no`), the
+// caption line of a weapon or accessory, for whom the kept piece stays, lines under it, and — for an equip and a lock —
+// the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
+interface StepText { title: string; hero: Char | null; tail?: string; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[] }
 
 // a piece of the dismantle or the feed (owner 2026-10-09): «Fire Grimoire · HP% · ATK% 2, DMG UP% 2, …» — name and main
 // in the grade's colour (Epic blue, Legendary red), then the substats; no number, row or place: after the feed the
@@ -53,13 +55,15 @@ function keptText(t: Texts, k: Kept): { text: string; c: Char | null } {
 function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
   switch (s.stage) {
     case 1: {
-      // the number among the hero's pieces of the slot and the batch number, said once when they are the same; a piece
-      // with no number (taken off another hero, set aside) is named by its hero
+      // «Lambda → Steel Sword · ATK%», «Eliza → броня» (owner 2026-10-10, variant B): the piece's caption ends the title,
+      // the position in the hero's slot list is a quiet hint on the right; a piece with no position (taken off another
+      // hero, set aside) is named by its hero, then its caption line
       const w = s.where;
-      const title = 'n' in w
-        ? s.k === null ? t.batch.equipStepAt(s.c.name, s.slot, `#${w.n}`) : s.k === w.n ? t.batch.equipStepN(s.c.name, s.slot, w.n) : t.batch.equipStep(s.c.name, s.slot, s.k, w.n)
-        : t.batch.equipStepAt(s.c.name, s.slot, t.batch.offAt(w.off.slot, w.c.name, w.was === 'stash'));
-      return { title, hero: s.c, cap: capOf(ctx, t, s.input), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
+      if ('n' in w) {
+        const what = batchCaption(t, ctx.idx, formPiece(s.input));
+        return { title: t.batch.equipTo(s.c.name, what), hero: s.c, tail: what, no: s.k === null ? undefined : t.batch.equipNo(s.k), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
+      }
+      return { title: t.batch.equipTo(s.c.name, t.batch.offAt(w.off.slot, w.c.name, w.was === 'stash')), hero: s.c, cap: capOf(ctx, t, s.input), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
     }
     case 2: {
       if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(ctx, t, s.where)), hero: s.where.c, more: [] };
@@ -109,14 +113,17 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
             {st === 3 && <p className="muted small">{t.batch.btNote}</p>}
             <ol className="bgear-list">
               {steps.map((s) => {
-                const { title, hero, cap, grade, kept, more, subs } = stepText(ctx, t, s);
+                const { title, hero, tail, no, cap, grade, kept, more, subs } = stepText(ctx, t, s);
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
                     {/* the whole card is the checkbox's label: a tap anywhere ticks the step (a phone, a thumb) */}
                     <Toggle className="bstep-l" checked={done} label={title} onChange={() => onTick(s.key)}>
                       <span className="bstep-t">
-                        <b>{withHero(title, hero)}</b>
+                        <span className="bstep-h">
+                          <b>{tail ? <>{withHero(title.slice(0, title.length - tail.length), hero)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{tail}</span></> : withHero(title, hero)}</b>
+                          {no && <span className="bstep-no">{no}</span>}
+                        </span>
                         {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
                         {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
                         {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}

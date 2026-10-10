@@ -3,9 +3,10 @@
 // nothing; locking moves nothing; Breakthrough needs no numbers (material is interchangeable, worn pieces aren't
 // listed, locked ones can't be picked); the dismantle comes last, so nothing meant for a Breakthrough is dismantled by
 // mistake (owner 2026-10-09).
-//   1 equip — at the hero: «Caren → шлем → № 7 в списке» (the hero's slot list: the batch's entries of that slot) +
-//     substats as the game shows them, to check after a tap. A piece taken off one hero and put on another — after the
-//     equip that takes it off.
+//   1 equip — at the hero: «Caren → шлем», on the right the quiet hint «№ 7» (the place in the hero's slot list: the
+//     batch's entries of that slot) + substats as the
+//     game shows them, to check after a tap. A piece taken off one hero and put on another — after the equip that takes it
+//     off.
 //   2 lock — what is kept: set aside, reserves, «Спорно → Отложить», a set-aside look-alike («same»).
 //   3 Breakthrough — per target: how many from the list, and how many set-aside ones to unlock first. No positions: the
 //     feed has eaten pieces before, so the list has moved — the target and every piece are named by stats («several

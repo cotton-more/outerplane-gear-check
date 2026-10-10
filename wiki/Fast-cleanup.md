@@ -69,12 +69,11 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
 4. **"Walk ▸"** — steps by game screen, in an order where the numbers don't drift (equipping and taking off don't move
    a piece — it only gains or loses its E). At the top — the game filter to set: "Game filter: Epic Speed · worn
    shown · by date."
-   1. **Equip — at the heroes:** "Caren → helmet → No. 7 in the list · #24" — the number in the hero's list of that
-      slot (in the game it holds only helmets, with the same filter), #24 — this piece in the batch; when they match,
-      it is just "Caren → helmet → No. 24". The class icon by the name and the name's colour (the element) help find
-      the hero with the game's roster filters. For a weapon or accessory the item and its main follow ("Steel Sword ·
-      ATK%"), then, in a column, the substats as the game shows them after a tap: "LV 3 Crit Chance +9.0%" — check
-      them. A piece taken off another hero: "Maxie → weapon → Tamara's removed weapon".
+   1. **Equip — at the heroes:** "Caren → helmet", on the right in grey "No. 7" — its place in the hero's helmet list in the game (it holds
+      only helmets, with the same filter). The class icon by the name and the name's colour (the element) help find the
+      hero with the game's roster filters. For a weapon or accessory the item and its main stand in the title ("Lambda →
+      Steel Sword · ATK%"). Below, in a column, the substats as the game shows them after a tap: "LV 3 Crit Chance
+      +9.0%" — check them. A piece taken off another hero: "Maxie → Tamara's removed weapon".
    2. **Lock** what you keep: "Row 3, no. 1 · #21" (10 pieces per row), for a weapon or accessory the item below it,
       then for whom: "for Gnosis Domine" (set aside to wear when the set comes together), "for Gnosis Domine ·
       reserve" — Breakthrough material, "Maybe, set aside", and the substats to check. A lock means "in someone's

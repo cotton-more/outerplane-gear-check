@@ -1,6 +1,6 @@
-// The texts of the walk's steps (.x/0165-merge-fixes TEXTS.md §1, §4, §11): the equip title says the number once when the
-// hero's list number and the batch number are the same; a taken-off piece is named by its hero and described once; the
-// lock step carries the position and the piece's caption, then for whom; a weapon or accessory has a caption line.
+// The texts of the walk's steps (.x/0165-merge-fixes TEXTS.md §4, §11, D «Equip step title», variant B): the equip title is
+// «Hero → caption» with the position in the hero's slot list as a quiet hint on the right; a taken-off piece is named by
+// its hero and described once; the lock step carries the position and the piece's caption, then for whom.
 import { JSDOM } from 'jsdom';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -44,7 +44,16 @@ function steps(lang: Lang, ctx: Ctx, b: Batch, p: Plan, walk: Walk = walkOf(b, p
   const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS[lang] },
     createElement(BatchWalk, { ctx, batch: b, plan: p, walk, what: '', onTick: () => {}, onDone: () => {} }))));
   const body = new JSDOM(`<body>${html}</body>`).window.document.body;
-  return [...body.querySelectorAll('.bstep-t')].map((s) => [...s.children].map((c) => c.textContent ?? ''));
+  return [...body.querySelectorAll('.bstep-t')].map((s) => [...s.children].map((c) => (c.classList.contains('bstep-h') ? c.querySelector('b') : c)?.textContent ?? ''));
+}
+// the quiet position hint of each step (null: none), and the coloured tail of the title (the caption's class)
+function head(lang: Lang, walk: Walk, ctx: Ctx, b: Batch, p: Plan): { hint: string | null; tail: string | null; cls: string | null; line: string }[] {
+  const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS[lang] },
+    createElement(BatchWalk, { ctx, batch: b, plan: p, walk, what: '', onTick: () => {}, onDone: () => {} }))));
+  const body = new JSDOM(`<body>${html}</body>`).window.document.body;
+  return [...body.querySelectorAll('.bstep-h')].map((h) => ({
+    hint: h.querySelector('.bstep-no')?.textContent ?? null, tail: h.querySelector('b .gname')?.textContent ?? null,
+    cls: h.querySelector('b .gname')?.className ?? null, line: h.textContent ?? '' }));
 }
 function planRows(lang: Lang, ctx: Ctx, p: Plan): string[] {
   const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS[lang] },
@@ -55,29 +64,62 @@ const NB = ' ';
 // the caption's «·» hangs on both neighbours (itemCaption)
 const nb = (x: string) => x.replace(/ · /g, `${NB}·${NB}`);
 
-describe('equip title: the number once when it is the same', () => {
-  it('k ≠ n: «№ 1 в списке · #2» (a locked glove entry comes first, but it is not a helmet)', () => {
+describe('equip title: «Hero → caption», the position as a quiet hint on the right', () => {
+  // a step built by hand: the title and the hint do not depend on the verdicts
+  const stepOf = (c: string, x: Piece, k: number | null, n = 1) => ({ key: `eq:${x.id}`, stage: 1 as const, c: char(c), slot: x.slot, k, where: { n }, subs: x.lit, input: inputOfPiece(x) });
+  const render = (lang: Lang, step: ReturnType<typeof stepOf>) => {
+    const { ctx, st } = world([step.c.name]);
+    const b = batchOf([]);
+    const p = plan(ctx, st, b);
+    const walk: Walk = { steps: [step], undecided: 0 };
+    return { title: steps(lang, ctx, b, p, walk)[0][0], h: head(lang, walk, ctx, b, p)[0], lines: steps(lang, ctx, b, p, walk)[0] };
+  };
+  const epicW = (bt: 0 | 4 = 0) => mk('ew', 'weapon', null, { CHC: 3, SPD: 3 }, bt, { grade: 'rare', itemKey: null, main: 'ATK%' });
+  it('weapon: «Lambda → Steel Sword · ATK%» in the grade colour, the hint «№ 1» / «No. 1» apart from the title', () => {
+    const ru = render('ru', stepOf('Lambda', epicW(), 1)), en = render('en', stepOf('Lambda', epicW(), 1));
+    expect(ru.title).toBe(nb('Lambda → Steel Sword · ATK%'));
+    expect(ru.h).toMatchObject({ hint: `№${NB}1`, tail: nb('Steel Sword · ATK%'), cls: 'gname epic' });
+    expect(en.title).toBe(nb('Lambda → Steel Sword · ATK%'));
+    expect(en.h).toMatchObject({ hint: `No.${NB}1`, tail: nb('Steel Sword · ATK%') });
+    expect(ru.lines.slice(0, 2)).toEqual([ru.title, expect.stringMatching(/^LV 3 /)]);     // no caption line under the title: it moved into it
+  });
+  it('a Legendary weapon: the item name, the Legendary colour', () => {
+    const r = render('en', stepOf('Lambda', mk('lw', 'weapon', null, { CHC: 3, SPD: 3 }, 0, { itemKey: '17', main: 'DEF%' }), 4));
+    expect(r.title).toBe(nb('Lambda → Thumping Odyssey · DEF%'));
+    expect(r.h).toMatchObject({ hint: `No.${NB}4`, cls: 'gname legend' });
+  });
+  it('armor: «Eliza → броня» / «Eliza → armor» — the slot word, no item, hint «№ 3»', () => {
+    const a = mk('ea', 'armor', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0);
+    const ru = render('ru', stepOf('Eliza', a, 3, 9)), en = render('en', stepOf('Eliza', a, 3, 9));
+    expect(ru.title).toBe('Eliza → броня');
+    expect(ru.h).toMatchObject({ hint: `№${NB}3`, tail: 'броня' });
+    expect(en.title).toBe('Eliza → armor');
+    expect(en.h.hint).toBe(`No.${NB}3`);
+    for (const x of [ru.title, en.title]) expect(x).not.toMatch(/#|в списке|in the list/);
+  });
+  it('T4: « · T4» ends the caption — a weapon and armor', () => {
+    expect(render('ru', stepOf('Lambda', epicW(4), 1)).title).toBe(`Lambda → Steel Sword${NB}·${NB}ATK%${NB}·${NB}T4`);
+    expect(render('en', stepOf('Eliza', mk('a4', 'armor', 'Speed', { SPD: 3 }, 4), 2)).title).toBe(`Eliza → armor${NB}·${NB}T4`);
+  });
+  it('no hint when the piece has no position in the hero\'s list', () => {
+    expect(render('en', stepOf('Lambda', epicW(), null)).h.hint).toBeNull();
+  });
+  it('the title texts: both languages', () => {
+    const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
+    expect(ru.equipTo('Eliza', 'шлем')).toBe('Eliza → шлем');
+    expect(en.equipTo('Eliza', 'helmet')).toBe('Eliza → helmet');
+    expect(ru.equipNo(17)).toBe(`№${NB}17`);
+    expect(en.equipNo(17)).toBe(`No.${NB}17`);
+    expect(ru.lockStep(2, 5, 15)).toBe(`Ряд 2, 5-й${NB}·${NB}#15`);
+    expect(en.lockStep(2, 5, 15)).toBe(`Row 2, no.${NB}5${NB}·${NB}#15`);
+  });
+  it('from a real plan: a helmet that is Caren\'s first helmet — «Caren → helmet» + «No. 1»; the position counts the slot, not the batch', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([{ kind: 'lock', slot: 'gloves' }, piece(good('g'))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → helmet → No.${NB}1 in${NB}the${NB}list${NB}·${NB}#2`);
-    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → шлем → №${NB}1 в${NB}списке${NB}·${NB}#2`);
-  });
-  it('k = n: «№ 1», no «в списке» and no «#n»', () => {
-    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
-    const b = batchOf([piece(good('g'))]);
-    const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p)[0][0]).toBe(`Caren → helmet → No.${NB}1`);
-    expect(steps('ru', ctx, b, p)[0][0]).toBe(`Caren → шлем → №${NB}1`);
-  });
-  it('the title texts: both languages, no-break spaces around «·» before «#n», no slot word repeated', () => {
-    const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
-    expect(ru.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → шлем → №${NB}2 в${NB}списке${NB}·${NB}#6`);
-    expect(en.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → helmet → No.${NB}2 in${NB}the${NB}list${NB}·${NB}#6`);
-    expect(ru.equipStepN('Saeran', 'gloves', 17)).toBe(`Saeran → перчатки → №${NB}17`);
-    expect(en.equipStepN('Saeran', 'gloves', 17)).toBe(`Saeran → gloves → No.${NB}17`);
-    expect(ru.lockStep(2, 5, 15)).toBe(`Ряд 2, 5-й${NB}·${NB}#15`);
-    expect(en.lockStep(2, 5, 15)).toBe(`Row 2, no.${NB}5${NB}·${NB}#15`);
+    expect(steps('en', ctx, b, p)[0][0]).toBe('Caren → helmet');
+    expect(head('en', walkOf(b, p), ctx, b, p)[0].hint).toBe(`No.${NB}1`);
+    expect(head('ru', walkOf(b, p), ctx, b, p)[0].hint).toBe(`№${NB}1`);
   });
 });
 
@@ -92,9 +134,12 @@ describe('a piece taken off another hero', () => {
   it('the equip title names it by its hero («Roxie\'s removed weapon»), then the caption line, then the game-format substats — once', () => {
     const { ctx, b, p } = make();
     const en = steps('en', ctx, b, p).find((s) => s[0].startsWith('Gnosis Domine'))!, ru = steps('ru', ctx, b, p).find((s) => s[0].startsWith('Gnosis Domine'))!;
-    expect(en.slice(0, 2)).toEqual(["Gnosis Domine → weapon → Roxie's removed weapon", nb('Thumping Odyssey · DEF%')]);
+    expect(en.slice(0, 2)).toEqual(["Gnosis Domine → Roxie's removed weapon", nb('Thumping Odyssey · DEF%')]);
     expect(en[2]).toMatch(/^LV 4 Crit DMG \+16\.0%LV 4 Speed/);
-    expect(ru.slice(0, 2)).toEqual(['Gnosis Domine → оружие → снятое оружие Roxie', nb('Thumping Odyssey · DEF%')]);
+    expect(ru.slice(0, 2)).toEqual(['Gnosis Domine → снятое оружие Roxie', nb('Thumping Odyssey · DEF%')]);
+    const h = head('en', walkOf(b, p), ctx, b, p).find((x) => x.line.startsWith('Gnosis Domine'))!;
+    expect(h.hint).toBeNull();                                        // a piece with no position: no hint
+    expect(h.tail).toBeNull();                                        // and no coloured tail: the caption is its own line
     expect(en.join('|')).not.toContain('(');                          // no abbreviated substats in a parenthesis
   });
   it('the plan row carries the item\'s name too', () => {

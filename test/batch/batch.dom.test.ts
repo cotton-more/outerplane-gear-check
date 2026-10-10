@@ -316,11 +316,12 @@ describe('«Партия»: обход по шагам', () => {
     expect(batch().choice).toEqual({ '3~1': 'junk' });
     await click(byText('.batch button', 'Walk ▸'));
     const steps = $$('.bwalk .bstep');
-    expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
-      'Caren → helmet → No.\u00A03',                           // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — the same as #3: said once
+    expect(steps.map((s) => s.querySelector('.bstep-h > b')?.textContent)).toEqual([
+      'Caren → helmet',
       "Caren's helmet → Breakthrough: up\u00A0to\u00A01",
       'Select in the game: 1',                             // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
+    expect(steps[0].querySelector('.bstep-no')?.textContent).toBe('No.\u00A03');         // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — a quiet hint on the right
     expect(steps[0].textContent).toContain('LV 3 Defense +');
     expect(steps[1].textContent).toContain('feed:SPD\u00A01');                                    // the feed, piece by piece: its stats — no number, armor has no name
     expect($$('.bwalk .bstage > p').map((x) => x.textContent)).toEqual(["Any piece from the game's list works. What the game doesn't take — dismantle."]);   // once, under «Breakthrough»
@@ -329,13 +330,13 @@ describe('«Партия»: обход по шагам', () => {
     expect(steps[2].textContent?.endsWith("+ feed the Breakthrough didn't take")).toBe(true);
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
     // the whole card is the checkbox's label: a tap on the step's text ticks it, a second one unticks it
-    await click(steps[0].querySelector('.bstep-t > b'));
+    await click(steps[0].querySelector('.bstep-h > b'));
     expect(batch().done).toEqual(['eq:3']);
     expect($('.drawer-h h3')?.textContent).toBe('Walk · 1 of 3');
     expect((document.querySelector('.bwalk .bstep input') as HTMLInputElement).checked).toBe(true);
-    expect($('.bwalk .bstep input')?.getAttribute('aria-label')).toBe(steps[0].querySelector('.bstep-t > b')?.textContent);
-    await click(steps[0].querySelector('.bstep-t > b'));
+    expect($('.bwalk .bstep input')?.getAttribute('aria-label')).toBe(steps[0].querySelector('.bstep-h > b')?.textContent);
+    await click(steps[0].querySelector('.bstep-h > b'));
     expect(batch().done).toEqual([]);
-    await click(steps[0].querySelector('.bstep-t > b'));
+    await click(steps[0].querySelector('.bstep-h > b'));
   });
 });
