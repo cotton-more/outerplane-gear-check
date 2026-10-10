@@ -82,8 +82,9 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
       doesn't know the exact tier below T4, the game takes no more than it needs); what the game doesn't take goes to
       the dismantle. Material is interchangeable, worn and locked pieces aren't in that list, so a set-aside piece
       can't be fed by mistake; "first unlock 2 set-aside" — when the plan feeds a reserve. A target you set aside is
-      named so: "Gnosis Domine's set-aside helmet (…) → Breakthrough: up to 4". Below — each piece of feed by its
-      substats: "HP 3, DEF% 2, …"; a weapon or accessory with its item first: "Noblewoman's Guile · DEF% · HP% 3, …".
+      named so: "Gnosis Domine's set-aside helmet (…) → Breakthrough: up to 4". Below — the target as a card: its item
+      (a weapon or accessory), all its substats and the tiers this feed adds (◆◆◇◇ +2; four pieces — T4); under it,
+      on a line, each piece of feed by its substats, a weapon or accessory with its item first.
       A Legendary weapon or accessory takes only copies of the same item, so heroes get different amounts of feed.
    4. **Dismantle — in one selection, last:** "Select in the game: 7" — after the Breakthrough, so nothing meant as feed
       is dismantled. Each piece on a line — its substats ("HP 1, EFF% 2, DMG RED% 1"); a weapon or accessory with its

@@ -49,9 +49,26 @@ function screens(lang: Lang, ctx: Ctx, b: Batch, p: Plan, walk: Walk): { plan: s
   const wk = wrap(createElement(BatchWalk, { ctx, batch: b, plan: p, walk, what: '', onTick: noop, onDone: noop }));
   // the no-break spaces inside substat tokens («DMG RED% 1») read as plain spaces here
   const flat = (x: string | null) => (x ?? '').replace(/\u00A0/g, ' ');
+  // the Breakthrough card (BtCard) as lines: the target's item, its tiers «T0 → T2», its substats; each feed piece as
+  // «item · substats» (substat chips read «CHD 3, SPD 5»), a described one as its text
+  const toks = (e: Element) => [...e.querySelectorAll('.tok')].map((x) => `${x.firstChild?.textContent} ${x.querySelector('i')?.textContent}`).join(', ');
+  const line = (e: Element) => {
+    if (!e.querySelector('.tok')) return flat(e.textContent);
+    const g = e.querySelector(':scope > .gname');
+    return flat(g ? `${g.textContent} · ${toks(e)}` : toks(e));
+  };
+  const lines = (c: Element): string[] => {
+    if (c.classList.contains('bstep-h')) return [flat(c.querySelector('b')?.textContent ?? '')];
+    if (c.classList.contains('bt-card')) {
+      const g = c.querySelector('.gname');
+      return [...(g ? [flat(g.textContent)] : []), c.querySelector('.bt-pips')!.getAttribute('aria-label')!, toks(c)];
+    }
+    if (c.classList.contains('bt-feed')) return [...c.querySelectorAll('.bt-mat')].map(line);
+    return [flat(c.textContent)];
+  };
   return {
     plan: [...pl.querySelectorAll('.brow')].map((r) => flat(r.textContent)),
-    walk: [...wk.querySelectorAll('.bstep-t')].map((s) => [...s.children].map((c) => flat((c.classList.contains('bstep-h') ? c.querySelector('b') : c)?.textContent ?? ''))),
+    walk: [...wk.querySelectorAll('.bstep-t')].map((s) => [...s.children].flatMap(lines)),
     notes: [...wk.querySelectorAll('.bstage > p')].map((x) => flat(x.textContent)),
   };
 }
@@ -116,8 +133,9 @@ describe('weapons: the item is named once, by stats', () => {
     const b = batchOf([piece(W('a', 'DEF%', { 'ATK%': 1, RES: 1, CHC: 2, SPD: 2 })), piece(W('b', 'ATK%', { CHC: 5, 'DMG UP%': 4, SPD: 6, 'DMG RED%': 2 })), piece(W('c', 'DEF%', { CHC: 1, DEF: 4, EFF: 3, 'HP%': 4 }))]);
     const p = plan(ctx, st, b);
     const bt = screens('ru', ctx, b, p, walkOf(b, p)).walk.find((s) => s[0].includes('→ Breakthrough'))!;
-    expect(bt).toEqual(['Оружие Roxie → Breakthrough: до 2', 'Thumping Odyssey · ATK%', 'корм:', 'Thumping Odyssey · DEF% · ATK% 1, RES% 1, CHC 2, SPD 2',
-      'Снятое оружие Roxie — Thumping Odyssey · ATK% (CHD 3, SPD 5, CHC 4, HP 3)']);
+    // the target as a card: its item, how far the feed takes it, all its substats (owner 2026-10-10); then the feed
+    expect(bt).toEqual(['Оружие Roxie → Breakthrough: до 2', 'Thumping Odyssey · ATK%', '+2', 'CHC 5, DMG UP% 4, SPD 6, DMG RED% 2',
+      'Thumping Odyssey · DEF% · ATK% 1, RES% 1, CHC 2, SPD 2', 'Снятое оружие Roxie — Thumping Odyssey · ATK% (CHD 3, SPD 5, CHC 4, HP 3)']);
   });
   it('a set-aside target: the title names hero, item and stats, and there is no separate caption line', () => {
     const { ctx, st } = world(['Roxie'], { Roxie: [W('w1', 'ATK%', { CHD: 3, SPD: 5, CHC: 4, HP: 3 }), W('w2', 'ATK%', { CHD: 4, SPD: 5, CHC: 5, HP: 3 })] }, { Roxie: ['w1'] });
@@ -125,7 +143,7 @@ describe('weapons: the item is named once, by stats', () => {
     const p = plan(ctx, st, b);
     const bt = screens('ru', ctx, b, p, walkOf(b, p)).walk.find((s) => s[0].includes('→ Breakthrough'))!;
     expect(bt[0]).toBe('Отложенное оружие Roxie — Thumping Odyssey · ATK% (CHD 4, SPD 5, CHC 5, HP 3) → Breakthrough: до 2');
-    expect(bt[1]).toBe('корм:');
+    expect(bt.slice(1, 4)).toEqual(['Thumping Odyssey · ATK%', '+2', 'CHD 4, SPD 5, CHC 5, HP 3']);   // the card repeats what the title names
   });
 });
 
@@ -172,7 +190,7 @@ describe('A2 / A3: the dismantle step', () => {
     expect(stage(/^Select in the game/).flat().join('\n')).not.toMatch(/#\d/);
     expect(stage(/^Caren → helmet$/)).toHaveLength(1);                        // «Caren → helmet» + the grey hint «No. 1»; no «#n» in the title
     const bt = stage(/→ Breakthrough/)[0];
-    expect(bt.slice(1, 2)).toEqual(['feed:']);
+    expect(bt[1]).toMatch(/^(\+\d|T4)$/);                                     // armor: no item line, the tiers it adds, then the substats
     expect(bt.slice(2).every((x) => /^[A-Z%]+ \d/.test(x))).toBe(true);   // armor: the substats alone
   });
 });

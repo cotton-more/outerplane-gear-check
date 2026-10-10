@@ -83,6 +83,17 @@ html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 .toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center;
   border-color: var(--temp); background: var(--temp-soft); }
 .bstep-k { font-weight: 600; }
+/* Breakthrough (BatchWalk BtCard): the target as a card with its tier pips, the feed hanging under it on a thin line */
+.bt-card { display: grid; gap: 4px; margin-top: 4px; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); }
+.bt-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.bt-pips { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; font: 600 11px/1 var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.bt-pips i { width: 7px; height: 7px; margin: 0 1px; border: 1.5px solid var(--ink-3); transform: rotate(45deg); }
+.bt-pips i.gain { border-color: var(--accent); background: var(--accent); }
+.bt-pips i:last-of-type { margin-right: 4px; }
+.bt-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.bt-feed { display: grid; gap: 6px; margin-left: 10px; padding: 6px 0 2px 14px; border-left: 2px solid var(--line-2); }
+.bt-mat { position: relative; display: grid; gap: 3px; color: var(--ink-2); }
+.bt-mat::before { content: '⤷'; position: absolute; left: -14px; top: 0; color: var(--ink-3); }
 /* the plan and the walk take the screen (owner 2026-10-09): a full-height sheet on a phone, the form's column on a wide
    screen (App batchResult); «← К списку» on top */
 .drawer.batch-full { height: 100dvh; max-height: 100dvh; border-radius: 0; }

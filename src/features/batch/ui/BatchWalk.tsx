@@ -17,6 +17,7 @@ import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/
 import { batchCaption, capLine, itemCaption } from '@/features/gear/ui/pieceText';
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
+import { SubToken } from '@/game/item/SubToken';
 
 // the caption line of a weapon or accessory: «Noblewoman's Guile · HP%», «Steel Sword · ATK% · T4» (Q4); armor has none —
 // the title says the slot and the hero, the grade and set are in the batch's title (an equip with a position has its
@@ -42,7 +43,35 @@ function DescLine({ ctx, t, w }: { ctx: Ctx; t: Texts; w: Exclude<Where, { n: nu
 // (`tail`, an equip of a piece with a position), the quiet position hint on the right of the title line (`no`), the
 // caption line of a weapon or accessory, for whom the kept piece stays, lines under it, and — for an equip and a lock —
 // the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
-interface StepText { title: string; hero: Char | null; tail?: string; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[] }
+interface StepText { title: string; hero: Char | null; tail?: string; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null }; more: ReactNode[]; subs?: string[]; bt?: Bt }
+// a Breakthrough step (owner 2026-10-10, «target card + pips»): the target as a card — its item, all its substats and how
+// many tiers this feed adds (◆ per piece, «+2»; four always reach T4 — «T4»: the app knows only T4 or not, so no «T0 →»)
+// — and the feed hanging under it
+interface Bt { piece: ItemInput; n: number; mats: ReactNode[] }
+
+const Chips = ({ x }: { x: ItemInput }) => <span className="bt-chips">{Object.entries(x.subs).map(([k, v]) => <SubToken key={k} stat={k} lit={v} />)}</span>;
+// a piece of the feed: the item in the grade's colour (a weapon or accessory), then its substats as chips
+function MatLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
+  return <>{!isArmor(x.slot) && <span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}{x.bt === 4 ? '\u00A0·\u00A0T4' : ''}</span>}<Chips x={x} /></>;
+}
+function BtCard({ ctx, t, bt }: { ctx: Ctx; t: Texts; bt: Bt }) {
+  const x = bt.piece;
+  const n = Math.min(4, bt.n), to = n >= 4 ? 'T4' : `+${n}`;
+  const pips = <span className="bt-pips" aria-label={to}>{[1, 2, 3, 4].map((k) => <i key={k} className={k <= n ? 'gain' : ''} />)}{to}</span>;
+  // armor has no item to name (the title says the slot): the pips go at the end of the substats' line
+  return (
+    <>
+      <span className="bt-card">
+        {isArmor(x.slot)
+          ? <span className="bt-top"><Chips x={x} />{pips}</span>
+          : <><span className="bt-top"><span className={`gname ${x.grade === 'unique' ? 'legend' : 'epic'}`}>{itemCaption(ctx.idx, x)}</span>{pips}</span><Chips x={x} /></>}
+      </span>
+      <span className="bt-feed" aria-label={t.batch.btFeed}>
+        {bt.mats.map((m, i) => <span key={i} className="bt-mat">{m}</span>)}
+      </span>
+    </>
+  );
+}
 
 // a piece of the dismantle or the feed (owner 2026-10-09): «Fire Grimoire · HP% · ATK% 2, DMG UP% 2, …» — name and main
 // in the grade's colour (Epic blue, Legendary red), then the substats; no number, row or place: after the feed the
@@ -86,8 +115,10 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       // the item of a worn weapon or accessory (armor: the title says it all; a set-aside target names it in the title)
       const cap = 'worn' in tg && s.piece ? capOf(ctx, t, s.piece) : '';
       // the feed, piece by piece: «Noblewoman's Guile · HP% · HP 3, …»; a taken-off or set-aside one — its description
-      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <PieceLine ctx={ctx} x={x} /> : <DescLine ctx={ctx} t={t} w={w} />));
-      return { title: t.batch.btStep(where, s.n), hero, cap, grade: s.piece?.grade, more: [...(s.unlock ? [t.batch.btUnlock(s.unlock)] : []), t.batch.btFeed, ...mats] };
+      const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <MatLine ctx={ctx} x={x} /> : <DescLine ctx={ctx} t={t} w={w} />));
+      const unlock = s.unlock ? [t.batch.btUnlock(s.unlock)] : [];
+      if (s.piece) return { title: t.batch.btStep(where, s.n), hero, more: unlock, bt: { piece: s.piece, n: s.n, mats } };
+      return { title: t.batch.btStep(where, s.n), hero, cap, grade: undefined, more: [...unlock, t.batch.btFeed, ...mats.map((m, i) => <span key={i}>{m}</span>)] };
     }
     case 4: {
       // each piece on its own line, what it is — «Sublime Melody · HP% · SPD 1, CHC 2, …»; the locked ones first need unlocking
@@ -120,7 +151,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
             {st === 3 && <p className="muted small">{t.batch.btNote}</p>}
             <ol className="bgear-list">
               {steps.map((s) => {
-                const { title, hero, tail, no, cap, grade, kept, more, subs } = stepText(ctx, t, s);
+                const { title, hero, tail, no, cap, grade, kept, more, subs, bt } = stepText(ctx, t, s);
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
@@ -134,6 +165,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                         {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
                         {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
                         {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
+                        {bt && <BtCard ctx={ctx} t={t} bt={bt} />}
                         {subs && <span className="bstep-subs">{subs.map((m) => <span key={m}>{m}</span>)}</span>}
                       </span>
                     </Toggle>

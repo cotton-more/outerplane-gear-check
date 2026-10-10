@@ -163,8 +163,8 @@ html.xs .bgear-t { grid-row: 3; }
 /* вторая строка вещи в списке, плане обмена и «Переодеть»: Breakthrough меткой первым (BtLabel), за ним — где она */
 .bgear-meta { grid-column: 2 / -1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .bgear-t { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
-.bgear-t .tok { display: inline-flex; align-items: center; gap: 4px; padding-right: 3px; }
-.bgear-t .tok i, .piece .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }
+.bgear-t .tok, .bt-chips .tok { display: inline-flex; align-items: center; gap: 4px; padding-right: 3px; }
+.bgear-t .tok i, .bt-chips .tok i, .piece .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }
 .bgear-empty { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 6px 4px 9px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); color: var(--ink-3); font-size: 13px; }
 .bgear-empty .bgear-act { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .bgear-empty .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }

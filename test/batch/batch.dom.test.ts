@@ -335,7 +335,9 @@ describe('«Партия»: обход по шагам', () => {
     ]);
     expect(steps[0].querySelector('.bstep-no')?.textContent).toBe('No.\u00A03');         // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — a quiet hint on the right
     expect(steps[0].textContent).toContain('LV 3 Defense +');
-    expect(steps[1].textContent).toContain('feed:SPD\u00A01');                                    // the feed, piece by piece: its stats — no number, armor has no name
+    expect(steps[1].querySelector('.bt-pips')?.getAttribute('aria-label')).toBe('+1');             // the target's card: the tiers the feed adds
+    expect(steps[1].querySelectorAll('.bt-card .tok')).toHaveLength(4);                           // …and all its substats
+    expect(steps[1].querySelector('.bt-mat')?.textContent).toBe('SPD1RES%1EFF%1HP1');              // the feed, piece by piece: its stats — no number, armor has no name
     expect($$('.bwalk .bstage > p').map((x) => x.textContent)).toEqual(["Any piece from the game's list works. What the game doesn't take — dismantle."]);   // once, under «Breakthrough»
     expect(steps[2].textContent).toContain('DEF%\u00A03');                    // the taken-off helmet, by its stats (no «#n» at this stage)
     expect(steps[2].textContent).not.toContain('#');
