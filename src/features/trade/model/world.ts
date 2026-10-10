@@ -1,6 +1,6 @@
-// Мост к приложению: мир обмена из хранилища и данных. Мерило героя — его заказ (.x/0085 FORMULA §7 п. 1): «По статам»,
-// набор из его билдов или, у закреплённого, его закрепление (жёстко, §6); очки, ранг, порог «годная» и ценность сетов — теми же функциями, что лучшая раскладка
-// (features/gear/layout, pool/info). Блокировки сеанса (§7 п. 4) — из шторки обмена, не из хранилища.
+// Мост к приложению: мир обмена из хранилища и данных. Мерило героя — его заказ (MODEL.md §7 item 1): «По статам»,
+// набор из его билдов или, у закреплённого, его закрепление (жёстко, MODEL.md §6); очки, ранг, порог «годная» и ценность сетов — теми же функциями, что лучшая раскладка
+// (features/gear/layout, pool/info). Блокировки сеанса (MODEL.md §7 item 4) — из шторки обмена, не из хранилища.
 import type { Ctx } from '@/game/context';
 import type { Char, Combo } from '@/game/data/types';
 import { combosOf, comboProfile, pinnedProfile, pinOf, profileOf } from '@/game/build/profile';
@@ -24,7 +24,7 @@ export const orderCombo = (c: Char, order: string): Combo | null =>
   (order === STATS ? null : combosOf(c).find((x) => comboSig(x) === order) ?? null);
 
 export interface WorldOpts {
-  locked?: ReadonlySet<string>;               // переодетые в этом окне (§7 п. 4)
+  locked?: ReadonlySet<string>;               // переодетые в этом окне (MODEL.md §7 item 4)
   orders?: Readonly<Record<string, string>>;  // герой → заказ; нет — «По статам»
 }
 
@@ -42,7 +42,7 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
     const c = ctx.idx.CHAR[heroId];
     const P = c ? profileOf(ctx, c) : null;
     if (!c || !P) { memo.set(heroId, null); return null; }
-    // закреплённый (§6, §7 п. 1) — жёстко: его набор, цепочка его билда, броня других сетов не годна; заказ не меняется
+    // закреплённый (MODEL.md §6, MODEL.md §7 item 1) — жёстко: его набор, цепочка его билда, броня других сетов не годна; заказ не меняется
     const pin = pinOf(c, st.pin?.[heroId]);
     const Pv = pin ? pinnedProfile(P, pin) : P;
     const combo = pin ? pin.combo : orderCombo(c, o.orders?.[heroId] ?? STATS);

@@ -1,6 +1,6 @@
-// Вердикт новой вещи по «статам + сетам» (.x/0085 FORMULA §4): для каждого героя ростера — что она ему даст, итог вещи —
+// Вердикт новой вещи по «статам + сетам» (MODEL.md §4): для каждого героя ростера — что она ему даст, итог вещи —
 // лучший из исходов по героям в порядке «Надень» → «Оставь» → материал (Breakthrough сейчас, запас) → «Спорно» →
-// «Разобрать». Пул героя — features/gear/pool/info (§5). Тексты — screens/eval (useVerdictModel).
+// «Разобрать». Пул героя — features/gear/pool/info (MODEL.md §5). Тексты — screens/eval (useVerdictModel).
 import { CFG } from '@/game/config';
 import { isArmor } from '@/game/data';
 import type { Char } from '@/game/data/types';
@@ -36,7 +36,7 @@ const btWorth = (P: Profile, p: Piece): boolean => (isArmor(p.slot) ? pieceBar(P
 export interface HeroPool { c: Char; P: Profile; pieces: Piece[]; wornIds: ReadonlySet<string>; info: PoolInfo }
 // пул героя по id; у героя без билдов (профиля нет) — null
 export type Pools = (charId: string) => HeroPool | null;
-// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (§6)
+// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (MODEL.md §6)
 export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySet<string>, pin?: string | null): HeroPool | null {
   const P = profileFor(ctx, c, pin);
   return P ? { c, P, pieces, wornIds, info: poolInfo(P, pieces, wornIds) } : null;
@@ -67,11 +67,11 @@ export interface HeroRes {
   margin: number;                // очки над лучшей держащейся вещью слота (порядок «Оставь», A10)
   slotEmpty: boolean;            // её слот пуст в нынешней раскладке
   replaced: Piece | null;        // «Надень»: вещь её слота, которую она сменит
-  rankUp: boolean;               // «Надень» по рангу: оружие или аксессуар из рекомендованных его билдам (§3 п. 3)
+  rankUp: boolean;               // «Надень» по рангу: оружие или аксессуар из рекомендованных его билдам (MODEL.md §3 item 3)
   alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней (в нынешней раскладке их в этом слоте не было)
   parts: { on: PartChange[]; off: PartChange[] };
   needT4: PartChange | null;     // «Оставь (а)»: сделай Breakthrough до T4 — без него эта часть не включится (A11)
-  reserveBt: Fed[];              // reserves fed to the new piece (§4 item 3b): the hero's own first, then other heroes'
+  reserveBt: Fed[];              // reserves fed to the new piece (MODEL.md §4 item 3b): the hero's own first, then other heroes'
                                  // (verdictOf, feedFrom) — as many as it takes to T4
   layoutWith: Layout;            // лучшая раскладка с ней — что будет надето после «Надеть»
 }
@@ -95,7 +95,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
     reserveBt: own.map((piece) => ({ piece, of: null })),
     layoutWith: withBest.layout,
   };
-  // 1. «Надень» (вопросы 10, 11): прошла порог, встаёт в лучшую раскладку, и та лучше нынешней (§3 п. 3)
+  // 1. «Надень» (вопросы 10, 11): прошла порог, встаёт в лучшую раскладку, и та лучше нынешней (MODEL.md §3 item 3)
   // Q7: a Legendary in place of the Epic of its slot needs no +1 — not worse by points is enough
   if (bar.pass && uses && better(withBest.value, info.value, epicToLegend(info.layout, withBest.layout))) return { ...base, kind: 'wear', replaced: info.layout[x.slot] ?? null };
   // 2. «Оставь» — только броня, порог прошла
@@ -115,7 +115,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
 // часть меню героя с этим сетом — меньшая («Penetration ×2»)
 const menuPart = (P: Profile, set: string): PartChange => ({ set, n: P.parts.has(partKey(set, 2)) ? 2 : 4 });
 
-// §4 item 3a: held good (btWorth) pieces of the hero of the same kind below T4 — the new one can give them Breakthrough; reserve and weak ones are not
+// MODEL.md §4 item 3a: held good (btWorth) pieces of the hero of the same kind below T4 — the new one can give them Breakthrough; reserve and weak ones are not
 // targets (A2). A piece at T4 is material too (owner 2026-10-09, was D6 «never»): it reaches this only when nobody wears or
 // keeps it, and one Breakthrough step for a hero beats dismantling it (#62 Ether Blade T4 → Hilde's Ether Blade)
 export interface Target { c: Char; piece: Piece; worn: boolean }
@@ -124,7 +124,7 @@ function materialTargets(hp: HeroPool, x: Piece): Target[] {
     .map((piece) => ({ c: hp.c, piece, worn: hp.wornIds.has(piece.id) }));
 }
 
-// §4 items 3b, 3c: a reserve is weak (below the threshold) and not at T4. Armor: the set is started, the slot has none of it, fewer reserves of this kind than
+// MODEL.md §4 items 3b, 3c: a reserve is weak (below the threshold) and not at T4. Armor: the set is started, the slot has none of it, fewer reserves of this kind than
 // CFG.reservePerHero. Weapon and accessory: a Legendary the hero's builds recommend while the hero has no good copy
 function reserveFor(hp: HeroPool, x: Piece, h: HeroRes): boolean {
   if (h.bar || x.bt === 4 || (hp.info.reserve.get(reserveKey(x))?.length ?? 0) >= CFG.reservePerHero) return false;
@@ -218,7 +218,7 @@ export interface Result {
   sub?: 'a' | 'b' | 'now' | 'reserve';
   heroes: HeroRes[];          // все герои ростера с билдами
   named: HeroRes[];           // A10: герой с наибольшей пользой первым, ещё до двух
-  now: Target[];              // материал сейчас (§4 п. 3а), лучшие цели первыми
+  now: Target[];              // материал сейчас (MODEL.md §4 item 3a), лучшие цели первыми
   reserve: Char[];            // reserve (items 3b, 3c)
   overEpic?: boolean;         // reserve: reserve[0] holds a good Epic of this set and slot, this Legendary waits for a good Legendary
   maybe: Char[];              // «Спорно»

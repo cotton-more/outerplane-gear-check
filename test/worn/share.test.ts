@@ -1,4 +1,4 @@
-// «Показать героя» (.x/0060-share-code SPEC 3.2): код героя туда и обратно, закреплённый набор по отпечатку (.x/0085 этап 6),
+// «Показать героя» (.x/0060-share-code SPEC 3.2): код героя туда и обратно, закреплённый набор по отпечатку (stat-sets этап 6),
 // длина, целостность.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -98,7 +98,7 @@ describe('3.2 код героя', () => {
     expect(decodeHero('OGH' + seal(new BitWriter().put(3, 4).put(0, 20).bits))).toBe('newer');
   });
 
-  // .x/0085 PLAN Д11: OGH v1 (до закрепления) нёс на месте набора отпечаток выбранного билда — читается, поле пропущено
+  // stat-sets PLAN Д11: OGH v1 (до закрепления) нёс на месте набора отпечаток выбранного билда — читается, поле пропущено
   it('T8.2 OGH v1 с отпечатком билда — вещи на месте, набора нет', async () => {
     const { BitWriter, seal } = await import('@/shared/bits');
     const pin = pinOptions(caren)[0];

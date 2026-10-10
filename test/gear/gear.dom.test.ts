@@ -95,7 +95,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.vcard .vc-vs')?.textContent).toBe('+2 ptsCaren');
     await click($('.vc-equip'));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
-    // the old helmet at T4 is Caren's best Speed helmet at T4 (.x/0085 FORMULA §5 item 3, Speed pinned): it stays in the pool
+    // the old helmet at T4 is Caren's best Speed helmet at T4 (MODEL.md §5 item 3, Speed pinned): it stays in the pool
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2']);
     expect($('.vcard')).toBeNull();
     expect($('.vc-equip')).toBeNull();
@@ -130,7 +130,7 @@ describe('«Надеть» и «Вернуть»', () => {
   // шаг 4 (В1), PLAN Д7: «Надеть» убрало вещь другого слота — заголовок про её слот («On … : boots»), убранная — строкой
   // «Лишнее убрано» (без перечня, вопрос 6); «Вернуть» — пул как был, в том же порядке. Caren: надеты Speed-броня и
   // -перчатки; в раскладке — Attack-шлем (сильнее Speed-шлема). Speed-ботинки собирают Speed ×4 со Speed-шлемом —
-  // Attack-шлем выпадает из раскладки, и больше его ничто не держит (.x/0085 FORMULA §5)
+  // Attack-шлем выпадает из раскладки, и больше его ничто не держит (MODEL.md §5)
   const extras = () => {
     const ok = { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 };
     const ps = [P('p1', 'helmet', set('Attack'), { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }), P('p2', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }),
@@ -347,7 +347,7 @@ describe('«Надеть»: что уходит из пула и что пише
   it('две вещи её слота ушли — «Заменено: ботинки — убраны прежние: Attack и Immunity», обе вне пула; «Вернуть» — обе обратно', async () => {
     const def = set('Defense');
     // надеты Defense ×3 и Attack-ботинки; Immunity-ботинки — лучшие Immunity-ботинки Caren (пул держит). Новые сильнее
-    // обоих: Attack-ботинки больше не надеты и не нужны, Immunity — уже не лучшие (.x/0085 FORMULA §5)
+    // обоих: Attack-ботинки больше не надеты и не нужны, Immunity — уже не лучшие (MODEL.md §5)
     const pcs = [
       P('p1', 'helmet', def, { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', def, { 'DEF%': 2, CHC: 2 }), P('p3', 'gloves', def, { 'DEF%': 2, CHC: 2 }),
       P('p4', 'shoes', set('Attack'), { 'DEF%': 2, CHC: 2 }), P('p5', 'shoes', set('Immunity'), { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
@@ -369,7 +369,7 @@ describe('«Надеть»: что уходит из пула и что пише
   it('две ушли, одна из них — и у Kappa: про Kappa ни слова, у неё запись остаётся', async () => {
     const def = set('Defense');
     // надеты Defense ×3 и Attack-ботинки; Immunity-ботинки — лучшие Immunity-ботинки Caren (пул держит). Новые сильнее
-    // обоих: Attack-ботинки больше не надеты и не нужны, Immunity — уже не лучшие (.x/0085 FORMULA §5)
+    // обоих: Attack-ботинки больше не надеты и не нужны, Immunity — уже не лучшие (MODEL.md §5)
     const pcs = [
       P('p1', 'helmet', def, { 'DEF%': 2, CHC: 2 }), P('p2', 'armor', def, { 'DEF%': 2, CHC: 2 }), P('p3', 'gloves', def, { 'DEF%': 2, CHC: 2 }),
       P('p4', 'shoes', set('Attack'), { 'DEF%': 2, CHC: 2 }), P('p5', 'shoes', set('Immunity'), { 'DEF%': 2, CHC: 2, CHD: 2, SPD: 1 }),
@@ -520,7 +520,7 @@ describe('«Кому надеть?»', () => {
 });
 
 describe('карточка персонажа', () => {
-  // .x/0085 этап 6: вкладки «Надето · Пул · Билды»; вещь не надета — только в «Пуле»
+  // stat-sets этап 6: вкладки «Надето · Пул · Билды»; вещь не надета — только в «Пуле»
   const openPiece = async (i = 0) => { await click(byText('.btabs [role="tab"]', 'Pool')); await click($$('.pool-row')[i]); };
   const four = (lit: Record<string, number>) => ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, lit));
   const wornOf = (ps: Pc[]) => ({ [caren.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) });
@@ -755,7 +755,7 @@ describe('карточка персонажа', () => {
     expect({ unused: unused(), pool: stored().pools[caren.id] }).toEqual({ unused: [false, true], pool: ['p1', 'p2'] });
   });
 
-  // .x/0085 FORMULA §3 п. 3, макет 6.0 решение 2: лучшая раскладка из своих вещей лучше надетой на 1+ очко
+  // MODEL.md §3 item 3, макет 6.0 решение 2: лучшая раскладка из своих вещей лучше надетой на 1+ очко
   it('«Переодеть: +N pts ▸» → шторка: прирост, «instead of …», «Wear all 2» — надето, тост с «Вернуть»', async () => {
     const worn = [P('p1', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('p2', 'armor', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }),
       P('p3', 'gloves', set('Attack'), { RES: 2, EFF: 2 }), P('p4', 'shoes', set('Attack'), { RES: 2, EFF: 2 })];
@@ -781,7 +781,7 @@ describe('карточка персонажа', () => {
     expect(byText('.seek-row', 'Speed ×4')?.textContent).toBe('Speed ×4: 2 of 4 — need gloves, boots');
   });
 
-  // .x/0085 FORMULA §6, макет 6.0 решение 7: «Закрепить набор» → шторка, предупреждение, «Pin» — плашка «Pinned: …»
+  // MODEL.md §6, макет 6.0 решение 7: «Закрепить набор» → шторка, предупреждение, «Pin» — плашка «Pinned: …»
   it('закрепление: шторка с вариантами и «k of 4», предупреждение, «Pin» — плашка и ключ в хранилище; «By stats» снимает', async () => {
     const two = [P('p1', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('p2', 'armor', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(two, { [caren.id]: ['p1', 'p2'] }, { worn: wornOf(two) }) });
@@ -1075,7 +1075,7 @@ describe('запись при загрузке (Р17)', () => {
     expect($('.gear-toast')).toBeNull();
   });
 
-  // .x/0085 PLAN Д11, TESTS T8.1: хранилище прежней модели — перенос в v3 записан, сообщение о переносе один раз,
+  // stat-sets PLAN Д11, TESTS T8.1: хранилище прежней модели — перенос в v3 записан, сообщение о переносе один раз,
   // пулы и надетое те же
   it('T8.1 хранилище v2 с «Собираю», выбранным билдом и булавкой: сообщение один раз, перенос записан, вещи и надетое те же', async () => {
     const old = { ...lone(), v: 2, worn: { [caren.id]: { helmet: 'p1' } }, marks: { [`${caren.id}/Speed`]: 'want' }, aim: { [caren.id]: `${caren.id}/Speed` }, pinned: [caren.id] };
@@ -1154,7 +1154,7 @@ describe('«По статам» у каждого героя (находка 28)
 });
 
 
-// «Статы + сеты» (.x/0085 PLAN Д3, TEXTS): в шапке — герой с наибольшей пользой, в «Сейчас на персонажах» — до трёх героев
+// «Статы + сеты» (stat-sets PLAN Д3, TEXTS): в шапке — герой с наибольшей пользой, в «Сейчас на персонажах» — до трёх героев
 // с цепочкой и тем, что вещь даёт; «Оставь» — без кнопки; материал и запас — заголовком; тихая строка — под вердиктом
 describe('вердикт «статы + сеты»', () => {
   const RIN_GOOD = { setId: set('Attack'), subs: { CHC: 1, CHD: 1, SPD: 1, 'ATK%': 1 } };

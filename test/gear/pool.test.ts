@@ -1,6 +1,6 @@
 // Пул экипировки (features/gear/pool): вид пула и ненужные вещи, «Примерить замену» (replace), оружие не для класса героя,
 // «Дальше: {слот}». Что держит пул и почему — test/gear/layout.test.ts, verdict.test.ts; старый движок («собираешь», сборка вариантов)
-// удалён на этапе 7 .x/0085.
+// удалён на этапе 7 stat-sets.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

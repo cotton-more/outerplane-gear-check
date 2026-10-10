@@ -8,7 +8,7 @@ import { heroPool, type HeroPool, type Pools } from '@/features/gear/verdict';
 export interface CharPool {
   c: Char;
   pieces: Piece[];
-  unused: Piece[]; // «больше не нужна»: пул героя их не держит (features/gear/pool/info, FORMULA §5 п. 6)
+  unused: Piece[]; // «больше не нужна»: пул героя их не держит (features/gear/pool/info, MODEL.md §5 item 6)
   worn: Set<string>; // надетые записи героя (его пул держит их всегда; «надета» вместо «где стоит» — PoolList)
 }
 
@@ -38,7 +38,7 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
     const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
     const mine = new Set(pieces.map((p) => p.id));
     const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
-    // «больше не нужна» — по «статам + сетам» (features/gear/pool/info, FORMULA §5 п. 6)
+    // «больше не нужна» — по «статам + сетам» (features/gear/pool/info, MODEL.md §5 item 6)
     const r = c ? { c, pieces, worn, unused: hero(id)?.info.unneeded ?? [] } : null;
     memo.set(id, r);
     return r;

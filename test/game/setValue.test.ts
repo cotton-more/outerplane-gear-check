@@ -1,4 +1,4 @@
-// Ценность сета в раскладке (T3): половины по меню билдов, строки бонусов T4 / T0–T3 (FORMULA.md §2 п. 2, 4).
+// Ценность сета в раскладке (T3): половины по меню билдов, строки бонусов T4 / T0–T3 (MODEL.md §2 item 2, 4).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

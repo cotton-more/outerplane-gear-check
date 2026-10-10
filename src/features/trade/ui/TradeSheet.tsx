@@ -1,4 +1,4 @@
-// Шторка «Обмен вещами» (.x/0040-trade/SPEC.md R4, R10.3–R10.6; сеанс и заказ — .x/0085 FORMULA §7). Режим «Герой»:
+// Шторка «Обмен вещами» (.x/0040-trade/SPEC.md R4, R10.3–R10.6; сеанс и заказ — MODEL.md §7). Режим «Герой»:
 // выбрать героя → план считается сразу; «Сделал» — и можно выбрать следующего, а надетое переодетого следующие не берут,
 // пока шторка открыта (сеанс, строка о нём над выбором). Режим «Команда»: четыре места ромбом (у члена — плитка и заказ
 // «Заказ: … ▾»), «Посчитать» → «Считаю…» и «Отмена» (runTeam кусками). «Не брать» и смена заказа — пересчёт (R7.3).
@@ -128,7 +128,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
     fresh();
   };
   const orderOf = (id: string) => orders[id] ?? STATS;
-  // закреплённый (FORMULA §7 п. 1) — его закрепление, жёстко: «Закреплено: Speed ×4»
+  // закреплённый (MODEL.md §7 item 1) — его закрепление, жёстко: «Закреплено: Speed ×4»
   const pinnedName = (id: string) => { const p = idx.CHAR[id] ? pinOf(idx.CHAR[id], st.pin?.[id]) : null; return p ? t.card.pinned(comboText(idx, p.combo)) : null; };
   const nameOfOrder = (id: string) => pinnedName(id) ?? orderName(ctx, idx.CHAR[id], orderOf(id), t.ui.byStats);
   const orderC = orderFor ? idx.CHAR[orderFor] : undefined;

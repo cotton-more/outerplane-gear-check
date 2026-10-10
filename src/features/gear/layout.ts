@@ -1,4 +1,4 @@
-// Ценность раскладки героя и его лучшая раскладка из пула (.x/0085 FORMULA §3). V = очки всех вещей + ценность сетов
+// Ценность раскладки героя и его лучшая раскладка из пула (MODEL.md §3). V = очки всех вещей + ценность сетов
 // брони — одной функцией по раскладке целиком. Оружие и аксессуар решает сначала ранг (рекомендованная > временная >
 // не из билдов), потом очки; броню — полный перебор (по вещи или пусто на слот), максимум V.
 import { isArmor } from '@/game/data';
@@ -111,7 +111,7 @@ export function layoutValue(P: Profile, layout: Layout): LayoutValue {
 }
 
 type Ranked = Pick<LayoutValue, 'rank' | 'v' | 'effHalves'>;
-// §3 п. 3: a лучше z — выше ранг оружия или аксессуара; или при том же ранге V больше хотя бы на 1 очко (в тысячных);
+// MODEL.md §3 item 3: a лучше z — выше ранг оружия или аксессуара; или при том же ранге V больше хотя бы на 1 очко (в тысячных);
 // или при том же ранге включается половина сета-эффекта при не меньшем V
 // legendOverEpic (owner Q7, 2026-10-09): the layouts differ only by Legendary pieces taking the place of Epic ones — then
 // V not lower is enough, no +1: the Legendary's bigger main stat breaks the tie (see epicToLegend)

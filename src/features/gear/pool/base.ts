@@ -7,7 +7,7 @@ export interface PoolStore {
   pieces: Readonly<Record<string, Piece>>;
   pools: Readonly<Record<string, readonly string[]>>;
   worn?: Readonly<Record<string, Readonly<Worn>>>;
-  pin?: Readonly<Record<string, string>>; // закрепление героя (.x/0085 FORMULA §6): ключ набора (profile pinKey)
+  pin?: Readonly<Record<string, string>>; // закрепление героя (MODEL.md §6): ключ набора (profile pinKey)
   seq?: number;
 }
 

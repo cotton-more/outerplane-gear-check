@@ -1,4 +1,4 @@
-// План обмена (.x/0040-trade/SPEC.md R6.3–R6.6, R8.4, R9, R10.4; «было → станет» — .x/0085 FORMULA §7 п. 3). Главное —
+// План обмена (.x/0040-trade/SPEC.md R6.3–R6.6, R8.4, R9, R10.4; «было → станет» — MODEL.md §7 item 3). Главное —
 // какие вещи на ком должны быть: у героя — итоговая вещь каждого меняемого слота целиком (как в сборке билда: сет или
 // предмет, main, сабстаты с уровнями, T4) — по ней и ищут в Change Gear; у оружия и аксессуара сабстат для Secondary и
 // сортировки отмечен ↓ (R9.1). Под вещью — откуда взять («у Ноа», «в инвентаре», владелец 2026-10-04: строки «Искать»
@@ -53,7 +53,7 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
   const t = useT();
   const { idx } = ctx;
   const name = (id: string) => heroName(idx, id);
-  // у закреплённого — цепочка его билда (FORMULA §0)
+  // у закреплённого — цепочка его билда (MODEL.md §0)
   const profile = (id: string) => (idx.CHAR[id] ? profileFor(ctx, idx.CHAR[id], st.pin?.[id]) : null);
   const breaks = new Map(fills.map((f) => [`${f.hero}:${f.slot}`, f.breaks]));
   const from = (m: Move) => (m.from.kind === 'worn' ? t.trade.fromWorn(name(m.from.hero))

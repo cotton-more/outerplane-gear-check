@@ -260,7 +260,7 @@ html.xs .bgear-t { grid-row: 3; }
 .rd-row .bgear-n { align-items: flex-start; white-space: normal; } /* узко: имя сета переносится, а не обрезается */
 .rd-row .bgear-n .pn { overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
 html .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 2; } /* и на узком (html.xs) — под именем, строка «вместо …» ниже */
-/* карточка героя (.x/0085 макет 6.0): «К обмену ▸» и закрепление под шапкой, «Переодеть», «Что искать», «Билды» */
+/* карточка героя (stat-sets макет 6.0): «К обмену ▸» и закрепление под шапкой, «Переодеть», «Что искать», «Билды» */
 .cd-acts { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 0 16px; }
 .cd-acts .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 .pinb { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }

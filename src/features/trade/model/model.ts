@@ -1,4 +1,4 @@
-// «Обмен вещами» (.x/0040-trade/SPEC.md; мерило — .x/0085 FORMULA §7): модель расчёта. Расчёт работает не с вещами
+// «Обмен вещами» (.x/0040-trade/SPEC.md; мерило — MODEL.md §7): модель расчёта. Расчёт работает не с вещами
 // приложения, а с заранее посчитанными числами: мир (герои, вещи), мерило героя по его заказу (очки вещи, ранг, годная
 // ли, ценность сетов), кандидаты получателя. Очки — целые тысячные (R2.2): округляются один раз, при построении модели.
 import type { Grade, SlotId } from '@/game/data/types';
@@ -26,19 +26,19 @@ export interface Item {
 export interface Hero {
   id: string;
   rank: number;             // место в ростере
-  locked: boolean;          // переодет в этом окне обмена: его надетое следующие не берут (FORMULA §7 п. 4)
+  locked: boolean;          // переодет в этом окне обмена: его надетое следующие не берут (MODEL.md §7 item 4)
   worn: Partial<Record<SlotId, string>>;
   pool: readonly string[];
 }
 
 // часть заказа: сет и сколько вещей (2 или 4)
 export interface Part { set: string; n: number }
-// ценность сета в раскладке (FORMULA §2): очки, включённые половины, из них — половины сета-эффекта
+// ценность сета в раскладке (MODEL.md §2): очки, включённые половины, из них — половины сета-эффекта
 export interface SetGain { v: Milli; halves: number; eff: number }
-// вещь для героя: очки (§1), ранг оружия и аксессуара (§3), годная ли (порог §4; надетое получателя годно всегда)
+// вещь для героя: очки (MODEL.md §1), ранг оружия и аксессуара (MODEL.md §3), годная ли (порог MODEL.md §4; надетое получателя годно всегда)
 export interface Worth { v: Milli; fit: Fit; ok: boolean }
 
-// Мерило героя — его заказ (§7 п. 1): «По статам» (parts пустые, половины — у всех частей меню) или набор (половины —
+// Мерило героя — его заказ (MODEL.md §7 item 1): «По статам» (parts пустые, половины — у всех частей меню) или набор (половины —
 // только у его частей)
 export interface Gauge {
   key: string;
@@ -81,12 +81,12 @@ const lex = (a: readonly number[], z: readonly number[]): number => {
   return 0;
 };
 
-// польза комплекта, как у лучшей раскладки (§3): ранг, V, заполненность. > 0 — a лучше
+// польза комплекта, как у лучшей раскладки (MODEL.md §3): ранг, V, заполненность. > 0 — a лучше
 export function cmpUse(a: KitKey, z: KitKey): number {
   return a.rank - z.rank || a.total - z.total || a.filled - z.filled;
 }
 
-// §3 п. 3 и §7 п. 5: b лучше a по порогу — выше ранг, или V больше хотя бы на 1 очко, или включилась половина
+// MODEL.md §3 item 3 и MODEL.md §7 item 5: b лучше a по порогу — выше ранг, или V больше хотя бы на 1 очко, или включилась половина
 // сета-эффекта при не меньшем V
 // legendOverEpic (Q7): V not lower is enough, no +1 — see legendOverEpic
 export const gains = (a: KitKey, b: KitKey, soft = false): boolean =>

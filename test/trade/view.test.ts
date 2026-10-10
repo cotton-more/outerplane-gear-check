@@ -1,4 +1,4 @@
-// Что показывает план (R10.4, .x/0040-trade/SPEC.md; «было → станет» — .x/0085 FORMULA §7 п. 3): итог по героям — кто
+// Что показывает план (R10.4, .x/0040-trade/SPEC.md; «было → станет» — MODEL.md §7 item 3): итог по героям — кто
 // получил, кто потерял, очки статов отдельно от сетов, включившаяся половина сета. Подписи — test/trade/trade.dom.test.ts.
 import { describe, expect, it } from 'vitest';
 import { heroMoves, advance } from '@/features/trade/model/moves';

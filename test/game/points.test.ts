@@ -1,4 +1,4 @@
-// Очки вещи (T1) и U героя (T2) по формуле «очки вещи + ценность сетов» (FORMULA.md §1–§2).
+// Очки вещи (T1) и U героя (T2) по формуле «очки вещи + ценность сетов» (MODEL.md §1–§2).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

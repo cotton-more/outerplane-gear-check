@@ -1,4 +1,4 @@
-// Профиль героя для «статов + сетов» (.x/0085 FORMULA §0, §2 п. 3): цепочка «По статам», меню частей сетов из всех его
+// Профиль героя для «статов + сетов» (MODEL.md §0, §2 item 3): цепочка «По статам», меню частей сетов из всех его
 // билдов и U — очки самой ценной строки T4 на 2 вещи среди статовых сетов. Половина сета из меню стоит U.
 import type { Build, Char, Combo, SetBonus } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
@@ -16,10 +16,10 @@ export interface Profile {
   uBy: { set: string; pts: number }[];  // строки 2P T4 статовых сетов, по убыванию
   parts: ReadonlySet<string>;           // части меню: partKey(сет, 2 или 4) из всех связок всех билдов
   menuSets: ReadonlySet<string>;
-  pin?: Pin;                            // закреплённый набор (§6): броня других сетов не годится
+  pin?: Pin;                            // закреплённый набор (MODEL.md §6): броня других сетов не годится
 }
 
-// Закрепление (FORMULA §6, PLAN Д9): набор одного билда героя и цепочка этого билда. Ключ — имя билда + подпись набора
+// Закрепление (MODEL.md §6, PLAN Д9): набор одного билда героя и цепочка этого билда. Ключ — имя билда + подпись набора
 export interface Pin { key: string; build: Build; combo: Combo }
 
 export const partKey = (set: string, n: number): string => `${set}:${n}`;
@@ -72,7 +72,7 @@ function makeProfile(ctx: Ctx, c: Char, chain: Build, combos: readonly Combo[]):
   return { ...base, chain, U: Math.max(0, ...uBy.map((x) => x.pts)), uBy, parts, menuSets };
 }
 
-// наборы героя (связки всех его билдов) без повторов, в порядке outerpedia: заказ обмена (§7 п. 1)
+// наборы героя (связки всех его билдов) без повторов, в порядке outerpedia: заказ обмена (MODEL.md §7 item 1)
 const combosMemo = new WeakMap<Char, Combo[]>();
 export function combosOf(c: Char): Combo[] {
   const hit = combosMemo.get(c);
@@ -86,7 +86,7 @@ export function combosOf(c: Char): Combo[] {
   return out;
 }
 
-// профиль под один набор: половины — только у его частей (заказ обмена §7 п. 2); цепочка, U и веса — героя
+// профиль под один набор: половины — только у его частей (заказ обмена MODEL.md §7 item 2); цепочка, U и веса — героя
 const comboMemo = new WeakMap<Profile, Map<string, Profile>>();
 export function comboProfile(P: Profile, combo: Combo): Profile {
   let m = comboMemo.get(P);
@@ -135,7 +135,7 @@ export function pinOptions(c: Char): Pin[] {
   return out;
 }
 
-// профиль закреплённого (§6): цепочка его билда, половины — только у частей набора, броня других сетов не годится
+// профиль закреплённого (MODEL.md §6): цепочка его билда, половины — только у частей набора, броня других сетов не годится
 // (pieceBar). Цепочка та же, что «По статам», — веса и U прежние
 const pinMemo = new WeakMap<Profile, Map<string, Profile>>();
 export function pinnedProfile(P: Profile, pin: Pin): Profile {

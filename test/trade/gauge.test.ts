@@ -1,4 +1,4 @@
-// «Обмен вещами», мерило героя — его заказ (.x/0085 FORMULA §7, TESTS T7.1, T7.2, T7.6) и X1 (модель обмена из своего пула =
+// «Обмен вещами», мерило героя — его заказ (MODEL.md §7, TESTS T7.1, T7.2, T7.6) и X1 (модель обмена из своего пула =
 // лучшая раскладка приложения). Мерило строит мост world.ts: key — заказ, parts — части набора, value — очки, ранг, годная.
 import { describe, expect, it } from 'vitest';
 import type { GearStore, Piece } from '@/features/gear/model/gear';

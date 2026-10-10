@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // «Обмен вещами»: открытие шторки с карточки героя и с панели ростера, команда из четырёх, заказ героя, план героя
-// (piece, search key, source, piece cost, «Не брать», stats points), «Сделал» with «Вернуть», the session (.x/0085 T7.4) and cancelling the calculation
+// (piece, search key, source, piece cost, «Не брать», stats points), «Сделал» with «Вернуть», the session (stat-sets T7.4) and cancelling the calculation
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -144,7 +144,7 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tmove .tsrc')).toBeNull();
   });
 
-  // .x/0085 FORMULA §7 п. 1: у закреплённого заказ — его закрепление, жёстко; в шторке заказа — один вариант
+  // MODEL.md §7 item 1: у закреплённого заказ — его закрепление, жёстко; в шторке заказа — один вариант
   it('T7.5: закреплённый — «Order: Pinned: Speed ×4 ▾», в шторке только он', async () => {
     const { pinOptions } = await import('@/game/build/profile');
     const pin = pinOptions(caren as never)[0];

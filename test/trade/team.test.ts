@@ -1,5 +1,5 @@
 // «Обмен вещами», этап 5: командный обмен (R7.1–R7.3): .x/0040-trade/TESTS.md, H1–H5, H7, H8, H10–H17, J7; у каждого
-// свой заказ — .x/0085 TESTS T7.6. H6, H9 (применение) — в тестах применения; H10 — отдельно.
+// свой заказ — stat-sets TESTS T7.6. H6, H9 (применение) — в тестах применения; H10 — отдельно.
 import { describe, expect, it } from 'vitest';
 import { moveStep } from '@/features/trade/model/apply';
 import { skipKey } from '@/features/trade/model/cands';
@@ -271,7 +271,7 @@ describe('H. команда', () => {
     expect(tp.steps).toEqual([]);
   });
 
-  it('H19 (FORMULA §7 п. 2): обмен парой не отдаёт члену вещь, не годную для него', () => {
+  it('H19 (MODEL.md §7 item 2): обмен парой не отдаёт члену вещь, не годную для него', () => {
     const w = mk({ a1: { slot: 'helmet' }, b1: { slot: 'helmet' } }, {
       A: { worn: { helmet: 'a1' }, value: { a1: 1, b1: { v: 8, fit: 'no', ok: false } } },
       B: { worn: { helmet: 'b1' }, value: { b1: 5, a1: 5 } },

@@ -1,4 +1,4 @@
-// Слова вердикта «статы + сеты» (.x/0085 TEXTS.md): штамп, заголовок и строки по исходу вещи (features/gear/verdict) —
+// Слова вердикта «статы + сеты» (stat-sets TEXTS.md): штамп, заголовок и строки по исходу вещи (features/gear/verdict) —
 // для панели вердикта, карточки и «Сейчас на персонажах». Штамп — про оцениваемую вещь (PLAN Д2).
 import { isArmor, type Index } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
@@ -18,7 +18,7 @@ const itemName = (idx: Index, x: Pick<ItemInput, 'slot' | 'itemKey' | 'main'>): 
 // отложенная вещь во фразе — как найти её в игре: «Это Speed-шлем · DEF 1, SPD 2, RES 2, отложен 06.10.»
 export const stashedLine = (t: Texts, p: Piece, label: Label): string => t.fit.stashedOne(p.slot, label(p), subsText(p.lit), t.fit.date(p.at));
 
-// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (§4 items 3b, 3c) and which one it is; the reserve may be another hero's.
+// «Слабый Speed-шлем из запаса Caren — в Breakthrough этой» (MODEL.md §4 items 3b, 3c) and which one it is; the reserve may be another hero's.
 // Several (up to T4, owner 2026-10-08): «В Breakthrough этой — 3 из запаса Caren, Rin» — any of them, they're alike
 function feedLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Label): string[] {
   if (!h.reserveBt.length) return [];

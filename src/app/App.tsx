@@ -120,7 +120,7 @@ export function App() {
   const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
   const [pieceOpen, setPieceOpen] = useState(false); // карточка вещи в блоке билда (для тура «Экипировка»)
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
-  // перенос на новую модель (.x/0085 PLAN Д11): игроку прежней модели — одно сообщение за всё время (флаг пишется сразу)
+  // перенос на новую модель (stat-sets PLAN Д11): игроку прежней модели — одно сообщение за всё время (флаг пишется сразу)
   const [modelNote, setModelNote] = useState<{ marks: boolean } | null>(null);
   useEffect(() => { const n = takeModelNote(idx); if (n) setModelNote(n); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // сообщения с «Вернуть»: экипировки (features/gear/ui/gearMsg) и формы — «Следующий» убрал предмет по ошибке

@@ -1,5 +1,5 @@
-// Пул героя по «статам + сетам» (.x/0085 FORMULA §5): что держим и почему, что «больше не нужна». Порог «годная» вещи
-// для героя (§4 «Порог») — здесь же: его читают пул, вердикт новой вещи и лучшая раскладка.
+// Пул героя по «статам + сетам» (MODEL.md §5): что держим и почему, что «больше не нужна». Порог «годная» вещи
+// для героя (MODEL.md §4 «Порог») — здесь же: его читают пул, вердикт новой вещи и лучшая раскладка.
 import { CFG } from '@/game/config';
 import { isArmor } from '@/game/data';
 import type { ArmorSlot } from '@/game/data/types';
@@ -21,7 +21,7 @@ export const geq1 = (a: number, b: number): boolean => milli(a) - milli(b) >= TH
 
 // Порог для героя: броня — прежние правила «Оставить / Временно» по его цепочке ИЛИ очки ≥ 6 (armorBar, этап 2);
 // оружие и аксессуар — ранг по любому его билду: рекомендованная или временная с хорошими сабстатами (gearRank).
-// keep — прошла как «Оставить», temp — только как временная (штамп «Временно», PLAN Д2). Закреплённому (§6) броня других
+// keep — прошла как «Оставить», temp — только как временная (штамп «Временно», PLAN Д2). Закреплённому (MODEL.md §6) броня других
 // сетов не годится; очки — по цепочке профиля (у закреплённого — его билда)
 export interface Bar { pass: boolean; keep: boolean; temp: boolean }
 const barMemo = new WeakMap<Profile, WeakMap<Piece, Bar>>();
@@ -59,13 +59,13 @@ export function needsT4(P: Profile, setId: string): boolean {
   return parts.length > 0 && parts.every((n) => needsT4Part(short, n));
 }
 
-// Оружие или аксессуар впрок (§4 п. 3в, вопрос 14): Legendary-предмет, который билды героя рекомендуют, но эта копия
+// Оружие или аксессуар впрок (MODEL.md §4 item 3c, вопрос 14): Legendary-предмет, который билды героя рекомендуют, но эта копия
 // не годная (main не тот), — держится одна копия, пока у героя нет годной этого предмета
 export const listedFor = (P: Profile, p: Pick<Piece, 'slot' | 'grade' | 'itemKey'>): boolean =>
   !isArmor(p.slot) && p.grade === 'unique' && !!p.itemKey
   && P.c.builds.some((b) => (p.slot === 'weapon' ? b.weapons : b.amulets).some((g) => g.key === p.itemKey));
 
-// почему пул держит вещь (§5): надета · в лучшей раскладке · лучшая своего сета в слоте · лучшая на T4 · сильная чужого
+// почему пул держит вещь (MODEL.md §5): надета · в лучшей раскладке · лучшая своего сета в слоте · лучшая на T4 · сильная чужого
 // сета · запас
 export type Why = 'worn' | 'layout' | 'menu-best' | 'menu-t4' | 'offmenu' | 'reserve';
 export interface PoolInfo {
@@ -75,7 +75,7 @@ export interface PoolInfo {
   why: Map<string, Why[]>;         // держится → почему
   reserve: Map<string, string[]>;  // reserveKey → ids of the reserves (up to CFG.reservePerHero), strongest first
   strong: Set<string>;             // держится не как запас
-  unneeded: Piece[];               // §5 п. 6: «больше не нужна»
+  unneeded: Piece[];               // MODEL.md §5 item 6: «больше не нужна»
 }
 
 // Reserve key: armor — 'set:slot:grade' (Legendary armor takes only Legendary material, so each grade keeps its own

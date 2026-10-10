@@ -1,5 +1,5 @@
 // «Обмен вещами»: понятия (A1, A2) и кандидаты получателя (C1–C9), .x/0040-trade/TESTS.md; сеанс и источники —
-// .x/0085 TESTS T7.4, вопрос 15
+// stat-sets TESTS T7.4, вопрос 15
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import { bestKit } from '@/features/trade/model/kit';

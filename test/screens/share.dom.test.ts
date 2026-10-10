@@ -211,7 +211,7 @@ describe('3.3 ссылка и карточка', () => {
     expect(card()?.querySelectorAll('.bgear-row')).toHaveLength(1);
   });
 
-  // .x/0085 этап 6: вместо билда — закреплённый набор (PLAN Д9); набора в данных смотрящего нет — строки нет
+  // stat-sets этап 6: вместо билда — закреплённый набор (PLAN Д9); набора в данных смотрящего нет — строки нет
   it('3.6 закреплённый набор отправителя — «Pinned: …»; набора нет в данных — без строки', async () => {
     const pin = pinOptions(caren)[0];
     await mount(STD(), codeOf([HELM], caren.id, pin.key));

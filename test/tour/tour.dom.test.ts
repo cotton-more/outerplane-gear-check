@@ -267,7 +267,7 @@ describe('вещь игрока не теряется', () => {
 
 // Главный тур и «Какое обучение?» идут на пустой экипировке: ничто в них не пишет в ogc.gear — ни во время, ни после.
 // Раньше «Собираю» в шторке вариантов записывал отметку в пустой стор, и после ✕ он ложился поверх всех вещей игрока;
-// теперь то же проверяем на закреплении набора (.x/0085 этап 6)
+// теперь то же проверяем на закреплении набора (stat-sets этап 6)
 describe('обучение не пишет в экипировку игрока', () => {
   const caren = D.chars.find((c) => c.name === 'Caren')!, luna = D.chars.find((c) => c.name === 'Demiurge Luna')!;
   const speed = D.sets.find((x) => x.short === 'Speed')!.id;
@@ -407,7 +407,7 @@ describe('подсказки по ходу и «Что нового»', () => {
     await click($('.vb-tab'));
     await click($('.more .has-news'));
     expect($('.tips-help .tour-new')).toBeTruthy();
-    expect(stored('tour').known).toMatchObject({ move: 1, pin: 1 }); // pin — новость «статов + сетов» (.x/0085 Д12)
+    expect(stored('tour').known).toMatchObject({ move: 1, pin: 1 }); // pin — новость «статов + сетов» (stat-sets Д12)
     expect($('.vb-tab.has-news')).toBeNull();
   });
 
@@ -468,7 +468,7 @@ describe('тур «Экипировка» на примере', () => {
     expect(stored('tour').seen['tour.gear']).toBe(1);
   });
 
-  // .x/0085 этап 6 (PLAN Д12): новость этапа одна — закрепление; тур «Экипировка» — из «Какое обучение?»
+  // stat-sets этап 6 (PLAN Д12): новость этапа одна — закрепление; тур «Экипировка» — из «Какое обучение?»
   it('давнему игроку «Что нового» — оценка и закрепление набора', async () => {
     const known = Object.fromEntries(TIPS.filter((tp) => tp.id !== 'pin').map((tp) => [tp.id, tp.rev]));
     await mount({ welcomeHidden: true, tour: { ...DONE, known } });

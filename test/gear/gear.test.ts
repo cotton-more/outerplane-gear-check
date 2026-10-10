@@ -33,7 +33,7 @@ const v1 = (pieces: Piece[], builds: Record<string, Record<string, string>>, ext
 const v2 = (pieces: Piece[], pools: Record<string, string[]>, extra: Partial<GearStore> = {}): GearStore =>
   ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...extra });
 
-describe('перенос v1 → v3 (design-final §F, .x/0085 PLAN Д11)', () => {
+describe('перенос v1 → v3 (design-final §F, stat-sets PLAN Д11)', () => {
   it('1. одна запись в нескольких билдах персонажа — один id в его пуле; «Собираю» и билды v1 не хранятся', () => {
     const p1 = rec('p1', helmet({ CHC: 2 }));
     const st = restoreGear(v1([p1], { [K]: { helmet: 'p1' }, [K2]: { helmet: 'p1' } }), idx);
@@ -650,7 +650,7 @@ describe('надетое (worn)', () => {
   });
 });
 
-describe('закрепление (pin, .x/0085 FORMULA §6)', () => {
+describe('закрепление (pin, MODEL.md §6)', () => {
   const caren = idx.CHAR[CAREN];
   const [a, b] = pinOptions(caren);
   const base = () => v2([rec('p1', helmet({ CHC: 2 })), rec('p2', helmet({ HP: 1 }))], { [CAREN]: ['p1'], [KAPPA]: ['p2'] });

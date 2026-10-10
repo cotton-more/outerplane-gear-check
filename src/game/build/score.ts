@@ -62,7 +62,7 @@ export const topTokens = (build: Build, n: number, im: ItemMains = NO_MAINS, use
   return build.subs.filter((_, i) => place[i] < n).flat().map((k) => k.trim()).filter(Boolean);
 };
 
-// allPlaces — очки «статов + сетов» (.x/0085 FORMULA §1 п. 2): засчитывается каждое место цепочки, без отсечки после 4-го
+// allPlaces — очки «статов + сетов» (MODEL.md §1 item 2): засчитывается каждое место цепочки, без отсечки после 4-го
 export function subWeights(ctx: Ctx, build: Build, c: Char, im: ItemMains = NO_MAINS, allPlaces = false): Map<string, SubWeight> {
   // «ключ сабстата предмета → вес / ступень / засчитывается (1, ½, 0)» по приоритету билда
   const out = new Map<string, SubWeight>();

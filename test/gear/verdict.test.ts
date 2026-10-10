@@ -1,4 +1,4 @@
-// Вердикт новой вещи и пул героя по «статам + сетам» (.x/0085-stat-set-model, TESTS T5, T6; FORMULA §4, §5) и
+// Вердикт новой вещи и пул героя по «статам + сетам» (stat-sets, TESTS T5, T6; MODEL.md §4, §5) и
 // свойство C1 прототипа: вердикт и пул согласны.
 import { describe, expect, it } from 'vitest';
 import type { Char } from '@/game/data/types';

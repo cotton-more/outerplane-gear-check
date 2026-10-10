@@ -1,4 +1,4 @@
-// Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 и v2 → v3 (GEARPOOL, .x/0085 PLAN Д11), старый
+// Экипировка в хранилище и в коде копии: чтение с проверкой, перенос v1 и v2 → v3 (GEARPOOL, stat-sets PLAN Д11), старый
 // код OGC-GEAR2. Перенос детерминированный: все вещи v1 — в пул персонажа (запись у двух персонажей — в оба пула, без
 // копии). Ни одна вещь и ни одна запись пула и надетого не теряются, кроме правила Core Fusion (features/gear/model/fusion):
 // у X и у Core Fusion X вещи — вещи X убраны. Все, у кого есть вещи, — в ростер (Р16). Поля прежней модели (LEGACY:
@@ -19,7 +19,7 @@ interface GearStoreV1 { v: 1; seq: number; pieces: Record<string, Piece>; builds
 export const newerGear = (raw: unknown): boolean =>
   !!raw && typeof raw === 'object' && typeof (raw as { v?: unknown }).v === 'number' && (raw as { v: number }).v > 3;
 
-// поля прежней модели (v2 и v1): перенос в v3 их снимает (.x/0085 PLAN Д11)
+// поля прежней модели (v2 и v1): перенос в v3 их снимает (stat-sets PLAN Д11)
 const LEGACY = ['marks', 'autoNew', 'aim', 'pinned', 'v1builds'] as const;
 const withoutLegacy = <T extends object>(r: T): T =>
   Object.fromEntries(Object.entries(r).filter(([k]) => !(LEGACY as readonly string[]).includes(k))) as T;
@@ -108,7 +108,7 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
   }
   return out;
 }
-// закрепление (.x/0085 FORMULA §6) — герой → ключ, только строки; ключ, которого больше нет в данных, переносит или снимает
+// закрепление (MODEL.md §6) — герой → ключ, только строки; ключ, которого больше нет в данных, переносит или снимает
 // с сообщением разбор хранилища (stored, fixPins)
 const restorePin = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
@@ -143,7 +143,7 @@ export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): L
 // данных — старая закэшированная PWA с прежним снимком или поле новой версии). Всё из сырых данных есть в прочитанном как
 // было; дописанное (значения по умолчанию) — не потеря, как и счётчик seq выше и пустые пулы. Поля прежней модели
 // (LEGACY) — не потеря: перенос снимает их нарочно, иначе нормализацию никогда бы не записали и перенос шёл бы при
-// каждой загрузке (.x/0085 IMPACT §8). v1 — сверка с проверкой v1. Нет данных — нечего терять; мусор — теряется
+// каждой загрузке (stat-sets IMPACT §8). v1 — сверка с проверкой v1. Нет данных — нечего терять; мусор — теряется
 export function readsWhole(raw: unknown, idx: Index): boolean {
   if (raw == null) return true;
   const r = (typeof raw === 'object' ? raw : {}) as { v?: unknown; seq?: unknown };

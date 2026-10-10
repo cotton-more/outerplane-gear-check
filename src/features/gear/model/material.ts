@@ -1,5 +1,5 @@
 // Что стало со снятой вещью после «Надеть» / «Заменить» (сообщение под тостом). Материал новой вещи по «статам + сетам» —
-// features/gear/verdict (FORMULA §4 п. 3).
+// features/gear/verdict (MODEL.md §4 item 3).
 import type { Piece } from './gear';
 import { sameForBt } from '@/game/item/item';
 import { isArmor } from '@/game/data';

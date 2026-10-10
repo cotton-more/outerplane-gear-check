@@ -1,5 +1,5 @@
-// Данные карточки героя (features/worn/wearing, .x/0085 этап 6): «Переодеть» — лучшая раскладка против надетого (+1 очко,
-// FORMULA §3 item 3; a Legendary instead of an Epic of the same slot — no +1, Q7), «Что искать» and pin variants — by the best layout for the set, the substat colour by points (PLAN Д1),
+// Данные карточки героя (features/worn/wearing, stat-sets этап 6): «Переодеть» — лучшая раскладка против надетого (+1 очко,
+// MODEL.md §3 item 3; a Legendary instead of an Epic of the same slot — no +1, Q7), «Что искать» and pin variants — by the best layout for the set, the substat colour by points (PLAN Д1),
 // причины в списке вещей. Герои — из эталонных данных, вещи — синтетические.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';

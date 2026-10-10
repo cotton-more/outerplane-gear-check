@@ -1,4 +1,4 @@
-// Лучший комплект получателя (R6.1; польза — как у лучшей раскладки, .x/0085 FORMULA §3) из кандидатов — то, что
+// Лучший комплект получателя (R6.1; польза — как у лучшей раскладки, MODEL.md §3) из кандидатов — то, что
 // приложение собрало бы по его заказу, если бы все кандидаты лежали в его пуле (features/gear/layout bestLayout):
 // оружие и аксессуар — по слоту (ранг, потом очки), броня — перебор слотов, максимум V.
 // Слоты независимы по пользе и по ничьим (суммы и порядок по слотам), поэтому лучшее по частям = лучшее целиком.
@@ -14,7 +14,7 @@ const EMPTY = Number.POSITIVE_INFINITY; // ранг и номер пустого
 const betterInSlot = (a: Cand, z: Cand) =>
   a.v !== z.v ? a.v > z.v : isLegend(a) !== isLegend(z) ? isLegend(a) : a.cost !== z.cost ? a.cost < z.cost : a.loss !== z.loss ? a.loss < z.loss
     : a.rank !== z.rank ? a.rank < z.rank : a.item.ord < z.item.ord;
-// оружие и аксессуар: сначала ранг (§3 п. 2)
+// оружие и аксессуар: сначала ранг (MODEL.md §3 item 2)
 const betterGear = (a: Cand, z: Cand) => (FIT[a.fit] !== FIT[z.fit] ? FIT[a.fit] > FIT[z.fit] : betterInSlot(a, z));
 
 // fix — слоты, заданные заранее (порог): вещь или null (слот пуст)
@@ -136,7 +136,7 @@ function armorKey(g: Gauge, arm: readonly (Cand | null)[]): KitKey {
   return { rank: 0, total, pts, halves, eff, filled, legends, cost, loss, ranks, ords };
 }
 
-// ключ всего комплекта (польза §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры)
+// ключ всего комплекта (польза MODEL.md §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры)
 export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
   const k = armorKey(g, ARMOR_SLOTS.map((s) => slots[s] ?? null));
   const ranks: number[] = [], ords: number[] = [];

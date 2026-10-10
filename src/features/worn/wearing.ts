@@ -1,5 +1,5 @@
-// Данные карточки героя по «статам + сетам» (.x/0085 FORMULA §3, §6; макет этапа 6.0, решения 1–5): вкладка «Надето» —
-// слоты, включённые бонусы, «Переодеть» (лучшая раскладка из своих вещей против надетого, +1 очко по §3 п. 3) и «Что
+// Данные карточки героя по «статам + сетам» (MODEL.md §3, §6; макет этапа 6.0, решения 1–5): вкладка «Надето» —
+// слоты, включённые бонусы, «Переодеть» (лучшая раскладка из своих вещей против надетого, +1 очко по MODEL.md §3 item 3) и «Что
 // искать» (наборы меню, где у героя 1–3 из 4, — по лучшей раскладке под набор, как при закреплении); варианты шторки
 // закрепления. Только данные — вещи, числа, части; подписи делает интерфейс.
 import { FLAT, SLOTS } from '@/game/data';
@@ -35,7 +35,7 @@ function chainTokens(ctx: Ctx, c: Char, chain: Build | null, p: Piece | null | u
 }
 
 // «Переодеть»: вещи лучшей раскладки, которые не надеты (replaces — что сейчас в её слоте), прирост V и половины; rankUp —
-// встаёт рекомендованное оружие или аксессуар (§3 п. 3: ранг раньше очков) — тогда pts бывает и меньше нуля
+// встаёт рекомендованное оружие или аксессуар (MODEL.md §3 item 3: ранг раньше очков) — тогда pts бывает и меньше нуля
 export interface Redress { pts: number; rankUp: boolean; on: PartChange[]; off: PartChange[]; wear: { piece: Piece; replaces: Piece | null }[] }
 // «Что искать»: набор, сколько его вещей в лучшей раскладке под него (k из n) и каких слотов не хватает — с сетом части
 // (set null — в наборе из одного сета)
@@ -57,7 +57,7 @@ export interface WornView {
   build: string;           // the build the chain comes from — named on the card only next to another chain
   alt: AltChain[];         // the hero's other chains (Heatwave Cop Delta: DPS and Support), same sums, for reference
   bonuses: BonusRow[];     // включённые бонусы надетых сетов
-  redress: Redress | null; // лучшая раскладка лучше надетой (§3 п. 3)
+  redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
   seek: Fill[];            // «Что искать»: 1–3 из 4, от ближнего; закреплён — только его набор
   pool: number;            // вещей в пуле героя
 }
@@ -132,7 +132,7 @@ export function chainSums(ctx: Ctx, chain: Pick<Build, 'subs'>, tokens: readonly
   return out;
 }
 
-// лучшая раскладка (нынешняя, D3) против надетого: лучше по §3 п. 3 — что надеть
+// лучшая раскладка (нынешняя, D3) против надетого: лучше по MODEL.md §3 item 3 — что надеть
 export function redressOf(hp: HeroPool, worn: Layout): Redress | null {
   const best = hp.info.layout, vb = hp.info.value, vw = layoutValue(hp.P, worn);
   if (!better(vb, vw, epicToLegend(worn, best))) return null; // Q7: Legendary in place of Epic — no +1

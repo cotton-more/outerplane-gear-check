@@ -63,7 +63,7 @@ const click = async (el: HTMLElement | null | undefined) => { if (!el) throw new
 const byText = (sel: string, text: string) => $$(sel).find((e) => e.textContent?.includes(text));
 const stored = (k: string) => JSON.parse(localStorage.getItem('ogc.' + k) ?? 'null');
 const onCard = { tab: 'chars', charId: caren.id, slot: 'helmet', grade: 'unique' };
-// .x/0085 этап 6: ненадетая вещь — во вкладке «Пул» карточки
+// stat-sets этап 6: ненадетая вещь — во вкладке «Пул» карточки
 const toPool = async () => { const t = byText('.btabs [role="tab"]', 'Pool'); if (t?.getAttribute('aria-selected') !== 'true') await click(t); };
 const openSpeed = async () => { await toPool(); await click(byText('.pool-row', 'Speed Set')); };
 
@@ -90,7 +90,7 @@ describe('режим «для героя»', () => {
   it('в режиме героя у неё лучше — только «Надеть» (ввод надетого); имени в строке нет — оно на полосе', async () => {
     const gear = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, tryon: { charId: caren.id, build: 'Speed' } });
-    // у Caren не хуже, а вещь «Оставить» для героев не из ростера — «Спорно» (.x/0085 FORMULA §4 п. 4); про Caren — в заголовке
+    // у Caren не хуже, а вещь «Оставить» для героев не из ростера — «Спорно» (MODEL.md §4 item 4); про Caren — в заголовке
     expect($('.vcard .vc-title')?.textContent).toMatch(/; Caren already has as good$/);
     expect($('.vcard .vc-vs b')).toBeNull();
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
@@ -122,7 +122,7 @@ describe('режим «для героя»', () => {
     expect($('.tryon')).toBeNull();
   });
 
-  // .x/0085 этап 6: «Примерить» билда ушло — «Ввести» на «Надето» ставит только слот
+  // stat-sets этап 6: «Примерить» билда ушло — «Ввести» на «Надето» ставит только слот
   it('«Ввести» на пустом слоте: слот, сета нет, грейд прежний; вещь, которую вводили, — в «Вернуть»; Caren — в ростер', async () => {
     await mount({ ...onCard, slot: 'gloves', grade: 'rare' }, { setId: speed, subs: { CHC: 2, SPD: 1 } }, { roster: [] });
     await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));
@@ -310,7 +310,7 @@ describe('штамп по вещам героев', () => {
   // на Caren · Speed — шлем заметно лучше новой (сравнение — как есть, по уровням)
   const STRONG = { ...GEAR, pieces: { p1: { ...GEAR.pieces.p1, yellow: { 'DEF%': 3, CHC: 3, SPD: 2, EFF: 1 }, lit: { 'DEF%': 6, CHC: 5, SPD: 3, EFF: 2 } } } };
 
-  // у Caren лучше, а героям не из ростера она «Оставить» — «Спорно» (FORMULA §4 п. 4), строки Caren и кнопки нет
+  // у Caren лучше, а героям не из ростера она «Оставить» — «Спорно» (MODEL.md §4 item 4), строки Caren и кнопки нет
   it('Caren носит лучше — «Спорно» для тех, кого нет в ростере: строки героя и кнопки «Надеть» нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: STRONG });
     expect($('.vcard .stamp')?.textContent).toBe('Maybe');

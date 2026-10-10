@@ -1,5 +1,5 @@
 // План героя целиком (R6, R8, .x/0040-trade/SPEC.md): кандидаты → порог → дыры. Честная строка заказа набора
-// (.x/0085 FORMULA §7 п. 3): часть, которая не собралась, потому что её сета нет в нужном числе слотов.
+// (MODEL.md §7 item 3): часть, которая не собралась, потому что её сета нет в нужном числе слотов.
 import type { SlotId } from '@/game/data/types';
 import { candidates, type CandInput } from './cands';
 import { planFor, type Plan } from './gate';
