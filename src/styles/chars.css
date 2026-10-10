@@ -228,7 +228,7 @@ html.xs .bgear-t { grid-row: 3; }
 /* the chain with segment sums (WornGear WornChain): the chain's colours, the fill and border weaker with fewer segments
    (--k, 0…1 within one colour). Text is the colour mixed with ink: contrast ≥ 4.5 on the strongest fill in both themes
    (on the plain colour it fell to ~3 — owner: CHD 13, HP 5 blended into the fill) */
-.wchain-alt { margin: -2px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; } /* another build's chain, for reference */
+.wchain-alt { margin: 0; display: grid; gap: 2px; } /* a build's chain when the hero has two or more: its name on its own line, the stats under it */
 .wchain-b { font-size: 12px; color: var(--ink-2); }
 .wchain .wch { display: inline-flex; align-items: center; gap: 3px; }
 .wchain .pill b { font-weight: 800; }

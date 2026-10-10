@@ -97,11 +97,12 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
           </div>
         )}
         <div className="worn-h" {...(shown ? {} : tour('bgear'))}>{title}{share}</div>
+        {/* two or more chains: each one's name stands on its own line above its stats, so every chain starts at one left edge */}
         {shownPts && wv.chain.length > 0 && (wv.alt.length
-          ? <p className="wchain-alt"><span className="wchain-b">{wv.build}:</span> <WornChain chain={wv.chain} anchor={!shown} /></p>
+          ? <div className="wchain-alt"><span className="wchain-b">{wv.build}</span><WornChain chain={wv.chain} anchor={!shown} /></div>
           : <WornChain chain={wv.chain} anchor={!shown} />)}
         {shownPts && wv.alt.map((a) => (
-          <p key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}:</span> <WornChain chain={a.chain} anchor={false} /></p>
+          <div key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}</span><WornChain chain={a.chain} anchor={false} /></div>
         ))}
         {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}{setPts(i)}</p>)}</div>}
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>

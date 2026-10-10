@@ -556,6 +556,23 @@ describe('карточка персонажа', () => {
       ['ok', 'DEF% 8'], ['ok', 'CHC 12'], ['miss', 'CHD'], ['ok', 'SPD 4'], ['ok', 'DMG UP% 4'],
     ]);
     expect($$('.wchain-alt')).toHaveLength(0); // the builds share one chain: no second line
+    expect($('.wchain-b')).toBeNull();         // one chain: no name
+  });
+
+  // two chains (Heatwave Cop Delta: DPS and Priority Support/PvP): each chain's name stands on its own line before its stats
+  // (no colon), the stats in the chain's own order
+  it('Worn tab, two chains: the build name stands above each chain, no colon', async () => {
+    const delta = char('Heatwave Cop Delta');
+    const ps = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('p' + (i + 1), slot, speed, { SPD: 2, CHC: 2 }));
+    await mount({ tab: 'chars', charId: delta.id }, {}, { gear: G(ps, { [delta.id]: ps.map((p) => p.id as string) }, { worn: { [delta.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } }) });
+
+    const rows = $$('.wchain-alt');
+    expect(rows.map((r) => r.firstElementChild?.className)).toEqual(['wchain-b', 'wchain-b']);
+    expect(rows.map((r) => r.firstElementChild?.textContent)).toEqual(['DPS', 'Priority Support/PvP']);
+    expect(rows.every((r) => r.children[1].classList.contains('wchain'))).toBe(true);
+    const keys = (r: HTMLElement) => [...r.querySelectorAll('.pill')].map((e) => e.textContent?.replace(/\s*\d+$/, ''));
+    expect(keys(rows[0])[0]).toBe('CHC');           // DPS: CHC first
+    expect(keys(rows[1])[0]).toBe('SPD');           // Priority Support/PvP: SPD first
   });
 
   it('«Билды» — справка outerpedia: переключатель билдов и их сеты, без «N/6» и «Собираю»', async () => {
