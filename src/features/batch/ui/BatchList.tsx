@@ -2,7 +2,9 @@
 // the piece into the form to fix it, ✕ removes it. «E · Caren» and «🔒 шлем» rows — only ✕. «Посчитать» — the plan.
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
+import { useEffect, useRef } from 'react';
 import type { BatchEntry } from '@/features/batch/batch';
+import type { BatchFresh } from '@/features/batch/useBatchMode';
 import type { SlotId } from '@/game/data/types';
 import type { Piece } from '@/features/gear/model/gear';
 import { inputOfPiece } from '@/features/batch/plan';
@@ -29,21 +31,30 @@ export function BatchPiece({ ctx, n, x, children }: { ctx: Ctx; n: number; x: It
   );
 }
 
+// fresh — the entry just added or fixed (wide screen, owner 2026-10-10: past 13 rows a new one was below the column's
+// edge — was it added?): the column scrolls to it and the row comes in (motion.css .brow.fresh); a new key replays it
 // wornOf — an «E» entry's piece (the hero's worn record): shown like a free piece plus a line with the hero's round
 // portrait and name (owner 2026-10-09); no record — the hero line alone
-export function BatchList({ ctx, items, editing, wornOf, onFix, onRemove, onPlan }: {
-  ctx: Ctx; items: readonly BatchEntry[]; editing: number | null; wornOf: (c: string, slot: SlotId) => Piece | null;
+export function BatchList({ ctx, items, editing, fresh, wornOf, onFix, onRemove, onPlan }: {
+  ctx: Ctx; items: readonly BatchEntry[]; editing: number | null; fresh: BatchFresh | null; wornOf: (c: string, slot: SlotId) => Piece | null;
   onFix: (n: number) => void; onRemove: (n: number) => void; onPlan: () => void;
 }) {
   const t = useT();
+  const list = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    if (fresh) list.current?.children[fresh.n - 1]?.scrollIntoView({ block: 'nearest' });
+  }, [fresh]);
   return (
     <div className="batch">
       {!items.length && <p className="muted small">{t.batch.empty}</p>}
-      <ol className="bgear-list batch-items">
+      <ol ref={list} className="bgear-list batch-items">
         {items.map((e, i) => {
+          const isNew = fresh?.n === i + 1;
+          const key = isNew ? `${i}:${fresh.seq}` : i;
+          const nw = isNew ? ' fresh' : '';
           const x = <CloseButton className="brow-x hit" label={t.batch.remove(i + 1)} title={t.batch.remove(i + 1)} onClick={() => onRemove(i + 1)} />;
           return e.kind === 'piece' ? (
-            <li key={i} className={`bgear-row brow${editing === i + 1 ? ' editing' : ''}`}>
+            <li key={key} className={`bgear-row brow${editing === i + 1 ? ' editing' : ''}${nw}`}>
               <button type="button" className="brow-fix" onClick={() => onFix(i + 1)} aria-label={`#${i + 1}`} />
               <BatchPiece ctx={ctx} n={i + 1} x={e.input}>{x}</BatchPiece>
             </li>
@@ -52,19 +63,19 @@ export function BatchList({ ctx, items, editing, wornOf, onFix, onRemove, onPlan
             const p = wornOf(e.c, e.slot);
             const hero = c && <span className="bworn"><HeroFace c={c} round /><HeroName c={c} /></span>;
             return p ? (
-              <li key={i} className="bgear-row brow bmark">
+              <li key={key} className={`bgear-row brow bmark${nw}`}>
                 <BatchPiece ctx={ctx} n={i + 1} x={inputOfPiece(p)}>{x}</BatchPiece>
                 {hero}
               </li>
             ) : (
-              <li key={i} className="bgear-row brow bmark">
+              <li key={key} className={`bgear-row brow bmark${nw}`}>
                 <SlotIcon slot={e.slot} />
                 <span className="bgear-n"><b className="bnum">#{i + 1}</b>{hero}</span>
                 {x}
               </li>
             );
           })() : (
-            <li key={i} className="bgear-row brow bmark">
+            <li key={key} className={`bgear-row brow bmark${nw}`}>
               <SlotIcon slot={e.slot} />
               <span className="bgear-n"><b className="bnum">#{i + 1}</b>{t.batch.lockRow(e.slot)}</span>
               {x}

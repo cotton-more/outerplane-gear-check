@@ -25,12 +25,15 @@ export interface BatchAsk { slot: boolean; grade: boolean }
 // grade — the first piece's (owner 2026-10-09: 60 Epic swords — 60 taps on «E» otherwise; Epic and Legendary are
 // different materials, so a mix-up is the costliest mistake); explain — a tap on a locked one: the note says why
 export interface BatchLock { slots: SlotId[]; set: string | null; grade: Grade | null; explain: () => void }
+// seq — a new one per put, so fixing the same #n again scrolls and plays again
+export interface BatchFresh { n: number; seq: number }
 const ARMOR_SLOTS: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
 export interface BatchMode {
   on: boolean;
   batch: Batch;
   editing: number | null;          // #n being fixed on the form («Сохранить #n»)
+  fresh: BatchFresh | null;        // wide screen: the entry just added or fixed — the list scrolls to it
   note: string | null;             // «Введены не все сабстаты…» for a few seconds
   view: BatchView;                 // phone: the sheet; wide screen: what the right column shows
   plan: Plan | null;               // only while view is 'plan' or 'walk'
@@ -71,6 +74,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     if (persist) storage.set('batch', next);
   };
   const [editing, setEditing] = useState<number | null>(null);
+  const [fresh, setFresh] = useState<BatchFresh | null>(null);
   const [view, setView] = useState<BatchView>(null);
   const [asking, setAsking] = useState(false);
   const [note, setNote] = useTimed<string>(4000);
@@ -102,7 +106,10 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     // fixing the only entry may change the kind
     const rest = free ? null : kind;
     if (!fitsKind(rest, k) || (grade && e.kind === 'piece' && e.input.grade !== grade)) { setNote(kindText(rest)); return false; }
-    set(putItem(value, e, editing));
+    const next = putItem(value, e, editing);
+    set(next);
+    // the phone's list is in a closed sheet: nothing to scroll; the strip's count says it
+    if (!narrow) setFresh((f) => ({ n: editing ?? next.items.length, seq: (f?.seq ?? 0) + 1 }));
     setEditing(null);
     setNote(null);
     return true;
@@ -113,9 +120,9 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const slotKind = (slot: SlotId): BatchKind => (isArmor(slot) ? 'armor' : (slot as 'weapon' | 'accessory'));
 
   const toForm = () => { if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }); };
-  const close = () => { setAsk(null); setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setAsking(false); };
+  const close = () => { setAsk(null); setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setFresh(null); setAsking(false); };
   return {
-    on: !!value, batch, editing, note, view, plan, walk, lock, asking,
+    on: !!value, batch, editing, fresh, note, view, plan, walk, lock, asking,
     wornOf: (c, slot) => { const id = gear.store.worn?.[c]?.[slot]; return id ? gear.store.pieces[id] ?? null : null; },
     what: whatOf(kind),
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
@@ -145,7 +152,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
       setEditing((e) => (e === n ? null : e !== null && e > n ? e - 1 : e));
       if (gone) say({ text: t.batch.removed(n), note: '', tab: 'eval', after: () => { if (current.current) set(restoreItem(current.current, gone)); } });
     },
-    show: setView,
+    show: (v) => { setView(v); setFresh(null); },
     skip: (line, hero) => { if (value) set(addSkip(value, skipKey(line, hero))); },
     twin: (n) => { if (value) set(setTwin(value, n)); },
     // «Записать план»: the plan on the current store — never a stale one; «Вернуть» undoes its operations and brings the batch back

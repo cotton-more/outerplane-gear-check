@@ -63,7 +63,7 @@ describe('batch rows', () => {
     const items: BatchEntry[] = ps.map((p) => ({ kind: 'piece', input: inputOfPiece(p) }));
     const noop = () => {};
     const body = new JSDOM(`<body>${renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS.en },
-      createElement(BatchList, { ctx, items, editing: null, wornOf: () => null, onFix: noop, onRemove: noop, onPlan: noop }))))}</body>`).window.document.body;
+      createElement(BatchList, { ctx, items, editing: null, fresh: null, wornOf: () => null, onFix: noop, onRemove: noop, onPlan: noop }))))}</body>`).window.document.body;
     return [...body.querySelectorAll('.brow')];
   };
   it('no grade chip, no set, no T0–T3; the caption is in the grade\'s colour; T4 only at T4', () => {

@@ -35,6 +35,8 @@ html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 /* a long batch: «Посчитать» / «Записать план» stay at hand at the bottom of the sheet and of the wide screen's column (.panel —
    the same --surface) */
 .batch-sheet .batch-acts, .batch-col .batch-acts { position: sticky; bottom: 0; z-index: 2; padding: 8px 0 4px; background: var(--surface); } /* above the rows' ✕ (z-index 1) */
+/* a row scrolled to after «В партию» (BatchList fresh) stops above that bar, not under it */
+.batch-col .brow { scroll-margin-bottom: 64px; }
 /* the column's bottom padding is the bar's own: rows don't show through under it */
 .batch-col .batch-acts { padding-bottom: 12px; }
 /* the step-by-step walk (MODEL.md §8 item 7): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
