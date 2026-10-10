@@ -17,6 +17,8 @@ export function withHero(text: string, c: Pick<Char, 'name' | 'element' | 'class
   const i = m.index + m[1].length;
   // the tag and the characters stuck to it (no plain space between: «'s», «)», «-а») are one no-wrap unit, so «Kappa» is
   // never left alone on a line with «'s helmet» on the next; a no-break-spaced run («Caren · запас») goes with it
-  const before = /[^ ]*$/.exec(text.slice(0, i))![0], after = /^[^ ]*/.exec(text.slice(i + c.name.length))![0];
-  return <>{text.slice(0, i - before.length)}<span className="nw">{before}<HeroTag c={c} />{after}</span>{text.slice(i + c.name.length + after.length)}</>;
+  // («'s» takes the next word along: «Core Fusion Eternal / 's armor», not «'s» alone on a line)
+  const rest = text.slice(i + c.name.length);
+  const before = /[^ ]*$/.exec(text.slice(0, i))![0], after = /^[^ ]*/.exec(rest)![0] + (/^['’]s(?= \S)/.test(rest) ? /^ [^ ]*/.exec(rest.slice(2))![0] : '');
+  return <>{text.slice(0, i - before.length)}<span className="nw">{before}<HeroTag c={c} />{after && <span className="nwx">{after}</span>}</span>{text.slice(i + c.name.length + after.length)}</>;
 }

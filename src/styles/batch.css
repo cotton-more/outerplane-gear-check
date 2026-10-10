@@ -16,7 +16,7 @@
 .batch .bgear-nm { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .batch .bgear-n:has(> .bgear-nm) { align-items: baseline; }
 .batch .bgear-nm .pn { overflow: visible; text-overflow: clip; }
-.batch .bgear-nm .pm { display: inline-block; margin-left: .3em; white-space: nowrap; }
+.batch .bgear-nm .pm { margin-left: 0; white-space: nowrap; } /* the space before it is a no-break one (PieceName), so it hangs on the name's last word */
 .bfate { grid-column: 2 / 3; font-weight: 600; color: var(--ink); }
 .b-wear .bfate, .b-keep .bfate, .b-reserve .bfate { color: var(--keep); }
 .b-feed .bfate { color: var(--fodder, var(--accent)); }

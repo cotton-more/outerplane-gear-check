@@ -70,7 +70,7 @@ describe('batch rows', () => {
     const [ew, lw, g0, g4] = rows(epicW('ATK%'), legendW('HP%', 4), gloves(0), gloves(4, 'rare'));
     expect([ew, lw, g0, g4].map((r) => r.querySelector('.gl'))).toEqual([null, null, null, null]);
     expect([ew, lw, g0, g4].map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual([
-      '#1Steel Sword· ATK%', `#2${name17}· HP%`, '#3gloves', '#4gloves']);
+      '#1Steel Sword\u00A0· ATK%', `#2${name17}\u00A0· HP%`, '#3gloves', '#4gloves']);
     expect(ew.querySelector('.pn.gname.epic')?.textContent).toBe('Steel Sword');
     expect(ew.querySelector('.pm.gname.epic')).toBeTruthy();
     expect(lw.querySelector('.pn.gname.legend')?.textContent).toBe(name17);

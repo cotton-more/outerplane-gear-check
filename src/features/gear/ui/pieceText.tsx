@@ -46,7 +46,8 @@ export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boole
     <>
       {!batch && <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>}
       {name && <span className={`pn${tone}`}>{name}</span>}
-      {main && <span className={`pm${tone}`}>{name ? '· ' : ''}{main}</span>}
+      {/* batch: a no-break space glues «· ATK%» to the name's last word, so a wrapped name never leaves it leading a line */}
+      {main && <span className={`pm${tone}`}>{name ? `${batch ? '\u00A0' : ''}· ` : ''}{main}</span>}
     </>
   );
 }
