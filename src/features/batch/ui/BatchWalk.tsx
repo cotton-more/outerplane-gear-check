@@ -121,8 +121,8 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                     <Toggle className="bstep-l" checked={done} label={title} onChange={() => onTick(s.key)}>
                       <span className="bstep-t">
                         <span className="bstep-h">
-                          <b>{tail ? <>{withHero(title.slice(0, title.length - tail.length), hero)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{tail}</span></> : withHero(title, hero)}</b>
                           {no && <span className="bstep-no">{no}</span>}
+                          <b>{tail ? <>{withHero(title.slice(0, title.length - tail.length), hero)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{tail}</span></> : withHero(title, hero)}</b>
                         </span>
                         {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
                         {kept && <span className="bstep-k">{withHero(kept.text, kept.c)}</span>}
