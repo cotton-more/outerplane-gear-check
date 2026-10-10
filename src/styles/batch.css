@@ -55,10 +55,16 @@ html.narrow .vbar.compact .bmark-b { min-width: 36px; padding: 0 6px; }
 html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 /* the lock in a row: after the number */
 .batch .bgear-n .ico-lock { width: 14px; height: 14px; color: #fff; } /* over .bgear-row .ico's grey (chars.css) */
-.batch-whose { display: grid; gap: 6px; }
-.bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
-/* a worn piece's owner: the round portrait (HeroFace round, base.css); the picker's is bigger */
-.bwho .face-round { width: 36px; height: 36px; }
+/* «E» picker: square tiles, the round portrait over the name (prefix in a small line above it, like the hero list) */
+.batch-whose { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+.batch-whose > p { grid-column: 1 / -1; }
+.bwho {
+  aspect-ratio: 1; min-width: 0; height: auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 6px 4px; text-align: center; white-space: normal;
+}
+.bwho .face-round { width: 44px; height: 44px; flex: none; }
+.bwho .cn { font-size: 12px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.bwho .cp { display: block; font-size: 10.5px; font-weight: 500; color: var(--ink-3); }
 .bmark .bgear-n { font-weight: 600; }
 .bstage { display: grid; gap: 6px; }
 .bstage h4 { margin: 4px 0 0; font-size: 13px; }

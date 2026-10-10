@@ -17,6 +17,7 @@ import { land, takeOff, type Leg } from '@/shared/fly';
 import { addSkip, entriesOf, inputOfEntry, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
 import { planBatch, skipKey, undoPlan, type Plan } from './plan';
 import { walkOf, type Walk } from './walk';
+import { compareChars } from '@/features/roster/charFilter';
 
 export type BatchView = 'list' | 'plan' | 'walk' | null;
 // the form under a batch of a known kind (owner 2026-10-08): other slots and sets can't be picked — a new batch for them
@@ -54,7 +55,7 @@ export interface BatchMode {
   skip: (line: string, hero: string) => void;
   twin: (n: number) => void;
   done: () => void;
-  wornCands: (slot: SlotId) => Char[] | null; // «E»: roster heroes wearing a piece of this slot that fits the batch; null — the slot is asked first
+  wornCands: (slot: SlotId) => Char[] | null; // «E»: roster heroes wearing a piece of this slot that fits the batch, by name; null — the slot is asked first
   addWorn: (c: string, slot: SlotId, from: Element | null) => void; // from — the tapped button: it flies into the list
   addLock: (input: ItemInput, complete: boolean) => void; // «🔒»: entered like «В партию» (owner 2026-10-10: its stats say which piece)
   tick: (step: string) => void;    // ✓ a walk step
@@ -187,7 +188,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
         const id = gear.store.worn?.[c.id]?.[slot];
         const p = id ? gear.store.pieces[id] : null;
         return !!p && fitsKind(kind, kindOfInput(p)) && (!grade || p.grade === grade);
-      });
+      }).sort(compareChars); // by name, like the hero list (owner 2026-10-10)
     },
     // «E» and «🔒» take the form's slot: armor asks it first, like a piece
     addWorn: (c, slot, from) => {

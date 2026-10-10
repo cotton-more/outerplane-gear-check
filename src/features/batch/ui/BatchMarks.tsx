@@ -1,6 +1,7 @@
 // «E · надето» and «🔒 · отложено» next to «В партию» (owner 2026-10-10: they add an entry just like it): the form's
 // footer on a wide screen, the bottom bar on a phone (words hidden there, see batch.css). «E» — a piece worn by a hero
-// (picker: heroes wearing this slot that fits the batch), no substats; «🔒» — a locked piece, entered on the form like
+// (picker: heroes wearing this slot that fits the batch, by name, as square tiles — round portrait over the name, owner
+// 2026-10-10: easier to find a face than read a list), no substats; «🔒» — a locked piece, entered on the form like
 // «В партию»: its substats only say which piece it is
 import { useState } from 'react';
 import type { Char } from '@/game/data/types';
@@ -31,7 +32,7 @@ export function BatchMarks({ cands, what, onWorn, onLock }: {
           <div className="batch-whose">
             {pick.length ? pick.map((c) => (
               <button key={c.id} type="button" className="btn bwho" onClick={(ev) => { onWorn(c.id, ev.currentTarget.querySelector('.face') ?? ev.currentTarget); setPick(null); }}>
-                <HeroFace c={c} round /><HeroName c={c} />
+                <HeroFace c={c} round /><span className="cn"><HeroName c={c} stacked /></span>
               </button>
             )) : <p className="muted small">{t.batch.whoseNone(what)}</p>}
           </div>
