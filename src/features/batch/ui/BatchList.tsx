@@ -1,5 +1,5 @@
 // What is in the batch (DEVELOPMENT.md "features/batch"): #1…#N in the entered order — the game filter's order; a tap loads
-// the piece into the form to fix it, ✕ removes it. «E · Caren» and «🔒 шлем» rows — only ✕. «Посчитать» — the plan.
+// the piece into the form to fix it, ✕ removes it. «E · Caren» rows and «🔒 шлем» without substats — only ✕. «Посчитать» — the plan.
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import { useEffect, useLayoutEffect, useRef } from 'react';
@@ -11,7 +11,7 @@ import type { Piece } from '@/features/gear/model/gear';
 import { inputOfPiece } from '@/features/batch/plan';
 import { HeroName } from '@/game/hero/HeroName';
 import { useT } from '@/i18n';
-import { SlotIcon } from '@/game/icons/Img';
+import { LockIcon, SlotIcon } from '@/game/icons/Img';
 import { SubToken } from '@/game/item/SubToken';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { CloseButton } from '@/shared/ui/CloseButton';
@@ -19,12 +19,13 @@ import { formPiece } from '@/features/gear/verdict';
 import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
 
 // a batch piece as a row: number, slot, caption (Q4: no grade chip, the grade and set are in the title), substats, T4
-export function BatchPiece({ ctx, n, x, children }: { ctx: Ctx; n: number; x: ItemInput; children?: React.ReactNode }) {
+// locked — a «🔒» entry entered with its substats: the lock after the number
+export function BatchPiece({ ctx, n, x, locked = false, children }: { ctx: Ctx; n: number; x: ItemInput; locked?: boolean; children?: React.ReactNode }) {
   const p = formPiece(x);
   return (
     <>
       <SlotIcon slot={x.slot} />
-      <span className="bgear-n"><b className="bnum">#{n}</b><span className="bgear-nm"><PieceName ctx={ctx} p={p} batch /></span></span>
+      <span className="bgear-n"><b className="bnum">#{n}</b>{locked && <LockIcon />}<span className="bgear-nm"><PieceName ctx={ctx} p={p} batch /></span></span>
       {children}
       <span className="bgear-t">{Object.entries(x.subs).map(([k, v]) => <SubToken key={k} stat={k} lit={v} />)}</span>
       <span className="bgear-meta"><BtLabel p={p} t4Only /></span>
@@ -96,10 +97,15 @@ export function BatchList({ ctx, items, editing, fresh, wornOf, onFix, onRemove,
                 {x}
               </li>
             );
-          })() : (
+          })() : e.input ? (
+            <li key={key} className={`bgear-row brow bmark${editing === i + 1 ? ' editing' : ''}${nw}`}>
+              <button type="button" className="brow-fix" onClick={() => onFix(i + 1)} aria-label={`#${i + 1}`} />
+              <BatchPiece ctx={ctx} n={i + 1} x={e.input} locked>{x}</BatchPiece>
+            </li>
+          ) : (
             <li key={key} className={`bgear-row brow bmark${nw}`}>
               <SlotIcon slot={e.slot} />
-              <span className="bgear-n"><b className="bnum">#{i + 1}</b>{t.batch.lockRow(e.slot)}</span>
+              <span className="bgear-n"><b className="bnum">#{i + 1}</b><LockIcon />{t.batch.lockRow(e.slot)}</span>
               {x}
             </li>
           );

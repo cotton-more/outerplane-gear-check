@@ -42,6 +42,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
   'features/batch/ui/BatchStrip.tsx': 'helper',        // batch strip over the form: the batch tip explains the mode
+  'features/batch/ui/BatchMarks.tsx': 'helper',        // «E» and the lock next to «Add»: Help and the wiki explain them, the batch tip the mode
   'features/batch/ui/BatchList.tsx': 'helper',         // pieces of the batch: the batch tip explains the mode
   'features/batch/ui/BatchPlan.tsx': 'helper',         // the batch plan: its lines say what to do, the batch tip explains the mode
   'features/batch/ui/BatchPanel.tsx': 'helper',        // list or plan in the sheet / column: the batch tip explains the mode

@@ -49,7 +49,7 @@ type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { leve
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: where the form goes after it. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, onBatch, lock = null, ask = null }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, marks, onBatch, lock = null, ask = null }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
@@ -58,6 +58,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   sameLine?: string | null; onTwin?: () => void;
   strip?: React.ReactNode;        // «Партия · 7 · Список ▸ ✕» instead of the hero strip (features/batch)
   nextLabel?: string;             // «В партию · #8» / «Сохранить #3» instead of «Следующий»
+  marks?: React.ReactNode;        // «E» and «🔒» after it (features/batch BatchMarks)
   onBatch?: () => void;           // «Партия» next to «Следующий» (wide screen)
   lock?: BatchLock | null;        // a batch of one kind: other slots and sets are off (features/batch)
   ask?: BatchAsk | null;          // the next batch piece picks its slot / grade again: none pressed, the row highlighted
@@ -185,6 +186,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
 
       <div className="actions">
         <button type="button" className="btn primary" onClick={onReset} {...tour('next')}>{nextLabel ?? t.ui.resetItem}</button>
+        {marks}
         {onBatch && <BatchButton onStart={onBatch} />}
         <span className="hk">
           {fineHover() && <><kbd>1</kbd>–<kbd>6</kbd> {t.ui.hkSlot} · <kbd>L</kbd>/<kbd>E</kbd> {t.ui.hkGrade} · <kbd>Esc</kbd> {t.ui.hkReset}</>}

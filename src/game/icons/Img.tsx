@@ -51,6 +51,10 @@ export function SetIcon({ set, className }: { set: GearSet | undefined; classNam
   return <Icon name={setIcon(set?.short ?? '')} className={className ? `ico-set ${className}` : 'ico-set'} />;
 }
 
+// «🔒»: a locked piece (features/batch) — a lock on a dark square, like the game's mark on an item; one in both modes
+// until the game's own lock icon is in the data
+export const LockIcon = () => <Icon name="lock" className="ico-lock" />;
+
 // фон кнопки грейда: красный Legendary, синий Epic
 export function GradeFrame({ grade }: { grade: string }) {
   return useGameIcons() ? <Img k={'frame:' + grade} /> : <span className={`gframe ${grade === 'rare' ? 'rare' : 'unique'}`} aria-hidden="true" />;

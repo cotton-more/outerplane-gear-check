@@ -31,6 +31,7 @@ import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
 import { useBatchMode } from '@/features/batch/useBatchMode';
 import { BatchStrip } from '@/features/batch/ui/BatchStrip';
+import { BatchMarks } from '@/features/batch/ui/BatchMarks';
 import { BatchPanel, batchTitle } from '@/features/batch/ui/BatchPanel';
 import { AskSheet } from '@/shared/ui/AskSheet';
 import { makeCtx } from '@/game/context';
@@ -174,13 +175,19 @@ export function App() {
   const { doEquip, doStash, nextNote } = flow;
   // the batch mode: «Следующий» (and Esc) add the piece to the batch — «В партию · #8» / «Сохранить #3»
   // only a complete piece goes in: all its substats entered (the plain-threshold verdict may decide earlier)
+  const complete = vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle';
   const onReset = batchOn
-    ? () => { if (batch.view !== 'plan' && batch.view !== 'walk') batch.add(input, vm.nSubs >= dropSubs(s.grade) && vm.raw.v !== 'idle'); }
+    ? () => { if (batch.view !== 'plan' && batch.view !== 'walk') batch.add(input, complete); }
     : flow.onReset;
   const batchNext = batchOn ? (batch.editing ? t.batch.save(batch.editing) : t.batch.add(batch.batch.items.length + 1, batch.ask?.slot ? null : s.slot)) : undefined;
   // the plan and the walk take the screen (owner 2026-10-09): no form — nothing is entered any more; on a phone the sheet
   // is full height, on a wide screen the batch column takes the form's place
   const batchResult = batchOn && (batch.view === 'plan' || batch.view === 'walk');
+  // «E» and «🔒» next to «В партию»: the form's footer (wide), the bottom bar (phone)
+  const batchMarks = batchOn && !batchResult
+    ? <BatchMarks cands={() => batch.wornCands(s.slot)} what={batch.what || t.ui.slotNames[s.slot]}
+        onWorn={(c, from) => batch.addWorn(c, s.slot, from)} onLock={() => batch.addLock(input, complete)} />
+    : undefined;
   const onBatch = canEquip && ctx.scoped && !hero && !batchOn && !tour.run ? batch.start : undefined;
   // a batch of one kind (owner 2026-10-08): the form can't switch to another slot or set — a new batch for those;
   // the batch's own actions (reset, load for a fix) go straight to dispatch
@@ -243,8 +250,8 @@ export function App() {
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
               other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
-              strip={batchOn ? <BatchStrip n={batch.batch.items.length} cands={() => batch.wornCands(s.slot)} what={batch.what || t.ui.slotNames[s.slot]} onList={() => batch.show('list')} onEnd={batch.end}
-                onWorn={(c, from) => batch.addWorn(c, s.slot, from)} onLock={(from) => batch.addLock(s.slot, from)} /> : null}
+              strip={batchOn ? <BatchStrip n={batch.batch.items.length} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
+              marks={layout.narrow ? undefined : batchMarks}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} ask={batchOn ? batch.ask : null} />}
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
@@ -263,7 +270,7 @@ export function App() {
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
           hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length).replace(/ /g, '\u00A0') : t.batch.empty) : hint}
-          resetLabel={batchNext} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
+          resetLabel={batchNext} marks={batchMarks} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
           onOpen={batchOn ? () => batch.show('list') : () => setVerdictOpen(true)} />
         <OnboardingStrips onb={onb} />
         <TipLayer tour={tour} c={onb.tourCtx} enabled={onb.tipsOn} forced={shownCode ? null : onb.forcedTip} onForced={onb.onForced} />

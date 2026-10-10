@@ -39,19 +39,22 @@ html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 .batch-col .brow { scroll-margin-bottom: 64px; }
 /* the column's bottom padding is the bar's own: rows don't show through under it */
 .batch-col .batch-acts { padding-bottom: 12px; }
-/* the step-by-step walk (MODEL.md §8 item 7): E / 🔒 entries under the strip, «Спорно» choice, walk steps with ✓ */
-.batch-strip { flex-wrap: wrap; }
-.batch-marks { display: flex; gap: 6px; margin-left: auto; }
-.batch-marks .btn { min-height: 30px; padding: 3px 10px; font-size: 13px; }
-.batch-marks + .tryon-x { margin-left: 0; }
-/* a tall phone: the two buttons on a second line inside the strip; a short window: one line, «E» / «🔒» only */
-html.narrow .batch-marks { order: 3; flex-basis: 100%; margin: 0 0 4px; }
-html.narrow .batch-marks + .tryon-x { margin-left: auto; }
-@media (max-height: 460px) {
-  html.narrow .batch-marks { order: 0; flex-basis: auto; margin: 0 0 0 auto; }
-  html.narrow .batch-marks + .tryon-x { margin-left: 0; }
-  .batch-marks .bm-long { display: none; }
-}
+/* the step-by-step walk (MODEL.md §8 item 7): «Спорно» choice, walk steps with ✓ */
+/* «E» and «🔒» next to «В партию» (BatchMarks): the form's footer; the phone's bottom bar — the marks alone, no words */
+.batch-marks { display: flex; gap: 6px; }
+.batch-marks .bmark-b { display: inline-flex; align-items: center; gap: 4px; }
+.batch-marks .bmark-b > b { font-weight: 800; }
+html.narrow .vbar .batch-marks { flex: none; gap: 4px; }
+html.narrow .vbar .bmark-b { min-width: 40px; min-height: 44px; padding: 0 8px; justify-content: center; }
+html.narrow .vbar .bm-long { display: none; }
+/* under 380px (VBar compact) the bar is ☰ · E · 🔒 · «Add · #2 · gloves»: the roster count and the hint «Batch · 1» go
+   (the strip above the form says it), the hint's place stays as the gap */
+html.narrow .vbar.compact:has(.batch-marks) { gap: 6px; padding-left: 10px; padding-right: 10px; }
+html.narrow .vbar.compact:has(.batch-marks) .vb-ros, html.narrow .vbar.compact:has(.batch-marks) .vb-main .vt { display: none; }
+html.narrow .vbar.compact .bmark-b { min-width: 36px; padding: 0 6px; }
+html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
+/* the lock in a row: after the number */
+.batch .bgear-n .ico-lock { width: 14px; height: 14px; color: #fff; } /* over .bgear-row .ico's grey (chars.css) */
 .batch-whose { display: grid; gap: 6px; }
 .bwho { display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; }
 /* a worn piece's owner: the round portrait (HeroFace round, base.css); the picker's is bigger */

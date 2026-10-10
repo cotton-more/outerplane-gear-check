@@ -14,7 +14,7 @@ import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import { useTimed } from '@/shared/useTimed';
 import { land, takeOff, type Leg } from '@/shared/fly';
-import { addSkip, entriesOf, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
+import { addSkip, entriesOf, inputOfEntry, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
 import { planBatch, skipKey, undoPlan, type Plan } from './plan';
 import { walkOf, type Walk } from './walk';
 
@@ -56,7 +56,7 @@ export interface BatchMode {
   done: () => void;
   wornCands: (slot: SlotId) => Char[] | null; // «E»: roster heroes wearing a piece of this slot that fits the batch; null — the slot is asked first
   addWorn: (c: string, slot: SlotId, from: Element | null) => void; // from — the tapped button: it flies into the list
-  addLock: (slot: SlotId, from: Element | null) => void;
+  addLock: (input: ItemInput, complete: boolean) => void; // «🔒»: entered like «В партию» (owner 2026-10-10: its stats say which piece)
   choose: (line: string, c: 'keep' | 'junk' | null) => void; // «Спорно»: decided before the walk
   tick: (step: string) => void;    // ✓ a walk step
   end: () => void;                 // ✕: asks when the batch has pieces
@@ -98,7 +98,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const kind = value ? kindOf(value, wornSet) : null;
   // fixing the only entry may change the kind and the grade — no lock then
   const free = editing !== null && batch.items.length === 1;
-  const grade: Grade | null = free ? null : (value?.items.find((e) => e.kind === 'piece') as { input: ItemInput } | undefined)?.input.grade ?? null;
+  const grade: Grade | null = free ? null : value?.items.map(inputOfEntry).find((x) => x)?.grade ?? null;
   // the batch's kind in a phrase («Epic Speed», «Legendary оружие»): the titles, the walk's filter note, the notes
   const whatOf = (k: BatchKind | null) => t.batch.what(!k ? null : k.startsWith('set:') ? { set: idx.SET[k.slice(4)]?.short ?? '' } : k === 'weapon' ? 'weapon' : k === 'accessory' ? 'accessory' : null, grade);
   const kindText = (k: BatchKind | null) => t.batch.otherKind(whatOf(k));
@@ -107,7 +107,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     if (!value) return false;
     // fixing the only entry may change the kind
     const rest = free ? null : kind;
-    if (!fitsKind(rest, k) || (grade && e.kind === 'piece' && e.input.grade !== grade)) { setNote(kindText(rest)); return false; }
+    if (!fitsKind(rest, k) || (grade && (inputOfEntry(e)?.grade ?? grade) !== grade)) { setNote(kindText(rest)); return false; }
     const legs = takeOff(from); // before the form resets
     const next = putItem(value, e, editing);
     set(next);
@@ -123,6 +123,17 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     : { slots: ARMOR_SLOTS, set: kind.startsWith('set:') ? kind.slice(4) : null, grade, explain: () => setNote(kindText(kind)) };
   const slotKind = (slot: SlotId): BatchKind => (isArmor(slot) ? 'armor' : (slot as 'weapon' | 'accessory'));
 
+  // «В партию» and «🔒»: a piece from the form; fixing an entry, the button pressed says which it becomes
+  const enter = (e: BatchEntry, input: ItemInput, complete: boolean) => {
+    if (!value) return;
+    if (ask && (ask.slot || ask.grade)) { askNote(ask); return; }
+    if (!complete) { setNote(t.batch.incomplete); return; }
+    const fixing = editing !== null;
+    if (!put(e, kindOfInput(input), document.querySelectorAll('#eval-in .subrow .subkey'))) return;
+    dispatch({ type: 'reset', batch: true });
+    if (!fixing) setAsk({ slot: isArmor(input.slot), grade: false }); // the grade is the batch's from now on (lock)
+    toForm();
+  };
   const toForm = () => { if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }); };
   const close = () => { setAsk(null); setValue(null); if (persist) storage.set('batch', null); setEditing(null); setView(null); setFresh(null); setAsking(false); };
   return {
@@ -130,20 +141,13 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     wornOf: (c, slot) => { const id = gear.store.worn?.[c]?.[slot]; return id ? gear.store.pieces[id] ?? null : null; },
     what: whatOf(kind),
     start: () => { set({ ...NEW_BATCH }); setEditing(null); setView(narrow ? null : 'list'); },
-    add: (input, complete) => {
-      if (!value) return;
-      if (ask && (ask.slot || ask.grade)) { askNote(ask); return; }
-      if (!complete) { setNote(t.batch.incomplete); return; }
-      const fixing = editing !== null;
-      if (!put({ kind: 'piece', input }, kindOfInput(input), document.querySelectorAll('#eval-in .subrow .subkey'))) return;
-      dispatch({ type: 'reset', batch: true });
-      if (!fixing) setAsk({ slot: isArmor(input.slot), grade: false }); // the grade is the batch's from now on (lock)
-      toForm();
-    },
+    add: (input, complete) => enter({ kind: 'piece', input }, input, complete),
+    addLock: (input, complete) => enter({ kind: 'lock', slot: input.slot, input }, input, complete),
     fix: (n) => {
       const x = value?.items[n - 1];
-      if (x?.kind !== 'piece') return;
-      dispatch({ type: 'load', item: x.input });
+      const input = x && inputOfEntry(x);
+      if (!input) return;
+      dispatch({ type: 'load', item: input });
       setEditing(n);
       if (narrow) setView(null);
       toForm();
@@ -190,10 +194,6 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     addWorn: (c, slot, from) => {
       if (ask?.slot) { askNote({ slot: true, grade: false }); return; }
       if (put({ kind: 'worn', c, slot }, slotKind(slot), from ? [from] : []) && isArmor(slot)) setAsk({ slot: true, grade: ask?.grade ?? false });
-    },
-    addLock: (slot, from) => {
-      if (ask?.slot) { askNote({ slot: true, grade: false }); return; }
-      if (put({ kind: 'lock', slot }, slotKind(slot), from ? [from] : []) && isArmor(slot)) setAsk({ slot: true, grade: ask?.grade ?? false });
     },
     ask: value ? ask : null,
     answer: (what) => setAsk((a) => (a ? { ...a, [what]: false } : a)),

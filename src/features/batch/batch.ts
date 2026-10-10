@@ -7,12 +7,13 @@ import type { ItemInput } from '@/game/item/item';
 import type { Entry } from './plan';
 
 // An entry is one piece of the game list, in its order (MODEL.md §8): a piece as entered; «E» — a piece worn
-// by hero c (the app knows it from c's worn record, no substats); «🔒» — a locked unworn piece, someone's reserve. #n —
-// the position in the game list, all kinds counted: plan lines and walk steps use it
+// by hero c (the app knows it from c's worn record, no substats); «🔒» — a locked unworn piece, someone's reserve; its
+// substats (owner 2026-10-10, entered like a piece's; older entries have none) only say which piece it is — the plan
+// doesn't rate it. #n — the position in the game list, all kinds counted: plan lines and walk steps use it
 export type BatchEntry =
   | { kind: 'piece'; input: ItemInput }
   | { kind: 'worn'; c: string; slot: SlotId }
-  | { kind: 'lock'; slot: SlotId };
+  | { kind: 'lock'; slot: SlotId; input?: ItemInput };
 // choice — «Спорно» lines decided before the walk (line id → keep / junk); done — walk steps ticked ✓
 export interface Batch { v: 2; items: BatchEntry[]; skip: string[]; twin: number[]; choice: Record<string, 'keep' | 'junk'>; done: string[] }
 export const NEW_BATCH: Batch = { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] };
@@ -20,6 +21,8 @@ export const NEW_BATCH: Batch = { v: 2, items: [], skip: [], twin: [], choice: {
 // the pieces the plan computes, with their positions; E and 🔒 entries are in the store already (worn, reserves)
 export const entriesOf = (b: Batch): Entry[] => b.items.flatMap((e, i) => (e.kind === 'piece' ? [{ n: i + 1, input: e.input, twin: b.twin.includes(i + 1) }] : []));
 export const slotOf = (e: BatchEntry): SlotId => (e.kind === 'piece' ? e.input.slot : e.slot);
+// the substats an entry was entered with: a piece, a «🔒» with them
+export const inputOfEntry = (e: BatchEntry): ItemInput | null => (e.kind === 'worn' ? null : e.input ?? null);
 
 // One filter per batch (owner, 2026-10-08, W1): weapons, accessories, or armor of one set. kind — 'weapon',
 // 'accessory', 'set:<id>' or 'armor' (armor with no set known yet: only E / 🔒 entries so far); null — empty
@@ -29,7 +32,8 @@ export const kindOfInput = (x: Pick<ItemInput, 'slot' | 'setId'>): BatchKind =>
 export function kindOf(b: Batch, setOf: (e: BatchEntry) => string | null = () => null): BatchKind | null {
   let kind: BatchKind | null = null;
   for (const e of b.items) {
-    const k: BatchKind = e.kind === 'piece' ? kindOfInput(e.input) : isArmor(e.slot) ? (setOf(e) ? `set:${setOf(e)}` : 'armor') : (e.slot as 'weapon' | 'accessory');
+    const x = inputOfEntry(e);
+    const k: BatchKind = x ? kindOfInput(x) : e.kind === 'piece' ? kindOfInput(e.input) : isArmor(e.slot) ? (setOf(e) ? `set:${setOf(e)}` : 'armor') : (e.slot as 'weapon' | 'accessory');
     if (k.startsWith('set:')) return k;
     kind ??= k;
   }
@@ -156,7 +160,10 @@ function entryOfRaw(raw: unknown, idx: Index): BatchEntry | null {
   const slot = r.slot as SlotId;
   if (r.kind === 'piece') return pieceOf(inputOf(r.input, idx));
   if (typeof r.slot !== 'string' || !SLOT[slot]) return null;
-  if (r.kind === 'lock') return { kind: 'lock', slot };
+  if (r.kind === 'lock') {
+    const input = r.input === undefined ? null : inputOf(r.input, idx);
+    return input && input.slot === slot ? { kind: 'lock', slot, input } : { kind: 'lock', slot };
+  }
   if (r.kind === 'worn' && typeof r.c === 'string' && idx.CHAR[r.c]) return { kind: 'worn', c: r.c, slot };
   return null;
 }

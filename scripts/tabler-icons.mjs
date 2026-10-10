@@ -23,6 +23,8 @@ const NAMES = [
   'pin', 'hanger',
   // список персонажей: кнопка фильтра и «Обмен»
   'filter', 'arrows-exchange',
+  // «Партия»: «🔒 · отложено» — a locked piece (until the game's own lock icon is in the data)
+  'lock',
 ];
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'icons', 'tabler.ts');

@@ -43,9 +43,10 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
    is no verdict on the way.
 2. Enter the pieces **in a row, as the game lists them**:
    - a usual piece — as always, "Add · #N" (not all substats — not added);
-   - a **worn** one (E mark) — "E · worn" and pick the hero: the app knows its substats — the list shows it as a usual
-     piece with the hero's round portrait and name under it;
-   - a **locked** one (a lock means someone's reserve) — "🔒 · set aside" with the slot on the form.
+   - a **worn** one (E mark) — "E" next to "Add" and pick the hero: the app knows its substats — the list shows it as a
+     usual piece with the hero's round portrait and name under it;
+   - a **locked** one (a lock means someone's reserve) — enter it like a usual piece and press the lock button next to
+     "Add": the substats only show in the list which piece it is, the plan doesn't rate it.
 
    After "Add" the form gets ready for the next piece of the list: substats, main and item name clear, the grade
    and set stay the batch's, for armor the slot has to be picked again. Until then the slot buttons are highlighted,

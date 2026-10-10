@@ -237,20 +237,33 @@ describe('«Партия» on a phone', () => {
 
 // The step-by-step walk (MODEL.md §8 item 7): «E» and «🔒» entries, one filter per batch, «Спорно» decided first, steps
 describe('«Партия»: обход по шагам', () => {
-  it('«E · worn» → «Whose piece?» lists Caren (she wears a Speed helmet) → a row of her helmet + her portrait and name; «🔒» adds a locked helmet', async () => {
+  it('«E · worn» → «Whose piece?» lists Caren (she wears a Speed helmet) → a row of her helmet + her portrait and name', async () => {
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
-    await click(byText('.batch-marks button', 'E · worn'));
+    await click(byText('.vbar .batch-marks button', 'E · worn'));    // next to «Add» in the bottom bar (owner 2026-10-10)
     await click(byText('.batch-whose button', 'Caren'));
-    await click(byText('.batch-marks button', 'set aside'));             // the slot is asked first after «E»
-    expect(batch().items).toHaveLength(1);
-    await click($('[data-tour="slot"] [data-tour-item="helmet"]'));
-    await click(byText('.batch-marks button', 'set aside'));
-    expect(batch().items).toEqual([{ kind: 'worn', c: caren.id, slot: 'helmet' }, { kind: 'lock', slot: 'helmet' }]);
+    expect(batch().items).toEqual([{ kind: 'worn', c: caren.id, slot: 'helmet' }]);
     await click($('.batch-strip .batch-list'));
     const rows = $$('.batch-items .brow');
-    expect(rows.map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual(['#1helmet', '#2🔒 helmet']); // armor in a batch row: the slot word alone — no grade chip, no set (Q4)
+    expect(rows.map((r) => r.querySelector('.bgear-n')?.textContent)).toEqual(['#1helmet']); // armor in a batch row: the slot word alone — no grade chip, no set (Q4)
     expect(rows[0].querySelector('.bworn')?.textContent).toBe('Caren');
-    expect(rows[0].querySelectorAll('.bgear-t .tok')).toHaveLength(3);                                         // her helmet's substats
+    expect(rows[0].querySelectorAll('.bgear-t .tok')).toHaveLength(3);                     // her helmet's substats
+  });
+
+  const lockBtn = () => byText('.vbar .batch-marks button', 'set aside');
+  it('the lock button, like «Add», needs all substats', async () => {
+    await mount({ setId: speed, subs: {} }, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
+    await click(lockBtn());
+    expect(batch().items).toHaveLength(0);
+  });
+
+  it('the lock button enters the form\'s piece as «🔒»: a row with the lock and the substats', async () => {
+    await mount(GOOD, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
+    await click(lockBtn());
+    expect(batch().items).toEqual([{ kind: 'lock', slot: 'helmet', input: expect.objectContaining({ slot: 'helmet', setId: speed, subs: GOOD.subs }) }]);
+    await click($('.batch-strip .batch-list'));
+    const row = $('.batch-items .brow')!;
+    expect(row.querySelector('.bgear-n .ico-lock')).not.toBeNull();
+    expect(row.querySelectorAll('.bgear-t .tok')).toHaveLength(4);
   });
 
   it('one filter per batch: a form with another set takes the batch\'s set by itself', async () => {

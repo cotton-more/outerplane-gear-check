@@ -13,9 +13,10 @@ import { barTitle } from './VerdictCard';
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
 // Подсказка и «что ввести дальше» (вердикт idle) — приглушённой строкой со стрелкой до трёх строк, вердикт — штампом:
 // сразу видно, где «сделай это», а где результат. quiet — идёт обучение: что делать, говорит его полоса, здесь не дублируем.
-export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen, resetLabel }: {
+export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen, resetLabel, marks }: {
   r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; quiet: boolean; tab: Tab; rosterSize: number;
   resetLabel?: string; // «В партию · #8» in the batch mode
+  marks?: React.ReactNode; // and «E», «🔒» before it (features/batch BatchMarks)
   onTab: (t: Tab) => void; onMenu: () => void; onReset: () => void; onOpen: () => void;
 }) {
   const t = useT();
@@ -38,7 +39,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
     <div className={`vbar v-${r.v}${compact ? ' compact' : ''}`} id="vbar">
       {flash > 0 && <span key={flash} className="vb-flash" aria-hidden="true" />}
       {evalTab
-        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <> <span className="vb-star">★</span>{rosterSize}</>}</button>
+        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <span className="vb-ros"> <span className="vb-star">★</span>{rosterSize}</span>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
       <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
         onClick={evalTab ? onOpen : () => onTab('eval')}>
@@ -49,6 +50,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
             : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>
+      {evalTab && marks}
       {evalTab && <button type="button" className="vb-reset" aria-label={resetLabel ?? t.ui.resetItem} onClick={onReset} {...tour('next')}>{resetLabel ?? t.ui.reset}</button>}
     </div>
   );

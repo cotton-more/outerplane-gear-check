@@ -156,6 +156,8 @@ img.gstat { box-sizing: content-box; padding: 2px; border-radius: 4px; backgroun
 /* сет — в рамке, чтобы Attack Set не путался со статом ATK */
 /* с «%» или «↓» в углу — отступ, чтобы пометка не липла к подписи справа */
 .ico:has(> .ico-b) { margin-right: 3px; }
+.ico.ico-lock { box-sizing: content-box; padding: 2px; border-radius: 4px; background: #3b4252; color: #fff; }
+.ico-lock > svg { stroke-width: 2.6; } /* thin at 12–14px on the dark square */
 .ico-set { padding: 2px; border: 1px solid var(--line-2); border-radius: 5px; }
 .ico.el-fire { color: var(--el-fire); }
 .ico.el-water { color: var(--el-water); }
