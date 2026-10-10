@@ -1,5 +1,5 @@
 // The undo of ✕ in the list (merge review fix): the entry comes back at its place with its marks
-// («Не брать», «Это другой», «Спорно»); later entries and their marks move down again.
+// («Не брать», «Это другой»); later entries and their marks move down again.
 import { describe, expect, it } from 'vitest';
 import { NEW_BATCH, removeItem, removedOf, restoreItem, type Batch, type BatchEntry } from '@/features/batch/batch';
 import { inputOfPiece } from '@/features/batch/plan';
@@ -7,8 +7,8 @@ import { mk } from '../gear/statSets';
 
 const piece = (id: string, i: number): BatchEntry => ({ kind: 'piece', input: inputOfPiece(mk(id, 'helmet', 'Speed', { SPD: 1, RES: 1 + (i % 3), EFF: 1 + Math.floor(i / 3), HP: 1 }, 0)) });
 const items: BatchEntry[] = [piece('a', 0), piece('b', 1), { kind: 'lock', slot: 'helmet' }, piece('c', 2), piece('d', 3)];
-// marks on #2 (its own and its taken-off line «2~1»), on #4, and a hero-less «Спорно» on #5
-const marked: Batch = { ...NEW_BATCH, items, skip: ['2>10', '2~1>11', '4>12'], twin: [2, 5], choice: { '2~1': 'junk', '4': 'keep', '5': 'junk' }, done: [] };
+// marks on #2 (its own and its taken-off line «2~1»), on #4, and «Это другой» on #5
+const marked: Batch = { ...NEW_BATCH, items, skip: ['2>10', '2~1>11', '4>12'], twin: [2, 5], done: [] };
 
 // the order of the marks is the order they were made in — not part of the batch's meaning
 const norm = (b: Batch): Batch => ({ ...b, skip: [...b.skip].sort(), twin: [...b.twin].sort((a, z) => a - z) });
@@ -22,7 +22,7 @@ describe('✕ and «Вернуть»', () => {
   });
   it('the marks of the removed entry are gone while it is out; the later ones moved up', () => {
     const without = removeItem(marked, 2);
-    expect(without).toMatchObject({ skip: ['3>12'], twin: [4], choice: { '3': 'keep', '4': 'junk' } });
+    expect(without).toMatchObject({ skip: ['3>12'], twin: [4] });
   });
   it('an entry added in between does not matter: the removed one returns to its own place', () => {
     const gone = removedOf(marked, 2)!;

@@ -14,7 +14,7 @@ import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import { useTimed } from '@/shared/useTimed';
 import { land, takeOff, type Leg } from '@/shared/fly';
-import { addSkip, entriesOf, inputOfEntry, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
+import { addSkip, entriesOf, inputOfEntry, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
 import { planBatch, skipKey, undoPlan, type Plan } from './plan';
 import { walkOf, type Walk } from './walk';
 
@@ -57,7 +57,6 @@ export interface BatchMode {
   wornCands: (slot: SlotId) => Char[] | null; // «E»: roster heroes wearing a piece of this slot that fits the batch; null — the slot is asked first
   addWorn: (c: string, slot: SlotId, from: Element | null) => void; // from — the tapped button: it flies into the list
   addLock: (input: ItemInput, complete: boolean) => void; // «🔒»: entered like «В партию» (owner 2026-10-10: its stats say which piece)
-  choose: (line: string, c: 'keep' | 'junk' | null) => void; // «Спорно»: decided before the walk
   tick: (step: string) => void;    // ✓ a walk step
   end: () => void;                 // ✕: asks when the batch has pieces
   endNow: () => void;
@@ -197,7 +196,6 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
     },
     ask: value ? ask : null,
     answer: (what) => setAsk((a) => (a ? { ...a, [what]: false } : a)),
-    choose: (line, c) => { if (value) set(setChoice(value, line, c)); },
     tick: (step) => { if (value) set(toggleDone(value, step)); },
     end: () => { if (value?.items.length) setAsking(true); else close(); },
     endNow: close,

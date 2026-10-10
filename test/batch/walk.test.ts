@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeCtx } from '@/game/context';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
-import { entriesOf, fitsKind, kindOf, NEW_BATCH, putItem, removeItem, restoreBatch, setChoice, type Batch, type BatchEntry } from '@/features/batch/batch';
+import { entriesOf, fitsKind, kindOf, NEW_BATCH, putItem, removeItem, restoreBatch, type Batch, type BatchEntry } from '@/features/batch/batch';
 import { inputOfPiece, planBatch, type Plan } from '@/features/batch/plan';
 import { gameSubs, rowOf, walkOf } from '@/features/batch/walk';
 import { char, idx, mk } from '../gear/statSets';
@@ -34,11 +34,12 @@ describe('batch v2', () => {
     const v1 = { v: 1, items: [inputOfPiece(weak('a'))], skip: ['1>2000012'], twin: [1] };
     const b = restoreBatch(v1, idx)!;
     expect(b.items).toMatchObject([{ kind: 'piece', input: { slot: 'helmet', subs: weak('a').lit } }]);
-    expect([b.skip, b.twin, b.choice, b.done]).toEqual([['1>2000012'], [1], {}, []]);
+    expect([b.skip, b.twin, b.done]).toEqual([['1>2000012'], [1], []]);
     const v2 = { v: 2, items: [{ kind: 'worn', c: 'nobody', slot: 'helmet' }, { kind: 'lock', slot: 'helmet' }, piece(weak('a'))], skip: [], twin: [3], choice: { 3: 'keep' }, done: ['x'] };
     const c = restoreBatch(v2, idx)!;
     expect(c.items.map((e) => e.kind)).toEqual(['lock', 'piece']);
-    expect([c.twin, c.choice]).toEqual([[2], { 2: 'keep' }]);
+    expect(c.twin).toEqual([2]);
+    expect(c).not.toHaveProperty('choice');                     // the old «Спорно» choice is dropped (2026-10-10)
   });
 
   it('entries of the plan carry their game positions; E and 🔒 are not planned', () => {
@@ -46,10 +47,8 @@ describe('batch v2', () => {
     expect(entriesOf(b).map((e) => e.n)).toEqual([2, 4]);
   });
 
-  it('removing an entry moves «Спорно» choices with their lines; any change clears the walk ticks', () => {
-    let b = setChoice(batchOf([piece(weak('a')), piece(weak('b', 1)), piece(weak('c', 2))]), '3~1', 'junk');
-    b = { ...b, done: ['eq:3'] };
-    expect(removeItem(b, 1).choice).toEqual({ '2~1': 'junk' });
+  it('any change clears the walk ticks', () => {
+    const b = { ...batchOf([piece(weak('a')), piece(weak('b', 1)), piece(weak('c', 2))]), done: ['eq:3'] };
     expect(removeItem(b, 1).done).toEqual([]);
     expect(putItem(b, piece(weak('d', 3))).done).toEqual([]);
   });
@@ -75,17 +74,16 @@ describe('the walk', () => {
     expect(gameSubs(idx, { CHC: 3, ATK: 2 })).toEqual(['LV 3 Crit Chance +9.0%', 'LV 2 Attack +' + Math.round(idx.SUB.ATK.step * 2)]);
   });
 
-  it('owner case: Caren on an Epic helmet; a good Legendary, a weak one, a locked reserve — equip, lock, Breakthrough', () => {
+  it('owner case: Caren on an Epic helmet; a good Legendary, a weak one — equip, Breakthrough, dismantle the Epic', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([{ kind: 'worn', c: char('Caren').id, slot: 'helmet' }, piece(weak('w')), piece(good('g'))]);
     const plan = planBatch(ctx, st, entriesOf(b));
-    const off = plan.lines.find((l) => l.off)!;
-    const walk = walkOf(off.fate.kind === 'maybe' ? setChoice(b, off.id, 'keep') : b, plan);
-    expect(walk.undecided).toBe(0);
-    expect(walk.steps.map((s) => s.stage)).toEqual([1, 2, 3]);
+    const walk = walkOf(b, plan);
+    expect(walk.steps.map((s) => s.stage)).toEqual([1, 3, 4]);
     expect(walk.steps[0]).toMatchObject({ stage: 1, c: { name: 'Caren' }, slot: 'helmet', k: 3 });
-    expect(walk.steps[1]).toMatchObject({ stage: 2, where: { n: 1 } });     // the taken-off Epic — where its «E» is
-    expect(walk.steps[2]).toMatchObject({ stage: 3, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
+    expect(walk.steps[1]).toMatchObject({ stage: 3, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
+    // the taken-off Epic suits only heroes outside the roster: dismantled where its «E» is (owner 2026-10-10: no «Спорно»)
+    expect(walk.steps[2]).toMatchObject({ stage: 4, where: [{ n: 1 }] });
   });
 
   it('the equip number is in the hero\'s list of that slot: boots first, then armor — the armor is No. 1 among armor, #2 in the batch', () => {
@@ -114,18 +112,6 @@ describe('the walk', () => {
     const second = equips.findIndex((s) => 'n' in s.where && s.where.n === 1);
     if (second >= 0) expect(second).toBeGreaterThan(equips.findIndex((s) => 'n' in s.where && s.where.n === 2));
     expect(equips.length).toBeGreaterThan(0);
-  });
-
-  it('«Спорно» undecided — the walk waits; «Разобрать» puts it into the one dismantle step', () => {
-    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
-    const b = batchOf([{ kind: 'worn', c: char('Caren').id, slot: 'helmet' }, piece(good('g'))]);
-    const plan = planBatch(ctx, st, entriesOf(b));
-    const maybe = plan.lines.filter((l) => l.fate.kind === 'maybe');
-    if (!maybe.length) return; // the taken-off Epic may be plain «Разобрать» on other data
-    expect(walkOf(b, plan).undecided).toBe(maybe.length);
-    const w = walkOf(maybe.reduce((x, l) => setChoice(x, l.id, 'junk'), b), plan);
-    expect(w.undecided).toBe(0);
-    expect(w.steps.filter((s) => s.stage === 4)).toHaveLength(1);
   });
 
   it('Breakthrough before the dismantle (owner 2026-10-09); a target of this batch that is kept is named as a set-aside piece of its hero — no position', () => {

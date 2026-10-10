@@ -146,18 +146,18 @@ describe('«Партия» on a phone', () => {
 
   it('✕ removes at once, the message «Removed #1 · Undo» puts the entry back at its place with its marks', async () => {
     const piece = (x: Record<string, unknown>) => ({ kind: 'piece', input: { slot: 'helmet', grade: 'unique', itemKey: null, main: null, bt: 0, ...x } });
-    const marks = { skip: [`1>${caren.id}`, `2>${caren.id}`], twin: [1, 3], choice: { '1': 'keep', '3~1': 'junk' }, done: [] };
+    const marks = { skip: [`1>${caren.id}`, `2>${caren.id}`], twin: [1, 3], done: [] };
     const saved = { v: 2, items: [piece(WEAK), piece(GOOD), piece(WEAK)], ...marks };
     await mount(GOOD, { batch: saved });
     await click($('.batch-strip .batch-list'));
     await click($('.batch-items .brow-x'));
     expect(batch().items).toHaveLength(2);
-    expect(batch()).toMatchObject({ skip: [`1>${caren.id}`], twin: [2], choice: { '2~1': 'junk' } });   // #1's marks are gone, the others moved up
+    expect(batch()).toMatchObject({ skip: [`1>${caren.id}`], twin: [2] });   // #1's marks are gone, the others moved up
     expect($('.gear-toast')?.textContent).toBe('Removed #1Undo');
     await click(byText('.gear-toast button', 'Undo'));
     const back = batch();                                 // the entry at its place, every mark back, the later ones moved down again
     expect(back.items.map((e: { input: { subs: unknown } }) => e.input.subs)).toEqual([WEAK.subs, GOOD.subs, WEAK.subs]);
-    expect({ skip: [...back.skip].sort(), twin: [...back.twin].sort(), choice: back.choice }).toEqual({ skip: [...marks.skip].sort(), twin: marks.twin, choice: marks.choice });
+    expect({ skip: [...back.skip].sort(), twin: [...back.twin].sort() }).toEqual({ skip: [...marks.skip].sort(), twin: marks.twin });
     expect($$('.batch-items .brow')).toHaveLength(3);
     expect($('.gear-toast')).toBeNull();
   });
@@ -235,7 +235,7 @@ describe('«Партия» on a phone', () => {
   });
 });
 
-// The step-by-step walk (MODEL.md §8 item 7): «E» and «🔒» entries, one filter per batch, «Спорно» decided first, steps
+// The step-by-step walk (MODEL.md §8 item 7): «E» and «🔒» entries, one filter per batch, steps
 describe('«Партия»: обход по шагам', () => {
   it('«E · worn» → «Whose piece?» lists Caren (she wears a Speed helmet) → a row of her helmet + her portrait and name', async () => {
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items: [], skip: [], twin: [], choice: {}, done: [] } });
@@ -323,10 +323,9 @@ describe('«Партия»: обход по шагам', () => {
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
     await click($('.batch-strip .batch-list'));
     await click(byText('.batch button', 'Plan it'));
-    // Caren's removed Epic helmet is «Maybe»: the walk waits until it is decided
-    expect(byText('.batch button', 'Walk ▸')?.hasAttribute('disabled')).toBe(true);
-    await click(byText('.bdecide button', 'Dismantle'));
-    expect(batch().choice).toEqual({ '3~1': 'junk' });
+    // Caren's removed Epic helmet suits only heroes outside the roster: dismantled, nothing to decide (owner 2026-10-10)
+    expect($('.bdecide')).toBeNull();
+    expect(byText('.batch button', 'Walk ▸')?.hasAttribute('disabled')).toBe(false);
     await click(byText('.batch button', 'Walk ▸'));
     const steps = $$('.bwalk .bstep');
     expect(steps.map((s) => s.querySelector('.bstep-h > b')?.textContent)).toEqual([

@@ -36,7 +36,6 @@ export function fateText(t: Texts, f: Fate, plan: Plan): string {
       return wornAtEnd(plan.st, f.to) ? t.batch.feedWorn(f.to.piece.slot, f.to.c.name) : t.batch.feedStash(f.to.piece.slot, f.to.c.name);
     }
     case 'same': return t.batch.same(f.same.piece.slot, f.same.c.name, t.fit.date(f.same.piece.at));
-    case 'maybe': return t.batch.maybe(f.heroes.slice(0, 3).map((c) => c.name).join(', '));
     case 'junk': return t.batch.junk;
     default: return t.batch.none;
   }
@@ -64,10 +63,9 @@ function heroOf(plan: Plan, l: Line): Char | null {
   return g && (g.kind === 'wear' || g.kind === 'keep') ? g.c : null;
 }
 
-export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoose, onWalk }: {
-  ctx: Ctx; plan: Plan; choice: Record<string, 'keep' | 'junk'>; undecided: number;
-  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onChoose: (line: string, c: 'keep' | 'junk' | null) => void;
-  onWalk: () => void;
+export function BatchPlan({ ctx, plan, onSkip, onTwin, onWalk }: {
+  ctx: Ctx; plan: Plan;
+  onSkip: (line: string, hero: string) => void; onTwin: (n: number) => void; onWalk: () => void;
 }) {
   const t = useT();
   const c = plan.counts;
@@ -87,23 +85,13 @@ export function BatchPlan({ ctx, plan, choice, undecided, onSkip, onTwin, onChoo
               <span className="bfate">{withHero(fateText(t, l.fate, plan), heroIn(plan, l.fate))}</span>
               {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small btwin hit" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
-              {l.fate.kind === 'maybe' && (
-                <span className="bdecide">
-                  {(['keep', 'junk'] as const).map((c) => (
-                    <button key={c} type="button" className="chip" aria-pressed={choice[l.id] === c} onClick={() => onChoose(l.id, choice[l.id] === c ? null : c)}>
-                      {c === 'keep' ? t.batch.keepIt : t.batch.junkIt}
-                    </button>
-                  ))}
-                </span>
-              )}
             </li>
           );
         })}
       </ol>
       {plan.wornFed && <p className="muted small">{t.batch.wornNote}</p>}
       <div className="batch-acts">
-        <button type="button" className="btn primary" disabled={undecided > 0} onClick={onWalk}>{t.batch.walk}</button>
-        {undecided > 0 && <span className="muted small">{t.batch.walkOff(undecided)}</span>}
+        <button type="button" className="btn primary" onClick={onWalk}>{t.batch.walk}</button>
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 .batch-col .brow { scroll-margin-bottom: 64px; }
 /* the column's bottom padding is the bar's own: rows don't show through under it */
 .batch-col .batch-acts { padding-bottom: 12px; }
-/* the step-by-step walk (MODEL.md §8 item 7): «Спорно» choice, walk steps with ✓ */
+/* the step-by-step walk (MODEL.md §8 item 7): walk steps with ✓ */
 /* «E» and «🔒» next to «В партию» (BatchMarks): the form's footer; the phone's bottom bar — the marks alone, no words */
 .batch-marks { display: flex; gap: 6px; }
 .batch-marks .bmark-b { display: inline-flex; align-items: center; gap: 4px; }
@@ -60,8 +60,6 @@ html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 /* a worn piece's owner: the round portrait (HeroFace round, base.css); the picker's is bigger */
 .bwho .face-round { width: 36px; height: 36px; }
 .bmark .bgear-n { font-weight: 600; }
-.bdecide { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.bdecide .chip { min-height: 40px; padding: 4px 12px; font-family: inherit; font-size: 13px; }
 .bstage { display: grid; gap: 6px; }
 .bstage h4 { margin: 4px 0 0; font-size: 13px; }
 /* a walk step: the card is a label of its checkbox (shared Toggle) — a tap anywhere on it ticks the step */

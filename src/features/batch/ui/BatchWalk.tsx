@@ -46,10 +46,9 @@ function PieceLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
   return <><span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}</span>{t4 && <b>{'\u00A0·\u00A0T4'}</b>} · {subsText(x.subs)}</>;
 }
 
-// for whom a kept piece stays: «для Gnosis Domine», «для Valentine · запас», «Спорно, отложено»; the piece is in the title
-// (row, place, #n) and, for a weapon or accessory, in the caption line above
+// for whom a kept piece stays: «для Gnosis Domine», «для Valentine · запас»; the piece is in the title (row, place, #n)
+// and, for a weapon or accessory, in the caption line above
 function keptText(t: Texts, k: Kept): { text: string; c: Char | null } {
-  if (k.why === 'maybe' || !k.c) return { text: t.batch.keptMaybe, c: null };
   return { text: k.why === 'reserve' ? t.batch.keptReserve(k.c.name) : t.batch.keptFor(k.c.name), c: k.c };
 }
 function stepText(ctx: Ctx, t: Texts, s: Step): StepText {

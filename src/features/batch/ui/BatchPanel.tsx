@@ -12,8 +12,7 @@ export function BatchPanel({ ctx, m }: { ctx: Ctx; m: BatchMode }) {
   const back = <button type="button" className="linkbtn batch-back hit" onClick={() => m.show('list')}>{t.batch.back}</button>;
   if (m.view === 'walk' && m.plan && m.walk) return <>{back}<BatchWalk ctx={ctx} batch={m.batch} plan={m.plan} walk={m.walk} what={m.what} onTick={m.tick} onDone={m.done} /></>;
   if (m.view === 'plan' && m.plan) {
-    return <>{back}<BatchPlan ctx={ctx} plan={m.plan} choice={m.batch.choice} undecided={m.walk?.undecided ?? 0} onSkip={m.skip} onTwin={m.twin}
-      onChoose={m.choose} onWalk={() => m.show('walk')} /></>;
+    return <>{back}<BatchPlan ctx={ctx} plan={m.plan} onSkip={m.skip} onTwin={m.twin} onWalk={() => m.show('walk')} /></>;
   }
   return <BatchList ctx={ctx} items={m.batch.items} editing={m.editing} fresh={m.fresh} wornOf={m.wornOf} onFix={m.fix} onRemove={m.remove} onPlan={() => m.show('plan')} />;
 }

@@ -31,7 +31,7 @@ const batchOf = (items: BatchEntry[]): Batch => ({ ...NEW_BATCH, items });
 const plan = (ctx: Ctx, st: GearStore, b: Batch): Plan => planBatch(ctx, st, entriesOf(b), new Set(b.skip));
 function render(lang: Lang, ctx: Ctx, p: Plan): { sum: string; rows: string[]; tagged: string[] } {
   const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS[lang] },
-    createElement(BatchPlan, { ctx, plan: p, choice: {}, undecided: 0, onSkip: () => {}, onTwin: () => {}, onChoose: () => {}, onWalk: () => {} }))));
+    createElement(BatchPlan, { ctx, plan: p, onSkip: () => {}, onTwin: () => {}, onWalk: () => {} }))));
   const body = new JSDOM(`<body>${html}</body>`).window.document.body;
   return {
     sum: body.querySelector('.batch-sum')?.textContent ?? '',
@@ -104,9 +104,8 @@ describe('small plan texts', () => {
     expect(TEXTS.ru.batch.summary(1, 8, 4, 7)).toBe('надеть 1 · отложить 8 · корм 4 · разобрать 7');
     expect(TEXTS.en.batch.summary(1, 8, 4, 7)).toBe('equip 1 · set aside 8 · feed 4 · dismantle 7');
   });
-  it('«Реши до обхода:» is gone, the chips stay', () => {
-    expect('decide' in TEXTS.ru.batch || 'decide' in TEXTS.en.batch).toBe(false);
-    expect([TEXTS.ru.batch.keepIt, TEXTS.ru.batch.junkIt, TEXTS.en.batch.keepIt, TEXTS.en.batch.junkIt]).toEqual(['Отложить', 'Разобрать', 'Set aside', 'Dismantle']);
+  it('no «Спорно» in the batch: no «Реши до обхода», no «Отложить / Разобрать» chips (owner 2026-10-10)', () => {
+    for (const k of ['decide', 'keepIt', 'junkIt', 'walkOff', 'maybe', 'keptMaybe']) expect(k in TEXTS.ru.batch || k in TEXTS.en.batch).toBe(false);
   });
   it('the look-alike of a set-aside piece is a question, the gender follows the slot', () => {
     const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
@@ -122,10 +121,6 @@ describe('small plan texts', () => {
     expect(TEXTS.ru.fit.date('2026-10-05')).toBe('05.10');
     expect(TEXTS.en.fit.same('helmet', 'Speed helmet', 'Hilde', 'Oct 5')).toBe('Looks like the Speed helmet set aside for Hilde (Oct 5). If it is — do nothing.');
     expect(TEXTS.en.fit.stashedOne('helmet', 'Speed helmet', 'SPD 1', 'Oct 5')).toBe("It's the Speed helmet · SPD 1, set aside (Oct 5).");
-  });
-  it('«Decide "Maybe" first» uses straight quotes in EN', () => {
-    expect(TEXTS.en.batch.walkOff(2)).toBe('Decide "Maybe" first: 2');
-    expect(TEXTS.ru.batch.walkOff(2)).toBe('Сначала реши «Спорно»: 2');
   });
   it('a substat token has a no-break space inside: «DMG RED% 1» never wraps between its parts', () => {
     const NB = ' ';

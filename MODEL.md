@@ -317,13 +317,14 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
 2. **Decisions are applied to a copy of the store** with the usual operations (`putOn`, `stashOn`, `removeFrom`), so
    later pieces see earlier keepers. Wear → `putOn` (the piece it replaces and other heroes' reserves it eats get lines
    of their own); keep/reserve → `stashOn`; material-now → feed (`feeds` per target, up to `FEEDS = 4`; a T4 piece counts
-   as all four and the target is `full`, not offered again); «Спорно» waits for the player's choice (set aside / dismantle).
+   as all four and the target is `full`, not offered again); «Спорно» (only heroes outside the roster want it) is junk.
 3. **One piece — one fate.** A record the plan itself made and a later "Equip" takes off or drops is fixed: eaten → "feed"
    for the eater; held → "set aside"; gone → **re-plan round** without that hero for that line (`skipKey`, an internal
    "Don't take", not saved). Rounds only add exclusions, at most one per entry — bounded (the rare "Equip → dismantle"
    is a known limitation, Q2).
-4. **Feed re-look** (`pass`, after all lines): a junk/maybe line, or a feed whose target left the pool (stranded), is
-   judged again on the final store; if it is now material it feeds (a piece taken off one hero and worn by another can
+4. **Feed re-look** (`pass`, after all lines): a junk line, or a feed whose target left the pool (stranded), is
+   judged again on the final store, with the player's «Don't take» only (a re-plan round's exclusion is about a record,
+   and a feed makes none); if it is now material it feeds (a piece taken off one hero and worn by another can
    feed a piece that reached a hero later); a stranded feed that finds no target becomes junk, and its count is dropped
    so "T4" never lands on a gone record.
 5. **T4 marks**: any piece fed four times (new or recorded, any tier below T4) gets "T4" — an op `{bt}` for "Undo";
@@ -339,9 +340,10 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    to hold it back for a better drop tomorrow (the piece worn today is replaced later through the usual «Equip» and
    Breakthrough). The owner's caveat — be careful where a T4 set bonus forms the build, maybe keep the better piece until
    three more arrive — is not implemented; an Epic armor stopgap is fed too (§4).
-9. **«Спорно» in a batch**: the line gets «Отложить» / «Разобрать» and the walk waits for the choice (`Walk.undecided`).
-   «Отложить» records nothing — it only puts the piece into the lock step (`walk.ts`, fate `lock`), no hero pool gets it
-   and «Record the plan» saves nothing for it; «Разобрать» puts it into the dismantle step.
+9. **No «Спорно» in a batch** (owner, 2026-10-10): a piece that suits only heroes outside the roster is dismantled —
+   nothing is set aside for a hero the player doesn't have, so there is no hero to lock it for and nothing to decide.
+   Material for the player's own heroes is checked before it (item 4). Was: «Отложить» / «Разобрать» chips, the walk
+   waited, «Отложить» locked the piece for no one.
 10. **Display order**: plan lines are *shown* in the entered order (`#n`), not the processing order of item 1. The line of
     a piece the plan takes off a hero (`off`: the worn piece a new one replaces, a set-aside record it pushes out) sits
     right under the entry that caused it; such lines are decided after all entries, in the order the pieces came off.

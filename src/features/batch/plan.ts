@@ -23,7 +23,6 @@ export type Fate =
   | { kind: 'reserve'; c: Char }
   | { kind: 'feed'; to: Target }
   | { kind: 'same'; same: Same }
-  | { kind: 'maybe'; heroes: Char[] }
   | { kind: 'junk' }
   | { kind: 'none' };                                               // no verdict: the item isn't in outerpedia data
 // a piece the plan takes from a hero: was — how the hero held it, 'worn' (taken off) or 'stash' (a set-aside record)
@@ -99,15 +98,19 @@ export function planBatch(ctx: Ctx, base: GearStore, entries: readonly Entry[], 
   const pools = poolsOf(ctx);
   const out = new Set(skip);
   for (let round = 0; ; round++) {
-    const { plan, gone } = pass(ctx, pools, base, entries, out);
+    const { plan, gone } = pass(ctx, pools, base, entries, out, skip);
     if (!gone.length || round >= entries.length) return plan;
     for (const k of gone) out.add(k);
   }
 }
 
-function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entries: readonly Entry[], skip: ReadonlySet<string>): { plan: Plan; gone: string[] } {
-  const skipOf = (line: string): Set<string> =>
-    new Set([...skip].filter((k) => k.startsWith(line + '>')).map((k) => k.slice(line.length + 1)));
+// skip — «Не брать» plus the heroes whose record of a line a later «Надень» dropped (planBatch's rounds); own — «Не брать»
+// alone: feeding makes no record, so only the player's own «Не брать» keeps a «Разобрать» piece from a hero's feed
+function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entries: readonly Entry[], skip: ReadonlySet<string>,
+  own: ReadonlySet<string>): { plan: Plan; gone: string[] } {
+  const keysOf = (keys: ReadonlySet<string>, line: string): Set<string> =>
+    new Set([...keys].filter((k) => k.startsWith(line + '>')).map((k) => k.slice(line.length + 1)));
+  const skipOf = (line: string) => keysOf(skip, line);
   const order = entries
     .map((e, i) => ({ n: e.n ?? i + 1, e, s: scoreOf(verdictOf(ctx, pools(base), e.input, { twin: e.twin, skip: skipOf(String(e.n ?? i + 1)) })), k: contentKey(e.input) }))
     // a T4 piece first among equals: as feed it fills its target at once, the others go to the next target
@@ -211,7 +214,8 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       return r.kind === 'keep' ? { kind: 'keep', c, t4: false } : { kind: 'reserve', c };
     }
     if (r.kind === 'material' && r.sub === 'now') return feedTo(r, input);
-    if (r.kind === 'maybe') return { kind: 'maybe', heroes: r.maybe };
+    // «Спорно» — good only for heroes outside the roster: dismantled (owner 2026-10-10: nothing is kept for a hero you
+    // don't have; material for your own was checked before it)
     return { kind: 'junk' };
   };
 
@@ -222,7 +226,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     if (!fates.has(o.id)) fates.set(o.id, decide(o.id, o.n, inputOfPiece(o.piece), false, false));
   }
 
-  // a «Разобрать» or «Спорно» piece decided before a piece of its kind reached a hero — taken off one hero and worn by
+  // a «Разобрать» piece decided before a piece of its kind reached a hero — taken off one hero and worn by
   // another after the entries (owner 2026-10-09: #48 Ether Blade vs the Ether Blade Fran gave Hilde) — feeds it if it can
   const inputOfLine = (id: string): { input: ItemInput; twin: boolean } | null => {
     const o = offs.find((x) => x.id === id);
@@ -236,9 +240,9 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     f.kind === 'feed' && !('entry' in f.to) && !st.pools[f.to.c.id]?.includes(f.to.piece.id) ? f.to.piece.id : null;
   for (const [id, f] of [...fates]) {
     const stranded = strandedTo(f);
-    if (f.kind !== 'junk' && f.kind !== 'maybe' && !stranded) continue;
+    if (f.kind !== 'junk' && !stranded) continue;
     const x = inputOfLine(id);
-    const r = x && verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: skipOf(id), full });
+    const r = x && verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: keysOf(own, id), full });
     if (stranded && x) feeds.delete(stranded);
     if (x && r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r, x.input));
     else if (stranded && x) fates.set(id, { kind: 'junk' });

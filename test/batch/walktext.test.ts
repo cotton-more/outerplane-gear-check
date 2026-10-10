@@ -57,7 +57,7 @@ function head(lang: Lang, walk: Walk, ctx: Ctx, b: Batch, p: Plan): { hint: stri
 }
 function planRows(lang: Lang, ctx: Ctx, p: Plan): string[] {
   const html = renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS[lang] },
-    createElement(BatchPlan, { ctx, plan: p, choice: {}, undecided: 0, onSkip: () => {}, onTwin: () => {}, onChoose: () => {}, onWalk: () => {} }))));
+    createElement(BatchPlan, { ctx, plan: p, onSkip: () => {}, onTwin: () => {}, onWalk: () => {} }))));
   return [...new JSDOM(`<body>${html}</body>`).window.document.body.querySelectorAll('.bfate, .boff-n')].map((x) => x.textContent ?? '');
 }
 const NB = ' ';
@@ -71,7 +71,7 @@ describe('equip title: «Hero → caption», the position as a quiet hint on the
     const { ctx, st } = world([step.c.name]);
     const b = batchOf([]);
     const p = plan(ctx, st, b);
-    const walk: Walk = { steps: [step], undecided: 0 };
+    const walk: Walk = { steps: [step] };
     return { title: steps(lang, ctx, b, p, walk)[0][0], h: head(lang, walk, ctx, b, p)[0], lines: steps(lang, ctx, b, p, walk)[0] };
   };
   const epicW = (bt: 0 | 4 = 0) => mk('ew', 'weapon', null, { CHC: 3, SPD: 3 }, bt, { grade: 'rare', itemKey: null, main: 'ATK%' });
@@ -179,18 +179,15 @@ describe('the lock step', () => {
     const input = inputOfPiece(W('k', 'ATK%', { CHD: 4, SPD: 4, CHC: 4, HP: 4 }, 4));
     const b = batchOf([{ kind: 'piece', input }]);
     const p = plan(ctx, st, b);
-    const walk: Walk = { undecided: 0, steps: [{ key: 'lk:1', stage: 2, where: { n: 1 }, kept: { n: 1, input, c: char('Roxie'), why: 'keep' } },
-      { key: 'lk:2', stage: 2, where: { n: 2 }, kept: { n: 2, input, c: null, why: 'maybe' } }] };
-    expect(steps('en', ctx, b, p, walk).map((s) => s.slice(0, 3))).toEqual([
-      [`Row 1, no.${NB}1${NB}·${NB}#1`, nb('Thumping Odyssey · ATK% · T4'), 'for Roxie'],
-      [`Row 1, no.${NB}2${NB}·${NB}#2`, nb('Thumping Odyssey · ATK% · T4'), 'Maybe, set aside']]);
-    expect(steps('ru', ctx, b, p, walk)[1].slice(0, 3)).toEqual([`Ряд 1, 2-й${NB}·${NB}#2`, nb('Thumping Odyssey · ATK% · T4'), 'Спорно, отложено']);
+    const walk: Walk = { steps: [{ key: 'lk:1', stage: 2, where: { n: 1 }, kept: { n: 1, input, c: char('Roxie'), why: 'keep' } }] };
+    expect(steps('en', ctx, b, p, walk).map((s) => s.slice(0, 3))).toEqual([[`Row 1, no.${NB}1${NB}·${NB}#1`, nb('Thumping Odyssey · ATK% · T4'), 'for Roxie']]);
+    expect(steps('ru', ctx, b, p, walk)[0].slice(0, 3)).toEqual([`Ряд 1, 1-й${NB}·${NB}#1`, nb('Thumping Odyssey · ATK% · T4'), 'для Roxie']);
   });
   it('the texts: no «Замок:» prefix on a taken-off piece, one «· запас» form', () => {
     expect(TEXTS.ru.batch.lockStepAt('Снятый шлем Caren (SPD 1)')).toBe('Снятый шлем Caren (SPD 1)');
     expect(TEXTS.en.batch.lockStepAt("Caren's removed helmet (SPD 1)")).toBe("Caren's removed helmet (SPD 1)");
-    expect([TEXTS.ru.batch.keptFor('Gnosis Domine'), TEXTS.ru.batch.keptReserve('Valentine'), TEXTS.ru.batch.keptMaybe]).toEqual(['для Gnosis Domine', `для Valentine${NB}·${NB}запас`, 'Спорно, отложено']);
-    expect([TEXTS.en.batch.keptFor('Gnosis Domine'), TEXTS.en.batch.keptReserve('Valentine'), TEXTS.en.batch.keptMaybe]).toEqual(['for Gnosis Domine', `for Valentine${NB}·${NB}reserve`, 'Maybe, set aside']);
+    expect([TEXTS.ru.batch.keptFor('Gnosis Domine'), TEXTS.ru.batch.keptReserve('Valentine')]).toEqual(['для Gnosis Domine', `для Valentine${NB}·${NB}запас`]);
+    expect([TEXTS.en.batch.keptFor('Gnosis Domine'), TEXTS.en.batch.keptReserve('Valentine')]).toEqual(['for Gnosis Domine', `for Valentine${NB}·${NB}reserve`]);
   });
 });
 

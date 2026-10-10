@@ -45,7 +45,7 @@ function screens(lang: Lang, ctx: Ctx, b: Batch, p: Plan, walk: Walk): { plan: s
     return new JSDOM(`<body>${renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: TEXTS[lang] }, el)))}</body>`).window.document.body;
   };
   const noop = () => {};
-  const pl = wrap(createElement(BatchPlan, { ctx, plan: p, choice: {}, undecided: 0, onSkip: noop, onTwin: noop, onChoose: noop, onWalk: noop }));
+  const pl = wrap(createElement(BatchPlan, { ctx, plan: p, onSkip: noop, onTwin: noop, onWalk: noop }));
   const wk = wrap(createElement(BatchWalk, { ctx, batch: b, plan: p, walk, what: '', onTick: noop, onDone: noop }));
   // the no-break spaces inside substat tokens («DMG RED% 1») read as plain spaces here
   const flat = (x: string | null) => (x ?? '').replace(/\u00A0/g, ' ');

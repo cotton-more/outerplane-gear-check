@@ -55,8 +55,7 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
    Worn and locked entries hold the numbers: without them "No. 7" in the app and in the game would differ. "List ▸" —
    fix a piece (tap it, then "Save #N") or remove it (✕). The kind is in the list's heading once ("Batch · 20 · Epic
    Speed"); the rows say only what differs — the item, or the slot for armor. ✕ removes at once and the later numbers
-   move up; "Removed #5 · Undo" brings the piece back at its place, with its "Don't take", "It's a different one" and
-   "Maybe".
+   move up; "Removed #5 · Undo" brings the piece back at its place, with its "Don't take" and "It's a different one".
 3. **"Plan it"** — a line per piece: "Equip on Caren", "Equip on Caren — instead of the helmet", "Set aside for Rin",
    "Feed to #4 · Kappa's helmet", "Feed to Kappa's helmet", "Feed to Kappa's set-aside helmet", "Dismantle". A piece
    the plan takes off a hero gets its own line right under it ("Caren's removed helmet …"; for a weapon or accessory
@@ -65,8 +64,8 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
    target takes up to four pieces; a new piece fed four times reaches T4 ("· T4 after feeding"). Four feeds take a worn
    piece to T4 too — "Record the plan" marks "T4" itself; fewer than four — once it's at T4, tap "T4" on its card. A
    piece that looks like one already set aside asks: "Same as Hilde's set-aside (Oct 5)? Then do nothing." — if you
-   have two of them, tap "It's a different one". **"Don't take"** on a line — plan it again without that hero. Decide
-   **"Maybe"** right away: "Set aside" or "Dismantle" — the walk waits for it.
+   have two of them, tap "It's a different one". **"Don't take"** on a line — plan it again without that hero. A piece
+   that would suit only heroes outside your roster is "Dismantle": there's no one to set it aside for.
 4. **"Walk ▸"** — steps by game screen, in an order where the numbers don't drift (equipping and taking off don't move
    a piece — it only gains or loses its E). At the top — the game filter to set: "Game filter: Epic Speed · worn
    shown · by date."
@@ -77,7 +76,7 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
       +9.0%" — check them. A piece taken off another hero: "Maxie → Tamara's removed weapon".
    2. **Lock** what you keep: "Row 3, no. 1 · #21" (10 pieces per row), for a weapon or accessory the item below it,
       then for whom: "for Gnosis Domine" (set aside to wear when the set comes together), "for Gnosis Domine ·
-      reserve" — Breakthrough material, "Maybe, set aside", and the substats to check. A lock means "in someone's
+      reserve" — Breakthrough material, and the substats to check. A lock means "in someone's
       Pool": whose — on the hero's card, the Pool tab.
    3. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4" — any piece from the game's list works (the app
       doesn't know the exact tier below T4, the game takes no more than it needs); what the game doesn't take goes to

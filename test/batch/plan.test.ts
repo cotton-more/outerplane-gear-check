@@ -31,7 +31,6 @@ function norm(plan: Plan, f: Fate): string {
     case 'wear': case 'keep': case 'reserve': return `${f.kind}:${f.c.name}`;
     case 'feed': return 'feed:' + ('entry' in f.to ? key(plan.lines.find((l) => l.n === (f.to as { entry: number }).entry && !l.off)!.input) : f.to.piece.id);
     case 'same': return 'same:' + f.same.piece.id;
-    case 'maybe': return 'maybe';
     default: return f.kind;
   }
 }
@@ -68,7 +67,7 @@ describe('plan of a batch', () => {
   it('Rin case in one batch: the good Legendary is worn, the weak one feeds it — whatever the entered order', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const a = planBatch(ctx, st, [E(weak('L1')), E(good('L2'))]);
-    expect(a.lines.map((l) => [l.id, l.fate.kind])).toEqual([['1', 'feed'], ['2', 'wear'], ['2~1', expect.stringMatching(/^(junk|maybe)$/)]]);
+    expect(a.lines.map((l) => [l.id, l.fate.kind])).toEqual([['1', 'feed'], ['2', 'wear'], ['2~1', 'junk']]);
     expect(a.lines[0].fate).toMatchObject({ kind: 'feed', to: { entry: 2 } });
     expect(a.lines[1].fate).toMatchObject({ kind: 'wear', c: { name: 'Caren' }, instead: { id: 'eH' } });
     expect(a.lines[2].off).toMatchObject({ c: { name: 'Caren' }, piece: { id: 'eH' } });
@@ -181,8 +180,8 @@ describe('plan of a batch', () => {
     ]);
     expect(problems(st, plan)).toEqual([]);
     // owner 2026-10-08, (c): with no pin the Speed armor (#2) goes on Rin first; Rin's old armor goes on Caren's empty
-    // slot under it, and #1 is left «Спорно» — no piece on two lines (was: #1 on Rin, #2 set aside for Caren)
-    expect(plan.lines.map((l) => [l.id, l.fate.kind, 'c' in l.fate ? l.fate.c.name : ''])).toEqual([['1', 'maybe', ''], ['2', 'wear', 'Rin'], ['2~1', 'wear', 'Caren']]);
+    // slot under it, and #1 — good only for heroes outside the roster — is dismantled (owner 2026-10-10) — no piece on two lines (was: #1 on Rin, #2 set aside for Caren)
+    expect(plan.lines.map((l) => [l.id, l.fate.kind, 'c' in l.fate ? l.fate.c.name : ''])).toEqual([['1', 'junk', ''], ['2', 'wear', 'Rin'], ['2~1', 'wear', 'Caren']]);
     expect(plan.lines[2].off).toMatchObject({ piece: { id: 'Ra' }, was: 'worn' });
   });
 
