@@ -261,8 +261,10 @@ html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
 .nw { display: inline-block; max-width: 100%; }
 .nwx { white-space: nowrap; }
 /* a hero to find in the game (game/hero/HeroTag): class icon + name in the element's colour */
-.htag { display: inline-flex; align-items: center; gap: 3px; vertical-align: bottom; }
-.htag .ico, .htag img { width: 16px; height: 16px; flex: none; }
+/* inline, not flex: the name sits on the phrase's own baseline (a flex box aligned by its bottom put it a pixel or two
+   lower — owner 2026-10-10); the icon is centred on the lowercase letters, its margins keep the line from growing */
+.htag { white-space: nowrap; }
+.htag .ico, .htag img { width: 16px; height: 16px; margin: -3px 3px -2px 0; vertical-align: -3px; }
 .htag.el-fire b { color: var(--el-fire); }
 .htag.el-water b { color: var(--el-water); }
 .htag.el-earth b { color: var(--el-earth); }
