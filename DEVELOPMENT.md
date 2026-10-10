@@ -178,8 +178,9 @@ without its own icon is drawn as a hexagon; the data update report will remind y
 
 **Animations** — all in `src/styles/motion.css`: appearance only (sheets, verdict card, tutorial and
 tip strips, «Вернуть») and a flash of the verdict bar on verdict change; 150–200 ms, only `transform` and `opacity`.
-Everything closes instantly. Grid, substat rows, slot, grade and verdict text are not animated — input must respond
-instantly. System "Reduce motion" disables all animations (`base.css`); screenshots are taken without them.
+The one animation that is not an entrance is the 200 ms pulse (`m-pick`, `motion.css`) of the only Legendary item left in the
+picker after typing, just before it is picked (owner-approved: an instant pick looked like a glitch). Everything closes
+instantly. Grid, substat rows, slot, grade and verdict text are not animated — input must respond instantly. System "Reduce motion" disables all animations (`base.css`); screenshots are taken without them.
 
 All thresholds are in the `CFG` block in `src/game/config.ts`; after editing, rebuild the page (`task build:pwa` or `task build:single`)
 and, if verdicts changed intentionally, update the golden (`task golden:update`).

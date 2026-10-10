@@ -251,6 +251,6 @@ gear") in them are skipped. During a tutorial there's no code: the page shows an
 hero's gear when Core Fusion has gear of its own (see [Core Fusion](#core-fusion)). "Filling", the chosen builds and
 "Keep worn gear" are removed; every hero is evaluated "By stats". You see one message once: "Evaluation updated: no build
 to pick per hero — stats and the sets from outerpedia builds now count together. Need a specific set? Pin it on the hero
-card." — with "Got it". New players and those who already moved don't see it. If something had to be fixed at launch
-(roster, Core Fusion), the fixed data is saved right away. If the saved data has something this version doesn't
+card." — with "Got it". If there were old marks, the message adds that the "Filling" marks and "Keep worn gear" were
+cleared. New players and those who already moved don't see it. If something had to be fixed at launch (roster, Core Fusion), the fixed data is saved right away. If the saved data has something this version doesn't
 understand, nothing is overwritten at launch.

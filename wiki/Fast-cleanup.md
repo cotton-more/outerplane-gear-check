@@ -89,14 +89,14 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
    4. **Dismantle — in one selection, last:** "Select in the game: 7" — after the Breakthrough, so nothing meant as feed
       is dismantled. Each piece on a line — its substats ("HP 1, EFF% 2, DMG RED% 1"); a weapon or accessory with its
       name and main first (Epic blue, Legendary red): "Sublime Melody · HP% · DMG UP% 3, EFF% 1, …"; "T4" shows only
-      at T4. The last line "+ feed the Breakthrough didn't take" — dismantle it too. A set-aside piece in this list
+      at T4. When there was a Breakthrough step, the last line "+ feed the Breakthrough didn't take" — dismantle it too. A set-aside piece in this list
       is locked in the game: "first unlock N set-aside".
 
    These two last steps have no numbers or places: after the Breakthrough the game's list has moved, so find the pieces
    by their substats; several identical — take the first.
 
-   Tick steps ✓ — the walk is saved, even if the phone unloads the page. Substats differ — the batch and the game
-   list differ: fix it in "List ▸".
+   Tick steps ✓ — the walk is saved, even if the phone unloads the page. If the substats in the game differ from the
+   step's, the batch and the game list have drifted apart: fix it in "List ▸".
 5. At the end **"All done — Record the plan"** and "Record" in the question "All done in the game?": equips and
    set-asides are recorded at once ("Batch recorded: 3 equipped, 2 set aside."), "Undo" reverts all and brings the
    batch back. If some steps are unticked, the question says how many: "Not ticked: 3 of 11 steps." Recording happens

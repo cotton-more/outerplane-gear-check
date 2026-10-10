@@ -256,7 +256,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
 
 `features/batch/plan.ts:planBatch` — one plan for pieces entered as a batch. **No new rules**: every piece goes through
 `verdictOf`; a one-piece batch equals the single verdict on the real roster (0 of 69,000 differ; in synthetic worlds
-118 of 24,738 differ through the re-plan, item 3). Entry kinds
+119 of 24,738 differ through the re-plan, item 3). Entry kinds
 (`batch.ts`): a typed piece, "E · worn" by a hero, "🔒" locked set-aside; all hold a position `#n` in the game list.
 
 1. **Order**: strongest outcome first judged against the real store (wear > keep > material > maybe > junk), then the
