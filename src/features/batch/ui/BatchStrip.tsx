@@ -14,7 +14,7 @@ import { HeroName } from '@/game/hero/HeroName';
 // what — the batch's kind for «Никто из твоих героев не носит здесь Legendary Speed»
 export function BatchStrip({ n, cands, what, onList, onEnd, onWorn, onLock }: {
   n: number; cands: () => Char[] | null; what: string;
-  onList: () => void; onEnd: () => void; onWorn: (c: string) => void; onLock: () => void;
+  onList: () => void; onEnd: () => void; onWorn: (c: string, from: Element | null) => void; onLock: (from: Element) => void;
 }) {
   const t = useT();
   const [pick, setPick] = useState<Char[] | null>(null);
@@ -27,7 +27,7 @@ export function BatchStrip({ n, cands, what, onList, onEnd, onWorn, onLock }: {
           <button type="button" className="btn small hit" aria-label={t.batch.wornAdd} title={t.batch.wornAdd} onClick={() => { const c = cands(); if (c) setPick(c); }}>
             <span aria-hidden="true">{t.batch.wornAdd.split(' · ')[0]}</span><span className="bm-long" aria-hidden="true"> · {t.batch.wornAdd.split(' · ')[1]}</span>
           </button>
-          <button type="button" className="btn small hit" aria-label={t.batch.lockAdd} title={t.batch.lockAdd} onClick={onLock}>
+          <button type="button" className="btn small hit" aria-label={t.batch.lockAdd} title={t.batch.lockAdd} onClick={(e) => onLock(e.currentTarget)}>
             <span aria-hidden="true">{t.batch.lockAdd.split(' · ')[0]}</span><span className="bm-long" aria-hidden="true"> · {t.batch.lockAdd.split(' · ')[1]}</span>
           </button>
         </span>
@@ -38,7 +38,7 @@ export function BatchStrip({ n, cands, what, onList, onEnd, onWorn, onLock }: {
         <Sheet title={t.batch.whose} onClose={() => setPick(null)}>
           <div className="batch-whose">
             {pick.length ? pick.map((c) => (
-              <button key={c.id} type="button" className="btn bwho" onClick={() => { setPick(null); onWorn(c.id); }}>
+              <button key={c.id} type="button" className="btn bwho" onClick={(e) => { onWorn(c.id, e.currentTarget.querySelector('.face') ?? e.currentTarget); setPick(null); }}>
                 <HeroFace c={c} round /><HeroName c={c} />
               </button>
             )) : <p className="muted small">{t.batch.whoseNone(what)}</p>}

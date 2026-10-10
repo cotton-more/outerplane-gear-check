@@ -24,6 +24,12 @@ html.sheet .char-detail.open { animation: m-sheet .2s cubic-bezier(.2, .8, .2, 1
 
 /* «Партия», wide screen: the entry just added or fixed comes into the list where the column scrolled to (BatchList fresh) */
 .batch .brow.fresh { animation: m-rise .18s ease-out; }
+/* …and what was tapped flies into it (shared/fly: substats, the hero, «🔒»; a phone — into the strip's count) while the row
+   fades in. Not an entrance and 300 ms: the owner asked to try it (2026-10-10) — if it goes, this, shared/fly and the
+   legs in features/batch go together */
+@keyframes m-fly { 60% { opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(var(--s)); opacity: .2; } }
+.fly { position: fixed; z-index: 1000; margin: 0; box-sizing: border-box; white-space: nowrap; pointer-events: none; animation: m-fly .3s cubic-bezier(.4, 0, .2, 1) forwards; }
+.batch .brow.landing { animation: m-fade .3s ease-in; }
 
 /* плашка вердикта внизу: вердикт сменился — короткая вспышка его цветом (Verdict.tsx, VBar) */
 .vb-flash { position: absolute; inset: 0; z-index: -1; background: var(--v, var(--idle)); pointer-events: none; animation: m-flash .4s ease-out forwards; }

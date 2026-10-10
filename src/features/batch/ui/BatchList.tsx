@@ -5,6 +5,7 @@ import type { ItemInput } from '@/game/item/item';
 import { useEffect, useRef } from 'react';
 import type { BatchEntry } from '@/features/batch/batch';
 import type { BatchFresh } from '@/features/batch/useBatchMode';
+import { land } from '@/shared/fly';
 import type { SlotId } from '@/game/data/types';
 import type { Piece } from '@/features/gear/model/gear';
 import { inputOfPiece } from '@/features/batch/plan';
@@ -32,7 +33,9 @@ export function BatchPiece({ ctx, n, x, children }: { ctx: Ctx; n: number; x: It
 }
 
 // fresh — the entry just added or fixed (wide screen, owner 2026-10-10: past 13 rows a new one was below the column's
-// edge — was it added?): the column scrolls to it and the row comes in (motion.css .brow.fresh); a new key replays it
+// edge — was it added?): the column scrolls to it and the row comes in (motion.css .brow.fresh); a new key replays it.
+// What was tapped flies in (shared/fly): substats into the row's chips, the hero into its portrait, «🔒» into the number;
+// the row then only fades in (.landing) — a rise would move the place they fly to
 // wornOf — an «E» entry's piece (the hero's worn record): shown like a free piece plus a line with the hero's round
 // portrait and name (owner 2026-10-09); no record — the hero line alone
 export function BatchList({ ctx, items, editing, fresh, wornOf, onFix, onRemove, onPlan }: {
@@ -42,7 +45,12 @@ export function BatchList({ ctx, items, editing, fresh, wornOf, onFix, onRemove,
   const t = useT();
   const list = useRef<HTMLOListElement>(null);
   useEffect(() => {
-    if (fresh) list.current?.children[fresh.n - 1]?.scrollIntoView({ block: 'nearest' });
+    const row = fresh && list.current?.children[fresh.n - 1];
+    if (!row) return;
+    row.scrollIntoView({ block: 'nearest' });
+    const chips = [...row.querySelectorAll('.bgear-t > *')];
+    const face = row.querySelector('.bworn .face');
+    land(fresh.legs, face ? [face] : chips.length ? chips : [...row.querySelectorAll('.bnum')]);
   }, [fresh]);
   return (
     <div className="batch">
@@ -51,7 +59,7 @@ export function BatchList({ ctx, items, editing, fresh, wornOf, onFix, onRemove,
         {items.map((e, i) => {
           const isNew = fresh?.n === i + 1;
           const key = isNew ? `${i}:${fresh.seq}` : i;
-          const nw = isNew ? ' fresh' : '';
+          const nw = !isNew ? '' : fresh.legs.length ? ' landing' : ' fresh';
           const x = <CloseButton className="brow-x hit" label={t.batch.remove(i + 1)} title={t.batch.remove(i + 1)} onClick={() => onRemove(i + 1)} />;
           return e.kind === 'piece' ? (
             <li key={key} className={`bgear-row brow${editing === i + 1 ? ' editing' : ''}${nw}`}>

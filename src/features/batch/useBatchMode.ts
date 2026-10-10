@@ -13,6 +13,7 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { storage } from '@/shared/storage';
 import { useTimed } from '@/shared/useTimed';
+import { land, takeOff, type Leg } from '@/shared/fly';
 import { addSkip, entriesOf, fitsKind, kindOf, kindOfInput, NEW_BATCH, putItem, removeItem, removedOf, restoreBatch, restoreItem, setChoice, setTwin, toggleDone, type Batch, type BatchEntry, type BatchKind } from './batch';
 import { planBatch, skipKey, undoPlan, type Plan } from './plan';
 import { walkOf, type Walk } from './walk';
@@ -25,8 +26,9 @@ export interface BatchAsk { slot: boolean; grade: boolean }
 // grade — the first piece's (owner 2026-10-09: 60 Epic swords — 60 taps on «E» otherwise; Epic and Legendary are
 // different materials, so a mix-up is the costliest mistake); explain — a tap on a locked one: the note says why
 export interface BatchLock { slots: SlotId[]; set: string | null; grade: Grade | null; explain: () => void }
-// seq — a new one per put, so fixing the same #n again scrolls and plays again
-export interface BatchFresh { n: number; seq: number }
+// seq — a new one per put, so fixing the same #n again scrolls and plays again; legs — what flies into the row (shared/fly):
+// the form's substats, the hero's button for «E», the «🔒» button
+export interface BatchFresh { n: number; seq: number; legs: Leg[] }
 const ARMOR_SLOTS: SlotId[] = ['helmet', 'armor', 'gloves', 'shoes'];
 
 export interface BatchMode {
@@ -53,8 +55,8 @@ export interface BatchMode {
   twin: (n: number) => void;
   done: () => void;
   wornCands: (slot: SlotId) => Char[] | null; // «E»: roster heroes wearing a piece of this slot that fits the batch; null — the slot is asked first
-  addWorn: (c: string, slot: SlotId) => void;
-  addLock: (slot: SlotId) => void;
+  addWorn: (c: string, slot: SlotId, from: Element | null) => void; // from — the tapped button: it flies into the list
+  addLock: (slot: SlotId, from: Element | null) => void;
   choose: (line: string, c: 'keep' | 'junk' | null) => void; // «Спорно»: decided before the walk
   tick: (step: string) => void;    // ✓ a walk step
   end: () => void;                 // ✕: asks when the batch has pieces
@@ -101,15 +103,17 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
   const whatOf = (k: BatchKind | null) => t.batch.what(!k ? null : k.startsWith('set:') ? { set: idx.SET[k.slice(4)]?.short ?? '' } : k === 'weapon' ? 'weapon' : k === 'accessory' ? 'accessory' : null, grade);
   const kindText = (k: BatchKind | null) => t.batch.otherKind(whatOf(k));
   // an entry of another kind isn't added: the note says what this batch is
-  const put = (e: BatchEntry, k: BatchKind): boolean => {
+  const put = (e: BatchEntry, k: BatchKind, from: Iterable<Element>): boolean => {
     if (!value) return false;
     // fixing the only entry may change the kind
     const rest = free ? null : kind;
     if (!fitsKind(rest, k) || (grade && e.kind === 'piece' && e.input.grade !== grade)) { setNote(kindText(rest)); return false; }
+    const legs = takeOff(from); // before the form resets
     const next = putItem(value, e, editing);
     set(next);
-    // the phone's list is in a closed sheet: nothing to scroll; the strip's count says it
-    if (!narrow) setFresh((f) => ({ n: editing ?? next.items.length, seq: (f?.seq ?? 0) + 1 }));
+    // the phone's list is in a closed sheet: nothing to scroll; it flies into the strip's count
+    if (!narrow) setFresh((f) => ({ n: editing ?? next.items.length, seq: (f?.seq ?? 0) + 1, legs }));
+    else requestAnimationFrame(() => land(legs, [...document.querySelectorAll('.batch-strip .tryon-k')]));
     setEditing(null);
     setNote(null);
     return true;
@@ -131,7 +135,7 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
       if (ask && (ask.slot || ask.grade)) { askNote(ask); return; }
       if (!complete) { setNote(t.batch.incomplete); return; }
       const fixing = editing !== null;
-      if (!put({ kind: 'piece', input }, kindOfInput(input))) return;
+      if (!put({ kind: 'piece', input }, kindOfInput(input), document.querySelectorAll('#eval-in .subrow .subkey'))) return;
       dispatch({ type: 'reset', batch: true });
       if (!fixing) setAsk({ slot: isArmor(input.slot), grade: false }); // the grade is the batch's from now on (lock)
       toForm();
@@ -183,13 +187,13 @@ export function useBatchMode({ idx, t, ctx, gear, dispatch, persist, narrow, say
       });
     },
     // «E» and «🔒» take the form's slot: armor asks it first, like a piece
-    addWorn: (c, slot) => {
+    addWorn: (c, slot, from) => {
       if (ask?.slot) { askNote({ slot: true, grade: false }); return; }
-      if (put({ kind: 'worn', c, slot }, slotKind(slot)) && isArmor(slot)) setAsk({ slot: true, grade: ask?.grade ?? false });
+      if (put({ kind: 'worn', c, slot }, slotKind(slot), from ? [from] : []) && isArmor(slot)) setAsk({ slot: true, grade: ask?.grade ?? false });
     },
-    addLock: (slot) => {
+    addLock: (slot, from) => {
       if (ask?.slot) { askNote({ slot: true, grade: false }); return; }
-      if (put({ kind: 'lock', slot }, slotKind(slot)) && isArmor(slot)) setAsk({ slot: true, grade: ask?.grade ?? false });
+      if (put({ kind: 'lock', slot }, slotKind(slot), from ? [from] : []) && isArmor(slot)) setAsk({ slot: true, grade: ask?.grade ?? false });
     },
     ask: value ? ask : null,
     answer: (what) => setAsk((a) => (a ? { ...a, [what]: false } : a)),
