@@ -30,9 +30,15 @@ export function waitText(t: Texts, ctx: Ctx, c: Char, x: ItemInput): string {
 // listed item is Legendary — «Token of the Supreme Witch · ATK%» red, not the line's green); armor's «хороший шлем Speed»
 // has no grade — plain
 export function withWait(text: string, c: Char | null, t: Texts, ctx: Ctx, x: ItemInput): ReactNode {
-  const what = isArmor(x.slot) || !c ? '' : waitText(t, ctx, c, x), i = what ? text.indexOf(what) : -1;
+  return withItem(text, c, isArmor(x.slot) || !c ? '' : waitText(t, ctx, c, x), 'unique');
+}
+
+// a phrase with a hero and an item caption somewhere in it: the hero tagged, the caption in its grade's colour (owner
+// 2026-10-10: every item named in a batch line shows its grade)
+export function withItem(text: string, c: Char | null, what: string, grade: ItemInput['grade']): ReactNode {
+  const i = what ? text.indexOf(what) : -1;
   if (i < 0) return withHero(text, c);
-  return <>{withHero(text.slice(0, i), c)}<span className="gname legend">{what}</span>{text.slice(i + what.length)}</>;
+  return <>{withHero(text.slice(0, i), c)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{what}</span>{withHero(text.slice(i + what.length), c)}</>;
 }
 
 // the piece a «Корм для #n» line feeds, by its line: the hero who gets or keeps it and its slot (owner 2026-10-09: «Корм для

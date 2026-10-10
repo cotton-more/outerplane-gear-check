@@ -11,7 +11,7 @@ import { LangContext, TEXTS, type Lang } from '@/i18n';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
 import { entriesOf, NEW_BATCH, type Batch, type BatchEntry } from '@/features/batch/batch';
 import { inputOfPiece, planBatch, type Fate, type Plan } from '@/features/batch/plan';
-import { BatchPlan, fateText, withWait } from '@/features/batch/ui/BatchPlan';
+import { BatchPlan, fateText, withItem, withWait } from '@/features/batch/ui/BatchPlan';
 import { subsText } from '@/game/text';
 import { char, idx, mk } from '../gear/statSets';
 
@@ -77,6 +77,11 @@ describe('Q6: a recommended Legendary that wins by rank and loses points names t
     const doc = new JSDOM(`<body>${renderToStaticMarkup(createElement('span', null, withWait(text, maxwell, TEXTS.ru, ctx, x)))}</body>`).window.document;
     expect([doc.querySelector('.gname')?.className, doc.querySelector('.gname')?.textContent, doc.querySelector('.htag')?.textContent])
       .toEqual(['gname legend', `${name}\u00A0·\u00A0${mains.join('/')}`, 'Maxwell']);
+    // a step title describing a taken-off piece: the hero tagged, the item in its grade's colour wherever it stands
+    const title = TEXTS.ru.batch.off('weapon', 'Maxwell', `${name}\u00A0·\u00A0HP%`) + ' (DEF 1)';
+    const d2 = new JSDOM(`<body>${renderToStaticMarkup(createElement('b', null, withItem(title, maxwell, `${name}\u00A0·\u00A0HP%`, 'unique')))}</body>`).window.document;
+    expect([d2.querySelector('.gname')?.className, d2.querySelector('.gname')?.textContent, d2.querySelector('.htag')?.textContent, d2.body.textContent])
+      .toEqual(['gname legend', `${name}\u00A0·\u00A0HP%`, 'Maxwell', title]);
     const speed = idx.D.sets.find((s) => s.short === 'Speed')!.id;
     const helm = { ...x, slot: 'helmet' as const, itemKey: null, main: null, setId: speed };
     expect(fateText(TEXTS.ru, { kind: 'reserve', c: maxwell }, p, ctx, helm)).toBe('Отложи для Maxwell — запас: корм, когда выпадет хороший шлем Speed');

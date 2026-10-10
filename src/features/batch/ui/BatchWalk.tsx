@@ -18,7 +18,7 @@ import { batchCaption, capLine, itemCaption, Painted } from '@/features/gear/ui/
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 import { SubToken } from '@/game/item/SubToken';
-import { waitText, withWait } from './BatchPlan';
+import { waitText, withItem, withWait } from './BatchPlan';
 
 // the caption line of a weapon or accessory: «Noblewoman's Guile · HP%», «Steel Sword · ATK% · T4» (Q4); armor has none —
 // the title says the slot and the hero, the grade and set are in the batch's title (an equip with a position has its
@@ -32,6 +32,9 @@ const desc = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>): string => {
   return w.was === 'stash' ? t.batch.offStash(w.off.slot, w.c.name, subsText(w.off.lit), what) : `${t.batch.off(w.off.slot, w.c.name, what)} (${subsText(w.off.lit)})`;
 };
 
+// the caption inside such a description, to colour it in a step's title
+const paintOf = (ctx: Ctx, t: Texts, w: Exclude<Where, { n: number }>) => ({ what: capOf(ctx, t, inputOfPiece(w.off)), grade: w.off.grade });
+
 // the same as a line of its own (the feed, the dismantle): the item's name and main in the grade's colour, like a PieceLine
 // (owner 2026-10-10: «Снятый аксессуар Luna — Steel Necklace · HP%» — the item didn't stand out)
 function DescLine({ ctx, t, w }: { ctx: Ctx; t: Texts; w: Exclude<Where, { n: number }> }) {
@@ -39,10 +42,10 @@ function DescLine({ ctx, t, w }: { ctx: Ctx; t: Texts; w: Exclude<Where, { n: nu
 }
 
 // a step: its title (with the hero to find, tagged), the piece's caption at the end of the title in the grade's colour
-// (`tail`, an equip of a piece with a position), the quiet position hint on the right of the title line (`no`), the
+// (`paint`: an equip of a piece with a position; a taken-off or set-aside piece described in the title), the quiet position hint on the right of the title line (`no`), the
 // caption line of a weapon or accessory, for whom the kept piece stays, lines under it, and — for an equip and a lock —
 // the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
-interface StepText { title: string; hero: Char | null; tail?: string; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null; x: ItemInput }; more: ReactNode[]; subs?: string[]; bt?: Bt }
+interface StepText { title: string; hero: Char | null; paint?: { what: string; grade: ItemInput['grade'] }; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null; x: ItemInput }; more: ReactNode[]; subs?: string[]; bt?: Bt }
 // a Breakthrough step (owner 2026-10-10, «target card + pips»): the target as a card — its item, all its substats and how
 // many tiers this feed adds (◆ per piece, «+2»; four always reach T4 — «T4»: the app knows only T4 or not, so no «T0 →»)
 // — and the feed hanging under it
@@ -96,12 +99,12 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const w = s.where;
       if ('n' in w) {
         const what = batchCaption(t, ctx.idx, formPiece(s.input));
-        return { title: t.batch.equipTo(s.c.name, what), hero: s.c, tail: what, no: s.k === null ? undefined : t.batch.equipNo(s.k), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
+        return { title: t.batch.equipTo(s.c.name, what), hero: s.c, paint: { what, grade: s.input.grade }, no: s.k === null ? undefined : t.batch.equipNo(s.k), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
       }
       return { title: t.batch.equipTo(s.c.name, t.batch.offAt(w.off.slot, w.c.name, w.was === 'stash')), hero: s.c, cap: capOf(ctx, t, s.input), grade: s.input.grade, more: [], subs: gameSubs(ctx.idx, s.subs) };
     }
     case 2: {
-      if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(ctx, t, s.where)), hero: s.where.c, more: [] };
+      if (!('n' in s.where)) return { title: t.batch.lockStepAt(desc(ctx, t, s.where)), hero: s.where.c, paint: paintOf(ctx, t, s.where), more: [] };
       const { r, p } = rowOf(s.where.n);
       return { title: t.batch.lockStep(r, p, s.where.n), hero: null, cap: s.kept ? capOf(ctx, t, s.kept.input) : undefined, grade: s.kept?.input.grade, kept: s.kept ? keptText(ctx, t, s.kept) : undefined,
         more: [], subs: s.kept ? gameSubs(ctx.idx, s.kept.input.subs) : undefined };
@@ -116,8 +119,9 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       // the feed, piece by piece: «Noblewoman's Guile · HP% · HP 3, …»; a taken-off or set-aside one — its description
       const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <MatLine ctx={ctx} x={x} /> : <DescLine ctx={ctx} t={t} w={w} />));
       const unlock = s.unlock ? [t.batch.btUnlock(s.unlock)] : [];
-      if (s.piece) return { title: t.batch.btStep(where, s.n), hero, more: unlock, bt: { piece: s.piece, n: s.n, mats } };
-      return { title: t.batch.btStep(where, s.n), hero, cap, grade: undefined, more: [...unlock, t.batch.btFeed, ...mats.map((m, i) => <span key={i}>{m}</span>)] };
+      const paint = 'worn' in tg ? undefined : paintOf(ctx, t, tg.where);
+      if (s.piece) return { title: t.batch.btStep(where, s.n), hero, paint, more: unlock, bt: { piece: s.piece, n: s.n, mats } };
+      return { title: t.batch.btStep(where, s.n), hero, paint, cap, grade: undefined, more: [...unlock, t.batch.btFeed, ...mats.map((m, i) => <span key={i}>{m}</span>)] };
     }
     case 4: {
       // each piece on its own line, what it is — «Sublime Melody · HP% · SPD 1, CHC 2, …»; the locked ones first need unlocking
@@ -150,7 +154,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
             {st === 3 && <p className="muted small">{t.batch.btNote}</p>}
             <ol className="bgear-list">
               {steps.map((s) => {
-                const { title, hero, tail, no, cap, grade, kept, more, subs, bt } = stepText(ctx, t, s);
+                const { title, hero, paint, no, cap, grade, kept, more, subs, bt } = stepText(ctx, t, s);
                 const done = batch.done.includes(s.key);
                 return (
                   <li key={s.key} className={`bgear-row bstep${done ? ' done' : ''}`}>
@@ -159,7 +163,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                       <span className="bstep-t">
                         <span className="bstep-h">
                           {no && <span className="bstep-no">{no}</span>}
-                          <b>{tail ? <>{withHero(title.slice(0, title.length - tail.length), hero)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{tail}</span></> : withHero(title, hero)}</b>
+                          <b>{paint ? withItem(title, hero, paint.what, paint.grade) : withHero(title, hero)}</b>
                         </span>
                         {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
                         {kept && <span className="bstep-k">{withWait(kept.text, kept.c, t, ctx, kept.x)}</span>}
