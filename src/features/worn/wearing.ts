@@ -12,6 +12,7 @@ import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { better, bestLayout, epicToLegend, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { namedGain } from '@/features/gear/model/vs';
 import { eligibleIn } from '@/features/gear/pool/info';
 import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
 import { undoWear, wearFromPool, type WearResult } from '@/features/gear/pool';
@@ -41,6 +42,10 @@ export interface Redress { pts: number; rankUp: boolean; on: PartChange[]; off: 
 // (set null — в наборе из одного сета)
 export interface Need { slot: ArmorSlot; set: string | null }
 export interface Fill { pin: Pin; k: number; n: number; need: Need[] }
+// A «Что искать» row with what completing the set is worth (owner 2026-10-10): the set's net gain in the Worn heading's points
+// (the set part of V after the row is completed minus before) — the pieces keep their own stats, so the number is only what the
+// set adds, net of the set bonus the replaced pieces give today
+export interface SeekRow extends Fill { gain: number }
 export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken[] }
 // The hero's chain with what the worn pieces give each stat (owner, 2026-10-07): the chain's own order (first — the most
 // valuable), a stat — the sum of its segments over the worn pieces. A flat axis (ATK, HP, DEF) shows its forms side by
@@ -58,7 +63,7 @@ export interface WornView {
   alt: AltChain[];         // the hero's other chains (Heatwave Cop Delta: DPS and Support), same sums, for reference
   bonuses: BonusRow[];     // включённые бонусы надетых сетов
   redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
-  seek: Fill[];            // «Что искать»: 1–3 из 4, от ближнего; закреплён — только его набор
+  seek: SeekRow[];         // «Что искать»: 1–3 из 4, от ближнего, ничего не добавляющие скрыты; закреплён — только его набор
   pool: number;            // вещей в пуле героя
 }
 
@@ -86,7 +91,7 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     alt: P ? altChains(ctx, c, P.chain, slots.map((s) => s.piece)) : [],
     bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
     redress: hp ? redressOf(hp, worn) : null,
-    seek: hp ? seekOf(hp) : [],
+    seek: hp ? seekOf(hp, worn) : [],
     pool: pieces.length,
   };
 }
@@ -165,11 +170,29 @@ export function fillOf(hp: HeroPool, pin: Pin): Fill {
 // варианты шторки закрепления: наборы героя (pinOptions) с заполнением, от ближнего; ничья — порядок outerpedia
 export const pinChoices = (hp: HeroPool): Fill[] => pinOptions(hp.c).map((pin) => fillOf(hp, pin)).sort((a, z) => z.k - a.k);
 
-// «Что искать» (решение макета 4): закреплён — только его набор; иначе наборы меню (тот же набор у двух ролей — один раз)
-function seekOf(hp: HeroPool): Fill[] {
+// What completing a row is worth: the set part of V of the worn layout where the needed slots carry the row's sets (a worn
+// piece is cloned into the set, an empty slot gets a bare stub — nothing but the set effect is measured; no target piece, no
+// roll assumed) minus the same part today. Exact; under the profile the card's points use
+function seekGain(hp: HeroPool, worn: Layout, f: Fill): number {
+  const swapped: Layout = { ...worn };
+  for (const nd of f.need) {
+    const cur = worn[nd.slot], setId = nd.set ?? f.pin.combo[0].set;
+    swapped[nd.slot] = cur ? { ...cur, setId }
+      : { id: 'stub', slot: nd.slot, grade: 'unique', setId, itemKey: null, main: null, yellow: {}, lit: {}, bt: 0, at: '' };
+  }
+  return layoutValue(hp.P, swapped).setSum - layoutValue(hp.P, worn).setSum;
+}
+
+// «Что искать» (решение макета 4): закреплён — только его набор; иначе наборы меню (тот же набор у двух ролей — один раз).
+// A row that adds nothing to the worn sets (or costs the set already worn) is left out — except on a pinned hero, whose row is
+// his intent: it stays, and the UI prints no number for it. Closest first, then the bigger gain, then outerpedia's order
+function seekOf(hp: HeroPool, worn: Layout): SeekRow[] {
   const seen = new Set<string>();
   const pins = hp.P.pin ? [hp.P.pin] : pinOptions(hp.c).filter((p) => !seen.has(comboSig(p.combo)) && !!seen.add(comboSig(p.combo)));
-  return pins.map((pin) => fillOf(hp, pin)).filter((f) => f.k > 0 && f.k < f.n).sort((a, z) => z.k - a.k);
+  return pins.map((pin) => fillOf(hp, pin)).filter((f) => f.k > 0 && f.k < f.n)
+    .map((f): SeekRow => ({ ...f, gain: seekGain(hp, worn, f) }))
+    .filter((f) => !!hp.P.pin || namedGain(f.gain))
+    .sort((a, z) => z.k - a.k || z.gain - a.gain);
 }
 
 // «Надеть все N» в «Переодеть»: вещи по очереди (каждая — wearFromPool: прежняя надетая слота уходит, если её не держит

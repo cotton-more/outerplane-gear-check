@@ -117,9 +117,11 @@ worn by 1+ point (a Legendary in place of an Epic — already at equal points), 
 gloves" with "Wear", and **"Wear all N"**. In the game you do the same yourself — the app only counts.
 
 **"What to look for"** under the slots — sets from the hero's builds where they have 1–3 of 4 pieces, the nearest
-first: "Speed ×4: 2 of 4 — need helmet, boots". Complete sets and sets with 0 of 4 aren't listed. Each set is counted
-from the hero's best layout for it: if two pieces compete for a slot (Swiftness and Immunity boots), the layout decides.
-A pinned hero sees only their set.
+first, each with what completing it is worth in the same points: "Speed ×4: 2 of 4 — need gloves, boots +14". Complete
+sets and sets with 0 of 4 aren't listed, and neither is a set that would add nothing or would cost the set the hero
+already wears (Primine: Speed ×2 + Swiftness ×2 would trade Speed ×4 for less). Each set is counted from the hero's best
+layout for it: if two pieces compete for a slot (Swiftness and Immunity boots), the layout decides. A pinned hero sees
+only their set — it stays even when it adds nothing, then without a number.
 
 **"Share"** sits by the "Worn · N of 6" heading when at least one piece is marked worn. On a phone it opens the system
 share sheet with a link (send it in a messenger); on a computer the link is copied — "Link copied". Your friend opens it

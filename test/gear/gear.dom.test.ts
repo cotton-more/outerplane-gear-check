@@ -795,7 +795,7 @@ describe('карточка персонажа', () => {
     const two = [P('p1', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 }), P('p2', 'armor', speed, { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, { bt: 4 })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(two, { [caren.id]: ['p1', 'p2'] }, { worn: wornOf(two) }) });
     expect($('.seek h4')?.textContent).toBe('What to look for');
-    expect(byText('.seek-row', 'Speed ×4')?.textContent).toBe('Speed ×4: 2 of 4 — need gloves, boots');
+    expect(byText('.seek-row', 'Speed ×4')?.textContent).toBe('Speed ×4: 2 of 4 — need gloves, boots +7.5'); // + the set's value
   });
 
   // MODEL.md §6, макет 6.0 решение 7: «Закрепить набор» → шторка, предупреждение, «Pin» — плашка «Pinned: …»

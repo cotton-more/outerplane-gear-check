@@ -12,6 +12,7 @@ import type { Subs } from '@/game/item/subs';
 import { comboSig } from '@/game/build/variants';
 import { pinOptions } from '@/game/build/profile';
 import { pinChoices, redressOf, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { layoutValue, type Layout } from '@/features/gear/layout';
 import { heroPool } from '@/features/gear/verdict';
 import { redressLabel } from '@/features/worn/Redress';
 import { TEXTS } from '@/i18n';
@@ -155,6 +156,71 @@ describe('«Что искать» и варианты закрепления —
     expect(list).toHaveLength(pinOptions(delta).length);
     expect(list.map((f) => f.k)).toEqual([...list.map((f) => f.k)].sort((a, z) => z - a));
     expect(list.at(-1)!.k).toBe(0);
+  });
+});
+
+// «What to look for» rows carry what completing the set is worth (owner 2026-10-10): the set part of V after the row is completed
+// minus before. The oracle is the same number measured on a layout with real pieces of the set in the needed slots
+describe('«What to look for»: what a row is worth', () => {
+  const hpOf = (st: GearStore) => poolView(ctx, st).hero(delta.id)!;
+  const layoutOf = (ps: Piece[]): Layout => Object.fromEntries(ps.map((p) => [p.slot, p]));
+  // the worn layout with a real piece of `short` in every slot the row needs: the set part of V, as the game would count it
+  const measured = (st: GearStore, worn: Piece[], f: { need: { slot: SlotId; set: string | null }[]; pin: { combo: { set: string }[] } }) => {
+    const hp = hpOf(st);
+    const after = layoutOf(worn);
+    for (const nd of f.need) after[nd.slot] = { ...piece(nd.slot, null), setId: nd.set ?? f.pin.combo[0].set, bt: 0 };
+    return layoutValue(hp.P, after).setSum - layoutValue(hp.P, layoutOf(worn)).setSum;
+  };
+
+  it('Speed ×4 with two Speed pieces at T4: the gain is the set points, as on a layout with real pieces; it is above zero', () => {
+    const two = [piece('helmet', 'Speed'), piece('armor', 'Speed')];
+    const st = store(two, two);
+    const row = view(st).seek.find((f) => comboSig(f.pin.combo) === `${SPEED}x4`)!;
+    expect(row.gain).toBeGreaterThan(1);
+    expect(row.gain).toBeCloseTo(measured(st, two, row), 9);
+  });
+
+  it('an empty slot is measured with a stub: three Speed worn, Speed ×4 is worth exactly the difference of the sets', () => {
+    const three = armorOf('Speed').slice(0, 3);
+    const st = store(three, three);
+    const row = view(st).seek.find((f) => comboSig(f.pin.combo) === `${SPEED}x4`)!;
+    expect(row.need).toEqual([{ slot: 'shoes', set: null }]);
+    expect(row.gain).toBeCloseTo(measured(st, three, row), 9);
+    expect(row.gain).toBeGreaterThan(1);
+  });
+
+  // Speed ×4 at T0–T3 is +25% on four pieces; Speed ×2 has no row below T4, so Attack ×2 + Speed ×2 would trade it for Attack ×2 alone
+  const t0Speed = () => ARMOR.map((slot) => piece(slot, 'Speed', GOOD, { bt: 0 }));
+
+  it('a row that leaves the worn set worth less (Speed ×4 worn, Attack ×2 + Speed ×2) is not shown; measured on real pieces it is negative', () => {
+    const speed = t0Speed();
+    const spare = [piece('gloves', 'Attack'), piece('shoes', 'Attack')];
+    const st = store([...speed, ...spare], speed);
+    expect(view(st).seek.some((f) => f.pin.combo.some((p) => p.set === ATTACK) && f.pin.combo.some((p) => p.set === SPEED))).toBe(false);
+    const hp = hpOf(st);
+    const f = pinChoices(hp).find((x) => comboSig(x.pin.combo) === `${ATTACK}x2+${SPEED}x2`)!;
+    expect(f.k).toBeGreaterThan(0);
+    expect(layoutValue(hp.P, { ...layoutOf(speed), gloves: spare[0], shoes: spare[1] }).setSum).toBeLessThan(layoutValue(hp.P, layoutOf(speed)).setSum - 1);
+  });
+
+  it('pinned hero: the row stays at a gain <= 0 (no number is printed for it); the same row on an unpinned hero is gone', () => {
+    const speed = t0Speed();
+    const st0 = store(speed, speed);
+    const pin = pinBy(`${ATTACK}x2+${SPEED}x2`);
+    const v = view(setPin(st0, delta.id, pin.key).st);
+    expect(v.seek.map((f) => comboSig(f.pin.combo))).toEqual([`${ATTACK}x2+${SPEED}x2`]);
+    expect(v.seek[0].gain).toBeLessThan(0.05);
+    expect(view(st0).seek).toEqual([]);
+  });
+
+  it('order: closest first, at equal distance the bigger gain; nothing under 0.05 is listed', () => {
+    const two = [piece('helmet', 'Speed'), piece('armor', 'Speed')];
+    const seek = view(store(two, two)).seek;
+    for (let i = 1; i < seek.length; i++) {
+      const a = seek[i - 1], z = seek[i];
+      expect(a.k > z.k || (a.k === z.k && a.gain >= z.gain)).toBe(true);
+    }
+    expect(seek.every((f) => f.gain >= 0.05)).toBe(true);
   });
 });
 

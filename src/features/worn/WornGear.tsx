@@ -15,7 +15,8 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { tour, tourItem } from '@/tour/anchors';
 import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
-import { WornSets } from './WornSets';
+import { Pts, WornSets } from './WornSets';
+import { namedGain } from '@/features/gear/model/vs';
 import { setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
 import { subLabel } from '@/game/data';
@@ -133,6 +134,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
           {wv.seek.map((f) => (
             <p key={f.pin.key} className="seek-row">
               <Rich text={t.card.seek(`**${comboText(idx, f.pin.combo)}**`, f.k, f.n, f.need.map((x) => ({ slot: x.slot, set: x.set && setName(idx, x.set) })))} />
+              {namedGain(f.gain) && <> <Pts x={f.gain} /></>}
             </p>
           ))}
         </div>

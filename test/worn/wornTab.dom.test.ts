@@ -244,3 +244,25 @@ describe('worn sets: header line and rows', () => {
     expect($('.bgear-set')).toBeNull();
   });
 });
+
+// «What to look for»: the row ends with what completing the set is worth; a set that would add nothing is not listed (and with no
+// rows left the block, title included, is gone)
+describe('«What to look for»: value of the row', () => {
+  const ARMOR2 = ['helmet', 'armor'];
+  const speedPair = (bt: number) => ARMOR2.map((slot, i) => P('s' + i, slot, speed, { CHC: 2, CHD: 2 }, { bt }));
+  const worn = (ps: Pc[]) => G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: { [caren.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } });
+
+  it('the value follows the sentence in the same span as the set lines', async () => {
+    await mount({ gear: worn(speedPair(0)) });
+    const row = byText('.seek-row', 'Speed ×4');
+    expect(row?.textContent).toMatch(/^Speed ×4: 2 of 4 — need gloves, boots \+\d+(\.\d)?$/);
+    expect(row?.querySelector('.wpts')?.textContent).toMatch(/^\+\d/);
+  });
+
+  it('no rows — no block at all (the gain filter itself is tested in wearing.test.ts)', async () => {
+    // two pieces of a set outside Caren's builds: none of her sets has 1–3 of 4, so there are no rows; the block (title too) is gone
+    const lifesteal = D.sets.find((s) => s.short === 'Lifesteal')!.id;
+    await mount({ gear: worn(ARMOR2.map((slot, i) => P('l' + i, slot, lifesteal, { CHC: 2 }, { bt: 0 }))) });
+    expect($('.seek')).toBeNull();
+  });
+});
