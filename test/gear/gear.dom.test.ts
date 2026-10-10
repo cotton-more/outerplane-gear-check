@@ -531,7 +531,7 @@ describe('карточка персонажа', () => {
 
     expect($$('.btabs [role="tab"]').map((b) => b.textContent)).toEqual(['Worn4/6', 'Pool4', 'Builds']);
     expect($('.btabs [aria-selected="true"]')?.textContent).toBe('Worn4/6');
-    expect($('.bgear-set')?.textContent).toContain('Speed ×4 · T? — ');
+    expect($('.bgear-set .wset-h span')?.textContent).toBe('Speed ×4 · T? · Speed +25% · mark Breakthrough');
     expect($('.bgear-set')?.textContent).not.toContain("not in Caren's builds");
     expect($$('.bgear-row')[0].querySelectorAll('.tok')[0].className).toBe('tok ok');
     expect($('.bgear-m')?.textContent).toBe('T?');

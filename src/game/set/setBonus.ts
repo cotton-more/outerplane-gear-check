@@ -18,9 +18,6 @@ export interface BonusRow {
   unknownBt: boolean; // у какой-то вещи сета Breakthrough не указан — интерфейс попросит «отметь Breakthrough»
 }
 
-// уровень строки для показа: 'T0' — это T0–T3 (строка без T4), как в карточке персонажа
-export const tierLabel = (tier: BonusRow['tier']): string => (tier === 'T4' ? 'T4' : 'T0–T3');
-
 // строки сета: из bonus, а у старых снимков без него — по тексту (есть строка или нет), без чисел
 const EFFECT: SetBonus = { stat: null, value: 0, mode: 'add' };
 function rowsOf(s: GearSet): { t0: { p2: SetBonus | null; p4: SetBonus | null }; t4: { p2: SetBonus | null; p4: SetBonus | null } } {

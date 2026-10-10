@@ -4,10 +4,10 @@ import { EPIC_NAME, isArmor, type Index } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
-import { tierLabel, type BonusRow } from '@/game/set/setBonus';
+import type { BonusRow } from '@/game/set/setBonus';
 import type { Texts } from '@/i18n';
 import type { Piece } from '@/features/gear/model/gear';
-import { setName } from '@/game/set/setName';
+import { partText, setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
 import { useIndex } from '@/game/data/IndexContext';
 
@@ -70,11 +70,26 @@ export const bonusText = (idx: Index, r: BonusRow): string => {
   return (r.n === 4 ? (r.tier === 'T4' ? s?.p4 : s?.p4base) : r.tier === 'T4' ? s?.p2 : s?.p2base) ?? '';
 };
 
-// включённые бонусы с уровнем; «T?» — отметь Breakthrough (макет 6.0 решение 3: строки «не из билдов» нет)
-export function bonusLinesOf(t: Texts, idx: Index, rows: readonly BonusRow[]): string[] {
-  return rows.map((r) => {
-    const tier = r.unknownBt ? 'T?' : tierLabel(r.tier);
-    return t.ui.bonusRow(setName(idx, r.set), r.n, tier, bonusText(idx, r)) + (r.unknownBt ? t.ui.markBt : '');
+// A worn set on its own header line (owner 2026-10-10): the set and its value once, its active bonus rows under it —
+// «Life ×4   +23,3» / «Health +30% · Health +20%». head — «Life ×4», plus «T4» when every row is T4 and «T?» when a piece's
+// Breakthrough is unknown (layout 6.0 decision 3: «mark Breakthrough» ends the rows). body — the rows' bonus texts joined
+// with « · »; a row of T4 inside a set that also has T0–T3 rows carries «T4» in front. rows — how many rows the set has:
+// one row stays on one line with the head (the UI), several get the head line alone
+export interface SetBlock { set: string; head: string; body: string; rows: number }
+export function setBlocksOf(t: Texts, idx: Index, rows: readonly BonusRow[]): SetBlock[] {
+  const sets: BonusRow[][] = [];
+  for (const r of rows) {
+    const last = sets[sets.length - 1];
+    if (last && last[0].set === r.set) last.push(r);
+    else sets.push([r]);
+  }
+  return sets.map((rs) => {
+    const unknown = rs.some((r) => r.unknownBt);
+    const allT4 = rs.every((r) => r.tier === 'T4');
+    const n = Math.max(...rs.map((r) => r.n));
+    const head = partText(idx, { set: rs[0].set, n }) + (allT4 ? ' · T4' : '') + (unknown ? ' · T?' : '');
+    const body = rs.map((r) => (!allT4 && r.tier === 'T4' ? 'T4 ' : '') + bonusText(idx, r)).join(' · ') + (unknown ? t.ui.markBt : '');
+    return { set: rs[0].set, head, body, rows: rs.length };
   });
 }
 

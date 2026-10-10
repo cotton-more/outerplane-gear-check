@@ -14,7 +14,8 @@ import type { WornView } from './wearing';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { tour, tourItem } from '@/tour/anchors';
-import { BtLabel, PieceName, bonusLinesOf } from '@/features/gear/ui/pieceText';
+import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
+import { WornSets } from './WornSets';
 import { setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
 import { subLabel } from '@/game/data';
@@ -75,14 +76,6 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
   if (gear.newer) return <div className="bgear" {...(shown ? {} : tour('wtab'))}><p className="muted small">{t.ui.gearNewer}</p></div>;
   const empty = wv.count === 0;
   const all = empty && !!onWearAll && wearAll(gear.store, c.id) !== null;
-  const lines = bonusLinesOf(t, idx, wv.bonuses);
-  // a set's points go on its last bonus line
-  const setPts = (i: number) => {
-    const r = wv.bonuses[i];
-    if (wv.bonuses[i + 1]?.set === r.set) return null;
-    const v = wv.value?.sets.find((x) => x.set === r.set)?.value;
-    return v ? <span className="wpts"> +{pt(t, v)}</span> : null;
-  };
   const shownPts = !empty && wv.value !== null;
   const title = <h4>{t.ui.wornTitle(wv.count)}{shownPts && <span className="wtotal"> · {t.ui.wornPts(pt(t, wv.value!.v))}</span>}</h4>;
   return (
@@ -104,7 +97,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
         {shownPts && wv.alt.map((a) => (
           <div key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}</span><WornChain chain={a.chain} anchor={false} /></div>
         ))}
-        {lines.length > 0 && <div className="bgear-set">{lines.map((l, i) => <p key={i}>{l}{setPts(i)}</p>)}</div>}
+        <WornSets idx={idx} wv={wv} />
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {
             const s = wv.slots.find((x) => x.slot === slot)!;

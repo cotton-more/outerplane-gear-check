@@ -195,3 +195,52 @@ describe('«Надеть» в карточке вещи и «надета» в �
     expect(byText('.piece-act button', 'Wear')).toBeUndefined();
   });
 });
+
+// A worn set on its own header line (owner 2026-10-10): a one-row set stays on one line with its value on the right, a
+// multi-row set gets its head line (with the value) and its rows under it; a set worth 0 prints no number
+describe('worn sets: header line and rows', () => {
+  const ARMOR4 = ['helmet', 'armor', 'gloves', 'shoes'];
+  const attack = D.sets.find((s) => s.short === 'Attack')!.id;
+  const four = (setId: string, bt: number) => ARMOR4.map((slot, i) => P('a' + i, slot, setId, { CHC: 2, CHD: 2 }, { bt }));
+  const worn = (ps: Pc[]) => G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: { [caren.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } });
+
+  it('one row (Speed ×4 at T0–T3): head, text and value on one line', async () => {
+    await mount({ gear: worn(four(speed, 0)) });
+    expect($$('.wset')).toHaveLength(1);
+    expect($('.wset-h span')?.textContent).toBe('Speed ×4 · Speed +25%');
+    expect($('.wset-h .wpts')?.textContent).toMatch(/^\+\d+(\.\d)?$/);
+    expect($('.wset-b')).toBeNull();
+  });
+
+  it('two rows (Attack ×4): head line with the value, rows under it, no «T0–T3»', async () => {
+    await mount({ gear: worn(four(attack, 0)) });
+    expect($('.wset-h span')?.textContent).toBe('Attack ×4');
+    expect($('.wset-b')?.textContent).toBe('Attack +30% · Attack +20%');
+    expect($('.bgear-set')?.textContent).not.toContain('T0–T3');
+  });
+
+  it('T4 on every piece: «T4» in the head', async () => {
+    await mount({ gear: worn(four(attack, 4)) });
+    expect($('.wset-h span')?.textContent).toBe('Attack ×4 · T4');
+    expect($('.wset-b')?.textContent).toBe('Attack +35% · Attack +25%');
+  });
+
+  it('Breakthrough unknown: «T?» in the head, «mark Breakthrough» ends the rows', async () => {
+    const ps = four(attack, 0).map((p, i) => (i < 2 ? { ...p, bt: null } : p));
+    await mount({ gear: worn(ps) });
+    expect($('.wset-h span')?.textContent).toBe('Attack ×4 · T?');
+    expect($('.wset-b')?.textContent).toBe('Attack +30% · Attack +20% · mark Breakthrough');
+  });
+
+  it('a set outside the hero\'s builds is worth 0: its line has no number', async () => {
+    const lifesteal = D.sets.find((s) => s.short === 'Lifesteal')!.id;
+    await mount({ gear: worn(four(lifesteal, 0)) });
+    expect($('.wset-h span')?.textContent).toBe('Lifesteal ×4');
+    expect($('.wset-h .wpts')).toBeNull();
+  });
+
+  it('no active row (two Speed pieces) — no set block', async () => {
+    await mount({ gear: worn(four(speed, 0).slice(0, 2)) });
+    expect($('.bgear-set')).toBeNull();
+  });
+});

@@ -36,6 +36,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/roster/CharTile.tsx': 'helper',            // плитка героя: её объясняют подсказки списка персонажей
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
+  'features/worn/WornSets.tsx': 'helper',              // sets and the T4 line under the chain on Worn: explained by the wornTab tip (pending, tip texts wait for the owner)
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet

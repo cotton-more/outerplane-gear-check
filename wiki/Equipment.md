@@ -101,12 +101,15 @@ after "Equip" the form moves to the next empty one. If the hero has at most one 
 replaces the entry.
 
 Next to the heading are the **points of what is worn** ("Worn · 6 of 6 · 37.7 pts"): the pieces' points plus the sets'.
-Each piece shows its points on the right under its substats, a set — after its bonus line ("+6.7"). Under the heading is
+Each piece shows its points on the right under its substats. Under the heading is
 the hero's **stat chain** in its order (first — the most valuable) and how many segments all worn pieces give each stat:
 `ATK% 6 / ATK 8 › CHC 8 › CHD 12 › SPD 9 › DMG UP% 4`. Green counts in full, yellow (flat) at half, paler — fewer
 segments; dashed — a chain stat no worn piece gives. It's the chain the points are counted on: the pinned set's or
 "By stats". A hero whose builds ask for different chains (Heatwave Cop Delta: DPS and Priority Support/PvP) shows both,
-each named by its build, the name above its chain: the same sums in its own order; points follow the first.
+each named by its build, the name above its chain: the same sums in its own order; points follow the first. Below the
+chain every **set** stands on its own line with what it adds on the right — the points of its bonus on top of the
+pieces' ("Life ×4 +23.3") — and its bonuses under it ("Health +30% · Health +20%"); a set with a single bonus line keeps
+it on the same line ("Attack ×2 · Attack +30% +7.5").
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point (a Legendary in place of an Epic — already at equal points), turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
