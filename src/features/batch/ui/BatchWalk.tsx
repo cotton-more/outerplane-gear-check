@@ -41,7 +41,7 @@ function PieceLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
   const t4 = x.bt === 4;
   // armor: the substats alone («T4 · HP 1, EFF% 2»); a weapon or accessory: «Sublime Melody · HP% · T4 · DMG UP% 3, …»
   if (isArmor(x.slot)) return <>{t4 && <b>T4 · </b>}{subsText(x.subs)}</>;
-  return <><span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}</span>{t4 && <b> · T4</b>} · {subsText(x.subs)}</>;
+  return <><span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}</span>{t4 && <b>{'\u00A0·\u00A0T4'}</b>} · {subsText(x.subs)}</>;
 }
 
 // for whom a kept piece stays: «для Gnosis Domine», «для Valentine · запас», «Спорно, отложено»; the piece is in the title
@@ -70,8 +70,8 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
     case 3: {
       const tg = s.target;
       // a worn target is «Шлем Caren»; any other is named like a set-aside piece — by its hero and stats, no position
-      const where = 'worn' in tg ? t.batch.btWorn(tg.slot, tg.worn.name) : 'n' in tg.where ? `#${tg.where.n}` : desc(ctx, t, tg.where);
-      const hero = 'worn' in tg ? tg.worn : 'n' in tg.where ? null : tg.where.c;
+      const where = 'worn' in tg ? t.batch.btWorn(tg.slot, tg.worn.name) : desc(ctx, t, tg.where);
+      const hero = 'worn' in tg ? tg.worn : tg.where.c;
       // the item of a worn weapon or accessory (armor: the title says it all; a set-aside target names it in the title)
       const cap = 'worn' in tg && s.piece ? capOf(ctx, t, s.piece) : '';
       // the feed, piece by piece: «Noblewoman's Guile · HP% · HP 3, …»; a taken-off or set-aside one — its description

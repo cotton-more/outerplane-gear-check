@@ -20,23 +20,25 @@ const epicW = (main: string | null, bt: 0 | 4 | null = 0) => mk('ew', 'weapon', 
 const epicA = (main: string | null) => mk('ea', 'accessory', null, epicSubs, 0, { grade: 'rare', itemKey: null, main });
 const gloves = (bt: 0 | 4 = 0, grade: 'unique' | 'rare' = 'unique') => mk('g', 'gloves', 'Speed', grade === 'rare' ? { 'DEF%': 2, CHC: 2, CHD: 1 } : { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, bt, { grade });
 const name17 = idx.ITEM.weapon['17'].name;
+// the caption's «·» hangs on both neighbours with no-break spaces (itemCaption)
+const nb = (x: string) => x.replace(/ · /g, ' · ');
 
 describe('the caption helper', () => {
   it('Epic weapon and accessory: the game\'s name and the main; main unknown — the name alone', () => {
-    expect(itemCaption(idx, epicW('ATK%'))).toBe('Steel Sword · ATK%');
-    expect(itemCaption(idx, epicA('SPD'))).toBe('Steel Necklace · SPD');
+    expect(itemCaption(idx, epicW('ATK%'))).toBe(nb('Steel Sword · ATK%'));
+    expect(itemCaption(idx, epicA('SPD'))).toBe(nb('Steel Necklace · SPD'));
     expect(itemCaption(idx, epicW(null))).toBe('Steel Sword');
   });
   it('Legendary: the item and the main (the main may be missing)', () => {
-    expect(itemCaption(idx, legendW('ATK%'))).toBe(`${name17} · ATK%`);
+    expect(itemCaption(idx, legendW('ATK%'))).toBe(nb(`${name17} · ATK%`));
     expect(itemCaption(idx, legendW(null))).toBe(name17);
   });
   it('every place that names a piece uses it: pieceText, pieceLabel, the card row', () => {
     const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set());
     const en = TEXTS.en;
-    expect(pieceText(ctx, epicW('ATK%'))).toBe('Steel Sword · ATK%');
-    expect(pieceLabel(en, idx)(epicW('ATK%'))).toBe('Steel Sword · ATK%');
-    expect(pieceLabel(en, idx)(legendW('HP%'))).toBe(`${name17} · HP%`);
+    expect(pieceText(ctx, epicW('ATK%'))).toBe(nb('Steel Sword · ATK%'));
+    expect(pieceLabel(en, idx)(epicW('ATK%'))).toBe(nb('Steel Sword · ATK%'));
+    expect(pieceLabel(en, idx)(legendW('HP%'))).toBe(nb(`${name17} · HP%`));
     expect(pieceLabel(en, idx)(gloves())).toBe('Speed gloves');               // armor in a phrase keeps its set
     const row = new JSDOM(`<body>${renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: en },
       createElement(PieceName, { ctx, p: epicW('ATK%') }))))}</body>`).window.document.body;
@@ -46,12 +48,12 @@ describe('the caption helper', () => {
   it('batch caption: a Legendary at T4 says T4; armor is its slot word, «T4» only at T4', () => {
     for (const lang of ['ru', 'en'] as const) {
       const t = TEXTS[lang];
-      expect(batchCaption(t, idx, legendW('ATK%', 4))).toBe(`${name17} · ATK% · T4`);
-      expect(batchCaption(t, idx, legendW('ATK%', 0))).toBe(`${name17} · ATK%`);
-      expect(batchCaption(t, idx, epicW('ATK%', null))).toBe('Steel Sword · ATK%');
+      expect(batchCaption(t, idx, legendW('ATK%', 4))).toBe(nb(`${name17} · ATK% · T4`));
+      expect(batchCaption(t, idx, legendW('ATK%', 0))).toBe(nb(`${name17} · ATK%`));
+      expect(batchCaption(t, idx, epicW('ATK%', null))).toBe(nb('Steel Sword · ATK%'));
     }
-    expect([batchCaption(TEXTS.ru, idx, gloves()), batchCaption(TEXTS.ru, idx, gloves(4))]).toEqual(['перчатки', 'перчатки · T4']);
-    expect([batchCaption(TEXTS.en, idx, gloves()), batchCaption(TEXTS.en, idx, gloves(4, 'rare'))]).toEqual(['gloves', 'gloves · T4']);
+    expect([batchCaption(TEXTS.ru, idx, gloves()), batchCaption(TEXTS.ru, idx, gloves(4))]).toEqual(['перчатки', nb('перчатки · T4')]);
+    expect([batchCaption(TEXTS.en, idx, gloves()), batchCaption(TEXTS.en, idx, gloves(4, 'rare'))]).toEqual(['gloves', nb('gloves · T4')]);
   });
 });
 

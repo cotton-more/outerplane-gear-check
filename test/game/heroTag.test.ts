@@ -30,4 +30,9 @@ describe('withHero tags the hero, not a piece of an item name', () => {
     expect(html('Шлем Caren', null)).toBe('<span>Шлем Caren</span>');
     expect(tagged(html('Корм для Tamamo-no-Mae', hero('Tamamo-no-Mae')))).toBe('Tamamo-no-Mae');
   });
+  it("the tag and the characters stuck to it are one no-wrap unit: «Kappa's», «Caren · запас»; a plain space parts them", () => {
+    expect(html("Kappa's helmet", hero('Kappa'))).toContain("</span>&#x27;s</span> helmet");
+    expect(html('для Caren\u00A0·\u00A0запас', hero('Caren'))).toContain('</span>\u00A0·\u00A0запас</span>');
+    expect(html('Rin → Breakthrough', hero('Rin'))).toMatch(/^<span><span class="nw"><span class="htag.*<\/span><\/span> → Breakthrough<\/span>$/);
+  });
 });

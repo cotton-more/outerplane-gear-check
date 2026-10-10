@@ -101,8 +101,8 @@ describe('«Корм для #n» says whose piece it is', () => {
 
 describe('small plan texts', () => {
   it('the summary says «корм» / "feed", not Breakthrough', () => {
-    expect(TEXTS.ru.batch.summary(1, 8, 4, 7)).toBe('надеть 1 · отложить 8 · корм 4 · разобрать 7');
-    expect(TEXTS.en.batch.summary(1, 8, 4, 7)).toBe('equip 1 · set aside 8 · feed 4 · dismantle 7');
+    expect(TEXTS.ru.batch.summary(1, 8, 4, 7)).toBe('надеть 1 · отложить 8 · корм 4 · разобрать 7');
+    expect(TEXTS.en.batch.summary(1, 8, 4, 7)).toBe('equip 1 · set aside 8 · feed 4 · dismantle 7');
   });
   it('«Реши до обхода:» is gone, the chips stay', () => {
     expect('decide' in TEXTS.ru.batch || 'decide' in TEXTS.en.batch).toBe(false);

@@ -171,7 +171,7 @@ describe('«Партия» on a phone', () => {
     expect($('.drawer-h h3')?.textContent).toBe('Batch plan · Legendary Speed');
     const lines = $$('.batch-plan .brow').map((l) => l.querySelector('.bfate')?.textContent);
     expect(lines.slice(0, 2)).toEqual(["Feed to #2 · Caren's helmet", 'Equip on Caren — instead of the helmet']);   // the feed row says whose piece
-    expect($('.batch-sum')?.textContent).toMatch(/^equip 1 · set aside 0 · feed 1 · dismantle \d$/);
+    expect($('.batch-sum')?.textContent).toMatch(/^equip\u00A01 · set\u00A0aside\u00A00 · feed\u00A01 · dismantle\u00A0\d$/);
     const before = gear();
     expect(byText('.batch button', 'Record the plan')).toBeUndefined(); // no recording from the plan (owner 2026-10-09)
     for (const b of $$('.bdecide button').filter((x) => x.textContent === 'Dismantle')) await click(b);
@@ -209,7 +209,7 @@ describe('«Партия» on a phone', () => {
     await click(byText('.batch button', 'Plan it'));
     const row = byText('.batch-plan .brow', "Caren's set-aside helmet (SPD\u00A01, RES%\u00A01, EFF%\u00A01, HP\u00A01)");
     expect(row?.querySelector('.bfate')?.textContent).toBe("Feed to #1 · Caren's helmet");
-    expect($('.batch-sum')?.textContent).toMatch(/· feed 1 ·/);
+    expect($('.batch-sum')?.textContent).toMatch(/· feed\u00A01 ·/);
   });
 
   it('«Don\'t take» plans the line again without that hero', async () => {
@@ -285,7 +285,7 @@ describe('«Партия»: обход по шагам', () => {
     await click($('.batch-strip .batch-list'));
     await click(byText('.batch button', 'Plan it'));
     await click(byText('.batch button', 'Walk ▸'));
-    expect($('.bwalk .bstep')?.textContent).toContain(`${w.name} · ${ref.mains[0]}`);
+    expect($('.bwalk .bstep')?.textContent).toContain(`${w.name}\u00A0·\u00A0${ref.mains[0]}`);
   });
 
   it('the form is locked to the batch: in a Speed armor batch weapon slots and other sets are off, hotkeys too', async () => {
@@ -317,8 +317,8 @@ describe('«Партия»: обход по шагам', () => {
     await click(byText('.batch button', 'Walk ▸'));
     const steps = $$('.bwalk .bstep');
     expect(steps.map((s) => s.querySelector('.bstep-t > b')?.textContent)).toEqual([
-      'Caren → helmet → No. 3',                           // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — the same as #3: said once
-      "Caren's helmet → Breakthrough: up to 1",
+      'Caren → helmet → No.\u00A03',                           // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — the same as #3: said once
+      "Caren's helmet → Breakthrough: up\u00A0to\u00A01",
       'Select in the game: 1',                             // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
     expect(steps[0].textContent).toContain('LV 3 Defense +');

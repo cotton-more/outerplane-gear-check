@@ -16,7 +16,8 @@ import { useIndex } from '@/game/data/IndexContext';
 type Named = Pick<Piece, 'slot' | 'grade' | 'itemKey' | 'main'>;
 const itemName = (idx: Index, p: Named): string =>
   (p.itemKey ? idx.ITEM[p.slot as GearKind][p.itemKey]?.name : undefined) ?? (p.grade === 'rare' ? EPIC_NAME[p.slot as GearKind] : '');
-export const itemCaption = (idx: Index, p: Named): string => [itemName(idx, p), p.main].filter(Boolean).join(' · ');
+// The «·» and the main hang on the name's last word with no-break spaces: a wrapped name never leaves «· ATK%» leading the next line
+export const itemCaption = (idx: Index, p: Named): string => [itemName(idx, p), p.main].filter(Boolean).join('\u00A0·\u00A0');
 
 // название вещи и main отдельно: на узком экране обрезается название, а main (DEF% у оружия) остаётся виден
 const nameOf = (ctx: Ctx, p: Piece): string => p.setId ? `${setName(ctx.idx, p.setId)} Set` : itemName(ctx.idx, p);
@@ -31,7 +32,7 @@ export const capLine = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): str
 // The piece in a batch line (Q4): the grade and the set are in the batch's title, so armor is its slot word alone, a
 // weapon or accessory its caption; «T4» only at T4 (armor: the word, then T4)
 export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string =>
-  (isArmor(p.slot) ? t.ui.slotNom[p.slot] : itemCaption(idx, p)) + (p.bt === 4 ? ' · T4' : '');
+  (isArmor(p.slot) ? t.ui.slotNom[p.slot] : itemCaption(idx, p)) + (p.bt === 4 ? '\u00A0·\u00A0T4' : '');
 // сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных» (.x/0060 SPEC 3.6)
 // batch — a row of the batch (Q4): no grade chip, the caption in the grade's colour, armor is its slot word alone
 export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boolean }) {

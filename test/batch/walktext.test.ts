@@ -52,30 +52,32 @@ function planRows(lang: Lang, ctx: Ctx, p: Plan): string[] {
   return [...new JSDOM(`<body>${html}</body>`).window.document.body.querySelectorAll('.bfate, .boff-n')].map((x) => x.textContent ?? '');
 }
 const NB = ' ';
+// the caption's «·» hangs on both neighbours (itemCaption)
+const nb = (x: string) => x.replace(/ · /g, `${NB}·${NB}`);
 
 describe('equip title: the number once when it is the same', () => {
   it('k ≠ n: «№ 1 в списке · #2» (a locked glove entry comes first, but it is not a helmet)', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([{ kind: 'lock', slot: 'gloves' }, piece(good('g'))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → helmet → No. 1 in the list ·${NB}#2`);
-    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → шлем → № 1 в списке ·${NB}#2`);
+    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → helmet → No.${NB}1 in the list${NB}·${NB}#2`);
+    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Caren'))![0]).toBe(`Caren → шлем → №${NB}1 в списке${NB}·${NB}#2`);
   });
   it('k = n: «№ 1», no «в списке» and no «#n»', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([piece(good('g'))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p)[0][0]).toBe('Caren → helmet → No. 1');
-    expect(steps('ru', ctx, b, p)[0][0]).toBe('Caren → шлем → № 1');
+    expect(steps('en', ctx, b, p)[0][0]).toBe(`Caren → helmet → No.${NB}1`);
+    expect(steps('ru', ctx, b, p)[0][0]).toBe(`Caren → шлем → №${NB}1`);
   });
-  it('the title texts: both languages, a no-break space before «#n», no slot word repeated', () => {
+  it('the title texts: both languages, no-break spaces around «·» before «#n», no slot word repeated', () => {
     const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
-    expect(ru.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → шлем → № 2 в списке ·${NB}#6`);
-    expect(en.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → helmet → No. 2 in the list ·${NB}#6`);
-    expect(ru.equipStepN('Saeran', 'gloves', 17)).toBe('Saeran → перчатки → № 17');
-    expect(en.equipStepN('Saeran', 'gloves', 17)).toBe('Saeran → gloves → No. 17');
-    expect(ru.lockStep(2, 5, 15)).toBe(`Ряд 2, 5-й ·${NB}#15`);
-    expect(en.lockStep(2, 5, 15)).toBe(`Row 2, no. 5 ·${NB}#15`);
+    expect(ru.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → шлем → №${NB}2 в списке${NB}·${NB}#6`);
+    expect(en.equipStep('Eliza', 'helmet', 2, 6)).toBe(`Eliza → helmet → No.${NB}2 in the list${NB}·${NB}#6`);
+    expect(ru.equipStepN('Saeran', 'gloves', 17)).toBe(`Saeran → перчатки → №${NB}17`);
+    expect(en.equipStepN('Saeran', 'gloves', 17)).toBe(`Saeran → gloves → No.${NB}17`);
+    expect(ru.lockStep(2, 5, 15)).toBe(`Ряд 2, 5-й${NB}·${NB}#15`);
+    expect(en.lockStep(2, 5, 15)).toBe(`Row 2, no.${NB}5${NB}·${NB}#15`);
   });
 });
 
@@ -90,15 +92,15 @@ describe('a piece taken off another hero', () => {
   it('the equip title names it by its hero («Roxie\'s removed weapon»), then the caption line, then the game-format substats — once', () => {
     const { ctx, b, p } = make();
     const en = steps('en', ctx, b, p).find((s) => s[0].startsWith('Gnosis Domine'))!, ru = steps('ru', ctx, b, p).find((s) => s[0].startsWith('Gnosis Domine'))!;
-    expect(en.slice(0, 2)).toEqual(["Gnosis Domine → weapon → Roxie's removed weapon", 'Thumping Odyssey · DEF%']);
+    expect(en.slice(0, 2)).toEqual(["Gnosis Domine → weapon → Roxie's removed weapon", nb('Thumping Odyssey · DEF%')]);
     expect(en[2]).toMatch(/^LV 4 Crit DMG \+16\.0%LV 4 Speed/);
-    expect(ru.slice(0, 2)).toEqual(['Gnosis Domine → оружие → снятое оружие Roxie', 'Thumping Odyssey · DEF%']);
+    expect(ru.slice(0, 2)).toEqual(['Gnosis Domine → оружие → снятое оружие Roxie', nb('Thumping Odyssey · DEF%')]);
     expect(en.join('|')).not.toContain('(');                          // no abbreviated substats in a parenthesis
   });
   it('the plan row carries the item\'s name too', () => {
     const { ctx, p } = make();
-    expect(planRows('en', ctx, p).filter((x) => x.includes('removed'))).toEqual(["Roxie's removed weapon — Thumping Odyssey · DEF%"]);
-    expect(planRows('ru', ctx, p).filter((x) => x.includes('Снятое'))).toEqual(['Снятое оружие Roxie — Thumping Odyssey · DEF%']);
+    expect(planRows('en', ctx, p).filter((x) => x.includes('removed'))).toEqual([nb("Roxie's removed weapon — Thumping Odyssey · DEF%")]);
+    expect(planRows('ru', ctx, p).filter((x) => x.includes('Снятое'))).toEqual([nb('Снятое оружие Roxie — Thumping Odyssey · DEF%')]);
   });
   it('offAt: removed and set aside, by gender in RU', () => {
     const [ru, en] = [TEXTS.ru.batch, TEXTS.en.batch];
@@ -124,8 +126,8 @@ describe('the lock step', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([piece(weak('w'))]);
     const p = plan(ctx, st, b);
-    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Row'))!.slice(0, 2)).toEqual([`Row 1, no. 1 ·${NB}#1`, 'for Caren · reserve']);
-    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Ряд'))!.slice(0, 2)).toEqual([`Ряд 1, 1-й ·${NB}#1`, 'для Caren · запас']);
+    expect(steps('en', ctx, b, p).find((s) => s[0].startsWith('Row'))!.slice(0, 2)).toEqual([`Row 1, no.${NB}1${NB}·${NB}#1`, `for Caren${NB}·${NB}reserve`]);
+    expect(steps('ru', ctx, b, p).find((s) => s[0].startsWith('Ряд'))!.slice(0, 2)).toEqual([`Ряд 1, 1-й${NB}·${NB}#1`, `для Caren${NB}·${NB}запас`]);
   });
   it('a weapon: the caption line sits between the position and for whom', () => {
     const { ctx, st } = world(['Roxie'], { Roxie: [W('w1', 'ATK%', { CHD: 5, SPD: 6, CHC: 5, HP: 3 })] });
@@ -135,15 +137,15 @@ describe('the lock step', () => {
     const walk: Walk = { undecided: 0, steps: [{ key: 'lk:1', stage: 2, where: { n: 1 }, kept: { n: 1, input, c: char('Roxie'), why: 'keep' } },
       { key: 'lk:2', stage: 2, where: { n: 2 }, kept: { n: 2, input, c: null, why: 'maybe' } }] };
     expect(steps('en', ctx, b, p, walk).map((s) => s.slice(0, 3))).toEqual([
-      [`Row 1, no. 1 ·${NB}#1`, 'Thumping Odyssey · ATK% · T4', 'for Roxie'],
-      [`Row 1, no. 2 ·${NB}#2`, 'Thumping Odyssey · ATK% · T4', 'Maybe, set aside']]);
-    expect(steps('ru', ctx, b, p, walk)[1].slice(0, 3)).toEqual([`Ряд 1, 2-й ·${NB}#2`, 'Thumping Odyssey · ATK% · T4', 'Спорно, отложено']);
+      [`Row 1, no.${NB}1${NB}·${NB}#1`, nb('Thumping Odyssey · ATK% · T4'), 'for Roxie'],
+      [`Row 1, no.${NB}2${NB}·${NB}#2`, nb('Thumping Odyssey · ATK% · T4'), 'Maybe, set aside']]);
+    expect(steps('ru', ctx, b, p, walk)[1].slice(0, 3)).toEqual([`Ряд 1, 2-й${NB}·${NB}#2`, nb('Thumping Odyssey · ATK% · T4'), 'Спорно, отложено']);
   });
   it('the texts: no «Замок:» prefix on a taken-off piece, one «· запас» form', () => {
     expect(TEXTS.ru.batch.lockStepAt('Снятый шлем Caren (SPD 1)')).toBe('Снятый шлем Caren (SPD 1)');
     expect(TEXTS.en.batch.lockStepAt("Caren's removed helmet (SPD 1)")).toBe("Caren's removed helmet (SPD 1)");
-    expect([TEXTS.ru.batch.keptFor('Gnosis Domine'), TEXTS.ru.batch.keptReserve('Valentine'), TEXTS.ru.batch.keptMaybe]).toEqual(['для Gnosis Domine', 'для Valentine · запас', 'Спорно, отложено']);
-    expect([TEXTS.en.batch.keptFor('Gnosis Domine'), TEXTS.en.batch.keptReserve('Valentine'), TEXTS.en.batch.keptMaybe]).toEqual(['for Gnosis Domine', 'for Valentine · reserve', 'Maybe, set aside']);
+    expect([TEXTS.ru.batch.keptFor('Gnosis Domine'), TEXTS.ru.batch.keptReserve('Valentine'), TEXTS.ru.batch.keptMaybe]).toEqual(['для Gnosis Domine', `для Valentine${NB}·${NB}запас`, 'Спорно, отложено']);
+    expect([TEXTS.en.batch.keptFor('Gnosis Domine'), TEXTS.en.batch.keptReserve('Valentine'), TEXTS.en.batch.keptMaybe]).toEqual(['for Gnosis Domine', `for Valentine${NB}·${NB}reserve`, 'Maybe, set aside']);
   });
 });
 

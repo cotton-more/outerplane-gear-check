@@ -40,7 +40,7 @@ export type Step =
   // target — the worn piece of a hero, or a piece named by its description (set aside — a piece the plan keeps for a hero,
   // of this batch or recorded); piece — the target's own record (its name in the step), mats — the planned feed, each to
   // check (owner 2026-10-09: a Legendary item takes only copies of itself)
-  | { key: string; stage: 3; target: { worn: Char; slot: SlotId } | { where: Where }; piece: ItemInput | null; n: number; unlock: number;
+  | { key: string; stage: 3; target: { worn: Char; slot: SlotId } | { where: Exclude<Where, { n: number }> }; piece: ItemInput | null; n: number; unlock: number;
       mats: { where: Where; input: ItemInput }[] };
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
@@ -100,15 +100,15 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   // named as a set-aside piece of the hero, by its stats, like a record taken off; so for a piece of this batch (the
   // record the plan makes isn't in the store yet — described from the entry) and for a recorded piece (plan.st.worn)
   type Target3 = Extract<Step, { stage: 3 }>['target'];
-  const targetOf = (to: Target): Target3 => {
+  const targetOf = (to: Target): Target3 | null => {
     if (!('entry' in to)) {
       return wornAtEnd(plan.st, to) ? { worn: to.c, slot: to.piece.slot } : { where: { off: to.piece, c: to.c, was: 'stash' } };
     }
     const t = lineOf(to.entry);
     if (t?.fate.kind === 'wear') return { worn: t.fate.c, slot: t.input.slot };
     const f = t && fateOf(t), c = f && (f.kind === 'keep' || f.kind === 'reserve' ? f.c : null);
-    // a plan feeds only a worn or kept piece of the batch (the checker's B5); a line with no hero stays a bare number
-    if (!t || !c) return { where: { n: to.entry } };
+    // a plan feeds only a worn or kept piece of the batch (the checker's B5), so a target with no hero doesn't happen
+    if (!t || !c) return null;
     const x = t.input;
     return { where: { off: { id: `batch:${t.n}`, slot: x.slot, grade: x.grade, setId: x.setId, itemKey: x.itemKey, main: x.main, unlisted: x.unlisted,
       yellow: {}, lit: x.subs, bt: x.bt ?? null, at: '' }, c, was: 'stash' } };
@@ -137,6 +137,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
         let x = feeds.get(tk);
         if (!x) {
           const target = targetOf(to);
+          if (!target) break; // not reachable (see targetOf): nothing to tell the player, so no step
           const piece = 'entry' in to ? lineOf(to.entry)?.input ?? null : inputOfPiece(to.piece);
           feeds.set(tk, (x = { target, piece, n: 0, unlock: 0, mats: [] }));
         }

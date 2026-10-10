@@ -15,5 +15,8 @@ export function withHero(text: string, c: Pick<Char, 'name' | 'element' | 'class
   const m = c && new RegExp(`(^|[^\\p{L}\\p{N}-])${c.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}-])`, 'u').exec(text);
   if (!c || !m) return text;
   const i = m.index + m[1].length;
-  return <>{text.slice(0, i)}<HeroTag c={c} />{text.slice(i + c.name.length)}</>;
+  // the tag and the characters stuck to it (no plain space between: «'s», «)», «-а») are one no-wrap unit, so «Kappa» is
+  // never left alone on a line with «'s helmet» on the next; a no-break-spaced run («Caren · запас») goes with it
+  const before = /[^ ]*$/.exec(text.slice(0, i))![0], after = /^[^ ]*/.exec(text.slice(i + c.name.length))![0];
+  return <>{text.slice(0, i - before.length)}<span className="nw">{before}<HeroTag c={c} />{after}</span>{text.slice(i + c.name.length + after.length)}</>;
 }

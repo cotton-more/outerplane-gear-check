@@ -774,7 +774,7 @@ export const ru = {
       typeof kind === 'object' && kind ? kind.set : kind === 'weapon' ? 'оружие' : kind === 'accessory' ? 'аксессуары' : ''].filter(Boolean).join(' '),
     listTitle: (n: number, what: string) => `Партия · ${n}${what ? ` · ${what}` : ''}`,
     title: (what: string) => `План партии${what ? ` · ${what}` : ''}`,
-    summary: (a: number, b: number, c: number, d: number) => `надеть ${a} · отложить ${b} · корм ${c} · разобрать ${d}`,
+    summary: (a: number, b: number, c: number, d: number) => `надеть\u00A0${a} · отложить\u00A0${b} · корм\u00A0${c} · разобрать\u00A0${d}`,
     wear: (name: string) => `Надень на ${name}`,
     replace: (name: string, slot: string) => `Надень на ${name} — вместо ${GEN[slot]}`,
     t4: ' · T4 после корма',
@@ -818,10 +818,10 @@ export const ru = {
     // no numbers: a batch without a dismantle would read 1, 2, 4 (owner 2026-10-09)
     stages: ['Надеть — у героев', 'Замок', 'Breakthrough', 'Разобрать — одним выбором'],
     // the number is in the hero's list of that slot (only that slot, same filter), #n — the piece in the batch (owner
-    // 2026-10-08: «№ 1» read as the first piece of the batch). The no-break space keeps «· #6» together
-    equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → № ${k} в списке ·\u00A0#${n}`,
+    // 2026-10-08: «№ 1» read as the first piece of the batch). The no-break spaces keep «№ 2», «· #6» together
+    equipStep: (hero: string, slot: string, k: number, n: number) => `${hero} → ${NOM[slot]} → №\u00A0${k} в списке\u00A0·\u00A0#${n}`,
     // the two numbers are equal: said once
-    equipStepN: (hero: string, slot: string, n: number) => `${hero} → ${NOM[slot]} → № ${n}`,
+    equipStepN: (hero: string, slot: string, n: number) => `${hero} → ${NOM[slot]} → №\u00A0${n}`,
     equipStepAt: (hero: string, slot: string, piece: string) => `${hero} → ${NOM[slot]} → ${piece}`,
     // a piece taken off another hero (or set aside), put on in this step: «снятое оружие Tamara»
     offAt: (slot: string, name: string, stash: boolean) =>
@@ -829,16 +829,16 @@ export const ru = {
     lockStepAt: (piece: string) => piece,
     // for whom a kept piece stays (lock and Breakthrough steps); the number and the piece are in the title and the caption
     keptFor: (name: string) => `для ${name}`,
-    keptReserve: (name: string) => `для ${name} · запас`,
+    keptReserve: (name: string) => `для ${name}\u00A0·\u00A0запас`,
     keptMaybe: 'Спорно, отложено',
-    lockStep: (r: number, p: number, n: number) => `Ряд ${r}, ${p}-й ·\u00A0#${n}`,
+    lockStep: (r: number, p: number, n: number) => `Ряд ${r}, ${p}-й\u00A0·\u00A0#${n}`,
     junkTitle: (n: number) => `Отметь в игре: ${n}`,
     btFeed: 'корм:',
     btWorn: (slot: string, hero: string) => `${NOM[slot][0].toUpperCase()}${NOM[slot].slice(1)} ${hero}`,
     // under the «Breakthrough» heading, once per stage
     btNote: 'Подойдёт любая вещь из списка игры. Что не вошло — в разбор.',
     // «до N»: the piece's exact tier below T4 isn't known — the game takes no more than it needs (owner 2026-10-08)
-    btStep: (where: string, n: number) => `${where} → Breakthrough: до ${n}`,
+    btStep: (where: string, n: number) => `${where} → Breakthrough: до\u00A0${n}`,
     btUnlock: (k: number) => `сначала сними замок с ${k} ${plural(k, 'отложенной', 'отложенных', 'отложенных')}`,
     // the last line of the dismantle step, when a Breakthrough step comes before it
     dzLeft: '+ корм, который Breakthrough не взял',
