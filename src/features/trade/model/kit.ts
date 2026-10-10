@@ -7,7 +7,8 @@
 import type { SlotId } from '@/game/data/types';
 import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, type Cand, type Cands, type Fit, type Gauge, type Kit, type KitKey } from './model';
 
-export const FIT: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
+// only a recommended item outranks points (its passive); a stopgap and the rest — by points (owner 2026-10-10)
+export const FIT: Record<Fit, number> = { rec: 1, stopgap: 0, no: 0 };
 const EMPTY = Number.POSITIVE_INFINITY; // ранг и номер пустого слота — после любых вещей
 
 // вещь a лучше z в одном слоте при тех же сетах: очки, Legendary (Q7), цена источника, потеря держателя, ростер, старшинство

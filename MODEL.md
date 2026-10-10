@@ -73,12 +73,14 @@ V). English keeps "pts" also for 1.
 5. `pointsBreakdown` (per substat: key, place, weight, credit, points) feeds the Worn tab; `piecePoints(P, piece)` in
    `features/gear/layout` is the memoized per-(profile, piece) value.
 6. **Rank of a weapon or accessory** (`layout:gearRank`, `model/vs:fit`) — the *passive matters more than substats*:
-   - `rec` (2): a Legendary whose item is in the list of any of the hero's builds and, if the list names mains, whose
+   - `rec` (1): a Legendary whose item is in the list of any of the hero's builds and, if the list names mains, whose
      main is among them; class limits respected (`wearable`).
-   - `stopgap` (1): any other piece (Epic, Legendary off the list or with another main) whose main some build of the
+   - `stopgap` (0): any other piece (Epic, Legendary off the list or with another main) whose main some build of the
      hero asks for in that slot — only at `stage = 'grow'` — and whose substats pass `score:tempOk`: useful ≥ 3, or
      ≥ 2 (Epic) / ≥ 3 (Legendary) useful with ≥ 5 useful segments (`CFG.tempGood/tempGood2/tempYellow`).
-   - `no` (0): the rest. Armor adds nothing to the layout's rank (`gearRank` for armor only says whether the set is in
+   - `no` (0): the rest. A stopgap has the same rank as `no` — only `rec` outranks points (owner 2026-10-10: an Epic
+     stopgap took an off-list Legendary with the same 2 useful substats and more points, by rank). `stopgap` still
+     decides what is kept and fed (§4). Armor adds nothing to the layout's rank (`gearRank` for armor only says whether the set is in
      the chain's combos).
 
 ## §2 Set value

@@ -584,3 +584,18 @@ describe('Q7: Legendary вместо надетого Epic', () => {
     expect(hp.info.layout.helmet?.id).toBe('l1');
   });
 });
+
+// owner 2026-10-10: an Epic stopgap (2 useful of 3 substats) took Core Fusion Eternal's Legendary Last Hope (off her list,
+// 2 useful of 4 — not a stopgap for a Legendary) by rank: «−2,6 очк., пассивка лучше» with no passive at all. Only a
+// recommended item outranks points now
+describe('a stopgap does not outrank points', () => {
+  it('Eternal keeps Last Hope · ATK%: an Epic Steel Sword · HP% with fewer points is not «Надень» for her', () => {
+    const hope = mk('lh', 'weapon', null, { RES: 4, SPD: 5, 'DMG RED%': 3, 'DMG UP%': 3 }, 0, { itemKey: '22', main: 'ATK%' });
+    const steel = mk('ss', 'weapon', null, { CHC: 3, DEF: 2, EFF: 2 }, 0, { grade: 'rare', itemKey: '3', main: 'HP%' });
+    const w = world(['Core Fusion Eternal'], { 'Core Fusion Eternal': [hope] });
+    const P = prof('Core Fusion Eternal');
+    expect(piecePoints(P, steel)).toBeLessThan(piecePoints(P, hope));
+    const h = w.v(steel)?.heroes.find((x) => x.c.name === 'Core Fusion Eternal');
+    expect(h?.kind).not.toBe('wear');
+  });
+});

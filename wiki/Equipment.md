@@ -21,7 +21,8 @@ There is **no build to pick**. The app takes the best of the hero's pieces itsel
   stat bonus for 2 pieces — as if it were points. A set with an effect bonus (Immunity, Penetration…) gives no points of
   its own, only its half's price, so it is traded for stats only when the stats win.
 - **Layout.** The hero's best layout is the combination of their pieces with the most points plus set value. A
-  weapon or accessory is decided first by rank (recommended > stopgap > not from builds), then by points.
+  weapon or accessory goes first if it is recommended (its passive beats substats); a stopgap and a piece not from
+  builds are compared by points.
 - **A good piece.** Armor counts for a hero when it passes the old bar (usually 3 useful substats) or is worth 6+
   points. A weak piece they don't wear never enters the layout.
 

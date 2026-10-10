@@ -109,8 +109,14 @@ describe('выбор комплекта: польза — V, как у лучш�
   it('ранг оружия решает раньше V: рекомендованное с меньшими очками бьёт оружие не из билдов', () => {
     const g = synthGauge();
     const rec = cand({ id: 'rec', slot: 'weapon', v: 2, fit: 'rec' }), no = cand({ id: 'no', slot: 'weapon', v: 9, fit: 'no' });
-    expect(useOf(g, { weapon: rec }).rank).toBe(2);
+    expect(useOf(g, { weapon: rec }).rank).toBe(1);
     expect(idsOf(g, [rec, no]).weapon).toBe('rec');
+  });
+
+  it('a stopgap outranks nothing: an off-build piece with more points beats it (owner 2026-10-10, Last Hope)', () => {
+    const g = synthGauge();
+    const temp = cand({ id: 'temp', slot: 'weapon', v: 3, fit: 'stopgap' }), no = cand({ id: 'no', slot: 'weapon', v: 6, fit: 'no' });
+    expect(idsOf(g, [temp, no]).weapon).toBe('no');
   });
 });
 

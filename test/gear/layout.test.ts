@@ -12,7 +12,7 @@ import { setValue } from '@/game/set/setValue';
 import { better, bestLayout, gearRank, layoutValue, NEW_ID, piecePoints, type Layout } from '@/features/gear/layout';
 import { ARMOR, char, ctx, D, EPS, GEAR, gen, heroes, mk, prof, randArmor, randGear, randPool, setId, twenty } from './statSets';
 
-const RANK: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
+const RANK: Record<Fit, number> = { rec: 1, stopgap: 0, no: 0 }; // only a recommended item outranks points
 
 // strict (rank, V) order with no threshold — what the best layout maximises
 const cmpLex = (a: { rank: number; v: number }, z: { rank: number; v: number }): number => {

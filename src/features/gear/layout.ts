@@ -15,7 +15,10 @@ import { EPS, NEWEST, numOf } from './pool/base';
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
 const GEAR: GearKind[] = ['weapon', 'accessory'];
 const ALL: SlotId[] = [...GEAR, ...ARMOR];
-export const RANK: Record<Fit, number> = { rec: 2, stopgap: 1, no: 0 };
+// Only a recommended item outranks points: its passive is worth more than substats. A stopgap and an off-build piece are
+// the same rank — points decide (owner 2026-10-10: an Epic stopgap with 2 useful substats took Eternal's off-list
+// Legendary Last Hope with the same 2 useful, −2.6 points and a passive the Epic doesn't have)
+export const RANK: Record<Fit, number> = { rec: 1, stopgap: 0, no: 0 };
 
 export type Layout = Partial<Record<SlotId, Piece>>;
 
