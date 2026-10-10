@@ -206,8 +206,8 @@ html.xs .bgear-t { grid-row: 3; }
 .bgear-set { display: grid; gap: 2px; }
 .bgear-set p { margin: 0; }
 /* вкладка «Пул»: строка вещи, справа — почему держится; внизу — «Оценить вещь для Caren» */
-.pool { padding: 14px 16px 0; display: grid; gap: 14px; }
-.pool-rate { width: 100%; min-height: 44px; margin-bottom: 20px; }
+.pool { padding: 14px 16px 20px; display: grid; gap: 14px; } /* the bottom 20px as on «Worn» (.bgear.worn:last-child), with or without the rate button */
+.pool-rate { width: 100%; min-height: 44px; }
 .pool-why { font-size: 12px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
 .pool-why.worn { color: var(--keep); }
 .pool .unused .pool-why { color: var(--junk); }
