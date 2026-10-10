@@ -81,8 +81,8 @@ Above the form — the **"Only for · Caren ✕"** strip. While it's there: the 
 "Equip" are only about Caren; the stamp is shared, over the whole roster. "Next" keeps the mode; ✕ — everyone again.
 The title speaks about Caren: "equip on Caren", "better than on Caren", "keep for Caren", "Caren already has as good" or
 "weak for Caren" — and the "Equip on Caren" button stays even on a useless piece: tap it if Caren wears it in the game. If the slot already has a worn piece, it says "Replace Caren's
-{slot}". When you enter worn pieces, after "Equip" the form moves to the next empty slot; the button says
-"Next: {slot}".
+{slot}". When you enter worn pieces, after "Equip" the form moves to the next empty slot (in the order Weapon, Accessory, Helmet, Armor, Gloves, Boots, and after Boots round to
+the start); the button says "Next: {slot}".
 
 **"Try a replacement"** on a piece — the "Replace" button is always there and removes exactly that piece, whether the new
 one is better or worse; "Next" drops the replacement.
