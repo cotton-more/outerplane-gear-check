@@ -28,8 +28,15 @@ html.sheet .char-detail.open { animation: m-sheet .2s cubic-bezier(.2, .8, .2, 1
    fades in. Not an entrance and 300 ms: the owner asked to try it (2026-10-10) — if it goes, this, shared/fly and the
    legs in features/batch go together */
 @keyframes m-fly { 60% { opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(var(--s)); opacity: .2; } }
-.fly { position: fixed; z-index: 1000; margin: 0; box-sizing: border-box; white-space: nowrap; pointer-events: none; animation: m-fly .3s cubic-bezier(.4, 0, .2, 1) forwards; }
+.ghost { position: fixed; z-index: 1000; margin: 0; box-sizing: border-box; white-space: nowrap; pointer-events: none; }
+.ghost.fly { animation: m-fly .3s cubic-bezier(.4, 0, .2, 1) forwards; }
 .batch .brow.landing { animation: m-fade .3s ease-in; }
+/* ✕: the row folds up where it was and the rows under it move up at the same time (shared/fly fold, slide; owner 2026-10-10) */
+@keyframes m-fold { to { transform: scaleY(0); opacity: 0; } }
+@keyframes m-slide { from { transform: translateY(var(--fy)); } }
+.ghost.in { position: absolute; }
+.ghost.fold { transform-origin: top; animation: m-fold .2s ease-in forwards; }
+.slide { animation: m-slide .2s ease-out; }
 
 /* плашка вердикта внизу: вердикт сменился — короткая вспышка его цветом (Verdict.tsx, VBar) */
 .vb-flash { position: absolute; inset: 0; z-index: -1; background: var(--v, var(--idle)); pointer-events: none; animation: m-flash .4s ease-out forwards; }

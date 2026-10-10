@@ -1,7 +1,7 @@
 /* «Партия» (features/batch, MODEL.md §8): the strip over the form, the list and the plan — piece rows like the trade plan */
 .batch-strip .batch-list { margin-left: 4px; }
 .batch-note { margin: 4px 2px 0; }
-.batch { display: grid; gap: 10px; font-size: 12.5px; }
+.batch { position: relative; display: grid; gap: 10px; font-size: 12.5px; } /* relative: a removed row's copy folds in it (motion.css .ghost.in) */
 .batch-col { padding: 12px 14px 0; }
 .batch-sheet .batch { padding: 4px 14px 16px; }
 .batch-h { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }

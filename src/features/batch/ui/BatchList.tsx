@@ -2,10 +2,10 @@
 // the piece into the form to fix it, ✕ removes it. «E · Caren» and «🔒 шлем» rows — only ✕. «Посчитать» — the plan.
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { BatchEntry } from '@/features/batch/batch';
 import type { BatchFresh } from '@/features/batch/useBatchMode';
-import { land } from '@/shared/fly';
+import { fold, land, slide, takeOff } from '@/shared/fly';
 import type { SlotId } from '@/game/data/types';
 import type { Piece } from '@/features/gear/model/gear';
 import { inputOfPiece } from '@/features/batch/plan';
@@ -52,15 +52,29 @@ export function BatchList({ ctx, items, editing, fresh, wornOf, onFix, onRemove,
     const face = row.querySelector('.bworn .face');
     land(fresh.legs, face ? [face] : chips.length ? chips : [...row.querySelectorAll('.bnum')]);
   }, [fresh]);
+  // ✕: the row folds and the rows under it move up (shared/fly) — their places are taken before the list changes
+  const box = useRef<HTMLDivElement>(null);
+  const gone = useRef<{ n: number; tops: number[] } | null>(null);
+  const drop = (n: number) => {
+    const rows = [...(list.current?.children ?? [])];
+    if (rows[n - 1]) fold(takeOff([rows[n - 1]]), box.current ?? undefined);
+    gone.current = { n, tops: rows.slice(n).map((r) => r.getBoundingClientRect().top) };
+    onRemove(n);
+  };
+  useLayoutEffect(() => {
+    const g = gone.current;
+    gone.current = null;
+    if (g && list.current) slide([...list.current.children].slice(g.n - 1, g.n - 1 + g.tops.length), g.tops);
+  }, [items]);
   return (
-    <div className="batch">
+    <div ref={box} className="batch">
       {!items.length && <p className="muted small">{t.batch.empty}</p>}
       <ol ref={list} className="bgear-list batch-items">
         {items.map((e, i) => {
           const isNew = fresh?.n === i + 1;
           const key = isNew ? `${i}:${fresh.seq}` : i;
           const nw = !isNew ? '' : fresh.legs.length ? ' landing' : ' fresh';
-          const x = <CloseButton className="brow-x hit" label={t.batch.remove(i + 1)} title={t.batch.remove(i + 1)} onClick={() => onRemove(i + 1)} />;
+          const x = <CloseButton className="brow-x hit" label={t.batch.remove(i + 1)} title={t.batch.remove(i + 1)} onClick={() => drop(i + 1)} />;
           return e.kind === 'piece' ? (
             <li key={key} className={`bgear-row brow${editing === i + 1 ? ' editing' : ''}${nw}`}>
               <button type="button" className="brow-fix" onClick={() => onFix(i + 1)} aria-label={`#${i + 1}`} />
