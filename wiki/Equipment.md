@@ -101,6 +101,9 @@ after "Equip" the form moves to the next empty one. If the hero has at most one 
 replaces the entry.
 
 Next to the heading are the **points of what is worn** ("Worn · 6 of 6 · 37.7 pts"): the pieces' points plus the sets'.
+**Tap the heading** (▾) and it opens into where they come from: **Stats** — the pieces' points per slot, **Sets** — what
+the sets add, **Passive** — what a weapon and an accessory give outside the points: "recommended" (an item from the
+hero's builds with the right main), "stopgap" or "not in builds". A recommended passive goes in before any substats.
 Each piece shows its points on the right under its substats. Under the heading is
 the hero's **stat chain** in its order (first — the most valuable) and how many segments all worn pieces give each stat:
 `ATK% 6 / ATK 8 › CHC 8 › CHD 12 › SPD 9 › DMG UP% 4`. Green counts in full, yellow (flat) at half, paler — fewer

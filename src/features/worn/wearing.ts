@@ -12,13 +12,14 @@ import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 import { setValue } from '@/game/set/setValue';
 import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { better, bestLayout, epicToLegend, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
-import { milli, namedGain, THRESHOLD } from '@/features/gear/model/vs';
+import { better, bestLayout, epicToLegend, gearRank, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { milli, namedGain, THRESHOLD, type Fit } from '@/features/gear/model/vs';
 import { eligibleIn } from '@/features/gear/pool/info';
 import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
 import { undoWear, wearFromPool, type WearResult } from '@/features/gear/pool';
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
+const PASSIVE = ['weapon', 'accessory'] as const;
 
 // та же вещь по содержимому: в игре две одинаковые записи — одна вещь, «надеть» одну вместо другой — не действие
 const stuff = (p: Piece): string =>
@@ -51,6 +52,8 @@ export interface SeekRow extends Fill { gain: number }
 // are not T4 yet whose T4 reaches the set's full-T4 value (sets are independent in V, so each set is decided alone), the
 // bonus rows that group turns on, and the gain in points. Only from 1 point. A piece with Breakthrough unknown counts as not T4
 export interface T4Line { set: string; rows: BonusRow[]; gain: number; slots: ArmorSlot[] }
+// The passive of a worn weapon or accessory (MODEL.md §3 item 3): its rank — recommended, stopgap or not from the builds. Not points
+export interface Passive { slot: 'weapon' | 'accessory'; fit: Fit }
 export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken[] }
 // The hero's chain with what the worn pieces give each stat (owner, 2026-10-07): the chain's own order (first — the most
 // valuable), a stat — the sum of its segments over the worn pieces. A flat axis (ATK, HP, DEF) shows its forms side by
@@ -67,6 +70,7 @@ export interface WornView {
   build: string;           // the build the chain comes from — named on the card only next to another chain
   alt: AltChain[];         // the hero's other chains (Heatwave Cop Delta: DPS and Support), same sums, for reference
   bonuses: BonusRow[];     // включённые бонусы надетых сетов
+  passive: Passive[];      // rank of the worn weapon and accessory (the budget's «Passive»); [] — a hero without builds
   t4: T4Line[];            // what T4 on worn armor would add to each set, from 1 point; [] — a hero without builds
   redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
   seek: SeekRow[];         // «Что искать»: 1–3 из 4, от ближнего, ничего не добавляющие скрыты; закреплён — только его набор
@@ -96,6 +100,7 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     build: P?.chain.name ?? '',
     alt: P ? altChains(ctx, c, P.chain, slots.map((s) => s.piece)) : [],
     bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
+    passive: P ? PASSIVE.filter((s) => worn[s]).map((slot) => ({ slot, fit: gearRank(P, worn[slot]!) })) : [],
     t4: P ? t4Of(ctx, P, worn) : [],
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],

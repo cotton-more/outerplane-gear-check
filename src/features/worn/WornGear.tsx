@@ -3,7 +3,7 @@
 // ниже — «Что искать»: наборы из билдов, где у героя 1–3 из 4, и каких слотов не хватает. Пустая вкладка: «Да, всё
 // надето» — когда в вещах героя не больше одной на слот. «Переодеть» — кнопкой над вкладкой (CharDetail). Данные —
 // features/worn/wearing (wornView); запись — CharDetail (onWearAll), у него же тост с «Вернуть».
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SLOTS } from '@/game/data';
 import type { Char, SlotId } from '@/game/data/types';
 import { useT } from '@/i18n';
@@ -16,6 +16,7 @@ import { SlotIcon } from '@/game/icons/Img';
 import { tour, tourItem } from '@/tour/anchors';
 import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
 import { Pts, WornSets } from './WornSets';
+import { BUDGET_ID, WornBudget } from './WornBudget';
 import { namedGain } from '@/features/gear/model/vs';
 import { setName } from '@/game/set/setName';
 import { SubToken } from '@/game/item/SubToken';
@@ -74,11 +75,17 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
 }) {
   const t = useT();
   const { idx } = ctx;
+  const [open, setOpen] = useState(false); // the budget under the heading: closed on every visit, nothing is remembered
   if (gear.newer) return <div className="bgear" {...(shown ? {} : tour('wtab'))}><p className="muted small">{t.ui.gearNewer}</p></div>;
   const empty = wv.count === 0;
   const all = empty && !!onWearAll && wearAll(gear.store, c.id) !== null;
   const shownPts = !empty && wv.value !== null;
-  const title = <h4>{t.ui.wornTitle(wv.count)}{shownPts && <span className="wtotal"> · {t.ui.wornPts(pt(t, wv.value!.v))}</span>}</h4>;
+  const text = <>{t.ui.wornTitle(wv.count)}{shownPts && <span className="wtotal"> · {t.ui.wornPts(pt(t, wv.value!.v))}</span>}</>;
+  // the heading opens into where the points come from; a plain heading where there is nothing to open (empty tab, a hero without
+  // builds) and on the shared view-only card
+  const title = shownPts && !shown
+    ? <h4><button type="button" className="worn-t hit" aria-expanded={open} aria-controls={BUDGET_ID} onClick={() => setOpen(!open)} {...tour('wbudget')}>{text}<span className="worn-ar" aria-hidden="true">{open ? '▴' : '▾'}</span></button></h4>
+    : <h4>{text}</h4>;
   return (
     <>
       <div className="bgear worn" {...(shown ? {} : tour('wtab'))}>
@@ -91,6 +98,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
           </div>
         )}
         <div className="worn-h" {...(shown ? {} : tour('bgear'))}>{title}{share}</div>
+        {shownPts && !shown && open && <WornBudget idx={idx} wv={wv} />}
         {/* two or more chains: each one's name stands on its own line above its stats, so every chain starts at one left edge */}
         {shownPts && wv.chain.length > 0 && (wv.alt.length
           ? <div className="wchain-alt"><span className="wchain-b">{wv.build}</span><WornChain chain={wv.chain} anchor={!shown} /></div>

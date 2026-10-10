@@ -293,3 +293,82 @@ describe('T4 line', () => {
     expect($('.pot')).toBeNull();
   });
 });
+
+// The Worn heading opens into where the points come from (owner 2026-10-10): Stats, Sets, Passive; closed on every visit
+describe('worn budget', () => {
+  const four = ['helmet', 'armor', 'gloves', 'shoes'].map((slot, i) => P('b' + i, slot, speed, { CHC: 2, CHD: 2 }, { bt: 0 }));
+  const gearOf = (ps: Pc[], hero = caren.id) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } });
+  const toggle = () => $('.worn-h .worn-t');
+  const num = (s: string | null | undefined) => Number((s ?? '').replace(/[^\d.]/g, ''));
+
+  it('closed by default: the heading is a button with aria-expanded=false and no panel', async () => {
+    await mount({ gear: gearOf(four) });
+    expect(toggle()?.tagName).toBe('BUTTON');
+    expect(toggle()?.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle()?.getAttribute('aria-controls')).toBe('worn-budget');
+    expect(toggle()?.classList.contains('hit')).toBe(true);
+    expect(toggle()?.textContent).toMatch(/^Worn · 4 of 6 · [\d.]+ pts▾$/);
+    expect($('#worn-budget')).toBeNull();
+    expect(toggle()?.closest('[data-tour]')?.getAttribute('data-tour')).toBe('wbudget');
+  });
+
+  it('a tap opens it, a second one closes; the arrow follows', async () => {
+    await mount({ gear: gearOf(four) });
+    await click(toggle());
+    expect(toggle()?.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle()?.textContent).toMatch(/▴$/);
+    expect($('#worn-budget')).not.toBeNull();
+    await click(toggle());
+    expect(toggle()?.getAttribute('aria-expanded')).toBe('false');
+    expect($('#worn-budget')).toBeNull();
+  });
+
+  it('Stats and Sets add up to the heading; one set stands on the Sets line, a chip per worn slot', async () => {
+    await mount({ gear: gearOf(four) });
+    await click(toggle());
+    const rows = $$('#worn-budget > div');
+    const [stats, sets] = rows;
+    expect(stats.querySelector('dt')?.textContent).toBe('Stats');
+    expect(sets.querySelector('dt')?.textContent).toBe('Sets · Speed ×4');
+    const total = num($('.worn-t .wtotal')?.textContent);
+    expect(num(stats.querySelector('dd')?.textContent) + num(sets.querySelector('dd')?.textContent)).toBeCloseTo(total, 9);
+    expect(stats.querySelectorAll('.wbud-chip')).toHaveLength(4);
+    expect(stats.querySelector('.wbud-chip .sr-only')?.textContent).toBe('Helmet'); // the icon is named for a screen reader
+    expect(rows.some((r) => r.querySelector('dt')?.textContent === 'Passive')).toBe(false); // no weapon, no accessory
+  });
+
+  it('two sets: the sum on the Sets line, a line per set under it', async () => {
+    const defense = D.sets.find((s) => s.short === 'Defense')!.id;
+    const two = [P('c0', 'helmet', speed, { CHC: 2 }, { bt: 4 }), P('c1', 'armor', speed, { CHC: 2 }, { bt: 4 }), P('c2', 'gloves', defense, { CHC: 2 }, { bt: 0 }), P('c3', 'shoes', defense, { CHC: 2 }, { bt: 0 })];
+    await mount({ gear: gearOf(two) });
+    await click(toggle());
+    const sets = $$('#worn-budget > div')[1];
+    expect(sets.querySelector('dt')?.textContent).toBe('Sets');
+    const lines = [...sets.querySelectorAll('.wbud-set')].map((l) => l.querySelector('span')?.textContent);
+    expect(lines.length).toBeGreaterThanOrEqual(1);
+    expect(lines.every((l) => /×2$/.test(l ?? ''))).toBe(true);
+  });
+
+  // Passive: the rank of the worn accessory as a word (Fran's pieces are the ones test/gear/layout.test.ts T4.5a uses)
+  const fran = D.chars.find((c) => c.name === 'Fran')!;
+  const accessory = (id: string, lit: Record<string, number>, o: Pc) => P(id, 'accessory', null, lit, { main: 'SPD', ...o });
+  for (const [label, piece] of [
+    ['recommended', accessory('a2', { RES: 2, DEF: 1, 'DMG RED%': 1, HP: 1 }, { itemKey: '1017', bt: 4 })],
+    ['stopgap', accessory('a178', { CHC: 2, RES: 2, 'HP%': 3 }, { grade: 'rare', bt: 0 })],
+    ['not in builds', accessory('a93', { DEF: 2, EFF: 3, HP: 2 }, { grade: 'rare', bt: 0 })],
+  ] as const) {
+    it(`Passive: a worn accessory reads «${label}»`, async () => {
+      await mount({ gear: gearOf([piece], fran.id), roster: [fran.id] }, { charId: fran.id });
+      await click(toggle());
+      const row = $$('#worn-budget > div').find((r) => r.querySelector('dt')?.textContent === 'Passive')!;
+      expect(row.querySelector('.wbud-chip')?.textContent).toBe('Accessory' + label);
+    });
+  }
+
+  it('plain heading (no button) on an empty tab', async () => {
+    await mount({ gear: G([], { [caren.id]: [] }) });
+    expect($('.worn-h h4')?.textContent).toBe('Worn · 0 of 6');
+    expect($('.worn-h .worn-t')).toBeNull();
+  });
+
+});

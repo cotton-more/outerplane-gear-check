@@ -550,7 +550,7 @@ describe('карточка персонажа', () => {
     const ps = four({ 'DEF%': 2, SPD: 1, CHC: 3, 'DMG UP%': 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: wornOf(ps) }) });
 
-    expect($('.worn-h h4')?.textContent).toBe('Worn · 4 of 6 · 36.2 pts');
+    expect($('.worn-h h4')?.textContent).toBe('Worn · 4 of 6 · 36.2 pts▾'); // the heading is the budget's button; the arrow is its only sign
     expect($$('.bgear-pts').map((e) => e.textContent)).toEqual(['5.3', '5.3', '5.3', '5.3']);
     expect($$('.wchain .pill').map((e) => [e.className.replace('pill ', ''), e.textContent])).toEqual([
       ['ok', 'DEF% 8'], ['ok', 'CHC 12'], ['miss', 'CHD'], ['ok', 'SPD 4'], ['ok', 'DMG UP% 4'],

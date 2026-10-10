@@ -270,6 +270,35 @@ describe('T4 line: what T4 on worn armor would add', () => {
   });
 });
 
+// The budget's «Passive»: the rank of the worn weapon and accessory (recommended, stopgap, not from the builds) — no points
+describe('passive of the worn weapon and accessory', () => {
+  const fran = ch('Fran'), rin = ch('Rin');
+  const viewOf = (c: typeof fran, ps: Piece[]) => {
+    const st: GearStore = { v: 3, seq: 9, pieces: Object.fromEntries(ps.map((p) => [p.id, p])), pools: { [c.id]: ps.map((p) => p.id) }, worn: { [c.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } };
+    return wornView(c2, c, st, poolView(c2, st).hero(c.id));
+  };
+
+  it('accessory: recommended / stopgap / not in builds (Fran)', () => {
+    const rec = mk('a2', 'accessory', null, { RES: 2, DEF: 1, 'DMG RED%': 1, HP: 1 }, 4, { itemKey: '1017', main: 'SPD' });
+    const stop = mk('a178', 'accessory', null, { CHC: 2, RES: 2, 'HP%': 3 }, 0, { grade: 'rare', main: 'SPD' });
+    const none = mk('a93', 'accessory', null, { DEF: 2, EFF: 3, HP: 2 }, 0, { grade: 'rare', main: 'SPD' });
+    expect(viewOf(fran, [rec]).passive).toEqual([{ slot: 'accessory', fit: 'rec' }]);
+    expect(viewOf(fran, [stop]).passive).toEqual([{ slot: 'accessory', fit: 'stopgap' }]);
+    expect(viewOf(fran, [none]).passive).toEqual([{ slot: 'accessory', fit: 'no' }]);
+  });
+
+  it('weapon and accessory together, in slot order; armor and an empty slot give none; a hero without builds has none', () => {
+    const listed = prof(rin).chain.weapons[0];
+    const item = data.weapons.find((i) => i.key === listed.key)!;
+    const rec = mk('w1', 'weapon', null, { RES: 1, EFF: 1, 'HP%': 1, 'DEF%': 1 }, 4, { itemKey: item.key, main: listed.mains[0] ?? item.mains[0] });
+    const helm = mk('h1', 'helmet', 'Speed', { SPD: 2 });
+    expect(viewOf(rin, [helm, rec]).passive).toEqual([{ slot: 'weapon', fit: 'rec' }]);
+    expect(viewOf(rin, [helm]).passive).toEqual([]);
+    const st: GearStore = { v: 3, seq: 9, pieces: { w1: rec }, pools: { [rin.id]: ['w1'] }, worn: { [rin.id]: { weapon: 'w1' } } };
+    expect(wornView(c2, rin, st, null).passive).toEqual([]);
+  });
+});
+
 describe('слоты «Надето» и причины в списке вещей', () => {
   it('цвет сабстата — по очкам: стат цепочки на 5-м месте засчитан, чужой — нет; закреплённый — по цепочке своего билда', () => {
     const h = piece('helmet', 'Speed', { 'DMG UP%': 2, RES: 2, CHC: 2, HP: 2 });

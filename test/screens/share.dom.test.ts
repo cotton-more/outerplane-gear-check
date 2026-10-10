@@ -168,7 +168,7 @@ describe('3.3 ссылка и карточка', () => {
     await mount(STD({ roster: [], state: { tab: 'eval' } }), codeOf([HELM, ARM]));
     const c = card()!;
     expect(c.querySelector('.drawer-h h3')?.textContent).toBe('Shared · view only');
-    for (const sel of ['.cd-star', '.cd-top', '.btabs', '.pool', '.cd-rate', '.bgear-empty .btn', '.worn-advice', '.worn-share']) {
+    for (const sel of ['.cd-star', '.cd-top', '.btabs', '.pool', '.cd-rate', '.bgear-empty .btn', '.worn-advice', '.worn-share', '.worn-t', '#worn-budget']) {
       expect(c.querySelector(sel), sel).toBeNull();
     }
     expect([...c.querySelectorAll('button')].map((b) => b.className)).toEqual(['drawer-x']);
@@ -180,7 +180,7 @@ describe('3.3 ссылка и карточка', () => {
   it('3.13 строки карточки — как во «Надето» того же героя на тех же вещах', async () => {
     await mount();
     const mine = $('#char-detail .bgear.worn')!.cloneNode(true) as HTMLElement;
-    for (const x of mine.querySelectorAll('.worn-share, .bgear-act, .pot')) x.remove(); // the T4 line is not on the shared card
+    for (const x of mine.querySelectorAll('.worn-share, .bgear-act, .pot, .worn-t > [aria-hidden]')) x.remove(); // the T4 line and the budget's arrow are not on the shared card
     const code = (() => {
       let got = '';
       vi.stubGlobal('navigator', { ...navigator, share: (d: { url: string }) => { got = d.url; return Promise.resolve(); } });
