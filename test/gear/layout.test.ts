@@ -5,7 +5,7 @@ import type { Piece } from '@/features/gear/model/gear';
 import { wearable } from '@/features/gear/model/vs';
 import type { Fit } from '@/features/gear/model/vs';
 import { bonusRows, convertible } from '@/game/set/setBonus';
-import { partKey, pinCombo, pinKey, pinnedProfile, pinOf, pinOptions, profileFor, rowPoints, type Profile } from '@/game/build/profile';
+import { partKey, pinCombo, pinKey, pinnedProfile, pinOf, pinOptions, profileFor, rowPoints, withNeed, type Profile } from '@/game/build/profile';
 import { eligibleIn, pieceBar, poolInfo } from '@/features/gear/pool/info';
 import { heroOutcome, heroPool } from '@/features/gear/verdict';
 import { setValue } from '@/game/set/setValue';
@@ -21,13 +21,55 @@ const cmpLex = (a: { rank: number; v: number }, z: { rank: number; v: number }):
 };
 
 // --- оракул: полный перебор. Броня: пусто | любая вещь слота; V заново из bonusRows по конкретным вещам (без setValue и мемо),
-// половины A4 написаны независимо. Оружие и аксессуар: все пары (пусто | годная вещь), порядок (ранг, очки) ---
-function bruteBestV(P: Profile, pool: readonly Piece[]): { v: number; rank: number; armorV: number } {
+// половины A4 написаны независимо. Оружие и аксессуар: любая вещь высшего ранга своего слота (пусто — только если вещей нет),
+// вместе с бронёй — мягкий потолок крита связывает слоты. Крит (MODEL.md crit) — своей реализацией: C₀ из данных героя,
+// main CHC из mainValues, строки CHC сетов; сегменты по одному, тяжёлые первыми, интеграл f по каждой полосе 3 % ---
+const fBand = (need: number, a: number, b: number): number => {
+  // ∫ₐᵇ f, f = 1 до N − 15 (не ниже 0), дальше линейно до 0 в N, выше N — 0; по кускам
+  const k = Math.max(0, need - 15);
+  let v = Math.max(0, Math.min(b, k) - a);
+  const lo = Math.max(a, k), hi = Math.min(b, need);
+  if (hi > lo && need > k) v += ((need - lo) + (need - hi)) / 2 / (need - k) * (hi - lo);
+  return v;
+};
+// rows: CHC set rows that are on — counted (worth points: on the curve at their weight) or not (C₀)
+function critLossOf(P: Profile, pieces: readonly Piece[], rows: { pct: number; pts: number | null }[]): number {
+  if (!P.c.builds.length || !P.chain.subs.flat().some((t) => t.trim() === 'CHC')) return 0;
+  const own = P.c.chc!;
+  let c = (own.base + own.cls + (ctx.settings.quirks ? own.quirk : 0)) / 10;
+  for (const p of pieces) if (p.main === 'CHC') c += D.mainValues![p.slot]![p.grade]!.CHC[p.bt ?? 0] / 10;
+  const bands: { w: number; width: number }[] = [];
+  for (const r of rows) {
+    if (r.pts) bands.push({ w: r.pts / (r.pct / 3), width: r.pct });
+    else c += r.pct;
+  }
+  for (const p of pieces) {
+    const n = Math.min(6, p.lit.CHC ?? 0);
+    if (!n) continue;
+    const { CHC: _, ...rest } = p.lit;
+    const w = (piecePoints(P, p) - piecePoints(P, { ...p, lit: rest })) / n;
+    for (let i = 0; i < n; i++) bands.push({ w, width: 3 });
+  }
+  bands.sort((a, z) => z.w - a.w);
+  let loss = 0;
+  for (const b of bands) { loss += (b.w * (b.width - fBand(P.need, c, c + b.width))) / 3; c += b.width; }
+  return loss;
+}
+function bruteBestV(P: Profile, pool: readonly Piece[]): { v: number; rank: number } {
   const per = ARMOR.map((slot) => [null as Piece | null, ...pool.filter((p) => p.slot === slot)]);
-  let armorV = -Infinity;
-  for (const a of per[0]) for (const b of per[1]) for (const c of per[2]) for (const d of per[3]) {
+  const gearOpts = GEAR.map((slot) => {
+    const mine = pool.filter((p) => p.slot === slot && wearable(ctx, P.c, p));
+    const r = Math.max(-1, ...mine.map((p) => RANK[gearRank(P, p)]));
+    const top = mine.filter((p) => RANK[gearRank(P, p)] === r);
+    return top.length ? top : [null as Piece | null];
+  });
+  let best = { v: -Infinity, rank: -1 };
+  for (const w of gearOpts[0]) for (const ac of gearOpts[1]) for (const a of per[0]) for (const b of per[1]) for (const c of per[2]) for (const d of per[3]) {
+    const gear = [w, ac].filter((x): x is Piece => !!x);
     const arm = [a, b, c, d].filter((x): x is Piece => !!x);
-    let v = arm.reduce((n, p) => n + piecePoints(P, p), 0);
+    const rank = gear.reduce((n, p) => n + RANK[gearRank(P, p)], 0);
+    let v = [...gear, ...arm].reduce((n, p) => n + piecePoints(P, p), 0);
+    const chcRows: { pct: number; pts: number | null }[] = [];
     for (const s of new Set(arm.map((p) => p.setId))) {
       if (!s) continue;
       const mine = arm.filter((p) => p.setId === s);
@@ -37,23 +79,17 @@ function bruteBestV(P: Profile, pool: readonly Piece[]): { v: number; rank: numb
       // A4: часть «S ×4» — две половины; «S ×2» — одна, если активна строка 2P или 4P
       const halves = P.parts.has(partKey(s, 4)) && r4 ? 2 : P.parts.has(partKey(s, 2)) && (r2 || r4) ? 1 : 0;
       v += halves * P.U;
-      if (!convertible(ctx, P.c, s)) continue;
+      const stat = convertible(ctx, P.c, s);
       for (const r of rows) {
         const counted = halves === 2 || (halves === 1 && (r.n === 2 || !r2));
-        if (!counted) v += rowPoints(P, r.bon);
+        if (stat && !counted) v += rowPoints(P, r.bon);
+        if (r.bon.stat === 'CHC') chcRows.push({ pct: r.bon.value, pts: stat && !counted ? rowPoints(P, r.bon) : null });
       }
     }
-    if (v > armorV) armorV = v;
+    v -= critLossOf(P, [...gear, ...arm], chcRows);
+    if (rank > best.rank || (rank === best.rank && v > best.v)) best = { v, rank };
   }
-  const opts = GEAR.map((slot) => [null as Piece | null, ...pool.filter((p) => p.slot === slot && wearable(ctx, P.c, p))]);
-  let bestRank = -1, bestPts = -Infinity;
-  for (const w of opts[0]) for (const a of opts[1]) {
-    const gear = [w, a].filter((x): x is Piece => !!x);
-    const rank = gear.reduce((n, p) => n + RANK[gearRank(P, p)], 0);
-    const pts = gear.reduce((n, p) => n + piecePoints(P, p), 0);
-    if (rank > bestRank || (rank === bestRank && pts > bestPts + EPS)) { bestRank = rank; bestPts = pts; }
-  }
-  return { v: armorV + bestPts, rank: bestRank, armorV };
+  return best;
 }
 
 const lay = (l: Layout) => ARMOR.map((s) => l[s]?.id ?? '-').join(' ');
@@ -93,25 +129,48 @@ describe('ценность раскладки и лучшая раскладка
     expect(b3.value.v - b1.value.v).toBeCloseTo(2, 6);
   });
 
-  it('T4.2: сборка (с отсечкой и без) = полный перебор, 20 героев × 40 пулов', () => {
+  it('T4.2: сборка (с отсечкой и без) = полный перебор, 20 героев × 40 пулов × N 100 / 60 / 20 (мягкий потолок крита)', () => {
     const g = gen(4242);
     const bad: string[] = [];
     let cases = 0;
-    for (const c of twenty()) {
-      const P = prof(c);
+    for (const c of twenty()) for (const need of [100, 60, 20]) {
+      const P = withNeed(prof(c), need);
       for (let i = 0; i < 40; i++) {
         const pool = randPool(g, P, 3, true);
         const a = bestLayout(P, pool, {});
         const b = bestLayout(P, pool, { prune: false });
         const r = bruteBestV(P, pool);
         cases++;
-        if (a.value.rank !== r.rank || Math.abs(a.value.v - r.v) > EPS) bad.push(`${c.name} #${i}: сборка (ранг ${a.value.rank}, ${a.value.v}) / перебор (ранг ${r.rank}, ${r.v})`);
-        if (Math.abs(a.value.v - b.value.v) > EPS) bad.push(`${c.name} #${i}: с отсечкой ${a.value.v} / без ${b.value.v}`);
+        if (a.value.rank !== r.rank || Math.abs(a.value.v - r.v) > 1e-7) bad.push(`${c.name} #${i}: сборка (ранг ${a.value.rank}, ${a.value.v}) / перебор (ранг ${r.rank}, ${r.v})`);
+        if (Math.abs(a.value.v - b.value.v) > 1e-7) bad.push(`${c.name} #${i}: с отсечкой ${a.value.v} / без ${b.value.v}`);
         if (Math.abs(layoutValue(P, a.layout).v - a.value.v) > EPS) bad.push(`${c.name} #${i}: V возвращённой раскладки пересчитан иначе`);
       }
     }
-    expect(cases).toBe(800);
+    expect(cases).toBe(2400);
     expect(bad).toEqual([]);
+  });
+
+  it('T4.2b: то же на пулах с Critical Hit и аксессуарами с main CHC (строки сета крита — на кривой, owner Q-A), N 100 / 60 / 30', () => {
+    const g = gen(13503);
+    const crit = setId('Critical Hit');
+    const bad: string[] = [];
+    let cases = 0, rows = 0;
+    for (const c of twenty().slice(0, 12)) for (const need of [100, 60, 30]) {
+      const P = withNeed(prof(c), need);
+      if (!P.critOn) continue;
+      for (let i = 0; i < 10; i++) {
+        const pool = randPool(g, P, 2, true).map((p) => (p.slot === 'accessory' && !p.lit.CHC && g.rnd() < 0.7 ? { ...p, main: 'CHC' } : p));
+        for (let k = 1 + g.int(3); k > 0; k--) pool.push({ ...randArmor(g, P, g.pick(ARMOR)), setId: crit });
+        const a = bestLayout(P, pool, {});
+        const r = bruteBestV(P, pool);
+        cases++;
+        if (a.value.sets.some((x) => x.set === crit)) rows++;
+        if (a.value.rank !== r.rank || Math.abs(a.value.v - r.v) > 1e-7) bad.push(`${c.name} N${need} #${i}: сборка ${a.value.v} / перебор ${r.v}`);
+      }
+    }
+    expect(bad).toEqual([]);
+    expect(cases).toBeGreaterThan(200);
+    expect(rows).toBeGreaterThan(20);
   });
 
   it('T4.3 (A6): добавленная вещь не делает лучшую раскладку хуже — по (ранг, V), по броне и по V только брони', () => {

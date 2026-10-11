@@ -53,14 +53,14 @@ function poolsOf(ctx: Ctx): (st: GearStore) => Pools {
   const cache = new Map<string, { sig: string; hp: HeroPool | null }>();
   return (st) => (id) => {
     const ids = st.pools[id] ?? [];
-    const sig = `${ids.join(',')}|${JSON.stringify(st.worn?.[id] ?? {})}|${st.pin?.[id] ?? ''}`;
+    const sig = `${ids.join(',')}|${JSON.stringify(st.worn?.[id] ?? {})}|${st.pin?.[id] ?? ''}|${st.crit?.[id] ?? ''}`;
     const hit = cache.get(id);
     if (hit && hit.sig === sig) return hit.hp;
     const c = ctx.idx.CHAR[id];
     const pieces = ids.map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
     const mine = new Set(pieces.map((p) => p.id));
     const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
-    const hp = c ? heroPool(ctx, c, pieces, worn, st.pin?.[id]) : null;
+    const hp = c ? heroPool(ctx, c, pieces, worn, st.pin?.[id], st.crit?.[id]) : null;
     cache.set(id, { sig, hp });
     return hp;
   };

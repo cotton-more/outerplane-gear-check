@@ -1,5 +1,6 @@
 // Профиль героя для «статов + сетов» (MODEL.md §0, §2 item 3): цепочка «По статам», меню частей сетов из всех его
-// билдов и U — очки самой ценной строки T4 на 2 вещи среди статовых сетов. Половина сета из меню стоит U.
+// билдов и U — очки самой ценной строки T4 на 2 вещи среди статовых сетов. Половина сета из меню стоит U. need — N, сколько
+// крита герою нужно от вещей (MODEL.md crit soft cap; хранилище crit, по умолчанию 100); critOn — CHC есть в цепочке.
 import type { Build, Char, Combo, SetBonus } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { bonusSegments, convertible } from '@/game/set/setBonus';
@@ -17,7 +18,11 @@ export interface Profile {
   parts: ReadonlySet<string>;           // части меню: partKey(сет, 2 или 4) из всех связок всех билдов
   menuSets: ReadonlySet<string>;
   pin?: Pin;                            // закреплённый набор (MODEL.md §6): броня других сетов не годится
+  need: number;                         // N: CHC needed from gear, % (the hero's sheet; 100 when not set)
+  critOn: boolean;                      // CHC is in the chain: the crit soft cap applies (layout V)
 }
+
+export const CRIT_NEED = 100;
 
 // Закрепление (MODEL.md §6, PLAN Д9): набор одного билда героя и цепочка этого билда. Ключ — имя билда + подпись набора
 export interface Pin { key: string; build: Build; combo: Combo }
@@ -62,14 +67,27 @@ export function profileOf(ctx: Ctx, c: Char): Profile | null {
 }
 
 // профиль по цепочке и наборам: веса, U и части меню
-function makeProfile(ctx: Ctx, c: Char, chain: Build, combos: readonly Combo[]): Profile {
+function makeProfile(ctx: Ctx, c: Char, chain: Build, combos: readonly Combo[], need = CRIT_NEED): Profile {
   const parts = new Set<string>(), menuSets = new Set<string>();
   for (const combo of combos) for (const p of combo) { parts.add(partKey(p.set, p.n)); menuSets.add(p.set); }
   const base = { ctx, c, W0: pointWeights(ctx, c, chain) };
   const uBy = ctx.idx.D.sets.filter((s) => s.bonus?.t4.p2 && convertible(ctx, c, s.id))
     .map((s) => ({ set: s.id, pts: rowPoints(base, s.bonus!.t4.p2!) }))
     .sort((a, z) => z.pts - a.pts);
-  return { ...base, chain, U: Math.max(0, ...uBy.map((x) => x.pts)), uBy, parts, menuSets };
+  const critOn = chain.subs.some((tier) => tier.some((k) => k.trim() === 'CHC'));
+  return { ...base, chain, U: Math.max(0, ...uBy.map((x) => x.pts)), uBy, parts, menuSets, need, critOn };
+}
+
+// the same profile with the hero's N (MODEL.md crit soft cap). Points, ranks and set values don't depend on N; the layout
+// value does — a variant per N keeps every per-profile memo right. Unchanged N — the same profile
+const needMemo = new WeakMap<Profile, Map<number, Profile>>();
+export function withNeed(P: Profile, need: number = CRIT_NEED): Profile {
+  if (P.need === need) return P;
+  let m = needMemo.get(P);
+  if (!m) needMemo.set(P, (m = new Map()));
+  let out = m.get(need);
+  if (!out) m.set(need, (out = { ...P, need }));
+  return out;
 }
 
 // наборы героя (связки всех его билдов) без повторов, в порядке outerpedia: заказ обмена (MODEL.md §7 item 1)
@@ -144,16 +162,18 @@ export function pinnedProfile(P: Profile, pin: Pin): Profile {
   let out = m.get(pin.key);
   if (!out) {
     const same = JSON.stringify(pin.build.subs) === JSON.stringify(P.chain.subs);
-    const base = same ? comboProfile(P, pin.combo) : makeProfile(P.ctx, P.c, pin.build, [pin.combo]);
+    const base = same ? comboProfile(P, pin.combo) : makeProfile(P.ctx, P.c, pin.build, [pin.combo], P.need);
     out = { ...base, pin };
     m.set(pin.key, out);
   }
   return out;
 }
 
-// профиль героя для его пула: закреплённый, если ключ ещё годится, иначе «По статам»
-export function profileFor(ctx: Ctx, c: Char, key?: string | null): Profile | null {
-  const P = profileOf(ctx, c);
-  const pin = P && key ? pinOf(c, key) : null;
-  return P && pin ? pinnedProfile(P, pin) : P;
+// профиль героя для его пула: закреплённый, если ключ ещё годится, иначе «По статам»; need — его N (хранилище crit)
+export function profileFor(ctx: Ctx, c: Char, key?: string | null, need?: number | null): Profile | null {
+  const base = profileOf(ctx, c);
+  if (!base) return null;
+  const P = withNeed(base, need ?? CRIT_NEED);
+  const pin = key ? pinOf(c, key) : null;
+  return pin ? pinnedProfile(P, pin) : P;
 }

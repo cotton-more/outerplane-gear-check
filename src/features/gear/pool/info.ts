@@ -11,7 +11,7 @@ import { sameForBt } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import { pieceInput, type Piece } from '@/features/gear/model/gear';
 import { milli, THRESHOLD } from '@/features/gear/model/vs';
-import { bestLayout, gearRank, piecePoints, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { bestLayout, gearRank, piecePoints, pointsIn, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { numOf } from './base';
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
@@ -90,6 +90,8 @@ export const coversSlot = (q: Pick<Piece, 'slot' | 'setId' | 'grade'>, p: Pick<P
   q.slot === p.slot && q.setId === p.setId && (p.grade !== 'unique' || q.grade === 'unique');
 
 const byPoints = (P: Profile) => (a: Piece, z: Piece) => piecePoints(P, z) - piecePoints(P, a) || numOf(a.id) - numOf(z.id);
+// the same order by a piece's points in the current layout (MODEL.md crit, decision 3; = points without the crit term)
+const byValue = (val: (p: Piece) => number) => (a: Piece, z: Piece) => val(z) - val(a) || numOf(a.id) - numOf(z.id);
 
 export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySet<string>): PoolInfo {
   const why = new Map<string, Why[]>();
@@ -100,21 +102,25 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   for (const p of pool) if (wornIds.has(p.id)) { worn[p.slot] = p; add(p, 'worn'); }                     // 1
   for (const p of Object.values(best.layout)) add(p, 'layout');                                         // 2
   const sorted = [...pool].sort(byPoints(P));
+  // 3 and 4 compare pieces by their points in the current layout: CHC substats counted where the hero's crit leaves them
+  // (MODEL.md crit, decision 3) — the same value the verdict's «Отложить» uses, so a piece set aside stays held
+  const val = (p: Piece) => pointsIn(P, best.layout, p);
+  const byVal = [...pool].sort(byValue(val));
   // 3: in an armor slot, for each menu set — the best good piece and the best good one at T4, if the best is not at T4. Only for a pinned
   // set (owner 2026-10-08, (c)): a hero with no pin is wanted by stats — set pieces stay only by 1, 2, 4
   if (P.pin) for (const slot of ARMOR) {
     for (const s of P.menuSets) {
-      const top = sorted.find((p) => p.slot === slot && p.setId === s && pass(p));
+      const top = byVal.find((p) => p.slot === slot && p.setId === s && pass(p));
       if (!top) continue;
       add(top, 'menu-best');
-      if (top.bt !== 4) { const t4 = sorted.find((p) => p.slot === slot && p.setId === s && p.bt === 4 && pass(p)); if (t4) add(t4, 'menu-t4'); }
+      if (top.bt !== 4) { const t4 = byVal.find((p) => p.slot === slot && p.setId === s && p.bt === 4 && pass(p)); if (t4) add(t4, 'menu-t4'); }
     }
   }
   // 4 (A12): лучшая годная чужого сета — если хотя бы на 1 очко выше каждой держащейся вещи слота (вещам сетов меню +U/2)
   for (const slot of ARMOR) {
     const held = pool.filter((p) => p.slot === slot && why.has(p.id));
-    const off = sorted.find((p) => p.slot === slot && !!p.setId && (!P.pin || !P.menuSets.has(p.setId)) && !why.has(p.id) && pass(p));
-    if (off && (!held.length || geq1(piecePoints(P, off), offBar(P, held)))) add(off, 'offmenu');
+    const off = byVal.find((p) => p.slot === slot && !!p.setId && (!P.pin || !P.menuSets.has(p.setId)) && !why.has(p.id) && pass(p));
+    if (off && (!held.length || geq1(val(off), offBar(P, held, val)))) add(off, 'offmenu');
   }
   const strong = new Set(why.keys());
   // 5: in reserve — weak pieces per «set + slot» when the set is started by a held piece but none is held in this slot; at T4
@@ -136,9 +142,10 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   return { worn, layout: best.layout, value: best.value, why, reserve, strong, unneeded: pool.filter((p) => !why.has(p.id)) };
 }
 
-// планка для чужого сета (A12): очки лучшей держащейся вещи слота, вещам сетов меню — с надбавкой U/2
-export const offBar = (P: Profile, held: readonly Piece[]): number =>
-  Math.max(...held.map((q) => piecePoints(P, q) + (q.setId && P.menuSets.has(q.setId) ? P.U / 2 : 0)));
+// планка для чужого сета (A12): очки лучшей держащейся вещи слота, вещам сетов меню — с надбавкой U/2. val — очки вещи
+// (в нынешней раскладке — MODEL.md crit, decision 3)
+export const offBar = (P: Profile, held: readonly Piece[], val: (p: Piece) => number = (q) => piecePoints(P, q)): number =>
+  Math.max(...held.map((q) => val(q) + (q.setId && P.menuSets.has(q.setId) ? P.U / 2 : 0)));
 
 // причина в списке вещей (TEXTS 28): одна, по старшинству — надета › лучшая на T4 › лучшая своего сета › по статам ›
 // в запасе; в раскладке, но ни то ни другое — «по статам». Не держится — null («больше не нужна»)

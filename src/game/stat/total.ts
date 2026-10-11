@@ -6,7 +6,7 @@ import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
 import { itemMains } from '@/game/item/mains';
 import { MAX_LIT, type Subs } from '@/game/item/subs';
-import { bonusRows } from '@/game/set/setBonus';
+import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 
 export type TotalStat = 'CHC';
 
@@ -39,19 +39,29 @@ export function mainValue(ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'bt'>,
   return row ? (row[p.bt ?? 0] ?? row[0]) / 10 : 0;
 }
 
-export function statTotal(ctx: Ctx, hero: Char, pieces: readonly StatPiece[], stat: TotalStat): StatTotal {
+// the hero's own part, %: base, class passive, awakening quirks (only with the `quirks` setting)
+export function ownStat(ctx: Ctx, hero: Char, _stat: TotalStat): Pick<StatTotal, 'base' | 'cls' | 'quirk'> {
   const own = hero.chc;
-  const base = (own?.base ?? 0) / 10;
-  const cls = (own?.cls ?? 0) / 10;
-  const quirk = ctx.settings.quirks ? (own?.quirk ?? 0) / 10 : 0;
+  return { base: (own?.base ?? 0) / 10, cls: (own?.cls ?? 0) / 10, quirk: ctx.settings.quirks ? (own?.quirk ?? 0) / 10 : 0 };
+}
+
+// the stat a piece's main lines give at +10 by its tier, %
+export const mainsStat = (ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main' | 'bt'>, stat: TotalStat): number =>
+  itemMains(ctx.idx, p).lines.reduce((n, line) => n + (line === stat ? mainValue(ctx, p, line) : 0), 0);
+
+// the stat set rows that are on give (bonusRows rule), %
+export const rowsStat = (rows: readonly BonusRow[], stat: TotalStat): number =>
+  rows.reduce((n, r) => n + (r.bon.stat === stat && r.bon.mode === 'add' ? r.bon.value : 0), 0);
+
+export function statTotal(ctx: Ctx, hero: Char, pieces: readonly StatPiece[], stat: TotalStat): StatTotal {
+  const { base, cls, quirk } = ownStat(ctx, hero, stat);
   let mains = 0, subs = 0;
   const step = ctx.idx.SUB[stat]?.step ?? 0;
   for (const p of pieces) {
-    for (const line of itemMains(ctx.idx, p).lines) if (line === stat) mains += mainValue(ctx, p, line);
+    mains += mainsStat(ctx, p, stat);
     subs += Math.min(MAX_LIT, p.lit[stat] ?? 0) * step;
   }
-  let sets = 0;
-  for (const r of bonusRows(ctx.idx.SET, pieces)) if (r.bon.stat === stat && r.bon.mode === 'add') sets += r.bon.value;
+  const sets = rowsStat(bonusRows(ctx.idx.SET, pieces), stat);
   const c0 = base + cls + quirk + mains + sets;
   return { base, cls, quirk, mains, sets, subs, c0, total: c0 + subs };
 }

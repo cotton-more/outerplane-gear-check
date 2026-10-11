@@ -238,6 +238,7 @@ export const en: Texts = {
     budgetStats: 'Stats',
     budgetSets: 'Sets',
     budgetPassive: 'Passive',
+    budgetCrit: 'Extra crit',
     t4Head: (part) => `${part} at T4`,
     t4Need: (slots) => `needs T4 on ${andEn(slots.map((s) => SLOT_EN[s]))}`,
     pin: 'Pin a set',

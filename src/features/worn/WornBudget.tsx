@@ -1,7 +1,9 @@
 // Where the Worn heading's points come from (owner 2026-10-10): Stats (the pieces' points; the sum is the heading minus the sets,
 // in tenths, so the panel adds up to the heading; a chip per worn slot), Sets (what the sets add; one set — on the heading's
-// line, several — a line each), Passive (the worn weapon's and accessory's rank as a word — no points). Opens under the heading
-// (WornGear). No new math: layoutValue splits ptsSum / setSum, the rank is gearRank (wearing.passive).
+// line, several — a line each), Crit (what the CHC substats and crit set rows lose on the soft cap, MODEL.md crit — from 0.05,
+// minus), Passive (the worn weapon's and accessory's rank as a word — no points). Opens under the heading (WornGear). No new
+// math: layoutValue splits ptsSum / setSum / critLoss, the rank is gearRank (wearing.passive). In tenths, Stats + Sets − Crit
+// = the heading
 import { useT } from '@/i18n';
 import type { Index } from '@/game/data';
 import { SLOTS } from '@/game/data';
@@ -25,7 +27,8 @@ export function WornBudget({ idx, wv }: { idx: Index; wv: WornView }) {
   const v = wv.value;
   if (!v) return null;
   const pts = (x: number) => t.fit.pts(x);
-  const stats = (Math.round(v.v * 10) - Math.round(v.setSum * 10)) / 10;
+  const crit = namedGain(v.critLoss) ? Math.round(v.critLoss * 10) : 0;
+  const stats = (Math.round(v.v * 10) - Math.round(v.setSum * 10) + crit) / 10;
   const sets = v.sets.filter((s) => namedGain(s.value)).map((s) => {
     const n = Math.max(0, ...wv.bonuses.filter((r) => r.set === s.set).map((r) => r.n)) || s.n;
     return { set: s.set, label: partText(idx, { set: s.set, n }), value: s.value };
@@ -43,6 +46,11 @@ export function WornBudget({ idx, wv }: { idx: Index; wv: WornView }) {
         <div>
           <dt>{t.card.budgetSets}{sets.length === 1 && ` · ${sets[0].label}`}</dt><dd className="wpts">{pts(v.setSum)}</dd>
           {sets.length > 1 && sets.map((s) => <dd key={s.set} className="wbud-set"><span>{s.label}</span><span className="wpts">{pts(s.value)}</span></dd>)}
+        </div>
+      )}
+      {crit > 0 && (
+        <div>
+          <dt>{t.card.budgetCrit}</dt><dd className="wpts">−{pts(crit / 10)}</dd>
         </div>
       )}
       {wv.passive.length > 0 && (

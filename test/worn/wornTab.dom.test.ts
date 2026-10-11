@@ -441,3 +441,32 @@ describe('«Надето»: Crit from gear on old data', () => {
     expect(view({ ...D, chars: D.chars.map((c) => ({ ...c, chc: undefined })) }).crit).toBeNull();
   });
 });
+
+// the budget's crit row (crit soft cap, decision 9): Stats + Sets − Extra crit = the heading
+describe('«Надето»: Extra crit in the budget', () => {
+  it('Caren at 119 %: a row «Extra crit −x», and the panel adds up to the heading', async () => {
+    const crit = D.sets.find((s) => s.short === 'Critical Hit')!.id;
+    const ps = [
+      P('a1', 'accessory', null, { CHD: 5, 'ATK%': 2, SPD: 1, HP: 1 }, { itemKey: '1036', main: 'CHC', bt: 4 }),
+      P('a2', 'helmet', crit, { CHC: 3, CHD: 3, SPD: 2, 'ATK%': 1 }, { bt: 4 }),
+      P('a3', 'armor', crit, { CHD: 4, 'ATK%': 3, DEF: 1, SPD: 1 }, { bt: 4 }),
+      P('a4', 'gloves', crit, { CHC: 2, CHD: 2, 'DEF%': 2, SPD: 2 }, { bt: 4 }),
+      P('a5', 'shoes', crit, { SPD: 4, CHD: 2, 'ATK%': 2, HP: 1 }, { bt: 4 }),
+    ];
+    await mount({ gear: G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: { [caren.id]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) } }) });
+    await click($('.worn-h .worn-t'));
+    const rows = $$('#worn-budget > div').map((d) => [d.querySelector('dt')?.textContent ?? '', d.querySelector('dd.wpts')?.textContent ?? '']);
+    const row = rows.find(([dt]) => dt === 'Extra crit');
+    expect(row?.[1]).toMatch(/^−\d+(\.\d)?$/);
+    const num = (s: string) => Number(s.replace('−', '-'));
+    const head = Number(/· ([\d.]+) pts/.exec($('.worn-h h4')!.textContent!)![1]);
+    const sum = rows.filter(([, v]) => v).reduce((n, [, v]) => n + num(v), 0);
+    expect(Math.round(sum * 10)).toBe(Math.round(head * 10));
+  });
+
+  it('no crit loss — no row', async () => {
+    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
+    await click($('.worn-h .worn-t'));
+    expect($$('#worn-budget dt').map((d) => d.textContent)).not.toContain('Extra crit');
+  });
+});

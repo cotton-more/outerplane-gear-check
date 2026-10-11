@@ -1,13 +1,18 @@
 // Ценность раскладки героя и его лучшая раскладка из пула (MODEL.md §3). V = очки всех вещей + ценность сетов
-// брони — одной функцией по раскладке целиком. Оружие и аксессуар решает сначала ранг (рекомендованная > временная >
-// не из билдов), потом очки; броню — полный перебор (по вещи или пусто на слот), максимум V.
+// брони − то, что CHC-сабстаты теряют у мягкого потолка крита (MODEL.md crit) — одной функцией по раскладке целиком.
+// Оружие и аксессуар решает сначала ранг (рекомендованная > временная > не из билдов), потом очки; броню — полный перебор
+// (по вещи или пусто на слот), максимум V.
 import { isArmor } from '@/game/data';
 import type { ArmorSlot, GearKind, SlotId } from '@/game/data/types';
-import { pointsOf } from '@/game/build/points';
+import { pointsOf, subWeightOn } from '@/game/build/points';
 import type { Profile } from '@/game/build/profile';
 import { scoreBuild, tempOk } from '@/game/build/score';
 import { itemMains } from '@/game/item/mains';
+import { MAX_LIT } from '@/game/item/subs';
+import { bonusRows } from '@/game/set/setBonus';
 import { setValue, type SetValue } from '@/game/set/setValue';
+import { CRIT_KNEE, critLoss, type CritSegs } from '@/game/stat/curve';
+import { mainsStat, ownStat, rowsStat } from '@/game/stat/total';
 import { pieceInput, type Piece } from './model/gear';
 import { fit, milli, THRESHOLD, wearable, type Fit } from './model/vs';
 import { EPS, NEWEST, numOf } from './pool/base';
@@ -65,9 +70,11 @@ export function gearRank(P: Profile, p: Piece): Fit {
 }
 
 export interface LayoutValue {
-  v: number;
+  v: number;            // ptsSum + setSum − critLoss
   ptsSum: number;
   setSum: number;
+  critLoss: number;     // what the CHC substats lose on the crit curve (MODEL.md crit); 0 — no CHC in the chain or under the knee
+  chc: number | null;   // the layout's CHC, % (C₀ + substats); null — no CHC in the hero's chain
   ptsBySlot: Partial<Record<SlotId, number>>;
   sets: SetValue[];     // сеты, у которых в раскладке 2+ вещи
   halves: number;
@@ -86,6 +93,96 @@ function setCounts(layout: Layout): Map<string, [number, number]> {
     m.set(p.setId, [n + 1, n4 + (p.bt === 4 ? 1 : 0)]);
   }
   return m;
+}
+
+// --- crit soft cap (MODEL.md crit). C₀ — crit that carries no points: the hero (base, class, quirks), CHC main lines at
+// +10 by tier, CHC set rows that are on. Substats are laid on the curve from C₀ by their weight on each piece.
+export interface PieceCrit { w: number; n: number; main: number } // CHC weight on the item, CHC segments (≤ 6), CHC % from its main lines
+const critMemo = new WeakMap<Profile, WeakMap<Piece, PieceCrit>>();
+export function pieceCrit(P: Profile, p: Piece): PieceCrit {
+  const m = memoOf(critMemo, P);
+  let r = m.get(p);
+  if (!r) {
+    const n = Math.min(MAX_LIT, p.lit.CHC ?? 0);
+    m.set(p, (r = { w: n ? subWeightOn(P.ctx, P.c, P.chain, pieceInput(p), 'CHC') : 0, n, main: mainsStat(P.ctx, p, 'CHC') }));
+  }
+  return r;
+}
+// the piece's points without its CHC substats
+const nonChc = (P: Profile, p: Piece): number => { const k = pieceCrit(P, p); return piecePoints(P, p) - k.w * k.n; };
+const critStep = (P: Profile): number => P.ctx.idx.SUB.CHC?.step ?? 3;
+const ownChc = (P: Profile): number => { const o = ownStat(P.ctx, P.c, 'CHC'); return o.base + o.cls + o.quirk; };
+// CHC of a set's rows that are on with n pieces, n4 of them at T4 (the bonusRows rule, as setValue)
+const rowsMemo = new WeakMap<Profile, Map<string, number>>();
+function setChc(P: Profile, set: string, n: number, n4: number): number {
+  let m = rowsMemo.get(P);
+  if (!m) rowsMemo.set(P, (m = new Map()));
+  const key = `${set}:${n}:${n4}`;
+  let r = m.get(key);
+  if (r === undefined) m.set(key, (r = rowsStat(bonusRows(P.ctx.idx.SET, Array.from({ length: n }, (_, i) => ({ setId: set, bt: i < n4 ? 4 : 0 }))), 'CHC')));
+  return r;
+}
+// A set's CHC rows that are on (owner Q-A, 2026-10-11: the set's crit counts by the curve too): a row worth points of its own
+// (a stat set, not covered by a half — MODEL.md §2) goes on the curve like substats, at its weight (its points per 3 %);
+// a row covered by a half (its price is U, the set as a build choice) or of an effect set carries no points — it is C₀
+interface SetCrit { c0: number; segs: CritSegs[]; chc: number }
+const setCritMemo = new WeakMap<Profile, Map<string, SetCrit>>();
+function setCrit(P: Profile, set: string, n: number, n4: number): SetCrit {
+  let m = setCritMemo.get(P);
+  if (!m) setCritMemo.set(P, (m = new Map()));
+  const key = `${set}:${n}:${n4}`;
+  let r = m.get(key);
+  if (!r) {
+    const sv = setValue(P, set, n, n4);
+    const rows = bonusRows(P.ctx.idx.SET, Array.from({ length: n }, (_, i) => ({ setId: set, bt: i < n4 ? 4 : 0 })));
+    r = { c0: 0, segs: [], chc: 0 };
+    rows.forEach((row, i) => {
+      if (row.bon.stat !== 'CHC' || row.bon.mode !== 'add') return;
+      const pts = sv.rows[i]?.pts ?? 0, k = row.bon.value / critStep(P);
+      r!.chc += row.bon.value;
+      if (!sv.effect && !sv.rows[i]?.covered && pts > 0 && k > 0) r!.segs.push({ w: pts / k, n: k });
+      else r!.c0 += row.bon.value;
+    });
+    m.set(key, r);
+  }
+  return r;
+}
+// what the segments lose on the curve from c0 (≥ 0)
+const lossOf = (P: Profile, c0: number, segs: readonly CritSegs[]): number => critLoss(P.need, c0, critStep(P), segs);
+// C₀ and the segments of a layout (substats and the set rows that carry points); total — the layout's CHC, %
+function critState(P: Profile, layout: Layout): { c0: number; segs: CritSegs[]; total: number } {
+  let c0 = ownChc(P), total = 0;
+  const segs: CritSegs[] = [];
+  for (const slot of ALL) {
+    const p = layout[slot];
+    if (!p) continue;
+    const k = pieceCrit(P, p);
+    c0 += k.main;
+    total += k.n * critStep(P);
+    if (k.n) segs.push({ w: k.w, n: k.n });
+  }
+  for (const [set, [n, n4]] of setCounts(layout)) {
+    if (n < 2) continue;
+    const sc = setCrit(P, set, n, n4);
+    c0 += sc.c0;
+    total += sc.chc - sc.c0;
+    segs.push(...sc.segs);
+  }
+  return { c0, segs, total: c0 + total };
+}
+
+// MODEL.md crit, decision 3 («Отложить»): a piece's points as if it stood in its slot of `layout` — its CHC substats
+// valued on the curve where the rest of that layout leaves them; the other substats as usual. A hero without CHC in the
+// chain, or a piece without CHC substats — its plain points
+export function pointsIn(P: Profile, layout: Layout, p: Piece): number {
+  const px = piecePoints(P, p);
+  const k = pieceCrit(P, p);
+  if (!P.critOn || !k.n || !k.w) return px;
+  const { c0, segs } = critState(P, { ...layout, [p.slot]: p });
+  const rest = [...segs];
+  rest.splice(rest.findIndex((s) => s.w === k.w && s.n === k.n), 1);
+  // = points − w·n + (value of all segments − value without its own): the loss its segments add, exactly 0 under the knee
+  return px - (lossOf(P, c0, segs) - lossOf(P, c0, rest));
 }
 
 export function layoutValue(P: Profile, layout: Layout): LayoutValue {
@@ -110,7 +207,13 @@ export function layoutValue(P: Profile, layout: Layout): LayoutValue {
     halves += s.halves;
     if (s.effect) effHalves += s.halves;
   }
-  return { v: ptsSum + setSum, ptsSum, setSum, ptsBySlot, sets, halves, effHalves, rank, filled };
+  let critLoss = 0, chc: number | null = null;
+  if (P.critOn) {
+    const st = critState(P, layout);
+    chc = st.total;
+    critLoss = lossOf(P, st.c0, st.segs);
+  }
+  return { v: ptsSum + setSum - critLoss, ptsSum, setSum, critLoss, chc, ptsBySlot, sets, halves, effHalves, rank, filled };
 }
 
 type Ranked = Pick<LayoutValue, 'rank' | 'v' | 'effHalves'>;
@@ -153,10 +256,16 @@ export interface LayoutOpts {
 }
 
 // Лучшая раскладка пула. Отсечка точная: V = Σ очков + Σ ценностей сетов по (сет, n, n4), поэтому в слоте важна только
-// the best piece per (set, T4 or not). At equal V — more filled slots, then more Legendary (Q7), then older records
+// the best piece per (set, T4 or not). At equal V — more filled slots, then more Legendary (Q7), then older records.
+// When the hero's crit can reach the knee of the curve with this pool (critBinds), the search takes the crit path instead
 export function bestLayout(P: Profile, pool: readonly Piece[], opts: LayoutOpts = {}): { layout: Layout; value: LayoutValue } {
-  const { prune = true, eligible } = opts;
-  const cands = pool.filter((p) => wearable(P.ctx, P.c, p) && (!eligible || eligible(p)));
+  const cands = pool.filter((p) => wearable(P.ctx, P.c, p) && (!opts.eligible || opts.eligible(p)));
+  return critBinds(P, cands, !!opts.armorOnly) ? critBest(P, cands, opts) : linearBest(P, cands, opts);
+}
+
+// the old search, exact while V is linear: gear by rank and points, armor best per (set, T4)
+function linearBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layout: Layout; value: LayoutValue } {
+  const { prune = true } = opts;
   const layout: Layout = {};
   if (!opts.armorOnly) {
     for (const slot of GEAR) {
@@ -216,5 +325,140 @@ export function bestLayout(P: Profile, pool: readonly Piece[], opts: LayoutOpts 
   };
   walk(0);
   top!.arm.forEach((p, i) => { if (p) layout[ARMOR[i]] = p; });
+  return { layout, value: layoutValue(P, layout) };
+}
+
+// a set piece in or out of the (n, n4) counts of the walk
+function add(cnt: Map<string, [number, number]>, p: Piece, d: 1 | -1) {
+  if (!p.setId) return;
+  const [n, n4] = cnt.get(p.setId) ?? [0, 0];
+  if (n + d === 0) cnt.delete(p.setId);
+  else cnt.set(p.setId, [n + d, n4 + d * (p.bt === 4 ? 1 : 0)]);
+}
+
+// armor tie-break inside one (set, T4) key: more points, then Legendary, then older
+function armorFirst(P: Profile, p: Piece, b: Piece): boolean {
+  const d = piecePoints(P, p) - piecePoints(P, b);
+  return d > EPS || (Math.abs(d) <= EPS && (gradeFirst(p, b) < 0 || (gradeFirst(p, b) === 0 && ageOf(p) < ageOf(b))));
+}
+
+// MODEL.md crit: can any layout of these candidates reach the knee N − 15? An upper bound of the crit: the hero, the
+// biggest CHC main in each slot, every CHC set row the pool could switch on, the most CHC segments in each slot. Not —
+// f = 1 on the whole run, V is linear and the old search is exact (and the same result as before the crit term)
+function critBinds(P: Profile, cands: readonly Piece[], armorOnly: boolean): boolean {
+  if (!P.critOn) return false;
+  const slots = armorOnly ? ARMOR : ALL;
+  let max = ownChc(P);
+  for (const slot of slots) {
+    let main = 0, n = 0;
+    for (const p of cands) if (p.slot === slot) { const k = pieceCrit(P, p); main = Math.max(main, k.main); n = Math.max(n, k.n); }
+    max += main + n * critStep(P);
+  }
+  const bySet = new Map<string, { slots: Set<string>; t4: Set<string> }>();
+  for (const p of cands) {
+    if (!isArmor(p.slot) || !p.setId) continue;
+    const x = bySet.get(p.setId) ?? { slots: new Set(), t4: new Set() };
+    x.slots.add(p.slot);
+    if (p.bt === 4) x.t4.add(p.slot);
+    bySet.set(p.setId, x);
+  }
+  for (const [set, x] of bySet) {
+    let best = 0;
+    for (let n = 2; n <= x.slots.size; n++) for (let n4 = 0; n4 <= Math.min(n, x.t4.size); n4++) best = Math.max(best, setChc(P, set, n, n4));
+    max += best;
+  }
+  return max > Math.max(0, P.need - CRIT_KNEE) + EPS;
+}
+
+// MODEL.md crit, pruning: a dominates b (same slot; for armor — same set and T4) when it comes first by points (ties: the
+// usual order), has at least b's points without CHC, no more CHC from its main, and their CHC weight is equal (or one has
+// no CHC substat). Then a layout with a is never worth less than with b: lower C₀ never lowers V, and with one weight the
+// extra segments of either piece add between 0 and their linear points
+function dominates(P: Profile, a: Piece, b: Piece): boolean {
+  const ka = pieceCrit(P, a), kb = pieceCrit(P, b);
+  return nonChc(P, a) >= nonChc(P, b) - EPS && ka.main <= kb.main + EPS && (ka.w === kb.w || !ka.n || !kb.n);
+}
+// keep the pieces nobody earlier in the list dominates (the list is in "first by points" order)
+function front(P: Profile, sorted: readonly Piece[]): Piece[] {
+  const out: Piece[] = [];
+  for (const p of sorted) if (!out.some((a) => dominates(P, a, p))) out.push(p);
+  return out;
+}
+
+// The search when crit binds. Weapon and accessory: rank still decides first; among the top rank the undominated pieces
+// join the search (an accessory's CHC main and a weapon's CHC substats change what armor CHC is worth), in the usual
+// order — at equal V the usual pick wins. Armor: per (set, T4) the undominated pieces instead of one. V of each layout
+// is layoutValue's: points + sets − crit loss. prune: false — every top-rank gear piece and every armor piece (the oracle)
+function critBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layout: Layout; value: LayoutValue } {
+  const { prune = true } = opts;
+  const order = (a: Piece, z: Piece) => (gearBetter(P, a, z) ? -1 : gearBetter(P, z, a) ? 1 : 0);
+  const gear = GEAR.map((slot): (Piece | null)[] => {
+    if (opts.armorOnly) return [null];
+    const mine = cands.filter((p) => p.slot === slot);
+    if (!mine.length) return [null];
+    const r = Math.max(...mine.map((p) => RANK[gearRank(P, p)]));
+    const top = mine.filter((p) => RANK[gearRank(P, p)] === r).sort(order);
+    return prune ? front(P, top) : top;
+  });
+  const perSlot = ARMOR.map((slot): (Piece | null)[] => {
+    const all = cands.filter((p) => p.slot === slot);
+    if (!prune) return [null, ...all];
+    const byKey = new Map<string, Piece[]>();
+    for (const p of all) { const k = `${p.setId}:${p.bt === 4}`; byKey.set(k, [...(byKey.get(k) ?? []), p]); }
+    return [null, ...[...byKey.values()].flatMap((xs) => front(P, xs.sort((a, z) => (armorFirst(P, a, z) ? -1 : armorFirst(P, z, a) ? 1 : 0))))];
+  });
+
+  const step = critStep(P), own = ownChc(P);
+  type Top = { gear: (Piece | null)[]; gi: number[]; arm: (Piece | null)[]; v: number; filled: number; legends: number; age: number };
+  let top: Top | null = null;
+  const cur: (Piece | null)[] = [null, null, null, null];
+  const cnt = new Map<string, [number, number]>();
+  let ptsSum = 0;
+  let g: (Piece | null)[] = [null, null], gi = [0, 0];
+  const leaf = () => {
+    let lin = ptsSum;
+    for (const p of g) if (p) lin += piecePoints(P, p);
+    let c0 = own;
+    const segs: CritSegs[] = [];
+    for (const [set, [n, n4]] of cnt) {
+      if (n < 2) continue;
+      lin += setValue(P, set, n, n4).value;
+      const sc = setCrit(P, set, n, n4);
+      c0 += sc.c0;
+      segs.push(...sc.segs);
+    }
+    if (top && lin < top.v - EPS) return; // the crit loss only lowers V
+    for (const p of [...g, ...cur]) {
+      if (!p) continue;
+      const k = pieceCrit(P, p);
+      c0 += k.main;
+      if (k.n) segs.push({ w: k.w, n: k.n });
+    }
+    const v = lin - critLoss(P.need, c0, step, segs);
+    const filled = cur.filter(Boolean).length;
+    const legends = cur.filter((p) => p?.grade === 'unique').length;
+    const age = cur.reduce((s, p) => s + (p ? ageOf(p) : 0), 0);
+    const earlier = top && (gi[0] !== top.gi[0] ? gi[0] < top.gi[0] : gi[1] < top.gi[1]);
+    const sameGear = top && gi[0] === top.gi[0] && gi[1] === top.gi[1];
+    if (!top || v > top.v + EPS || (Math.abs(v - top.v) <= EPS && (earlier || (sameGear && (filled > top.filled || (filled === top.filled
+      && (legends > top.legends || (legends === top.legends && age < top.age)))))))) {
+      top = { gear: [...g], gi: [...gi], arm: [...cur], v, filled, legends, age };
+    }
+  };
+  const walk = (i: number) => {
+    if (i === ARMOR.length) { leaf(); return; }
+    for (const p of perSlot[i]) {
+      cur[i] = p;
+      if (p) { ptsSum += piecePoints(P, p); add(cnt, p, 1); }
+      walk(i + 1);
+      if (p) { ptsSum -= piecePoints(P, p); add(cnt, p, -1); }
+    }
+    cur[i] = null;
+  };
+  gear[0].forEach((w, i) => gear[1].forEach((a, j) => { g = [w, a]; gi = [i, j]; walk(0); }));
+  const layout: Layout = {};
+  const best = top as Top | null;
+  best!.gear.forEach((p, i) => { if (p) layout[GEAR[i]] = p; });
+  best!.arm.forEach((p, i) => { if (p) layout[ARMOR[i]] = p; });
   return { layout, value: layoutValue(P, layout) };
 }

@@ -27,7 +27,7 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
     const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
     const mine = new Set(pieces.map((p) => p.id));
     const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
-    const r = c ? heroPool(ctx, c, pieces, worn, st.pin?.[id]) : null;
+    const r = c ? heroPool(ctx, c, pieces, worn, st.pin?.[id], st.crit?.[id]) : null;
     heroes.set(id, r);
     return r;
   };

@@ -289,6 +289,7 @@ export const ru = {
     budgetStats: 'Статы',
     budgetSets: 'Сеты',
     budgetPassive: 'Пассивка',
+    budgetCrit: 'Лишний крит', // what CHC loses on the soft cap (MODEL.md crit): «Лишний крит −1,5»
     // the faint line under the worn sets: what Breakthrough T4 on worn armor would add — «Speed ×2 на T4 · Speed +13%   +6,7» / «нужен T4 у шлема и брони»
     t4Head: (part: string) => `${part} на T4`,
     t4Need: (slots: string[]) => `нужен T4 у ${andList(slots.map((s) => GEN[s]))}`,

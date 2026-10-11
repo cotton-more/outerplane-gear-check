@@ -10,11 +10,12 @@ import { partKey, profileFor, type Profile } from '@/game/build/profile';
 import { scoreBuild, tempOk, uselessFor } from '@/game/build/score';
 import { itemMains, subAllowed, subForms } from '@/game/item/mains';
 import { dropSubs } from '@/game/item/subs';
+import { CRIT_KNEE } from '@/game/stat/curve';
 import { sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
-import { better, bestLayout, epicToLegend, NEW_ID, piecePoints, type Layout, type LayoutValue } from './layout';
+import { better, bestLayout, epicToLegend, NEW_ID, piecePoints, pointsIn, type Layout, type LayoutValue } from './layout';
 import { coversSlot, eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
 
 // вещь с формы как запись: id NEW_ID — новее всех записанных
@@ -37,9 +38,9 @@ const btWorth = (P: Profile, p: Piece): boolean => (isArmor(p.slot) ? pieceBar(P
 export interface HeroPool { c: Char; P: Profile; pieces: Piece[]; wornIds: ReadonlySet<string>; info: PoolInfo }
 // пул героя по id; у героя без билдов (профиля нет) — null
 export type Pools = (charId: string) => HeroPool | null;
-// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (MODEL.md §6)
-export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySet<string>, pin?: string | null): HeroPool | null {
-  const P = profileFor(ctx, c, pin);
+// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (MODEL.md §6); need — его N (GearStore.crit, MODEL.md crit)
+export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySet<string>, pin?: string | null, need?: number | null): HeroPool | null {
+  const P = profileFor(ctx, c, pin, need);
   return P ? { c, P, pieces, wornIds, info: poolInfo(P, pieces, wornIds) } : null;
 }
 
@@ -82,14 +83,18 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const pool = hp.pieces.filter((p) => p.id !== x.id);
   const bar = pieceBar(P, x);
   const px = piecePoints(P, x);
+  // «Оставь» compares points in the current layout: CHC substats counted where the hero's crit leaves them (MODEL.md
+  // crit, decision 3) — x and the held pieces each as if it stood in its slot; the bar stays plain points
+  const val = (p: Piece) => pointsIn(P, info.layout, p);
+  const vx = val(x);
   const heldHere = pool.filter((p) => p.slot === x.slot && info.strong.has(p.id));
-  const top = heldHere.length ? Math.max(...heldHere.map((p) => piecePoints(P, p))) : 0;
+  const top = heldHere.length ? Math.max(...heldHere.map(val)) : 0;
   const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds) });
   const uses = withBest.layout[x.slot]?.id === x.id;
   const own = btWorth(P, x) ? (info.reserve.get(reserveKey(x)) ?? []).map((id) => pool.find((p) => p.id === id))
     .filter((p): p is Piece => !!p && sameForBt(x, p)).slice(0, feedsLeft(x)) : [];
   const base: HeroRes = {
-    c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: px - top,
+    c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: vx - top,
     slotEmpty: !info.layout[x.slot], replaced: null, rankUp: withBest.value.rank > info.value.rank,
     alsoWear: Object.values(withBest.layout).filter((p) => p.id !== x.id && !wornIds.has(p.id) && info.layout[p.slot]?.id !== p.id),
     parts: partsDiff(info.value, withBest.value), needT4: null,
@@ -104,12 +109,12 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   if (x.setId && P.pin && P.menuSets.has(x.setId)) {
     // а) a pinned set (owner 2026-10-08, (c): with no pin the hero is wanted by stats — every set goes by б): better by at least 1 point than the one held for the slot and set (a T4 piece — than the best at T4)
     const pair = heldHere.filter((p) => p.setId === x.setId && (x.bt !== 4 || p.bt === 4));
-    const ref = pair.length ? Math.max(...pair.map((p) => piecePoints(P, p))) : null;
-    if (ref === null || geq1(px, ref)) return { ...base, kind: 'keep', sub: 'a', needT4: (x.bt ?? 0) < 4 && needsT4(P, x.setId) ? menuPart(P, x.setId) : null };
+    const ref = pair.length ? Math.max(...pair.map(val)) : null;
+    if (ref === null || geq1(vx, ref)) return { ...base, kind: 'keep', sub: 'a', needT4: (x.bt ?? 0) < 4 && needsT4(P, x.setId) ? menuPart(P, x.setId) : null };
     return base;
   }
   // б) сет не из меню: на 1 очко выше каждой держащейся вещи слота, вещам сетов меню +U/2 (A12)
-  if (!heldHere.length || geq1(px, offBar(P, heldHere))) return { ...base, kind: 'keep', sub: 'b' };
+  if (!heldHere.length || geq1(vx, offBar(P, heldHere, val))) return { ...base, kind: 'keep', sub: 'b' };
   return base;
 }
 
@@ -179,15 +184,18 @@ function quietOf(pools: HeroPool[], x: Piece, heroes: HeroRes[]): Quiet | null {
     if (forced.layout[x.slot]?.id !== x.id) continue;
     const dV = forced.value.v - hp.info.value.v;
     if (!geq1(forced.value.v, hp.info.value.v) || (top && dV <= top.dV)) continue;
-    top = { c: hp.c, dV, slotEmpty: h.slotEmpty, stats: lookFor(hp.P, x) };
+    top = { c: hp.c, dV, slotEmpty: h.slotEmpty, stats: lookFor(hp.P, x, hp.info.value.chc) };
   }
   return top;
 }
-function lookFor(P: Profile, x: Piece): string[] {
+// crit — the hero's CHC in the current layout: from N − 15 on, CHC is not worth looking for (MODEL.md crit)
+function lookFor(P: Profile, x: Piece, crit: number | null): string[] {
   const input = { slot: x.slot, grade: x.grade, setId: x.setId, itemKey: x.itemKey, main: x.main };
   const useless = uselessFor(P.ctx, P.c);
+  const capped = crit !== null && crit >= P.need - CRIT_KNEE;
   const out: string[] = [];
   for (const tok of P.chain.subs.flat()) {
+    if (capped && tok.trim() === 'CHC') continue;
     const k = subForms(tok.trim()).sort((a, z) => Number(z.endsWith('%')) - Number(a.endsWith('%'))).find((f) => P.ctx.idx.SUB[f] && subAllowed(P.ctx.idx, input, f) && !useless.includes(f));
     if (k && !out.includes(k)) out.push(k);
     if (out.length === 2) break;
@@ -265,7 +273,7 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: Verdic
   const x = formPiece(input);
   const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x) && !opts.skip?.has(c.id)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
   const same = opts.twin ? null : sameOf(all, x);
-  const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds, hp.P.pin?.key)! : hp)) : all;
+  const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds, hp.P.pin?.key, hp.P.need)! : hp)) : all;
   const heroes = hps.map((hp) => feedFrom(hps, x, heroOutcome(hp, x)));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>
     ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, same, ...more });

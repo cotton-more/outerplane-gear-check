@@ -6,7 +6,7 @@
 import type { Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { subAllowed } from '@/game/item/mains';
-import { pinOf, pinOptions } from '@/game/build/profile';
+import { CRIT_NEED, pinOf, pinOptions } from '@/game/build/profile';
 import { comboSig } from '@/game/build/variants';
 import { DROP_LEVEL, MAX_LIT, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
 import { type Bt, type ItemInput } from '@/game/item/item';
@@ -207,7 +207,7 @@ export const undoPin = (st: GearStore, charId: string, r: Pick<PinResult, 'was' 
   ((st.pin?.[charId] ?? null) === r.now ? setPin(st, charId, r.was).st : st);
 
 // N героя — сколько крита ему нужно от вещей (MODEL.md crit soft cap); нет записи — CRIT_NEED
-export const CRIT_NEED = 100;
+export { CRIT_NEED };
 export const critNeed = (st: Pick<GearStore, 'crit'>, charId: string): number => st.crit?.[charId] ?? CRIT_NEED;
 // задать N (целое 0…100; null или CRIT_NEED — «Сбросить», запись убираем). Ничего не поменялось — то же хранилище
 export function setCrit(st: GearStore, charId: string, n: number | null): GearStore {

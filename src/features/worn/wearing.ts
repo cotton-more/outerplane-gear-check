@@ -5,7 +5,7 @@
 import { FLAT, SLOTS } from '@/game/data';
 import type { ArmorSlot, Build, Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import { pinnedProfile, pinOptions, profileOf, type Pin, type Profile } from '@/game/build/profile';
+import { pinnedProfile, pinOptions, profileOf, withNeed, type Pin, type Profile } from '@/game/build/profile';
 import { pointWeights } from '@/game/build/points';
 import { comboSig } from '@/game/build/variants';
 import { itemMains } from '@/game/item/mains';
@@ -131,7 +131,11 @@ function t4Of(ctx: Ctx, P: Profile, worn: Layout): T4Line[] {
     const pieces = (up: readonly ArmorSlot[]) => mine.map((s) => ({ setId: set, bt: up.includes(s) ? 4 : worn[s]!.bt }));
     const was = bonusRows(ctx.idx.SET, pieces([]));
     const rows = bonusRows(ctx.idx.SET, pieces(slots)).filter((r) => !was.some((w) => w.n === r.n && w.tier === r.tier));
-    if (rows.length) out.push({ set, rows, gain: full - now, slots });
+    // the gain in V: more CHC from the T4 rows can cost CHC substats on the crit curve (MODEL.md crit)
+    const up: Layout = { ...worn };
+    for (const s of slots) up[s] = { ...worn[s]!, bt: 4 };
+    const gain = P.critOn ? layoutValue(P, up).v - layoutValue(P, worn).v : full - now;
+    if (rows.length && milli(gain) >= THRESHOLD) out.push({ set, rows, gain, slots });
   }
   return out;
 }
@@ -189,7 +193,7 @@ export function redressOf(hp: HeroPool, worn: Layout): Redress | null {
 // лучшая раскладка брони под набор (как при закреплении: цепочка его билда, броня только его сетов, надетое остаётся):
 // k — вещей набора в ней (по части не больше n), недостающее — в слоты, где вещь набора не засчитана
 export function fillOf(hp: HeroPool, pin: Pin): Fill {
-  const base = hp.P.pin ? profileOf(hp.P.ctx, hp.c)! : hp.P;
+  const base = hp.P.pin ? withNeed(profileOf(hp.P.ctx, hp.c)!, hp.P.need) : hp.P;
   const Pc = pinnedProfile(base, pin);
   const { layout } = bestLayout(Pc, hp.pieces, { eligible: eligibleIn(Pc, hp.wornIds), armorOnly: true });
   const counted = new Set<ArmorSlot>();
