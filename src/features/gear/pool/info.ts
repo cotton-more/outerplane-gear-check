@@ -90,8 +90,9 @@ export const coversSlot = (q: Pick<Piece, 'slot' | 'setId' | 'grade'>, p: Pick<P
   q.slot === p.slot && q.setId === p.setId && (p.grade !== 'unique' || q.grade === 'unique');
 
 const byPoints = (P: Profile) => (a: Piece, z: Piece) => piecePoints(P, z) - piecePoints(P, a) || numOf(a.id) - numOf(z.id);
-// the same order by a piece's points in the current layout (MODEL.md §12 item 5, decision 3; = points without the crit term)
-const byValue = (val: (p: Piece) => number) => (a: Piece, z: Piece) => val(z) - val(a) || numOf(a.id) - numOf(z.id);
+// the same order by a piece's points in the current layout (MODEL.md §12 item 5, decision 3; = points without the crit term);
+// val is read from a map filled once per piece, not inside the comparator
+const byValue = (val: ReadonlyMap<Piece, number>) => (a: Piece, z: Piece) => val.get(z)! - val.get(a)! || numOf(a.id) - numOf(z.id);
 
 export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySet<string>): PoolInfo {
   const why = new Map<string, Why[]>();
@@ -104,8 +105,9 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   const sorted = [...pool].sort(byPoints(P));
   // 3 and 4 compare pieces by their points in the current layout: CHC substats counted where the hero's crit leaves them
   // (MODEL.md §12 item 5, decision 3) — the same value the verdict's «Отложить» uses, so a piece set aside stays held
-  const val = (p: Piece) => pointsIn(P, best.layout, p);
-  const byVal = [...pool].sort(byValue(val));
+  const vals = new Map(pool.map((p) => [p, pointsIn(P, best.layout, p)]));
+  const val = (p: Piece) => vals.get(p)!;
+  const byVal = [...pool].sort(byValue(vals));
   // 3: in an armor slot, for each menu set — the best good piece and the best good one at T4, if the best is not at T4. Only for a pinned
   // set (owner 2026-10-08, (c)): a hero with no pin is wanted by stats — set pieces stay only by 1, 2, 4
   if (P.pin) for (const slot of ARMOR) {

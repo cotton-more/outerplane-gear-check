@@ -122,6 +122,15 @@ function setChc(P: Profile, set: string, n: number, n4: number): number {
   if (r === undefined) m.set(key, (r = rowsStat(bonusRows(P.ctx.idx.SET, Array.from({ length: n }, (_, i) => ({ setId: set, bt: i < n4 ? 4 : 0 }))), 'CHC')));
   return r;
 }
+// the most CHC a set's rows give (on 2–4 pieces, any of them at T4)
+const setMaxMemo = new WeakMap<Profile, Map<string, number>>();
+function setChcMax(P: Profile, set: string): number {
+  let m = setMaxMemo.get(P);
+  if (!m) setMaxMemo.set(P, (m = new Map()));
+  let r = m.get(set);
+  if (r === undefined) m.set(set, (r = Math.max(...[2, 3, 4].flatMap((n) => Array.from({ length: n + 1 }, (_, n4) => setChc(P, set, n, n4))))));
+  return r;
+}
 // A set's CHC rows that are on (owner Q-A, 2026-10-11: the set's crit counts by the curve too): a row worth points of its own
 // (a stat set, not covered by a half — MODEL.md §2) goes on the curve like substats, at its weight (its points per 3 %);
 // a row covered by a half (its price is U, the set as a build choice) or of an effect set carries no points — it is C₀
@@ -187,7 +196,7 @@ const ownCached = (P: Profile): number => { let r = ownMemo.get(P); if (r === un
 // crit any kit's set rows give, a set's most crit from its rows. A kit whose sum stays under the knee loses nothing
 export interface CritBound { own: number; knee: number; rows: number; set: (set: string) => number }
 export function critBound(P: Profile): CritBound {
-  const setMax = (set: string) => Math.max(...[2, 3, 4].flatMap((n) => Array.from({ length: n + 1 }, (_, n4) => setChc(P, set, n, n4))));
+  const setMax = (set: string) => setChcMax(P, set);
   return {
     own: ownCached(P),
     knee: Math.max(0, P.need - CRIT_KNEE),
@@ -209,6 +218,16 @@ function rowsMaxOf(P: Profile, setMax: (set: string) => number, set2: (set: stri
   return r;
 }
 
+// the layout's crit (critState total), once per (profile, layout)
+const layoutCritMemo = new WeakMap<Profile, WeakMap<Layout, number>>();
+function layoutCrit(P: Profile, layout: Layout): number {
+  let m = layoutCritMemo.get(P);
+  if (!m) layoutCritMemo.set(P, (m = new WeakMap()));
+  let r = m.get(layout);
+  if (r === undefined) m.set(layout, (r = critState(P, layout).total));
+  return r;
+}
+
 // MODEL.md §12 item 5, decisions 3 and 15 («Отложить»): a piece's points as if it stood in its slot of `layout` — its CHC substats
 // valued on the curve where the rest of that layout leaves them; the other substats as usual. A hero without CHC in the
 // chain, or a piece without CHC substats — its plain points
@@ -216,6 +235,10 @@ export function pointsIn(P: Profile, layout: Layout, p: Piece): number {
   const px = piecePoints(P, p);
   const k = pieceCrit(P, p);
   if (!P.critOn || !k.n || !k.w) return px;
+  // no loss is possible when the layout's crit + the piece's + its set's rows stays under the knee (the piece only takes a
+  // slot's place, and the rows of the other sets can only switch off) — the pool view asks this for every piece
+  const most = layoutCrit(P, layout) + k.main + k.n * critStep(P) + (p.setId ? setChcMax(P, p.setId) : 0);
+  if (most <= Math.max(0, P.need - CRIT_KNEE)) return px;
   const { c0, segs } = critState(P, { ...layout, [p.slot]: p });
   const rest = [...segs];
   rest.splice(rest.findIndex((s) => s.w === k.w && s.n === k.n), 1);
