@@ -41,6 +41,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import Counter
 from pathlib import Path
@@ -221,6 +222,7 @@ def load_sources(source: Path | None, ref: str) -> tuple[dict, dict]:
             if not path.exists():
                 raise SystemExit(f"Нет файла {path} — это точно клон outerpedia?")
             data[key] = parse_json(path.read_text(encoding="utf-8"), rel)
+        data["guides"] = load_guides(source, ref)
         sha, date = git_info(source)
         # путь к клону в страницу не пишем: он попадёт в публикуемый файл
         return data, {"source": f"github.com/{REPO} (локальный клон)", "commit": sha, "commitDate": date}
@@ -228,6 +230,44 @@ def load_sources(source: Path | None, ref: str) -> tuple[dict, dict]:
     sha, date = resolve_ref(ref)
     log(f"Источник: github.com/{REPO} @ {sha[:10] if date else sha}{' (' + date + ')' if date else ''}")
     return fetch_sources(sha), {"source": f"github.com/{REPO}", "commit": sha if date else None, "commitDate": date}
+
+
+# outerpedia's guides: recommended teams (teams.json) and titles (meta.json) — one folder per guide, no index file
+GUIDES_DIR = "src/app/[lang]/guides/_contents"
+
+
+def guide_paths_api(ref: str) -> list[str] | None:
+    """teams.json and meta.json paths of the guides at ref — one GitHub tree request; None if the API is unavailable."""
+    url = f"https://api.github.com/repos/{REPO}/git/trees/{ref}?recursive=1"
+    headers = {"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}"} if os.environ.get("GITHUB_TOKEN") else {}
+    try:
+        tree = json.loads(http_get(url, timeout=30, headers=headers))
+    except Exception as exc:  # noqa: BLE001 — without the list there are no guide teams; the caller decides
+        log(f"  ! список гайдов outerpedia не получен ({exc})")
+        return None
+    if tree.get("truncated"):
+        log("  ! дерево outerpedia обрезано GitHub — список гайдов неполный")
+        return None
+    return [e["path"] for e in tree.get("tree", []) if e.get("type") == "blob" and e["path"].startswith(GUIDES_DIR + "/")
+            and e["path"].rsplit("/", 1)[-1] in ("teams.json", "meta.json")]
+
+
+def load_guides(source: Path | None, ref: str) -> dict | None:
+    """{path under GUIDES_DIR: json} of every guide's teams.json and meta.json; None — the list is unavailable."""
+    if source:
+        base = source / GUIDES_DIR
+        return {str(p.relative_to(base)): parse_json(p.read_text(encoding="utf-8"), str(p))
+                for name in ("teams.json", "meta.json") for p in sorted(base.rglob(name))}
+    paths = guide_paths_api(ref)
+    if paths is None:
+        return None
+
+    def fetch(rel: str) -> tuple[str, object]:
+        url = f"https://raw.githubusercontent.com/{REPO}/{ref}/{urllib.parse.quote(rel)}"
+        return rel[len(GUIDES_DIR) + 1:], parse_json(fetch_retry(url, rel), rel)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        return dict(pool.map(fetch, sorted(paths)))
 
 
 def fetch_sources(ref: str) -> dict:
@@ -238,7 +278,9 @@ def fetch_sources(ref: str) -> dict:
         return key, parse_json(fetch_retry(url, rel), rel)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-        return dict(pool.map(fetch, SOURCE_FILES.items()))
+        data = dict(pool.map(fetch, SOURCE_FILES.items()))
+    data["guides"] = load_guides(None, ref)
+    return data
 
 
 def git_info(path: Path) -> tuple[str | None, str | None]:
@@ -910,6 +952,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         "talismans": talismans,
         "chars": chars,
         "synergy": build_synergy(src, warn),
+        **({"teams": teams} if (teams := build_teams(src, chars, warn)) else {}),
     }
 
 
@@ -927,6 +970,31 @@ SYN_TO = {"ME": "self", "MY_TEAM": "team", "MY_TEAM_WITHOUT_ME": "ally", "MY_TEA
 # How a give fires: a skill use, each turn, battle start, a passive. Not events (on death, on break, when hit, chain).
 SYN_CREATE = {None, "SKILL_FINISH", "SKILL_START", "SKILL_FINISH_IMMEDIATELY", "DAMAGE", "ON_TURN", "ON_SPAWN",
               "ON_SPAWN2", "PASSIVE", "PASSIVE2", "ON_TURN_END_ATTACKER"}
+# What a condition switches on — a short key the app names (team.fx in src/i18n): BT_* type, for stat rows by stat and side
+SYN_FX = {"BT_CALL_BACKUP": "dual", "BT_CALL_BACKUP_2": "dual", "BT_DMG": "dmg", "BT_ADDITIVE_ATTACK_ON_EVENT": "extra",
+          "BT_RUN_ACTIVE_SKILL_ON_TURN_END": "extra", "BT_SKILL_RANGE_ALL": "aoe", "BT_SKILL_RANGE_SINGLE": "single",
+          "BT_COOL_CHARGE": "cd", "BT_COOL2_CHARGE": "cd", "BT_COOL3_CHARGE": "cd", "BT_STUN": "stun", "BT_FREEZE": "freeze",
+          "BT_DOT_BLEED": "bleed", "BT_DOT_LIGHTNING": "shock", "BT_DOT_BURN": "burn", "BT_DOT_POISON": "poison",
+          "BT_REVERSE_HEAL_BASED_TARGET": "maxhp", "BT_SEALED_RESURRECTION": "norevive"}
+SYN_FX_STAT = {"ST_DMG_BOOST": "dmg", "ST_ATK": "dmg", "ST_CRITICAL_RATE": "dmg", "ST_CRITICAL_DMG_RATE": "dmg",
+               "ST_PIERCE_POWER_RATE": "pen"}
+SYN_FX_DOWN = {"ST_ATK": "atkDown", "ST_DEF": "defDown", "ST_SPEED": "slow"}
+
+
+# most telling first: Francesca S2 «доп. атака, больше урона, приоритет»
+SYN_FX_ORDER = ["dual", "extra", "aoe", "single", "stun", "freeze", "bleed", "shock", "burn", "poison", "norevive", "maxhp",
+                "dmg", "pen", "cd", "prio", "prioDown", "atkDown", "defDown", "slow", "other"]
+
+
+def syn_fx(r: dict) -> str:
+    t, enemy = r.get("type"), (r.get("targetType") or "").startswith("ENEMY")
+    if t == "BT_ACTION_GAUGE":
+        return "prioDown" if enemy or (r.get("value") or 0) < 0 else "prio"
+    if t == "BT_STAT":
+        return SYN_FX_DOWN.get(r.get("stat"), "other") if enemy else SYN_FX_STAT.get(r.get("stat"), "other")
+    return SYN_FX.get(t, "other")
+
+
 # conditionValue 9996..9999 = "any buff / any debuff" (outerpedia gear.ts conditionBuffRef), not a status
 SYN_ANY = range(9996, 10000)
 
@@ -977,6 +1045,7 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
     gives: dict[str, dict] = {}
     needs: dict[str, dict] = {}
     slot_cd: dict[str, dict] = {}  # hero -> slot -> startCool (turns before the skill is ready)
+    need_fx: dict[str, dict] = {}  # hero -> (status, side, slot) -> what it switches on
     rows_dbg: list[dict] = []
     for cid in src["chars"]:
         ch = dchars.get(cid)
@@ -1045,8 +1114,8 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
                         callers = (r.get("callerSkillType") or "").split(",")
                         slots = (["s1", "s2", "s3"] if "SKT_ALL" in callers else
                                  [SYN_CALLER[c] for c in callers if c in SYN_CALLER]) or slots
-                    has.append({"st": need, "on": on, "star": star, "slots": slots, "effect": r.get("type"), "buff": b,
-                                "cond": ct})
+                    has.append({"st": need, "on": on, "star": star, "slots": slots, "effect": r.get("type"), "fx": syn_fx(r),
+                                "buff": b, "cond": ct})
             for h in has:
                 if (h["st"], h["effect"]) in has_not:
                     continue
@@ -1057,6 +1126,9 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
                 for sl in dict.fromkeys(h["slots"]):
                     key = (h["st"], h["on"], sl)
                     mine[key] = min(h["star"], mine.get(key, h["star"]))
+                    fxs = need_fx.setdefault(cid, {}).setdefault(key, [])
+                    if h["fx"] not in fxs:
+                        fxs.append(h["fx"])
                 if debug:
                     rows_dbg.append({"kind": "need", "hero": cid, "skill": sid, **h})
 
@@ -1072,8 +1144,11 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
         by: dict[tuple, dict] = {}
         for (st, on, slot), star in sorted(hero.items(), key=lambda kv: order.index(kv[0][2])):
             if others_give(cid, st, on):
-                n = by.setdefault((st, on, star), {"st": st, "on": on, "slots": [], "star": star, "cd": 99})
+                n = by.setdefault((st, on, star), {"st": st, "on": on, "slots": [], "star": star, "cd": 99, "fx": {}})
                 n["slots"].append(slot)
+                n["fx"][slot] = sorted(need_fx[cid][(st, on, slot)], key=SYN_FX_ORDER.index)
+                if "other" in n["fx"][slot]:
+                    warn.add(f"синергия: у героя {cid} условие на статус {st} включает неизвестный эффект — назови его в update.py SYN_FX")
                 if slot in ("s1", "s2", "s3"):  # a burst needs AP, not a cooldown — it doesn't set the turn
                     n["cd"] = min(n["cd"], slot_cd.get(cid, {}).get(slot, 0))
         for n in by.values():
@@ -1101,6 +1176,62 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
     if debug:
         out["rows"] = rows_dbg
     return out
+
+
+def build_teams(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
+    """outerpedia's recommended teams (guides' teams.json): four slots, each a list of interchangeable heroes → hero ids.
+    The same team in several guides (guild raid seasons) is one entry with all its guides. None — no guide list."""
+    files = src.get("guides")
+    if files is None:
+        warn.add("команды outerpedia: список гайдов не получен — подсказок «кого добавить» по ним не будет")
+        return None
+    by_name = {c["name"]: c["id"] for c in chars}
+    metas = {k.rsplit("/", 1)[0]: v for k, v in files.items() if k.endswith("meta.json")}
+
+    def title(guide: str) -> str:
+        parts = guide.split("/")
+        while parts:  # guild raid seasons sit under the boss folder: its meta.json names them
+            m = metas.get("/".join(parts))
+            if m and en(m.get("title")):
+                return en(m["title"]) + ("" if len(parts) == len(guide.split("/")) else " · " + guide.split("/")[-1])
+            parts.pop()
+        return guide
+
+    def slot_lists(x):
+        if isinstance(x, dict):
+            sl = x.get("slots")
+            if isinstance(sl, list) and sl and all(isinstance(s, list) for s in sl):
+                yield sl
+            for v in x.values():
+                yield from slot_lists(v)
+        elif isinstance(x, list):
+            for v in x:
+                yield from slot_lists(v)
+
+    teams: dict[tuple, dict] = {}
+    for path, body in sorted(files.items()):
+        if not path.endswith("teams.json"):
+            continue
+        guide = path.rsplit("/", 1)[0]
+        for slots in slot_lists(body):
+            ids = []
+            for slot in slots:
+                got = []
+                for name in slot:
+                    if name in by_name:
+                        got.append(by_name[name])
+                    else:
+                        warn.add(f"команды outerpedia: герой «{name}» ({guide}) не найден в данных")
+                if got:
+                    ids.append(got)
+            if len(ids) < 2:
+                continue
+            key = tuple(sorted(tuple(sorted(s)) for s in ids))
+            t = teams.setdefault(key, {"g": [], "s": ids})
+            if guide not in t["g"]:
+                t["g"].append(guide)
+    used = sorted({g for t in teams.values() for g in t["g"]})
+    return {"guides": {g: title(g) for g in used}, "list": list(teams.values())}
 
 
 def build_view(label: str, b: dict, ctx: dict, ee_names: dict, warn: Warnings) -> dict:

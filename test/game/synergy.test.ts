@@ -36,7 +36,7 @@ describe('the extract', () => {
     }
   });
   it('Increased Defense: Veronica needs it on S1; 14 heroes give it to allies', () => {
-    expect(syn.heroes[H.veronica].need).toEqual([{ st: '6', on: 'self', slots: ['s1'], star: 1, cd: 0 }]);
+    expect(syn.heroes[H.veronica].need).toEqual([{ st: '6', on: 'self', slots: ['s1'], star: 1, cd: 0, fx: { s1: ['dual'] } }]);
     const allies = ALL.filter((id) => syn.heroes[id].give?.some((g) => g.st === '6' && (g.to === 'team' || g.to === 'ally')));
     expect(allies).toHaveLength(14);
     expect(allies).toEqual(expect.arrayContaining([H.yuri, H.saeran, H.tio, H.anarky, H.veronica, H.veronicaCF]));

@@ -50,3 +50,15 @@ html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 2; }
   .tm-sb .tm-mini { gap: 0; }
   .tm-sb .tm-mini i, .tm-sb .tm-mini svg { width: 7px; height: 7px; }
 }
+
+/* the hero sheet: who fits the team (rows with reasons), then everyone else */
+.tm-pick { display: grid; gap: 8px; }
+.tm-pick .pick-q { margin: 0; }
+.tm-ph { margin: 4px 0 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
+.tm-fits { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tm-fit { width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 10px; row-gap: 1px; align-items: center; padding: 6px 10px 6px 6px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: 13px var(--font-body); }
+.tm-fit .face { grid-row: 1 / span 3; width: 36px; height: 36px; border-radius: 7px; object-fit: cover; align-self: start; }
+.tm-fn { grid-column: 2; font-weight: 700; font-size: 13.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm-fr { grid-column: 2; font-size: 12px; line-height: 1.3; color: var(--ink-2); }
+.tm-fr.fix { color: var(--keep); font-weight: 600; }
+.tm-pick > .tm-more { justify-self: start; }

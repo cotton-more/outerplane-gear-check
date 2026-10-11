@@ -873,14 +873,31 @@ export const ru = {
     star: (n: number) => `★${n}`,
     from: (n: number) => `с ★${n}`,
     slot: { s1: 'S1', s2: 'S2', s3: 'S3', burst: 'Burst', passive: 'пассивка' } as Record<SkillSlot, string>,
-    // status — the status name, skills — the skills that need it («S1», «S1 и S3»)
-    none: (status: string, skills: string) => `Никто в команде не даёт **${status}** — нужно для ${skills}.`,
-    noneEnemy: (status: string, skills: string) => `Никто в команде не накладывает **${status}** на врага — нужно для ${skills}.`,
+    // what — what the status switches on, «S1: двойная атака» (bold); status — its name
+    none: (what: string, status: string) => `**${what}** — ${status}: в команде никто не даёт.`,
+    noneEnemy: (what: string, status: string) => `**${what}** — ${status} на враге: в команде никто не накладывает.`,
     // own — the hero's own skill that gives it; cd — its cooldown at battle start (the number on the skill icon)
-    selfOnly: (status: string, skills: string, own: string, cd: number) =>
-      `**${status}** только от своего ${own} — на старте боя он на перезарядке (${cd}), до него ${skills} без статуса.`,
-    selfBurst: (status: string, skills: string) => `**${status}** только от своего Burst — до него ${skills} без статуса.`,
-    ok: (status: string, who: string) => `${status} — даёт ${who}`,
+    selfOnly: (what: string, status: string, own: string, cd: number) =>
+      `**${what}** — ${status} только от своего ${own}, а он на старте боя на перезарядке (${cd}).`,
+    selfBurst: (what: string, status: string) => `**${what}** — ${status} только от своего Burst.`,
+    ok: (what: string, status: string, who: string) => `${what} — ${status} даёт ${who}`,
+    // skills — «S1», «S1 и S3»; fx — what they get, «двойная атака»
+    effect: (skills: string, fx: string) => (fx ? `${skills}: ${fx}` : skills),
+    fx: {
+      dual: 'двойная атака', extra: 'доп. атака', aoe: 'бьёт всех', single: 'одиночный удар', stun: 'оглушение',
+      freeze: 'заморозка', bleed: 'кровотечение', shock: 'ещё Шок', burn: 'горение', poison: 'отравление',
+      norevive: 'без воскрешения', maxhp: 'урон от макс. HP', dmg: 'больше урона', pen: 'больше пробития',
+      cd: 'короче перезарядка', prio: 'приоритет', prioDown: '−приоритет врагу', atkDown: '−атака врагу',
+      defDown: '−защита врагу', slow: '−скорость врагу', other: 'эффект навыка',
+    } as Record<string, string>,
+    // the hero sheet: who fits the team (.x/0171-team-suggest)
+    fitHead: 'Подойдут команде',
+    popularHead: 'Чаще всего в командах outerpedia',
+    restHead: 'Остальные',
+    together: (parts: string) => `в командах outerpedia: ${parts}`,
+    togetherWith: (name: string, n: number) => `с ${name} ×${n}`,
+    inTeams: (n: number) => `в ${n} ${plural(n, 'команде', 'командах', 'командах')} outerpedia`,
+    fixLine: (hero: string, what: string) => `у ${hero} заработает ${what}`,
     fixHead: 'Дадут:',
     more: (n: number) => `ещё ${n}`,
     and: (a: string, b: string) => `${a} и ${b}`,

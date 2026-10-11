@@ -5,13 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset, Synergy } from '@/game/data/types';
+import type { Dataset, GuideTeams, Synergy } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 import { moreButton, openMore } from '../app/more';
 
 const file = (rel: string) => readFileSync(fileURLToPath(new URL(rel, 'file://' + __filename)), 'utf8');
 const D0: Dataset = JSON.parse(file('../fixtures/data.json'));
 const SYN: Synergy = JSON.parse(file('../fixtures/synergy.json'));
+const TEAMS: GuideTeams = JSON.parse(file('../fixtures/teams.json'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
 const H = { veronica: '2000037', yuri: '2000026', kappa: '2000077', stella: '2000053', kanon: '2000071' };
 const ROSTER = Object.values(H);
@@ -32,13 +33,13 @@ afterEach(async () => {
   localStorage.clear();
 });
 
-async function mount({ roster = ROSTER, syn = true }: { roster?: string[]; syn?: boolean } = {}) {
+async function mount({ roster = ROSTER, syn = true, teams = false }: { roster?: string[]; syn?: boolean; teams?: boolean } = {}) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster, state: { tab: 'eval' }, item: {} };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   const { App } = await import('@/app/App');
   const { IndexContext } = await import('@/game/data/IndexContext');
   const { createIndex } = await import('@/game/data');
-  const D: Dataset = { ...structuredClone(D0), ...(syn ? { synergy: SYN } : {}) };
+  const D: Dataset = { ...structuredClone(D0), ...(syn ? { synergy: SYN } : {}), ...(teams ? { teams: TEAMS } : {}) };
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
@@ -58,10 +59,12 @@ const team = () => $('#view-team')!;
 // a spot: «+» or the hero's portrait button
 const slot = (i: number) => team().querySelectorAll<HTMLElement>('.tm-team > .tm-add, .tm-team > .tm-p > .tm-slot')[i];
 const spot = (i: number) => team().querySelectorAll<HTMLElement>('.tm-team > *')[i];
-const sheetHeroes = () => $$('.drawer.tm-sheet .trade-hero');
+// hero buttons of the sheet (who fits, then everyone else) — by the name alone
+const sheetHeroes = () => $$('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit');
+const heroName = (b: HTMLElement) => b.querySelector('.trade-hn, .tm-fn')!.textContent;
 const pick = async (i: number, name: string) => {
   await click(slot(i));
-  await click(sheetHeroes().find((b) => b.textContent === name));
+  await click(sheetHeroes().find((b) => heroName(b) === name));
 };
 const setStars = async (i: number, n: number) => {
   await click(spot(i).querySelector<HTMLElement>('.tm-sb'));
@@ -90,7 +93,7 @@ describe('«Команда»', () => {
     await click(slot(0));
     const q = $('.drawer.tm-sheet .pick-q') as HTMLInputElement;
     await type(q, 'vero');
-    expect(sheetHeroes().map((b) => b.textContent)).toEqual(['Veronica']);
+    expect(sheetHeroes().map(heroName)).toEqual(['Veronica']);
     await click(sheetHeroes()[0]);
     // picked at ★6; the sheet is closed
     expect($('.drawer.tm-sheet')).toBeNull();
@@ -99,13 +102,13 @@ describe('«Команда»', () => {
     expect($$('.drawer.tm-star-sheet .tm-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★6']);
     await click($('.drawer.tm-star-sheet .drawer-x'));
     const warn = $('#view-team .tm-warn')!.textContent!;
-    expect(warn).toContain('Increased Defense only from own S3 — on cooldown (4) at battle start, S1 goes without it until then.');
+    expect(warn).toContain('S1: Dual Attack — Increased Defense only from own S3, on cooldown (4) at battle start.');
     expect(warn).toContain('Would give it:');
     expect(warn).toContain('Kappa');
     expect(warn).toContain('Yuri');
     await pick(1, 'Yuri');
     expect($('#view-team .tm-warn')).toBeNull();
-    expect($('#view-team .tm-ok')?.textContent).toBe('✓ Increased Defense — from Yuri');
+    expect($('#view-team .tm-ok')?.textContent).toBe('✓ S1: Dual Attack — Increased Defense from Yuri');
   });
 
   it('★ matters: Demiurge Stella ★5 is the first suggestion «from ★6»; set ★6 → Kanon is covered', async () => {
@@ -119,7 +122,7 @@ describe('«Команда»', () => {
     expect(fix[0].textContent).toBe('Demiurge Stella from ★6');
     await setStars(1, 6);
     expect($('#view-team .tm-warn')).toBeNull();
-    expect(report()[0]).toContain('Barrier — from Demiurge Stella');
+    expect(report()[0]).toContain('Barrier from Demiurge Stella');
   });
 
   it('✕ empties the spot, the portrait replaces the hero; the team survives a tab switch, a reload forgets it and opens «Evaluate»', async () => {
@@ -132,7 +135,7 @@ describe('«Команда»', () => {
     // the portrait opens the list: another hero takes the spot, keeping its ★
     await setStars(1, 3);
     await click(slot(1));
-    await click(sheetHeroes().find((b) => b.textContent === 'Yuri'));
+    await click(sheetHeroes().find((b) => heroName(b) === 'Yuri'));
     expect(spot(1).textContent).toContain('Yuri');
     expect(spot(1).querySelectorAll('.tm-mini .on')).toHaveLength(3);
     await click($('.vbar .vb-tab')); // ← Evaluate
@@ -143,6 +146,26 @@ describe('«Команда»', () => {
     expect($('#view-eval')!.hidden).toBe(false);
     await openTeam();
     expect($$('#view-team .tm-slot')).toHaveLength(0);
+  });
+
+  it('the hero sheet: who fits first — outerpedia partners, a skill that starts working; everyone else below', async () => {
+    const tamara = '2000060', laplace = '2000044';
+    await mount({ roster: [...ROSTER, tamara, laplace], teams: true });
+    await openTeam();
+    // an empty team: who is most often in outerpedia's teams
+    await click(slot(0));
+    expect($('.drawer.tm-sheet .tm-ph')?.textContent).toBe('Most often in outerpedia teams');
+    await click(sheetHeroes().find((b) => heroName(b) === 'Veronica'));
+    await click(slot(1));
+    expect($$('.drawer.tm-sheet .tm-ph').map((p) => p.textContent)[0]).toBe('Fit the team');
+    const fits = $$('.drawer.tm-sheet .tm-fit');
+    expect(fits.slice(0, 2).map((b) => b.textContent)).toEqual([
+      'Tamarain outerpedia teams: with Veronica ×8', 'Laplacein outerpedia teams: with Veronica ×8']); // a tie: by outerpedia rank
+    expect(fits.find((b) => heroName(b) === 'Kappa')?.textContent).toContain('Veronica: S1: Dual Attack starts working');
+    // the same hero is not in both lists; the search filters both
+    expect($$('.drawer.tm-sheet .trade-hero').map(heroName)).not.toContain('Laplace');
+    await type($('.drawer.tm-sheet .pick-q') as HTMLInputElement, 'lap');
+    expect(sheetHeroes().map(heroName)).toEqual(['Laplace']);
   });
 
   it('an empty roster — a notice with a way to «Characters»', async () => {

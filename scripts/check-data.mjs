@@ -235,6 +235,8 @@ function problems(D) {
         if (!syn.statuses?.[r.st]?.en) out.add(`synergy: у героя ${id} статус ${r.st} без имени`);
       }
     }
+    if (!D.teams) out.add('нет команд outerpedia (подсказки «кого добавить» на «Команде»): не получен список гайдов?');
+    else if ((D.teams.list ?? []).length < 40) out.add(`команд outerpedia всего ${(D.teams.list ?? []).length} (ждём ≥ 40) — формат teams.json изменился?`);
     for (const st of Object.keys(syn.statuses ?? {})) {
       if (!STATUS_RU.has(st)) out.add(`synergy: новый статус ${st} «${syn.statuses[st].en}» — нужно русское и английское имя (team.status в src/i18n)`);
     }

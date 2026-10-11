@@ -5,16 +5,20 @@ import { useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
+import type { Char } from '@/game/data/types';
+
+// the name search of hero lists: name, slug, nickname
+export const heroMatches = (c: Pick<Char, 'name' | 'slug' | 'nick'>, query: string) => {
+  const q = query.trim().toLowerCase();
+  return !q || c.name.toLowerCase().includes(q) || c.slug.includes(q) || (c.nick || '').toLowerCase().includes(q);
+};
 
 export function HeroPicker({ ids, title, empty, search, onPick }: {
   ids: readonly string[]; title?: string; empty: string; search?: string; onPick: (id: string) => void;
 }) {
   const idx = useIndex();
   const [q, setQ] = useState('');
-  const query = q.trim().toLowerCase();
-  const shown = query
-    ? ids.filter((id) => { const c = idx.CHAR[id]; return c.name.toLowerCase().includes(query) || c.slug.includes(query) || (c.nick || '').toLowerCase().includes(query); })
-    : ids;
+  const shown = ids.filter((id) => heroMatches(idx.CHAR[id], q));
   return (
     <div className="trade-pick">
       {title && <p className="trade-q">{title}</p>}

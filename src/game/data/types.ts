@@ -122,12 +122,17 @@ export interface Meta {
 export type SkillSlot = 's1' | 's2' | 's3' | 'burst' | 'passive';
 // self — the caster only; team — all allies with the caster; ally — another ally (single-target too); enemy
 export interface SynGive { st: string; to: 'self' | 'team' | 'ally' | 'enemy'; slot: SkillSlot; star: number; cd: number }
-// cd — startCool of the earliest S1–S3 slot that needs it (0 for burst/passive only)
-export interface SynNeed { st: string; on: 'self' | 'enemy'; slots: SkillSlot[]; star: number; cd: number }
+// cd — startCool of the earliest S1–S3 slot that needs it (0 for burst/passive only); fx — what the status switches on in
+// each slot, most telling first ('dual' — Dual Attack, 'dmg' — more damage…; names in i18n team.fx; no field in old snapshots)
+export interface SynNeed { st: string; on: 'self' | 'enemy'; slots: SkillSlot[]; star: number; cd: number; fx?: Partial<Record<SkillSlot, string[]>> }
 export interface Synergy {
   statuses: Record<string, { en: string; debuff: boolean }>;
   heroes: Record<string, { give?: SynGive[]; need?: SynNeed[] }>;
 }
+
+// outerpedia's recommended teams (update.py build_teams, guides' teams.json): four slots, each a list of interchangeable
+// heroes (ids); g — the guides that recommend it (keys of guides: guide path → its English title)
+export interface GuideTeams { guides: Record<string, string>; list: { g: string[]; s: string[][] }[] }
 
 export interface Dataset {
   meta: Meta;
@@ -147,5 +152,6 @@ export interface Dataset {
   talismans: Record<string, Talisman>;
   chars: Char[];
   synergy?: Synergy; // missing in old snapshots: the Team screen shows a notice instead
+  teams?: GuideTeams; // missing in old snapshots or when the guide list was not fetched: no suggestions from outerpedia
   img?: Record<string, string>; // ключ картинки → data URI, относительный путь или URL CDN
 }

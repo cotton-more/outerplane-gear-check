@@ -41,7 +41,8 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/worn/WornSets.tsx': 'helper',              // sets and the T4 line under the chain on Worn: explained by the wornTab tip
   'features/team/ui/Stars.tsx': 'helper',              // transcend stars on Team: tap the N-th star, as in the game
   'features/team/ui/TeamSlots.tsx': 'helper',          // the four Team spots: explained by the Team tip
-  'features/team/ui/TeamReport.tsx': 'helper',         // the Team report: explained by the Team tip
+  'features/team/ui/TeamReport.tsx': 'helper',
+  'features/team/ui/TeamPicker.tsx': 'helper',         // the hero sheet of a spot: who fits the team first — section titles explain it         // the Team report: explained by the Team tip
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
