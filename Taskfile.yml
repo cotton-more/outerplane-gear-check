@@ -17,9 +17,18 @@ tasks:
     generates: [node_modules/.package-lock.json]
 
   dev:
-    desc: Dev-сервер с горячей перезагрузкой — данные и картинки берёт из docs/
-    deps: [setup]
+    desc: Dev-сервер с горячей перезагрузкой — данные того же коммита, что docs/, но текущим update.py (dev:data); картинки из docs/
+    deps: [setup, dev:data]
     cmds: [npm run dev]
+
+  dev:data:
+    desc: 'Данные для task dev: коммит outerpedia из docs/index.html, собранный текущим update.py — новые поля данных видны до публикации'
+    sources: [update.py, docs/index.html]
+    generates: [build/dev-data.json]
+    cmds:
+      # без сети — не беда: dev возьмёт данные из docs/ (и скажет об этом)
+      - cmd: python3 update.py --dev-data build/dev-data.json
+        ignore_error: true
 
   build:app:
     desc: Собрать приложение в build/app/index.html (без данных)

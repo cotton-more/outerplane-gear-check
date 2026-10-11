@@ -240,16 +240,47 @@ html.xs .bgear-t { grid-row: 3; }
 .wchain .pill b { font-weight: 800; }
 .wchain .pill.ok { color: color-mix(in srgb, var(--keep) 55%, var(--ink)); background: color-mix(in srgb, var(--keep) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--keep) calc(35% + 65% * var(--k, 1)), transparent); }
 .wchain .pill.half { color: color-mix(in srgb, var(--temp) 55%, var(--ink)); background: color-mix(in srgb, var(--temp) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--temp) calc(35% + 65% * var(--k, 1)), transparent); }
-/* «Крит от вещей: 98%» under the chain (WornGear CritLine): a quiet line, amber from N − 15 — where crit starts to count
-   less; a button that opens the hero's N (CritSheet) */
-.wcrit { justify-self: start; margin: 0; padding: 2px 0; border: 0; background: none; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-2); text-align: left; }
-.wcrit.near { color: var(--temp); }
-button.wcrit span { color: var(--ink-3); font-size: 11px; }
+/* «Крит от вещей: 98%» under the chain (WornGear CritLine): a quiet line like the others on the card — a small crit icon,
+   the percent in bold in the zone's colour (amber from N − 15, red from N), the sheet's bar in small; a button that opens
+   the hero's N (CritSheet) */
+.wcrit { justify-self: start; margin: 0; padding: 2px 0; border: 0; background: none; display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-2); text-align: left; }
+.wcrit > .ico, .wcrit > img { width: 14px; height: 14px; font-size: 14px; }
+.wcrit > img.gstat { padding: 1px; }
+.wcrit .crit-t b { color: var(--ink); font-weight: 700; }
+.wcrit.near .crit-t b { color: var(--temp); }
+.wcrit.over .crit-t b { color: var(--junk); }
+.wcrit-ar { font-size: 10px; color: var(--ink-3); }
+
+/* the bar (CritSheet CritBar): the zones — full (keep), soft (keep → temp), extra (junk) — dim, lit up to the hero's crit */
+.crit-bar { position: relative; display: block; }
+.cb-track { position: absolute; left: 0; right: 0; height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.cb-zones { position: absolute; inset: 0; opacity: .25;
+  background: linear-gradient(90deg, var(--keep) 0, var(--keep) var(--knee), var(--temp) var(--need), var(--junk) var(--need), var(--junk) 100%); }
+.cb-zones.cb-lit { opacity: .9; clip-path: inset(0 calc(100% - var(--me)) 0 0); }
+.crit-bar.mini { display: inline-block; width: 52px; height: 4px; margin-left: 2px; }
+.crit-bar.mini .cb-track { top: 0; height: 4px; }
+/* the sheet's: N above the track in its own row (never under the face, even when the hero's crit is N), its flag down to
+   the track, the hero's face at their crit on the track, their number under the face */
+.crit-bar:not(.mini) { height: 92px; margin: 0 20px; }
+.crit-bar:not(.mini) .cb-track { top: 44px; }
+.cb-need { position: absolute; left: var(--need); top: 17px; width: 2px; height: 38px; margin-left: -1px; border-radius: 2px; background: var(--ink-2); }
+.cb-need span { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); font: 600 11px var(--font-mono);
+  color: var(--ink-2); white-space: nowrap; }
+.cb-me { position: absolute; left: var(--me); top: 48px; transform: translate(-50%, -50%); z-index: 1; display: grid; justify-items: center; }
+.cb-me .face-round { width: 30px; height: 30px; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--el, var(--accent)), 0 2px 10px rgb(0 0 0 / .25); }
+.cb-me b { position: absolute; top: calc(100% + 6px); padding: 0 6px; border-radius: 999px; background: var(--surface-3); color: var(--ink);
+  font: 700 11px var(--font-mono); line-height: 18px; white-space: nowrap; }
+.crit-bar.near .cb-me b { background: var(--temp-soft); color: var(--temp); }
+.crit-bar.over .cb-me b { background: var(--junk-soft); color: var(--junk); }
+
+/* «Крит для X» (CritSheet, a bare sheet: no title) */
 .crit-about { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
 .crit-n { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.crit-n > .btn { min-width: 44px; min-height: 44px; font-size: 20px; line-height: 1; }
+.crit-n > .crit-step { min-width: 44px; min-height: 44px; font-size: 20px; line-height: 1; }
 .crit-in { display: inline-flex; align-items: baseline; gap: 2px; font: 700 20px var(--font-mono); color: var(--ink); }
-.crit-in input { box-sizing: border-box; width: calc(3ch + 20px); min-height: 44px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); color: var(--ink); font: inherit; text-align: center; }
+.crit-in input { box-sizing: border-box; width: calc(3ch + 20px); min-height: 44px; padding: 0 8px; border: 1px solid var(--line-2);
+  border-radius: var(--radius-s); background: var(--surface); color: var(--ink); font: inherit; text-align: center; }
 .crit-reset { margin-left: auto; min-height: 44px; }
 .crit-reset:disabled { color: var(--ink-3); text-decoration: none; }
 /* «Надето» without «Что искать» after it: the last piece doesn't touch the card's edge (.seek brings its own 20px) */

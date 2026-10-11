@@ -1824,7 +1824,11 @@ def main() -> None:
                                                                   "несопоставленные рекомендации) — для scripts/check-data.mjs")
     ap.add_argument("--same-data", action="store_true", help="с --pwa: пересобрать только код — на том же коммите outerpedia, "
                                                              "что в DIR/index.html, за свежими данными не ходить (task preview)")
+    ap.add_argument("--dev-data", type=Path, metavar="FILE", help="only the dataset as JSON for task dev: the outerpedia commit "
+                                                                   "of docs/index.html, built by this update.py (no app, no images)")
     args = ap.parse_args()
+    if args.dev_data:
+        return main_dev_data(args)
     if args.same_data and not args.pwa:
         ap.error("--same-data — только вместе с --pwa DIR")
     if args.pwa:
@@ -1857,6 +1861,22 @@ def main() -> None:
         f"оружия {c['weapons']}, аксессуаров {c['accessories']}, "
         f"{'ссылок на картинки' if args.no_embed else 'картинок встроено'} {len(data['img'])}")
     report(data, prev, warn)
+
+
+def main_dev_data(args) -> None:
+    """task dev (vite.config.ts devData) takes data from docs/index.html — the published snapshot, built by the update.py
+    of that day. A new data field (as Char.chc, mainValues) appears there only after a publish; this builds the dataset
+    of the same outerpedia commit with the current update.py, so the dev page sees it now. Images stay docs/'s."""
+    prev = previous_data(HERE / "docs" / "index.html")
+    commit = ((prev or {}).get("meta") or {}).get("commit")
+    if not commit and not args.source:
+        raise SystemExit("--dev-data: в docs/index.html нет коммита outerpedia — нечего пересобирать")
+    warn = Warnings()
+    src, prov = load_sources(args.source, commit or args.ref)
+    data = build_dataset(src, prov, warn)
+    args.dev_data.parent.mkdir(parents=True, exist_ok=True)
+    args.dev_data.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    log(f"Данные для task dev: {args.dev_data} (outerpedia {str(prov.get('commit') or commit)[:7]})")
 
 
 def report(data: dict, prev: dict | None, warn: Warnings) -> None:

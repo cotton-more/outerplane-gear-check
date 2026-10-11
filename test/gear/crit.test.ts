@@ -213,3 +213,15 @@ describe('отсечка при упёртом крите', () => {
     expect(binding).toBeGreaterThan(cases / 3);
   });
 });
+
+describe('старые данные', () => {
+  it('снимок без CHC героев или без mainValues — потолка крита нет вовсе (critOn false, потери нет)', async () => {
+    const { createIndex } = await import('@/game/data');
+    const { makeCtx: mk2 } = await import('@/game/context');
+    const { profileOf } = await import('@/game/build/profile');
+    const ofData = (data: typeof D) => profileOf(mk2(createIndex(data), { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set()), data.chars.find((c) => c.name === 'Caren')!)!;
+    expect(ofData(D).critOn).toBe(true);
+    expect(ofData({ ...D, mainValues: undefined }).critOn).toBe(false);
+    expect(ofData({ ...D, chars: D.chars.map((c) => ({ ...c, chc: undefined })) }).critOn).toBe(false);
+  });
+});

@@ -214,7 +214,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {sheet === 'redress' && wv?.redress && hp && (
             <Redress c={c} ctx={ctx} P={hp.P} plan={wv.redress} onClose={() => setSheet(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
           )}
-          {sheet === 'crit' && <CritSheet c={c} now={critNeed(gear.store, c.id)} onClose={() => setSheet(null)} onSave={saveCrit} />}
+          {sheet === 'crit' && <CritSheet c={c} now={critNeed(gear.store, c.id)} total={wv?.crit?.total ?? 0} onClose={() => setSheet(null)} onSave={saveCrit} />}
           {sheet === 'pin' && hp && <PinSheet c={c} ctx={ctx} choices={pinChoices(hp)} now={pin?.key ?? null} onClose={() => setSheet(null)} onPin={doPin} />}
         </>
       ) : (

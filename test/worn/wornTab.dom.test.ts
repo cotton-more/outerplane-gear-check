@@ -405,7 +405,7 @@ describe('«Надето»: Crit from gear', () => {
     await click(line());
     expect(($('.critsheet input') as HTMLInputElement).value).toBe('85');
     await click(byText('.critsheet .linkbtn', 'Reset'));
-    await click(byText('.critsheet .btn', '−'));
+    await click(byText('.critsheet .crit-step', '−'));
     await click(byText('.critsheet .btn.primary', 'Done'));
     expect(stored().crit).toEqual({ [caren.id]: 99 });
   });

@@ -20,8 +20,9 @@ export function popPlace(at: Point, box: { w: number; h: number; bodyTop: number
   return { left: fit(at.x - box.w / 2, box.w, view.w), top: fit(at.y - box.bodyTop - box.bodyH / 2, box.h, view.h) };
 }
 
-export function Sheet({ title, onClose, children, className, at }: {
-  title: string; onClose: () => void; children: ReactNode; className?: string; at?: Point;
+// bare — the title only for screen readers (the sheet says by itself what it is): the header is just the ✕
+export function Sheet({ title, onClose, children, className, at, bare = false }: {
+  title: string; onClose: () => void; children: ReactNode; className?: string; at?: Point; bare?: boolean;
 }) {
   const t = useT();
   const close = useRef(onClose);
@@ -55,8 +56,8 @@ export function Sheet({ title, onClose, children, className, at }: {
     <div className={at ? 'drawer-back pop' : 'drawer-back'} onClick={onClose}>
       <div ref={box} className={className ? `drawer ${className}` : 'drawer'} role="dialog" aria-modal="true" aria-label={title} style={pos ?? undefined}
         onClick={(e) => e.stopPropagation()}>
-        <div className="drawer-h">
-          <h3>{title}</h3>
+        <div className={bare ? 'drawer-h bare' : 'drawer-h'}>
+          <h3 className={bare ? 'sr-only' : undefined}>{title}</h3>
           <CloseButton className="drawer-x" label={t.ui.close} onClick={onClose} />
         </div>
         <div className="drawer-b">{children}</div>

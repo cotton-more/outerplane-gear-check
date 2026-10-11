@@ -74,7 +74,8 @@ function makeProfile(ctx: Ctx, c: Char, chain: Build, combos: readonly Combo[], 
   const uBy = ctx.idx.D.sets.filter((s) => s.bonus?.t4.p2 && convertible(ctx, c, s.id))
     .map((s) => ({ set: s.id, pts: rowPoints(base, s.bonus!.t4.p2!) }))
     .sort((a, z) => z.pts - a.pts);
-  const critOn = chain.subs.some((tier) => tier.some((k) => k.trim() === 'CHC'));
+  // only with data that has the hero's CHC and main values: an old snapshot would count crit far below the game's
+  const critOn = !!c.chc && !!ctx.idx.D.mainValues && chain.subs.some((tier) => tier.some((k) => k.trim() === 'CHC'));
   return { ...base, chain, U: Math.max(0, ...uBy.map((x) => x.pts)), uBy, parts, menuSets, need, critOn };
 }
 

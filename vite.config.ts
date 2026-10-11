@@ -13,7 +13,9 @@ const MARKER = '/*__OGC_DATA__*/null';
 const MIME: Record<string, string> = { '.webp': 'image/webp', '.png': 'image/png' };
 
 // Режим разработки работает на собранном docs/: данные — из docs/index.html, картинки — из docs/img и docs/icons.
-// Отдаём только эти две папки, чтобы docs/index.html и docs/sw.js не подменили dev-страницу.
+// Отдаём только эти две папки, чтобы docs/index.html и docs/sw.js не подменили dev-страницу. Данные — build/dev-data.json
+// (task dev:data: тот же коммит outerpedia, собранный текущим update.py), если он того же коммита; иначе — docs/index.html
+const DEV_DATA = resolve(import.meta.dirname, 'build/dev-data.json');
 function devData(): Plugin {
   return {
     name: 'ogc-dev-data',
@@ -32,9 +34,25 @@ function devData(): Plugin {
       const page = join(DOCS, 'index.html');
       const m = existsSync(page) ? /<script>window\.OGC_DATA = (\{.*?\});<\/script>/s.exec(readFileSync(page, 'utf8')) : null;
       if (!m) server_warn();
-      return html.replace(MARKER, m ? m[1] : 'null');
+      return html.replace(MARKER, m ? devDataOver(m[1]) : 'null');
     },
   };
+}
+// fresher data of the same commit (build/dev-data.json), with docs/'s images; another commit or no file — docs/'s data
+let said = '';
+function devDataOver(docsJson: string): string {
+  try {
+    if (!existsSync(DEV_DATA)) return note('docs/index.html (нет build/dev-data.json — task dev:data)', docsJson);
+    const docs = JSON.parse(docsJson), fresh = JSON.parse(readFileSync(DEV_DATA, 'utf8'));
+    if (fresh?.meta?.commit !== docs?.meta?.commit) return note('docs/index.html (build/dev-data.json другого коммита — task dev:data)', docsJson);
+    return note('build/dev-data.json', JSON.stringify({ ...fresh, img: docs.img }).replace(/<\//g, '<\\/'));
+  } catch {
+    return note('docs/index.html (build/dev-data.json не читается)', docsJson);
+  }
+}
+function note(what: string, json: string): string {
+  if (said !== what) { said = what; console.log(`[ogc] данные: ${what}`); }
+  return json;
 }
 function server_warn() {
   console.warn('[ogc] в docs/index.html нет данных — собери сайт: task build:pwa');

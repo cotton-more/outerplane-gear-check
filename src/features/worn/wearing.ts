@@ -110,7 +110,7 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     t4: P ? t4Of(ctx, P, worn) : [],
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],
-    crit: P && c.chc && ctx.idx.D.mainValues && Object.keys(worn).length && P.chain.subs.some((tier) => tier.some((k) => k.trim() === 'CHC'))
+    crit: P?.critOn && Object.keys(worn).length
       ? { total: statTotal(ctx, c, Object.values(worn), 'CHC').total, need: critNeed(st, c.id) } : null,
     pool: pieces.length,
   };

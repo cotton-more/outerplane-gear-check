@@ -215,6 +215,7 @@ html:not(.narrow) .drawer-back { align-items: center; }
 html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
 .drawer-h { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--line); }
 .drawer-h h3 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drawer-h.bare { justify-content: flex-end; padding: 4px 4px 0; border-bottom: 0; } /* Sheet bare: only the ✕ */
 .drawer-x { flex: none; width: 40px; height: 40px; border: 0; background: none; font-size: 16px; color: var(--ink-2); border-radius: var(--radius-s); }
 .drawer-b { overflow: auto; overscroll-behavior: contain; padding: 12px 14px 14px; }
 .drawer .items { max-height: none; overflow: visible; }

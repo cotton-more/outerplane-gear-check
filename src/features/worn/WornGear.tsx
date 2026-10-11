@@ -12,7 +12,8 @@ import { comboText } from '@/game/build/builds';
 import { wearAll } from '@/features/gear/pool';
 import type { WornCrit, WornView } from './wearing';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { SlotIcon } from '@/game/icons/Img';
+import { SlotIcon, StatIcon } from '@/game/icons/Img';
+import { CritBar, CritText, critZone } from './CritSheet';
 import { tour, tourItem } from '@/tour/anchors';
 import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
 import { Pts, WornSets } from './WornSets';
@@ -61,15 +62,15 @@ function WornChain({ chain, anchor }: { chain: ChainSum[]; anchor: boolean }) {
   );
 }
 
-// «Крит от вещей: 98%» (crit soft cap, decision 5): just the percent, amber from N − 15 — where crit starts to count less;
-// floored, so the line never shows more than the app counts
-function CritLine({ crit, onClick }: { crit: WornCrit; onClick?: () => void }) {
-  const t = useT();
-  const cls = `wcrit${crit.total >= crit.need - 15 ? ' near' : ''}`;
-  const text = t.card.critLine(Math.floor(crit.total + 1e-9));
+// «Крит от вещей: 98%» (crit soft cap, decision 5): a quiet line — a small crit icon, the percent in bold (amber from N − 15,
+// where crit starts to count less; red from N, where it counts nothing) and the sheet's bar in small; floored, so it never
+// shows more than the app counts
+function CritLine({ c, crit, onClick }: { c: Char; crit: WornCrit; onClick?: () => void }) {
+  const cls = `wcrit${critZone(crit.total, crit.need)}`;
+  const body = <><StatIcon stat="CHC" /><CritText total={crit.total} /><CritBar c={c} total={crit.total} need={crit.need} mini /></>;
   return onClick
-    ? <button type="button" className={`${cls} hit`} onClick={onClick} {...tour('wcrit')}>{text}<span aria-hidden="true">▸</span></button>
-    : <p className={cls} {...tour('wcrit')}>{text}</p>;
+    ? <button type="button" className={`${cls} hit`} onClick={onClick} {...tour('wcrit')}>{body}<span className="wcrit-ar" aria-hidden="true">▸</span></button>
+    : <p className={cls} {...tour('wcrit')}>{body}</p>;
 }
 
 // строка вещи: нажатие открывает шторку вещи; в карточке показа — не кнопка
@@ -118,7 +119,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, on
         {shownPts && wv.alt.map((a) => (
           <div key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}</span><WornChain chain={a.chain} anchor={false} /></div>
         ))}
-        {wv.crit && !shown && <CritLine crit={wv.crit} onClick={onCrit} />}
+        {wv.crit && !shown && <CritLine c={c} crit={wv.crit} onClick={onCrit} />}
         <WornSets idx={idx} wv={wv} t4={!shown} />
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {
