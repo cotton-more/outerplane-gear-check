@@ -99,6 +99,11 @@ SOURCE_FILES = {
     "equipCurated": "data/curated/equipment.json",
     "ee": "data/generated/equipment/ee.json",
     "progression": "data/generated/progression.json",
+    # team synergy (build_synergy): raw game tables, only a small extract goes into the page
+    "skills": "data/generated/skills.json",
+    "transcend": "data/generated/transcend.json",
+    "dmgBuffs": "data/generated/damage/buffs.json",
+    "dmgChars": "data/generated/damage/characters.json",
 }
 
 # Аббревиатуры статов — та же таблица, что на outerpedia (src/lib/stats.ts, STAT_ABBR).
@@ -904,7 +909,198 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         "amulets": amulets,
         "talismans": talismans,
         "chars": chars,
+        "synergy": build_synergy(src, warn),
     }
+
+
+# --------------------------------------------------------------------------- синергия команды
+
+# Skill type -> slot. Chain/dual attacks, class passives and the rest are not counted: a chain proc is not reliable
+# (owner, .x/0170 Q2), class passives give no status (owner's in-game check, decision 6).
+SYN_SLOT = {"first": "s1", "second": "s2", "ultimate": "s3", "burst_1": "burst", "burst_2": "burst", "burst_3": "burst",
+            "unique_passive": "passive", "fusion_passive": "passive"}
+SYN_CALLER = {"SKT_FIRST": "s1", "SKT_SECOND": "s2", "SKT_ULTIMATE": "s3", "SKT_BURST_1": "burst", "SKT_BURST_2": "burst",
+              "SKT_BURST_3": "burst"}
+# Row target -> who gets the status. "team" includes the caster; "ally" is another hero (single-target ones too).
+SYN_TO = {"ME": "self", "MY_TEAM": "team", "MY_TEAM_WITHOUT_ME": "ally", "MY_TEAM_ONE": "ally",
+          "MY_TEAM_LOWEST_HP_RATE": "ally", "MY_TEAM_HIGHEST_ATK": "ally", "MY_TEAM_HIGHEST_MAXHP": "ally"}
+# How a give fires: a skill use, each turn, battle start, a passive. Not events (on death, on break, when hit, chain).
+SYN_CREATE = {None, "SKILL_FINISH", "SKILL_START", "SKILL_FINISH_IMMEDIATELY", "DAMAGE", "ON_TURN", "ON_SPAWN",
+              "ON_SPAWN2", "PASSIVE", "PASSIVE2", "ON_TURN_END_ATTACKER"}
+# conditionValue 9996..9999 = "any buff / any debuff" (outerpedia gear.ts conditionBuffRef), not a status
+SYN_ANY = range(9996, 10000)
+
+
+def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
+    """Which status each hero's skills need (on self or on the enemy) and which statuses heroes give.
+
+    Only real status applications count: a row needs a tooltip id (or a BT_STAT key the glossary maps to one).
+    Passive "+N% DEF" rows without a status icon (class passives, BT_STAT_PREMIUM) are not the status — owner's
+    in-game check (.x/0170 decision 6). Transcend gating: unique_passive level L -> the first transcend step with
+    skillLevel >= L; burst_2/burst_3 -> the first step that unlocks them. Stars are the in-game ★ (showStar)."""
+    gl = src["glossaries"]
+    effects, by_tip, by_key = gl.get("effects", {}), gl.get("effectByTooltip", {}), gl.get("effectByKey", {})
+    buffs = src["dmgBuffs"]["buffs"]
+    dchars, dskills = src["dmgChars"]["characters"], src["dmgChars"]["skills"]
+    skills, trans = src["skills"], src["transcend"]
+
+    def norm(tip) -> str | None:
+        if tip is None:
+            return None
+        t = str(tip)
+        return str(by_tip.get(t, t))
+
+    # outerpedia's own digest names a status on rows without a tooltip ("SYS_BUFF_ATTACK_UP"); unnamed ones are
+    # in-skill tweaks (S3 "+30% PEN while attacking"), not a status the hero holds
+    labelled = {e["buff"] for sk in skills.values() for e in sk.get("effects", []) if e.get("buff") and e.get("label")}
+
+    def status_of(r: dict, b: str) -> str | None:
+        if r.get("tooltipId"):
+            return norm(r["tooltipId"])
+        if r.get("type") == "BT_STAT" and r.get("stat") and b in labelled:
+            kind = "buff" if r.get("buffDebuffType", "").startswith("BUFF") else "debuff"
+            return norm(by_key.get(kind, {}).get(f"BT_STAT|{r['stat']}"))
+        return None
+
+    def steps(cid: str) -> list[dict]:
+        return trans.get("overrides", {}).get(cid) or trans["byStar"].get(str(src["chars"][cid].get("rarity")), [])
+
+    def star_of(cid: str, typ: str, level: int) -> int | None:
+        """In-game ★ a skill row needs; None = never reachable."""
+        if typ == "unique_passive":
+            return next((s["showStar"] for s in steps(cid) if s.get("skillLevel", 0) >= level), None)
+        if typ in ("burst_2", "burst_3"):
+            flag = "burst" + typ[-1]
+            return next((s["showStar"] for s in steps(cid) if s.get(flag)), None)
+        return 1
+
+    gives: dict[str, dict] = {}
+    needs: dict[str, dict] = {}
+    slot_cd: dict[str, dict] = {}  # hero -> slot -> startCool (turns before the skill is ready)
+    rows_dbg: list[dict] = []
+    for cid in src["chars"]:
+        ch = dchars.get(cid)
+        if not ch:
+            warn.add(f"синергия: нет героя {cid} в damage/characters.json")
+            continue
+        for ent in ch.get("skills", []):
+            sid = ent["id"] if isinstance(ent, dict) else str(ent)
+            typ = (skills.get(sid) or {}).get("type")
+            slot = SYN_SLOT.get(typ)
+            ds = dskills.get(sid)
+            if not slot or not ds:
+                continue
+            lv0 = ((skills.get(sid) or {}).get("levels") or [{}])[0]
+            cd = lv0.get("startCool") or 0
+            if slot in ("s1", "s2", "s3"):
+                slot_cd.setdefault(cid, {})[slot] = cd
+            first: dict[str, int] = {}
+            for lv in ds.get("levels", []):
+                for b in lv.get("buffIds", []):
+                    first.setdefault(b, lv.get("level", 1))
+            # a has/has-not pair with the same effect is a branch, not a need (Luna S1: a Dual Attack either way,
+            # but the Additional Attack only with a Barrier)
+            has, has_not = [], set()
+            for b, level in first.items():
+                star = star_of(cid, typ, level)
+                if star is None:
+                    continue
+                for r in buffs.get(b, []):
+                    ct, cv, tgt = r.get("conditionType"), r.get("conditionValue"), r.get("targetType", "")
+                    st = status_of(r, b)
+                    # DEBUFF_IGNORE_RESIST / _IGNORE_IMMUNE are applications too
+                    if (st and not ct and r.get("buffDebuffType", "").startswith(("BUFF", "DEBUFF"))
+                            and r.get("createType") in SYN_CREATE):
+                        to = SYN_TO.get(tgt) or ("enemy" if tgt.startswith("ENEMY") else None)
+                        if to:
+                            key = (st, to, slot)
+                            g = gives.setdefault(cid, {}).get(key)
+                            if not g or (star, cd) < (g["star"], g["cd"]):
+                                gives[cid][key] = {"st": st, "to": to, "slot": slot, "star": star, "cd": cd}
+                            if debug:
+                                rows_dbg.append({"kind": "give", "hero": cid, "skill": sid, "buff": b, "st": st, "to": to,
+                                                 "slot": slot, "star": star, "cd": cd, "rate": r.get("createRate")})
+                    if not ct or cv is None or cv in SYN_ANY or "HAS" not in ct:
+                        continue
+                    need = norm(cv)
+                    on = None
+                    base = ct.replace("_NOT", "")
+                    if base == "CASTER_HAS_BUFF":
+                        on = "self"
+                    elif base == "OWNER_HAS_BUFF":
+                        on = "self" if tgt == "ME" else "enemy" if tgt.startswith("ENEMY") else None
+                    elif base == "TARGET_HAS_BUFF":
+                        on = "enemy" if tgt.startswith("ENEMY") or ds.get("targetTeamType") == "ENEMY" else None
+                    elif base == "CASTER_ENEMY_TEAM_HAS_BUFF":
+                        on = "enemy"
+                    if not on:
+                        continue
+                    if "_NOT_" in ct:
+                        has_not.add((need, r.get("type")))
+                        continue
+                    # a passive that fires on skill use gates the skills it names (Epsilon CF: SKT_ALL -> S1/S2/S3);
+                    # one that fires each turn stays the passive (Eliza CF ★5: DEF down on bleeding enemies)
+                    slots = [slot]
+                    if slot == "passive" and r.get("createType", "").startswith("SKILL_"):
+                        callers = (r.get("callerSkillType") or "").split(",")
+                        slots = (["s1", "s2", "s3"] if "SKT_ALL" in callers else
+                                 [SYN_CALLER[c] for c in callers if c in SYN_CALLER]) or slots
+                    has.append({"st": need, "on": on, "star": star, "slots": slots, "effect": r.get("type"), "buff": b,
+                                "cond": ct})
+            for h in has:
+                if (h["st"], h["effect"]) in has_not:
+                    continue
+                if h["on"] == "enemy" and not (effects.get(h["st"]) or {}).get("isDebuff"):
+                    continue  # an enemy buff (Fenrir: Barrier) — the team can't give it; v2
+                # burst_1..3 are one slot: the lowest ★ that has the condition
+                mine = needs.setdefault(cid, {})
+                for sl in dict.fromkeys(h["slots"]):
+                    key = (h["st"], h["on"], sl)
+                    mine[key] = min(h["star"], mine.get(key, h["star"]))
+                if debug:
+                    rows_dbg.append({"kind": "need", "hero": cid, "skill": sid, **h})
+
+    # a need counts only when some other hero can give the status: a hero-specific mechanic (Beth's Retribution's
+    # Dominion, Viella's Corrosive Poison) or a status nobody applies leaves the team nothing to change
+    def others_give(cid: str, st: str, on: str) -> bool:
+        sides = ("team", "ally") if on == "self" else ("enemy",)
+        return any(g["st"] == st and g["to"] in sides for o, gs in gives.items() if o != cid for g in gs.values())
+
+    order = ["s1", "s2", "s3", "burst", "passive"]
+    merged: dict[str, list[dict]] = {}
+    for cid, hero in needs.items():
+        by: dict[tuple, dict] = {}
+        for (st, on, slot), star in sorted(hero.items(), key=lambda kv: order.index(kv[0][2])):
+            if others_give(cid, st, on):
+                n = by.setdefault((st, on, star), {"st": st, "on": on, "slots": [], "star": star, "cd": 99})
+                n["slots"].append(slot)
+                if slot in ("s1", "s2", "s3"):  # a burst needs AP, not a cooldown — it doesn't set the turn
+                    n["cd"] = min(n["cd"], slot_cd.get(cid, {}).get(slot, 0))
+        for n in by.values():
+            n["cd"] = 0 if n["cd"] == 99 else n["cd"]
+        if by:
+            merged[cid] = sorted(by.values(), key=lambda n: (n["star"], order.index(n["slots"][0]), n["st"]))
+    wanted = {n["st"] for hero in merged.values() for n in hero}
+    heroes: dict[str, dict] = {}
+    for cid in src["chars"]:
+        need = merged.get(cid, [])
+        # a self-only give matters only for the hero's own need
+        mine = {n["st"] for n in need}
+        give = sorted((g for g in gives.get(cid, {}).values()
+                       if g["st"] in wanted and (g["to"] != "self" or g["st"] in mine)),
+                      key=lambda g: (int(g["st"]) if g["st"].isdigit() else 0, order.index(g["slot"]), g["to"]))
+        if need or give:
+            heroes[cid] = {k: v for k, v in (("give", give), ("need", need)) if v}
+    statuses = {}
+    for st in sorted(wanted, key=lambda x: int(x) if x.isdigit() else 0):
+        e = effects.get(st)
+        if not e or not en(e.get("name")):
+            warn.add(f"синергия: статус {st} без имени в glossaries.effects")
+        statuses[st] = {"en": en((e or {}).get("name")) or st, "debuff": bool((e or {}).get("isDebuff"))}
+    out = {"statuses": statuses, "heroes": heroes}
+    if debug:
+        out["rows"] = rows_dbg
+    return out
 
 
 def build_view(label: str, b: dict, ctx: dict, ee_names: dict, warn: Warnings) -> dict:

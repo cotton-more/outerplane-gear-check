@@ -1,0 +1,1729 @@
+{
+ "commit": "93a5234e557e2d783e3cf256cfc7c06f93ee4002",
+ "statuses": {
+  "1": {
+   "en": "Burned",
+   "debuff": true
+  },
+  "3": {
+   "en": "Bleeding",
+   "debuff": true
+  },
+  "4": {
+   "en": "Poisoned",
+   "debuff": true
+  },
+  "5": {
+   "en": "Shocked",
+   "debuff": true
+  },
+  "6": {
+   "en": "Increased Defense",
+   "debuff": false
+  },
+  "7": {
+   "en": "Increased Attack",
+   "debuff": false
+  },
+  "8": {
+   "en": "Increased Penetration",
+   "debuff": false
+  },
+  "11": {
+   "en": "Increased Crit Hit Chance",
+   "debuff": false
+  },
+  "12": {
+   "en": "Increased Critical Damage",
+   "debuff": false
+  },
+  "26": {
+   "en": "Reduced Speed",
+   "debuff": true
+  },
+  "29": {
+   "en": "Barrier",
+   "debuff": false
+  },
+  "33": {
+   "en": "Frozen",
+   "debuff": true
+  },
+  "98": {
+   "en": "Stealth",
+   "debuff": false
+  }
+ },
+ "heroes": {
+  "2000003": {
+   "give": [
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 3
+    },
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000004": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 3
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "1",
+     "on": "enemy",
+     "slots": [
+      "s3"
+     ],
+     "star": 1,
+     "cd": 3
+    },
+    {
+     "st": "1",
+     "on": "enemy",
+     "slots": [
+      "burst"
+     ],
+     "star": 5,
+     "cd": 0
+    }
+   ]
+  },
+  "2000005": {
+   "give": [
+    {
+     "st": "7",
+     "to": "self",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ],
+   "need": [
+    {
+     "st": "7",
+     "on": "self",
+     "slots": [
+      "s2"
+     ],
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000009": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000012": {
+   "give": [
+    {
+     "st": "11",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 7
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 7
+    }
+   ]
+  },
+  "2000013": {
+   "give": [
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000015": {
+   "give": [
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "3",
+     "on": "enemy",
+     "slots": [
+      "s1",
+      "s2",
+      "s3",
+      "burst"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000017": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000018": {
+   "give": [
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "5",
+     "on": "enemy",
+     "slots": [
+      "s2"
+     ],
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000020": {
+   "give": [
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000021": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 6
+    },
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000025": {
+   "give": [
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 3
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 5,
+     "cd": 0
+    },
+    {
+     "st": "8",
+     "to": "self",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "8",
+     "to": "self",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ],
+   "need": [
+    {
+     "st": "3",
+     "on": "enemy",
+     "slots": [
+      "s1",
+      "s3"
+     ],
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "8",
+     "on": "self",
+     "slots": [
+      "s2",
+      "s3"
+     ],
+     "star": 1,
+     "cd": 3
+    }
+   ]
+  },
+  "2000026": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000029": {
+   "give": [
+    {
+     "st": "4",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000030": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000031": {
+   "give": [
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 6
+    }
+   ]
+  },
+  "2000032": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "1",
+     "on": "enemy",
+     "slots": [
+      "s2"
+     ],
+     "star": 1,
+     "cd": 3
+    }
+   ]
+  },
+  "2000035": {
+   "give": [
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "3",
+     "on": "enemy",
+     "slots": [
+      "s3"
+     ],
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000036": {
+   "give": [
+    {
+     "st": "6",
+     "to": "ally",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "6",
+     "to": "ally",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000037": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "s2",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "6",
+     "on": "self",
+     "slots": [
+      "s1"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000039": {
+   "give": [
+    {
+     "st": "8",
+     "to": "team",
+     "slot": "burst",
+     "star": 5,
+     "cd": 0
+    }
+   ]
+  },
+  "2000040": {
+   "give": [
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000042": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000043": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000044": {
+   "give": [
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000045": {
+   "give": [
+    {
+     "st": "29",
+     "to": "self",
+     "slot": "s3",
+     "star": 1,
+     "cd": 6
+    },
+    {
+     "st": "29",
+     "to": "self",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "29",
+     "on": "self",
+     "slots": [
+      "s1"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000047": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000048": {
+   "give": [
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000049": {
+   "give": [
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000052": {
+   "give": [
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "5",
+     "on": "enemy",
+     "slots": [
+      "s1",
+      "s3"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000053": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "passive",
+     "star": 6,
+     "cd": 0
+    }
+   ]
+  },
+  "2000054": {
+   "give": [
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 7
+    }
+   ]
+  },
+  "2000055": {
+   "give": [
+    {
+     "st": "11",
+     "to": "self",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "11",
+     "on": "self",
+     "slots": [
+      "s2",
+      "burst"
+     ],
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000056": {
+   "give": [
+    {
+     "st": "4",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000057": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000060": {
+   "give": [
+    {
+     "st": "11",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "11",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000061": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000063": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "8",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000066": {
+   "give": [
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "11",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000068": {
+   "give": [
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 3,
+     "cd": 4
+    }
+   ],
+   "need": [
+    {
+     "st": "33",
+     "on": "enemy",
+     "slots": [
+      "s2"
+     ],
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000071": {
+   "need": [
+    {
+     "st": "29",
+     "on": "self",
+     "slots": [
+      "s1",
+      "burst"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000073": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 3,
+     "cd": 0
+    }
+   ]
+  },
+  "2000076": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ],
+   "need": [
+    {
+     "st": "29",
+     "on": "self",
+     "slots": [
+      "s1"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000077": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000078": {
+   "give": [
+    {
+     "st": "98",
+     "to": "self",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "98",
+     "to": "self",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "98",
+     "on": "self",
+     "slots": [
+      "s1",
+      "s3"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000081": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000082": {
+   "give": [
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "5",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000092": {
+   "give": [
+    {
+     "st": "98",
+     "to": "ally",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000094": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000098": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "burst",
+     "star": 5,
+     "cd": 0
+    }
+   ]
+  },
+  "2000101": {
+   "give": [
+    {
+     "st": "7",
+     "to": "ally",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "7",
+     "to": "ally",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "11",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000102": {
+   "give": [
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "burst",
+     "star": 5,
+     "cd": 0
+    }
+   ]
+  },
+  "2000103": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 3
+    }
+   ],
+   "need": [
+    {
+     "st": "29",
+     "on": "self",
+     "slots": [
+      "s1"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000105": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000106": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "8",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000107": {
+   "give": [
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ],
+   "need": [
+    {
+     "st": "26",
+     "on": "enemy",
+     "slots": [
+      "s3"
+     ],
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "3",
+     "on": "enemy",
+     "slots": [
+      "s3"
+     ],
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000108": {
+   "give": [
+    {
+     "st": "4",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ],
+   "need": [
+    {
+     "st": "4",
+     "on": "enemy",
+     "slots": [
+      "s1",
+      "burst"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000110": {
+   "give": [
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "burst",
+     "star": 3,
+     "cd": 4
+    },
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "passive",
+     "star": 5,
+     "cd": 0
+    }
+   ]
+  },
+  "2000111": {
+   "give": [
+    {
+     "st": "7",
+     "to": "team",
+     "slot": "burst",
+     "star": 5,
+     "cd": 4
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000113": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2000116": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 6
+    }
+   ]
+  },
+  "2000117": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 3,
+     "cd": 0
+    }
+   ]
+  },
+  "2000118": {
+   "give": [
+    {
+     "st": "29",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2000122": {
+   "give": [
+    {
+     "st": "8",
+     "to": "team",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "8",
+     "to": "team",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2000129": {
+   "give": [
+    {
+     "st": "6",
+     "to": "ally",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "12",
+     "to": "ally",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2700003": {
+   "give": [
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "33",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "33",
+     "on": "enemy",
+     "slots": [
+      "s2"
+     ],
+     "star": 1,
+     "cd": 4
+    }
+   ]
+  },
+  "2700005": {
+   "give": [
+    {
+     "st": "8",
+     "to": "self",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "8",
+     "to": "self",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "12",
+     "to": "self",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ],
+   "need": [
+    {
+     "st": "12",
+     "on": "self",
+     "slots": [
+      "s2",
+      "burst"
+     ],
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "8",
+     "on": "self",
+     "slots": [
+      "s3"
+     ],
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2700019": {
+   "give": [
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2700035": {
+   "give": [
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "3",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ],
+   "need": [
+    {
+     "st": "3",
+     "on": "enemy",
+     "slots": [
+      "passive"
+     ],
+     "star": 5,
+     "cd": 0
+    }
+   ]
+  },
+  "2700037": {
+   "give": [
+    {
+     "st": "6",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "29",
+     "to": "ally",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    }
+   ],
+   "need": [
+    {
+     "st": "6",
+     "on": "self",
+     "slots": [
+      "s1"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2700043": {
+   "give": [
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "1",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "26",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ]
+  },
+  "2700056": {
+   "give": [
+    {
+     "st": "4",
+     "to": "enemy",
+     "slot": "s2",
+     "star": 1,
+     "cd": 4
+    },
+    {
+     "st": "4",
+     "to": "enemy",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    },
+    {
+     "st": "4",
+     "to": "enemy",
+     "slot": "burst",
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  },
+  "2700070": {
+   "give": [
+    {
+     "st": "6",
+     "to": "self",
+     "slot": "s1",
+     "star": 1,
+     "cd": 0
+    },
+    {
+     "st": "12",
+     "to": "team",
+     "slot": "s3",
+     "star": 1,
+     "cd": 5
+    }
+   ],
+   "need": [
+    {
+     "st": "6",
+     "on": "self",
+     "slots": [
+      "s1",
+      "s2",
+      "s3"
+     ],
+     "star": 1,
+     "cd": 0
+    }
+   ]
+  }
+ }
+}
