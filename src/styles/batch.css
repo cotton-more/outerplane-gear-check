@@ -56,15 +56,20 @@ html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 /* the lock in a row: after the number */
 .batch .bgear-n .ico-lock { width: 14px; height: 14px; color: #fff; } /* over .bgear-row .ico's grey (chars.css) */
 /* «E» picker: square tiles, the round portrait over the name (prefix in a small line above it, like the hero list) */
-.batch-whose { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+.batch-whose { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
 .batch-whose > p { grid-column: 1 / -1; }
+/* portraits on one line across a row: the face sits at the top, a long name stretches the tile down (the row grows
+   with it); the prefix is cut to two lines with «…», the name itself never */
 .bwho {
-  aspect-ratio: 1; min-width: 0; height: auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 5px; padding: 6px 4px; text-align: center; white-space: normal;
+  min-width: 0; min-height: 96px; height: auto; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-start; gap: 5px; padding: 8px 4px; text-align: center; white-space: normal;
 }
-.bwho .face-round { width: 44px; height: 44px; flex: none; }
-.bwho .cn { font-size: 12px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
-.bwho .cp { display: block; font-size: 10.5px; font-weight: 500; color: var(--ink-3); }
+.bwho .face-round { width: 52px; height: 52px; flex: none; }
+.bwho .cn { max-width: 100%; font-size: 12px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.bwho .cp {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+  font-size: 10.5px; font-weight: 500; color: var(--ink-3); overflow-wrap: normal;
+}
 .bmark .bgear-n { font-weight: 600; }
 .bstage { display: grid; gap: 6px; }
 .bstage h4 { margin: 4px 0 0; font-size: 13px; }
