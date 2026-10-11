@@ -117,6 +117,18 @@ export interface Meta {
   newIds?: string[];
 }
 
+// Team synergy (update.py build_synergy): the statuses a hero's skills need and the statuses heroes give.
+// ★ — the in-game transcend star from which the row works; cd — turns before the skill is first ready (startCool).
+export type SkillSlot = 's1' | 's2' | 's3' | 'burst' | 'passive';
+// self — the caster only; team — all allies with the caster; ally — another ally (single-target too); enemy
+export interface SynGive { st: string; to: 'self' | 'team' | 'ally' | 'enemy'; slot: SkillSlot; star: number; cd: number }
+// cd — startCool of the earliest S1–S3 slot that needs it (0 for burst/passive only)
+export interface SynNeed { st: string; on: 'self' | 'enemy'; slots: SkillSlot[]; star: number; cd: number }
+export interface Synergy {
+  statuses: Record<string, { en: string; debuff: boolean }>;
+  heroes: Record<string, { give?: SynGive[]; need?: SynNeed[] }>;
+}
+
 export interface Dataset {
   meta: Meta;
   classes: Record<string, string>;
@@ -134,5 +146,6 @@ export interface Dataset {
   amulets: Item[];
   talismans: Record<string, Talisman>;
   chars: Char[];
+  synergy?: Synergy; // missing in old snapshots: the Team screen shows a notice instead
   img?: Record<string, string>; // ключ картинки → data URI, относительный путь или URL CDN
 }

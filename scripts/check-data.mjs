@@ -23,6 +23,9 @@ const REPO = 'Sevih/outerpedia';
 // код приложения — те же пути, по которым vite.config.ts берёт версию для подвала
 const APP_PATHS = ['src', 'index.html', 'vite.config.ts', 'package.json', 'package-lock.json', 'update.py', 'pwa'];
 const golden = JSON.parse(readFileSync(new URL('../test/golden.json', import.meta.url), 'utf8'));
+// status ids that have names in the app (team.status in src/i18n/ru.ts, block between the status markers)
+const STATUS_RU = new Set([...(/\/\/ statuses:begin([\s\S]*?)\/\/ statuses:end/.exec(
+  readFileSync(new URL('../src/i18n/ru.ts', import.meta.url), 'utf8'))?.[1] ?? '').matchAll(/'(\d+)':/g)].map((m) => m[1]));
 
 // --------------------------------------------------------------------------- аргументы и входы
 
@@ -217,6 +220,24 @@ function problems(D) {
   }
   for (const s of D.sets) {
     for (const r of Object.values(s.bonus ?? {}).flatMap((t) => [t.p2, t.p4])) if (r?.stat && !subKeys.has(r.stat)) out.add(`сет ${s.name}: бонус — сабстат ${r.stat}, которого нет`);
+  }
+  // team synergy (update.py build_synergy): a changed outerpedia format empties or breaks the block
+  const syn = D.synergy;
+  if (!syn) out.add('нет блока synergy (экран «Команда»)');
+  else {
+    const H = syn.heroes ?? {};
+    const vero = H['2000037']?.need?.some((n) => n.st === '6' && n.on === 'self');
+    if (!vero) out.add('synergy: у Veronica нет условия «Increased Defense на себе» — формат таблиц outerpedia изменился?');
+    const def = Object.values(H).filter((h) => h.give?.some((g) => g.st === '6' && (g.to === 'team' || g.to === 'ally'))).length;
+    if (def < 10) out.add(`synergy: Increased Defense союзникам дают ${def} героев (ждём ≥ 10)`);
+    for (const [id, h] of Object.entries(H)) {
+      for (const r of [...(h.need ?? []), ...(h.give ?? [])]) {
+        if (!syn.statuses?.[r.st]?.en) out.add(`synergy: у героя ${id} статус ${r.st} без имени`);
+      }
+    }
+    for (const st of Object.keys(syn.statuses ?? {})) {
+      if (!STATUS_RU.has(st)) out.add(`synergy: новый статус ${st} «${syn.statuses[st].en}» — нужно русское и английское имя (team.status в src/i18n)`);
+    }
   }
   return out;
 }

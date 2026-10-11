@@ -1,7 +1,7 @@
 // Русские тексты: вердикты (logic/) и интерфейс (components/). en.ts — тот же набор ключей (тип Texts):
 // TypeScript не даст пропустить перевод. **так** — жирным (shared/ui/Rich.tsx).
 import { GRADE_NAME } from '@/game/data';
-import type { GearKind, Grade } from '@/game/data/types';
+import type { GearKind, Grade, SkillSlot } from '@/game/data/types';
 import type { StepText } from '@/tour/types';
 
 const plural = (n: number, one: string, few: string, many: string): string => {
@@ -846,6 +846,49 @@ export const ru = {
     // the last line of the dismantle step, when a Breakthrough step comes before it
     dzLeft: '+ корм, который Breakthrough не взял',
     walkEnd: 'Всё сделано — Записать план',
+  },
+
+  // «Команда» (team check, .x/0170-team-synergy). Draft: the screen texts are settled at the design stage
+  team: {
+    tab: 'Команда',
+    noData: 'В этих данных нет навыков героев — обнови приложение.',
+    empty: 'Ростер пуст — отметь своих героев на «Персонажах».',
+    emptyGo: 'К персонажам',
+    pick: 'Кого поставить на это место?',
+    addMember: 'Место в команде',
+    removeMember: (name: string) => `Убрать из команды: ${name}`,
+    starPick: 'Звёзды героя',
+    from: (n: number) => `с ★${n}`,
+    slot: { s1: 'S1', s2: 'S2', s3: 'S3', burst: 'Burst', passive: 'пассивка' } as Record<SkillSlot, string>,
+    // status — the status name, skills — the skills that need it («S1», «S1 и S3»)
+    none: (status: string, skills: string) => `Никто в команде не даёт **${status}** — нужно для ${skills}.`,
+    noneEnemy: (status: string, skills: string) => `Никто в команде не накладывает **${status}** на врага — нужно для ${skills}.`,
+    // own — the hero's own skill that gives it; turn — the turn it is first ready
+    selfOnly: (status: string, skills: string, own: string, turn: number) =>
+      `**${status}** только от своего ${own} (готов с ${turn}-го хода) — до этого ${skills} без него.`,
+    selfBurst: (status: string, skills: string) => `**${status}** только от своего Burst — до него ${skills} без статуса.`,
+    ok: (status: string, who: string) => `${status} — даёт ${who}`,
+    fixHead: 'Дадут:',
+    more: (n: number) => `ещё ${n}`,
+    and: (a: string, b: string) => `${a} и ${b}`,
+    note: 'Проверяются только статусы из навыков: шансы, порядок ходов и пассивки классов не учитываются.',
+    // statuses:begin — status id → name (scripts/check-data.mjs compares the ids with the data)
+    status: {
+      '1': 'Горение',
+      '3': 'Кровотечение',
+      '4': 'Отравление',
+      '5': 'Шок',
+      '6': 'Повышение защиты',
+      '7': 'Повышение атаки',
+      '8': 'Повышение пробития',
+      '11': 'Повышение шанса крита',
+      '12': 'Повышение крит. урона',
+      '26': 'Снижение скорости',
+      '29': 'Барьер',
+      '33': 'Заморозка',
+      '98': 'Скрытность',
+    } as Record<string, string>,
+    // statuses:end
   },
 
   tour: {

@@ -1,0 +1,91 @@
+{
+ "commit": "93a5234e557e2d783e3cf256cfc7c06f93ee4002",
+ "teams": [
+  {
+   "team": "Veronica★6",
+   "report": [
+    "Veronica: Increased Defense on self s1 → self (own s3 t4) | Kappa, Leo, Demiurge Drakhan, Liselotte, Summer Knight's Dream Ember, Anarky +7"
+   ]
+  },
+  {
+   "team": "Veronica★6 + Yuri★3 + Tio★3 + Lisha★6",
+   "report": [
+    "Veronica: Increased Defense on self s1 → ok (Yuri, Tio)",
+    "Lisha: Increased Attack on self s2 → self (own s3 t5) | Skadi, Mero, Christina, Charlotte, Cindy, Mene +3"
+   ]
+  },
+  {
+   "team": "Core Fusion Veronica★6 + Anarky★1",
+   "report": [
+    "Core Fusion Veronica: Increased Defense on self s1 → ok (Anarky)"
+   ]
+  },
+  {
+   "team": "Bleu★6 + Demiurge Stella★5 + Veronica★6",
+   "report": [
+    "Bleu: Barrier on self s1 → ok (Veronica)",
+    "Veronica: Increased Defense on self s1 → self (own s3 t4) | Kappa, Leo, Demiurge Drakhan, Liselotte, Summer Knight's Dream Ember, Anarky +7"
+   ]
+  },
+  {
+   "team": "Fatal★6 + Gnosis Beth★6",
+   "report": [
+    "Fatal: Stealth on self s1/s3 → ok (Gnosis Beth)"
+   ]
+  },
+  {
+   "team": "Fatal★6 + Kanon★6 + Luna★6 + Aer★6",
+   "report": [
+    "Fatal: Stealth on self s1/s3 → self (own s2 t4) | Gnosis Beth",
+    "Kanon: Barrier on self s1/burst → ok (Luna)",
+    "Luna: Barrier on self s1 → self (own s2 t3) | Tio, Veronica, Claire, Kate, Leo, Laplace +16",
+    "Aer: Increased Crit Hit Chance on self s2/burst → ok (self)"
+   ]
+  },
+  {
+   "team": "Beth★6 + Francesca★6",
+   "report": [
+    "Beth: Bleeding on enemy s1/s3 → ok (Francesca)",
+    "Beth: Increased Penetration on self s2/s3 → ok (self)",
+    "Francesca: Bleeding on enemy s1/s2/s3/burst → ok (Beth)"
+   ]
+  },
+  {
+   "team": "Philia★6 + Sigma★6 + Iris★5",
+   "report": [
+    "Philia: Shocked on enemy s2 → ok (Sigma)",
+    "Sigma: Shocked on enemy s1/s3 → ok (Philia)",
+    "Iris: Burned on enemy s3/burst → ok (self)"
+   ]
+  },
+  {
+   "team": "Resonance Eliza★6 + Core Fusion Snow★6 + Core Fusion Lisha★6 + Core Fusion Epsilon★6",
+   "report": [
+    "Resonance Eliza: Bleeding on enemy passive → ok (self)",
+    "Core Fusion Snow: Frozen on enemy s2 → ok (self)",
+    "Core Fusion Lisha: Increased Critical Damage on self s2/burst → ok (Core Fusion Epsilon)",
+    "Core Fusion Lisha: Increased Penetration on self s3 → ok (self)",
+    "Core Fusion Epsilon: Increased Defense on self s1/s2/s3 → ok (self)"
+   ]
+  },
+  {
+   "team": "Lisha★3",
+   "report": [
+    "Lisha: Increased Attack on self s2 → self (own s3 t5) | Skadi, Mero, Christina, Charlotte, Cindy, Mene +3"
+   ]
+  },
+  {
+   "team": "Iris★4 + Resonance Eliza★4",
+   "report": [
+    "Iris: Burned on enemy s3 → ok (self)"
+   ]
+  },
+  {
+   "team": "Kanon★6 + Bleu★6 + Tio★6 + Demiurge Stella★6",
+   "report": [
+    "Kanon: Barrier on self s1/burst → ok (Tio, Demiurge Stella)",
+    "Bleu: Barrier on self s1 → ok (Tio, Demiurge Stella)"
+   ]
+  }
+ ]
+}
