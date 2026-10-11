@@ -55,10 +55,17 @@ const type = async (el: HTMLInputElement, v: string) => {
   await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); });
 };
 const team = () => $('#view-team')!;
-const slot = (i: number) => team().querySelectorAll<HTMLElement>('.tm-team > button')[i];
+// a spot: «+» or the hero's portrait button
+const slot = (i: number) => team().querySelectorAll<HTMLElement>('.tm-team > .tm-add, .tm-team > .tm-p > .tm-slot')[i];
+const spot = (i: number) => team().querySelectorAll<HTMLElement>('.tm-team > *')[i];
+const sheetHeroes = () => $$('.drawer.tm-sheet .trade-hero');
 const pick = async (i: number, name: string) => {
   await click(slot(i));
-  await click([...team().querySelectorAll<HTMLElement>('.trade-hero')].find((b) => b.textContent === name));
+  await click(sheetHeroes().find((b) => b.textContent === name));
+};
+const setStars = async (i: number, n: number) => {
+  await click(spot(i).querySelector<HTMLElement>('.tm-sb'));
+  await click($$('.drawer.tm-star-sheet .tm-big button')[n - 1]);
 };
 const report = () => $$('#view-team .tm-hero').map((h) => h.textContent);
 async function openTeam() {
@@ -81,13 +88,16 @@ describe('«Команда»', () => {
     await mount();
     await openTeam();
     await click(slot(0));
-    const q = team().querySelector<HTMLInputElement>('.pick-q')!;
+    const q = $('.drawer.tm-sheet .pick-q') as HTMLInputElement;
     await type(q, 'vero');
-    expect($$('#view-team .trade-hero').map((b) => b.textContent)).toEqual(['Veronica']);
-    await click($('#view-team .trade-hero'));
-    // picked at ★6, the stars of the picked spot are open
-    expect($$('#view-team .tm-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★6']);
-    expect(slot(0).querySelectorAll('.tm-mini .on')).toHaveLength(6);
+    expect(sheetHeroes().map((b) => b.textContent)).toEqual(['Veronica']);
+    await click(sheetHeroes()[0]);
+    // picked at ★6; the sheet is closed
+    expect($('.drawer.tm-sheet')).toBeNull();
+    expect(spot(0).querySelectorAll('.tm-mini .on')).toHaveLength(6);
+    await click(spot(0).querySelector<HTMLElement>('.tm-sb'));
+    expect($$('.drawer.tm-star-sheet .tm-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★6']);
+    await click($('.drawer.tm-star-sheet .drawer-x'));
     const warn = $('#view-team .tm-warn')!.textContent!;
     expect(warn).toContain('Increased Defense only from own S3 — on cooldown (4) at battle start, S1 goes without it until then.');
     expect(warn).toContain('Would give it:');
@@ -103,22 +113,28 @@ describe('«Команда»', () => {
     await openTeam();
     await pick(0, 'Kanon');
     await pick(1, 'Demiurge Stella');
-    await click(team().querySelectorAll<HTMLElement>('.tm-big button')[4]); // ★5
-    expect(slot(1).querySelectorAll('.tm-mini .on')).toHaveLength(5);
+    await setStars(1, 5);
+    expect(spot(1).querySelectorAll('.tm-mini .on')).toHaveLength(5);
     const fix = $$('#view-team .tm-fx');
     expect(fix[0].textContent).toBe('Demiurge Stella from ★6');
-    await click(team().querySelectorAll<HTMLElement>('.tm-big button')[5]); // ★6
+    await setStars(1, 6);
     expect($('#view-team .tm-warn')).toBeNull();
     expect(report()[0]).toContain('Barrier — from Demiurge Stella');
   });
 
-  it('«Remove» empties the spot; the team survives a tab switch, a reload forgets it and opens «Evaluate»', async () => {
+  it('✕ empties the spot, the portrait replaces the hero; the team survives a tab switch, a reload forgets it and opens «Evaluate»', async () => {
     await mount();
     await openTeam();
     await pick(0, 'Veronica');
     await pick(1, 'Kappa');
-    await click($('#view-team .tm-x'));
+    await click(spot(0).querySelector<HTMLElement>('.tm-x'));
     expect($$('#view-team .tm-slot')).toHaveLength(1);
+    // the portrait opens the list: another hero takes the spot, keeping its ★
+    await setStars(1, 3);
+    await click(slot(1));
+    await click(sheetHeroes().find((b) => b.textContent === 'Yuri'));
+    expect(spot(1).textContent).toContain('Yuri');
+    expect(spot(1).querySelectorAll('.tm-mini .on')).toHaveLength(3);
     await click($('.vbar .vb-tab')); // ← Evaluate
     await openTeam();
     expect($$('#view-team .tm-slot')).toHaveLength(1);

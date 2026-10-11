@@ -1,5 +1,5 @@
 // Transcend stars, as the game shows them: six stars, gold up to ★N. MiniStars — on a team slot and a report header;
-// StarPick — under the slots for the picked hero: tap the N-th star (owner 2026-10-11: «теперь идеально»).
+// StarPick — in the stars sheet of a team hero: tap the N-th star (owner 2026-10-11: «теперь идеально»).
 import { TABLER } from '@/game/icons/tabler';
 import { useT } from '@/i18n';
 
@@ -16,20 +16,14 @@ export function MiniStars({ n }: { n: number }) {
   );
 }
 
-export function StarPick({ name, star, onStar, onRemove }: { name: string; star: number; onStar: (n: number) => void; onRemove: () => void }) {
+export function StarPick({ star, onStar }: { star: number; onStar: (n: number) => void }) {
   const t = useT();
   return (
-    <div className="tm-stars">
-      <div className="tm-sh">
-        <span className="tm-sn">{name}</span>
-        <button type="button" className="tm-x hit" aria-label={t.team.removeMember(name)} onClick={onRemove}>✕ {t.team.remove}</button>
-      </div>
-      <div className="tm-big" role="group" aria-label={t.team.stars(name)}>
-        {SIX.map((k) => (
-          <button key={k} type="button" className={k <= star ? 'on' : undefined} aria-pressed={k === star} aria-label={t.team.star(k)}
-            onClick={() => onStar(k)}><Star /></button>
-        ))}
-      </div>
+    <div className="tm-big" role="group" aria-label={t.team.starsGroup}>
+      {SIX.map((k) => (
+        <button key={k} type="button" className={k <= star ? 'on' : undefined} aria-pressed={k === star} aria-label={t.team.star(k)}
+          onClick={() => onStar(k)}><Star /></button>
+      ))}
     </div>
   );
 }

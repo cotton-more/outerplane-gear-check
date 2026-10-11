@@ -3,34 +3,33 @@
 .tm { display: grid; gap: 12px; padding: 12px; align-content: start; }
 html:not(.narrow) .tm { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); align-items: start; padding: 16px; }
 html:not(.narrow) .tm > :not(.tm-rep) { grid-column: 1; }
-html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 4; }
+html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 2; }
 
-/* the four spots */
-.tm-team { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.tm-slot, .tm-add { min-height: 96px; border-radius: var(--radius-s); }
-.tm-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px 5px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); min-width: 0; }
-.tm-slot[aria-pressed="true"], .tm-add[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* the four spots: a hero is the portrait button (another hero), the stars button at the bottom (★) and ✕ (remove) */
+.tm-team { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-top: 4px; }
+.tm-p { position: relative; min-width: 0; display: grid; }
+.tm-slot, .tm-add { min-height: 100px; border-radius: var(--radius-s); }
+.tm-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 28px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); min-width: 0; }
 .tm-slot .face { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
 .tm-n { max-width: 100%; font-size: 11.5px; font-weight: 600; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm-sb { position: absolute; left: 1px; right: 1px; bottom: 1px; height: 26px; display: grid; place-items: center; border: 0; border-top: 1px dashed var(--line); border-radius: 0 0 var(--radius-s) var(--radius-s); background: none; padding: 0; }
+.tm-x { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line-2); color: var(--ink-2); font-size: 11px; line-height: 1; }
 .tm-add { border: 1px dashed var(--line-2); background: none; color: var(--ink-3); font-size: 22px; }
-.tm-add[aria-pressed="true"] { color: var(--accent); }
 .tm-hint { margin: 0; font-size: 13px; }
 
-/* transcend stars: six small ones on a slot and a report header; the picker — tap the N-th big star */
+/* transcend stars: six small ones on a spot and a report header; the stars sheet — tap the N-th big star */
 .tm-mini { display: inline-flex; gap: 1px; flex: none; }
 .tm-mini i, .tm-mini svg { display: block; width: 9px; height: 9px; }
-.tm-slot .tm-mini i, .tm-slot .tm-mini svg { width: 8px; height: 8px; }
+.tm-sb .tm-mini i, .tm-sb .tm-mini svg { width: 8px; height: 8px; }
 .tm-mini svg { fill: var(--line-2); }
 .tm-mini .on svg { fill: var(--star-on); }
-.tm-stars { display: grid; gap: 6px; padding: 8px 10px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
-.tm-sh { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.tm-sn { font-weight: 700; font-size: 13.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tm-x { border: 0; background: none; color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 0 2px; flex: none; }
-.tm-big { display: flex; justify-content: space-between; max-width: 300px; width: 100%; justify-self: center; }
-.tm-big button { flex: 1 1 0; min-width: 0; height: 44px; padding: 4px 0; border: 0; background: none; display: grid; place-items: center; }
-.tm-big svg { width: min(32px, 100%); height: 32px; fill: none; stroke: var(--line-2); stroke-width: 1.6; stroke-linejoin: round; }
+.drawer.tm-star-sheet { max-width: 420px; }
+.tm-big { display: flex; justify-content: space-between; max-width: 320px; width: 100%; margin: 4px auto 8px; }
+.tm-big button { flex: 1 1 0; min-width: 0; height: 52px; padding: 4px 0; border: 0; background: none; display: grid; place-items: center; }
+.tm-big svg { width: min(36px, 100%); height: 36px; fill: none; stroke: var(--line-2); stroke-width: 1.6; stroke-linejoin: round; }
 .tm-big .on svg { fill: var(--star-on); stroke: var(--star-on); }
 .tm-big [aria-pressed="true"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--star-on) 60%, transparent)); }
+.drawer.tm-sheet .trade-heroes { margin-top: 0; }
 
 /* report */
 .tm-rep { display: grid; gap: 10px; }
@@ -48,6 +47,6 @@ html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 4; }
 .tm-from { font: 600 11.5px var(--font-mono); color: var(--ink-3); }
 .tm-more { border: 0; background: none; padding: 0; color: var(--accent); font: 600 12.5px var(--font-body); }
 @media (max-width: 330px) {
-  .tm-slot .tm-mini { gap: 0; }
-  .tm-slot .tm-mini i, .tm-slot .tm-mini svg { width: 7px; height: 7px; }
+  .tm-sb .tm-mini { gap: 0; }
+  .tm-sb .tm-mini i, .tm-sb .tm-mini svg { width: 7px; height: 7px; }
 }

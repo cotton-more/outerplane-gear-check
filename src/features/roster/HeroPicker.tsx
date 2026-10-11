@@ -1,5 +1,5 @@
 // Hero list to pick one from: portrait and name in a grid of buttons («Обмен вещами» — whom to re-dress, a team spot;
-// «Команда» — a team spot). search — placeholder of a name field above the list (none — no field): matches like the
+// «Команда» — a team spot, in its own sheet: no title line). search — placeholder of a name field above the list (none — no field): matches like the
 // character list's search (name, slug, nickname).
 import { useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
@@ -7,7 +7,7 @@ import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
 export function HeroPicker({ ids, title, empty, search, onPick }: {
-  ids: readonly string[]; title: string; empty: string; search?: string; onPick: (id: string) => void;
+  ids: readonly string[]; title?: string; empty: string; search?: string; onPick: (id: string) => void;
 }) {
   const idx = useIndex();
   const [q, setQ] = useState('');
@@ -17,7 +17,7 @@ export function HeroPicker({ ids, title, empty, search, onPick }: {
     : ids;
   return (
     <div className="trade-pick">
-      <p className="trade-q">{title}</p>
+      {title && <p className="trade-q">{title}</p>}
       {search && ids.length > 0 && (
         <input className="pick-q" type="search" value={q} placeholder={search} aria-label={search} onChange={(e) => setQ(e.target.value)} />
       )}
