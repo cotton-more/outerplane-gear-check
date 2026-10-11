@@ -39,7 +39,8 @@ can be. Close the window — no restrictions remain. Members of one team still s
 For each receiver:
 
 - **the gain** — how many points stronger the hero gets ("+4.2 pts"), or weaker ("Stats drop by N pts"); sets that
-  turn on or off are named ("Speed ×4 activates");
+  turn on or off are named ("Speed ×4 activates"); when less or more of the hero's crit goes to waste — "Extra crit
+  −6.3 → −2.3": crit near their number N counts less (see [Equipment](Equipment#worn), "Crit: 45%");
 - an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
   pieces are there but below T4, "Speed ×2 won't come together: needs T4";
 - **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6

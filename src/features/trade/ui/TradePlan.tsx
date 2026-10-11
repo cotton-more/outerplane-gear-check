@@ -112,6 +112,8 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
         const c = idx.CHAR[l.hero];
         const sets = [...l.on.map((p) => t.trade.setOn(setName(idx, p.set), p.n)), ...l.off.map((p) => t.trade.setOff(setName(idx, p.set), p.n))];
         const drop = tenths(l.ptsBefore - l.ptsAfter) > 0;
+        // the extra crit, when it changes in tenths (decision 14): stats + sets − crit = the gain
+        const crit = tenths(l.critBefore) !== tenths(l.critAfter) ? t.trade.critPart(pts(l.critBefore), pts(l.critAfter)) : null;
         const shown = new Set(l.moves.map((m) => m.slot));
         return (
           <section key={l.hero} className="tline to">
@@ -121,8 +123,11 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
               <OrderButton name={orderName(l.hero)} onClick={() => onOrder(l.hero)} />
               {!empty && <span className={`tgain ${g.cls}`}>{g.text}</span>}
               {!empty && (
-                <span className={`tline-s${drop ? ' down' : ''}`}>
-                  {drop ? t.trade.weaker(pts(l.ptsBefore - l.ptsAfter)) : t.trade.stats(pts(l.ptsBefore), pts(l.ptsAfter))}
+                <span className="tline-s">
+                  <span className={drop ? 'down' : undefined}>
+                    {drop ? t.trade.weaker(pts(l.ptsBefore - l.ptsAfter), !!crit) : t.trade.stats(pts(l.ptsBefore), pts(l.ptsAfter))}
+                  </span>
+                  {crit && ` · ${crit}`}
                 </span>
               )}
               {sets.length > 0 && <span className="tline-s">{sets.join(', ')}</span>}

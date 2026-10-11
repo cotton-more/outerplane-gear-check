@@ -493,7 +493,7 @@ EFF and SPD are later tickets.
    current layout leaves them (= points − the loss its segments add, the piece standing in its slot). Used by «Оставь» (§4)
    and pool reasons 3–4 (§5); the bar, reserves and Breakthrough targets stay plain points.
 6. **Trade** (§7): the gauge has `crit` (`CritGauge`: loss of a kit, `binds`, per-item facts, a quick bound — `Item.chc` is a
-   piece's most crit, the same for every hero); `keyOf` subtracts the kit's loss. `bestKit` runs the plain search first: a
+   piece's most crit, the same for every hero); `keyOf` subtracts the kit's loss (`KitKey.crit`); the plan's hero line names it — «Лишний крит a → b» after the stats part, when it changes in tenths (decision 14), so stats + sets − crit add up to the gain. `bestKit` runs the plain search first: a
    plain best that loses nothing is the best (no kit beats its plain V); otherwise `critKit` — the same fronts (ties: Legendary,
    cost, holder loss, roster, age) under branch and bound. The trade hole hint may still name CHC (it has no crit after the
    trade).

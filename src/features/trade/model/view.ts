@@ -17,6 +17,8 @@ export interface HeroLine {
   after: Milli;
   ptsBefore: Milli;         // очки статов — без сетов
   ptsAfter: Milli;
+  critBefore: Milli;        // the kit's crit loss (MODEL.md §12 item 6): «Лишний крит a → b» on the line (decision 14)
+  critAfter: Milli;
   on: Part[];               // половины сетов, которые включились: «S ×2» (1 половина) или «S ×4» (2)
   off: Part[];              // и выключились
   moves: Move[];
@@ -65,6 +67,7 @@ export function linesOf(w0: World, w1: World, receivers: readonly string[], m: M
     return {
       hero, receiver,
       before: k0?.total ?? 0, after: k1?.total ?? 0, ptsBefore: k0?.pts ?? 0, ptsAfter: k1?.pts ?? 0,
+      critBefore: k0?.crit ?? 0, critAfter: k1?.crit ?? 0,
       on: grown(b, a), off: grown(a, b),
       moves: m.moves.filter((x) => x.hero === hero),
       worth: Object.fromEntries(m.moves.filter((x) => x.hero === hero).flatMap((x) => {

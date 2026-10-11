@@ -85,9 +85,10 @@ export interface Cand {
 export type Cands = Partial<Record<SlotId, readonly Cand[]>>;
 
 // rank — Σ рангов оружия и аксессуара; total — V; pts — очки вещей без сетов; halves / eff — включённые половины (все и
-// сетов-эффектов); дальше — ничьи R6.1
+// сетов-эффектов); crit — the crit loss already subtracted from total (MODEL.md §12 item 6; shown on the plan line, not
+// compared); дальше — ничьи R6.1
 export interface KitKey {
-  rank: number; total: Milli; pts: Milli; halves: number; eff: number; filled: number;
+  rank: number; total: Milli; pts: Milli; halves: number; eff: number; filled: number; crit: Milli;
   legends: number;          // slots held by a Legendary that nobody else wears (cost < 3): at equal V it wins (Q7)
   cost: number; loss: Milli; ranks: number[]; ords: number[];
 }

@@ -144,6 +144,27 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tmove .tsrc')).toBeNull();
   });
 
+  // F1 of review 0136, decision 14: Caren over the cap takes Rin's CHD helmet for her CHC 6 one — the line names the extra crit
+  it('the hero line names the extra crit when it changes: «Stats drop by 1.4 pts · Extra crit −6.3 → −2.3»', async () => {
+    const rin = D.chars.find((c) => c.name === 'Rin')!;
+    const crit = D.sets.find((s) => s.short === 'Critical Hit')!.id;
+    const acc = P('c1', 'accessory', null, { CHD: 3, 'ATK%': 2, SPD: 1, HP: 1 }, { itemKey: '1036', main: 'CHC', bt: 4 });
+    const rest = (['armor', 'gloves', 'shoes'] as const).map((s, i) => P(`c${i + 2}`, s, crit, { 'DEF%': 2, CHD: 2, SPD: 1, HP: 1 }, { bt: 4 }));
+    const hA = P('c5', 'helmet', crit, { CHC: 6, 'DEF%': 1, SPD: 1, HP: 1 }, { bt: 4 });
+    const hB = P('c6', 'helmet', crit, { CHD: 4, CHC: 1, 'DEF%': 1, SPD: 1 }, { bt: 4 });
+    const mine = [acc, ...rest, hA];
+    await mount({
+      roster: [caren.id, rin.id],
+      gear: G([...mine, hB], { [caren.id]: mine.map((p) => p.id as string), [rin.id]: ['c6'] },
+        { worn: { [caren.id]: Object.fromEntries(mine.map((p) => [p.slot, p.id])) } }),
+    });
+    await click(byText('.cd-acts button', 'Trade'));
+
+    expect($('.tline.to .tgain')?.textContent).toBe('▲ +2.6 pts');
+    expect($('.tline.to .tline-s')?.textContent).toBe('Stats drop by 1.4 pts · Extra crit −6.3 → −2.3');
+    expect($('.tline.to .tline-s .down')?.textContent).toBe('Stats drop by 1.4 pts'); // only the stats part is red
+  });
+
   // MODEL.md §7 item 1: у закреплённого заказ — его закрепление, жёстко; в шторке заказа — один вариант
   it('T7.5: закреплённый — «Order: Pinned: Speed ×4 ▾», в шторке только он', async () => {
     const { pinOptions } = await import('@/game/build/profile');

@@ -143,14 +143,17 @@ function armorKey(g: Gauge, arm: readonly (Cand | null)[]): KitKey {
     const b = g.bonus(s, k, n4.get(s) ?? 0);
     total += b.v; halves += b.halves; eff += b.eff;
   }
-  return { rank: 0, total, pts, halves, eff, filled, legends, cost, loss, ranks, ords };
+  return { rank: 0, total, pts, halves, eff, filled, crit: 0, legends, cost, loss, ranks, ords };
 }
 
 // ключ всего комплекта (польза MODEL.md §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры). V — за
 // вычетом потери крита (MODEL.md crit): она зависит от всего комплекта сразу
 export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
   const k = armorKey(g, ARMOR_SLOTS.map((s) => slots[s] ?? null));
-  if (g.crit && critMayLose(g.crit, slots)) k.total -= g.crit.loss(SLOT_ORDER.flatMap((s) => (slots[s] ? [slots[s]!.item.id] : [])));
+  if (g.crit && critMayLose(g.crit, slots)) {
+    k.crit = g.crit.loss(SLOT_ORDER.flatMap((s) => (slots[s] ? [slots[s]!.item.id] : [])));
+    k.total -= k.crit;
+  }
   const ranks: number[] = [], ords: number[] = [];
   let rank = 0;
   for (const slot of GEAR_SLOTS) {

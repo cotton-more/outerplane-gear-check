@@ -41,7 +41,7 @@
 .tgain.up { color: var(--keep); }
 .tgain.down { color: var(--junk); }
 .tline-s { flex-basis: 100%; font-size: 12px; font-weight: 500; color: var(--ink-2); }
-.tline-s.down { color: var(--junk); }
+.tline-s .down { color: var(--junk); }
 .tmiss { margin: 0; font-size: 12px; color: var(--ink-2); }
 .tmoves { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .tmove { display: grid; gap: 3px; }

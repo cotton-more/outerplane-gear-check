@@ -9,6 +9,8 @@ import { candidates } from '@/features/trade/model/cands';
 import { bestKit } from '@/features/trade/model/kit';
 import { SLOT_ORDER } from '@/features/trade/model/model';
 import { heroPlan } from '@/features/trade/model/plan';
+import { advance, heroMoves } from '@/features/trade/model/moves';
+import { linesOf } from '@/features/trade/model/view';
 import { worldOf } from '@/features/trade/model/world';
 import type { SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';
@@ -33,6 +35,20 @@ describe('мерило знает потолок крита', () => {
     const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [] } });
     const plan = heroPlan(realWorld(st, [K, R]), { to: K }).plan;
     expect(plan.changes.map((c) => [c.slot, c.cand.item.id, c.was?.item.id])).toEqual([['helmet', hB.id, hA.id]]);
+  });
+
+  // F1 of review 0136, decision 14: the plan line names the extra crit, so stats + sets − crit add up to the gain
+  it('the plan line carries the kit\'s extra crit before and after: 6.267 → 2.267, and the parts add up', () => {
+    const { acc, rest, hA, hB } = capped();
+    const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [] } });
+    const world = realWorld(st, [K, R]);
+    const hp = heroPlan(world, { to: K });
+    const step = { plans: [{ to: K, plan: hp.plan }], fills: hp.holes.fills };
+    const l = linesOf(world, advance(world, step), [K], heroMoves(world, K, step)).find((x) => x.hero === K)!;
+    expect([l.critBefore, l.critAfter]).toEqual([6267, 2267]);
+    expect([l.on, l.off]).toEqual([[], []]);
+    expect(l.after - l.before).toBe(l.ptsAfter - l.ptsBefore + l.critBefore - l.critAfter);
+    expect(l.after - l.before).toBe(2600);
   });
 
   it('без упора (нет аксессуара с main CHC и сета крита) тот же шлем с CHC 6 остаётся', () => {

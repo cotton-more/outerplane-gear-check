@@ -10,6 +10,7 @@ const noun = (k: GearKind) => (k === 'weapon' ? 'weapon' : 'accessory');
 const nouns = (k: GearKind) => (k === 'weapon' ? 'weapons' : 'accessories');
 const aNoun = (k: GearKind) => (k === 'weapon' ? 'a weapon' : 'an accessory');
 const dec = (x: number) => String(Math.round(x * 10) / 10);
+const minus = (x: number) => (Math.round(x * 10) ? `−${dec(x)}` : '0');
 
 // slot names for GEARPOOL lines: «boots» for shoes
 const SLOT_EN: Record<string, string> = { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' };
@@ -585,7 +586,7 @@ export const en: Texts = {
       'Works out how to re-dress a hero (or a team of four) from the pieces already in your roster and inventory. Open it with "Trade ▸" on a hero card (that hero\'s plan) or "Trade" above the character list and "Team trade" in More on a phone (straight to the team). In the game you do it yourself — the app only calculates.',
       '**Hero** — whom to re-dress; **Team** — four places in a diamond: they swap pieces among themselves and take from everyone else. A member is a tile; tap it to put another hero there or "Remove from team". Under the tile — the hero\'s order ("Order: … ▾"): "By stats" or one of the sets from their builds; tap to change. A hero with a pinned set has one order — "Pinned".',
       '**Session:** while the trade window is open, what already re-dressed heroes wear is not taken by the next ones; their spares can be. Close the window — no restrictions.',
-      'The plan: for each receiver — how many points stronger ("+4.2 pts") or weaker ("Stats drop by N pts") they get, which set bonuses turn on, what to put on, how many points each piece gives over the worn one ("+1.6 pts"; a recommended weapon or accessory says "better passive", even with fewer points), where each piece comes from (a hero or the inventory) and how to find it in the game — the source is small under the piece, weapons and accessories also get Secondary ↓. If the order lacks pieces of its set, a line says so. "Don\'t take" looks for another piece. An empty slot shows "Search:" with a hint. The plan shows only whom you re-dress; heroes you take pieces from are not shown.',
+      'The plan: for each receiver — how many points stronger ("+4.2 pts") or weaker ("Stats drop by N pts"; when less or more of the hero\'s crit goes to waste — "Extra crit −6.3 → −2.3": crit near their number N counts less, see "Crit: 45%") they get, which set bonuses turn on, what to put on, how many points each piece gives over the worn one ("+1.6 pts"; a recommended weapon or accessory says "better passive", even with fewer points), where each piece comes from (a hero or the inventory) and how to find it in the game — the source is small under the piece, weapons and accessories also get Secondary ↓. If the order lacks pieces of its set, a line says so. "Don\'t take" looks for another piece. An empty slot shows "Search:" with a hint. The plan shows only whom you re-dress; heroes you take pieces from are not shown.',
       '**Holes are not filled:** a piece taken off stays off until you enter a new one through evaluation.',
       '**Done** — all done in the game: the plan is saved. **Cancel** — nothing changed. Right after "Done" there is "Undo". A copy that is in no pool leaves the app but stays in your game inventory.',
       '**"Re-dress"** on the Worn tab uses the same threshold as the trade: the best layout from the hero\'s own pieces beats what\'s worn by at least 1 point (a Legendary in place of an Epic — no worse), turns on an effect-set bonus or puts on a recommended weapon or accessory.',
@@ -674,7 +675,8 @@ export const en: Texts = {
     stats: (a: number, b: number) => `Stats: ${dec(a)} → ${dec(b)} pts`,
     missing: (part: string, set: string, slots: string) => `${part} won't come together: no ${set} ${slots}.`,
     needT4: (part: string) => `${part} won't come together: needs T4.`,
-    weaker: (pts: number) => `Stats drop by ${dec(pts)} pts.`,
+    weaker: (pts: number, more = false) => `Stats drop by ${dec(pts)} pts${more ? '' : '.'}`,
+    critPart: (a: number, b: number) => `Extra crit ${minus(a)} → ${minus(b)}`,
     session: "Heroes you've re-dressed in this trade keep their gear while the window is open.",
   },
 

@@ -44,6 +44,7 @@ describe('T7.3: было → станет', () => {
     const [r] = linesOf(w, advance(w, step), ['R'], heroMoves(w, 'R', step));
     expect([r.ptsBefore, r.ptsAfter]).toEqual([6000, 3000]);
     expect([r.before, r.after]).toEqual([6000, 13000]);
+    expect([r.critBefore, r.critAfter]).toEqual([0, 0]); // no crit gauge — no «Лишний крит» part
     expect(r.on).toEqual([{ set: 'S', n: 2 }]);
     expect(r.off).toEqual([]);
   });
