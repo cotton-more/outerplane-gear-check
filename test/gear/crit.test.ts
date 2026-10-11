@@ -5,11 +5,14 @@ import { makeCtx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
 import { pieceInput, type Piece, type Worn } from '@/features/gear/model/gear';
 import { poolView } from '@/features/gear/pool';
-import { bestLayout, layoutValue, piecePoints, pointsIn } from '@/features/gear/layout';
+import { bestLayout, gearRank, layoutValue, piecePoints, pointsIn, RANK, type Layout } from '@/features/gear/layout';
+import { poolInfo } from '@/features/gear/pool/info';
+import { wearable } from '@/features/gear/model/vs';
 import { heroOutcome, heroPool, verdictOf } from '@/features/gear/verdict';
-import { withNeed, type Profile } from '@/game/build/profile';
+import { pinnedProfile, pinOptions, withNeed, type Profile } from '@/game/build/profile';
 import { critF, critLinear, critValue } from '@/game/stat/curve';
-import { char, D, gen, idx, mk, prof, randArmor, randGear, randPool, twenty, type Gen } from './statSets';
+import { char, D, gen, idx, mk, prof, randArmor, randGear, randPool, setId as setIdOf, twenty, type Gen } from './statSets';
+import * as S from './statSets';
 
 const inputOf = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt === 4 ? 4 : p.bt === null ? null : 0 });
 const near = (a: number, b: number, d = 1e-9) => Math.abs(a - b) <= d;
@@ -223,5 +226,86 @@ describe('старые данные', () => {
     expect(ofData(D).critOn).toBe(true);
     expect(ofData({ ...D, mainValues: undefined }).critOn).toBe(false);
     expect(ofData({ ...D, chars: D.chars.map((c) => ({ ...c, chc: undefined })) }).critOn).toBe(false);
+  });
+});
+
+// Review 0136 F8 (a), (c): properties from the review fuzz, smaller loops. Random pools of heroes with CHC in the chain,
+// Critical Hit pieces, CHC mains on accessories, CHC substats; pins, armorOnly and N from 0 to 100
+describe('fuzz: crit search and «Оставь» (review 0136)', () => {
+  const CH = setIdOf('Critical Hit');
+  const critHeroes = S.heroes.filter((c) => S.prof(c).critOn);
+  const ids = (l: Layout) => Object.entries(l).map(([s, p]) => `${s}:${p!.id}`).sort().join(' ');
+  const critPool = (g: Gen, P: Profile, perSlot = 3): Piece[] => {
+    const out = randPool(g, P, perSlot, true);
+    if (g.rnd() < 0.7) out.push(randGear(g, P, 'accessory'));
+    for (let i = g.int(5); i > 0; i--) out.push({ ...randArmor(g, P, g.pick(S.ARMOR)), setId: CH });
+    return out.map((p) => {
+      if (p.slot === 'accessory' && g.rnd() < 0.6 && !p.lit.CHC) return { ...p, main: 'CHC' };
+      if (p.slot !== 'accessory' && g.rnd() < 0.35) { const lit = { ...p.lit, CHC: 1 + g.int(6) }; if (Object.keys(lit).length <= 4) return { ...p, lit, yellow: lit }; }
+      return p;
+    });
+  };
+  // every layout (top-rank gear, any armor or empty): the most (rank, V) by layoutValue
+  const enumBest = (P: Profile, pool: readonly Piece[], armorOnly: boolean): { v: number; rank: number } => {
+    const cands = pool.filter((p) => wearable(P.ctx, P.c, p));
+    const gear = (['weapon', 'accessory'] as const).map((slot) => {
+      const mine = armorOnly ? [] : cands.filter((p) => p.slot === slot);
+      if (!mine.length) return [null];
+      const r = Math.max(...mine.map((p) => RANK[gearRank(P, p)]));
+      return mine.filter((p) => RANK[gearRank(P, p)] === r);
+    });
+    const per = S.ARMOR.map((s) => [null, ...cands.filter((p) => p.slot === s)]);
+    let best = { v: -Infinity, rank: -1 };
+    for (const w of gear[0]) for (const a of gear[1]) for (const h of per[0]) for (const b of per[1]) for (const gl of per[2]) for (const sh of per[3]) {
+      const l: Layout = {};
+      if (w) l.weapon = w; if (a) l.accessory = a; if (h) l.helmet = h; if (b) l.armor = b; if (gl) l.gloves = gl; if (sh) l.shoes = sh;
+      const v = layoutValue(P, l);
+      if (v.rank > best.rank || (v.rank === best.rank && v.v > best.v)) best = { v: v.v, rank: v.rank };
+    }
+    return best;
+  };
+
+  it('prune = no prune (the same pieces) = enumeration (V), with pins, armorOnly, N 0…100', () => {
+    const g = gen(9001);
+    let binding = 0;
+    for (let t = 0; t < 120; t++) {
+      const c = g.pick(critHeroes);
+      let P = withNeed(S.prof(c), g.pick([100, 100, 90, 75, 60, 40, 20, 0]));
+      if (g.rnd() < 0.3) { const pins = pinOptions(c); if (pins.length) P = pinnedProfile(P, g.pick(pins)); }
+      const pool = critPool(g, P, 2);
+      const armorOnly = g.rnd() < 0.15;
+      const a = bestLayout(P, pool, { armorOnly });
+      const e = enumBest(P, pool, armorOnly);
+      if (a.value.critLoss > 0) binding++;
+      expect(ids(a.layout), `#${t} ${c.name} N${P.need}`).toBe(ids(bestLayout(P, pool, { armorOnly, prune: false }).layout));
+      expect([a.value.rank, a.value.v], `#${t} ${c.name} N${P.need}`).toEqual([e.rank, expect.closeTo(e.v, 7)]);
+    }
+    expect(binding).toBeGreaterThan(40);
+  });
+
+  // decision 3 / 15: a piece judged «Оставь» counts its CHC where the current layout leaves it, as the pool does — after
+  // the stash the pool holds it
+  it('«Оставь» → after the stash the pool holds it', () => {
+    const g = gen(9004);
+    let keeps = 0;
+    for (let t = 0; t < 3000; t++) {
+      const c = g.pick(critHeroes);
+      const need = g.pick([100, 85, 70, 55, 40]);
+      const pins = pinOptions(c);
+      const pin = g.rnd() < 0.3 && pins.length ? g.pick(pins).key : null;
+      const P0 = pin ? pinnedProfile(withNeed(S.prof(c), need), pins.find((x) => x.key === pin)!) : withNeed(S.prof(c), need);
+      const pool = critPool(g, P0);
+      const worn = new Set<string>();
+      for (const s of ['weapon', 'accessory', ...S.ARMOR]) { const xs = pool.filter((p) => p.slot === s); if (xs.length && g.rnd() < 0.7) worn.add(g.pick(xs).id); }
+      const hp = heroPool(S.ctx, c, pool, worn, pin, need)!;
+      let x = { ...randArmor(g, hp.P, g.pick(S.ARMOR)), id: 'new' } as Piece;
+      if (g.rnd() < 0.5) x = { ...x, setId: CH };
+      if (g.rnd() < 0.6 && Object.keys(x.lit).length < 4) x = { ...x, lit: { ...x.lit, CHC: 1 + g.int(6) } };
+      if (heroOutcome(hp, x).kind !== 'keep') continue;
+      keeps++;
+      const stashed = { ...x, id: 'p999999' };
+      expect(poolInfo(hp.P, [...pool, stashed], worn).why.has(stashed.id), `#${t} ${c.name} N${need} pin ${!!pin}`).toBe(true);
+    }
+    expect(keeps).toBeGreaterThan(30);
   });
 });
