@@ -398,6 +398,19 @@ describe('подсказки по ходу и «Что нового»', () => {
     }
   }, 10_000);
 
+  it('в Справке новые подсказки — вверху списка, остальные — по порядку', async () => {
+    const known = Object.fromEntries(TIPS.filter((tp) => tp.id !== 'team' && tp.id !== 'teamPick').map((tp) => [tp.id, tp.rev]));
+    await mount({ welcomeHidden: true, tour: { ...done, known } });
+    await click(byText('.tour-invite button', 'Later'));
+    await click($('.vb-tab'));
+    await click($('.more .has-news'));
+    const items = [...document.querySelectorAll<HTMLElement>('.tips-help li')];
+    expect(items.slice(0, 2).map((li) => !!li.querySelector('.tour-new'))).toEqual([true, true]);
+    expect(items[0].textContent).toContain(T.tips.team);
+    expect(items[1].textContent).toContain(T.tips.teamPick);
+    expect(items.slice(2).some((li) => li.querySelector('.tour-new'))).toBe(false);
+  });
+
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, known: {} } }); // вышли после его первого запуска
     expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 9)); // and also pin, move, bt, batch, wornChain, wornTab, wornBudget, team, teamPick

@@ -1,4 +1,5 @@
-// Раздел «Подсказки» в Справке: выключатель, «показать заново» и все подсказки списком — новые помечены.
+// Раздел «Подсказки» в Справке: выключатель, «показать заново» и все подсказки списком — новые помечены и стоят первыми
+// (owner 2026-10-11: «всё новое должно быть вверху списка»), в остальном — порядок TIP_ORDER.
 import { useT } from '@/i18n';
 import { TIPS } from './registry';
 import type { TourApi } from './useTour';
@@ -16,7 +17,7 @@ export function TipsHelp({ tour, news }: { tour: TourApi; news: Tip[] }) {
         <button type="button" className="linkbtn" onClick={tour.resetTips}>{t.tour.tipsReset}</button>
       </SegSwitch>
       <ul>
-        {TIPS.map((tip) => (
+        {[...TIPS.filter((tip) => news.includes(tip)), ...TIPS.filter((tip) => !news.includes(tip))].map((tip) => (
           <li key={tip.id}>{news.includes(tip) && <span className="tour-new">{t.tour.newBadge}</span>} {t.tour.tips[tip.id]}</li>
         ))}
       </ul>
