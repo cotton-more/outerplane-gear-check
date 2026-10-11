@@ -271,7 +271,7 @@ html.narrow .welcome { font-size: 13.5px; padding: 10px 12px 12px; }
    outline parts it from the light and the dark surface alike. Mid tones close to the game's element icons, the same
    in both themes (white on each ≥ 3:1) */
 .ce { position: relative; display: inline-block; flex: none; line-height: 0; isolation: isolate; }
-.ce::before { content: ''; position: absolute; border-radius: 2px; background: var(--el-bg); transform: rotate(45deg); }
+.ce::before { content: ''; position: absolute; inset: 0; border-radius: 2px; background: var(--el-bg); transform: rotate(45deg); }
 /* the icon's size is the .ce box (set per place: .htag, .ctile .badges, .cd-badge); the image always fills it exactly —
    a place's own img rule (.bgear-row img: 22px) would push its black diamond off the colour one (owner 2026-10-10) */
 .ce > img { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; margin: 0 !important; mix-blend-mode: screen; }
