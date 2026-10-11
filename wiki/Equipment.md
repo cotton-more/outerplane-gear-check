@@ -264,7 +264,7 @@ for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode a
 More → "Backup": the **OGC-GEAR5** code — all pieces, what's worn, each hero's pinned set and crit number. Copy it to keep a backup or
 move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
 and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
-The older codes still read — OGC-GEAR1, 2 and 3; marks of the old model ("Filling", the chosen build, "Keep worn
+The older codes still read — OGC-GEAR1 to 4; marks of the old model ("Filling", the chosen build, "Keep worn
 gear") in them are skipped. During a tutorial there's no code: the page shows an example, not your pieces.
 
 **The first launch after the update.** Your saved gear moves to the new model: no piece is lost, except the regular

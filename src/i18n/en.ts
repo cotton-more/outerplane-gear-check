@@ -256,7 +256,7 @@ export const en: Texts = {
     critSplit: (hero, gear) => `Hero ${hero}% · gear ${gear}%`,
     critTitle: (name) => `Crit for ${name}`,
     critAbout: 'How much crit the hero needs. Near this number crit counts less, above it not at all. Lower it if gems, the talisman, stars or the team add crit.',
-    critN: 'Crit needed from gear, %',
+    critN: 'How much crit the hero needs, %',
     critLess: 'Less',
     critMore: 'More',
     critReset: 'Reset',
