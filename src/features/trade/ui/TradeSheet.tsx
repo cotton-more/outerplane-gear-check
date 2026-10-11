@@ -23,8 +23,8 @@ import { TradePlan } from './TradePlan';
 import { OrderSheet, orderName } from './OrderSheet';
 import { pinOf } from '@/game/build/profile';
 import { comboText } from '@/game/build/builds';
-import { HeroFace } from '@/game/hero/HeroFace';
-import { heroName, HeroName } from '@/game/hero/HeroName';
+import { heroName } from '@/game/hero/HeroName';
+import { HeroPicker } from '@/features/roster/HeroPicker';
 
 type Undo = (st: GearStore) => GearStore | null;
 
@@ -134,21 +134,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
   const orderC = orderFor ? idx.CHAR[orderFor] : undefined;
 
   const picker = (exclude: readonly string[], onPick: (id: string) => void, title: string) => (
-    <div className="trade-pick">
-      <p className="trade-q">{title}</p>
-      {pickable.length ? (
-        <ul className="trade-heroes">
-          {pickable.filter((id) => !exclude.includes(id)).map((id) => (
-            <li key={id}>
-              <button type="button" className="trade-hero" onClick={() => onPick(id)}>
-                <HeroFace c={idx.CHAR[id]} />
-                <span className="trade-hn"><HeroName c={idx.CHAR[id]} /></span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : <p className="muted small">{t.trade.noHeroes}</p>}
-    </div>
+    <HeroPicker ids={pickable.filter((id) => !exclude.includes(id))} title={title} empty={pickable.length ? '' : t.trade.noHeroes} onPick={onPick} />
   );
 
   return (

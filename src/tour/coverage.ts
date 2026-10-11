@@ -34,6 +34,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/roster/CharBar.tsx': 'helper',             // панель над списком: поиск, фильтр, «Мои · Доодеть», «Обмен» — подписи говорят сами, звёздочку объясняет подсказка star
   'features/roster/CharFilterSheet.tsx': 'helper',     // шторка фильтра: стихии и классы кнопками, «Сбросить»
   'features/roster/CharTile.tsx': 'helper',            // плитка героя: её объясняют подсказки списка персонажей
+  'features/roster/HeroPicker.tsx': 'helper',          // hero list to pick one (trade, Team): the title line says what it is for
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
   'features/worn/WornBudget.tsx': 'helper',            // budget under the Worn heading: the wornBudget tip explains it
