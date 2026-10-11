@@ -57,7 +57,7 @@ export interface CritFacts { w: number; n: number; main: number; non: Milli }
 export interface CritGauge {
   own: number;
   knee: number;
-  rowsMax: number;                    // the most crit any set's rows give (Critical Hit ×4 T4: 30): own + items + this ≤ knee — no loss
+  rowsMax: number;                    // the most crit any kit's set rows give (one set ×4, or two sets ×2 each; today Critical Hit ×4 T4: 30): own + items + this ≤ knee — no loss
   setMax(set: string): number;
   loss(itemIds: readonly string[]): Milli;
   binds(itemIds: readonly string[]): boolean;

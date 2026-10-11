@@ -174,7 +174,7 @@ function critMayLose(cr: CritGauge, slots: Partial<Record<SlotId, Cand>>): boole
   let c = cr.own;
   for (const s of SLOT_ORDER) c += slots[s]?.item.chc ?? 0;
   if (c > cr.knee) return true;
-  if (c + cr.rowsMax <= cr.knee) return false; // no set's rows could make it
+  if (c + cr.rowsMax <= cr.knee) return false; // no kit's set rows could make it
   for (let i = 0; i < ARMOR_SLOTS.length; i++) {
     const set = slots[ARMOR_SLOTS[i]]?.item.set;
     if (!set) continue;

@@ -551,6 +551,12 @@ async function main() {
     check('Ссылки в данных целы', !fresh.length, fresh);
   });
 
+  // crit from sets: the trade's quick crit bound (layout rowsMaxOf) and MODEL.md §12 are checked with one such set
+  await guarded('Крит от сетов', () => {
+    const chcSets = newD.sets.filter((s) => Object.values(s.bonus ?? {}).some((t) => t.p2?.stat === 'CHC' || t.p4?.stat === 'CHC'));
+    if (chcSets.length > 1) check('Крит от сетов', 'warn', [`CHC в бонусе у ${chcSets.length} сетов (${chcSets.map((s) => s.name).join(', ')}) — проверь «Крит» в обмене и MODEL.md §12`]);
+  });
+
   // 4. страница запускается и рисует всё
   await guarded('Страница работает', async () => {
     const errs = await renderAll(newHtml, newD);

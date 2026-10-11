@@ -195,17 +195,22 @@ export function critBound(P: Profile): CritBound {
   return {
     own: ownCached(P),
     knee: Math.max(0, P.need - CRIT_KNEE),
-    rows: rowsMaxOf(P, setMax),
+    rows: rowsMaxOf(P, setMax, (set) => Math.max(...[0, 1, 2].map((n4) => setChc(P, set, 2, n4)))),
     piece: (p) => { const k = pieceCrit(P, p); return k.main + k.n * step; },
     set: setMax,
   };
 }
-// the most crit any set's rows give — the same for every hero (rows are data), once per dataset
+// the most crit the set rows of any kit give: one set on 3–4 pieces, or two sets on 2 pieces each (today only the Critical
+// Hit set has CHC rows, but two such 2P T4 halves would give 36 > its ×4 T4 30). The same for every hero (rows are data),
+// once per dataset
 const rowsMaxMemo = new WeakMap<object, number>();
-function rowsMaxOf(P: Profile, setMax: (set: string) => number): number {
+function rowsMaxOf(P: Profile, setMax: (set: string) => number, set2: (set: string) => number): number {
   const D = P.ctx.idx.D;
   let r = rowsMaxMemo.get(D);
-  if (r === undefined) rowsMaxMemo.set(D, (r = Math.max(0, ...D.sets.map((s) => setMax(s.id)))));
+  if (r === undefined) {
+    const [a = 0, b = 0] = D.sets.map((s) => set2(s.id)).sort((x, z) => z - x);
+    rowsMaxMemo.set(D, (r = Math.max(0, a + b, ...D.sets.map((s) => setMax(s.id)))));
+  }
   return r;
 }
 
