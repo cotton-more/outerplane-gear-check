@@ -295,7 +295,7 @@ function gearBetter(P: Profile, a: Piece, z: Piece): boolean {
 export interface LayoutOpts {
   eligible?: (p: Piece) => boolean; // кто может встать: надетые и прошедшие порог (этапы 2–4); по умолчанию — все
   prune?: boolean;                  // false — полное произведение (эталон для тестов)
-  armorOnly?: boolean;
+  armorOnly?: boolean;              // armor only, no gear: CHC is then valued as if the hero had no accessory — tests only (T4.3)
 }
 
 // Лучшая раскладка пула. Отсечка точная: V = Σ очков + Σ ценностей сетов по (сет, n, n4), поэтому в слоте важна только

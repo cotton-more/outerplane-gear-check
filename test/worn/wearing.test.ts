@@ -9,15 +9,16 @@ import { makeCtx } from '@/game/context';
 import { setPin, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { poolView } from '@/features/gear/pool';
 import type { Subs } from '@/game/item/subs';
+import type { Bt } from '@/game/item/item';
 import { comboSig } from '@/game/build/variants';
-import { pinOptions } from '@/game/build/profile';
-import { pinChoices, redressOf, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
-import { layoutValue, type Layout } from '@/features/gear/layout';
+import { pinnedProfile, pinOptions } from '@/game/build/profile';
+import { fillOf, pinChoices, redressOf, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
+import { bestLayout, layoutValue, type Layout } from '@/features/gear/layout';
 import { heroPool } from '@/features/gear/verdict';
 import { redressLabel } from '@/features/worn/Redress';
 import { TEXTS } from '@/i18n';
 import { char as ch, ctx as c2, D as data, mk, prof } from '../gear/statSets';
-import { reasonOf } from '@/features/gear/pool/info';
+import { eligibleIn, reasonOf } from '@/features/gear/pool/info';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -156,6 +157,41 @@ describe('«Что искать» и варианты закрепления —
     expect(list).toHaveLength(pinOptions(delta).length);
     expect(list.map((f) => f.k)).toEqual([...list.map((f) => f.k)].sort((a, z) => z - a));
     expect(list.at(-1)!.k).toBe(0);
+  });
+});
+
+// Review 0136 F2: the pinned preview searches armor with the current weapon and accessory, so the accessory's CHC main sets
+// what armor CHC is worth. Epsilon at N 100 (seed 9005 of the review fuzz): armor alone keeps the Counterattack armor with
+// CHC 5 («0 of 4», Speed ×4 drops out of «What to look for»); with her CHC accessory the Speed armor wins — «1 of 4»
+describe('«What to look for» with crit: the current weapon and accessory take part', () => {
+  it('Epsilon, Speed ×4: 1 of 4 (the Speed armor), not 0 of 4', () => {
+    const eps = char('Epsilon');
+    const P = (id: string, slot: SlotId, short: string | null, lit: Subs, bt: Bt | null, o: Partial<Piece> = {}): Piece =>
+      ({ id, slot, grade: 'unique', setId: short ? set(short) : null, itemKey: null, main: null, yellow: lit, lit, bt, at: '', ...o });
+    const pool = [
+      P('e1', 'armor', 'Speed', { SPD: 4, RES: 3, 'DMG UP%': 5, CHD: 1 }, 0),
+      P('e2', 'armor', 'Immunity', { 'ATK%': 2, CHD: 4, CHC: 4, SPD: 5 }, 4),
+      P('e3', 'armor', 'Counterattack', { EFF: 2, SPD: 6, CHD: 1, CHC: 5 }, 4),
+      P('e4', 'gloves', 'Counterattack', { 'ATK%': 2, 'DMG RED%': 3, 'DMG UP%': 6, SPD: 5 }, 4),
+      P('e5', 'gloves', 'Weakness', { CHD: 6, CHC: 6, 'HP%': 1 }, 0, { grade: 'rare' }),
+      P('e6', 'weapon', null, { HP: 6, CHD: 5, 'HP%': 4, SPD: 6 }, 0, { itemKey: '786:striker', main: 'ATK%' }),
+      P('e7', 'weapon', null, { HP: 3, DEF: 6, CHD: 4, CHC: 2 }, 4, { itemKey: '630', main: 'HP%' }),
+      P('e8', 'accessory', null, { ATK: 5, 'ATK%': 6, 'DEF%': 6, CHD: 3 }, 4, { itemKey: '1010', main: 'CHC' }),
+      P('e9', 'helmet', 'Critical Hit', { CHD: 5, CHC: 2, ATK: 1, SPD: 2 }, 0),
+      P('e10', 'shoes', 'Critical Hit', { CHD: 3, CHC: 5, ATK: 6, 'DMG RED%': 1 }, 4),
+      P('e11', 'gloves', 'Critical Hit', { 'DEF%': 5, 'ATK%': 4, ATK: 5, SPD: 1 }, 0),
+      P('e12', 'gloves', 'Critical Hit', { ATK: 1, CHD: 4, CHC: 6, 'ATK%': 2 }, null),
+    ];
+    const worn = new Set(['e6', 'e8', 'e9', 'e3', 'e4', 'e10']);
+    const hp = heroPool(ctx, eps, pool, worn)!;
+    expect(Object.values(hp.info.layout).map((p) => p!.id).sort()).toEqual([...worn].sort());
+    const pin = pinOptions(eps).find((o) => o.key === `${eps.id}/Speed#13x4`)!;
+    const f = fillOf(hp, pin);
+    expect([f.k, f.n]).toEqual([1, 4]);
+    expect(f.need.map((x) => x.slot)).toEqual(['helmet', 'gloves', 'shoes']);
+    // the old preview (armor alone) kept the Counterattack armor
+    const Pc = pinnedProfile(hp.P, pin);
+    expect(bestLayout(Pc, pool, { eligible: eligibleIn(Pc, worn), armorOnly: true }).layout.armor?.id).toBe('e3');
   });
 });
 

@@ -2,7 +2,7 @@
 // слоты, включённые бонусы, «Переодеть» (лучшая раскладка из своих вещей против надетого, +1 очко по MODEL.md §3 item 3) и «Что
 // искать» (наборы меню, где у героя 1–3 из 4, — по лучшей раскладке под набор, как при закреплении); варианты шторки
 // закрепления. Только данные — вещи, числа, части; подписи делает интерфейс.
-import { FLAT, SLOTS } from '@/game/data';
+import { FLAT, isArmor, SLOTS } from '@/game/data';
 import type { ArmorSlot, Build, Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { pinnedProfile, pinOptions, profileOf, withNeed, type Pin, type Profile } from '@/game/build/profile';
@@ -195,11 +195,16 @@ export function redressOf(hp: HeroPool, worn: Layout): Redress | null {
 }
 
 // лучшая раскладка брони под набор (как при закреплении: цепочка его билда, броня только его сетов, надетое остаётся):
-// k — вещей набора в ней (по части не больше n), недостающее — в слоты, где вещь набора не засчитана
+// k — вещей набора в ней (по части не больше n), недостающее — в слоты, где вещь набора не засчитана.
+// The weapon and accessory of the current layout are the only gear candidates: their crit (an accessory's CHC main) sets
+// what armor CHC is worth (MODEL.md §12 item 4), so armor is searched with the hero's real C₀
 export function fillOf(hp: HeroPool, pin: Pin): Fill {
   const base = hp.P.pin ? withNeed(profileOf(hp.P.ctx, hp.c)!, hp.P.need) : hp.P;
   const Pc = pinnedProfile(base, pin);
-  const { layout } = bestLayout(Pc, hp.pieces, { eligible: eligibleIn(Pc, hp.wornIds), armorOnly: true });
+  const gear = [hp.info.layout.weapon, hp.info.layout.accessory].filter((p): p is Piece => !!p);
+  const el = eligibleIn(Pc, hp.wornIds);
+  const pool = [...hp.pieces.filter((p) => isArmor(p.slot)), ...gear];
+  const { layout } = bestLayout(Pc, pool, { eligible: (p) => gear.includes(p) || el(p) });
   const counted = new Set<ArmorSlot>();
   const short: { set: string; d: number }[] = [];
   let k = 0;
