@@ -103,7 +103,8 @@ replaces the entry.
 
 Next to the heading are the **points of what is worn** ("Worn · 6 of 6 · 37.7 pts"): the pieces' points plus the sets'.
 **Tap the heading** (▾) and it opens into where they come from: **Stats** — the pieces' points per slot, **Sets** — what
-the sets add, **Passive** — what a weapon and an accessory give outside the points: "recommended" (an item from the
+the sets add, **Extra crit** — what crit above the hero's need takes off (see Crit below; only when there is some),
+**Passive** — what a weapon and an accessory give outside the points: "recommended" (an item from the
 hero's builds with the right main), "stopgap" or "not in builds". A recommended passive goes in before any substats.
 Each piece shows its points on the right under its substats. Under the heading is
 the hero's **stat chain** in its order (first — the most valuable) and how many segments all worn pieces give each stat:
@@ -115,6 +116,15 @@ chain every **set** stands on its own line with what it adds on the right — th
 pieces' ("Life ×4 +23.3") — and its bonuses under it ("Health +30% · Health +20%"); a set with a single bonus line keeps
 it on the same line ("Attack ×2 · Attack +30% +7.5"). When Breakthrough T4 on worn armor would add 1+ points of set
 bonus, a faint line says so and on which pieces: "Speed ×2 at T4 · Speed +13% +6.7 — needs T4 on helmet and armor".
+
+**"Crit: 45%"** under the chain (heroes with crit chance in the chain) — the hero's crit chance with what's worn: their own
+5% (+5% for Strikers, +10% from awakening Quirks) plus the gear — the accessory's CHC main (counted at +10 by its
+Breakthrough), CHC substats and the Critical Hit set. Above 100% the game wastes crit, so near the hero's number N (100
+by default) crit counts less: in full up to N − 15, then less and less, nothing above N. The line turns amber from N − 15
+and red from N. Tap it: a bar with the hero's portrait at their crit and a flag at N, "Hero 20% · gear 25%" and the
+number. Lower N for what the app doesn't see — gems, the talisman, transcend stars, team buffs. Example: Regina at 5★
+gets +65% crit from transcend, so set her N to about 35. The verdict, "Set aside", "Re-dress", the batch and trade all
+count crit this way: a crit-heavy piece loses to a piece with other stats once the hero has enough.
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point (a Legendary in place of an Epic — already at equal points), turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
@@ -251,7 +261,7 @@ for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode a
 
 ## Backup
 
-More → "Backup": the **OGC-GEAR4** code — all pieces, what's worn and each hero's pinned set. Copy it to keep a backup or
+More → "Backup": the **OGC-GEAR5** code — all pieces, what's worn, each hero's pinned set and crit number. Copy it to keep a backup or
 move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
 and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
 The older codes still read — OGC-GEAR1, 2 and 3; marks of the old model ("Filling", the chosen build, "Keep worn

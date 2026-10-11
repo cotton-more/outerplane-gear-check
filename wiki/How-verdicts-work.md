@@ -57,6 +57,11 @@ With a roster every hero is looked at separately, and the verdict depends not on
   11.2 points for Rin; it didn't pass the old bar, now it's "Equip".
 - **Sets** are in points too: a half of a set from the hero's builds (2 pieces) is worth the hero's best stat bonus for
   2 pieces.
+- **Crit near the hero's need counts less.** Crit chance above 100% is wasted in the game, so once the hero's crit
+  (own + gear, "Crit: 45%" on the hero card) passes N − 15, each further CHC segment and the Critical Hit set's crit are
+  worth less, and nothing above N (100 by default; set it on the card). Example: at 80% crit six CHC segments in second
+  place are worth 3.3 points instead of 4.8, so CHC 2 + CHD 4 (4.2) wins. The "good piece" bar above still counts plain
+  points ([Equipment](Equipment#worn)).
 - Then comes the outcome per hero: "Equip", "Keep for…", material, "Maybe", "Dismantle" ([Equipment](Equipment#the-stamp)).
 
 ## Flat ATK/DEF/HP vs %

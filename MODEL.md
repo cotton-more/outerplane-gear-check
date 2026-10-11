@@ -10,7 +10,7 @@ the commit bodies on 2026-10-10. The numbering below keeps the old section numbe
 Product background — [GEARPOOL.md](GEARPOOL.md) (obsolete, history) and the Wiki pages `Equipment`, `Upgrading`,
 `Fast-cleanup`.
 
-Conventions. **V** is the value of a hero's layout (piece points + set value). **Points** are decimals inside the model
+Conventions. **V** is the value of a hero's layout (piece points + set value − the crit loss of §12). **Points** are decimals inside the model
 and whole thousandths (**milli**, `game/build/points:milli`) wherever two numbers are compared: `milli(p) = round(p·1000)`,
 because six points as a sum of shares can come out 5.999999999999999. `EPS = 1e-9` (`features/gear/pool/base`) is the
 float tolerance for plain decimals. The **+1 point margin** is `THRESHOLD = milli(1)` (`features/gear/model/vs`).
@@ -113,8 +113,8 @@ V). English keeps "pts" also for 1.
 
 ## §3 Best layout
 
-`features/gear/layout`. **V** = Σ piece points of the filled slots + Σ `setValue` over the armor sets with n ≥ 2
-(`layoutValue`; also `ptsSum`, `setSum`, `halves`, `effHalves`, `rank`, `filled`). Slots: weapon, accessory, helmet,
+`features/gear/layout`. **V** = Σ piece points of the filled slots + Σ `setValue` over the armor sets with n ≥ 2 − the
+crit loss (§12; `layoutValue`; also `ptsSum`, `setSum`, `critLoss`, `chc`, `halves`, `effHalves`, `rank`, `filled`). Slots: weapon, accessory, helmet,
 armor, gloves, shoes.
 
 1. **V is one function of the whole layout** — the same for the Worn tab, the verdict, the pool and trade.
@@ -136,7 +136,8 @@ armor, gloves, shoes.
 5. **Exact pruning** (`prune`, default): V is Σ points + Σ `setValue(set, n, n4)`, so in a slot only the best piece per
    `(set, is-T4)` matters (equal keys are interchangeable for set value; ties inside a key follow item 4). The search is
    `O(k⁴)` over what is left (12 ms typical, 1.3 s at 168 passing pieces in 21 sets). `prune: false` is the full product,
-   the test oracle (`test/gear/layout.test.ts`).
+   the test oracle (`test/gear/layout.test.ts`). When the hero's crit can reach the soft cap the search is different
+   (§12.4).
 6. **"Current layout"** (`pool/info:poolInfo.layout`) is the best layout over *worn + good* pieces; it is not stored.
    The **worn layout** is what the player marked worn. "Re-dress" (`worn/wearing:redressOf`) = `better(best, worn)`,
    shown as points, parts turned on/off and "better passive" (`rankUp`, points may be negative).
@@ -169,6 +170,8 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
    b. *Otherwise* (no pin: every set is "by stats"; or a set outside the pinned combo is already excluded by the bar):
       the slot holds nothing, or points ≥ the best held piece of the slot + 1 (menu sets' held pieces get +U/2,
       `offBar`). Held = pool pieces the pool keeps (`info.strong`).
+   In a and b "points" are **points in the current layout** (§12.5): CHC substats counted where the hero's crit leaves
+   them, the new piece and each held one as if it stood in its slot. The bar stays plain points.
    Weapons and accessories are never "keep" without wear.
 3. A hero's `temp` flag (`!bar.keep && bar.temp`) turns the stamp to **Stopgap** («Временно»).
 
@@ -198,7 +201,8 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
 5. **junk** («Разобрать») — nobody needs it. The text says who already has as good. A Legendary can be junk (the
    Wiki's "Fast cleanup" says so; the older note "Legendary is never dismantled" does not hold in code).
 6. **Quiet line**: for material/maybe/junk, the hero who would gain V ≥ 1 from the piece if it stood anyway (it is weak,
-   so it is never offered to wear) — "look for ATK and CHC" (`quietOf`, `lookFor`).
+   so it is never offered to wear) — "look for ATK and CHC" (`quietOf`, `lookFor`). CHC is not named once the hero's crit
+   in the current layout is ≥ N − 15 (§12).
 7. **Same piece guard** (`samePiece`): a not-worn pool record with identical slot, grade, set/item, main and substats
    **in the same order** → "looks like the one set aside" and the verdict is computed without it, until "It's a
    different one" (`twin`). Worn records never count as look-alikes: **what is entered is always a new piece from the
@@ -250,7 +254,8 @@ Reasons, in the order they are added (the numbers are cited from code):
 3. **menu-best / menu-t4** — only for a *pinned* hero: in each armor slot the best passing piece of each menu set, and the
    best passing T4 one when the best is not T4.
 4. **offmenu** — the best passing piece of a set outside the menu (all sets when unpinned) if it is ≥ 1 point above
-   every held piece of the slot (menu sets' pieces get +U/2, `offBar`).
+   every held piece of the slot (menu sets' pieces get +U/2, `offBar`). Items 3 and 4 compare points in the current
+   layout (§12.5), the same as the verdict's «Оставь», so a piece set aside stays held.
 5. **reserve** — a weak (not passing), non-T4, non-held piece: armor whose set is *started* (the pool holds a piece of
    that set) while the slot holds none of it (`coversSlot`: an Epic reserve is covered by any held piece of that set and
    slot, a Legendary one only by a Legendary), and the hero is not pinned to another set; weapon/accessory — `listedFor`
@@ -293,7 +298,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    the cheapest source (`cheaper`: cost, then points) among pieces inside the window "worse than best by 0…1 point, same
    halves and effect halves, not lower rank, and itself passing the threshold against the worn piece" is taken. The best kit
    (`kit:bestKit`) is the exact armor search with branch-and-bound over the same key as §3 (`cmpKit`: rank, V, filled,
-   Legendary, lower cost, lower loss, holder rank, record age).
+   Legendary, lower cost, lower loss, holder rank, record age). V of a kit includes its crit loss (§12.6).
 6. **Team trade objective** (`team:teamSteps`, `scoreOf`; owner, 2026-10-02: heroes are equal, no priorities): the
    exact search tries all 24 orders of the four members and keeps the order with the best result, compared in this
    sequence — (a) the **sum** of the members' kits (rank, V, filled slots; `use`), so sacrificing one hero for a bigger
@@ -444,6 +449,57 @@ experiment answers them:
    doubts "passive always beats substats"; the rule stays for now.
 2. **Main-stat value.** Points ignore the main stat (§1.4), so Legendary and Epic are equal in points and a bigger main
    only breaks ties (Q7); how much a main stat is worth outside points is open.
-3. **Linear points vs balanced stats.** Points are linear per stat: `ATK% 6 + junk` = 6.0 beats `ATK% 2 + CHC 2 + CHD 2` =
+3. **Linear points vs balanced stats.** (For CHC answered by the soft cap, §12.) Points are linear per stat: `ATK% 6 + junk` = 6.0 beats `ATK% 2 + CHC 2 + CHD 2` =
    4.9, although the game rewards a balanced set (chain weights against a real final-stat model). This also shapes the
    «Что искать» lines ("the first chain stats by points"); stat combinations are to be checked in the experiment.
+
+## §12 Crit soft cap («Крит: 45%»)
+
+Owner decisions 1–12 of `.x/0135-stat-targets` (outside git). In the game crit chance (CHC) is clamped at 100 % after gear
+and passive buffs (`CStatValue_SetFinalValue.cs`), so linear points kept rewarding CHC a hero no longer uses. Only CHC;
+EFF and SPD are later tickets.
+
+1. **N** — «сколько крита нужно герою», an integer 0…100 per hero, default 100 (`GearStore.crit`, the sheet on «Надето»).
+   The player lowers it for what the app does not see: gems, talisman, transcend stars, EE, team buffs (they only add,
+   so the app's crit is never above the game's). It applies to every hero with **CHC in the chain** (`Profile.critOn`;
+   off on data without `Char.chc` or `mainValues`). The profile carries N (`Profile.need`, `withNeed`, `profileFor(…,
+   need)`), so per-profile memos stay right.
+2. **The curve.** Per CHC %: f = 1 up to the knee N − 15 (not below 0), linear down to 0 at N, 0 above N
+   (`game/stat/curve`). **C₀** — crit that carries no points: the hero (base 5 %, Striker class passive +5 %, awakening
+   quirks +10 % by the `quirks` setting — `Char.chc`), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
+   null = T0), CHC set rows that carry no points (covered by a half, or of an effect set). **Segments** — the layout's
+   CHC substats (≤ 6 per piece, 3 % each, weight = place weight × credit *on that piece*: a main that closes an earlier
+   stat moves CHC up) and the CHC rows of stat sets that are not covered by a half (owner Q-A, B: the Critical Hit set's
+   crit counts by the curve too; weight = the row's points per 3 %).
+   Segments are laid on the curve from C₀ **heaviest first**: a band of weight w over [c, c + δ] is worth
+   w·(F(c + δ) − F(c))/3. The **crit loss** = linear points of the segments − their value (`critLoss`; exactly 0 while the
+   whole run stays under the knee). V = points + sets − loss. Check value: N 100, C₀ + earlier 80 %, weight 0.8 → six CHC
+   segments are worth 0.80 / 0.79 / 0.67 / 0.51 / 0.35 / 0.19 = 3.30 instead of 4.8, so CHC 2 + CHD 4 (4.19) beats CHC 6.
+   Heaviest first keeps V one function of the layout, and an added segment adds between 0 and its linear points.
+3. **What the card shows**: «Крит: 45%» (`statTotal` — C₀ + substats, floored), amber from N − 15, red from N; the sheet:
+   the bar (zones, the hero's face at their crit, N with its flag), «Герой 20% · вещи 25%», the number N. The budget gets
+   «Лишний крит −x» (from 0.05), so Stats + Sets − crit = the heading.
+4. **Best layout** (`bestLayout`): `critBinds` — an upper bound of the crit over the candidates (the hero + the most CHC
+   main and segments in each slot + every CHC row the pool could switch on); ≤ the knee → the old search, the same result
+   and speed. Else `critBest`: weapon and accessory of the top rank join the search (an accessory's CHC main changes what
+   armor CHC is worth); every slot keeps its **Pareto front** instead of one piece per (set, T4): a dominates b when it comes
+   first by points, has at least b's points without CHC, no more CHC from its main, the same CHC weight (or one has no CHC
+   substat) — then lower C₀ never lowers V and with one weight the extra segments add between 0 and their linear points —
+   and it does not lose the ties after V (armor: more Legendary, then older; gear ties go by list order). Branch and bound
+   on the plain V (points so far + most points left + the most four slots' sets can be worth). `prune: false` is the full
+   product; the oracle (`test/gear/layout.test.ts` T4.2, T4.2b) has its own curve. A gear slot is never left empty when it
+   has a top-rank candidate.
+5. **Points in the current layout** (`pointsIn`, decision 3): a piece's points with its CHC substats valued where the
+   current layout leaves them (= points − the loss its segments add, the piece standing in its slot). Used by «Оставь» (§4)
+   and pool reasons 3–4 (§5); the bar, reserves and Breakthrough targets stay plain points.
+6. **Trade** (§7): the gauge has `crit` (`CritGauge`: loss of a kit, `binds`, per-item facts, a quick bound — `Item.chc` is a
+   piece's most crit, the same for every hero); `keyOf` subtracts the kit's loss. `bestKit` runs the plain search first: a
+   plain best that loses nothing is the best (no kit beats its plain V); otherwise `critKit` — the same fronts (ties: Legendary,
+   cost, holder loss, roster, age) under branch and bound. The trade hole hint may still name CHC (it has no crit after the
+   trade).
+7. **Elsewhere.** The T4 line's gain includes the loss; «Что искать» set gains are the set part only (no loss).
+8. **Not modelled** (the player lowers N): gems (+3 % each), talisman (7.2…9 %), transcend stars (+3/+3/+6 % for 15
+   heroes, Regina 2000085 +65 % from 5★ — the stars ticket `.x/0190-hero-stars`), EE, Singularity of the main, active
+   buffs (Valentine, Tamara, Skadi, Noa +50 % after the cap — the reason of outerpedia's «CHC up to 50%»; default N stays
+   100, owner). Enhance: every main counts at +10.
+
