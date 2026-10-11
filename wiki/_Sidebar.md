@@ -9,7 +9,7 @@
 - [Characters and guild code](Characters-and-guild-code)
 - [Equipment](Equipment)
 - [Trading gear](Trading-gear)
-- [Team check](Team-check)
+- [Team check (alpha)](Team-check)
 - [Limitations and credits](Limitations-and-credits)
 
 **Русский**
@@ -21,5 +21,5 @@
 - [Персонажи и код для гильдии](Персонажи-и-код-для-гильдии)
 - [Экипировка](Экипировка)
 - [Обмен вещами](Обмен-вещами)
-- [Проверка команды](Проверка-команды)
+- [Проверка команды (альфа)](Проверка-команды)
 - [Ограничения и авторы](Ограничения-и-авторы)

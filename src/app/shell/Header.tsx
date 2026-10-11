@@ -1,4 +1,5 @@
 import { useT } from '@/i18n';
+import { AlphaMark } from '@/shared/ui/AlphaMark';
 import type { Tab } from '@/shared/tab';
 import { tour } from '@/tour/anchors';
 
@@ -38,7 +39,7 @@ export function Header({ tab, onTab, rosterSize, news, onMore }: { tab: Tab; onT
         <button type="button" role="tab" id="tab-chars" aria-controls="view-chars" aria-selected={tab === 'chars'} onClick={() => onTab('chars')}>
           {t.ui.tabChars} <span className="count">{rosterSize ? `★ ${rosterSize}` : ''}</span>
         </button>
-        <button type="button" role="tab" id="tab-team" aria-controls="view-team" aria-selected={tab === 'team'} onClick={() => onTab('team')}>{t.team.tab}</button>
+        <button type="button" role="tab" id="tab-team" aria-controls="view-team" aria-selected={tab === 'team'} onClick={() => onTab('team')}>{t.team.tab} <AlphaMark /></button>
       </nav>
       <button type="button" className={news ? 'top-more has-news' : 'top-more'} aria-label={t.ui.more} title={t.ui.more} onClick={onMore} {...tour('more')}>⋯</button>
     </header>

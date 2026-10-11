@@ -579,13 +579,14 @@ export const en: Texts = {
       '**Done** — all done in the game: the plan is saved. **Cancel** — nothing changed. Right after "Done" there is "Undo". A copy that is in no pool leaves the app but stays in your game inventory.',
       '**"Re-dress"** on the Worn tab uses the same threshold as the trade: the best layout from the hero\'s own pieces beats what\'s worn by at least 1 point (a Legendary in place of an Epic — no worse), turns on an effect-set bonus or puts on a recommended weapon or accessory.',
     ],
-    helpTeam: 'Team',
+    helpTeam: 'Team · alpha',
     helpTeamItems: [
       'Checks which skills in a team won\'t work without a status: Veronica\'s Dual Attack (S1) needs Increased Defense on her, and she gives it herself with S3 — which is on cooldown at battle start. The «Team» tab (on a phone — «More» → «Team»).',
       'Put up to four heroes from your roster: «+» opens a window with the list and a name search. On a hero\'s spot: the portrait — put another hero, the stars at the bottom — the stars window (transcend ★, tap the N-th), ✕ in the corner — remove. Stars matter: some skills and passives open at ★3–★6. A new hero starts at ★6.',
-      '**⚠ Nobody gives it** — a skill needs the status and nobody in the team gives it. **⚠ Only from own** — the hero gives it, but later than needed (the number is the cooldown at battle start, as on the skill icon), or only with their Burst. Below — **Would give it:** roster heroes who give it; «from ★N» — only from those stars; a team hero short of stars comes first. A quiet **✓** line — an ally gives it.',
+      'The hero window suggests whom to add. On top — **Fit the team**: how many outerpedia recommended teams have the hero together with each of yours («with Kanon ×3») and, in green, whose skill starts working with them («Kanon: S1: Priority starts working»). An empty team — **Most often in outerpedia teams**. Below — everyone else by name.',
+      'Each line starts with what the status switches on: «**S1: Dual Attack** — Increased Defense from Kappa». **⚠ Nobody gives it** — a skill needs the status and nobody in the team gives it. **⚠ Only from own** — the hero gives it, but later than needed (the number is the cooldown at battle start, as on the skill icon), or only with their Burst. Below — **Would give it:** roster heroes who give it; «from ★N» — only from those stars; a team hero short of stars comes first. A quiet **✓** line — an ally gives it.',
       'Not counted: chances, turn order, class passives (in the game they give no status), events («when hit»), enemy buffs and boss immunities. Statuses only the hero gives (their own mechanic) are not shown.',
-      'Nothing is saved: the team lives while the page is open; a reload forgets it.',
+      'Nothing is saved: the team lives while the page is open; a reload forgets it. The feature is in alpha: it may be wrong and will still change.',
     ],
     helpCode: 'Code for your guild',
     helpCodeText: (example) => `The verdict details and a character's piece card show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster. A piece with 5–6 segments gets a code 1–2 letters longer.`,
@@ -738,6 +739,8 @@ export const en: Texts = {
 
   team: {
     tab: 'Team',
+    alpha: 'alpha',
+    alphaHint: 'A new feature: it may be wrong and will still change',
     noData: 'This data has no hero skills — update the app.',
     empty: 'The roster is empty — mark your heroes on «Characters».',
     emptyGo: 'To characters',
@@ -856,6 +859,7 @@ export const en: Texts = {
       share: "Share this hero: the link shows a friend what's worn and the pinned set. View only — nothing changes on their side.",
       pin: 'Evaluation weighs stats and sets together — no build to pick. Want a specific set? Pin it on the hero card.',
       team: "Team: up to four heroes and their stars — I'll show skills missing a status from the team (Veronica without Increased Defense) and who in your roster gives it.",
+      teamPick: 'Tap «+» or a portrait: on top — who fits the team: most often in outerpedia teams with your heroes, and who makes their skills work.',
     },
     news: {
       pin: 'evaluation: stats and sets together, pin a set',
@@ -867,6 +871,7 @@ export const en: Texts = {
       wornTab: 'what to look for: a set\'s worth in points, what T4 would add',
       wornBudget: 'worn points break down: stats, sets, passive',
       team: 'team: which skills miss a status',
+      teamPick: 'team: whom to add',
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',

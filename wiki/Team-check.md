@@ -1,6 +1,8 @@
 **English** · [Русский](Проверка-команды)
 
-# Team check
+# Team check (alpha)
+
+> Alpha: a new feature — it may be wrong and will still change.
 
 Some skills only work while a status is on the hero or on the enemy: Veronica's S1 calls a Dual Attack only while her
 Defense is increased, Philia's S2 hits harder on a Shocked target. The «Team» screen shows which of these conditions
@@ -18,18 +20,31 @@ The «Team» tab in the header; on a phone — «More» → «Team». Only heroe
 - Stars matter: some skills and passives open only at ★3–★6 (Burst 2 at ★3, Burst 3 at ★5, transcend passive levels at
   ★3–★6), both for what a hero needs and for what they give.
 
+## Who to add
+
+The hero window (tap «+» or a portrait) starts with suggestions:
+
+- **Fit the team** — roster heroes recommended together with yours in outerpedia's guide teams (bosses, guild raid,
+  adventure license): «in outerpedia teams: with Kanon ×3, with Aer ×5». A hero listed as an alternative for the same slot
+  doesn't count as a partner. In green — a team skill that starts working with this hero: «Kanon: S1: Priority starts
+  working»; such heroes rank higher.
+- With an empty team — **Most often in outerpedia teams**: «in 49 outerpedia teams».
+- Six are shown, «N more» opens the rest; below — everyone else by name. The search filters both.
+
 ## The report
 
 Only heroes with something to say are listed.
 
-- **⚠ Nobody in the team gives X — needed for S1.** A skill needs the status and nobody gives it.
-- **⚠ X only from own S3 — on cooldown (4) at battle start, S1 goes without it until then.** The hero gives the status
+- Each line starts with what the status switches on: «S1: Dual Attack», «S1 and S3: more damage», «S2: hits all
+  enemies».
+- **⚠ S1: Dual Attack — X: nobody in the team gives it.** A skill needs the status and nobody gives it.
+- **⚠ S1: Dual Attack — X only from own S3, on cooldown (4) at battle start.** The hero gives the status
   herself, but later than the skill that needs it. The number is the cooldown the game shows on the skill icon at the
   start of battle. If the only own source is a Burst, the line says so.
 - **Would give it:** roster heroes who give the status (class icon in the element's colour and the name, so you can find
   them with the game's filters). «from ★6» — only from those stars. A team hero whose stars are too low comes first.
   Six are shown, «N more» opens the rest.
-- **✓ X — from Kappa, Liselotte** — a quiet line when an ally covers the need. A hero who covers herself in time (her
+- **✓ S1: Dual Attack — X from Kappa, Liselotte** — a quiet line when an ally covers the need. A hero who covers herself in time (her
   S1 gives what her S2 needs) gets no line.
 
 ## What is not counted

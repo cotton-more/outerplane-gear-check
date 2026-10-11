@@ -62,3 +62,5 @@ html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 2; }
 .tm-fr { grid-column: 2; font-size: 12px; line-height: 1.3; color: var(--ink-2); }
 .tm-fr.fix { color: var(--keep); font-weight: 600; }
 .tm-pick > .tm-more { justify-self: start; }
+.tm-alpha { margin: 0; }
+html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }

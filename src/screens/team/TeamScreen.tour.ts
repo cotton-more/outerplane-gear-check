@@ -4,4 +4,6 @@ import { defineTips } from '@/tour/types';
 
 export default defineTips(
   { id: 'team', rev: 1, at: 'team', news: true, when: (c) => c.s.tab === 'team' },
+  // the hero window suggests whom to add (.x/0171-team-suggest), in «Что нового» (owner, 2026-10-11)
+  { id: 'teamPick', rev: 1, at: 'team', news: true, when: (c) => c.s.tab === 'team' },
 );

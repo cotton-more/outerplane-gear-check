@@ -6,6 +6,7 @@
 // Нажатие на переход или действие закрывает шторку и выполняет его.
 import { useState, type Dispatch } from 'react';
 import { useT, type Lang } from '@/i18n';
+import { AlphaMark } from '@/shared/ui/AlphaMark';
 import type { Action, AppState } from '@/app/appState';
 import { EvalSettings } from '@/features/eval/form/EvalSettings';
 import { RosterOnlyToggle } from '@/features/eval/form/RosterOnlyToggle';
@@ -44,7 +45,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
               {rosterSize ? <><span className="vb-star">★</span> {t.ui.tabChars} {rosterSize}</> : `☆ ${t.ui.tabChars}`}
             </button>
             <button type="button" className="btn" onClick={go(onTodress)}>{t.ui.menuBare(todressN)}</button>
-            <button type="button" className="btn" onClick={go(onTeam)}>{t.team.tab}</button>
+            <button type="button" className="btn" onClick={go(onTeam)}>{t.team.tab} <AlphaMark /></button>
             {onTrade && <button type="button" className="btn" onClick={go(onTrade)}>{t.trade.teamOpen}</button>}
             {onBatch && <BatchButton onStart={go(onBatch)} />}
           </div>

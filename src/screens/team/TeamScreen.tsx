@@ -12,6 +12,7 @@ import { TeamPicker } from '@/features/team/ui/TeamPicker';
 import { TeamReport } from '@/features/team/ui/TeamReport';
 import { TeamSlots } from '@/features/team/ui/TeamSlots';
 import { useT } from '@/i18n';
+import { AlphaMark } from '@/shared/ui/AlphaMark';
 import { Notice } from '@/shared/ui/Notice';
 import { Sheet } from '@/shared/ui/Sheet';
 
@@ -49,6 +50,7 @@ export function TeamScreen({ roster, off, onChars }: { roster: readonly string[]
       <TeamSlots team={team} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} />
       {!members.length && <p className="tm-hint muted">{t.team.hint}</p>}
       <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? STAR0} />
+      <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
         <Sheet title={t.team.pick} onClose={() => setPicking(null)} className="tm-sheet">
           <TeamPicker syn={syn} fits={fits} rest={pickable} emptyTeam={!members.some((m) => m !== team[picking])} search={t.team.search}
