@@ -32,7 +32,7 @@ from Sevih, who runs outerpedia.
 
 Some things are easy to miss: the first tap in the grid for an accessory, the 4th substat on an Epic, replacing a
 stat in its row. The app shows a short tip once, when you first get there: one at a time, at most three per launch, and
-only after a pause in tapping. "Got it", or a tap on what the tip points at, and it won't come back. After an update, a
+only after a pause in tapping. Each one shows once — even if you don't close it and just move on. After an update, a
 "New: …" strip lists what changed; "Later" keeps a dot on ☰ ("⋯" on a computer) and on Help until you look. Tips are listed in Help, where they
 can be turned off or shown again. Like the tutorial, they only appear by themselves in a taller window.
 

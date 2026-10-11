@@ -266,8 +266,9 @@ strip — `place.ts`). Texts — the
   will be shown again. A tour step changed — fix its text; a step's `rev` is only recorded for now; long-time players learn about
   the change via a tip with `news`.
 - **In-flow tips** (`tips.ts`, `TipLayer.tsx`): one at a time, no more than three per launch, no more often than once per 20 s and after
-  a 1.5 s pause in input; only in windows from 560px, not during a tour and not over other strips. Seen — when closed
-  or its anchor was pressed; left on its own (anchor disappeared or scrolled off-screen, `when` condition no longer true) — it will show again.
+  a 1.5 s pause in input; only in windows from 560px, not during a tour and not over other strips. Seen — as soon as
+  it is shown (owner, 2026-10-11): closed, its anchor pressed or left on its own (anchor gone, `when` no longer true), it
+  doesn't come back; every tip stays in Help, «Показать подсказки заново» brings them all back.
 - **What's new**: a tip with `news: true` that is absent from `ogc.tour.known` or present there with a lower `rev`. On first
   launch everything in the app goes into `known` at once, so new = exactly what appeared after it; no release
   date needed. A long-time player (`first: skipped`, came before the tutorial) doesn't know about `news` tips yet — they're

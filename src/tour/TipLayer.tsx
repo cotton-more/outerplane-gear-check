@@ -1,6 +1,6 @@
 // Подсказки по ходу: пунктирная рамка вокруг того, что объясняется, и полоса с текстом и «Понятно». Без приглушения.
-// Какую показать — tips.ts (одна за раз, лимиты, пауза в нажатиях). Увиденной подсказка считается, когда её
-// закрыли или нажали на то, на что она показывает; ушла сама (закрыли окно, сменили вещь) — покажется ещё.
+// Какую показать — tips.ts (одна за раз, лимиты, пауза в нажатиях). A tip counts as seen as soon as it is shown, however it
+// leaves (owner 2026-10-11: it kept coming back when the next piece took the verdict away); all tips stay in Help.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '@/i18n';
@@ -28,8 +28,8 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
   const sess = useRef<TipSession>({ shown: 0, lastAt: 0 });
   const lastInput = useRef(0);
   const pinned = useRef(false); // показана по «Показать»: не гасим, пока игрок сам не закроет
-  const live = useRef({ c, enabled, store: tour.store, tip, forced });
-  live.current = { c, enabled, store: tour.store, tip, forced };
+  const live = useRef({ c, enabled, store: tour.store, tip, forced, see: tour.seeTip });
+  live.current = { c, enabled, store: tour.store, tip, forced, see: tour.seeTip };
 
   // пауза в нажатиях: подсказка не выскакивает под пальцем посреди ввода
   useEffect(() => {
@@ -42,10 +42,11 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
   // раз в полсекунды: погасить подсказку, если её уже не к чему показывать, или выбрать следующую
   useEffect(() => {
     const id = setInterval(() => {
-      const { c: now, enabled: on, store, tip: cur, forced: f } = live.current;
+      const { c: now, enabled: on, store, tip: cur, forced: f, see } = live.current;
       if (f) {
         onForced();
         pinned.current = true;
+        see(f);
         setTip(f);
         sess.current = { shown: sess.current.shown + 1, lastAt: Date.now() };
         return;
@@ -56,7 +57,7 @@ export function TipLayer({ tour, c, enabled, forced, onForced }: {
       }
       if (!on) return;
       const next = nextTip(TIPS, store, now, sess.current, Date.now(), lastInput.current, (a) => !!at(a));
-      if (next) { setTip(next); sess.current = { shown: sess.current.shown + 1, lastAt: Date.now() }; }
+      if (next) { see(next); setTip(next); sess.current = { shown: sess.current.shown + 1, lastAt: Date.now() }; }
     }, 500);
     return () => clearInterval(id);
   }, [onForced]);

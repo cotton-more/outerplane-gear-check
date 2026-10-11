@@ -383,6 +383,25 @@ describe('подсказки по ходу и «Что нового»', () => {
     }
   }, 10_000);
 
+  // owner 2026-10-11 (A): shown once — seen, even when the player neither closes it nor taps its target
+  it('a tip left alone counts as seen: the next launch does not show it again', async () => {
+    const orig = Element.prototype.getClientRects;
+    Element.prototype.getClientRects = function () { return [{}] as unknown as DOMRectList; };
+    try {
+      await mount({ welcomeHidden: true, tour: { ...done, seen: { more: 1 } }, state: { tab: 'chars' } });
+      await wait(LIMITS.idleMs + 700);
+      expect($('.tour-tip')?.textContent).toContain('Star your characters');
+      expect(stored('tour').seen.star).toBe(1);
+      await act(async () => root?.unmount());
+      document.body.innerHTML = '';
+      await mount({ welcomeHidden: true, state: { tab: 'chars' } }); // the same ogc.tour as left by the first launch
+      await wait(LIMITS.idleMs + 700);
+      expect($('.tour-tip')?.textContent ?? '').not.toContain('Star your characters');
+    } finally {
+      Element.prototype.getClientRects = orig;
+    }
+  }, 10_000);
+
   // решение владельца 2026-10-01/02: «T4» и у Legendary оружия — подсказка bt (одна на все вещи) встаёт у его кнопки
   it('первая вещь — Legendary оружие: подсказка «T4» у кнопки в строке предмета', async () => {
     const orig = Element.prototype.getClientRects;
