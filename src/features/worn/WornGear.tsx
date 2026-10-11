@@ -62,7 +62,7 @@ function WornChain({ chain, anchor }: { chain: ChainSum[]; anchor: boolean }) {
   );
 }
 
-// «Крит от вещей: 98%» (crit soft cap, decision 5): a quiet line — a small crit icon, the percent in bold (amber from N − 15,
+// «Крит: 98%» (MODEL.md §12 item 3, decisions 5 and 10): a quiet line — a small crit icon, the percent in bold (amber from N − 15,
 // where crit starts to count less; red from N, where it counts nothing) and the sheet's bar in small; floored, so it never
 // shows more than the app counts
 function CritLine({ c, crit, onClick }: { c: Char; crit: WornCrit; onClick?: () => void }) {
@@ -81,7 +81,7 @@ const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: S
 // onEnter — «Ввести» у пустого слота; onWearAll — «Да, всё надето». Нет их — обучение и новая версия страницы: слоты
 // показываются, действий нет. share — «Поделиться» у заголовка (ShareButton). shown — карточка показа чужого героя
 // (DEVELOPMENT.md "features/worn"): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор.
-// onCrit — «Крит от вещей» opens the hero's N (CritSheet); without it the line is plain text. Not on the shared card
+// onCrit — «Крит: 45%» opens the hero's N (CritSheet); without it the line is plain text. Not on the shared card
 export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, onCrit, share, shown = false, pinned }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece?: (id: string) => void;
   onEnter?: (slot: SlotId) => void; onWearAll?: () => void; onCrit?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;

@@ -31,8 +31,8 @@ export interface Piece {
 // (updateIn). Незнакомые поля переносятся как есть. worn — что надето на персонаже: слот → id записи его пула (надетое ⊂
 // пул, слот записи = ключ; syncWorn). pin — закреплённый набор героя (MODEL.md §6): ключ pinKey
 // («герой/билд#подпись»); от пула не зависит — герой из ростера может закрепить набор до первой вещи. Пустых worn и pin
-// не храним. crit — сколько крита герою нужно от вещей (N, MODEL.md crit soft cap): целое 0…100, нет записи — 100;
-// как и pin, от пула не зависит и Core Fusion его не переносит. Поля v2 — «Собираю» (marks), autoNew, выбранный билд (aim), булавка обмена (pinned), билды v1 (v1builds) —
+// не храним. crit — the hero's N, how much crit the hero needs (MODEL.md §12 item 1): an integer 0…100, no record — 100;
+// like pin, it doesn't depend on the pool and Core Fusion doesn't move it. Поля v2 — «Собираю» (marks), autoNew, выбранный билд (aim), булавка обмена (pinned), билды v1 (v1builds) —
 // снимает перенос (features/gear/store/gearStore)
 export type Worn = Partial<Record<SlotId, string>>;
 export interface GearStore {
@@ -206,10 +206,10 @@ export function setPin(st: GearStore, charId: string, key: string | null): PinRe
 export const undoPin = (st: GearStore, charId: string, r: Pick<PinResult, 'was' | 'now'>): GearStore =>
   ((st.pin?.[charId] ?? null) === r.now ? setPin(st, charId, r.was).st : st);
 
-// N героя — сколько крита ему нужно от вещей (MODEL.md crit soft cap); нет записи — CRIT_NEED
+// the hero's N — how much crit the hero needs (MODEL.md §12 item 1); no record — CRIT_NEED
 export { CRIT_NEED };
 export const critNeed = (st: Pick<GearStore, 'crit'>, charId: string): number => st.crit?.[charId] ?? CRIT_NEED;
-// задать N (целое 0…100; null или CRIT_NEED — «Сбросить», запись убираем). Ничего не поменялось — то же хранилище
+// set N (an integer 0…100; null or CRIT_NEED — «Сбросить», the record goes). Nothing changed — the same store
 export function setCrit(st: GearStore, charId: string, n: number | null): GearStore {
   const v = n === null ? CRIT_NEED : Math.max(0, Math.min(CRIT_NEED, Math.round(n)));
   if (critNeed(st, charId) === v) return st;

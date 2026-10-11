@@ -3,11 +3,11 @@
 // В коде — весь ростер (и герои, которых нет в данных), у каждого героя с вещами — пул в прежнем порядке (вещь —
 // запись SPEC 1 и дата) и надетое, у каждого закрепившего — закреплённый набор (stat-sets PLAN Д11): по имени билда и
 // подписи связки (ключ без id героя), не по номеру в списке outerpedia. Имена и подписи — два словаря: у героев они
-// повторяются («Speed», «13x4»), подписей мало — номер в словаре короткий. С OGC-GEAR5 — N героя («сколько крита нужно
-// от вещей», crit): признак и 7 бит, только у тех, кто менял его со 100.
+// повторяются («Speed», «13x4»), подписей мало — номер в словаре короткий.
+// From OGC-GEAR5 — the hero's N («сколько крита нужно герою», crit): a flag and 7 bits, only for heroes who changed it from 100.
 // Не переносится (решение 3): незнакомые поля, номера вещей (выдаются заново), порядок ростера, отдельные «жёлтые».
 // Общая запись (вещь в пулах двух героев) становится двумя копиями.
-// OGC-GEAR4 (без N) и OGC-GEAR3 (до закрепления) читаются: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
+// OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
 import { SLOTS, type Index } from '@/game/data';
 import { BitReader, BitWriter, seal, unseal, widthOf } from '@/shared/bits';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
@@ -118,7 +118,7 @@ export function decodeBackup(text: string): Backup | 'newer' | 'broken' | null {
 }
 
 // v — версия кода: 3 — после пула выбранный билд и «Не отдавать», затем «Собираю»; всё это пропускаем; 4 — закрепление;
-// 5 — ещё N героя
+// 5 — plus the hero's N
 function read(r: BitReader, v: number): Backup {
   const names: string[] = [], sigs: string[] = [];
   for (let n = r.vlq(3); n > 0; n--) names.push(r.str());

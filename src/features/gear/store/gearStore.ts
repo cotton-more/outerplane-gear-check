@@ -113,7 +113,7 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
 const restorePin = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
 
-// N героя (crit, MODEL.md crit soft cap) — герой → целое 0…100; прочее отбрасываем (чтение тогда «не целиком»)
+// the hero's N (crit, MODEL.md §12 item 1): hero → an integer 0…100; anything else is dropped (the read is then «не целиком»)
 const restoreCrit = (raw: unknown): Record<string, number> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, number] => Number.isInteger(e[1]) && (e[1] as number) >= 0 && (e[1] as number) <= 100));
 

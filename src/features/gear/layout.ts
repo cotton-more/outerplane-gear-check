@@ -1,5 +1,5 @@
 // Ценность раскладки героя и его лучшая раскладка из пула (MODEL.md §3). V = очки всех вещей + ценность сетов
-// брони − то, что CHC-сабстаты теряют у мягкого потолка крита (MODEL.md crit) — одной функцией по раскладке целиком.
+// брони − то, что CHC-сабстаты теряют у мягкого потолка крита (MODEL.md §12 item 2) — одной функцией по раскладке целиком.
 // Оружие и аксессуар решает сначала ранг (рекомендованная > временная > не из билдов), потом очки; броню — полный перебор
 // (по вещи или пусто на слот), максимум V.
 import { isArmor } from '@/game/data';
@@ -73,7 +73,7 @@ export interface LayoutValue {
   v: number;            // ptsSum + setSum − critLoss
   ptsSum: number;
   setSum: number;
-  critLoss: number;     // what the CHC substats lose on the crit curve (MODEL.md crit); 0 — no CHC in the chain or under the knee
+  critLoss: number;     // what the CHC substats lose on the crit curve (MODEL.md §12 item 2); 0 — no CHC in the chain or under the knee
   chc: number | null;   // the layout's CHC, % (C₀ + substats); null — no CHC in the hero's chain
   ptsBySlot: Partial<Record<SlotId, number>>;
   sets: SetValue[];     // сеты, у которых в раскладке 2+ вещи
@@ -95,7 +95,7 @@ function setCounts(layout: Layout): Map<string, [number, number]> {
   return m;
 }
 
-// --- crit soft cap (MODEL.md crit). C₀ — crit that carries no points: the hero (base, class, quirks), CHC main lines at
+// --- crit soft cap (MODEL.md §12 item 2). C₀ — crit that carries no points: the hero (base, class, quirks), CHC main lines at
 // +10 by tier, CHC set rows that are on. Substats are laid on the curve from C₀ by their weight on each piece.
 export interface PieceCrit { w: number; n: number; main: number } // CHC weight on the item, CHC segments (≤ 6), CHC % from its main lines
 const critMemo = new WeakMap<Profile, WeakMap<Piece, PieceCrit>>();
@@ -209,7 +209,7 @@ function rowsMaxOf(P: Profile, setMax: (set: string) => number, set2: (set: stri
   return r;
 }
 
-// MODEL.md crit, decision 3 («Отложить»): a piece's points as if it stood in its slot of `layout` — its CHC substats
+// MODEL.md §12 item 5, decisions 3 and 15 («Отложить»): a piece's points as if it stood in its slot of `layout` — its CHC substats
 // valued on the curve where the rest of that layout leaves them; the other substats as usual. A hero without CHC in the
 // chain, or a piece without CHC substats — its plain points
 export function pointsIn(P: Profile, layout: Layout, p: Piece): number {
@@ -380,7 +380,7 @@ function armorFirst(P: Profile, p: Piece, b: Piece): boolean {
   return d > EPS || (Math.abs(d) <= EPS && (gradeFirst(p, b) < 0 || (gradeFirst(p, b) === 0 && ageOf(p) < ageOf(b))));
 }
 
-// MODEL.md crit: can any layout of these candidates reach the knee N − 15? An upper bound of the crit: the hero, the
+// MODEL.md §12 item 4: can any layout of these candidates reach the knee N − 15? An upper bound of the crit: the hero, the
 // biggest CHC main in each slot, every CHC set row the pool could switch on, the most CHC segments in each slot. Not —
 // f = 1 on the whole run, V is linear and the old search is exact (and the same result as before the crit term)
 function critBinds(P: Profile, cands: readonly Piece[], armorOnly: boolean): boolean {
@@ -408,7 +408,7 @@ function critBinds(P: Profile, cands: readonly Piece[], armorOnly: boolean): boo
   return max > Math.max(0, P.need - CRIT_KNEE) + EPS;
 }
 
-// MODEL.md crit, pruning: a dominates b (same slot; for armor — same set and T4) when it comes first by points (ties: the
+// MODEL.md §12 item 4, pruning: a dominates b (same slot; for armor — same set and T4) when it comes first by points (ties: the
 // usual order), has at least b's points without CHC, no more CHC from its main, and their CHC weight is equal (or one has
 // no CHC substat). Then a layout with a is never worth less than with b: lower C₀ never lowers V, and with one weight the
 // extra segments of either piece add between 0 and their linear points

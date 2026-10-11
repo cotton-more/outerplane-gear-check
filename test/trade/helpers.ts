@@ -20,7 +20,7 @@ import { worldOf } from '@/features/trade/model/world';
 // Мерило из чисел. bonus — ценность сета по числу вещей: { Speed: { 2: 3, 4: 8 } } — при 2–3 вещах 3 (одна половина),
 // при 4 — 3 + 8 (две); effect — сеты-эффекты (их половины — eff). value — очки вещей (для кандидатов из мира; ok по
 // умолчанию — годная); у кандидатов из cand() не нужен
-// crit — the soft cap (MODEL.md crit) from numbers: the hero's own crit c0, N, per item its CHC weight w, segments n
+// crit — the soft cap (MODEL.md §12 item 6) from numbers: the hero's own crit c0, N, per item its CHC weight w, segments n
 // (3 % each) and CHC main %; v of a crit item must include w × n (its CHC substats' plain points)
 export interface SynthCrit { need: number; c0: number; items: Record<string, { w?: number; n?: number; main?: number }> }
 export function synthGauge(o: {

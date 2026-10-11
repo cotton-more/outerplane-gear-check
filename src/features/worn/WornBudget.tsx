@@ -1,6 +1,6 @@
 // Where the Worn heading's points come from (owner 2026-10-10): Stats (the pieces' points; the sum is the heading minus the sets,
 // in tenths, so the panel adds up to the heading; a chip per worn slot), Sets (what the sets add; one set — on the heading's
-// line, several — a line each), Crit (what the CHC substats and crit set rows lose on the soft cap, MODEL.md crit — from 0.05,
+// line, several — a line each), Crit (what the CHC substats and crit set rows lose on the soft cap, MODEL.md §12 item 3 — from 0.05,
 // minus), Passive (the worn weapon's and accessory's rank as a word — no points). Opens under the heading (WornGear). No new
 // math: layoutValue splits ptsSum / setSum / critLoss, the rank is gearRank (wearing.passive). In tenths, Stats + Sets − Crit
 // = the heading

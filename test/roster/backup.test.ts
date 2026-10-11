@@ -1,6 +1,6 @@
 // Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
 // размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11), OGC-GEAR5 —
-// с N героя («сколько крита нужно от вещей», crit).
+// с N героя («сколько крита нужно герою», crit).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

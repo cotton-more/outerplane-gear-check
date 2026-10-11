@@ -38,7 +38,7 @@ const btWorth = (P: Profile, p: Piece): boolean => (isArmor(p.slot) ? pieceBar(P
 export interface HeroPool { c: Char; P: Profile; pieces: Piece[]; wornIds: ReadonlySet<string>; info: PoolInfo }
 // пул героя по id; у героя без билдов (профиля нет) — null
 export type Pools = (charId: string) => HeroPool | null;
-// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (MODEL.md §6); need — его N (GearStore.crit, MODEL.md crit)
+// pin — ключ закрепления героя (GearStore.pin): профиль закреплённого (MODEL.md §6); need — его N (GearStore.crit, MODEL.md §12 item 1)
 export function heroPool(ctx: Ctx, c: Char, pieces: Piece[], wornIds: ReadonlySet<string>, pin?: string | null, need?: number | null): HeroPool | null {
   const P = profileFor(ctx, c, pin, need);
   return P ? { c, P, pieces, wornIds, info: poolInfo(P, pieces, wornIds) } : null;
@@ -84,7 +84,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const bar = pieceBar(P, x);
   const px = piecePoints(P, x);
   // «Оставь» compares points in the current layout: CHC substats counted where the hero's crit leaves them (MODEL.md
-  // crit, decision 3) — x and the held pieces each as if it stood in its slot; the bar stays plain points
+  // §12 item 5, decision 3) — x and the held pieces each as if it stood in its slot; the bar stays plain points
   const val = (p: Piece) => pointsIn(P, info.layout, p);
   const vx = val(x);
   const heldHere = pool.filter((p) => p.slot === x.slot && info.strong.has(p.id));
@@ -188,7 +188,7 @@ function quietOf(pools: HeroPool[], x: Piece, heroes: HeroRes[]): Quiet | null {
   }
   return top;
 }
-// crit — the hero's CHC in the current layout: from N − 15 on, CHC is not worth looking for (MODEL.md crit)
+// crit — the hero's CHC in the current layout: from N − 15 on, CHC is not worth looking for (MODEL.md §12 item 2)
 function lookFor(P: Profile, x: Piece, crit: number | null): string[] {
   const input = { slot: x.slot, grade: x.grade, setId: x.setId, itemKey: x.itemKey, main: x.main };
   const useless = uselessFor(P.ctx, P.c);

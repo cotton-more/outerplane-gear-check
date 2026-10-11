@@ -61,8 +61,8 @@ export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken
 // side, % first: ATK% counts in full, flat ATK at ½ (a flat form that counts 0 is left out). seg 0 — nothing worn gives
 // the stat: the UI draws it dashed. sep — before the stat: '›' next place, '=' same place, '/' another form of the axis.
 export interface ChainSum { key: string; seg: number; credit: number; sep: '' | '›' | '=' | '/' }
-// «Crit from gear» (crit soft cap, decision 5): CHC the app knows from the worn pieces and the hero (game/stat/total) and the
-// hero's N («CHC needed from gear», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
+// «Крит: 45%» (MODEL.md §12 item 3, decisions 5 and 10): CHC the app knows from the worn pieces and the hero (game/stat/total)
+// and the hero's N («сколько крита нужно герою», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
 // that has the hero's CHC and main values (an old snapshot would show a number far below the game's)
 export interface WornCrit { total: number; own: number; need: number } // own — the hero's part: base, class, quirks
 // another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
@@ -79,7 +79,7 @@ export interface WornView {
   t4: T4Line[];            // what T4 on worn armor would add to each set, from 1 point; [] — a hero without builds
   redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
   seek: SeekRow[];         // «Что искать»: 1–3 из 4, от ближнего, ничего не добавляющие скрыты; закреплён — только его набор
-  crit: WornCrit | null;   // «Крит от вещей»; null — CHC нет в цепочке, ничего не надето или у героя нет билдов
+  crit: WornCrit | null;   // «Крит: 45%»; null — no CHC in the chain, nothing worn or the hero has no builds
   pool: number;            // вещей в пуле героя
 }
 
@@ -135,7 +135,7 @@ function t4Of(ctx: Ctx, P: Profile, worn: Layout): T4Line[] {
     const pieces = (up: readonly ArmorSlot[]) => mine.map((s) => ({ setId: set, bt: up.includes(s) ? 4 : worn[s]!.bt }));
     const was = bonusRows(ctx.idx.SET, pieces([]));
     const rows = bonusRows(ctx.idx.SET, pieces(slots)).filter((r) => !was.some((w) => w.n === r.n && w.tier === r.tier));
-    // the gain in V: more CHC from the T4 rows can cost CHC substats on the crit curve (MODEL.md crit)
+    // the gain in V: more CHC from the T4 rows can cost CHC substats on the crit curve (MODEL.md §12 item 7)
     const up: Layout = { ...worn };
     for (const s of slots) up[s] = { ...worn[s]!, bt: 4 };
     const gain = P.critOn ? layoutValue(P, up).v - layoutValue(P, worn).v : full - now;

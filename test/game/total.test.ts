@@ -22,7 +22,7 @@ const armor = (slot: StatPiece['slot'], setId: string, bt: StatPiece['bt'], lit 
   ({ slot, grade: 'unique', setId, itemKey: null, main: null, lit, bt });
 const critSet = (bt: StatPiece['bt']) => (['helmet', 'armor', 'gloves', 'shoes'] as const).map((s) => armor(s, crit, bt));
 
-describe('CHC from gear', () => {
+describe('the hero\'s CHC with what is worn', () => {
   it('hero data: every base 5 %, Strikers +5 % from the class passive, element quirks +10 %', () => {
     expect(new Set(D.chars.map((c) => c.chc?.base))).toEqual(new Set([50]));
     expect(hero('Caren').chc).toEqual({ base: 50, cls: 50, quirk: 100 });

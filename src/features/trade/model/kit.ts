@@ -3,7 +3,7 @@
 // оружие и аксессуар — по слоту (ранг, потом очки), броня — перебор слотов, максимум V.
 // Слоты независимы по пользе и по ничьим (суммы и порядок по слотам), поэтому лучшее по частям = лучшее целиком.
 // Отсечение брони точное: в слоте из вещей одного ключа (сет, T4) остаётся лучшая по (очки, цена, потеря, ростер,
-// старшинство) — сеты и их ценность у них одни и те же. Мягкий потолок крита (MODEL.md crit) связывает слоты: когда крит
+// старшинство) — сеты и их ценность у них одни и те же. Мягкий потолок крита (MODEL.md §12 item 6) связывает слоты: когда крит
 // получателя может дойти до колена с этими кандидатами, работает critKit — как critBest лучшей раскладки.
 import type { SlotId } from '@/game/data/types';
 import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, SLOT_ORDER, type Cand, type Cands, type CritGauge, type Fit, type Gauge, type Kit, type KitKey } from './model';
@@ -148,7 +148,7 @@ function armorKey(g: Gauge, arm: readonly (Cand | null)[]): KitKey {
 }
 
 // ключ всего комплекта (польза MODEL.md §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры). V — за
-// вычетом потери крита (MODEL.md crit): она зависит от всего комплекта сразу
+// вычетом потери крита (MODEL.md §12 item 6): она зависит от всего комплекта сразу
 export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
   const k = armorKey(g, ARMOR_SLOTS.map((s) => slots[s] ?? null));
   if (g.crit && critMayLose(g.crit, slots)) {
@@ -191,7 +191,7 @@ function critMayLose(cr: CritGauge, slots: Partial<Record<SlotId, Cand>>): boole
 
 // a dominates b (a comes first in the slot's order, so at least b's points): at least b's points without CHC, no more CHC
 // from its main, equal CHC weight or one without CHC substats — the dominance of features/gear/layout critBest (MODEL.md
-// crit) — and not worse on the ties after V (R6.1: Legendary, source cost, holder loss, roster, age): V may come out equal
+// §12 item 4) — and not worse on the ties after V (R6.1: Legendary, source cost, holder loss, roster, age): V may come out equal
 // once the extra CHC is worth nothing, and then b would win on them
 const ties = (c: Cand): number[] => [Number(isLegend(c)), -c.cost, -c.loss, -c.rank, -c.item.ord];
 function dominates(cr: CritGauge, a: Cand, b: Cand): boolean {

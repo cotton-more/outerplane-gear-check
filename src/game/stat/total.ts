@@ -1,4 +1,4 @@
-// A hero's total of one stat from what the app knows (MODEL.md, crit soft cap): the hero's own sources, the main lines
+// A hero's total of one stat from what the app knows (MODEL.md §12 item 3): the hero's own sources, the main lines
 // of the pieces, set rows that are on and the substats. Hidden sources (gems, talisman, transcend, EE, team buffs) are
 // not here — they only add, so the total is never above the game's. Only CHC for now; EFF reuses the same shape later.
 import type { Char, Grade, SlotId } from '@/game/data/types';

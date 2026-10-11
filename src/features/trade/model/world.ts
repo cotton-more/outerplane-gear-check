@@ -18,7 +18,7 @@ import { codeOf, type CritGauge, type Gauge, type Hero, type Item, type Worth, t
 // заказ «По статам»; набор — подпись связки (comboSig)
 export const STATS = 'stats';
 
-// chc — the piece's most crit (MODEL.md crit): its CHC main at +10 by tier and CHC substats; the same for every hero
+// chc — the piece's most crit (MODEL.md §12 item 6): its CHC main at +10 by tier and CHC substats; the same for every hero
 export const itemOf = (p: Piece, ctx: Ctx): Item => ({
   id: p.id, slot: p.slot, code: codeOf(p), bt: p.bt, set: p.setId, t4: p.bt === 4, ord: numOf(p.id), grade: p.grade,
   chc: mainsStat(ctx, p, 'CHC') + Math.min(MAX_LIT, p.lit.CHC ?? 0) * (ctx.idx.SUB.CHC?.step ?? 3),
@@ -33,7 +33,7 @@ export interface WorldOpts {
   orders?: Readonly<Record<string, string>>;  // герой → заказ; нет — «По статам»
 }
 
-// the crit part of a gauge (MODEL.md crit): the same curve and C₀ as layoutValue, over the kit's pieces; Po — the order's
+// the crit part of a gauge (MODEL.md §12 item 6): the same curve and C₀ as layoutValue, over the kit's pieces; Po — the order's
 // profile (its halves decide which crit set rows carry points), with the hero's N and chain
 function critGauge(Po: Parameters<typeof critLossOf>[0], pieceOf: (id: string) => Piece | undefined): CritGauge {
   const of = (ids: readonly string[]) => ids.map(pieceOf).filter((p): p is Piece => !!p);
@@ -74,7 +74,7 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
     const c = ctx.idx.CHAR[heroId];
     const base = c ? profileOf(ctx, c) : null;
     if (!c || !base) { memo.set(heroId, null); return null; }
-    const P = withNeed(base, st.crit?.[heroId]); // the hero's N (MODEL.md crit)
+    const P = withNeed(base, st.crit?.[heroId]); // the hero's N (MODEL.md §12 item 1)
     // закреплённый (MODEL.md §6, MODEL.md §7 item 1) — жёстко: его набор, цепочка его билда, броня других сетов не годна; заказ не меняется
     const pin = pinOf(c, st.pin?.[heroId]);
     const Pv = pin ? pinnedProfile(P, pin) : P;

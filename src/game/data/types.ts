@@ -50,7 +50,7 @@ export interface Char {
   flat: { levels: [number, number]; ATK: FlatBase | null; DEF: FlatBase | null; HP: FlatBase | null };
   spd?: FlatBase | null; // база SPD для бонуса Speed Set (он в % от базы); нет в старых снимках — бонус не переводится в статы
   // CHC from sources that are always on, ‰ (1000 = 100 %): base, class passive (Striker +50), awakening quirks (by the
-  // `quirks` setting). Missing in old snapshots: no «Crit from gear» line
+  // `quirks` setting). Missing in old snapshots: no «Крит: 45%» line
   chc?: { base: number; cls: number; quirk: number };
 }
 

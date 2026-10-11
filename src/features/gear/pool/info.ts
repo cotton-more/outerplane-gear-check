@@ -90,7 +90,7 @@ export const coversSlot = (q: Pick<Piece, 'slot' | 'setId' | 'grade'>, p: Pick<P
   q.slot === p.slot && q.setId === p.setId && (p.grade !== 'unique' || q.grade === 'unique');
 
 const byPoints = (P: Profile) => (a: Piece, z: Piece) => piecePoints(P, z) - piecePoints(P, a) || numOf(a.id) - numOf(z.id);
-// the same order by a piece's points in the current layout (MODEL.md crit, decision 3; = points without the crit term)
+// the same order by a piece's points in the current layout (MODEL.md §12 item 5, decision 3; = points without the crit term)
 const byValue = (val: (p: Piece) => number) => (a: Piece, z: Piece) => val(z) - val(a) || numOf(a.id) - numOf(z.id);
 
 export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySet<string>): PoolInfo {
@@ -103,7 +103,7 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   for (const p of Object.values(best.layout)) add(p, 'layout');                                         // 2
   const sorted = [...pool].sort(byPoints(P));
   // 3 and 4 compare pieces by their points in the current layout: CHC substats counted where the hero's crit leaves them
-  // (MODEL.md crit, decision 3) — the same value the verdict's «Отложить» uses, so a piece set aside stays held
+  // (MODEL.md §12 item 5, decision 3) — the same value the verdict's «Отложить» uses, so a piece set aside stays held
   const val = (p: Piece) => pointsIn(P, best.layout, p);
   const byVal = [...pool].sort(byValue(val));
   // 3: in an armor slot, for each menu set — the best good piece and the best good one at T4, if the best is not at T4. Only for a pinned
@@ -143,7 +143,7 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
 }
 
 // планка для чужого сета (A12): очки лучшей держащейся вещи слота, вещам сетов меню — с надбавкой U/2. val — очки вещи
-// (в нынешней раскладке — MODEL.md crit, decision 3)
+// (в нынешней раскладке — MODEL.md §12 item 5, decision 3)
 export const offBar = (P: Profile, held: readonly Piece[], val: (p: Piece) => number = (q) => piecePoints(P, q)): number =>
   Math.max(...held.map((q) => val(q) + (q.setId && P.menuSets.has(q.setId) ? P.U / 2 : 0)));
 

@@ -1,6 +1,6 @@
 // Профиль героя для «статов + сетов» (MODEL.md §0, §2 item 3): цепочка «По статам», меню частей сетов из всех его
-// билдов и U — очки самой ценной строки T4 на 2 вещи среди статовых сетов. Половина сета из меню стоит U. need — N, сколько
-// крита герою нужно от вещей (MODEL.md crit soft cap; хранилище crit, по умолчанию 100); critOn — CHC есть в цепочке.
+// билдов и U — очки самой ценной строки T4 на 2 вещи среди статовых сетов. Половина сета из меню стоит U.
+// need — N, how much crit the hero needs (MODEL.md §12 item 1; store crit, 100 by default); critOn — CHC is in the chain.
 import type { Build, Char, Combo, SetBonus } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { bonusSegments, convertible } from '@/game/set/setBonus';
@@ -18,7 +18,7 @@ export interface Profile {
   parts: ReadonlySet<string>;           // части меню: partKey(сет, 2 или 4) из всех связок всех билдов
   menuSets: ReadonlySet<string>;
   pin?: Pin;                            // закреплённый набор (MODEL.md §6): броня других сетов не годится
-  need: number;                         // N: CHC needed from gear, % (the hero's sheet; 100 when not set)
+  need: number;                         // N: how much crit the hero needs, % (the hero's sheet; 100 when not set)
   critOn: boolean;                      // CHC is in the chain: the crit soft cap applies (layout V)
 }
 
@@ -79,7 +79,7 @@ function makeProfile(ctx: Ctx, c: Char, chain: Build, combos: readonly Combo[], 
   return { ...base, chain, U: Math.max(0, ...uBy.map((x) => x.pts)), uBy, parts, menuSets, need, critOn };
 }
 
-// the same profile with the hero's N (MODEL.md crit soft cap). Points, ranks and set values don't depend on N; the layout
+// the same profile with the hero's N (MODEL.md §12 item 1). Points, ranks and set values don't depend on N; the layout
 // value does — a variant per N keeps every per-profile memo right. Unchanged N — the same profile
 const needMemo = new WeakMap<Profile, Map<number, Profile>>();
 export function withNeed(P: Profile, need: number = CRIT_NEED): Profile {

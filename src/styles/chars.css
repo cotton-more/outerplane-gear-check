@@ -240,7 +240,7 @@ html.xs .bgear-t { grid-row: 3; }
 .wchain .pill b { font-weight: 800; }
 .wchain .pill.ok { color: color-mix(in srgb, var(--keep) 55%, var(--ink)); background: color-mix(in srgb, var(--keep) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--keep) calc(35% + 65% * var(--k, 1)), transparent); }
 .wchain .pill.half { color: color-mix(in srgb, var(--temp) 55%, var(--ink)); background: color-mix(in srgb, var(--temp) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--temp) calc(35% + 65% * var(--k, 1)), transparent); }
-/* «Крит от вещей: 98%» under the chain (WornGear CritLine): a quiet line like the others on the card — a small crit icon,
+/* «Крит: 98%» under the chain (WornGear CritLine): a quiet line like the others on the card — a small crit icon,
    the percent in bold in the zone's colour (amber from N − 15, red from N), the sheet's bar in small; a button that opens
    the hero's N (CritSheet) */
 .wcrit { justify-self: start; margin: 0; padding: 2px 0; border: 0; background: none; display: inline-flex; align-items: center; gap: 6px;

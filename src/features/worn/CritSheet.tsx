@@ -1,9 +1,10 @@
-// Шторка «Крит для X» (crit soft cap, decision 5): N — сколько крита герою нужно от вещей, целое 0…100 (по умолчанию 100).
-// Без заголовка (owner: and so it's clear whose it is — only for screen readers). Наверху — шкала (CritBar): зона, где крит
-// стоит полностью (до N − 15), мягкая зона (N − 15 … N), лишний крит (выше N); портрет героя стоит на шкале там, где его
-// крит, под ним — число, над шкалой — N с флажком. Шкала следует за
-// числом сразу, пока его меняют. «−» / «+» по одному, число можно вписать; «Сбросить» — 100. Применяется по «Готово», не
-// сразу. Запись — у родителя (CharDetail, setCrit). Слов нет новых: только одобренные тексты и числа.
+// The sheet «Крит для X» (MODEL.md §12 items 1 and 3, decisions 5, 6 and 10): N — how much crit the hero needs, an integer
+// 0…100 (100 by default). No visible title (owner; the title is for screen readers only). On top — the bar (CritBar): the
+// zone where crit counts in full (up to N − 15), the soft zone (N − 15 … N), extra crit (above N); the hero's face stands on
+// the bar at their crit with the number under it, N with its flag above the bar. The bar follows the number at once while
+// it changes. Then «Герой · вещи», the number row (before the text, so it stays above «Готово» in short windows), the text.
+// «−» / «+» by one, the number can be typed; «Сбросить» — 100. Applied on «Готово», not at once. The parent stores it
+// (CharDetail, setCrit). No new words: only approved texts and numbers.
 import { useState, type CSSProperties } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
@@ -20,7 +21,7 @@ export const shownCrit = (total: number) => Math.floor(total + 1e-9);
 export const critZone = (total: number, need: number): string =>
   (total >= need ? ' over' : total >= need - CRIT_KNEE ? ' near' : '');
 
-// «Крит от вещей: 98%» with the number in bold — the approved line, split around its number
+// «Крит: 98%» with the number in bold — the approved line, split around its number
 export function CritText({ total }: { total: number }) {
   const t = useT();
   const v = shownCrit(total), text = t.card.critLine(v), num = `${v}%`, at = text.lastIndexOf(num);

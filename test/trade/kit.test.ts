@@ -215,7 +215,7 @@ describe('X2: отсечение и границы на броне', () => {
   });
 });
 
-// MODEL.md crit: the soft cap links the slots; the kit search (Pareto fronts, gear inside the search, branch and bound on the
+// MODEL.md §12 item 6: the soft cap links the slots; the kit search (Pareto fronts, gear inside the search, branch and bound on the
 // plain V) must still equal the full search, where V of every kit is keyOf's (plain V minus the crit loss)
 describe('X2c: мягкий потолок крита — лучший комплект = полный перебор', () => {
   it('300 случайных синтетик с критом: веса 1 / 0,8 / 0,65, main CHC на аксессуаре, N 100 / 70 / 40', () => {

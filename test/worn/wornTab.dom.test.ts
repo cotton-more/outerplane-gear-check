@@ -374,7 +374,7 @@ describe('worn budget', () => {
 });
 
 // «Crit» (crit soft cap, decision 5): the line under the chain, amber from N − 15, tap → the hero's N
-describe('«Надето»: Crit from gear', () => {
+describe('«Надето»: the hero\'s crit «Crit: 45%»', () => {
   const worn = (ps: Pc[], hero = caren.id, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
   const line = () => $('.bgear.worn .wcrit');
   const type = async (el: HTMLInputElement, v: string) => {
@@ -424,7 +424,7 @@ describe('«Надето»: Crit from gear', () => {
   });
 });
 
-describe('«Надето»: Crit from gear on old data', () => {
+describe('«Надето»: the hero\'s crit on old data', () => {
   it('a snapshot without the hero\'s CHC or main values — no line (the number would be far below the game\'s)', async () => {
     const old = { ...D, mainValues: undefined };
     const { wornView } = await import('@/features/worn/wearing');

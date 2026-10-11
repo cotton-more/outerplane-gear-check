@@ -221,7 +221,7 @@ function problems(D) {
   for (const s of D.sets) {
     for (const r of Object.values(s.bonus ?? {}).flatMap((t) => [t.p2, t.p4])) if (r?.stat && !subKeys.has(r.stat)) out.add(`сет ${s.name}: бонус — сабстат ${r.stat}, которого нет`);
   }
-  // crit from gear (update.py crit_profile, main_values): a changed format zeroes the card line «Крит от вещей»
+  // the hero's crit (update.py crit_profile, main_values): a changed format zeroes the card line «Крит: 45%»
   const noChc = D.chars.filter((c) => !c.chc || ![c.chc.base, c.chc.cls, c.chc.quirk].every((v) => Number.isInteger(v) && v >= 0 && v <= 1000));
   if (noChc.length) out.add(`CHC героя (chc) нет или не число: ${noChc.slice(0, 5).map((c) => c.name).join(', ')}${noChc.length > 5 ? '…' : ''}`);
   const cls = D.chars.filter((c) => c.class === 'striker' && c.chc?.cls > 0).length;

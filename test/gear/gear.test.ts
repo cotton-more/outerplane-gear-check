@@ -873,7 +873,7 @@ describe('«Отложить для X» (stashOn)', () => {
   });
 });
 
-describe('N героя — сколько крита нужно от вещей (crit, MODEL.md crit soft cap)', () => {
+describe('N героя — сколько крита нужно герою (crit, MODEL.md §12 item 1)', () => {
   const RIN = '2000019';
   const base = () => v2([rec('p1', helmet({ CHC: 2 })), rec('p2', helmet({ HP: 1 }))], { [CAREN]: ['p1'], [KAPPA]: ['p2'] });
 

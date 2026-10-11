@@ -1,4 +1,4 @@
-// Crit soft cap (MODEL.md, crit): what CHC substats are worth once the hero's crit nears N — «CHC needed from gear».
+// Crit soft cap (MODEL.md §12 item 2): what CHC substats are worth once the hero's crit nears N — «сколько крита нужно герою».
 // Per CHC %: f(c) = 1 up to the knee N − 15 (clamped at 0), then linear down to 0 at N, 0 above N. F is its integral.
 // A layout's CHC segments are laid on the curve from C₀ (crit that carries no points: the hero, mains, set rows) heaviest
 // first: a segment of weight w over [c, c + step] is worth w × (F(c + step) − F(c)) / step instead of w. Heaviest first

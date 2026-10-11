@@ -56,7 +56,7 @@ export const pointsOf = (ctx: Ctx, c: Char, chain: Build, item: ItemInput): numb
   pointsBreakdown(ctx, c, chain, item).reduce((n, x) => n + x.pts, 0);
 
 // weight × credit a substat `key` has on this item (whether it rolled or not); 0 — not in the chain or closed by the main.
-// The crit soft cap lays CHC segments on its curve by this weight (MODEL.md crit)
+// The crit soft cap lays CHC segments on its curve by this weight (MODEL.md §12 item 2)
 export function subWeightOn(ctx: Ctx, c: Char, chain: Build, item: Pick<ItemInput, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main' | 'subs'>, key: string): number {
   const w = weightsFor(ctx, c, chain, item as ItemInput).get(key);
   return w ? weightOfPlace(w.tier) * w.credit : 0;
