@@ -20,6 +20,7 @@ verdict, why, and which of your characters it suits. Builds come from [outerpedi
 | [Characters and guild code](Characters-and-guild-code) | [Персонажи и код для гильдии](Персонажи-и-код-для-гильдии) |
 | [Equipment](Equipment) | [Экипировка](Экипировка) |
 | [Trading gear](Trading-gear) | [Обмен вещами](Обмен-вещами) |
+| [Team check](Team-check) | [Проверка команды](Проверка-команды) |
 | [Limitations and credits](Limitations-and-credits) | [Ограничения и авторы](Ограничения-и-авторы) |
 
 <table>

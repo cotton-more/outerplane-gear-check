@@ -5,13 +5,14 @@ import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 import type { TeamMember } from '@/game/synergy/check';
 import { useT } from '@/i18n';
+import { tour } from '@/tour/anchors';
 import { MiniStars } from './Stars';
 
 export function TeamSlots({ team, sel, onSlot }: { team: readonly (TeamMember | null)[]; sel: number | null; onSlot: (i: number) => void }) {
   const t = useT();
   const idx = useIndex();
   return (
-    <div className="tm-team">
+    <div className="tm-team" {...tour('team')}>
       {team.map((m, i) => {
         const c = m ? idx.CHAR[m.id] : null;
         return m && c ? (

@@ -579,6 +579,14 @@ export const en: Texts = {
       '**Done** — all done in the game: the plan is saved. **Cancel** — nothing changed. Right after "Done" there is "Undo". A copy that is in no pool leaves the app but stays in your game inventory.',
       '**"Re-dress"** on the Worn tab uses the same threshold as the trade: the best layout from the hero\'s own pieces beats what\'s worn by at least 1 point (a Legendary in place of an Epic — no worse), turns on an effect-set bonus or puts on a recommended weapon or accessory.',
     ],
+    helpTeam: 'Team',
+    helpTeamItems: [
+      'Checks which skills in a team won\'t work without a status: Veronica\'s Dual Attack (S1) needs Increased Defense on her, and she gives it herself with S3 — which is on cooldown at battle start. The «Team» tab (on a phone — «More» → «Team»).',
+      'Put up to four heroes from your roster: «+» opens the list with a name search. Tap a hero for their stars (transcend ★, tap the N-th) and «Remove». Stars matter: some skills and passives open at ★3–★6. A new hero starts at ★6.',
+      '**⚠ Nobody gives it** — a skill needs the status and nobody in the team gives it. **⚠ Only from own** — the hero gives it, but later than needed (the number is the cooldown at battle start, as on the skill icon), or only with their Burst. Below — **Would give it:** roster heroes who give it; «from ★N» — only from those stars; a team hero short of stars comes first. A quiet **✓** line — an ally gives it.',
+      'Not counted: chances, turn order, class passives (in the game they give no status), events («when hit»), enemy buffs and boss immunities. Statuses only the hero gives (their own mechanic) are not shown.',
+      'Nothing is saved: the team lives while the page is open; a reload forgets it.',
+    ],
     helpCode: 'Code for your guild',
     helpCodeText: (example) => `The verdict details and a character's piece card show the item's code, e.g. ${example}. Copy it into the game chat; whoever gets it taps "Enter code" and types it in. Everyone gets the verdict for their own roster. A piece with 5–6 segments gets a code 1–2 letters longer.`,
     helpInstall: 'Installing',
@@ -752,7 +760,6 @@ export const en: Texts = {
     fixHead: 'Would give it:',
     more: (n: number) => `${n} more`,
     and: (a: string, b: string) => `${a} and ${b}`,
-    note: 'Checks statuses from skills only: chances, turn order and class passives are not counted.',
     status: {
       '1': 'Burned',
       '3': 'Bleeding',
@@ -832,6 +839,7 @@ export const en: Texts = {
       batch: 'Many pieces of one set? “Batch”: enter them in a row as the game lists them — the app plans each and walks you through: equip, lock, Breakthrough, dismantle.',
       share: "Share this hero: the link shows a friend what's worn and the pinned set. View only — nothing changes on their side.",
       pin: 'Evaluation weighs stats and sets together — no build to pick. Want a specific set? Pin it on the hero card.',
+      team: "Team: up to four heroes and their stars — I'll show skills missing a status from the team (Veronica without Increased Defense) and who in your roster gives it.",
     },
     news: {
       pin: 'evaluation: stats and sets together, pin a set',
@@ -842,6 +850,7 @@ export const en: Texts = {
       wornChain: 'worn points and the hero\'s chain on “Worn”',
       wornTab: 'what to look for: a set\'s worth in points, what T4 would add',
       wornBudget: 'worn points break down: stats, sets, passive',
+      team: 'team: which skills miss a status',
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',

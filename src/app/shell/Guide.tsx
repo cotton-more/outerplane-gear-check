@@ -62,6 +62,8 @@ export function Help({ install, onTour, tips }: { install: InstallInfo; onTour: 
       <List items={t.ui.helpChars} />
       <h4>{t.ui.helpTrade}</h4>
       <List items={t.ui.helpTradeItems} />
+      <h4>{t.ui.helpTeam}</h4>
+      <List items={t.ui.helpTeamItems} />
       <h4>{t.ui.helpCode}</h4>
       <p>{t.ui.helpCodeText(`${CODE_PREFIX} KXRM TPWA`)}</p>
       <h4>{t.ui.helpInstall}</h4>
