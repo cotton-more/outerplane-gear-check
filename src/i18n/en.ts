@@ -730,19 +730,23 @@ export const en: Texts = {
 
   team: {
     tab: 'Team',
-    noData: "This data has no hero skills — update the app.",
+    noData: 'This data has no hero skills — update the app.',
     empty: 'The roster is empty — mark your heroes on «Characters».',
     emptyGo: 'To characters',
+    hint: 'Add heroes — I’ll show which skills miss a status from the team.',
     pick: 'Who goes in this spot?',
+    search: 'Name',
     addMember: 'Team spot',
+    remove: 'Remove',
     removeMember: (name: string) => `Remove from the team: ${name}`,
-    starPick: "Hero's stars",
+    stars: (name: string) => `Stars: ${name}`,
+    star: (n: number) => `★${n}`,
     from: (n: number) => `from ★${n}`,
     slot: { s1: 'S1', s2: 'S2', s3: 'S3', burst: 'Burst', passive: 'passive' },
     none: (status: string, skills: string) => `Nobody in the team gives **${status}** — needed for ${skills}.`,
     noneEnemy: (status: string, skills: string) => `Nobody in the team puts **${status}** on the enemy — needed for ${skills}.`,
-    selfOnly: (status: string, skills: string, own: string, turn: number) =>
-      `**${status}** only from own ${own} (ready on turn ${turn}) — ${skills} goes without it until then.`,
+    selfOnly: (status: string, skills: string, own: string, cd: number) =>
+      `**${status}** only from own ${own} — on cooldown (${cd}) at battle start, ${skills} goes without it until then.`,
     selfBurst: (status: string, skills: string) => `**${status}** only from own Burst — ${skills} goes without it until then.`,
     ok: (status: string, who: string) => `${status} — from ${who}`,
     fixHead: 'Would give it:',

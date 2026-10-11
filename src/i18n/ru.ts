@@ -848,24 +848,28 @@ export const ru = {
     walkEnd: 'Всё сделано — Записать план',
   },
 
-  // «Команда» (team check, .x/0170-team-synergy). Draft: the screen texts are settled at the design stage
+  // «Команда» (team check, .x/0170-team-synergy; screen approved by the owner 2026-10-11)
   team: {
     tab: 'Команда',
     noData: 'В этих данных нет навыков героев — обнови приложение.',
     empty: 'Ростер пуст — отметь своих героев на «Персонажах».',
     emptyGo: 'К персонажам',
+    hint: 'Поставь героев — покажу, каким навыкам не хватит статусов от команды.',
     pick: 'Кого поставить на это место?',
+    search: 'Имя',
     addMember: 'Место в команде',
+    remove: 'Убрать',
     removeMember: (name: string) => `Убрать из команды: ${name}`,
-    starPick: 'Звёзды героя',
+    stars: (name: string) => `Звёзды: ${name}`,
+    star: (n: number) => `★${n}`,
     from: (n: number) => `с ★${n}`,
     slot: { s1: 'S1', s2: 'S2', s3: 'S3', burst: 'Burst', passive: 'пассивка' } as Record<SkillSlot, string>,
     // status — the status name, skills — the skills that need it («S1», «S1 и S3»)
     none: (status: string, skills: string) => `Никто в команде не даёт **${status}** — нужно для ${skills}.`,
     noneEnemy: (status: string, skills: string) => `Никто в команде не накладывает **${status}** на врага — нужно для ${skills}.`,
-    // own — the hero's own skill that gives it; turn — the turn it is first ready
-    selfOnly: (status: string, skills: string, own: string, turn: number) =>
-      `**${status}** только от своего ${own} (готов с ${turn}-го хода) — до этого ${skills} без него.`,
+    // own — the hero's own skill that gives it; cd — its cooldown at battle start (the number on the skill icon)
+    selfOnly: (status: string, skills: string, own: string, cd: number) =>
+      `**${status}** только от своего ${own} — на старте боя он на перезарядке (${cd}), до него ${skills} без статуса.`,
     selfBurst: (status: string, skills: string) => `**${status}** только от своего Burst — до него ${skills} без статуса.`,
     ok: (status: string, who: string) => `${status} — даёт ${who}`,
     fixHead: 'Дадут:',

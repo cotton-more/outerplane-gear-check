@@ -64,11 +64,11 @@ const saved = () => JSON.parse(localStorage.getItem('ogc.state')!);
 const nav = () => $$('.more-nav button').map((b) => b.textContent);
 
 describe('1. шторка «Ещё» на телефоне', () => {
-  it('16. первая группа — переходы: ★ Персонажи, «To dress · N», «Team trade»; после неё — действия и настройки', async () => {
+  it('16. первая группа — переходы: ★ Персонажи, «To dress · N», «Team», «Team trade»; после неё — действия и настройки', async () => {
     await mount({ roster: [caren.id, kappa.id], gear: GEAR });
     await openMore();
     expect($('.more')?.firstElementChild?.classList.contains('more-nav')).toBe(true);
-    expect(nav()).toEqual(['★ Characters 2', 'To dress · 2', 'Team trade', 'Batch']);
+    expect(nav()).toEqual(['★ Characters 2', 'To dress · 2', 'Team', 'Team trade', 'Batch']);
     expect($$('.more-acts button').map((b) => b.textContent)).toEqual(['Enter code', 'Help', 'Tutorial']);
   });
 
@@ -120,10 +120,10 @@ describe('1.4, 2.2 «Ещё» на ПК', () => {
     expect($('.drawer h3')?.textContent).toBe('More');
   });
 
-  it('2.2 шапка: вкладки «Evaluate item» и «Characters ★N» и кнопка «⋯» после них; «⋯» доступна и на «Персонажах»', async () => {
+  it('2.2 шапка: вкладки «Evaluate item», «Characters ★N», «Team» и кнопка «⋯» после них; «⋯» доступна и на «Персонажах»', async () => {
     setWidth(1280);
     await mount({ roster: [caren.id, kappa.id], state: { tab: 'chars' } });
-    expect($$('.top .tabs [role="tab"]').map((b) => b.textContent)).toEqual(['Evaluate item', 'Characters ★ 2']);
+    expect($$('.top .tabs [role="tab"]').map((b) => b.textContent)).toEqual(['Evaluate item', 'Characters ★ 2', 'Team']);
     expect($('.top .tabs')?.nextElementSibling?.classList.contains('top-more')).toBe(true);
     await openMore();
     expect($('.more')).toBeTruthy();

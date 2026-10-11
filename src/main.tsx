@@ -19,6 +19,7 @@ import './styles/chars.css';
 import './styles/more.css';
 import './styles/trade.css';
 import './styles/batch.css';
+import './styles/team.css';
 import './styles/tour.css';
 import './styles/motion.css';
 

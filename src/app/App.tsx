@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CharDetail } from '@/screens/chars/CharDetail';
 import { ShareCard } from '@/screens/share/ShareCard';
+import { TeamScreen } from '@/screens/team/TeamScreen';
 import { EvalPanel } from '@/screens/eval/EvalPanel';
 import { Verdict, VerdictSheet } from '@/screens/eval/VerdictPanel';
 import { VBar } from '@/screens/eval/VBar';
@@ -267,6 +268,9 @@ export function App() {
               onPieceOpen={setPieceOpen} onTrade={canEquip ? (c) => setTrade({ hero: c.id }) : undefined}
               canShare={!tour.run && !gear.newer} />
           </section>
+          <section id="view-team" className="view team-view" role="tabpanel" aria-labelledby="tab-team" hidden={s.tab !== 'team'}>
+            <TeamScreen roster={rosterList} off={off} onChars={() => onTab('chars')} />
+          </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
           hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length).replace(/ /g, '\u00A0') : t.batch.empty) : hint}
@@ -293,7 +297,7 @@ export function App() {
           <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
             rosterApi={ros.rosterUi} gear={gear} onBackup={ros.onBackup}
             lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} install={install} onAppUpdate={appUpdate}
-            onClose={() => setMoreOpen(false)} onChars={() => onTab('chars')}
+            onClose={() => setMoreOpen(false)} onChars={() => onTab('chars')} onTeam={() => onTab('team')}
             // список ровно тех, кого считает N: режим «Доодеть», прочие фильтры (стихия, класс, поиск) — сбросить, карточку героя закрыть
             onTodress={() => {
               dispatch({ type: 'charFilter', patch: { cMode: 'todress', cq: '', cel: '', ccl: '' } });

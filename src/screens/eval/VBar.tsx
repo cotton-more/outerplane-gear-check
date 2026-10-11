@@ -9,6 +9,7 @@ import { barTitle } from './VerdictCard';
 // Узкий экран (телефон, разделённый экран с игрой): шапки нет, внизу одна плашка на обе вкладки.
 //   Оценка:    [☰ «Ещё», ★ ростер] [вердикт или подсказка — нажми, подробности шторкой] [Следующий]
 //   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
+//   Команда:   [← Оценка] (the team screen is not about the piece in the form)
 // compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету.
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
 // Подсказка и «что ввести дальше» (вердикт idle) — приглушённой строкой со стрелкой до трёх строк, вердикт — штампом:
@@ -41,7 +42,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
       {evalTab
         ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <span className="vb-ros"> <span className="vb-star">★</span>{rosterSize}</span>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
-      <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
+      {tab !== 'team' && <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
         onClick={evalTab ? onOpen : () => onTab('eval')}>
         {evalTab && (hint || r.v === 'idle')
           ? !quiet && <span className="vt vt-hint">{hint ?? r.title}</span>
@@ -49,7 +50,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
             ? <span className="vt vt-more">{t.ui.details}</span>
             : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
-      </button>
+      </button>}
       {evalTab && marks}
       {evalTab && <button type="button" className="vb-reset" aria-label={resetLabel ?? t.ui.resetItem} onClick={onReset} {...tour('next')}>{resetLabel ?? t.ui.reset}</button>}
     </div>

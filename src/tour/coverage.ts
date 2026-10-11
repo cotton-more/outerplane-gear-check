@@ -39,6 +39,10 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
   'features/worn/WornBudget.tsx': 'helper',            // budget under the Worn heading: the wornBudget tip explains it
   'features/worn/WornSets.tsx': 'helper',              // sets and the T4 line under the chain on Worn: explained by the wornTab tip
+  'features/team/ui/Stars.tsx': 'helper',              // transcend stars on Team: tap the N-th star, as in the game
+  'features/team/ui/TeamSlots.tsx': 'helper',          // the four Team spots: explained by the Team tip
+  'features/team/ui/TeamReport.tsx': 'helper',         // the Team report: explained by the Team tip
+  'screens/team/TeamScreen.tsx': 'todo',               // the Team screen: tip text waits for the owner (stage 5)
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
