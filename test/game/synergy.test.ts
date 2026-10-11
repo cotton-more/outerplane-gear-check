@@ -117,6 +117,9 @@ describe('checkTeam', () => {
     const stars = fix.map((f) => f.star);
     expect(stars).toEqual([...stars].sort((a, b) => a - b));
   });
+  it('a team hero whose ★ is too low comes first (Kanon + Stella ★5: Stella from ★6)', () => {
+    expect(need(run([[H.kanon, 6], [H.stella, 5]], ALL), H.kanon, '29').fix[0]).toEqual({ id: H.stella, star: 6 });
+  });
 });
 
 // Golden-style record: a dozen teams → compact text. UPDATE_SYNERGY_GOLDEN=1 npm test rewrites it.

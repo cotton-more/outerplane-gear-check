@@ -18,7 +18,7 @@ export interface NeedReport {
   verdict: NeedVerdict;
   by: string[];          // allies in the team who give it
   own: SynGive | null;   // the hero's own earliest source (for "self": which skill and from which turn)
-  fix: Fix[];            // only when not ok: roster heroes who would give it, team heroes whose ★ is too low
+  fix: Fix[];            // only when not ok: team heroes whose ★ is too low, then roster heroes who would give it
 }
 
 export interface HeroReport { id: string; needs: NeedReport[] }
@@ -78,7 +78,10 @@ export function checkTeam(syn: Synergy, team: TeamMember[], roster: Iterable<str
           fix.push({ id: c, star: need });
           cd.set(c, Math.min(...gs.map((g) => (steady(g) ? g.cd : 99))));
         }
-        fix.sort((a, b) => a.star - b.star || cd.get(a.id)! - cd.get(b.id)! || rank(a.id) - rank(b.id) || a.id.localeCompare(b.id));
+        // a team hero whose ★ is too low first (already in the team: only transcend her), then any-★ heroes
+        const mate = (f: Fix) => Number(!starOf.has(f.id));
+        fix.sort((a, b) => mate(a) - mate(b) || a.star - b.star || cd.get(a.id)! - cd.get(b.id)! || rank(a.id) - rank(b.id)
+          || a.id.localeCompare(b.id));
       }
       return { st: n.st, on: n.on, slots: n.slots, verdict, by, own, fix };
     }),
