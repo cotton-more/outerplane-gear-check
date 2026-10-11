@@ -49,6 +49,9 @@ export interface Char {
   rankPvp: string | null;
   flat: { levels: [number, number]; ATK: FlatBase | null; DEF: FlatBase | null; HP: FlatBase | null };
   spd?: FlatBase | null; // база SPD для бонуса Speed Set (он в % от базы); нет в старых снимках — бонус не переводится в статы
+  // CHC from sources that are always on, ‰ (1000 = 100 %): base, class passive (Striker +50), awakening quirks (by the
+  // `quirks` setting). Missing in old snapshots: no «Crit from gear» line
+  chc?: { base: number; cls: number; quirk: number };
 }
 
 // Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус
@@ -146,6 +149,9 @@ export interface Dataset {
   // сабстату EFF% не мешает (null). Нет поля — данные старше: main запрещает сабстат с той же меткой
   mainBlocks?: Record<string, string | null>;
   fixedMains?: FixedMains;
+  // main line at +10 by Breakthrough tier: slot → grade → label → [T0…T4], game units (‰ for % stats, CHC 400 = 40 %);
+  // the smallest over the slot's items. Missing in old snapshots
+  mainValues?: Partial<Record<SlotId, Partial<Record<Grade, Record<string, number[]>>>>>;
   sets: GearSet[];
   weapons: Item[];
   amulets: Item[];

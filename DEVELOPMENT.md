@@ -204,8 +204,8 @@ It was originally captured from the old page (before the React migration) — `s
 behavior — `task golden:update` and review the golden diff: it shows exactly the cases that changed.
 The `golden:update` run itself prints differences from the old file — that's normal, the file is already overwritten.
 
-The golden and unit tests run on the frozen `test/fixtures/data.json` (outerpedia a31f580; fields `mainBlocks`,
-`fixedMains`, `fixed` and `bonus` on sets and items, `fusionOf` and `spd` on characters were added by the same `update.py` from the same commit), so fresh
+The golden and unit tests run on the frozen `test/fixtures/data.json` (outerpedia a31f580; fields `mainBlocks`, `mainValues`,
+`fixedMains`, `fixed` and `bonus` on sets and items, `fusionOf`, `spd` and `chc` on characters were added by the same `update.py` from the same commit), so fresh
 outerpedia data is guarded by a separate check — `scripts/check-data.mjs` (`task check`, site bot): the built page
 in jsdom, the same
 golden inputs on old and new data, "every build finds its piece". What exactly is checked — in

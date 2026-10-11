@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { dropChar, EMPTY_GEAR, fixPins, gc, gearedChars, holdersOf, isWorn, newPiece, setPin, stalePins, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { critNeed, dropChar, EMPTY_GEAR, fixPins, gc, gearedChars, holdersOf, isWorn, newPiece, setCrit, setPin, stalePins, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
@@ -870,5 +870,50 @@ describe('«Отложить для X» (stashOn)', () => {
     expect(r.st.pieces.p1).toMatchObject({ at: '2026-10-06', bt: null, lit: { 'DEF%': 2, CHC: 2 } });
     expect(isWorn(r.st, CAREN, r.st.pieces.p1)).toBe(false);
     expect(undoPut(r.st, CAREN, r).pools[CAREN] ?? []).toEqual([]);
+  });
+});
+
+describe('N героя — сколько крита нужно от вещей (crit, MODEL.md crit soft cap)', () => {
+  const RIN = '2000019';
+  const base = () => v2([rec('p1', helmet({ CHC: 2 })), rec('p2', helmet({ HP: 1 }))], { [CAREN]: ['p1'], [KAPPA]: ['p2'] });
+
+  it('нет записи — 100; setCrit пишет целое 0…100, «Сбросить» (null или 100) убирает запись; без изменений — то же хранилище', () => {
+    const st = base();
+    expect(critNeed(st, CAREN)).toBe(100);
+    const one = setCrit(st, CAREN, 85);
+    expect([one.crit, critNeed(one, CAREN), critNeed(one, KAPPA)]).toEqual([{ [CAREN]: 85 }, 85, 100]);
+    expect(setCrit(one, CAREN, 85)).toBe(one);
+    expect(setCrit(one, KAPPA, 120).crit).toEqual({ [CAREN]: 85 });   // выше 100 — это 100, записи нет
+    expect(setCrit(one, KAPPA, -3.4).crit).toEqual({ [CAREN]: 85, [KAPPA]: 0 });
+    expect('crit' in setCrit(one, CAREN, null)).toBe(false);
+    expect('crit' in setCrit(one, CAREN, 100)).toBe(false);
+  });
+
+  it('чтение: целое 0…100 как есть, код копии его сохраняет; прочее отброшено, прочитано не целиком', () => {
+    const st = setCrit(setCrit(base(), CAREN, 85), RIN, 0);
+    expect(restoreGear(st, idx).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
+    expect((decodeGear(encodeGear(st), idx) as GearStore).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
+    expect(readsWhole(st, idx)).toBe(true);
+    for (const v of [85.5, 101, -1, '85', null]) {
+      const bad = { ...base(), crit: { [CAREN]: v } };
+      expect([restoreGear(bad, idx).crit, readsWhole(bad, idx)]).toEqual([undefined, false]);
+    }
+  });
+
+  it('от пула не зависит: «Убрать» последнюю вещь и gc N не снимают; dropChar снимает, undoDrop возвращает', () => {
+    const st = setCrit(setPin(base(), CAREN, pinOptions(idx.CHAR[CAREN])[0].key).st, CAREN, 90);
+    expect(gc(removeFrom(st, CAREN, 'p1')).crit).toEqual({ [CAREN]: 90 });
+    const r = dropChar(st, CAREN);
+    expect([r.st.crit, r.dropped.crit]).toEqual([undefined, 90]);
+    expect(undoDrop(r.st, r.dropped)).toEqual(st);
+    // за эти секунды N задали заново — «Вернуть» его не трогает
+    expect(undoDrop(setCrit(r.st, CAREN, 70), r.dropped).crit).toEqual({ [CAREN]: 70 });
+  });
+
+  it('Core Fusion N не переносит', () => {
+    const cf = D.chars.find((c) => c.fusionOf)!;
+    const st = setCrit(v2([rec('p1', helmet({ CHC: 2 }))], { [cf.fusionOf!]: ['p1'] }), cf.fusionOf!, 80);
+    const n = normalizeFusion(idx, [cf.id], st).st;
+    expect(n.crit).toEqual({ [cf.fusionOf!]: 80 });
   });
 });

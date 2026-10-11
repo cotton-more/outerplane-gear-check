@@ -8,6 +8,7 @@ export const ANCHORS = [
   'wtab', // вкладка «Надето» в карточке героя
   'wchain', // the chain with segment sums on «Надето»
   'wbudget', // the «Надето» heading that opens into stats, sets and passive
+  'wcrit', // «Крит от вещей» under the chain on «Надето»
   'pin', // «Закрепить набор» / «Закреплено: …» в карточке героя
   'fusion', // пометка «заменён Core Fusion X» на плитке X
   'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4

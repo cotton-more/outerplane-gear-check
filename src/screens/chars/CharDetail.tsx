@@ -9,7 +9,7 @@ import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import type { RosterApi } from '@/features/roster/useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { setPin, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { critNeed, setCrit, setPin, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
 import { undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
 import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 import { reasonOf } from '@/features/gear/pool/info';
@@ -17,6 +17,7 @@ import { PieceSheet } from './PieceSheet';
 import { PoolList, reasonText } from '@/features/gear/ui/PoolList';
 import { Redress, redressLabel } from '@/features/worn/Redress';
 import { PinSheet } from '@/features/worn/PinSheet';
+import { CritSheet } from '@/features/worn/CritSheet';
 import { WornGear } from '@/features/worn/WornGear';
 import { ShareButton } from '@/features/worn/ShareButton';
 import { shareCodeOf } from '@/features/worn/share';
@@ -57,7 +58,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // открыта «Надето»; у героя не из ростера и без вещей — «Билды» (смотрит справку)
   const [tab, setTab] = useState<Tab>(() => (c && !rosterApi.roster.has(c.id) && !view.of(c.id)?.pieces.length ? 'builds' : 'worn'));
   const [bi, setBi] = useState(0); // билд на вкладке «Билды»
-  const [sheet, setSheet] = useState<'redress' | 'pin' | null>(null);
+  const [sheet, setSheet] = useState<'redress' | 'pin' | 'crit' | null>(null);
   const [pieceId, setPieceId] = useState<string | null>(null);
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
   useEffect(() => { if (!active) { setPieceId(null); setSheet(null); } }, [active]);
@@ -131,6 +132,12 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const now = key ? pinChoices(hp!).find((f) => f.pin.key === key)?.pin : null;
     onGearToast?.(now ? t.card.pinned(comboText(ctx.idx, now.combo)) : t.card.pinNone, '', (x) => undoPin(x, c.id, r));
   };
+  // «Крит для X»: the hero's N; the line on «Надето» shows the change, no message
+  const saveCrit = (n: number) => {
+    setSheet(null);
+    const next = setCrit(gear.store, c.id, n);
+    if (next !== gear.store) gear.set(next);
+  };
   // «Поделиться»: надета хоть одна вещь (SPEC 3.1)
   const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, pieces, pin?.key ?? null) : null;
   const enter = onTryOn ? (slot: SlotId) => onTryOn(c, slot, undefined, false, true) : undefined;
@@ -186,7 +193,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           )}
           {shownTab === 'worn' && wv && (
             <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={live ? enter : undefined} onWearAll={live ? wearEverything : undefined}
-              share={shareCode ? <ShareButton code={shareCode} /> : undefined} />
+              onCrit={live ? () => setSheet('crit') : undefined} share={shareCode ? <ShareButton code={shareCode} /> : undefined} />
           )}
           {shownTab === 'pool' && <PoolList c={c} pieces={pieces} hp={hp} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />}
           {shownTab === 'builds' && (
@@ -207,6 +214,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {sheet === 'redress' && wv?.redress && hp && (
             <Redress c={c} ctx={ctx} P={hp.P} plan={wv.redress} onClose={() => setSheet(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
           )}
+          {sheet === 'crit' && <CritSheet c={c} now={critNeed(gear.store, c.id)} onClose={() => setSheet(null)} onSave={saveCrit} />}
           {sheet === 'pin' && hp && <PinSheet c={c} ctx={ctx} choices={pinChoices(hp)} now={pin?.key ?? null} onClose={() => setSheet(null)} onPin={doPin} />}
         </>
       ) : (

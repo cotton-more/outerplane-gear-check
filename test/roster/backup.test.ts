@@ -1,5 +1,6 @@
 // Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
-// размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11).
+// размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11), OGC-GEAR5 —
+// с N героя («сколько крита нужно от вещей», crit).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
@@ -35,6 +36,7 @@ const meaning = (st: GearStore) => ({
   pools: Object.fromEntries(Object.entries(st.pools).map(([h, ids]) => [h, ids.map((id) => content(st.pieces[id]))])),
   worn: Object.fromEntries(Object.entries(st.worn ?? {}).map(([h, w]) => [h, Object.fromEntries(Object.entries(w).map(([s, id]) => [s, content(st.pieces[id!])]))])),
   pin: st.pin ?? {},
+  crit: st.crit ?? {},
 });
 
 describe('1. вещь в коде', () => {
@@ -160,7 +162,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.2 вид: без пробелов, только буквы и цифры после префикса', () => {
-    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR4-[0-9A-Za-z]+$/);
+    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR5-[0-9A-Za-z]+$/);
   });
 
   it('2.7 начинается с OGC-GEAR и номера больше 2; разбор выпущенной версии — «код новее»', () => {
@@ -172,7 +174,7 @@ describe('2. резервная копия', () => {
 
   describe('2.8 целостность', () => {
     const code = encodeBackup(rich(), roster10);
-    const head = 'OGC-GEAR4-'.length;
+    const head = 'OGC-GEAR5-'.length;
     const body = code.slice(head);
     const flip = (s: string, i: number) => s.slice(0, i) + (s[i] === 'a' ? 'b' : 'a') + s.slice(i + 1);
     const sw = [...body].findIndex((ch, i) => i >= 10 && ch !== body[i + 1]); // соседние разные знаки
@@ -200,7 +202,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.10 номер формата выше известного — «новее»', () => {
-    expect(decodeBackup('OGC-GEAR5-abc')).toBe('newer');
+    expect(decodeBackup('OGC-GEAR6-abc')).toBe('newer');
     expect(decodeBackup('OGC-GEAR12-abc')).toBe('newer');
   });
 
@@ -218,6 +220,31 @@ describe('2. резервная копия', () => {
     expect(new Set(b.roster)).toEqual(new Set([CAREN, KAPPA, RIN, ANARKY]));
     expect(meaning(b.raw)).toEqual(meaning(was));
     expect(Object.keys(b.raw).sort()).toEqual(['pieces', 'pools', 'seq', 'v', 'worn']);
+  });
+
+  // код выпущенной версии (OGC-GEAR4, до N героя): у Caren шлем Critical Hit T4 надет, Epic аксессуар CHC в пуле, набор
+  // закреплён; Kappa — только в ростере
+  it('OGC-GEAR4 читается: ростер, пулы, надетое и закрепление — как были; N нет ни у кого', () => {
+    const V4 = 'OGC-GEAR4-5FuSLopk01xvOAdOZxrQU5hUCyjDGaSk68R3nNam3ZE2aDbT4';
+    const helmet = P('helmet', { setId: '4', bt: 4, at: '2026-10-01' });
+    const acc = P('accessory', { grade: 'rare', main: 'CHC', ...sub({ CHD: 3 }), bt: 0, at: '2026-10-02' });
+    const was = store([helmet, acc], { [CAREN]: [helmet.id, acc.id] },
+      { worn: { [CAREN]: { helmet: helmet.id } }, pin: { [CAREN]: `${CAREN}/Speed#13x4` } });
+
+    const b = decodeBackup(V4) as Backup;
+
+    expect(new Set(b.roster)).toEqual(new Set([CAREN, KAPPA]));
+    expect(meaning(b.raw)).toEqual(meaning(was));
+    expect(b.raw.crit).toBeUndefined();
+  });
+
+  it('N героя: туда и обратно, и у героя без вещей и без закрепления; 100 (по умолчанию) в код не пишется', () => {
+    const helmet = P('helmet', { setId: set('Speed') });
+    const st = store([helmet], { [CAREN]: [helmet.id] }, { crit: { [CAREN]: 85, [RIN]: 0, [KAPPA]: 100 } });
+    const b = round(st, [CAREN]);
+    expect(b.raw.crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
+    expect(b.roster).toEqual([CAREN]);
+    expect(meaning(loadGear(b.raw, idx, b.roster).st).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
   });
 
   it('старые коды и прочее — не этот формат', () => {

@@ -31,7 +31,8 @@ export interface Piece {
 // (updateIn). Незнакомые поля переносятся как есть. worn — что надето на персонаже: слот → id записи его пула (надетое ⊂
 // пул, слот записи = ключ; syncWorn). pin — закреплённый набор героя (MODEL.md §6): ключ pinKey
 // («герой/билд#подпись»); от пула не зависит — герой из ростера может закрепить набор до первой вещи. Пустых worn и pin
-// не храним. Поля v2 — «Собираю» (marks), autoNew, выбранный билд (aim), булавка обмена (pinned), билды v1 (v1builds) —
+// не храним. crit — сколько крита герою нужно от вещей (N, MODEL.md crit soft cap): целое 0…100, нет записи — 100;
+// как и pin, от пула не зависит и Core Fusion его не переносит. Поля v2 — «Собираю» (marks), autoNew, выбранный билд (aim), булавка обмена (pinned), билды v1 (v1builds) —
 // снимает перенос (features/gear/store/gearStore)
 export type Worn = Partial<Record<SlotId, string>>;
 export interface GearStore {
@@ -41,6 +42,7 @@ export interface GearStore {
   pools: Record<string, string[]>;
   worn?: Record<string, Worn>;
   pin?: Record<string, string>;
+  crit?: Record<string, number>;
   [extra: string]: unknown;
 }
 
@@ -95,25 +97,27 @@ export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slo
 // которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; at: number;
-  worn?: Worn; pin?: string;
+  worn?: Worn; pin?: string; crit?: number;
 }
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
   const ids = st.pools[charId] ?? [];
   const { [charId]: _, ...pools } = st.pools;
-  const { pin: _p, ...rest } = st;
+  const { pin: _p, crit: _c, ...rest } = st;
   const { [charId]: myPin, ...pin } = st.pin ?? {};
-  const next = gc({ ...rest, pools, ...(Object.keys(pin).length ? { pin } : {}) });
+  const { [charId]: myCrit, ...crit } = st.crit ?? {};
+  const next = gc({ ...rest, pools, ...(Object.keys(pin).length ? { pin } : {}), ...(Object.keys(crit).length ? { crit } : {}) });
   const dropped: Dropped = {
     charId, ids,
     pieces: Object.fromEntries(ids.filter((id) => !next.pieces[id] && st.pieces[id]).map((id) => [id, st.pieces[id]])),
     at: Object.keys(st.pools).indexOf(charId),
     ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}),
     ...(myPin !== undefined ? { pin: myPin } : {}),
+    ...(myCrit !== undefined ? { crit: myCrit } : {}),
   };
   return { st: next, dropped };
 }
 // «Вернуть» после dropChar: записи, пул на прежнем месте, надетое и закрепление — как были. За эти секунды герою успели
-// дать что-то новое — оно остаётся после прежних; надетое в слоте или закрепление успели выбрать заново — их не трогаем
+// дать что-то новое — оно остаётся после прежних; надетое в слоте, закрепление или N успели выбрать заново — их не трогаем
 export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const pieces = { ...d.pieces, ...st.pieces };
   const pool = [...d.ids.filter((id) => pieces[id]), ...(st.pools[d.charId] ?? []).filter((id) => !d.ids.includes(id))];
@@ -121,7 +125,10 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   if (pool.length) entries.splice(Math.min(Math.max(d.at, 0), entries.length), 0, [d.charId, pool]);
   const worn = d.worn ? { ...st.worn, [d.charId]: { ...d.worn, ...st.worn?.[d.charId] } } : st.worn;
   const pin = d.pin !== undefined ? { ...st.pin, [d.charId]: st.pin?.[d.charId] ?? d.pin } : st.pin;
-  return syncWorn({ ...st, pieces, pools: Object.fromEntries(entries), ...(worn ? { worn } : {}), ...(pin ? { pin } : {}) });
+  const crit = d.crit !== undefined ? { ...st.crit, [d.charId]: st.crit?.[d.charId] ?? d.crit } : st.crit;
+  return syncWorn({
+    ...st, pieces, pools: Object.fromEntries(entries), ...(worn ? { worn } : {}), ...(pin ? { pin } : {}), ...(crit ? { crit } : {}),
+  });
 }
 
 // новая запись вещи с формы: уровень (lit) и Breakthrough — как на форме (поля нет — не указан). yellow — тот же
@@ -198,6 +205,20 @@ export function setPin(st: GearStore, charId: string, key: string | null): PinRe
 // «Вернуть»: только если стоит то, что записано этим действием
 export const undoPin = (st: GearStore, charId: string, r: Pick<PinResult, 'was' | 'now'>): GearStore =>
   ((st.pin?.[charId] ?? null) === r.now ? setPin(st, charId, r.was).st : st);
+
+// N героя — сколько крита ему нужно от вещей (MODEL.md crit soft cap); нет записи — CRIT_NEED
+export const CRIT_NEED = 100;
+export const critNeed = (st: Pick<GearStore, 'crit'>, charId: string): number => st.crit?.[charId] ?? CRIT_NEED;
+// задать N (целое 0…100; null или CRIT_NEED — «Сбросить», запись убираем). Ничего не поменялось — то же хранилище
+export function setCrit(st: GearStore, charId: string, n: number | null): GearStore {
+  const v = n === null ? CRIT_NEED : Math.max(0, Math.min(CRIT_NEED, Math.round(n)));
+  if (critNeed(st, charId) === v) return st;
+  const { [charId]: _, ...rest } = st.crit ?? {};
+  const crit = v === CRIT_NEED ? rest : { ...rest, [charId]: v };
+  const next: GearStore = { ...st, crit };
+  if (!Object.keys(crit).length) delete next.crit;
+  return next;
+}
 
 // закрепления, которых больше нет в данных (билд переименовали или убрали набор, PLAN Д9): герой → ключ. Героя нет в
 // данных — не трогаем (его пул лежит, как лежал)

@@ -11,7 +11,8 @@ import { comboSig } from '@/game/build/variants';
 import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 import { setValue } from '@/game/set/setValue';
-import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { statTotal } from '@/game/stat/total';
+import { critNeed, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { better, bestLayout, epicToLegend, gearRank, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { milli, namedGain, THRESHOLD, type Fit } from '@/features/gear/model/vs';
 import { eligibleIn } from '@/features/gear/pool/info';
@@ -60,6 +61,10 @@ export interface WornSlot { slot: SlotId; piece: Piece | null; tokens: WornToken
 // side, % first: ATK% counts in full, flat ATK at ½ (a flat form that counts 0 is left out). seg 0 — nothing worn gives
 // the stat: the UI draws it dashed. sep — before the stat: '›' next place, '=' same place, '/' another form of the axis.
 export interface ChainSum { key: string; seg: number; credit: number; sep: '' | '›' | '=' | '/' }
+// «Crit from gear» (crit soft cap, decision 5): CHC the app knows from the worn pieces and the hero (game/stat/total) and the
+// hero's N («CHC needed from gear», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
+// that has the hero's CHC and main values (an old snapshot would show a number far below the game's)
+export interface WornCrit { total: number; need: number }
 // another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
 export interface AltChain { build: string; chain: ChainSum[] }
 export interface WornView {
@@ -74,6 +79,7 @@ export interface WornView {
   t4: T4Line[];            // what T4 on worn armor would add to each set, from 1 point; [] — a hero without builds
   redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
   seek: SeekRow[];         // «Что искать»: 1–3 из 4, от ближнего, ничего не добавляющие скрыты; закреплён — только его набор
+  crit: WornCrit | null;   // «Крит от вещей»; null — CHC нет в цепочке, ничего не надето или у героя нет билдов
   pool: number;            // вещей в пуле героя
 }
 
@@ -104,6 +110,8 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     t4: P ? t4Of(ctx, P, worn) : [],
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],
+    crit: P && c.chc && ctx.idx.D.mainValues && Object.keys(worn).length && P.chain.subs.some((tier) => tier.some((k) => k.trim() === 'CHC'))
+      ? { total: statTotal(ctx, c, Object.values(worn), 'CHC').total, need: critNeed(st, c.id) } : null,
     pool: pieces.length,
   };
 }

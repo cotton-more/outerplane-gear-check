@@ -79,8 +79,8 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 
 // перенос v1 → v3. Ростер и Core Fusion (features/gear/model/fusion normalizeStored)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
-  // надетого и закрепления в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
-  const { builds, v: _, worn: _w, pin: _n, ...rest } = withoutLegacy(v1);
+  // надетого, закрепления и N в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
+  const { builds, v: _, worn: _w, pin: _n, crit: _c, ...rest } = withoutLegacy(v1);
   const pools: Record<string, string[]> = {};
   for (const k of Object.keys(builds).sort()) {
     // ключ v1 — «персонаж/билд»; без «/» весь ключ — персонаж (indexOf −1 обрезал бы у id последнюю цифру)
@@ -113,6 +113,10 @@ function restoreWorn(raw: unknown): Record<string, Worn> {
 const restorePin = (raw: unknown): Record<string, string> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, string] => typeof e[1] === 'string'));
 
+// N героя (crit, MODEL.md crit soft cap) — герой → целое 0…100; прочее отбрасываем (чтение тогда «не целиком»)
+const restoreCrit = (raw: unknown): Record<string, number> =>
+  Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, number] => Number.isInteger(e[1]) && (e[1] as number) >= 0 && (e[1] as number) <= 100));
+
 // v2 и v3: пулы — массивы строк, id только существующих вещей, без повторов; надетое и закрепление — restoreWorn /
 // restorePin; поля прежней модели (LEGACY) у v2 — снимаем
 function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
@@ -122,11 +126,12 @@ function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
     const ids = [...new Set(poolIds(x).filter((pid): pid is string => typeof pid === 'string' && !!pieces[pid]))];
     if (ids.length) pools[id] = ids;
   }
-  const worn = restoreWorn(r.worn), pin = restorePin(r.pin);
-  const { worn: _w, pin: _n, ...rest } = withoutLegacy(r);
+  const worn = restoreWorn(r.worn), pin = restorePin(r.pin), crit = restoreCrit(r.crit);
+  const { worn: _w, pin: _n, crit: _c, ...rest } = withoutLegacy(r);
   return gc({
     ...rest, v: 3, seq: seqOf(r, pieces), pieces, pools,
     ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(pin).length ? { pin } : {}),
+    ...(Object.keys(crit).length ? { crit } : {}),
   });
 }
 

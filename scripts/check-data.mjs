@@ -221,6 +221,15 @@ function problems(D) {
   for (const s of D.sets) {
     for (const r of Object.values(s.bonus ?? {}).flatMap((t) => [t.p2, t.p4])) if (r?.stat && !subKeys.has(r.stat)) out.add(`сет ${s.name}: бонус — сабстат ${r.stat}, которого нет`);
   }
+  // crit from gear (update.py crit_profile, main_values): a changed format zeroes the card line «Крит от вещей»
+  const noChc = D.chars.filter((c) => !c.chc || ![c.chc.base, c.chc.cls, c.chc.quirk].every((v) => Number.isInteger(v) && v >= 0 && v <= 1000));
+  if (noChc.length) out.add(`CHC героя (chc) нет или не число: ${noChc.slice(0, 5).map((c) => c.name).join(', ')}${noChc.length > 5 ? '…' : ''}`);
+  const cls = D.chars.filter((c) => c.class === 'striker' && c.chc?.cls > 0).length;
+  if (D.chars.length && cls < 10) out.add(`CHC от класса (Striker +5 %) нашёлся у ${cls} героев (ждём ≥ 10) — формат class_passive изменился?`);
+  for (const g of ['unique', 'rare']) {
+    const row = D.mainValues?.accessory?.[g]?.CHC;
+    if (!(row?.length === 5 && row.every((v, i) => v > 0 && (!i || v > row[i - 1])))) out.add(`нет значений main CHC аксессуара ${GRADE_EN[g]} на +10 по T0…T4 (mainValues)`);
+  }
   // team synergy (update.py build_synergy): a changed outerpedia format empties or breaks the block
   const syn = D.synergy;
   if (!syn) out.add('нет блока synergy (экран «Команда»)');

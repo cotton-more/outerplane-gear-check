@@ -240,6 +240,18 @@ html.xs .bgear-t { grid-row: 3; }
 .wchain .pill b { font-weight: 800; }
 .wchain .pill.ok { color: color-mix(in srgb, var(--keep) 55%, var(--ink)); background: color-mix(in srgb, var(--keep) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--keep) calc(35% + 65% * var(--k, 1)), transparent); }
 .wchain .pill.half { color: color-mix(in srgb, var(--temp) 55%, var(--ink)); background: color-mix(in srgb, var(--temp) calc(8% + 30% * var(--k, 1)), var(--surface)); border-color: color-mix(in srgb, var(--temp) calc(35% + 65% * var(--k, 1)), transparent); }
+/* «Крит от вещей: 98%» under the chain (WornGear CritLine): a quiet line, amber from N − 15 — where crit starts to count
+   less; a button that opens the hero's N (CritSheet) */
+.wcrit { justify-self: start; margin: 0; padding: 2px 0; border: 0; background: none; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-2); text-align: left; }
+.wcrit.near { color: var(--temp); }
+button.wcrit span { color: var(--ink-3); font-size: 11px; }
+.crit-about { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.crit-n { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crit-n > .btn { min-width: 44px; min-height: 44px; font-size: 20px; line-height: 1; }
+.crit-in { display: inline-flex; align-items: baseline; gap: 2px; font: 700 20px var(--font-mono); color: var(--ink); }
+.crit-in input { box-sizing: border-box; width: calc(3ch + 20px); min-height: 44px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); color: var(--ink); font: inherit; text-align: center; }
+.crit-reset { margin-left: auto; min-height: 44px; }
+.crit-reset:disabled { color: var(--ink-3); text-decoration: none; }
 /* «Надето» without «Что искать» after it: the last piece doesn't touch the card's edge (.seek brings its own 20px) */
 .bgear.worn:last-child { padding-bottom: 20px; }
 .worn-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }

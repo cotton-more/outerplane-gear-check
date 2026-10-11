@@ -94,6 +94,8 @@ SOURCE_FILES = {
     "talisman": "data/generated/equipment/talisman.json",
     "passives": "data/generated/equipment/passives.json",
     "pools": "data/generated/equipment/pools.json",
+    "enhance": "data/generated/equipment/enhance.json",
+    "breakLimits": "data/generated/equipment/breakLimits.json",
     "families": "data/generated/equipment/families.json",
     "sources": "data/generated/equipment/sources.json",
     "bosses": "data/generated/equipment/bosses.json",
@@ -450,6 +452,63 @@ def flat_profile(c: dict, prog: dict) -> dict:
         # без собственной базы сравнение flat/% бессмысленно (иначе база = одни quirks) — пусть страница берёт средние
         ok = st.get("min", 0) > 0 if axis == "SPD" else st.get("max", 0) > st.get("min", 0) > 0
         out[axis] = [at[axis][lo], at[axis][hi], quirk[axis]] if ok else None
+    return out
+
+
+def crit_profile(c: dict, skills: dict, buffs: dict, prog: dict) -> dict:
+    """CHC of the hero from sources that are always on, in ‰ (1000 = 100 %): {"base", "cls", "quirk"}.
+
+    base — stats.critical_rate (no growth); cls — the class passive (class_passive skill): BT_STAT_PREMIUM on the hero
+    with ST_CRITICAL_RATE, OAT_ADD, PASSIVE (Striker: ATTACKER_PASSIVE_2 = 50); quirk — awakening quirk nodes with
+    critical_rate "add" (element nodes 30 + 30 + 40), counted like flat_profile counts its quirks. The game sums these
+    with gear and clamps CHC at 1000 (CStatValue_SetFinalValue.cs).
+    """
+    st = (c.get("stats") or {}).get("critical_rate") or {}
+    cls = 0
+    for sid in c.get("skills") or []:
+        sk = skills.get(sid) or {}
+        if sk.get("type") != "class_passive":
+            continue
+        for e in sk.get("effects") or []:
+            if e.get("type") != "BT_STAT_PREMIUM" or e.get("stat") != "critical_rate" or e.get("target") != "me":
+                continue
+            for b in buffs.get(e.get("buff"), [])[:1]:
+                if b.get("applyingType") == "OAT_ADD" and b.get("createType") in ("PASSIVE", "PASSIVE2"):
+                    cls += b.get("value", 0)
+    q = prog.get("quirks", {})
+    blocks = [q.get("elemental", {}).get(c.get("element")), q.get("class", {}).get(c.get("class")),
+              q.get("subclass", {}).get(c.get("subClass")) if c.get("subClass") else None]
+    quirk = sum(b.get("value", 0) for bl in blocks for b in (bl or {}).get("stat", [])
+                if b.get("stat") == "critical_rate" and b.get("applying") != "rate")
+    return {"base": st.get("min", 0), "cls": cls, "quirk": quirk}
+
+
+def main_values(src: dict, pools: dict) -> dict:
+    """Main line values of 6★ gear at +10 by Breakthrough tier: slot → grade → label → [T0, T1, T2, T3, T4].
+
+    Game units: ‰ for percent stats (CHC 400 = 40 %), points for flat ones. Value = (int)(base × (1 + Σ enhance) ×
+    (1 + Σ tier factors)) (CItemMainOption_get_OptionValue.cs); the app assumes every main is +10. Items of one slot
+    and grade may differ (weapon flat ATK 190/200): the smallest is taken, so a total built from it never exceeds the
+    game's.
+    """
+    enh = src.get("enhance") or {}
+    ench = enh.get("enhanceFactor", 0.4) * enh.get("maxEnhance", 10)
+    limits = src.get("breakLimits") or {}
+    out: dict = {}
+    for slot in ("weapon", "accessory", *ARMOR_SLOTS):
+        for it in src[slot].values():
+            if it.get("star") != 6 or it.get("grade") not in APP_GRADES:
+                continue
+            factors = (limits.get(it.get("breakLimit") or "") or {}).get("factors") or [0.05] * 4
+            for g in (it.get("options") if "options" in it else it.get("main", [])):
+                for o in live_options(pools, g):
+                    lab = option_label(o)
+                    if not lab:
+                        continue
+                    row = [int(o["value"] * (1 + ench) * (1 + sum(factors[:bt])) + 1e-6) for bt in range(5)]
+                    by = out.setdefault(slot, {}).setdefault(it["grade"], {})
+                    if lab not in by or row[0] < by[lab][0]:
+                        by[lab] = row
     return out
 
 
@@ -862,6 +921,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         entry["rankPvp"] = cur.get("rankPvp")
         entry["flat"] = flat_profile({**c, "id": cid}, src["progression"])
         entry["spd"] = entry["flat"].pop("SPD")  # база SPD для бонуса Speed Set: [lv100, макс. Limit Break, quirks]
+        entry["chc"] = crit_profile(c, src["skills"], src["dmgBuffs"]["buffs"], src["progression"])
         if not all(entry["flat"].get(ax) for ax in ("ATK", "DEF", "HP")):
             warn.add(f"{who}: нет базовых статов — flat/% для него оценивается по средним")
         chars.append(entry)
@@ -946,6 +1006,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         "mainLabels": main_labels,
         "mainBlocks": main_blocks,
         "fixedMains": fixed_mains,
+        "mainValues": main_values(src, pools),
         "sets": sets,
         "weapons": weapons,
         "amulets": amulets,

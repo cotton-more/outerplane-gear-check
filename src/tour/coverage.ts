@@ -39,6 +39,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/roster/RosterRemoveAsk.tsx': 'helper',     // окно «Убрать X из ростера?» при звезде героя с вещами: объясняет себя само
   'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
   'features/worn/WornBudget.tsx': 'helper',            // budget under the Worn heading: the wornBudget tip explains it
+  'features/worn/CritSheet.tsx': 'helper',             // the hero's N from «Крит от вещей» on Worn: the wornCrit tip explains it, the sheet's text too
   'features/worn/WornSets.tsx': 'helper',              // sets and the T4 line under the chain on Worn: explained by the wornTab tip
   'features/team/ui/Stars.tsx': 'helper',              // transcend stars on Team: tap the N-th star, as in the game
   'features/team/ui/TeamSlots.tsx': 'helper',          // the four Team spots: explained by the Team tip

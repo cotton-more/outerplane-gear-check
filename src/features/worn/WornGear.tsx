@@ -10,7 +10,7 @@ import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import { wearAll } from '@/features/gear/pool';
-import type { WornView } from './wearing';
+import type { WornCrit, WornView } from './wearing';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon } from '@/game/icons/Img';
 import { tour, tourItem } from '@/tour/anchors';
@@ -61,6 +61,17 @@ function WornChain({ chain, anchor }: { chain: ChainSum[]; anchor: boolean }) {
   );
 }
 
+// «Крит от вещей: 98%» (crit soft cap, decision 5): just the percent, amber from N − 15 — where crit starts to count less;
+// floored, so the line never shows more than the app counts
+function CritLine({ crit, onClick }: { crit: WornCrit; onClick?: () => void }) {
+  const t = useT();
+  const cls = `wcrit${crit.total >= crit.need - 15 ? ' near' : ''}`;
+  const text = t.card.critLine(Math.floor(crit.total + 1e-9));
+  return onClick
+    ? <button type="button" className={`${cls} hit`} onClick={onClick} {...tour('wcrit')}>{text}<span aria-hidden="true">▸</span></button>
+    : <p className={cls} {...tour('wcrit')}>{text}</p>;
+}
+
 // строка вещи: нажатие открывает шторку вещи; в карточке показа — не кнопка
 const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: SlotId; shown: boolean; children: ReactNode }) => (onClick
   ? <button type="button" className="bgear-row" onClick={onClick} {...(shown ? {} : tourItem(slot))}>{children}</button>
@@ -68,10 +79,11 @@ const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: S
 
 // onEnter — «Ввести» у пустого слота; onWearAll — «Да, всё надето». Нет их — обучение и новая версия страницы: слоты
 // показываются, действий нет. share — «Поделиться» у заголовка (ShareButton). shown — карточка показа чужого героя
-// (DEVELOPMENT.md "features/worn"): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор
-export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, share, shown = false, pinned }: {
+// (DEVELOPMENT.md "features/worn"): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор.
+// onCrit — «Крит от вещей» opens the hero's N (CritSheet); without it the line is plain text. Not on the shared card
+export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, onCrit, share, shown = false, pinned }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece?: (id: string) => void;
-  onEnter?: (slot: SlotId) => void; onWearAll?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;
+  onEnter?: (slot: SlotId) => void; onWearAll?: () => void; onCrit?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;
 }) {
   const t = useT();
   const { idx } = ctx;
@@ -106,6 +118,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, sh
         {shownPts && wv.alt.map((a) => (
           <div key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}</span><WornChain chain={a.chain} anchor={false} /></div>
         ))}
+        {wv.crit && !shown && <CritLine crit={wv.crit} onClick={onCrit} />}
         <WornSets idx={idx} wv={wv} t4={!shown} />
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {

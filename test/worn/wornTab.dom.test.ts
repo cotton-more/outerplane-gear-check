@@ -372,3 +372,72 @@ describe('worn budget', () => {
   });
 
 });
+
+// «Crit from gear» (crit soft cap, decision 5): the line under the chain, amber from N − 15, tap → the hero's N
+describe('«Надето»: Crit from gear', () => {
+  const worn = (ps: Pc[], hero = caren.id, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
+  const line = () => $('.bgear.worn .wcrit');
+  const type = async (el: HTMLInputElement, v: string) => {
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  };
+
+  it('Caren (Striker): 5 base + 5 class + 10 quirks + CHC 2 on the helmet = 26%; under N − 15 — not amber', async () => {
+    await mount({ gear: worn([WEAK]) });
+    expect(line()?.textContent).toBe('Crit from gear: 26%▸');
+    expect(line()?.classList.contains('near')).toBe(false);
+  });
+
+  it('a lower N turns the line amber from N − 15', async () => {
+    await mount({ gear: worn([WEAK], caren.id, { crit: { [caren.id]: 41 } }) });
+    expect(line()?.classList.contains('near')).toBe(true);
+  });
+
+  it('tap → the sheet: type 85, Done — stored; Reset and Done — back to 100, the record is gone', async () => {
+    await mount({ gear: worn([WEAK]) });
+    await click(line());
+    const input = $('.critsheet input') as HTMLInputElement;
+    expect(input.value).toBe('100');
+    await type(input, '85');
+    await click(byText('.critsheet .btn.primary', 'Done'));
+    expect(stored().crit).toEqual({ [caren.id]: 85 });
+    expect($('.critsheet')).toBeNull();
+    await click(line());
+    expect(($('.critsheet input') as HTMLInputElement).value).toBe('85');
+    await click(byText('.critsheet .linkbtn', 'Reset'));
+    await click(byText('.critsheet .btn', '−'));
+    await click(byText('.critsheet .btn.primary', 'Done'));
+    expect(stored().crit).toEqual({ [caren.id]: 99 });
+  });
+
+  it('no line for a hero without CHC in the chain, and with nothing worn', async () => {
+    const akari = D.chars.find((c) => c.name === 'Akari')!;
+    await mount({ gear: worn([WEAK], akari.id), roster: [akari.id] }, { charId: akari.id });
+    expect($('.bgear.worn')).not.toBeNull();
+    expect(line()).toBeNull();
+  });
+
+  it('nothing worn — no line', async () => {
+    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }) });
+    expect(line()).toBeNull();
+  });
+});
+
+describe('«Надето»: Crit from gear on old data', () => {
+  it('a snapshot without the hero\'s CHC or main values — no line (the number would be far below the game\'s)', async () => {
+    const old = { ...D, mainValues: undefined };
+    const { wornView } = await import('@/features/worn/wearing');
+    const { createIndex } = await import('@/game/data');
+    const { makeCtx } = await import('@/game/context');
+    const { heroPool } = await import('@/features/gear/verdict');
+    const view = (data: Dataset) => {
+      const ctx = makeCtx(createIndex(data), { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set([caren.id]));
+      const st = G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) as never;
+      const c = ctx.idx.CHAR[caren.id];
+      return wornView(ctx, c, st, heroPool(ctx, c, [WEAK as never], new Set(['p1'])));
+    };
+    expect(view(D).crit).toEqual({ total: 26, need: 100 });
+    expect(view(old).crit).toBeNull();
+    expect(view({ ...D, chars: D.chars.map((c) => ({ ...c, chc: undefined })) }).crit).toBeNull();
+  });
+});
