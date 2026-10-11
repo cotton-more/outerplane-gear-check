@@ -109,7 +109,7 @@ export function pieceCrit(P: Profile, p: Piece): PieceCrit {
   return r;
 }
 // the piece's points without its CHC substats
-const nonChc = (P: Profile, p: Piece): number => { const k = pieceCrit(P, p); return piecePoints(P, p) - k.w * k.n; };
+export const nonChc = (P: Profile, p: Piece): number => { const k = pieceCrit(P, p); return piecePoints(P, p) - k.w * k.n; };
 const critStep = (P: Profile): number => P.ctx.idx.SUB.CHC?.step ?? 3;
 const ownChc = (P: Profile): number => { const o = ownStat(P.ctx, P.c, 'CHC'); return o.base + o.cls + o.quirk; };
 // CHC of a set's rows that are on with n pieces, n4 of them at T4 (the bonusRows rule, as setValue)
@@ -169,6 +169,44 @@ function critState(P: Profile, layout: Layout): { c0: number; segs: CritSegs[]; 
     segs.push(...sc.segs);
   }
   return { c0, segs, total: c0 + total };
+}
+
+// the crit loss of a set of pieces worn together (one per slot) — for trade (features/trade/model/world), which builds kits
+// from candidates of many heroes; 0 for a hero without CHC in the chain
+export function critLossOf(P: Profile, pieces: readonly Piece[]): number {
+  if (!P.critOn) return 0;
+  const layout: Layout = {};
+  for (const p of pieces) layout[p.slot] = p;
+  const st = critState(P, layout);
+  return lossOf(P, st.c0, st.segs);
+}
+// can any kit of these pieces reach the knee (the upper bound of critBinds); no — the crit term is 0 for all of them
+export const critCanBind = (P: Profile, pieces: readonly Piece[]): boolean => critBinds(P, pieces, false);
+const ownMemo = new WeakMap<Profile, number>();
+const ownCached = (P: Profile): number => { let r = ownMemo.get(P); if (r === undefined) ownMemo.set(P, (r = ownChc(P))); return r; };
+
+// The numbers of a quick crit bound for trade's kits (features/trade/model/world): the hero's own crit, the knee, a piece's
+// most crit (main + substats), a set's most crit from its rows (at 4 pieces on T4). A kit whose sum stays under the knee
+// loses nothing
+export interface CritBound { own: number; knee: number; rows: number; piece: (p: Piece) => number; set: (set: string) => number }
+export function critBound(P: Profile): CritBound {
+  const step = critStep(P);
+  const setMax = (set: string) => Math.max(...[2, 3, 4].flatMap((n) => Array.from({ length: n + 1 }, (_, n4) => setChc(P, set, n, n4))));
+  return {
+    own: ownCached(P),
+    knee: Math.max(0, P.need - CRIT_KNEE),
+    rows: rowsMaxOf(P, setMax),
+    piece: (p) => { const k = pieceCrit(P, p); return k.main + k.n * step; },
+    set: setMax,
+  };
+}
+// the most crit any set's rows give — the same for every hero (rows are data), once per dataset
+const rowsMaxMemo = new WeakMap<object, number>();
+function rowsMaxOf(P: Profile, setMax: (set: string) => number): number {
+  const D = P.ctx.idx.D;
+  let r = rowsMaxMemo.get(D);
+  if (r === undefined) rowsMaxMemo.set(D, (r = Math.max(0, ...D.sets.map((s) => setMax(s.id)))));
+  return r;
 }
 
 // MODEL.md crit, decision 3 («Отложить»): a piece's points as if it stood in its slot of `layout` — its CHC substats
@@ -374,14 +412,17 @@ function critBinds(P: Profile, cands: readonly Piece[], armorOnly: boolean): boo
 // usual order), has at least b's points without CHC, no more CHC from its main, and their CHC weight is equal (or one has
 // no CHC substat). Then a layout with a is never worth less than with b: lower C₀ never lowers V, and with one weight the
 // extra segments of either piece add between 0 and their linear points
-function dominates(P: Profile, a: Piece, b: Piece): boolean {
+// For armor also not worse on the ties after V (more Legendary, then older): V may come out equal once the extra CHC is worth
+// nothing, and then b would win on them. Gear ties go by the list order, where a is first anyway (gear = true)
+function dominates(P: Profile, a: Piece, b: Piece, gear = false): boolean {
   const ka = pieceCrit(P, a), kb = pieceCrit(P, b);
-  return nonChc(P, a) >= nonChc(P, b) - EPS && ka.main <= kb.main + EPS && (ka.w === kb.w || !ka.n || !kb.n);
+  if (!(nonChc(P, a) >= nonChc(P, b) - EPS && ka.main <= kb.main + EPS && (ka.w === kb.w || !ka.n || !kb.n))) return false;
+  return gear || gradeFirst(a, b) < 0 || (gradeFirst(a, b) === 0 && ageOf(a) <= ageOf(b));
 }
 // keep the pieces nobody earlier in the list dominates (the list is in "first by points" order)
-function front(P: Profile, sorted: readonly Piece[]): Piece[] {
+function front(P: Profile, sorted: readonly Piece[], gear = false): Piece[] {
   const out: Piece[] = [];
-  for (const p of sorted) if (!out.some((a) => dominates(P, a, p))) out.push(p);
+  for (const p of sorted) if (!out.some((a) => dominates(P, a, p, gear))) out.push(p);
   return out;
 }
 
@@ -389,6 +430,8 @@ function front(P: Profile, sorted: readonly Piece[]): Piece[] {
 // join the search (an accessory's CHC main and a weapon's CHC substats change what armor CHC is worth), in the usual
 // order — at equal V the usual pick wins. Armor: per (set, T4) the undominated pieces instead of one. V of each layout
 // is layoutValue's: points + sets − crit loss. prune: false — every top-rank gear piece and every armor piece (the oracle)
+// With pruning a branch whose plain V can't reach the best so far is cut (points so far + the most points of the slots left +
+// the most a layout's sets can be worth): the crit loss only lowers V
 function critBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layout: Layout; value: LayoutValue } {
   const { prune = true } = opts;
   const order = (a: Piece, z: Piece) => (gearBetter(P, a, z) ? -1 : gearBetter(P, z, a) ? 1 : 0);
@@ -398,7 +441,7 @@ function critBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layo
     if (!mine.length) return [null];
     const r = Math.max(...mine.map((p) => RANK[gearRank(P, p)]));
     const top = mine.filter((p) => RANK[gearRank(P, p)] === r).sort(order);
-    return prune ? front(P, top) : top;
+    return prune ? front(P, top, true) : top;
   });
   const perSlot = ARMOR.map((slot): (Piece | null)[] => {
     const all = cands.filter((p) => p.slot === slot);
@@ -413,8 +456,20 @@ function critBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layo
   let top: Top | null = null;
   const cur: (Piece | null)[] = [null, null, null, null];
   const cnt = new Map<string, [number, number]>();
-  let ptsSum = 0;
+  let ptsSum = 0, gPts = 0;
   let g: (Piece | null)[] = [null, null], gi = [0, 0];
+  // the bound: the most points left per armor slot, the most the sets of four slots can be worth
+  const restMax = [0, 0, 0, 0, 0];
+  for (let i = 3; i >= 0; i--) restMax[i] = restMax[i + 1] + Math.max(0, ...perSlot[i].map((p) => (p ? piecePoints(P, p) : 0)));
+  let b2 = 0, b3 = 0, b4 = 0;
+  for (const set of new Set(perSlot.flat().map((p) => p?.setId).filter((x): x is string => !!x))) {
+    for (let n4 = 0; n4 <= 4; n4++) {
+      if (n4 <= 2) b2 = Math.max(b2, setValue(P, set, 2, n4).value);
+      if (n4 <= 3) b3 = Math.max(b3, setValue(P, set, 3, n4).value);
+      b4 = Math.max(b4, setValue(P, set, 4, n4).value);
+    }
+  }
+  const setCap = Math.max(0, b4, b3, 2 * b2);
   const leaf = () => {
     let lin = ptsSum;
     for (const p of g) if (p) lin += piecePoints(P, p);
@@ -447,6 +502,7 @@ function critBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layo
   };
   const walk = (i: number) => {
     if (i === ARMOR.length) { leaf(); return; }
+    if (prune && top && ptsSum + gPts + restMax[i] + setCap < top.v - EPS) return;
     for (const p of perSlot[i]) {
       cur[i] = p;
       if (p) { ptsSum += piecePoints(P, p); add(cnt, p, 1); }
@@ -455,7 +511,11 @@ function critBest(P: Profile, cands: readonly Piece[], opts: LayoutOpts): { layo
     }
     cur[i] = null;
   };
-  gear[0].forEach((w, i) => gear[1].forEach((a, j) => { g = [w, a]; gi = [i, j]; walk(0); }));
+  gear[0].forEach((w, i) => gear[1].forEach((a, j) => {
+    g = [w, a]; gi = [i, j];
+    gPts = (w ? piecePoints(P, w) : 0) + (a ? piecePoints(P, a) : 0);
+    walk(0);
+  }));
   const layout: Layout = {};
   const best = top as Top | null;
   best!.gear.forEach((p, i) => { if (p) layout[GEAR[i]] = p; });

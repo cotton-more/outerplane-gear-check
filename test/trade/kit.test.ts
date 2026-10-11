@@ -214,3 +214,43 @@ describe('X2: отсечение и границы на броне', () => {
     }
   });
 });
+
+// MODEL.md crit: the soft cap links the slots; the kit search (Pareto fronts, gear inside the search, branch and bound on the
+// plain V) must still equal the full search, where V of every kit is keyOf's (plain V minus the crit loss)
+describe('X2c: мягкий потолок крита — лучший комплект = полный перебор', () => {
+  it('300 случайных синтетик с критом: веса 1 / 0,8 / 0,65, main CHC на аксессуаре, N 100 / 70 / 40', () => {
+    const r = lcg(13503);
+    const int = (n: number) => Math.floor(r() * n);
+    let binding = 0;
+    for (let t = 0; t < 300; t++) {
+      const names = ['A', 'B', 'C'].slice(0, 2 + int(2));
+      const bonus: Record<string, { 2?: number; 4?: number }> = {};
+      for (const s of names) bonus[s] = { ...(r() < 0.8 ? { 2: int(6) } : {}), ...(r() < 0.6 ? { 4: int(9) } : {}) };
+      const items: Record<string, { w?: number; n?: number; main?: number }> = {};
+      const vs: Record<string, number> = {};
+      const list: Cand[] = [];
+      for (const slot of SLOT_ORDER) {
+        const armor = !['weapon', 'accessory'].includes(slot);
+        for (let i = 1 + int(3); i > 0; i--) {
+          const n = r() < 0.7 ? 1 + int(6) : 0, w = armor ? 0.8 : [1, 0.8, 0.65][int(3)];
+          const other = Math.round(r() * 12) / 2;
+          const c = cand({
+            slot, v: other + w * n, set: armor ? names[int(names.length)] : null, t4: armor && r() < 0.3,
+            fit: armor ? 'no' : (['rec', 'stopgap', 'no'] as const)[int(3)], cost: int(4) as 0 | 1 | 2 | 3, loss: int(4), rank: int(4),
+          });
+          items[c.item.id] = { w, n, main: slot === 'accessory' && r() < 0.5 ? 40 + 2 * int(5) : 0 };
+          vs[c.item.id] = other + w * n;
+          list.push(c);
+        }
+      }
+      const need = [100, 70, 40][t % 3];
+      const g = synthGauge({ bonus, crit: { need, c0: 20, items }, vOf: (id) => vs[id] });
+      const c = candsOf(list);
+      const best = bestKit(g, c), brute = bruteKit(g, c);
+      if (g.crit!.loss(SLOT_ORDER.flatMap((s) => (best.slots[s] ? [best.slots[s]!.item.id] : []))) > 0) binding++;
+      expect(best.key, `случай ${t}`).toEqual(brute.key);
+      for (const slot of SLOT_ORDER) expect(best.slots[slot]?.item.id, `случай ${t} ${slot}`).toBe(brute.slots[slot]?.item.id);
+    }
+    expect(binding).toBeGreaterThan(60);
+  });
+});

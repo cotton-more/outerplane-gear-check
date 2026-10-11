@@ -202,6 +202,9 @@ describe('отсечка при упёртом крите', () => {
           cases++;
           if (a.value.critLoss > 1e-9) binding++;
           if (a.value.rank !== b.value.rank || Math.abs(a.value.v - b.value.v) > 1e-7) bad.push(`${c.name} N${need} #${i}: ${a.value.v} / ${b.value.v}`);
+          // and the same pieces: pruning never drops a piece that would win a tie (more Legendary, older)
+          const ids = (l: typeof a.layout) => Object.entries(l).map(([s, p]) => `${s}:${p!.id}`).sort().join(' ');
+          if (ids(a.layout) !== ids(b.layout)) bad.push(`${c.name} N${need} #${i}: ${ids(a.layout)} / ${ids(b.layout)}`);
         }
       }
     }

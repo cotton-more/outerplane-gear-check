@@ -21,6 +21,7 @@ export interface Item {
   t4: boolean;              // bt === 4
   ord: number;              // номер записи: меньше — старше
   grade?: Grade;            // Epic ('rare') or Legendary ('unique'); synthetic worlds leave it out (Q7 then never applies)
+  chc?: number;             // its most crit, % — CHC main at +10 by tier + CHC substats (the same for every hero; MODEL.md crit)
 }
 
 export interface Hero {
@@ -45,6 +46,22 @@ export interface Gauge {
   parts: readonly Part[];
   value(itemId: string): Worth | null; // null — герой не может носить (класс)
   bonus(set: string, n: number, n4: number): SetGain;
+  crit?: CritGauge;                   // the crit soft cap (MODEL.md crit); no — the hero has no CHC in the chain
+}
+// What crit costs a kit (MODEL.md crit): the loss of the CHC substats and crit set rows on the hero's curve for the kit's
+// items together; whether any kit of these items can reach the knee (no — the term is 0, the plain search is exact);
+// an item's facts for pruning: CHC weight on it, CHC segments, CHC from its main, its points without CHC
+export interface CritFacts { w: number; n: number; main: number; non: Milli }
+// own, knee, setMax — numbers of a quick bound: own + the items' chc + the most crit rows of each set with 2+ pieces in the
+// kit ≤ knee — the kit loses nothing (keyOf checks it before asking loss)
+export interface CritGauge {
+  own: number;
+  knee: number;
+  rowsMax: number;                    // the most crit any set's rows give (Critical Hit ×4 T4: 30): own + items + this ≤ knee — no loss
+  setMax(set: string): number;
+  loss(itemIds: readonly string[]): Milli;
+  binds(itemIds: readonly string[]): boolean;
+  facts(itemId: string): CritFacts;
 }
 
 export interface World {

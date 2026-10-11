@@ -3,9 +3,10 @@
 // оружие и аксессуар — по слоту (ранг, потом очки), броня — перебор слотов, максимум V.
 // Слоты независимы по пользе и по ничьим (суммы и порядок по слотам), поэтому лучшее по частям = лучшее целиком.
 // Отсечение брони точное: в слоте из вещей одного ключа (сет, T4) остаётся лучшая по (очки, цена, потеря, ростер,
-// старшинство) — сеты и их ценность у них одни и те же.
+// старшинство) — сеты и их ценность у них одни и те же. Мягкий потолок крита (MODEL.md crit) связывает слоты: когда крит
+// получателя может дойти до колена с этими кандидатами, работает critKit — как critBest лучшей раскладки.
 import type { SlotId } from '@/game/data/types';
-import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, type Cand, type Cands, type Fit, type Gauge, type Kit, type KitKey } from './model';
+import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, SLOT_ORDER, type Cand, type Cands, type CritGauge, type Fit, type Gauge, type Kit, type KitKey } from './model';
 
 // only a recommended item outranks points (its passive); a stopgap and the rest — by points (owner 2026-10-10)
 export const FIT: Record<Fit, number> = { rec: 1, stopgap: 0, no: 0 };
@@ -21,7 +22,15 @@ const betterGear = (a: Cand, z: Cand) => (FIT[a.fit] !== FIT[z.fit] ? FIT[a.fit]
 // fix — слоты, заданные заранее (порог): вещь или null (слот пуст)
 export type Fix = Partial<Record<SlotId, Cand | null>>;
 
+// The plain search first: a plain best that loses nothing to crit is the best with it too (no kit is worth more than its
+// plain V; the plain search settled the ties among the plain maxima). Otherwise, if crit can bind, critKit
 export function bestKit(g: Gauge, cands: Cands, fix: Fix = {}): Kit {
+  const plain = plainKit(g, cands, fix);
+  if (!g.crit || !critMayLose(g.crit, plain.slots) || !g.crit.loss(SLOT_ORDER.flatMap((s) => (plain.slots[s] ? [plain.slots[s]!.item.id] : [])))) return plain;
+  return g.crit.binds(idsOf(cands, fix)) ? critKit(g, cands, fix) : plain;
+}
+
+function plainKit(g: Gauge, cands: Cands, fix: Fix): Kit {
   const slots: Partial<Record<SlotId, Cand>> = {};
   for (const slot of GEAR_SLOTS) {
     if (slot in fix) { const f = fix[slot]; if (f) slots[slot] = f; continue; }
@@ -137,9 +146,11 @@ function armorKey(g: Gauge, arm: readonly (Cand | null)[]): KitKey {
   return { rank: 0, total, pts, halves, eff, filled, legends, cost, loss, ranks, ords };
 }
 
-// ключ всего комплекта (польза MODEL.md §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры)
+// ключ всего комплекта (польза MODEL.md §3 + ничьи R6.1) — для сравнения комплектов везде (порог, команда, дыры). V — за
+// вычетом потери крита (MODEL.md crit): она зависит от всего комплекта сразу
 export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
   const k = armorKey(g, ARMOR_SLOTS.map((s) => slots[s] ?? null));
+  if (g.crit && critMayLose(g.crit, slots)) k.total -= g.crit.loss(SLOT_ORDER.flatMap((s) => (slots[s] ? [slots[s]!.item.id] : [])));
   const ranks: number[] = [], ords: number[] = [];
   let rank = 0;
   for (const slot of GEAR_SLOTS) {
@@ -152,3 +163,135 @@ export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
   return { ...k, rank, ranks: [...ranks, ...k.ranks], ords: [...ords, ...k.ords] };
 }
 
+
+// ----------------------------------------------------------------------------------------------- мягкий потолок крита
+
+// the quick bound (CritGauge): most kits stay under the knee and lose nothing — no call, no allocation
+function critMayLose(cr: CritGauge, slots: Partial<Record<SlotId, Cand>>): boolean {
+  let c = cr.own;
+  for (const s of SLOT_ORDER) c += slots[s]?.item.chc ?? 0;
+  if (c > cr.knee) return true;
+  if (c + cr.rowsMax <= cr.knee) return false; // no set's rows could make it
+  for (let i = 0; i < ARMOR_SLOTS.length; i++) {
+    const set = slots[ARMOR_SLOTS[i]]?.item.set;
+    if (!set) continue;
+    let first = true, more = false;
+    for (let j = 0; j < ARMOR_SLOTS.length; j++) {
+      if (j === i || slots[ARMOR_SLOTS[j]]?.item.set !== set) continue;
+      if (j < i) first = false; else more = true;
+    }
+    if (first && more && (c += cr.setMax(set)) > cr.knee) return true;
+  }
+  return false;
+}
+
+// every item the search may take: candidates of open slots and the fixed ones
+function idsOf(cands: Cands, fix: Fix): string[] {
+  const out: string[] = [];
+  for (const slot of SLOT_ORDER) {
+    if (slot in fix) { const f = fix[slot]; if (f) out.push(f.item.id); continue; }
+    for (const c of cands[slot] ?? []) out.push(c.item.id);
+  }
+  return out;
+}
+
+// a dominates b (a comes first in the slot's order, so at least b's points): at least b's points without CHC, no more CHC
+// from its main, equal CHC weight or one without CHC substats — the dominance of features/gear/layout critBest (MODEL.md
+// crit) — and not worse on the ties after V (R6.1: Legendary, source cost, holder loss, roster, age): V may come out equal
+// once the extra CHC is worth nothing, and then b would win on them
+const ties = (c: Cand): number[] => [Number(isLegend(c)), -c.cost, -c.loss, -c.rank, -c.item.ord];
+function dominates(cr: CritGauge, a: Cand, b: Cand): boolean {
+  const fa = cr.facts(a.item.id), fb = cr.facts(b.item.id);
+  if (!(fa.non >= fb.non && fa.main <= fb.main + 1e-9 && (fa.w === fb.w || !fa.n || !fb.n))) return false;
+  const ta = ties(a), tb = ties(b);
+  for (let i = 0; i < ta.length; i++) if (ta[i] !== tb[i]) return ta[i] > tb[i];
+  return true;
+}
+function front(cr: CritGauge, sorted: readonly Cand[]): Cand[] {
+  const out: Cand[] = [];
+  for (const c of sorted) if (!out.some((a) => dominates(cr, a, c))) out.push(c);
+  return out;
+}
+const byOrder = (better: (a: Cand, z: Cand) => boolean) => (a: Cand, z: Cand) => (better(a, z) ? -1 : better(z, a) ? 1 : 0);
+
+// The kit when crit binds: weapon and accessory — the top-rank candidates' front joins the search (an accessory's CHC
+// main and CHC substats change what armor CHC is worth); armor — the front per (set, T4). Branch and bound on the plain
+// V (the crit loss only lowers it); every kit is compared by keyOf / cmpKit, so ties follow R6.1 as everywhere
+function critKit(g: Gauge, cands: Cands, fix: Fix): Kit {
+  const cr = g.crit!;
+  const gear = GEAR_SLOTS.map((slot): (Cand | null)[] => {
+    if (slot in fix) return [fix[slot] ?? null];
+    const list = cands[slot] ?? [];
+    if (!list.length) return [null];
+    const top = Math.max(...list.map((c) => FIT[c.fit]));
+    return front(cr, list.filter((c) => FIT[c.fit] === top).sort(byOrder(betterGear)));
+  });
+  const opts = ARMOR_SLOTS.map((slot): (Cand | null)[] => {
+    if (slot in fix) return [fix[slot] ?? null];
+    const byKey = new Map<string, Cand[]>();
+    for (const c of cands[slot] ?? []) { const k = `${c.item.set}:${c.item.t4}`; byKey.set(k, [...(byKey.get(k) ?? []), c]); }
+    const keep = [...byKey.values()].flatMap((xs) => front(cr, xs.sort(byOrder(betterInSlot))));
+    return [...keep.sort((a, z) => z.v - a.v), null];
+  });
+  const sets = new Map<string, number>();
+  for (const o of opts) for (const c of o) if (c?.item.set && !sets.has(c.item.set)) sets.set(c.item.set, sets.size);
+  const names = [...sets.keys()];
+  const S = sets.size;
+  const memo = new Float64Array(S * 25).fill(NaN);
+  const bonus = (s: number, n: number, n4: number) => {
+    const i = s * 25 + n * 5 + n4;
+    if (Number.isNaN(memo[i])) memo[i] = g.bonus(names[s], n, n4).v;
+    return memo[i];
+  };
+  let b2 = 0, b3 = 0, b4 = 0;
+  for (let s = 0; s < S; s++) for (let n4 = 0; n4 <= 4; n4++) {
+    if (n4 <= 2) b2 = Math.max(b2, bonus(s, 2, n4));
+    if (n4 <= 3) b3 = Math.max(b3, bonus(s, 3, n4));
+    b4 = Math.max(b4, bonus(s, 4, n4));
+  }
+  const setCap = Math.max(0, b4, b3, 2 * b2);
+  const restMax = [0, 0, 0, 0, 0], restFill = [0, 0, 0, 0, 0];
+  for (let i = 3; i >= 0; i--) {
+    restMax[i] = restMax[i + 1] + Math.max(0, opts[i][0]?.v ?? 0);
+    restFill[i] = restFill[i + 1] + (opts[i].some((c) => !!c) ? 1 : 0);
+  }
+  const cnt = new Int8Array(S), cnt4 = new Int8Array(S);
+  const cur: (Cand | null)[] = [null, null, null, null];
+  let best: Kit | null = null;
+  let vSum = 0, filled = 0, gearV = 0, gearN = 0;
+  let g2: (Cand | null)[] = [null, null];
+  const leaf = () => {
+    let lin = gearV + vSum;
+    for (let s = 0; s < S; s++) if (cnt[s] >= 2) lin += bonus(s, cnt[s], cnt4[s]);
+    if (best && lin < best.key.total) return; // the crit loss only lowers V
+    const slots: Partial<Record<SlotId, Cand>> = {};
+    GEAR_SLOTS.forEach((slot, i) => { const c = g2[i]; if (c) slots[slot] = c; });
+    ARMOR_SLOTS.forEach((slot, i) => { const c = cur[i]; if (c) slots[slot] = c; });
+    const key = keyOf(g, slots);
+    if (!best || cmpKit(key, best.key) > 0) best = { slots, key };
+  };
+  const hopeless = (i: number): boolean => {
+    if (!best) return false;
+    const d = gearV + vSum + restMax[i] + setCap - best.key.total || gearN + filled + restFill[i] - best.key.filled;
+    return d < 0;
+  };
+  const walk = (i: number) => {
+    if (i === 4) { leaf(); return; }
+    if (hopeless(i)) return;
+    for (const c of opts[i]) {
+      cur[i] = c;
+      const s = c?.item.set ? sets.get(c.item.set)! : -1;
+      if (c) { vSum += c.v; filled++; if (s >= 0) { cnt[s]++; if (c.item.t4) cnt4[s]++; } }
+      walk(i + 1);
+      if (c) { vSum -= c.v; filled--; if (s >= 0) { cnt[s]--; if (c.item.t4) cnt4[s]--; } }
+    }
+    cur[i] = null;
+  };
+  for (const w of gear[0]) for (const a of gear[1]) {
+    g2 = [w, a];
+    gearV = (w?.v ?? 0) + (a?.v ?? 0);
+    gearN = (w ? 1 : 0) + (a ? 1 : 0);
+    walk(0);
+  }
+  return best!;
+}

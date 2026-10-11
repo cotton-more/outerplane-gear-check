@@ -11,7 +11,8 @@ import { decodeBackup } from '@/features/roster/backup';
 import type { Subs } from '@/game/item/subs';
 import { cmpKit, SLOT_ORDER, type Cand, type Cands, type Fit, type Gauge, type Item, type Kit, type Part, type SetGain, type World } from '@/features/trade/model/model';
 import { milli } from '@/features/gear/model/vs';
-import { keyOf } from '@/features/trade/model/kit';
+import { FIT, keyOf } from '@/features/trade/model/kit';
+import { critLoss } from '@/game/stat/curve';
 import { worldOf } from '@/features/trade/model/world';
 
 // ----------------------------------------------------------------------------------------------- синтетика
@@ -19,11 +20,29 @@ import { worldOf } from '@/features/trade/model/world';
 // Мерило из чисел. bonus — ценность сета по числу вещей: { Speed: { 2: 3, 4: 8 } } — при 2–3 вещах 3 (одна половина),
 // при 4 — 3 + 8 (две); effect — сеты-эффекты (их половины — eff). value — очки вещей (для кандидатов из мира; ok по
 // умолчанию — годная); у кандидатов из cand() не нужен
+// crit — the soft cap (MODEL.md crit) from numbers: the hero's own crit c0, N, per item its CHC weight w, segments n
+// (3 % each) and CHC main %; v of a crit item must include w × n (its CHC substats' plain points)
+export interface SynthCrit { need: number; c0: number; items: Record<string, { w?: number; n?: number; main?: number }> }
 export function synthGauge(o: {
   key?: string; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>; effect?: readonly string[];
   value?: Record<string, number | { v: number; fit: Fit; ok?: boolean } | null>; bonusFn?: (set: string, n: number, n4: number) => SetGain;
+  crit?: SynthCrit; vOf?: (id: string) => number;
 } = {}): Gauge {
+  const cr = o.crit;
   return {
+    ...(cr ? { crit: {
+      own: cr.c0, knee: -1, rowsMax: 0, setMax: () => 0, // the quick bound always says «may lose»: loss decides
+      loss: (ids: readonly string[]) => {
+        let c0 = cr.c0;
+        const segs = ids.map((id) => { const x = cr.items[id] ?? {}; c0 += x.main ?? 0; return { w: x.w ?? 0, n: x.n ?? 0 }; });
+        return milli(critLoss(cr.need, c0, 3, segs));
+      },
+      binds: (ids: readonly string[]) => ids.reduce((n, id) => n + (cr.items[id]?.main ?? 0) + 3 * (cr.items[id]?.n ?? 0), cr.c0) > cr.need - 15,
+      facts: (id: string) => {
+        const x = cr.items[id] ?? {};
+        return { w: x.w ?? 0, n: x.n ?? 0, main: x.main ?? 0, non: milli((o.vOf?.(id) ?? 0) - (x.w ?? 0) * (x.n ?? 0)) };
+      },
+    } } : {}),
     key: o.key ?? 'synth',
     parts: o.parts ?? [],
     value(id) {
@@ -64,7 +83,8 @@ export function candsOf(list: readonly Cand[]): Cands {
   return out;
 }
 
-// полный перебор: каждый слот — любая вещь или пусто (без отсечения), лучший по cmpKit
+// полный перебор: броня — любая вещь или пусто, оружие и аксессуар — любая вещь высшего ранга слота (пусто — только без
+// вещей: как в приложении, MODEL.md §3; с потолком крита пустой слот мог бы «выиграть» у main CHC), лучший по cmpKit
 export function bruteKit(g: Gauge, cands: Cands): Kit {
   let best: Kit | null = null;
   const cur: Partial<Record<SlotId, Cand>> = {};
@@ -75,9 +95,12 @@ export function bruteKit(g: Gauge, cands: Cands): Kit {
       return;
     }
     const slot = SLOT_ORDER[i];
+    const list = cands[slot] ?? [];
+    const gear = slot === 'weapon' || slot === 'accessory';
+    const top = Math.max(-1, ...list.map((c) => FIT[c.fit]));
     delete cur[slot];
-    walk(i + 1);
-    for (const c of cands[slot] ?? []) { cur[slot] = c; walk(i + 1); delete cur[slot]; }
+    if (!gear || !list.length) walk(i + 1);
+    for (const c of list) { if (gear && FIT[c.fit] !== top) continue; cur[slot] = c; walk(i + 1); delete cur[slot]; }
   };
   walk(0);
   return best!;
