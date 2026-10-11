@@ -582,7 +582,7 @@ export const en: Texts = {
     helpTeam: 'Team',
     helpTeamItems: [
       'Checks which skills in a team won\'t work without a status: Veronica\'s Dual Attack (S1) needs Increased Defense on her, and she gives it herself with S3 — which is on cooldown at battle start. The «Team» tab (on a phone — «More» → «Team»).',
-      'Put up to four heroes from your roster: «+» opens the list with a name search. Tap a hero for their stars (transcend ★, tap the N-th) and «Remove». Stars matter: some skills and passives open at ★3–★6. A new hero starts at ★6.',
+      'Put up to four heroes from your roster: «+» opens a window with the list and a name search. On a hero\'s spot: the portrait — put another hero, the stars at the bottom — the stars window (transcend ★, tap the N-th), ✕ in the corner — remove. Stars matter: some skills and passives open at ★3–★6. A new hero starts at ★6.',
       '**⚠ Nobody gives it** — a skill needs the status and nobody in the team gives it. **⚠ Only from own** — the hero gives it, but later than needed (the number is the cooldown at battle start, as on the skill icon), or only with their Burst. Below — **Would give it:** roster heroes who give it; «from ★N» — only from those stars; a team hero short of stars comes first. A quiet **✓** line — an ally gives it.',
       'Not counted: chances, turn order, class passives (in the game they give no status), events («when hit»), enemy buffs and boss immunities. Statuses only the hero gives (their own mechanic) are not shown.',
       'Nothing is saved: the team lives while the page is open; a reload forgets it.',

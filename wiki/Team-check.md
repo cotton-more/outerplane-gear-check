@@ -12,9 +12,9 @@ The «Team» tab in the header; on a phone — «More» → «Team». Only heroe
 
 ## Picking the team
 
-- Four spots in a row. Tap «+» — the roster list with a name search; tap a hero to put them there.
-- Tap a hero in a spot — their **stars**: six stars like the game's transcend, tap the N-th to set ★N; «Remove» empties
-  the spot. A new hero starts at ★6.
+- Four spots in a row. Tap «+» — a window with the roster list and a name search; tap a hero to put them there.
+- On a hero's spot: the portrait — put another hero there (the stars stay); the **stars** at the bottom — a window with
+  six stars like the game's transcend, tap the N-th to set ★N; ✕ in the corner — empty the spot. A new hero starts at ★6.
 - Stars matter: some skills and passives open only at ★3–★6 (Burst 2 at ★3, Burst 3 at ★5, transcend passive levels at
   ★3–★6), both for what a hero needs and for what they give.
 
