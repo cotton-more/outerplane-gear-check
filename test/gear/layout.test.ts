@@ -173,11 +173,13 @@ describe('ценность раскладки и лучшая раскладка
     expect(rows).toBeGreaterThan(20);
   });
 
+  // A6 holds for linear V. With the crit soft cap a CHC main raises C₀ and can lower V (MODEL.md §12 item 2; the next
+  // test), so this one runs with crit off
   it('T4.3 (A6): добавленная вещь не делает лучшую раскладку хуже — по (ранг, V), по броне и по V только брони', () => {
     const g = gen(777);
     const bad: string[] = [];
     for (const c of twenty()) {
-      const P = prof(c);
+      const P: Profile = { ...prof(c), critOn: false };
       for (let i = 0; i < 20; i++) {
         let pool: Piece[] = [];
         let last = { rank: 0, v: 0 }, lastArmor = 0;
@@ -194,6 +196,19 @@ describe('ценность раскладки и лучшая раскладка
       }
     }
     expect(bad).toEqual([]);
+  });
+
+  // Review 0136 F3 (a): a CHC main raises C₀, so the hero's CHC segments are worth less; a gear slot is never left empty
+  // (the real alternative is another accessory), so an added accessory of the same rank as nothing lowers V
+  it('T4.3c: a CHC-main accessory nobody builds lowers a capped Caren\'s best V (29.3 → 18.0); V is not monotone in gear', () => {
+    const arm = ARMOR.map((s, i) => mk(`a${i}`, s, 'Critical Hit', { CHC: 6, 'DEF%': 2, SPD: 1, HP: 1 }));
+    const acc = mk('x', 'accessory', null, { CHD: 1, SPD: 1, HP: 1, RES: 1 }, 4, { main: 'CHC', unlisted: true });
+    const P = prof('Caren');
+    expect(bestLayout(P, arm).value.v).toBeCloseTo(29.333, 3);
+    const withAcc = bestLayout(P, [...arm, acc]);
+    expect([withAcc.layout.accessory?.id, withAcc.value.rank]).toEqual(['x', 0]);
+    expect(withAcc.value.v).toBeCloseTo(17.983, 3);
+    expect(bestLayout({ ...P, critOn: false }, [...arm, acc]).value.v).toBeGreaterThan(bestLayout({ ...P, critOn: false }, arm).value.v);
   });
 
   it('T4.4 (A16): равные вещи на одном T — лучший набор из меню не хуже любого статового не из меню', () => {

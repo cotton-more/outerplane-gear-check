@@ -5,7 +5,7 @@ import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { profileOf, withNeed } from '@/game/build/profile';
 import { bestLayout } from '@/features/gear/layout';
 import { eligibleIn } from '@/features/gear/pool/info';
-import { candidates } from '@/features/trade/model/cands';
+import { candidates, holderLoss } from '@/features/trade/model/cands';
 import { bestKit, keyOf } from '@/features/trade/model/kit';
 import { cmpKit, SLOT_ORDER, type Cand, type Gauge } from '@/features/trade/model/model';
 import { heroPlan } from '@/features/trade/model/plan';
@@ -52,6 +52,16 @@ describe('мерило знает потолок крита', () => {
     expect([l.on, l.off]).toEqual([[], []]);
     expect(l.after - l.before).toBe(l.ptsAfter - l.ptsBefore + l.critBefore - l.critAfter);
     expect(l.after - l.before).toBe(2600);
+  });
+
+  // Review 0136 F3 (b): her CHC-main accessory lowers capped Caren's V (layout T4.3c), yet taking it is no gain for her
+  it('holder loss is never negative: taking capped Caren\'s CHC-main accessory costs her 0, not −11.35', () => {
+    const arm = ARMOR.map((s) => piece(s, 'Critical Hit', { CHC: 6, 'DEF%': 2, SPD: 1, HP: 1 }, { bt: 4 }));
+    const acc = piece('accessory', null, { CHD: 1, SPD: 1, HP: 1, RES: 1 }, { main: 'CHC', unlisted: true, bt: 4 });
+    const w = worldOf(ctx, store({ [K]: { pool: [acc, ...arm], worn: [acc, ...arm] } }), [K]);
+    const k = w.heroes.find((h) => h.id === K)!;
+    expect(holderLoss(w, k, w.gauge(K)!, 'accessory')).toBe(0);
+    expect(holderLoss(w, k, w.gauge(K)!, 'helmet')).toBeGreaterThan(0);
   });
 
   it('без упора (нет аксессуара с main CHC и сета крита) тот же шлем с CHC 6 остаётся', () => {

@@ -18,7 +18,9 @@ export const skipKey = (itemId: string, heroId: string): string => `${itemId}>${
 const NOBODY: Hero = { id: '', rank: -1, locked: false, worn: {}, pool: [] };
 const btOf = (bt: number | null) => bt ?? 0;
 
-// сколько очков теряет держатель, если опустеет только этот слот (по его мерилу)
+// сколько очков теряет держатель, если опустеет только этот слот (по его мерилу). Never below 0: with the crit soft cap a
+// CHC main can lower V (MODEL.md §12 item 2), so emptying the slot may raise the holder's V, but a taken piece is never a
+// gain for its holder — the slot stays a hole (MODEL.md §7 item 7)
 export function holderLoss(w: World, k: Hero, gk: Gauge, slot: SlotId): Milli {
   const slots: Partial<Record<SlotId, Cand>> = {};
   for (const s of SLOT_ORDER) {
@@ -29,7 +31,7 @@ export function holderLoss(w: World, k: Hero, gk: Gauge, slot: SlotId): Milli {
   if (!slots[slot]) return 0;
   const before = keyOf(gk, slots).total;
   delete slots[slot];
-  return before - keyOf(gk, slots).total;
+  return Math.max(0, before - keyOf(gk, slots).total);
 }
 
 export function candidates(w: World, inp: CandInput): Cands {

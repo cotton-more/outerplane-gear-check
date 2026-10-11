@@ -476,6 +476,9 @@ EFF and SPD are later tickets.
    whole run stays under the knee). V = points + sets − loss. Check value: N 100, C₀ + earlier 80 %, weight 0.8 → six CHC
    segments are worth 0.80 / 0.79 / 0.67 / 0.51 / 0.35 / 0.19 = 3.30 instead of 4.8, so CHC 2 + CHD 4 (4.19) beats CHC 6.
    Heaviest first keeps V one function of the layout, and an added segment adds between 0 and its linear points.
+   A CHC **main** is different: it raises C₀, so every CHC segment of the hero is worth less, and a CHC main can lower V.
+   V is therefore not monotone in gear pieces; the search still never leaves a gear slot empty (item 4: the real
+   alternative is another accessory, not nothing), and trade's holder loss is clamped at 0 (`cands:holderLoss`).
 3. **What the card shows**: «Крит: 45%» (`statTotal` — C₀ + substats, floored), amber from N − 15, red from N; the sheet:
    the bar (zones, the hero's face at their crit, N with its flag), «Герой 20% · вещи 25%», the number N. The budget gets
    «Лишний крит −x» (from 0.05), so Stats + Sets − crit = the heading.
