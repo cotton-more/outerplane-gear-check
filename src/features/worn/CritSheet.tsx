@@ -57,7 +57,6 @@ export function CritSheet({ c, now, total, own, onClose, onSave }: {
       <div className="vsheet">
         <CritBar c={c} total={total} need={need} />
         <p className="crit-split">{t.card.critSplit(Math.floor(own + 1e-9), shownCrit(total) - Math.floor(own + 1e-9))}</p>
-        <p className="crit-about">{t.card.critAbout}</p>
         <div className="crit-n">
           <button type="button" className="btn crit-step" aria-label={t.card.critLess} disabled={n === 0} onClick={() => step(-1)}>−</button>
           <label className="crit-in">
@@ -68,6 +67,7 @@ export function CritSheet({ c, now, total, own, onClose, onSave }: {
           <button type="button" className="btn crit-step" aria-label={t.card.critMore} disabled={n === CRIT_NEED} onClick={() => step(1)}>+</button>
           <button type="button" className="linkbtn crit-reset" disabled={n === CRIT_NEED} onClick={() => setText(String(CRIT_NEED))}>{t.card.critReset}</button>
         </div>
+        <p className="crit-about">{t.card.critAbout}</p>
         <button type="button" className="btn primary aim-go" onClick={() => onSave(need)}>{t.card.critGo}</button>
       </div>
     </Sheet>
