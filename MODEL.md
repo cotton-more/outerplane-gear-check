@@ -122,7 +122,8 @@ armor, gloves, shoes.
    are `eligible` — in the app (`pool/info:eligibleIn`) a piece worn now or one that passes the §4 bar; a weak piece
    the hero does not wear never enters. **Weapon and accessory** are decided per slot: higher rank first (§1.6), then
    points, then the tie-breaks of item 4. **Armor**: exhaustive over "one piece or empty" per slot, maximum V.
-   `armorOnly` skips the gear slots (used for pinned previews).
+   `armorOnly` skips the gear slots (tests only). The pinned preview (`worn/wearing:fillOf`) passes armor plus the current
+   weapon and accessory as the only gear candidates, so armor CHC is valued with the hero's real C₀ (§12 item 4).
 3. **`better(a, z)`** — when layout `a` is worth switching to from `z` (used for "Equip", "Re-dress", trade steps):
    a. higher weapon/accessory rank (`Σ RANK`, empty slot = 0) — rank decides before points; or
    b. at equal rank, V higher by at least 1 point (`milli(a.v) − milli(z.v) ≥ THRESHOLD`); or
