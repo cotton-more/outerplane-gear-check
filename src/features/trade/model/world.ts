@@ -7,7 +7,7 @@ import { combosOf, comboProfile, pinnedProfile, pinOf, profileOf, withNeed } fro
 import { comboSig } from '@/game/build/variants';
 import { setValue } from '@/game/set/setValue';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { critBound, critCanBind, critLossOf, gearRank, nonChc, pieceCrit, piecePoints } from '@/features/gear/layout';
+import { critBound, critLossOf, gearRank, nonChc, pieceCrit, piecePoints } from '@/features/gear/layout';
 import { MAX_LIT } from '@/game/item/subs';
 import { mainsStat } from '@/game/stat/total';
 import { pieceBar } from '@/features/gear/pool/info';
@@ -19,9 +19,9 @@ import { codeOf, type CritGauge, type Gauge, type Hero, type Item, type Worth, t
 export const STATS = 'stats';
 
 // chc — the piece's most crit (MODEL.md crit): its CHC main at +10 by tier and CHC substats; the same for every hero
-export const itemOf = (p: Piece, ctx?: Ctx): Item => ({
+export const itemOf = (p: Piece, ctx: Ctx): Item => ({
   id: p.id, slot: p.slot, code: codeOf(p), bt: p.bt, set: p.setId, t4: p.bt === 4, ord: numOf(p.id), grade: p.grade,
-  chc: ctx ? mainsStat(ctx, p, 'CHC') + Math.min(MAX_LIT, p.lit.CHC ?? 0) * (ctx.idx.SUB.CHC?.step ?? 3) : 0,
+  chc: mainsStat(ctx, p, 'CHC') + Math.min(MAX_LIT, p.lit.CHC ?? 0) * (ctx.idx.SUB.CHC?.step ?? 3),
 });
 
 // набор заказа; «По статам» и подпись, которой у героя нет (данные обновились), — null
@@ -51,7 +51,6 @@ function critGauge(Po: Parameters<typeof critLossOf>[0], pieceOf: (id: string) =
       if (r === undefined) losses.set(k, (r = milli(critLossOf(Po, of(ids)))));
       return r;
     },
-    binds: (ids) => critCanBind(Po, of(ids)),
     facts(id) {
       const p = pieceOf(id);
       if (!p) return { w: 0, n: 0, main: 0, non: 0 };

@@ -23,11 +23,12 @@ const betterGear = (a: Cand, z: Cand) => (FIT[a.fit] !== FIT[z.fit] ? FIT[a.fit]
 export type Fix = Partial<Record<SlotId, Cand | null>>;
 
 // The plain search first: a plain best that loses nothing to crit is the best with it too (no kit is worth more than its
-// plain V; the plain search settled the ties among the plain maxima). Otherwise, if crit can bind, critKit
+// plain V; the plain search settled the ties among the plain maxima). Otherwise the plain best already loses crit, so crit
+// binds: critKit
 export function bestKit(g: Gauge, cands: Cands, fix: Fix = {}): Kit {
   const plain = plainKit(g, cands, fix);
   if (!g.crit || !critMayLose(g.crit, plain.slots) || !g.crit.loss(SLOT_ORDER.flatMap((s) => (plain.slots[s] ? [plain.slots[s]!.item.id] : [])))) return plain;
-  return g.crit.binds(idsOf(cands, fix)) ? critKit(g, cands, fix) : plain;
+  return critKit(g, cands, fix);
 }
 
 function plainKit(g: Gauge, cands: Cands, fix: Fix): Kit {
@@ -172,7 +173,7 @@ export function keyOf(g: Gauge, slots: Partial<Record<SlotId, Cand>>): KitKey {
 // the quick bound (CritGauge): most kits stay under the knee and lose nothing — no call, no allocation
 function critMayLose(cr: CritGauge, slots: Partial<Record<SlotId, Cand>>): boolean {
   let c = cr.own;
-  for (const s of SLOT_ORDER) c += slots[s]?.item.chc ?? 0;
+  for (const s of SLOT_ORDER) c += slots[s]?.item.chc ?? 0; // an empty slot adds nothing
   if (c > cr.knee) return true;
   if (c + cr.rowsMax <= cr.knee) return false; // no kit's set rows could make it
   for (let i = 0; i < ARMOR_SLOTS.length; i++) {
@@ -186,16 +187,6 @@ function critMayLose(cr: CritGauge, slots: Partial<Record<SlotId, Cand>>): boole
     if (first && more && (c += cr.setMax(set)) > cr.knee) return true;
   }
   return false;
-}
-
-// every item the search may take: candidates of open slots and the fixed ones
-function idsOf(cands: Cands, fix: Fix): string[] {
-  const out: string[] = [];
-  for (const slot of SLOT_ORDER) {
-    if (slot in fix) { const f = fix[slot]; if (f) out.push(f.item.id); continue; }
-    for (const c of cands[slot] ?? []) out.push(c.item.id);
-  }
-  return out;
 }
 
 // a dominates b (a comes first in the slot's order, so at least b's points): at least b's points without CHC, no more CHC

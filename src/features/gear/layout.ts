@@ -180,23 +180,18 @@ export function critLossOf(P: Profile, pieces: readonly Piece[]): number {
   const st = critState(P, layout);
   return lossOf(P, st.c0, st.segs);
 }
-// can any kit of these pieces reach the knee (the upper bound of critBinds); no — the crit term is 0 for all of them
-export const critCanBind = (P: Profile, pieces: readonly Piece[]): boolean => critBinds(P, pieces, false);
 const ownMemo = new WeakMap<Profile, number>();
 const ownCached = (P: Profile): number => { let r = ownMemo.get(P); if (r === undefined) ownMemo.set(P, (r = ownChc(P))); return r; };
 
-// The numbers of a quick crit bound for trade's kits (features/trade/model/world): the hero's own crit, the knee, a piece's
-// most crit (main + substats), a set's most crit from its rows (at 4 pieces on T4). A kit whose sum stays under the knee
-// loses nothing
-export interface CritBound { own: number; knee: number; rows: number; piece: (p: Piece) => number; set: (set: string) => number }
+// The numbers of a quick crit bound for trade's kits (features/trade/model/world): the hero's own crit, the knee, the most
+// crit any kit's set rows give, a set's most crit from its rows. A kit whose sum stays under the knee loses nothing
+export interface CritBound { own: number; knee: number; rows: number; set: (set: string) => number }
 export function critBound(P: Profile): CritBound {
-  const step = critStep(P);
   const setMax = (set: string) => Math.max(...[2, 3, 4].flatMap((n) => Array.from({ length: n + 1 }, (_, n4) => setChc(P, set, n, n4))));
   return {
     own: ownCached(P),
     knee: Math.max(0, P.need - CRIT_KNEE),
     rows: rowsMaxOf(P, setMax, (set) => Math.max(...[0, 1, 2].map((n4) => setChc(P, set, 2, n4)))),
-    piece: (p) => { const k = pieceCrit(P, p); return k.main + k.n * step; },
     set: setMax,
   };
 }

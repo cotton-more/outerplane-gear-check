@@ -37,7 +37,6 @@ export function synthGauge(o: {
         const segs = ids.map((id) => { const x = cr.items[id] ?? {}; c0 += x.main ?? 0; return { w: x.w ?? 0, n: x.n ?? 0 }; });
         return milli(critLoss(cr.need, c0, 3, segs));
       },
-      binds: (ids: readonly string[]) => ids.reduce((n, id) => n + (cr.items[id]?.main ?? 0) + 3 * (cr.items[id]?.n ?? 0), cr.c0) > cr.need - 15,
       facts: (id: string) => {
         const x = cr.items[id] ?? {};
         return { w: x.w ?? 0, n: x.n ?? 0, main: x.main ?? 0, non: milli((o.vOf?.(id) ?? 0) - (x.w ?? 0) * (x.n ?? 0)) };
@@ -71,7 +70,7 @@ export function cand(o: {
   const ord = o.ord ?? ++ordSeq;
   const id = o.id ?? `s${ord}`;
   return {
-    item: { id, slot: o.slot, code: o.code ?? id, bt: o.bt ?? (o.t4 ? 4 : 0), set: o.set ?? null, t4: !!o.t4, ord, ...(o.grade ? { grade: o.grade } : {}) },
+    item: { id, slot: o.slot, code: o.code ?? id, bt: o.bt ?? (o.t4 ? 4 : 0), set: o.set ?? null, t4: !!o.t4, ord, chc: 0, ...(o.grade ? { grade: o.grade } : {}) },
     v: milli(o.v), fit: o.fit ?? 'no', cost: o.cost ?? 1, loss: milli(o.loss ?? 0),
     holder: o.holder === undefined ? 'R' : o.holder, rank: o.rank ?? 0,
   };
@@ -177,7 +176,7 @@ export interface SynthHero {
 export function synthWorld(o: { items: Record<string, { slot: SlotId; set?: string; code?: string; bt?: number; t4?: boolean }>; heroes: Record<string, SynthHero> }): World {
   const items: Record<string, Item> = {};
   Object.entries(o.items).forEach(([id, it], i) => {
-    items[id] = { id, slot: it.slot, code: it.code ?? id, bt: it.bt ?? (it.t4 ? 4 : 0), set: it.set ?? null, t4: !!it.t4, ord: i + 1 };
+    items[id] = { id, slot: it.slot, code: it.code ?? id, bt: it.bt ?? (it.t4 ? 4 : 0), set: it.set ?? null, t4: !!it.t4, ord: i + 1, chc: 0 };
   });
   const ids = Object.keys(o.heroes);
   const heroes = ids.map((id, rank) => {
