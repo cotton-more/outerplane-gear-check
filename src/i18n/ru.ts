@@ -304,9 +304,11 @@ export const ru = {
     pinGo: 'Закрепить',
     pinFill: (k: number, n: number) => `${k} из ${n}`,
     // «Крит от вещей» on «Надето» (crit soft cap): the line under the chain and its sheet with the hero's N
-    critLine: (n: number) => `Крит от вещей: ${n}%`,
+    critLine: (n: number) => `Крит: ${n}%`,
+    // under the sheet's bar: the hero's own crit (base, class, quirks) and what the gear adds
+    critSplit: (hero: number, gear: number) => `Герой ${hero}% · вещи ${gear}%`,
     critTitle: (name: string) => `Крит для ${name}`,
-    critAbout: 'Сколько крита герою нужно от вещей. Ближе к этому числу крит ценится меньше, выше — не ценится. Понизь, если крит дают камни, талисман или команда.',
+    critAbout: 'Сколько крита нужно герою. Ближе к этому числу крит ценится меньше, выше — не ценится. Понизь, если крит дают камни, талисман, звёзды или команда.',
     critN: 'Нужно крита от вещей, %',
     critLess: 'Меньше',
     critMore: 'Больше',

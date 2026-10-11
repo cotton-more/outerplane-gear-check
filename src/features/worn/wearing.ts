@@ -64,7 +64,7 @@ export interface ChainSum { key: string; seg: number; credit: number; sep: '' | 
 // «Crit from gear» (crit soft cap, decision 5): CHC the app knows from the worn pieces and the hero (game/stat/total) and the
 // hero's N («CHC needed from gear», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
 // that has the hero's CHC and main values (an old snapshot would show a number far below the game's)
-export interface WornCrit { total: number; need: number }
+export interface WornCrit { total: number; own: number; need: number } // own — the hero's part: base, class, quirks
 // another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
 export interface AltChain { build: string; chain: ChainSum[] }
 export interface WornView {
@@ -110,10 +110,14 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     t4: P ? t4Of(ctx, P, worn) : [],
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],
-    crit: P?.critOn && Object.keys(worn).length
-      ? { total: statTotal(ctx, c, Object.values(worn), 'CHC').total, need: critNeed(st, c.id) } : null,
+    crit: P?.critOn && Object.keys(worn).length ? critOf(ctx, c, Object.values(worn), critNeed(st, c.id)) : null,
     pool: pieces.length,
   };
+}
+
+function critOf(ctx: Ctx, c: Char, worn: Piece[], need: number): WornCrit {
+  const s = statTotal(ctx, c, worn, 'CHC');
+  return { total: s.total, own: s.base + s.cls + s.quirk, need };
 }
 
 function t4Of(ctx: Ctx, P: Profile, worn: Layout): T4Line[] {

@@ -43,8 +43,9 @@ export function CritBar({ c, total, need, mini = false }: { c: Char; total: numb
   );
 }
 
-export function CritSheet({ c, now, total, onClose, onSave }: {
-  c: Char; now: number; total: number; onClose: () => void; onSave: (n: number) => void;
+// own — the hero's part of the crit (base, class, quirks): «Герой 20% · вещи 25%» under the bar, adding up to the shown crit
+export function CritSheet({ c, now, total, own, onClose, onSave }: {
+  c: Char; now: number; total: number; own: number; onClose: () => void; onSave: (n: number) => void;
 }) {
   const t = useT();
   const [text, setText] = useState(String(now));
@@ -55,6 +56,7 @@ export function CritSheet({ c, now, total, onClose, onSave }: {
     <Sheet title={t.card.critTitle(c.name)} onClose={onClose} className="critsheet" bare>
       <div className="vsheet">
         <CritBar c={c} total={total} need={need} />
+        <p className="crit-split">{t.card.critSplit(Math.floor(own + 1e-9), shownCrit(total) - Math.floor(own + 1e-9))}</p>
         <p className="crit-about">{t.card.critAbout}</p>
         <div className="crit-n">
           <button type="button" className="btn crit-step" aria-label={t.card.critLess} disabled={n === 0} onClick={() => step(-1)}>−</button>

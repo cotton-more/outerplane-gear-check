@@ -180,7 +180,7 @@ describe('3.3 ссылка и карточка', () => {
   it('3.13 строки карточки — как во «Надето» того же героя на тех же вещах', async () => {
     await mount();
     const mine = $('#char-detail .bgear.worn')!.cloneNode(true) as HTMLElement;
-    for (const x of mine.querySelectorAll('.worn-share, .bgear-act, .pot, .worn-t > [aria-hidden], .wcrit')) x.remove(); // the T4 line, the budget's arrow and «Crit from gear» are not on the shared card
+    for (const x of mine.querySelectorAll('.worn-share, .bgear-act, .pot, .worn-t > [aria-hidden], .wcrit')) x.remove(); // the T4 line, the budget's arrow and «Crit» are not on the shared card
     const code = (() => {
       let got = '';
       vi.stubGlobal('navigator', { ...navigator, share: (d: { url: string }) => { got = d.url; return Promise.resolve(); } });

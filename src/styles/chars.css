@@ -274,7 +274,8 @@ html.xs .bgear-t { grid-row: 3; }
 .crit-bar.near .cb-me b { background: var(--temp-soft); color: var(--temp); }
 .crit-bar.over .cb-me b { background: var(--junk-soft); color: var(--junk); }
 
-/* «Крит для X» (CritSheet, a bare sheet: no title) */
+/* «Крит для X» (CritSheet, a bare sheet: no title); «Герой 20% · вещи 25%» under the bar */
+.crit-split { margin: -6px 0 0; text-align: center; font: 600 12px var(--font-mono); color: var(--ink-2); }
 .crit-about { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
 .crit-n { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .crit-n > .crit-step { min-width: 44px; min-height: 44px; font-size: 20px; line-height: 1; }

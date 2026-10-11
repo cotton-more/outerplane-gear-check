@@ -373,7 +373,7 @@ describe('worn budget', () => {
 
 });
 
-// «Crit from gear» (crit soft cap, decision 5): the line under the chain, amber from N − 15, tap → the hero's N
+// «Crit» (crit soft cap, decision 5): the line under the chain, amber from N − 15, tap → the hero's N
 describe('«Надето»: Crit from gear', () => {
   const worn = (ps: Pc[], hero = caren.id, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
   const line = () => $('.bgear.worn .wcrit');
@@ -384,7 +384,7 @@ describe('«Надето»: Crit from gear', () => {
 
   it('Caren (Striker): 5 base + 5 class + 10 quirks + CHC 2 on the helmet = 26%; under N − 15 — not amber', async () => {
     await mount({ gear: worn([WEAK]) });
-    expect(line()?.textContent).toBe('Crit from gear: 26%▸');
+    expect(line()?.textContent).toBe('Crit: 26%▸');
     expect(line()?.classList.contains('near')).toBe(false);
   });
 
@@ -396,6 +396,7 @@ describe('«Надето»: Crit from gear', () => {
   it('tap → the sheet: type 85, Done — stored; Reset and Done — back to 100, the record is gone', async () => {
     await mount({ gear: worn([WEAK]) });
     await click(line());
+    expect($('.critsheet .crit-split')?.textContent).toBe('Hero 20% · gear 6%');
     const input = $('.critsheet input') as HTMLInputElement;
     expect(input.value).toBe('100');
     await type(input, '85');
@@ -436,7 +437,7 @@ describe('«Надето»: Crit from gear on old data', () => {
       const c = ctx.idx.CHAR[caren.id];
       return wornView(ctx, c, st, heroPool(ctx, c, [WEAK as never], new Set(['p1'])));
     };
-    expect(view(D).crit).toEqual({ total: 26, need: 100 });
+    expect(view(D).crit).toEqual({ total: 26, own: 20, need: 100 });
     expect(view(old).crit).toBeNull();
     expect(view({ ...D, chars: D.chars.map((c) => ({ ...c, chc: undefined })) }).crit).toBeNull();
   });
