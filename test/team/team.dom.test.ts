@@ -33,8 +33,12 @@ afterEach(async () => {
   localStorage.clear();
 });
 
-async function mount({ roster = ROSTER, syn = true, teams = false }: { roster?: string[]; syn?: boolean; teams?: boolean } = {}) {
-  const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster, state: { tab: 'eval' }, item: {} };
+async function mount({ roster = ROSTER, syn = true, teams = false, stars }: { roster?: string[]; syn?: boolean; teams?: boolean; stars?: Record<string, number> } = {}) {
+  const saved = {
+    lang: 'en', welcomeHidden: true, tour: DONE, roster, state: { tab: 'eval' }, item: {},
+    // stored hero stars (PLAN 0190): they live in the gear store
+    ...(stars ? { gear: { v: 3, seq: 0, pieces: {}, pools: {}, stars } } : {}),
+  };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   const { App } = await import('@/app/App');
   const { IndexContext } = await import('@/game/data/IndexContext');
@@ -68,7 +72,7 @@ const pick = async (i: number, name: string) => {
 };
 const setStars = async (i: number, n: number) => {
   await click(spot(i).querySelector<HTMLElement>('.tm-sb'));
-  await click($$('.drawer.tm-star-sheet .tm-big button')[n - 1]);
+  await click($$('.drawer.hs-sheet .hs-big button')[n - 1]);
 };
 const report = () => $$('#view-team .tm-hero').map((h) => h.textContent);
 async function openTeam() {
@@ -97,10 +101,10 @@ describe('«Команда»', () => {
     await click(sheetHeroes()[0]);
     // picked at ★6; the sheet is closed
     expect($('.drawer.tm-sheet')).toBeNull();
-    expect(spot(0).querySelectorAll('.tm-mini .on')).toHaveLength(6);
+    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(6);
     await click(spot(0).querySelector<HTMLElement>('.tm-sb'));
-    expect($$('.drawer.tm-star-sheet .tm-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★6']);
-    await click($('.drawer.tm-star-sheet .drawer-x'));
+    expect($$('.drawer.hs-sheet .hs-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★6']);
+    await click($('.drawer.hs-sheet .drawer-x'));
     const warn = $('#view-team .tm-warn')!.textContent!;
     expect(warn).toContain('S1: Dual Attack — Increased Defense only from own S3, on cooldown (4) at battle start.');
     expect(warn).toContain('Would give it:');
@@ -117,12 +121,44 @@ describe('«Команда»', () => {
     await pick(0, 'Kanon');
     await pick(1, 'Demiurge Stella');
     await setStars(1, 5);
-    expect(spot(1).querySelectorAll('.tm-mini .on')).toHaveLength(5);
+    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(5);
     const fix = $$('#view-team .tm-fx');
     expect(fix[0].textContent).toBe('Demiurge Stella from ★6');
     await setStars(1, 6);
     expect($('#view-team .tm-warn')).toBeNull();
     expect(report()[0]).toContain('Barrier from Demiurge Stella');
+  });
+
+  // PLAN 0190 Z5: the stars belong to the hero — Team shows the stored ★ and writes the change back
+  it('a hero with a stored ★4 enters at ★4, one without at ★6', async () => {
+    await mount({ stars: { [H.stella]: 4 } });
+    await openTeam();
+    await pick(0, 'Demiurge Stella');
+    await pick(1, 'Kanon');
+    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(4);
+    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(6);
+  });
+
+  it('a tap in Team writes the hero\'s ★ to the store; the same hero in another spot after ✕ comes back with it', async () => {
+    await mount();
+    await openTeam();
+    await pick(0, 'Kanon');
+    await setStars(0, 3);
+    expect(JSON.parse(localStorage.getItem('ogc.gear')!).stars).toEqual({ [H.kanon]: 3 });
+    await click(spot(0).querySelector<HTMLElement>('.tm-x'));
+    await pick(0, 'Kanon');
+    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(3);
+  });
+
+  it('the report and the suggestions use the stored ★: Stella ★5 gives nothing yet, «from ★6»', async () => {
+    await mount({ stars: { [H.stella]: 5 } });
+    await openTeam();
+    await pick(0, 'Kanon');
+    await pick(1, 'Demiurge Stella');
+    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(5);
+    expect($$('#view-team .tm-fx')[0].textContent).toBe('Demiurge Stella from ★6');
+    await setStars(1, 6);
+    expect($('#view-team .tm-warn')).toBeNull();
   });
 
   it('✕ empties the spot, the portrait replaces the hero; the team survives a tab switch, a reload forgets it and opens «Evaluate»', async () => {
@@ -132,12 +168,12 @@ describe('«Команда»', () => {
     await pick(1, 'Kappa');
     await click(spot(0).querySelector<HTMLElement>('.tm-x'));
     expect($$('#view-team .tm-slot')).toHaveLength(1);
-    // the portrait opens the list: another hero takes the spot, keeping its ★
+    // the portrait opens the list: another hero takes the spot with its own ★ (not the previous hero's): ★6 when not set
     await setStars(1, 3);
     await click(slot(1));
     await click(sheetHeroes().find((b) => heroName(b) === 'Yuri'));
     expect(spot(1).textContent).toContain('Yuri');
-    expect(spot(1).querySelectorAll('.tm-mini .on')).toHaveLength(3);
+    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(6);
     await click($('.vbar .vb-tab')); // ← Evaluate
     await openTeam();
     expect($$('#view-team .tm-slot')).toHaveLength(1);

@@ -10,7 +10,7 @@ import { HeroTag } from '@/game/hero/HeroTag';
 import type { HeroReport, NeedReport } from '@/game/synergy/check';
 import { useT, type Texts } from '@/i18n';
 import { Rich } from '@/shared/ui/Rich';
-import { MiniStars } from './Stars';
+import { MiniStars } from '@/game/hero/Stars';
 
 const FIX_SHOWN = 6;
 

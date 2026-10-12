@@ -20,8 +20,9 @@ const FIX_NONE = 3, FIX_SELF = 1.5;
 const slotOf = (t: GuideTeams['list'][number], id: string) => t.s.findIndex((s) => s.includes(id));
 
 /** Roster heroes (pool, not in the team) that fit the team, best first; empty without outerpedia teams and statuses. */
+// starOf — the stored ★ of a candidate (not set — ★6, the strongest the hero can be)
 export function suggest(syn: Synergy | undefined, guide: GuideTeams | undefined, team: TeamMember[], pool: readonly string[],
-  rank: (id: string) => number = () => 0): Suggestion[] {
+  rank: (id: string) => number = () => 0, starOf?: (id: string) => number | undefined): Suggestion[] {
   const inTeam = new Set(team.map((m) => m.id));
   const list = guide?.list ?? [];
   const base = syn ? checkTeam(syn, team, pool) : [];
@@ -35,7 +36,7 @@ export function suggest(syn: Synergy | undefined, guide: GuideTeams | undefined,
     const teams = team.length ? 0 : list.filter((t) => slotOf(t, id) >= 0).length;
     const fixes: Fix[] = [];
     if (syn && open.size) {
-      for (const h of checkTeam(syn, [...team, { id, star: 6 }], pool)) {
+      for (const h of checkTeam(syn, [...team, { id, star: starOf?.(id) ?? 6 }], pool)) {
         if (h.id === id) continue;
         for (const n of h.needs) {
           const was = open.get(`${h.id}:${n.on}:${n.st}`);

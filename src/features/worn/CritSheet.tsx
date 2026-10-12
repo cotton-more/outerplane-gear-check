@@ -44,20 +44,22 @@ export function CritBar({ c, total, need, mini = false }: { c: Char; total: numb
   );
 }
 
-// own — the hero's part of the crit (base, class, quirks): «Герой 20% · вещи 25%» under the bar, adding up to the shown crit
-export function CritSheet({ c, now, total, own, onClose, onSave }: {
-  c: Char; now: number; total: number; own: number; onClose: () => void; onSave: (n: number) => void;
+// own — the hero's part of the crit (base, class, quirks), stars — the transcend stars' part: «Герой 20% · звёзды 65% · вещи 25%»
+// under the bar (the stars part only when > 0), adding up to the shown crit
+export function CritSheet({ c, now, total, own, stars, onClose, onSave }: {
+  c: Char; now: number; total: number; own: number; stars: number; onClose: () => void; onSave: (n: number) => void;
 }) {
   const t = useT();
   const [text, setText] = useState(String(now));
   const n = /^\d{1,3}$/.test(text) ? clamp(Number(text)) : null;
   const need = n ?? now;
   const step = (d: number) => setText(String(clamp(need + d)));
+  const hero = Math.floor(own + 1e-9), starsPart = Math.floor(stars + 1e-9);
   return (
     <Sheet title={t.card.critTitle(c.name)} onClose={onClose} className="critsheet" bare>
       <div className="vsheet">
         <CritBar c={c} total={total} need={need} />
-        <p className="crit-split">{t.card.critSplit(Math.floor(own + 1e-9), shownCrit(total) - Math.floor(own + 1e-9))}</p>
+        <p className="crit-split">{t.card.critSplit(hero, shownCrit(total) - hero - starsPart, starsPart)}</p>
         <div className="crit-n">
           <button type="button" className="btn crit-step" aria-label={t.card.critLess} disabled={n === 0} onClick={() => step(-1)}>−</button>
           <label className="crit-in">

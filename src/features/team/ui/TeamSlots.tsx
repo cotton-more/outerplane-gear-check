@@ -8,7 +8,7 @@ import type { TeamMember } from '@/game/synergy/check';
 import { useT } from '@/i18n';
 import { CloseButton } from '@/shared/ui/CloseButton';
 import { tour } from '@/tour/anchors';
-import { MiniStars } from './Stars';
+import { MiniStars } from '@/game/hero/Stars';
 
 export function TeamSlots({ team, onPick, onStars, onRemove }: {
   team: readonly (TeamMember | null)[]; onPick: (i: number) => void; onStars: (i: number) => void; onRemove: (i: number) => void;
@@ -25,7 +25,7 @@ export function TeamSlots({ team, onPick, onStars, onRemove }: {
               <HeroFace c={c} />
               <span className="tm-n"><HeroName c={c} /></span>
             </button>
-            <button type="button" className="tm-sb" aria-label={t.team.stars(c.name)} onClick={() => onStars(i)}><MiniStars n={m.star} /></button>
+            <button type="button" className="tm-sb" aria-label={t.ui.stars(c.name)} onClick={() => onStars(i)}><MiniStars n={m.star} /></button>
             <CloseButton className="tm-x hit" label={t.team.removeMember(c.name)} onClick={() => onRemove(i)} />
           </div>
         ) : (

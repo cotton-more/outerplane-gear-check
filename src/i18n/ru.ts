@@ -307,10 +307,12 @@ export const ru = {
     pinFill: (k: number, n: number) => `${k} из ${n}`,
     // «Крит: 45%» on «Надето» (MODEL.md §12 item 3): the line under the chain and its sheet with the hero's N
     critLine: (n: number) => `Крит: ${n}%`,
-    // under the sheet's bar: the hero's own crit (base, class, quirks) and what the gear adds
-    critSplit: (hero: number, gear: number) => `Герой ${hero}% · вещи ${gear}%`,
+    // under the sheet's bar: the hero's own crit (base, class, quirks), the transcend stars' (only when > 0) and what the gear adds
+    critSplit: (hero: number, gear: number, stars: number) => `Герой ${hero}% · ${stars > 0 ? `звёзды ${stars}% · ` : ''}вещи ${gear}%`,
+    // the stars button in the card header (PLAN 0190 T1): six small stars before «Attacker · DPS»; null — not set
+    starsAria: (name: string, n: number | null) => (n === null ? `Звёзды ${name} не указаны — указать` : `Звёзды ${name}: ★${n} — поменять`),
     critTitle: (name: string) => `Крит для ${name}`,
-    critAbout: 'Сколько крита нужно герою. Ближе к этому числу крит ценится меньше, выше — не ценится. Понизь, если крит дают камни, талисман, звёзды или команда.',
+    critAbout: 'Сколько крита нужно герою. Ближе к этому числу крит ценится меньше, выше — не ценится. Понизь, если крит дают камни, талисман или команда.',
     critN: 'Сколько крита нужно герою, %',
     critLess: 'Меньше',
     critMore: 'Больше',
@@ -590,6 +592,13 @@ export const ru = {
     tradeBtn: 'Обмен',
     nobodyFound: 'Никого не нашлось.',
     rosterToggle: (name: string, own: boolean) => `${name} — ${own ? 'убрать из ростера' : 'добавить в ростер'}`,
+    starsUnset: 'звёзды не указаны',
+    // the star sheet (card and Team): the title, the six stars and the line for heroes whose stars give crit
+    stars: (name: string) => `Звёзды: ${name}`,
+    star: (n: number) => `★${n}`,
+    starsGroup: 'Звёзды героя',
+    starsCrit: (p: number) => `Крит от звёзд: +${p}%`,
+    starsCritFrom: (p: number, s: number) => `Крит от звёзд: с ★${s} +${p}%`,
     rosterSelected: 'Выделено — нажми Ctrl/Cmd+C',
     rosterApplied: (replace: boolean, n: number, missed: string) => `${replace ? 'Заменено' : 'Добавлено'}: ${n}${missed ? `; не распознано: ${missed}` : ''}`,
     replace: 'Заменить',
@@ -888,10 +897,7 @@ export const ru = {
     search: 'Имя',
     addMember: 'Место в команде',
     replace: (name: string) => `Поставить другого вместо ${name}`,
-    starsGroup: 'Звёзды героя',
     removeMember: (name: string) => `Убрать из команды: ${name}`,
-    stars: (name: string) => `Звёзды: ${name}`,
-    star: (n: number) => `★${n}`,
     from: (n: number) => `с ★${n}`,
     slot: { s1: 'S1', s2: 'S2', s3: 'S3', burst: 'Burst', passive: 'пассивка' } as Record<SkillSlot, string>,
     // what — what the status switches on, «S1: двойная атака» (bold); status — its name

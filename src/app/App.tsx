@@ -22,7 +22,7 @@ import { fitsData } from '@/features/eval/form/formState';
 import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
 import { replacedX } from '@/features/gear/model/fusion';
-import type { GearStore } from '@/features/gear/model/gear';
+import { setStars, type GearStore } from '@/features/gear/model/gear';
 import { gearBadges } from '@/features/gear/model/poolVs';
 import { poolView } from '@/features/gear/pool';
 import { useGear, type GearApi } from '@/features/gear/store/useGear';
@@ -269,7 +269,7 @@ export function App() {
               canShare={!tour.run && !gear.newer} />
           </section>
           <section id="view-team" className="view team-view" role="tabpanel" aria-labelledby="tab-team" hidden={s.tab !== 'team'}>
-            <TeamScreen roster={rosterList} off={off} onChars={() => onTab('chars')} />
+            <TeamScreen roster={rosterList} off={off} stars={gear.store.stars ?? NO_STARS} onStar={(id, n) => gear.set(setStars(gear.store, id, n))} onChars={() => onTab('chars')} />
           </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}

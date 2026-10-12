@@ -9,7 +9,7 @@ import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import type { RosterApi } from '@/features/roster/useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { critNeed, setCrit, setPin, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { critNeed, setCrit, setPin, setStars, starOf, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
 import { undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
 import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 import { reasonOf } from '@/features/gear/pool/info';
@@ -18,6 +18,7 @@ import { PoolList, reasonText } from '@/features/gear/ui/PoolList';
 import { Redress, redressLabel } from '@/features/worn/Redress';
 import { PinSheet } from '@/features/worn/PinSheet';
 import { CritSheet } from '@/features/worn/CritSheet';
+import { MiniStars, StarSheet } from '@/game/hero/Stars';
 import { WornGear } from '@/features/worn/WornGear';
 import { ShareButton } from '@/features/worn/ShareButton';
 import { shareCodeOf } from '@/features/worn/share';
@@ -58,7 +59,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // открыта «Надето»; у героя не из ростера и без вещей — «Билды» (смотрит справку)
   const [tab, setTab] = useState<Tab>(() => (c && !rosterApi.roster.has(c.id) && !view.of(c.id)?.pieces.length ? 'builds' : 'worn'));
   const [bi, setBi] = useState(0); // билд на вкладке «Билды»
-  const [sheet, setSheet] = useState<'redress' | 'pin' | 'crit' | null>(null);
+  const [sheet, setSheet] = useState<'redress' | 'pin' | 'crit' | 'stars' | null>(null);
   const [pieceId, setPieceId] = useState<string | null>(null);
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
   useEffect(() => { if (!active) { setPieceId(null); setSheet(null); } }, [active]);
@@ -81,6 +82,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     );
   }
   const own = rosterApi.roster.has(c.id);
+  const stars = starOf(gear.store, c.id);
   // есть Core Fusion этого героя (features/gear/model/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
   const fusedBy = ctx.off.has(c.id) ? CHAR[ctx.off.get(c.id)!] : null;
   const hasBuilds = c.builds.length > 0;
@@ -138,6 +140,12 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const next = setCrit(gear.store, c.id, n);
     if (next !== gear.store) gear.set(next);
   };
+  // the hero's stars (transcend): saved at once, the sheet closes; the «Крит» line shows the change, no message (like N)
+  const saveStars = (k: number) => {
+    setSheet(null);
+    const next = setStars(gear.store, c.id, k);
+    if (next !== gear.store) gear.set(next);
+  };
   // «Поделиться»: надета хоть одна вещь (SPEC 3.1)
   const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, pieces, pin?.key ?? null) : null;
   const enter = onTryOn ? (slot: SlotId) => onTryOn(c, slot, undefined, false, true) : undefined;
@@ -157,7 +165,11 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         <button type="button" className="cd-star" aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={() => rosterApi.toggle(c.id)}>
           {own ? '★' : '☆'}
         </button>
-      )} />
+      )} stars={own ? (
+        live
+          ? <button type="button" className="cd-stars" aria-label={t.card.starsAria(c.name, stars)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} /></button>
+          : <span className="cd-stars" {...tour('hstars')}><MiniStars n={stars} /></span>
+      ) : undefined} />
       {fusedBy && (
         <div className="own-row">
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name, fusedBy.name)}</button>
@@ -214,7 +226,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {sheet === 'redress' && wv?.redress && hp && (
             <Redress c={c} ctx={ctx} P={hp.P} plan={wv.redress} onClose={() => setSheet(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
           )}
-          {sheet === 'crit' && <CritSheet c={c} now={critNeed(gear.store, c.id)} total={wv?.crit?.total ?? 0} own={wv?.crit?.own ?? 0} onClose={() => setSheet(null)} onSave={saveCrit} />}
+          {sheet === 'crit' && <CritSheet c={c} now={critNeed(gear.store, c.id)} total={wv?.crit?.total ?? 0} own={wv?.crit?.own ?? 0} stars={wv?.crit?.stars ?? 0} onClose={() => setSheet(null)} onSave={saveCrit} />}
           {sheet === 'pin' && hp && <PinSheet c={c} ctx={ctx} choices={pinChoices(hp)} now={pin?.key ?? null} onClose={() => setSheet(null)} onPin={doPin} />}
         </>
       ) : (
@@ -223,6 +235,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {c.gameSets && c.gameSets.length > 0 && <><br />{t.ui.gameSets(c.gameSets.map((id) => setName(ctx.idx, id)).join(', '))}</>}
         </div>
       )}
+      {sheet === 'stars' && own && <StarSheet c={c} star={stars} onStar={saveStars} onClose={() => setSheet(null)} />}
     </aside>
   );
 }

@@ -41,7 +41,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/worn/WornBudget.tsx': 'helper',            // budget under the Worn heading: the wornBudget tip explains it
   'features/worn/CritSheet.tsx': 'helper',             // the hero's N from «Крит: 45%» on Worn: the wornCrit tip explains it, the sheet's text too
   'features/worn/WornSets.tsx': 'helper',              // sets and the T4 line under the chain on Worn: explained by the wornTab tip
-  'features/team/ui/Stars.tsx': 'helper',              // transcend stars on Team: tap the N-th star, as in the game
+  'game/hero/Stars.tsx': 'helper',                     // transcend stars: card and Team; the heroStars tip explains them
   'features/team/ui/TeamSlots.tsx': 'helper',          // the four Team spots: explained by the Team tip
   'features/team/ui/TeamReport.tsx': 'helper',
   'features/team/ui/TeamPicker.tsx': 'helper',         // the hero sheet of a spot: who fits the team first — section titles explain it         // the Team report: explained by the Team tip

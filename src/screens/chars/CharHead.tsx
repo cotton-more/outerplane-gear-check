@@ -1,5 +1,6 @@
 // Шапка героя: портрет со значками стихии и класса, имя, подкласс и роль, тиры PvE / PvP, ник, ссылка outerpedia —
-// только показ. star — звезда ростера у имени (карточка героя); в карточке показа её нет.
+// только показ. star — звезда ростера у имени (карточка героя); в карточке показа её нет. stars — звёзды героя (transcend) в
+// начале строки под именем: кнопка или просто шесть звёзд (карточка героя); в карточке показа их нет.
 import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
@@ -15,7 +16,7 @@ const Tier = ({ k, v }: { k: string; v: string }) => (
   <span className="tier"><span className="tier-k">{k}</span><b className={`tier-v tier-${v.toLowerCase()}`}>{v}</b></span>
 );
 
-export function CharHead({ c, ctx, star }: { c: Char; ctx: Ctx; star?: ReactNode }) {
+export function CharHead({ c, ctx, star, stars }: { c: Char; ctx: Ctx; star?: ReactNode; stars?: ReactNode }) {
   const t = useT();
   const { D } = ctx.idx;
   const elName = D.elements[c.element] || c.element;
@@ -33,7 +34,7 @@ export function CharHead({ c, ctx, star }: { c: Char; ctx: Ctx; star?: ReactNode
           {star}
         </div>
         {/* класса текстом нет — его показывает значок; подкласс есть у всех, но без него — название класса */}
-        <div className="meta">{[c.subClass ? cap(c.subClass) : clsName, c.role && (ROLE[c.role] || c.role)].filter(Boolean).join(' · ')}</div>
+        <div className="meta">{stars}{stars && <span aria-hidden="true">·</span>}<span>{[c.subClass ? cap(c.subClass) : clsName, c.role && (ROLE[c.role] || c.role)].filter(Boolean).join(' · ')}</span></div>
       </div>
       {/* оценки outerpedia, прозвище (режется многоточием) и ссылка на страницу персонажа — без языкового префикса: /ru/ нет */}
       <div className="cd-foot">

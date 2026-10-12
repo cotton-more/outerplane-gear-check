@@ -424,6 +424,61 @@ describe('«Надето»: the hero\'s crit «Crit: 45%»', () => {
   });
 });
 
+// Hero stars (PLAN 0190): six small stars before «Subclass · Role» in the card header → the star sheet; crit from stars joins «Crit»
+describe('«Надето»: the hero\'s stars', () => {
+  const regina = D.chars.find((c) => c.name === 'Poolside Trickster Regina')!;
+  const worn = (ps: Pc[], hero: string, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
+  const lit = () => $$('.cd-head .cd-stars .hs-mini .on').length;
+  const line = () => $('.bgear.worn .wcrit')?.textContent;
+
+  it('a roster hero: a button with six unlit stars and its aria; not in the roster — nothing', async () => {
+    await mount({ gear: worn([WEAK], caren.id) });
+    const b = $('.cd-head button.cd-stars')!;
+    expect([b.getAttribute('aria-label'), lit()]).toEqual(['Caren’s stars not set — set them', 0]);
+    expect($$('.cd-head .cd-stars .hs-mini i')).toHaveLength(6);
+  });
+
+  it('a hero not in the roster has no stars', async () => {
+    await mount({ roster: [] });
+    expect($('.cd-head .cd-stars')).toBeNull();
+  });
+
+  it('tap → the sheet «Stars: Regina»; ★5 → saved, the sheet closes, the line and the crit sheet count 65%', async () => {
+    await mount({ gear: worn([WEAK], regina.id), roster: [regina.id] }, { charId: regina.id });
+    const before = line();
+    await click($('.cd-head button.cd-stars'));
+    expect($('.drawer.hs-sheet .drawer-title, .drawer.hs-sheet h3, .drawer.hs-sheet h2')?.textContent).toBe('Stars: Poolside Trickster Regina');
+    expect($('.hs-crit')?.textContent).toBe('Crit from stars: +65% from ★5');
+    await click($$('.drawer.hs-sheet .hs-big button')[4]);
+    expect($('.drawer.hs-sheet')).toBeNull();
+    expect(stored().stars).toEqual({ [regina.id]: 5 });
+    expect([lit(), $('.cd-head button.cd-stars')?.getAttribute('aria-label')]).toEqual([5, 'Poolside Trickster Regina’s stars: ★5 — change']);
+    const crit = (t: string | undefined) => Number(/(\d+)%/.exec(t ?? '')?.[1]);
+    expect(crit(line())).toBe(crit(before) + 65);
+    await click($('.bgear.worn .wcrit'));
+    expect($('.critsheet .crit-split')?.textContent).toMatch(/^Hero 20% · stars 65% · gear \d+%$/);
+  });
+
+  it('a stored ★ shows at once; the star sheet line for ★5: «+65%»; ★4 — «from ★5»; a hero whose stars give no crit — no line', async () => {
+    await mount({ gear: worn([WEAK], regina.id, { stars: { [regina.id]: 5 } }), roster: [regina.id] }, { charId: regina.id });
+    expect(lit()).toBe(5);
+    await click($('.cd-head button.cd-stars'));
+    expect($('.hs-crit')?.textContent).toBe('Crit from stars: +65%');
+    await click($$('.drawer.hs-sheet .hs-big button')[3]);
+    await click($('.cd-head button.cd-stars'));
+    expect($('.hs-crit')?.textContent).toBe('Crit from stars: +65% from ★5');
+  });
+
+  it('a hero whose stars give no crit: the sheet has no crit line, no crit part in the split', async () => {
+    await mount({ gear: worn([WEAK], caren.id, { stars: { [caren.id]: 6 } }) });
+    await click($('.cd-head button.cd-stars'));
+    expect($('.hs-crit')).toBeNull();
+    await click($$('.drawer.hs-sheet .hs-big button')[5]);
+    await click($('.bgear.worn .wcrit'));
+    expect($('.critsheet .crit-split')?.textContent).toBe('Hero 20% · gear 6%');
+  });
+});
+
 describe('«Надето»: the hero\'s crit on old data', () => {
   it('a snapshot without the hero\'s CHC or main values — no line (the number would be far below the game\'s)', async () => {
     const old = { ...D, mainValues: undefined };

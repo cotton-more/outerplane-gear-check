@@ -62,7 +62,7 @@ describe('шапка карточки персонажа', () => {
     await mountCard(caren.id, [caren.id]);
 
     // Act
-    const meta = $('.cd-head .meta')?.textContent;
+    const meta = $('.cd-head .meta > span:last-child')?.textContent;
 
     // Assert
     expect(meta).toBe('Bruiser · DPS');

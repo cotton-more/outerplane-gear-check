@@ -16,19 +16,8 @@ html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 2; }
 .tm-x { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line-2); color: var(--ink-2); font-size: 11px; line-height: 1; }
 .tm-add { border: 1px dashed var(--line-2); background: none; color: var(--ink-3); font-size: 22px; }
 .tm-hint { margin: 0; font-size: 13px; }
+.tm-sb .hs-mini i, .tm-sb .hs-mini svg { width: 8px; height: 8px; }
 
-/* transcend stars: six small ones on a spot and a report header; the stars sheet — tap the N-th big star */
-.tm-mini { display: inline-flex; gap: 1px; flex: none; }
-.tm-mini i, .tm-mini svg { display: block; width: 9px; height: 9px; }
-.tm-sb .tm-mini i, .tm-sb .tm-mini svg { width: 8px; height: 8px; }
-.tm-mini svg { fill: var(--line-2); }
-.tm-mini .on svg { fill: var(--star-on); }
-.drawer.tm-star-sheet { max-width: 420px; }
-.tm-big { display: flex; justify-content: space-between; max-width: 320px; width: 100%; margin: 4px auto 8px; }
-.tm-big button { flex: 1 1 0; min-width: 0; height: 52px; padding: 4px 0; border: 0; background: none; display: grid; place-items: center; }
-.tm-big svg { width: min(36px, 100%); height: 36px; fill: none; stroke: var(--line-2); stroke-width: 1.6; stroke-linejoin: round; }
-.tm-big .on svg { fill: var(--star-on); stroke: var(--star-on); }
-.tm-big [aria-pressed="true"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--star-on) 60%, transparent)); }
 .drawer.tm-sheet .trade-heroes { margin-top: 0; }
 
 /* report */
@@ -47,8 +36,8 @@ html:not(.narrow) .tm > .tm-rep { grid-column: 2; grid-row: 1 / span 2; }
 .tm-from { font: 600 11.5px var(--font-mono); color: var(--ink-3); }
 .tm-more { border: 0; background: none; padding: 0; color: var(--accent); font: 600 12.5px var(--font-body); }
 @media (max-width: 330px) {
-  .tm-sb .tm-mini { gap: 0; }
-  .tm-sb .tm-mini i, .tm-sb .tm-mini svg { width: 7px; height: 7px; }
+  .tm-sb .hs-mini { gap: 0; }
+  .tm-sb .hs-mini i, .tm-sb .hs-mini svg { width: 7px; height: 7px; }
 }
 
 /* the hero sheet: who fits the team (rows with reasons), then everyone else */

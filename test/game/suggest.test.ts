@@ -50,6 +50,15 @@ describe('suggest', () => {
     expect(s.indexOf(lise)).toBeLessThan(3);
   });
 
+  it('a candidate\'s stored ★ counts: Demiurge Stella gives Kanon a Barrier only from ★6 (not set — ★6)', () => {
+    const stella = '2000053';
+    const fixes = (starOf?: (id: string) => number | undefined) =>
+      suggest(syn, guide, team(H.kanon, H.fatal, H.aer), ALL, undefined, starOf).find((x) => x.id === stella)!.fixes;
+    expect(fixes()).toHaveLength(1);
+    expect(fixes((id) => (id === stella ? 6 : undefined))).toHaveLength(1);
+    expect(fixes((id) => (id === stella ? 5 : undefined))).toEqual([]);
+  });
+
   it('only from herself → «from the start of battle» counts less: Veronica + Kappa is a fix of a «self» need', () => {
     const k = suggest(syn, guide, team(H.veronica), ALL).find((x) => x.id === H.kappa)!;
     expect(k.fixes).toEqual([{ hero: H.veronica, st: '6', slot: 's1', fx: ['dual'], was: 'self' }]);
