@@ -236,6 +236,37 @@ function problems(D) {
     const row = D.mainValues?.accessory?.[g]?.CHC;
     if (!(row?.length === 5 && row.every((v, i) => v > 0 && (!i || v > row[i - 1])))) out.add(`нет значений main CHC аксессуара ${GRADE_EN[g]} на +10 по T0…T4 (mainValues)`);
   }
+  // hero EFF (update.py eff_profile): white EFF is one of a few class values; a changed evolution format zeroes it
+  const W = new Set([80, 120, 140, 160, 180]);
+  const badW = D.chars.filter((c) => !c.eff || !(c.eff.w?.length === 2 && c.eff.w.every((v) => W.has(v)) && c.eff.w[0] <= c.eff.w[1]));
+  if (badW.length) out.add(`EFF героя (eff.w) нет или не 80/120/140/160/180: ${badW.slice(0, 5).map((c) => c.name).join(', ')}${badW.length > 5 ? '…' : ''}`);
+  const rangers = D.chars.filter((c) => c.class === 'ranger');
+  if (rangers.length && !rangers.every((c) => c.eff?.r === 50)) out.add('EFF: не у всех Ranger узел квирков +50 (eff.r) — формат quirks изменился?');
+  if (D.mainValues?.gloves?.unique?.EFF?.[0] !== 50) out.add(`main EFF перчаток Legendary на +10 T0: ${D.mainValues?.gloves?.unique?.EFF?.[0]}, ждём 50 (mainValues)`);
+  // boss fights (update.py build_bosses): count, RES by stage, heroes of the guide teams, two known numbers
+  const B = D.bosses;
+  if (!B) out.add('нет боссов outerpedia (bosses): не получен список гайдов?');
+  else {
+    if (B.b.length < 55) out.add(`боссов всего ${B.b.length} (ждём ≥ 55) — формат гайдов или encounters изменился?`);
+    for (const f of B.b) {
+      const rows = B.t[f.table];
+      if (!rows?.length) { out.add(`босс ${f.key}: нет таблицы этапов ${f.table}`); continue; }
+      // RES grows by stage. World boss: within a league; a new league starts lower, and once per league the ladder may
+      // drop where the second boss takes over (Harshna league 4: A 360 → S 350)
+      const league = (r) => (r[3].includes(':') ? r[3].split(':')[0] : '');
+      const drops = new Map();
+      rows.forEach((r, i) => { if (i && league(r) === league(rows[i - 1]) && r[1] < rows[i - 1][1]) drops.set(league(r), (drops.get(league(r)) ?? 0) + 1); });
+      if ([...drops].some(([lg, n]) => n > (lg ? 1 : 0))) out.add(`босс ${f.key}: RES падает от этапа к этапу`);
+      if (!rows.every((r) => r.slice(0, 3).every((v) => Number.isInteger(v) && v > 0))) out.add(`босс ${f.key}: в таблице не числа`);
+      for (const t of f.teams ?? []) {
+        for (const h of [...t.s.flat(), ...(t.r ?? []).map((r) => r.h)]) if (!ids.has(h)) out.add(`босс ${f.key}: в команде гайда герой ${h}, которого нет в данных`);
+      }
+    }
+    const top = (key, label) => B.t[B.b.find((f) => f.key === key)?.table]?.find((r) => r[3] === label)?.[1];
+    if (top('sr:meteos', '13') !== 360) out.add(`Meteos этап 13: RES ${top('sr:meteos', '13')}, ждём 360`);
+    if (top('gr:frost-legion:main', '10') !== 335) out.add(`Frost Legion этап 10: RES ${top('gr:frost-legion:main', '10')}, ждём 335`);
+    if (B.q !== -200) out.add(`Challenge quirk на RES боссов ${B.q} ‰, ждём −200`);
+  }
   // team synergy (update.py build_synergy): a changed outerpedia format empties or breaks the block
   const syn = D.synergy;
   if (!syn) out.add('нет блока synergy (экран «Команда»)');
