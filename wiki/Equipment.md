@@ -127,6 +127,18 @@ stars on the card (by the name) and the app counts it: Poolside Trickster Regina
 stars, the hero has their starting ★1–★3 — no crit from stars there. Lower N only for what the app doesn't see — gems, the talisman, team buffs. The verdict, "Set aside", "Re-dress", the batch and trade all
 count crit this way: a crit-heavy piece loses to a piece with other stats once the hero has enough.
 
+**"EFF: ≈ 233"** under the crit line — for heroes who need EFF against a boss's RES: the boss can resist their debuffs
+(Tamara, Iota, Sigma, Ember…; heroes whose DoTs go through RES — Francesca, Vlada, Eris, Eliza, Drakhan — have no line).
+The app counts EFF by the game's formula: the hero's white EFF (level by the "Lv 120" setting, Ranger +50 by "Quirks"),
+the EFF main of gloves and accessory (at +10 by their Breakthrough), EFF% substats and the Effectiveness set — those
+multiply the white EFF only — and transcend stars (Gnosis Domine at ★4: ×2). "≈" means an estimate: the app can't see
+the EE, the talisman or gems, and the EE doubles EFF for many debuffers (Tamara: 233 in the app, 466 in the game). Tap
+the line — the sheet "EFF for Tamara": the number, "Hero 170 · gear 63" and the **"In game"** field. Type EFF from the
+hero's screen in the game and the "≈" goes. The number is kept as a factor over the app's count (466 / 233 = ×2):
+re-dress the hero and the line recounts itself, with "≈" again and a quiet line in the sheet, "Gear changed since you
+typed it" — check the game when convenient. "Reset" forgets the number. Enhance isn't recorded: gear counts at +10. For
+now EFF is only shown — it doesn't change the verdict or trade.
+
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point (a Legendary in place of an Epic — already at equal points), turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says
 "Re-dress: better passive"). The sheet shows the total (points, what turns on and off), a row per piece "— instead of the Speed
@@ -263,7 +275,7 @@ for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode a
 
 ## Backup
 
-More → "Backup": the **OGC-GEAR6** code — all pieces, what's worn, each hero's pinned set, crit number and stars. Copy it to keep a backup or
+More → "Backup": the **OGC-GEAR7** code — all pieces, what's worn, each hero's pinned set, crit number, in-game EFF and stars. Copy it to keep a backup or
 move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
 and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
 The older codes still read — OGC-GEAR1 to 4; marks of the old model ("Filling", the chosen build, "Keep worn

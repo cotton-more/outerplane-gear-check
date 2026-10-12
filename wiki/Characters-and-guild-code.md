@@ -23,8 +23,8 @@ Until you set them, the hero has their starting stars (★1–★3, as in the ga
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
 has gear. Removing from the roster works only in the card: the stars by the name → "Remove from roster". If the character has gear, a window warns that the gear is removed from the app (unlock it in the game, or it can't be dismantled); after "Yes,
-remove" — a message with "Undo". The hero's stars, crit number and pinned set go along with the gear. A hero without
-gear leaves at once, and with them the same stars, crit number and set; "Undo" in the message brings them all back.
+remove" — a message with "Undo". The hero's stars, crit number, in-game EFF and pinned set go along with the gear. A hero without
+gear leaves at once, and with them the same stars, crit number, EFF and set; "Undo" in the message brings them all back.
 
 Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster never holds
 both. Star Core Fusion Eternal while Eternal is in the roster or has gear — a window: Eternal's gear moves to Core
@@ -38,7 +38,7 @@ with "Undo". More — [Equipment](Equipment#core-fusion).
 
 Everything you mark stays in your browser only — nothing is sent anywhere. To keep it safe or move it to another device
 there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code
-(**OGC-GEAR6**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set, crit number and stars. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
+(**OGC-GEAR7**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set, crit number, in-game EFF and stars. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
 the same field and tap **"Replace"**: the roster and gear are replaced by the code, and the message's "Undo" brings the
 old ones back. The code may be split into lines — spaces and line breaks don't matter; a cut or damaged code won't load
 ("The code is damaged or cut off — copy all of it").
