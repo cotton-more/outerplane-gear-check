@@ -7,7 +7,7 @@
 // которые есть и у других, остаются у других).
 // Надетое (worn) идёт за вещами: всё, что было надето на X, надето и на CF; убраны — не надето. Звёзды героя (stars) и N
 // (crit) переходят тоже: в игре Core Fusion X сохраняет звёзды обычного героя (owner, 2026-10-11), «переносим всё»
-// (owner, 2026-10-12), и эфф из игры (eff, .x/0200-boss Q3: у CF он с «≈» — свой счёт другой); у второго уже есть свои — остаются они. Закрепление набора (pin) снимается: билды у героев разные
+// (owner, 2026-10-12), и эфф из игры (eff, .x/0200-boss Q3: у CF он с «≈» — свой счёт другой), и уровень героя (lv, .x/0205-hero-level: Core Fusion X сохраняет уровень, как звёзды); у второго уже есть свои — остаются они. Закрепление набора (pin) снимается: билды у героев разные
 // (stat-sets PLAN Д9), а у ушедшего из ростера данных нет (owner, 2026-10-12). «Вернуть» возвращает всё это (unfuseChar).
 import type { Index } from '@/game/data';
 import { gc, syncWorn, type GearStore, type Worn } from './gear';
@@ -33,25 +33,26 @@ export const starsTo = (stars: GearStore['stars'], from: string, to: string) => 
 // с запиской, что именно перешло: нужно «Вернуть» (gearStore unfuseChar)
 const entryMoved = <T>(m: HeroMap<T>, from: string, to: string): T | undefined =>
   m?.[from] !== undefined && m[to] === undefined ? m[from] : undefined;
-// карта героев в хранилище (stars, crit, pin, eff): пустой нет — поля нет
-export function withMap<K extends 'stars' | 'crit' | 'pin' | 'eff'>(st: GearStore, key: K, m: GearStore[K]): GearStore {
+// карта героев в хранилище (stars, crit, pin, eff, lv): пустой нет — поля нет
+export function withMap<K extends 'stars' | 'crit' | 'pin' | 'eff' | 'lv'>(st: GearStore, key: K, m: GearStore[K]): GearStore {
   if (m === st[key]) return st;
   const { [key]: _, ...rest } = st;
   return (m ? { ...rest, [key]: m } : rest) as GearStore;
 }
 export const withStars = (st: GearStore, stars: GearStore['stars']): GearStore => withMap(st, 'stars', stars);
-// ★, N и эфф from — к to, pin from снят; что перешло и что снято — для «Вернуть»
-interface Carried { stars?: number; crit?: number; pin?: string; eff?: EffCal }
+// ★, N, эфф и уровень from — к to, pin from снят; что перешло и что снято — для «Вернуть»
+interface Carried { stars?: number; crit?: number; pin?: string; eff?: EffCal; lv?: 100 | 120 }
 function carry(st: GearStore, from: string, to: string): { st: GearStore; carried: Carried } {
   const carried: Carried = {};
   const stars = entryMoved(st.stars, from, to), crit = entryMoved(st.crit, from, to), pin = st.pin?.[from];
-  const eff = entryMoved(st.eff, from, to);
+  const eff = entryMoved(st.eff, from, to), lv = entryMoved(st.lv, from, to);
   if (stars !== undefined) carried.stars = stars;
   if (crit !== undefined) carried.crit = crit;
   if (pin !== undefined) carried.pin = pin;
   if (eff !== undefined) carried.eff = eff;
-  const next = withMap(withMap(withMap(withMap(st, 'stars', entryTo(st.stars, from, to)), 'crit', entryTo(st.crit, from, to)), 'pin', entryTo(st.pin, from, null)),
-    'eff', entryTo(st.eff, from, to));
+  if (lv !== undefined) carried.lv = lv;
+  const next = withMap(withMap(withMap(withMap(withMap(st, 'stars', entryTo(st.stars, from, to)), 'crit', entryTo(st.crit, from, to)), 'pin', entryTo(st.pin, from, null)),
+    'eff', entryTo(st.eff, from, to)), 'lv', entryTo(st.lv, from, to));
   return { st: next, carried };
 }
 
@@ -63,6 +64,7 @@ export interface FusionFix {
   stars?: number;                     // ★ X, которые перешли к CF
   crit?: number;                      // N X, который перешёл к CF
   eff?: EffCal;                       // эфф X из игры, который перешёл к CF
+  lv?: 100 | 120;                     // уровень X, который перешёл к CF
   pin?: string;                       // закрепление X, которое снято
 }
 
@@ -115,7 +117,7 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
 // «есть персонаж» у него — в ростере или с вещами, так что итог тот же, что «сначала в ростер», а Core Fusion встаёт на
 // место X. После него у X при Core Fusion вещей нет — добавленные в ростер конфликта не создают. added — кого добавили
 // (только герои из данных: незнакомый id не показать и не убрать звездой — его пул лежит, как лежал). cleared — героев
-// не в ростере, чьи pin, N и ★ убраны (owner 2026-10-12: убрал героя из ростера — его данных нет; X при Core Fusion отдал
+// не в ростере, чьи pin, N, ★, эфф и уровень убраны (owner 2026-10-12: убрал героя из ростера — его данных нет; X при Core Fusion отдал
 // ★ и N ему, а pin снят — у X тоже ничего), незнакомый id — как лежал
 export interface Normalized { roster: string[]; st: GearStore; fixes: FusionFix[]; added: string[]; cleared: string[] }
 export function normalizeStored(idx: Index, roster: readonly string[], st: GearStore): Normalized {
@@ -125,7 +127,7 @@ export function normalizeStored(idx: Index, roster: readonly string[], st: GearS
   const { st: next, cleared } = clearOutside(idx, list, n.st);
   return { ...n, st: next, roster: list, added, cleared };
 }
-// pin, N, ★ и эфф из игры только у героев ростера (незнакомый id — как лежал)
+// pin, N, ★, эфф из игры и уровень только у героев ростера (незнакомый id — как лежал)
 function clearOutside(idx: Index, roster: readonly string[], st: GearStore): { st: GearStore; cleared: string[] } {
   const own = new Set(roster);
   const keep = (id: string) => !idx.CHAR[id] || own.has(id);
@@ -135,15 +137,16 @@ function clearOutside(idx: Index, roster: readonly string[], st: GearStore): { s
     const out = Object.fromEntries(Object.entries(m).filter(([id]) => keep(id) || !cleared.add(id)));
     return Object.keys(out).length === Object.keys(m).length ? m : out;
   };
-  const pin = part(st.pin), crit = part(st.crit), stars = part(st.stars), eff = part(st.eff);
+  const pin = part(st.pin), crit = part(st.crit), stars = part(st.stars), eff = part(st.eff), lv = part(st.lv);
   if (!cleared.size) return { st, cleared: [] };
-  const { pin: _p, crit: _c, stars: _s, eff: _e, ...rest } = st;
+  const { pin: _p, crit: _c, stars: _s, eff: _e, lv: _l, ...rest } = st;
   const has = <T>(m: Record<string, T> | undefined) => (m && Object.keys(m).length ? m : undefined);
   const next: GearStore = { ...rest };
   if (has(pin)) next.pin = pin;
   if (has(crit)) next.crit = crit;
   if (has(stars)) next.stars = stars;
   if (has(eff)) next.eff = eff;
+  if (has(lv)) next.lv = lv;
   return { st: next, cleared: [...cleared] };
 }
 // нормализация что-то поменяла — хранилище пора переписать (Р17)

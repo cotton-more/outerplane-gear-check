@@ -310,20 +310,20 @@ entry — game icons.
 
 `ogc.gear` v3 also stores `worn` (equipped), `pin` (hero's pinned set), `crit` (hero → N, «сколько крита нужно герою»,
 an integer 0…100; no entry — 100; [MODEL.md §12](MODEL.md)) `stars` (hero → transcend ★ 1…6, a fact about the hero;
-no entry — the hero's minimum ★, the base rarity 1…3 (`game/hero/star` `heroStar`, owner 2026-10-12): a hero never has fewer; `Ctx.stars`) and `eff` (hero → `{typed, at}`: the stat-screen EFF the player typed and the app's
+no entry — the hero's minimum ★, the base rarity 1…3 (`game/hero/star` `heroStar`, owner 2026-10-12): a hero never has fewer; `Ctx.stars`), `lv` (hero → the white-stat level marked on the card, `100` or `120`; no entry — the settings default `lv120`; .x/0205-hero-level) and `eff` (hero → `{typed, at}`: the stat-screen EFF the player typed and the app's
 EFF then; the card shows the app's EFF × typed / at, «≈» once the app's EFF differs from `at`; .x/0200-boss Q3). Invariants: worn ⊂ hero pool (`syncWorn` in
-every mutation via `gc`); `pin`, `crit`, `stars` and `eff` don't depend on the pool; Core Fusion moves `stars`, `crit` and `eff` with the pieces (like `worn`; the other hero's own value wins) and lifts the pin (builds differ) — owner 2026-10-12, the hero who leaves keeps nothing; «Вернуть» moves them back only if nothing changed (`Switch` / `FusionFix` record what moved) — `dropChar` (and
-«Вернуть» `undoDrop`; for a hero without pieces the star in the list or card does the same, with a message and «Вернуть»), an explicit "don't pin" / «Сбросить» clear them, and `normalizeStored` drops them for a hero outside the roster (`cleared`; an unknown id keeps all — owner 2026-10-12: a hero out of the roster has no data); a `crit` value that isn't an integer 0…100, a `stars` value that isn't an integer 1…6, or an `eff` entry that isn't two integers 1…9999, is dropped
+every mutation via `gc`); `pin`, `crit`, `stars`, `lv` and `eff` don't depend on the pool; Core Fusion moves `stars`, `crit`, `lv` and `eff` with the pieces (like `worn`; the other hero's own value wins) and lifts the pin (builds differ) — owner 2026-10-12, the hero who leaves keeps nothing; «Вернуть» moves them back only if nothing changed (`Switch` / `FusionFix` record what moved) — `dropChar` (and
+«Вернуть» `undoDrop`; for a hero without pieces the star in the list or card does the same, with a message and «Вернуть»), an explicit "don't pin" / «Сбросить» clear them, and `normalizeStored` drops them for a hero outside the roster (`cleared`; an unknown id keeps all — owner 2026-10-12: a hero out of the roster has no data); a `crit` value that isn't an integer 0…100, a `stars` value that isn't an integer 1…6, an `lv` value that isn't exactly 100 or 120, or an `eff` entry that isn't two integers 1…9999, is dropped
 on read (the read is then "not whole"). Fields of the old
 model (`marks`, `autoNew`, `aim`, `pinned`) are read and discarded; a player from the old model is shown a one-time
 message (`ogc.modelNote`; only for a v1/v2 store with pieces; its extra sentence about cleared marks, `ui.modelNoteMarks`, only when
-the v2 store had `marks`, `aim` (a chosen build) or `pinned` («Не отдавать надетое») — v1 never counts). Backup — `OGC-GEAR7` (includes
-pinning, each hero's N other than 100: a flag and 7 bits, the stars: a flag and 3 bits, and the typed EFF: a flag and two 14-bit numbers), GEAR1–6 are readable.
+the v2 store had `marks`, `aim` (a chosen build) or `pinned` («Не отдавать надетое») — v1 never counts). Backup — `OGC-GEAR8` (includes
+pinning, each hero's N other than 100: a flag and 7 bits, the stars: a flag and 3 bits, the typed EFF: a flag and two 14-bit numbers, and the hero's level: a flag and 1 bit, 0 — 100, 1 — 120), GEAR1–7 are readable.
 
 **When the load-time normalisation is written back** (`features/gear/store/stored:readStored`). Roster and gear are read together
 and normalized: Core Fusion (`fusion:normalizeStored` — X and Core Fusion X never together, X's pieces move to CF or are removed,
-worn, stars and N move with them, the pin is lifted; the same runs on code import, v1 transfer and batch roster edits), "pieces only for roster
-heroes" (everyone with pieces joins the roster), pin / N / ★ only for roster heroes (`cleared`, silent), v1/v2 → v3 and stale pins (`fixPins`). If anything changed — or a v1/v2 store
+worn, stars, N, level and EFF move with them, the pin is lifted; the same runs on code import, v1 transfer and batch roster edits), "pieces only for roster
+heroes" (everyone with pieces joins the roster), pin / N / ★ / level / EFF only for roster heroes (`cleared`, silent), v1/v2 → v3 and stale pins (`fixPins`). If anything changed — or a v1/v2 store
 was upgraded or a pin moved — both keys are written at once, so the notice doesn't repeat on every launch and half of a fix
 can't get lost. Deliberately **not** written when: a newer page version saved the gear (`newer`: this page doesn't understand it
 and would erase it); there is no storage; the read dropped something (a substat not from the data, a mark or field of a newer

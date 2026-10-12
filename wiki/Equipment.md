@@ -129,7 +129,7 @@ count crit this way: a crit-heavy piece loses to a piece with other stats once t
 
 **"EFF: ≈ 233"** under the crit line — for heroes who need EFF against a boss's RES: the boss can resist their debuffs
 (Tamara, Iota, Sigma, Ember…; heroes whose DoTs go through RES — Francesca, Vlada, Eris, Eliza, Drakhan — have no line).
-The app counts EFF by the game's formula: the hero's white EFF (level by the "Lv 120" setting, Ranger +50 by "Quirks"),
+The app counts EFF by the game's formula: the hero's white EFF (level 100 or 120 — the hero's, by the stars, or the "Default level" setting; Ranger +50 by "Quirks"),
 the EFF main of gloves and accessory (at +10 by their Breakthrough), EFF% substats and the Effectiveness set — those
 multiply the white EFF only — and transcend stars (Gnosis Domine at ★4: ×2). "≈" means an estimate: the app can't see
 the EE, the talisman or gems, and the EE doubles EFF for many debuffers (Tamara: 233 in the app, 466 in the game). Tap
@@ -275,7 +275,7 @@ for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode a
 
 ## Backup
 
-More → "Backup": the **OGC-GEAR7** code — all pieces, what's worn, each hero's pinned set, crit number, in-game EFF and stars. Copy it to keep a backup or
+More → "Backup": the **OGC-GEAR8** code — all pieces, what's worn, each hero's pinned set, crit number, in-game EFF, stars and level. Copy it to keep a backup or
 move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
 and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
 The older codes still read — OGC-GEAR1 to 4; marks of the old model ("Filling", the chosen build, "Keep worn

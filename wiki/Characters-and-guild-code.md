@@ -19,12 +19,15 @@ clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are 
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. Next to the name
 there's a grey star ☆, as in the list: tap it and the character is in the roster. For a roster hero the hero's **stars** take its place, six like the game's transcend: tap, pick ★N in the window, and the window closes; the same window has a "Remove from roster" button.
+The window "Stars and level" also holds the hero's **level**: a switch "default | Lv 100 | Lv 120". "default" — the level
+from the settings' "Default level" (lit pale); Lv 100 or Lv 120 — the hero's own (lit bright), kept when the default flips. The level sets the base for flat vs %,
+set bonuses and EFF; a hero at 120 shows "· Lv 120" after the stars.
 Until you set them, the hero has their starting stars (★1–★3, as in the game); fewer can't be picked. Some heroes get crit from their stars; it counts in "Crit" on the "Worn" tab ([Equipment](Equipment#the-hero-card)), and [Team](Team-check) takes the stars from here. "outerpedia ↗" at the bottom of the header opens the character's guide on outerpedia in a new tab. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
 has gear. Removing from the roster works only in the card: the stars by the name → "Remove from roster". If the character has gear, a window warns that the gear is removed from the app (unlock it in the game, or it can't be dismantled); after "Yes,
-remove" — a message with "Undo". The hero's stars, crit number, in-game EFF and pinned set go along with the gear. A hero without
-gear leaves at once, and with them the same stars, crit number, EFF and set; "Undo" in the message brings them all back.
+remove" — a message with "Undo". The hero's stars, crit number, in-game EFF, level and pinned set go along with the gear. A hero without
+gear leaves at once, and with them the same stars, crit number, EFF, level and set; "Undo" in the message brings them all back.
 
 Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster never holds
 both. Star Core Fusion Eternal while Eternal is in the roster or has gear — a window: Eternal's gear moves to Core
@@ -38,7 +41,7 @@ with "Undo". More — [Equipment](Equipment#core-fusion).
 
 Everything you mark stays in your browser only — nothing is sent anywhere. To keep it safe or move it to another device
 there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code
-(**OGC-GEAR7**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set, crit number, in-game EFF and stars. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
+(**OGC-GEAR8**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set, crit number, in-game EFF, stars and level. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
 the same field and tap **"Replace"**: the roster and gear are replaced by the code, and the message's "Undo" brings the
 old ones back. The code may be split into lines — spaces and line breaks don't matter; a cut or damaged code won't load
 ("The code is damaged or cut off — copy all of it").

@@ -1,5 +1,6 @@
 // Билд персонажа из outerpedia в его карточке: связки сетов, цепочка приоритета сабстатов (flat или %), талисманы,
 // оружие и аксессуары с main stat.
+import { lv120Of } from '@/game/hero/level';
 import { Fragment } from 'react';
 import { FLAT } from '@/game/data';
 import type { Build, Char, GearKind, GearRef } from '@/game/data/types';
@@ -69,7 +70,8 @@ function PrioHint({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
   const axes = [...new Set(b.subs.flat().map((k) => k.replace(/%$/, '')).filter((k) => FLAT.has(k)))];
   const t = useT();
   if (!axes.length) return null;
-  const { lv120, quirks } = ctx.settings;
+  const { quirks } = ctx.settings;
+  const lv120 = lv120Of(ctx, c); // the hero's level (.x/0205): marked on the card or the default
   return (
     <>
       <ul className="prio-hint">

@@ -520,11 +520,11 @@ describe('«Надето»: the hero\'s stars', () => {
     expect($('.cd-head .cd-stars')).toBeNull();
   });
 
-  it('tap → the sheet «Stars: Regina»; ★5 → saved, the sheet closes, the line and the crit sheet count 65%', async () => {
+  it('tap → the sheet «Stars and level: Regina»; ★5 → saved, the sheet closes, the line and the crit sheet count 65%', async () => {
     await mount({ gear: worn([WEAK], regina.id), roster: [regina.id] }, { charId: regina.id });
     const before = line();
     await click($('.cd-head button.cd-stars'));
-    expect($('.drawer.hs-sheet .drawer-title, .drawer.hs-sheet h3, .drawer.hs-sheet h2')?.textContent).toBe('Stars: Poolside Trickster Regina');
+    expect($('.drawer.hs-sheet .drawer-title, .drawer.hs-sheet h3, .drawer.hs-sheet h2')?.textContent).toBe('Stars and level: Poolside Trickster Regina');
     expect($('.hs-crit')).toBeNull(); // the sheet only picks the stars; what they give is not shown
     await click($$('.drawer.hs-sheet .hs-big button')[4]);
     expect($('.drawer.hs-sheet')).toBeNull();
@@ -552,6 +552,44 @@ describe('«Надето»: the hero\'s stars', () => {
     await click($$('.drawer.hs-sheet .hs-big button')[5]);
     await click($('.bgear.worn .wcrit:not(.weff)'));
     expect($('.critsheet .crit-split')?.textContent).toBe('Hero 20% · gear 6%');
+  });
+});
+
+// The hero's level (.x/0205): «Level [100][120][default]» in the star sheet; a mark keeps the level when the settings default
+// flips; «· Lv 120» after the stars; EFF and flat vs % follow it
+describe('«Надето»: the hero\'s level', () => {
+  const akari = D.chars.find((c) => c.name === 'Akari')!;
+  const worn = (ps: Pc[], hero: string, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
+  // the lit segments of the pill: «default» (chosen), a level — bright (chosen) or pale (what the default gives)
+  const pressed = () => $$('.drawer.hs-sheet .lv-seg.on').map((b) => `${b.textContent}${b.classList.contains('soft') ? ' soft' : ''}`);
+  const def = () => $('.drawer.hs-sheet .lv-auto');
+  const eff = () => $('.bgear.worn .weff')?.textContent;
+
+  it('not marked: the default (Lv 100) pressed with «default»; 120 → stored, «· Lv 120» in the header, EFF at W 140; the sheet stays', async () => {
+    await mount({ gear: worn([WEAK], akari.id), roster: [akari.id] }, { charId: akari.id });
+    expect(eff()).toBe('EFF: ≈\u2009about 179▸'); // W 120 at Lv 100
+    expect($('.cd-head .cd-lv')).toBeNull();
+    await click($('.cd-head button.cd-stars'));
+    expect(pressed()).toEqual(['default', 'Lv100 soft']);
+    await click(byText('.drawer.hs-sheet .lv-seg', '120'));
+    expect(stored().lv).toEqual({ [akari.id]: 120 });
+    expect(pressed()).toEqual(['Lv120']);
+    expect($('.cd-head .cd-lv')?.textContent).toBe('· Lv 120');
+    expect($('.cd-head button.cd-stars')?.getAttribute('aria-label')).toBe('Akari’s stars: ★3, Lv 120 — change or remove from roster');
+    expect(eff()).toBe('EFF: ≈\u2009about 200▸'); // ⌊140 × 1.075⌋ = 150 + 50
+    await click(def());
+    expect(stored().lv).toBeUndefined();
+    expect(pressed()).toEqual(['default', 'Lv100 soft']);
+    await click(byText('.drawer.hs-sheet .lv-seg', '100')); // the same level as the default, but marked
+    expect([stored().lv, pressed()]).toEqual([{ [akari.id]: 100 }, ['Lv100']]);
+  });
+
+  it('a hero marked 100 stays at 100 when the default is 120; an unmarked one follows it', async () => {
+    await mount({ gear: worn([WEAK], akari.id, { lv: { [akari.id]: 100 } }), roster: [akari.id] }, { charId: akari.id, lv120: true });
+    expect(eff()).toBe('EFF: ≈\u2009about 179▸');
+    expect($('.cd-head .cd-lv')).toBeNull();
+    await click($('.cd-head button.cd-stars'));
+    expect(pressed()).toEqual(['Lv100']);
   });
 });
 

@@ -51,6 +51,10 @@ export interface GearStore {
   // effShown): the card shows the app's EFF × typed / at. No entry — not typed. Like crit and stars: doesn't depend on the
   // pool, Core Fusion moves it X → CF (shown with «≈» there: CF's own count differs)
   eff?: Record<string, EffCal>;
+  // hero → the white-stat level marked on the card, 100 or 120 (.x/0205-hero-level); no entry — the settings default
+  // (lv120). Doesn't depend on the pool; Core Fusion moves it X → CF like the stars (in the game Core Fusion X keeps the
+  // hero's level as it keeps the stars)
+  lv?: Record<string, 100 | 120>;
   [extra: string]: unknown;
 }
 
@@ -105,19 +109,21 @@ export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slo
 // которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; at: number;
-  worn?: Worn; pin?: string; crit?: number; stars?: number; eff?: EffCal;
+  worn?: Worn; pin?: string; crit?: number; stars?: number; eff?: EffCal; lv?: 100 | 120;
 }
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
   const ids = st.pools[charId] ?? [];
   const { [charId]: _, ...pools } = st.pools;
-  const { pin: _p, crit: _c, stars: _s, eff: _e, ...rest } = st;
+  const { pin: _p, crit: _c, stars: _s, eff: _e, lv: _l, ...rest } = st;
   const { [charId]: myPin, ...pin } = st.pin ?? {};
   const { [charId]: myCrit, ...crit } = st.crit ?? {};
   const { [charId]: myStars, ...stars } = st.stars ?? {};
   const { [charId]: myEff, ...eff } = st.eff ?? {};
+  const { [charId]: myLv, ...lv } = st.lv ?? {};
   const next = gc({
     ...rest, pools, ...(Object.keys(pin).length ? { pin } : {}), ...(Object.keys(crit).length ? { crit } : {}),
     ...(Object.keys(stars).length ? { stars } : {}), ...(Object.keys(eff).length ? { eff } : {}),
+    ...(Object.keys(lv).length ? { lv } : {}),
   });
   const dropped: Dropped = {
     charId, ids,
@@ -128,6 +134,7 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     ...(myCrit !== undefined ? { crit: myCrit } : {}),
     ...(myStars !== undefined ? { stars: myStars } : {}),
     ...(myEff !== undefined ? { eff: myEff } : {}),
+    ...(myLv !== undefined ? { lv: myLv } : {}),
   };
   return { st: next, dropped };
 }
@@ -143,9 +150,10 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const crit = d.crit !== undefined ? { ...st.crit, [d.charId]: st.crit?.[d.charId] ?? d.crit } : st.crit;
   const stars = d.stars !== undefined ? { ...st.stars, [d.charId]: st.stars?.[d.charId] ?? d.stars } : st.stars;
   const eff = d.eff !== undefined ? { ...st.eff, [d.charId]: st.eff?.[d.charId] ?? d.eff } : st.eff;
+  const lv = d.lv !== undefined ? { ...st.lv, [d.charId]: st.lv?.[d.charId] ?? d.lv } : st.lv;
   return syncWorn({
     ...st, pieces, pools: Object.fromEntries(entries), ...(worn ? { worn } : {}), ...(pin ? { pin } : {}), ...(crit ? { crit } : {}),
-    ...(stars ? { stars } : {}), ...(eff ? { eff } : {}),
+    ...(stars ? { stars } : {}), ...(eff ? { eff } : {}), ...(lv ? { lv } : {}),
   });
 }
 
@@ -249,6 +257,19 @@ export function setStars(st: GearStore, charId: string, n: number | null): GearS
   const stars = n === null ? rest : { ...rest, [charId]: n };
   const next: GearStore = { ...st, stars };
   if (!Object.keys(stars).length) delete next.stars;
+  return next;
+}
+
+// the hero's white-stat level marked on the card (100 or 120); null — not marked: the settings default applies
+export const levelOf = (st: Pick<GearStore, 'lv'>, charId: string): 100 | 120 | null => st.lv?.[charId] ?? null;
+// mark the level (100 or 120; null removes the mark — back to the default). Anything else or nothing changed — the same store
+export function setLevel(st: GearStore, charId: string, v: 100 | 120 | null): GearStore {
+  if (v !== null && v !== 100 && v !== 120) return st;
+  if (levelOf(st, charId) === v) return st;
+  const { [charId]: _, ...rest } = st.lv ?? {};
+  const lv = v === null ? rest : { ...rest, [charId]: v };
+  const next: GearStore = { ...st, lv };
+  if (!Object.keys(lv).length) delete next.lv;
   return next;
 }
 

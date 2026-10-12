@@ -393,4 +393,21 @@ html .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 2; } /* и на узком
 .hs-big .on svg { fill: var(--star-on); stroke: var(--star-on); }
 .hs-big button:disabled svg { opacity: .45; }
 .hs-act { display: flex; justify-content: center; margin-top: 8px; }
+/* the hero's level under the stars (.x/0205; owner: it belongs to the stars' sheet, so it wears their gold): one pill as
+   wide as the stars — «по умолчанию» (a little wider; two lines at 280 px) and two level halves; the level in force is gold — bright when
+   chosen on the hero, pale while «по умолчанию» gives it; «по умолчанию» chosen — a raised neutral chip */
+.lv-pill { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); gap: 3px; width: 100%; max-width: 320px; margin: 2px auto 8px; padding: 3px;
+  border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface-2); }
+.lv-seg { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 38px; padding: 0 6px; border: 1px solid transparent;
+  border-radius: 999px; background: none; color: var(--ink-3); line-height: 1; min-width: 0; }
+.lv-seg small { font: 700 10.5px/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; }
+.lv-seg b { font: 700 17px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.lv-auto { padding: 2px 8px; font: 600 12.5px/1.1 var(--font-body); text-align: center; } /* wraps to two lines at 280 px */
+.lv-auto.on { background: var(--surface); border-color: var(--line-2); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+.lv-seg.on:not(.lv-auto) { background: linear-gradient(180deg, color-mix(in srgb, var(--star-on) 78%, #fff), var(--star-on)); border-color: var(--star-on);
+  color: var(--surface); box-shadow: 0 2px 10px color-mix(in srgb, var(--star-on) 40%, transparent); }
+.lv-seg.on.soft { background: color-mix(in srgb, var(--star-on) 16%, var(--surface)); border-color: color-mix(in srgb, var(--star-on) 45%, transparent);
+  color: var(--ink); box-shadow: none; }
+.lv-seg:disabled { opacity: .6; }
+.cd-lv { margin-left: 5px; font-size: 11px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 .hs-big [aria-pressed="true"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--star-on) 60%, transparent)); }

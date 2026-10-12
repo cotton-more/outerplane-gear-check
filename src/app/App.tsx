@@ -38,7 +38,7 @@ import { BatchStrip } from '@/features/batch/ui/BatchStrip';
 import { BatchMarks } from '@/features/batch/ui/BatchMarks';
 import { BatchPanel, batchTitle } from '@/features/batch/ui/BatchPanel';
 import { AskSheet } from '@/shared/ui/AskSheet';
-import { makeCtx, NO_STARS } from '@/game/context';
+import { makeCtx, NO_LV, NO_STARS } from '@/game/context';
 import { useIndex } from '@/game/data/IndexContext';
 import { heroName } from '@/game/hero/HeroName';
 import { GameIconsContext } from '@/game/icons/Img';
@@ -106,7 +106,8 @@ export function App() {
   const demoTry = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : null;
   // Core Fusion (features/gear/model/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и не герой режима «для героя»
   const off = useMemo(() => replacedX(idx, roster, gear.store.pools), [idx, roster, gear.store.pools]);
-  const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off, gear.store.stars ?? NO_STARS), [idx, s.settings, roster, t, off, gear.store.stars]);
+  const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off, gear.store.stars ?? NO_STARS, gear.store.lv ?? NO_LV),
+    [idx, s.settings, roster, t, off, gear.store.stars, gear.store.lv]);
   // экипировка по пулу (features/gear/pool): вид — один раз на хранилище
   const view = useMemo(() => poolView(ctx, gear.store), [ctx, gear.store]);
   // у кого есть вещи: персонаж → сколько отмечено надетым (плитки, «Доодеть» в списке и в «Ещё»)
