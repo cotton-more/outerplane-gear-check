@@ -2,8 +2,8 @@
 // team slot, a report header and the card header; StarPick — tap the N-th star (min — stars below it are lit and can't be
 // picked: the hero's minimum on the card, the card's ★ in Team); StarSheet — the sheet with the pick (none without onStar)
 // and the caller's actions below it (the card: «Убрать из ростера»); what the stars give is not shown here, it just counts.
-// With `level` (the card, .x/0205) — «Уровень [100][120][по умолчанию]» under the stars: the pressed buttons are the hero's
-// level and, while it follows the settings, «по умолчанию»; 100/120 marks the hero, «по умолчанию» forgets the mark.
+// With `level` (the card, .x/0205) — under the stars one pill «по умолчанию | Lv 100 | Lv 120» (owner 2026-10-12: a
+// three-way switch): «по умолчанию» chosen — the level the settings give is lit pale gold; a level chosen — bright gold.
 import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { TABLER } from '@/game/icons/tabler';
@@ -39,13 +39,19 @@ export interface LevelPick { lv120: boolean; marked: boolean; onLevel?: (v: 100 
 
 function LevelRow({ lv120, marked, onLevel }: LevelPick) {
   const t = useT();
-  const b = (on: boolean, v: 100 | 120 | null, label: string, cls = 'chip') => (
-    <button type="button" className={cls} aria-pressed={on} disabled={!onLevel} onClick={() => onLevel?.(v)}>{label}</button>
-  );
+  // a level half: bright gold when marked on the hero, pale while the default gives it
+  const seg = (v: 100 | 120) => {
+    const on = (v === 120) === lv120;
+    return (
+      <button type="button" className={`lv-seg${on ? (marked ? ' on' : ' on soft') : ''}`} aria-pressed={on && marked} disabled={!onLevel}
+        onClick={() => onLevel?.(v)}><small>Lv</small><b>{v}</b></button>
+    );
+  };
   return (
-    <div className="hs-lv" role="group" aria-label={t.ui.levelHero}>
-      <span className="hs-lvl">{t.ui.levelRow}</span>
-      {b(!lv120, 100, '100')}{b(lv120, 120, '120')}{b(!marked, null, t.ui.levelDefault, 'chip hs-def')}
+    <div className="lv-pill" role="group" aria-label={t.ui.levelHero}>
+      <button type="button" className={`lv-seg lv-auto${marked ? '' : ' on'}`} aria-pressed={!marked} disabled={!onLevel}
+        onClick={() => onLevel?.(null)}>{t.ui.levelDefault}</button>
+      {seg(100)}{seg(120)}
     </div>
   );
 }

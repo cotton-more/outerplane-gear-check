@@ -525,7 +525,6 @@ export const en: Texts = {
     rosterToggle: (name, own) => `${name} — ${own ? 'remove from roster' : 'add to roster'}`,
     stars: (name) => `Stars: ${name}`,
     starsLevel: (name) => `Stars and level: ${name}`,
-    levelRow: 'Level',
     levelHero: 'Hero level',
     levelDefault: 'default',
     star: (n) => `★${n}`,

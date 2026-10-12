@@ -622,9 +622,8 @@ export const ru = {
     rosterToggle: (name: string, own: boolean) => `${name} — ${own ? 'убрать из ростера' : 'добавить в ростер'}`,
     // the star sheet (card and Team): the title and the six stars
     stars: (name: string) => `Звёзды: ${name}`,
-    // the card's star sheet with the hero's level (.x/0205): «Уровень [100][120][по умолчанию]»
+    // the card's star sheet with the hero's level (.x/0205): «Lv 100 | Lv 120» and the «по умолчанию» tick
     starsLevel: (name: string) => `Звёзды и уровень: ${name}`,
-    levelRow: 'Уровень',
     levelHero: 'Уровень героя',
     levelDefault: 'по умолчанию',
     star: (n: number) => `★${n}`,

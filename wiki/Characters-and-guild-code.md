@@ -19,8 +19,8 @@ clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are 
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. Next to the name
 there's a grey star ☆, as in the list: tap it and the character is in the roster. For a roster hero the hero's **stars** take its place, six like the game's transcend: tap, pick ★N in the window, and the window closes; the same window has a "Remove from roster" button.
-The window "Stars and level" also holds the hero's **level**: "Level [100] [120] [default]". A marked level is kept when
-the "Default level" in the settings flips; "default" follows the settings again. The level sets the base for flat vs %,
+The window "Stars and level" also holds the hero's **level**: a switch "default | Lv 100 | Lv 120". "default" — the level
+from the settings' "Default level" (lit pale); Lv 100 or Lv 120 — the hero's own (lit bright), kept when the default flips. The level sets the base for flat vs %,
 set bonuses and EFF; a hero at 120 shows "· Lv 120" after the stars.
 Until you set them, the hero has their starting stars (★1–★3, as in the game); fewer can't be picked. Some heroes get crit from their stars; it counts in "Crit" on the "Worn" tab ([Equipment](Equipment#the-hero-card)), and [Team](Team-check) takes the stars from here. "outerpedia ↗" at the bottom of the header opens the character's guide on outerpedia in a new tab. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
 

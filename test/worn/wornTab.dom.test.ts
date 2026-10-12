@@ -560,7 +560,9 @@ describe('«Надето»: the hero\'s stars', () => {
 describe('«Надето»: the hero\'s level', () => {
   const akari = D.chars.find((c) => c.name === 'Akari')!;
   const worn = (ps: Pc[], hero: string, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
-  const pressed = () => $$('.drawer.hs-sheet .hs-lv [aria-pressed="true"]').map((b) => b.textContent);
+  // the lit segments of the pill: «default» (chosen), a level — bright (chosen) or pale (what the default gives)
+  const pressed = () => $$('.drawer.hs-sheet .lv-seg.on').map((b) => `${b.textContent}${b.classList.contains('soft') ? ' soft' : ''}`);
+  const def = () => $('.drawer.hs-sheet .lv-auto');
   const eff = () => $('.bgear.worn .weff')?.textContent;
 
   it('not marked: the default (Lv 100) pressed with «default»; 120 → stored, «· Lv 120» in the header, EFF at W 140; the sheet stays', async () => {
@@ -568,16 +570,18 @@ describe('«Надето»: the hero\'s level', () => {
     expect(eff()).toBe('EFF: ≈\u2009about 179▸'); // W 120 at Lv 100
     expect($('.cd-head .cd-lv')).toBeNull();
     await click($('.cd-head button.cd-stars'));
-    expect(pressed()).toEqual(['100', 'default']);
-    await click(byText('.drawer.hs-sheet .hs-lv button', '120'));
+    expect(pressed()).toEqual(['default', 'Lv100 soft']);
+    await click(byText('.drawer.hs-sheet .lv-seg', '120'));
     expect(stored().lv).toEqual({ [akari.id]: 120 });
-    expect(pressed()).toEqual(['120']);
+    expect(pressed()).toEqual(['Lv120']);
     expect($('.cd-head .cd-lv')?.textContent).toBe('· Lv 120');
     expect($('.cd-head button.cd-stars')?.getAttribute('aria-label')).toBe('Akari’s stars: ★3, Lv 120 — change or remove from roster');
     expect(eff()).toBe('EFF: ≈\u2009about 200▸'); // ⌊140 × 1.075⌋ = 150 + 50
-    await click(byText('.drawer.hs-sheet .hs-lv button', 'default'));
+    await click(def());
     expect(stored().lv).toBeUndefined();
-    expect(pressed()).toEqual(['100', 'default']);
+    expect(pressed()).toEqual(['default', 'Lv100 soft']);
+    await click(byText('.drawer.hs-sheet .lv-seg', '100')); // the same level as the default, but marked
+    expect([stored().lv, pressed()]).toEqual([{ [akari.id]: 100 }, ['Lv100']]);
   });
 
   it('a hero marked 100 stays at 100 when the default is 120; an unmarked one follows it', async () => {
@@ -585,7 +589,7 @@ describe('«Надето»: the hero\'s level', () => {
     expect(eff()).toBe('EFF: ≈\u2009about 179▸');
     expect($('.cd-head .cd-lv')).toBeNull();
     await click($('.cd-head button.cd-stars'));
-    expect(pressed()).toEqual(['100']);
+    expect(pressed()).toEqual(['Lv100']);
   });
 });
 
