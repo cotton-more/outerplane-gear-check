@@ -6,7 +6,8 @@
 
 Some skills only work while a status is on the hero or on the enemy: Veronica's S1 calls a Dual Attack only while her
 Defense is increased, Philia's S2 hits harder on a Shocked target. The «Team» screen shows which of these conditions
-nobody in your team covers, and who from your roster would.
+nobody in your team covers, and who from your roster would. On top you can pick a boss: its RES and immunities at a
+stage, outerpedia's guide teams and a team of your own per boss.
 
 ## How to open
 
@@ -34,6 +35,39 @@ The hero window (tap «+» or a portrait) starts with suggestions:
 - With an empty team — **Most often in outerpedia teams**: «in 49 outerpedia teams».
 - Six are shown, «N more» opens the rest; below — everyone else by name. The search filters both.
 
+## Boss
+
+The row above the spots: «Boss: Meteos · 13 · RES 288 ▾». Tap it to open the boss window.
+
+- **The list of fights:** Special Request, Dimensional Singularity, Joint Challenge, Guild Raid (the main boss and its
+  subs under the raid's name). A fight running now is on top, with its end date. A name search. On the right — RES at
+  the top stage.
+- **Stage:** Special Request and Guild Raid — a number, Joint Challenge — the difficulty, Singularity — the rank in two
+  rows: the letter and the pluses. A new boss opens at its top stage; the stage you pick is remembered per boss.
+- **RES and SPD** of the boss at that stage. RES counts the Challenge tree in Quirks as open (the four «Reduced Boss
+  Resilience» nodes, −20 %), like outerpedia's guides: if yours are closed, the boss has more RES in your game (Meteos 13:
+  360 instead of 288).
+- **Immune to:** «Crowd control» stands for taunt, freeze, stun, petrify, silence and golden curse together (nearly
+  every boss has them; tap it for the list), then the rest: «Reduced Defense», «Buff Removal»…
+- **outerpedia guide ↗** — the guide's page. **Other boss** — the list again, **No boss** — clear it.
+
+## Team from the guide
+
+If outerpedia's guide has teams for this stage, **Fill from the guide** appears under the spots. On each spot it puts your
+first hero among the guide's alternatives, in the guide's order: no Luna — Veronica goes in. A hero already on another
+spot isn't put twice. A spot with nobody from your roster stays empty. It fills the whole team; «Undo» in the message
+brings the old one back.
+
+Several teams in the guide (Guild Raid) — first a window «Which guide team?»: each shows whom it would put (faded — not in
+your roster), «3 of 4 owned» and who is missing. A team with nobody you own can't be picked. Some teams are a core of two
+heroes — they fill two spots only.
+
+With a boss, a spot's window starts with **From the guide for this spot** — your heroes among the guide's alternatives
+for that spot; below, one line names the guide's heroes you don't have. Singularity guides have no teams — the window
+suggests as without a boss.
+
+The guides' notes, tips and requirements (speed, effectiveness) are not copied into the app: they are in English only.
+
 ## The report
 
 Only heroes with something to say are listed.
@@ -60,6 +94,7 @@ Only heroes with something to say are listed.
 - Statuses only the hero herself can give (her own mechanic, like Beth's Retribution's Dominion): nothing for the team
   to change, so no line.
 
-Nothing is saved: the team lives while the page is open; a reload forgets it.
+The team is kept on this device — one per boss and one without a boss; the last boss and its stage too. It is not in
+the backup. Stars tried on a spot are not saved.
 
 The skill data comes from outerpedia's game tables and updates with the rest of the data.

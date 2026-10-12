@@ -17,6 +17,7 @@ export const ANCHORS = [
   'batch', // «Партия»: next to «Следующий» on a wide screen, in «Ещё» on a phone
   'share', // «Поделиться» во вкладке «Надето»
   'team', // the four spots on «Команда»
+  'teamBoss', // the boss row at the top of «Команда»
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
   'stash', // «Отложить для X» под карточкой вердикта и в строке героя
 ] as const;

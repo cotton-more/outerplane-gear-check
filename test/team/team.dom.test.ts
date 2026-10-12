@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// «Команда» (screens/team): open from «Ещё» on a phone, pick heroes and ★, the report reacts; nothing is saved (the ★ come
-// from the hero's card; Team only tries higher ones).
+// «Команда» (screens/team): open from «Ещё» on a phone, pick heroes and ★, the report reacts; the team is kept in
+// 'ogc.boss' (owner D5, .x/0200-boss), the ★ tried here are not (they come from the hero's card; Team only tries higher ones).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -175,7 +175,7 @@ describe('«Команда»', () => {
     expect($('#view-team .tm-warn')).toBeNull();
   });
 
-  it('✕ empties the spot, the portrait replaces the hero; the team survives a tab switch, a reload forgets it and opens «Evaluate»', async () => {
+  it('✕ empties the spot, the portrait replaces the hero; the team survives a tab switch and a reload (the ★ tried here do not)', async () => {
     await mount();
     await openTeam();
     await pick(0, 'Veronica');
@@ -196,7 +196,9 @@ describe('«Команда»', () => {
     await mount();
     expect($('#view-eval')!.hidden).toBe(false);
     await openTeam();
-    expect($$('#view-team .tm-slot')).toHaveLength(0);
+    expect($$('#view-team .tm-slot')).toHaveLength(1);
+    expect(spot(1).textContent).toContain('Yuri');
+    expect(JSON.parse(localStorage.getItem('ogc.boss')!)).toEqual({ v: 1, boss: null, stage: {}, teams: { '': [null, H.yuri, null, null] } });
   });
 
   it('the hero sheet: who fits first — outerpedia partners, a skill that starts working; everyone else below', async () => {

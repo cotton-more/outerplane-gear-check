@@ -285,6 +285,10 @@ function problems(D) {
     if (top('wb:harshna', '4:A') !== 360) out.add(`Harshna лига 4 этап A: RES ${top('wb:harshna', '4:A')}, ждём 360`);
     if (top('wb:harshna', '4:S') !== 350) out.add(`Harshna лига 4 этап S: RES ${top('wb:harshna', '4:S')}, ждём 350 (второй босс)`);
     if (B.q !== -200) out.add(`Challenge quirk на RES боссов ${B.q} ‰, ждём −200`);
+    // the boss sheet names every immunity with the app's own strings (team.status in src/i18n)
+    for (const id of new Set(B.b.flatMap((b) => b.imm.flatMap(([, ids]) => ids)))) {
+      if (!STATUS_RU.has(id)) out.add(`боссы: новый иммунитет ${id} — нужно русское и английское имя (team.status в src/i18n)`);
+    }
   }
   // team synergy (update.py build_synergy): a changed outerpedia format empties or breaks the block
   const syn = D.synergy;

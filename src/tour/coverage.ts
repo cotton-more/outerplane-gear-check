@@ -46,6 +46,8 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/team/ui/TeamSlots.tsx': 'helper',          // the four Team spots: explained by the Team tip
   'features/team/ui/TeamReport.tsx': 'helper',
   'features/team/ui/TeamPicker.tsx': 'helper',         // the hero sheet of a spot: who fits the team first — section titles explain it         // the Team report: explained by the Team tip
+  'features/boss/ui/BossSheet.tsx': 'helper',          // the boss sheet: opened from the boss row, the teamBoss tip explains it
+  'features/boss/ui/GuideChoice.tsx': 'helper',        // «Какую команду из гайда?»: opened by «Собрать из гайда» (teamBoss tip)
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
