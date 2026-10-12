@@ -1,6 +1,6 @@
 // A hero's total of one stat from what the app knows (MODEL.md §12 item 3): the hero's own sources, the main lines
-// of the pieces, set rows that are on and the substats. Transcend is here for the heroes whose stars give crit and whose ★ is
-// set (`Ctx.stars`). Hidden sources (gems, talisman, EE, team buffs) are not here — they only add, so the total is never
+// of the pieces, set rows that are on and the substats. Transcend is here for the heroes whose stars give crit, at the hero's ★
+// (`Ctx.stars`, not set — the hero's minimum, `game/hero/star`). Hidden sources (gems, talisman, EE, team buffs) are not here — they only add, so the total is never
 // above the game's. Only CHC for now; EFF reuses the same shape later.
 import type { Char, Grade, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
@@ -8,6 +8,7 @@ import type { Bt } from '@/game/item/item';
 import { itemMains } from '@/game/item/mains';
 import { MAX_LIT, type Subs } from '@/game/item/subs';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
+import { heroStar } from '@/game/hero/star';
 
 export type TotalStat = 'CHC';
 
@@ -42,13 +43,13 @@ export function mainValue(ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'bt'>,
 }
 
 // the hero's own part, %: base, class passive, awakening quirks (only with the `quirks` setting), transcend passive at the
-// hero's ★ (not set — 0)
+// hero's ★ (not set — the minimum, where no hero has transcend crit)
 export function ownStat(ctx: Ctx, hero: Char, _stat: TotalStat): Pick<StatTotal, 'base' | 'cls' | 'quirk' | 'trans'> {
   const own = hero.chc;
-  const star = ctx.stars[hero.id];
+  const star = heroStar(hero, ctx.stars[hero.id]);
   return {
     base: (own?.base ?? 0) / 10, cls: (own?.cls ?? 0) / 10, quirk: ctx.settings.quirks ? (own?.quirk ?? 0) / 10 : 0,
-    trans: star ? (own?.trans?.[star - 1] ?? 0) / 10 : 0,
+    trans: (own?.trans?.[star - 1] ?? 0) / 10,
   };
 }
 

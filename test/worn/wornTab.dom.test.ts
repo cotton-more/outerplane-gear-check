@@ -431,11 +431,17 @@ describe('«Надето»: the hero\'s stars', () => {
   const lit = () => $$('.cd-head .cd-stars .hs-mini .on').length;
   const line = () => $('.bgear.worn .wcrit')?.textContent;
 
-  it('a roster hero: a button with six unlit stars and its aria; not in the roster — nothing', async () => {
+  it('a roster hero without stored ★: a button with her minimum ★3 lit (base rarity) and its aria; not in the roster — nothing', async () => {
     await mount({ gear: worn([WEAK], caren.id) });
     const b = $('.cd-head button.cd-stars')!;
-    expect([b.getAttribute('aria-label'), lit()]).toEqual(['Caren’s stars not set — set them', 0]);
+    expect([b.getAttribute('aria-label'), lit()]).toEqual(['Caren’s stars: ★3 — change', 3]);
     expect($$('.cd-head .cd-stars .hs-mini i')).toHaveLength(6);
+  });
+
+  it('the star sheet locks the stars below the hero\'s minimum (Caren ★3: ★1, ★2)', async () => {
+    await mount({ gear: worn([WEAK], caren.id) });
+    await click($('.cd-head button.cd-stars'));
+    expect($$('.drawer.hs-sheet .hs-big button').map((b) => (b as HTMLButtonElement).disabled)).toEqual([true, true, false, false, false, false]);
   });
 
   it('a hero not in the roster has no stars', async () => {

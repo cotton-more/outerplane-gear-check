@@ -468,7 +468,7 @@ EFF and SPD are later tickets.
 2. **The curve.** Per CHC %: f = 1 up to the knee N − 15 (not below 0), linear down to 0 at N, 0 above N
    (`game/stat/curve`). **C₀** — crit that carries no points: the hero (base 5 %, Striker class passive +5 %, awakening
    quirks +10 % by the `quirks` setting — `Char.chc`), the transcend stars' CHC (`Char.chc.trans` at the hero's ★ — `Ctx.stars`, the card's
-   stars; not set → 0; the passive counts before the 100 % clamp, so it is just a smaller N), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
+   stars; not set → the hero's minimum ★1–★3, where no hero has it; the passive counts before the 100 % clamp, so it is just a smaller N), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
    null = T0), CHC set rows that carry no points (covered by a half, or of an effect set). **Segments** — the layout's
    CHC substats (≤ 6 per piece, 3 % each, weight = place weight × credit *on that piece*: a main that closes an earlier
    stat moves CHC up) and the CHC rows of stat sets that are not covered by a half (owner Q-A, B: the Critical Hit set's

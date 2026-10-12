@@ -123,8 +123,8 @@ Breakthrough), CHC substats and the Critical Hit set. Above 100% the game wastes
 by default) crit counts less: in full up to N − 15, then less and less, nothing above N. The line turns amber from N − 15
 and red from N. Tap it: a bar with the hero's portrait at their crit and a flag at N, "Hero 20% · gear 25%" and the
 number (with stars — "Hero 20% · stars 65% · gear 25%"). Some heroes get crit from their transcend stars; set the hero's
-stars on the card (under the name) and the app counts it: Poolside Trickster Regina at ★5 gets +65%. Stars not set —
-no crit from stars. Lower N only for what the app doesn't see — gems, the talisman, team buffs. The verdict, "Set aside", "Re-dress", the batch and trade all
+stars on the card (under the name) and the app counts it: Poolside Trickster Regina at ★5 gets +65%. Until you set the
+stars, the hero has their starting ★1–★3 — no crit from stars there. Lower N only for what the app doesn't see — gems, the talisman, team buffs. The verdict, "Set aside", "Re-dress", the batch and trade all
 count crit this way: a crit-heavy piece loses to a piece with other stats once the hero has enough.
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's

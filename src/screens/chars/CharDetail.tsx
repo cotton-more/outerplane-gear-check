@@ -19,6 +19,7 @@ import { Redress, redressLabel } from '@/features/worn/Redress';
 import { PinSheet } from '@/features/worn/PinSheet';
 import { CritSheet } from '@/features/worn/CritSheet';
 import { MiniStars, StarSheet } from '@/game/hero/Stars';
+import { heroStar, minStar } from '@/game/hero/star';
 import { WornGear } from '@/features/worn/WornGear';
 import { ShareButton } from '@/features/worn/ShareButton';
 import { shareCodeOf } from '@/features/worn/share';
@@ -82,7 +83,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     );
   }
   const own = rosterApi.roster.has(c.id);
-  const stars = starOf(gear.store, c.id);
+  const stars = heroStar(c, starOf(gear.store, c.id)); // not set — the hero's minimum (game/hero/star)
   // есть Core Fusion этого героя (features/gear/model/fusion): он неактивен — в ростере и с вещами Core Fusion; звезда — «Вернуться к X?»
   const fusedBy = ctx.off.has(c.id) ? CHAR[ctx.off.get(c.id)!] : null;
   const hasBuilds = c.builds.length > 0;
@@ -235,7 +236,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {c.gameSets && c.gameSets.length > 0 && <><br />{t.ui.gameSets(c.gameSets.map((id) => setName(ctx.idx, id)).join(', '))}</>}
         </div>
       )}
-      {sheet === 'stars' && own && <StarSheet c={c} star={stars} onStar={saveStars} onClose={() => setSheet(null)} />}
+      {sheet === 'stars' && own && <StarSheet c={c} star={stars} min={minStar(c)} onStar={saveStars} onClose={() => setSheet(null)} />}
     </aside>
   );
 }

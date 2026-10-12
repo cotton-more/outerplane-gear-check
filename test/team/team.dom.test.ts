@@ -100,11 +100,11 @@ describe('«Команда»', () => {
     await type(q, 'vero');
     expect(sheetHeroes().map(heroName)).toEqual(['Veronica']);
     await click(sheetHeroes()[0]);
-    // picked at ★6; the sheet is closed
+    // no ★ on her card — her minimum ★3 (base rarity, owner 2026-10-12); the sheet is closed
     expect($('.drawer.tm-sheet')).toBeNull();
-    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(6);
+    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(3);
     await click(spot(0).querySelector<HTMLElement>('.tm-sb'));
-    expect($$('.drawer.hs-sheet .hs-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★6']);
+    expect($$('.drawer.hs-sheet .hs-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★3']);
     await click($('.drawer.hs-sheet .drawer-x'));
     const warn = $('#view-team .tm-warn')!.textContent!;
     expect(warn).toContain('S1: Dual Attack — Increased Defense only from own S3, on cooldown (4) at battle start.');
@@ -131,13 +131,13 @@ describe('«Команда»', () => {
   });
 
   // PLAN 0190 Z5: the stars belong to the hero — Team shows the stored ★
-  it('a hero with a stored ★4 enters at ★4, one without at ★6', async () => {
+  it('a hero with a stored ★4 enters at ★4, one without at their minimum (Kanon ★3)', async () => {
     await mount({ stars: { [H.stella]: 4 } });
     await openTeam();
     await pick(0, 'Demiurge Stella');
     await pick(1, 'Kanon');
     expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(4);
-    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(6);
+    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(3);
   });
 
   // owner 2026-10-12: the ★ are changed only on the card; Team tries higher ★ («what if»), never lower, and saves nothing
@@ -182,12 +182,13 @@ describe('«Команда»', () => {
     await pick(1, 'Kappa');
     await click(spot(0).querySelector<HTMLElement>('.tm-x'));
     expect($$('#view-team .tm-slot')).toHaveLength(1);
-    // the portrait opens the list: another hero takes the spot with its own ★ (not the previous hero's): ★6 when not set
+    // the portrait opens the list: another hero takes the spot with its own ★ (not the previous hero's): their minimum when
+    // not set (Yuri — ★1)
     await setStars(1, 3);
     await click(slot(1));
     await click(sheetHeroes().find((b) => heroName(b) === 'Yuri'));
     expect(spot(1).textContent).toContain('Yuri');
-    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(6);
+    expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(1);
     await click($('.vbar .vb-tab')); // ← Evaluate
     await openTeam();
     expect($$('#view-team .tm-slot')).toHaveLength(1);

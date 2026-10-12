@@ -2,15 +2,15 @@
 // status nobody in the team gives, and who from the roster would give it (game/synergy checkTeam). The team itself is not
 // saved (owner decision 5): it lives while the page is open — the tab is hidden, not unmounted; a reload forgets it. The ★
 // come from the hero's card and are changed only there (owner 2026-10-12): a spot can try higher ★ («what if» — counted in
-// the report, kept in the spot only, never saved), not lower than the card's; no ★ on the card — ★6, any ★ in the spot.
+// the report, kept in the spot only, never saved), not lower than the card's; not set — the hero's minimum (game/hero/star).
 // Picking a hero and setting ★ — sheets, like the other pickers in the app (owner 2026-10-11).
 import { useMemo, useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
 import { suggest } from '@/game/synergy/suggest';
-import { STARS } from '@/features/gear/model/gear';
 import { compareChars } from '@/features/roster/charFilter';
 import { StarSheet } from '@/game/hero/Stars';
+import { heroStar } from '@/game/hero/star';
 import { TeamPicker } from '@/features/team/ui/TeamPicker';
 import { TeamReport } from '@/features/team/ui/TeamReport';
 import { TeamSlots } from '@/features/team/ui/TeamSlots';
@@ -20,8 +20,6 @@ import { Notice } from '@/shared/ui/Notice';
 import { Sheet } from '@/shared/ui/Sheet';
 
 const RANK = ['S', 'A', 'B', 'C', 'D', 'E'];
-const STAR0 = STARS; // a hero without ★ on the card counts at ★6 (owner decision 3)
-
 // a spot: the hero and the ★ tried here (none — the card's)
 interface Spot { id: string; want?: number }
 
@@ -37,8 +35,9 @@ export function TeamScreen({ roster, off, stars, onChars }: {
   const [starring, setStarring] = useState<number | null>(null); // spot whose stars sheet is open
   // the roster without heroes replaced by their Core Fusion
   const mine = useMemo(() => roster.filter((id) => idx.CHAR[id] && !off.has(id)), [roster, idx, off]);
-  // the spot's ★: the card's, or the higher one tried here; no ★ on the card — what was tried here, else ★6
-  const starOf = (m: Spot) => { const own = stars[m.id]; return own === undefined ? m.want ?? STAR0 : Math.max(own, m.want ?? own); };
+  // the hero's ★ on the card; the spot's — the card's or the higher one tried here
+  const cardStar = (id: string) => heroStar(idx.CHAR[id] ?? { rarity: null }, stars[id]);
+  const starOf = (m: Spot) => Math.max(cardStar(m.id), m.want ?? 0);
   const members: TeamMember[] = team.filter((m): m is Spot => !!m).map((m) => ({ id: m.id, star: starOf(m) }));
   const rank = (id: string) => { const r = RANK.indexOf(idx.CHAR[id]?.rank ?? ''); return r < 0 ? RANK.length : r; };
   const report = useMemo(() => (syn ? checkTeam(syn, members, mine, rank) : []), [syn, team, stars, mine, idx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -46,7 +45,7 @@ export function TeamScreen({ roster, off, stars, onChars }: {
   const fits = useMemo(() => {
     if (picking === null) return [];
     const others = members.filter((m) => m.id !== team[picking]?.id);
-    return suggest(syn, idx.D.teams, others, mine.filter((id) => !members.some((m) => m.id === id)), rank, (id) => stars[id]);
+    return suggest(syn, idx.D.teams, others, mine.filter((id) => !members.some((m) => m.id === id)), rank, cardStar);
   }, [picking, team, stars, syn, mine, idx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!syn) return <div className="panel tm"><p className="muted">{t.team.noData}</p></div>;
@@ -61,7 +60,7 @@ export function TeamScreen({ roster, off, stars, onChars }: {
     <div className="panel tm">
       <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} />
       {!members.length && <p className="tm-hint muted">{t.team.hint}</p>}
-      <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? stars[id] ?? STAR0} />
+      <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
       <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
         <Sheet title={t.team.pick} onClose={() => setPicking(null)} className="tm-sheet">
@@ -70,7 +69,7 @@ export function TeamScreen({ roster, off, stars, onChars }: {
         </Sheet>
       )}
       {starring !== null && starred && (
-        <StarSheet c={idx.CHAR[starred.id]} star={starOf(starred)} min={stars[starred.id]} onClose={() => setStarring(null)}
+        <StarSheet c={idx.CHAR[starred.id]} star={starOf(starred)} min={cardStar(starred.id)} onClose={() => setStarring(null)}
           onStar={(n) => { put(starring, { ...starred, want: n }); setStarring(null); }} />
       )}
     </div>

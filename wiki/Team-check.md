@@ -17,7 +17,7 @@ The «Team» tab in the header; on a phone — «More» → «Team». Only heroe
 - Four spots in a row. Tap «+» — a window with the roster list and a name search; tap a hero to put them there.
 - On a hero's spot: the portrait — put another hero there; the **stars** at the bottom — a window with
   six stars like the game's transcend, tap the N-th to set ★N; ✕ in the corner — empty the spot. A hero comes in with the
-  stars from their card (not set — ★6). In the window you can try more: the stars below the card's are locked, the report
+  stars from their card. In the window you can try more: the stars below the card's are locked, the report
   counts the higher ones, but only in this spot — nothing is saved. To change a hero's stars, go to their
   [card](Characters-and-guild-code).
 - Stars matter: some skills and passives open only at ★3–★6 (Burst 2 at ★3, Burst 3 at ★5, transcend passive levels at
