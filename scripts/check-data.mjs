@@ -224,6 +224,12 @@ function problems(D) {
   // the hero's crit (update.py crit_profile, main_values): a changed format zeroes the card line «Крит: 45%»
   const noChc = D.chars.filter((c) => !c.chc || ![c.chc.base, c.chc.cls, c.chc.quirk].every((v) => Number.isInteger(v) && v >= 0 && v <= 1000));
   if (noChc.length) out.add(`CHC героя (chc) нет или не число: ${noChc.slice(0, 5).map((c) => c.name).join(', ')}${noChc.length > 5 ? '…' : ''}`);
+  // CHC of the transcend passive by ★1…6 (update.py crit_profile): a changed skill8 format drops it silently
+  const badTrans = D.chars.filter((c) => c.chc?.trans && !(c.chc.trans.length === 6 && c.chc.trans.every((v, i) => Number.isInteger(v) && v >= 0 && v <= 1000 && (!i || v >= c.chc.trans[i - 1]))));
+  if (badTrans.length) out.add(`CHC от звёзд (chc.trans) не 6 чисел 0…1000 по возрастанию: ${badTrans.slice(0, 5).map((c) => c.name).join(', ')}${badTrans.length > 5 ? '…' : ''}`);
+  const withTrans = D.chars.filter((c) => c.chc?.trans).length;
+  if (D.chars.length && withTrans < 10) out.add(`CHC от звёзд нашёлся у ${withTrans} героев (ждём ≥ 10) — формат skill8 изменился?`);
+  if (D.chars.length && !D.chars.some((c) => (c.chc?.trans?.[4] ?? 0) >= 500)) out.add('CHC от звёзд: нет героя с ≥ 50 % на ★5 (Poolside Trickster Regina) — формат transcend изменился?');
   const cls = D.chars.filter((c) => c.class === 'striker' && c.chc?.cls > 0).length;
   if (D.chars.length && cls < 10) out.add(`CHC от класса (Striker +5 %) нашёлся у ${cls} героев (ждём ≥ 10) — формат class_passive изменился?`);
   for (const g of ['unique', 'rare']) {

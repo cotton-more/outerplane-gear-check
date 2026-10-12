@@ -29,6 +29,14 @@ describe('the hero\'s CHC with what is worn', () => {
     expect(hero('Akari').chc).toEqual({ base: 50, cls: 0, quirk: 100 });
   });
 
+  it('hero data: transcend CHC by ★1…6 (‰) only for the heroes whose stars give crit', () => {
+    expect(hero('Poolside Trickster Regina').chc?.trans).toEqual([0, 0, 0, 0, 650, 650]);
+    expect(hero('Lisha').chc?.trans).toEqual([0, 0, 0, 30, 30, 60]);
+    expect(hero('Demiurge Luna').chc?.trans).toEqual([0, 0, 0, 60, 60, 60]);
+    expect('trans' in hero('Caren').chc!).toBe(false);
+    expect(D.chars.filter((c) => c.chc?.trans)).toHaveLength(15);
+  });
+
   it('Striker, CHC accessory T4, Critical Hit 4P T4: 5 + 5 + 10 + 48 + 18 + 12 = 98 % before substats', () => {
     const t = statTotal(ctx, hero('Caren'), [acc('unique', 4), ...critSet(4)], 'CHC');
     expect(t).toEqual({ base: 5, cls: 5, quirk: 10, mains: 48, sets: 30, subs: 0, c0: 98, total: 98 });

@@ -50,8 +50,9 @@ export interface Char {
   flat: { levels: [number, number]; ATK: FlatBase | null; DEF: FlatBase | null; HP: FlatBase | null };
   spd?: FlatBase | null; // база SPD для бонуса Speed Set (он в % от базы); нет в старых снимках — бонус не переводится в статы
   // CHC from sources that are always on, ‰ (1000 = 100 %): base, class passive (Striker +50), awakening quirks (by the
-  // `quirks` setting). Missing in old snapshots: no «Крит: 45%» line
-  chc?: { base: number; cls: number; quirk: number };
+  // `quirks` setting). Missing in old snapshots: no «Крит: 45%» line. trans — CHC of the transcend passive by the
+  // in-game ★1…6, ‰ (the bearer's own sheet); only for the heroes whose stars give crit
+  chc?: { base: number; cls: number; quirk: number; trans?: number[] };
 }
 
 // Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус

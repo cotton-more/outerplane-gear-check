@@ -455,14 +455,36 @@ def flat_profile(c: dict, prog: dict) -> dict:
     return out
 
 
-def crit_profile(c: dict, skills: dict, buffs: dict, prog: dict) -> dict:
-    """CHC of the hero from sources that are always on, in ‰ (1000 = 100 %): {"base", "cls", "quirk"}.
+def trans_steps(src: dict, cid: str) -> list[dict]:
+    """The hero's transcend ladder: its own override, else the ladder of its base rarity."""
+    trans = src["transcend"]
+    return trans.get("overrides", {}).get(cid) or trans["byStar"].get(str(src["chars"][cid].get("rarity")), [])
+
+
+def trans_level(src: dict, cid: str, show: int) -> int:
+    """Transcend passive level at the in-game ★ `show` (the plain step, no "+"); 0 = nothing unlocked yet."""
+    return next((s.get("skillLevel", 0) for s in trans_steps(src, cid) if s.get("showStar") == show and s.get("starPlus", 0) == 0), 0)
+
+
+def unique_passive(src: dict, cid: str) -> str | None:
+    """The hero's transcend passive skill id ("skill 8"); Luna and Saeran have two kits with identical rows — the first."""
+    ch = src["dmgChars"]["characters"].get(cid) or {}
+    for ent in ch.get("skills", []):
+        sid = ent["id"] if isinstance(ent, dict) else str(ent)
+        if (src["skills"].get(sid) or {}).get("type") == "unique_passive":
+            return sid
+    return None
+
+
+def crit_profile(src: dict, cid: str, c: dict) -> dict:
+    """CHC of the hero from sources that are always on, in ‰ (1000 = 100 %): {"base", "cls", "quirk", "trans"?}.
 
     base — stats.critical_rate (no growth); cls — the class passive (class_passive skill): BT_STAT_PREMIUM on the hero
     with ST_CRITICAL_RATE, OAT_ADD, PASSIVE (Striker: ATTACKER_PASSIVE_2 = 50); quirk — awakening quirk nodes with
     critical_rate "add" (element nodes 30 + 30 + 40), counted like flat_profile counts its quirks. The game sums these
-    with gear and clamps CHC at 1000 (CStatValue_SetFinalValue.cs).
+    with gear and clamps CHC at 1000 (CStatValue_SetFinalValue.cs); trans — see below.
     """
+    skills, buffs, prog = src["skills"], src["dmgBuffs"]["buffs"], src["progression"]
     st = (c.get("stats") or {}).get("critical_rate") or {}
     cls = 0
     for sid in c.get("skills") or []:
@@ -480,7 +502,16 @@ def crit_profile(c: dict, skills: dict, buffs: dict, prog: dict) -> dict:
               q.get("subclass", {}).get(c.get("subClass")) if c.get("subClass") else None]
     quirk = sum(b.get("value", 0) for bl in blocks for b in (bl or {}).get("stat", [])
                 if b.get("stat") == "critical_rate" and b.get("applying") != "rate")
-    return {"base": st.get("min", 0), "cls": cls, "quirk": quirk}
+    out = {"base": st.get("min", 0), "cls": cls, "quirk": quirk}
+    # transcend passive (skill 8) CHC by the in-game ★1…6, ‰ — ME and MY_TEAM rows both land on the bearer's own
+    # sheet; passive, so before the 100 % clamp
+    sid = unique_passive(src, cid)
+    rows = (src["progression"].get("skill8") or {}).get(sid or "", {})
+    trans = [sum(r["value"] for r in rows.get(str(trans_level(src, cid, star)), [])
+                 if r["stat"] == "critical_rate" and r["applying"] == "add") for star in range(1, 7)]
+    if any(trans):
+        out["trans"] = trans
+    return out
 
 
 def main_values(src: dict, pools: dict) -> dict:
@@ -921,7 +952,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         entry["rankPvp"] = cur.get("rankPvp")
         entry["flat"] = flat_profile({**c, "id": cid}, src["progression"])
         entry["spd"] = entry["flat"].pop("SPD")  # база SPD для бонуса Speed Set: [lv100, макс. Limit Break, quirks]
-        entry["chc"] = crit_profile(c, src["skills"], src["dmgBuffs"]["buffs"], src["progression"])
+        entry["chc"] = crit_profile(src, cid, c)
         if not all(entry["flat"].get(ax) for ax in ("ATK", "DEF", "HP")):
             warn.add(f"{who}: нет базовых статов — flat/% для него оценивается по средним")
         chars.append(entry)
@@ -1071,7 +1102,7 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
     effects, by_tip, by_key = gl.get("effects", {}), gl.get("effectByTooltip", {}), gl.get("effectByKey", {})
     buffs = src["dmgBuffs"]["buffs"]
     dchars, dskills = src["dmgChars"]["characters"], src["dmgChars"]["skills"]
-    skills, trans = src["skills"], src["transcend"]
+    skills = src["skills"]
 
     def norm(tip) -> str | None:
         if tip is None:
@@ -1091,16 +1122,13 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
             return norm(by_key.get(kind, {}).get(f"BT_STAT|{r['stat']}"))
         return None
 
-    def steps(cid: str) -> list[dict]:
-        return trans.get("overrides", {}).get(cid) or trans["byStar"].get(str(src["chars"][cid].get("rarity")), [])
-
     def star_of(cid: str, typ: str, level: int) -> int | None:
         """In-game ★ a skill row needs; None = never reachable."""
         if typ == "unique_passive":
-            return next((s["showStar"] for s in steps(cid) if s.get("skillLevel", 0) >= level), None)
+            return next((s["showStar"] for s in trans_steps(src, cid) if s.get("skillLevel", 0) >= level), None)
         if typ in ("burst_2", "burst_3"):
             flag = "burst" + typ[-1]
-            return next((s["showStar"] for s in steps(cid) if s.get(flag)), None)
+            return next((s["showStar"] for s in trans_steps(src, cid) if s.get(flag)), None)
         return 1
 
     gives: dict[str, dict] = {}
