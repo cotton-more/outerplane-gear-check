@@ -372,6 +372,25 @@ describe('stars: Ctx.stars shifts C₀, not the curve (PLAN 0190 §5)', () => {
     }
   });
 
+  // N 50 is below C₀ (5 + 5 + 10 + 65 = 85 %): crit counts nothing above N, so a CHC segment is lost whole — V does not rise
+  it('Regina ★5, N 50 (below C₀): a CHC substat adds nothing — its whole linear value is the loss, V equals the piece without it', () => {
+    const regina = char('Poolside Trickster Regina');
+    const P = withNeed(S.profileFor(starCtx(regina.id, 5), regina), 50);
+    expect(P.critOn).toBe(true);
+    const bare = mk('hb', 'helmet', null, { CHD: 3, SPD: 2, HP: 1 });
+    const withChc = mk('hc', 'helmet', null, { CHD: 3, SPD: 2, HP: 1, CHC: 4 });
+    const lin = piecePoints(P, withChc) - piecePoints(P, bare);
+    expect(lin).toBeGreaterThan(0);                  // the segments are worth something in a straight line
+    const a = layoutValue(P, { helmet: withChc }), b = layoutValue(P, { helmet: bare });
+    expect(a.chc).toBeCloseTo(85 + 12, 9);           // the card number still counts them
+    expect(a.critLoss).toBeCloseTo(lin, 9);          // …but the curve takes all of it
+    expect(a.v).toBeCloseTo(b.v, 9);
+    // without the stars C₀ is 20 %, under the knee (35): the same segments are worth in full
+    const P0 = withNeed(prof(regina), 50);
+    expect(layoutValue(P0, { helmet: withChc }).critLoss).toBe(0);
+    expect(layoutValue(P0, { helmet: withChc }).v).toBeGreaterThan(layoutValue(P0, { helmet: bare }).v);
+  });
+
   function critPoolOf(g: Gen, P: Profile): Piece[] {
     const out = randPool(g, P, 2, true);
     if (g.rnd() < 0.7) out.push(randGear(g, P, 'accessory'));

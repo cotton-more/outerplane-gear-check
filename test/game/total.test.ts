@@ -77,4 +77,39 @@ describe('the hero\'s CHC with what is worn', () => {
     expect(statTotal(starred({ [hero('Caren').id]: 6 }), hero('Caren'), [], 'CHC').trans).toBe(0);
     expect(statTotal(starred({ [hero('Lisha').id]: 6 }), hero('Caren'), [], 'CHC').c0).toBe(20);
   });
+
+  it('transcend: a ★ that is not 1…6 (0, 7, 3.5, NaN) or a short trans table counts nothing, and the total is a number', () => {
+    const regina = hero('Poolside Trickster Regina');
+    for (const star of [0, 7, 3.5, Number.NaN]) {
+      const t = statTotal(starred({ [regina.id]: star }), regina, [acc('unique', 4)], 'CHC');
+      expect(t.trans, `★${star}`).toBe(0);
+      expect(Number.isNaN(t.total), `★${star}`).toBe(false);
+      expect(t.total, `★${star}`).toBe(20 + 48);
+    }
+    // a table shorter than 6 with ★6 — nothing (no entry), not NaN
+    const short = structuredClone(regina);
+    short.chc!.trans = [0, 0, 0, 0, 650];
+    const t = statTotal(starred({ [short.id]: 6 }), short, [], 'CHC');
+    expect([t.trans, t.total]).toEqual([0, 20]);
+    expect(statTotal(starred({ [short.id]: 5 }), short, [], 'CHC').trans).toBe(65);
+  });
+
+  it('transcend: an old snapshot — the hero has no chc at all — with a ★ set does not throw and counts 0', () => {
+    const old = structuredClone(hero('Poolside Trickster Regina'));
+    delete old.chc;
+    const t = statTotal(starred({ [old.id]: 5 }), old, [], 'CHC');
+    expect(t).toEqual({ base: 0, cls: 0, quirk: 0, trans: 0, mains: 0, sets: 0, subs: 0, c0: 0, total: 0 });
+  });
+
+  it('transcend is per id: Core Fusion Lisha ★6 gives +6 %; the same ★ on base Lisha does not reach her', () => {
+    const cf = D.chars.find((c) => c.id === '2700005')!, base = D.chars.find((c) => c.id === '2000005')!;
+    expect(cf.chc?.trans).toEqual([0, 0, 0, 30, 30, 60]);
+    const own = (c: typeof cf, stars: Record<string, number>) => statTotal(starred(stars), c, [], 'CHC');
+    expect(own(cf, { '2700005': 6 }).trans).toBe(6);
+    expect(own(cf, { '2700005': 6 }).total - own(cf, {}).total).toBe(6);
+    expect(own(cf, { '2000005': 6 }).trans).toBe(0);
+    expect(own(cf, { '2000005': 6 }).total).toBe(own(cf, {}).total);
+    expect(own(base, { '2000005': 6 }).trans).toBe(6);
+    expect(own(base, { '2700005': 6 }).trans).toBe(0);
+  });
 });

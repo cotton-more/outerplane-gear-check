@@ -10,7 +10,8 @@ import { eligibleIn, pieceBar, poolInfo } from '@/features/gear/pool/info';
 import { heroOutcome, heroPool } from '@/features/gear/verdict';
 import { setValue } from '@/game/set/setValue';
 import { better, bestLayout, gearRank, layoutValue, NEW_ID, piecePoints, type Layout } from '@/features/gear/layout';
-import { ARMOR, char, ctx, D, EPS, GEAR, gen, heroes, mk, prof, randArmor, randGear, randPool, setId, twenty } from './statSets';
+import { makeCtx, type Ctx } from '@/game/context';
+import { ARMOR, char, ctx, D, EPS, GEAR, gen, heroes, idx, mk, prof, profileFor as profileIn, randArmor, randGear, randPool, setId, twenty } from './statSets';
 
 const RANK: Record<Fit, number> = { rec: 1, stopgap: 0, no: 0 }; // only a recommended item outranks points
 
@@ -33,10 +34,10 @@ const fBand = (need: number, a: number, b: number): number => {
   return v;
 };
 // rows: CHC set rows that are on — counted (worth points: on the curve at their weight) or not (C₀)
-function critLossOf(P: Profile, pieces: readonly Piece[], rows: { pct: number; pts: number | null }[]): number {
+function critLossOf(P: Profile, pieces: readonly Piece[], rows: { pct: number; pts: number | null }[], cx: Ctx = ctx): number {
   if (!P.c.builds.length || !P.chain.subs.flat().some((t) => t.trim() === 'CHC')) return 0;
   const own = P.c.chc!;
-  let c = (own.base + own.cls + (ctx.settings.quirks ? own.quirk : 0) + (ctx.stars[P.c.id] ? own.trans?.[ctx.stars[P.c.id] - 1] ?? 0 : 0)) / 10;
+  let c = (own.base + own.cls + (cx.settings.quirks ? own.quirk : 0) + (cx.stars[P.c.id] ? own.trans?.[cx.stars[P.c.id] - 1] ?? 0 : 0)) / 10;
   for (const p of pieces) if (p.main === 'CHC') c += D.mainValues![p.slot]![p.grade]!.CHC[p.bt ?? 0] / 10;
   const bands: { w: number; width: number }[] = [];
   for (const r of rows) {
@@ -55,10 +56,10 @@ function critLossOf(P: Profile, pieces: readonly Piece[], rows: { pct: number; p
   for (const b of bands) { loss += (b.w * (b.width - fBand(P.need, c, c + b.width))) / 3; c += b.width; }
   return loss;
 }
-function bruteBestV(P: Profile, pool: readonly Piece[]): { v: number; rank: number } {
+function bruteBestV(P: Profile, pool: readonly Piece[], cx: Ctx = ctx): { v: number; rank: number } {
   const per = ARMOR.map((slot) => [null as Piece | null, ...pool.filter((p) => p.slot === slot)]);
   const gearOpts = GEAR.map((slot) => {
-    const mine = pool.filter((p) => p.slot === slot && wearable(ctx, P.c, p));
+    const mine = pool.filter((p) => p.slot === slot && wearable(cx, P.c, p));
     const r = Math.max(-1, ...mine.map((p) => RANK[gearRank(P, p)]));
     const top = mine.filter((p) => RANK[gearRank(P, p)] === r);
     return top.length ? top : [null as Piece | null];
@@ -79,14 +80,14 @@ function bruteBestV(P: Profile, pool: readonly Piece[]): { v: number; rank: numb
       // A4: часть «S ×4» — две половины; «S ×2» — одна, если активна строка 2P или 4P
       const halves = P.parts.has(partKey(s, 4)) && r4 ? 2 : P.parts.has(partKey(s, 2)) && (r2 || r4) ? 1 : 0;
       v += halves * P.U;
-      const stat = convertible(ctx, P.c, s);
+      const stat = convertible(cx, P.c, s);
       for (const r of rows) {
         const counted = halves === 2 || (halves === 1 && (r.n === 2 || !r2));
         if (stat && !counted) v += rowPoints(P, r.bon);
         if (r.bon.stat === 'CHC') chcRows.push({ pct: r.bon.value, pts: stat && !counted ? rowPoints(P, r.bon) : null });
       }
     }
-    v -= critLossOf(P, [...gear, ...arm], chcRows);
+    v -= critLossOf(P, [...gear, ...arm], chcRows, cx);
     if (rank > best.rank || (rank === best.rank && v > best.v)) best = { v, rank };
   }
   return best;
@@ -171,6 +172,37 @@ describe('ценность раскладки и лучшая раскладка
     expect(bad).toEqual([]);
     expect(cases).toBeGreaterThan(200);
     expect(rows).toBeGreaterThan(20);
+  });
+
+  // the oracle's C₀ reads ctx.stars[hero]; the cases above have no stars, so this one runs it with Regina's ★5 (+65 %) —
+  // C₀ 85 % is above N 60 and 30 (crit counts nothing there) and below 100 (the curve bites)
+  it('T4.2c: with hero stars (Regina ★5 / ★6 / not set) the build = full enumeration; the oracle takes C₀ from Ctx.stars', () => {
+    const g = gen(19050);
+    const crit = setId('Critical Hit');
+    const regina = char('Poolside Trickster Regina');
+    const bad: string[] = [];
+    let cases = 0, lossy = 0, shifted = 0;
+    for (const star of [5, 6, 0]) {
+      const cx = makeCtx(idx, ctx.settings, new Set(), undefined, undefined, star ? { [regina.id]: star } : {});
+      for (const need of [100, 60, 30]) {
+        const P = withNeed(profileIn(cx, regina), need);
+        if (!P.critOn) continue;
+        for (let i = 0; i < 12; i++) {
+          const pool = randPool(g, P, 2, true).map((p) => (p.slot === 'accessory' && !p.lit.CHC && g.rnd() < 0.7 ? { ...p, main: 'CHC' } : p));
+          for (let k = 1 + g.int(3); k > 0; k--) pool.push({ ...randArmor(g, P, g.pick(ARMOR)), setId: crit });
+          const a = bestLayout(P, pool, {});
+          const r = bruteBestV(P, pool, cx);
+          cases++;
+          if (a.value.critLoss > 1e-9) lossy++;
+          if (star && Math.abs(r.v - bruteBestV(P, pool).v) > 1e-9) shifted++; // the oracle without stars would give another V
+          if (a.value.rank !== r.rank || Math.abs(a.value.v - r.v) > 1e-7) bad.push(`★${star} N${need} #${i}: build ${a.value.v} / enumeration ${r.v}`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+    expect(cases).toBe(108);
+    expect(lossy).toBeGreaterThan(20);
+    expect(shifted).toBeGreaterThan(10); // the stars really matter in the sample
   });
 
   // A6 holds for linear V. With the crit soft cap a CHC main raises C₀ and can lower V (MODEL.md §12 item 2; the next
