@@ -53,6 +53,11 @@ export interface Char {
   // `quirks` setting). Missing in old snapshots: no «Крит: 45%» line. trans — CHC of the transcend passive by the
   // in-game ★1…6, ‰ (the bearer's own sheet); only for the heroes whose stars give crit
   chc?: { base: number; cls: number; quirk: number; trans?: number[] };
+  // EFF from sources that are always on (update.py eff_profile; the game's formula in .x/0200-boss RESEARCH §1.2):
+  // w — white EFF [Lv100, Lv120] (the `lv120` setting picks one); r — flat quirk node (Ranger +50, by `quirks`); p — a
+  // passive's permanent premium, ‰ (Core Fusion Notia +500); t — transcend passive by the in-game ★1…6: r premium ‰,
+  // f flat. The EE is not here (the app can't know it). Missing in old snapshots
+  eff?: { w: [number, number]; r?: number; p?: number; t?: { r?: number[]; f?: number[] } };
 }
 
 // Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус
@@ -138,6 +143,32 @@ export interface Synergy {
 // heroes (ids); g — the guides that recommend it (keys of guides: guide path → its English title)
 export interface GuideTeams { guides: Record<string, string>; list: { g: string[]; s: string[][] }[] }
 
+// Boss fights of outerpedia's guides (update.py build_bosses, .x/0200-boss). A table row per stage: [level, RES, SPD,
+// label]; RES raw, before the account's Challenge quirk q (‰, −200 at the full tree: RES × (1000 + q)/1000).
+// label: "7" — stage, "4:SS" — world boss league:rank, "AA+" — singularity rank, "normal"/"hard"/"very_hard"
+export type BossRow = [number, number, number, string];
+// mode: sr special request, gr guild raid (main and the subA/subB bosses — group names the raid), wb world boss,
+// jc joint challenge, ie irregular extermination, ds dimensional singularity
+export type BossMode = 'sr' | 'gr' | 'wb' | 'jc' | 'ie' | 'ds';
+// a guide team: hero ids per slot (alternatives in guide order); st — the stages it is for (none = all); r — guild
+// raid requirements as the guide writes them ("268", "518/259", "≤180"; trans — transcend ★)
+export interface BossTeam { st?: [number, number]; s: string[][]; r?: { h: string; eff?: string; spd?: string; trans?: string }[] }
+export interface Boss {
+  key: string; // "sr:meteos", "gr:frost-legion:subA"
+  name: string;
+  mode: BossMode;
+  element: string;
+  class: string;
+  table: string; // key of Bosses.t
+  imm: string[]; // effect ids (keys of synergy.statuses) the boss is immune to at the top stage
+  immAll?: string[]; // immune at every stage — only when the lower stages block less
+  group?: string; // guild raid: the raid's name
+  live?: [string, string]; // world boss, guild raid, joint challenge: start and battle end of the latest season (ISO)
+  guide: string; // outerpedia guide path: "special-request/meteos"
+  teams?: BossTeam[];
+}
+export interface Bosses { q: number; t: Record<string, BossRow[]>; b: Boss[] }
+
 export interface Dataset {
   meta: Meta;
   classes: Record<string, string>;
@@ -151,7 +182,8 @@ export interface Dataset {
   mainBlocks?: Record<string, string | null>;
   fixedMains?: FixedMains;
   // main line at +10 by Breakthrough tier: slot → grade → label → [T0…T4], game units (‰ for % stats, CHC 400 = 40 %);
-  // the smallest over the slot's items. Missing in old snapshots
+  // the value most of the slot's items carry (older snapshots: the smallest — Legendary gloves EFF 45, not 50). Missing
+  // in old snapshots
   mainValues?: Partial<Record<SlotId, Partial<Record<Grade, Record<string, number[]>>>>>;
   sets: GearSet[];
   weapons: Item[];
@@ -160,5 +192,6 @@ export interface Dataset {
   chars: Char[];
   synergy?: Synergy; // missing in old snapshots: the Team screen shows a notice instead
   teams?: GuideTeams; // missing in old snapshots or when the guide list was not fetched: no suggestions from outerpedia
+  bosses?: Bosses; // missing in old snapshots or when the guide list was not fetched
   img?: Record<string, string>; // ключ картинки → data URI, относительный путь или URL CDN
 }
