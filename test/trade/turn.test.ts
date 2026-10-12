@@ -10,7 +10,8 @@ import { heroPlan } from '@/features/trade/model/plan';
 import { heroGain, turnGains, turnOrder } from '@/features/trade/model/turn';
 import { lineGain, linesOf } from '@/features/trade/model/view';
 import { worldOf } from '@/features/trade/model/world';
-import { HERO, hasOwner, lcg, loadOwner, piece, realWorld, store } from './helpers';
+import { compareChars } from '@/features/roster/charFilter';
+import { D, HERO, hasOwner, idx, lcg, loadOwner, piece, realWorld, store } from './helpers';
 
 // what the plan's hero line says (TradeSheet: heroPlan → advance → linesOf, the receiver's line)
 function planLineGain(w: World, to: string): number | null {
@@ -77,15 +78,27 @@ describe('the picker gain = the plan line gain', () => {
 
 describe('the picker order', () => {
   const name = (id: string) => ({ a: 'Rin', b: 'Aer', c: 'Caren', d: 'Beth' })[id] ?? id;
+  const byName = (a: string, z: string) => name(a).localeCompare(name(z));
   it('by name, the re-dressed last in done order', () => {
-    expect(turnOrder(['a', 'b', 'c', 'd'], [], name)).toEqual(['b', 'd', 'c', 'a']);
-    expect(turnOrder(['a', 'b', 'c', 'd'], ['c', 'b'], name)).toEqual(['d', 'a', 'c', 'b']);
+    expect(turnOrder(['a', 'b', 'c', 'd'], [], byName)).toEqual(['b', 'd', 'c', 'a']);
+    expect(turnOrder(['a', 'b', 'c', 'd'], ['c', 'b'], byName)).toEqual(['d', 'a', 'c', 'b']);
   });
   it('«Вернуть»: an unlocked hero goes back to his place by name', () => {
-    expect(turnOrder(['a', 'b', 'c', 'd'], ['b'], name)).toEqual(['d', 'c', 'a', 'b']);
+    expect(turnOrder(['a', 'b', 'c', 'd'], ['b'], byName)).toEqual(['d', 'c', 'a', 'b']);
   });
   it('a done hero outside the list stays out', () => {
-    expect(turnOrder(['a'], ['z'], name)).toEqual(['a']);
+    expect(turnOrder(['a'], ['z'], byName)).toEqual(['a']);
+  });
+  it('like the character list: a prefixed hero sorts by his base name (compareChars)', () => {
+    const id = (name: string) => D.chars.find((c) => c.name === name)!.id;
+    const ids = ["Summer Knight's Dream Ember", 'Gnosis Beth', 'Ember', 'Demiurge Astei', 'Caren', 'Beth', 'Astei'].map(id);
+    const compare = (a: string, z: string) => compareChars(idx.CHAR[a], idx.CHAR[z]);
+    const names = (xs: string[]) => xs.map((x) => idx.CHAR[x].name);
+    // by the full name «Demiurge Astei» would land after «Caren» and «Gnosis Beth» after «Ember»
+    expect(names(turnOrder(ids, [], compare))).toEqual(
+      ['Astei', 'Demiurge Astei', 'Beth', 'Gnosis Beth', 'Caren', 'Ember', "Summer Knight's Dream Ember"]);
+    expect(names(turnOrder(ids, [id('Beth'), id('Astei')], compare))).toEqual(
+      ['Demiurge Astei', 'Gnosis Beth', 'Caren', 'Ember', "Summer Knight's Dream Ember", 'Beth', 'Astei']);
   });
 });
 

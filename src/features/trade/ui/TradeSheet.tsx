@@ -30,6 +30,7 @@ import { pinOf } from '@/game/build/profile';
 import { comboText } from '@/game/build/builds';
 import { heroName } from '@/game/hero/HeroName';
 import { HeroPicker, type PickMark } from '@/features/roster/HeroPicker';
+import { compareChars } from '@/features/roster/charFilter';
 
 type Undo = (st: GearStore) => GearStore | null;
 
@@ -62,7 +63,8 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
   const members = team.filter((x): x is string => !!x);
   const fresh = () => { setSkip(new Set()); setStale(false); };
   const alive = useRef(true);
-  useEffect(() => () => { alive.current = false; }, []);
+  // set on every setup: StrictMode runs setup → cleanup → setup on mount
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   // «Кого переодеть?»: each open hero's gain now — for this world only (a new «Сделал», «Вернуть», order: counted again)
   const [gains, setGains] = useState<{ w: World; g: Gains } | null>(null);
@@ -200,7 +202,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
           </>
         )}
         {mode === 'hero' && !hero && (
-          <HeroPicker ids={turnOrder(pickable, [...locked], name)} title={t.trade.pickHero} empty={pickable.length ? '' : t.trade.noHeroes}
+          <HeroPicker ids={turnOrder(pickable, [...locked], (a, z) => compareChars(idx.CHAR[a], idx.CHAR[z]))} title={t.trade.pickHero} empty={pickable.length ? '' : t.trade.noHeroes}
             mark={markOf} onPick={(id) => { setHero(id); fresh(); }} />
         )}
         {res && (

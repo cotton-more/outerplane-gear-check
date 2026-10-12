@@ -4,7 +4,7 @@
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { act, createElement } from 'react';
+import { act, createElement, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
@@ -46,7 +46,8 @@ afterEach(async () => {
   history.replaceState(null, '', location.pathname);
 });
 
-async function mount(extra: Record<string, unknown>, state: Record<string, unknown> = {}, item: Record<string, unknown> = {}) {
+// strict — inside StrictMode, as in dev (src/main.tsx): effects run setup → cleanup → setup on mount
+async function mount(extra: Record<string, unknown>, state: Record<string, unknown> = {}, item: Record<string, unknown> = {}, strict = false) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'chars', charId: caren.id, ...state }, item, ...extra };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   const { App } = await import('@/app/App');
@@ -55,7 +56,8 @@ async function mount(extra: Record<string, unknown>, state: Record<string, unkno
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
-  await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
+  const app = createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App));
+  await act(async () => root!.render(strict ? createElement(StrictMode, null, app) : app));
 }
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 const $$ = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)];
@@ -243,6 +245,19 @@ describe('J. обмен вещами', () => {
     await click(byText('.trade-session button', 'Finish'));
     expect($('.drawer.trade')).toBeNull();
     expect(stored().worn[caren.id].helmet).toBe('p2');
+  });
+
+  it('«Undo» works under StrictMode too: the hero leaves the session (the unmounted-guard is re-armed on remount)', async () => {
+    await mount({ gear: gear(), roster: ROSTER }, {}, {}, true);
+    await click(byText('.cd-acts button', 'Trade'));
+    await click($('.tact .btn.primary'));
+    await settle();
+    expect(rows().find((r) => r[0] === 'Caren')?.[1]).toBe('✓');
+
+    await click(byText('.gear-toast button', 'Undo'));
+    await settle();
+    expect($('.trade-session')).toBeNull();
+    expect(rows().find((r) => r[0] === 'Caren')?.slice(1)).toEqual([expect.stringMatching(/^\+[\d.]+$/), false]);
   });
 
   it('J7: «Calculate» → «Calculating…», «Cancel» гасит расчёт, ничего не записано', async () => {
