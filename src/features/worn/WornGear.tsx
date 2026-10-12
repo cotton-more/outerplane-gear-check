@@ -126,7 +126,8 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, on
             const s = wv.slots.find((x) => x.slot === slot)!;
             const p = s.piece;
             return (
-              <li key={slot}>
+              // a little air between the weapon + accessory and the armor (owner 2026-10-12): the rows don't run together
+              <li key={slot} className={slot === 'helmet' ? 'bgear-armor' : undefined}>
                 {p ? (
                   <Row onClick={onOpenPiece && (() => onOpenPiece(p.id))} slot={slot} shown={shown}>
                     <SlotIcon slot={slot} />
