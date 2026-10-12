@@ -80,8 +80,8 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 
 // перенос v1 → v3. Ростер и Core Fusion (features/gear/model/fusion normalizeStored)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
-  // надетого, закрепления, N, звёзд и эффа в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
-  const { builds, v: _, worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, ...rest } = withoutLegacy(v1);
+  // надетого, закрепления, N, звёзд, эффа и уровня в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
+  const { builds, v: _, worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, lv: _l, ...rest } = withoutLegacy(v1);
   const pools: Record<string, string[]> = {};
   for (const k of Object.keys(builds).sort()) {
     // ключ v1 — «персонаж/билд»; без «/» весь ключ — персонаж (indexOf −1 обрезал бы у id последнюю цифру)
@@ -131,6 +131,10 @@ const restoreEff = (raw: unknown): Record<string, EffCal> =>
     return okEff(r.typed) && okEff(r.at) && Object.keys(r).length === 2 ? [[id, { typed: r.typed as number, at: r.at as number }]] : [];
   }));
 
+// the hero's level (.x/0205-hero-level): hero → exactly 100 or 120; anything else is dropped (the read is then «не целиком»)
+const restoreLevel = (raw: unknown): Record<string, 100 | 120> =>
+  Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, 100 | 120] => e[1] === 100 || e[1] === 120));
+
 // v2 и v3: пулы — массивы строк, id только существующих вещей, без повторов; надетое и закрепление — restoreWorn /
 // restorePin; поля прежней модели (LEGACY) у v2 — снимаем
 function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
@@ -141,13 +145,13 @@ function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
     if (ids.length) pools[id] = ids;
   }
   const worn = restoreWorn(r.worn), pin = restorePin(r.pin), crit = restoreCrit(r.crit), stars = restoreStars(r.stars);
-  const eff = restoreEff(r.eff);
-  const { worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, ...rest } = withoutLegacy(r);
+  const eff = restoreEff(r.eff), lv = restoreLevel(r.lv);
+  const { worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, lv: _l, ...rest } = withoutLegacy(r);
   return gc({
     ...rest, v: 3, seq: seqOf(r, pieces), pieces, pools,
     ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(pin).length ? { pin } : {}),
     ...(Object.keys(crit).length ? { crit } : {}), ...(Object.keys(stars).length ? { stars } : {}),
-    ...(Object.keys(eff).length ? { eff } : {}),
+    ...(Object.keys(eff).length ? { eff } : {}), ...(Object.keys(lv).length ? { lv } : {}),
   });
 }
 
@@ -231,15 +235,15 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
 // Надетое base: в слоте, где на fusion надета одна из ушедших к base вещей, — она (выбор за эти секунды); в остальных —
 // r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
 // копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Закрепление не переходило
-// ★ перешли к fusion (r.stars) и там остались такими же, у base своих нет — возвращаются; успели поменять — не трогаем
+// ★ и уровень перешли к fusion (r.stars, r.lv) и там остались такими же, у base своих нет — возвращаются; успели поменять — не трогаем
 export function unfuseChar(st: GearStore, base: string, fusion: string,
-  r: { moved: string[]; had: string[]; worn?: Worn; stars?: number; crit?: number; pin?: string; eff?: EffCal }): GearStore {
-  // ★, N и эфф — назад, если у fusion стоит то, что перешло, а у base своего нет; снятое закрепление — base, если он его не выбрал
+  r: { moved: string[]; had: string[]; worn?: Worn; stars?: number; crit?: number; pin?: string; eff?: EffCal; lv?: 100 | 120 }): GearStore {
+  // ★, N, эфф и уровень — назад, если у fusion стоит то, что перешло, а у base своего нет; снятое закрепление — base, если он его не выбрал
   const back = <T>(m: Record<string, T> | undefined, v: T | undefined) =>
     v !== undefined && m?.[fusion] === v && m[base] === undefined ? entryTo(m, fusion, base) : m;
   const pin = r.pin !== undefined && st.pin?.[base] === undefined ? { ...st.pin, [base]: r.pin } : st.pin;
-  const next = withMap(withMap(withMap(withMap(st, 'stars', back(st.stars, r.stars)), 'crit', back(st.crit, r.crit)), 'pin', pin),
-    'eff', back(st.eff, r.eff));
+  const next = withMap(withMap(withMap(withMap(withMap(st, 'stars', back(st.stars, r.stars)), 'crit', back(st.crit, r.crit)), 'pin', pin),
+    'eff', back(st.eff, r.eff)), 'lv', back(st.lv, r.lv));
   return unfusePieces(next, base, fusion, r);
 }
 function unfusePieces(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn }): GearStore {

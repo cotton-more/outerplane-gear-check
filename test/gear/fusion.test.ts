@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
-import { dropChar, effCal, setCrit, setEff, setStars, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { dropChar, effCal, levelOf, setCrit, setEff, setLevel, setStars, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { removeFrom } from '@/features/gear/pool';
 import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '@/features/gear/model/fusion';
@@ -426,6 +426,52 @@ describe('эфф из игры (eff)', () => {
     expect(readsWhole(raw, idx)).toBe(true);
     const bad = { ...raw, eff: { [CAREN]: cal, [KAPPA]: { typed: 0, at: 1 }, [X]: { typed: 5, at: 5, x: 1 } } };
     expect(loadGear(bad, idx, [CAREN, KAPPA, X]).st.eff).toEqual({ [CAREN]: cal });
+    expect(readsWhole(bad, idx)).toBe(false);
+  });
+});
+
+// the hero's level (.x/0205-hero-level): stored like ★ — set / reset, drop and «Вернуть», Core Fusion moves it, a hero out of
+// the roster loses it, the store reads it back
+describe('уровень героя (lv)', () => {
+  it('setLevel: 100 и 120, то же — то же хранилище, null — поле уходит; не 100 и не 120 не пишется', () => {
+    const st = setLevel(v2({}), CAREN, 120);
+    expect([levelOf(st, CAREN), levelOf(st, KAPPA)]).toEqual([120, null]);
+    expect(levelOf(setLevel(st, CAREN, 100), CAREN)).toBe(100);
+    expect(setLevel(st, CAREN, 120)).toBe(st);
+    expect('lv' in setLevel(st, CAREN, null)).toBe(false);
+    expect(setLevel(st, KAPPA, null)).toBe(st);
+    for (const bad of [110, '120', 0, NaN, undefined]) expect(setLevel(st, KAPPA, bad as unknown as 100)).toBe(st);
+    expect(setLevel(v2({}), CAREN, 110 as 100).lv).toBeUndefined();
+  });
+  it('dropChar снимает, undoDrop возвращает; за это время отметили заново — остаётся новое', () => {
+    const st = setLevel(v2({ [CAREN]: ['p1'] }), CAREN, 120);
+    const r = dropChar(st, CAREN);
+    expect([r.st.lv, r.dropped.lv]).toEqual([undefined, 120]);
+    expect(undoDrop(r.st, r.dropped)).toEqual(st);
+    expect(levelOf(undoDrop(setLevel(r.st, CAREN, 100), r.dropped), CAREN)).toBe(100);
+  });
+  it('нормализация: к CF вместе с ★; у CF свой — остаётся он', () => {
+    const r = normalizeFusion(idx, [CF], setLevel(v2({ [X]: ['p1'] }), X, 120));
+    expect([r.st.lv, r.fixes[0].lv]).toEqual([{ [CF]: 120 }, 120]);
+    const both = normalizeFusion(idx, [CF], setLevel(setLevel(v2({ [X]: ['p1'] }), X, 120), CF, 100));
+    expect([both.st.lv, both.fixes[0].lv]).toEqual([{ [CF]: 100 }, undefined]);
+  });
+  it('окно перехода: к CF; «Вернуть» — снова у X', () => {
+    const sw = switchFusion(idx, [X], setLevel(v2({ [X]: ['p1'] }), X, 120), CF)!;
+    expect([sw.st.lv, sw.lv]).toEqual([{ [CF]: 120 }, 120]);
+    expect(unfuseChar(sw.st, sw.from, sw.to, sw).lv).toEqual({ [X]: 120 });
+  });
+  it('герой не из ростера — уровень убирается (cleared)', () => {
+    const r = normalizeStored(idx, [CAREN], setLevel(setLevel(v2({ [CAREN]: ['p1'] }), KAPPA, 100), CAREN, 120));
+    expect([r.st.lv, r.cleared]).toEqual([{ [CAREN]: 120 }, [KAPPA]]);
+  });
+  it('хранилище: читается как было; мусор отброшен — «не целиком»', () => {
+    const st = setLevel(v2({ [CAREN]: ['p1'] }), CAREN, 120);
+    const raw = JSON.parse(JSON.stringify(st));
+    expect(loadGear(raw, idx, [CAREN]).st.lv).toEqual({ [CAREN]: 120 });
+    expect(readsWhole(raw, idx)).toBe(true);
+    const bad = { ...raw, lv: { [CAREN]: 120, [KAPPA]: 110, [X]: '100' } };
+    expect(loadGear(bad, idx, [CAREN, KAPPA, X]).st.lv).toEqual({ [CAREN]: 120 });
     expect(readsWhole(bad, idx)).toBe(false);
   });
 });
