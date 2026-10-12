@@ -448,7 +448,7 @@ describe('«Надето»: the hero\'s stars', () => {
     const before = line();
     await click($('.cd-head button.cd-stars'));
     expect($('.drawer.hs-sheet .drawer-title, .drawer.hs-sheet h3, .drawer.hs-sheet h2')?.textContent).toBe('Stars: Poolside Trickster Regina');
-    expect($('.hs-crit')?.textContent).toBe('Crit from stars: +65% from ★5');
+    expect($('.hs-crit')).toBeNull(); // the sheet only picks the stars; what they give is not shown
     await click($$('.drawer.hs-sheet .hs-big button')[4]);
     expect($('.drawer.hs-sheet')).toBeNull();
     expect(stored().stars).toEqual({ [regina.id]: 5 });
@@ -459,20 +459,19 @@ describe('«Надето»: the hero\'s stars', () => {
     expect($('.critsheet .crit-split')?.textContent).toMatch(/^Hero 20% · stars 65% · gear \d+%$/);
   });
 
-  it('a stored ★ shows at once; the star sheet line for ★5: «+65%»; ★4 — «from ★5»; a hero whose stars give no crit — no line', async () => {
+  it('a stored ★ shows at once and is marked in the sheet; ★4 counts less crit than ★5', async () => {
     await mount({ gear: worn([WEAK], regina.id, { stars: { [regina.id]: 5 } }), roster: [regina.id] }, { charId: regina.id });
     expect(lit()).toBe(5);
     await click($('.cd-head button.cd-stars'));
-    expect($('.hs-crit')?.textContent).toBe('Crit from stars: +65%');
+    expect($$('.drawer.hs-sheet .hs-big [aria-pressed="true"]').map((b) => b.getAttribute('aria-label'))).toEqual(['★5']);
+    const crit5 = Number(/(\d+)%/.exec(line() ?? '')?.[1]);
     await click($$('.drawer.hs-sheet .hs-big button')[3]);
-    await click($('.cd-head button.cd-stars'));
-    expect($('.hs-crit')?.textContent).toBe('Crit from stars: +65% from ★5');
+    expect(Number(/(\d+)%/.exec(line() ?? '')?.[1])).toBe(crit5 - 65);
   });
 
-  it('a hero whose stars give no crit: the sheet has no crit line, no crit part in the split', async () => {
+  it('a hero whose stars give no crit: no crit part in the split', async () => {
     await mount({ gear: worn([WEAK], caren.id, { stars: { [caren.id]: 6 } }) });
     await click($('.cd-head button.cd-stars'));
-    expect($('.hs-crit')).toBeNull();
     await click($$('.drawer.hs-sheet .hs-big button')[5]);
     await click($('.bgear.worn .wcrit'));
     expect($('.critsheet .crit-split')?.textContent).toBe('Hero 20% · gear 6%');

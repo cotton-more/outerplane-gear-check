@@ -597,8 +597,6 @@ export const ru = {
     stars: (name: string) => `Звёзды: ${name}`,
     star: (n: number) => `★${n}`,
     starsGroup: 'Звёзды героя',
-    starsCrit: (p: number) => `Крит от звёзд: +${p}%`,
-    starsCritFrom: (p: number, s: number) => `Крит от звёзд: с ★${s} +${p}%`,
     rosterSelected: 'Выделено — нажми Ctrl/Cmd+C',
     rosterApplied: (replace: boolean, n: number, missed: string) => `${replace ? 'Заменено' : 'Добавлено'}: ${n}${missed ? `; не распознано: ${missed}` : ''}`,
     replace: 'Заменить',

@@ -506,8 +506,6 @@ export const en: Texts = {
     stars: (name) => `Stars: ${name}`,
     star: (n) => `★${n}`,
     starsGroup: "Hero's stars",
-    starsCrit: (p) => `Crit from stars: +${p}%`,
-    starsCritFrom: (p, s) => `Crit from stars: +${p}% from ★${s}`,
     rosterSelected: 'Selected — press Ctrl/Cmd+C',
     rosterApplied: (replace, n, missed) => `${replace ? 'Replaced' : 'Added'}: ${n}${missed ? `; not recognized: ${missed}` : ''}`,
     replace: 'Replace',
