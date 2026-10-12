@@ -16,9 +16,10 @@ The «Team» tab in the header; on a phone — «More» → «Team». Only heroe
 
 - Four spots in a row. Tap «+» — a window with the roster list and a name search; tap a hero to put them there.
 - On a hero's spot: the portrait — put another hero there; the **stars** at the bottom — a window with
-  six stars like the game's transcend, tap the N-th to set ★N; ✕ in the corner — empty the spot. The stars belong to the
-  hero: they are the same as on the hero's card, and a change here changes them there. A hero whose stars aren't set yet
-  comes in at ★6.
+  six stars like the game's transcend, tap the N-th to set ★N; ✕ in the corner — empty the spot. A hero comes in with the
+  stars from their card (not set — ★6). In the window you can try more: the stars below the card's are locked, the report
+  counts the higher ones, but only in this spot — nothing is saved. To change a hero's stars, go to their
+  [card](Characters-and-guild-code).
 - Stars matter: some skills and passives open only at ★3–★6 (Burst 2 at ★3, Burst 3 at ★5, transcend passive levels at
   ★3–★6), both for what a hero needs and for what they give.
 
@@ -59,7 +60,6 @@ Only heroes with something to say are listed.
 - Statuses only the hero herself can give (her own mechanic, like Beth's Retribution's Dominion): nothing for the team
   to change, so no line.
 
-The team itself isn't saved: it lives while the page is open; a reload forgets it. The heroes' stars are saved (they are
-the card's stars).
+Nothing is saved: the team lives while the page is open; a reload forgets it.
 
 The skill data comes from outerpedia's game tables and updates with the rest of the data.

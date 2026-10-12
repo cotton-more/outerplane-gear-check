@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// «Команда» (screens/team): open from «Ещё» on a phone, pick heroes and ★, the report reacts; nothing is saved.
+// «Команда» (screens/team): open from «Ещё» on a phone, pick heroes and ★, the report reacts; nothing is saved (the ★ come
+// from the hero's card; Team only tries higher ones).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -129,7 +130,7 @@ describe('«Команда»', () => {
     expect(report()[0]).toContain('Barrier from Demiurge Stella');
   });
 
-  // PLAN 0190 Z5: the stars belong to the hero — Team shows the stored ★ and writes the change back
+  // PLAN 0190 Z5: the stars belong to the hero — Team shows the stored ★
   it('a hero with a stored ★4 enters at ★4, one without at ★6', async () => {
     await mount({ stars: { [H.stella]: 4 } });
     await openTeam();
@@ -139,18 +140,31 @@ describe('«Команда»', () => {
     expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(6);
   });
 
-  it('a tap in Team writes the hero\'s ★ to the store; the same hero in another spot after ✕ comes back with it', async () => {
+  // owner 2026-10-12: the ★ are changed only on the card; Team tries higher ★ («what if»), never lower, and saves nothing
+  it('a stored ★4: the stars under it are locked; ★6 here counts in the spot only, the store keeps ★4; ✕ and back — ★4 again', async () => {
+    await mount({ stars: { [H.stella]: 4 } });
+    await openTeam();
+    await pick(0, 'Demiurge Stella');
+    await click(spot(0).querySelector<HTMLElement>('.tm-sb'));
+    expect($$('.drawer.hs-sheet .hs-big button').map((b) => (b as HTMLButtonElement).disabled)).toEqual([true, true, true, false, false, false]);
+    await click($$('.drawer.hs-sheet .hs-big button')[5]);
+    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(6);
+    expect(JSON.parse(localStorage.getItem('ogc.gear')!).stars).toEqual({ [H.stella]: 4 });
+    await click(spot(0).querySelector<HTMLElement>('.tm-x'));
+    await pick(0, 'Demiurge Stella');
+    expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(4);
+  });
+
+  it('no ★ on the card: the spot starts at ★6, any ★ can be tried, nothing is saved', async () => {
     await mount();
     await openTeam();
     await pick(0, 'Kanon');
     await setStars(0, 3);
-    expect(JSON.parse(localStorage.getItem('ogc.gear')!).stars).toEqual({ [H.kanon]: 3 });
-    await click(spot(0).querySelector<HTMLElement>('.tm-x'));
-    await pick(0, 'Kanon');
     expect(spot(0).querySelectorAll('.hs-mini .on')).toHaveLength(3);
+    expect(JSON.parse(localStorage.getItem('ogc.gear') ?? '{}').stars).toBeUndefined();
   });
 
-  it('the report and the suggestions use the stored ★: Stella ★5 gives nothing yet, «from ★6»', async () => {
+  it('the report and the suggestions use the stored ★: Stella ★5 gives nothing yet, «from ★6»; ★6 tried here covers Kanon', async () => {
     await mount({ stars: { [H.stella]: 5 } });
     await openTeam();
     await pick(0, 'Kanon');
