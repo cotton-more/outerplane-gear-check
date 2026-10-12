@@ -144,7 +144,7 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tmove .tsrc')).toBeNull();
   });
 
-  // F1 of review 0136, decision 14: Caren over the cap takes Rin's CHD helmet for her CHC 6 one — the line names the extra crit
+  // F1 of review 0136, decision 14: Caren over the cap takes Rin's worn CHD helmet for her CHC 6 one — the line names the extra crit
   it('the hero line names the extra crit when it changes: «Stats drop by 1.4 pts · Extra crit −6.3 → −2.3»', async () => {
     const rin = D.chars.find((c) => c.name === 'Rin')!;
     const crit = D.sets.find((s) => s.short === 'Critical Hit')!.id;
@@ -156,7 +156,7 @@ describe('J. обмен вещами', () => {
     await mount({
       roster: [caren.id, rin.id],
       gear: G([...mine, hB], { [caren.id]: mine.map((p) => p.id as string), [rin.id]: ['c6'] },
-        { worn: { [caren.id]: Object.fromEntries(mine.map((p) => [p.slot, p.id])) } }),
+        { worn: { [caren.id]: Object.fromEntries(mine.map((p) => [p.slot, p.id])), [rin.id]: { helmet: 'c6' } } }),
     });
     await click(byText('.cd-acts button', 'Trade'));
 

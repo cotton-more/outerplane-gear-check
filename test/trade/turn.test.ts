@@ -1,5 +1,5 @@
 // Dressing in turn (MODEL.md §7 item 8): the picker's gain of each hero is the number on his plan's hero line; the order —
-// gain, «—», the re-dressed in the order they were done. Labels and the sheet — test/trade/trade.dom.test.ts.
+// by name, the re-dressed last in the order they were done (owner, Q1a). Labels and the sheet — test/trade/trade.dom.test.ts.
 import { describe, expect, it } from 'vitest';
 import type { Piece } from '@/features/gear/model/gear';
 import type { Subs } from '@/game/item/subs';
@@ -76,19 +76,16 @@ describe('the picker gain = the plan line gain', () => {
 });
 
 describe('the picker order', () => {
-  const ids = ['a', 'b', 'c', 'd', 'e', 'f'];
-  it('gain desc (ties keep roster order) → «—» → the re-dressed in done order', () => {
-    const gains = new Map<string, number | null>([['a', null], ['b', 2.1], ['d', 6.3], ['e', 2.1], ['f', -0.4]]);
-    expect(turnOrder(ids, gains, ['c'])).toEqual(['d', 'b', 'e', 'f', 'a', 'c']);
-    expect(turnOrder(ids, gains, ['e', 'c'])).toEqual(['d', 'b', 'f', 'a', 'e', 'c']);
+  const name = (id: string) => ({ a: 'Rin', b: 'Aer', c: 'Caren', d: 'Beth' })[id] ?? id;
+  it('by name, the re-dressed last in done order', () => {
+    expect(turnOrder(['a', 'b', 'c', 'd'], [], name)).toEqual(['b', 'd', 'c', 'a']);
+    expect(turnOrder(['a', 'b', 'c', 'd'], ['c', 'b'], name)).toEqual(['d', 'a', 'c', 'b']);
   });
-  it('«Вернуть»: an unlocked hero goes back by his gain', () => {
-    const gains = new Map<string, number | null>(ids.map((id, i) => [id, i]));
-    expect(turnOrder(ids, gains, ['f'])).toEqual(['e', 'd', 'c', 'b', 'a', 'f']);
-    expect(turnOrder(ids, gains, [])).toEqual(['f', 'e', 'd', 'c', 'b', 'a']);
+  it('«Вернуть»: an unlocked hero goes back to his place by name', () => {
+    expect(turnOrder(['a', 'b', 'c', 'd'], ['b'], name)).toEqual(['d', 'c', 'a', 'b']);
   });
   it('a done hero outside the list stays out', () => {
-    expect(turnOrder(['a'], new Map([['a', 1]]), ['z'])).toEqual(['a']);
+    expect(turnOrder(['a'], ['z'], name)).toEqual(['a']);
   });
 });
 

@@ -285,8 +285,10 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
 1. **A hero's order** (the gauge; `world:worldOf`, `profile:combosOf`): "By stats", or one set from his builds
    (`orderCombo`, by `comboSig`); a pinned hero's order is his pin, hard (the pinned profile, §6).
 2. **What an order values, and candidates for the receiver.** Under an order, halves exist only for that combo's parts
-   (`comboProfile`); other sets count as random ones (rows only). Candidates: his pieces (worn cost 0, spare cost 1), other
-   heroes' spare (2), free (2) and other heroes' worn (3). Not candidates: wrong class, **not passing the receiver's bar
+   (`comboProfile`); other sets count as random ones (rows only). Candidates: his pieces (worn cost 0, spare cost 1), free
+   (2) and other heroes' worn (3). **Other heroes' spare is never a candidate** (owner, 2026-10-12, Q1b): it is held for its
+   hero (a better piece, Breakthrough; in game locked, not worn). Only the spare held when the calculation started
+   (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. Not candidates: wrong class, **not passing the receiver's bar
    (§4; his own worn is always eligible)** — a swap between two team members never hands over a piece unfit for the
    receiver — "Don't take", a code (content without Breakthrough) he already has at an equal or higher BT.
 3. **"Was → becomes"** per hero: points of each piece over the worn one; a part of the order that cannot be built —

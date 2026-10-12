@@ -1,10 +1,10 @@
-// Кандидаты получателя (R5; MODEL.md §7, вопрос 15): свои вещи, надетое других (кроме переодетых в этом окне — у
-// них только пул; члены команды друг другу открыты), запас других, свободные вещи расчёта. Не кандидаты: не по классу,
+// Кандидаты получателя (R5; MODEL.md §7, вопрос 15): свои вещи, надетое других (кроме переодетых в этом окне; члены
+// команды друг другу открыты), снятое этим же расчётом, свободные вещи расчёта. Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
 // не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2), «Не брать», код, который у получателя уже
 // есть, без BT выше (R5.5). Герои без билдов — ни получатели, ни держатели (R2.7).
 import type { SlotId } from '@/game/data/types';
 import { keyOf } from './kit';
-import { SLOT_ORDER, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
+import { heldOf, SLOT_ORDER, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 
 export interface CandInput {
@@ -41,6 +41,7 @@ export function candidates(w: World, inp: CandInput): Cands {
   const out: Partial<Record<SlotId, Cand[]>> = {};
   // запись в пулах двух героев, надетая одним, — его надетое, а не чей-то запас (ревью этапа 10): иначе сеанс её не
   // закрывал, а после «Сделал» она была бы надета на двоих
+  const held = w.held ?? heldOf(w);
   const wornBy = new Map<string, string>();
   for (const k of w.heroes) for (const id of Object.values(k.worn)) if (id) wornBy.set(id, k.id);
   const elsewhere = (id: string) => { const by = wornBy.get(id); return !!by && by !== h.id; };
@@ -73,7 +74,10 @@ export function candidates(w: World, inp: CandInput): Cands {
     for (const id of k.pool) {
       const it = w.items[id];
       if (!it) continue;
-      if (!kw.has(id)) { if (!wornBy.has(id)) add(id, 2, k, 0, false); }
+      // his spare is held for him (a better piece, Breakthrough): in game it is locked, not worn — handed to another hero it
+      // would be worn and locked with nobody knowing whom it was for (owner, 2026-10-12, Q1b). Taken off by this same
+      // calculation (a team member's step) — not held: the swap of two members goes on
+      if (!kw.has(id)) { if (!wornBy.has(id) && !held.has(id)) add(id, 2, k, 0, false); }
       else if (open && k.worn[it.slot] === id) add(id, 3, k, holderLoss(w, k, gk, it.slot), false);
     }
   }

@@ -66,6 +66,15 @@ export interface World {
   heroes: readonly Hero[];  // герои с вещами, в порядке ростера
   items: Readonly<Record<string, Item>>;
   gauge(heroId: string): Gauge | null; // null — у героя нет билдов (R2.7)
+  // spare when the calculation started — held for its hero (a better piece, Breakthrough), never a candidate for another
+  // (owner, 2026-10-12, Q1b); a piece the same calculation took off is not in it. No set — heldOf(this world)
+  held?: ReadonlySet<string>;
+}
+
+// pieces in a pool that nobody wears
+export function heldOf(w: Pick<World, 'heroes'>): Set<string> {
+  const worn = new Set(w.heroes.flatMap((h) => Object.values(h.worn).filter((x): x is string => !!x)));
+  return new Set(w.heroes.flatMap((h) => h.pool.filter((id) => !worn.has(id))));
 }
 
 export type Cost = 0 | 1 | 2 | 3; // R1.7: надета на получателе, его запас, инвентарь, надета на другом
