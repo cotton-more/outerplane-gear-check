@@ -71,7 +71,7 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
    the end */
 .boss-eff { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .boss-eff h4 { margin: 0 0 2px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
-.be-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto auto; align-items: center; gap: 2px 8px; width: 100%; min-height: 44px;
+.be-row { display: grid; grid-template-columns: 30px minmax(6ch, 1fr) auto auto auto; align-items: center; gap: 2px 6px; width: 100%; min-height: 44px;
   padding: 4px 8px 4px 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: 13.5px var(--font-body); }
 .be-row > .face { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; }
 .be-n { min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

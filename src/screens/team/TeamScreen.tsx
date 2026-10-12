@@ -118,7 +118,8 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
     const eff = m && effOfSpot(m);
     return m && eff ? [{ c: idx.CHAR[m.id], eff }] : [];
   }) : [];
-  const effOpen = effFor ? effRows.find((r) => r.c.id === effFor) : undefined;
+  // the sheet takes the card's ★, not the spot's: the number the player types is the game's, at the hero's real stars
+  const effOpen = effFor && effRows.some((r) => r.c.id === effFor) ? effView(ctx, idx.CHAR[effFor], gear.store) : null;
   const saveEff = (id: string, cal: Parameters<typeof setEff>[2]) => {
     setEffFor(null);
     const next = setEff(gear.store, id, cal);
@@ -155,9 +156,9 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
           onStage={(i) => boss && update((s) => ({ ...s, stage: { ...s.stage, [boss.key]: i } }))}
           onClear={() => { update((s) => ({ ...s, boss: null })); setBossAt(null); }} />
       )}
-      {effOpen && <EffSheet c={effOpen.c} eff={effOpen.eff} onClose={() => setEffFor(null)} onSave={(cal) => saveEff(effOpen.c.id, cal)} />}
+      {effOpen && effFor && <EffSheet c={idx.CHAR[effFor]} eff={effOpen} onClose={() => setEffFor(null)} onSave={(cal) => saveEff(effFor, cal)} />}
       {choosing && <GuideChoice teams={guideTeams} owned={mineSet} onPick={fill} onClose={() => setChoosing(false)} />}
-      {filled && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
+      {filled && filled.key === key && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
     </div>
   );
 }

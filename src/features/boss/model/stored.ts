@@ -11,8 +11,17 @@ export const NO_BOSS = '';
 export const EMPTY: BossStore = { v: 1, boss: null, stage: {}, teams: {} };
 
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
-const spots = (x: unknown): (string | null)[] | null =>
-  Array.isArray(x) ? [0, 1, 2, 3].map((i) => (typeof x[i] === 'string' ? (x[i] as string) : null)) : null;
+// four spots; a hero is in one spot only (the second occurrence of an id is dropped)
+const spots = (x: unknown): (string | null)[] | null => {
+  if (!Array.isArray(x)) return null;
+  const seen = new Set<string>();
+  return [0, 1, 2, 3].map((i) => {
+    const id = typeof x[i] === 'string' ? (x[i] as string) : null;
+    if (id === null || seen.has(id)) return null;
+    seen.add(id);
+    return id;
+  });
+};
 
 // a stored value → the store; anything unreadable is dropped (keys and ids that left the data are checked where used)
 export function restoreBoss(raw: unknown): BossStore {

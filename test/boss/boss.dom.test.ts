@@ -34,8 +34,12 @@ afterEach(async () => {
   localStorage.clear();
 });
 
-async function mount({ bosses = true, roster = ROSTER, boss }: { bosses?: boolean; roster?: string[]; boss?: unknown } = {}) {
-  const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster, state: { tab: 'eval' }, item: {}, ...(boss ? { boss } : {}) };
+async function mount({ bosses = true, roster = ROSTER, boss, stars }: { bosses?: boolean; roster?: string[]; boss?: unknown; stars?: Record<string, number> } = {}) {
+  const saved = {
+    lang: 'en', welcomeHidden: true, tour: DONE, roster, state: { tab: 'eval' }, item: {}, ...(boss ? { boss } : {}),
+    // stored hero stars live in the gear store
+    ...(stars ? { gear: { v: 3, seq: 0, pieces: {}, pools: {}, stars } } : {}),
+  };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   const { App } = await import('@/app/App');
   const { IndexContext } = await import('@/game/data/IndexContext');
@@ -116,6 +120,20 @@ describe('a boss on «Команда»', () => {
     expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
     await click($('.toast button'));
     expect(names()).toEqual(['+', '+', '+', '+']);
+    expect($('.toast')).toBeNull();
+  });
+
+  it('the «Undo» toast belongs to the boss it was shown for: switching the boss hides it', async () => {
+    await mount();
+    await pickBoss('Blazing Knight Meteos');
+    await closeSheet();
+    await click($('#view-team .boss-fill'));
+    expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
+    await click(row());
+    await click(byText('.boss-sheet .btn', 'No boss'));
+    expect($('.toast')).toBeNull();
+    await pickBoss('Annihilator');
+    await closeSheet();
     expect($('.toast')).toBeNull();
   });
 
@@ -222,8 +240,8 @@ describe('EFF vs RES on «Команда»', () => {
     expect($('#view-team .boss-eff h4')?.textContent).toBe('EFF vs RES 288');
     // Tamara: W 120 + Ranger 50 = 170 → −119, resisted (⌊1000/(1 + 100/118)⌋ + 1)/1001 → lands 45 %
     expect(rows()).toEqual([
-      ['Tamara', '≈ about 170', '−119', '45 %', 'EE gives EFF ×2 — type EFF from the game ▸'],
-      ['Roxie', '≈ about 120', '−169', '37 %', null],
+      ['Tamara', '≈\u2009about 170', '−119', '45 %', 'EE gives EFF ×2 — type EFF from the game ▸'],
+      ['Roxie', '≈\u2009about 120', '−169', '37 %', null],
     ]);
     expect($('#view-team .boss-eff .be-foot')?.textContent).toContain('the chance the boss doesn’t resist');
   });
@@ -238,5 +256,26 @@ describe('EFF vs RES on «Команда»', () => {
     await click(byText('.effsheet .btn.primary', 'Done'));
     expect(rows()[0]).toEqual(['Tamara', '340', '✓', '100 %', null]);
     expect(JSON.parse(localStorage.getItem('ogc.gear')!).eff).toEqual({ [id('Tamara')]: { typed: 340, at: 170 } });
+  });
+
+  // Iota's transcend gives EFF (★4 +3 %, ★6 +6 %): the sheet takes the card's ★4 (123), not the ★6 tried in the spot (127)
+  it('the sheet stores the typed value at the card\'s ★, not at the ★ tried in the spot', async () => {
+    const iota = id('Iota');
+    await mount({ roster: [...ROSTER, iota], stars: { [iota]: 4 } });
+    await pickBoss('Blazing Knight Meteos');
+    await closeSheet();
+    await click($('#view-team .tm-add'));
+    await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Iota'));
+    await click($('#view-team .tm-team .tm-sb'));
+    await click($$('.drawer.hs-sheet .hs-big button')[5]);
+    const iotaRow = () => $$('#view-team .boss-eff .be-row').find((r) => r.querySelector('.be-n')?.textContent === 'Iota')!;
+    expect(iotaRow().querySelector('.be-v')?.textContent).toBe('≈\u2009about 127');
+    await click(iotaRow());
+    expect($('.effsheet .eff-v')?.textContent).toBe('≈\u2009about 123');
+    const input = $('.effsheet input') as HTMLInputElement;
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(input, '250'); input.dispatchEvent(new Event('input', { bubbles: true })); });
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect(JSON.parse(localStorage.getItem('ogc.gear')!).eff).toEqual({ [iota]: { typed: 250, at: 123 } });
   });
 });

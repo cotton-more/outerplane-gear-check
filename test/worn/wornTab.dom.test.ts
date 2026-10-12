@@ -439,8 +439,8 @@ describe('«Надето»: the hero\'s EFF «EFF: ≈ 233»', () => {
 
   it('Akari: «EFF: ≈ 179» — W 120, Ranger node 50, EFF% on the helmet; the sign has a word for screen readers', async () => {
     await mountAkari();
-    expect(line()?.textContent).toBe('EFF: ≈ about 179▸');
-    expect(line()?.querySelector('b [aria-hidden="true"]')?.textContent).toBe('≈ ');
+    expect(line()?.textContent).toBe('EFF: ≈\u2009about 179▸');
+    expect(line()?.querySelector('b [aria-hidden="true"]')?.textContent).toBe('≈\u2009');
   });
 
   it('no line for a hero who doesn\'t need EFF (Caren) and with nothing worn', async () => {
@@ -471,9 +471,22 @@ describe('«Надето»: the hero\'s EFF «EFF: ≈ 233»', () => {
     expect(stored().eff).toBeUndefined();
   });
 
+  it('Done with a text that is not a number in 1…9999 («0») changes nothing; empty forgets the value', async () => {
+    await mountAkari({ eff: { [akari.id]: { typed: 358, at: 179 } } });
+    await click(line());
+    await type($('.effsheet input') as HTMLInputElement, '0');
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect($('.effsheet')).toBeNull();
+    expect(stored().eff).toEqual({ [akari.id]: { typed: 358, at: 179 } });
+    await click(line());
+    await type($('.effsheet input') as HTMLInputElement, '');
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect(stored().eff).toBeUndefined();
+  });
+
   it('gear changed since typing: the factor follows (357 typed at 170, now 179: 179 × 357 / 170 = 376), «≈» again, the quiet line; Done untouched — nothing re-anchored', async () => {
     await mountAkari({ eff: { [akari.id]: { typed: 357, at: 170 } } });
-    expect(line()?.textContent).toBe('EFF: ≈ about 376▸');
+    expect(line()?.textContent).toBe('EFF: ≈\u2009about 376▸');
     await click(line());
     expect($('.effsheet .eff-stale')?.textContent).toBe('Gear changed since you typed it: the number is an estimate.');
     expect(($('.effsheet input') as HTMLInputElement).value).toBe('357');

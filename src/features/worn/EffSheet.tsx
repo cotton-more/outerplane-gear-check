@@ -19,7 +19,7 @@ export const effX = (t: ReturnType<typeof useT>, x: number): string | null => (M
 // «≈ 233»: the sign for the eye, the word for a screen reader
 export function EffNum({ shown }: { shown: WornEff['shown'] }) {
   const t = useT();
-  return <>{shown.approx && <><span aria-hidden="true">≈ </span><span className="sr-only">{t.card.effApprox} </span></>}{shown.v}</>;
+  return <>{shown.approx && <><span aria-hidden="true">≈{'\u2009'}</span><span className="sr-only">{t.card.effApprox}{' '}</span></>}{shown.v}</>;
 }
 
 export function EffSheet({ c, eff, onClose, onSave }: {
@@ -32,7 +32,7 @@ export function EffSheet({ c, eff, onClose, onSave }: {
   const { e, shown } = eff;
   const x = effX(t, shown.x);
   const save = () => {
-    if (text === first) onClose();
+    if (text === first || (text !== '' && n === null)) onClose(); // empty — forget the value; not a number in range — leave it
     else onSave(n === null ? null : { typed: n, at: e.total });
   };
   return (

@@ -98,6 +98,10 @@ describe('a stage', () => {
     expect([...all].filter((i) => !ru.team.status[i] || !(en.team.status as Record<string, string>)[i])).toEqual([]);
   });
 
+  it('team.status names the same ids in Russian and English', () => {
+    expect(Object.keys(en.team.status).sort()).toEqual(Object.keys(ru.team.status).sort());
+  });
+
   it('«Контроль» stands for the six hard CC ids when the boss blocks all of them', () => {
     expect(immunityChips(factsAt(B, boss('sr:meteos'), 12)!.imm)).toEqual({ cc: true, rest: ['17', '62'] });
     expect(immunityChips(['33', '34', '26'])).toEqual({ cc: false, rest: ['33', '34', '26'] });
@@ -152,5 +156,10 @@ describe("'ogc.boss'", () => {
     expect(restoreBoss({ v: 2, boss: 'x' })).toEqual(EMPTY);
     expect(restoreBoss({ v: 1, boss: 7, stage: { a: 'x', b: 2 }, teams: { a: ['x', 5], b: 'y' } }))
       .toEqual({ v: 1, boss: null, stage: { b: 2 }, teams: { a: ['x', null, null, null] } });
+  });
+
+  it('a hero twice in one team: the second spot is emptied; the same id in another team stays', () => {
+    expect(restoreBoss({ v: 1, boss: null, stage: {}, teams: { a: ['x', 'y', 'x', 'y'], b: ['x', null, null, null] } }))
+      .toEqual({ v: 1, boss: null, stage: {}, teams: { a: ['x', 'y', null, null], b: ['x', null, null, null] } });
   });
 });

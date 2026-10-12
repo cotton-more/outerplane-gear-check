@@ -103,4 +103,10 @@ describe('the chance a debuff lands', () => {
     expect(landChance(188, 288)).toBeCloseTo(1 - 501 / 1001);
     expect(Math.floor(landChance(233, 288) * 100)).toBe(64);
   });
+
+  // the game's FloorToInt(1000f / (1f + 100f / d)) is float32: d = 60 gives 374.99998… in float64 but 375 in float32
+  it('float32 like the game: d = 60 → resisted (375 + 1)/1001', () => {
+    expect(Math.floor(1000 / (1 + 100 / 60))).toBe(374);
+    expect(landChance(228, 288)).toBe(1 - 376 / 1001);
+  });
 });

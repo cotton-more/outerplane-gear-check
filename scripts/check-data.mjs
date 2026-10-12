@@ -290,6 +290,13 @@ function problems(D) {
       if (!Array.isArray(imm) || !imm.length || imm[0]?.[0] !== 0
         || !imm.every((r, i) => Array.isArray(r) && r.length === 2 && Number.isInteger(r[0]) && r[0] < rows.length && (!i || r[0] > imm[i - 1][0])
           && Array.isArray(r[1]) && r[1].every((x) => typeof x === 'string'))) out.add(`босс ${f.key}: иммунитеты по этапам (imm) не по форме`);
+      // the stage chips of a special request and a guild raid are the numbers 1…N in order (the sheet and «этап 13» rely on it)
+      if ((f.mode === 'sr' || f.mode === 'gr') && !rows.every((r, i) => r[3] === String(i + 1))) out.add(`босс ${f.key}: этапы таблицы ${f.table} не «1»…«${rows.length}» по порядку`);
+      // the latest season: start and end are ISO strings in UTC, the start before the end
+      const iso = (x) => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(x) && !Number.isNaN(Date.parse(x));
+      if (f.live !== undefined && !(Array.isArray(f.live) && f.live.length === 2 && f.live.every(iso) && Date.parse(f.live[0]) < Date.parse(f.live[1]))) {
+        out.add(`босс ${f.key}: даты сезона (live) — не две ISO-строки с Z, начало раньше конца`);
+      }
       for (const t of f.teams ?? []) {
         for (const h of [...t.s.flat(), ...(t.r ?? []).map((r) => r.h)]) if (!ids.has(h)) out.add(`босс ${f.key}: в команде гайда герой ${h}, которого нет в данных`);
       }

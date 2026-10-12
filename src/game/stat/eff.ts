@@ -56,9 +56,10 @@ export function effShown(e: Pick<Eff, 'base' | 'total'>, cal?: EffCal | null): E
 }
 
 // Landing a resist-checked debuff (RESEARCH §1.1, CheckResist): EFF above RES — never resisted; else d = max(1, RES − EFF)
-// and the boss resists with (⌊1000/(1 + 100/d)⌋ + 1)/1001. The chance it lands, 0…1 (the skill's own chance is separate)
+// and the boss resists with (⌊1000/(1 + 100/d)⌋ + 1)/1001 — float32 in the game, so each step is rounded (d = 60: 375, not 374).
+// The chance it lands, 0…1 (the skill's own chance is separate)
 export function landChance(eff: number, res: number): number {
   if (eff > res) return 1;
   const d = Math.max(1, res - eff);
-  return 1 - (Math.floor(1000 / (1 + 100 / d)) + 1) / 1001;
+  return 1 - (Math.floor(Math.fround(1000 / Math.fround(1 + Math.fround(100 / d)))) + 1) / 1001;
 }
