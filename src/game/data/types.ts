@@ -56,9 +56,11 @@ export interface Char {
   // EFF from sources that are always on (update.py eff_profile; the game's formula in .x/0200-boss RESEARCH §1.2):
   // w — white EFF [Lv100, Lv120] (the `lv120` setting picks one); r — flat quirk node (Ranger +50, by `quirks`); p — a
   // passive's permanent premium, ‰ (Core Fusion Notia +500, only at Core Fusion level 5 = fusion passive level 2; the
-  // data assumes it maxed); t — transcend passive by the in-game ★1…6: r premium ‰,
-  // f flat. The EE is not here (the app can't know it). Missing in old snapshots
-  eff?: { w: [number, number]; r?: number; p?: number; t?: { r?: number[]; f?: number[] } };
+  // data assumes it maxed); t — transcend passive by the in-game ★1…6: r premium ‰, f flat; ee — the EE's permanent
+  // self premium, ‰ (the app can't know whether the player owns the EE or its level: used only for the «type EFF from
+  // the game» hint, never added to the sheet); d — 1 when the hero needs EFF against a boss's RES (rule R, .x/0200-boss
+  // RESEARCH §1.5). Missing in old snapshots
+  eff?: { w: [number, number]; r?: number; p?: number; t?: { r?: number[]; f?: number[] }; ee?: number; d?: 1 };
 }
 
 // Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус

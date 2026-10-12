@@ -248,6 +248,22 @@ function problems(D) {
   if (mixedW.length) out.add(`EFF героя (eff.w) у героев одного подкласса разный: ${mixedW.join(', ')}`);
   const rangers = D.chars.filter((c) => c.class === 'ranger');
   if (rangers.length && !rangers.every((c) => c.eff?.r === 50)) out.add('EFF: не у всех Ranger узел квирков +50 (eff.r) — формат quirks изменился?');
+  // EE premium (eff.ee, ‰) and rule R (eff.d): the 17 heroes whose Exclusive Equipment gives a permanent self EFF premium
+  // (Tanya and Rico +50 %, the rest +100 %), and who needs EFF against a boss's RES (.x/0200-boss RESEARCH §1.5)
+  const EE_HEROES = ['Tanya', 'Rico', 'Alice', 'Beth', 'Eternal', 'Sterope', 'Tamara', 'Christina', 'Akari', 'Iota', 'Kuro',
+    'Gnosis Nella', 'Ember', 'Omega Nadja', 'Core Fusion Snow', 'Resonance Eliza', 'Core Fusion Eternal'];
+  const eeNow = D.chars.filter((c) => c.eff?.ee).map((c) => c.name);
+  const eeLost = EE_HEROES.filter((n) => !eeNow.includes(n));
+  const eeNew = eeNow.filter((n) => !EE_HEROES.includes(n));
+  if (D.chars.length && (eeLost.length || eeNew.length)) out.add(`EFF от EE (eff.ee): не у тех героев — пропал: ${eeLost.join(', ') || '—'}; новый: ${eeNew.join(', ') || '—'} (формат ee.json или passives.json изменился? Или вышло новое EE — тогда обнови список здесь)`);
+  const eeWrong = D.chars.filter((c) => c.eff?.ee && c.eff.ee !== (['Tanya', 'Rico'].includes(c.name) ? 500 : 1000)).map((c) => `${c.name} ${c.eff.ee}`);
+  if (eeWrong.length) out.add(`EFF от EE (eff.ee): ждём Tanya и Rico 500, остальные 1000: ${eeWrong.join(', ')}`);
+  const dOf = (n) => D.chars.find((c) => c.name === n)?.eff?.d === 1;
+  const dBad = [...['Tamara', 'Iota', 'Sigma', 'Ember', 'Gnosis Domine'].filter((n) => !dOf(n)).map((n) => `${n} без d`),
+    ...['Francesca', 'Vlada', 'Eris', 'Eliza', 'Drakhan'].filter(dOf).map((n) => `${n} с d`)];
+  if (D.chars.length && dBad.length) out.add(`EFF от RES босса (eff.d, правило R): ${dBad.join(', ')} — формат skills или buffs изменился?`);
+  const dCount = D.chars.filter((c) => c.eff?.d).length;
+  if (D.chars.length && (dCount < 40 || dCount > 60)) out.add(`EFF от RES босса (eff.d): отмечено ${dCount} героев (ждём 40…60) — правило R или данные damage/ изменились?`);
   if (D.mainValues?.gloves?.unique?.EFF?.[0] !== 50) out.add(`main EFF перчаток Legendary на +10 T0: ${D.mainValues?.gloves?.unique?.EFF?.[0]}, ждём 50 (mainValues)`);
   // main values (update.py main_values): the most common value of an item, not the smallest (Ether rows are lower)
   for (const [slot, stat, want] of [['armor', 'DEF', 500], ['weapon', 'ATK', 1000]]) {
