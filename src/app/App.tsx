@@ -18,6 +18,7 @@ import { CodeInput } from '@/features/eval/code/ItemCode';
 import { heroCodeIn } from '@/features/gear/store/heroCode';
 import { readGearCode } from '@/features/gear/store/gearStore';
 import { decodeBackup } from '@/features/roster/backup';
+import { FindPiece } from '@/screens/find/FindPiece';
 import { fitsData } from '@/features/eval/form/formState';
 import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
@@ -117,6 +118,7 @@ export function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
   // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
   // или «Ещё» → «Обмен для команды», сразу в режиме «Команда»
   const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
@@ -304,7 +306,7 @@ export function App() {
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined}
+            onCode={() => setCodeOpen(true)} onFind={tour.run ? undefined : () => setFindOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined}
             onBatch={onBatch ? () => { onTab('eval'); onBatch(); } : undefined} />
         )}
         {batchOn && layout.narrow && batch.view && s.tab === 'eval' && (
@@ -326,6 +328,11 @@ export function App() {
                 if (hero) { setCodeOpen(false); setShown(hero); return true; }
                 return decodeBackup(text) !== null || readGearCode(text) !== null ? t.ui.codeBackup : null;
               }} />
+          </Sheet>
+        )}
+        {findOpen && (
+          <Sheet title={t.ui.findPiece} onClose={() => setFindOpen(false)}>
+            <FindPiece ctx={ctx} store={gear.store} fits={(item) => fitsData(s, item, ctx.idx)} onOpenChar={(id) => { setFindOpen(false); openChar(id); }} />
           </Sheet>
         )}
         {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}

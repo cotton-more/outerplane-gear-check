@@ -208,7 +208,7 @@ function lookFor(P: Profile, x: Piece, crit: number | null): string[] {
 // «похоже, это она — ничего не делай». Substats are compared in the order typed — the form keeps it, Help asks for the
 // game's order, and the same stats in another order are another piece (owner, 2026-10-07)
 export interface Same { c: Char; piece: Piece }
-const samePiece = (p: Piece, x: Piece): boolean => {
+export const samePiece = (p: Piece, x: Piece): boolean => {
   const a = Object.entries(p.lit), b = Object.entries(x.lit);
   return p.slot === x.slot && p.grade === x.grade && p.setId === x.setId && p.itemKey === x.itemKey && p.main === x.main
     && a.length === b.length && a.every(([k, n], i) => b[i][0] === k && b[i][1] === n);

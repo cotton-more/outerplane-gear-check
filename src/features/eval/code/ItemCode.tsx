@@ -28,9 +28,11 @@ export function ShareCode({ item, anchor = true }: { item: ItemInput; anchor?: b
 }
 
 // окно «Ввести код»: код из чата гильдии → предмет на панели оценки. other — сначала другие коды (код героя, резервная
-// копия): true — разобрался сам, строка — что сказать, null — это не они, читаем код предмета
-export function CodeInput({ fits, onLoad, other }: {
+// копия): true — разобрался сам, строка — что сказать, null — это не они, читаем код предмета. action и hint — для
+// «Найти вещь» (screens/find): своя кнопка и подсказка
+export function CodeInput({ fits, onLoad, other, action, hint }: {
   fits: (item: ItemInput) => boolean; onLoad: (item: ItemInput) => void; other?: (text: string) => true | string | null;
+  action?: string; hint?: string;
 }) {
   const t = useT();
   const [text, setText] = useState('');
@@ -50,9 +52,9 @@ export function CodeInput({ fits, onLoad, other }: {
       <input className="search" autoFocus value={text} placeholder={`${CODE_PREFIX} KXRM TPWA`} aria-label={t.ui.codeSheet}
         autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go"
         onChange={(e) => { setText(e.target.value); setError(null); }} />
-      <button type="submit" className="btn primary">{t.ui.codeOpen}</button>
+      <button type="submit" className="btn primary">{action ?? t.ui.codeOpen}</button>
       {error && <p className="err" role="alert">{typeof error === 'string' ? t.ui.codeErrors[error] : error.text}</p>}
-      <p className="muted small">{t.ui.codeHint}</p>
+      <p className="muted small">{hint ?? t.ui.codeHint}</p>
     </form>
   );
 }

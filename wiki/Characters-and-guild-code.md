@@ -68,3 +68,7 @@ into the game chat (8–11 letters, the chat limit is 50 characters). Whoever ge
 case and spaces don't matter, and a check letter catches typos. Everyone gets the evaluation for their own roster and
 settings. A piece with 5–6 segments (after Reforge) gets a code 1–2 letters longer; app versions from October 2026 read
 it, an older one says the code has an error until it updates. "T4" isn't part of the code.
+
+**Whose piece is it?** More → "Find a piece": paste a piece's code and the app shows who wears it and who has it set
+aside (a name opens the hero's card). It looks for the same stats in the same order at the same levels; Breakthrough
+isn't compared. To get the code of a piece from the game, enter it on "Evaluate" — the code is in the verdict details.

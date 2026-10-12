@@ -1,6 +1,6 @@
 // «Ещё» — одна шторка и на телефоне (кнопка ☰ на нижней плашке), и на ПК (кнопка ⋯ в шапке).
 // Сверху вниз: переходы (только на узком экране: ★ Персонажи, «Доодеть · N», «Обмен для команды»); уведомления, пока
-// актуальны (новая версия, установка, подсказка для iPhone); «Ввести код», «Справка», «Обучение»; «Настройки» (только мои,
+// актуальны (новая версия, установка, подсказка для iPhone); «Ввести код», «Найти вещь», «Справка», «Обучение»; «Настройки» (только мои,
 // «Оценка» со сводкой, язык, значки); «Данные» («Резервная копия» и «О приложении» раскрываются на месте); последней строкой —
 // обязательная фраза VA Games: не спрятана в «О приложении», но и не прибита к низу — в разделённом экране шторка низкая.
 // Нажатие на переход или действие закрывает шторку и выполняет его.
@@ -22,7 +22,7 @@ import type { InstallInfo } from './Guide';
 import { IconSwitch, LangSwitch } from './Switches';
 
 export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring, rosterApi, gear, onBackup, lang, onLang, gameIcons, onIcons, install, onAppUpdate,
-  onClose, onChars, onTodress, onTeam, onTrade, onCode, onHelp, onTour, onBatch }: {
+  onClose, onChars, onTodress, onTeam, onTrade, onCode, onFind, onHelp, onTour, onBatch }: {
   s: AppState; dispatch: Dispatch<Action>; rosterSize: number; todressN: number; news: boolean;
   narrow: boolean;                       // телефон: сверху переходы (на ПК вкладки в шапке)
   touring: boolean;                      // идёт обучение: вместо поля копии — пояснение (на странице пример, не вещи игрока)
@@ -30,6 +30,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
   lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void;
   install: InstallInfo; onAppUpdate?: () => void;
   onClose: () => void; onChars: () => void; onTodress: () => void; onTeam: () => void; onTrade?: () => void; onCode: () => void; onHelp: () => void; onTour: () => void;
+  onFind?: () => void;                   // «Найти вещь» (screens/find); not during a tutorial — its gear is an example
   onBatch?: () => void;                  // «Партия» (features/batch) — on a phone here, on a wide screen next to «Следующий»
 }) {
   const t = useT();
@@ -59,6 +60,7 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
         )}
         <div className="more-acts">
           <button type="button" className="btn" onClick={go(onCode)}>{t.ui.enterCode}</button>
+          {onFind && <button type="button" className="btn" onClick={go(onFind)}>{t.ui.findPiece}</button>}
           <button type="button" className={news ? 'btn has-news' : 'btn'} onClick={go(onHelp)}>{t.ui.help}</button>
           <button type="button" className="btn" onClick={go(onTour)}>{t.tour.start}</button>
         </div>

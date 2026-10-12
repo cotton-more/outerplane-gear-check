@@ -12,6 +12,7 @@ import { encodeBackup } from '@/features/roster/backup';
 import type { GearStore } from '@/features/gear/model/gear';
 import { TIPS } from '@/tour/registry';
 import { moreButton, openBackup, openMore } from './more';
+import { encodeItem } from '@/features/eval/code/codec';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -69,7 +70,7 @@ describe('1. шторка «Ещё» на телефоне', () => {
     await openMore();
     expect($('.more')?.firstElementChild?.classList.contains('more-nav')).toBe(true);
     expect(nav()).toEqual(['★ Characters 2', 'To dress · 2', 'Team α', 'Team trade', 'Batch']);
-    expect($$('.more-acts button').map((b) => b.textContent)).toEqual(['Enter code', 'Help', 'Tutorial']);
+    expect($$('.more-acts button').map((b) => b.textContent)).toEqual(['Enter code', 'Find a piece', 'Help', 'Tutorial']);
   });
 
   it('пустой ростер — «☆ Characters»', async () => {
@@ -116,7 +117,7 @@ describe('1.4, 2.2 «Ещё» на ПК', () => {
     await openMore();
     expect($('.more')).toBeTruthy();
     expect($('.more-nav')).toBeNull();
-    expect($$('.more-acts button').map((b) => b.textContent)).toEqual(['Enter code', 'Help', 'Tutorial']);
+    expect($$('.more-acts button').map((b) => b.textContent)).toEqual(['Enter code', 'Find a piece', 'Help', 'Tutorial']);
     expect($('.drawer h3')?.textContent).toBe('More');
   });
 
@@ -393,5 +394,38 @@ describe('1.2 точка «новое»', () => {
     expect($('.has-news')).toBeNull();
     await openMore();
     expect($('.has-news')).toBeNull();
+  });
+});
+
+// 0199 (owner 2026-10-12): «Find a piece» — the code → the piece, who wears it and who has it set aside; a name opens the card
+describe('«Find a piece»', () => {
+  const subs = { SPD: 2, CHC: 3, 'DEF%': 1 };
+  const code = encodeItem({ slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, unlisted: false, subs })!;
+  const gear = {
+    v: 3, seq: 3, pieces: { p1: P('p1', 'helmet', subs), p2: P('p2', 'helmet', subs), p3: P('p3', 'helmet', { CHC: 3, SPD: 2, 'DEF%': 1 }) },
+    pools: { [caren.id]: ['p1'], [rin.id]: ['p2', 'p3'] }, worn: { [caren.id]: { helmet: 'p1' } },
+  };
+  const find = async (text: string) => {
+    await openMore();
+    await click(moreButton('Find a piece'));
+    await type($('.find .codein input') as HTMLInputElement, text);
+    await act(async () => { ($('.find .codein') as HTMLFormElement).requestSubmit(); });
+  };
+
+  it('worn by Caren, set aside for Rin (another order is another piece); Caren\'s name opens her card', async () => {
+    await mount({ roster: [caren.id, rin.id], gear });
+    await find('OGC ' + code);
+    expect($$('.find-res p').map((p) => p.textContent?.replace(/\u00A0/g, ' '))).toEqual(['LSpeed Set', 'SPD 2, CHC 3, DEF% 1', 'Worn by: Caren', 'Set aside for: Rin']);
+    await click($$('.find-res .linkbtn').find((b) => b.textContent === 'Caren'));
+    expect([$('.find'), saved().tab, saved().charId]).toEqual([null, 'chars', caren.id]);
+  });
+
+  it('nobody has it; a broken code — the error line', async () => {
+    await mount({ roster: [caren.id], gear: GEAR });
+    await find(code);
+    expect($('.find-res')?.textContent).toContain('Nobody has it, worn or set aside.');
+    await type($('.find .codein input') as HTMLInputElement, 'OGC ZZZZ');
+    await act(async () => { ($('.find .codein') as HTMLFormElement).requestSubmit(); });
+    expect($('.find .codein .err')).toBeTruthy();
   });
 });

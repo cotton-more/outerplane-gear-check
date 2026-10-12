@@ -91,6 +91,11 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .codein { display: flex; flex-wrap: wrap; gap: 8px; }
 .codein .search { flex: 1 1 180px; font: 700 18px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .codein .search::placeholder { text-transform: none; letter-spacing: .04em; font-weight: 500; }
+/* «Найти вещь» (screens/find): the piece, then who wears it and who has it set aside */
+.find { display: grid; gap: 12px; }
+.find-res { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.find-res p { margin: 0; }
+.find-res .linkbtn { font-weight: 600; }
 .codein p { flex-basis: 100%; margin: 0; }
 .codein .err { color: var(--junk); font-size: 13.5px; font-weight: 600; }
 .subgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
