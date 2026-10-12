@@ -107,6 +107,11 @@ SOURCE_FILES = {
     "transcend": "data/generated/transcend.json",
     "dmgBuffs": "data/generated/damage/buffs.json",
     "dmgChars": "data/generated/damage/characters.json",
+    # boss fights (build_bosses): monster stats by level, the stages of each fight, the season calendar
+    "monsters": "data/generated/monsters.json",
+    "encounters": "data/generated/encounters.json",
+    "schedule": "data/generated/content-schedule.json",
+    "singularity": "data/generated/singularity.json",
 }
 
 # Аббревиатуры статов — та же таблица, что на outerpedia (src/lib/stats.ts, STAT_ABBR).
@@ -234,12 +239,23 @@ def load_sources(source: Path | None, ref: str) -> tuple[dict, dict]:
     return fetch_sources(sha), {"source": f"github.com/{REPO}", "commit": sha if date else None, "commitDate": date}
 
 
-# outerpedia's guides: recommended teams (teams.json) and titles (meta.json) — one folder per guide, no index file
+# outerpedia's guides: recommended teams (teams.json) and titles (meta.json) — one folder per guide, no index file.
+# Rotating boss guides keep one folder per season under versions/: config.json names the fight's encounter groups,
+# guild raid teams are in main.json (with stat requirements) and subA/subB.json
 GUIDES_DIR = "src/app/[lang]/guides/_contents"
+GUIDE_FILES = ("teams.json", "meta.json")
+SEASON_FILES = ("config.json", "main.json", "subA.json", "subB.json")
+SEASON_MODES = ("guild-raid", "world-boss", "joint-challenge")
+
+
+def guide_file(rel: str) -> bool:
+    """rel — a path under GUIDES_DIR: one of the files build_teams and build_bosses read."""
+    name = rel.rsplit("/", 1)[-1]
+    return name in GUIDE_FILES or (name in SEASON_FILES and rel.split("/", 1)[0] in SEASON_MODES)
 
 
 def guide_paths_api(ref: str) -> list[str] | None:
-    """teams.json and meta.json paths of the guides at ref — one GitHub tree request; None if the API is unavailable."""
+    """Guide file paths at ref (guide_file) — one GitHub tree request; None if the API is unavailable."""
     url = f"https://api.github.com/repos/{REPO}/git/trees/{ref}?recursive=1"
     headers = {"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}"} if os.environ.get("GITHUB_TOKEN") else {}
     try:
@@ -251,15 +267,15 @@ def guide_paths_api(ref: str) -> list[str] | None:
         log("  ! дерево outerpedia обрезано GitHub — список гайдов неполный")
         return None
     return [e["path"] for e in tree.get("tree", []) if e.get("type") == "blob" and e["path"].startswith(GUIDES_DIR + "/")
-            and e["path"].rsplit("/", 1)[-1] in ("teams.json", "meta.json")]
+            and guide_file(e["path"][len(GUIDES_DIR) + 1:])]
 
 
 def load_guides(source: Path | None, ref: str) -> dict | None:
-    """{path under GUIDES_DIR: json} of every guide's teams.json and meta.json; None — the list is unavailable."""
+    """{path under GUIDES_DIR: json} of the guide files build_teams and build_bosses read; None — the list is unavailable."""
     if source:
         base = source / GUIDES_DIR
-        return {str(p.relative_to(base)): parse_json(p.read_text(encoding="utf-8"), str(p))
-                for name in ("teams.json", "meta.json") for p in sorted(base.rglob(name))}
+        return {rel: parse_json(p.read_text(encoding="utf-8"), str(p))
+                for p in sorted(base.rglob("*.json")) if guide_file(rel := str(p.relative_to(base)))}
     paths = guide_paths_api(ref)
     if paths is None:
         return None
@@ -514,18 +530,66 @@ def crit_profile(src: dict, cid: str, c: dict) -> dict:
     return out
 
 
+EFF_LEVELS = (100, 120)  # white EFF at Lv100 and Lv120 — the `lv120` setting picks one
+
+
+def eff_profile(src: dict, cid: str, c: dict) -> dict:
+    """EFF of the hero from sources that are always on: {"w", "r"?, "p"?, "t"?}.
+
+    The game: EFF = ⌊(⌊W·(1000 + gear rate)/1000⌋ + gear flat + r)·(1000 + premium)/1000⌋ (CalcFinalStat.cs).
+    w — white EFF [Lv100, Lv120]: base stat + evolution rewards up to that level (Core Fusion: the original's
+    evolutions); r — flat "buff" rows of the awakening quirk tree (Ranger node +50, by the `quirks` setting);
+    p — permanent self premium of a passive in ‰ (Core Fusion Notia +500); t — transcend passive by the in-game ★1…6:
+    r premium ‰, f flat. The EE (+100 % for some) is not here: the app can't know whether the player has it.
+    """
+    dchars = src["dmgChars"]["characters"]
+    evo = (dchars.get(cid) or {}).get("evolution") or (dchars.get(str(c.get("originalCharacter") or "")) or {}).get("evolution") or []
+    rungs = {r["ev"]: r["level"] for r in src["progression"].get("evolutions", {}).get(str(c.get("rarity")), [])}
+    st = (c.get("stats") or {}).get("buff_chance") or {}
+    w = [st.get("min", 0) + sum(x["value"] for e in evo if rungs.get(e["level"], 999) <= lv
+                                for x in e.get("rewards", []) if x.get("stat") == "ST_BUFF_CHANCE") for lv in EFF_LEVELS]
+    out: dict = {"w": w}
+    q = src["progression"].get("quirks", {})
+    blocks = [q.get("elemental", {}).get(c.get("element")), q.get("class", {}).get(c.get("class")),
+              q.get("subclass", {}).get(c.get("subClass")) if c.get("subClass") else None]
+    r = sum(b.get("value", 0) for bl in blocks for b in (bl or {}).get("buff", [])
+            if b.get("stat") == "buff_chance" and b.get("applying") == "add")
+    if r:
+        out["r"] = r
+    skills, buffs = src["skills"], src["dmgBuffs"]["buffs"]
+    p = 0
+    for sid in c.get("skills") or []:
+        sk = skills.get(sid) or {}
+        if sk.get("type") != "fusion_passive":
+            continue
+        for e in sk.get("effects") or []:
+            if e.get("type") == "BT_STAT_PREMIUM" and e.get("stat") == "buff_chance" and e.get("target") == "me":
+                for b in buffs.get(e.get("buff"), [])[:1]:
+                    if b.get("applyingType") == "OAT_RATE" and b.get("createType") in ("PASSIVE", "PASSIVE2"):
+                        p += b.get("value", 0)
+    if p:
+        out["p"] = p
+    rows = (src["progression"].get("skill8") or {}).get(unique_passive(src, cid) or "", {})
+    by_star = [rows.get(str(trans_level(src, cid, star)), []) for star in range(1, 7)]
+    t = {k: [sum(x.get("value", 0) for x in lv if x.get("stat") == "buff_chance" and x.get("applying") == mode) for lv in by_star]
+         for k, mode in (("r", "rate"), ("f", "add"))}
+    if any(t["r"]) or any(t["f"]):
+        out["t"] = {k: v for k, v in t.items() if any(v)}
+    return out
+
+
 def main_values(src: dict, pools: dict) -> dict:
     """Main line values of 6★ gear at +10 by Breakthrough tier: slot → grade → label → [T0, T1, T2, T3, T4].
 
     Game units: ‰ for percent stats (CHC 400 = 40 %), points for flat ones. Value = (int)(base × (1 + Σ enhance) ×
     (1 + Σ tier factors)) (CItemMainOption_get_OptionValue.cs); the app assumes every main is +10. Items of one slot
-    and grade may differ (weapon flat ATK 190/200): the smallest is taken, so a total built from it never exceeds the
-    game's.
+    and grade may differ: the "Ether" set (Etheric Gloves of Attack: EFF 45 instead of 50, Ether Blade ATK 950
+    instead of 1000) is one weaker item per slot, so the value most items carry is taken; on a tie, the smaller.
     """
     enh = src.get("enhance") or {}
     ench = enh.get("enhanceFactor", 0.4) * enh.get("maxEnhance", 10)
     limits = src.get("breakLimits") or {}
-    out: dict = {}
+    rows: dict = {}  # (slot, grade, label) → {row: items}
     for slot in ("weapon", "accessory", *ARMOR_SLOTS):
         for it in src[slot].values():
             if it.get("star") != 6 or it.get("grade") not in APP_GRADES:
@@ -536,10 +600,13 @@ def main_values(src: dict, pools: dict) -> dict:
                     lab = option_label(o)
                     if not lab:
                         continue
-                    row = [int(o["value"] * (1 + ench) * (1 + sum(factors[:bt])) + 1e-6) for bt in range(5)]
-                    by = out.setdefault(slot, {}).setdefault(it["grade"], {})
-                    if lab not in by or row[0] < by[lab][0]:
-                        by[lab] = row
+                    row = tuple(int(o["value"] * (1 + ench) * (1 + sum(factors[:bt])) + 1e-6) for bt in range(5))
+                    seen = rows.setdefault((slot, it["grade"], lab), {})
+                    seen[row] = seen.get(row, 0) + 1
+    out: dict = {}
+    for (slot, grade, lab), seen in rows.items():
+        row = max(seen, key=lambda r: (seen[r], [-v for v in r]))
+        out.setdefault(slot, {}).setdefault(grade, {})[lab] = list(row)
     return out
 
 
@@ -953,6 +1020,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         entry["flat"] = flat_profile({**c, "id": cid}, src["progression"])
         entry["spd"] = entry["flat"].pop("SPD")  # база SPD для бонуса Speed Set: [lv100, макс. Limit Break, quirks]
         entry["chc"] = crit_profile(src, cid, c)
+        entry["eff"] = eff_profile(src, cid, c)
         if not all(entry["flat"].get(ax) for ax in ("ATK", "DEF", "HP")):
             warn.add(f"{who}: нет базовых статов — flat/% для него оценивается по средним")
         chars.append(entry)
@@ -1045,6 +1113,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         "chars": chars,
         "synergy": build_synergy(src, warn),
         **({"teams": teams} if (teams := build_teams(src, chars, warn)) else {}),
+        **({"bosses": bosses} if (bosses := build_bosses(src, chars, warn)) else {}),
     }
 
 
@@ -1321,6 +1390,257 @@ def build_teams(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
                 t["g"].append(guide)
     used = sorted({g for t in teams.values() for g in t["g"]})
     return {"guides": {g: title(g) for g in used}, "list": list(teams.values())}
+
+
+# --------------------------------------------------------------------------- боссы
+
+# boss guides the app lists, in this order (.x/0200-boss D1); hidden guides (adventure license — closed, monad gate —
+# route maps without stats) and towers / story bosses are not listed
+BOSS_MODES = {"special-request": "sr", "guild-raid": "gr", "world-boss": "wb", "joint-challenge": "jc",
+              "irregular-extermination": "ie", "dimensional-singularity": "ds"}
+ADV_OF = {"atk": "atk", "def": "def", "hp": "hp", "speed": "spd"}
+# BT_REVERSE_HEAL_BASED_* has no glossary key; outerpedia's skill-view.ts shows it as "Fixed Damage" (tooltip 75)
+IMMUNE_FALLBACK = {"BT_REVERSE_HEAL_BASED_TARGET": "75", "BT_REVERSE_HEAL_BASED_CASTER": "75"}
+
+
+def monster_stat(mon: dict, slug: str, level: int, adv: dict | None = None) -> int | None:
+    """outerpedia monster-stats.ts statAt(): min + ⌊(max − min)·(level − 1)/99⌋ (CalcStat.cs, extrapolated past Lv100);
+    a dungeon's or rank's adv (‰) scales ATK/DEF/HP/SPD only. The Challenge quirk (bosses' q) is the app's, not here."""
+    r = (mon.get("stats") or {}).get(slug)
+    if not r:
+        return None
+    v = r["min"] + ((r["max"] - r["min"]) * (level - 1)) // 99
+    a = (adv or {}).get(ADV_OF.get(slug, ""))
+    return (v * (1000 + a)) // 1000 if a else v
+
+
+def rank_slices(d: dict) -> dict[int, tuple[int, int]]:
+    """outerpedia encounters.ts ranksOfMonster(): with several bosses on one rank ladder (world boss leagues 3–4),
+    boss k plays from the first rank at its own level up to the next boss's first rank. {monster index: (lo, hi)}."""
+    ranks, mons = d.get("ranks") or [], d["monsters"]
+    bosses = [m for m in mons if m["role"] != "add"]
+    starts = [next((j for j, r in enumerate(ranks) if r.get("level") == b["level"]), -1) for b in bosses]
+    split = len(bosses) >= 2 and all((s == 0) if i == 0 else (s > starts[i - 1]) for i, s in enumerate(starts))
+    out = {}
+    for i, m in enumerate(mons):
+        k = next((q for q, b in enumerate(bosses) if b["id"] == m["id"]), -1) if split and m["role"] != "add" else -1
+        out[i] = (starts[k], starts[k + 1] if k + 1 < len(starts) else len(ranks)) if k >= 0 else (0, len(ranks))
+    return out
+
+
+def main_boss(units: list[dict]) -> dict:
+    """The fight's boss (outerpedia bossWaveMonsters / groupCombatants): a boss of the last wave that has bosses, the one
+    with hpLines first; no boss at all — the first unit."""
+    bosses = [u for u in units if u["role"] == "boss"]
+    if not bosses:
+        return units[0]
+    last = max(u.get("wave") or 0 for u in bosses)
+    wave = [u for u in bosses if (u.get("wave") or 0) == last]
+    return next((u for u in wave if u.get("hpLines")), wave[0])
+
+
+def stage_label(d: dict, rank: dict | None) -> str:
+    """Stage name, language-neutral: "7" (special request, guild raid), "4:SS" (world boss league 4, rank SS),
+    "AA+" (singularity rank), "very_hard" (joint challenge, irregular)."""
+    diff = d.get("difficulty") or {}
+    key = diff.get("key") or ""
+    if rank and rank.get("name"):
+        return f"{diff.get('order')}:{rank['name']}" if key.startswith("league_") else rank["name"]
+    if rank and rank.get("stage"):
+        return str(rank["stage"])
+    return str(diff.get("order")) if key.startswith("stage_") else key
+
+
+def fight_rows(enc: dict, mons: dict, dungeons: list[tuple[str, dict]]) -> list[tuple[str, int, int, int, str]]:
+    """[(label, level, RES, SPD, boss monster id)] — one per stage, in the game's order."""
+    rows = []
+    for _, d in dungeons:
+        ranks = d.get("ranks") or []
+        if not ranks:
+            units = [{**m, "lvl": m["level"]} for m in d["monsters"]]
+            rows.append((d, None, units, d.get("adv")))
+            continue
+        sl = rank_slices(d)
+        for ri, r in enumerate(ranks):
+            units = [{**m, "lvl": r.get("level", m["level"])} for i, m in enumerate(d["monsters"]) if sl[i][0] <= ri < sl[i][1]]
+            rows.append((d, r, units, r.get("adv")))  # a rank's adv replaces the dungeon's (expandRankContexts)
+    out = []
+    for d, r, units, adv in rows:
+        b = main_boss(units)
+        mon = mons.get(b["id"])
+        res, spd = (monster_stat(mon, "buff_resist", b["lvl"]), monster_stat(mon, "speed", b["lvl"], adv)) if mon else (None, None)
+        if res is not None and spd is not None:
+            out.append((stage_label(d, r), b["lvl"], res, spd, b["id"]))
+    return out
+
+
+def immune_ids(gl: dict, mon: dict) -> list[str]:
+    """Glossary effect ids (the keys of synergy.statuses) a monster is immune to — outerpedia skill-view.ts
+    immunityChipEffects: immuneTooltips, then buffImmune BT types (debuff side first), then statBuffImmune ST types."""
+    by_tip, by_key, effects = gl.get("effectByTooltip", {}), gl.get("effectByKey", {}), gl.get("effects", {})
+    deb, buf = by_key.get("debuff", {}), by_key.get("buff", {})
+    refs = [by_tip.get(str(t), str(t)) for t in mon.get("immuneTooltips", [])]
+    for t in mon.get("buffImmune", []):
+        base = re.sub(r"\d+", "", t)
+        refs.append(deb.get(t) or deb.get(base) or buf.get(t) or buf.get(base) or IMMUNE_FALLBACK.get(t))
+    refs += [deb.get(f"BT_STAT|{t}") or buf.get(f"BT_STAT|{t}") for t in mon.get("statBuffImmune", [])]
+    out: list[str] = []
+    for x in refs:
+        if x and str(x) in effects and str(x) not in out:
+            out.append(str(x))
+    return out
+
+
+def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
+    """Boss fights of outerpedia's guides for the boss on «Команда» (.x/0200-boss stage B).
+
+    {q: Challenge quirk ‰ on boss RES (−200 at the full tree), t: {table id: [[level, RES, SPD, stage label]…]} (RES raw;
+    identical tables shared), b: [{key, name, mode, element, class, table, imm, immAll?, group?, live?, guide, teams?}]}.
+    imm — effect ids the boss is immune to at the top stage; immAll — at every stage, when the lower stages block less;
+    live — [start, battle end] of the latest season (world boss, guild raid, joint challenge); teams — the guide's teams
+    for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}]}] (guild raid
+    requirements as the guide writes them: "268", "518/259", "≤180"). Guide texts are not taken (no Russian, D4).
+    None — the guide list was not fetched."""
+    files = src.get("guides")
+    if files is None:
+        warn.add("боссы outerpedia: список гайдов не получен — боссов на «Команде» не будет")
+        return None
+    gl, enc, mons = src["glossaries"], src["encounters"], src["monsters"]
+    by_name = {c["name"]: c["id"] for c in chars}
+
+    def ids_of(slots: list, where: str) -> list[list[str]]:
+        out = []
+        for slot in slots:
+            got = []
+            for name in slot:
+                if name in by_name:
+                    got.append(by_name[name])
+                else:
+                    warn.add(f"боссы outerpedia: герой «{name}» ({where}) не найден в данных")
+            if got:
+                out.append(got)
+        return out
+
+    def group_dungeons(group: str) -> list[tuple[str, dict]]:
+        ds = [(k, d) for k, d in enc.items() if d.get("group") == group and d.get("monsters")]
+        return sorted(ds, key=lambda kd: ((kd[1].get("difficulty") or {}).get("order", 0), kd[0]))
+
+    def seasons(guide_dir: str) -> list[str]:
+        """Season folders of a rotating guide, oldest first."""
+        pre = guide_dir + "/versions/"
+        return sorted({k[len(pre):].split("/", 1)[0] for k in files if k.startswith(pre)})
+
+    def newest(guide_dir: str, name: str, ok=lambda x: True):
+        """(season, json) of the newest season whose file `name` passes ok; (None, None) — none."""
+        for v in reversed(seasons(guide_dir)):
+            x = files.get(f"{guide_dir}/versions/{v}/{name}")
+            if x is not None and ok(x):
+                return v, x
+        return None, None
+
+    sing = {}  # singularity boss monster → its dungeon
+    for gr in (src.get("singularity") or {}).get("groups", []):
+        for b in gr.get("bosses", []):
+            for mid in b.get("monsters", []):
+                sing.setdefault(mid, b["dungeon"])
+
+    sched = src.get("schedule") or {}
+    calendar = [(s, [m for b in s.get("bosses", []) for m in b.get("monsters", [])] if "bosses" in s else s.get("monsters", []), mode)
+                for key, mode in (("worldBoss", "world-boss"), ("guildRaid", "guild-raid"), ("jointChallenge", "joint-challenge"))
+                for s in sched.get(key, [])]
+
+    metas = sorted(((k.split("/")[0], k.rsplit("/", 1)[0], v) for k, v in files.items()
+                    if k.endswith("/meta.json") and k.count("/") == 2 and k.split("/")[0] in BOSS_MODES),
+                   key=lambda x: (list(BOSS_MODES).index(x[0]), x[2].get("order") or 0, x[1]))
+    tables: dict[str, str] = {}  # rows → table id
+    table_rows: dict[str, list] = {}
+    fights = []
+    for mode, gdir, meta in metas:
+        if meta.get("hidden"):
+            continue
+        # (fight key suffix, encounter dungeons, teams)
+        parts: list[tuple[str, list, list]] = []
+        if mode in ("special-request", "irregular-extermination"):
+            body = files.get(gdir + "/teams.json")
+            teams = []
+            if isinstance(body, dict):  # special request: stage buckets; neighbours with the same slots merge
+                for b in body.get("buckets", []):
+                    s = ids_of(b.get("slots", []), gdir)
+                    if teams and teams[-1]["s"] == s and teams[-1]["st"][1] + 1 == b["stages"][0]:
+                        teams[-1]["st"] = [teams[-1]["st"][0], b["stages"][1]]
+                    elif s:
+                        teams.append({"st": list(b["stages"]), "s": s})
+            elif isinstance(body, list):
+                teams = [{"s": s} for e in body if (s := ids_of(e.get("slots", []), gdir))]
+            parts.append(("", group_dungeons(meta.get("group") or ""), teams))
+        elif mode == "dimensional-singularity":
+            dk = sing.get(meta.get("bossId") or "")
+            parts.append(("", [(dk, enc[dk])] if dk in enc else [], []))
+        elif mode == "guild-raid":
+            ver, cfg = newest(gdir, "config.json", lambda x: bool(x.get("main")))
+            _, main = newest(gdir, "main.json", lambda x: bool(x.get("teams")))
+            for slot in ("main", "subA", "subB"):
+                teams = []
+                if slot == "main":
+                    for t in (main or {}).get("teams", []):
+                        s = ids_of(t.get("slots", []), gdir)
+                        req = [{"h": by_name[e["character"]], **{k: str(v) for k, v in (e.get("stats") or {}).items() if k in ("eff", "spd", "trans")}}
+                               for e in ((t.get("requirements") or {}).get("entries") or []) if e.get("character") in by_name]
+                        req = [r for r in req if len(r) > 1]
+                        if s:
+                            teams.append({"s": s, **({"r": req} if req else {})})
+                else:
+                    _, sub = newest(gdir, slot + ".json", lambda x: bool((x.get("team") or {}).get("slots")))
+                    if sub and (s := ids_of(sub["team"]["slots"], gdir)):
+                        teams.append({"s": s})
+                parts.append((":" + slot, group_dungeons((cfg or {}).get(slot) or ""), teams))
+        else:  # world boss, joint challenge: config.json group of the newest season; teams of the newest season with any
+            _, cfg = newest(gdir, "config.json", lambda x: bool(x.get("group")))
+            _, body = newest(gdir, "teams.json")
+            teams = [{"s": s} for sec in ((body or {}).get("sections") or [body or {}]) if (s := ids_of(sec.get("slots") or [], gdir))]
+            parts.append(("", group_dungeons((cfg or {}).get("group") or ""), teams))
+
+        slug = gdir.split("/", 1)[1]
+        ids_in_guide = {m["id"] for _, dungeons, _ in parts for _, d in dungeons for m in d["monsters"]}
+        season = max((s for s, ms, m in calendar if m == mode and ids_in_guide & set(ms)), key=lambda s: s.get("start", ""), default=None)
+        for suffix, dungeons, teams in parts:
+            rows = fight_rows(enc, mons, dungeons)
+            if not rows:
+                warn.add(f"боссы outerpedia: {gdir}{suffix} — нет этапов с RES (формат encounters/monsters изменился?)")
+                continue
+            table = [[lvl, res, spd, label] for label, lvl, res, spd, _ in rows]
+            tid = tables.setdefault(json.dumps(table), f"t{len(tables)}")
+            table_rows[tid] = table
+            if len(teams) == 1 and teams[0].get("st") == [1, len(rows)]:
+                del teams[0]["st"]  # one bucket for every stage
+            top = mons[rows[-1][4]]
+            imm = sorted(immune_ids(gl, top), key=lambda x: (len(x), x))
+            every = set(imm)
+            for mid in dict.fromkeys(r[4] for r in rows):
+                every &= set(immune_ids(gl, mons[mid]))
+            fight = {
+                "key": f"{BOSS_MODES[mode]}:{slug}{suffix}",
+                "name": en(meta.get("title")) if mode in ("world-boss", "dimensional-singularity") else en(top.get("name")),
+                "mode": BOSS_MODES[mode],
+                "element": top.get("element"),
+                "class": top.get("class"),
+                "table": tid,
+                "imm": imm,
+            }
+            if every != set(imm):
+                fight["immAll"] = [x for x in imm if x in every]
+            if mode == "guild-raid":
+                fight["group"] = en((season or {}).get("title")) or re.sub(r"\s+Guild Raid Guide$", "", en(meta.get("title")))
+            if season:
+                fight["live"] = [season["start"], season.get("battleEnd") or season["end"]]
+            fight["guide"] = gdir
+            if teams:
+                fight["teams"] = teams
+            fights.append(fight)
+    q = (gl.get("bossQuirkMods") or {}).get("buff_resist")
+    if q is None:
+        warn.add("боссы outerpedia: нет bossQuirkMods.buff_resist (Challenge quirk) — считаю −200")
+    return {"q": q if q is not None else -200, "t": table_rows, "b": fights}
 
 
 def build_view(label: str, b: dict, ctx: dict, ee_names: dict, warn: Warnings) -> dict:
