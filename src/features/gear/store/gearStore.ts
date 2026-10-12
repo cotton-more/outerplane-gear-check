@@ -5,7 +5,7 @@
 // «Собираю», autoNew, выбранный билд, булавка обмена, билды v1) перенос снимает — их больше никто не читает.
 import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
-import { normalizeStored, starsTo, withStars, type Normalized } from '@/features/gear/model/fusion';
+import { entryTo, normalizeStored, withMap, type Normalized } from '@/features/gear/model/fusion';
 import { gc, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { Bt } from '@/game/item/item';
 import { MAX_SUBS, type Subs, MAX_LIT } from '@/game/item/subs';
@@ -220,10 +220,14 @@ export function decodeGear(text: string, idx: Index): GearStore | 'newer' | null
 // r.worn (надетое base до перехода), если эта вещь снова в его пуле. Надетое fusion не трогаем: его вещи (свои, новые,
 // копия общей записи после правки) остаются у него; надетое из ушедших — снято (gc). Закрепление не переходило
 // ★ перешли к fusion (r.stars) и там остались такими же, у base своих нет — возвращаются; успели поменять — не трогаем
-export function unfuseChar(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn; stars?: number }): GearStore {
-  const back = r.stars !== undefined && st.stars?.[fusion] === r.stars && st.stars[base] === undefined
-    ? withStars(st, starsTo(st.stars, fusion, base)) : st;
-  return unfusePieces(back, base, fusion, r);
+export function unfuseChar(st: GearStore, base: string, fusion: string,
+  r: { moved: string[]; had: string[]; worn?: Worn; stars?: number; crit?: number; pin?: string }): GearStore {
+  // ★ и N — назад, если у fusion стоит то, что перешло, а у base своего нет; снятое закрепление — base, если он его не выбрал
+  const back = <T>(m: Record<string, T> | undefined, v: T | undefined) =>
+    v !== undefined && m?.[fusion] === v && m[base] === undefined ? entryTo(m, fusion, base) : m;
+  const pin = r.pin !== undefined && st.pin?.[base] === undefined ? { ...st.pin, [base]: r.pin } : st.pin;
+  const next = withMap(withMap(withMap(st, 'stars', back(st.stars, r.stars)), 'crit', back(st.crit, r.crit)), 'pin', pin);
+  return unfusePieces(next, base, fusion, r);
 }
 function unfusePieces(st: GearStore, base: string, fusion: string, r: { moved: string[]; had: string[]; worn?: Worn }): GearStore {
   if (!r.moved.length || st.pools[base]?.length) return st;

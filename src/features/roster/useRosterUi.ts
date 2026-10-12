@@ -79,7 +79,7 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     // у X были только ★: они тоже вернутся (moved пуст — unfuseChar двигает одни звёзды)
     // убраны из ростера с pin, N или ★ (cleared) — тоже всё хранилище
     const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') || r.cleared.length ? () => st
-      : (x: GearStore) => r.fixes.reduceRight((y, f) => unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [], stars: f.stars }), x);
+      : (x: GearStore) => r.fixes.reduceRight((y, f) => unfuseChar(y, f.base, f.fusion, { ...f, moved: f.ids, had: [] }), x);
     if (intro !== undefined) {
       say({ text: intro, note: [fixesNote(r.fixes), keptNote].filter(Boolean).join(' '), tab, undo, after: () => rosterApi.replace(prev) });
       return;

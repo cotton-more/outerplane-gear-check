@@ -72,10 +72,11 @@ describe('нормализация: есть X и Core Fusion X — остаёт
     expect(r.roster).toEqual([CAREN]);
   });
 
-  it('закрепление X не переносится к Core Fusion (PLAN Д9: билды у героев разные)', () => {
+  // PLAN Д9: builds differ, so the pin doesn't go to CF; owner 2026-10-12: X keeps nothing — the pin is lifted (fix.pin for «Вернуть»)
+  it('закрепление X не переносится к Core Fusion и снимается с X', () => {
     const st = v2({ [X]: ['p1'] }, { pin: { [X]: buildKey(X, 'Speed') } });
     const r = normalizeFusion(idx, [CF], st);
-    expect({ pools: r.st.pools, pin: r.st.pin }).toEqual({ pools: { [CF]: ['p1'] }, pin: { [X]: buildKey(X, 'Speed') } });
+    expect({ pools: r.st.pools, pin: r.st.pin, fix: r.fixes[0].pin }).toEqual({ pools: { [CF]: ['p1'] }, pin: undefined, fix: buildKey(X, 'Speed') });
   });
 
   it('конфликта нет — то же хранилище (без записи), тот же ростер', () => {
@@ -121,20 +122,19 @@ describe('normalizeStored: все с вещами — в ростере, зат�
     const r = normalizeStored(idx, [CAREN, KAPPA], st);
     expect({ st: r.st === st, roster: r.roster, fixes: r.fixes, added: r.added }).toEqual({ st: true, roster: [CAREN, KAPPA], fixes: [], added: [] });
   });
-  // owner 2026-10-12: a hero out of the roster has no data — pin, N and ★ go; X replaced by its Core Fusion in the roster keeps
-  // pin and N (they come back with the star on X); an unknown id keeps everything
-  it('pin, N и ★ героя не из ростера убираются (cleared); X при Core Fusion в ростере хранит pin и N; незнакомый id — всё', () => {
+  // owner 2026-10-12: a hero out of the roster has no data — pin, N and ★ go; an unknown id keeps everything
+  it('pin, N и ★ героя не из ростера убираются (cleared); незнакомый id — всё на месте', () => {
     const st = v2({ [CAREN]: ['p1'] }, {
-      pin: { [KAPPA]: 'k', [X]: 'x', gone: 'g' }, crit: { [KAPPA]: 50, [X]: 70, [CAREN]: 80 }, stars: { [KAPPA]: 4, gone: 3, [CF]: 5 },
+      pin: { [KAPPA]: 'k', gone: 'g' }, crit: { [KAPPA]: 50, [CAREN]: 80 }, stars: { [KAPPA]: 4, gone: 3, [CF]: 5 },
     });
     const r = normalizeStored(idx, [CAREN, CF], st);
     expect({ pin: r.st.pin, crit: r.st.crit, stars: r.st.stars, cleared: r.cleared }).toEqual({
-      pin: { [X]: 'x', gone: 'g' }, crit: { [X]: 70, [CAREN]: 80 }, stars: { gone: 3, [CF]: 5 }, cleared: [KAPPA],
+      pin: { gone: 'g' }, crit: { [CAREN]: 80 }, stars: { gone: 3, [CF]: 5 }, cleared: [KAPPA],
     });
     expect(normalizeStored(idx, [CAREN, CF], r.st).st).toBe(r.st); // nothing more to clear
   });
 
-  it('X без Core Fusion в ростере — его pin и N тоже убираются; поля без записей исчезают', () => {
+  it('X не в ростере — его pin, N и ★ убираются; поля без записей исчезают', () => {
     const r = normalizeStored(idx, [CAREN], v2({ [CAREN]: ['p1'] }, { pin: { [X]: 'x' }, crit: { [X]: 70 }, stars: { [X]: 4 } }));
     expect([r.cleared, 'pin' in r.st, 'crit' in r.st, 'stars' in r.st]).toEqual([[X], false, false, false]);
   });
@@ -321,7 +321,7 @@ describe('Core Fusion: надетое идёт за вещами', () => {
   });
 });
 
-describe('Core Fusion: звёзды идут за вещами (Z7, PLAN 0190 §4.3); pin и N остаются у X', () => {
+describe('Core Fusion: звёзды и N идут за вещами (Z7, PLAN 0190 §4.3; owner 2026-10-12), pin снимается', () => {
   const stars = (st: GearStore) => st.stars;
   it('нормализация: ★ X → CF, запись X уходит; пул, надетое, ★ — вместе', () => {
     const st = setStars(v2({ [X]: ['p1'] }), X, 5);
@@ -343,10 +343,19 @@ describe('Core Fusion: звёзды идут за вещами (Z7, PLAN 0190 §
     const other = normalizeFusion(idx, [CF], setStars(v2({ [X]: ['p1'] }), CAREN, 3));
     expect(other.st.stars).toEqual({ [CAREN]: 3 });
   });
-  it('pin и N остаются у X', () => {
+  it('N — к CF вместе с ★; у CF свой N — остаётся он', () => {
     const st = setCrit(setStars(v2({ [X]: ['p1'] }), X, 5), X, 80);
-    const n = normalizeFusion(idx, [CF], st).st;
-    expect([n.crit, n.stars]).toEqual([{ [X]: 80 }, { [CF]: 5 }]);
+    const r = normalizeFusion(idx, [CF], st);
+    expect([r.st.crit, r.st.stars, r.fixes[0].crit]).toEqual([{ [CF]: 80 }, { [CF]: 5 }, 80]);
+    const both = normalizeFusion(idx, [CF], setCrit(st, CF, 60));
+    expect([both.st.crit, both.fixes[0].crit]).toEqual([{ [CF]: 60 }, undefined]);
+  });
+  it('окно перехода: N и pin X — к CF / сняты; «Вернуть» — N и pin снова у X', () => {
+    const st = setCrit(v2({ [X]: ['p1'] }, { pin: { [X]: buildKey(X, 'Speed') } }), X, 70);
+    const sw = switchFusion(idx, [X], st, CF)!;
+    expect([sw.st.crit, sw.st.pin, sw.crit, sw.pin]).toEqual([{ [CF]: 70 }, undefined, 70, buildKey(X, 'Speed')]);
+    const back = unfuseChar(sw.st, sw.from, sw.to, sw);
+    expect([back.crit, back.pin]).toEqual([{ [X]: 70 }, { [X]: buildKey(X, 'Speed') }]);
   });
   it('окно перехода «Да, Core Fusion X»: ★ — к CF; «Вернуть» — к X; без вещей — тоже', () => {
     const st = setStars(v2({ [X]: ['p1'] }), X, 5);

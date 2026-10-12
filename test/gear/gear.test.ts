@@ -910,11 +910,11 @@ describe('N героя — сколько крита нужно герою (crit
     expect(undoDrop(setCrit(r.st, CAREN, 70), r.dropped).crit).toEqual({ [CAREN]: 70 });
   });
 
-  it('Core Fusion N не переносит', () => {
+  it('Core Fusion переносит N вместе с вещами (owner 2026-10-12)', () => {
     const cf = D.chars.find((c) => c.fusionOf)!;
     const st = setCrit(v2([rec('p1', helmet({ CHC: 2 }))], { [cf.fusionOf!]: ['p1'] }), cf.fusionOf!, 80);
     const n = normalizeFusion(idx, [cf.id], st).st;
-    expect(n.crit).toEqual({ [cf.fusionOf!]: 80 });
+    expect(n.crit).toEqual({ [cf.id]: 80 });
   });
 });
 

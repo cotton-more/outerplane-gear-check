@@ -241,8 +241,8 @@ Epsilon.
   on whom?" or in rating for a character.
 - **The star on Eternal** — a window "Switch back to Eternal?": Core Fusion Eternal leaves the roster, Core Fusion
   Eternal's gear moves to Eternal.
-- After "Yes" — a message with "Undo"; "Cancel" changes nothing. The pinned set and the crit number don't move over: the heroes' builds
-  differ; the stars go with the pieces.
+- After "Yes" — a message with "Undo"; "Cancel" changes nothing. The stars and the crit number go with the pieces; the pinned set is
+  lifted (the heroes' builds differ) — "Undo" brings it back too.
 - **Both at once** — in data saved by an older version, in a gear code or in a roster code: Core Fusion stays, with no
   window, in one message. Core Fusion Eternal has no gear — Eternal's gear moves to Core Fusion Eternal; it has its
   own — Eternal's gear is removed.
