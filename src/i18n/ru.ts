@@ -593,7 +593,7 @@ export const ru = {
     nobodyFound: 'Никого не нашлось.',
     rosterToggle: (name: string, own: boolean) => `${name} — ${own ? 'убрать из ростера' : 'добавить в ростер'}`,
     starsUnset: 'звёзды не указаны',
-    // the star sheet (card and Team): the title, the six stars and the line for heroes whose stars give crit
+    // the star sheet (card and Team): the title and the six stars
     stars: (name: string) => `Звёзды: ${name}`,
     star: (n: number) => `★${n}`,
     starsGroup: 'Звёзды героя',

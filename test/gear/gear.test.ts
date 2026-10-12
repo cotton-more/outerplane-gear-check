@@ -944,6 +944,11 @@ describe('звёзды героя — in-game ★1…6 (stars, transcend; PLAN 0
     }
   });
 
+  it('чтение: рядом с верным значением неверное отбрасывается, верное остаётся', () => {
+    const mixed = { ...base(), stars: { [CAREN]: 5, [KAPPA]: 7 } };
+    expect([restoreGear(mixed, idx).stars, readsWhole(mixed, idx)]).toEqual([{ [CAREN]: 5 }, false]);
+  });
+
   it('от пула не зависит: gc звёзд не снимает; dropChar снимает, undoDrop возвращает', () => {
     const st = setStars(base(), CAREN, 4);
     expect(gc(removeFrom(st, CAREN, 'p1')).stars).toEqual({ [CAREN]: 4 });

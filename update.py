@@ -507,8 +507,8 @@ def crit_profile(src: dict, cid: str, c: dict) -> dict:
     # sheet; passive, so before the 100 % clamp
     sid = unique_passive(src, cid)
     rows = (src["progression"].get("skill8") or {}).get(sid or "", {})
-    trans = [sum(r["value"] for r in rows.get(str(trans_level(src, cid, star)), [])
-                 if r["stat"] == "critical_rate" and r["applying"] == "add") for star in range(1, 7)]
+    trans = [sum(r.get("value", 0) for r in rows.get(str(trans_level(src, cid, star)), [])
+                 if r.get("stat") == "critical_rate" and r.get("applying") == "add") for star in range(1, 7)]
     if any(trans):
         out["trans"] = trans
     return out

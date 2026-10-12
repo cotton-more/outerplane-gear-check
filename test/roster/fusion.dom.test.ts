@@ -15,6 +15,7 @@ const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/da
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
 const char = (name: string) => D.chars.find((c) => c.name === name)!;
 const caren = char('Caren'), eternal = char('Eternal'), cfEternal = char('Core Fusion Eternal'), eps = char('Epsilon'), cfEps = char('Core Fusion Epsilon');
+const lisha = char('Lisha'), cfLisha = char('Core Fusion Lisha');
 const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
 const speed = set('Speed');
 const NEW = { setId: speed, subs: { 'DEF%': 2, CHC: 2, CHD: 3, HP: 1 } };
@@ -306,6 +307,19 @@ describe('пакетные добавления — без окон, одно с
     expect($('.gear-toast')?.textContent).toContain('Core Fusion Eternal kept in the roster: Eternal is replaced, their gear moved to Core Fusion Eternal.');
     await click(byText('.gear-toast button', 'Undo'));
     expect({ roster: roster(), pools: stored().pools }).toEqual({ roster: [eternal.id], pools: { [eternal.id]: ['p1'] } });
+  });
+
+  // X has stars but no pieces: the move is stars-only (fix kind 'none'), and «Вернуть» must bring the stars back too
+  it('код ростера «Заменить» с X и Core Fusion, у X только звёзды — звёзды переходят; «Вернуть» — звёзды снова у X', async () => {
+    const gear = G([], {}, { stars: { [lisha.id]: 5 } });
+    await mount({ tab: 'chars' }, {}, { gear, roster: [lisha.id] });
+    const ta = await openBackup();
+    ta.value = 'lisha, core-fusion-lisha';
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+
+    expect({ roster: roster(), stars: stored().stars }).toEqual({ roster: [cfLisha.id], stars: { [cfLisha.id]: 5 } });
+    await click(byText('.gear-toast button', 'Undo'));
+    expect({ roster: roster(), stars: stored().stars }).toEqual({ roster: [lisha.id], stars: { [lisha.id]: 5 } });
   });
 });
 

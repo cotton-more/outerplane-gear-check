@@ -310,7 +310,7 @@ entry — game icons.
 an integer 0…100; no entry — 100; [MODEL.md §12](MODEL.md)) and `stars` (hero → transcend ★ 1…6, a fact about the hero;
 no entry — not set, the stars' crit is not counted; `Ctx.stars`). Invariants: worn ⊂ hero pool (`syncWorn` in
 every mutation via `gc`); `pin`, `crit` and `stars` don't depend on the pool; Core Fusion moves only `stars` (with the pieces, like `worn` — the pin and N stay, they are about the build; «Вернуть» moves it back only if nothing changed) — `dropChar` (and
-«Вернуть» `undoDrop`), an explicit "don't pin" / «Сбросить» clear them; a `crit` value that isn't an integer 0…100 is dropped
+«Вернуть» `undoDrop`), an explicit "don't pin" / «Сбросить» clear them; a `crit` value that isn't an integer 0…100, or a `stars` value that isn't an integer 1…6, is dropped
 on read (the read is then "not whole"). Fields of the old
 model (`marks`, `autoNew`, `aim`, `pinned`) are read and discarded; a player from the old model is shown a one-time
 message (`ogc.modelNote`; only for a v1/v2 store with pieces; its extra sentence about cleared marks, `ui.modelNoteMarks`, only when

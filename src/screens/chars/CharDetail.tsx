@@ -167,7 +167,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
         </button>
       )} stars={own ? (
         live
-          ? <button type="button" className="cd-stars" aria-label={t.card.starsAria(c.name, stars)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} /></button>
+          ? <button type="button" className="cd-stars hit" aria-label={t.card.starsAria(c.name, stars)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} /></button>
           : <span className="cd-stars" {...tour('hstars')}><MiniStars n={stars} /></span>
       ) : undefined} />
       {fusedBy && (

@@ -9,6 +9,7 @@ import { pinOptions } from '@/game/build/profile';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { loadGear, readGearCode, readsWhole } from '@/features/gear/store/gearStore';
 import { decodeBackup, encodeBackup, type Backup } from '@/features/roster/backup';
+import { seal, unseal } from '@/shared/bits';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -189,6 +190,13 @@ describe('2. резервная копия', () => {
     ];
     it.each(cases)('%s — «повреждён»', (_, bad) => {
       expect(decodeBackup(bad)).toBe('broken');
+    });
+    // a code whose CRC is valid but the stars field is out of range (the field is the last 3 bits of a stars-only code)
+    it.each([0, 7])('звёзды %i при верной сумме — «повреждён»', (n) => {
+      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR6-', ''))!;
+      const bad = [...bits.slice(0, -3), (n >> 2) & 1, (n >> 1) & 1, n & 1];
+      expect(decodeBackup(`OGC-GEAR6-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
+      expect(decodeBackup(`OGC-GEAR6-${seal(bad)}`)).toBe('broken');
     });
     it('обрезан на любую длину — «повреждён»', () => {
       for (let n = head; n < code.length; n++) expect(decodeBackup(code.slice(0, n))).toBe('broken');

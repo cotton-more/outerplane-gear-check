@@ -4,7 +4,7 @@
 // (features/tryon) — его строка, «Надеть» и заголовок про него.
 import { useMemo, useState } from 'react';
 import { FLAT, isArmor, type Index } from '@/game/data';
-import type { Ctx } from '@/game/context';
+import { NO_STARS, type Ctx } from '@/game/context';
 import { dropSubs } from '@/game/item/subs';
 import type { ItemInput } from '@/game/item/item';
 import { namesLine } from '@/game/text';
@@ -84,7 +84,8 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
       let v = memo.get(id);
       if (!v) {
         const st = storeFor(idx, roster, store, id);
-        v = st === store ? view : poolView(ctx, st);
+        // the switch moves X's ★ to CF too: count CF's crit with them, as after «Да»
+        v = st === store ? view : poolView(st.stars !== store.stars ? { ...ctx, stars: st.stars ?? NO_STARS } : ctx, st);
         memo.set(id, v);
       }
       return v;

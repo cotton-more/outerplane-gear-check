@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
 import { suggest } from '@/game/synergy/suggest';
+import { STARS } from '@/features/gear/model/gear';
 import { compareChars } from '@/features/roster/charFilter';
 import { StarSheet } from '@/game/hero/Stars';
 import { TeamPicker } from '@/features/team/ui/TeamPicker';
@@ -18,7 +19,7 @@ import { Notice } from '@/shared/ui/Notice';
 import { Sheet } from '@/shared/ui/Sheet';
 
 const RANK = ['S', 'A', 'B', 'C', 'D', 'E'];
-const STAR0 = 6; // a picked hero starts at ★6 (owner decision 3)
+const STAR0 = STARS; // a picked hero starts at ★6 (owner decision 3)
 
 export function TeamScreen({ roster, off, stars, onStar, onChars }: {
   roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>; stars: Readonly<Record<string, number>>;

@@ -269,7 +269,7 @@ export function App() {
               canShare={!tour.run && !gear.newer} />
           </section>
           <section id="view-team" className="view team-view" role="tabpanel" aria-labelledby="tab-team" hidden={s.tab !== 'team'}>
-            <TeamScreen roster={rosterList} off={off} stars={gear.store.stars ?? NO_STARS} onStar={(id, n) => gear.set(setStars(gear.store, id, n))} onChars={() => onTab('chars')} />
+            <TeamScreen roster={rosterList} off={off} stars={gear.store.stars ?? NO_STARS} onStar={(id, n) => { const next = setStars(gear.store, id, n); if (next !== gear.store) gear.set(next); }} onChars={() => onTab('chars')} />
           </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}

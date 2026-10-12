@@ -36,7 +36,7 @@ export function suggest(syn: Synergy | undefined, guide: GuideTeams | undefined,
     const teams = team.length ? 0 : list.filter((t) => slotOf(t, id) >= 0).length;
     const fixes: Fix[] = [];
     if (syn && open.size) {
-      for (const h of checkTeam(syn, [...team, { id, star: starOf?.(id) ?? 6 }], pool)) {
+      for (const h of checkTeam(syn, [...team, { id, star: starOf?.(id) ?? 6 /* ★6 — the highest */ }], pool)) {
         if (h.id === id) continue;
         for (const n of h.needs) {
           const was = open.get(`${h.id}:${n.on}:${n.st}`);
