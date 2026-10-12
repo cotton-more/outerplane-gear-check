@@ -10,6 +10,7 @@ import { CRIT_NEED, pinOf, pinOptions } from '@/game/build/profile';
 import { comboSig } from '@/game/build/variants';
 import { DROP_LEVEL, MAX_LIT, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
 import { type Bt, type ItemInput } from '@/game/item/item';
+import type { EffCal } from '@/game/stat/eff';
 
 
 export interface Piece {
@@ -46,6 +47,10 @@ export interface GearStore {
   // hero → in-game ★1…6 (transcend); no entry — not set. Doesn't depend on the pool; Core Fusion moves it X → CF with
   // the pieces, the game keeps the stars (owner, Z7) — unlike pin and N
   stars?: Record<string, number>;
+  // hero → the stat-screen EFF the player typed and the app's EFF at that moment (.x/0200-boss Q3, game/stat/eff
+  // effShown): the card shows the app's EFF × typed / at. No entry — not typed. Like crit and stars: doesn't depend on the
+  // pool, Core Fusion moves it X → CF (shown with «≈» there: CF's own count differs)
+  eff?: Record<string, EffCal>;
   [extra: string]: unknown;
 }
 
@@ -100,18 +105,19 @@ export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slo
 // которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; at: number;
-  worn?: Worn; pin?: string; crit?: number; stars?: number;
+  worn?: Worn; pin?: string; crit?: number; stars?: number; eff?: EffCal;
 }
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
   const ids = st.pools[charId] ?? [];
   const { [charId]: _, ...pools } = st.pools;
-  const { pin: _p, crit: _c, stars: _s, ...rest } = st;
+  const { pin: _p, crit: _c, stars: _s, eff: _e, ...rest } = st;
   const { [charId]: myPin, ...pin } = st.pin ?? {};
   const { [charId]: myCrit, ...crit } = st.crit ?? {};
   const { [charId]: myStars, ...stars } = st.stars ?? {};
+  const { [charId]: myEff, ...eff } = st.eff ?? {};
   const next = gc({
     ...rest, pools, ...(Object.keys(pin).length ? { pin } : {}), ...(Object.keys(crit).length ? { crit } : {}),
-    ...(Object.keys(stars).length ? { stars } : {}),
+    ...(Object.keys(stars).length ? { stars } : {}), ...(Object.keys(eff).length ? { eff } : {}),
   });
   const dropped: Dropped = {
     charId, ids,
@@ -121,6 +127,7 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     ...(myPin !== undefined ? { pin: myPin } : {}),
     ...(myCrit !== undefined ? { crit: myCrit } : {}),
     ...(myStars !== undefined ? { stars: myStars } : {}),
+    ...(myEff !== undefined ? { eff: myEff } : {}),
   };
   return { st: next, dropped };
 }
@@ -135,9 +142,10 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const pin = d.pin !== undefined ? { ...st.pin, [d.charId]: st.pin?.[d.charId] ?? d.pin } : st.pin;
   const crit = d.crit !== undefined ? { ...st.crit, [d.charId]: st.crit?.[d.charId] ?? d.crit } : st.crit;
   const stars = d.stars !== undefined ? { ...st.stars, [d.charId]: st.stars?.[d.charId] ?? d.stars } : st.stars;
+  const eff = d.eff !== undefined ? { ...st.eff, [d.charId]: st.eff?.[d.charId] ?? d.eff } : st.eff;
   return syncWorn({
     ...st, pieces, pools: Object.fromEntries(entries), ...(worn ? { worn } : {}), ...(pin ? { pin } : {}), ...(crit ? { crit } : {}),
-    ...(stars ? { stars } : {}),
+    ...(stars ? { stars } : {}), ...(eff ? { eff } : {}),
   });
 }
 
@@ -241,6 +249,22 @@ export function setStars(st: GearStore, charId: string, n: number | null): GearS
   const stars = n === null ? rest : { ...rest, [charId]: n };
   const next: GearStore = { ...st, stars };
   if (!Object.keys(stars).length) delete next.stars;
+  return next;
+}
+
+// the typed stat-screen EFF (.x/0200-boss Q3): typed — what the game shows, at — the app's EFF then; null — not typed
+export const EFF_MAX = 9999;
+export const effCal = (st: Pick<GearStore, 'eff'>, charId: string): EffCal | null => st.eff?.[charId] ?? null;
+// store it (typed and at — integers 1…EFF_MAX) or drop it (null — «Сбросить»). Anything else or nothing changed — the same store
+const okEff = (n: number) => Number.isInteger(n) && n >= 1 && n <= EFF_MAX;
+export function setEff(st: GearStore, charId: string, cal: EffCal | null): GearStore {
+  if (cal !== null && !(okEff(cal.typed) && okEff(cal.at))) return st;
+  const was = effCal(st, charId);
+  if (was === cal || (was && cal && was.typed === cal.typed && was.at === cal.at)) return st;
+  const { [charId]: _, ...rest } = st.eff ?? {};
+  const eff = cal === null ? rest : { ...rest, [charId]: { typed: cal.typed, at: cal.at } };
+  const next: GearStore = { ...st, eff };
+  if (!Object.keys(eff).length) delete next.eff;
   return next;
 }
 

@@ -1,6 +1,7 @@
 // Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
 // размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11), OGC-GEAR5 —
-// с N героя («сколько крита нужно герою», crit), OGC-GEAR6 — со звёздами героя (transcend).
+// с N героя («сколько крита нужно герою», crit), OGC-GEAR6 — со звёздами героя (transcend), OGC-GEAR7 — с эффом из игры
+// (.x/0200-boss Q3).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
@@ -38,6 +39,7 @@ const meaning = (st: GearStore) => ({
   worn: Object.fromEntries(Object.entries(st.worn ?? {}).map(([h, w]) => [h, Object.fromEntries(Object.entries(w).map(([s, id]) => [s, content(st.pieces[id!])]))])),
   pin: st.pin ?? {},
   crit: st.crit ?? {},
+  eff: st.eff ?? {},
 });
 
 describe('1. вещь в коде', () => {
@@ -163,7 +165,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.2 вид: без пробелов, только буквы и цифры после префикса', () => {
-    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR6-[0-9A-Za-z]+$/);
+    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR7-[0-9A-Za-z]+$/);
   });
 
   it('2.7 начинается с OGC-GEAR и номера больше 2; разбор выпущенной версии — «код новее»', () => {
@@ -175,7 +177,7 @@ describe('2. резервная копия', () => {
 
   describe('2.8 целостность', () => {
     const code = encodeBackup(rich(), roster10);
-    const head = 'OGC-GEAR6-'.length;
+    const head = 'OGC-GEAR7-'.length;
     const body = code.slice(head);
     const flip = (s: string, i: number) => s.slice(0, i) + (s[i] === 'a' ? 'b' : 'a') + s.slice(i + 1);
     const sw = [...body].findIndex((ch, i) => i >= 10 && ch !== body[i + 1]); // соседние разные знаки
@@ -191,12 +193,21 @@ describe('2. резервная копия', () => {
     it.each(cases)('%s — «повреждён»', (_, bad) => {
       expect(decodeBackup(bad)).toBe('broken');
     });
-    // a code whose CRC is valid but the stars field is out of range (the field is the last 3 bits of a stars-only code)
+    // a code whose CRC is valid but the stars field is out of range (the field is the 3 bits before the EFF flag of a
+    // stars-only code)
     it.each([0, 7])('звёзды %i при верной сумме — «повреждён»', (n) => {
-      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR6-', ''))!;
-      const bad = [...bits.slice(0, -3), (n >> 2) & 1, (n >> 1) & 1, n & 1];
-      expect(decodeBackup(`OGC-GEAR6-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
-      expect(decodeBackup(`OGC-GEAR6-${seal(bad)}`)).toBe('broken');
+      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR7-', ''))!;
+      const bad = [...bits.slice(0, -4), (n >> 2) & 1, (n >> 1) & 1, n & 1, 0];
+      expect(decodeBackup(`OGC-GEAR7-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
+      expect(decodeBackup(`OGC-GEAR7-${seal(bad)}`)).toBe('broken');
+    });
+    // the same for the typed EFF: an EFF-only code ends with the two 14-bit numbers; 0 and 10 000+ are out of range
+    it.each([0, 10000])('эфф %i при верной сумме — «повреждён»', (n) => {
+      const bits = unseal(encodeBackup(store([], {}, { eff: { [CAREN]: { typed: 466, at: 233 } } }), []).replace('OGC-GEAR7-', ''))!;
+      const num = Array.from({ length: 14 }, (_, i) => (n >> (13 - i)) & 1);
+      expect(decodeBackup(`OGC-GEAR7-${seal(bits)}`)).not.toBe('broken');
+      expect(decodeBackup(`OGC-GEAR7-${seal([...bits.slice(0, -28), ...num, ...bits.slice(-14)])}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR7-${seal([...bits.slice(0, -14), ...num])}`)).toBe('broken');
     });
     it('обрезан на любую длину — «повреждён»', () => {
       for (let n = head; n < code.length; n++) expect(decodeBackup(code.slice(0, n))).toBe('broken');
@@ -210,7 +221,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.10 номер формата выше известного — «новее»', () => {
-    expect(decodeBackup('OGC-GEAR7-abc')).toBe('newer');
+    expect(decodeBackup('OGC-GEAR8-abc')).toBe('newer');
     expect(decodeBackup('OGC-GEAR12-abc')).toBe('newer');
   });
 
@@ -258,6 +269,38 @@ describe('2. резервная копия', () => {
     expect(meaning(b.raw)).toEqual(meaning(was));
     expect(b.raw.crit).toEqual({ [CAREN]: 85 });
     expect(b.raw.stars).toBeUndefined();
+  });
+
+  // a code of the released version (OGC-GEAR6, before the typed EFF): Caren — Critical Hit helmet T4 worn, N 85, ★5; Rin — roster only
+  it('OGC-GEAR6 читается: ростер, пулы, надетое, N и звёзды — как были; эффа из игры нет ни у кого', () => {
+    const V6 = 'OGC-GEAR6-2Vu7aCdwner1TI3cwfkEYvrOQku8Dq';
+    const helmet = P('helmet', { setId: set('Critical Hit'), ...sub({ CHC: 2, SPD: 1 }), bt: 4, at: '2026-10-01' });
+    const was = store([helmet], { [CAREN]: [helmet.id] }, { worn: { [CAREN]: { helmet: helmet.id } }, crit: { [CAREN]: 85 } });
+
+    const b = decodeBackup(V6) as Backup;
+
+    expect(new Set(b.roster)).toEqual(new Set([CAREN, RIN]));
+    expect(meaning(b.raw)).toEqual(meaning(was));
+    expect(b.raw.stars).toEqual({ [CAREN]: 5 });
+    expect(b.raw.eff).toBeUndefined();
+  });
+
+  it('эфф из игры: туда и обратно, вместе с N и звёздами, и у героя без вещей; без него — поля нет', () => {
+    const helmet = P('helmet', { setId: set('Speed') });
+    const eff = { [CAREN]: { typed: 466, at: 233 }, [RIN]: { typed: 9999, at: 1 } };
+    const st = store([helmet], { [CAREN]: [helmet.id] }, { crit: { [CAREN]: 85 }, stars: { [CAREN]: 5 }, eff });
+    const b = round(st, [CAREN, RIN]);
+    expect(b.raw.eff).toEqual(eff);
+    expect([b.raw.crit, b.raw.stars]).toEqual([{ [CAREN]: 85 }, { [CAREN]: 5 }]);
+    expect(round(store([helmet], { [CAREN]: [helmet.id] }), [CAREN]).raw.eff).toBeUndefined();
+    expect(round(store([], {}, { eff: { [KAPPA]: { typed: 300, at: 150 } } })).raw.eff).toEqual({ [KAPPA]: { typed: 300, at: 150 } });
+    // a hero out of the roster: the load drops it (like N and stars)
+    expect(loadGear(round(store([], {}, { eff })).raw, idx, [CAREN]).st.eff).toEqual({ [CAREN]: eff[CAREN] });
+  });
+
+  it('эфф из игры: 0, 10 000 и нецелое в код не пишутся', () => {
+    const bad = { [CAREN]: { typed: 0, at: 233 }, [RIN]: { typed: 466, at: 10000 }, [KAPPA]: { typed: 46.5, at: 233 } };
+    expect(encodeBackup(store([], {}, { eff: bad }), [])).toBe('');
   });
 
   it('звёзды героя: туда и обратно, вместе с N, и у героя без вещей, N и закрепления; без звёзд — поля нет', () => {

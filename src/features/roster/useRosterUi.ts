@@ -145,11 +145,11 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   const unstar = (id: string) => {
     const n = realStore().pools[id]?.length ?? 0;
     if (n) { if (!touring) setRemoveAsk({ id, n }); return; }
-    // В4 ревью этапа 10 и owner 2026-10-12: у героя без вещей его данные — закрепление, N и ★ — снимаются вместе со звездой
+    // В4 ревью этапа 10 и owner 2026-10-12: у героя без вещей его данные — закрепление, N, ★ и эфф из игры — снимаются вместе со звездой
     // (иначе невидимы, но действуют); «Вернуть» — и звезду на прежнее место, и их
     const r = touring ? null : dropChar(gear.store, id);
     const d = r?.dropped;
-    if (!r || !d || (d.pin === undefined && d.crit === undefined && d.stars === undefined)) { rosterApi.toggle(id); return; }
+    if (!r || !d || (d.pin === undefined && d.crit === undefined && d.stars === undefined && d.eff === undefined)) { rosterApi.toggle(id); return; }
     const prev = rosterApi.list();
     gear.set(r.st);
     rosterApi.remove([id]);

@@ -1,4 +1,4 @@
-// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): ростер и экипировка — «OGC-GEAR6-» и base62 с CRC-32
+// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): ростер и экипировка — «OGC-GEAR7-» и base62 с CRC-32
 // (shared/bits). Номер после OGC-GEAR больше 2: выпущенные версии читают такой код как «новее — обнови страницу».
 // В коде — весь ростер (и герои, которых нет в данных), у каждого героя с вещами — пул в прежнем порядке (вещь —
 // запись SPEC 1 и дата) и надетое, у каждого закрепившего — закреплённый набор (stat-sets PLAN Д11): по имени билда и
@@ -6,20 +6,23 @@
 // повторяются («Speed», «13x4»), подписей мало — номер в словаре короткий.
 // From OGC-GEAR5 — the hero's N («сколько крита нужно герою», crit): a flag and 7 bits, only for heroes who changed it from 100.
 // From OGC-GEAR6 — the hero's in-game stars (1…6, transcend): a flag and 3 bits, after the N field; a hero with only stars is in the list too.
+// From OGC-GEAR7 — the typed stat-screen EFF (.x/0200-boss Q3): a flag and two 14-bit numbers (typed, the app's EFF then), after the stars.
 // Не переносится (решение 3): незнакомые поля, номера вещей (выдаются заново), порядок ростера, отдельные «жёлтые».
 // Общая запись (вещь в пулах двух героев) становится двумя копиями.
-// OGC-GEAR5 (no stars), OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
+// OGC-GEAR6 (no EFF), OGC-GEAR5 (no stars), OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
 import { SLOTS, type Index } from '@/game/data';
 import { BitReader, BitWriter, seal, unseal, widthOf } from '@/shared/bits';
-import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
+import { EFF_MAX, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
+import type { EffCal } from '@/game/stat/eff';
 import { readBody, readSlot, writeBody, writeSlot } from '@/features/gear/store/pieceCode';
 import { readGearCode } from '@/features/gear/store/gearStore';
 import { heroCodeIn } from '@/features/gear/store/heroCode';
 import { parseRoster } from './rosterCode';
 
-const VERSION = 6;
+const VERSION = 7;
 const CRIT_BITS = 7; // N 0…100
 const STAR_BITS = 3; // ★ 1…6
+const EFF_BITS = 14; // EFF 1…EFF_MAX (9999)
 const OLDEST = 3;
 const DAY = 864e5;
 const DAY0 = Date.UTC(2024, 0, 1);
@@ -55,7 +58,13 @@ export function encodeBackup(st: GearStore, roster: readonly string[]): string {
     return Number.isInteger(n) && n! >= 1 && n! <= 6 ? n! : null;
   };
   const starred = Object.keys(st.stars ?? {}).filter((id) => starsOf(id) !== null);
-  const heroes = [...new Set([...roster, ...pools.map(([id]) => id), ...pinners, ...critters, ...starred])];
+  const okEff = (n: unknown) => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= EFF_MAX;
+  const effOf = (id: string): EffCal | null => {
+    const e = st.eff?.[id];
+    return e && okEff(e.typed) && okEff(e.at) ? e : null;
+  };
+  const typed = Object.keys(st.eff ?? {}).filter((id) => effOf(id) !== null);
+  const heroes = [...new Set([...roster, ...pools.map(([id]) => id), ...pinners, ...critters, ...starred, ...typed])];
   if (!heroes.length) return '';
   const nums = heroes.filter((id) => asNum(id) !== null).sort((a, z) => asNum(a)! - asNum(z)!);
   const strs = heroes.filter((id) => asNum(id) === null);
@@ -106,6 +115,9 @@ export function encodeBackup(st: GearStore, roster: readonly string[]): string {
     const stars = starsOf(id);
     w.put(stars !== null ? 1 : 0, 1);
     if (stars !== null) w.put(stars, STAR_BITS);
+    const eff = effOf(id);
+    w.put(eff !== null ? 1 : 0, 1);
+    if (eff !== null) w.put(eff.typed, EFF_BITS).put(eff.at, EFF_BITS);
   }
   return `OGC-GEAR${VERSION}-${seal(w.bits)}`;
 }
@@ -128,7 +140,7 @@ export function decodeBackup(text: string): Backup | 'newer' | 'broken' | null {
 }
 
 // v — версия кода: 3 — после пула выбранный билд и «Не отдавать», затем «Собираю»; всё это пропускаем; 4 — закрепление;
-// 5 — plus the hero's N; 6 — plus the hero's stars
+// 5 — plus the hero's N; 6 — plus the hero's stars; 7 — plus the typed EFF
 function read(r: BitReader, v: number): Backup {
   const names: string[] = [], sigs: string[] = [];
   for (let n = r.vlq(3); n > 0; n--) names.push(r.str());
@@ -149,6 +161,7 @@ function read(r: BitReader, v: number): Backup {
   const st: GearStore = { v: 3, seq: 0, pieces: {}, pools: {} };
   const roster: string[] = [];
   const worn: Record<string, Worn> = {}, pin: Record<string, string> = {}, crit: Record<string, number> = {}, stars: Record<string, number> = {};
+  const eff: Record<string, EffCal> = {};
   for (const id of heroes) {
     if (r.get(1)) roster.push(id);
     const pool: Piece[] = [];
@@ -192,6 +205,11 @@ function read(r: BitReader, v: number): Backup {
       if (n < 1 || n > 6) throw new RangeError('stars');
       stars[id] = n;
     }
+    if (v > 6 && r.get(1)) {
+      const typed = r.get(EFF_BITS), at = r.get(EFF_BITS);
+      if (typed < 1 || typed > EFF_MAX || at < 1 || at > EFF_MAX) throw new RangeError('eff');
+      eff[id] = { typed, at };
+    }
   }
   if (r.left) throw new RangeError('tail');
   return {
@@ -199,11 +217,12 @@ function read(r: BitReader, v: number): Backup {
     raw: {
       ...st, ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(pin).length ? { pin } : {}),
       ...(Object.keys(crit).length ? { crit } : {}), ...(Object.keys(stars).length ? { stars } : {}),
+      ...(Object.keys(eff).length ? { eff } : {}),
     },
   };
 }
 
-// Что вставили в поле «Резервная копия» (SPEC 2.4): код копии (OGC-GEAR3 … OGC-GEAR6); старый код экипировки (OGC-GEAR1, OGC-GEAR2 — как
+// Что вставили в поле «Резервная копия» (SPEC 2.4): код копии (OGC-GEAR3 … OGC-GEAR7); старый код экипировки (OGC-GEAR1, OGC-GEAR2 — как
 // есть, проверит loadGear); старый код ростера (slug или id через пробел, запятую, точку с запятой) — узнанные герои;
 // код новее; новый код, но повреждён; код героя или ссылка показа; прочее
 export type Pasted =

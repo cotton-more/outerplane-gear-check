@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
-import { dropChar, setCrit, setStars, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { dropChar, effCal, setCrit, setEff, setStars, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { removeFrom } from '@/features/gear/pool';
 import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '@/features/gear/model/fusion';
@@ -383,5 +383,49 @@ describe('Core Fusion: звёзды и N идут за вещами (Z7, PLAN 01
   it('загрузка и код: та же нормализация переносит ★', () => {
     const st = setStars(v2({ [X]: ['p1'] }), X, 5);
     expect(loadGear(st, idx, [X, CF]).st.stars).toEqual({ [CF]: 5 });
+  });
+});
+
+// the typed stat-screen EFF (.x/0200-boss Q3): stored like N and ★ — set / reset, drop and «Вернуть», Core Fusion moves it,
+// a hero out of the roster loses it, the store reads it back
+describe('эфф из игры (eff)', () => {
+  const cal = { typed: 466, at: 233 };
+  it('setEff: записать, то же — то же хранилище, «Сбросить» — поле уходит; мусор не пишется', () => {
+    const st = setEff(v2({}), CAREN, cal);
+    expect(effCal(st, CAREN)).toEqual(cal);
+    expect(setEff(st, CAREN, { ...cal })).toBe(st);
+    expect('eff' in setEff(st, CAREN, null)).toBe(false);
+    for (const bad of [{ typed: 0, at: 233 }, { typed: 466, at: 10000 }, { typed: 46.5, at: 233 }]) expect(setEff(st, KAPPA, bad)).toBe(st);
+  });
+  it('dropChar снимает, undoDrop возвращает; за это время вписали заново — остаётся новое', () => {
+    const st = setEff(v2({ [CAREN]: ['p1'] }), CAREN, cal);
+    const r = dropChar(st, CAREN);
+    expect([r.st.eff, r.dropped.eff]).toEqual([undefined, cal]);
+    expect(undoDrop(r.st, r.dropped)).toEqual(st);
+    expect(effCal(undoDrop(setEff(r.st, CAREN, { typed: 500, at: 250 }), r.dropped), CAREN)).toEqual({ typed: 500, at: 250 });
+  });
+  it('нормализация: к CF вместе с ★ и N; у CF свой — остаётся он', () => {
+    const r = normalizeFusion(idx, [CF], setEff(v2({ [X]: ['p1'] }), X, cal));
+    expect([r.st.eff, r.fixes[0].eff]).toEqual([{ [CF]: cal }, cal]);
+    const both = normalizeFusion(idx, [CF], setEff(setEff(v2({ [X]: ['p1'] }), X, cal), CF, { typed: 400, at: 200 }));
+    expect([both.st.eff, both.fixes[0].eff]).toEqual([{ [CF]: { typed: 400, at: 200 } }, undefined]);
+  });
+  it('окно перехода: к CF; «Вернуть» — снова у X', () => {
+    const sw = switchFusion(idx, [X], setEff(v2({ [X]: ['p1'] }), X, cal), CF)!;
+    expect([sw.st.eff, sw.eff]).toEqual([{ [CF]: cal }, cal]);
+    expect(unfuseChar(sw.st, sw.from, sw.to, sw).eff).toEqual({ [X]: cal });
+  });
+  it('герой не из ростера — эфф убирается (cleared)', () => {
+    const r = normalizeStored(idx, [CAREN], setEff(setEff(v2({ [CAREN]: ['p1'] }), KAPPA, cal), CAREN, cal));
+    expect([r.st.eff, r.cleared]).toEqual([{ [CAREN]: cal }, [KAPPA]]);
+  });
+  it('хранилище: читается как было; мусор отброшен — «не целиком»', () => {
+    const st = setEff(v2({ [CAREN]: ['p1'] }), CAREN, cal);
+    const raw = JSON.parse(JSON.stringify(st));
+    expect(loadGear(raw, idx, [CAREN]).st.eff).toEqual({ [CAREN]: cal });
+    expect(readsWhole(raw, idx)).toBe(true);
+    const bad = { ...raw, eff: { [CAREN]: cal, [KAPPA]: { typed: 0, at: 1 }, [X]: { typed: 5, at: 5, x: 1 } } };
+    expect(loadGear(bad, idx, [CAREN, KAPPA, X]).st.eff).toEqual({ [CAREN]: cal });
+    expect(readsWhole(bad, idx)).toBe(false);
   });
 });
