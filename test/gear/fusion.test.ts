@@ -121,6 +121,23 @@ describe('normalizeStored: все с вещами — в ростере, зат�
     const r = normalizeStored(idx, [CAREN, KAPPA], st);
     expect({ st: r.st === st, roster: r.roster, fixes: r.fixes, added: r.added }).toEqual({ st: true, roster: [CAREN, KAPPA], fixes: [], added: [] });
   });
+  // owner 2026-10-12: a hero out of the roster has no data — pin, N and ★ go; X replaced by its Core Fusion in the roster keeps
+  // pin and N (they come back with the star on X); an unknown id keeps everything
+  it('pin, N и ★ героя не из ростера убираются (cleared); X при Core Fusion в ростере хранит pin и N; незнакомый id — всё', () => {
+    const st = v2({ [CAREN]: ['p1'] }, {
+      pin: { [KAPPA]: 'k', [X]: 'x', gone: 'g' }, crit: { [KAPPA]: 50, [X]: 70, [CAREN]: 80 }, stars: { [KAPPA]: 4, gone: 3, [CF]: 5 },
+    });
+    const r = normalizeStored(idx, [CAREN, CF], st);
+    expect({ pin: r.st.pin, crit: r.st.crit, stars: r.st.stars, cleared: r.cleared }).toEqual({
+      pin: { [X]: 'x', gone: 'g' }, crit: { [X]: 70, [CAREN]: 80 }, stars: { gone: 3, [CF]: 5 }, cleared: [KAPPA],
+    });
+    expect(normalizeStored(idx, [CAREN, CF], r.st).st).toBe(r.st); // nothing more to clear
+  });
+
+  it('X без Core Fusion в ростере — его pin и N тоже убираются; поля без записей исчезают', () => {
+    const r = normalizeStored(idx, [CAREN], v2({ [CAREN]: ['p1'] }, { pin: { [X]: 'x' }, crit: { [X]: 70 }, stars: { [X]: 4 } }));
+    expect([r.cleared, 'pin' in r.st, 'crit' in r.st, 'stars' in r.st]).toEqual([[X], false, false, false]);
+  });
 });
 
 // Р16: «Да, убрать» в окне снятия звезды и его «Вернуть»

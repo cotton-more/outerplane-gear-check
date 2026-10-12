@@ -323,6 +323,19 @@ describe('пакетные добавления — без окон, одно с
   });
 });
 
+describe('код ростера убирает героя — его данные тоже (owner 2026-10-12)', () => {
+  it('«Заменить» без Caren: её N и ★ убраны; «Вернуть» — ростер и данные как были', async () => {
+    const gear = G([], {}, { crit: { [caren.id]: 60 }, stars: { [caren.id]: 5 } });
+    await mount({ tab: 'chars' }, {}, { gear, roster: [caren.id] });
+    const ta = await openBackup();
+    ta.value = 'kappa';
+    await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
+    expect([stored().crit, stored().stars]).toEqual([undefined, undefined]);
+    await click(byText('.gear-toast button', 'Undo'));
+    expect({ roster: roster(), crit: stored().crit, stars: stored().stars }).toEqual({ roster: [caren.id], crit: { [caren.id]: 60 }, stars: { [caren.id]: 5 } });
+  });
+});
+
 describe('импорт кода с обоими', () => {
   const pieces = [P('p1', 'helmet', speed, { SPD: 2 }), P('p2', 'armor', speed, { SPD: 2 })];
 

@@ -92,12 +92,37 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
 // вещи, — в ростер, затем правило Core Fusion. Одна чистая функция над {ростер, хранилище}. Core Fusion считается первым:
 // «есть персонаж» у него — в ростере или с вещами, так что итог тот же, что «сначала в ростер», а Core Fusion встаёт на
 // место X. После него у X при Core Fusion вещей нет — добавленные в ростер конфликта не создают. added — кого добавили
-// (только герои из данных: незнакомый id не показать и не убрать звездой — его пул лежит, как лежал)
-export interface Normalized { roster: string[]; st: GearStore; fixes: FusionFix[]; added: string[] }
+// (только герои из данных: незнакомый id не показать и не убрать звездой — его пул лежит, как лежал). cleared — героев
+// не в ростере, чьи pin, N и ★ убраны (owner 2026-10-12: убрал героя из ростера — его данных нет); X, которого заменил его
+// Core Fusion из ростера, свои pin и N хранит (вернутся звездой на X), незнакомый id — тоже
+export interface Normalized { roster: string[]; st: GearStore; fixes: FusionFix[]; added: string[]; cleared: string[] }
 export function normalizeStored(idx: Index, roster: readonly string[], st: GearStore): Normalized {
   const n = normalizeFusion(idx, roster, st);
   const added = Object.keys(n.st.pools).filter((id) => idx.CHAR[id] && n.st.pools[id].length && !n.roster.includes(id));
-  return { ...n, roster: added.length ? [...n.roster, ...added] : n.roster, added };
+  const list = added.length ? [...n.roster, ...added] : n.roster;
+  const { st: next, cleared } = clearOutside(idx, list, n.st);
+  return { ...n, st: next, roster: list, added, cleared };
+}
+// pin, N и ★ только у героев ростера (и у X, чей Core Fusion в ростере, — кроме ★: они ушли к Core Fusion)
+function clearOutside(idx: Index, roster: readonly string[], st: GearStore): { st: GearStore; cleared: string[] } {
+  const own = new Set(roster);
+  const partner = (id: string) => idx.CHAR[id]?.fusionOf ?? idx.FUSED[id];
+  const keep = (id: string, stars: boolean) => !idx.CHAR[id] || own.has(id) || (!stars && own.has(partner(id) ?? ''));
+  const cleared = new Set<string>();
+  const part = <T>(m: Record<string, T> | undefined, stars = false) => {
+    if (!m) return m;
+    const out = Object.fromEntries(Object.entries(m).filter(([id]) => keep(id, stars) || !cleared.add(id)));
+    return Object.keys(out).length === Object.keys(m).length ? m : out;
+  };
+  const pin = part(st.pin), crit = part(st.crit), stars = part(st.stars, true);
+  if (!cleared.size) return { st, cleared: [] };
+  const { pin: _p, crit: _c, stars: _s, ...rest } = st;
+  const has = <T>(m: Record<string, T> | undefined) => (m && Object.keys(m).length ? m : undefined);
+  const next: GearStore = { ...rest };
+  if (has(pin)) next.pin = pin;
+  if (has(crit)) next.crit = crit;
+  if (has(stars)) next.stars = stars;
+  return { st: next, cleared: [...cleared] };
 }
 // нормализация что-то поменяла — хранилище пора переписать (Р17)
 export const changed = (n: Pick<Normalized, 'fixes' | 'added'>) => n.fixes.length > 0 || n.added.length > 0;

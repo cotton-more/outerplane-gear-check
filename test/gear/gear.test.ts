@@ -891,8 +891,8 @@ describe('N героя — сколько крита нужно герою (crit
 
   it('чтение: целое 0…100 как есть, код копии его сохраняет; прочее отброшено, прочитано не целиком', () => {
     const st = setCrit(setCrit(base(), CAREN, 85), RIN, 0);
-    expect(restoreGear(st, idx).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
-    expect((decodeGear(encodeGear(st), idx) as GearStore).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
+    expect(restoreGear(st, idx, [RIN]).crit).toEqual({ [CAREN]: 85, [RIN]: 0 }); // Rin — in the roster (no pieces)
+    expect((decodeGear(encodeGear(st), idx) as GearStore).crit).toEqual({ [CAREN]: 85 }); // no roster here: Rin's N goes
     expect(readsWhole(st, idx)).toBe(true);
     for (const v of [85.5, 101, -1, '85', null]) {
       const bad = { ...base(), crit: { [CAREN]: v } };
@@ -936,7 +936,7 @@ describe('звёзды героя — in-game ★1…6 (stars, transcend; PLAN 0
 
   it('чтение: целое 1…6 как есть, код копии его сохраняет; прочее отброшено, прочитано не целиком', () => {
     const st = setStars(setStars(base(), CAREN, 5), RIN, 6);
-    expect(restoreGear(st, idx).stars).toEqual({ [CAREN]: 5, [RIN]: 6 });
+    expect(restoreGear(st, idx, [RIN]).stars).toEqual({ [CAREN]: 5, [RIN]: 6 }); // Rin — in the roster (no pieces)
     expect(readsWhole(st, idx)).toBe(true);
     for (const v of [0, 7, 5.5, '5', null]) {
       const bad = { ...base(), stars: { [CAREN]: v } };

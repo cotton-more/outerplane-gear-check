@@ -310,7 +310,7 @@ entry — game icons.
 an integer 0…100; no entry — 100; [MODEL.md §12](MODEL.md)) and `stars` (hero → transcend ★ 1…6, a fact about the hero;
 no entry — not set, the stars' crit is not counted; `Ctx.stars`). Invariants: worn ⊂ hero pool (`syncWorn` in
 every mutation via `gc`); `pin`, `crit` and `stars` don't depend on the pool; Core Fusion moves only `stars` (with the pieces, like `worn` — the pin and N stay, they are about the build; «Вернуть» moves it back only if nothing changed) — `dropChar` (and
-«Вернуть» `undoDrop`), an explicit "don't pin" / «Сбросить» clear them; a `crit` value that isn't an integer 0…100, or a `stars` value that isn't an integer 1…6, is dropped
+«Вернуть» `undoDrop`; for a hero without pieces the star in the list or card does the same, with a message and «Вернуть»), an explicit "don't pin" / «Сбросить» clear them, and `normalizeStored` drops them for a hero outside the roster (`cleared`; X replaced by its Core Fusion in the roster keeps pin and N; an unknown id keeps all — owner 2026-10-12: a hero out of the roster has no data); a `crit` value that isn't an integer 0…100, or a `stars` value that isn't an integer 1…6, is dropped
 on read (the read is then "not whole"). Fields of the old
 model (`marks`, `autoNew`, `aim`, `pinned`) are read and discarded; a player from the old model is shown a one-time
 message (`ogc.modelNote`; only for a v1/v2 store with pieces; its extra sentence about cleared marks, `ui.modelNoteMarks`, only when
@@ -320,7 +320,7 @@ pinning, each hero's N other than 100: a flag and 7 bits, and the stars: a flag 
 **When the load-time normalisation is written back** (`features/gear/store/stored:readStored`). Roster and gear are read together
 and normalized: Core Fusion (`fusion:normalizeStored` — X and Core Fusion X never together, X's pieces move to CF or are removed,
 worn and stars move with them, pin does not; the same runs on code import, v1 transfer and batch roster edits), "pieces only for roster
-heroes" (everyone with pieces joins the roster), v1/v2 → v3 and stale pins (`fixPins`). If anything changed — or a v1/v2 store
+heroes" (everyone with pieces joins the roster), pin / N / ★ only for roster heroes (`cleared`, silent), v1/v2 → v3 and stale pins (`fixPins`). If anything changed — or a v1/v2 store
 was upgraded or a pin moved — both keys are written at once, so the notice doesn't repeat on every launch and half of a fix
 can't get lost. Deliberately **not** written when: a newer page version saved the gear (`newer`: this page doesn't understand it
 and would erase it); there is no storage; the read dropped something (a substat not from the data, a mark or field of a newer

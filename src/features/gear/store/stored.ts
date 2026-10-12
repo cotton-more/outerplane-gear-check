@@ -49,7 +49,7 @@ export function readStored(idx: Index): Stored {
   const pins = whole && fresh && !r.newer ? fixPins(idx, r.st) : { st: r.st, gone: [] };
   const pinsMoved = pins.st !== r.st;
   r.st = pins.st;
-  if ((changed(r) || migrated || pinsMoved) && !r.newer && !held && whole && storage.available()) {
+  if ((changed(r) || r.cleared.length > 0 || migrated || pinsMoved) && !r.newer && !held && whole && storage.available()) {
     storage.set('roster', r.roster);
     storage.set('gear', r.st);
   }

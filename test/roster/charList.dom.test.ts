@@ -264,7 +264,7 @@ describe('панель над сеткой (SPEC 4)', () => {
   });
 });
 
-describe('В4 ревью этапа 10: звезда с героя без вещей снимает закрепление', () => {
+describe('В4 ревью этапа 10: звезда с героя без вещей снимает закрепление (и N, и ★ — owner 2026-10-12)', () => {
   it('сообщение «Caren: … unpinned.» с «Undo» — звезда и закрепление снова на месте', async () => {
     const { pinOptions } = await import('@/game/build/profile');
     const key = pinOptions(caren)[0].key;
@@ -277,6 +277,18 @@ describe('В4 ревью этапа 10: звезда с героя без вещ
     await click($$('.gear-toast button').find((b) => b.textContent === 'Undo'));
     expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([caren.id]);
     expect(JSON.parse(localStorage.getItem('ogc.gear')!).pin).toEqual({ [caren.id]: key });
+  });
+
+  // owner 2026-10-12: a hero out of the roster has no data — N and ★ go with the star too
+  it('N и ★ без закрепления: сообщение «Caren is out of the roster.» с «Undo» — звезда, N и ★ снова на месте', async () => {
+    await mount({ gear: G([], {}, { crit: { [caren.id]: 60 }, stars: { [caren.id]: 5 } }), state: { tab: 'chars', cOwned: false } });
+    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
+    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    const gear = () => JSON.parse(localStorage.getItem('ogc.gear') ?? '{}');
+    expect([JSON.parse(localStorage.getItem('ogc.roster')!), gear().crit, gear().stars]).toEqual([[], undefined, undefined]);
+    expect($('.gear-toast span')?.textContent).toBe('Caren is out of the roster.');
+    await click($$('.gear-toast button').find((b) => b.textContent === 'Undo'));
+    expect([JSON.parse(localStorage.getItem('ogc.roster')!), gear().crit, gear().stars]).toEqual([[caren.id], { [caren.id]: 60 }, { [caren.id]: 5 }]);
   });
 
   it('без закрепления — как раньше: без сообщения', async () => {

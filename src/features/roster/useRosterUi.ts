@@ -7,7 +7,7 @@ import { heroName } from '@/game/hero/HeroName';
 import { comboText } from '@/game/build/builds';
 import { pinCombo } from '@/game/build/profile';
 import type { Texts } from '@/i18n';
-import { dropChar, gearedChars, setPin, undoDrop, undoPin, type GearStore } from '@/features/gear/model/gear';
+import { dropChar, gearedChars, undoDrop, type GearStore } from '@/features/gear/model/gear';
 import { gateOf, normalizeStored, switchFusion, type FusionFix } from '@/features/gear/model/fusion';
 import { loadGear, unfuseChar } from '@/features/gear/store/gearStore';
 import { readStored, takeLoadNote } from '@/features/gear/store/stored';
@@ -77,7 +77,8 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     }
     // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище. «none» —
     // у X были только ★: они тоже вернутся (moved пуст — unfuseChar двигает одни звёзды)
-    const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
+    // убраны из ростера с pin, N или ★ (cleared) — тоже всё хранилище
+    const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') || r.cleared.length ? () => st
       : (x: GearStore) => r.fixes.reduceRight((y, f) => unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [], stars: f.stars }), x);
     if (intro !== undefined) {
       say({ text: intro, note: [fixesNote(r.fixes), keptNote].filter(Boolean).join(' '), tab, undo, after: () => rosterApi.replace(prev) });
@@ -144,15 +145,16 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   const unstar = (id: string) => {
     const n = realStore().pools[id]?.length ?? 0;
     if (n) { if (!touring) setRemoveAsk({ id, n }); return; }
-    const key = touring ? undefined : gear.store.pin?.[id];
-    if (!key) { rosterApi.toggle(id); return; }
-    // В4 ревью этапа 10: у героя без вещей было закрепление — снимается вместе со звездой (иначе невидимое, но действует);
-    // «Вернуть» — и звезду на прежнее место, и закрепление
+    // В4 ревью этапа 10 и owner 2026-10-12: у героя без вещей его данные — закрепление, N и ★ — снимаются вместе со звездой
+    // (иначе невидимы, но действуют); «Вернуть» — и звезду на прежнее место, и их
+    const r = touring ? null : dropChar(gear.store, id);
+    const d = r?.dropped;
+    if (!r || !d || (d.pin === undefined && d.crit === undefined && d.stars === undefined)) { rosterApi.toggle(id); return; }
     const prev = rosterApi.list();
-    const r = setPin(gear.store, id, null);
     gear.set(r.st);
     rosterApi.remove([id]);
-    say({ text: t.card.unpinned(charName(id), comboText(idx, pinCombo(key))), note: '', tab: 'chars', undo: (x) => undoPin(x, id, r), after: putBack(prev, id) });
+    const text = d.pin !== undefined ? t.card.unpinned(charName(id), comboText(idx, pinCombo(d.pin))) : t.ui.rosterRemoved(charName(id));
+    say({ text, note: '', tab: 'chars', undo: (x) => undoDrop(x, d), after: putBack(prev, id) });
   };
   const doRemove = () => {
     const a = removeAsk;

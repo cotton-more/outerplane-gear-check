@@ -23,7 +23,8 @@ outerpedia in a new tab. Under the name — the hero's **stars**, six like the g
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
 has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,
-remove" — a message with "Undo".
+remove" — a message with "Undo". The hero's stars, crit number and pinned set go along with the gear. A hero without
+gear loses the star at once, and with it the same stars, crit number and set; "Undo" in the message brings them all back.
 
 Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster never holds
 both. Star Core Fusion Eternal while Eternal is in the roster or has gear — a window: Eternal's gear moves to Core

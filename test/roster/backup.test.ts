@@ -282,7 +282,9 @@ describe('2. резервная копия', () => {
     const b = round(st, [CAREN]);
     expect(b.raw.crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
     expect(b.roster).toEqual([CAREN]);
-    expect(meaning(loadGear(b.raw, idx, b.roster).st).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
+    // Rin is not in the roster: the load drops her N (owner 2026-10-12 — a hero out of the roster has no data)
+    expect(meaning(loadGear(b.raw, idx, b.roster).st).crit).toEqual({ [CAREN]: 85 });
+    expect(meaning(loadGear(b.raw, idx, [CAREN, RIN]).st).crit).toEqual({ [CAREN]: 85, [RIN]: 0 });
   });
 
   it('старые коды и прочее — не этот формат', () => {
