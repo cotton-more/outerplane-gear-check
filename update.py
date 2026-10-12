@@ -539,8 +539,9 @@ def eff_profile(src: dict, cid: str, c: dict) -> dict:
     The game: EFF = ⌊(⌊W·(1000 + gear rate)/1000⌋ + gear flat + r)·(1000 + premium)/1000⌋ (CalcFinalStat.cs).
     w — white EFF [Lv100, Lv120]: base stat + evolution rewards up to that level (Core Fusion: the original's
     evolutions); r — flat "buff" rows of the awakening quirk tree (Ranger node +50, by the `quirks` setting);
-    p — permanent self premium of a passive in ‰ (Core Fusion Notia +500); t — transcend passive by the in-game ★1…6:
-    r premium ‰, f flat. The EE (+100 % for some) is not here: the app can't know whether the player has it.
+    p — permanent self premium of a passive in ‰ (Core Fusion Notia +500, which exists only at Core Fusion level 5 =
+    fusion passive level 2; the data assumes it maxed); t — transcend passive by the in-game ★1…6: r premium ‰, f flat.
+    The EE (+50…100 %) is not here: the app can't know whether the player has it.
     """
     dchars = src["dmgChars"]["characters"]
     evo = (dchars.get(cid) or {}).get("evolution") or (dchars.get(str(c.get("originalCharacter") or "")) or {}).get("evolution") or []
@@ -1113,7 +1114,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         "chars": chars,
         "synergy": build_synergy(src, warn),
         **({"teams": teams} if (teams := build_teams(src, chars, warn)) else {}),
-        **({"bosses": bosses} if (bosses := build_bosses(src, chars, warn)) else {}),
+        **({"bosses": bosses} if (bosses := build_bosses_safe(src, chars, warn)) else {}),
     }
 
 
@@ -1451,8 +1452,8 @@ def stage_label(d: dict, rank: dict | None) -> str:
     return str(diff.get("order")) if key.startswith("stage_") else key
 
 
-def fight_rows(enc: dict, mons: dict, dungeons: list[tuple[str, dict]]) -> list[tuple[str, int, int, int, str]]:
-    """[(label, level, RES, SPD, boss monster id)] — one per stage, in the game's order."""
+def fight_rows(enc: dict, mons: dict, dungeons: list[tuple[str, dict]], warn: Warnings, where: str) -> list[tuple[str, int, int, int, str]]:
+    """[(label, level, RES, SPD, boss monster id)] — one per stage, in the game's order; where — the fight, for warnings."""
     rows = []
     for _, d in dungeons:
         ranks = d.get("ranks") or []
@@ -1471,11 +1472,14 @@ def fight_rows(enc: dict, mons: dict, dungeons: list[tuple[str, dict]]) -> list[
         res, spd = (monster_stat(mon, "buff_resist", b["lvl"]), monster_stat(mon, "speed", b["lvl"], adv)) if mon else (None, None)
         if res is not None and spd is not None:
             out.append((stage_label(d, r), b["lvl"], res, spd, b["id"]))
+        else:
+            warn.add(f"боссы outerpedia: {where} — этап «{stage_label(d, r)}» пропущен ("
+                     + (f"у монстра {b['id']} нет RES/SPD" if mon else f"монстра {b['id']} нет в monsters.json") + ")")
     return out
 
 
 def immune_ids(gl: dict, mon: dict) -> list[str]:
-    """Glossary effect ids (the keys of synergy.statuses) a monster is immune to — outerpedia skill-view.ts
+    """Glossary effect ids (outerpedia `effects`; the names are the app's own strings) a monster is immune to — outerpedia skill-view.ts
     immunityChipEffects: immuneTooltips, then buffImmune BT types (debuff side first), then statBuffImmune ST types."""
     by_tip, by_key, effects = gl.get("effectByTooltip", {}), gl.get("effectByKey", {}), gl.get("effects", {})
     deb, buf = by_key.get("debuff", {}), by_key.get("buff", {})
@@ -1496,7 +1500,8 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
 
     {q: Challenge quirk ‰ on boss RES (−200 at the full tree), t: {table id: [[level, RES, SPD, stage label]…]} (RES raw;
     identical tables shared), b: [{key, name, mode, element, class, table, imm, immAll?, group?, live?, guide, teams?}]}.
-    imm — effect ids the boss is immune to at the top stage; immAll — at every stage, when the lower stages block less;
+    imm — outerpedia glossary effect ids (`effects`; names for them are the app's own strings, not in the data) the boss
+    is immune to at the top stage; immAll — at every stage, when the lower stages block less;
     live — [start, battle end] of the latest season (world boss, guild raid, joint challenge); teams — the guide's teams
     for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}]}] (guild raid
     requirements as the guide writes them: "268", "518/259", "≤180"). Guide texts are not taken (no Russian, D4).
@@ -1578,19 +1583,27 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
             parts.append(("", [(dk, enc[dk])] if dk in enc else [], []))
         elif mode == "guild-raid":
             ver, cfg = newest(gdir, "config.json", lambda x: bool(x.get("main")))
-            _, main = newest(gdir, "main.json", lambda x: bool(x.get("teams")))
+            vmain, main = newest(gdir, "main.json", lambda x: bool(x.get("teams")))
+            if main is not None and vmain != ver:
+                warn.add(f"боссы outerpedia: {gdir} — main.json из сезона {vmain}, config.json из {ver}")
             for slot in ("main", "subA", "subB"):
                 teams = []
                 if slot == "main":
                     for t in (main or {}).get("teams", []):
                         s = ids_of(t.get("slots", []), gdir)
+                        entries = (t.get("requirements") or {}).get("entries") or []
+                        for e in entries:
+                            if e.get("character") not in by_name:
+                                warn.add(f"боссы outerpedia: герой «{e.get('character')}» ({gdir}, требования) не найден в данных")
                         req = [{"h": by_name[e["character"]], **{k: str(v) for k, v in (e.get("stats") or {}).items() if k in ("eff", "spd", "trans")}}
-                               for e in ((t.get("requirements") or {}).get("entries") or []) if e.get("character") in by_name]
+                               for e in entries if e.get("character") in by_name]
                         req = [r for r in req if len(r) > 1]
                         if s:
                             teams.append({"s": s, **({"r": req} if req else {})})
                 else:
-                    _, sub = newest(gdir, slot + ".json", lambda x: bool((x.get("team") or {}).get("slots")))
+                    vsub, sub = newest(gdir, slot + ".json", lambda x: bool((x.get("team") or {}).get("slots")))
+                    if sub is not None and vsub != ver:
+                        warn.add(f"боссы outerpedia: {gdir} — {slot}.json из сезона {vsub}, config.json из {ver}")
                     if sub and (s := ids_of(sub["team"]["slots"], gdir)):
                         teams.append({"s": s})
                 parts.append((":" + slot, group_dungeons((cfg or {}).get(slot) or ""), teams))
@@ -1602,9 +1615,13 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
 
         slug = gdir.split("/", 1)[1]
         ids_in_guide = {m["id"] for _, dungeons, _ in parts for _, d in dungeons for m in d["monsters"]}
-        season = max((s for s, ms, m in calendar if m == mode and ids_in_guide & set(ms)), key=lambda s: s.get("start", ""), default=None)
+        mine = [s for s, ms, m in calendar if m == mode and ids_in_guide & set(ms)]
+        for s in mine:
+            if not s.get("start") or not (s.get("battleEnd") or s.get("end")):
+                warn.add(f"боссы outerpedia: {gdir} — у сезона расписания «{en(s.get('title')) or s.get('id') or '?'}» нет start или battleEnd/end")
+        season = max(mine, key=lambda s: s.get("start", ""), default=None)
         for suffix, dungeons, teams in parts:
-            rows = fight_rows(enc, mons, dungeons)
+            rows = fight_rows(enc, mons, dungeons, warn, gdir + suffix)
             if not rows:
                 warn.add(f"боссы outerpedia: {gdir}{suffix} — нет этапов с RES (формат encounters/monsters изменился?)")
                 continue
@@ -1631,7 +1648,7 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
                 fight["immAll"] = [x for x in imm if x in every]
             if mode == "guild-raid":
                 fight["group"] = en((season or {}).get("title")) or re.sub(r"\s+Guild Raid Guide$", "", en(meta.get("title")))
-            if season:
+            if season and season.get("start") and (season.get("battleEnd") or season.get("end")):
                 fight["live"] = [season["start"], season.get("battleEnd") or season["end"]]
             fight["guide"] = gdir
             if teams:
@@ -1641,6 +1658,15 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
     if q is None:
         warn.add("боссы outerpedia: нет bossQuirkMods.buff_resist (Challenge quirk) — считаю −200")
     return {"q": q if q is not None else -200, "t": table_rows, "b": fights}
+
+
+def build_bosses_safe(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
+    """build_bosses, but a format change in the boss data costs only the bosses, not the whole build."""
+    try:
+        return build_bosses(src, chars, warn)
+    except Exception as e:  # noqa: BLE001 — any format change: the rest of the data still ships
+        warn.add(f"боссы outerpedia: формат изменился ({type(e).__name__}: {e}) — боссов на «Команде» не будет")
+        return None
 
 
 def build_view(label: str, b: dict, ctx: dict, ee_names: dict, warn: Warnings) -> dict:
