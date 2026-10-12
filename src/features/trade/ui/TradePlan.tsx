@@ -21,13 +21,13 @@ import type { Move } from '@/features/trade/model/moves';
 import type { Missing } from '@/features/trade/model/plan';
 import { lineGain, tenths, type HeroLine } from '@/features/trade/model/view';
 import { SlotIcon } from '@/game/icons/Img';
-import { PieceName, pieceText } from '@/features/gear/ui/pieceText';
+import { pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { SubToken } from '@/game/item/SubToken';
 import { heroName, HeroName } from '@/game/hero/HeroName';
-import { BtLabel } from '@/features/gear/ui/pieceText';
 import { OrderButton } from './OrderSheet';
+import { PieceRow } from './PieceRow';
 
 type T = Texts;
 const pts = (m: number) => m / 1000;
@@ -75,18 +75,13 @@ export function TradePlan({ ctx, st, lines, fills, missing, empty, stale, onSkip
     const sort = !isArmor(p.slot) ? keyOfItem(P, p).sub : null;
     return (
       <li key={m.slot} className="tmove">
-        <div className="bgear-row">
-          <SlotIcon slot={m.slot} />
-          <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-          <button type="button" className="linkbtn small tskip" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>
-          <span className="bgear-meta"><BtLabel p={p} />{worthRow(l, m)}<span className="tsrc">{from(m)}</span></span>
-          <span className="bgear-t">
-            {Object.keys(p.lit).map((k) => {
-              const s2 = k === sort;
-              return <SubToken key={k} stat={k} lit={p.lit[k]} credit={W.get(k)?.credit ?? 0} sort={s2} title={s2 ? t.trade.sortTitle : undefined} />;
-            })}
-          </span>
-        </div>
+        <PieceRow ctx={ctx} p={p}
+          action={<button type="button" className="linkbtn small tskip" onClick={() => onSkip(m.item, m.hero)}>{t.trade.skip}</button>}
+          meta={<>{worthRow(l, m)}<span className="tsrc">{from(m)}</span></>}
+          sub={(k, lit) => {
+            const s2 = k === sort;
+            return <SubToken key={k} stat={k} lit={lit} credit={W.get(k)?.credit ?? 0} sort={s2} title={s2 ? t.trade.sortTitle : undefined} />;
+          }} />
       </li>
     );
   };

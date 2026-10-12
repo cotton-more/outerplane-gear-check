@@ -55,7 +55,8 @@ export interface Char {
   chc?: { base: number; cls: number; quirk: number; trans?: number[] };
   // EFF from sources that are always on (update.py eff_profile; the game's formula in .x/0200-boss RESEARCH §1.2):
   // w — white EFF [Lv100, Lv120] (the `lv120` setting picks one); r — flat quirk node (Ranger +50, by `quirks`); p — a
-  // passive's permanent premium, ‰ (Core Fusion Notia +500); t — transcend passive by the in-game ★1…6: r premium ‰,
+  // passive's permanent premium, ‰ (Core Fusion Notia +500, only at Core Fusion level 5 = fusion passive level 2; the
+  // data assumes it maxed); t — transcend passive by the in-game ★1…6: r premium ‰,
   // f flat. The EE is not here (the app can't know it). Missing in old snapshots
   eff?: { w: [number, number]; r?: number; p?: number; t?: { r?: number[]; f?: number[] } };
 }
@@ -160,8 +161,7 @@ export interface Boss {
   element: string;
   class: string;
   table: string; // key of Bosses.t
-  imm: string[]; // effect ids (keys of synergy.statuses) the boss is immune to at the top stage
-  immAll?: string[]; // immune at every stage — only when the lower stages block less
+  imm: [number, string[]][]; // immunities by stage: runs [first row, ids]; the stage's set is the last run whose first row ≤ the stage's row (row = index in Bosses.t[table]); ids — outerpedia glossary effect ids (`effects`), names are the app's own strings
   group?: string; // guild raid: the raid's name
   live?: [string, string]; // world boss, guild raid, joint challenge: start and battle end of the latest season (ISO)
   guide: string; // outerpedia guide path: "special-request/meteos"

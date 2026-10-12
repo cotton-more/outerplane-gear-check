@@ -49,6 +49,8 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
+  'features/trade/ui/FreeSheet.tsx': 'helper',         // «Free pieces» right after a trade closes: the sheet says by itself what it lists
+  'features/trade/ui/PieceRow.tsx': 'helper',          // a piece as the trade plan draws it, shared with the free-pieces sheet
   'features/batch/ui/BatchStrip.tsx': 'helper',        // batch strip over the form: the batch tip explains the mode
   'features/batch/ui/BatchMarks.tsx': 'helper',        // «E» and the lock next to «Add»: Help and the wiki explain them, the batch tip the mode
   'features/batch/ui/BatchList.tsx': 'helper',         // pieces of the batch: the batch tip explains the mode

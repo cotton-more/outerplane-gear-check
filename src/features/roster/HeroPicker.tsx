@@ -1,6 +1,6 @@
 // Hero list to pick one from: portrait and name in a grid of buttons («Обмен вещами» — whom to re-dress, a team spot;
 // «Команда» — a team spot, in its own sheet: no title line). search — placeholder of a name field above the list (none — no field): matches like the
-// character list's search (name, slug, nickname). mark — an optional per-row mark at the end («Кого переодеть?»: the gain now,
+// character list's search (name, slug, nickname). mark — an optional per-row mark under the name («Кого переодеть?»: the gain now,
 // «—», ✓); off — the row can't be picked.
 import { useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';

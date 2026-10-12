@@ -36,11 +36,13 @@ export function movesOf(w0: World, w1: World, first: readonly string[]): Moves {
   const rest = [...new Set([...w0.heroes, ...w1.heroes].map((h) => h.id))].filter((id) => !first.includes(id));
   rest.sort((a, z) => (before.get(a)?.rank ?? after.get(a)?.rank ?? 0) - (before.get(z)?.rank ?? after.get(z)?.rank ?? 0));
   // кто сейчас носит вещь и чей она нетронутый запас
+  const held = w0.held ?? heldOf(w0);
   const wearer = new Map<string, [string, SlotId]>();
   const stock = new Map<string, string>();
   for (const h of w0.heroes) {
     for (const s of SLOT_ORDER) if (h.worn[s]) wearer.set(h.worn[s]!, [h.id, s]);
-    for (const id of h.pool) if (!wearer.has(id)) stock.set(id, h.id);
+    // a free piece of the window (not held) is plain inventory: nobody's spare
+    for (const id of h.pool) if (!wearer.has(id) && held.has(id)) stock.set(id, h.id);
   }
   const now = new Map(w0.heroes.map((h) => [h.id, { ...h.worn }]));
   const moves: Move[] = [], emptied: Moves['emptied'] = [];

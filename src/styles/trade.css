@@ -1,5 +1,5 @@
 /* «Обмен вещами» (features/trade): шторка, ромб команды, план. Телефон 280–420 px — основной размер. */
-.drawer.trade { max-width: 560px; }
+.drawer.trade, .drawer.trade-free { max-width: 560px; }
 .trade-b { display: grid; gap: 10px; }
 .trade-mode { display: flex; gap: 4px; padding: 3px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
 .trade-mode button { flex: 1; min-height: 34px; border: 0; border-radius: 5px; background: none; color: var(--ink-2); font: 600 13.5px var(--font-body); }
@@ -17,7 +17,8 @@
 .trade-mk { font: 700 11.5px/1.2 var(--font-mono); color: var(--ink-3); }
 .trade-mk.up { color: var(--keep); }
 .trade-mk.down { color: var(--junk); }
-.trade-hero:disabled { opacity: .6; }
+/* a done row is dimmed by its portrait and name only: the ✓ stays at full strength (contrast) */
+.trade-hero:disabled .face, .trade-hero:disabled .trade-hn { opacity: .6; }
 .trade-hero:disabled .trade-mk { color: var(--keep); }
 .trade-count { justify-self: start; }
 .trade-session { margin: 0; display: flex; align-items: center; gap: 10px; }

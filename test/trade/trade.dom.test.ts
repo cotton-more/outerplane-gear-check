@@ -4,7 +4,7 @@
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { act, createElement } from 'react';
+import { act, createElement, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
@@ -46,7 +46,8 @@ afterEach(async () => {
   history.replaceState(null, '', location.pathname);
 });
 
-async function mount(extra: Record<string, unknown>, state: Record<string, unknown> = {}, item: Record<string, unknown> = {}) {
+// strict — inside StrictMode, as in dev (src/main.tsx): effects run setup → cleanup → setup on mount
+async function mount(extra: Record<string, unknown>, state: Record<string, unknown> = {}, item: Record<string, unknown> = {}, strict = false) {
   const saved = { lang: 'en', welcomeHidden: true, tour: DONE, roster: [caren.id], state: { tab: 'chars', charId: caren.id, ...state }, item, ...extra };
   for (const [k, v] of Object.entries(saved)) localStorage.setItem('ogc.' + k, JSON.stringify(v));
   const { App } = await import('@/app/App');
@@ -55,7 +56,8 @@ async function mount(extra: Record<string, unknown>, state: Record<string, unkno
   const el = document.createElement('div');
   document.body.append(el);
   root = createRoot(el);
-  await act(async () => root!.render(createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App))));
+  const app = createElement(IndexContext.Provider, { value: createIndex(D) }, createElement(App));
+  await act(async () => root!.render(strict ? createElement(StrictMode, null, app) : app));
 }
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 const $$ = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)];
@@ -222,7 +224,9 @@ describe('J. обмен вещами', () => {
     await click(hero('Caren'));
     await click($('.tact .btn.primary'));
     await settle();
-    expect(rows()).toEqual([['Aer', '—', false], ['Ais Wallenstein', '—', false], ['Caren', '✓', true]]);
+    // Caren's old helmet (p1) was worn when the window opened and is off now: free, so Aer (his slot is empty since Caren took
+    // his) can take it; so can Ais (nothing worn) — a gain, not «—» (before the free pieces it stayed held in Caren's pool)
+    expect(rows()).toEqual([['Aer', expect.stringMatching(/^\+[\d.]+$/), false], ['Ais Wallenstein', expect.stringMatching(/^\+[\d.]+$/), false], ['Caren', '✓', true]]);
     expect(byText('.trade-hero', 'Caren')?.querySelector('.sr-only')?.textContent).toBe('Already re-dressed');
   });
 
@@ -243,6 +247,19 @@ describe('J. обмен вещами', () => {
     await click(byText('.trade-session button', 'Finish'));
     expect($('.drawer.trade')).toBeNull();
     expect(stored().worn[caren.id].helmet).toBe('p2');
+  });
+
+  it('«Undo» works under StrictMode too: the hero leaves the session (the unmounted-guard is re-armed on remount)', async () => {
+    await mount({ gear: gear(), roster: ROSTER }, {}, {}, true);
+    await click(byText('.cd-acts button', 'Trade'));
+    await click($('.tact .btn.primary'));
+    await settle();
+    expect(rows().find((r) => r[0] === 'Caren')?.[1]).toBe('✓');
+
+    await click(byText('.gear-toast button', 'Undo'));
+    await settle();
+    expect($('.trade-session')).toBeNull();
+    expect(rows().find((r) => r[0] === 'Caren')?.slice(1)).toEqual([expect.stringMatching(/^\+[\d.]+$/), false]);
   });
 
   it('J7: «Calculate» → «Calculating…», «Cancel» гасит расчёт, ничего не записано', async () => {
@@ -285,5 +302,96 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tsrc')?.textContent).toBe('on Aer');
     expect($$('.tline').map((l) => l.querySelector('.tline-n')?.textContent)).not.toContain('Aer');
     expect($('.tline:not(.to)')).toBeNull();
+  });
+
+  // free pieces (MODEL.md §7 items 2 and 8): worn when the window opened, off now, given to no one → «Free pieces» on close
+  describe('free pieces', () => {
+    const FREE3 = [caren.id, aer.id, ais.id];
+    const freeSheet = () => byText('.drawer', 'Free pieces');
+    const oneRedressed = async () => {
+      await mount({ gear: gear(), roster: FREE3 }, { charId: null });
+      await click(byText('.cbar button', 'Trade'));
+      await click(byText('.trade-mode button', 'Hero'));
+      await click(hero('Caren'));
+      await click($('.tact .btn.primary'));
+      await settle();
+    };
+
+    it('«Finish» after Caren took Aer\'s helmet: the sheet lists Caren\'s old helmet, no hero named, nothing stored', async () => {
+      await oneRedressed();
+      const before = localStorage.getItem('ogc.gear');
+      await click(byText('.trade-session button', 'Finish'));
+      expect($('.drawer.trade')).toBeNull();
+      const sheet = freeSheet()!;
+      expect(sheet.classList.contains('trade-free')).toBe(true);
+      expect(sheet.querySelector('h3')?.textContent).toBe('Free pieces');
+      expect(sheet.textContent).toContain("Taken off in this trade and given to no one. In the game they're in your inventory.");
+      expect(sheet.querySelectorAll('.tmove')).toHaveLength(1);
+      const row = sheet.querySelector('.tmove')!;
+      expect(row.textContent).toContain('Speed');
+      expect(row.querySelector('.bgear-t')?.textContent).toContain('SPD'); // substats with levels, as in the plan
+      expect(row.querySelector('.tsrc')).toBeNull();
+      expect(row.querySelector('button')).toBeNull();
+      for (const n of ['Caren', 'Aer']) expect(sheet.textContent).not.toContain(n);
+      expect([...sheet.querySelectorAll('.drawer-b button')]).toEqual([]);
+      expect(localStorage.getItem('ogc.gear')).toBe(before);
+
+      await click(sheet.querySelector<HTMLElement>('.drawer-x'));
+      expect(freeSheet()).toBeUndefined();
+    });
+
+    it('the ✕ of the trade sheet closes it the same way', async () => {
+      await oneRedressed();
+      await click($('.drawer.trade .drawer-x'));
+      expect(freeSheet()).toBeTruthy();
+    });
+
+    it('Aer took the free helmet before closing: no sheet', async () => {
+      await oneRedressed();
+      await click(hero('Aer'));
+      expect($$('.tmove .tsrc').map((x) => x.textContent)).toEqual(['in inventory']); // a free piece is nobody's stock
+      await click($('.tact .btn.primary'));
+      await settle();
+      expect(stored().worn[aer.id].helmet).toBe('p1');
+      await click(byText('.trade-session button', 'Finish'));
+      expect($('.drawer.trade')).toBeNull();
+      expect(freeSheet()).toBeUndefined();
+    });
+
+    it('«Undo» before closing: the piece is worn again — no sheet', async () => {
+      await oneRedressed();
+      await click(byText('.gear-toast button', 'Undo'));
+      await settle();
+      await click($('.drawer.trade .drawer-x'));
+      expect($('.drawer.trade')).toBeNull();
+      expect(freeSheet()).toBeUndefined();
+    });
+
+    it('nothing re-dressed: closing shows no sheet', async () => {
+      await mount({ gear: gear(), roster: ROSTER });
+      await click(byText('.cd-acts button', 'Trade'));
+      await click($('.drawer.trade .drawer-x'));
+      expect($('.drawer')).toBeNull();
+    });
+
+    it('team «Done» that leaves a piece free: the sheet opens with the applied store', async () => {
+      // Caren takes Aer's helmet; her old one is junk (no useful stats), so nobody in the team wears it
+      const junk = P('p1', 'helmet', speed, { RES: 1 }, { lit: { RES: 1 }, bt: 4 });
+      const team = [caren.id, ais.id, akari.id, D.chars.find((c) => c.name === 'Ame')!.id];
+      await mount({ roster: [...team, aer.id], gear: G([junk, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] },
+        { worn: { [caren.id]: { helmet: 'p1' }, [aer.id]: { helmet: 'p2' } } }) }, { charId: null });
+      await click(byText('.cbar button', 'Trade'));
+      for (const id of team) {
+        await click($$('.team-add')[0]);
+        await click(hero(D.chars.find((c) => c.id === id)!.name));
+      }
+      await click($('.trade-count'));
+      for (let i = 0; i < 100 && !$('.tplan'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+      await click($('.tact .btn.primary'));
+
+      expect(stored().worn[caren.id].helmet).toBe('p2');
+      expect($('.drawer.trade')).toBeNull();
+      expect(freeSheet()?.querySelectorAll('.tmove')).toHaveLength(1);
+    });
   });
 });

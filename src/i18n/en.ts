@@ -599,7 +599,7 @@ export const en: Texts = {
       'Works out how to re-dress a hero (or a team of four) from the pieces already in your roster and inventory. Open it with "Trade ▸" on a hero card (that hero\'s plan) or "Trade" above the character list and "Team trade" in More on a phone (straight to the team). In the game you do it yourself — the app only calculates.',
       '**Hero** — whom to re-dress; **Team** — four places in a diamond: they swap pieces among themselves and take from everyone else. A member is a tile; tap it to put another hero there or "Remove from team". Under the tile — the hero\'s order ("Order: … ▾"): "By stats" or one of the sets from their builds; tap to change. A hero with a pinned set has one order — "Pinned".',
       '**One by one:** in "Who to re-dress?" each hero shows how many points they\'d gain if re-dressed now ("+4.2"; "—" — nothing to change). The number changes after every "Done": the first hero takes the best, the next ones get what is left. Sorted by name.',
-      '**Session:** while the trade window is open, what already re-dressed heroes wear is not taken by the next ones; they go to the end of the list with ✓. "Finish" closes the window — no restrictions remain. Other heroes\' spares are never taken: a piece held for a hero stays with that hero.',
+      '**Session:** while the trade window is open, what already re-dressed heroes wear is not taken by the next ones; they go to the end of the list with ✓. "Finish" closes the window — no restrictions remain. Other heroes\' spares are never taken: a piece held for a hero stays with that hero. A piece taken off a re-dressed hero is free: any next hero may take it. If nobody took it by the time the window closes, the app lists it in "Free pieces".',
       'The plan: for each receiver — how many points stronger ("+4.2 pts") or weaker ("Stats drop by N pts"; when less or more of the hero\'s crit goes to waste — "Extra crit −6.3 → −2.3": crit near their number N counts less, see "Crit: 45%") they get, which set bonuses turn on, what to put on, how many points each piece gives over the worn one ("+1.6 pts"; a recommended weapon or accessory says "better passive", even with fewer points), where each piece comes from (a hero or the inventory) and how to find it in the game — the source is small under the piece, weapons and accessories also get Secondary ↓. If the order lacks pieces of its set, a line says so. "Don\'t take" looks for another piece. An empty slot shows "Search:" with a hint. The plan shows only whom you re-dress; heroes you take pieces from are not shown.',
       '**Holes are not filled:** a piece taken off stays off until you enter a new one through evaluation.',
       '**Done** — all done in the game: the plan is saved. **Cancel** — nothing changed. Right after "Done" there is "Undo". A copy that is in no pool leaves the app but stays in your game inventory.',
@@ -697,6 +697,8 @@ export const en: Texts = {
     markTitle: (n: number) => `Would gain now: ${n > 0 ? '+' : n < 0 ? '−' : ''}${dec(Math.abs(n))} pts`,
     markNone: 'Nothing to change',
     markDone: 'Already re-dressed',
+    freeTitle: 'Free pieces',
+    freeNote: "Taken off in this trade and given to no one. In the game they're in your inventory.",
   },
 
   batch: {

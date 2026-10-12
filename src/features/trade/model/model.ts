@@ -67,7 +67,8 @@ export interface World {
   items: Readonly<Record<string, Item>>;
   gauge(heroId: string): Gauge | null; // null — у героя нет билдов (R2.7)
   // spare when the calculation started — held for its hero (a better piece, Breakthrough), never a candidate for another
-  // (owner, 2026-10-12, Q1b); a piece the same calculation took off is not in it. No set — heldOf(this world)
+  // (owner, 2026-10-12, Q1b); a piece the same calculation took off is not in it, nor a piece taken off in this window
+  // (free, model/free). No set — heldOf(this world)
   held?: ReadonlySet<string>;
 }
 

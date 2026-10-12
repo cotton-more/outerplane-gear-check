@@ -31,6 +31,8 @@ import { takeModelNote } from '@/features/gear/store/stored';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
+import { freeOf } from '@/features/trade/model/free';
+import { FreeSheet } from '@/features/trade/ui/FreeSheet';
 import { useBatchMode } from '@/features/batch/useBatchMode';
 import { BatchStrip } from '@/features/batch/ui/BatchStrip';
 import { BatchMarks } from '@/features/batch/ui/BatchMarks';
@@ -122,6 +124,9 @@ export function App() {
   // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
   // или «Ещё» → «Обмен для команды», сразу в режиме «Команда»
   const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
+  // pieces taken off in a closed trade window and given to no one (features/trade/model/free): «Свободные вещи», a list only
+  const [freeIds, setFreeIds] = useState<string[]>([]);
+  const freeNow = useMemo(() => freeOf(new Set(freeIds), gear.store), [freeIds, gear.store]); // «Вернуть» on the toast empties it
   const [pieceOpen, setPieceOpen] = useState(false); // карточка вещи в блоке билда (для тура «Экипировка»)
   const [fitHidden, setFitHidden] = useState(() => storage.get('fitnoteHidden', false));
   // перенос на новую модель (stat-sets PLAN Д11): игроку прежней модели — одно сообщение за всё время (флаг пишется сразу)
@@ -316,9 +321,10 @@ export function App() {
           <AskSheet title={t.batch.end} text={t.batch.endAsk(batch.batch.items.length)} yes={t.batch.endYes} kind="batch-ask" onYes={batch.endNow} onClose={batch.cancelEnd} />
         )}
         {trade && canEquip && (
-          <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}
+          <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={(free) => { setTrade(null); setFreeIds(free); }}
             onApplied={(text, undo, after) => say({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x, after })} />
         )}
+        {freeNow.length > 0 && <FreeSheet ctx={ctx} st={gear.store} ids={freeNow} onClose={() => setFreeIds([])} />}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>
             <CodeInput fits={(item) => fitsData(s, item, ctx.idx)} onLoad={(item) => { dispatch({ type: 'load', item }); dropReplace(); setCodeOpen(false); }}

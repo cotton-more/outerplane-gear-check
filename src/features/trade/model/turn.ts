@@ -26,9 +26,10 @@ export function* turnGains(w: World, ids: readonly string[]): Generator<void, Ga
   return out;
 }
 
-// the picker's order (owner, Q1a): by name — the player already knows whom to re-dress, the gain only shows what he could
-// take now; the re-dressed last, in the order they were done
-export function turnOrder(ids: readonly string[], done: readonly string[], name: (id: string) => string): string[] {
-  const open = ids.filter((id) => !done.includes(id)).sort((a, z) => name(a).localeCompare(name(z)));
+// the picker's order (owner, Q1a): by name, the way the character list sorts (compare — compareChars: base name, then
+// prefix) — the player already knows whom to re-dress, the gain only shows what he could take now; the re-dressed last,
+// in the order they were done
+export function turnOrder(ids: readonly string[], done: readonly string[], compare: (a: string, z: string) => number): string[] {
+  const open = ids.filter((id) => !done.includes(id)).sort(compare);
   return [...open, ...done.filter((id) => ids.includes(id))];
 }
