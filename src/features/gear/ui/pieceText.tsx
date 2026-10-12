@@ -35,19 +35,19 @@ export const capLine = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): str
 export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>): string =>
   (isArmor(p.slot) ? t.ui.slotNom[p.slot] : itemCaption(idx, p)) + (p.bt === 4 ? '\u00A0·\u00A0T4' : '');
 // сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных»
-// batch — a row of the batch (Q4): no grade chip, the caption in the grade's colour, armor is its slot word alone
+// The name in the grade's colour — red Legendary, blue Epic (no «L»/«E» chip: owner 2026-10-12, as the batch rows had it,
+// Q4); the set's icon too where it is our own outline. batch — a row of the batch: armor is its slot word alone
 export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boolean }) {
   const t = useT();
   const armor = isArmor(p.slot);
   const unknown = p.setId ? !ctx.idx.SET[p.setId] : !!p.itemKey && !ctx.idx.ITEM[p.slot as GearKind]?.[p.itemKey];
   const name = batch && armor ? t.ui.slotNom[p.slot] : unknown ? t.ui.notInData : nameOf(ctx, p);
   const main = p.setId ? null : p.main;
-  const tone = batch ? ` gname ${p.grade === 'unique' ? 'legend' : 'epic'}` : '';
+  const tone = ` gname ${p.grade === 'unique' ? 'legend' : 'epic'}`;
   return (
     <>
-      {!batch && <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>}
       {/* the set's icon by the name — easier to match against the game (owner 2026-10-12); batch rows name the set in the title */}
-      {!batch && p.setId && ctx.idx.SET[p.setId] && <SetIcon set={ctx.idx.SET[p.setId]} className="pset" />}
+      {!batch && p.setId && ctx.idx.SET[p.setId] && <SetIcon set={ctx.idx.SET[p.setId]} className={`pset${tone}`} />}
       {name && <span className={`pn${tone}`}>{name}</span>}
       {/* batch: a no-break space glues «· ATK%» to the name's last word, so a wrapped name never leaves it leading a line */}
       {main && <span className={`pm${tone}`}>{name ? `${batch ? '\u00A0' : ''}· ` : ''}{main}</span>}

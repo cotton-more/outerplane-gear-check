@@ -415,7 +415,7 @@ describe('«Find a piece»', () => {
   it('worn by Caren, set aside for Rin (another order is another piece); Caren\'s name opens her card', async () => {
     await mount({ roster: [caren.id, rin.id], gear });
     await find('OGC ' + code);
-    expect($$('.find-res p').map((p) => p.textContent?.replace(/\u00A0/g, ' '))).toEqual(['LSpeed Set', 'SPD 2, CHC 3, DEF% 1', 'Worn by: Caren', 'Set aside for: Rin']);
+    expect($$('.find-res p').map((p) => p.textContent?.replace(/\u00A0/g, ' '))).toEqual(['Speed Set', 'SPD 2, CHC 3, DEF% 1', 'Worn by: Caren', 'Set aside for: Rin']);
     await click($$('.find-res .linkbtn').find((b) => b.textContent === 'Caren'));
     expect([$('.find'), saved().tab, saved().charId]).toEqual([null, 'chars', caren.id]);
   });

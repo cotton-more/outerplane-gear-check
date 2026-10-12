@@ -177,9 +177,9 @@ html.xs .bgear-t { grid-row: 3; }
 .bgear-none p { margin: 0; font-size: 13px; color: var(--ink-2); }
 /* значок сета у названия (PieceName): игровой — тёмный кружок, свой — контур в рамке; читается в обеих темах */
 .bgear-row .bgear-n .pset, .piece-n .pset { box-sizing: border-box; width: 18px; height: 18px; flex: none; }
-.gl { width: 18px; height: 18px; flex: none; border-radius: 4px; font: 700 10.5px/1 var(--font-display); color: #fff; display: inline-flex; align-items: center; justify-content: center; }
-.gl.L { background: color-mix(in srgb, var(--legend) 70%, var(--surface)); }
-.gl.E { background: color-mix(in srgb, var(--epic) 80%, var(--surface)); }
+/* a piece's name (and our own set outline) in its grade's colour: red Legendary, blue Epic — PieceName, batch lines */
+.gname.legend { color: var(--legend); }
+.gname.epic { color: var(--epic); }
 .piece { display: grid; gap: 10px; }
 .piece p { margin: 0; }
 .piece-n { display: flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; white-space: nowrap; }

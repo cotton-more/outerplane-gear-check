@@ -42,7 +42,8 @@ describe('the caption helper', () => {
     expect(pieceLabel(en, idx)(gloves())).toBe('Speed gloves');               // armor in a phrase keeps its set
     const row = new JSDOM(`<body>${renderToStaticMarkup(createElement(IndexContext.Provider, { value: idx }, createElement(LangContext.Provider, { value: en },
       createElement(PieceName, { ctx, p: epicW('ATK%') }))))}</body>`).window.document.body;
-    expect(row.querySelector('.gl')?.textContent).toBe('E');                 // the card keeps its chip
+    expect(row.querySelector('.gl')).toBeNull();                             // no grade chip: the name is in the grade's colour
+    expect([row.querySelector('.pn.gname.epic'), row.querySelector('.pm.gname.epic')].every(Boolean)).toBe(true);
     expect([row.querySelector('.pn')?.textContent, row.querySelector('.pm')?.textContent]).toEqual(['Steel Sword', '· ATK%']);
   });
   it('batch caption: a Legendary at T4 says T4; armor is its slot word, «T4» only at T4', () => {

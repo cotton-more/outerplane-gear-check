@@ -202,7 +202,7 @@ describe('3.3 ссылка и карточка', () => {
   it('3.14 сета нет в данных — «not in your data» в строке, прочие вещи на месте', async () => {
     await mount(STD(), codeOf([{ ...HELM, setId: '99' }, ARM]));
     const rows = [...card()!.querySelectorAll('.bgear-row .bgear-n')].map((n) => n.textContent);
-    expect(rows).toEqual(['Lnot in your data', 'LSpeed Set']);
+    expect(rows).toEqual(['not in your data', 'Speed Set']);
   });
 
   it('3.14 у героя нет билдов — строки билда нет, чипы без подсветки', async () => {

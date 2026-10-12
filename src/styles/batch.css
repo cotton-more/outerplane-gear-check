@@ -125,5 +125,3 @@ html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: 
 .batch-sheet .batch-back { margin: 6px 14px 0; } /* the tap area above it (.hit) is clipped by the sheet's scroll box: room for it */
 .bworn { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
 .gname { font-weight: 600; }
-.gname.legend { color: var(--legend); }
-.gname.epic { color: var(--epic); }
