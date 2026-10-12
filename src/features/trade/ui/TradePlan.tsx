@@ -19,7 +19,7 @@ import { keyOfHole, keyOfItem, type SearchKey } from '@/features/trade/model/hin
 import type { HoleFill } from '@/features/trade/model/holes';
 import type { Move } from '@/features/trade/model/moves';
 import type { Missing } from '@/features/trade/model/plan';
-import type { HeroLine } from '@/features/trade/model/view';
+import { lineGain, tenths, type HeroLine } from '@/features/trade/model/view';
 import { SlotIcon } from '@/game/icons/Img';
 import { PieceName, pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
@@ -31,9 +31,6 @@ import { OrderButton } from './OrderSheet';
 
 type T = Texts;
 const pts = (m: number) => m / 1000;
-// points the way the plan writes them (to tenths): «+0 очк.» and «слабее на 0 очк.» never occur (stage 10 review); halves round
-// away from zero both ways, otherwise a gain of −1.05 read «−1» while «слабее на» read «1,1»
-const tenths = (m: number) => Math.sign(m) * Math.round(Math.abs(m) / 100) / 10;
 
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
   return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && setName(ctx.idx, k.set),
@@ -41,7 +38,7 @@ function keyText(t: T, ctx: Ctx, k: SearchKey): string {
 }
 
 function gainText(t: T, l: HeroLine): { text: string; cls: string } {
-  const n = tenths(l.after - l.before);
+  const n = lineGain(l);
   return { text: t.trade.gainPts(n), cls: n > 0 ? 'up' : n < 0 ? 'down' : '' };
 }
 

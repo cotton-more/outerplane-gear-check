@@ -50,7 +50,13 @@ function halvesOf(w: World, id: string): Map<string, number> {
 const grown = (more: Map<string, number>, less: Map<string, number>): Part[] =>
   [...more].filter(([set, h]) => h > (less.get(set) ?? 0)).map(([set, h]) => ({ set, n: h === 2 ? 4 : 2 }));
 
-const keyIn = (w: World, id: string) => (w.gauge(id) ? kitIn(w, id).key : null);
+export const keyIn = (w: World, id: string) => (w.gauge(id) ? kitIn(w, id).key : null);
+
+// points the way the plan writes them (to tenths): «+0 очк.» and «слабее на 0 очк.» never occur (stage 10 review); halves round
+// away from zero both ways, otherwise a gain of −1.05 read «−1» while «слабее на» read «1,1»
+export const tenths = (m: Milli) => Math.sign(m) * Math.round(Math.abs(m) / 100) / 10;
+// the gain on the hero's line of the plan («▲ +6,3 очк.») — and the mark in «Кого переодеть?» (turn.ts)
+export const lineGain = (l: Pick<HeroLine, 'before' | 'after'>) => tenths(l.after - l.before);
 const poolOf = (w: World) => new Map(w.heroes.flatMap((h) => h.pool.map((id) => [id, h.id] as const)));
 
 // w0 — до плана, w1 — после; receivers — получатели в порядке плана; дальше — герои, у которых поменялось надетое

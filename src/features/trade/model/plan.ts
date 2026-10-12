@@ -33,10 +33,16 @@ export function missingOf(g: Gauge, cands: Cands, slots: Partial<Record<SlotId, 
   return out;
 }
 
-export function heroPlan(w: World, inp: PlanInput): HeroPlan {
+// the plan alone — candidates and the threshold, no holes: heroPlan and the picker's gains (turn.ts) count it the same way
+export function planOf(w: World, inp: PlanInput): { plan: Plan; cands: Cands; g: Gauge | null } {
   const g = w.gauge(inp.to);
   const cin: CandInput = { to: inp.to, skip: inp.skip, open: inp.open };
   const cands = g ? candidates(w, cin) : {};
   const plan = g ? planFor(g, cands) : { kit: { slots: {}, key: null as never }, changes: [], losses: [] };
+  return { plan, cands, g };
+}
+
+export function heroPlan(w: World, inp: PlanInput): HeroPlan {
+  const { plan, cands, g } = planOf(w, inp);
   return { plan, holes: fillHoles(w, { to: inp.to, plan }), missing: g ? missingOf(g, cands, plan.kit.slots) : [] };
 }

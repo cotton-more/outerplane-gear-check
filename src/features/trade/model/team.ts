@@ -14,6 +14,7 @@ import { cmpUse, gains, SLOT_ORDER, type Cand, type Gauge, type Hero, type Kit, 
 import type { Milli } from '@/features/gear/model/vs';
 import { advance, movesOf, type Moves } from './moves';
 import { heroPlan, partOn, type Missing } from './plan';
+import { runAll, runChunks } from './chunks';
 
 export const TEAM_SIZE = 4;
 
@@ -171,26 +172,6 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
   return { order: r.order, steps, members, moves: movesOf(w0, r.w, r.order) };
 }
 
-const run = <T>(gen: Generator<void, T>): T => { for (;;) { const r = gen.next(); if (r.done) return r.value; } };
-export const teamPlan = (w: World, inp: TeamInput): TeamPlan | null => run(teamSteps(w, inp));
-
-// фоновый расчёт кусками: уступает поток между кусками; signal.abort() — null, без последствий
-export function runChunks<T>(gen: Generator<void, T>, signal?: AbortSignal, slice = 8): Promise<T | null> {
-  return new Promise((resolve, reject) => {
-    const step = () => {
-      if (signal?.aborted) { resolve(null); return; }
-      try {
-        const t0 = performance.now();
-        for (;;) {
-          const r = gen.next();
-          if (r.done) { resolve(r.value); return; }
-          if (performance.now() - t0 >= slice) break;
-        }
-        setTimeout(step, 0);
-      } catch (e) { reject(e); }
-    };
-    setTimeout(step, 0);
-  });
-}
+export const teamPlan = (w: World, inp: TeamInput): TeamPlan | null => runAll(teamSteps(w, inp));
 export const runTeam = (w: World, inp: TeamInput, signal?: AbortSignal, slice = 8): Promise<TeamPlan | null> =>
   runChunks(teamSteps(w, inp), signal, slice);
