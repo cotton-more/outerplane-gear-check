@@ -76,7 +76,8 @@ export function candidates(w: World, inp: CandInput): Cands {
       if (!it) continue;
       // his spare is held for him (a better piece, Breakthrough): in game it is locked, not worn — handed to another hero it
       // would be worn and locked with nobody knowing whom it was for (owner, 2026-10-12, Q1b). Taken off by this same
-      // calculation (a team member's step) — not held: the swap of two members goes on
+      // calculation (a team member's step), or by an earlier «Сделал» of this window (free, World.held) — not held: the swap of
+      // two members goes on, and a re-dressed hero's old piece goes to the next
       if (!kw.has(id)) { if (!wornBy.has(id) && !held.has(id)) add(id, 2, k, 0, false); }
       else if (open && k.worn[it.slot] === id) add(id, 3, k, holderLoss(w, k, gk, it.slot), false);
     }

@@ -288,7 +288,10 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (`comboProfile`); other sets count as random ones (rows only). Candidates: his pieces (worn cost 0, spare cost 1), free
    (2) and other heroes' worn (3). **Other heroes' spare is never a candidate** (owner, 2026-10-12, Q1b): it is held for its
    hero (a better piece, Breakthrough; in game locked, not worn). Only the spare held when the calculation started
-   (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. Not candidates: wrong class, **not passing the receiver's bar
+   (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. So is a
+   **free piece of the window** (`free:freeOf`; owner, 2026-10-12): worn by someone when the window opened and by nobody
+   now (a «Сделал» took it off its hero) — it leaves `held` (`worldOf` option `free`) and goes to the next hero at cost 2;
+   «Вернуть» wears it again, so it is not free. Not candidates: wrong class, **not passing the receiver's bar
    (§4; his own worn is always eligible)** — a swap between two team members never hands over a piece unfit for the
    receiver — "Don't take", a code (content without Breakthrough) he already has at an equal or higher BT.
 3. **"Was → becomes"** per hero: points of each piece over the worn one; a part of the order that cannot be built —
@@ -317,7 +320,9 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    open hero's gain now — the number on his plan's hero line (`planOf` → `advance` → `lineGain`; «—» when the plan changes
    nothing), counted in chunks after every «Сделал» / «Вернуть» / order change. The first hero re-dressed takes the best,
    the next ones what is left — expected. Order: by name (the player decides whom to re-dress), the re-dressed last in
-   done order with ✓, not pickable; «Закончить» closes the window (locks dropped).
+   done order with ✓, not pickable; «Закончить» closes the window (locks dropped). When the window closes (✕, «Закончить»,
+   or after a team «Сделал») and free pieces remain — computed from the store after the last apply — App opens «Свободные
+   вещи» (`ui/FreeSheet`): a list of the pieces drawn as in the plan (`ui/PieceRow`), with no hero named; nothing is stored.
 
 ## §8 Batch plan ("Партия")
 

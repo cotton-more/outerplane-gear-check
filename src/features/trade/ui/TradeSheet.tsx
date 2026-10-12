@@ -4,7 +4,8 @@
 // by name, at each hero the gain of his plan now (counted in chunks after every «Сделал» / «Вернуть»), the re-dressed last
 // with ✓, not pickable. Режим «Команда»: четыре места ромбом (у члена — плитка и заказ
 // «Заказ: … ▾»), «Посчитать» → «Считаю…» и «Отмена» (runTeam кусками). «Не брать» и смена заказа — пересчёт (R7.3).
-// «Сделал» — одна запись (features/trade/model/apply), сообщение с «Вернуть» — у App (onApplied).
+// «Сделал» — одна запись (features/trade/model/apply), сообщение с «Вернуть» — у App (onApplied). Free pieces (model/free): worn at the
+// open, worn by nobody now — any next hero may take them; the window closes with onClose(free) — App lists them (FreeSheet).
 // Неподтверждённый план, заказы и сеанс нигде не хранятся (R4.5): закрыл шторку — их нет.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n';
@@ -12,6 +13,7 @@ import type { Ctx } from '@/game/context';
 import type { GearStore } from '@/features/gear/model/gear';
 import { applyHero, applyTeam, stampOf } from '@/features/trade/model/apply';
 import { skipKey } from '@/features/trade/model/cands';
+import { freeOf, wornOf } from '@/features/trade/model/free';
 import type { HoleFill } from '@/features/trade/model/holes';
 import { advance, heroMoves } from '@/features/trade/model/moves';
 import { heroPlan, type Missing } from '@/features/trade/model/plan';
@@ -40,7 +42,8 @@ interface Result { lines: HeroLine[]; fills: HoleFill[]; missing: Record<string,
 // onApplied: after — for the toast's «Вернуть» once the store is back (the hero leaves the session; a no-op once the sheet is closed)
 export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onApplied, onClose }: {
   ctx: Ctx; gear: GearApi; roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>;
-  start: string | null; team?: boolean; onApplied: (text: string, undo: Undo, after?: () => void) => void; onClose: () => void;
+  start: string | null; team?: boolean; onApplied: (text: string, undo: Undo, after?: () => void) => void;
+  onClose: (free: string[]) => void; // free — pieces taken off in this window and given to no one, from the store as it is now
 }) {
   const t = useT();
   const { idx } = ctx;
@@ -58,7 +61,10 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
   const [orderFor, setOrderFor] = useState<string | null>(null);
   // кого можно выбрать: герои ростера с билдами (R2.7, R10.3), X при Core Fusion X — нет
   const pickable = useMemo(() => roster.filter((id) => idx.CHAR[id]?.builds.length && !off.has(id)), [roster, idx, off]);
-  const world = useMemo(() => worldOf(ctx, st, roster, { locked, orders }), [ctx, st, roster, locked, orders]);
+  // what was worn when the window opened (the sheet is mounted per window)
+  const [opened] = useState(() => wornOf(st));
+  const free = useMemo(() => new Set(freeOf(opened, st)), [opened, st]);
+  const world = useMemo(() => worldOf(ctx, st, roster, { locked, orders, free }), [ctx, st, roster, locked, orders, free]);
   const stamp = useMemo(() => stampOf(st), [st]);
   const members = team.filter((x): x is string => !!x);
   const fresh = () => { setSkip(new Set()); setStale(false); };
@@ -117,6 +123,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
   }, [mode, go, teamKey, world, skip, stamp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const res = mode === 'hero' ? hres : tres;
+  const close = () => onClose(freeOf(opened, st));
   const done = () => {
     if (mode === 'hero' && hres && hero) {
       const r = applyHero(st, { to: hero, hp: hres.hp, stamp: hres.stamp });
@@ -136,7 +143,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
       const r = applyTeam(st, { tp: tres.tp, stamp: tres.stamp });
       if (!r) { setStale(true); return; }
       if (r.st !== st) { gear.set(r.st); onApplied(t.trade.savedTeam, r.undo); }
-      onClose();
+      onClose(freeOf(opened, r.st)); // the applied store: the prop is not updated yet
     }
   };
   const cancel = () => {
@@ -169,7 +176,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
   );
 
   return (
-    <Sheet title={t.trade.title} onClose={onClose} className="trade">
+    <Sheet title={t.trade.title} onClose={close} className="trade">
       <div className="trade-b">
         <div className="trade-mode" role="tablist" aria-label={t.trade.title}>
           <button type="button" role="tab" aria-selected={mode === 'hero'} onClick={() => switchMode('hero')}>{t.trade.modeHero}</button>
@@ -178,7 +185,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
         {locked.size > 0 && (
           <p className="muted small trade-session">
             <span>{t.trade.session}</span>
-            <button type="button" className="btn" onClick={onClose}>{t.trade.finish}</button>
+            <button type="button" className="btn" onClick={close}>{t.trade.finish}</button>
           </p>
         )}
         {mode === 'team' && (

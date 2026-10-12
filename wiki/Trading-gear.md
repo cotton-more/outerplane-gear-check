@@ -42,6 +42,9 @@ While the trade window is open, **what already re-dressed heroes wear** is not t
 sit at the end of the list with ✓ and can't be picked again. "Undo" after "Done" puts the hero back. **"Finish"** closes
 the window — no restrictions remain. Members of one team still swap among themselves.
 
+A piece taken off a re-dressed hero is free: any next hero may take it. If nobody took it by the time the window closes,
+the app lists it in "Free pieces".
+
 ## The plan
 
 For each receiver:

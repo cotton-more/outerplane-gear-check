@@ -143,8 +143,9 @@ export function store(heroes: Record<string, { pool: Piece[]; worn?: Piece[] }>,
 }
 
 // мир из хранилища: ростер — порядок героев в хранилище, если не задан; locked — переодетые в этом окне, orders — заказы
-export const realWorld = (st: GearStore, roster: readonly string[] = Object.keys(st.pools), locked: readonly string[] = [], orders: Record<string, string> = {}): World =>
-  worldOf(ctx, st, roster, { locked: new Set(locked), orders });
+// free — free pieces of the window (model/free)
+export const realWorld = (st: GearStore, roster: readonly string[] = Object.keys(st.pools), locked: readonly string[] = [], orders: Record<string, string> = {}, free: readonly string[] = []): World =>
+  worldOf(ctx, st, roster, { locked: new Set(locked), orders, free: new Set(free) });
 
 // ----------------------------------------------------------------------------------------------- снимок владельца
 

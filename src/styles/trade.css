@@ -1,5 +1,5 @@
 /* «Обмен вещами» (features/trade): шторка, ромб команды, план. Телефон 280–420 px — основной размер. */
-.drawer.trade { max-width: 560px; }
+.drawer.trade, .drawer.trade-free { max-width: 560px; }
 .trade-b { display: grid; gap: 10px; }
 .trade-mode { display: flex; gap: 4px; padding: 3px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
 .trade-mode button { flex: 1; min-height: 34px; border: 0; border-radius: 5px; background: none; color: var(--ink-2); font: 600 13.5px var(--font-body); }
