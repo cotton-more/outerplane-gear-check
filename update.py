@@ -1499,9 +1499,11 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
     """Boss fights of outerpedia's guides for the boss on «Команда» (.x/0200-boss stage B).
 
     {q: Challenge quirk ‰ on boss RES (−200 at the full tree), t: {table id: [[level, RES, SPD, stage label]…]} (RES raw;
-    identical tables shared), b: [{key, name, mode, element, class, table, imm, immAll?, group?, live?, guide, teams?}]}.
-    imm — outerpedia glossary effect ids (`effects`; names for them are the app's own strings, not in the data) the boss
-    is immune to at the top stage; immAll — at every stage, when the lower stages block less;
+    identical tables shared), b: [{key, name, mode, element, class, table, imm, group?, live?, guide, teams?}]}.
+    imm — immunities by stage, runs over the rows of the fight's table: [[first row, ids]…], the first run starts at 0 and a
+    new run only where the set changes (the row's boss monster changes it); ids — outerpedia glossary effect ids (`effects`;
+    names for them are the app's own strings, not in the data), sorted; the stage's set is the last run whose first row ≤
+    the stage's row;
     live — [start, battle end] of the latest season (world boss, guild raid, joint challenge); teams — the guide's teams
     for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}]}] (guild raid
     requirements as the guide writes them: "268", "518/259", "≤180"). Guide texts are not taken (no Russian, D4).
@@ -1631,10 +1633,11 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
             if len(teams) == 1 and teams[0].get("st") == [1, len(rows)]:
                 del teams[0]["st"]  # one bucket for every stage
             top = mons[rows[-1][4]]
-            imm = sorted(immune_ids(gl, top), key=lambda x: (len(x), x))
-            every = set(imm)
-            for mid in dict.fromkeys(r[4] for r in rows):
-                every &= set(immune_ids(gl, mons[mid]))
+            imm: list[list] = []
+            for i, r in enumerate(rows):
+                ids = sorted(immune_ids(gl, mons[r[4]]), key=lambda x: (len(x), x))
+                if not imm or imm[-1][1] != ids:
+                    imm.append([i, ids])
             fight = {
                 "key": f"{BOSS_MODES[mode]}:{slug}{suffix}",
                 "name": en(meta.get("title")) if mode in ("world-boss", "dimensional-singularity") else en(top.get("name")),
@@ -1644,8 +1647,6 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
                 "table": tid,
                 "imm": imm,
             }
-            if every != set(imm):
-                fight["immAll"] = [x for x in imm if x in every]
             if mode == "guild-raid":
                 fight["group"] = en((season or {}).get("title")) or re.sub(r"\s+Guild Raid Guide$", "", en(meta.get("title")))
             if season and season.get("start") and (season.get("battleEnd") or season.get("end")):

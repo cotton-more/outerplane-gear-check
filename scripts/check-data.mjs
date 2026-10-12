@@ -269,6 +269,11 @@ function problems(D) {
       rows.forEach((r, i) => { if (i && league(r) === league(rows[i - 1]) && r[1] < rows[i - 1][1]) drops.set(league(r), (drops.get(league(r)) ?? 0) + 1); });
       if ([...drops].some(([lg, n]) => n > (lg ? 1 : 0))) out.add(`босс ${f.key}: RES падает от этапа к этапу`);
       if (!rows.every((r) => r.slice(0, 3).every((v) => Number.isInteger(v) && v > 0))) out.add(`босс ${f.key}: в таблице не числа`);
+      // immunities by stage: runs [first row, ids] — the first at row 0, rows strictly rising and inside the table
+      const imm = f.imm;
+      if (!Array.isArray(imm) || !imm.length || imm[0]?.[0] !== 0
+        || !imm.every((r, i) => Array.isArray(r) && r.length === 2 && Number.isInteger(r[0]) && r[0] < rows.length && (!i || r[0] > imm[i - 1][0])
+          && Array.isArray(r[1]) && r[1].every((x) => typeof x === 'string'))) out.add(`босс ${f.key}: иммунитеты по этапам (imm) не по форме`);
       for (const t of f.teams ?? []) {
         for (const h of [...t.s.flat(), ...(t.r ?? []).map((r) => r.h)]) if (!ids.has(h)) out.add(`босс ${f.key}: в команде гайда герой ${h}, которого нет в данных`);
       }

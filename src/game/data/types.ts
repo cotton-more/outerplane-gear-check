@@ -161,8 +161,7 @@ export interface Boss {
   element: string;
   class: string;
   table: string; // key of Bosses.t
-  imm: string[]; // outerpedia glossary effect ids (`effects`) the boss is immune to at the top stage; names are the app's own strings
-  immAll?: string[]; // immune at every stage — only when the lower stages block less
+  imm: [number, string[]][]; // immunities by stage: runs [first row, ids]; the stage's set is the last run whose first row ≤ the stage's row (row = index in Bosses.t[table]); ids — outerpedia glossary effect ids (`effects`), names are the app's own strings
   group?: string; // guild raid: the raid's name
   live?: [string, string]; // world boss, guild raid, joint challenge: start and battle end of the latest season (ISO)
   guide: string; // outerpedia guide path: "special-request/meteos"
