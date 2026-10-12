@@ -240,9 +240,20 @@ function problems(D) {
   const W = new Set([80, 120, 140, 160, 180]);
   const badW = D.chars.filter((c) => !c.eff || !(c.eff.w?.length === 2 && c.eff.w.every((v) => W.has(v)) && c.eff.w[0] <= c.eff.w[1]));
   if (badW.length) out.add(`EFF героя (eff.w) нет или не 80/120/140/160/180: ${badW.slice(0, 5).map((c) => c.name).join(', ')}${badW.length > 5 ? '…' : ''}`);
+  // white EFF is the same for every hero of a subclass (base stat + evolution rewards): a mixed subclass means the
+  // evolution rewards were read from the wrong hero or rung
+  const wBySub = new Map();
+  for (const c of D.chars) if (c.subClass && c.eff?.w) wBySub.set(c.subClass, new Set([...(wBySub.get(c.subClass) ?? []), c.eff.w.join('/')]));
+  const mixedW = [...wBySub].filter(([, v]) => v.size > 1).map(([k]) => k).sort();
+  if (mixedW.length) out.add(`EFF героя (eff.w) у героев одного подкласса разный: ${mixedW.join(', ')}`);
   const rangers = D.chars.filter((c) => c.class === 'ranger');
   if (rangers.length && !rangers.every((c) => c.eff?.r === 50)) out.add('EFF: не у всех Ranger узел квирков +50 (eff.r) — формат quirks изменился?');
   if (D.mainValues?.gloves?.unique?.EFF?.[0] !== 50) out.add(`main EFF перчаток Legendary на +10 T0: ${D.mainValues?.gloves?.unique?.EFF?.[0]}, ждём 50 (mainValues)`);
+  // main values (update.py main_values): the most common value of an item, not the smallest (Ether rows are lower)
+  for (const [slot, stat, want] of [['armor', 'DEF', 500], ['weapon', 'ATK', 1000]]) {
+    const got = D.mainValues?.[slot]?.unique?.[stat]?.[0];
+    if (got !== want) out.add(`main ${stat} ${slot === 'armor' ? 'брони' : 'оружия'} Legendary на +10 T0: ${got}, ждём ${want} (mainValues)`);
+  }
   // boss fights (update.py build_bosses): count, RES by stage, heroes of the guide teams, two known numbers
   const B = D.bosses;
   if (!B) out.add('нет боссов outerpedia (bosses): не получен список гайдов?');
@@ -265,6 +276,9 @@ function problems(D) {
     const top = (key, label) => B.t[B.b.find((f) => f.key === key)?.table]?.find((r) => r[3] === label)?.[1];
     if (top('sr:meteos', '13') !== 360) out.add(`Meteos этап 13: RES ${top('sr:meteos', '13')}, ждём 360`);
     if (top('gr:frost-legion:main', '10') !== 335) out.add(`Frost Legion этап 10: RES ${top('gr:frost-legion:main', '10')}, ждём 335`);
+    // world boss ladder of the right boss: league 4 is A 360, and the second boss takes over at S (350)
+    if (top('wb:harshna', '4:A') !== 360) out.add(`Harshna лига 4 этап A: RES ${top('wb:harshna', '4:A')}, ждём 360`);
+    if (top('wb:harshna', '4:S') !== 350) out.add(`Harshna лига 4 этап S: RES ${top('wb:harshna', '4:S')}, ждём 350 (второй босс)`);
     if (B.q !== -200) out.add(`Challenge quirk на RES боссов ${B.q} ‰, ждём −200`);
   }
   // team synergy (update.py build_synergy): a changed outerpedia format empties or breaks the block
