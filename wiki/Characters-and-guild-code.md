@@ -19,7 +19,7 @@ clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are 
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
 next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on
-outerpedia in a new tab. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
+outerpedia in a new tab. Under the name — the hero's **stars**, six like the game's transcend (roster heroes only): tap, pick ★N in the window, and the window closes. Not set — six grey stars. Some heroes get crit from their stars; it counts in "Crit" on the "Worn" tab ([Equipment](Equipment#the-hero-card)), and [Team](Team-check) takes the stars from here. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
 has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,
@@ -37,7 +37,7 @@ with "Undo". More — [Equipment](Equipment#core-fusion).
 
 Everything you mark stays in your browser only — nothing is sent anywhere. To keep it safe or move it to another device
 there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code
-(**OGC-GEAR5**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set and crit number. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
+(**OGC-GEAR6**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set, crit number and stars. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
 the same field and tap **"Replace"**: the roster and gear are replaced by the code, and the message's "Undo" brings the
 old ones back. The code may be split into lines — spaces and line breaks don't matter; a cut or damaged code won't load
 ("The code is damaged or cut off — copy all of it").

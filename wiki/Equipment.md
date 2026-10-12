@@ -118,12 +118,13 @@ it on the same line ("Attack ×2 · Attack +30% +7.5"). When Breakthrough T4 on 
 bonus, a faint line says so and on which pieces: "Speed ×2 at T4 · Speed +13% +6.7 — needs T4 on helmet and armor".
 
 **"Crit: 45%"** under the chain (heroes with crit chance in the chain) — the hero's crit chance with what's worn: their own
-5% (+5% for Strikers, +10% from awakening Quirks) plus the gear — the accessory's CHC main (counted at +10 by its
+5% (+5% for Strikers, +10% from awakening Quirks), crit from transcend stars (see below) plus the gear — the accessory's CHC main (counted at +10 by its
 Breakthrough), CHC substats and the Critical Hit set. Above 100% the game wastes crit, so near the hero's number N (100
 by default) crit counts less: in full up to N − 15, then less and less, nothing above N. The line turns amber from N − 15
 and red from N. Tap it: a bar with the hero's portrait at their crit and a flag at N, "Hero 20% · gear 25%" and the
-number. Lower N for what the app doesn't see — gems, the talisman, transcend stars, team buffs. Example: Regina at 5★
-gets +65% crit from transcend, so set her N to about 35. The verdict, "Set aside", "Re-dress", the batch and trade all
+number (with stars — "Hero 20% · stars 65% · gear 25%"). Some heroes get crit from their transcend stars; set the hero's
+stars on the card (under the name) and the app counts it: Poolside Trickster Regina at ★5 gets +65%. Stars not set —
+no crit from stars. Lower N only for what the app doesn't see — gems, the talisman, team buffs. The verdict, "Set aside", "Re-dress", the batch and trade all
 count crit this way: a crit-heavy piece loses to a piece with other stats once the hero has enough.
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
@@ -233,15 +234,15 @@ Core Fusion has its own builds and its own priority chain. The same goes for Sno
 Epsilon.
 
 - **Star Core Fusion Eternal** while Eternal is there (in the roster or with gear) — a window "Mark Core Fusion
-  Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn, and Eternal turns
+  Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn and its stars, and Eternal turns
   inactive. The same window comes up for "Equip on Core Fusion Eternal" and "Rate a piece for Core Fusion Eternal".
 - **Inactive Eternal** keeps its place in the list, Core Fusion Eternal right after it (whichever of the pair is in the
   roster), marked "replaced by Core Fusion Eternal": the verdict doesn't consider Eternal, and Eternal isn't in "Equip
   on whom?" or in rating for a character.
 - **The star on Eternal** — a window "Switch back to Eternal?": Core Fusion Eternal leaves the roster, Core Fusion
   Eternal's gear moves to Eternal.
-- After "Yes" — a message with "Undo"; "Cancel" changes nothing. The pinned set doesn't move over: the heroes' builds
-  differ.
+- After "Yes" — a message with "Undo"; "Cancel" changes nothing. The pinned set and the crit number don't move over: the heroes' builds
+  differ; the stars go with the pieces.
 - **Both at once** — in data saved by an older version, in a gear code or in a roster code: Core Fusion stays, with no
   window, in one message. Core Fusion Eternal has no gear — Eternal's gear moves to Core Fusion Eternal; it has its
   own — Eternal's gear is removed.
@@ -261,7 +262,7 @@ for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode a
 
 ## Backup
 
-More → "Backup": the **OGC-GEAR5** code — all pieces, what's worn, each hero's pinned set and crit number. Copy it to keep a backup or
+More → "Backup": the **OGC-GEAR6** code — all pieces, what's worn, each hero's pinned set, crit number and stars. Copy it to keep a backup or
 move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
 and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
 The older codes still read — OGC-GEAR1 to 4; marks of the old model ("Filling", the chosen build, "Keep worn

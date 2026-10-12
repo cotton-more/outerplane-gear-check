@@ -6,4 +6,6 @@ export default defineTips(
   { id: 'prio', rev: 1, at: 'prio', when: (c) => c.s.tab === 'chars' },
   { id: 'builds', rev: 6, at: 'btabs', when: (c) => c.s.tab === 'chars' },
   { id: 'gear', rev: 3, at: 'bgear', when: (c) => c.s.tab === 'chars' },
+  // the stars under the name (PLAN 0190): crit from transcend stars counts; Team takes the stars from the card
+  { id: 'heroStars', rev: 1, at: 'hstars', news: true, when: (c) => c.s.tab === 'chars' },
 );

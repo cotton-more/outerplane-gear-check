@@ -2,7 +2,7 @@
 // 0…100 (100 by default). No visible title (owner; the title is for screen readers only). On top — the bar (CritBar): the
 // zone where crit counts in full (up to N − 15), the soft zone (N − 15 … N), extra crit (above N); the hero's face stands on
 // the bar at their crit with the number under it, N with its flag above the bar. The bar follows the number at once while
-// it changes. Then «Герой · вещи», the number row (before the text, so it stays above «Готово» in short windows), the text.
+// it changes. Then «Герой · звёзды · вещи», the number row (before the text, so it stays above «Готово» in short windows), the text.
 // «−» / «+» by one, the number can be typed; «Сбросить» — 100. Applied on «Готово», not at once. The parent stores it
 // (CharDetail, setCrit). No new words: only approved texts and numbers.
 import { useState, type CSSProperties } from 'react';

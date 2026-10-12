@@ -461,13 +461,14 @@ and passive buffs (`CStatValue_SetFinalValue.cs`), so linear points kept rewardi
 EFF and SPD are later tickets.
 
 1. **N** — «сколько крита нужно герою», an integer 0…100 per hero, default 100 (`GearStore.crit`, the sheet on «Надето»).
-   The player lowers it for what the app does not see: gems, talisman, transcend stars, EE, team buffs (they only add,
+   The player lowers it for what the app does not see: gems, talisman, EE, team buffs (they only add,
    so the app's crit is never above the game's). It applies to every hero with **CHC in the chain** (`Profile.critOn`;
    off on data without `Char.chc` or `mainValues`). The profile carries N (`Profile.need`, `withNeed`, `profileFor(…,
    need)`), so per-profile memos stay right.
 2. **The curve.** Per CHC %: f = 1 up to the knee N − 15 (not below 0), linear down to 0 at N, 0 above N
    (`game/stat/curve`). **C₀** — crit that carries no points: the hero (base 5 %, Striker class passive +5 %, awakening
-   quirks +10 % by the `quirks` setting — `Char.chc`), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
+   quirks +10 % by the `quirks` setting — `Char.chc`), the transcend stars' CHC (`Char.chc.trans` at the hero's ★ — `Ctx.stars`, the card's
+   stars; not set → 0; the passive counts before the 100 % clamp, so it is just a smaller N), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
    null = T0), CHC set rows that carry no points (covered by a half, or of an effect set). **Segments** — the layout's
    CHC substats (≤ 6 per piece, 3 % each, weight = place weight × credit *on that piece*: a main that closes an earlier
    stat moves CHC up) and the CHC rows of stat sets that are not covered by a half (owner Q-A, B: the Critical Hit set's
@@ -481,7 +482,7 @@ EFF and SPD are later tickets.
    V is therefore not monotone in gear pieces; the search still never leaves a gear slot empty (item 4: the real
    alternative is another accessory, not nothing), and trade's holder loss is clamped at 0 (`cands:holderLoss`).
 3. **What the card shows**: «Крит: 45%» (`statTotal` — C₀ + substats, floored), amber from N − 15, red from N; the sheet:
-   the bar (zones, the hero's face at their crit, N with its flag), «Герой 20% · вещи 25%», the number N. The budget gets
+   the bar (zones, the hero's face at their crit, N with its flag), «Герой 20% · звёзды 65% · вещи 25%» (the stars part only when > 0), the number N. The budget gets
    «Лишний крит −x» (from 0.05), so Stats + Sets − crit = the heading.
 4. **Best layout** (`bestLayout`): `critBinds` — an upper bound of the crit over the candidates (the hero + the most CHC
    main and segments in each slot + every CHC row the pool could switch on); ≤ the knee → the old search, the same result
@@ -503,8 +504,7 @@ EFF and SPD are later tickets.
    cost, holder loss, roster, age) under branch and bound. The trade hole hint may still name CHC (it has no crit after the
    trade).
 7. **Elsewhere.** The T4 line's gain includes the loss; «Что искать» set gains are the set part only (no loss).
-8. **Not modelled** (the player lowers N): gems (+3 % each), talisman (7.2…9 %), transcend stars (+3/+3/+6 % for 15
-   heroes, Regina 2000085 +65 % from 5★ — the stars ticket `.x/0190-hero-stars`), EE, Singularity of the main, active
+8. **Not modelled** (the player lowers N): gems (+3 % each), talisman (7.2…9 %), EE, Singularity of the main, active
    buffs (Valentine, Tamara, Skadi, Noa +50 % after the cap — the reason of outerpedia's «CHC up to 50%»; default N stays
    100, owner). Enhance: every main counts at +10.
 
