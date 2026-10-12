@@ -313,6 +313,11 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    was taken from. **Holes are not filled**: a piece taken off a hero stays off until the hero is given a piece through
    the evaluation. The plan only hints what to look for (`breaks` — a set whose half, §2, switched off with the hole;
    `unfilled` — the receiver's slots left empty); the Wiki says so too («Trading gear»).
+8. **Dressing in turn** (`turn:heroGain`, `turnOrder`; owner, 2026-10-12, 0200 Q1 + Q1a): «Кого переодеть?» shows each
+   open hero's gain now — the number on his plan's hero line (`planOf` → `advance` → `lineGain`; «—» when the plan changes
+   nothing), counted in chunks after every «Сделал» / «Вернуть» / order change. The first hero re-dressed takes the best,
+   the next ones what is left — expected. Order: by name (the player decides whom to re-dress), the re-dressed last in
+   done order with ✓, not pickable; «Закончить» closes the window (locks dropped).
 
 ## §8 Batch plan ("Партия")
 

@@ -30,10 +30,17 @@ What the app builds the hero for:
 
 The app doesn't switch to another order itself: you choose and look again.
 
+## One by one
+
+In "Who to re-dress?" each hero shows how many points they'd gain if re-dressed now ("+4.2"; "—" — nothing to change).
+It's the same number as on the hero's line in the plan. It changes after every "Done": the first hero re-dressed takes
+the best, the next ones get what is left. The list is by name: whom to re-dress is your call.
+
 ## The session
 
-While the trade window is open, **what already re-dressed heroes wear** is not taken by the next ones; Close the
-window — no restrictions remain. Members of one team still swap among themselves.
+While the trade window is open, **what already re-dressed heroes wear** is not taken by the next ones; re-dressed heroes
+sit at the end of the list with ✓ and can't be picked again. "Undo" after "Done" puts the hero back. **"Finish"** closes
+the window — no restrictions remain. Members of one team still swap among themselves.
 
 ## The plan
 

@@ -1,10 +1,12 @@
 // Шторка «Обмен вещами» (R4, R10.3–R10.6 — MODEL.md §10; сеанс и заказ — MODEL.md §7). Режим «Герой»:
 // выбрать героя → план считается сразу; «Сделал» — и можно выбрать следующего, а надетое переодетого следующие не берут,
-// пока шторка открыта (сеанс, строка о нём над выбором). Режим «Команда»: четыре места ромбом (у члена — плитка и заказ
+// пока шторка открыта (сеанс, строка о нём над выбором с «Закончить»). «Кого переодеть?» (0200 stage A, MODEL.md §7 item 8):
+// by name, at each hero the gain of his plan now (counted in chunks after every «Сделал» / «Вернуть»), the re-dressed last
+// with ✓, not pickable. Режим «Команда»: четыре места ромбом (у члена — плитка и заказ
 // «Заказ: … ▾»), «Посчитать» → «Считаю…» и «Отмена» (runTeam кусками). «Не брать» и смена заказа — пересчёт (R7.3).
 // «Сделал» — одна запись (features/trade/model/apply), сообщение с «Вернуть» — у App (onApplied).
 // Неподтверждённый план, заказы и сеанс нигде не хранятся (R4.5): закрыл шторку — их нет.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import type { GearStore } from '@/features/gear/model/gear';
@@ -16,6 +18,9 @@ import { heroPlan, type Missing } from '@/features/trade/model/plan';
 import { runTeam, type TeamPlan } from '@/features/trade/model/team';
 import { linesOf, type HeroLine } from '@/features/trade/model/view';
 import { STATS, worldOf } from '@/features/trade/model/world';
+import { runChunks } from '@/features/trade/model/chunks';
+import { turnGains, turnOrder, type Gains } from '@/features/trade/model/turn';
+import type { World } from '@/features/trade/model/model';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { Sheet } from '@/shared/ui/Sheet';
 import { TeamPick } from './TeamPick';
@@ -24,16 +29,17 @@ import { OrderSheet, orderName } from './OrderSheet';
 import { pinOf } from '@/game/build/profile';
 import { comboText } from '@/game/build/builds';
 import { heroName } from '@/game/hero/HeroName';
-import { HeroPicker } from '@/features/roster/HeroPicker';
+import { HeroPicker, type PickMark } from '@/features/roster/HeroPicker';
 
 type Undo = (st: GearStore) => GearStore | null;
 
 interface Result { lines: HeroLine[]; fills: HoleFill[]; missing: Record<string, Missing[]>; stamp: string; empty: boolean }
 
 // start — герой с карточки «К обмену ▸» (сразу его план); team — открыта «Обменом для команды» (кнопка «Обмен» над списком, «Ещё» на телефоне): сразу «Команда»
+// onApplied: after — for the toast's «Вернуть» once the store is back (the hero leaves the session; a no-op once the sheet is closed)
 export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onApplied, onClose }: {
   ctx: Ctx; gear: GearApi; roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>;
-  start: string | null; team?: boolean; onApplied: (text: string, undo: Undo) => void; onClose: () => void;
+  start: string | null; team?: boolean; onApplied: (text: string, undo: Undo, after?: () => void) => void; onClose: () => void;
 }) {
   const t = useT();
   const { idx } = ctx;
@@ -55,6 +61,27 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
   const stamp = useMemo(() => stampOf(st), [st]);
   const members = team.filter((x): x is string => !!x);
   const fresh = () => { setSkip(new Set()); setStale(false); };
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
+
+  // «Кого переодеть?»: each open hero's gain now — for this world only (a new «Сделал», «Вернуть», order: counted again)
+  const [gains, setGains] = useState<{ w: World; g: Gains } | null>(null);
+  useEffect(() => {
+    if (mode !== 'hero') return;
+    const ac = new AbortController();
+    runChunks(turnGains(world, pickable.filter((id) => !locked.has(id))), ac.signal).then((g) => {
+      if (g && !ac.signal.aborted) setGains({ w: world, g });
+    }).catch((e) => console.error(e));
+    return () => ac.abort();
+  }, [mode, world, pickable, locked]);
+  const marks = gains?.w === world ? gains.g : null;
+  const markOf = (id: string): PickMark | null => {
+    if (locked.has(id)) return { text: '✓', title: t.trade.markDone, off: true };
+    const g = marks?.get(id);
+    if (g === undefined) return null;
+    if (g === null) return { text: '—', title: t.trade.markNone };
+    return { text: t.trade.mark(g), title: t.trade.markTitle(g), cls: g > 0 ? 'up' : g < 0 ? 'down' : undefined };
+  };
 
   // план героя — синхронно (R11.1: до 50 мс)
   const hres = useMemo((): (Result & { hp: ReturnType<typeof heroPlan> }) | null => {
@@ -95,7 +122,9 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
       if (r.st !== st) {
         gear.set(r.st);
         setLocked((x) => new Set([...x, hero]));
-        onApplied(t.trade.savedHero(name(hero)), r.undo);
+        // «Вернуть»: the hero is not re-dressed any more — he leaves the session
+        const unlock = () => { if (alive.current) setLocked((x) => new Set([...x].filter((id) => id !== hero))); };
+        onApplied(t.trade.savedHero(name(hero)), r.undo, unlock);
       }
       setHero(null);
       fresh();
@@ -144,7 +173,12 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
           <button type="button" role="tab" aria-selected={mode === 'hero'} onClick={() => switchMode('hero')}>{t.trade.modeHero}</button>
           <button type="button" role="tab" aria-selected={mode === 'team'} onClick={() => switchMode('team')}>{t.trade.modeTeam}</button>
         </div>
-        {locked.size > 0 && <p className="muted small trade-session">{t.trade.session}</p>}
+        {locked.size > 0 && (
+          <p className="muted small trade-session">
+            <span>{t.trade.session}</span>
+            <button type="button" className="btn" onClick={onClose}>{t.trade.finish}</button>
+          </p>
+        )}
         {mode === 'team' && (
           <>
             <p className="muted small">{t.trade.teamHint}</p>
@@ -165,7 +199,10 @@ export function TradeSheet({ ctx, gear, roster, off, start, team: teamFirst, onA
             )}
           </>
         )}
-        {mode === 'hero' && !hero && picker([], (id) => { setHero(id); fresh(); }, t.trade.pickHero)}
+        {mode === 'hero' && !hero && (
+          <HeroPicker ids={turnOrder(pickable, [...locked], name)} title={t.trade.pickHero} empty={pickable.length ? '' : t.trade.noHeroes}
+            mark={markOf} onPick={(id) => { setHero(id); fresh(); }} />
+        )}
         {res && (
           <TradePlan ctx={ctx} st={st} lines={res.lines} fills={res.fills} missing={res.missing} empty={res.empty} stale={stale}
             onSkip={(item, h) => setSkip((s) => new Set([...s, skipKey(item, h)]))}

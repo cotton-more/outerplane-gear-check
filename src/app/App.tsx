@@ -317,7 +317,7 @@ export function App() {
         )}
         {trade && canEquip && (
           <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={() => setTrade(null)}
-            onApplied={(text, undo) => say({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x })} />
+            onApplied={(text, undo, after) => say({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x, after })} />
         )}
         {codeOpen && (
           <Sheet title={t.ui.codeSheet} onClose={() => setCodeOpen(false)}>
