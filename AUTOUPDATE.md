@@ -74,8 +74,9 @@ outerpedia между опубликованной версией и новой 
    даты сезона `live` — две ISO-строки с `Z`, начало раньше конца, Meteos этап 13 — RES 360, Frost Legion этап 10 — 335,
    лига 4 мирового босса Harshna: A — 360 и S — 350 (второй босс). EFF героев (`eff`):
    белый EFF 80/120/140/160/180 и один и тот же у всех героев подкласса, у каждого Ranger узел +50; премия EE (`ee`) —
-   ровно у 17 героев (Tanya и Rico 500, остальные 1000); правило R (`d`) — Tamara, Iota, Sigma, Ember, Gnosis Domine да,
-   Francesca, Vlada, Eris, Eliza, Drakhan нет, всего 40–60 героев; main Legendary на
+   ровно у 17 героев (Tanya и Rico 500, остальные 1000); правило R (`d`) — Tamara, Iota, Sigma, Ember, Gnosis Domine, Demiurge Vlada,
+   Epsilon, Maxwell да, Francesca, Vlada, Eris, Eliza, Drakhan нет, всего 40–60 героев; EFF трансценда на всю команду
+   (`tm`) — Iota, Dahlia, Gnosis Nella да, Gnosis Domine и Iris нет; main Legendary на
    T0: перчатки EFF — 50, броня DEF — 500, оружие ATK — 1000.
 4. **Страница работает.** Собранный `docs/index.html` запускается в jsdom: пустой экран, разбор брони и оружия,
    карточка каждого персонажа — без исключений.

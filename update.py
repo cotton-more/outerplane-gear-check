@@ -534,15 +534,17 @@ EFF_LEVELS = (100, 120)  # white EFF at Lv100 and Lv120 — the `lv120` setting 
 
 
 def eff_profile(src: dict, cid: str, c: dict) -> dict:
-    """EFF of the hero from sources that are always on: {"w", "r"?, "p"?, "t"?, "ee"?, "d"?}.
+    """EFF of the hero from sources that are always on: {"w", "r"?, "p"?, "t"?, "tm"?, "ee"?, "d"?}.
 
     The game: EFF = ⌊(⌊W·(1000 + gear rate)/1000⌋ + gear flat + r)·(1000 + premium)/1000⌋ (CalcFinalStat.cs).
     w — white EFF [Lv100, Lv120]: base stat + evolution rewards up to that level (Core Fusion: the original's
     evolutions); r — flat "buff" rows of the awakening quirk tree (Ranger node +50, by the `quirks` setting);
     p — permanent self premium of a passive in ‰ (Core Fusion Notia +500, which exists only at Core Fusion level 5 =
     fusion passive level 2; the data assumes it maxed); t — transcend passive by the in-game ★1…6: r premium ‰, f flat.
-    ee — permanent self premium of the hero's Exclusive Equipment in ‰ (+50…100 %; the largest over EE levels), only a
-    hint: the app can't know whether the player has the EE or its level; d — 1 if the hero needs EFF against a boss's RES
+    tm — 1 if that t.r premium is a MY_TEAM row (it reaches every ally in battle, not only the bearer's sheet; a hero
+    with both self and team EFF rows is not flagged); ee — permanent self premium of the hero's Exclusive Equipment in
+    ‰ (+50…100 %; the largest over EE levels), only a hint: the app can't know whether the player has the EE or its
+    level; d — 1 if the hero needs EFF against a boss's RES
     (ee_premium, needs_eff).
     """
     dchars = src["dmgChars"]["characters"]
@@ -578,6 +580,18 @@ def eff_profile(src: dict, cid: str, c: dict) -> dict:
          for k, mode in (("r", "rate"), ("f", "add"))}
     if any(t["r"]) or any(t["f"]):
         out["t"] = {k: v for k, v in t.items() if any(v)}
+        # tm (in out, beside t) — the premium t.r reaches the whole team (every EFF premium row of the passive targets MY_TEAM); the row's
+        # target is in the skill's buff rows, not in skill8. A hero with both self and team rows is not flagged
+        mine = team = 0
+        for e in (skills.get(unique_passive(src, cid) or "") or {}).get("effects") or []:
+            if e.get("stat") != "buff_chance" or e.get("type") != "BT_STAT_PREMIUM":  # not Nella's EFF-scaled damage rows
+                continue
+            for b in buffs.get(e.get("buff"), [])[:1]:
+                if b.get("applyingType") == "OAT_RATE" and b.get("createType") in ("PASSIVE", "PASSIVE2"):
+                    team += (b.get("targetType") or "").startswith("MY_TEAM")
+                    mine += b.get("targetType") == "ME"
+        if any(t["r"]) and team and not mine:
+            out["tm"] = 1
     if ee := ee_premium(src, c.get("ee") or cid):
         out["ee"] = ee
     if needs_eff(src, cid):
@@ -612,6 +626,9 @@ STATUS_FAMILY = {
     "BT_DOT_LIGHTNING": "DOT", "BT_DOT_2000092": "DOT", "BT_STAT": "STAT_DOWN", "BT_ACTION_GAUGE": "AP_DOWN",
     "BT_REMOVE_BUFF": "DISPEL", "BT_STEAL_BUFF": "DISPEL", "BT_MARKING": "MARK", "BT_DMG_REDUCE": "DMG_REDUCE",
     "BT_SEALED_RECEIVE_HEAL": "HEAL_BLOCK", "BT_REDUCE_RECEIVE_HEAL": "HEAL_BLOCK",
+    # on an enemy these are debuffs too: cooldown up (Demiurge Vlada S1), AP charge down (Epsilon S2), buff shortening (Maxwell
+    # S2, DEBUFF_IGNORE_IMMUNE — still resistable); the same BT_* types on ME / my team are buffs and never reach here
+    "BT_COOL3_CHARGE": "COOLDOWN", "BT_AP_CHARGE": "AP_DOWN", "BT_EXTEND_BUFF": "BUFF_CUT",
 }
 # CC and taunt are immune on most late bosses (monsters.json buffImmune), so only these rows count for "needs EFF"
 HARD_CC = ("BT_STUN", "BT_FREEZE", "BT_STONE", "BT_SILENCE", "BT_GOLDEN_CURSE")
@@ -622,7 +639,8 @@ def needs_eff(src: dict, cid: str) -> bool:
     """Rule R (.x/0200-boss RESEARCH §1.5): the hero's own debuffs get resisted, so EFF matters. A row counts when it is on
     S1/S2/S3, a DEBUFF* row on an enemy target, a status (STATUS_FAMILY; not a modifier or damage), resistable (not
     IGNORE_RESIST / IGNORE_ALL) and its application roll is ≥ 50 % at the max skill level; not hard CC and not taunt.
-    Then: any such row on S1 or S2, or a DoT / stat-down on S3. Rows are the game's per-level buff rows; the last
+    Then: any such row on S1 or S2, or a DoT / stat-down on S3. Cooldown up (BT_COOL3_CHARGE), AP charge down
+    (BT_AP_CHARGE) and buff shortening (BT_EXTEND_BUFF) count as statuses when they sit on an enemy. Rows are the game's per-level buff rows; the last
     (max level) row of a (skill, buff, type, stat, target) group speaks for it."""
     dchars, dskills, buffs = src["dmgChars"]["characters"], src["dmgChars"]["skills"], src["dmgBuffs"]["buffs"]
     for ent in (dchars.get(cid) or {}).get("skills", []):

@@ -259,9 +259,16 @@ function problems(D) {
   const eeWrong = D.chars.filter((c) => c.eff?.ee && c.eff.ee !== (['Tanya', 'Rico'].includes(c.name) ? 500 : 1000)).map((c) => `${c.name} ${c.eff.ee}`);
   if (eeWrong.length) out.add(`EFF от EE (eff.ee): ждём Tanya и Rico 500, остальные 1000: ${eeWrong.join(', ')}`);
   const dOf = (n) => D.chars.find((c) => c.name === n)?.eff?.d === 1;
-  const dBad = [...['Tamara', 'Iota', 'Sigma', 'Ember', 'Gnosis Domine'].filter((n) => !dOf(n)).map((n) => `${n} без d`),
+  // Demiurge Vlada (S1 cooldown up), Epsilon (S2 AP charge down) and Maxwell (S2 buff shortening) count since cooldown /
+  // AP / buff-cut rows joined rule R; plain Vlada has none of them
+  const dBad = [...['Tamara', 'Iota', 'Sigma', 'Ember', 'Gnosis Domine', 'Demiurge Vlada', 'Epsilon', 'Maxwell'].filter((n) => !dOf(n)).map((n) => `${n} без d`),
     ...['Francesca', 'Vlada', 'Eris', 'Eliza', 'Drakhan'].filter(dOf).map((n) => `${n} с d`)];
   if (D.chars.length && dBad.length) out.add(`EFF от RES босса (eff.d, правило R): ${dBad.join(', ')} — формат skills или buffs изменился?`);
+  // transcend EFF premium that reaches the whole team (eff.tm: a MY_TEAM row of the passive) and the self-only ones
+  const tmOf = (n) => D.chars.find((c) => c.name === n)?.eff?.tm === 1;
+  const tmBad = [...['Iota', 'Dahlia', 'Gnosis Nella'].filter((n) => !tmOf(n)).map((n) => `${n} без tm`),
+    ...['Gnosis Domine', 'Iris'].filter(tmOf).map((n) => `${n} с tm`)];
+  if (D.chars.length && tmBad.length) out.add(`EFF трансценда на всю команду (eff.tm): ${tmBad.join(', ')} — формат skills или buffs изменился?`);
   const dCount = D.chars.filter((c) => c.eff?.d).length;
   if (D.chars.length && (dCount < 40 || dCount > 60)) out.add(`EFF от RES босса (eff.d): отмечено ${dCount} героев (ждём 40…60) — правило R или данные damage/ изменились?`);
   if (D.mainValues?.gloves?.unique?.EFF?.[0] !== 50) out.add(`main EFF перчаток Legendary на +10 T0: ${D.mainValues?.gloves?.unique?.EFF?.[0]}, ждём 50 (mainValues)`);
