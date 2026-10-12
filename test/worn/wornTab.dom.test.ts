@@ -376,7 +376,7 @@ describe('worn budget', () => {
 // «Crit» (crit soft cap, decision 5): the line under the chain, amber from N − 15, tap → the hero's N
 describe('«Надето»: the hero\'s crit «Crit: 45%»', () => {
   const worn = (ps: Pc[], hero = caren.id, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
-  const line = () => $('.bgear.worn .wcrit');
+  const line = () => $('.bgear.worn .wcrit:not(.weff)');
   const type = async (el: HTMLInputElement, v: string) => {
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     await act(async () => { set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); });
@@ -424,12 +424,70 @@ describe('«Надето»: the hero\'s crit «Crit: 45%»', () => {
   });
 });
 
+// «EFF» (.x/0200-boss stage D): the line under crit for heroes who need EFF (rule R), «≈» until the game's number is typed;
+// tap → «EFF for X»: the typed value is kept as a factor over the app's count
+describe('«Надето»: the hero\'s EFF «EFF: ≈ 233»', () => {
+  const akari = D.chars.find((c) => c.name === 'Akari')!;
+  const worn = (ps: Pc[], hero = akari.id, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
+  const line = () => $('.bgear.worn .weff');
+  const type = async (el: HTMLInputElement, v: string) => {
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  };
+  // Akari (Ranger, Lv 100, Quirks): W 120 + node 50; the helmet's EFF% 3 segments = 7.5 % of W → ⌊120 × 1.075⌋ = 129 → 179
+  const mountAkari = (o: Pc = {}) => mount({ gear: worn([WEAK], akari.id, o), roster: [akari.id] }, { charId: akari.id });
+
+  it('Akari: «EFF: ≈ 179» — W 120, Ranger node 50, EFF% on the helmet; the sign has a word for screen readers', async () => {
+    await mountAkari();
+    expect(line()?.textContent).toBe('EFF: ≈ about 179▸');
+    expect(line()?.querySelector('b [aria-hidden="true"]')?.textContent).toBe('≈ ');
+  });
+
+  it('no line for a hero who doesn\'t need EFF (Caren) and with nothing worn', async () => {
+    await mount({ gear: worn([WEAK], caren.id) });
+    expect(line()).toBeNull();
+    await act(async () => root?.unmount());
+    root = null;
+    await mount({ gear: G([WEAK], { [akari.id]: ['p1'] }), roster: [akari.id] }, { charId: akari.id });
+    expect(line()).toBeNull();
+  });
+
+  it('tap → the sheet: type 358, Done — stored with the app\'s 179, the line shows 358 without ≈; Reset and Done — gone', async () => {
+    await mountAkari();
+    await click(line());
+    expect($('.effsheet .eff-split')?.textContent).toBe('Hero 170 · gear 9');
+    const input = $('.effsheet input') as HTMLInputElement;
+    expect([input.value, input.placeholder]).toEqual(['', '179']);
+    expect(($$('.effsheet .linkbtn').find((b) => b.textContent === 'Reset') as HTMLButtonElement).disabled).toBe(true);
+    await type(input, '358');
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect(stored().eff).toEqual({ [akari.id]: { typed: 358, at: 179 } });
+    expect(line()?.textContent).toBe('EFF: 358▸');
+    await click(line());
+    expect($('.effsheet .eff-split')?.textContent).toBe('Hero 170 · gear 9 · ×2');
+    expect($('.effsheet .eff-stale')).toBeNull();
+    await click(byText('.effsheet .linkbtn', 'Reset'));
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect(stored().eff).toBeUndefined();
+  });
+
+  it('gear changed since typing: the factor follows (357 typed at 170, now 179: 179 × 357 / 170 = 376), «≈» again, the quiet line; Done untouched — nothing re-anchored', async () => {
+    await mountAkari({ eff: { [akari.id]: { typed: 357, at: 170 } } });
+    expect(line()?.textContent).toBe('EFF: ≈ about 376▸');
+    await click(line());
+    expect($('.effsheet .eff-stale')?.textContent).toBe('Gear changed since you typed it: the number is an estimate.');
+    expect(($('.effsheet input') as HTMLInputElement).value).toBe('357');
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect(stored().eff).toEqual({ [akari.id]: { typed: 357, at: 170 } });
+  });
+});
+
 // Hero stars (PLAN 0190; at the name since 0197): six small stars next to the hero's name in the card header → the star sheet; crit from stars joins «Crit»
 describe('«Надето»: the hero\'s stars', () => {
   const regina = D.chars.find((c) => c.name === 'Poolside Trickster Regina')!;
   const worn = (ps: Pc[], hero: string, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
   const lit = () => $$('.cd-head .cd-stars .hs-mini .on').length;
-  const line = () => $('.bgear.worn .wcrit')?.textContent;
+  const line = () => $('.bgear.worn .wcrit:not(.weff)')?.textContent;
 
   it('a roster hero without stored ★: a button with her minimum ★3 lit (base rarity) and its aria; not in the roster — nothing', async () => {
     await mount({ gear: worn([WEAK], caren.id) });
@@ -461,7 +519,7 @@ describe('«Надето»: the hero\'s stars', () => {
     expect([lit(), $('.cd-head button.cd-stars')?.getAttribute('aria-label')]).toEqual([5, 'Poolside Trickster Regina’s stars: ★5 — change or remove from roster']);
     const crit = (t: string | undefined) => Number(/(\d+)%/.exec(t ?? '')?.[1]);
     expect(crit(line())).toBe(crit(before) + 65);
-    await click($('.bgear.worn .wcrit'));
+    await click($('.bgear.worn .wcrit:not(.weff)'));
     expect($('.critsheet .crit-split')?.textContent).toMatch(/^Hero 20% · stars 65% · gear \d+%$/);
   });
 
@@ -479,7 +537,7 @@ describe('«Надето»: the hero\'s stars', () => {
     await mount({ gear: worn([WEAK], caren.id, { stars: { [caren.id]: 6 } }) });
     await click($('.cd-head button.cd-stars'));
     await click($$('.drawer.hs-sheet .hs-big button')[5]);
-    await click($('.bgear.worn .wcrit'));
+    await click($('.bgear.worn .wcrit:not(.weff)'));
     expect($('.critsheet .crit-split')?.textContent).toBe('Hero 20% · gear 6%');
   });
 });

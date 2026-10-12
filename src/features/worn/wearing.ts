@@ -12,7 +12,8 @@ import { itemMains } from '@/game/item/mains';
 import { bonusRows, type BonusRow } from '@/game/set/setBonus';
 import { setValue } from '@/game/set/setValue';
 import { statTotal } from '@/game/stat/total';
-import { critNeed, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { effOf, effShown, type Eff, type EffCal, type EffShown } from '@/game/stat/eff';
+import { critNeed, effCal, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { better, bestLayout, epicToLegend, gearRank, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { milli, namedGain, THRESHOLD, type Fit } from '@/features/gear/model/vs';
 import { eligibleIn } from '@/features/gear/pool/info';
@@ -65,6 +66,9 @@ export interface ChainSum { key: string; seg: number; credit: number; sep: '' | 
 // and the hero's N («сколько крита нужно герою», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
 // that has the hero's CHC and main values (an old snapshot would show a number far below the game's)
 export interface WornCrit { total: number; own: number; stars: number; need: number } // own — the hero's part: base, class, quirks; stars — transcend at the hero's ★
+// «Эфф: ≈ 233» (.x/0200-boss stage D): EFF the app knows from the worn pieces and the hero (game/stat/eff), calibrated by the
+// player's typed stat-screen value (cal). Only for heroes who need EFF against a boss's RES (rule R, Char.eff.d)
+export interface WornEff { e: Eff; shown: EffShown; cal: EffCal | null }
 // another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
 export interface AltChain { build: string; chain: ChainSum[] }
 export interface WornView {
@@ -80,6 +84,7 @@ export interface WornView {
   redress: Redress | null; // лучшая раскладка лучше надетой (MODEL.md §3 item 3)
   seek: SeekRow[];         // «Что искать»: 1–3 из 4, от ближнего, ничего не добавляющие скрыты; закреплён — только его набор
   crit: WornCrit | null;   // «Крит: 45%»; null — no CHC in the chain, nothing worn or the hero has no builds
+  eff: WornEff | null;     // «Эфф: ≈ 233»; null — the hero doesn't need EFF (rule R), nothing worn or old data
   pool: number;            // вещей в пуле героя
 }
 
@@ -111,8 +116,20 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],
     crit: P?.critOn && Object.keys(worn).length ? critOf(ctx, c, Object.values(worn), critNeed(st, c.id)) : null,
+    eff: Object.keys(worn).length ? effView(ctx, c, st) : null,
     pool: pieces.length,
   };
+}
+
+// the hero's EFF with what the store says they wear — the card and «Команда» (features/boss) read this one; null — the hero
+// doesn't need EFF (rule R) or old data without it
+export function effView(ctx: Ctx, c: Char, st: Pick<GearStore, 'worn' | 'pieces' | 'eff'>): WornEff | null {
+  if (!c.eff?.d) return null;
+  const worn = Object.values(st.worn?.[c.id] ?? {}).map((id) => (id ? st.pieces[id] : undefined)).filter((p): p is Piece => !!p);
+  const e = effOf(ctx, c, worn);
+  if (!e) return null;
+  const cal = effCal(st, c.id);
+  return { e, shown: effShown(e, cal), cal };
 }
 
 function critOf(ctx: Ctx, c: Char, worn: Piece[], need: number): WornCrit {

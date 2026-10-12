@@ -6,6 +6,8 @@
 // A boss on top (.x/0200-boss stage C, owner Q2): the boss row → its sheet (stage, RES, immunities, guide); with a boss
 // the guide's teams for the stage replace the general suggestions and «Собрать из гайда» fills the spots. The team is
 // kept per boss and without one in 'ogc.boss' (owner D5; before — React state only, lost on reload).
+// With a boss, under the team — each member's EFF vs its RES (.x/0200-boss stage D, BossEff); a row opens «Эфф для X» —
+// the same sheet as the card's, the typed value is the hero's (GearStore.eff). EFF counts the spot's ★ (like the report).
 import { useMemo, useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
@@ -22,6 +24,12 @@ import { useBossStore } from '@/features/boss/useBossStore';
 import { BossRow } from '@/features/boss/ui/BossRow';
 import { BossSheet } from '@/features/boss/ui/BossSheet';
 import { GuideChoice } from '@/features/boss/ui/GuideChoice';
+import { BossEff, type EffRow } from '@/features/boss/ui/BossEff';
+import { effView } from '@/features/worn/wearing';
+import { EffSheet } from '@/features/worn/EffSheet';
+import { setEff } from '@/features/gear/model/gear';
+import type { GearApi } from '@/features/gear/store/useGear';
+import type { Ctx } from '@/game/context';
 import { useT } from '@/i18n';
 import { AlphaMark } from '@/shared/ui/AlphaMark';
 import { Notice } from '@/shared/ui/Notice';
@@ -36,9 +44,9 @@ interface Spot { id: string; want?: number }
 // the message after «Собрать из гайда»; undo — the team before it (none — nothing changed)
 interface Filled { text: string; key: string; undo?: (string | null)[] }
 
-export function TeamScreen({ roster, off, stars, onChars }: {
+export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
   roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>; stars: Readonly<Record<string, number>>;
-  onChars: () => void;
+  ctx: Ctx; gear: GearApi; onChars: () => void;
 }) {
   const t = useT();
   const idx = useIndex();
@@ -50,6 +58,7 @@ export function TeamScreen({ roster, off, stars, onChars }: {
   const [starring, setStarring] = useState<number | null>(null); // spot whose stars sheet is open
   const [bossAt, setBossAt] = useState<number | null>(null); // the boss sheet is open (when it was opened — «идёт сейчас»)
   const [choosing, setChoosing] = useState(false); // «Какую команду из гайда?»
+  const [effFor, setEffFor] = useState<string | null>(null); // the member whose «Эфф для X» is open
   const [filled, setFilled] = useTimed<Filled>(6000);
   // the roster without heroes replaced by their Core Fusion
   const mine = useMemo(() => roster.filter((id) => idx.CHAR[id] && !off.has(id)), [roster, idx, off]);
@@ -103,6 +112,19 @@ export function TeamScreen({ roster, off, stars, onChars }: {
   const onFill = () => (guideTeams.length > 1 ? setChoosing(true) : fill(fillFrom(guideTeams[0], mineSet)));
   const undoFill = () => { if (filled?.undo) saveTeam(filled.key, filled.undo); setFilled(null); };
 
+  // EFF vs RES: members who need EFF, in spot order, with the spot's ★
+  const effOfSpot = (m: Spot) => effView({ ...ctx, stars: { ...ctx.stars, [m.id]: starOf(m) } }, idx.CHAR[m.id], gear.store);
+  const effRows: EffRow[] = facts ? team.flatMap((m) => {
+    const eff = m && effOfSpot(m);
+    return m && eff ? [{ c: idx.CHAR[m.id], eff }] : [];
+  }) : [];
+  const effOpen = effFor ? effRows.find((r) => r.c.id === effFor) : undefined;
+  const saveEff = (id: string, cal: Parameters<typeof setEff>[2]) => {
+    setEffFor(null);
+    const next = setEff(gear.store, id, cal);
+    if (next !== gear.store) gear.set(next);
+  };
+
   const pickable = mine.filter((id) => !members.some((m) => m.id === id))
     .sort((a, b) => compareChars(idx.CHAR[a], idx.CHAR[b]));
   const starred = starring === null ? null : team[starring];
@@ -113,6 +135,7 @@ export function TeamScreen({ roster, off, stars, onChars }: {
       <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} />
       {guideTeams.length > 0 && <button type="button" className="boss-fill" onClick={onFill}>{t.boss.fill}</button>}
       {!members.length && !guideTeams.length && <p className="tm-hint muted">{t.team.hint}</p>}
+      {facts && <BossEff rows={effRows} res={facts.res} onOpen={gear.newer ? () => undefined : setEffFor} />}
       <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
       <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
@@ -132,6 +155,7 @@ export function TeamScreen({ roster, off, stars, onChars }: {
           onStage={(i) => boss && update((s) => ({ ...s, stage: { ...s.stage, [boss.key]: i } }))}
           onClear={() => { update((s) => ({ ...s, boss: null })); setBossAt(null); }} />
       )}
+      {effOpen && <EffSheet c={effOpen.c} eff={effOpen.eff} onClose={() => setEffFor(null)} onSave={(cal) => saveEff(effOpen.c.id, cal)} />}
       {choosing && <GuideChoice teams={guideTeams} owned={mineSet} onPick={fill} onClose={() => setChoosing(false)} />}
       {filled && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
     </div>

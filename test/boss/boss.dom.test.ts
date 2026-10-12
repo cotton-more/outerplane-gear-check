@@ -203,3 +203,40 @@ describe('a boss on «Команда»', () => {
     expect($('#view-team .boss-fill')).toBeNull();
   });
 });
+
+// EFF vs the boss's RES under the team (.x/0200-boss stage D): members who need EFF (rule R) — EFF, the gap to RES + 1 or ✓,
+// the chance the debuff lands; the EE hint until the game's number is typed; a row opens «EFF for X»
+describe('EFF vs RES on «Команда»', () => {
+  const rows = () => $$('#view-team .boss-eff .be-row').map((r) => [r.querySelector('.be-n')?.textContent, r.querySelector('.be-v')?.textContent,
+    r.querySelector('.be-d')?.textContent, r.querySelector('.be-p')?.textContent, r.querySelector('.be-hint')?.textContent ?? null]);
+  const meteos = async () => {
+    await pickBoss('Blazing Knight Meteos');
+    await closeSheet();
+    await click($('#view-team .boss-fill'));
+  };
+
+  it('no boss — no block; Meteos 13 (RES 288): Tamara and Roxie, nothing worn — W + node, «≈», the EE hint for Tamara', async () => {
+    await mount();
+    expect($('#view-team .boss-eff')).toBeNull();
+    await meteos();
+    expect($('#view-team .boss-eff h4')?.textContent).toBe('EFF vs RES 288');
+    // Tamara: W 120 + Ranger 50 = 170 → −119, resisted (⌊1000/(1 + 100/118)⌋ + 1)/1001 → lands 45 %
+    expect(rows()).toEqual([
+      ['Tamara', '≈ about 170', '−119', '45 %', 'EE gives EFF ×2 — type EFF from the game ▸'],
+      ['Roxie', '≈ about 120', '−169', '37 %', null],
+    ]);
+    expect($('#view-team .boss-eff .be-foot')?.textContent).toContain('the chance the boss doesn’t resist');
+  });
+
+  it('a row → «EFF for Tamara»: typed 340 — ✓ 100 %, no hint; stored on the hero', async () => {
+    await mount();
+    await meteos();
+    await click($('#view-team .boss-eff .be-row'));
+    const input = $('.effsheet input') as HTMLInputElement;
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(input, '340'); input.dispatchEvent(new Event('input', { bubbles: true })); });
+    await click(byText('.effsheet .btn.primary', 'Done'));
+    expect(rows()[0]).toEqual(['Tamara', '340', '✓', '100 %', null]);
+    expect(JSON.parse(localStorage.getItem('ogc.gear')!).eff).toEqual({ [id('Tamara')]: { typed: 340, at: 170 } });
+  });
+});

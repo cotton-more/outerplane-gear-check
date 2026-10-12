@@ -9,6 +9,7 @@ export const ANCHORS = [
   'wchain', // the chain with segment sums on «Надето»
   'wbudget', // the «Надето» heading that opens into stats, sets and passive
   'wcrit', // «Крит: 45%» under the chain on «Надето»
+  'weff', // «Эфф: ≈ 233» under the crit line on «Надето» (.x/0200-boss stage D)
   'hstars', // six stars before «Attacker · DPS» in the card header
   'pin', // «Закрепить набор» / «Закреплено: …» в карточке героя
   'fusion', // пометка «заменён Core Fusion X» на плитке X
