@@ -19,6 +19,7 @@ export function EvalSettings({ s, dispatch }: { s: FormState; dispatch: Dispatch
           options={[{ value: 'grow', label: t.ui.stageGrow }, { value: 'end', label: t.ui.stageEnd }]} />
         <SegSwitch label={t.ui.level} group={t.ui.levelGroup} value={st.lv120} onChange={(lv120) => set({ lv120 })}
           options={[{ value: false, label: 'lv 100' }, { value: true, label: 'lv 120 (Limit Break)' }]} />
+        <p className="muted small">{t.ui.levelNote}</p>
         <Toggle id="opt-quirks" checked={st.quirks} onChange={(on) => set({ quirks: on })}>
           {t.ui.quirks} <span className="muted">{t.ui.quirksNote}</span>
         </Toggle>

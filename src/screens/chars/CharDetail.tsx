@@ -9,7 +9,7 @@ import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import type { RosterApi } from '@/features/roster/useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { critNeed, setCrit, setEff, setPin, setStars, starOf, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { critNeed, levelOf, setCrit, setEff, setLevel, setPin, setStars, starOf, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
 import type { EffCal } from '@/game/stat/eff';
 import { undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
 import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
@@ -20,6 +20,7 @@ import { Redress, redressLabel } from '@/features/worn/Redress';
 import { PinSheet } from '@/features/worn/PinSheet';
 import { CritSheet } from '@/features/worn/CritSheet';
 import { EffSheet } from '@/features/worn/EffSheet';
+import { lv120Of } from '@/game/hero/level';
 import { MiniStars, StarSheet } from '@/game/hero/Stars';
 import { heroStar, minStar } from '@/game/hero/star';
 import { WornGear } from '@/features/worn/WornGear';
@@ -155,6 +156,13 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const next = setStars(gear.store, c.id, k);
     if (next !== gear.store) gear.set(next);
   };
+  // the hero's level (.x/0205): 100 / 120 marks the hero, «по умолчанию» forgets the mark; the sheet stays open (the row
+  // shows what is set), no message
+  const lv120 = lv120Of(ctx, c), marked = levelOf(gear.store, c.id) !== null;
+  const saveLevel = (v: 100 | 120 | null) => {
+    const next = setLevel(gear.store, c.id, v);
+    if (next !== gear.store) gear.set(next);
+  };
   // «Поделиться»: надета хоть одна вещь (SPEC 3.1)
   const shareCode = canShare && wv && wv.count > 0 ? shareCodeOf(c, gear.store, pieces, pin?.key ?? null) : null;
   const enter = onTryOn ? (slot: SlotId) => onTryOn(c, slot, undefined, false, true) : undefined;
@@ -173,7 +181,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
       {/* owner 2026-10-12 (0197): one element at the name — not in the roster: grey ☆, a tap adds the hero at their minimum ★;
           in the roster: the hero's stars, a tap opens the sheet (pick ★, or «Убрать из ростера» — the only way out) */}
       <CharHead c={c} ctx={ctx} star={own
-        ? <button type="button" className="cd-stars hit" aria-label={t.card.starsAria(c.name, stars)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} /></button>
+        ? <button type="button" className="cd-stars hit" aria-label={t.card.starsAria(c.name, stars, lv120)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} />{lv120 && <span className="cd-lv" aria-hidden="true">{t.card.lv120Mark}</span>}</button>
         : <button type="button" className="cd-star" aria-pressed={false} aria-label={t.ui.rosterToggle(c.name, false)} onClick={() => rosterApi.toggle(c.id)}>☆</button>} />
       {fusedBy && (
         <div className="own-row">
@@ -243,7 +251,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
       )}
       {/* read-only card (tour, newer data): no ★ pick, only the way out of the roster */}
       {sheet === 'stars' && own && (
-        <StarSheet c={c} star={stars} min={minStar(c)} onStar={live ? saveStars : undefined} onClose={() => setSheet(null)}>
+        <StarSheet c={c} star={stars} min={minStar(c)} onStar={live ? saveStars : undefined} level={{ lv120, marked, onLevel: live ? saveLevel : undefined }} onClose={() => setSheet(null)}>
           <button type="button" className="btn" onClick={() => { setSheet(null); rosterApi.toggle(c.id); }}>{t.ui.rosterRemove}</button>
         </StarSheet>
       )}

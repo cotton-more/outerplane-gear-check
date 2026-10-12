@@ -393,4 +393,12 @@ html .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 2; } /* и на узком
 .hs-big .on svg { fill: var(--star-on); stroke: var(--star-on); }
 .hs-big button:disabled svg { opacity: .45; }
 .hs-act { display: flex; justify-content: center; margin-top: 8px; }
+/* the hero's level under the stars (.x/0205): «Уровень [100][120][по умолчанию]» — chips, the pressed ones filled */
+.hs-lv { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 8px; margin: 0 auto 4px; }
+.hs-lvl { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.hs-lv .chip { min-width: 44px; min-height: 36px; padding: 4px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface);
+  color: var(--ink); font: 600 13px var(--font-body); font-variant-numeric: tabular-nums; }
+.hs-lv .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.hs-lv .chip:disabled { opacity: .6; }
+.cd-lv { margin-left: 5px; font-size: 11px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 .hs-big [aria-pressed="true"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--star-on) 60%, transparent)); }
