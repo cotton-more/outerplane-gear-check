@@ -6,7 +6,9 @@
 // Вещи X: у CF пусто — переходят к CF; у CF есть свои — не заменяем и не дополняем, вещи X убраны из его пула (записи,
 // которые есть и у других, остаются у других).
 // Надетое (worn) идёт за вещами: всё, что было надето на X, надето и на CF; убраны — не надето. Закрепление набора
-// (pin) не переносится: билды у героев разные (stat-sets PLAN Д9).
+// (pin) не переносится: билды у героев разные (stat-sets PLAN Д9). Звёзды героя (stars) идут за вещами, как worn: в игре
+// Core Fusion X сохраняет звёзды обычного героя (owner, 2026-10-11); у CF уже есть свои — остаются они. N (crit) не
+// переносится, как pin: «pin and N stay; worn and stars move».
 import type { Index } from '@/game/data';
 import { gc, syncWorn, type GearStore, type Worn } from './gear';
 
@@ -17,11 +19,29 @@ function wornTo(worn: GearStore['worn'], from: string, to: string): GearStore['w
   return { ...rest, [to]: { ...w, ...worn[to] } };
 }
 
+// ★ героя from — к to (у to своей нет); запись from убирается в любом случае, пустую карту не держим
+export function starsTo(stars: GearStore['stars'], from: string, to: string): GearStore['stars'] {
+  if (stars?.[from] === undefined) return stars;
+  const { [from]: n, ...rest } = stars;
+  const next = rest[to] === undefined ? { ...rest, [to]: n } : rest;
+  return Object.keys(next).length ? next : undefined;
+}
+// с запиской, что именно перешло: нужно «Вернуть» (gearStore unfuseChar)
+const starsMoved = (stars: GearStore['stars'], from: string, to: string): number | undefined =>
+  stars?.[from] !== undefined && stars[to] === undefined ? stars[from] : undefined;
+// карта звёзд в хранилище: пустой нет — поля нет
+export const withStars = (st: GearStore, stars: GearStore['stars']): GearStore => {
+  if (stars === st.stars) return st;
+  const { stars: _, ...rest } = st;
+  return stars ? { ...rest, stars } : rest as GearStore;
+};
+
 export interface FusionFix {
   base: string;
   fusion: string;
   kind: 'moved' | 'removed' | 'none'; // вещи X перешли к CF / убраны / у X вещей не было
   ids: string[];                      // вещи X, которые перешли или убраны
+  stars?: number;                     // ★ X, которые перешли к CF
 }
 
 const exists = (roster: ReadonlySet<string>, pools: GearStore['pools'], id: string) => roster.has(id) || !!pools[id]?.length;
@@ -47,21 +67,25 @@ export function normalizeFusion(idx: Index, roster: readonly string[], st: GearS
   let list = [...roster];
   let pools = st.pools;
   let worn = st.worn;
+  let stars = st.stars;
   const fixes: FusionFix[] = [];
   for (const [base, fusion] of Object.entries(idx.FUSED)) {
     const r = new Set(list);
     if (!exists(r, pools, base) || !exists(r, pools, fusion)) continue;
     if (r.has(base)) list = r.has(fusion) ? list.filter((id) => id !== base) : list.map((id) => (id === base ? fusion : id));
     const ids = pools[base] ?? [];
-    if (!ids.length) { fixes.push({ base, fusion, kind: 'none', ids: [] }); continue; }
+    const carried = starsMoved(stars, base, fusion);
+    stars = starsTo(stars, base, fusion);
+    const star = carried !== undefined ? { stars: carried } : {};
+    if (!ids.length) { fixes.push({ base, fusion, kind: 'none', ids: [], ...star }); continue; }
     const { [base]: _, ...rest } = pools;
     const kind = pools[fusion]?.length ? 'removed' : 'moved';
     pools = kind === 'moved' ? { ...rest, [fusion]: ids } : rest;
     if (kind === 'moved') worn = wornTo(worn, base, fusion);
-    fixes.push({ base, fusion, kind, ids });
+    fixes.push({ base, fusion, kind, ids, ...star });
   }
-  if (!fixes.length || pools === st.pools) return { roster: list, st, fixes };
-  return { roster: list, st: gc({ ...st, pools, ...(worn ? { worn } : {}) }), fixes };
+  if (!fixes.length || (pools === st.pools && stars === st.stars)) return { roster: list, st, fixes };
+  return { roster: list, st: withStars(gc({ ...st, pools, ...(worn ? { worn } : {}) }), stars), fixes };
 }
 
 // Р16: вещи есть только у героев ростера. Загрузка, перенос v1, импорт кода, пакетные правки ростера: каждый, у кого есть
@@ -81,7 +105,7 @@ export const changed = (n: Pick<Normalized, 'fixes' | 'added'>) => n.fixes.lengt
 // окно перехода (звезда, «Надеть», оценка для героя): «Да, Core Fusion X» или «Да, X». to — кого выбрали, from — второй из пары;
 // в ростере — только to (на месте from), вещи from — к to, надетое from — тоже (wornTo). moved / had / worn (надетое
 // from до перехода) — для «Вернуть» (gearStore unfuseChar)
-export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[]; worn?: Worn }
+export interface Switch { to: string; from: string; roster: string[]; st: GearStore; moved: string[]; had: string[]; worn?: Worn; stars?: number }
 export function switchFusion(idx: Index, roster: readonly string[], st: GearStore, to: string): Switch | null {
   const from = idx.CHAR[to]?.fusionOf ?? idx.FUSED[to];
   if (!from) return null;
@@ -90,12 +114,15 @@ export function switchFusion(idx: Index, roster: readonly string[], st: GearStor
     : roster.includes(to) ? [...roster] : [...roster, to];
   const moved = st.pools[from] ?? [];
   const had = st.pools[to] ?? [];
-  if (!moved.length) return { to, from, roster: list, st, moved, had };
+  const carried = starsMoved(st.stars, from, to);
+  const star = carried !== undefined ? { stars: carried } : {};
+  const base = withStars(st, starsTo(st.stars, from, to));
+  if (!moved.length) return { to, from, roster: list, st: base, moved, had, ...star };
   const { [from]: _, ...rest } = st.pools;
   const pools = { ...rest, [to]: [...had, ...moved.filter((id) => !had.includes(id))] };
   const worn = wornTo(st.worn, from, to);
-  const next = syncWorn({ ...st, pools, ...(worn ? { worn } : {}) });
-  return { to, from, roster: list, st: next, moved, had, ...(st.worn?.[from] ? { worn: st.worn[from] } : {}) };
+  const next = syncWorn({ ...base, pools, ...(worn ? { worn } : {}) });
+  return { to, from, roster: list, st: next, moved, had, ...(st.worn?.[from] ? { worn: st.worn[from] } : {}), ...star };
 }
 
 // будет ли окно перехода у героя (звезда, «Надеть», оценка для героя): второй из пары есть — в ростере или с вещами. Его id

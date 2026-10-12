@@ -1,6 +1,6 @@
 // Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
 // размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11), OGC-GEAR5 —
-// с N героя («сколько крита нужно герою», crit).
+// с N героя («сколько крита нужно герою», crit), OGC-GEAR6 — со звёздами героя (transcend).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
@@ -162,7 +162,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.2 вид: без пробелов, только буквы и цифры после префикса', () => {
-    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR5-[0-9A-Za-z]+$/);
+    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR6-[0-9A-Za-z]+$/);
   });
 
   it('2.7 начинается с OGC-GEAR и номера больше 2; разбор выпущенной версии — «код новее»', () => {
@@ -174,7 +174,7 @@ describe('2. резервная копия', () => {
 
   describe('2.8 целостность', () => {
     const code = encodeBackup(rich(), roster10);
-    const head = 'OGC-GEAR5-'.length;
+    const head = 'OGC-GEAR6-'.length;
     const body = code.slice(head);
     const flip = (s: string, i: number) => s.slice(0, i) + (s[i] === 'a' ? 'b' : 'a') + s.slice(i + 1);
     const sw = [...body].findIndex((ch, i) => i >= 10 && ch !== body[i + 1]); // соседние разные знаки
@@ -202,7 +202,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.10 номер формата выше известного — «новее»', () => {
-    expect(decodeBackup('OGC-GEAR6-abc')).toBe('newer');
+    expect(decodeBackup('OGC-GEAR7-abc')).toBe('newer');
     expect(decodeBackup('OGC-GEAR12-abc')).toBe('newer');
   });
 
@@ -236,6 +236,36 @@ describe('2. резервная копия', () => {
     expect(new Set(b.roster)).toEqual(new Set([CAREN, KAPPA]));
     expect(meaning(b.raw)).toEqual(meaning(was));
     expect(b.raw.crit).toBeUndefined();
+  });
+
+  // a code of the released version (OGC-GEAR5, before the hero's stars): Caren — Critical Hit helmet T4 worn, N 85; Rin — roster only
+  it('OGC-GEAR5 читается: ростер, пулы, надетое и N — как были; звёзд нет ни у кого', () => {
+    const V5 = 'OGC-GEAR5-4s46wWFOniHTydTAYBow5JJqDEXLQ';
+    const helmet = P('helmet', { setId: set('Critical Hit'), ...sub({ CHC: 2, SPD: 1 }), bt: 4, at: '2026-10-01' });
+    const was = store([helmet], { [CAREN]: [helmet.id] }, { worn: { [CAREN]: { helmet: helmet.id } }, crit: { [CAREN]: 85 } });
+
+    const b = decodeBackup(V5) as Backup;
+
+    expect(new Set(b.roster)).toEqual(new Set([CAREN, RIN]));
+    expect(meaning(b.raw)).toEqual(meaning(was));
+    expect(b.raw.crit).toEqual({ [CAREN]: 85 });
+    expect(b.raw.stars).toBeUndefined();
+  });
+
+  it('звёзды героя: туда и обратно, вместе с N, и у героя без вещей, N и закрепления; без звёзд — поля нет', () => {
+    const helmet = P('helmet', { setId: set('Speed') });
+    const st = store([helmet], { [CAREN]: [helmet.id] }, { crit: { [CAREN]: 85 }, stars: { [CAREN]: 5, [RIN]: 6, [KAPPA]: 1 } });
+    const b = round(st, [CAREN]);
+    expect(b.raw.stars).toEqual({ [CAREN]: 5, [RIN]: 6, [KAPPA]: 1 });
+    expect(b.raw.crit).toEqual({ [CAREN]: 85 });
+    expect(round(store([helmet], { [CAREN]: [helmet.id] }, { crit: { [CAREN]: 85 } }), [CAREN]).raw.stars).toBeUndefined();
+    expect(round(store([], {}, { stars: { [RIN]: 4 } })).raw.stars).toEqual({ [RIN]: 4 });
+  });
+
+  it('звёзды: 0, 7 и нецелое в код не пишутся', () => {
+    const st = store([], {}, { stars: { [CAREN]: 0, [RIN]: 7, [KAPPA]: 3.5 } as Record<string, number> });
+    expect(encodeBackup(st, [])).toBe('');
+    expect(round(store([], {}, { stars: { [CAREN]: 5, [RIN]: 0 } as Record<string, number> })).raw.stars).toEqual({ [CAREN]: 5 });
   });
 
   it('N героя: туда и обратно, и у героя без вещей и без закрепления; 100 (по умолчанию) в код не пишется', () => {

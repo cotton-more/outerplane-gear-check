@@ -850,10 +850,10 @@ describe('меню, плитки, код копии, другая вкладка
   });
 
   // DEVELOPMENT.md "Storage and URLs": одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
-  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR5, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
+  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR6, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 4 })], { [caren.id]: ['p1'] }) });
     const ta = await openBackup();
-    expect(ta.value.startsWith('OGC-GEAR5-')).toBe(true);
+    expect(ta.value.startsWith('OGC-GEAR6-')).toBe(true);
     const { encodeGear } = await import('@/features/gear/store/gearStore');
     const { decodeBackup } = await import('@/features/roster/backup');
     const b = decodeBackup(ta.value) as { roster: string[]; raw: { pieces: Record<string, { lit: object; bt: number }> } };
@@ -871,7 +871,7 @@ describe('меню, плитки, код копии, другая вкладка
   it('код, сохранённый более новой версией, — «обнови страницу»', async () => {
     await mount({ tab: 'chars' }, {});
     const ta = await openBackup();
-    ta.value = 'OGC-GEAR6-abc';
+    ta.value = 'OGC-GEAR7-abc';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(ta.closest('.roster-io')?.textContent).toContain('A newer page saved this code — reload the page.');
   });

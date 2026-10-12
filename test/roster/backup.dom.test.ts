@@ -120,7 +120,7 @@ describe('поле «Резервная копия»', () => {
     ['код героя', 'OGH1abcdef', 'This is a hero code — open it with "Enter code".'],
     ['ссылка показа', 'https://x.github.io/outerplane-gear/#OGH1abcdef', 'This is a hero code — open it with "Enter code".'],
     ['мусор', '!!! что-то ???', "Can't read the code."],
-    ['код новее', 'OGC-GEAR6-abc', 'A newer page saved this code — reload the page.'],
+    ['код новее', 'OGC-GEAR7-abc', 'A newer page saved this code — reload the page.'],
   ])('%s → строка под полем, ничего не меняется', async (_, code, msg) => {
     await mount(MINE);
     const before = { roster: raw('roster'), gear: raw('gear') };

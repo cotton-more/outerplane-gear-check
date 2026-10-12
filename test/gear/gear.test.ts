@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { critNeed, dropChar, EMPTY_GEAR, fixPins, gc, gearedChars, holdersOf, isWorn, newPiece, setCrit, setPin, stalePins, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { critNeed, dropChar, EMPTY_GEAR, fixPins, gc, gearedChars, holdersOf, isWorn, newPiece, setCrit, setPin, setStars, stalePins, starOf, undoDrop, undoPin, updateIn, updatePiece, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
@@ -915,5 +915,47 @@ describe('N героя — сколько крита нужно герою (crit
     const st = setCrit(v2([rec('p1', helmet({ CHC: 2 }))], { [cf.fusionOf!]: ['p1'] }), cf.fusionOf!, 80);
     const n = normalizeFusion(idx, [cf.id], st).st;
     expect(n.crit).toEqual({ [cf.fusionOf!]: 80 });
+  });
+});
+
+describe('звёзды героя — in-game ★1…6 (stars, transcend; PLAN 0190 §4)', () => {
+  const RIN = '2000019';
+  const base = () => v2([rec('p1', helmet({ CHC: 2 })), rec('p2', helmet({ HP: 1 }))], { [CAREN]: ['p1'], [KAPPA]: ['p2'] });
+
+  it('нет записи — null; setStars пишет целое 1…6; прочее и то же значение — то же хранилище; null и пустая карта убирают поле', () => {
+    const st = base();
+    expect(starOf(st, CAREN)).toBeNull();
+    const one = setStars(st, CAREN, 5);
+    expect([one.stars, starOf(one, CAREN), starOf(one, KAPPA)]).toEqual([{ [CAREN]: 5 }, 5, null]);
+    expect(setStars(one, CAREN, 5)).toBe(one);
+    for (const bad of [0, 7, 3.5, '5' as never, NaN]) expect(setStars(one, KAPPA, bad)).toBe(one);
+    expect(setStars(one, KAPPA, 1).stars).toEqual({ [CAREN]: 5, [KAPPA]: 1 });
+    expect('stars' in setStars(one, CAREN, null)).toBe(false);
+    expect(setStars(st, CAREN, null)).toBe(st);
+  });
+
+  it('чтение: целое 1…6 как есть, код копии его сохраняет; прочее отброшено, прочитано не целиком', () => {
+    const st = setStars(setStars(base(), CAREN, 5), RIN, 6);
+    expect(restoreGear(st, idx).stars).toEqual({ [CAREN]: 5, [RIN]: 6 });
+    expect(readsWhole(st, idx)).toBe(true);
+    for (const v of [0, 7, 5.5, '5', null]) {
+      const bad = { ...base(), stars: { [CAREN]: v } };
+      expect([restoreGear(bad, idx).stars, readsWhole(bad, idx)]).toEqual([undefined, false]);
+    }
+  });
+
+  it('от пула не зависит: gc звёзд не снимает; dropChar снимает, undoDrop возвращает', () => {
+    const st = setStars(base(), CAREN, 4);
+    expect(gc(removeFrom(st, CAREN, 'p1')).stars).toEqual({ [CAREN]: 4 });
+    const r = dropChar(st, CAREN);
+    expect([r.st.stars, r.dropped.stars]).toEqual([undefined, 4]);
+    expect(undoDrop(r.st, r.dropped)).toEqual(st);
+    // за эти секунды ★ задали заново — «Вернуть» их не трогает
+    expect(undoDrop(setStars(r.st, CAREN, 6), r.dropped).stars).toEqual({ [CAREN]: 6 });
+  });
+
+  it('перенос v1 звёзд не знает: поле из v1 не переносится', () => {
+    const raw = v1([rec('p1', helmet({ CHC: 2 }))], { [K]: { helmet: 'p1' } }, { stars: { [CAREN]: 5 } });
+    expect(restoreGear(raw, idx).stars).toBeUndefined();
   });
 });

@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
-import { dropChar, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { dropChar, setCrit, setStars, undoDrop, updateIn, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { buildKey } from '@/game/build/variants';
 import { removeFrom } from '@/features/gear/pool';
 import { normalizeFusion, normalizeStored, replacedX, switchFusion } from '@/features/gear/model/fusion';
@@ -301,5 +301,61 @@ describe('Core Fusion: надетое идёт за вещами', () => {
     const back = unfuseChar(edited.st, sw.from, sw.to, sw);
     expect({ pools: back.pools, worn: back.worn })
       .toEqual({ pools: { [X]: ['p1'], [CAREN]: ['p1'], [CF]: [edited.id] }, worn: { [X]: { helmet: 'p1' }, [CF]: { helmet: edited.id } } });
+  });
+});
+
+describe('Core Fusion: звёзды идут за вещами (Z7, PLAN 0190 §4.3); pin и N остаются у X', () => {
+  const stars = (st: GearStore) => st.stars;
+  it('нормализация: ★ X → CF, запись X уходит; пул, надетое, ★ — вместе', () => {
+    const st = setStars(v2({ [X]: ['p1'] }), X, 5);
+    const r = normalizeFusion(idx, [CF], st);
+    expect([stars(r.st), r.fixes[0].stars]).toEqual([{ [CF]: 5 }, 5]);
+  });
+  it('нормализация: у X ★, вещей нет — ★ всё равно переходят (kind none)', () => {
+    const r = normalizeFusion(idx, [X, CF], setStars(v2({}), X, 6));
+    expect([r.st.stars, r.fixes[0].kind, r.fixes[0].stars]).toEqual([{ [CF]: 6 }, 'none', 6]);
+  });
+  it('нормализация: у CF уже ★6 — остаётся 6; запись X уходит; fix без stars', () => {
+    const st = setStars(setStars(v2({ [X]: ['p1'] }), X, 4), CF, 6);
+    const r = normalizeFusion(idx, [CF], st);
+    expect([stars(r.st), r.fixes[0].stars]).toEqual([{ [CF]: 6 }, undefined]);
+  });
+  it('нормализация: у X нет ★ — поля нет; чужие ★ остаются', () => {
+    const r = normalizeFusion(idx, [CF], v2({ [X]: ['p1'] }));
+    expect('stars' in r.st).toBe(false);
+    const other = normalizeFusion(idx, [CF], setStars(v2({ [X]: ['p1'] }), CAREN, 3));
+    expect(other.st.stars).toEqual({ [CAREN]: 3 });
+  });
+  it('pin и N остаются у X', () => {
+    const st = setCrit(setStars(v2({ [X]: ['p1'] }), X, 5), X, 80);
+    const n = normalizeFusion(idx, [CF], st).st;
+    expect([n.crit, n.stars]).toEqual([{ [X]: 80 }, { [CF]: 5 }]);
+  });
+  it('окно перехода «Да, Core Fusion X»: ★ — к CF; «Вернуть» — к X; без вещей — тоже', () => {
+    const st = setStars(v2({ [X]: ['p1'] }), X, 5);
+    const sw = switchFusion(idx, [X], st, CF)!;
+    expect(sw.st.stars).toEqual({ [CF]: 5 });
+    expect(unfuseChar(sw.st, sw.from, sw.to, sw).stars).toEqual({ [X]: 5 });
+    const bare = switchFusion(idx, [X], setStars(v2({}), X, 4), CF)!;
+    expect([bare.st.stars, bare.stars]).toEqual([{ [CF]: 4 }, 4]);
+    expect(unfuseChar(bare.st, bare.from, bare.to, bare).stars).toEqual({ [X]: 4 });
+  });
+  it('окно «Да, X»: ★ Core Fusion — к X', () => {
+    const st = setStars(v2({ [CF]: ['p1'] }), CF, 6);
+    expect(switchFusion(idx, [CF], st, X)!.st.stars).toEqual({ [X]: 6 });
+  });
+  it('«Вернуть»: ★ за эти секунды поменяли — не трогаем; у X успели задать новые — не трогаем', () => {
+    const sw = switchFusion(idx, [X], setStars(v2({ [X]: ['p1'] }), X, 5), CF)!;
+    expect(unfuseChar(setStars(sw.st, CF, 3), sw.from, sw.to, sw).stars).toEqual({ [CF]: 3 });
+    expect(unfuseChar(setStars(sw.st, X, 2), sw.from, sw.to, sw).stars).toEqual({ [CF]: 5, [X]: 2 });
+  });
+  it('у CF уже есть ★: окно — запись X уходит, у CF как было; «Вернуть» ★ не возвращает', () => {
+    const st = setStars(setStars(v2({ [X]: ['p1'] }), X, 4), CF, 6);
+    const sw = switchFusion(idx, [X], st, CF)!;
+    expect([sw.st.stars, sw.stars]).toEqual([{ [CF]: 6 }, undefined]);
+  });
+  it('загрузка и код: та же нормализация переносит ★', () => {
+    const st = setStars(v2({ [X]: ['p1'] }), X, 5);
+    expect(loadGear(st, idx, [X, CF]).st.stars).toEqual({ [CF]: 5 });
   });
 });

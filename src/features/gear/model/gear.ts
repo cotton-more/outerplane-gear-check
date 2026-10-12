@@ -43,6 +43,9 @@ export interface GearStore {
   worn?: Record<string, Worn>;
   pin?: Record<string, string>;
   crit?: Record<string, number>;
+  // hero → in-game ★1…6 (transcend); no entry — not set. Doesn't depend on the pool; Core Fusion moves it X → CF with
+  // the pieces, the game keeps the stars (owner, Z7) — unlike pin and N
+  stars?: Record<string, number>;
   [extra: string]: unknown;
 }
 
@@ -97,15 +100,19 @@ export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slo
 // которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; at: number;
-  worn?: Worn; pin?: string; crit?: number;
+  worn?: Worn; pin?: string; crit?: number; stars?: number;
 }
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
   const ids = st.pools[charId] ?? [];
   const { [charId]: _, ...pools } = st.pools;
-  const { pin: _p, crit: _c, ...rest } = st;
+  const { pin: _p, crit: _c, stars: _s, ...rest } = st;
   const { [charId]: myPin, ...pin } = st.pin ?? {};
   const { [charId]: myCrit, ...crit } = st.crit ?? {};
-  const next = gc({ ...rest, pools, ...(Object.keys(pin).length ? { pin } : {}), ...(Object.keys(crit).length ? { crit } : {}) });
+  const { [charId]: myStars, ...stars } = st.stars ?? {};
+  const next = gc({
+    ...rest, pools, ...(Object.keys(pin).length ? { pin } : {}), ...(Object.keys(crit).length ? { crit } : {}),
+    ...(Object.keys(stars).length ? { stars } : {}),
+  });
   const dropped: Dropped = {
     charId, ids,
     pieces: Object.fromEntries(ids.filter((id) => !next.pieces[id] && st.pieces[id]).map((id) => [id, st.pieces[id]])),
@@ -113,6 +120,7 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}),
     ...(myPin !== undefined ? { pin: myPin } : {}),
     ...(myCrit !== undefined ? { crit: myCrit } : {}),
+    ...(myStars !== undefined ? { stars: myStars } : {}),
   };
   return { st: next, dropped };
 }
@@ -126,8 +134,10 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const worn = d.worn ? { ...st.worn, [d.charId]: { ...d.worn, ...st.worn?.[d.charId] } } : st.worn;
   const pin = d.pin !== undefined ? { ...st.pin, [d.charId]: st.pin?.[d.charId] ?? d.pin } : st.pin;
   const crit = d.crit !== undefined ? { ...st.crit, [d.charId]: st.crit?.[d.charId] ?? d.crit } : st.crit;
+  const stars = d.stars !== undefined ? { ...st.stars, [d.charId]: st.stars?.[d.charId] ?? d.stars } : st.stars;
   return syncWorn({
     ...st, pieces, pools: Object.fromEntries(entries), ...(worn ? { worn } : {}), ...(pin ? { pin } : {}), ...(crit ? { crit } : {}),
+    ...(stars ? { stars } : {}),
   });
 }
 
@@ -217,6 +227,20 @@ export function setCrit(st: GearStore, charId: string, n: number | null): GearSt
   const crit = v === CRIT_NEED ? rest : { ...rest, [charId]: v };
   const next: GearStore = { ...st, crit };
   if (!Object.keys(crit).length) delete next.crit;
+  return next;
+}
+
+// the hero's in-game ★ (transcend, 1…6); null — not set: no crit from stars is counted (MODEL.md §12 item 2)
+export const STARS = 6;
+export const starOf = (st: Pick<GearStore, 'stars'>, charId: string): number | null => st.stars?.[charId] ?? null;
+// set the stars (an integer 1…6; null removes the record). Anything else or nothing changed — the same store
+export function setStars(st: GearStore, charId: string, n: number | null): GearStore {
+  if (n !== null && !(Number.isInteger(n) && n >= 1 && n <= STARS)) return st;
+  if (starOf(st, charId) === n) return st;
+  const { [charId]: _, ...rest } = st.stars ?? {};
+  const stars = n === null ? rest : { ...rest, [charId]: n };
+  const next: GearStore = { ...st, stars };
+  if (!Object.keys(stars).length) delete next.stars;
   return next;
 }
 

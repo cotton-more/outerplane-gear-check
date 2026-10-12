@@ -77,7 +77,7 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
     }
     // вещи на ходу только переходят (у CF пусто — иначе X уже был бы неактивен); убраны — «Вернуть» всё хранилище
     const undo = r.st === st ? undefined : r.fixes.some((f) => f.kind === 'removed') ? () => st
-      : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [] }) : y), x);
+      : (x: GearStore) => r.fixes.reduceRight((y, f) => (f.kind === 'moved' ? unfuseChar(y, f.base, f.fusion, { moved: f.ids, had: [], stars: f.stars }) : y), x);
     if (intro !== undefined) {
       say({ text: intro, note: [fixesNote(r.fixes), keptNote].filter(Boolean).join(' '), tab, undo, after: () => rosterApi.replace(prev) });
       return;

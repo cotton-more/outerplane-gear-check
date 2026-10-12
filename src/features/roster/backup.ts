@@ -1,13 +1,14 @@
-// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): ростер и экипировка — «OGC-GEAR5-» и base62 с CRC-32
+// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): ростер и экипировка — «OGC-GEAR6-» и base62 с CRC-32
 // (shared/bits). Номер после OGC-GEAR больше 2: выпущенные версии читают такой код как «новее — обнови страницу».
 // В коде — весь ростер (и герои, которых нет в данных), у каждого героя с вещами — пул в прежнем порядке (вещь —
 // запись SPEC 1 и дата) и надетое, у каждого закрепившего — закреплённый набор (stat-sets PLAN Д11): по имени билда и
 // подписи связки (ключ без id героя), не по номеру в списке outerpedia. Имена и подписи — два словаря: у героев они
 // повторяются («Speed», «13x4»), подписей мало — номер в словаре короткий.
 // From OGC-GEAR5 — the hero's N («сколько крита нужно герою», crit): a flag and 7 bits, only for heroes who changed it from 100.
+// From OGC-GEAR6 — the hero's in-game stars (1…6, transcend): a flag and 3 bits, after the N field; a hero with only stars is in the list too.
 // Не переносится (решение 3): незнакомые поля, номера вещей (выдаются заново), порядок ростера, отдельные «жёлтые».
 // Общая запись (вещь в пулах двух героев) становится двумя копиями.
-// OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
+// OGC-GEAR5 (no stars), OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
 import { SLOTS, type Index } from '@/game/data';
 import { BitReader, BitWriter, seal, unseal, widthOf } from '@/shared/bits';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
@@ -16,8 +17,9 @@ import { readGearCode } from '@/features/gear/store/gearStore';
 import { heroCodeIn } from '@/features/gear/store/heroCode';
 import { parseRoster } from './rosterCode';
 
-const VERSION = 5;
+const VERSION = 6;
 const CRIT_BITS = 7; // N 0…100
+const STAR_BITS = 3; // ★ 1…6
 const OLDEST = 3;
 const DAY = 864e5;
 const DAY0 = Date.UTC(2024, 0, 1);
@@ -48,7 +50,12 @@ export function encodeBackup(st: GearStore, roster: readonly string[]): string {
     return Number.isInteger(n) && n! >= 0 && n! < 100 ? n! : null;
   };
   const critters = Object.keys(st.crit ?? {}).filter((id) => critOf(id) !== null);
-  const heroes = [...new Set([...roster, ...pools.map(([id]) => id), ...pinners, ...critters])];
+  const starsOf = (id: string): number | null => {
+    const n = st.stars?.[id];
+    return Number.isInteger(n) && n! >= 1 && n! <= 6 ? n! : null;
+  };
+  const starred = Object.keys(st.stars ?? {}).filter((id) => starsOf(id) !== null);
+  const heroes = [...new Set([...roster, ...pools.map(([id]) => id), ...pinners, ...critters, ...starred])];
   if (!heroes.length) return '';
   const nums = heroes.filter((id) => asNum(id) !== null).sort((a, z) => asNum(a)! - asNum(z)!);
   const strs = heroes.filter((id) => asNum(id) === null);
@@ -96,6 +103,9 @@ export function encodeBackup(st: GearStore, roster: readonly string[]): string {
     const crit = critOf(id);
     w.put(crit !== null ? 1 : 0, 1);
     if (crit !== null) w.put(crit, CRIT_BITS);
+    const stars = starsOf(id);
+    w.put(stars !== null ? 1 : 0, 1);
+    if (stars !== null) w.put(stars, STAR_BITS);
   }
   return `OGC-GEAR${VERSION}-${seal(w.bits)}`;
 }
@@ -118,7 +128,7 @@ export function decodeBackup(text: string): Backup | 'newer' | 'broken' | null {
 }
 
 // v — версия кода: 3 — после пула выбранный билд и «Не отдавать», затем «Собираю»; всё это пропускаем; 4 — закрепление;
-// 5 — plus the hero's N
+// 5 — plus the hero's N; 6 — plus the hero's stars
 function read(r: BitReader, v: number): Backup {
   const names: string[] = [], sigs: string[] = [];
   for (let n = r.vlq(3); n > 0; n--) names.push(r.str());
@@ -138,7 +148,7 @@ function read(r: BitReader, v: number): Backup {
   const name = () => word(names, nameBits);
   const st: GearStore = { v: 3, seq: 0, pieces: {}, pools: {} };
   const roster: string[] = [];
-  const worn: Record<string, Worn> = {}, pin: Record<string, string> = {}, crit: Record<string, number> = {};
+  const worn: Record<string, Worn> = {}, pin: Record<string, string> = {}, crit: Record<string, number> = {}, stars: Record<string, number> = {};
   for (const id of heroes) {
     if (r.get(1)) roster.push(id);
     const pool: Piece[] = [];
@@ -177,18 +187,23 @@ function read(r: BitReader, v: number): Backup {
       if (n > 100) throw new RangeError('crit');
       crit[id] = n;
     }
+    if (v > 5 && r.get(1)) {
+      const n = r.get(STAR_BITS);
+      if (n < 1 || n > 6) throw new RangeError('stars');
+      stars[id] = n;
+    }
   }
   if (r.left) throw new RangeError('tail');
   return {
     roster,
     raw: {
       ...st, ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(pin).length ? { pin } : {}),
-      ...(Object.keys(crit).length ? { crit } : {}),
+      ...(Object.keys(crit).length ? { crit } : {}), ...(Object.keys(stars).length ? { stars } : {}),
     },
   };
 }
 
-// Что вставили в поле «Резервная копия» (SPEC 2.4): код копии (OGC-GEAR3 … OGC-GEAR5); старый код экипировки (OGC-GEAR1, OGC-GEAR2 — как
+// Что вставили в поле «Резервная копия» (SPEC 2.4): код копии (OGC-GEAR3 … OGC-GEAR6); старый код экипировки (OGC-GEAR1, OGC-GEAR2 — как
 // есть, проверит loadGear); старый код ростера (slug или id через пробел, запятую, точку с запятой) — узнанные герои;
 // код новее; новый код, но повреждён; код героя или ссылка показа; прочее
 export type Pasted =
