@@ -2,7 +2,8 @@
 // outerpedia's teams, and whose skills start working (owner 2026-10-11: outerpedia first); with an empty team — who is
 // most often in outerpedia's teams. Below — everyone else by name. One name search for both.
 // With a boss (.x/0200-boss stage C) — guide: the guide's heroes for this spot replace «Подойдут команде» (owner
-// 2026-10-12), with one line naming the guide's heroes not in the roster.
+// 2026-10-12), with one line naming the guide's heroes not in the roster; when none of them is in the roster, the
+// suggestions stay under that line (C3).
 import { useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -54,10 +55,10 @@ export function TeamPicker({ syn, fits, guide, rest, emptyTeam, search, onPick }
             </ul>
           )}
           {guide.note && <p className="tm-gn muted small">{guide.note}</p>}
-          {others.length > 0 && <p className="tm-ph">{t.team.restHead}</p>}
+          {others.length > 0 && !found.length && <p className="tm-ph">{t.team.restHead}</p>}
         </>
       )}
-      {!guide && found.length > 0 && (
+      {found.length > 0 && (
         <>
           <p className="tm-ph">{emptyTeam ? t.team.popularHead : t.team.fitHead}</p>
           <ul className="tm-fits">

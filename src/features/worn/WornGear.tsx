@@ -10,7 +10,8 @@ import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import { wearAll } from '@/features/gear/pool';
-import type { WornCrit, WornView } from './wearing';
+import type { WornCrit, WornEff, WornView } from './wearing';
+import { EffNum } from './EffSheet';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon, StatIcon } from '@/game/icons/Img';
 import { CritBar, CritText, critZone } from './CritSheet';
@@ -73,6 +74,16 @@ function CritLine({ c, crit, onClick }: { c: Char; crit: WornCrit; onClick?: () 
     : <p className={cls} {...tour('wcrit')}>{body}</p>;
 }
 
+// «Эфф: ≈ 233» (.x/0200-boss stage D): the same quiet line as crit — the EFF icon, the number in bold; no bar (no EFF target
+// before stage E). A tap opens «Эфф для X» (EffSheet)
+function EffLine({ eff, onClick }: { eff: WornEff; onClick?: () => void }) {
+  const t = useT();
+  const body = <><StatIcon stat="EFF" /><span className="crit-t">{t.card.effLine} <b><EffNum shown={eff.shown} /></b></span></>;
+  return onClick
+    ? <button type="button" className="wcrit weff hit" onClick={onClick} {...tour('weff')}>{body}<span className="wcrit-ar" aria-hidden="true">▸</span></button>
+    : <p className="wcrit weff" {...tour('weff')}>{body}</p>;
+}
+
 // строка вещи: нажатие открывает шторку вещи; в карточке показа — не кнопка
 const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: SlotId; shown: boolean; children: ReactNode }) => (onClick
   ? <button type="button" className="bgear-row" onClick={onClick} {...(shown ? {} : tourItem(slot))}>{children}</button>
@@ -81,10 +92,11 @@ const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: S
 // onEnter — «Ввести» у пустого слота; onWearAll — «Да, всё надето». Нет их — обучение и новая версия страницы: слоты
 // показываются, действий нет. share — «Поделиться» у заголовка (ShareButton). shown — карточка показа чужого героя
 // (DEVELOPMENT.md "features/worn"): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор.
-// onCrit — «Крит: 45%» opens the hero's N (CritSheet); without it the line is plain text. Not on the shared card
-export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, onCrit, share, shown = false, pinned }: {
+// onCrit — «Крит: 45%» opens the hero's N (CritSheet); without it the line is plain text. Not on the shared card. onEff — the
+// same for «Эфф: ≈ 233» (EffSheet)
+export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, onCrit, onEff, share, shown = false, pinned }: {
   c: Char; wv: WornView; ctx: Ctx; gear: GearApi; onOpenPiece?: (id: string) => void;
-  onEnter?: (slot: SlotId) => void; onWearAll?: () => void; onCrit?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;
+  onEnter?: (slot: SlotId) => void; onWearAll?: () => void; onCrit?: () => void; onEff?: () => void; share?: ReactNode; shown?: boolean; pinned?: string | null;
 }) {
   const t = useT();
   const { idx } = ctx;
@@ -120,6 +132,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, on
           <div key={a.build} className="wchain-alt"><span className="wchain-b">{a.build}</span><WornChain chain={a.chain} anchor={false} /></div>
         ))}
         {wv.crit && !shown && <CritLine c={c} crit={wv.crit} onClick={onCrit} />}
+        {wv.eff && !shown && <EffLine eff={wv.eff} onClick={onEff} />}
         <WornSets idx={idx} wv={wv} t4={!shown} />
         <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
           {SLOTS.map(({ id: slot }) => {

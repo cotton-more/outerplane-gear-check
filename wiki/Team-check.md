@@ -68,6 +68,19 @@ suggests as without a boss.
 
 The guides' notes, tips and requirements (speed, effectiveness) are not copied into the app: they are in English only.
 
+## EFF vs RES
+
+With a boss, under the team — the block **"EFF vs RES 288"**: a row for everyone who needs EFF (as on the hero card) —
+their EFF (with "≈" until the game's number is typed), how much is missing to RES + 1 and the chance the boss doesn't
+resist the debuff: "Tamara ≈ 233 −56 64 %". EFF above RES — ✓ and 100 %: the debuff always lands. Below it the boss
+resists about d / (d + 100), where d is the gap: −10 — 9 %, −50 — 33 %, −100 — half. The skill's own chance ("50 % to
+inflict") is separate; EFF doesn't change it. Heroes whose EE gives EFF get a hint until the game's number is typed:
+"EE gives EFF ×2 — type EFF from the game ▸". Tap a row — the same "EFF for …" sheet as on the card
+([Equipment](Equipment)); the number is kept on the hero. The row shows EFF in battle: the card's number plus the element node in Quirks (Light and Dark +5 %, Earth,
+Water and Fire +7 % when the hero's element beats the boss's; with the "Quirks" setting) and a teammate's transcend that
+gives EFF to the whole team (Iota, Dahlia, Alice… +3/+6 %; one, the strongest). EFF counts the stars tried on the spot. Not counted: EFF buffs
+and RES-down in battle (Akari S2), guild raid geas.
+
 ## The report
 
 Only heroes with something to say are listed.

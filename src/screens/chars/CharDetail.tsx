@@ -9,7 +9,8 @@ import type { Ctx } from '@/game/context';
 import { comboText } from '@/game/build/builds';
 import type { RosterApi } from '@/features/roster/useRoster';
 import type { GearApi } from '@/features/gear/store/useGear';
-import { critNeed, setCrit, setPin, setStars, starOf, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import { critNeed, setCrit, setEff, setPin, setStars, starOf, undoPin, updateIn, type GearStore, type Piece, type PieceEdit } from '@/features/gear/model/gear';
+import type { EffCal } from '@/game/stat/eff';
 import { undoWear, undoWearAll, wearAll, wearFromPool, type PoolView } from '@/features/gear/pool';
 import { pinChoices, undoWearMany, wearMany, wornView } from '@/features/worn/wearing';
 import { reasonOf } from '@/features/gear/pool/info';
@@ -18,6 +19,7 @@ import { PoolList, reasonText } from '@/features/gear/ui/PoolList';
 import { Redress, redressLabel } from '@/features/worn/Redress';
 import { PinSheet } from '@/features/worn/PinSheet';
 import { CritSheet } from '@/features/worn/CritSheet';
+import { EffSheet } from '@/features/worn/EffSheet';
 import { MiniStars, StarSheet } from '@/game/hero/Stars';
 import { heroStar, minStar } from '@/game/hero/star';
 import { WornGear } from '@/features/worn/WornGear';
@@ -60,7 +62,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // открыта «Надето»; у героя не из ростера и без вещей — «Билды» (смотрит справку)
   const [tab, setTab] = useState<Tab>(() => (c && !rosterApi.roster.has(c.id) && !view.of(c.id)?.pieces.length ? 'builds' : 'worn'));
   const [bi, setBi] = useState(0); // билд на вкладке «Билды»
-  const [sheet, setSheet] = useState<'redress' | 'pin' | 'crit' | 'stars' | null>(null);
+  const [sheet, setSheet] = useState<'redress' | 'pin' | 'crit' | 'eff' | 'stars' | null>(null);
   const [pieceId, setPieceId] = useState<string | null>(null);
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
   useEffect(() => { if (!active) { setPieceId(null); setSheet(null); } }, [active]);
@@ -141,6 +143,12 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const next = setCrit(gear.store, c.id, n);
     if (next !== gear.store) gear.set(next);
   };
+  // the typed stat-screen EFF (.x/0200-boss Q3): saved on «Готово», no message (like N); null — «Сбросить»
+  const saveEff = (cal: EffCal | null) => {
+    setSheet(null);
+    const next = setEff(gear.store, c.id, cal);
+    if (next !== gear.store) gear.set(next);
+  };
   // the hero's stars (transcend): saved at once, the sheet closes; the «Крит» line shows the change, no message (like N)
   const saveStars = (k: number) => {
     setSheet(null);
@@ -202,7 +210,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           )}
           {shownTab === 'worn' && wv && (
             <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={live ? enter : undefined} onWearAll={live ? wearEverything : undefined}
-              onCrit={live ? () => setSheet('crit') : undefined} share={shareCode ? <ShareButton code={shareCode} /> : undefined} />
+              onCrit={live ? () => setSheet('crit') : undefined} onEff={live ? () => setSheet('eff') : undefined} share={shareCode ? <ShareButton code={shareCode} /> : undefined} />
           )}
           {shownTab === 'pool' && <PoolList c={c} pieces={pieces} hp={hp} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />}
           {shownTab === 'builds' && (
@@ -224,6 +232,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
             <Redress c={c} ctx={ctx} P={hp.P} plan={wv.redress} onClose={() => setSheet(null)} onWear={live ? wear : undefined} onWearAll={live ? wearList : undefined} />
           )}
           {sheet === 'crit' && <CritSheet c={c} now={critNeed(gear.store, c.id)} total={wv?.crit?.total ?? 0} own={wv?.crit?.own ?? 0} stars={wv?.crit?.stars ?? 0} onClose={() => setSheet(null)} onSave={saveCrit} />}
+          {sheet === 'eff' && wv?.eff && <EffSheet c={c} eff={wv.eff} onClose={() => setSheet(null)} onSave={saveEff} />}
           {sheet === 'pin' && hp && <PinSheet c={c} ctx={ctx} choices={pinChoices(hp)} now={pin?.key ?? null} onClose={() => setSheet(null)} onPin={doPin} />}
         </>
       ) : (

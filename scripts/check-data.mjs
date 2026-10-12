@@ -248,6 +248,29 @@ function problems(D) {
   if (mixedW.length) out.add(`EFF героя (eff.w) у героев одного подкласса разный: ${mixedW.join(', ')}`);
   const rangers = D.chars.filter((c) => c.class === 'ranger');
   if (rangers.length && !rangers.every((c) => c.eff?.r === 50)) out.add('EFF: не у всех Ranger узел квирков +50 (eff.r) — формат quirks изменился?');
+  // EE premium (eff.ee, ‰) and rule R (eff.d): the 17 heroes whose Exclusive Equipment gives a permanent self EFF premium
+  // (Tanya and Rico +50 %, the rest +100 %), and who needs EFF against a boss's RES (.x/0200-boss RESEARCH §1.5)
+  const EE_HEROES = ['Tanya', 'Rico', 'Alice', 'Beth', 'Eternal', 'Sterope', 'Tamara', 'Christina', 'Akari', 'Iota', 'Kuro',
+    'Gnosis Nella', 'Ember', 'Omega Nadja', 'Core Fusion Snow', 'Resonance Eliza', 'Core Fusion Eternal'];
+  const eeNow = D.chars.filter((c) => c.eff?.ee).map((c) => c.name);
+  const eeLost = EE_HEROES.filter((n) => !eeNow.includes(n));
+  const eeNew = eeNow.filter((n) => !EE_HEROES.includes(n));
+  if (D.chars.length && (eeLost.length || eeNew.length)) out.add(`EFF от EE (eff.ee): не у тех героев — пропал: ${eeLost.join(', ') || '—'}; новый: ${eeNew.join(', ') || '—'} (формат ee.json или passives.json изменился? Или вышло новое EE — тогда обнови список здесь)`);
+  const eeWrong = D.chars.filter((c) => c.eff?.ee && c.eff.ee !== (['Tanya', 'Rico'].includes(c.name) ? 500 : 1000)).map((c) => `${c.name} ${c.eff.ee}`);
+  if (eeWrong.length) out.add(`EFF от EE (eff.ee): ждём Tanya и Rico 500, остальные 1000: ${eeWrong.join(', ')}`);
+  const dOf = (n) => D.chars.find((c) => c.name === n)?.eff?.d === 1;
+  // Demiurge Vlada (S1 cooldown up), Epsilon (S2 AP charge down) and Maxwell (S2 buff shortening) count since cooldown /
+  // AP / buff-cut rows joined rule R; plain Vlada has none of them
+  const dBad = [...['Tamara', 'Iota', 'Sigma', 'Ember', 'Gnosis Domine', 'Demiurge Vlada', 'Epsilon', 'Maxwell'].filter((n) => !dOf(n)).map((n) => `${n} без d`),
+    ...['Francesca', 'Vlada', 'Eris', 'Eliza', 'Drakhan'].filter(dOf).map((n) => `${n} с d`)];
+  if (D.chars.length && dBad.length) out.add(`EFF от RES босса (eff.d, правило R): ${dBad.join(', ')} — формат skills или buffs изменился?`);
+  // transcend EFF premium that reaches the whole team (eff.tm: a MY_TEAM row of the passive) and the self-only ones
+  const tmOf = (n) => D.chars.find((c) => c.name === n)?.eff?.tm === 1;
+  const tmBad = [...['Iota', 'Dahlia', 'Gnosis Nella'].filter((n) => !tmOf(n)).map((n) => `${n} без tm`),
+    ...['Gnosis Domine', 'Iris'].filter(tmOf).map((n) => `${n} с tm`)];
+  if (D.chars.length && tmBad.length) out.add(`EFF трансценда на всю команду (eff.tm): ${tmBad.join(', ')} — формат skills или buffs изменился?`);
+  const dCount = D.chars.filter((c) => c.eff?.d).length;
+  if (D.chars.length && (dCount < 40 || dCount > 60)) out.add(`EFF от RES босса (eff.d): отмечено ${dCount} героев (ждём 40…60) — правило R или данные damage/ изменились?`);
   if (D.mainValues?.gloves?.unique?.EFF?.[0] !== 50) out.add(`main EFF перчаток Legendary на +10 T0: ${D.mainValues?.gloves?.unique?.EFF?.[0]}, ждём 50 (mainValues)`);
   // main values (update.py main_values): the most common value of an item, not the smallest (Ether rows are lower)
   for (const [slot, stat, want] of [['armor', 'DEF', 500], ['weapon', 'ATK', 1000]]) {
@@ -274,6 +297,13 @@ function problems(D) {
       if (!Array.isArray(imm) || !imm.length || imm[0]?.[0] !== 0
         || !imm.every((r, i) => Array.isArray(r) && r.length === 2 && Number.isInteger(r[0]) && r[0] < rows.length && (!i || r[0] > imm[i - 1][0])
           && Array.isArray(r[1]) && r[1].every((x) => typeof x === 'string'))) out.add(`босс ${f.key}: иммунитеты по этапам (imm) не по форме`);
+      // the stage chips of a special request and a guild raid are the numbers 1…N in order (the sheet and «этап 13» rely on it)
+      if ((f.mode === 'sr' || f.mode === 'gr') && !rows.every((r, i) => r[3] === String(i + 1))) out.add(`босс ${f.key}: этапы таблицы ${f.table} не «1»…«${rows.length}» по порядку`);
+      // the latest season: start and end are ISO strings in UTC, the start before the end
+      const iso = (x) => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(x) && !Number.isNaN(Date.parse(x));
+      if (f.live !== undefined && !(Array.isArray(f.live) && f.live.length === 2 && f.live.every(iso) && Date.parse(f.live[0]) < Date.parse(f.live[1]))) {
+        out.add(`босс ${f.key}: даты сезона (live) — не две ISO-строки с Z, начало раньше конца`);
+      }
       for (const t of f.teams ?? []) {
         for (const h of [...t.s.flat(), ...(t.r ?? []).map((r) => r.h)]) if (!ids.has(h)) out.add(`босс ${f.key}: в команде гайда герой ${h}, которого нет в данных`);
       }

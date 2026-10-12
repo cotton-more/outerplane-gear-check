@@ -1,15 +1,15 @@
 // «Какую команду из гайда?» — a stage with several guide teams (guild raid: 4–6). A row per team: on each guide spot
-// the hero «Собрать» would put (faded — the first alternative, nobody owned), «есть 2 из 4», who is missing. A team
+// the hero «Собрать» would put (a Core Fusion for its base hero; faded — the first alternative, nobody owned), «есть 2 из 4», who is missing. A team
 // with nobody owned can't be picked.
 import type { BossTeam } from '@/game/data/types';
 import { useIndex } from '@/game/data/IndexContext';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { useT } from '@/i18n';
 import { Sheet } from '@/shared/ui/Sheet';
-import { fillFrom, type Fill } from '../model/boss';
+import { fillFrom, type Fill, type Own } from '../model/boss';
 
-export function GuideChoice({ teams, owned, onPick, onClose }: {
-  teams: readonly BossTeam[]; owned: Pick<ReadonlySet<string>, 'has'>; onPick: (f: Fill) => void; onClose: () => void;
+export function GuideChoice({ teams, own, onPick, onClose }: {
+  teams: readonly BossTeam[]; own: Own; onPick: (f: Fill) => void; onClose: () => void;
 }) {
   const t = useT();
   const idx = useIndex();
@@ -18,7 +18,7 @@ export function GuideChoice({ teams, owned, onPick, onClose }: {
     <Sheet title={t.boss.chooseTeam} onClose={onClose} className="boss-choice">
       <ul className="boss-tc">
         {teams.map((team, i) => {
-          const f = fillFrom(team, owned);
+          const f = fillFrom(team, own);
           return (
             <li key={i}>
               <button type="button" disabled={!f.have} onClick={() => onPick(f)}>

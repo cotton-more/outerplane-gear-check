@@ -41,6 +41,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/worn/Redress.tsx': 'helper',               // re-dress sheet from the Worn tab button: the gear tip explains it, rows name themselves
   'features/worn/WornBudget.tsx': 'helper',            // budget under the Worn heading: the wornBudget tip explains it
   'features/worn/CritSheet.tsx': 'helper',             // the hero's N from «Крит: 45%» on Worn: the wornCrit tip explains it, the sheet's text too
+  'features/worn/EffSheet.tsx': 'helper',              // «Эфф для X» from «Эфф: ≈ 233» on Worn and from «Команда»: the wornEff tip explains it, the sheet's text too
   'features/worn/WornSets.tsx': 'helper',              // sets and the T4 line under the chain on Worn: explained by the wornTab tip
   'game/hero/Stars.tsx': 'helper',                     // transcend stars: card and Team; the heroStars tip explains them
   'features/team/ui/TeamSlots.tsx': 'helper',          // the four Team spots: explained by the Team tip
@@ -48,6 +49,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/team/ui/TeamPicker.tsx': 'helper',         // the hero sheet of a spot: who fits the team first — section titles explain it         // the Team report: explained by the Team tip
   'features/boss/ui/BossSheet.tsx': 'helper',          // the boss sheet: opened from the boss row, the teamBoss tip explains it
   'features/boss/ui/GuideChoice.tsx': 'helper',        // «Какую команду из гайда?»: opened by «Собрать из гайда» (teamBoss tip)
+  'features/boss/ui/BossEff.tsx': 'helper',            // EFF vs RES under the team (.x/0200-boss stage D): Help and the wornEff tip explain it (owner: no tip of its own)
   'features/trade/ui/TeamPick.tsx': 'helper',          // team diamond inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet

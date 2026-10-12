@@ -77,23 +77,41 @@ export const uniq = <T,>(xs: readonly T[]) => xs.filter((x, i) => xs.indexOf(x) 
 export const teamsAt = (b: Boss, i: number): BossTeam[] =>
   (b.teams ?? []).filter((t) => !t.st || (i + 1 >= t.st[0] && i + 1 <= t.st[1]));
 
-// «Собрать из гайда»: on each of the guide's spots the first owned hero among its alternatives (guide order), one not
-// already put on an earlier spot; spots past the guide's (a core of 2) stay empty. have — spots filled, of — the guide's
-// spots; missing — the first alternative of each spot left empty (to name it)
+// Who the player has for a guide's hero: the hero (in the roster) → itself; else his Core Fusion (owner 2026-10-12: Core
+// Fusion X stands in for X in a guide spot — the guides list the base hero) → its id; else null. `fused`: base id → Core
+// Fusion id (idx.FUSED). The roster never holds both X and Core Fusion X (the base hero is replaced), so the order is moot
+export type Own = (id: string) => string | null;
+export const ownOf = (owned: Pick<ReadonlySet<string>, 'has'>, fused: Readonly<Record<string, string>> = {}): Own => (id) =>
+  owned.has(id) ? id : fused[id] && owned.has(fused[id]) ? fused[id] : null;
+
+// «Собрать из гайда»: on each of the guide's spots the first alternative the player has (guide order; `own` resolves a
+// Core Fusion), one not already put on an earlier spot; spots past the guide's (a core of 2) stay empty. have — spots
+// filled, of — the guide's spots; missing — the first alternative of each spot left empty (to name it)
 export interface Fill { team: (string | null)[]; have: number; of: number; missing: string[] }
-export function fillFrom(t: BossTeam, owned: Pick<ReadonlySet<string>, 'has'>): Fill {
+export function fillFrom(t: BossTeam, own: Own): Fill {
   const team: (string | null)[] = [null, null, null, null];
   const missing: string[] = [];
   t.s.slice(0, 4).forEach((alts, j) => {
-    const id = alts.find((h) => owned.has(h) && !team.includes(h)) ?? null;
+    let id: string | null = null;
+    for (const h of alts) {
+      const mine = own(h);
+      if (mine && !team.includes(mine)) { id = mine; break; }
+    }
     team[j] = id;
     if (!id && alts.length) missing.push(alts[0]);
   });
   return { team, have: team.filter(Boolean).length, of: Math.min(4, t.s.length), missing };
 }
 
-// the picker of spot j with a boss: the guide's alternatives for that spot over the stage's teams, guide order, no repeats
-export const spotAlternatives = (teams: readonly BossTeam[], j: number): string[] => uniq(teams.flatMap((t) => t.s[j] ?? []));
+// the picker of spot j with a boss: the guide's alternatives for that spot, guide order, no repeats. Over the stage's
+// teams that match the rest of `team` (owner 2026-10-12: position j means something different from team to team of a
+// guild raid): every other filled spot's hero is among the team's alternatives at that same spot (a Core Fusion standing
+// in for its base hero counts); empty spots match anything. No team matches — over all of them
+export function spotAlternatives(teams: readonly BossTeam[], j: number, team: readonly (string | null)[] = [], own: Own = (id) => id): string[] {
+  const fits = (t: BossTeam) => team.every((h, i) => !h || i === j || (t.s[i] ?? []).some((a) => a === h || own(a) === h));
+  const matching = teams.filter(fits);
+  return uniq((matching.length ? matching : teams).flatMap((t) => t.s[j] ?? []));
+}
 
 // outerpedia's guide page (English — the site has no Russian)
 export const guideUrl = (b: Boss) => `https://outerpedia.com/guides/${b.guide}`;
