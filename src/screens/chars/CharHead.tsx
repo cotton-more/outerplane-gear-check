@@ -30,8 +30,9 @@ export function CharHead({ c, ctx, star }: { c: Char; ctx: Ctx; star?: ReactNode
       </span>
       <div>
         <div className="cd-name">
-          <h2><HeroName c={c} stacked /></h2>
-          {star}
+          {/* the star right after the name, on its line (owner 2026-10-12): h2 is inline, the star follows it — outside the
+              heading, so a screen reader hears just the name */}
+          <h2><HeroName c={c} stacked /></h2>{star && <>{' '}{star}</>}
         </div>
         {/* класса текстом нет — его показывает значок; подкласс есть у всех, но без него — название класса */}
         <div className="meta"><span>{[c.subClass ? cap(c.subClass) : clsName, c.role && (ROLE[c.role] || c.role)].filter(Boolean).join(' · ')}</span></div>
