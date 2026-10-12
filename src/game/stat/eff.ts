@@ -63,3 +63,23 @@ export function landChance(eff: number, res: number): number {
   const d = Math.max(1, res - eff);
   return 1 - (Math.floor(Math.fround(1000 / Math.fround(1 + Math.fround(100 / d)))) + 1) / 1001;
 }
+
+// EFF in battle against a boss (.x/0200-boss review C+D, owner F1 and F4): what the stat screen doesn't show but is live
+// when a skill's debuffs roll the resist — added to the premium sum, so it adds that many ‰ of the base (hero + gear):
+// - the element quirk node (with `quirks`): Light and Dark +5 % on every skill; Earth, Water, Fire +7 % when the hero's
+//   element beats the boss's (water → fire → earth → water) — read as +5 % for Light/Dark until the game says otherwise;
+// - a teammate's transcend EFF that reaches the team (`Char.eff.tm`), only the strongest one (stacking unknown) and only
+//   above the hero's own team row, which their own stat screen already shows.
+// Talisman and gems stay out (unknowable).
+const BEATS: Readonly<Record<string, string>> = { water: 'fire', fire: 'earth', earth: 'water' };
+export interface Mate { c: Char; star: number }
+const teamRow = (m: Mate): number => (m.c.eff?.tm ? m.c.eff.t?.r?.[m.star - 1] ?? 0 : 0);
+export function battleBonus(c: Char, star: number, quirks: boolean, bossElement: string | null, mates: readonly Mate[]): number {
+  const quirk = !quirks ? 0 : c.element === 'light' || c.element === 'dark' ? 50 : bossElement && BEATS[c.element] === bossElement ? 70 : 0;
+  const own = teamRow({ c, star });
+  const team = Math.max(0, ...mates.filter((m) => m.c.id !== c.id).map(teamRow)) - own;
+  return quirk + Math.max(0, team);
+}
+// the shown number in battle: + bonus ‰ of the base
+export const inBattle = (e: Pick<Eff, 'base'>, shown: number, bonus: number): number => shown + Math.floor((e.base * bonus) / 1000);
+

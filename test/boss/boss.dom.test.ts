@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { Dataset, Synergy } from '@/game/data/types';
+import type { Dataset, GuideTeams, Synergy } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 import { moreButton, openMore } from '../app/more';
 
@@ -34,7 +34,9 @@ afterEach(async () => {
   localStorage.clear();
 });
 
-async function mount({ bosses = true, roster = ROSTER, boss, stars }: { bosses?: boolean; roster?: string[]; boss?: unknown; stars?: Record<string, number> } = {}) {
+async function mount({ bosses = true, roster = ROSTER, boss, stars, teams }: {
+  bosses?: boolean; roster?: string[]; boss?: unknown; stars?: Record<string, number>; teams?: GuideTeams;
+} = {}) {
   const saved = {
     lang: 'en', welcomeHidden: true, tour: DONE, roster, state: { tab: 'eval' }, item: {}, ...(boss ? { boss } : {}),
     // stored hero stars live in the gear store
@@ -44,7 +46,7 @@ async function mount({ bosses = true, roster = ROSTER, boss, stars }: { bosses?:
   const { App } = await import('@/app/App');
   const { IndexContext } = await import('@/game/data/IndexContext');
   const { createIndex } = await import('@/game/data');
-  const D: Dataset = { ...structuredClone(D0), synergy: SYN };
+  const D: Dataset = { ...structuredClone(D0), synergy: SYN, ...(teams ? { teams } : {}) };
   if (!bosses) delete D.bosses;
   const el = document.createElement('div');
   document.body.append(el);
@@ -206,6 +208,85 @@ describe('a boss on «Команда»', () => {
     expect($('.toast')?.textContent).toBe('None of this guide’s heroes are in your roster.');
   });
 
+  // Core Fusion X stands in for X, which the guides list (owner 2026-10-12): Dek'Ril's guide lists Eternal on spot 2
+  it('a Core Fusion hero stands in for the base hero: «Fill», the spot sheet, the missing line', async () => {
+    const cf = id('Core Fusion Eternal');
+    await mount({ roster: [cf, id('Akari')] });
+    await pickBoss("Dek'Ril");
+    await closeSheet();
+    await click($$('#view-team .tm-add')[1]);
+    expect($$('.drawer.tm-sheet .tm-fit').map((b) => b.textContent)).toEqual(['Core Fusion Eternal']);
+    expect($('.drawer.tm-sheet .tm-gn')?.textContent).toBe('Also in the guide: Astei, Liselotte, Tio — not in your roster.');
+    await closeSheet();
+    await click($('#view-team .boss-fill'));
+    expect(names()).toEqual(['+', 'Core Fusion Eternal', '+', '+']);
+    expect($('.toast')?.textContent).toBe('From the guide: 1 of 4.Undo');
+  });
+
+  it('several guide teams: a Core Fusion counts as owned in «n of m» and is not named missing', async () => {
+    await mount({ roster: [id('Core Fusion Eternal'), id('Akari')] });
+    await pickBoss('Scientific Inheritance Devotee');
+    await closeSheet();
+    await click($('#view-team .boss-fill'));
+    const rows = $$('.boss-choice .boss-tc button') as HTMLButtonElement[];
+    expect(rows.map((b) => b.querySelector('.boss-th')!.textContent)).toEqual(['0 of 4 owned', '1 of 4 owned', '0 of 4 owned', '0 of 4 owned']);
+    expect(rows.map((b) => b.disabled)).toEqual([true, false, true, true]);
+    expect(rows[1].querySelector('.boss-tm')!.textContent).not.toContain('Eternal');
+    expect(rows[1].querySelector('.sr-only')!.textContent).toBe('Core Fusion Eternal');
+    await click(rows[1]);
+    expect(names()).toEqual(['+', '+', 'Core Fusion Eternal', '+']);
+  });
+
+  // Gornolf (Frost Legion): spot 1 of its teams is Omega Nadja / Monad Eva / Ember / Demiurge Saeran, and so on per team
+  it('a guild raid team: a spot lists the heroes of the matching guide teams only; no match — all teams', async () => {
+    const roster = ['Monad Eva', 'Maxie', 'Vlada', 'Akari', 'Ember', 'Bell Cranel'].map(id);
+    await mount({ roster });
+    await pickBoss('Gornolf');
+    await closeSheet();
+    const guide = () => ({ fits: $$('.drawer.tm-sheet .tm-fit').map((b) => b.textContent), note: $('.drawer.tm-sheet .tm-gn')?.textContent ?? null });
+    const open = (i: number) => click($$('#view-team .tm-team .tm-add, #view-team .tm-team .tm-slot')[i]);
+    const pick = async (i: number, name: string) => { await open(i); await click(byText('.drawer.tm-sheet .tm-fit', name)); };
+    await open(0);
+    expect(guide()).toEqual({ fits: ['Monad Eva', 'Ember'], note: 'Also in the guide: Omega Nadja, Demiurge Saeran — not in your roster.' });
+    await click(byText('.drawer.tm-sheet .tm-fit', 'Monad Eva'));
+    await pick(1, 'Maxie'); // the teams that start with Monad Eva: spot 2 is Gnosis Beth / Maxie
+    await open(2); // teams 3 and 5 (Monad Eva, Maxie): Vlada / Parti and Akari — not Omega Nadja, Demiurge Astei, Anarky of the others
+    expect(guide()).toEqual({ fits: ['Vlada', 'Akari'], note: 'Also in the guide: Parti — not in your roster.' });
+    await click(byText('.drawer.tm-sheet .tm-fit', 'Vlada'));
+    await open(3); // only team 3 keeps Vlada on spot 3
+    expect(guide()).toEqual({ fits: ['Ember', 'Bell Cranel'], note: null });
+    await closeSheet();
+    // Ember and Maxie belong to no single team: the union of spot 4 over the stage
+    await act(async () => root?.unmount());
+    root = null;
+    document.body.innerHTML = '';
+    await mount({ roster, boss: { v: 1, boss: 'gr:frost-legion:main', stage: {}, teams: { 'gr:frost-legion:main': [id('Ember'), id('Maxie'), null, null] } } });
+    await open(3);
+    expect(guide()).toEqual({ fits: ['Bell Cranel', 'Vlada'], note: 'Also in the guide: Sterope, Demiurge Drakhan, Monad Iota — not in your roster.' });
+  });
+
+  it('nobody owned among the spot\'s guide heroes: the line (4 names, «and N more») and the suggestions under it', async () => {
+    // outerpedia's teams (the fixture has none) put Akari and Maxie on the same team: with an empty team both are suggested
+    const teams: GuideTeams = { guides: {}, list: [{ g: [], s: [[id('Akari')], [id('Maxie')], [], []] }] };
+    await mount({ roster: ['Caren', 'Tamara', 'Rin', 'Roxie', 'Maxie', 'Vlada', 'Akari'].map(id), teams });
+    await pickBoss('Masterless Guardian');
+    await closeSheet();
+    await click($('#view-team .tm-add'));
+    expect($('.drawer.tm-sheet .tm-gn')?.textContent).toBe('Also in the guide: Veronica, Christina, Ember, Tio and 8 more — not in your roster.');
+    expect($$('.drawer.tm-sheet .tm-ph').map((p) => p.textContent)).toEqual(['From the guide for this spot', 'Most often in outerpedia teams', 'Everyone else']);
+    expect($$('.drawer.tm-sheet .tm-fn').map((b) => b.textContent)).toEqual(['Akari', 'Maxie']);
+  });
+
+  it('several guide teams and nobody owned in any: the message, no choice sheet', async () => {
+    await mount({ roster: [id('Akari')] });
+    await pickBoss('Scientific Inheritance Devotee');
+    await closeSheet();
+    await click($('#view-team .boss-fill'));
+    expect($('.boss-choice')).toBeNull();
+    expect(names()).toEqual(['+', '+', '+', '+']);
+    expect($('.toast')?.textContent).toBe('None of this guide’s heroes are in your roster.');
+  });
+
   it('singularity: no guide teams — no «Fill»; ranks in two rows, a letter keeps the pluses', async () => {
     await mount();
     await pickBoss('Urd (Dark)');
@@ -233,15 +314,15 @@ describe('EFF vs RES on «Команда»', () => {
     await click($('#view-team .boss-fill'));
   };
 
-  it('no boss — no block; Meteos 13 (RES 288): Tamara and Roxie, nothing worn — W + node, «≈», the EE hint for Tamara', async () => {
+  it('no boss — no block; Meteos 13 (RES 288): Tamara and Roxie, nothing worn — W + node + the element node in battle, «≈», the EE hint for Tamara', async () => {
     await mount();
     expect($('#view-team .boss-eff')).toBeNull();
     await meteos();
     expect($('#view-team .boss-eff h4')?.textContent).toBe('EFF vs RES 288');
-    // Tamara: W 120 + Ranger 50 = 170 → −119, resisted (⌊1000/(1 + 100/118)⌋ + 1)/1001 → lands 45 %
+    // Tamara: W 120 + Ranger 50 = 170, in battle + 7 % of 170 (water beats the fire boss) = 181 → −108, lands 48 %; Roxie (water) 120 + 8
     expect(rows()).toEqual([
-      ['Tamara', '≈\u2009about 170', '−119', '45 %', 'EE gives EFF ×2 — type EFF from the game ▸'],
-      ['Roxie', '≈\u2009about 120', '−169', '37 %', null],
+      ['Tamara', '≈\u2009about 181', '−108', '48 %', 'EE gives EFF ×2 — type EFF from the game ▸'],
+      ['Roxie', '≈\u2009about 128', '−161', '38 %', null],
     ]);
     expect($('#view-team .boss-eff .be-foot')?.textContent).toContain('the chance the boss doesn’t resist');
   });
@@ -254,7 +335,7 @@ describe('EFF vs RES on «Команда»', () => {
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     await act(async () => { set.call(input, '340'); input.dispatchEvent(new Event('input', { bubbles: true })); });
     await click(byText('.effsheet .btn.primary', 'Done'));
-    expect(rows()[0]).toEqual(['Tamara', '340', '✓', '100 %', null]);
+    expect(rows()[0]).toEqual(['Tamara', '351', '✓', '100 %', null]); // 340 typed + water beats fire: 7 % of 170
     expect(JSON.parse(localStorage.getItem('ogc.gear')!).eff).toEqual({ [id('Tamara')]: { typed: 340, at: 170 } });
   });
 
@@ -269,7 +350,7 @@ describe('EFF vs RES on «Команда»', () => {
     await click($('#view-team .tm-team .tm-sb'));
     await click($$('.drawer.hs-sheet .hs-big button')[5]);
     const iotaRow = () => $$('#view-team .boss-eff .be-row').find((r) => r.querySelector('.be-n')?.textContent === 'Iota')!;
-    expect(iotaRow().querySelector('.be-v')?.textContent).toBe('≈\u2009about 127');
+    expect(iotaRow().querySelector('.be-v')?.textContent).toBe('≈\u2009about 133'); // 127 at ★6 + Dark 5 % of 120
     await click(iotaRow());
     expect($('.effsheet .eff-v')?.textContent).toBe('≈\u2009about 123');
     const input = $('.effsheet input') as HTMLInputElement;

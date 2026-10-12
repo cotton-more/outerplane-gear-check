@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
 import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
-import { effOf, effShown, landChance } from '@/game/stat/eff';
+import { battleBonus, effOf, effShown, inBattle, landChance } from '@/game/stat/eff';
 import type { StatPiece } from '@/game/stat/total';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
@@ -110,3 +110,25 @@ describe('the chance a debuff lands', () => {
     expect(landChance(228, 288)).toBe(1 - 376 / 1001);
   });
 });
+
+// EFF in battle (owner F1, F4): the element quirk node and a teammate's transcend team row, added to the premium sum
+describe('EFF in battle against a boss', () => {
+  const C = (name: string, eff: Partial<NonNullable<ReturnType<typeof hero>['eff']>> = {}) => ({ ...hero(name), eff: { ...hero(name).eff!, ...eff } });
+  it('the element node: Light/Dark +5 % always, Water vs Fire +7 %, Water vs Earth nothing, quirks off — nothing', () => {
+    const tamara = hero('Tamara'), iota = hero('Iota');
+    expect([tamara.element, iota.element]).toEqual(['water', 'dark']);
+    expect(battleBonus(tamara, 3, true, 'fire', [])).toBe(70);
+    expect(battleBonus(tamara, 3, true, 'earth', [])).toBe(0);
+    expect(battleBonus(iota, 3, true, 'fire', [])).toBe(50);
+    expect(battleBonus(tamara, 3, false, 'fire', [])).toBe(0);
+  });
+  it('a teammate\'s team row: the strongest one, above the hero\'s own; Tamara 233 (base 233) + 7 % + 6 % = 263', () => {
+    const tamara = hero('Tamara');
+    const iota = C('Iota', { tm: 1 }), dahlia = C('Dahlia', { tm: 1 });
+    expect(battleBonus(tamara, 3, false, null, [{ c: iota, star: 6 }, { c: dahlia, star: 4 }])).toBe(60);
+    expect(battleBonus(iota, 6, false, null, [{ c: iota, star: 6 }, { c: dahlia, star: 4 }])).toBe(0); // her own 6 % ≥ Dahlia's 3 %
+    expect(battleBonus(iota, 4, false, null, [{ c: dahlia, star: 6 }])).toBe(30);
+    expect(inBattle({ base: 233 }, 233, 70 + 60)).toBe(263);
+  });
+});
+
