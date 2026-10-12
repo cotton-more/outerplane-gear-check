@@ -112,6 +112,9 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-th { font-size: 12.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 .boss-th.full { color: var(--keep); }
 .boss-tm { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
+/* the toast after «Собрать из гайда»: one line, like the batch notes (left: 50% would halve its width) */
+.toast.boss-toast { width: max-content; max-width: calc(100vw - 32px); }
 @media (max-width: 330px) {
+  .boss-rl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* «Босс:» — for screen readers only: the name needs the room */
   .boss-tf > span, .boss-tf > i, .boss-tf .face { width: 28px; height: 28px; }
 }
