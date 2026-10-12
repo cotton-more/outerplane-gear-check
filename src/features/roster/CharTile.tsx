@@ -1,5 +1,5 @@
 // Плитка героя в списке и в ромбе команды обмена: портрет, стихия и класс, имя (приставка Core Fusion — строкой над
-// именем), «NEW», сколько надето, пометка заменённого в паре; в углу — звезда ростера.
+// именем), «NEW», сколько надето, пометка заменённого в паре; в углу — звезда ростера: серая — кнопка «в ростер», золотая — значок.
 import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -26,9 +26,11 @@ export function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSe
         {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
       </button>
       {corner !== undefined ? corner : (
-        <button type="button" className="star" {...tour('star')} aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, !!own)} onClick={onToggle}>
-          {own ? '★' : '☆'}
-        </button>
+        // owner 2026-10-12 (0197): the gold ★ is only a badge — a tap on it is a tap on the tile; a hero leaves the roster
+        // only from the card's star sheet
+        own
+          ? <span className="star on" role="img" aria-label={t.ui.inRosterMark}>★</span>
+          : <button type="button" className="star" {...tour('star')} aria-pressed={false} aria-label={t.ui.rosterToggle(c.name, false)} onClick={onToggle}>☆</button>
       )}
     </div>
   );

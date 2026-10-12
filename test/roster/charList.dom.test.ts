@@ -7,6 +7,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { removeFromRoster, tileOf } from './unstar';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
@@ -264,13 +265,32 @@ describe('панель над сеткой (SPEC 4)', () => {
   });
 });
 
+// 0197 (owner 2026-10-12): золотая ★ на плитке — значок; из ростера — только карточка → звёзды → «Remove from roster»
+describe('звезда на плитке', () => {
+  it('серая ☆ — кнопка «add to roster»; золотая ★ — значок «In roster», не кнопка', async () => {
+    await mount({ roster: [caren.id], state: { tab: 'chars', cOwned: false } });
+    const star = tileOf('Caren')!.parentElement!.querySelector<HTMLElement>('.star')!;
+    expect([star.tagName, star.getAttribute('aria-label'), star.textContent]).toEqual(['SPAN', 'In roster', '★']);
+    const grey = $$('#cgrid .star').find((e) => e.tagName === 'BUTTON')!;
+    expect([grey.textContent, grey.getAttribute('aria-label')]).toEqual(['☆', expect.stringMatching(/ — add to roster$/)]);
+  });
+
+  it('карточка: звёзды → лист со звёздами и «Remove from roster»; убрать — герой не в ростере, у имени снова ☆', async () => {
+    await mount({ roster: [caren.id], state: { tab: 'chars', cOwned: false } });
+    await click(tileOf('Caren'));
+    await click($('.cd-head .cd-stars'));
+    expect([$$('.hs-big button').length, $('.hs-act .btn')?.textContent]).toEqual([6, 'Remove from roster']);
+    await click($('.hs-act .btn'));
+    expect([JSON.parse(localStorage.getItem('ogc.roster')!), $('.hs-big'), $('.cd-head .cd-stars'), $('.cd-name .cd-star')?.textContent]).toEqual([[], null, null, '☆']);
+  });
+});
+
 describe('В4 ревью этапа 10: звезда с героя без вещей снимает закрепление (и N, и ★ — owner 2026-10-12)', () => {
   it('сообщение «Caren: … unpinned.» с «Undo» — звезда и закрепление снова на месте', async () => {
     const { pinOptions } = await import('@/game/build/profile');
     const key = pinOptions(caren)[0].key;
     await mount({ gear: G([], {}, { pin: { [caren.id]: key } }), state: { tab: 'chars', cOwned: false } });
-    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
-    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    await removeFromRoster('Caren');
     expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]);
     expect(JSON.parse(localStorage.getItem('ogc.gear') ?? '{}').pin).toBeUndefined();
     expect($('.gear-toast span')?.textContent).toMatch(/^Caren: .+ unpinned\.$/);
@@ -282,8 +302,7 @@ describe('В4 ревью этапа 10: звезда с героя без вещ
   // owner 2026-10-12: a hero out of the roster has no data — N and ★ go with the star too
   it('N и ★ без закрепления: сообщение «Caren is out of the roster.» с «Undo» — звезда, N и ★ снова на месте', async () => {
     await mount({ gear: G([], {}, { crit: { [caren.id]: 60 }, stars: { [caren.id]: 5 } }), state: { tab: 'chars', cOwned: false } });
-    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
-    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    await removeFromRoster('Caren');
     const gear = () => JSON.parse(localStorage.getItem('ogc.gear') ?? '{}');
     expect([JSON.parse(localStorage.getItem('ogc.roster')!), gear().crit, gear().stars]).toEqual([[], undefined, undefined]);
     expect($('.gear-toast span')?.textContent).toBe('Caren is out of the roster.');
@@ -293,8 +312,7 @@ describe('В4 ревью этапа 10: звезда с героя без вещ
 
   it('без закрепления — как раньше: без сообщения', async () => {
     await mount({ state: { tab: 'chars', cOwned: false } });
-    const tile = $$('#cgrid .ctile').find((e) => e.getAttribute('title')?.startsWith('Caren'))!;
-    await click(tile.parentElement!.querySelector<HTMLElement>('.star'));
+    await removeFromRoster('Caren');
     expect(JSON.parse(localStorage.getItem('ogc.roster')!)).toEqual([]);
     expect($('.gear-toast')).toBeNull();
   });

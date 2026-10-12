@@ -5,8 +5,8 @@
 ## Characters
 
 The second tab ("Characters" in the header on a computer, ☰ → "Characters" on a phone): search by name and every outerpedia build — sets with alternatives, weapon and
-accessory with the main stat, substat priority with a flat/% hint, talismans, a note. The star adds a character to your
-roster; with "only my characters" checked (More → Settings), the evaluation considers only them. A link like
+accessory with the main stat, substat priority with a flat/% hint, talismans, a note. The grey star ☆ on the portrait adds a character to your
+roster, the gold ★ means they're already in it (just a badge: tapping it opens the card); with "only my characters" checked (More → Settings), the evaluation considers only them. A link like
 `…/#demiurge-stella` opens a character directly.
 
 Above the grid are two rows: search with the filter button, and the list mode with the **Trade** button. The mode is
@@ -17,14 +17,14 @@ how many are left to dress. While the roster is empty there is no mode, only a h
 are under the filter button (the number on it is how many are chosen); the chosen ones show as chips above the grid, ✕
 clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are remembered, "To dress" isn't. **Trade** opens [team trade](Trading-gear).
 
-In the character card the element and class are icons on the portrait; the subclass and role are text. The star sits
-next to the name, the same as in the list. "outerpedia ↗" at the bottom of the header opens the character's guide on
-outerpedia in a new tab. Under the name — the hero's **stars**, six like the game's transcend (roster heroes only): tap, pick ★N in the window, and the window closes. Until you set them, the hero has their starting stars (★1–★3, as in the game); fewer can't be picked. Some heroes get crit from their stars; it counts in "Crit" on the "Worn" tab ([Equipment](Equipment#the-hero-card)), and [Team](Team-check) takes the stars from here. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
+In the character card the element and class are icons on the portrait; the subclass and role are text. Next to the name
+there's a grey star ☆, as in the list: tap it and the character is in the roster. For a roster hero the hero's **stars** take its place, six like the game's transcend: tap, pick ★N in the window, and the window closes; the same window has a "Remove from roster" button.
+Until you set them, the hero has their starting stars (★1–★3, as in the game); fewer can't be picked. Some heroes get crit from their stars; it counts in "Crit" on the "Worn" tab ([Equipment](Equipment#the-hero-card)), and [Team](Team-check) takes the stars from here. "outerpedia ↗" at the bottom of the header opens the character's guide on outerpedia in a new tab. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
-has gear. Unstar a character who has gear and a window warns that the gear is removed from the app (unlock it in the game, or it can't be dismantled); after "Yes,
+has gear. Removing from the roster works only in the card: the stars by the name → "Remove from roster". If the character has gear, a window warns that the gear is removed from the app (unlock it in the game, or it can't be dismantled); after "Yes,
 remove" — a message with "Undo". The hero's stars, crit number and pinned set go along with the gear. A hero without
-gear loses the star at once, and with it the same stars, crit number and set; "Undo" in the message brings them all back.
+gear leaves at once, and with them the same stars, crit number and set; "Undo" in the message brings them all back.
 
 Core Fusion replaces the hero: after Core Fusion the regular hero is gone from the game, so the roster never holds
 both. Star Core Fusion Eternal while Eternal is in the roster or has gear — a window: Eternal's gear moves to Core

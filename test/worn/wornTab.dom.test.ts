@@ -424,7 +424,7 @@ describe('«Надето»: the hero\'s crit «Crit: 45%»', () => {
   });
 });
 
-// Hero stars (PLAN 0190): six small stars before «Subclass · Role» in the card header → the star sheet; crit from stars joins «Crit»
+// Hero stars (PLAN 0190; at the name since 0197): six small stars next to the hero's name in the card header → the star sheet; crit from stars joins «Crit»
 describe('«Надето»: the hero\'s stars', () => {
   const regina = D.chars.find((c) => c.name === 'Poolside Trickster Regina')!;
   const worn = (ps: Pc[], hero: string, o: Pc = {}) => G(ps, { [hero]: ps.map((p) => p.id as string) }, { worn: { [hero]: Object.fromEntries(ps.map((p) => [p.slot, p.id])) }, ...o });
@@ -434,7 +434,7 @@ describe('«Надето»: the hero\'s stars', () => {
   it('a roster hero without stored ★: a button with her minimum ★3 lit (base rarity) and its aria; not in the roster — nothing', async () => {
     await mount({ gear: worn([WEAK], caren.id) });
     const b = $('.cd-head button.cd-stars')!;
-    expect([b.getAttribute('aria-label'), lit()]).toEqual(['Caren’s stars: ★3 — change', 3]);
+    expect([b.getAttribute('aria-label'), lit()]).toEqual(['Caren’s stars: ★3 — change or remove from roster', 3]);
     expect($$('.cd-head .cd-stars .hs-mini i')).toHaveLength(6);
   });
 
@@ -458,7 +458,7 @@ describe('«Надето»: the hero\'s stars', () => {
     await click($$('.drawer.hs-sheet .hs-big button')[4]);
     expect($('.drawer.hs-sheet')).toBeNull();
     expect(stored().stars).toEqual({ [regina.id]: 5 });
-    expect([lit(), $('.cd-head button.cd-stars')?.getAttribute('aria-label')]).toEqual([5, 'Poolside Trickster Regina’s stars: ★5 — change']);
+    expect([lit(), $('.cd-head button.cd-stars')?.getAttribute('aria-label')]).toEqual([5, 'Poolside Trickster Regina’s stars: ★5 — change or remove from roster']);
     const crit = (t: string | undefined) => Number(/(\d+)%/.exec(t ?? '')?.[1]);
     expect(crit(line())).toBe(crit(before) + 65);
     await click($('.bgear.worn .wcrit'));

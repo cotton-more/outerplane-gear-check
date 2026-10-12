@@ -123,7 +123,7 @@ Breakthrough), CHC substats and the Critical Hit set. Above 100% the game wastes
 by default) crit counts less: in full up to N − 15, then less and less, nothing above N. The line turns amber from N − 15
 and red from N. Tap it: a bar with the hero's portrait at their crit and a flag at N, "Hero 20% · gear 25%" and the
 number (with stars — "Hero 20% · stars 65% · gear 25%"). Some heroes get crit from their transcend stars; set the hero's
-stars on the card (under the name) and the app counts it: Poolside Trickster Regina at ★5 gets +65%. Until you set the
+stars on the card (by the name) and the app counts it: Poolside Trickster Regina at ★5 gets +65%. Until you set the
 stars, the hero has their starting ★1–★3 — no crit from stars there. Lower N only for what the app doesn't see — gems, the talisman, team buffs. The verdict, "Set aside", "Re-dress", the batch and trade all
 count crit this way: a crit-heavy piece loses to a piece with other stats once the hero has enough.
 
@@ -153,7 +153,7 @@ piece isn't removed by itself: dismantle it in the game and press **"Remove from
 silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). "Rate a piece for Caren" sits at the bottom.
 
 **Only roster characters have gear.** "Equip" on a character outside the roster adds the character to the roster;
-importing a gear code and starting the app add everyone who has gear. Unstar Caren while Caren has gear — a window
+importing a gear code and starting the app add everyone who has gear. Remove Caren from the roster (card → the stars by the name → "Remove from roster") while Caren has gear — a window
 "Remove Caren from the roster? Caren's gear (N) is removed from the app. Unlock it in the game — otherwise it can't be
 dismantled.": "Yes, remove" — the message "Caren is out of
 the roster." with "Undo", "Cancel" — nothing. "Replace" with a roster code keeps characters who have gear.
@@ -187,7 +187,7 @@ warns: armor of other sets won't be taken, even with good stats. To undo — "By
 the blue "Pinned: …" plate where the button was. What's worn from other sets stays until a piece of the set takes the
 slot. A pinned hero's order in a trade is one: the pin ([Trading gear](Trading-gear)). If outerpedia renames the build and the
 set with the same chain stays, the pin moves by itself; if it drops the set, the app unpins it and tells you.
-Unstarring the hero unpins it (the message has Undo).
+Removing the hero from the roster unpins it (the message has Undo).
 
 ## "On your characters now" in the verdict
 

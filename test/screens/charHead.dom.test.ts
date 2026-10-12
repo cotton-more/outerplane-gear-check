@@ -101,7 +101,7 @@ describe('шапка карточки персонажа', () => {
     expect(row).toBeNull();
   });
 
-  it('звезда у имени: героя без вещей добавляет в ростер сразу, без окна', async () => {
+  it('серая звезда у имени: героя без вещей добавляет в ростер сразу, без окна; у имени — его звёзды', async () => {
     // Arrange
     await mountCard(caren.id, []);
     const star = $('.cd-name .cd-star')!;
@@ -110,7 +110,8 @@ describe('шапка карточки персонажа', () => {
     await act(async () => star.click());
 
     // Assert
-    expect({ pressed: star.getAttribute('aria-pressed'), text: star.textContent, roster: JSON.parse(localStorage.getItem('ogc.roster')!), ask: $('.roster-ask, .fusion-ask') })
-      .toEqual({ pressed: 'true', text: '★', roster: [caren.id], ask: null });
+    // 0197: in the roster the grey ☆ gives way to the hero's stars at the minimum ★
+    expect({ grey: $('.cd-name .cd-star'), stars: $('.cd-name .cd-stars .hs-mini .on') !== null, roster: JSON.parse(localStorage.getItem('ogc.roster')!), ask: $('.roster-ask, .fusion-ask') })
+      .toEqual({ grey: null, stars: true, roster: [caren.id], ask: null });
   });
 });

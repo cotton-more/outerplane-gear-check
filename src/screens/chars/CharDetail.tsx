@@ -162,15 +162,11 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   return (
     <aside className="panel char-detail open" id="char-detail" aria-label={t.ui.charBuilds}>
       <div className="cd-top"><button type="button" className="btn" onClick={onClose}>{t.ui.toList}</button></div>
-      <CharHead c={c} ctx={ctx} star={(
-        <button type="button" className="cd-star" aria-pressed={own} aria-label={t.ui.rosterToggle(c.name, own)} onClick={() => rosterApi.toggle(c.id)}>
-          {own ? '★' : '☆'}
-        </button>
-      )} stars={own ? (
-        live
-          ? <button type="button" className="cd-stars hit" aria-label={t.card.starsAria(c.name, stars)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} /></button>
-          : <span className="cd-stars" {...tour('hstars')}><MiniStars n={stars} /></span>
-      ) : undefined} />
+      {/* owner 2026-10-12 (0197): one element at the name — not in the roster: grey ☆, a tap adds the hero at their minimum ★;
+          in the roster: the hero's stars, a tap opens the sheet (pick ★, or «Убрать из ростера» — the only way out) */}
+      <CharHead c={c} ctx={ctx} star={own
+        ? <button type="button" className="cd-stars hit" aria-label={t.card.starsAria(c.name, stars)} onClick={() => setSheet('stars')} {...tour('hstars')}><MiniStars n={stars} /></button>
+        : <button type="button" className="cd-star" aria-pressed={false} aria-label={t.ui.rosterToggle(c.name, false)} onClick={() => rosterApi.toggle(c.id)}>☆</button>} />
       {fusedBy && (
         <div className="own-row">
           <button type="button" className="linkbtn small" onClick={() => onOpenChar?.(fusedBy.id)}>{t.ui.fusionOffCard(c.name, fusedBy.name)}</button>
@@ -236,7 +232,12 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {c.gameSets && c.gameSets.length > 0 && <><br />{t.ui.gameSets(c.gameSets.map((id) => setName(ctx.idx, id)).join(', '))}</>}
         </div>
       )}
-      {sheet === 'stars' && own && <StarSheet c={c} star={stars} min={minStar(c)} onStar={saveStars} onClose={() => setSheet(null)} />}
+      {/* read-only card (tour, newer data): no ★ pick, only the way out of the roster */}
+      {sheet === 'stars' && own && (
+        <StarSheet c={c} star={stars} min={minStar(c)} onStar={live ? saveStars : undefined} onClose={() => setSheet(null)}>
+          <button type="button" className="btn" onClick={() => { setSheet(null); rosterApi.toggle(c.id); }}>{t.ui.rosterRemove}</button>
+        </StarSheet>
+      )}
     </aside>
   );
 }

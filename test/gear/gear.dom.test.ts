@@ -12,6 +12,7 @@ import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
 import { encodeItem } from '@/features/eval/code/codec';
 import { openBackup, openMore, startTour } from '../app/more';
+import { removeFromRoster, removeOnCard } from '../roster/unstar';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
 // обучение пройдено, все подсказки знакомы — «Что нового» нет
@@ -903,7 +904,7 @@ describe('меню, плитки, код копии, другая вкладка
 
 // Core Fusion — test/roster/fusion.dom.test.ts
 // Р16 (владелец 2026-09-30): вещи есть только у героев ростера. Было: звезду сняли, а вещи остались — «Вещи X · N — X не
-// в ростере». Теперь: при загрузке такой герой — в ростер; звезда героя с вещами — окно «Убрать X из ростера?»
+// в ростере». Теперь: при загрузке такой герой — в ростер; убрать героя с вещами (карточка → звёзды → «Убрать из ростера») — окно «Убрать X из ростера?»
 describe('вещи только у героев ростера (Р16)', () => {
   const tileStar = (name: string) => $$('#cgrid .cwrap').find((w) => w.querySelector('.ctile')?.getAttribute('title')?.split(' — ')[0] === name)?.querySelector<HTMLElement>('.star');
   const ask = () => $('.roster-ask')?.closest<HTMLElement>('.drawer') ?? null;
@@ -913,13 +914,13 @@ describe('вещи только у героев ростера (Р16)', () => {
 
   it('загрузка: у Caren вещи, в ростере её нет — она в ростере, сообщение «Added to the roster: Caren.»', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
-    expect({ star: $('.cd-star')?.getAttribute('aria-pressed'), pool: byText('.btabs [role="tab"]', 'Pool')?.textContent, toast: $('.gear-toast span')?.textContent })
-      .toEqual({ star: 'true', pool: 'Pool1', toast: 'Added to the roster: Caren.' });
+    expect({ star: !!$('.cd-head .cd-stars'), pool: byText('.btabs [role="tab"]', 'Pool')?.textContent, toast: $('.gear-toast span')?.textContent })
+      .toEqual({ star: true, pool: 'Pool1', toast: 'Added to the roster: Caren.' });
   });
 
   it('звезда Caren с вещами — окно «Remove Caren from the roster?» с числом вещей', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
-    await click(tileStar('Caren'));
+    await removeFromRoster('Caren');
     expect({ title: ask()?.getAttribute('aria-label'), text: $('.roster-ask p')?.textContent })
       .toEqual({ title: 'Remove Caren from the roster?', text: "Caren's gear (2) is removed from the app. Unlock it in the game — otherwise it can't be dismantled." });
   });
@@ -927,7 +928,7 @@ describe('вещи только у героев ростера (Р16)', () => {
   // сообщение — только о герое: что та же запись осталась у Rin, не говорим (было: «Removed from Caren. Rin still has it.»)
   it('«Да, убрать»: Caren не в ростере, её вещи убраны, общая запись у Rin осталась; сообщение только о Caren', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
-    await click(tileStar('Caren'));
+    await removeFromRoster('Caren');
     await click(askBtn('Yes, remove'));
     expect({ roster: roster(), pools: stored().pools, pieces: Object.keys(stored().pieces) })
       .toEqual({ roster: [rin.id, kappa.id], pools: { [rin.id]: ['p2'] }, pieces: ['p2'] });
@@ -938,7 +939,7 @@ describe('вещи только у героев ростера (Р16)', () => {
   it('«Вернуть» после «Да» — вещи и место в ростере как были', async () => {
     const gear = shared();
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
-    await click(tileStar('Caren'));
+    await removeFromRoster('Caren');
     await click(askBtn('Yes, remove'));
     await click(byText('.gear-toast button', 'Undo'));
     expect({ roster: roster(), gear: stored() }).toEqual({ roster: [rin.id, caren.id, kappa.id], gear });
@@ -947,23 +948,23 @@ describe('вещи только у героев ростера (Р16)', () => {
   it('«Отмена» и ✕ ничего не меняют', async () => {
     const gear = shared();
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear });
-    await click(tileStar('Caren'));
+    await removeFromRoster('Caren');
     await click(askBtn('Cancel'));
-    await click(tileStar('Caren'));
-    await click($('.drawer-x'));
+    await removeOnCard();
+    await click($('.roster-ask')?.closest('.drawer')?.querySelector<HTMLElement>('.drawer-x'));
     expect({ ask: ask(), roster: roster(), gear: stored(), toast: $('.gear-toast') })
       .toEqual({ ask: null, roster: [rin.id, caren.id, kappa.id], gear, toast: null });
   });
 
-  it('без вещей — звезда снимается сразу, без окна', async () => {
+  it('без вещей — убирается сразу, без окна', async () => {
     await mount({ tab: 'chars' }, {}, { roster: [caren.id, kappa.id], gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }) });
-    await click(tileStar('Kappa'));
+    await removeFromRoster('Kappa');
     expect({ ask: ask(), roster: roster() }).toEqual({ ask: null, roster: [caren.id] });
   });
 
-  it('звезда в карточке персонажа — то же окно', async () => {
+  it('карточка персонажа: звёзды → «Remove from roster» — то же окно', async () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [caren.id], gear: shared() });
-    await click($('.cd-star'));
+    await removeOnCard();
     expect(ask()?.getAttribute('aria-label')).toBe('Remove Caren from the roster?');
   });
 
@@ -1012,7 +1013,7 @@ describe('вещи только у героев ростера (Р16)', () => {
     const { restoreGear } = await import('@/features/gear/store/gearStore');
     const { createIndex } = await import('@/game/data');
     const before = JSON.stringify(restoreGear(gear, createIndex(D), [rin.id, caren.id, kappa.id]));
-    await click(tileStar('Caren'));
+    await removeFromRoster('Caren');
     await click(askBtn('Yes, remove'));
     await act(async () => { document.dispatchEvent(new Event('visibilitychange')); });
     await click(byText('.gear-toast button', 'Undo'));
@@ -1052,7 +1053,7 @@ describe('вещи только у героев ростера (Р16)', () => {
     });
   });
 
-  it('в обучении: звезда Caren с вещами — ни окна, ни удаления; вещи и ростер на месте', async () => {
+  it('в обучении: «Remove from roster» у Caren с вещами — ни окна, ни удаления; вещи и ростер на месте', async () => {
     const gear = shared();
     await mount({ tab: 'eval' }, {}, { roster: [rin.id, caren.id], gear });
     await startTour();
@@ -1060,7 +1061,7 @@ describe('вещи только у героев ростера (Р16)', () => {
     await click(byText('.tour-strip button', 'Example'));
     await openMore();
     await click(byText('.more button', 'Characters'));
-    await click(tileStar('Caren'));
+    await removeFromRoster('Caren');
     expect({ ask: ask(), roster: roster(), gear: stored() }).toEqual({ ask: null, roster: [rin.id, caren.id], gear });
   });
 });
@@ -1121,12 +1122,19 @@ describe('запись при загрузке (Р17)', () => {
     expect({ gear: localStorage.getItem('ogc.gear'), roster: roster() }).toEqual({ gear: text, roster: [char('Eternal').id, char('Core Fusion Eternal').id] });
   });
 
+  // 0197: карточка только для чтения — в листе звёзд выбора нет, только «Remove from roster»
+  it('экипировку сохранила более новая версия — лист звёзд без выбора ★, «Remove from roster» на месте', async () => {
+    await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [caren.id], gear: { v: 4, seq: 0, pieces: {}, pools: {} } });
+    await click($('.cd-head .cd-stars'));
+    expect([$('.hs-big'), $('.hs-act .btn')?.textContent]).toEqual([null, 'Remove from roster']);
+  });
+
   // вход опровержения: запись при загрузке стирала саб не из данных, которого эта версия не понимает
   it('чтение что-то отбросило (саб NEWSUB) — не пишется, хотя Caren добавлена в ростер в памяти', async () => {
     const gear = JSON.stringify(G([P('p1', 'helmet', speed, { CHC: 1, NEWSUB: 2 })], { [caren.id]: ['p1'] }));
     await mount({ tab: 'chars', charId: caren.id }, {}, { roster: [], gear: JSON.parse(gear) });
-    expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster'), star: $('.cd-star')?.getAttribute('aria-pressed') })
-      .toEqual({ gear, roster: '[]', star: 'true' });
+    expect({ gear: localStorage.getItem('ogc.gear'), roster: localStorage.getItem('ogc.roster'), star: !!$('.cd-head .cd-stars') })
+      .toEqual({ gear, roster: '[]', star: true });
   });
 
   it('ничего не исправлено — хранилище не переписано (строки те же)', async () => {

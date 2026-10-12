@@ -1,7 +1,8 @@
 // Transcend stars, as the game shows them: six stars, gold up to ★N (owner 2026-10-11: «теперь идеально»). MiniStars — on a
 // team slot, a report header and the card header; StarPick — tap the N-th star (min — stars below it are lit and can't be
-// picked: the hero's minimum on the card, the card's ★ in Team); StarSheet — the sheet with the pick only: what the stars give
-// is not shown here, it just counts.
+// picked: the hero's minimum on the card, the card's ★ in Team); StarSheet — the sheet with the pick (none without onStar)
+// and the caller's actions below it (the card: «Убрать из ростера»); what the stars give is not shown here, it just counts.
+import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { TABLER } from '@/game/icons/tabler';
 import { useT } from '@/i18n';
@@ -32,13 +33,14 @@ export function StarPick({ star, min = 1, onStar }: { star: number; min?: number
   );
 }
 
-export function StarSheet({ c, star, min, onStar, onClose }: {
-  c: Char; star: number; min?: number; onStar: (n: number) => void; onClose: () => void;
+export function StarSheet({ c, star, min, onStar, onClose, children }: {
+  c: Char; star: number; min?: number; onStar?: (n: number) => void; onClose: () => void; children?: ReactNode;
 }) {
   const t = useT();
   return (
     <Sheet title={t.ui.stars(c.name)} onClose={onClose} className="hs-sheet">
-      <StarPick star={star} min={min} onStar={onStar} />
+      {onStar && <StarPick star={star} min={min} onStar={onStar} />}
+      {children && <div className="hs-act">{children}</div>}
     </Sheet>
   );
 }
