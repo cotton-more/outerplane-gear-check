@@ -85,7 +85,7 @@ html:not(.sheet) .cd-top { display: none; }
 }
 .cd-star[aria-pressed="true"] { color: var(--star-on); }
 /* звёзды героя (transcend) в начале строки под именем: кнопка к листу звёзд; в туре и при новой версии — те же шесть звёзд без кнопки */
-.cd-stars { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 6px; margin: -4px -4px; border: 0; border-radius: var(--radius-s); background: var(--surface-2); flex: none; }
+.cd-stars { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; margin: -4px 0 -4px -2px; border: 0; border-radius: var(--radius-s); background: var(--surface-2); flex: none; }
 .cd-stars .hs-mini { gap: 2px; }
 .cd-stars .hs-mini i, .cd-stars .hs-mini svg { width: 11px; height: 11px; }
 /* нижняя строка шапки: оценки, прозвище с многоточием, ссылка на outerpedia всегда целиком */

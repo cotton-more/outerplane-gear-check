@@ -34,7 +34,7 @@ export function CharHead({ c, ctx, star, stars }: { c: Char; ctx: Ctx; star?: Re
           {star}
         </div>
         {/* класса текстом нет — его показывает значок; подкласс есть у всех, но без него — название класса */}
-        <div className="meta">{stars}{stars && <span aria-hidden="true">·</span>}<span>{[c.subClass ? cap(c.subClass) : clsName, c.role && (ROLE[c.role] || c.role)].filter(Boolean).join(' · ')}</span></div>
+        <div className="meta">{stars}<span>{[c.subClass ? cap(c.subClass) : clsName, c.role && (ROLE[c.role] || c.role)].filter(Boolean).join(' · ')}</span></div>
       </div>
       {/* оценки outerpedia, прозвище (режется многоточием) и ссылка на страницу персонажа — без языкового префикса: /ru/ нет */}
       <div className="cd-foot">
