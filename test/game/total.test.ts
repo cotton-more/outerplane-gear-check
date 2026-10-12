@@ -11,6 +11,7 @@ const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', impo
 const idx = createIndex(D);
 const ctxOf = (quirks: boolean) => makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks }, new Set());
 const ctx = ctxOf(true);
+const starred = (stars: Record<string, number>) => makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set(), undefined, undefined, stars);
 const hero = (name: string) => D.chars.find((c) => c.name === name)!;
 const crit = D.sets.find((s) => s.short === 'Critical Hit')!.id;
 const attack = D.sets.find((s) => s.short === 'Attack')!.id;
@@ -39,7 +40,7 @@ describe('the hero\'s CHC with what is worn', () => {
 
   it('Striker, CHC accessory T4, Critical Hit 4P T4: 5 + 5 + 10 + 48 + 18 + 12 = 98 % before substats', () => {
     const t = statTotal(ctx, hero('Caren'), [acc('unique', 4), ...critSet(4)], 'CHC');
-    expect(t).toEqual({ base: 5, cls: 5, quirk: 10, mains: 48, sets: 30, subs: 0, c0: 98, total: 98 });
+    expect(t).toEqual({ base: 5, cls: 5, quirk: 10, trans: 0, mains: 48, sets: 30, subs: 0, c0: 98, total: 98 });
   });
 
   it('Critical Hit at T0 and the accessory at T0: 15 + 10 and 40', () => {
@@ -61,5 +62,19 @@ describe('the hero\'s CHC with what is worn', () => {
     const other = { ...acc('unique', 4), main: 'CHD' };
     expect(statTotal(ctx, hero('Caren'), [other], 'CHC').mains).toBe(0);
     expect(statTotal(ctx, hero('Caren'), [], 'CHC').total).toBe(20);
+  });
+
+  it('transcend (PLAN 0190): Poolside Regina ★5 +65 %, ★4 and not set 0; Lisha ★6 +6 %; c0 and total include it', () => {
+    const regina = hero('Poolside Trickster Regina'), lisha = hero('Lisha');
+    const at = (c: typeof regina, star?: number) => statTotal(star ? starred({ [c.id]: star }) : ctx, c, [], 'CHC');
+    expect([at(regina).trans, at(regina, 4).trans, at(regina, 5).trans, at(regina, 6).trans]).toEqual([0, 0, 65, 65]);
+    expect([at(lisha, 3).trans, at(lisha, 5).trans, at(lisha, 6).trans]).toEqual([0, 3, 6]);
+    expect(at(regina, 5)).toMatchObject({ base: 5, cls: 5, quirk: 10, trans: 65, c0: 85, total: 85 });
+    expect(statTotal(starred({ [regina.id]: 5 }), regina, [acc('unique', 4)], 'CHC').total).toBe(85 + 48);
+  });
+
+  it('transcend: a hero whose stars give no crit gains nothing; the star of another hero does not count', () => {
+    expect(statTotal(starred({ [hero('Caren').id]: 6 }), hero('Caren'), [], 'CHC').trans).toBe(0);
+    expect(statTotal(starred({ [hero('Lisha').id]: 6 }), hero('Caren'), [], 'CHC').c0).toBe(20);
   });
 });

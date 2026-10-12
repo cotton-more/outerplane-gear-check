@@ -28,6 +28,8 @@ export const setId = (short: string): string => {
 };
 export const heroes = D.chars.filter((c) => c.builds.length);
 export const prof = (c: Char | string): Profile => profileOf(ctx, typeof c === 'string' ? char(c) : c)!;
+// the profile in another ctx (hero stars etc.)
+export const profileFor = (cx: typeof ctx, c: Char): Profile => profileOf(cx, c)!;
 
 // mulberry32, как в test/gear/pool.test.ts
 export const lcg = (seed: number) => () => {

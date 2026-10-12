@@ -16,7 +16,7 @@ import type { Dataset, SlotId } from '@/game/data/types';
 import { createIndex } from '@/game/data';
 import { makeCtx } from '@/game/context';
 import type { Subs } from '@/game/item/subs';
-import { bruteKit, ctx, HERO, lcg, piece, realWorld, store } from './helpers';
+import { bruteKit, ctx, D as FIX, HERO, idx as fixIdx, lcg, piece, realWorld, store } from './helpers';
 import * as S from '../gear/statSets';
 
 const K = HERO.karen, R = HERO.rin;
@@ -186,5 +186,32 @@ describe('X2d: real crit gauges — bestKit = bruteKit, the quick bound never hi
     expect(gg.crit!.rowsMax).toBe(36);
     expect(keyOf(gg, slots).crit).toBe(142);
     expect(keyOf(gg, slots).total).toBe(keyOf(force, slots).total);
+  });
+});
+
+// PLAN 0190 stage 3: transcend crit is the hero's own (C₀): Poolside Trickster Regina at ★5 has 5 + 5 + 10 + 65 = 85 % before gear
+describe('stars: the trade gauge counts transcend crit', () => {
+  const REGINA = FIX.chars.find((c) => c.name === 'Poolside Trickster Regina')!.id;
+  const starred = (star: number | null) => makeCtx(fixIdx, { rosterOnly: false, stage: 'grow', lv120: false, quirks: true }, new Set(), undefined, undefined, star ? { [REGINA]: star } : undefined);
+  const hA = () => piece('helmet', 'Critical Hit', { CHC: 6, 'DEF%': 1, SPD: 1, HP: 1 }, { bt: 4 });
+  const hB = () => piece('helmet', 'Critical Hit', { CHD: 4, CHC: 1, 'DEF%': 1, SPD: 1 }, { bt: 4 });
+
+  it('the gauge\'s own crit includes 65 at ★5 (and not at ★4 or when not set)', () => {
+    const a = hA();
+    const st = store({ [REGINA]: { pool: [a], worn: [a] } });
+    const own = (star: number | null) => worldOf(starred(star), st, [REGINA]).gauge(REGINA)!.crit!.own;
+    expect([own(null), own(4), own(5), own(6)]).toEqual([20, 20, 85, 85]);
+  });
+
+  it('at ★5 the kit takes the CHD helmet instead of CHC 6 (crit is capped), without stars the CHC 6 one', () => {
+    const a = hA(), b = hB();
+    const st = store({ [REGINA]: { pool: [a, b], worn: [a] } }, { crit: { [REGINA]: 100 } });
+    const pickOf = (star: number | null) => {
+      const w = worldOf(starred(star), st, [REGINA]);
+      const kit = bestKit(w.gauge(REGINA)!, candidates(w, { to: REGINA }));
+      return kit.slots.helmet?.item.id;
+    };
+    expect(pickOf(null)).toBe(a.id);
+    expect(pickOf(5)).toBe(b.id);
   });
 });

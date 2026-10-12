@@ -64,7 +64,7 @@ export interface ChainSum { key: string; seg: number; credit: number; sep: '' | 
 // «Крит: 45%» (MODEL.md §12 item 3, decisions 5 and 10): CHC the app knows from the worn pieces and the hero (game/stat/total)
 // and the hero's N («сколько крита нужно герою», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
 // that has the hero's CHC and main values (an old snapshot would show a number far below the game's)
-export interface WornCrit { total: number; own: number; need: number } // own — the hero's part: base, class, quirks
+export interface WornCrit { total: number; own: number; stars: number; need: number } // own — the hero's part: base, class, quirks; stars — transcend at the hero's ★
 // another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it
 export interface AltChain { build: string; chain: ChainSum[] }
 export interface WornView {
@@ -117,7 +117,7 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
 
 function critOf(ctx: Ctx, c: Char, worn: Piece[], need: number): WornCrit {
   const s = statTotal(ctx, c, worn, 'CHC');
-  return { total: s.total, own: s.base + s.cls + s.quirk, need };
+  return { total: s.total, own: s.base + s.cls + s.quirk, stars: s.trans, need };
 }
 
 function t4Of(ctx: Ctx, P: Profile, worn: Layout): T4Line[] {

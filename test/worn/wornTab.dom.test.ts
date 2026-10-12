@@ -437,7 +437,7 @@ describe('«Надето»: the hero\'s crit on old data', () => {
       const c = ctx.idx.CHAR[caren.id];
       return wornView(ctx, c, st, heroPool(ctx, c, [WEAK as never], new Set(['p1'])));
     };
-    expect(view(D).crit).toEqual({ total: 26, own: 20, need: 100 });
+    expect(view(D).crit).toEqual({ total: 26, own: 20, stars: 0, need: 100 });
     expect(view(old).crit).toBeNull();
     expect(view({ ...D, chars: D.chars.map((c) => ({ ...c, chc: undefined })) }).crit).toBeNull();
   });

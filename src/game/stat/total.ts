@@ -1,6 +1,7 @@
 // A hero's total of one stat from what the app knows (MODEL.md §12 item 3): the hero's own sources, the main lines
-// of the pieces, set rows that are on and the substats. Hidden sources (gems, talisman, transcend, EE, team buffs) are
-// not here — they only add, so the total is never above the game's. Only CHC for now; EFF reuses the same shape later.
+// of the pieces, set rows that are on and the substats. Transcend is here for the heroes whose stars give crit and whose ★ is
+// set (`Ctx.stars`). Hidden sources (gems, talisman, EE, team buffs) are not here — they only add, so the total is never
+// above the game's. Only CHC for now; EFF reuses the same shape later.
 import type { Char, Grade, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
@@ -26,6 +27,7 @@ export interface StatTotal {
   base: number;
   cls: number;
   quirk: number;
+  trans: number;
   mains: number;
   sets: number;
   subs: number;
@@ -39,10 +41,15 @@ export function mainValue(ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'bt'>,
   return row ? (row[p.bt ?? 0] ?? row[0]) / 10 : 0;
 }
 
-// the hero's own part, %: base, class passive, awakening quirks (only with the `quirks` setting)
-export function ownStat(ctx: Ctx, hero: Char, _stat: TotalStat): Pick<StatTotal, 'base' | 'cls' | 'quirk'> {
+// the hero's own part, %: base, class passive, awakening quirks (only with the `quirks` setting), transcend passive at the
+// hero's ★ (not set — 0)
+export function ownStat(ctx: Ctx, hero: Char, _stat: TotalStat): Pick<StatTotal, 'base' | 'cls' | 'quirk' | 'trans'> {
   const own = hero.chc;
-  return { base: (own?.base ?? 0) / 10, cls: (own?.cls ?? 0) / 10, quirk: ctx.settings.quirks ? (own?.quirk ?? 0) / 10 : 0 };
+  const star = ctx.stars[hero.id];
+  return {
+    base: (own?.base ?? 0) / 10, cls: (own?.cls ?? 0) / 10, quirk: ctx.settings.quirks ? (own?.quirk ?? 0) / 10 : 0,
+    trans: star ? (own?.trans?.[star - 1] ?? 0) / 10 : 0,
+  };
 }
 
 // the stat a piece's main lines give at +10 by its tier, %
@@ -54,7 +61,7 @@ export const rowsStat = (rows: readonly BonusRow[], stat: TotalStat): number =>
   rows.reduce((n, r) => n + (r.bon.stat === stat && r.bon.mode === 'add' ? r.bon.value : 0), 0);
 
 export function statTotal(ctx: Ctx, hero: Char, pieces: readonly StatPiece[], stat: TotalStat): StatTotal {
-  const { base, cls, quirk } = ownStat(ctx, hero, stat);
+  const { base, cls, quirk, trans } = ownStat(ctx, hero, stat);
   let mains = 0, subs = 0;
   const step = ctx.idx.SUB[stat]?.step ?? 0;
   for (const p of pieces) {
@@ -62,6 +69,6 @@ export function statTotal(ctx: Ctx, hero: Char, pieces: readonly StatPiece[], st
     subs += Math.min(MAX_LIT, p.lit[stat] ?? 0) * step;
   }
   const sets = rowsStat(bonusRows(ctx.idx.SET, pieces), stat);
-  const c0 = base + cls + quirk + mains + sets;
-  return { base, cls, quirk, mains, sets, subs, c0, total: c0 + subs };
+  const c0 = base + cls + quirk + trans + mains + sets;
+  return { base, cls, quirk, trans, mains, sets, subs, c0, total: c0 + subs };
 }

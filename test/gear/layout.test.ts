@@ -36,7 +36,7 @@ const fBand = (need: number, a: number, b: number): number => {
 function critLossOf(P: Profile, pieces: readonly Piece[], rows: { pct: number; pts: number | null }[]): number {
   if (!P.c.builds.length || !P.chain.subs.flat().some((t) => t.trim() === 'CHC')) return 0;
   const own = P.c.chc!;
-  let c = (own.base + own.cls + (ctx.settings.quirks ? own.quirk : 0)) / 10;
+  let c = (own.base + own.cls + (ctx.settings.quirks ? own.quirk : 0) + (ctx.stars[P.c.id] ? own.trans?.[ctx.stars[P.c.id] - 1] ?? 0 : 0)) / 10;
   for (const p of pieces) if (p.main === 'CHC') c += D.mainValues![p.slot]![p.grade]!.CHC[p.bt ?? 0] / 10;
   const bands: { w: number; width: number }[] = [];
   for (const r of rows) {

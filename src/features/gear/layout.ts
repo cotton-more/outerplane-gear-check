@@ -111,7 +111,7 @@ export function pieceCrit(P: Profile, p: Piece): PieceCrit {
 // the piece's points without its CHC substats
 export const nonChc = (P: Profile, p: Piece): number => { const k = pieceCrit(P, p); return piecePoints(P, p) - k.w * k.n; };
 const critStep = (P: Profile): number => P.ctx.idx.SUB.CHC?.step ?? 3;
-const ownChc = (P: Profile): number => { const o = ownStat(P.ctx, P.c, 'CHC'); return o.base + o.cls + o.quirk; };
+const ownChc = (P: Profile): number => { const o = ownStat(P.ctx, P.c, 'CHC'); return o.base + o.cls + o.quirk + o.trans; };
 // CHC of a set's rows that are on with n pieces, n4 of them at T4 (the bonusRows rule, as setValue)
 const rowsMemo = new WeakMap<Profile, Map<string, number>>();
 function setChc(P: Profile, set: string, n: number, n4: number): number {

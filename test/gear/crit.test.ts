@@ -309,3 +309,73 @@ describe('fuzz: crit search and «Оставь» (review 0136)', () => {
     expect(keeps).toBeGreaterThan(30);
   });
 });
+
+// PLAN 0190 stage 3: the stars' CHC joins the hero's own crit (C₀) — the same as lowering N by that much, and the card
+// number matches the game's sum. The curve depends on N − C₀ only while the knee N − 15 is not clamped at 0
+describe('stars: Ctx.stars shifts C₀, not the curve (PLAN 0190 §5)', () => {
+  const CH = setIdOf('Critical Hit');
+  const settings = { rosterOnly: false, stage: 'grow', lv120: false, quirks: true } as const;
+  const starCtx = (id: string, star: number) => makeCtx(idx, settings, new Set(), undefined, undefined, { [id]: star });
+  const starHeroes = S.heroes.filter((c) => c.chc?.trans && S.prof(c).critOn);
+  const pick = (l: Layout) => Object.entries(l).map(([s, p]) => `${s}:${p!.id}`).sort().join(' ');
+  const randLayout = (g: Gen, pool: readonly Piece[]): Layout => {
+    const l: Layout = {};
+    for (const s of ['weapon', 'accessory', ...S.ARMOR] as const) {
+      const xs = pool.filter((p) => p.slot === s);
+      if (xs.length && g.rnd() < 0.8) l[s] = g.pick(xs);
+    }
+    return l;
+  };
+  const trans = (c: { chc?: { trans?: number[] } }, star: number) => (c.chc?.trans?.[star - 1] ?? 0) / 10;
+
+  it('the fixture has heroes with crit from stars that have a CHC build', () => {
+    expect(starHeroes.length).toBeGreaterThan(3);
+    expect(starHeroes.some((c) => c.name === 'Poolside Trickster Regina')).toBe(true);
+  });
+
+  it('shift property: stars with N = stars absent with N − trans: V, critLoss, rank equal, CHC differs by exactly trans', () => {
+    const g = gen(1990);
+    let moved = 0, lossy = 0;
+    for (let t = 0; t < 400; t++) {
+      const c = g.pick(starHeroes);
+      const star = 1 + g.int(6), tr = trans(c, star);
+      const need = Math.max(40, tr + 15) + g.int(100 - Math.max(40, tr + 15) + 1);
+      const Ps = withNeed(prof(c), need), Pn = withNeed(prof(c), need - tr);
+      const withStars = withNeed(S.profileFor(starCtx(c.id, star), c), need);
+      const pool = critPoolOf(g, Ps);
+      const l = randLayout(g, pool);
+      const a = layoutValue(withStars, l), b = layoutValue(Pn, l);
+      if (tr) moved++;
+      if (a.critLoss > 0) lossy++;
+      const tag = `#${t} ${c.name} ★${star} N${need}`;
+      expect(a.v, tag).toBeCloseTo(b.v, 7);
+      expect(a.critLoss, tag).toBeCloseTo(b.critLoss, 7);
+      expect(a.rank, tag).toBe(b.rank);
+      expect(a.chc! - b.chc!, tag).toBeCloseTo(tr, 7);
+    }
+    expect(moved).toBeGreaterThan(100);
+    expect(lossy).toBeGreaterThan(20); // the curve really bites in the sample
+  });
+
+  it('bestLayout picks the same pieces in both worlds (crit binds or not)', () => {
+    const g = gen(1991);
+    for (let t = 0; t < 60; t++) {
+      const c = g.pick(starHeroes);
+      const star = 5 + g.int(2), tr = trans(c, star);
+      const need = Math.max(40, tr + 15) + g.int(100 - Math.max(40, tr + 15) + 1);
+      const Pn = withNeed(prof(c), need - tr);
+      const withStars = withNeed(S.profileFor(starCtx(c.id, star), c), need);
+      const pool = critPoolOf(g, Pn);
+      const a = bestLayout(withStars, pool), b = bestLayout(Pn, pool);
+      expect(pick(a.layout), `#${t} ${c.name} ★${star} N${need}`).toBe(pick(b.layout));
+      expect(a.value.v).toBeCloseTo(b.value.v, 7);
+    }
+  });
+
+  function critPoolOf(g: Gen, P: Profile): Piece[] {
+    const out = randPool(g, P, 2, true);
+    if (g.rnd() < 0.7) out.push(randGear(g, P, 'accessory'));
+    for (let i = g.int(4); i > 0; i--) out.push({ ...randArmor(g, P, g.pick(S.ARMOR)), setId: CH });
+    return out.map((p) => (p.slot === 'accessory' && g.rnd() < 0.6 && !p.lit.CHC ? { ...p, main: 'CHC' } : p));
+  }
+});

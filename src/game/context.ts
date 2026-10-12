@@ -19,15 +19,21 @@ export interface Ctx {
   scoped: boolean;              // «только мои персонажи» включено и ростер не пуст
   // X, которого заменил его Core Fusion (features/gear/model/fusion, X → CF): не кандидат вердикта — ни среди своих, ни среди других
   off: ReadonlyMap<string, string>;
+  // hero → in-game ★ from the store (`gear.ts stars`): facts about the hero, like the quirks setting; N — a wish — stays in
+  // the profile. No entry — not set: no crit from stars is counted
+  stars: Readonly<Record<string, number>>;
   inScope: (c: Char) => boolean;
   outScope: (c: Char) => boolean; // «не в ростере» при «только мои»: кандидат, но не свой
   t: Texts;                     // фразы вердикта на выбранном языке
 }
 
-export function makeCtx(idx: Index, settings: Settings, roster: ReadonlySet<string>, t: Texts = ru, off: ReadonlyMap<string, string> = new Map()): Ctx {
+export const NO_STARS: Readonly<Record<string, number>> = Object.freeze({});
+
+export function makeCtx(idx: Index, settings: Settings, roster: ReadonlySet<string>, t: Texts = ru, off: ReadonlyMap<string, string> = new Map(),
+  stars: Readonly<Record<string, number>> = NO_STARS): Ctx {
   const scoped = settings.rosterOnly && roster.size > 0;
   return {
-    idx, settings, roster, scoped, off, t,
+    idx, settings, roster, scoped, off, stars, t,
     inScope: (c) => !off.has(c.id) && (!scoped || roster.has(c.id)),
     outScope: (c) => !off.has(c.id) && scoped && !roster.has(c.id),
   };
