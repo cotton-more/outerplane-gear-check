@@ -4,6 +4,7 @@ import { FLAT } from '@/game/data';
 import type { Build, Char, Grade } from '@/game/data/types';
 import type { BuildRef } from './builds';
 import type { Ctx } from '@/game/context';
+import { lv120Of } from '@/game/hero/level';
 import { NO_MAINS, takenByMain, type ItemMains } from '@/game/item/mains';
 import { dropSubs, type Subs } from '@/game/item/subs';
 
@@ -27,7 +28,7 @@ export function flatFactor(ctx: Ctx, c: Char | null | undefined, axis: string): 
   const f = c && c.flat && c.flat[axis as 'ATK' | 'DEF' | 'HP'];
   const t = ctx.idx.TICK[axis];
   if (!f || !t || !f[0] || !f[1]) return CFG.flatFallback[axis]; // нет своей базы — берём средние
-  const base = f[ctx.settings.lv120 ? 1 : 0] + (ctx.settings.quirks ? f[2] : 0);
+  const base = f[c && lv120Of(ctx, c) ? 1 : 0] + (ctx.settings.quirks ? f[2] : 0);
   return t[0] / (base * t[1] / 100);
 }
 const flatCredit = (r: number) => (r >= CFG.flatFull ? 1 : r >= CFG.flatHalf ? 0.5 : 0);

@@ -1,7 +1,7 @@
 // A hero's total of one stat from what the app knows (MODEL.md §12 item 3): the hero's own sources, the main lines
 // of the pieces, set rows that are on and the substats. Transcend is here for the heroes whose stars give crit, at the hero's ★
 // (`Ctx.stars`, not set — the hero's minimum, `game/hero/star`). Hidden sources (gems, talisman, EE, team buffs) are not here — they only add, so the total is never
-// above the game's. Only CHC for now; EFF reuses the same shape later.
+// above the game's. Only CHC here; EFF has its own formula (game/stat/eff).
 import type { Char, Grade, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
@@ -36,11 +36,14 @@ export interface StatTotal {
   total: number;
 }
 
-// main line value at +10 in % (mainValues are ‰); bt not marked counts as T0 — the total stays ≤ the game's
-export function mainValue(ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'bt'>, line: string): number {
+// main line value at +10 in the game's units (‰ for a percent stat, points for a flat one); bt not marked counts as T0 — the
+// total stays ≤ the game's
+export function mainRaw(ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'bt'>, line: string): number {
   const row = ctx.idx.D.mainValues?.[p.slot]?.[p.grade]?.[line];
-  return row ? (row[p.bt ?? 0] ?? row[0]) / 10 : 0;
+  return row ? (row[p.bt ?? 0] ?? row[0]) : 0;
 }
+// main line value of a percent stat at +10, in %
+export const mainValue = (ctx: Ctx, p: Pick<StatPiece, 'slot' | 'grade' | 'bt'>, line: string): number => mainRaw(ctx, p, line) / 10;
 
 // the hero's own part, %: base, class passive, awakening quirks (only with the `quirks` setting), transcend passive at the
 // hero's ★ (not set — the minimum, where no hero has transcend crit)

@@ -9,6 +9,7 @@
 // базы SPD — бонус считается невыразимым.
 import type { Char, GearSet, SetBonus } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
+import { lv120Of } from '@/game/hero/level';
 
 export interface BonusRow {
   set: string;
@@ -60,7 +61,7 @@ export function convertible(ctx: Ctx, c: Char, setId: string): boolean {
 function spdBase(ctx: Ctx, c: Char): number | null {
   const f = c.spd;
   if (!f || !f[0] || !f[1]) return null;
-  return f[ctx.settings.lv120 ? 1 : 0] + (ctx.settings.quirks ? f[2] : 0);
+  return f[lv120Of(ctx, c) ? 1 : 0] + (ctx.settings.quirks ? f[2] : 0);
 }
 
 // сегменты стата, которые даёт строка бонуса; null — статом не выразить
