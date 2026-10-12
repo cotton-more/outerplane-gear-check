@@ -1,6 +1,8 @@
 // The hero sheet of a team spot (.x/0171-team-suggest): first who fits the team — recommended together with its heroes in
 // outerpedia's teams, and whose skills start working (owner 2026-10-11: outerpedia first); with an empty team — who is
 // most often in outerpedia's teams. Below — everyone else by name. One name search for both.
+// With a boss (.x/0200-boss stage C) — guide: the guide's heroes for this spot replace «Подойдут команде» (owner
+// 2026-10-12), with one line naming the guide's heroes not in the roster.
 import { useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -13,8 +15,11 @@ import { effectText } from './TeamReport';
 
 const SHOWN = 6;
 
-export function TeamPicker({ syn, fits, rest, emptyTeam, search, onPick }: {
-  syn: Synergy; fits: Suggestion[]; rest: readonly string[]; emptyTeam: boolean; search: string; onPick: (id: string) => void;
+export interface GuideSpot { head: string; ids: readonly string[]; note: string | null }
+
+export function TeamPicker({ syn, fits, guide, rest, emptyTeam, search, onPick }: {
+  syn: Synergy; fits: Suggestion[]; guide?: GuideSpot | null; rest: readonly string[]; emptyTeam: boolean; search: string;
+  onPick: (id: string) => void;
 }) {
   const t = useT();
   const idx = useIndex();
@@ -23,8 +28,9 @@ export function TeamPicker({ syn, fits, rest, emptyTeam, search, onPick }: {
   const name = (id: string) => idx.CHAR[id]?.name ?? id;
   const found = fits.filter((f) => heroMatches(idx.CHAR[f.id], q));
   const shown = all || q ? found : found.slice(0, SHOWN);
-  // a hero shown in «Подойдут» is not repeated below; one behind «ещё N» stays in the plain list
-  const others = rest.filter((id) => !shown.some((f) => f.id === id) && heroMatches(idx.CHAR[id], q));
+  const guided = (guide?.ids ?? []).filter((id) => heroMatches(idx.CHAR[id], q));
+  // a hero shown in «Подойдут» or «Из гайда» is not repeated below; one behind «ещё N» stays in the plain list
+  const others = rest.filter((id) => !shown.some((f) => f.id === id) && !guided.includes(id) && heroMatches(idx.CHAR[id], q));
   const fixText = (f: Suggestion['fixes'][number]) => {
     const need = syn.heroes[f.hero]?.need?.find((x) => x.st === f.st);
     return t.team.fixLine(name(f.hero), effectText(t, [f.slot], need?.fx));
@@ -32,7 +38,26 @@ export function TeamPicker({ syn, fits, rest, emptyTeam, search, onPick }: {
   return (
     <div className="tm-pick">
       <input className="pick-q" type="search" value={q} placeholder={search} aria-label={search} onChange={(e) => setQ(e.target.value)} />
-      {found.length > 0 && (
+      {guide && (
+        <>
+          <p className="tm-ph">{guide.head}</p>
+          {guided.length > 0 && (
+            <ul className="tm-fits">
+              {guided.map((id) => (
+                <li key={id}>
+                  <button type="button" className="tm-fit" onClick={() => onPick(id)}>
+                    <HeroFace c={idx.CHAR[id]} />
+                    <span className="tm-fn"><HeroName c={idx.CHAR[id]} /></span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {guide.note && <p className="tm-gn muted small">{guide.note}</p>}
+          {others.length > 0 && <p className="tm-ph">{t.team.restHead}</p>}
+        </>
+      )}
+      {!guide && found.length > 0 && (
         <>
           <p className="tm-ph">{emptyTeam ? t.team.popularHead : t.team.fitHead}</p>
           <ul className="tm-fits">
