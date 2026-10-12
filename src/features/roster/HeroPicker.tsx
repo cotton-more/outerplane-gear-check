@@ -37,8 +37,14 @@ export function HeroPicker({ ids, title, empty, search, mark, onPick }: {
               <li key={id}>
                 <button type="button" className="trade-hero" disabled={m?.off} onClick={() => onPick(id)}>
                   <HeroFace c={idx.CHAR[id]} />
-                  <span className="trade-hn"><HeroName c={idx.CHAR[id]} /></span>
-                  {m && <><span className={`trade-mk${m.cls ? ' ' + m.cls : ''}`} title={m.title} aria-hidden="true">{m.text}</span><span className="sr-only">{m.title}</span></>}
+                  {m ? (
+                    // the mark under the name: a long name keeps its width on a 280 px phone
+                    <span className="trade-ht">
+                      <span className="trade-hn"><HeroName c={idx.CHAR[id]} /></span>
+                      <span className={`trade-mk${m.cls ? ' ' + m.cls : ''}`} title={m.title} aria-hidden="true">{m.text}</span>
+                      <span className="sr-only">{m.title}</span>
+                    </span>
+                  ) : <span className="trade-hn"><HeroName c={idx.CHAR[id]} /></span>}
                 </button>
               </li>
             );

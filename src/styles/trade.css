@@ -11,8 +11,10 @@
 .trade-hero .face { width: 32px; height: 32px; border-radius: 6px; flex: none; }
 .tline-h .face { width: 26px; height: 26px; border-radius: 5px; flex: none; }
 .trade-hn { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* the mark at the row's end («Кого переодеть?», 0200 stage A): the gain now, «—», ✓ for the re-dressed (row not pickable) */
-.trade-mk { flex: none; font: 700 12px var(--font-mono); color: var(--ink-3); }
+/* the mark under the name («Кого переодеть?», 0200 stage A): the gain now, «—», ✓ for the re-dressed (row not pickable) */
+.trade-ht { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.trade-ht .trade-hn { flex: none; }
+.trade-mk { font: 700 11.5px/1.2 var(--font-mono); color: var(--ink-3); }
 .trade-mk.up { color: var(--keep); }
 .trade-mk.down { color: var(--junk); }
 .trade-hero:disabled { opacity: .6; }
