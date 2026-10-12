@@ -10,6 +10,7 @@ import type { Piece } from '@/features/gear/model/gear';
 import { partText, setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
 import { useIndex } from '@/game/data/IndexContext';
+import { SetIcon } from '@/game/icons/Img';
 
 // A weapon or accessory named in a phrase, one rule everywhere (owner 2026-10-09, Q4): a Legendary — its item, an Epic —
 // the game's name (EPIC_NAME), then the main: «Noblewoman's Guile · HP%», «Steel Sword · ATK%»; main unknown — «Steel Sword»
@@ -45,6 +46,8 @@ export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boole
   return (
     <>
       {!batch && <span className={`gl ${p.grade === 'unique' ? 'L' : 'E'}`}>{p.grade === 'unique' ? 'L' : 'E'}</span>}
+      {/* the set's icon by the name — easier to match against the game (owner 2026-10-12); batch rows name the set in the title */}
+      {!batch && p.setId && ctx.idx.SET[p.setId] && <SetIcon set={ctx.idx.SET[p.setId]} className="pset" />}
       {name && <span className={`pn${tone}`}>{name}</span>}
       {/* batch: a no-break space glues «· ATK%» to the name's last word, so a wrapped name never leaves it leading a line */}
       {main && <span className={`pm${tone}`}>{name ? `${batch ? '\u00A0' : ''}· ` : ''}{main}</span>}

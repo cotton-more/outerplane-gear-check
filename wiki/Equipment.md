@@ -97,7 +97,7 @@ below) next to "Trade ▸".
 ### Worn
 
 What the hero wears in the game now: six slots with substats colored by the hero's points, Breakthrough ("T4",
-"T0–T3") and only the set bonuses that are turned on. An empty slot has **"Enter"**: "Rate" opens for that slot, and
+"T0–T3") and only the set bonuses that are turned on. Armor shows the set icon before its name, as in the game. An empty slot has **"Enter"**: "Rate" opens for that slot, and
 after "Equip" the form moves to the next empty one. If the hero has at most one piece per slot, "Yes, all worn"
 replaces the entry.
 

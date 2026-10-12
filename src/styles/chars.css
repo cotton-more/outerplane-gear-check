@@ -175,6 +175,8 @@ html.xs .bgear-t { grid-row: 3; }
 /* в пуле по вещи на слот, ничего не надето: «Да, всё надето» */
 .bgear-none { display: grid; gap: 8px; justify-items: start; padding: 10px 12px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); }
 .bgear-none p { margin: 0; font-size: 13px; color: var(--ink-2); }
+/* значок сета у названия (PieceName): игровой — тёмный кружок, свой — контур в рамке; читается в обеих темах */
+.bgear-row .bgear-n .pset, .piece-n .pset { box-sizing: border-box; width: 18px; height: 18px; flex: none; }
 .gl { width: 18px; height: 18px; flex: none; border-radius: 4px; font: 700 10.5px/1 var(--font-display); color: #fff; display: inline-flex; align-items: center; justify-content: center; }
 .gl.L { background: color-mix(in srgb, var(--legend) 70%, var(--surface)); }
 .gl.E { background: color-mix(in srgb, var(--epic) 80%, var(--surface)); }
