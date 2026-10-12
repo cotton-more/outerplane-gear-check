@@ -921,7 +921,7 @@ describe('вещи только у героев ростера (Р16)', () => {
     await mount({ tab: 'chars' }, {}, { roster: [rin.id, caren.id, kappa.id], gear: shared() });
     await click(tileStar('Caren'));
     expect({ title: ask()?.getAttribute('aria-label'), text: $('.roster-ask p')?.textContent })
-      .toEqual({ title: 'Remove Caren from the roster?', text: "Caren's gear (2) is removed from the app." });
+      .toEqual({ title: 'Remove Caren from the roster?', text: "Caren's gear (2) is removed from the app. Unlock it in the game — otherwise it can't be dismantled." });
   });
 
   // сообщение — только о герое: что та же запись осталась у Rin, не говорим (было: «Removed from Caren. Rin still has it.»)

@@ -400,7 +400,7 @@ export const en: Texts = {
     unfuseAskYes: (base) => `Yes, ${base}`,
     cancel: 'Cancel',
     rosterRemoveTitle: (name) => `Remove ${name} from the roster?`,
-    rosterRemoveText: (name, n) => `${name}'s gear (${n}) is removed from the app.`,
+    rosterRemoveText: (name, n) => `${name}'s gear (${n}) is removed from the app. Unlock it in the game — otherwise it can't be dismantled.`,
     rosterRemoveYes: 'Yes, remove',
     rosterRemoved: (name) => `${name} is out of the roster.`,
     equipped: (name, slot, t4 = '') => `On ${name}: ${SLOT_EN[slot]}${t4}.`,

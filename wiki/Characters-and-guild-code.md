@@ -22,7 +22,7 @@ next to the name, the same as in the list. "outerpedia ↗" at the bottom of the
 outerpedia in a new tab. Under the name — the hero's **stars**, six like the game's transcend (roster heroes only): tap, pick ★N in the window, and the window closes. Not set — six grey stars. Some heroes get crit from their stars; it counts in "Crit" on the "Worn" tab ([Equipment](Equipment#the-hero-card)), and [Team](Team-check) takes the stars from here. The card has three tabs: "Worn" — what they wear in the game, "Pool" — all their pieces and why each is kept, "Builds" — the outerpedia reference, view only ([Equipment](Equipment#the-hero-card)).
 
 Only roster characters have gear: "Equip" adds the character to the roster, loading a backup adds everyone who
-has gear. Unstar a character who has gear and a window warns that the gear is removed from the app; after "Yes,
+has gear. Unstar a character who has gear and a window warns that the gear is removed from the app (unlock it in the game, or it can't be dismantled); after "Yes,
 remove" — a message with "Undo". The hero's stars, crit number and pinned set go along with the gear. A hero without
 gear loses the star at once, and with it the same stars, crit number and set; "Undo" in the message brings them all back.
 

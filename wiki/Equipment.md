@@ -154,7 +154,8 @@ silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). "Rate a piec
 
 **Only roster characters have gear.** "Equip" on a character outside the roster adds the character to the roster;
 importing a gear code and starting the app add everyone who has gear. Unstar Caren while Caren has gear — a window
-"Remove Caren from the roster? Caren's gear (N) is removed from the app.": "Yes, remove" — the message "Caren is out of
+"Remove Caren from the roster? Caren's gear (N) is removed from the app. Unlock it in the game — otherwise it can't be
+dismantled.": "Yes, remove" — the message "Caren is out of
 the roster." with "Undo", "Cancel" — nothing. "Replace" with a roster code keeps characters who have gear.
 
 Tap a piece to fix it after upgrading in the game. The edit is narrow — only what upgrading changes:

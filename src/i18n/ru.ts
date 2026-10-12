@@ -474,7 +474,7 @@ export const ru = {
     cancel: 'Отмена',
     // сняли звезду с героя, у которого есть вещи (Р16: вещи только у героев ростера), — окно RosterRemoveAsk
     rosterRemoveTitle: (name: string) => `Убрать ${name} из ростера?`,
-    rosterRemoveText: (name: string, n: number) => `Вещи ${name} (${n}) уберутся из приложения.`,
+    rosterRemoveText: (name: string, n: number) => `Вещи ${name} (${n}) уберутся из приложения. Сними с них замок в игре — иначе их не разобрать.`,
     rosterRemoveYes: 'Да, убрать',
     // тост после «Да, убрать»: только о герое — вещи, что есть у других, просто не используются здесь
     rosterRemoved: (name: string) => `${name} — не в ростере.`,
