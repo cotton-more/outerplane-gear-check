@@ -205,15 +205,15 @@ describe('H. команда', () => {
   });
 
   describe('H13: равная польза — дешёвый источник, потом меньшая потеря', () => {
-    it('надета на Карен вне команды и такая же в запасе другого героя → из запаса (cost 2)', () => {
+    it('надета на Карен вне команды и такая же в запасе другого героя → у Карен: запас не берём (Q1b)', () => {
       const w = mk({ i1: { slot: 'weapon' }, i2: { slot: 'weapon' }, mw: { slot: 'weapon' } }, {
         R: { value: { i1: 7, i2: 7 } },
         K: { worn: { weapon: 'i1' }, value: { i1: 5 } },
         M: { worn: { weapon: 'mw' }, pool: ['i2'], value: { mw: 5 } },
       });
       const c = changes(run(w, ['R']), 'R')[0].cand;
-      expect(c.item.id).toBe('i2');
-      expect(c.cost).toBe(2);
+      expect(c.item.id).toBe('i1');
+      expect(c.cost).toBe(3);
     });
     it('обе надеты на других (цены равны) → отдаёт тот, кто теряет меньше', () => {
       const w = mk({ k1: { slot: 'weapon' }, l1: { slot: 'weapon' } }, {
@@ -225,16 +225,16 @@ describe('H. команда', () => {
     });
   });
 
-  it('H14: член берёт вещь у героя вне команды и из запаса по тому же порогу; переодетого в этом окне не трогает', () => {
+  it('H14: член берёт надетое героев вне команды по тому же порогу; переодетого в этом окне не трогает', () => {
     const w = mk(
       {
-        r: { slot: 'weapon' }, wO: { slot: 'weapon' }, rh: { slot: 'helmet' }, mh: { slot: 'helmet' }, hM: { slot: 'helmet' },
+        r: { slot: 'weapon' }, wO: { slot: 'weapon' }, rh: { slot: 'helmet' }, hM: { slot: 'helmet' },
         rg: { slot: 'gloves' }, qg: { slot: 'gloves' }, pa: { slot: 'armor' },
       },
       {
         R: { worn: { weapon: 'r', helmet: 'rh', gloves: 'rg' }, value: { r: 5, rh: 5, rg: 5, wO: 7, hM: 7, qg: 5.5, pa: 20 } },
         O: { worn: { weapon: 'wO' } },
-        M: { worn: { helmet: 'mh' }, pool: ['hM'] },
+        M: { worn: { helmet: 'hM' } },
         Q: { worn: { gloves: 'qg' } },
         P: { worn: { armor: 'pa' }, locked: true },
       },

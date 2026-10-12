@@ -13,7 +13,7 @@ import { mainsStat } from '@/game/stat/total';
 import { pieceBar } from '@/features/gear/pool/info';
 import { numOf } from '@/features/gear/pool/base';
 import { milli, wearable } from '@/features/gear/model/vs';
-import { codeOf, type CritGauge, type Gauge, type Hero, type Item, type Worth, type World } from './model';
+import { codeOf, heldOf, type CritGauge, type Gauge, type Hero, type Item, type Worth, type World } from './model';
 
 // заказ «По статам»; набор — подпись связки (comboSig)
 export const STATS = 'stats';
@@ -100,5 +100,5 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
     memo.set(heroId, g);
     return g;
   };
-  return { heroes, items, gauge };
+  return { heroes, items, gauge, held: heldOf({ heroes }) };
 }

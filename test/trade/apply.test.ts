@@ -118,14 +118,14 @@ describe('E. применение: один герой', () => {
     for (const h of [rin, karen, noa]) expect(back.pools[h]).toEqual(st.pools[h]);
     expect(back.worn?.[karen]).toEqual(st.worn?.[karen]);
   });
-  it('E10 (T7.4): после шага Рин в том же окне для Карен не предлагается надетое Рин, предлагается её запас', () => {
+  it('E10 (T7.4): после шага Рин в том же окне для Карен не предлагается ни надетое Рин, ни её запас (Q1b)', () => {
     const r = piece('gloves', SET), rs = piece('gloves', SET, { SPD: 4, CHC: 4, CHD: 3, ATK: 3 }), k = piece('helmet', SET);
     const st = store({ [rin]: { pool: [r, rs], worn: [r] }, [karen]: { pool: [k], worn: [k] } });
     const x = go(st, rin, planOf([])).st;
     const w = worldOf(ctx, x, Object.keys(x.pools), { locked: new Set([rin]) });
     const ids = Object.values(candidates(w, { to: karen })).flat().map((c) => c.item.id);
     expect(ids).not.toContain(r.id);
-    expect(ids).toContain(rs.id);
+    expect(ids).not.toContain(rs.id);
   });
   it('E11: Рин «Сделал», план Карен не применён — у Рин и у тех, у кого брали, как после шага Рин', () => {
     const { st, r, k, n } = base();

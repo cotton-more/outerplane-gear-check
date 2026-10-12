@@ -33,9 +33,9 @@ const capped = () => {
 };
 
 describe('мерило знает потолок крита', () => {
-  it('получатель с упёртым критом берёт у Rin запасной шлем с CHD вместо своего надетого с CHC 6', () => {
+  it('получатель с упёртым критом берёт у Rin надетый шлем с CHD вместо своего надетого с CHC 6', () => {
     const { acc, rest, hA, hB } = capped();
-    const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [] } });
+    const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [hB] } });
     const plan = heroPlan(realWorld(st, [K, R]), { to: K }).plan;
     expect(plan.changes.map((c) => [c.slot, c.cand.item.id, c.was?.item.id])).toEqual([['helmet', hB.id, hA.id]]);
   });
@@ -43,7 +43,7 @@ describe('мерило знает потолок крита', () => {
   // F1 of review 0136, decision 14: the plan line names the extra crit, so stats + sets − crit add up to the gain
   it('the plan line carries the kit\'s extra crit before and after: 6.267 → 2.267, and the parts add up', () => {
     const { acc, rest, hA, hB } = capped();
-    const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [] } });
+    const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [hB] } });
     const world = realWorld(st, [K, R]);
     const hp = heroPlan(world, { to: K });
     const step = { plans: [{ to: K, plan: hp.plan }], fills: hp.holes.fills };
@@ -67,7 +67,7 @@ describe('мерило знает потолок крита', () => {
   it('без упора (нет аксессуара с main CHC и сета крита) тот же шлем с CHC 6 остаётся', () => {
     const { hA, hB } = capped();
     const plain = piece('armor', 'Defense', { 'DEF%': 2, CHD: 2, SPD: 1, HP: 1 });
-    const st = store({ [K]: { pool: [hA, plain], worn: [hA, plain] }, [R]: { pool: [{ ...hB, setId: hA.setId }], worn: [] } });
+    const st = store({ [K]: { pool: [hA, plain], worn: [hA, plain] }, [R]: { pool: [{ ...hB, setId: hA.setId }], worn: [{ ...hB, setId: hA.setId }] } });
     expect(heroPlan(realWorld(st, [K, R]), { to: K }).plan.changes).toEqual([]);
   });
 

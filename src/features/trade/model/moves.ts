@@ -5,14 +5,14 @@
 // Надеть вещь, надетую на другом, в игре снимает её с него, поэтому у обмена двоих второй берёт свою из инвентаря.
 import type { SlotId } from '@/game/data/types';
 import { moveStep, type Placement, type Step } from './apply';
-import { SLOT_ORDER, type Hero, type World } from './model';
+import { heldOf, SLOT_ORDER, type Hero, type World } from './model';
 
 export type Source = { kind: 'worn'; hero: string } | { kind: 'stock'; hero: string } | { kind: 'inventory' };
 export interface Move { hero: string; slot: SlotId; item: string; from: Source }
 // emptied — слоты, где было надето, а после плана пусто (дыра без заполнения, слот получателя)
 export interface Moves { moves: Move[]; emptied: { hero: string; slot: SlotId }[] }
 
-// мир после шага: тот же перенос, что у «Сделал» (apply moveStep); мерила и вещи — прежние (R2.6: на момент расчёта)
+// мир после шага: тот же перенос, что у «Сделал» (apply moveStep); мерила, вещи и held — прежние (R2.6: на момент расчёта)
 export function advance(w: World, step: Step): World {
   const p: Placement = {
     pools: Object.fromEntries(w.heroes.map((h) => [h.id, [...h.pool]])),
@@ -26,7 +26,7 @@ export function advance(w: World, step: Step): World {
   for (const [id, pool] of Object.entries(p.pools)) {
     if (!old.has(id) && pool.length) heroes.push({ id, rank: w.heroes.length + heroes.length, locked: false, worn: p.worn[id] ?? {}, pool });
   }
-  return { heroes, items: w.items, gauge: w.gauge };
+  return { heroes, items: w.items, gauge: w.gauge, held: w.held ?? heldOf(w) };
 }
 
 // first — получатели в порядке плана; дальше остальные (герои дыр) в порядке ростера

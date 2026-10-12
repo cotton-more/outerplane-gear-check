@@ -82,9 +82,9 @@ describe('мерило героя — заказ', () => {
   });
 
   it('T7.2: заказ набора собирает его, «По статам» — то, что больше по V', () => {
-    // Speed ×4 надет, такие же по статам Pen-вещи на T4 — в запасе другого героя
+    // Speed ×4 надет, такие же по статам Pen-вещи на T4 надеты на другом герое (его запас обмен не берёт, Q1b)
     const speed = armorOf('Speed', GOOD2), pen = ARMOR.map((slot) => piece(slot, 'Penetration', { SPD: 4, CHC: 4, CHD: 4, ATK: 3 }, { bt: 4 }));
-    const st = store({ [D]: { pool: speed, worn: speed }, [K]: { pool: pen } });
+    const st = store({ [D]: { pool: speed, worn: speed }, [K]: { pool: pen, worn: pen } });
     const setOf = (order: string) => {
       const hp = heroPlan(realWorld(st, undefined, [], { [D]: order }), { to: D });
       return ARMOR.map((s) => hp.plan.kit.slots[s]?.item.set);
@@ -100,7 +100,7 @@ describe('мерило героя — заказ', () => {
 
   it('T7.1: не годная для получателя вещь другого героя — не кандидат; своё надетое — кандидат, даже слабое', () => {
     const weakOther = piece('helmet', 'Speed', WEAK), weakMine = piece('armor', 'Speed', WEAK);
-    const st = store({ [D]: { pool: [weakMine], worn: [weakMine] }, [K]: { pool: [weakOther] } });
+    const st = store({ [D]: { pool: [weakMine], worn: [weakMine] }, [K]: { pool: [weakOther], worn: [weakOther] } });
     const w = realWorld(st);
     expect(w.gauge(D)!.value(weakOther.id)!.ok).toBe(false); // premise
     const c = candidates(w, { to: D });
@@ -223,8 +223,9 @@ describe('X1. Эквивалентность модели лучшей раск�
         while (Object.keys(lit).length < 3) lit[pick(stats)] = 1 + Math.floor(rnd() * 5);
         return piece(slot, pick(sets), lit, { bt: rnd() < 0.5 ? 4 : 0 });
       });
-      const mine = mk(5), theirs = mk(6);
-      const st = store({ [HERO.rin]: { pool: mine }, [K]: { pool: theirs, worn: [] } });
+      // the other hero's pieces are worn (his spare is no candidate, Q1b): one per slot
+      const mine = mk(5), theirs = ARMOR.map((slot) => { const lit: Subs = {}; while (Object.keys(lit).length < 3) lit[pick(stats)] = 1 + Math.floor(rnd() * 5); return piece(slot, pick(sets), lit, { bt: rnd() < 0.5 ? 4 : 0 }); });
+      const st = store({ [HERO.rin]: { pool: mine }, [K]: { pool: theirs, worn: theirs } });
       expect(compare({ st, roster: [HERO.rin, K], ctx }, HERO.rin, [...mine, ...theirs]), `случай ${t}`).toBeNull();
     }
   });

@@ -12,7 +12,8 @@ More on a phone — straight to team mode. Only roster heroes that have builds t
 
 ## Hero and team
 
-- **Hero** — pick whom to re-dress. They get the best of what other heroes and the inventory have.
+- **Hero** — pick whom to re-dress. They get the best of what other heroes wear and of their own spares.
+  **Other heroes' spares are never taken:** a piece held for a hero (for Breakthrough or until a better one) stays theirs.
 - **Team** — four places in a diamond, like in the game. Members swap pieces among themselves and take from the rest.
   Press "Calculate"; change a member — "Calculate" again.
 - A team member is a tile like in the character list. Tap the tile to put another hero there or "Remove from team".
@@ -29,10 +30,17 @@ What the app builds the hero for:
 
 The app doesn't switch to another order itself: you choose and look again.
 
+## One by one
+
+In "Who to re-dress?" each hero shows how many points they'd gain if re-dressed now ("+4.2"; "—" — nothing to change).
+It's the same number as on the hero's line in the plan. It changes after every "Done": the first hero re-dressed takes
+the best, the next ones get what is left. The list is by name: whom to re-dress is your call.
+
 ## The session
 
-While the trade window is open, **what already re-dressed heroes wear** is not taken by the next ones; their spares
-can be. Close the window — no restrictions remain. Members of one team still swap among themselves.
+While the trade window is open, **what already re-dressed heroes wear** is not taken by the next ones; re-dressed heroes
+sit at the end of the list with ✓ and can't be picked again. "Undo" after "Done" puts the hero back. **"Finish"** closes
+the window — no restrictions remain. Members of one team still swap among themselves.
 
 ## The plan
 
@@ -44,8 +52,8 @@ For each receiver:
 - an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
   pieces are there but below T4, "Speed ×2 won't come together: needs T4";
 - **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6
-  pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Caren's
-  stock", "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓. The
+  pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Rin's
+  stock" — the hero's own spare, "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓. The
   plan takes a recommended weapon or accessory even with fewer points — for its passive; such a piece shows "−4.4 pts ·
   better passive"; if you don't want it — "Don't take";
 - **"Don't take"** — the app offers another piece;
