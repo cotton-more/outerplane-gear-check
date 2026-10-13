@@ -838,11 +838,11 @@ describe('меню, плитки, код копии, другая вкладка
     expect($$('#cgrid .ctile').length).toBeGreaterThan(2); // без режима — и не из ростера: у них не надето ничего
   });
 
-  it('панель списка: «Trade» — сразу команда; «mark all shown», «clear roster», «export / import» нет', async () => {
+  it('панель списка: «Trade» — «Who to re-dress?» (the team trade is on «Команда»); «mark all shown», «clear roster», «export / import» нет', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { CHC: 1 })], { [caren.id]: ['p1'] }), roster: [caren.id] });
     expect($$('#char-list button').map((b) => b.textContent).filter((t) => /mark|clear|export|import/i.test(t ?? ''))).toEqual([]);
     await click(byText('.cbar button', 'Trade'));
-    expect($('.trade-mode [aria-selected="true"]')?.textContent).toBe('Team');
+    expect($('.drawer.trade')?.textContent).toContain('Who to re-dress?');
   });
 
   it('плитка считает отмеченное надетое, не вещи билда', async () => {

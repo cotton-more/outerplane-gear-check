@@ -217,6 +217,10 @@ describe("'ogc.boss'", () => {
     const s: BossStore = { v: 1, boss: 'sr:meteos', stage: { 'sr:meteos': 10 }, teams: { 'sr:meteos': ['a', null, 'b', null], '': [null, null, null, 'c'] } };
     expect(restoreBoss(JSON.parse(JSON.stringify(s)))).toEqual(s);
     expect(restoreBoss(null)).toEqual(EMPTY);
+    // the builds kept with a team (E2): strings only, an empty map dropped
+    const o: BossStore = { ...s, orders: { 'sr:meteos': { a: '13x4' } } };
+    expect(restoreBoss(JSON.parse(JSON.stringify(o)))).toEqual(o);
+    expect(restoreBoss({ ...s, orders: { 'sr:meteos': { a: 5 }, x: 'y' } })).toEqual(s);
     expect(restoreBoss({ v: 2, boss: 'x' })).toEqual(EMPTY);
     expect(restoreBoss({ v: 1, boss: 7, stage: { a: 'x', b: 2 }, teams: { a: ['x', 5], b: 'y' } }))
       .toEqual({ v: 1, boss: null, stage: { b: 2 }, teams: { a: ['x', null, null, null] } });

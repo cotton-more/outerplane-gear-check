@@ -2,22 +2,20 @@
 
 # Trading gear
 
-The app works out how to re-dress a hero (or a team of four) from the pieces already in your roster and inventory. In
-the game you do it yourself — the app only calculates and tells you what to look for.
+The app works out how to re-dress a hero from the pieces already in your roster and inventory, one hero after another.
+In the game you do it yourself — the app only calculates and tells you what to look for. The **team trade** (two to four
+heroes swapping among themselves) lives on the «Team» tab — see [Team check](Team-check#pick-gear).
 
 ## How to open
 
-"Trade ▸" on a hero card — straight to that hero's plan. "Trade" above the character list, and "Team trade" in
-More on a phone — straight to team mode. Only roster heroes that have builds take part.
+"Trade ▸" on a hero card — straight to that hero's plan. "Trade" above the character list — "Who to re-dress?". Only
+roster heroes that have builds take part.
 
-## Hero and team
+## Whom to re-dress
 
-- **Hero** — pick whom to re-dress. They get the best of what other heroes wear and of their own spares.
-  **Other heroes' spares are never taken:** a piece held for a hero (for Breakthrough or until a better one) stays theirs.
-- **Team** — four places in a diamond, like in the game. Members swap pieces among themselves and take from the rest.
-  Press "Calculate"; change a member — "Calculate" again.
-- A team member is a tile like in the character list. Tap the tile to put another hero there or "Remove from team".
-- Under the tile — the hero's **order** ("Order: … ▾"). Tap it to change.
+Pick whom to re-dress. They get the best of what other heroes wear and of their own spares. **Other heroes' spares are
+never taken:** a piece held for a hero (for Breakthrough or until a better one) stays theirs. Each hero in the plan has an
+**order** ("Order: … ▾"). Tap it to change.
 
 ## The order
 
@@ -40,7 +38,7 @@ the best, the next ones get what is left. The list is by name: whom to re-dress 
 
 While the trade window is open, **what already re-dressed heroes wear** is not taken by the next ones; re-dressed heroes
 sit at the end of the list with ✓ and can't be picked again. "Undo" after "Done" puts the hero back. **"Finish"** closes
-the window — no restrictions remain. Members of one team still swap among themselves.
+the window — no restrictions remain.
 
 A piece taken off a re-dressed hero is free: any next hero may take it. If nobody took it by the time the window closes,
 the app lists it in "Free pieces".

@@ -20,6 +20,7 @@ export const ANCHORS = [
   'team', // the four spots on «Команда»
   'teamBoss', // the boss row at the top of «Команда»
   'teamTurn', // «Ход против босса» under the team with a boss (.x/0200-boss E1)
+  'teamTrade', // «Подобрать вещи» under the team (.x/0200-boss E2)
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
   'stash', // «Отложить для X» под карточкой вердикта и в строке героя
 ] as const;

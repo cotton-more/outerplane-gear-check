@@ -305,8 +305,11 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    halves and effect halves, not lower rank, and itself passing the threshold against the worn piece" is taken. The best kit
    (`kit:bestKit`) is the exact armor search with branch-and-bound over the same key as §3 (`cmpKit`: rank, V, filled,
    Legendary, lower cost, lower loss, holder rank, record age). V of a kit includes its crit loss (§12.6).
-6. **Team trade objective** (`team:teamSteps`, `scoreOf`; owner, 2026-10-02: heroes are equal, no priorities): the
-   exact search tries all 24 orders of the four members and keeps the order with the best result, compared in this
+6. **Team trade objective** (`team:teamSteps`, `scoreOf`; owner, 2026-10-02: heroes are equal, no priorities). The team
+   trade is opened from «Команда» («Подобрать вещи», .x/0200-boss E2, owner 2026-10-13) for **two to four** members with
+   builds (`teamOk`; was exactly four); each member's order is the build under his spot, kept with the team (`ogc.boss`),
+   never the worn gear — the trade reads the store as it is. The
+   exact search tries all orders of the members (24 for four) and keeps the order with the best result, compared in this
    sequence — (a) the **sum** of the members' kits (rank, V, filled slots; `use`), so sacrificing one hero for a bigger
    total gain is allowed; (b) the points of heroes outside the team (the swap must not take them from others needlessly);
    (c) the members' gains sorted ascending, compared lexicographically — at an equal sum the variant whose *smaller* gain

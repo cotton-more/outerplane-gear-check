@@ -223,10 +223,10 @@ describe('панель над сеткой (SPEC 4)', () => {
   });
 
   // 14. «Обмен»: когда доступен и у кого-то есть вещи; сразу «Команда»
-  it('14. «Trade» есть, когда обмен доступен и у кого-то есть вещи; нажатие открывает режим «Team»', async () => {
+  it('14. «Trade» есть, когда обмен доступен и у кого-то есть вещи; нажатие открывает «Who to re-dress?» (обмен для команды — на «Команде»)', async () => {
     await mount({ roster: [caren.id], gear: GEAR, state: { tab: 'chars' } });
     await click($('.cbar-trade'));
-    expect($('.trade-mode [aria-selected="true"]')?.textContent).toBe('Team');
+    expect($('.drawer.trade')?.textContent).toContain('Who to re-dress?');
   });
 
   it('14. вещей ни у кого нет — «Trade» нет; обмен недоступен (экипировку сохранила новая версия) — тоже', async () => {

@@ -93,6 +93,22 @@ boss in the order of the first turn, top to bottom. The boss is the red row in i
 
 Not counted: EFF and SPD buffs and RES-down in battle (Akari S2), guild raid geas (they can change the boss's SPD too).
 
+## Pick gear
+
+The **team trade** lives here: the heroes on the spots swap gear among themselves and take from others — what other heroes
+wear and their own spare (other heroes' spare is never taken; see [Trading gear](Trading-gear)).
+
+- **The build** under each hero's stars — what to gear them for: "stats" (the default, all stats and sets of their builds)
+  or one of their builds' sets (the set icon and how many pieces: Speed ×4). Tap it to change. A hero with a
+  [pinned set](Equipment#pin-a-set) has a gold outline and a pin: the pin is their build, changed on their card. The builds
+  are kept with the team on this device (one team per boss and one without a boss).
+- **"Pick gear"** — for two to four heroes with builds. With one, it opens the usual trade for that hero. A hero without
+  builds on outerpedia stays out — one line under the button says so.
+- **The plan** opens in a window, the same as the trade's: per hero what to wear, from whom, how much stronger; "Don't
+  take"; the order under each hero. **Done** — the pieces move in the app as you moved them in the game (holes stay);
+  "Undo" in the message; pieces taken off and given to nobody are listed in "Free pieces".
+- **Worn gear is never kept with the team:** the trade and the turn timeline always read what the app records as worn now.
+
 ## The report
 
 Only heroes with something to say are listed.

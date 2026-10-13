@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// «Обмен вещами»: открытие шторки с карточки героя и с панели ростера, команда из четырёх, заказ героя, план героя
+// «Обмен вещами»: открытие шторки с карточки героя и с панели ростера («Кого переодеть?»), обмен для команды на «Команде»
+// (.x/0200-boss E2: билд под местом, «Подобрать вещи»), заказ героя, план героя
 // (piece, search key, source, piece cost, «Не брать», stats points), «Сделал» with «Вернуть», the session (stat-sets T7.4) and cancelling the calculation
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
@@ -9,8 +10,11 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@/game/data/types';
 import { TIPS } from '@/tour/registry';
+import { moreButton, openMore } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
+// «Команда» needs the skills data (the team trade lives there, .x/0200-boss E2)
+D.synergy = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/synergy.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
 const caren = D.chars.find((c) => c.name === 'Caren')!;
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
@@ -81,51 +85,15 @@ describe('J. обмен вещами', () => {
     expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
   });
 
-  it('J2: список героев, вкладка «Team» из четырёх мест, у члена — заказ; смена заказа — шторка с наборами', async () => {
+  it('J2: «Trade» on the roster bar opens «Who to re-dress?» — the one-hero trade, no «Hero | Team» tabs; heroes with builds only', async () => {
     const roster = [caren.id, aer.id, ais.id, akari.id, bare.id];
     await mount({ roster, gear: G([WEAK, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] }) }, { charId: null });
-    // «Trade» на панели списка — сразу режим «Team» (для одного героя — «Trade ▸» на карточке)
     await click(byText('.cbar button', 'Trade'));
-    expect($$('.team-p')).toHaveLength(4);
-    await click(byText('.trade-mode button', 'Hero'));
+    expect($('.drawer.trade')).not.toBeNull();
+    expect($('.trade-mode')).toBeNull();
+    expect($('.team')).toBeNull();
     expect(hero('Caren')).toBeTruthy();
     expect(hero(bare.name)).toBeUndefined();
-
-    await click(byText('.trade-mode button', 'Team'));
-    expect($$('.team-p')).toHaveLength(4);
-    for (const id of [caren.id, aer.id, ais.id, akari.id]) {
-      await click($$('.team-add')[0]);
-      await click(hero(D.chars.find((c) => c.id === id)!.name));
-    }
-    expect($$('.team .aimb').map((b) => b.textContent)).toEqual(Array(4).fill('By stats ▾'));
-    expect($$('.team .aimb')[0].getAttribute('aria-label')).toBe('Order: By stats ▾');
-
-    await click($$('.team .aimb')[0]);
-    const radios = $$('.aimsheet [role="radio"]');
-    expect(radios[0].textContent).toBe('By stats');
-    expect(radios[0].getAttribute('aria-checked')).toBe('true');
-    expect(radios.length).toBeGreaterThan(1);
-    const combo = radios[1].textContent!;
-    await click(radios[1]);
-    expect($('.aimsheet')).toBeNull();
-    expect($$('.team .aimb')[0].textContent).toBe(`${combo} ▾`);
-    expect(stored().pin).toBeUndefined(); // заказ живёт в шторке, не в хранилище
-  });
-
-  it('команда: член — плитка как в списке, без звезды; нажатие — «Убрать из команды» под ромбом', async () => {
-    await mount({ roster: [caren.id, aer.id], gear: gear() }, { charId: null });
-    await click(byText('.cbar button', 'Trade'));
-    await click($$('.team-add')[0]);
-    await click(hero('Caren'));
-
-    expect($('.team .ctile .cn')?.textContent).toBe('Caren');
-    expect($('.team .star')).toBeNull();
-
-    await click($('.team .ctile'));
-    await click(byText('.trade-out', 'Caren'));
-
-    expect($('.team .ctile')).toBeNull();
-    expect($$('.team-add')).toHaveLength(4);
   });
 
   it('J3: у вещи в плане — ключ поиска, источник, «Не брать»; у героя — заказ и очки статов; «Не брать» пересчитывает', async () => {
@@ -212,7 +180,6 @@ describe('J. обмен вещами', () => {
     const roster = [caren.id, aer.id, ais.id];
     await mount({ gear: gear(), roster }, { charId: null });
     await click(byText('.cbar button', 'Trade'));
-    await click(byText('.trade-mode button', 'Hero'));
     await settle();
     // Caren would take Aer's better helmet; Aer and Ais have nothing to gain
     const before = rows();
@@ -262,46 +229,67 @@ describe('J. обмен вещами', () => {
     expect(rows().find((r) => r[0] === 'Caren')?.slice(1)).toEqual([expect.stringMatching(/^\+[\d.]+$/), false]);
   });
 
-  it('J7: «Calculate» → «Calculating…», «Cancel» гасит расчёт, ничего не записано', async () => {
-    const roster = [caren.id, aer.id, ais.id, akari.id];
-    await mount({ roster, gear: gear() }, { charId: null });
+  // the team trade on «Команда» (.x/0200-boss E2): the team without a boss from 'ogc.boss', the build under each spot (kept with
+  // the team), «Pick gear» → «Team trade» for 2–4 heroes with builds; one — the one-hero trade; a hero without builds stays out
+  const team = async (ids: string[], g = gear()) => {
+    await mount({ roster: [...new Set([...ids, aer.id])], gear: g, boss: { v: 1, boss: null, stage: {}, teams: { '': [...ids, null, null, null].slice(0, 4) } } }, { charId: null });
+    await openMore();
+    await click(moreButton('Team'));
+  };
+  const planReady = async () => { for (let i = 0; i < 100 && !$('.tplan'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)); }); };
+
+  it('E2: under each spot — the build («stats ▾»); the sheet of her builds; the choice is kept with the team, not in the gear', async () => {
+    await team([caren.id, ais.id, akari.id]);
+    const pills = () => $$('#view-team .tm-team .opill');
+    expect(pills().map((b) => b.textContent)).toEqual(Array(3).fill('stats▾'));
+    expect(pills()[0].getAttribute('aria-label')).toBe('Caren’s build: By stats — change');
+    await click(pills()[0]);
+    const radios = $$('.aimsheet [role="radio"]');
+    expect(radios[0].textContent).toBe('By stats');
+    expect(radios.length).toBeGreaterThan(1);
+    const combo = radios[1].textContent!;
+    await click(radios[1]);
+    expect($('.aimsheet')).toBeNull();
+    expect(pills()[0].textContent).not.toContain('stats');
+    expect(pills()[0].getAttribute('aria-label')).toBe(`Caren’s build: ${combo} — change`);
+    expect(Object.keys(JSON.parse(localStorage.getItem('ogc.boss')!).orders[''])).toEqual([caren.id]);
+    expect(stored().pin).toBeUndefined();
+  });
+
+  it('J7: «Pick gear» → «Calculating…», «Cancel» closes the window, nothing stored', async () => {
+    await team([caren.id, ais.id, akari.id, aer.id]);
     const before = localStorage.getItem('ogc.gear');
-    await click(byText('.cbar button', 'Trade'));
-    for (const id of roster) {
-      await click($$('.team-add')[0]);
-      await click(hero(D.chars.find((c) => c.id === id)!.name));
-    }
-    // куски расчёта (setTimeout) не идут, пока не отпустим: иначе быстрый расчёт успевал закончиться до проверки
+    // the calculation's chunks (setTimeout) wait until released: a fast calculation would finish before the check
     vi.useFakeTimers({ toFake: ['setTimeout'] });
     try {
-      await click($('.trade-count'));
+      await click(byText('#view-team .tm-go', 'Pick gear'));
+      expect($('.drawer.trade .drawer-h')?.textContent).toContain('Team trade');
       expect($('.trade-busy')?.textContent).toContain('Calculating…');
       await click(byText('.trade-busy button', 'Cancel'));
       await act(async () => { vi.runAllTimers(); });
     } finally {
       vi.useRealTimers();
     }
-
-    expect($('.trade-busy')).toBeNull();
-    expect($('.tplan')).toBeNull();
+    expect($('.drawer.trade')).toBeNull();
     expect(localStorage.getItem('ogc.gear')).toBe(before);
   });
 
-  it('команда: в плане только члены команды — у Aer вне команды берут шлем, его строки нет (владелец, 2026-10-04)', async () => {
-    const fourth = D.chars.find((c) => c.builds.length && ![caren.id, aer.id, ais.id, akari.id].includes(c.id))!;
-    const team = [caren.id, ais.id, akari.id, fourth.id];
-    await mount({ roster: [...team, aer.id], gear: gear() }, { charId: null });
-    await click(byText('.cbar button', 'Trade'));
-    for (const id of team) {
-      await click($$('.team-add')[0]);
-      await click(hero(D.chars.find((c) => c.id === id)!.name));
-    }
-    await click($('.trade-count'));
-    for (let i = 0; i < 100 && !$('.tplan'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
-
+  it('the plan shows only the team — Aer outside it loses his helmet, his line isn\'t there (owner, 2026-10-04); three heroes are a team', async () => {
+    await team([caren.id, ais.id, akari.id]);
+    await click(byText('#view-team .tm-go', 'Pick gear'));
+    await planReady();
     expect($('.tline.to .tsrc')?.textContent).toBe('on Aer');
     expect($$('.tline').map((l) => l.querySelector('.tline-n')?.textContent)).not.toContain('Aer');
     expect($('.tline:not(.to)')).toBeNull();
+  });
+
+  it('one hero with builds — the one-hero trade for her; a hero without builds stays out with a line', async () => {
+    await team([caren.id, bare.id]);
+    expect($('#view-team .tm-nob')?.textContent).toBe(`${bare.name}: no builds on outerpedia — not in the trade.`);
+    expect($$('#view-team .tm-team .opill')).toHaveLength(1);
+    await click(byText('#view-team .tm-go', 'Pick gear'));
+    expect($('.drawer.trade .drawer-h')?.textContent).toContain('Trade gear');
+    expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
   });
 
   // free pieces (MODEL.md §7 items 2 and 8): worn when the window opened, off now, given to no one → «Free pieces» on close
@@ -311,7 +299,6 @@ describe('J. обмен вещами', () => {
     const oneRedressed = async () => {
       await mount({ gear: gear(), roster: FREE3 }, { charId: null });
       await click(byText('.cbar button', 'Trade'));
-      await click(byText('.trade-mode button', 'Hero'));
       await click(hero('Caren'));
       await click($('.tact .btn.primary'));
       await settle();
@@ -377,21 +364,16 @@ describe('J. обмен вещами', () => {
     it('team «Done» that leaves a piece free: the sheet opens with the applied store', async () => {
       // Caren takes Aer's helmet; her old one is junk (no useful stats), so nobody in the team wears it
       const junk = P('p1', 'helmet', speed, { RES: 1 }, { lit: { RES: 1 }, bt: 4 });
-      const team = [caren.id, ais.id, akari.id, D.chars.find((c) => c.name === 'Ame')!.id];
-      await mount({ roster: [...team, aer.id], gear: G([junk, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] },
-        { worn: { [caren.id]: { helmet: 'p1' }, [aer.id]: { helmet: 'p2' } } }) }, { charId: null });
-      await click(byText('.cbar button', 'Trade'));
-      for (const id of team) {
-        await click($$('.team-add')[0]);
-        await click(hero(D.chars.find((c) => c.id === id)!.name));
-      }
-      await click($('.trade-count'));
-      for (let i = 0; i < 100 && !$('.tplan'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+      const ids = [caren.id, ais.id, akari.id, D.chars.find((c) => c.name === 'Ame')!.id];
+      await team(ids, G([junk, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] }, { worn: { [caren.id]: { helmet: 'p1' }, [aer.id]: { helmet: 'p2' } } }));
+      await click(byText('#view-team .tm-go', 'Pick gear'));
+      await planReady();
       await click($('.tact .btn.primary'));
 
       expect(stored().worn[caren.id].helmet).toBe('p2');
       expect($('.drawer.trade')).toBeNull();
       expect(freeSheet()?.querySelectorAll('.tmove')).toHaveLength(1);
+      expect(byText('.gear-toast', 'Team trade saved.')).toBeTruthy();
     });
   });
 });

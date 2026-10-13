@@ -32,8 +32,9 @@ import { PieceRow } from './PieceRow';
 type T = Texts;
 const pts = (m: number) => m / 1000;
 
+// no grade — nothing about it (owner 2026-10-13: «6★» says nothing, only the stats to look for help)
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
-  return [k.grade ? GRADE_NAME[k.grade] : t.trade.anyGrade, k.set && setName(ctx.idx, k.set),
+  return [k.grade && GRADE_NAME[k.grade], k.set && setName(ctx.idx, k.set),
     k.main && subLabel(k.main), k.sub && t.trade.keySub(subLabel(k.sub)), k.t4 && 'T4'].filter(Boolean).join(' · ');
 }
 

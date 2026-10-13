@@ -15,7 +15,7 @@ Above the grid are two rows: search with the filter button, and the list mode wi
 hero without builds is found by name). Pressing the pressed mode again unpresses it. The numbers are the roster size and
 how many are left to dress. While the roster is empty there is no mode, only a hint about the star. Element and class
 are under the filter button (the number on it is how many are chosen); the chosen ones show as chips above the grid, ✕
-clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are remembered, "To dress" isn't. **Trade** opens [team trade](Trading-gear).
+clears one, "Reset" in the filter clears both. "Mine" and "nothing pressed" are remembered, "To dress" isn't. **Trade** opens [the trade](Trading-gear) at "Who to re-dress?"; the team trade is on the «Team» tab.
 
 In the character card the element and class are icons on the portrait; the subclass and role are text. Next to the name
 there's a grey star ☆, as in the list: tap it and the character is in the roster. For a roster hero the hero's **stars** take its place, six like the game's transcend: tap, pick ★N in the window, and the window closes; the same window has a "Remove from roster" button.

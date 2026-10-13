@@ -31,9 +31,11 @@ export interface TeamMember { to: string; before: Kit; after: Kit; unfilled: Slo
 // steps — как считалось (для «Сделал»); moves — что игроку надеть: итог против начала, каждая вещь один раз
 export interface TeamPlan { order: string[]; steps: TeamStep[]; members: TeamMember[]; moves: Moves }
 
-// ровно 4 разных героя с билдами (R4.1, R2.7)
+// 2…4 different heroes with builds (R2.7; owner 2026-10-13, .x/0200-boss E2 — a team on «Команда» is often incomplete;
+// was exactly four, R4.1). One hero is the one-hero trade, not a team
+export const TEAM_MIN = 2;
 export const teamOk = (w: World, team: readonly string[]): boolean =>
-  team.length === TEAM_SIZE && new Set(team).size === TEAM_SIZE && team.every((id) => !!w.gauge(id));
+  team.length >= TEAM_MIN && team.length <= TEAM_SIZE && new Set(team).size === team.length && team.every((id) => !!w.gauge(id));
 
 // ----------------------------------------------------------------------------------------------- мир по ходу расчёта
 
