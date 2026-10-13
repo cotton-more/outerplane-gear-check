@@ -46,7 +46,7 @@ describe('мерило знает потолок крита', () => {
     const st = store({ [K]: { pool: [acc, ...rest, hA], worn: [acc, ...rest, hA] }, [R]: { pool: [hB], worn: [hB] } });
     const world = realWorld(st, [K, R]);
     const hp = heroPlan(world, { to: K });
-    const step = { plans: [{ to: K, plan: hp.plan }], fills: hp.holes.fills };
+    const step = { plans: [{ to: K, plan: hp.plan }] };
     const l = linesOf(world, advance(world, step), [K], heroMoves(world, K, step)).find((x) => x.hero === K)!;
     expect([l.critBefore, l.critAfter]).toEqual([6267, 2267]);
     expect([l.on, l.off]).toEqual([[], []]);

@@ -1,13 +1,14 @@
 // Что игроку сделать в игре (R6.4, R7.2): итог плана против начала, без промежуточных переносов. Шаги расчёта (очередь,
 // дыры, обмены пары) могут передать вещь дважды — игроку это не нужно: у каждого героя по слотам — какую вещь надеть,
 // каждая вещь один раз. Откуда взять — по ходу выполнения в этом порядке (в Change Gear получателя): надета на другом —
-// «у {героя}», лежит запасом — «в инвентаре · запас {героя}», иначе «в инвентаре» (снятая этим же планом, свободная).
+// «у {героя}», лежит запасом — «в инвентаре · запас {героя}», parked — «в инвентаре · припаркована у {героя}», иначе «в
+// инвентаре» (снятая этим же планом).
 // Надеть вещь, надетую на другом, в игре снимает её с него, поэтому у обмена двоих второй берёт свою из инвентаря.
 import type { SlotId } from '@/game/data/types';
 import { moveStep, type Placement, type Step } from './apply';
 import { heldOf, SLOT_ORDER, type Hero, type World } from './model';
 
-export type Source = { kind: 'worn'; hero: string } | { kind: 'stock'; hero: string } | { kind: 'inventory' };
+export type Source = { kind: 'worn'; hero: string } | { kind: 'stock'; hero: string } | { kind: 'parked'; hero: string } | { kind: 'inventory' };
 export interface Move { hero: string; slot: SlotId; item: string; from: Source }
 // emptied — слоты, где было надето, а после плана пусто (дыра без заполнения, слот получателя)
 export interface Moves { moves: Move[]; emptied: { hero: string; slot: SlotId }[] }
@@ -26,7 +27,7 @@ export function advance(w: World, step: Step): World {
   for (const [id, pool] of Object.entries(p.pools)) {
     if (!old.has(id) && pool.length) heroes.push({ id, rank: w.heroes.length + heroes.length, locked: false, worn: p.worn[id] ?? {}, pool });
   }
-  return { heroes, items: w.items, gauge: w.gauge, held: w.held ?? heldOf(w) };
+  return { heroes, items: w.items, gauge: w.gauge, held: w.held ?? heldOf(w), ...(w.parked ? { parked: w.parked } : {}) };
 }
 
 // first — получатели в порядке плана; дальше остальные (герои дыр) в порядке ростера
@@ -38,11 +39,15 @@ export function movesOf(w0: World, w1: World, first: readonly string[]): Moves {
   // кто сейчас носит вещь и чей она нетронутый запас
   const held = w0.held ?? heldOf(w0);
   const wearer = new Map<string, [string, SlotId]>();
-  const stock = new Map<string, string>();
+  const stock = new Map<string, string>(), parked = new Map<string, string>();
   for (const h of w0.heroes) {
     for (const s of SLOT_ORDER) if (h.worn[s]) wearer.set(h.worn[s]!, [h.id, s]);
-    // a free piece of the window (not held) is plain inventory: nobody's spare
-    for (const id of h.pool) if (!wearer.has(id) && held.has(id)) stock.set(id, h.id);
+    // a piece taken off by this same plan (not held) is plain inventory: nobody's spare
+    for (const id of h.pool) {
+      if (wearer.has(id)) continue;
+      if (held.has(id)) stock.set(id, h.id);
+      else if (w0.parked?.has(id)) parked.set(id, h.id);
+    }
   }
   const now = new Map(w0.heroes.map((h) => [h.id, { ...h.worn }]));
   const moves: Move[] = [], emptied: Moves['emptied'] = [];
@@ -53,7 +58,8 @@ export function movesOf(w0: World, w1: World, first: readonly string[]): Moves {
       if (item === was[slot]) continue;
       if (!item) { emptied.push({ hero, slot }); continue; }
       const on = wearer.get(item);
-      const from: Source = on ? { kind: 'worn', hero: on[0] } : stock.has(item) ? { kind: 'stock', hero: stock.get(item)! } : { kind: 'inventory' };
+      const from: Source = on ? { kind: 'worn', hero: on[0] } : stock.has(item) ? { kind: 'stock', hero: stock.get(item)! }
+        : parked.has(item) ? { kind: 'parked', hero: parked.get(item)! } : { kind: 'inventory' };
       moves.push({ hero, slot, item, from });
       // в игре: вещь снимается с прежнего носителя, прежняя вещь слота уходит в инвентарь
       if (on) { delete now.get(on[0])?.[on[1]]; }
@@ -62,6 +68,7 @@ export function movesOf(w0: World, w1: World, first: readonly string[]): Moves {
       mine[slot] = item;
       wearer.set(item, [hero, slot]);
       stock.delete(item);
+      parked.delete(item);
     }
   }
   return { moves, emptied };

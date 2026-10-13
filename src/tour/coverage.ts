@@ -18,6 +18,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'screens/chars/CharHead.tsx': 'helper',              // шапка героя: портрет, имя, тиры — только показ
   'screens/share/ShareCard.tsx': 'helper',            // карточка показа по ссылке: только просмотр, полоса сверху говорит сама; кнопку объясняет подсказка share
   'screens/eval/EvalPanel.tsx': 'core',                // форма: слот, грейд, сет или main, сетка
+  'features/eval/form/ItemForm.tsx': 'core',          // the form below the slot row (EvalPanel; the trade's entry window reuses it)
   'screens/eval/VBar.tsx': 'core',                     // плашка вердикта на телефоне — шаг «Вердикт» главного тура (якорь verdict)
   'screens/eval/VerdictCard.tsx': 'core',              // карточка вердикта — шаг «Вердикт» главного тура (якорь verdict)
   'features/eval/form/EvalSettings.tsx': 'helper',     // настройки оценки: подписи говорят сами за себя
@@ -49,10 +50,10 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/team/ui/TeamPicker.tsx': 'helper',         // the hero sheet of a spot: who fits the team first — section titles explain it         // the Team report: explained by the Team tip
   'features/boss/ui/BossSheet.tsx': 'helper',          // the boss sheet: opened from the boss row, the teamBoss tip explains it
   'features/boss/ui/GuideChoice.tsx': 'helper',        // «Какую команду из гайда?»: opened by «Собрать из гайда» (teamBoss tip)
-  'features/trade/ui/TradePlan.tsx': 'helper',         // trade plan inside the trade sheet: the trade tip explains the sheet
+  'features/trade/ui/TradeWalk.tsx': 'helper',         // the trade walk inside the trade sheets: the trade tips explain it
+  'features/trade/ui/EntrySheet.tsx': 'helper',        // the entry window of an empty slot in the walk: the trade tip names «Ввести»
   'features/trade/ui/OrderSheet.tsx': 'helper',        // hero's order in the trade sheet: the trade tip explains the sheet
-  'features/trade/ui/FreeSheet.tsx': 'helper',         // «Free pieces» right after a trade closes: the sheet says by itself what it lists
-  'features/trade/ui/PieceRow.tsx': 'helper',          // a piece as the trade plan draws it, shared with the free-pieces sheet
+  'features/trade/ui/PieceRow.tsx': 'helper',          // a piece as the trade walk draws it
   'features/batch/ui/BatchStrip.tsx': 'helper',        // batch strip over the form: the batch tip explains the mode
   'features/batch/ui/BatchMarks.tsx': 'helper',        // «E» and the lock next to «Add»: Help and the wiki explain them, the batch tip the mode
   'features/batch/ui/BatchList.tsx': 'helper',         // pieces of the batch: the batch tip explains the mode

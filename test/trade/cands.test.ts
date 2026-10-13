@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import { bestKit } from '@/features/trade/model/kit';
 import { codeOf } from '@/features/trade/model/model';
-import { candidates, skipKey } from '@/features/trade/model/cands';
+import { candidates } from '@/features/trade/model/cands';
+import { slotKey } from '@/features/trade/model/model';
 import { advance } from '@/features/trade/model/moves';
 import { heroPlan } from '@/features/trade/model/plan';
 import { GOOD, HERO, piece, realWorld, store, synthWorld } from './helpers';
@@ -122,7 +123,7 @@ describe('C. кандидаты', () => {
       expect(ids(c, 'weapon')).toContain(open.id);
       expect(ids(c, 'weapon')).not.toContain(foreign.id);
     });
-    it('вещь после «Не брать»', () => {
+    it('a slot kept as it was («Оставить как было»): nothing else in it', () => {
       const nw = piece('helmet', 'Speed');
       const st = store({
         [HERO.rin]: { pool: [piece('gloves', 'Life')] },
@@ -130,7 +131,7 @@ describe('C. кандидаты', () => {
       });
       const w = realWorld(st);
       expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).toContain(nw.id);
-      expect(ids(candidates(w, { to: HERO.rin, skip: new Set([skipKey(nw.id, HERO.rin)]) }), 'helmet')).not.toContain(nw.id);
+      expect(ids(candidates(w, { to: HERO.rin, frozen: new Set([slotKey(HERO.rin, 'helmet')]) }), 'helmet')).not.toContain(nw.id);
     });
   });
 
@@ -156,7 +157,7 @@ describe('C. кандидаты', () => {
     });
   });
 
-  it('C7: «Не брать» для Рин не действует на Карен и на свою надетую вещь Рин', () => {
+  it('C7: Rin\'s frozen helmet slot does not touch Karen, nor Rin\'s other slots; nobody takes a frozen slot\'s piece', () => {
     const v = piece('helmet', 'Speed'), own = piece('gloves', 'Speed');
     const st = store({
       [HERO.rin]: { pool: [own], worn: [own] },
@@ -164,11 +165,12 @@ describe('C. кандидаты', () => {
       [HERO.karen]: { pool: [piece('armor', 'Life')] },
     });
     const w = realWorld(st);
-    const skip = new Set([skipKey(v.id, HERO.rin), skipKey(own.id, HERO.rin)]);
+    const frozen = new Set([slotKey(HERO.rin, 'helmet'), slotKey(HERO.noa, 'helmet')]);
     expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).toContain(v.id);
-    expect(ids(candidates(w, { to: HERO.rin, skip }), 'helmet')).not.toContain(v.id);
-    expect(ids(candidates(w, { to: HERO.karen, skip }), 'helmet')).toContain(v.id);
-    expect(ids(candidates(w, { to: HERO.rin, skip }), 'gloves')).toContain(own.id);
+    expect(ids(candidates(w, { to: HERO.rin, frozen: new Set([slotKey(HERO.rin, 'helmet')]) }), 'helmet')).not.toContain(v.id);
+    expect(ids(candidates(w, { to: HERO.karen, frozen: new Set([slotKey(HERO.rin, 'helmet')]) }), 'helmet')).toContain(v.id);
+    expect(ids(candidates(w, { to: HERO.karen, frozen }), 'helmet')).not.toContain(v.id); // Noa kept hers as it was
+    expect(ids(candidates(w, { to: HERO.rin, frozen }), 'gloves')).toContain(own.id);
   });
 
   it('C8: у героя нет вещей — берёт надетое других (не их запас), надетое переодетых в окне не трогает', () => {
@@ -195,7 +197,7 @@ describe('C. кандидаты', () => {
       });
       const w = realWorld(st);
       expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).toContain(kw.id);
-      const c = candidates(w, { to: HERO.rin, skip: new Set([skipKey(kw.id, HERO.rin), skipKey(own.id, HERO.rin)]) });
+      const c = candidates(w, { to: HERO.rin, frozen: new Set([slotKey(HERO.rin, 'helmet')]) });
       expect(bestKit(w.gauge(HERO.rin)!, c).slots.helmet?.item.id).toBe(own.id);
     });
     it('пустой слот остаётся пустым', () => {
@@ -206,7 +208,7 @@ describe('C. кандидаты', () => {
       });
       const w = realWorld(st);
       expect(ids(candidates(w, { to: HERO.rin }), 'helmet')).toContain(kw.id);
-      const c = candidates(w, { to: HERO.rin, skip: new Set([skipKey(kw.id, HERO.rin)]) });
+      const c = candidates(w, { to: HERO.rin, frozen: new Set([slotKey(HERO.rin, 'helmet')]) });
       expect(ids(c, 'helmet')).toEqual([]);
       expect(bestKit(w.gauge(HERO.rin)!, c).slots.helmet).toBeUndefined();
     });
@@ -222,7 +224,7 @@ describe('C. кандидаты', () => {
     });
     expect(ids(candidates(w, { to: 'N' }), 'helmet')).toEqual([]);
     const hp = heroPlan(w, { to: 'D' });
-    const w1 = advance(w, { plans: [{ to: 'D', plan: hp.plan }], fills: hp.holes.fills });
+    const w1 = advance(w, { plans: [{ to: 'D', plan: hp.plan }], });
     expect(w1.heroes.find((h) => h.id === 'D')?.worn.gloves).toBe('gN');
     expect(candidates(w1, { to: 'N' }).gloves?.find((c) => c.item.id === 'gD')?.cost).toBe(2);
     expect(ids(candidates(w1, { to: 'N' }), 'helmet')).toEqual([]);

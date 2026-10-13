@@ -10,7 +10,8 @@ import type { Profile } from '@/game/build/profile';
 import { pieceInput, type Piece } from '@/features/gear/model/gear';
 import { itemMains, subAllowed, subForms } from '@/game/item/mains';
 import { subWeights } from '@/game/build/score';
-import { gearList } from '@/game/build/builds';
+import { gearList, slotMains } from '@/game/build/builds';
+import { piecePoints } from '@/features/gear/layout';
 import { wearable } from '@/features/gear/model/vs';
 import type { Cand } from './model';
 
@@ -58,4 +59,23 @@ export function keyOfHole(P: Profile, slot: SlotId, breaksSet: string | null): S
   const chain = P.chain.subs.flat().map((t) => t.trim()).filter(Boolean).flatMap((t) => subForms(t).reverse()); // у ATK/DEF/HP % не ниже flat
   const sub = chain.find((k) => subAllowed(ctx.idx, as, k)) ?? null;
   return { grade: null, set: isArmor(slot) ? breaksSet : null, main, sub, sort: sub, t4: false };
+}
+
+// A piece entered for an empty slot in the walk (.x/0200-boss E2b Q4): its points for the hero (MODEL.md §1) and what is
+// off — the main is none of the mains the hero's builds recommend for this slot (a weapon or accessory), or none of its
+// substats counts for the hero (look — the first chain stats a substat of this slot can be)
+export interface Advice { pts: number; main: string[] | null; look: string[] | null }
+export function adviceOf(P: Profile, p: Piece): Advice {
+  const { ctx, c } = P;
+  let main: string[] | null = null;
+  if (!isArmor(p.slot)) {
+    const mains = [...new Set(c.builds.flatMap((b) => [...slotMains(b, p.slot as GearKind)]))];
+    if (mains.length && (!p.main || !mains.includes(p.main))) main = mains;
+  }
+  const W = subWeights(ctx, P.chain, c, itemMains(ctx.idx, pieceInput(p)));
+  const counts = Object.keys(p.lit).some((k) => (W.get(k)?.credit ?? 0) > 0);
+  const as = { slot: p.slot, grade: p.grade, setId: p.setId, itemKey: p.itemKey, main: p.main };
+  const chain = [...new Set(P.chain.subs.flat().map((t) => t.trim()).filter(Boolean).flatMap((t) => subForms(t).reverse()))];
+  const look = counts ? null : chain.filter((k) => subAllowed(ctx.idx, as, k)).slice(0, 3);
+  return { pts: piecePoints(P, p), main, look: look?.length ? look : null };
 }

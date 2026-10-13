@@ -81,7 +81,7 @@ function restoreV1(r: Partial<GearStoreV1>, idx: Index): GearStoreV1 {
 // перенос v1 → v3. Ростер и Core Fusion (features/gear/model/fusion normalizeStored)
 function migrateV1(v1: GearStoreV1, idx: Index, roster: readonly string[]): Loaded {
   // надетого, закрепления, N, звёзд, эффа и уровня в v1 нет: такие поля (не из v1) не переносим — их никто не проверял
-  const { builds, v: _, worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, lv: _l, ...rest } = withoutLegacy(v1);
+  const { builds, v: _, worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, lv: _l, park: _k, ...rest } = withoutLegacy(v1);
   const pools: Record<string, string[]> = {};
   for (const k of Object.keys(builds).sort()) {
     // ключ v1 — «персонаж/билд»; без «/» весь ключ — персонаж (indexOf −1 обрезал бы у id последнюю цифру)
@@ -135,6 +135,9 @@ const restoreEff = (raw: unknown): Record<string, EffCal> =>
 const restoreLevel = (raw: unknown): Record<string, 100 | 120> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, 100 | 120] => e[1] === 100 || e[1] === 120));
 
+// parked pieces (MODEL.md §5): piece ids, strings only, no repeats; a piece in no pool or worn — gc (syncWorn) drops it
+const restorePark = (raw: unknown): string[] => [...new Set((Array.isArray(raw) ? raw : []).filter((id): id is string => typeof id === 'string'))];
+
 // v2 и v3: пулы — массивы строк, id только существующих вещей, без повторов; надетое и закрепление — restoreWorn /
 // restorePin; поля прежней модели (LEGACY) у v2 — снимаем
 function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
@@ -145,13 +148,13 @@ function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
     if (ids.length) pools[id] = ids;
   }
   const worn = restoreWorn(r.worn), pin = restorePin(r.pin), crit = restoreCrit(r.crit), stars = restoreStars(r.stars);
-  const eff = restoreEff(r.eff), lv = restoreLevel(r.lv);
-  const { worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, lv: _l, ...rest } = withoutLegacy(r);
+  const eff = restoreEff(r.eff), lv = restoreLevel(r.lv), park = restorePark(r.park);
+  const { worn: _w, pin: _n, crit: _c, stars: _s, eff: _e, lv: _l, park: _k, ...rest } = withoutLegacy(r);
   return gc({
     ...rest, v: 3, seq: seqOf(r, pieces), pieces, pools,
     ...(Object.keys(worn).length ? { worn } : {}), ...(Object.keys(pin).length ? { pin } : {}),
     ...(Object.keys(crit).length ? { crit } : {}), ...(Object.keys(stars).length ? { stars } : {}),
-    ...(Object.keys(eff).length ? { eff } : {}), ...(Object.keys(lv).length ? { lv } : {}),
+    ...(Object.keys(eff).length ? { eff } : {}), ...(Object.keys(lv).length ? { lv } : {}), ...(park.length ? { park } : {}),
   });
 }
 

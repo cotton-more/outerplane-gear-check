@@ -1,5 +1,5 @@
 /* «Обмен вещами» (features/trade): шторка, план (обмен для команды — с «Команды», .x/0200-boss E2). Телефон 280–420 px — основной размер. */
-.drawer.trade, .drawer.trade-free { max-width: 560px; }
+.drawer.trade, .drawer.trade-entry { max-width: 560px; }
 .trade-b { display: grid; gap: 10px; }
 .trade-q { margin: 0 0 6px; font-weight: 600; font-size: 14px; }
 .pick-q { width: 100%; min-height: 40px; margin: 0 0 8px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--surface); color: var(--ink); font: 15px var(--font-body); }
@@ -22,13 +22,12 @@
 .trade-session .btn { flex: none; }
 .trade-busy { margin: 0; display: flex; align-items: center; gap: 12px; font-weight: 600; }
 
-/* план */
+/* план — обход (.x/0200-boss E2b): шаг — круглая галочка и сам шаг */
 .tplan { display: grid; gap: 10px; font-size: 12.5px; }
 .tplan .bgear-row .ico, .tplan .bgear-row img { width: 18px; height: 18px; }
 .tplan .bgear-n { font-size: 12.5px; }
 .tplan .bgear-t .tok { font-size: 10.5px; padding: 1px 4px; }
 .tplan .bgear-t .tok i { min-width: 12px; padding: 0 2px; }
-.tskip { padding: 0; font-size: 11.5px; }
 .tstale, .tnothing { margin: 0; padding: 8px 10px; border-radius: var(--radius-s); background: var(--accent-soft); font-size: 13px; }
 .tnothing { font-weight: 600; }
 .tline { display: grid; gap: 6px; }
@@ -56,3 +55,48 @@
 .tpts.down { color: var(--junk); }
 .tsrc { grid-column: 2 / 4; font-size: 11px; color: var(--ink-3); }
 .tplan .bgear-t .tok.sort { box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* the walk (.x/0200-boss E2b, mockups approved 2026-10-13): a step is a card with a round tick on the left; done — dimmed,
+   the tick stays at full strength; a lock, an empty slot and a declined step — dashed, no fill */
+.tsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tstep { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 9px 7px 7px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.tstep .bgear-row { padding: 0; border: 0; border-radius: 0; background: none; }
+.tstep.done .tstep-b { opacity: .55; }
+.tlock, .thole, .tdecl { border-style: dashed; background: none; }
+.tlock .tstep-h { color: var(--temp); }
+.tdecl .tstep-h { color: var(--ink-3); }
+.ttick { position: relative; width: 26px; height: 26px; margin-top: 1px; padding: 0; border-radius: 50%; border: 2px solid var(--line-2); background: var(--surface); display: grid; place-items: center; color: transparent; }
+.ttick .ico { width: 15px; height: 15px; }
+.ttick.on { border-color: var(--keep); background: var(--keep); color: var(--surface); }
+.ttick.off { cursor: default; }
+.ttick.off:disabled { opacity: 1; }
+.tdecl .ttick { border-color: var(--ink-3); background: var(--ink-3); color: var(--surface); }
+.ttick.open { border-style: dashed; background: none; }
+.tstep-b { display: grid; gap: 3px; min-width: 0; }
+.tstep-r { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 8px; }
+.tstep-h { margin: 0; display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 700; font-size: 13px; line-height: 1.3; }
+.tstep-h .ico, .tstep-h img { width: 16px; height: 16px; flex: none; }
+.tstep-s { margin: 0; font-size: 12px; color: var(--ink-3); }
+.tstep-a { margin: 0; text-align: right; }
+.tsub { color: var(--ink-3); font-weight: 600; }
+.tkeep, .tundo { padding: 2px 0; font-size: 12px; }
+.tundo { display: inline-flex; align-items: center; gap: 3px; }
+.tundo .ico { width: 13px; height: 13px; }
+.tkey { font-size: 12px; color: var(--ink-2); }
+/* «Ввести» / «Оставить»: two pills in the app's look — «Ввести» in the stars' gold (memory: pretty controls) */
+.tpair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 3px; }
+.tpill { min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); font-weight: 700; font-size: 13px; }
+.tpill.go { border-color: var(--star-on); color: var(--surface); background: linear-gradient(180deg, color-mix(in srgb, var(--star-on) 78%, #fff), var(--star-on)); box-shadow: 0 2px 8px color-mix(in srgb, var(--star-on) 35%, transparent); }
+.tadv { margin: 0; font-size: 12px; font-weight: 600; color: var(--temp); }
+.tnote { margin: 0; padding: 6px 10px; border-radius: var(--radius-s); background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 600; }
+.tend-h { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.tend-h small { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12px; color: var(--ink-3); }
+.tdone.wait { background: var(--surface-3); border-color: var(--surface-3); color: var(--ink-3); cursor: default; }
+.tdone b { font: 700 12.5px var(--font-mono); }
+/* the entry window: the form, its live line, the buttons */
+.tentry { padding: 0; }
+.tlive { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--keep-soft); font-size: 13px; font-weight: 600; }
+.tlive.warn { background: var(--temp-soft); color: var(--temp); }
+.tlive.wait { background: var(--surface-2); color: var(--ink-3); }
+.tlive .tpts { font-size: 12.5px; }
+.tentry .tact { bottom: -14px; }

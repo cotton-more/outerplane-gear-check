@@ -1,7 +1,7 @@
 // Пул экипировки, операции с пулом — «Надеть», «Убрать», «Вернуть». Что держит пул — info.ts.
 import type { Char, SlotId } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import { EMPTY_GEAR, gc, isWorn, newPiece, syncWorn, today, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
+import { activePieces, EMPTY_GEAR, gc, isWorn, newPiece, syncWorn, today, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { ItemInput } from '@/game/item/item';
 import type { PoolStore } from './base';
 import { profileFor } from '@/game/build/profile';
@@ -18,7 +18,8 @@ export interface WearResult { st: GearStore; id: string; slot: SlotId; wasWorn: 
 // слота — «Заменить», других — строка «Лишнее убрано»). Отметок «Надеть» не ставит (Р19 ушло, В10)
 export interface PutResult extends WearResult { piece: Piece }
 
-const poolPieces = (st: GearStore, charId: string) => (st.pools[charId] ?? []).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
+// the hero's pool as «Надеть» judges it: parked pieces left out (MODEL.md §5) — never removed by it, never the bar
+const poolPieces = (st: GearStore, charId: string, but?: string) => activePieces(st, charId, but);
 // надеть id на героя в слот (null — снять): пустое надетое героя и пустое поле не храним, порядок ключей прежний
 function setWorn(st: GearStore, charId: string, slot: SlotId, id: string | null): GearStore {
   const { [slot]: _, ...rest } = st.worn?.[charId] ?? {};
@@ -123,7 +124,7 @@ export function wearFromPool(ctx: Ctx, st: GearStore, charId: string, id: string
   // убыть может только прежняя надетая её слота — если пул её больше не держит (features/gear/pool/info)
   const P = c ? profileFor(ctx, c, st.pin?.[charId], st.crit?.[charId]) : null;
   const on = new Set([...Object.values({ ...st.worn?.[charId], [p.slot]: id })].filter((x): x is string => !!x));
-  const gone = P && old && !poolInfo(P, poolPieces(st, charId), on).why.has(old) ? old : null;
+  const gone = P && old && !poolInfo(P, poolPieces(st, charId, id), on).why.has(old) ? old : null;
   const was = st.pools[charId];
   const removed = gone ? [st.pieces[gone]] : [];
   const next = gc(setWorn({ ...st, pools: { ...st.pools, [charId]: was.filter((x) => x !== gone) } }, charId, p.slot, id));

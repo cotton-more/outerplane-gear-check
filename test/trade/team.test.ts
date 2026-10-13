@@ -2,10 +2,9 @@
 // свой заказ — stat-sets TESTS T7.6. H6, H9 (применение) — в тестах применения; H10 — отдельно.
 import { describe, expect, it } from 'vitest';
 import { moveStep } from '@/features/trade/model/apply';
-import { skipKey } from '@/features/trade/model/cands';
 import { keyOf } from '@/features/trade/model/kit';
 import { heroPlan } from '@/features/trade/model/plan';
-import type { Cand, World } from '@/features/trade/model/model';
+import { slotKey, type Cand, type World } from '@/features/trade/model/model';
 import { runTeam, teamOk, teamPlan, type TeamPlan } from '@/features/trade/model/team';
 import { synthWorld, type SynthHero } from './helpers';
 
@@ -27,7 +26,7 @@ const got = (tp: TeamPlan, id: string) => {
   const was = member(tp, id).before.slots;
   return Object.fromEntries(Object.entries(kitOf(tp, id)).filter(([s, x]) => was[s as keyof typeof was]?.item.id !== x));
 };
-const run = (w: World, members: string[], extra: { skip?: ReadonlySet<string> } = {}): TeamPlan => {
+const run = (w: World, members: string[], extra: { frozen?: ReadonlySet<string> } = {}): TeamPlan => {
   const tp = teamPlan(w, { team: team(...members), ...extra });
   expect(tp).not.toBeNull();
   return tp!;
@@ -109,14 +108,14 @@ describe('H. команда', () => {
     expect(kitOf(tp, 'D')).toEqual({ gloves: 'gN', helmet: 'hN' });
   });
 
-  it('H7: «Не брать» у члена пересчитывает весь план', () => {
+  it('H7: «Оставить как было» у члена пересчитывает весь план', () => {
     const w = mk({ w: { slot: 'weapon' } }, {
       R: { value: { w: 10 } },
       K: { value: { w: 5 } },
       O: { worn: { weapon: 'w' } },
     });
     expect(got(run(w, ['R', 'K']), 'R')).toEqual({ weapon: 'w' });
-    const tp = run(w, ['R', 'K'], { skip: new Set([skipKey('w', 'R')]) });
+    const tp = run(w, ['R', 'K'], { frozen: new Set([slotKey('R', 'weapon')]) });
     expect(got(tp, 'R')).toEqual({});
     expect(got(tp, 'K')).toEqual({ weapon: 'w' });
   });
@@ -165,7 +164,7 @@ describe('H. команда', () => {
         const lockedW = { ...w, heroes: w.heroes.map((h) => (done.includes(h.id) ? { ...h, locked: true } : h)) };
         const hp = heroPlan(lockedW, { to: order[i], open: new Set(ahead) });
         const p = { pools: Object.fromEntries(w.heroes.map((h) => [h.id, [...h.pool]])), worn: Object.fromEntries(w.heroes.map((h) => [h.id, { ...h.worn }])) };
-        moveStep(p, { plans: [{ to: order[i], plan: hp.plan }], fills: hp.holes.fills }, (id) => w.items[id]?.code ?? null);
+        moveStep(p, { plans: [{ to: order[i], plan: hp.plan }] }, (id) => w.items[id]?.code ?? null);
         const ids = new Set([...w.heroes.map((h) => h.id), ...Object.keys(p.pools)]);
         w = { ...w, heroes: [...ids].filter((id) => p.pools[id]?.length).map((id, rank) => ({ ...(w.heroes.find((h) => h.id === id) ?? { id, rank, locked: false }), pool: p.pools[id], worn: p.worn[id] ?? {} })) };
       }

@@ -1,16 +1,15 @@
-// План героя целиком (R6, R8 — MODEL.md §10): кандидаты → порог → дыры. Честная строка заказа набора
+// План героя целиком (R6, R8 — MODEL.md §10): кандидаты → порог (the end — replacements, parking, holes — is ends.ts). Честная строка заказа набора
 // (MODEL.md §7 item 3): часть, которая не собралась, потому что её сета нет в нужном числе слотов.
 import type { SlotId } from '@/game/data/types';
 import { candidates, type CandInput } from './cands';
 import { planFor, type Plan } from './gate';
-import { fillHoles, type HolesResult } from './holes';
 import { ARMOR_SLOTS, type Cand, type Cands, type Gauge, type Part, type World } from './model';
 
-export interface PlanInput { to: string; skip?: ReadonlySet<string>; open?: ReadonlySet<string> }
+export interface PlanInput { to: string; frozen?: ReadonlySet<string>; open?: ReadonlySet<string> }
 // missing — части заказа, которым не хватает вещей: slots — слоты брони, где вещи этого сета нет ни у кого
 // t4 — вещи части есть по слотам, но ниже T4, а части нужен T4 (ревью этапа 10, В2): «не собирается: нужен T4»
 export interface Missing { part: Part; slots: SlotId[]; t4?: boolean }
-export interface HeroPlan { plan: Plan; holes: HolesResult; missing: Missing[] }
+export interface HeroPlan { plan: Plan; missing: Missing[] }
 
 // часть включена: у сета в комплекте нужное число половин (×2 — одна, ×4 — две)
 export function partOn(g: Gauge, slots: Partial<Record<SlotId, Cand>>, p: Part): boolean {
@@ -33,10 +32,10 @@ export function missingOf(g: Gauge, cands: Cands, slots: Partial<Record<SlotId, 
   return out;
 }
 
-// the plan alone — candidates and the threshold, no holes: heroPlan and the picker's gains (turn.ts) count it the same way
+// the plan alone — candidates and the threshold: heroPlan and the picker's gains (turn.ts) count it the same way
 export function planOf(w: World, inp: PlanInput): { plan: Plan; cands: Cands; g: Gauge | null } {
   const g = w.gauge(inp.to);
-  const cin: CandInput = { to: inp.to, skip: inp.skip, open: inp.open };
+  const cin: CandInput = { to: inp.to, frozen: inp.frozen, open: inp.open };
   const cands = g ? candidates(w, cin) : {};
   const plan = g ? planFor(g, cands) : { kit: { slots: {}, key: null as never }, changes: [], losses: [] };
   return { plan, cands, g };
@@ -44,5 +43,5 @@ export function planOf(w: World, inp: PlanInput): { plan: Plan; cands: Cands; g:
 
 export function heroPlan(w: World, inp: PlanInput): HeroPlan {
   const { plan, cands, g } = planOf(w, inp);
-  return { plan, holes: fillHoles(w, { to: inp.to, plan }), missing: g ? missingOf(g, cands, plan.kit.slots) : [] };
+  return { plan, missing: g ? missingOf(g, cands, plan.kit.slots) : [] };
 }

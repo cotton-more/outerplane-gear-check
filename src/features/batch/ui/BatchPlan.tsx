@@ -117,7 +117,7 @@ export function BatchPlan({ ctx, plan, onSkip, onTwin, onWalk }: {
               <span className="bfate">{l.fate.kind === 'reserve'
                 ? withWait(fateText(t, l.fate, plan, ctx, l.input), l.fate.c, t, ctx, l.input)
                 : withHero(fateText(t, l.fate, plan, ctx, l.input), heroIn(plan, l.fate))}</span>
-              {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.trade.skip}</button>}
+              {hero && <button type="button" className="linkbtn small tskip hit" onClick={() => onSkip(l.id, hero.id)}>{t.batch.skip}</button>}
               {l.fate.kind === 'same' && !l.off && <button type="button" className="linkbtn small btwin hit" onClick={() => onTwin(l.n)}>{t.fit.twin(l.input.slot)}</button>}
             </li>
           );
