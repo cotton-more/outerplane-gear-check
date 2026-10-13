@@ -804,7 +804,6 @@ export const ru = {
     fromInventory: 'в инвентаре',
     skip: 'Не брать',
     search: 'Искать:',
-    anyGrade: '6★',
     sortTitle: 'Secondary Stat — сортировка по нему',
     keySub: (sub: string) => `${sub} ↓`, // Secondary и сортировка по нему
     emptySlot: (slot: string) => `${cap(NOM[slot] ?? slot)}: пусто`,
