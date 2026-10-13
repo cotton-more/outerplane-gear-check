@@ -39,7 +39,7 @@ can be turned off or shown again. Like the tutorial, they only appear by themsel
 ## "More"
 
 Everything that isn't the form and the verdict is in one sheet, **More**: ☰ on the bottom bar on a phone, "⋯" next to the
-tabs on a computer. From top to bottom: on a phone, "Characters", "To dress · N" and "Team trade"; a line "A new
+tabs on a computer. From top to bottom: on a phone, "Characters", "To dress · N" and "Team"; a line "A new
 version is ready · Update" or "Install as an app" when there is one; "Enter code", "Find a piece", "Help", "Tutorial"; **Settings** —
 "only my characters", "Evaluation" (Progression / Endgame, level and Quirks; the row shows the current ones),
 language and icons (from the game or own outlines; without a choice — from the game); **Data** — "Backup" (the roster
