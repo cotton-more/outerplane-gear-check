@@ -319,6 +319,27 @@ describe('J. обмен вещами', () => {
     expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
   });
 
+  // the EFF goal (.x/0200-boss E3): with a boss the members who need EFF get «EFF ≈ a → b · p%» on their line; the walk is
+  // the boss's and the stage's (owner Q7: new inputs — a new calculation)
+  it('E3: Meteos 13 — Akari takes Aer\'s EFF gloves, her line shows the EFF and the chance; the walk names the boss and stage', async () => {
+    const own = P('g1', 'gloves', speed, { SPD: 4, ATK: 2 }), effy = P('g2', 'gloves', speed, { SPD: 4, EFF: 6 });
+    const g = G([own, effy], { [akari.id]: ['g1'], [aer.id]: ['g2'] }, { worn: { [akari.id]: { gloves: 'g1' }, [aer.id]: { gloves: 'g2' } } });
+    await mount({ roster: [akari.id, ais.id, aer.id], gear: g, boss: { v: 1, boss: 'sr:meteos', stage: { 'sr:meteos': 12 }, teams: { 'sr:meteos': [akari.id, ais.id, null, null] } } }, { charId: null });
+    await openMore();
+    await click(moreButton('Team'));
+    await click(byText('#view-team .tm-go', 'Pick gear'));
+    await planReady();
+    const line = $$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Akari'))!;
+    const eff = line.querySelector('.teff')!;
+    expect(eff.textContent).toMatch(/^EFF ≈ \d+ → \d+ · \d+%$/);
+    expect(eff.getAttribute('aria-label')).toMatch(/^EFF after the trade \d+ vs RES 288: the debuff lands \d+% of the time$/);
+    expect(line.querySelector('.tsrc')?.textContent).toBe('on Aer');
+    // Ais needs no EFF — no part
+    expect($$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Ais'))?.querySelector('.teff') ?? null).toBeNull();
+    await click(line.querySelector('button.ttick') as HTMLElement);
+    expect(JSON.parse(localStorage.getItem('ogc.trade')!).target).toMatch(new RegExp(`^team:${akari.id},${ais.id}\\|sr:meteos@12\\|${akari.id}\\*\\d,${ais.id}\\*\\d$`));
+  });
+
   // the walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b): ticks on the device, «Cancel», parking, the entry window, the team
   describe('the walk', () => {
     const open = async () => { await mount({ gear: gear(), roster: ROSTER }); await click(byText('.cd-acts button', 'Trade')); };

@@ -4,6 +4,7 @@
 import type { Grade, SlotId } from '@/game/data/types';
 import type { Subs } from '@/game/item/subs';
 import { THRESHOLD, type Milli } from '@/features/gear/model/vs';
+import type { GoalGauge } from './goal';
 
 // порядок слотов в ключе сравнения и в пороге (R6.2): оружие, аксессуар, шлем, броня, перчатки, ботинки
 export const SLOT_ORDER: readonly SlotId[] = ['weapon', 'accessory', 'helmet', 'armor', 'gloves', 'shoes'];
@@ -47,6 +48,7 @@ export interface Gauge {
   value(itemId: string): Worth | null; // null — герой не может носить (класс)
   bonus(set: string, n: number, n4: number): SetGain;
   crit?: CritGauge;                   // the crit soft cap (MODEL.md §12 item 6); no — the hero has no CHC in the chain
+  goal?: GoalGauge;                   // the EFF goal against a boss (MODEL.md §13; .x/0200-boss E3); no — no boss or the hero needs no EFF
 }
 // What crit costs a kit (MODEL.md §12 item 6): the loss of the CHC substats and crit set rows on the hero's curve for the kit's
 // items together; an item's facts for pruning: CHC weight on it, CHC segments, CHC from its main, its points without CHC
@@ -100,9 +102,10 @@ export type Cands = Partial<Record<SlotId, readonly Cand[]>>;
 
 // rank — Σ рангов оружия и аксессуара; total — V; pts — очки вещей без сетов; halves / eff — включённые половины (все и
 // сетов-эффектов); crit — the crit loss already subtracted from total (MODEL.md §12 item 6; shown on the plan line, not
-// compared); дальше — ничьи R6.1
+// compared); goal — the EFF goal's term already subtracted from total (MODEL.md §13; not printed in the gain, not compared;
+// none — no goal); дальше — ничьи R6.1
 export interface KitKey {
-  rank: number; total: Milli; pts: Milli; halves: number; eff: number; filled: number; crit: Milli;
+  rank: number; total: Milli; pts: Milli; halves: number; eff: number; filled: number; crit: Milli; goal?: Milli;
   legends: number;          // slots held by a Legendary that nobody else wears (cost < 3): at equal V it wins (Q7)
   cost: number; loss: Milli; ranks: number[]; ords: number[];
 }

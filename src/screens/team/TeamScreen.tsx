@@ -14,6 +14,7 @@
 // The team trade (.x/0200-boss E2, owner 2026-10-13): under each spot the hero's build (OrderPill; kept with the team in
 // 'ogc.boss' — orders; a pin wins), «Подобрать вещи» → TeamTradeSheet for the 2–4 members with builds (one — the one-hero
 // trade, App), a hero without builds stays out with a line. Worn gear is never kept with the team: the store as it is now.
+// With a boss the trade also raises the EFF of members who need it (.x/0200-boss E3): goals from the boss's RES and the spots.
 import { useMemo, useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
@@ -179,6 +180,14 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
     return <OrderPill ctx={ctx} combo={combo} pinned={!!pin} label={label} onClick={() => setOrderFor(id)} />;
   };
   const onTrade = () => (withBuilds.length === 1 ? onHeroTrade?.(withBuilds[0]) : setTrading(true));
+  // with a boss the team trade raises the EFF of members who need it to RES + 1 (.x/0200-boss E3, MODEL.md §13): in the
+  // timeline's number — the spot's ★, the battle bonus (owner Q2); the key names every input, so another boss, stage, ★ or
+  // team is a new calculation and a new walk (owner Q7)
+  const goals = Object.fromEntries(facts && boss ? members.filter((m) => idx.CHAR[m.id]?.eff?.d && withBuilds.includes(m.id)).map((m) => {
+    const c = idx.CHAR[m.id];
+    return [m.id, { t: facts.res + 1, star: m.star, bonus: battleBonus(c, m.star, ctx.settings.quirks, boss.element, mates) }];
+  }) : []);
+  const goalKey = facts && boss ? `${boss.key}@${stage}|${members.map((m) => `${m.id}*${m.star}`).join(',')}` : '';
   const orderC = orderFor ? idx.CHAR[orderFor] : undefined;
 
   const pickable = mine.filter((id) => !members.some((m) => m.id === id))
@@ -226,7 +235,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
           onChoose={(o) => { setOrder(orderC.id, o); setOrderFor(null); }} />
       )}
       {trading && canTrade && (
-        <TeamTradeSheet ctx={ctx} gear={gear} roster={roster} team={withBuilds} orders={orders} onOrder={setOrder}
+        <TeamTradeSheet ctx={ctx} gear={gear} roster={roster} team={withBuilds} orders={orders} goals={goals} goalKey={goalKey} onOrder={setOrder}
           onApplied={(text, undo) => onApplied?.(text, undo)} onClose={() => setTrading(false)} />
       )}
       {choosing && <GuideChoice teams={guideTeams} own={own} onPick={fill} onClose={() => setChoosing(false)} />}
