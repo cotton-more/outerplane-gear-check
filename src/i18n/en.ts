@@ -731,7 +731,7 @@ export const en: Texts = {
     stale: 'Gear changed — plan recalculated. Check and tap "Done" again.',
     savedHero: (name: string) => `Trade for ${name} saved.`,
     savedTeam: 'Team trade saved.',
-    order: (order: string) => `Order: ${order} ▾`,
+    order: (order: string) => `Order: ${order}`,
     stats: (a: number, b: number) => `Stats: ${dec(a)} → ${dec(b)} pts`,
     missing: (part: string, set: string, slots: string) => `${part} won't come together: no ${set} ${slots}.`,
     needT4: (part: string) => `${part} won't come together: needs T4.`,

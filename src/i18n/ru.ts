@@ -846,7 +846,7 @@ export const ru = {
     stale: 'Вещи поменялись — план пересчитан. Проверь и нажми «Сделал» ещё раз.',
     savedHero: (name: string) => `Обмен для ${name} сохранён.`,
     savedTeam: 'Обмен команды сохранён.',
-    order: (order: string) => `Заказ: ${order} ▾`,
+    order: (order: string) => `Заказ: ${order}`,
     stats: (a: number, b: number) => `Статы: ${dec(a)} → ${dec(b)} очк.`,
     missing: (part: string, set: string, slots: string) => `${part} не собирается: нет ${set} — ${slots}.`,
     needT4: (part: string) => `${part} не собирается: нужен T4.`,
