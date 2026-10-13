@@ -18,7 +18,7 @@ import { slotKey, type World } from '../model/model';
 import { targetOf } from '../model/stored';
 import { runTeam, type TeamPlan } from '../model/team';
 import { STATS, worldOf } from '../model/world';
-import type { EffGoal } from '../model/goal';
+import type { EffGoal, SpdGoal } from '../model/goal';
 import { Sheet } from '@/shared/ui/Sheet';
 import { TradeWalk } from './TradeWalk';
 import { EntrySheet } from './EntrySheet';
@@ -34,11 +34,12 @@ export function pinnedOrder(ctx: Ctx, st: GearStore, id: string, t: ReturnType<t
   return p ? t.card.pinned(comboText(ctx.idx, p.combo)) : null;
 }
 
-// goals — a boss on «Команда»: member → the EFF goal (MODEL.md §13; .x/0200-boss E3); goalKey names its inputs (boss, stage,
+// goals — a boss on «Команда»: member → the EFF goal (MODEL.md §13; .x/0200-boss E3), spdGoals — → the SPD goal (E4); goalKey
+// names its inputs (boss, stage,
 // members and their ★) — the world is counted again and the walk is another one when it changes (owner Q7)
-export function TeamTradeSheet({ ctx, gear, roster, team, orders, goals, goalKey = '', onOrder, onApplied, onClose }: {
+export function TeamTradeSheet({ ctx, gear, roster, team, orders, goals, spdGoals, goalKey = '', onOrder, onApplied, onClose }: {
   ctx: Ctx; gear: GearApi; roster: readonly string[]; team: readonly string[]; orders: Readonly<Record<string, string>>;
-  goals?: Readonly<Record<string, EffGoal>>; goalKey?: string;
+  goals?: Readonly<Record<string, EffGoal>>; spdGoals?: Readonly<Record<string, SpdGoal>>; goalKey?: string;
   onOrder: (id: string, order: string) => void; onApplied: (text: string, undo: Undo) => void; onClose: () => void;
 }) {
   const t = useT();
@@ -46,7 +47,7 @@ export function TeamTradeSheet({ ctx, gear, roster, team, orders, goals, goalKey
   const st = gear.store;
   const [stale, setStale] = useState(false);
   const [orderFor, setOrderFor] = useState<string | null>(null);
-  const world = useMemo(() => worldOf(ctx, st, roster, { orders, goals }), [ctx, st, roster, orders, goalKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const world = useMemo(() => worldOf(ctx, st, roster, { orders, goals, spd: spdGoals }), [ctx, st, roster, orders, goalKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const stamp = useMemo(() => stampOf(st), [st]);
   const teamKey = team.join();
   const walk = useWalk(targetOf(team, true) + (goalKey ? `|${goalKey}` : ''));

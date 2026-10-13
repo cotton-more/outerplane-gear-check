@@ -336,17 +336,19 @@ describe('Turn vs the boss on «Команда»', () => {
     expect($('#view-team .boss-turn .bt-foot')?.textContent).toContain('the chance the boss doesn’t resist');
   });
 
-  it('a tap expands a row: EFF short of RES + 1, the SPD that surely moves first; a hero without EFF — SPD only', async () => {
+  it('a tap expands a row: the SPD that surely moves first, why, EFF short of RES + 1; a hero without EFF — SPD only', async () => {
     await mount();
     await meteos();
     await click(row('Tamara').querySelector('.bt-row'));
     expect(row('Tamara').querySelector('.bt-row')?.getAttribute('aria-expanded')).toBe('true');
     expect([...row('Tamara').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
-      'EFF ≈\u2009181 — 108 short of RES + 1.', 'SPD 154 — surely before the boss.']);
+      'SPD 154 — surely before the boss.', 'EFF ≈\u2009181 — 108 short of RES + 1.']);
     expect(row('Tamara').querySelector('.bt-eff')?.textContent).toBe('EE gives EFF ×2 — type EFF from the game ▸');
     await click(row('Veronica').querySelector('.bt-row'));
     expect([...row('Veronica').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
-      `SPD 106 — to surely move before the boss: ${Math.floor((109 * 100) / 95) + 1} (+${Math.floor((109 * 100) / 95) + 1 - 106}).`]);
+      `SPD 106 — to surely move before the boss: ${Math.floor((109 * 100) / 95) + 1} (+${Math.floor((109 * 100) / 95) + 1 - 106}).`,
+      // E4: why — her S2 shield; her S1 taunt goes, Meteos is immune to it
+      'Moving before the boss matters: S2 shields the team.']);
     expect(row('Veronica').querySelector('.bt-eff')).toBeNull();
   });
 

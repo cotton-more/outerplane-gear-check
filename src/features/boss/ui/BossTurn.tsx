@@ -5,8 +5,12 @@
 // EFF (rule R), EFF in battle and the chance the debuff lands (game/stat/eff landChance; ✓ above RES). A tap expands the
 // row: EFF short of RES + 1, the SPD that surely moves first, «Эфф из игры» → the EFF sheet (TeamScreen), with the EE hint
 // until the game's number is typed (Q3 detail 1). The boss — a red row in its place with SPD and RES.
+// E4 (owner 2026-10-13): SPD counts the allies' transcend bonus (Q6; «(+10 трансценд союзников)» in the expanded row); the
+// expanded row says SPD first, then — for a member whose turn-1 skill acts on the boss or shields the team — why moving first
+// matters and the SPD for it (Q1, Q7), and «не догнать» when even the fastest kit from the gear gives no chance (Q5); the
+// others get the state alone, no «нужно …».
 import { useState } from 'react';
-import type { Boss, Char } from '@/game/data/types';
+import type { Boss, Char, TurnReason } from '@/game/data/types';
 import { useIndex } from '@/game/data/IndexContext';
 import { ElementIcon, Icon, SetIcon, StatIcon } from '@/game/icons/Img';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -17,8 +21,10 @@ import { effX } from '@/features/worn/EffSheet';
 import type { WornEff } from '@/features/worn/wearing';
 import { timeline, type TurnRow } from '../model/turn';
 
-// a member: SPD the app knows; eff — null for a hero who doesn't need EFF; v — EFF in battle against this boss
-export interface TurnHero { c: Char; spd: number; eff: WornEff | null; v: number }
+// a member: SPD in the turn order (the app's count + bonus, the allies' transcend); why — the turn-1 reasons that work on this
+// boss (none — no reason to move first); reach — the most SPD a kit from the gear gives (+ bonus) when it gives no chance, else
+// null; eff — null for a hero who doesn't need EFF; v — EFF in battle against this boss
+export interface TurnHero { c: Char; spd: number; bonus: number; why: readonly TurnReason[]; reach: number | null; eff: WornEff | null; v: number }
 
 const pct = (p: number) => Math.min(99, Math.max(1, Math.round(p * 100))); // luck is never 0 or 100
 
@@ -35,6 +41,12 @@ export function BossTurn({ heroes, boss, spd, res, onEff }: {
   const luck = [...line.before, ...line.after].some((r) => r.turn.state === 'luck');
   const debuff = heroes.some((h) => h.eff);
 
+  const spdText = (h: TurnHero, turn: TurnRow<TurnHero>['turn']) => {
+    const s = t.boss.turnSpd(h.spd, h.bonus);
+    if (turn.state === 'first') return t.boss.turnSpdFirst(s);
+    if (!h.why.length) return turn.state === 'luck' ? t.boss.turnSpdLuckOther(s) : t.boss.turnSpdAfterOther(s);
+    return turn.state === 'luck' ? t.boss.turnSpdLuck(s, h.spd, turn.need) : t.boss.turnSpdAfter(s, h.spd, turn.need);
+  };
   const row = ({ hero: h, turn }: TurnRow<TurnHero>) => {
     const { c, eff, v } = h;
     const on = open.has(c.id);
@@ -63,8 +75,10 @@ export function BossTurn({ heroes, boss, spd, res, onEff }: {
         </button>
         {on && (
           <div className="bt-x">
+            <p>{spdText(h, turn)}</p>
+            {h.why.length > 0 && <p className="bt-why">{t.boss.turnWhy(h.why.slice(0, 2).map((r) => `${r.s.toUpperCase()} ${t.boss.turnReason[r.k]}`).join(', '))}</p>}
+            {h.reach !== null && <p className="bt-far">{t.boss.turnFar(h.reach)}</p>}
             {eff && <p>{v > res ? t.boss.turnEffOk(shown) : t.boss.turnEffShort(shown, res + 1 - v)}</p>}
-            <p>{turn.state === 'first' ? t.boss.turnSpdFirst(h.spd) : turn.state === 'luck' ? t.boss.turnSpdLuck(h.spd, turn.need) : t.boss.turnSpdAfter(h.spd, turn.need)}</p>
             {eff && (
               <button type="button" className="linkbtn bt-eff" onClick={() => onEff(c.id)}>
                 {ee ? t.boss.effHint(ee) : t.boss.turnEffOpen} <span aria-hidden="true">▸</span>

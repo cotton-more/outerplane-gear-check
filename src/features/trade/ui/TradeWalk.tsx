@@ -23,8 +23,9 @@ import type { Missing } from '@/features/trade/model/plan';
 import { lineGain, tenths, type HeroLine } from '@/features/trade/model/view';
 import type { Line, Walk } from '@/features/trade/model/walk';
 import { isArmor } from '@/game/data';
-import { Icon, SlotIcon, StatIcon } from '@/game/icons/Img';
+import { Icon, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
 import { landChance } from '@/game/stat/eff';
+import { turnOf } from '@/game/stat/turn';
 import { pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -55,6 +56,19 @@ function effPart(t: T, e: NonNullable<HeroLine['eff']>) {
   return (
     <span className="tline-s teff" aria-label={ok ? t.trade.effAriaOk(e.b, e.res) : t.trade.effAria(e.b, e.res, p)}>
       <span aria-hidden="true"><StatIcon stat="EFF" />{t.trade.effLine(e.approx, e.a, e.b)}{' '}
+        {ok ? <span className="ok">✓</span> : <>· <span className="lack">{p}%</span></>}</span>
+    </span>
+  );
+}
+
+// the SPD goal (.x/0200-boss E4 Q7): «Скорость 138 → 232 ✓» / «· 74%» — SPD in the turn order before and after and the
+// chance to move before the boss after the trade (BossTurn's number); its own row under the EFF row, the Speed Set's icon
+function spdPart(t: T, ctx: Ctx, s: NonNullable<HeroLine['spd']>) {
+  const tu = turnOf(s.b, s.boss, []), ok = tu.state === 'first', p = Math.round(tu.p * 100);
+  const speed = Object.values(ctx.idx.SET).find((x) => x.short === 'Speed');
+  return (
+    <span className="tline-s tspd" aria-label={ok ? t.trade.spdAriaOk(s.b) : t.trade.spdAria(s.b, p)}>
+      <span aria-hidden="true"><SetIcon set={speed} />{t.trade.spdLine(s.a, s.b)}{' '}
         {ok ? <span className="ok">✓</span> : <>· <span className="lack">{p}%</span></>}</span>
     </span>
   );
@@ -261,6 +275,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
                 </span>
               )}
               {l?.eff && l.eff.a !== l.eff.b && effPart(t, l.eff)}
+              {l?.spd && l.spd.a !== l.spd.b && spdPart(t, ctx, l.spd)}
               {sets.length > 0 && <span className="tline-s">{sets.join(', ')}</span>}
             </h4>
             {(missing[hero] ?? []).map((m) => (

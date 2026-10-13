@@ -20,6 +20,7 @@ export interface HeroLine {
   critBefore: Milli;        // the kit's crit loss (MODEL.md §12 item 6): «Лишний крит a → b» on the line (decision 14)
   critAfter: Milli;
   eff?: EffLine;            // a member with the EFF goal (MODEL.md §13): battle EFF before and after; none — no goal
+  spd?: SpdLine;            // a member with the SPD goal (E4): SPD in the turn order before and after; none — no goal
   on: Part[];               // половины сетов, которые включились: «S ×2» (1 половина) или «S ×4» (2)
   off: Part[];              // и выключились
   moves: Move[];
@@ -35,6 +36,9 @@ export interface Worth { d: Milli; passive: boolean }
 // «Эфф ≈ 184 → 222 · 93%» (.x/0200-boss E3 Q6): the game's battle EFF of the worn kit before and after, the boss's RES (the
 // target − 1), «≈» — no stat-screen EFF typed
 export interface EffLine { a: number; b: number; res: number; approx: boolean }
+// «Скорость 138 → 232 ✓» (.x/0200-boss E4 Q7): SPD in the turn order (+ the allies' transcend bonus) before and after, the
+// boss's SPD (the chance after)
+export interface SpdLine { a: number; b: number; boss: number }
 
 function worthOf(w0: World, hero: string, m: Move): Worth | null {
   const g = w0.gauge(hero);
@@ -76,13 +80,14 @@ export function linesOf(w0: World, w1: World, receivers: readonly string[], m: M
     const worn = after.get(hero)?.worn ?? {};
     // the gain stays plain stats (owner Q6): the goal's term is put back
     const plain = (k: ReturnType<typeof keyIn>) => (k ? k.total + (k.goal ?? 0) : 0);
-    const goal = w0.gauge(hero)?.goal;
+    const goal = w0.gauge(hero)?.goal, spd = w0.gauge(hero)?.spd;
     const ids = (w: World) => Object.values(w.heroes.find((h) => h.id === hero)?.worn ?? {}).filter((x): x is string => !!x);
     return {
       hero, receiver,
       before: plain(k0), after: plain(k1), ptsBefore: k0?.pts ?? 0, ptsAfter: k1?.pts ?? 0,
       critBefore: k0?.crit ?? 0, critAfter: k1?.crit ?? 0,
       ...(goal ? { eff: { a: goal.eff(ids(w0)), b: goal.eff(ids(w1)), res: goal.t - 1, approx: goal.approx } } : {}),
+      ...(spd ? { spd: { a: spd.spd(ids(w0)), b: spd.spd(ids(w1)), boss: spd.boss } } : {}),
       on: grown(b, a), off: grown(a, b),
       moves: m.moves.filter((x) => x.hero === hero),
       worth: Object.fromEntries(m.moves.filter((x) => x.hero === hero).flatMap((x) => {

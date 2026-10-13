@@ -14,7 +14,7 @@ import { mainsStat } from '@/game/stat/total';
 import { pieceBar } from '@/features/gear/pool/info';
 import { numOf } from '@/features/gear/pool/base';
 import { milli, wearable } from '@/features/gear/model/vs';
-import { goalGauge, type EffGoal } from './goal';
+import { goalGauge, spdGauge, type EffGoal, type SpdGoal } from './goal';
 import { codeOf, heldOf, type CritGauge, type Gauge, type Hero, type Item, type Worth, type World } from './model';
 
 // заказ «По статам»; набор — подпись связки (comboSig)
@@ -34,6 +34,7 @@ export interface WorldOpts {
   locked?: ReadonlySet<string>;               // переодетые в этом окне (MODEL.md §7 item 4)
   orders?: Readonly<Record<string, string>>;  // герой → заказ; нет — «По статам»
   goals?: Readonly<Record<string, EffGoal>>;  // a boss on «Команда»: member → the EFF goal (MODEL.md §13); only heroes who need EFF
+  spd?: Readonly<Record<string, SpdGoal>>;    // and → the SPD goal (E4): only members who should move before the boss and can
 }
 
 // the crit part of a gauge (MODEL.md §12 item 6): the same curve and C₀ as layoutValue, over the kit's pieces; Po — the order's
@@ -102,6 +103,8 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
     };
     const goal = c.eff?.d && o.goals?.[heroId] ? goalGauge(ctx, c, Pv, Po, effCal(st, heroId), o.goals[heroId], (id) => st.pieces[id]) : null;
     if (goal) g.goal = goal;
+    const spd = o.spd?.[heroId] ? spdGauge(ctx, c, Pv, o.spd[heroId], (id) => st.pieces[id]) : null;
+    if (spd) g.spd = spd;
     memo.set(heroId, g);
     return g;
   };

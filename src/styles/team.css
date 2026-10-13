@@ -123,6 +123,8 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .bt-b.lack { color: var(--temp); background: var(--temp-soft); }
 .bt-x { display: grid; gap: 4px; margin: 0 8px 8px 47px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-2); }
 .bt-x p { margin: 0; }
+.bt-x .bt-why { color: var(--ink); font-weight: 600; } /* why moving first matters (E4) */
+.bt-x .bt-far { color: var(--temp); font-weight: 600; }
 .bt-eff { justify-self: start; text-align: left; }
 .bt-foot { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }
 .bt-foot > img, .bt-foot > .ico { vertical-align: -2px; }

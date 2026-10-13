@@ -1,3 +1,4 @@
+// The goals of the boss team trade: EFF (E3) and SPD (E4, at the end).
 // The EFF goal of a debuffer in the boss team trade (.x/0200-boss E3; MODEL.md §13): a soft term inside V, like the crit
 // loss (MODEL.md §12 item 6). The member's battle EFF against the boss — the app's count × the typed ratio + what battle adds
 // at the spot's ★ (owner Q2, as «Ход против босса») — is held against the target RES + 1 (Q1, the debuff always lands):
@@ -17,11 +18,13 @@ import { MAX_LIT } from '@/game/item/subs';
 import { bonusRows } from '@/game/set/setBonus';
 import { setValue } from '@/game/set/setValue';
 import { effOf, effShown, inBattle, type EffCal } from '@/game/stat/eff';
+import { spdOf } from '@/game/stat/spd';
 import { pieceInput, type Piece } from '@/features/gear/model/gear';
 import { piecePoints } from '@/features/gear/layout';
 import { milli, type Milli } from '@/features/gear/model/vs';
 
 const SUB = 'EFF';
+const SPD = 'SPD';
 export const LAMBDA = 1; // points per missing EFF% segment (owner Q3)
 
 // the goal of one member: the target battle EFF (RES + 1), the spot's ★ and the battle bonus ‰ (game/stat/eff battleBonus)
@@ -31,7 +34,21 @@ export interface EffGoal { t: number; star: number; bonus: number }
 // its main lines, its points without the EFF segments
 export interface GoalFacts { w: number; n: number; flat: number; non: Milli }
 
-export interface GoalGauge {
+// What the kit search needs of a goal term (EFF or SPD): the shortfall split by slot and set (a − Σ b − Σ r, whole thousandths),
+// the term of a kit (loss) and a piece's facts for the dominance (kit.ts goalDominates). eff — EFF above the target loses its
+// points (Q3a); spd — SPD keeps its chain points above the target (E4 Q3), the term is the shortfall's penalty alone
+export interface GoalTerm {
+  kind: 'eff' | 'spd';
+  a: Milli;
+  b(itemId: string): Milli;
+  r(set: string, n: number, n4: number): Milli;
+  rMax: Milli;
+  loss(itemIds: readonly string[]): Milli;
+  facts(itemId: string): GoalFacts;
+}
+
+export interface GoalGauge extends GoalTerm {
+  kind: 'eff';
   t: number;
   approx: boolean;                         // no stat-screen EFF typed — the plan says «≈»
   eff(itemIds: readonly string[]): number; // the kit's battle EFF as the game counts it (floors) — the plan's number
@@ -127,6 +144,7 @@ export function goalGauge(ctx: Ctx, c: Char, Pv: Profile, Po: Profile, cal: EffC
   const base = mult * (e0.w + e0.own);
   const a = Math.round(per * (goal.t - base));
   return {
+    kind: 'eff',
     t: goal.t,
     approx: !cal,
     seg,
@@ -169,6 +187,85 @@ export function goalGauge(ctx: Ctx, c: Char, Pv: Profile, Po: Profile, cal: EffC
       }
       losses.set(k, (r = milli(loss)));
       return r;
+    },
+    facts(id) {
+      const p = pieceOf(id);
+      return p ? factsOf(p) : { w: 0, n: 0, flat: 0, non: 0 };
+    },
+  };
+}
+
+// The SPD goal of a member who should move before the boss (.x/0200-boss E4; MODEL.md §13): the target is the SPD that surely
+// moves first (Q2, the timeline's «нужно»), held against the kit's SPD + the team's transcend bonus (Q6, game/stat/spd
+// spdBonus); below it each missing SPD segment (3 SPD) costs λ = 1 point (Q3), above it SPD keeps its chain points — no surplus
+// step. The game's SPD is linear in the pieces: ⌊B × (1000 + Speed Set rate)/1000⌋ + 3 × segments + SPD mains, and the rate
+// comes from one set (only the Speed Set has SPD rows), so the shortfall splits by piece and by set exactly — whole SPD, 333
+// thousandths of a point each.
+export interface SpdGoal { t: number; boss: number; bonus: number }
+export const SPD_MILLI = 333; // a point per SPD segment of 3 SPD (λ = 1), in thousandths per SPD
+
+export interface SpdGauge extends GoalTerm {
+  kind: 'spd';
+  t: number;
+  boss: number;                            // the boss's SPD — the chance on the plan's line
+  spd(itemIds: readonly string[]): number; // the kit's SPD in the turn order (+ the transcend bonus) — the plan's number
+}
+
+export function spdGauge(ctx: Ctx, c: Char, Pv: Profile, goal: SpdGoal, pieceOf: (id: string) => Piece | undefined): SpdGauge | null {
+  const s0 = spdOf(ctx, c, []);
+  if (!s0) return null;
+  const B = s0.base;
+  const of = (ids: readonly string[]) => ids.map(pieceOf).filter((p): p is Piece => !!p);
+  const facts = new Map<string, GoalFacts>();
+  const factsOf = (p: Piece): GoalFacts => {
+    let f = facts.get(p.id);
+    if (!f) {
+      const n = Math.min(MAX_LIT, p.lit[SPD] ?? 0);
+      const w = n ? subWeightOn(Pv.ctx, Pv.c, Pv.chain, pieceInput(p), SPD) : 0;
+      const flat = spdOf(ctx, c, [{ ...p, lit: { ...p.lit, [SPD]: 0 }, setId: null }])!.gear;
+      facts.set(p.id, (f = { w, n, flat, non: milli(piecePoints(Pv, p) - w * n) }));
+    }
+    return f;
+  };
+  const unitsOf = (p: Piece) => spdOf(ctx, c, [{ ...p, setId: null }])!.gear; // segments × 3 + SPD mains
+  // the rows of a set on n pieces (n4 at T4): what they add to B (the game's floor)
+  const rowsOf = (set: string, n: number, n4: number) => (n < 2 ? 0
+    : spdOf(ctx, c, Array.from({ length: n }, (_, i) => ({ slot: 'helmet' as const, grade: 'unique' as const, setId: set, itemKey: null, main: null, bt: i < n4 ? 4 as const : 0 as const, lit: {} })))!.gear);
+  const rMemo = new Map<string, Milli>();
+  const rOf = (set: string, n: number, n4: number): Milli => {
+    const k = `${set}:${n}:${n4}`;
+    let r = rMemo.get(k);
+    if (r === undefined) rMemo.set(k, (r = SPD_MILLI * rowsOf(set, n, n4)));
+    return r;
+  };
+  const rMax = Math.max(0, ...ctx.idx.D.sets.flatMap((x) => [2, 3, 4].flatMap((n) => Array.from({ length: n + 1 }, (_, n4) => rOf(x.id, n, n4)))));
+  const counts = (pieces: readonly Piece[]) => {
+    const cnt = new Map<string, [number, number]>();
+    for (const p of pieces) {
+      if (!p.setId) continue;
+      const [n, n4] = cnt.get(p.setId) ?? [0, 0];
+      cnt.set(p.setId, [n + 1, n4 + (p.bt === 4 ? 1 : 0)]);
+    }
+    return cnt;
+  };
+  const a = SPD_MILLI * (goal.t - B - goal.bonus);
+  const bMemo = new Map<string, Milli>();
+  const bOf = (p: Piece): Milli => { let r = bMemo.get(p.id); if (r === undefined) bMemo.set(p.id, (r = SPD_MILLI * unitsOf(p))); return r; };
+  return {
+    kind: 'spd',
+    t: goal.t,
+    boss: goal.boss,
+    a,
+    b: (id) => { const p = pieceOf(id); return p ? bOf(p) : 0; },
+    r: rOf,
+    rMax,
+    spd: (ids) => (spdOf(ctx, c, of(ids))?.total ?? 0) + goal.bonus,
+    loss(ids) {
+      const pieces = of(ids);
+      let short = a;
+      for (const p of pieces) short -= bOf(p);
+      for (const [set, [n, n4]] of counts(pieces)) short -= rOf(set, n, n4);
+      return Math.max(0, short);
     },
     facts(id) {
       const p = pieceOf(id);

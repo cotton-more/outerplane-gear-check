@@ -63,7 +63,19 @@ export interface Char {
   // for the «type EFF from the game» hint, never added to the sheet); d — 1 when the hero needs EFF against a boss's RES (rule R, .x/0200-boss
   // RESEARCH §1.5). Missing in old snapshots
   eff?: { w: [number, number]; r?: number; p?: number; t?: { r?: number[]; f?: number[] }; tm?: 1; ee?: number; d?: 1 };
+  // SPD the transcend passive adds in battle (update.py spd_up, .x/0200-boss E4 Q6): t — flat by the in-game ★1…6; tm — 1 when it
+  // reaches every ally (outerpedia's "Ally Speed transcend bonus"), else the hero alone. Missing — no such row (or an old snapshot)
+  spdUp?: { t: number[]; tm?: 1 };
+  // why the hero should move before the boss (update.py turn_reasons, E4 Q1): a skill ready on turn 1 and what it does — to the
+  // boss (fx — the effect the boss may be immune to, Boss.imm ids) or for the team. Missing — nothing timed on turn 1
+  turn?: TurnReason[];
 }
+
+// a turn-1 reason: on the boss — atk, slow (SPD down), crit, push (priority down), taunt, stun, freeze, stone, silence,
+// cool (cooldown up); for the team — shield, def, cut (damage taken down), invul, immune
+export type TurnKind = 'atk' | 'slow' | 'crit' | 'push' | 'taunt' | 'stun' | 'freeze' | 'stone' | 'silence' | 'cool'
+  | 'shield' | 'def' | 'cut' | 'invul' | 'immune';
+export interface TurnReason { s: 's1' | 's2' | 's3'; k: TurnKind; fx?: string }
 
 // Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус
 // выражается им (8 сетов-статов); иначе null — в статах не выразить (Penetration, Counterattack, сеты-эффекты; у
