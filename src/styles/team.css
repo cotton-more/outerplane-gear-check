@@ -83,6 +83,7 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 /* a long name wraps to two lines at word breaks (E4: SPD and RES took room on the right) */
 .boss-rn { flex: 0 1 auto; min-width: 0; font-weight: 700; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .boss-rn.none { flex: 1; font-weight: 500; color: var(--ink-2); }
+.boss-rt { display: contents; } /* label + name + stage: three flex items here, one wrapping text at ≤ 340 px */
 .boss-rs { flex: none; font-weight: 700; white-space: nowrap; }
 .boss-rr { flex: none; display: inline-flex; align-items: center; gap: 8px; margin-left: auto; padding-left: 4px; font: 700 12.5px var(--font-mono); }
 .boss-rv { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
@@ -132,6 +133,7 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .bt-eff { justify-self: start; text-align: left; }
 .bt-foot { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }
 .bt-foot > img, .bt-foot > .ico { vertical-align: -2px; }
+.bt-foot > .ico:has(> .ico-b) { margin-right: 7px; } /* the «%» badge sits past the outline's corner: it touched the dash (as .teff .ico in trade.css) */
 
 .boss-list, .boss-view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .boss-list .pick-q { margin: 0; }
@@ -180,10 +182,17 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-tm { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
 /* the toast after «Собрать из гайда»: one line, like the batch notes (left: 50% would halve its width) */
 .toast.boss-toast { width: max-content; max-width: calc(100vw - 32px); }
-/* a phone at ≤ 340 px: SPD and RES go to their own line under the name (side by side the name kept «Gr…») */
+/* a phone at ≤ 340 px: SPD and RES go to their own line under the name (side by side the name kept «Gr…»); the label, name and
+   stage flow as one text beside the element icon (no «·»: it would hang at a line start), ▾ stays at the row's right end */
 @media (max-width: 340px) {
   .boss-row { flex-wrap: wrap; row-gap: 2px; }
-  .boss-rr { order: 9; flex-basis: 100%; margin-left: 23px; padding-left: 0; }
+  .boss-row > .ico, .boss-row > img { align-self: flex-start; }
+  .boss-rt { display: block; flex: 1 1 0; min-width: 0; line-height: 1.25; }
+  .boss-rt > .boss-rl { margin-right: 5px; }
+  .boss-rt > .boss-rn { display: inline; overflow: visible; }
+  .boss-rt > .boss-rs { margin-left: 6px; font: 700 12.5px var(--font-mono); color: var(--ink-2); }
+  .boss-rs > .boss-sep { display: none; }
+  .boss-rr { order: 9; flex: 0 0 calc(100% - 23px); margin-left: 23px; padding-left: 0; }
 }
 @media (max-width: 330px) {
   .boss-rl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* «Босс:» — for screen readers only: the name needs the room */
