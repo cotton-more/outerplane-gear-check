@@ -69,8 +69,10 @@ For each receiver:
   plan for the piece you put there from the inventory (grade, set or item, main, substats with segments, T4; the line
   then shows its points and what is off — a wrong main, none of the needed stats); **"Leave"** — the slot stays empty.
 
-The pieces taken as candidates are good ones for the receiver; what they wear themselves is a candidate always. The
-plan shows the heroes you re-dress; heroes you take pieces from appear only at the end.
+The pieces taken as candidates are good ones for the receiver; what they wear themselves is a candidate always. In the
+team trade there is one more case: a teammate's weapon or accessory may come even if it isn't good enough, when the hero's
+own in that slot isn't on his list either. The plan shows the heroes you re-dress; heroes you take pieces from appear only
+at the end.
 
 ## At the end — replacements
 

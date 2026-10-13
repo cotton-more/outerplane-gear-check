@@ -5,7 +5,7 @@ import { candidates, type CandInput } from './cands';
 import { planFor, type Plan } from './gate';
 import { ARMOR_SLOTS, type Cand, type Cands, type Gauge, type Part, type World } from './model';
 
-export interface PlanInput { to: string; frozen?: ReadonlySet<string>; open?: ReadonlySet<string> }
+export interface PlanInput { to: string; frozen?: ReadonlySet<string>; open?: ReadonlySet<string>; team?: ReadonlySet<string> }
 // missing — части заказа, которым не хватает вещей: slots — слоты брони, где вещи этого сета нет ни у кого
 // t4 — вещи части есть по слотам, но ниже T4, а части нужен T4 (ревью этапа 10, В2): «не собирается: нужен T4»
 export interface Missing { part: Part; slots: SlotId[]; t4?: boolean }
@@ -35,7 +35,7 @@ export function missingOf(g: Gauge, cands: Cands, slots: Partial<Record<SlotId, 
 // the plan alone — candidates and the threshold: heroPlan and the picker's gains (turn.ts) count it the same way
 export function planOf(w: World, inp: PlanInput): { plan: Plan; cands: Cands; g: Gauge | null } {
   const g = w.gauge(inp.to);
-  const cin: CandInput = { to: inp.to, frozen: inp.frozen, open: inp.open };
+  const cin: CandInput = { to: inp.to, frozen: inp.frozen, open: inp.open, team: inp.team };
   const cands = g ? candidates(w, cin) : {};
   const plan = g ? planFor(g, cands) : { kit: { slots: {}, key: null as never }, changes: [], losses: [] };
   return { plan, cands, g };

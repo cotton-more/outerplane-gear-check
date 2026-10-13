@@ -83,8 +83,24 @@ describe('the end: replacements and parking', () => {
     expect(o.w2.heroes.find((h) => h.id === 'C')).toBeUndefined(); // C gave her only piece and got none back
   });
 
+  // armor keeps the bar in the team trade, so the emptied member gets the piece only at the end
   it('the giver can\'t wear it → another team member whose slot emptied in this trade', () => {
-    // A takes B's accessory (B outside, can't wear A's old one); N takes M's; M's slot emptied → A's old one goes to M
+    // A takes B's helmet (B outside, can't wear A's old one); N takes M's; M's slot emptied → A's old one goes to M
+    const w = mk({ ah: { slot: 'helmet' }, bh: { slot: 'helmet' }, mh: { slot: 'helmet' } }, {
+      A: { worn: { helmet: 'ah' }, value: { ah: 0, bh: 10, mh: 1 } },
+      M: { worn: { helmet: 'mh' }, value: { mh: 0, ah: no, bh: 1 } },
+      N: { value: { mh: 10, ah: 1, bh: 1 } },
+      B: { worn: { helmet: 'bh' }, value: { bh: 0, ah: null } },
+    });
+    const o = team(w, ['A', 'M', 'N']);
+    expect(o.ends.repl.map((r) => [r.to, r.item, r.from])).toEqual([['M', 'ah', 'A']]);
+    expect(o.ends.park).toEqual([]);
+    expect(o.ends.holes.filter((h) => h.slot === 'helmet').map((h) => h.hero)).toEqual(['B']);
+  });
+
+  // a weapon or accessory below the bar is no replacement: the teammate whose own slot the plan emptied takes it in the plan
+  // itself (MODEL.md §7 item 2, the team trade's extra condition)
+  it('a teammate\'s accessory below the bar goes to the member whose slot emptied in the plan itself, nothing is left for the end', () => {
     const w = mk({ aa: { slot: 'accessory' }, ba: { slot: 'accessory' }, ma: { slot: 'accessory' } }, {
       A: { worn: { accessory: 'aa' }, value: { aa: 0, ba: 10, ma: 1 } },
       M: { worn: { accessory: 'ma' }, value: { ma: 0, aa: no, ba: 1 } },
@@ -92,9 +108,10 @@ describe('the end: replacements and parking', () => {
       B: { worn: { accessory: 'ba' }, value: { ba: 0, aa: null } },
     });
     const o = team(w, ['A', 'M', 'N']);
-    expect(o.ends.repl.map((r) => [r.to, r.item, r.from])).toEqual([['M', 'aa', 'A']]);
+    expect(o.ends.repl).toEqual([]);
     expect(o.ends.park).toEqual([]);
-    expect(o.ends.holes.filter((h) => h.slot === 'accessory').map((h) => h.hero)).toEqual(['B']);
+    const worn = (id: string) => o.w2.heroes.find((h) => h.id === id)?.worn.accessory;
+    expect([worn('A'), worn('M'), worn('N')]).toEqual(['ba', 'aa', 'ma']);
   });
 
   it('replacements come after every member\'s step: a piece a later step takes is no replacement; the chain\'s end gets the rest', () => {

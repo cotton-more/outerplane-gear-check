@@ -123,7 +123,8 @@ wear and their own spare (other heroes' spare is never taken; see [Trading gear]
 - **With a boss the trade also raises EFF** for the heroes who need it — up to the boss's RES + 1, where the debuff
   always lands; the EFF is the one the turn timeline shows (the card's EFF + what battle adds). Not at any price: a little
   stats are given for EFF, EFF above RES + 1 is worth nothing and goes to whoever lacks it; a piece the hero can't use won't
-  come for EFF, and a recommended accessory stays. A hero whose EFF changes gets a row under the stats:
+  come for EFF — except a teammate's weapon or accessory when the hero's own in that slot isn't on his list either; a
+  recommended accessory stays. A hero whose EFF changes gets a row under the stats:
   "EFF ≈ 184 → 222 · 93%" — EFF before and after and the chance the debuff lands after the trade (✓ — above RES; «≈» — the
   game's EFF isn't typed). The gain in points stays the stats' own. A hero who can't reach the target gets as close as a few
   points allow — the chance on the row says how far it is.

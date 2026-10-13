@@ -13,6 +13,11 @@ export const ARMOR_SLOTS: readonly SlotId[] = ['helmet', 'armor', 'gloves', 'sho
 
 export type Fit = 'rec' | 'stopgap' | 'no';
 
+// The team trade's extra condition (MODEL.md §7 item 2; owner, 2026-10-13): a teammate's weapon or accessory may come below the
+// receiver's bar when the receiver's own piece in that slot is missing or off his list (fit 'no': neither recommended nor a
+// stopgap). `own` — the fit of the piece he wears there by his gauge; null — nothing (or one his class can't wear)
+export const belowBarOk = (slot: SlotId, own: Fit | null): boolean => GEAR_SLOTS.includes(slot) && (own === null || own === 'no');
+
 export interface Item {
   id: string;
   slot: SlotId;

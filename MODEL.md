@@ -303,9 +303,16 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
    the usual rules apply. Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
-   without Breakthrough) he already has at an equal or higher BT. A **frozen slot** (item 4): only the receiver's own
-   worn piece there, and nobody else takes it. (Was, until E2b: «Не брать» per piece, and the window's «free pieces» —
-   both gone.)
+   without Breakthrough) he already has at an equal or higher BT. **One extra condition, in the team trade only** (2–4
+   members; owner, 2026-10-13, review 0203: "not an exception — an extra rule-condition of the team trade"): a **weapon or
+   accessory** that a teammate holds — worn by him (cost 3), or in his pool and taken off by this same calculation (cost 2,
+   holder him; never his spare, never a parked one) — may go to a member **below his bar** when the receiver's own piece in
+   that slot is empty or off his list (`fit` `no`: neither recommended nor a stopgap — `model:belowBarOk`; `cands:candidates`
+   and the pair swap's `was` in `team:bestSwap`). Armor keeps the bar; the rank rule (a recommended weapon or accessory
+   outranks points) is untouched; the one-hero trade and «Кого переодеть?» have no team and keep the bar. (Why: Maxwell wears
+   an Epic necklace off his list; with a teammate's accessory, below his bar, his EFF goes 187 → 298.) A **frozen slot**
+   (item 4): only the receiver's own worn piece there, and nobody else takes it. (Was, until E2b: «Не брать» per piece,
+   and the window's «free pieces» — both gone.)
 3. **"Was → becomes"** per hero: points of each piece over the worn one; a part of the order that cannot be built —
    `missingOf`: no piece of the set in enough slots, or pieces exist but are below T4 and the part needs T4.
 4. **Session locks**: a hero re-dressed in this window is `locked`: his worn gear is not taken by later steps (his
@@ -593,8 +600,9 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
 5. **What the plan shows** (Q6): the ▲/▼ gain and «Статы» stay plain stats (+ sets − crit: `HeroLine.before/after` put the
    goal's term back); a member with a goal whose EFF changes gets its own row «Эфф ≈ 184 → 222 · 93%» (`HeroLine.eff`: the
    game's battle EFF before and after, the chance after — `landChance`; ✓ above RES).
-6. **The candidates are as before** (Q4): the goal pulls no piece that fails the member's bar, and a recommended weapon or
-   accessory still outranks points — EFF never beats a passive.
+6. **The candidates are as before** (Q4): the goal pulls no piece that fails the member's bar (but the team trade's own rule,
+   §7 item 2, lets a teammate's weapon or accessory below the bar into a slot off the member's list; owner, 2026-10-13,
+   review 0203), and a recommended weapon or accessory still outranks points — EFF never beats a passive.
 7. **New inputs — a new walk** (Q7): the walk's target in `ogc.trade` is `team:<ids>|<boss>@<stage>|<id>*<★>,…`; another
    boss, stage, ★ tried on a spot or team starts a new walk (ticks reset, silently). No boss — no goals, the plan and the
    target of today.
