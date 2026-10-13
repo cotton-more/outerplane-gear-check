@@ -156,8 +156,11 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
       <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} />
       {guideTeams.length > 0 && <button type="button" className="boss-fill" onClick={onFill}>{t.boss.fill}</button>}
       {!members.length && !guideTeams.length && <p className="tm-hint muted">{t.team.hint}</p>}
-      {facts && boss && <BossTurn heroes={turnHeroes} boss={boss} spd={facts.spd} res={facts.res} onEff={gear.newer ? () => undefined : setEffFor} />}
-      <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
+      {/* a wide window: the team on the left, the turn timeline and the report on the right (one column on a phone) */}
+      <div className="tm-side">
+        {facts && boss && <BossTurn heroes={turnHeroes} boss={boss} spd={facts.spd} res={facts.res} onEff={gear.newer ? () => undefined : setEffFor} />}
+        <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
+      </div>
       <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
         <Sheet title={t.team.pick} onClose={() => setPicking(null)} className="tm-sheet">
