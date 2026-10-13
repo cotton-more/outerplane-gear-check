@@ -68,8 +68,8 @@ function spdPart(t: T, ctx: Ctx, s: NonNullable<HeroLine['spd']>) {
   const speed = Object.values(ctx.idx.SET).find((x) => x.short === 'Speed');
   return (
     <span className="tline-s tspd" aria-label={ok ? t.trade.spdAriaOk(s.b) : t.trade.spdAria(s.b, p)}>
-      <span aria-hidden="true"><SetIcon set={speed} />{t.trade.spdLine(s.a, s.b)}{' '}
-        {ok ? <span className="ok">✓</span> : <>· <span className="lack">{p}%</span></>}</span>
+      <span aria-hidden="true"><SetIcon set={speed} /><span>{t.trade.spdLine(s.a, s.b)}</span>
+        {ok ? <span className="ok">✓</span> : <><span className="sep">·</span><span className="lack">{p}%</span></>}</span>
     </span>
   );
 }

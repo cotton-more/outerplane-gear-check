@@ -360,7 +360,7 @@ describe('J. обмен вещами', () => {
     await planReady();
     const line = $$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Akari'))!;
     const spd = line.querySelector('.tspd')!;
-    expect(spd.textContent).toMatch(/^SPD \d+ → \d+ ✓$/);
+    expect(spd.textContent).toMatch(/^SPD \d+ → \d+✓$/); // flex row: the gap is a margin, not a space
     expect(spd.getAttribute('aria-label')).toMatch(/^SPD after the trade \d+: surely before the boss$/);
     // Ais has no turn-1 reason — no SPD row
     expect($$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Ais'))?.querySelector('.tspd') ?? null).toBeNull();
