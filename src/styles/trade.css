@@ -82,7 +82,7 @@
 .tkeep, .tundo { padding: 2px 0; font-size: 12px; }
 .tundo { display: inline-flex; align-items: center; gap: 3px; }
 .tundo .ico { width: 13px; height: 13px; }
-.tkey { font-size: 12px; color: var(--ink-2); }
+.tstep .tkey { grid-column: auto; font-size: 12px; color: var(--ink-2); }
 /* «Ввести» / «Оставить»: two pills in the app's look — «Ввести» in the stars' gold (memory: pretty controls) */
 .tpair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 3px; }
 .tpill { min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); font-weight: 700; font-size: 13px; }
@@ -100,3 +100,5 @@
 .tlive.wait { background: var(--surface-2); color: var(--ink-3); }
 .tlive .tpts { font-size: 12.5px; }
 .tentry .tact { bottom: -14px; }
+/* a short window (landscape phone 812×375, 420×390): the footer scrolls with the walk — sticky it left ~95 px of steps */
+@media (max-height: 460px) { .twalk .tact { position: static; } }

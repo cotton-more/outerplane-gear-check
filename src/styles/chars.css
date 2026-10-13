@@ -228,6 +228,9 @@ html.xs .bgear-t { grid-row: 3; }
 /* parked (MODEL.md §5): «P припаркована» in amber, the row tinted — never «больше не нужна»; .tpk is also the walk's mark */
 .pool-why.park { display: inline-flex; align-items: center; gap: 5px; color: var(--temp); }
 .pool-row.parked { border-color: color-mix(in srgb, var(--temp) 45%, var(--line)); background: color-mix(in srgb, var(--temp) 6%, var(--surface-2)); }
+/* the mark goes under the name: beside it, at 280 px the item's name was cut to «A P…» */
+.pool-row.parked { grid-template-columns: 24px minmax(0, 1fr); }
+.pool-row.parked .pool-why { grid-column: 2; }
 .tpk { width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; flex: none; font: 800 11px var(--font-mono); color: var(--surface); background: var(--temp); }
 .pool-unused { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); font-size: 12.5px; }
 .pool-unused .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }

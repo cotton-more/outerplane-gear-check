@@ -108,7 +108,11 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
         return (
           <li key={l.key} className={`tstep${done ? ' done' : ''}`}>
             {tick(l, done)}
-            <div className="tstep-b">{piece(p, l.hero, meta, l.receiver ? keep(() => onDecide({ kind: 'freeze', hero: l.hero, slot: l.slot })) : undefined)}</div>
+            <div className="tstep-b">
+              {piece(p, l.hero, meta)}
+              {/* under the piece, not beside its name: at 280 px the link took the name's width (shots-E2b) */}
+              {l.receiver && <p className="tstep-a">{keep(() => onDecide({ kind: 'freeze', hero: l.hero, slot: l.slot }))}</p>}
+            </div>
           </li>
         );
       }
@@ -173,7 +177,8 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
       }
       case 'repl': {
         const p = st.pieces[l.item];
-        const title = <p className="tstep-h"><SlotIcon slot={l.slot} /><span>{t.trade.repl(name(l.hero), l.slot, name(l.from))}{!l.kept && <span className="tsub"> · {t.trade.unlock}</span>}</span></p>;
+        // the slot icon only on the kept line: otherwise the piece row below draws it
+        const title = <p className="tstep-h">{l.kept && <SlotIcon slot={l.slot} />}<span>{t.trade.repl(name(l.hero), l.slot, name(l.from))}{!l.kept && <span className="tsub"> · {t.trade.unlock}</span>}</span></p>;
         if (l.kept) {
           return (
             <li key={l.key} className="tstep tdecl done">
