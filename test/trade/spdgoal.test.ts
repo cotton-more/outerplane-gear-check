@@ -221,6 +221,8 @@ describe('around the goal', () => {
     expect(turnOf(firstAt(211), 211, []).state).toBe('first');
     expect(anyChance(201, 211)).toBe(true);
     expect(anyChance(200, 211)).toBe(false);
+    expect(anyChance(190, 200)).toBe(false); // exactly 0.95 × the boss: a tie of the extremes, no chance (E1-1)
+    expect(anyChance(191, 200)).toBe(true);
   });
 
   it('reasonsAt: a row the boss is immune to goes; a team row stays', () => {

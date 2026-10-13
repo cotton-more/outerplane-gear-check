@@ -25,7 +25,7 @@ import type { Line, Walk } from '@/features/trade/model/walk';
 import { isArmor } from '@/game/data';
 import { Icon, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
 import { landChance } from '@/game/stat/eff';
-import { turnOf } from '@/game/stat/turn';
+import { luckPct, turnOf } from '@/game/stat/turn';
 import { pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -64,7 +64,7 @@ function effPart(t: T, e: NonNullable<HeroLine['eff']>) {
 // the SPD goal (.x/0200-boss E4 Q7): «Скорость 138 → 232 ✓» / «· 74%» — SPD in the turn order before and after and the
 // chance to move before the boss after the trade (BossTurn's number); its own row under the EFF row, the Speed Set's icon
 function spdPart(t: T, ctx: Ctx, s: NonNullable<HeroLine['spd']>) {
-  const tu = turnOf(s.b, s.boss, []), ok = tu.state === 'first', p = Math.round(tu.p * 100);
+  const tu = turnOf(s.b, s.boss, []), ok = tu.state === 'first', p = tu.state === 'luck' ? luckPct(tu.p) : 0;
   const speed = Object.values(ctx.idx.SET).find((x) => x.short === 'Speed');
   return (
     <span className="tline-s tspd" aria-label={ok ? t.trade.spdAriaOk(s.b) : t.trade.spdAria(s.b, p)}>

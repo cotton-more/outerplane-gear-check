@@ -1,5 +1,5 @@
 // Who moves first against the boss (.x/0200-boss E1, features/boss/model/turn; rules data/turn/TURN.md): the start gauge
-// SPD × 100 / top SPD plus a hidden head start of 0…5 — surely first above ≈ boss × 1.053, surely after below ≈ × 0.95,
+// SPD × 100 / top SPD plus a hidden head start of 0…5 — surely first above ≈ boss × 1.053, surely after at or below ≈ × 0.95,
 // luck between; and the hero's SPD the app knows (game/stat/spd: base by level and quirks, the Speed Set rows on the base,
 // SPD substats 3 a segment, an accessory's SPD main).
 import { readFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ import type { Dataset } from '@/game/data/types';
 import { makeCtx } from '@/game/context';
 import { spdOf } from '@/game/stat/spd';
 import type { StatPiece } from '@/game/stat/total';
-import { JITTER, timeline, turnOf } from '@/features/boss/model/turn';
+import { JITTER, luckPct, timeline, turnOf } from '@/features/boss/model/turn';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -37,6 +37,20 @@ describe('the first turn against the boss', () => {
     expect(turnOf(291, 276, [400]).state).toBe('first');
     expect(turnOf(262, 276, [400]).state).toBe('after');
     expect(turnOf(276, 276, [400]).p).toBeCloseTo(0.5, 2);
+  });
+
+  it('exactly 0.95 × the boss\'s SPD: the best start only ties the boss\'s worst — surely after, chance 0, not luck (E1-1)', () => {
+    expect(turnOf(190, 200, [])).toEqual({ state: 'after', p: 0, need: 211 });
+    expect(turnOf(191, 200, []).state).toBe('luck');
+    expect(turnOf(191, 200, []).p).toBeGreaterThan(0);
+    expect(turnOf(285, 300, []).state).toBe('after');
+    expect(turnOf(494, 520, []).state).toBe('after');
+    expect(turnOf(495, 520, []).state).toBe('luck');
+  });
+
+  it('luckPct: the percent of a luck chance is never 0 or 100, in the badge and in the trade walk alike (E4-2)', () => {
+    expect([0.0001, 0.004, 0.5, 0.9996, 1].map(luckPct)).toEqual([1, 1, 50, 99, 99]);
+    expect(luckPct(turnOf(222, 211, []).p)).toBe(99);
   });
 
   it('a slow boss: everyone first; a fast boss: everyone after, need = the SPD that surely beats it', () => {

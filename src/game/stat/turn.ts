@@ -3,10 +3,14 @@
 // SPD × 100 / the top SPD of the fight (the boss included) plus a hidden random head start of 0…5 points; it fills in
 // proportion to SPD and the unit acts at 100 (several at 100 or above — the higher gauge first). So a hero surely moves
 // before the boss only when even his worst start (0) beats the boss's best (5) — above ≈ boss × 1.053; surely after when
-// his best loses to the boss's worst; between — luck, its chance counted over both head starts (uniform, independent).
+// even his best (5) only ties or loses to the boss's worst (0) — at or below boss × 0.95; between — luck, its chance counted
+// over both head starts (uniform, independent).
 // Only the first turn (owner 2026-10-13): after it, skills, buffs and pushes decide.
 export const JITTER = 5;
 const GRID = 100; // midpoints per head start for the chance — exact to well under 1 %
+
+// luck as a percent: never 0 or 100 (those are 'after' and 'first') — BossTurn and the trade walk
+export const luckPct = (p: number): number => Math.min(99, Math.max(1, Math.round(p * 100)));
 
 export type TurnState = 'first' | 'luck' | 'after';
 // p — the chance to move before the boss, 0…1; need — the SPD that surely moves first (0 — already does)
@@ -31,7 +35,8 @@ function chance(hero: number, boss: number, top: number): number {
 }
 
 const surelyFirst = (hero: number, boss: number, top: number) => when(hero, top, 0) < when(boss, top, JITTER);
-const surelyAfter = (hero: number, boss: number, top: number) => when(hero, top, JITTER) > when(boss, top, 0);
+// >=: at hero = 0.95 × boss the best start only ties the boss's worst — a tie is a chance of 0, not luck
+const surelyAfter = (hero: number, boss: number, top: number) => when(hero, top, JITTER) >= when(boss, top, 0);
 
 // the hero's first turn against the boss; others — the rest of the fight's SPD (the team), for the top SPD
 export function turnOf(hero: number, boss: number, others: readonly number[]): Turn {

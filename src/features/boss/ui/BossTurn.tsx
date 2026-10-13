@@ -19,14 +19,12 @@ import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 import { effX } from '@/features/worn/EffSheet';
 import type { WornEff } from '@/features/worn/wearing';
-import { timeline, type TurnRow } from '../model/turn';
+import { luckPct, timeline, type TurnRow } from '../model/turn';
 
 // a member: SPD in the turn order (the app's count + bonus, the allies' transcend); why — the turn-1 reasons that work on this
 // boss (none — no reason to move first); reach — the most SPD a kit from the gear gives (+ bonus) when it gives no chance, else
 // null; eff — null for a hero who doesn't need EFF; v — EFF in battle against this boss
 export interface TurnHero { c: Char; spd: number; bonus: number; why: readonly TurnReason[]; reach: number | null; eff: WornEff | null; v: number }
-
-const pct = (p: number) => Math.min(99, Math.max(1, Math.round(p * 100))); // luck is never 0 or 100
 
 export function BossTurn({ heroes, boss, spd, res, onEff }: {
   heroes: readonly TurnHero[]; boss: Boss; spd: number; res: number; onEff: (id: string) => void;
@@ -64,7 +62,7 @@ export function BossTurn({ heroes, boss, spd, res, onEff }: {
           </span>
           <span className="bt-bd">
             {turn.state === 'luck' && (
-              <span className="bt-b lack" aria-label={t.boss.turnFirstAria(pct(turn.p))}><Icon name="stopwatch" /><span className="bt-bw">{t.boss.turnFirstWord} </span>{pct(turn.p)}%</span>
+              <span className="bt-b lack" aria-label={t.boss.turnFirstAria(luckPct(turn.p))}><Icon name="stopwatch" /><span className="bt-bw">{t.boss.turnFirstWord} </span>{luckPct(turn.p)}%</span>
             )}
             {eff && (
               <span className={`bt-b ${v > res ? 'ok' : 'lack'}`} aria-label={t.boss.turnDebAria(lands)}>

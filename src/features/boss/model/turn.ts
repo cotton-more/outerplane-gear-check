@@ -3,7 +3,7 @@
 import type { Char, TurnReason } from '@/game/data/types';
 import { turnOf, type Turn } from '@/game/stat/turn';
 
-export { JITTER, turnOf, firstAt, anyChance, type Turn, type TurnState } from '@/game/stat/turn';
+export { JITTER, turnOf, firstAt, anyChance, luckPct, type Turn, type TurnState } from '@/game/stat/turn';
 
 // the timeline: heroes by SPD (higher first), the boss after everyone whose chance to move first is at least ½
 export interface TurnRow<H> { hero: H; spd: number; turn: Turn }
