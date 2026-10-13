@@ -683,18 +683,32 @@ def spd_up(src: dict, cid: str) -> dict | None:
 # What a hero's first move does to the boss's first move or for the team (.x/0200-boss E4 Q1): the reason to move before
 # the boss. Enemy rows: kind by BT type / stat; the glossary key (debuff side) lets the app drop a row the boss is immune to.
 TURN_ENEMY = {"BT_AGGRO": "taunt", "BT_STUN": "stun", "BT_FREEZE": "freeze", "BT_STONE": "stone", "BT_SILENCE": "silence",
-              "BT_ACTION_GAUGE": "push", "BT_COOL_CHARGE": "cool"}
+              "BT_ACTION_GAUGE": "push", "BT_COOL_CHARGE": "cool", "BT_COOL2_CHARGE": "cool", "BT_COOL3_CHARGE": "cool"}
+# Types that are a debuff only with a negative value: priority down, cooldown up (the same types with +1 / +2 on an ally
+# are priority up and cooldown reduction).
+TURN_ENEMY_NEG = {"BT_ACTION_GAUGE", "BT_COOL_CHARGE", "BT_COOL2_CHARGE", "BT_COOL3_CHARGE"}
 TURN_ENEMY_STAT = {"ST_ATK": "atk", "ST_SPEED": "slow", "ST_CRITICAL_RATE": "crit", "ST_CRITICAL_DMG_RATE": "crit"}
 TURN_TEAM = {"BT_SHIELD_BASED_CASTER": "shield", "BT_SHIELD_BASED_TARGET": "shield", "BT_DMG_REDUCE": "cut",
              "BT_INVINCIBLE": "invul", "BT_IMMUNE": "immune"}
+# createType = when a row lands. Among the rows the turn kinds come from (ready skills, outerpedia a31f580 and 93a5234) the
+# turn-1 ones are SKILL_FINISH / DAMAGE / SKILL_START (with the cast: Veronica's taunt, Stella's push, Kappa's DEF up),
+# ON_TURN (Veronica's S2 shield, at the start of her turn) and PASSIVE (Ritri's cut, on from the start). The only other one
+# seen, ON_GOLDEN_CURSE_BUFF_REMOVE (Monad Iota's ATK / CDMG down), fires when another effect ends: not counted. A createType
+# that is not listed is left out until someone looks at it.
+TURN_CREATE = {"SKILL_FINISH", "DAMAGE", "SKILL_START", "ON_TURN", "PASSIVE"}
 
 
 def turn_reasons(src: dict, cid: str) -> list[dict]:
-    """The hero's skills ready on turn 1 (S1; S2/S3 with start cooldown 0 at the max skill level) and what they do before
-    the boss acts: [{"s": "s1", "k": kind, "fx"?: glossary effect id}], at most one per (slot, kind), skill order.
+    """The hero's skills ready on turn 1 (S1; S2/S3 with start cooldown 0 at the max skill level, and no resource to
+    collect first) and what they do before the boss acts: [{"s": "s1", "k": kind, "fx"?: glossary effect id}], at most
+    one per (slot, kind), skill order. Only a row that happens by itself counts: no `conditionType` (a status on the
+    caster or target, the target's element, a counterattack... — none is there on turn 1) and a createType from
+    TURN_CREATE. An ultimate with BT_SKILL_USING_CONDITION on OWNER_RESOURCE + BT_RESOURCE_USE_SKILL (Maxwell, Bryn,
+    Demiurge Stella, Monad Iota) waits for 5 of the unique resource, start cooldown 0 or not: skipped.
     On the boss (a DEBUFF* row on an enemy, roll ≥ 50 % at the max level): ATK / SPD / crit down, priority down, taunt,
-    hard CC, cooldown up — fx is the effect the boss may be immune to. On the team (a BUFF row on MY_TEAM…): shield, DEF up,
-    damage cut, invincibility, immunity. The last (max level) row of a (buff, type, stat, target) group speaks for it."""
+    hard CC, cooldown up (any BT_COOL*_CHARGE with a negative value) — fx is the effect the boss may be immune to. On the
+    team (a BUFF row on MY_TEAM…): shield, DEF up, damage cut, invincibility, immunity. The last (max level) row of a
+    (buff, type, stat, target) group speaks for it."""
     dchars, dskills, buffs = src["dmgChars"]["characters"], src["dmgChars"]["skills"], src["dmgBuffs"]["buffs"]
     deb = src["glossaries"].get("effectByKey", {}).get("debuff", {})
     out: list[dict] = []
@@ -710,13 +724,18 @@ def turn_reasons(src: dict, cid: str) -> list[dict]:
                 k = (b, r["type"], r.get("stat"), r.get("targetType"))
                 if k not in last or r["level"] >= last[k]["level"]:
                     last[k] = r
+        if (any(r["type"] == "BT_SKILL_USING_CONDITION" and r.get("conditionType") == "OWNER_RESOURCE" for r in last.values())
+                and any(r["type"] == "BT_RESOURCE_USE_SKILL" for r in last.values())):
+            continue
         for r in last.values():
             t, stat, tgt, v = r["type"], r.get("stat"), r.get("targetType") or "", r.get("value") or 0
+            if r.get("conditionType") or r.get("createType") not in TURN_CREATE:
+                continue
             kind = key = None
             if tgt.startswith("ENEMY") and r.get("buffDebuffType", "").startswith("DEBUFF") and (r.get("createRate") or 0) >= 500:
                 if t == "BT_STAT" and stat in TURN_ENEMY_STAT and v < 0:
                     kind, key = TURN_ENEMY_STAT[stat], f"BT_STAT|{stat}"
-                elif t in TURN_ENEMY and (t != "BT_ACTION_GAUGE" or v < 0):
+                elif t in TURN_ENEMY and (t not in TURN_ENEMY_NEG or v < 0):
                     kind, key = TURN_ENEMY[t], t
             elif tgt.startswith("MY_TEAM") and r.get("buffDebuffType", "").startswith("BUFF"):
                 kind = TURN_TEAM.get(t) or ("def" if t == "BT_STAT" and stat == "ST_DEF" and v > 0 else None)

@@ -270,13 +270,14 @@ function problems(D) {
     ...['Gnosis Domine', 'Iris'].filter(tmOf).map((n) => `${n} с tm`)];
   if (D.chars.length && tmBad.length) out.add(`EFF трансценда на всю команду (eff.tm): ${tmBad.join(', ')} — формат skills или buffs изменился?`);
   // SPD from transcend (spdUp, .x/0200-boss E4 Q6): Dianne, Mene, Liselotte, Viella reach the team (+5/+5/+10 at ★4–6), Claire
-  // only herself; the turn-1 reasons (turn, E4 Q1): Akari S1 boss ATK down, Veronica S1 taunt + S2 shield, Iota S1 priority down
+  // only herself; the turn-1 reasons (turn, E4 Q1): Akari S1 boss ATK down, Veronica S1 taunt + S2 shield, Iota S1 priority down,
+  // Vlada S1 cooldown up (BT_COOL3_CHARGE); Ember has none — her S1 taunt needs a status her S3 gives (a conditional row doesn't count)
   const upOf = (n) => D.chars.find((c) => c.name === n)?.spdUp;
   const upBad = [...['Dianne', 'Mene', 'Liselotte', 'Viella'].filter((n) => !(upOf(n)?.tm === 1 && upOf(n)?.t?.[5] === 10)).map((n) => `${n} без командного +10 на ★6`),
     ...(upOf('Claire') && !upOf('Claire').tm ? [] : ['Claire не своя строка'])];
   if (D.chars.length && upBad.length) out.add(`SPD трансценда (spdUp): ${upBad.join(', ')} — формат progression.skill8 или skills изменился?`);
   const turnOf = (n) => (D.chars.find((c) => c.name === n)?.turn ?? []).map((r) => `${r.s}:${r.k}`).join(',');
-  const turnBad = [['Akari', 's1:atk'], ['Veronica', 's1:taunt,s2:shield'], ['Iota', 's1:push'], ['Maxie', '']].filter(([n, want]) => turnOf(n) !== want)
+  const turnBad = [['Akari', 's1:atk'], ['Veronica', 's1:taunt,s2:shield'], ['Iota', 's1:push'], ['Demiurge Vlada', 's1:cool'], ['Ember', ''], ['Maxie', '']].filter(([n, want]) => turnOf(n) !== want)
     .map(([n, want]) => `${n} «${turnOf(n)}» вместо «${want}»`);
   if (D.chars.length && turnBad.length) out.add(`причины ходить раньше босса (turn): ${turnBad.join(', ')} — формат damage/characters или buffs изменился?`);
   const dCount = D.chars.filter((c) => c.eff?.d).length;

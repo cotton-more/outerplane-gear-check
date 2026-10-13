@@ -84,8 +84,10 @@ boss in the order of the first turn, top to bottom. The boss is the red row in i
   allies' transcend)"). The EE, talisman and battle buffs are invisible — in the game the hero may be faster.
 - **Who should move first.** Not everyone: only a hero whose first move does something before the boss acts — on turn 1
   only S1 is ready (S2 and S3 start on cooldown), so the app looks at S1 (and at S2/S3 that are ready at once): it lowers
-  the boss's ATK, SPD or crit, pushes it back on the turn gauge, taunts it, stuns it, or shields the team, raises its DEF,
-  cuts the damage it takes. An effect the boss is immune to at this stage doesn't count (Meteos ignores taunt). For the
+  the boss's ATK, SPD or crit, pushes it back on the turn gauge, taunts it, stuns it, delays its skills, or shields the
+  team, raises its DEF, cuts the damage it takes. Only what happens by itself counts: an effect with a condition (Ember's
+  taunt needs her own status from S3) or an ultimate that waits for a collected resource doesn't. Nor does an effect the
+  boss is immune to at this stage (Meteos ignores taunt). For the
   others SPD is just a stat of their chain — a damage dealer doesn't need to beat the boss to its first move.
 - **EFF.** Heroes who need EFF (as on the hero card) also show it, with the chance the boss doesn't resist the debuff:
   "✓ 100%" — EFF above RES, the debuff always lands. Below it the boss resists about d / (d + 100), where d is the gap:
