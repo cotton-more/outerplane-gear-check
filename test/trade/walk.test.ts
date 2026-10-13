@@ -33,7 +33,7 @@ const team = (w: World, members: string[], d: Decisions = NO_DECISIONS) => {
 };
 const short = (l: Line): string => {
   switch (l.kind) {
-    case 'lock': return `lock ${l.hero}.${l.slot} ${l.item} → ${l.to.kind === 'park' ? 'park' : l.to.hero}`;
+    case 'lock': return `lock ${l.hero}.${l.slot} ${l.item}`;
     case 'equip': return `${l.hero}.${l.slot} ← ${l.item} (${l.from.kind}${'hero' in l.from ? ' ' + l.from.hero : ''})`;
     case 'kept': return `${l.hero}.${l.slot} kept`;
     case 'hole': return `${l.hero}.${l.slot} empty`;
@@ -54,15 +54,15 @@ const rinWorld = () => mk({
 });
 
 describe('the end: replacements and parking', () => {
-  it('the giver gets the old piece; a class-locked one parks on the hero it came off; the walk locks it first', () => {
+  it('the giver gets the old piece; a class-locked one parks on the hero it came off; only the parked one is locked (O3)', () => {
     const o = hero(rinWorld(), 'R');
     expect(o.ends.repl.map((r) => [r.to, r.slot, r.item, r.from])).toEqual([['C', 'helmet', 'rh', 'R'], ['S', 'armor', 'ra', 'R']]);
     expect(o.ends.park).toEqual([{ item: 'rx', hero: 'R', slot: 'accessory', why: 'class', giver: 'V' }]);
     expect(linesOfWalk(o.walk).map(short)).toEqual([
       'R.weapon empty',
-      'lock R.accessory rx → park', 'R.accessory ← vx (worn V)',
-      'lock R.helmet rh → C', 'R.helmet ← ch (worn C)',
-      'lock R.armor ra → S', 'R.armor ← sa (worn S)',
+      'lock R.accessory rx', 'R.accessory ← vx (worn V)',
+      'R.helmet ← ch (worn C)',
+      'R.armor ← sa (worn S)',
       'R.gloves empty', 'R.shoes empty',
       'C.helmet ← rh of R', 'S.armor ← ra of R', 'park rx on R (class)', 'V.accessory empty',
     ]);
@@ -105,8 +105,8 @@ describe('the end: replacements and parking', () => {
     const o = team(w, ['A', 'M']);
     expect(o.moves.moves.map((m) => [m.hero, m.item])).toEqual([['A', 'bh'], ['M', 'ah']]);
     expect(o.ends.repl.map((r) => [r.to, r.item, r.from])).toEqual([['B', 'mh', 'M']]);
-    // A's old helmet is taken by M later in the walk: A locks it before putting on B's
-    expect(linesOfWalk(o.walk).map(short).filter((x) => !x.endsWith('empty')).slice(0, 3)).toEqual(['lock A.helmet ah → M', 'A.helmet ← bh (worn B)', 'lock M.helmet mh → B']);
+    // no locks (O3): A's old helmet is found by M in the inventory by its stats; M's old one by B
+    expect(linesOfWalk(o.walk).map(short).filter((x) => !x.endsWith('empty'))).toEqual(['A.helmet ← bh (worn B)', 'M.helmet ← ah (inventory)', 'B.helmet ← mh of M']);
   });
 });
 

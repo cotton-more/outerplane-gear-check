@@ -1,7 +1,8 @@
 // The trade as a walk with ticks (MODEL.md §7 item 9; .x/0200-boss E2b Q7, owner 2026-10-13): the plan's moves, the
 // replacements, parking and the empty slots as lines to do in the game top to bottom. Per hero (the receivers in the plan's
 // order, then anyone else who gets a piece), slot by slot: «Замок» on his old piece right before the equip — only when that
-// piece is needed later (a replacement, parking, or a later hero takes it from the inventory); the equip; a slot kept as it
+// piece stays with him parked (O3, owner 2026-10-13: a piece that moves to someone is found in the game by grade, main and
+// stats — the line names it in full, a lock would only be one more step); the equip; a slot kept as it
 // was; an empty slot («Ввести» / «Оставить»). Then «В конце — замены»: replacements (kept → parked), parking, the empty
 // slots of heroes who only gave. Each line has a key: a tick survives a recount while its line stays the same.
 // «Сделал» only when every line is done — ticked, kept as it was, entered or left empty.
@@ -12,9 +13,8 @@ import { endsOf, type Ends } from './ends';
 import { SLOT_ORDER, slotKey, type World } from './model';
 import { advance, movesOf, type Moves, type Source } from './moves';
 
-export type LockTo = { kind: 'repl'; hero: string } | { kind: 'park' } | { kind: 'next'; hero: string };
 export type Line =
-  | { kind: 'lock'; key: string; hero: string; slot: SlotId; item: string; to: LockTo }
+  | { kind: 'lock'; key: string; hero: string; slot: SlotId; item: string }
   | { kind: 'equip'; key: string; hero: string; slot: SlotId; item: string; from: Source; receiver: boolean }
   | { kind: 'kept'; key: string; hero: string; slot: SlotId }
   | { kind: 'hole'; key: string; hero: string; slot: SlotId; receiver: boolean; breaks: string | null; entered: ItemInput | null; left: boolean }
@@ -40,9 +40,7 @@ const srcKey = (s: Source) => (s.kind === 'inventory' ? s.kind : `${s.kind}>${s.
 export function walkOf(w0: World, m: Moves, ends: Ends, receivers: readonly string[], d: Decisions): Walk {
   const frozen = new Set(d.frozen), left = new Set(d.left);
   const before = new Map(w0.heroes.map((h) => [h.id, h]));
-  const repl = new Map(ends.repl.filter((r) => !r.kept).map((r) => [r.item, r]));
   const parked = new Set(ends.park.map((p) => p.item));
-  const at = new Map(m.moves.map((x, i) => [x.item, i]));
   const hole = (h: Ends['holes'][number]): Line => {
     const k = slotKey(h.hero, h.slot);
     return { kind: 'hole', key: `h:${k}`, hero: h.hero, slot: h.slot, receiver: h.receiver, breaks: h.breaks, entered: d.entered[k] ?? null, left: left.has(k) };
@@ -56,10 +54,7 @@ export function walkOf(w0: World, m: Moves, ends: Ends, receivers: readonly stri
       if (i >= 0) {
         const mv = m.moves[i];
         const old = before.get(hero)?.worn[slot];
-        const r = old ? repl.get(old) : undefined;
-        const later = old !== undefined && (at.get(old) ?? -1) > i ? m.moves[at.get(old)!].hero : null;
-        const to: LockTo | null = !old ? null : r ? { kind: 'repl', hero: r.to } : parked.has(old) ? { kind: 'park' } : later ? { kind: 'next', hero: later } : null;
-        if (old && to) lines.push({ kind: 'lock', key: `l:${slotKey(hero, slot)}:${old}:${to.kind === 'park' ? 'park' : `${to.kind}>${to.hero}`}`, hero, slot, item: old, to });
+        if (old && parked.has(old)) lines.push({ kind: 'lock', key: `l:${slotKey(hero, slot)}:${old}`, hero, slot, item: old });
         lines.push({ kind: 'equip', key: `e:${slotKey(hero, slot)}:${mv.item}:${srcKey(mv.from)}`, hero, slot, item: mv.item, from: mv.from, receiver: receivers.includes(hero) });
       }
       const h = ends.holes.find((x) => x.hero === hero && x.slot === slot && x.receiver);

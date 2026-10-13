@@ -54,8 +54,9 @@ For each receiver:
   −6.3 → −2.3": crit near their number N counts less (see [Equipment](Equipment#worn), "Crit: 45%");
 - an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
   pieces are there but below T4, "Speed ×2 won't come together: needs T4";
-- **"Lock: Rin's helmet"** — right before a piece goes on, when the hero's old piece is needed later (it goes to someone
-  at the end, or is parked): lock it in the game so it's easy to find;
+- **"Lock: Rin's helmet"** — right before a piece goes on, when the hero's old piece will be parked (below): lock it in
+  the game. A piece that goes to someone else gets no lock — its line names it in full (item or set, main, substats):
+  once taken off, the game finds it only by grade, main and stats;
 - **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6
   pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Rin's
   stock" — the hero's own spare, "in inventory · parked on Rin", "in inventory") and how to find it in the game; weapons
@@ -74,7 +75,7 @@ plan shows the heroes you re-dress; heroes you take pieces from appear only at t
 ## At the end — replacements
 
 Nothing taken off is left without an owner. After all the steps above, the old piece of a re-dressed hero goes to
-**whoever gave up theirs in that slot** ("Caren ← Rin's helmet · unlock it") if they can wear it — even if it's weak; if
+**whoever gave up theirs in that slot** ("Caren ← Rin's helmet", with the piece in full) if they can wear it — even if it's weak; if
 not (an accessory of another class), to **another team member** whose slot emptied in this trade; otherwise it is
 **parked**: it stays in the "Pool" of the hero it came off, marked "parked", and stays locked in the game. "Keep as it
 was" on a replacement leaves the giver's slot empty and parks the piece. A giver's slot that nothing fills shows

@@ -103,19 +103,19 @@ describe('J. обмен вещами', () => {
     expect(hero(bare.name)).toBeUndefined();
   });
 
-  it('J3: the walk — lock, the piece (source, points), «Keep as it was»; the order and stats; the end gives Aer Caren\'s old helmet', async () => {
+  it('J3: the walk — the piece (source, points), «Keep as it was»; the order and stats; the end gives Aer Caren\'s old helmet', async () => {
     await mount({ gear: gear(), roster: ROSTER });
     await click(byText('.cd-acts button', 'Trade'));
 
-    expect($('.tline.to .tlock .tstep-h')?.textContent).toBe('Lock: Caren’s helmet');
-    expect($('.tline.to .tlock .tstep-s')?.textContent).toBe('at the end — to Aer');
+    expect($('.tline.to .tlock')).toBeNull(); // her old helmet goes to Aer: no lock, the end names it in full (O3)
     expect($('.tstep .bgear-row')).not.toBeNull();
     expect($('.tstep .tsrc')?.textContent).toBe('on Aer');
     expect($('.tstep .tpts')?.textContent).toMatch(/^\+[\d.]+ pts$/); // Aer's helmet against Caren's worn helmet
     expect($('.tline.to .aimb')?.textContent).toBe('Order: By stats ▾'); // заказ — его можно сменить
     expect($('.tline.to .tline-s')?.textContent).toMatch(/^Stats: [\d.]+ → [\d.]+ pts$/);
     expect($('.tend .tend-h')?.textContent).toBe('At the end — replacements once all above is done');
-    expect(byText('.tend .tstep-h', 'Aer ← Caren’s helmet')?.textContent).toBe('Aer ← Caren’s helmet · unlock it');
+    expect(byText('.tend .tstep-h', 'Aer ← Caren’s helmet')?.textContent).toBe('Aer ← Caren’s helmet');
+    expect(byText('.tend .tstep', 'Aer ←')?.querySelector('.bgear-t')?.textContent).toContain('SPD'); // the piece in full
     expect($$('.tline.to .thole')).toHaveLength(5); // her five empty slots: «Enter» / «Leave»
     expect($('.tact .tdone')?.textContent).toMatch(/^Done · \d+ left$/);
 
@@ -325,13 +325,14 @@ describe('J. обмен вещами', () => {
 
     it('✕ keeps the ticks on the device; the same hero\'s trade picks them up; «Cancel» asks and resets them', async () => {
       await open();
-      await click($('.tline.to .tlock .ttick'));
-      expect($('.tline.to .tlock')?.classList.contains('done')).toBe(true);
+      const step = () => $('.tline.to button.ttick')!.closest('.tstep')!;
+      await click($('.tline.to button.ttick'));
+      expect(step().classList.contains('done')).toBe(true);
       expect(JSON.parse(localStorage.getItem('ogc.trade')!).target).toBe(`hero:${caren.id}`);
       await click($('.drawer.trade .drawer-x'));
       expect($('.drawer.trade')).toBeNull();
       await click(byText('.cd-acts button', 'Trade'));
-      expect($('.tline.to .tlock')?.classList.contains('done')).toBe(true);
+      expect(step().classList.contains('done')).toBe(true);
       expect($('.tnote')?.textContent).toMatch(/^Picking up: 1 of \d+ ticked\.$/);
 
       await click(byText('.tact .btn', 'Cancel'));

@@ -1,9 +1,10 @@
 // The trade as a walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b, mockups and texts approved by the owner 2026-10-13).
 // Per hero — his line as before (gain by his order, stats was → becomes, sets on and off, parts that can't be built,
-// «Заказ: … ▾») and his steps: «Замок» on his old piece when it is needed later, the piece to wear (as the plan drew it:
+// «Заказ: … ▾») and his steps: «Замок» on his old piece when it stays with him parked (O3), the piece to wear (as the plan drew it:
 // set or item, main, substats, T4, points against the worn one, where it is) with «Оставить как было», a slot kept as it
 // was («вернуть»), an empty slot («Искать: …», «Ввести» / «Оставить»; entered — the piece, its points and what is off).
-// Then «В конце — замены»: replacements («сними замок», «Оставить как было»), parking, the empty slots of givers. A step
+// Then «В конце — замены»: replacements (the piece named in full — the game finds it by grade, main and stats; «Оставить
+// как было»), parking, the empty slots of givers. A step
 // is ticked by its round button; «Сделал · ещё N» until every line is done; «Отмена» asks first (the ticks go).
 import type { SlotId } from '@/game/data/types';
 import { GRADE_NAME, subLabel } from '@/game/data';
@@ -95,7 +96,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
             {tick(l, done)}
             <div className="tstep-b">
               <p className="tstep-h"><Icon name="lock" /><span>{t.trade.lock(l.slot, name(l.hero))}</span></p>
-              <p className="tstep-s">{l.to.kind === 'park' ? t.trade.lockPark : l.to.kind === 'repl' ? t.trade.lockTo(name(l.to.hero)) : t.trade.lockNext(name(l.to.hero))}</p>
+              <p className="tstep-s">{t.trade.lockPark}</p>
             </div>
           </li>
         );
@@ -178,7 +179,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
       case 'repl': {
         const p = st.pieces[l.item];
         // the slot icon only on the kept line: otherwise the piece row below draws it
-        const title = <p className="tstep-h">{l.kept && <SlotIcon slot={l.slot} />}<span>{t.trade.repl(name(l.hero), l.slot, name(l.from))}{!l.kept && <span className="tsub"> · {t.trade.unlock}</span>}</span></p>;
+        const title = <p className="tstep-h">{l.kept && <SlotIcon slot={l.slot} />}<span>{t.trade.repl(name(l.hero), l.slot, name(l.from))}</span></p>;
         if (l.kept) {
           return (
             <li key={l.key} className="tstep tdecl done">
