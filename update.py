@@ -664,6 +664,71 @@ def needs_eff(src: dict, cid: str) -> bool:
     return False
 
 
+def spd_up(src: dict, cid: str) -> dict | None:
+    """SPD the hero's transcend passive adds in battle (.x/0200-boss E4 Q6; outerpedia's Stats guide: the "Ally Speed
+    transcend bonus" is added to SPD in the priority formula, e.g. Dianne + Mene + Demiurge Delta = 30): {"t": flat by the
+    in-game ★1…6, "tm"?: 1 — the row reaches every ally (a MY_TEAM row), else the hero alone}. The skill8 rows of
+    `speed` / `add`; conditional stacking rows (Ryu Lion's BT_STAT on turn) aren't skill8 rows and stay out. None — no row."""
+    up = unique_passive(src, cid)
+    rows = (src["progression"].get("skill8") or {}).get(up or "", {})
+    t = [sum(x.get("value", 0) for x in rows.get(str(trans_level(src, cid, star)), [])
+             if x.get("stat") == "speed" and x.get("applying") == "add") for star in range(1, 7)]
+    if not any(t):
+        return None
+    team = any(e.get("stat") == "speed" and e.get("type") == "BT_STAT_PREMIUM" and e.get("target") == "my_team"
+               for e in (src["skills"].get(up or "") or {}).get("effects") or [])
+    return {"t": t, **({"tm": 1} if team else {})}
+
+
+# What a hero's first move does to the boss's first move or for the team (.x/0200-boss E4 Q1): the reason to move before
+# the boss. Enemy rows: kind by BT type / stat; the glossary key (debuff side) lets the app drop a row the boss is immune to.
+TURN_ENEMY = {"BT_AGGRO": "taunt", "BT_STUN": "stun", "BT_FREEZE": "freeze", "BT_STONE": "stone", "BT_SILENCE": "silence",
+              "BT_ACTION_GAUGE": "push", "BT_COOL_CHARGE": "cool"}
+TURN_ENEMY_STAT = {"ST_ATK": "atk", "ST_SPEED": "slow", "ST_CRITICAL_RATE": "crit", "ST_CRITICAL_DMG_RATE": "crit"}
+TURN_TEAM = {"BT_SHIELD_BASED_CASTER": "shield", "BT_SHIELD_BASED_TARGET": "shield", "BT_DMG_REDUCE": "cut",
+             "BT_INVINCIBLE": "invul", "BT_IMMUNE": "immune"}
+
+
+def turn_reasons(src: dict, cid: str) -> list[dict]:
+    """The hero's skills ready on turn 1 (S1; S2/S3 with start cooldown 0 at the max skill level) and what they do before
+    the boss acts: [{"s": "s1", "k": kind, "fx"?: glossary effect id}], at most one per (slot, kind), skill order.
+    On the boss (a DEBUFF* row on an enemy, roll ≥ 50 % at the max level): ATK / SPD / crit down, priority down, taunt,
+    hard CC, cooldown up — fx is the effect the boss may be immune to. On the team (a BUFF row on MY_TEAM…): shield, DEF up,
+    damage cut, invincibility, immunity. The last (max level) row of a (buff, type, stat, target) group speaks for it."""
+    dchars, dskills, buffs = src["dmgChars"]["characters"], src["dmgChars"]["skills"], src["dmgBuffs"]["buffs"]
+    deb = src["glossaries"].get("effectByKey", {}).get("debuff", {})
+    out: list[dict] = []
+    for ent in (dchars.get(cid) or {}).get("skills", []):
+        ds = dskills.get(ent["id"] if isinstance(ent, dict) else str(ent)) or {}
+        slot = EFF_SLOTS.get(ds.get("type"))
+        levels = ds.get("levels") or []
+        if not slot or not levels or (slot != "S1" and (levels[-1].get("startCool") or 0) > 0):
+            continue
+        last: dict[tuple, dict] = {}
+        for b in levels[-1].get("buffIds", []):
+            for r in buffs.get(b, []):
+                k = (b, r["type"], r.get("stat"), r.get("targetType"))
+                if k not in last or r["level"] >= last[k]["level"]:
+                    last[k] = r
+        for r in last.values():
+            t, stat, tgt, v = r["type"], r.get("stat"), r.get("targetType") or "", r.get("value") or 0
+            kind = key = None
+            if tgt.startswith("ENEMY") and r.get("buffDebuffType", "").startswith("DEBUFF") and (r.get("createRate") or 0) >= 500:
+                if t == "BT_STAT" and stat in TURN_ENEMY_STAT and v < 0:
+                    kind, key = TURN_ENEMY_STAT[stat], f"BT_STAT|{stat}"
+                elif t in TURN_ENEMY and (t != "BT_ACTION_GAUGE" or v < 0):
+                    kind, key = TURN_ENEMY[t], t
+            elif tgt.startswith("MY_TEAM") and r.get("buffDebuffType", "").startswith("BUFF"):
+                kind = TURN_TEAM.get(t) or ("def" if t == "BT_STAT" and stat == "ST_DEF" and v > 0 else None)
+            if not kind or any(x["s"] == slot.lower() and x["k"] == kind for x in out):
+                continue
+            row: dict = {"s": slot.lower(), "k": kind}
+            if key and deb.get(key):
+                row["fx"] = str(deb[key])
+            out.append(row)
+    return out
+
+
 def main_values(src: dict, pools: dict) -> dict:
     """Main line values of 6★ gear at +10 by Breakthrough tier: slot → grade → label → [T0, T1, T2, T3, T4].
 
@@ -1107,6 +1172,10 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         entry["spd"] = entry["flat"].pop("SPD")  # база SPD для бонуса Speed Set: [lv100, макс. Limit Break, quirks]
         entry["chc"] = crit_profile(src, cid, c)
         entry["eff"] = eff_profile(src, cid, c)
+        if up := spd_up(src, cid):
+            entry["spdUp"] = up
+        if turn := turn_reasons(src, cid):
+            entry["turn"] = turn
         if not all(entry["flat"].get(ax) for ax in ("ATK", "DEF", "HP")):
             warn.add(f"{who}: нет базовых статов — flat/% для него оценивается по средним")
         chars.append(entry)

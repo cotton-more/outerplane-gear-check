@@ -340,6 +340,32 @@ describe('J. обмен вещами', () => {
     expect(JSON.parse(localStorage.getItem('ogc.trade')!).target).toMatch(new RegExp(`^team:${akari.id},${ais.id}\\|sr:meteos@12\\|${akari.id}\\*\\d,${ais.id}\\*\\d$`));
   });
 
+  // the SPD goal (.x/0200-boss E4): Akari's S1 lowers the boss's ATK and Grand Calamari isn't immune to it — the timeline says
+  // why she should move first; the trade raises her SPD to 223 (surely first at boss 211) and her line shows «SPD a → b ✓»
+  it('E4: Grand Calamari 13 — Akari\'s row says why she should move first; her plan line shows the SPD before and after', async () => {
+    const mine = ['helmet', 'armor', 'gloves', 'shoes'].map((s, i) => P(`m${i}`, s, speed, { ATK: 2, HP: 2 }));
+    const fast = ['helmet', 'armor', 'gloves', 'shoes'].map((s, i) => P(`f${i}`, s, speed, { SPD: 6, EFF: 4, ATK: 2, HP: 1 }, { bt: 4 }));
+    const acc = P('a1', 'accessory', null, { SPD: 4, EFF: 4 }, { main: 'SPD' });
+    const g = G([...mine, ...fast, acc], { [akari.id]: mine.map((p) => p.id as string), [aer.id]: [...fast.map((p) => p.id as string), 'a1'] },
+      { worn: { [akari.id]: Object.fromEntries(mine.map((p) => [p.slot, p.id])), [aer.id]: { ...Object.fromEntries(fast.map((p) => [p.slot, p.id])), accessory: 'a1' } } });
+    await mount({ roster: [akari.id, ais.id, aer.id], gear: g, boss: { v: 1, boss: 'sr:grand-calamari', stage: { 'sr:grand-calamari': 12 }, teams: { 'sr:grand-calamari': [akari.id, ais.id, null, null] } } }, { charId: null });
+    await openMore();
+    await click(moreButton('Team'));
+    const akariRow = [...document.querySelectorAll('#view-team .bt-li')].find((li) => li.textContent?.includes('Akari'))!;
+    await click(akariRow.querySelector('.bt-row'));
+    const x = [...document.querySelectorAll('#view-team .bt-li')].find((li) => li.textContent?.includes('Akari'))!;
+    expect(x.querySelector('.bt-why')?.textContent).toBe('Moving before the boss matters: S1 lowers the boss\'s ATK.');
+    expect([...x.querySelectorAll('.bt-x p')][0].textContent).toMatch(/^SPD \d+ — moves after the boss; to surely move first: 223 \(\+\d+\)\.$/);
+    await click(byText('#view-team .tm-go', 'Pick gear'));
+    await planReady();
+    const line = $$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Akari'))!;
+    const spd = line.querySelector('.tspd')!;
+    expect(spd.textContent).toMatch(/^SPD \d+ → \d+✓$/); // flex row: the gap is a margin, not a space
+    expect(spd.getAttribute('aria-label')).toMatch(/^SPD after the trade \d+: surely before the boss$/);
+    // Ais has no turn-1 reason — no SPD row
+    expect($$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Ais'))?.querySelector('.tspd') ?? null).toBeNull();
+  });
+
   // the walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b): ticks on the device, «Cancel», parking, the entry window, the team
   describe('the walk', () => {
     const open = async () => { await mount({ gear: gear(), roster: ROSTER }); await click(byText('.cd-acts button', 'Trade')); };

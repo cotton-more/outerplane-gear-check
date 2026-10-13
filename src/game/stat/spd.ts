@@ -29,3 +29,40 @@ export function spdOf(ctx: Ctx, c: Char, pieces: readonly StatPiece[]): Spd | nu
   const total = Math.floor((base * (1000 + rate)) / 1000) + Math.round(segs * (ctx.idx.SUB[KEY]?.step ?? 0)) + flat;
   return { base, gear: total - base, total };
 }
+
+// SPD the transcend passives add in battle (.x/0200-boss E4 Q6; outerpedia's priority formula: «Ally Speed transcend bonus»,
+// Dianne + Mene + Demiurge Delta = 30, so the rows add up): every member's team row at that member's ★ (the hero's own
+// included) and the hero's self-only row. The stat screen doesn't show it; the turn order counts it
+export interface SpdMate { c: Pick<Char, 'id' | 'spdUp'>; star: number }
+const upAt = (m: SpdMate) => m.c.spdUp?.t[m.star - 1] ?? 0;
+export function spdBonus(c: Pick<Char, 'id' | 'spdUp'>, star: number, mates: readonly SpdMate[]): number {
+  const team = mates.filter((m, i) => m.c.spdUp?.tm && mates.findIndex((x) => x.c.id === m.c.id) === i && m.c.id !== c.id)
+    .reduce((s, m) => s + upAt(m), 0);
+  return team + upAt({ c, star });
+}
+
+// The most SPD a kit from `pieces` could give the hero (E4 Q5: no chance to move first even then — no SPD goal). Per slot the
+// piece with the most SPD (substats and an SPD main); the Speed Set's rows (% of the base) may beat that, so for every set
+// with SPD rows each armor slot also tries its best piece of that set, T4 and not — 3⁴ armor kits per set
+export function spdReach(ctx: Ctx, c: Char, pieces: readonly StatPiece[]): number {
+  const one = (p: StatPiece) => spdOf(ctx, c, [p])?.gear ?? 0;
+  const top = (xs: readonly StatPiece[]) => xs.reduce<StatPiece | null>((b, p) => (!b || one(p) > one(b) ? p : b), null);
+  const bySlot = new Map<string, StatPiece[]>();
+  for (const p of pieces) bySlot.set(p.slot, [...(bySlot.get(p.slot) ?? []), p]);
+  const gear = ['weapon', 'accessory'].flatMap((s) => top(bySlot.get(s) ?? []) ?? []);
+  const armor = ['helmet', 'armor', 'gloves', 'shoes'].map((s) => bySlot.get(s) ?? []);
+  const rated = Object.keys(ctx.idx.SET).filter((id) =>
+    bonusRows(ctx.idx.SET, [0, 1, 2, 3].map(() => ({ setId: id, bt: 4 }))).some((r) => r.bon.stat === KEY && r.bon.mode === 'rate'));
+  let best = spdOf(ctx, c, [...gear, ...armor.flatMap((xs) => top(xs) ?? [])])?.total ?? 0;
+  for (const set of rated) {
+    const opts = armor.map((xs) => [top(xs), top(xs.filter((p) => p.setId === set && p.bt === 4)), top(xs.filter((p) => p.setId === set && p.bt !== 4))]
+      .filter((p, i, a): p is StatPiece => !!p && a.indexOf(p) === i));
+    const walk = (i: number, kit: StatPiece[]) => {
+      if (i === armor.length) { best = Math.max(best, spdOf(ctx, c, [...gear, ...kit])?.total ?? 0); return; }
+      if (!opts[i].length) { walk(i + 1, kit); return; }
+      for (const p of opts[i]) walk(i + 1, [...kit, p]);
+    };
+    walk(0, []);
+  }
+  return best;
+}

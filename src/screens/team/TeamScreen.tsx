@@ -14,8 +14,10 @@
 // The team trade (.x/0200-boss E2, owner 2026-10-13): under each spot the hero's build (OrderPill; kept with the team in
 // 'ogc.boss' — orders; a pin wins), «Подобрать вещи» → TeamTradeSheet for the 2–4 members with builds (one — the one-hero
 // trade, App), a hero without builds stays out with a line. Worn gear is never kept with the team: the store as it is now.
-// With a boss the trade also raises the EFF of members who need it (.x/0200-boss E3): goals from the boss's RES and the spots.
+// With a boss the trade also raises the EFF of members who need it (.x/0200-boss E3): goals from the boss's RES and the spots;
+// and the SPD of members who should move before the boss (E4): a turn-1 skill that works on it, a chance to get there.
 import { useMemo, useState } from 'react';
+import type { Char } from '@/game/data/types';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
 import { suggest } from '@/game/synergy/suggest';
@@ -34,7 +36,9 @@ import { GuideChoice } from '@/features/boss/ui/GuideChoice';
 import { BossTurn, type TurnHero } from '@/features/boss/ui/BossTurn';
 import { effView } from '@/features/worn/wearing';
 import { battleBonus, inBattle } from '@/game/stat/eff';
-import { spdOf } from '@/game/stat/spd';
+import { spdBonus, spdOf, spdReach } from '@/game/stat/spd';
+import { anyChance, firstAt, reasonsAt } from '@/features/boss/model/turn';
+import { wearable } from '@/features/gear/model/vs';
 import { EffSheet } from '@/features/worn/EffSheet';
 import { setEff } from '@/features/gear/model/gear';
 import type { GearApi } from '@/features/gear/store/useGear';
@@ -148,12 +152,24 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   const effOfSpot = (m: Spot) => effView({ ...ctx, stars: { ...ctx.stars, [m.id]: starOf(m) } }, idx.CHAR[m.id], gear.store);
   const mates = members.map((m) => ({ c: idx.CHAR[m.id], star: m.star }));
   const wornOf = (id: string) => Object.values(gear.store.worn?.[id] ?? {}).flatMap((p) => (p && gear.store.pieces[p] ? [gear.store.pieces[p]] : []));
+  // SPD in the turn order — the app's count + the allies' transcend bonus (E4 Q6); a member whose turn-1 skill works on this
+  // boss (E4 Q1) also gets the most SPD a kit could give — what the trade can reach: pieces worn by anyone, the member's own
+  // pool, parked ones (others' spare is never taken), the class allowing
+  const reachOf = (c: Char) => {
+    const own = new Set([...(gear.store.pools[c.id] ?? []), ...(gear.store.park ?? []),
+      ...Object.values(gear.store.worn ?? {}).flatMap((w) => Object.values(w ?? {}).filter((x): x is string => !!x))]);
+    return spdReach(ctx, c, [...own].flatMap((id) => { const p = gear.store.pieces[id]; return p && wearable(ctx, c, p) ? [p] : []; }));
+  };
   const turnHeroes: TurnHero[] = facts && boss ? team.flatMap((m) => {
     const c = m && idx.CHAR[m.id];
     const spd = c && spdOf(ctx, c, wornOf(c.id));
     if (!m || !c || !spd) return [];
     const eff = effOfSpot(m);
-    return [{ c, spd: spd.total, eff, v: eff ? inBattle(eff.e, eff.shown.v, battleBonus(c, starOf(m), ctx.settings.quirks, boss.element, mates)) : 0 }];
+    const bonus = spdBonus(c, starOf(m), mates);
+    const why = reasonsAt(c, facts.imm);
+    const most = why.length ? reachOf(c) + bonus : 0;
+    return [{ c, spd: spd.total + bonus, bonus, why, reach: why.length && !anyChance(most, facts.spd) ? most : null, eff,
+      v: eff ? inBattle(eff.e, eff.shown.v, battleBonus(c, starOf(m), ctx.settings.quirks, boss.element, mates)) : 0 }];
   }) : [];
   // the sheet takes the card's ★, not the spot's: the number the player types is the game's, at the hero's real stars
   const effOpen = effFor && turnHeroes.some((r) => r.eff && r.c.id === effFor) ? effView(ctx, idx.CHAR[effFor], gear.store) : null;
@@ -187,6 +203,10 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
     const c = idx.CHAR[m.id];
     return [m.id, { t: facts.res + 1, star: m.star, bonus: battleBonus(c, m.star, ctx.settings.quirks, boss.element, mates) }];
   }) : []);
+  // and the SPD of members who should move before the boss (E4): a turn-1 reason that works on it (Q1), some chance with the
+  // fastest kit (Q5); the target — the SPD that surely moves first (Q2), held with the allies' transcend bonus (Q6)
+  const spdGoals = Object.fromEntries(facts ? turnHeroes.filter((h) => h.why.length && h.reach === null && withBuilds.includes(h.c.id))
+    .map((h) => [h.c.id, { t: firstAt(facts.spd), boss: facts.spd, bonus: h.bonus }]) : []);
   const goalKey = facts && boss ? `${boss.key}@${stage}|${members.map((m) => `${m.id}*${m.star}`).join(',')}` : '';
   const orderC = orderFor ? idx.CHAR[orderFor] : undefined;
 
@@ -235,7 +255,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
           onChoose={(o) => { setOrder(orderC.id, o); setOrderFor(null); }} />
       )}
       {trading && canTrade && (
-        <TeamTradeSheet ctx={ctx} gear={gear} roster={roster} team={withBuilds} orders={orders} goals={goals} goalKey={goalKey} onOrder={setOrder}
+        <TeamTradeSheet ctx={ctx} gear={gear} roster={roster} team={withBuilds} orders={orders} goals={goals} spdGoals={spdGoals} goalKey={goalKey} onOrder={setOrder}
           onApplied={(text, undo) => onApplied?.(text, undo)} onClose={() => setTrading(false)} />
       )}
       {choosing && <GuideChoice teams={guideTeams} own={own} onPick={fill} onClose={() => setChoosing(false)} />}

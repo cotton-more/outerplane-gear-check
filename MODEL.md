@@ -560,7 +560,7 @@ EFF and SPD are later tickets.
    buffs (Valentine, Tamara, Skadi, Noa +50 % after the cap — the reason of outerpedia's «CHC up to 50%»; default N stays
    100, owner). Enhance: every main counts at +10.
 
-## §13 EFF goal in the boss team trade («Эфф ≈ 184 → 222 · 93%»)
+## §13 EFF and SPD goals in the boss team trade («Эфф ≈ 184 → 222 · 93%», «Скорость 138 → 232 ✓»)
 
 .x/0200-boss E3, owner decisions Q1–Q7 and Q3a (2026-10-13, PLAN §5). Only in the team trade on «Команда» with a boss: the
 verdict, the pool, «Надето», the batch and the one-hero trade are unchanged (the hero card doesn't know whom the hero fights).
@@ -601,3 +601,33 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
 8. **Speed** (owner's roster, 14 guide teams, desktop): the worst team 0.6 s (0.7 s without goals), all together 1.6× the
    plain time — the calculation runs in chunks with «Отмена», as before.
 
+**The SPD goal** (.x/0200-boss E4, owner decisions Q1–Q7, 2026-10-13) — the same plumbing, a second term:
+
+9. **Who.** A member with builds whose turn-1 skill acts before the boss does (`Char.turn`, `update.py turn_reasons`): S1
+   always, S2/S3 only with start cooldown 0 at the max level; on the boss — ATK, SPD or crit down, priority down, taunt,
+   hard CC, cooldown up (a DEBUFF* row on an enemy, roll ≥ 50 %); for the team — shield, DEF up, damage cut, invincibility,
+   immunity. A row the boss is immune to at the stage goes (`reasonsAt`, the effect id against `factsAt().imm`). The app
+   decides (Q1): no per-spot switch, no guide numbers, never a ceiling. The reason is shown on the timeline's expanded row,
+   not in the plan (Q7); a member without one has no goal — SPD stays a plain chain stat, the row drops «нужно …».
+10. **The target** is the SPD that surely moves first (Q2): `firstAt(boss)` — the first SPD above boss × 100/95 (`turnOf`,
+    the team's top SPD cancels out); no luck level. The SPD it is held in is the turn order's (Q6): the kit's `spdOf` + the
+    allies' transcend bonus (`spdBonus`: every member's team row `Char.spdUp` at its ★ adds up — Dianne + Mene = 15 — plus
+    the hero's self-only row); EE, talisman and buffs stay invisible.
+11. **The term** (`SpdGauge.loss`): below the target each missing SPD segment (3 SPD) costs **λ = 1 point** (Q3) — 333
+    thousandths per SPD, whole numbers; **above it SPD keeps its chain points** (no surplus step: extra SPD is more turns
+    later). The game's SPD is linear in the pieces — ⌊B × (1000 + rate)/1000⌋ + 3 × segments + SPD mains, the rate from one
+    set (only the Speed Set has SPD rows) — so a − Σ b − Σ r = 333 × (t − SPD) exactly (`test/trade/spdgoal.test.ts`).
+12. **No chance — no goal** (Q5): `spdReach` — the most SPD any kit could give (per slot the fastest piece; for a set with
+    SPD rows each armor slot also tries its best piece of that set, T4 and not) over what the trade can reach (pieces worn by
+    anyone, the member's own pool, parked ones; class-wearable) + the bonus; at or below the boss's "surely after" bound
+    (≈ × 0.95) the goal is off and the timeline says «Из твоих вещей не догнать: самое большее N». With some chance the goal
+    stays, λ caps the cost (an out-of-reach target turns linear, as EFF's).
+13. **Both goals on one member** (Q4) — the sum of the two terms. The kit search takes goal terms as a list
+    (`kit.ts termsOf`): the plain best that loses nothing to crit and every term; terms out of reach fold into v / the set
+    value (`linearKit`); otherwise `critKit` with the dominance per stat (CHC, EFF, SPD segments each against the candidate's
+    points; EFF flat equal; SPD flat below b's adds the penalty b's extra SPD could close) and a bound per set of goals
+    (every mask: points + its b's at their best − its a's + its rows' most). bestKit = bruteKit on random worlds with both.
+14. **What the plan shows** (Q7): «Скорость 138 → 232 ✓» / «Скорость 201 → 214 · 74%» under the EFF row, the Speed Set's
+    icon (`HeroLine.spd`: SPD with the bonus before and after, the chance after — `turnOf`); only for goal members whose SPD
+    changes; the gain stays plain stats. Speed (owner's roster, 11 guide teams + a singularity, desktop): the worst team
+    0.62 s (E3 0.59 s), all together E4 3.0 s vs E3 2.8 s (`probe-E4/timing.txt`) — auto-run kept.

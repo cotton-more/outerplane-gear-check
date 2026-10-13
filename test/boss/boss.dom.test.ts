@@ -97,15 +97,15 @@ describe('a boss on «Команда»', () => {
     expect($('.boss-sheet .boss-guide')?.getAttribute('href')).toBe('https://outerpedia.com/guides/special-request/meteos');
     await click(byText('.boss-sheet .boss-chip', '11'));
     await closeSheet();
-    expect(row()!.textContent).toBe('Boss:Blazing Knight Meteos· 11RES 256▾');
+    expect(row()!.textContent).toBe('Boss:Blazing Knight Meteos· 11SPD 102RES 256▾'); // E4: SPD and RES with icons, the words for screen readers
     // another boss opens at its top stage; back to Meteos — stage 11 again
     await pickBoss('Annihilator');
     expect($('.boss-sheet .boss-chip[aria-pressed="true"]')?.textContent).toBe('Very Hard');
     await closeSheet();
-    expect(row()!.textContent).toContain('Annihilator· Very HardRES 54');
+    expect(row()!.textContent).toContain('Annihilator· Very HardSPD 250RES 54');
     await pickBoss('Blazing Knight Meteos');
     await closeSheet();
-    expect(row()!.textContent).toContain('· 11RES 256');
+    expect(row()!.textContent).toContain('· 11SPD 102RES 256');
     expect(stored()).toMatchObject({ boss: 'sr:meteos', stage: { 'sr:meteos': 10 } }); // an untouched boss stores no stage: the top one
   });
 
@@ -336,17 +336,19 @@ describe('Turn vs the boss on «Команда»', () => {
     expect($('#view-team .boss-turn .bt-foot')?.textContent).toContain('the chance the boss doesn’t resist');
   });
 
-  it('a tap expands a row: EFF short of RES + 1, the SPD that surely moves first; a hero without EFF — SPD only', async () => {
+  it('a tap expands a row: the SPD that surely moves first, why, EFF short of RES + 1; a hero without EFF — SPD only', async () => {
     await mount();
     await meteos();
     await click(row('Tamara').querySelector('.bt-row'));
     expect(row('Tamara').querySelector('.bt-row')?.getAttribute('aria-expanded')).toBe('true');
     expect([...row('Tamara').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
-      'EFF ≈\u2009181 — 108 short of RES + 1.', 'SPD 154 — surely before the boss.']);
+      'SPD 154 — surely before the boss.', 'EFF ≈\u2009181 — 108 short of RES + 1.']);
     expect(row('Tamara').querySelector('.bt-eff')?.textContent).toBe('EE gives EFF ×2 — type EFF from the game ▸');
     await click(row('Veronica').querySelector('.bt-row'));
     expect([...row('Veronica').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
-      `SPD 106 — to surely move before the boss: ${Math.floor((109 * 100) / 95) + 1} (+${Math.floor((109 * 100) / 95) + 1 - 106}).`]);
+      `SPD 106 — to surely move before the boss: ${Math.floor((109 * 100) / 95) + 1} (+${Math.floor((109 * 100) / 95) + 1 - 106}).`,
+      // E4: why — her S2 shield; her S1 taunt goes, Meteos is immune to it
+      'Moving before the boss matters: S2 shields the team.']);
     expect(row('Veronica').querySelector('.bt-eff')).toBeNull();
   });
 

@@ -78,16 +78,26 @@ boss in the order of the first turn, top to bottom. The boss is the red row in i
   a hero below it — after it. A dashed row with ⏱ "first 74%" — luck decides: a hero at 0.95 to 1.053 of the boss's SPD
   may move before or after it (boss 276: from 263 to 290 is luck, 291 and more — surely first). Only the first turn is
   shown: after it, skills, buffs and pushes decide.
-- **SPD** is what the app knows: the hero's base (level, Quirks), SPD substats, an SPD accessory and the Speed set.
-  Allies' transcend speed bonuses, the EE and battle buffs are invisible — in the game the hero may be faster.
+- **SPD** is what the app knows: the hero's base (level, Quirks), SPD substats, an SPD accessory, the Speed set and the
+  SPD bonus from allies' transcend — Dianne, Mene, Liselotte, Viella… give the whole team +5 at ★4–5 and +10 at ★6, and
+  several of them add up (the turn order counts it, the hero's stat screen doesn't show it; the row says "SPD 148 (+10
+  allies' transcend)"). The EE, talisman and battle buffs are invisible — in the game the hero may be faster.
+- **Who should move first.** Not everyone: only a hero whose first move does something before the boss acts — on turn 1
+  only S1 is ready (S2 and S3 start on cooldown), so the app looks at S1 (and at S2/S3 that are ready at once): it lowers
+  the boss's ATK, SPD or crit, pushes it back on the turn gauge, taunts it, stuns it, or shields the team, raises its DEF,
+  cuts the damage it takes. An effect the boss is immune to at this stage doesn't count (Meteos ignores taunt). For the
+  others SPD is just a stat of their chain — a damage dealer doesn't need to beat the boss to its first move.
 - **EFF.** Heroes who need EFF (as on the hero card) also show it, with the chance the boss doesn't resist the debuff:
   "✓ 100%" — EFF above RES, the debuff always lands. Below it the boss resists about d / (d + 100), where d is the gap:
   −10 — 9 %, −50 — 33 %, −100 — half. The skill's own chance ("50 % to inflict") is separate; EFF doesn't change it.
   The row shows EFF in battle: the card's number plus the element node in Quirks (Light and Dark +5 %, Earth, Water and
   Fire +7 % when the hero's element beats the boss's; with the "Quirks" setting) and a teammate's transcend that gives EFF
   to the whole team (Iota, Dahlia, Alice… +3/+6 %; one, the strongest). EFF counts the stars tried on the spot.
-- **Tap a row** — it opens in place: how much EFF is short of RES + 1, how much SPD surely moves the hero before the
-  boss ("SPD 280 — to surely move before the boss: 291 (+11)") and "EFF from the game ▸" — the same "EFF for …" sheet
+- **Tap a row** — it opens in place: the SPD, and for a hero who should move first — why ("Moving before the boss
+  matters: S1 lowers the boss's ATK.") and how much SPD surely moves them first ("SPD 280 — to surely move before the
+  boss: 291 (+11)"); if even the fastest gear they could get gives no chance — "Out of reach with your gear: 223 at most."
+  The others get the state alone ("SPD 141 — moves after the boss."). Then how much EFF is short of RES + 1 and "EFF from
+  the game ▸" — the same "EFF for …" sheet
   as on the card ([Equipment](Equipment)); the number is kept on the hero. Heroes whose EE gives EFF get "EE gives EFF ×2
   — type EFF from the game ▸" there until the game's number is typed.
 
@@ -115,6 +125,12 @@ wear and their own spare (other heroes' spare is never taken; see [Trading gear]
   "EFF ≈ 184 → 222 · 93%" — EFF before and after and the chance the debuff lands after the trade (✓ — above RES; «≈» — the
   game's EFF isn't typed). The gain in points stays the stats' own. A hero who can't reach the target gets as close as a few
   points allow — the chance on the row says how far it is.
+- **With a boss the trade also raises SPD** for the heroes who should move first (see above) — up to the SPD where they
+  surely move before the boss (boss 211 → 223). Each missing SPD substat roll (3 SPD) costs about as much as one roll of
+  the hero's first stat, so the trade reaches for SPD while it's cheap; SPD above the target keeps its usual value (more
+  turns later in the fight). If even the fastest gear gives no chance, the trade doesn't try. The hero gets a row:
+  "SPD 138 → 232 ✓" or "SPD 201 → 214 · 74%" — SPD before and after (with the allies' transcend) and the chance to move
+  first. A hero with both goals (Iota: EFF and SPD) gets both rows; the trade balances them.
 - **Another boss, stage, team or stars on a spot** is a new calculation: the walk starts over with its ticks reset.
 - **Worn gear is never kept with the team:** the trade and the turn timeline always read what the app records as worn now.
 

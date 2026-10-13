@@ -1,7 +1,10 @@
-// The boss row at the top of «Команда» (owner Q2, 2026-10-12): «Босс: Meteos · 13 · RES 288 ▾» — RES only, SPD and
-// immunities live in the sheet (mockups OK). No boss — «Босс: не выбран ▾». Tap — the boss sheet.
+// The boss row at the top of «Команда» (owner Q2, 2026-10-12): «Босс: Meteos · 13 · RES 288 ▾»; immunities live in the sheet
+// (mockups OK). E4 (owner 2026-10-13, as the E4 mockups): SPD and RES with their icons, no words — the Speed Set's icon and SPD
+// (the turn and the SPD goal count against it), the RES stat icon and RES; the words stay for screen readers. No boss —
+// «Босс: не выбран ▾». Tap — the boss sheet.
 import type { Boss } from '@/game/data/types';
-import { ElementIcon } from '@/game/icons/Img';
+import { ElementIcon, SetIcon, StatIcon } from '@/game/icons/Img';
+import { useIndex } from '@/game/data/IndexContext';
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 import type { StageFacts } from '../model/boss';
@@ -9,6 +12,8 @@ import { stageText } from './stageText';
 
 export function BossRow({ boss, facts, onOpen }: { boss: Boss | null; facts: StageFacts | null; onOpen: () => void }) {
   const t = useT();
+  const idx = useIndex();
+  const speed = Object.values(idx.SET).find((x) => x.short === 'Speed');
   return (
     <button type="button" className="boss-row" aria-haspopup="dialog" aria-label={boss ? undefined : t.boss.pickAria} onClick={onOpen} {...tour('teamBoss')}>
       {boss && <ElementIcon el={boss.element} />}
@@ -18,7 +23,10 @@ export function BossRow({ boss, facts, onOpen }: { boss: Boss | null; facts: Sta
           {/* a long name gives way, the stage stays */}
           <span className="boss-rn">{boss.name}</span>
           <span className="boss-rs">· {stageText(t, boss, facts.label)}</span>
-          <span className="boss-rr">RES {facts.res}</span>
+          <span className="boss-rr">
+            <span className="boss-rv"><SetIcon set={speed} /><span className="sr-only">SPD </span>{facts.spd}</span>
+            <span className="boss-rv"><StatIcon stat="RES" /><span className="sr-only">RES </span>{facts.res}</span>
+          </span>
         </>
       ) : <span className="boss-rn none">{t.boss.none}</span>}
       <span className="boss-rc" aria-hidden="true">▾</span>

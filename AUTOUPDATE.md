@@ -76,7 +76,9 @@ outerpedia между опубликованной версией и новой 
    белый EFF 80/120/140/160/180 и один и тот же у всех героев подкласса, у каждого Ranger узел +50; премия EE (`ee`) —
    ровно у 17 героев (Tanya и Rico 500, остальные 1000); правило R (`d`) — Tamara, Iota, Sigma, Ember, Gnosis Domine, Demiurge Vlada,
    Epsilon, Maxwell да, Francesca, Vlada, Eris, Eliza, Drakhan нет, всего 40–60 героев; EFF трансценда на всю команду
-   (`tm`) — Iota, Dahlia, Gnosis Nella да, Gnosis Domine и Iris нет; main Legendary на
+   (`tm`) — Iota, Dahlia, Gnosis Nella да, Gnosis Domine и Iris нет; SPD трансценда (`spdUp`) — Dianne, Mene, Liselotte,
+   Viella на всю команду (+10 на ★6), Claire только себе; причины ходить раньше босса (`turn`) — Akari `s1:atk`, Veronica
+   `s1:taunt,s2:shield`, Iota `s1:push`, у Maxie нет; main Legendary на
    T0: перчатки EFF — 50, броня DEF — 500, оружие ATK — 1000.
 4. **Страница работает.** Собранный `docs/index.html` запускается в jsdom: пустой экран, разбор брони и оружия,
    карточка каждого персонажа — без исключений.
