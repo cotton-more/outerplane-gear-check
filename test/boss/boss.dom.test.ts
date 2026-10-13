@@ -352,6 +352,18 @@ describe('Turn vs the boss on «Команда»', () => {
     expect(row('Veronica').querySelector('.bt-eff')).toBeNull();
   });
 
+  // E4-1: a member with builds whose turn-1 skill matters but who can't catch the boss: no chance from the trade's own
+  // candidates (nothing worn here: her base SPD) — the row says how far her gear goes (the units: test/trade/spdgoal.test.ts)
+  it('a member who can\'t catch the boss (Annihilator, SPD 250): the expanded row says «out of reach: N at most»', async () => {
+    await mount();
+    await pickBoss('Annihilator');
+    await closeSheet();
+    await click($('#view-team .tm-add'));
+    await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Veronica'));
+    await click(row('Veronica').querySelector('.bt-row'));
+    expect(row('Veronica').querySelector('.bt-far')?.textContent).toBe('Out of reach with your gear: 106 at most.');
+  });
+
   it('a row → «EFF for Tamara»: typed 340 — ✓ 100 %, no hint; stored on the hero', async () => {
     await mount();
     await meteos();

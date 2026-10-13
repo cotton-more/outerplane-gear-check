@@ -45,7 +45,8 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearStore } from '@/features/gear/model/gear';
 import { OrderPill, OrderSheet, orderName } from '@/features/trade/ui/OrderSheet';
 import { TeamTradeSheet, pinnedOrder } from '@/features/trade/ui/TeamTradeSheet';
-import { STATS } from '@/features/trade/model/world';
+import { tradeSpdReach } from '@/features/trade/model/reach';
+import { STATS, worldOf } from '@/features/trade/model/world';
 import { combosOf, pinOf } from '@/game/build/profile';
 import { comboSig } from '@/game/build/variants';
 import { comboText } from '@/game/build/builds';
@@ -61,6 +62,7 @@ import { useTimed } from '@/shared/useTimed';
 const RANK = ['S', 'A', 'B', 'C', 'D', 'E'];
 const LACK = 4; // «нет в ростере» names at most this many heroes, then «и ещё N»
 const NONE: (string | null)[] = [null, null, null, null];
+const NO_ORDERS: Readonly<Record<string, string>> = {};
 // a spot: the hero and the ★ tried here (none — the card's)
 interface Spot { id: string; want?: number }
 // the message after «Собрать из гайда»; undo — the team before it (none — nothing changed)
@@ -100,6 +102,11 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   const guideTeams = boss ? teamsAt(boss, stage) : [];
   // the stored team of this boss; a hero who left the roster (or became Core Fusion) leaves the spot empty
   const ids = (store.teams[key] ?? NONE).map((id) => (id && mineSet.has(id) ? id : null));
+  // the builds kept with this team (E2): hero → comboSig; none — «По статам»; a pin is the hero's order (hard)
+  const orders = store.orders?.[key] ?? NO_ORDERS;
+  // the world of the team trade as it is now (the store, no goals): its candidates tell a member's SPD reach (E4 Q5); built
+  // only with a boss — the timeline is the only reader
+  const tradeWorld = useMemo(() => (boss ? worldOf(ctx, gear.store, roster, { orders }) : null), [boss, ctx, gear.store, roster, orders]);
   const team: (Spot | null)[] = ids.map((id, i) => (id ? { id, want: wants[`${key}|${i}|${id}`] } : null));
 
   // the hero's ★ on the card; the spot's — the card's or the higher one tried here
@@ -153,9 +160,12 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   const mates = members.map((m) => ({ c: idx.CHAR[m.id], star: m.star }));
   const wornOf = (id: string) => Object.values(gear.store.worn?.[id] ?? {}).flatMap((p) => (p && gear.store.pieces[p] ? [gear.store.pieces[p]] : []));
   // SPD in the turn order — the app's count + the allies' transcend bonus (E4 Q6); a member whose turn-1 skill works on this
-  // boss (E4 Q1) also gets the most SPD a kit could give — what the trade can reach: pieces worn by anyone, the member's own
-  // pool, parked ones (others' spare is never taken), the class allowing
+  // boss (E4 Q1) also gets the most SPD a kit could give. With builds — from the trade's own candidates (the bar, no
+  // one's spare, code copies, parked into an empty slot: `tradeSpdReach`, MODEL.md §13 item 12), so no chance here means no
+  // SPD goal there. Without builds the trade offers nothing (no gauge): every piece he could wear — worn by anyone, his
+  // pool, parked ones — tells what his gear could give
   const reachOf = (c: Char) => {
+    if (tradeWorld && c.builds.length) return tradeSpdReach(ctx, c, tradeWorld, gear.store.pieces);
     const own = new Set([...(gear.store.pools[c.id] ?? []), ...(gear.store.park ?? []),
       ...Object.values(gear.store.worn ?? {}).flatMap((w) => Object.values(w ?? {}).filter((x): x is string => !!x))]);
     return spdReach(ctx, c, [...own].flatMap((id) => { const p = gear.store.pieces[id]; return p && wearable(ctx, c, p) ? [p] : []; }));
@@ -179,8 +189,6 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
     if (next !== gear.store) gear.set(next);
   };
 
-  // the builds kept with this team (E2): hero → comboSig; none — «По статам»; a pin is the hero's order (hard)
-  const orders = store.orders?.[key] ?? {};
   const setOrder = (id: string, o: string) => update((s) => {
     const { [id]: _, ...rest } = s.orders?.[key] ?? {};
     return { ...s, orders: { ...s.orders, [key]: o === STATS ? rest : { ...rest, [id]: o } } };

@@ -622,10 +622,12 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
     later). The game's SPD is linear in the pieces — ⌊B × (1000 + rate)/1000⌋ + 3 × segments + SPD mains, the rate from one
     set (only the Speed Set has SPD rows) — so a − Σ b − Σ r = 333 × (t − SPD) exactly (`test/trade/spdgoal.test.ts`).
 12. **No chance — no goal** (Q5): `spdReach` — the most SPD any kit could give (per slot the fastest piece; for a set with
-    SPD rows each armor slot also tries its best piece of that set, T4 and not) over what the trade can reach (pieces worn by
-    anyone, the member's own pool, parked ones; class-wearable) + the bonus; at or below the boss's "surely after" bound
-    (≈ × 0.95) the goal is off and the timeline says «Из твоих вещей не догнать: самое большее N». With some chance the goal
-    stays, λ caps the cost (an out-of-reach target turns linear, as EFF's).
+    SPD rows each armor slot also tries its best piece of that set, T4 and not) over the trade's own candidates for that
+    member (`reach:tradeSpdReach` = `candidates` of §7 item 2: the receiver's bar, others' spare never, code copies,
+    parked pieces into an empty slot without the bar; class-wearable) + the bonus; at or below the boss's "surely after"
+    bound (≈ × 0.95) the goal is off and the timeline says «Из твоих вещей не догнать: самое большее N». A member without
+    builds has no gauge and no goal; his line counts every piece he could wear (worn by anyone, his pool, parked ones).
+    With some chance the goal stays, λ caps the cost (an out-of-reach target turns linear, as EFF's).
 13. **Both goals on one member** (Q4) — the sum of the two terms. The kit search takes goal terms as a list
     (`kit.ts termsOf`): the plain best that loses nothing to crit and every term; terms out of reach fold into v / the set
     value (`linearKit`); otherwise `critKit` with the dominance per stat (CHC, EFF, SPD segments each against the candidate's

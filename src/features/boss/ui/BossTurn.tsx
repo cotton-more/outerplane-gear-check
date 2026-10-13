@@ -22,8 +22,9 @@ import type { WornEff } from '@/features/worn/wearing';
 import { luckPct, timeline, type TurnRow } from '../model/turn';
 
 // a member: SPD in the turn order (the app's count + bonus, the allies' transcend); why — the turn-1 reasons that work on this
-// boss (none — no reason to move first); reach — the most SPD a kit from the gear gives (+ bonus) when it gives no chance, else
-// null; eff — null for a hero who doesn't need EFF; v — EFF in battle against this boss
+// boss (none — no reason to move first); reach — the most SPD a kit gives (+ bonus) when it gives no chance, else null: with
+// builds from the team trade's own candidates, without — from every piece he could wear (the screen decides); eff — null for
+// a hero who doesn't need EFF; v — EFF in battle against this boss
 export interface TurnHero { c: Char; spd: number; bonus: number; why: readonly TurnReason[]; reach: number | null; eff: WornEff | null; v: number }
 
 export function BossTurn({ heroes, boss, spd, res, onEff }: {
