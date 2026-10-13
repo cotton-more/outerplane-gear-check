@@ -66,22 +66,45 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-rc { flex: none; color: var(--ink-3); font-size: 12px; }
 .boss-fill { width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: var(--radius-s); background: var(--accent-soft); color: var(--accent); font: 700 13.5px var(--font-body); }
 .tm-gn { margin: 0; }
-/* EFF vs the boss's RES under the team (BossEff, .x/0200-boss stage D, mockup variant A): a row per member who needs EFF —
-   face, name, EFF, the gap (amber) or ✓ (green), the chance; the EE hint on its own line under the name; one quiet line at
-   the end */
-.boss-eff { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.boss-eff h4 { margin: 0 0 2px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
-.be-row { display: grid; grid-template-columns: 30px minmax(6ch, 1fr) auto auto auto; align-items: center; gap: 2px 6px; width: 100%; min-height: 44px;
-  padding: 4px 8px 4px 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: 13.5px var(--font-body); }
-.be-row > .face { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; }
-.be-n { min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.be-v { font: 700 13.5px var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.be-d { min-width: 4ch; text-align: right; font: 800 13px var(--font-mono); white-space: nowrap; }
-.be-d.ok { color: var(--keep); }
-.be-d.lack { color: var(--temp); }
-.be-p { min-width: 5ch; text-align: right; font: 600 12px var(--font-mono); color: var(--ink-2); white-space: nowrap; }
-.be-hint { grid-column: 2 / -1; font-size: 12px; font-weight: 600; color: var(--accent); }
-.be-foot { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }
+/* «Ход против босса» (BossTurn, .x/0200-boss E1, mockup MOCKUP-E1 v3): the turn line on the left (accent, fading down) with a
+   stopwatch on top; a node per fighter — blue: surely before the boss, dashed amber: luck, grey: after; the boss — a red
+   row with a bigger red node. A row: face, name, SPD (the Speed Set's icon) and EFF under the name, badges on the right;
+   a tap opens the row in place */
+.boss-turn { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding-left: 26px; }
+.boss-turn::before { content: ""; position: absolute; left: 11px; top: 30px; bottom: 14px; width: 2px; border-radius: 1px;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 25%, var(--line))); }
+.bt-h { display: flex; align-items: center; gap: 8px; min-height: 26px; margin: 0 0 0 -26px; font-size: 12px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.bt-h > .ico { width: 24px; height: 24px; color: var(--accent); }
+.bt-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bt-li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.bt-li::before { content: ""; position: absolute; left: -20px; top: 24px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
+  background: var(--surface); box-shadow: 0 0 0 2px var(--accent); }
+.bt-li::after { content: ""; position: absolute; left: -10px; top: 24px; width: 9px; height: 2px; margin-top: -1px; background: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.bt-li.luck { border-style: dashed; border-color: var(--temp); }
+.bt-li.luck::before { box-shadow: 0 0 0 2px var(--temp); }
+.bt-li.after::before { background: var(--line-2); box-shadow: 0 0 0 2px var(--line-2); }
+.bt-li.boss { border: 1.5px solid var(--junk); background: color-mix(in srgb, var(--junk) 7%, var(--surface)); }
+.bt-li.boss::before { left: -22px; width: 14px; height: 14px; margin-top: -7px; background: var(--junk); box-shadow: 0 0 0 3px color-mix(in srgb, var(--junk) 25%, transparent); }
+.bt-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 1px 8px; width: 100%;
+  min-height: 46px; padding: 5px 8px 5px 5px; border: 0; background: none; color: var(--ink); text-align: left; font: 13.5px var(--font-body); }
+.bt-row > .face, .bt-row > .ico, .bt-row > img { grid-row: 1 / span 2; width: 34px; height: 34px; border-radius: 7px; object-fit: cover; }
+.bt-li.boss .bt-row > .ico, .bt-li.boss .bt-row > img { width: 22px; height: 22px; margin: 6px; }
+.bt-n { min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bt-st { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0 10px; font: 600 11.5px var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.bt-s { display: inline-flex; align-items: center; gap: 3px; }
+.bt-s > img, .bt-s > .ico, .bt-b > img, .bt-b > .ico, .bt-foot > img, .bt-foot > .ico { width: 13px; height: 13px; }
+.bt-s > img.gstat, .bt-b > img.gstat, .bt-foot > img.gstat { width: 11px; height: 11px; padding: 1px; }
+.bt-bd { grid-column: 3; grid-row: 1 / span 2; display: grid; gap: 3px; justify-items: end; }
+.bt-b { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 999px; font: 700 11.5px var(--font-mono); white-space: nowrap; }
+@media (max-width: 340px) { .bt-bw { display: none; } }
+.bt-b.ok { color: var(--keep); background: var(--keep-soft); }
+.bt-b.lack { color: var(--temp); background: var(--temp-soft); }
+.bt-x { display: grid; gap: 4px; margin: 0 8px 8px 47px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-2); }
+.bt-x p { margin: 0; }
+.bt-eff { justify-self: start; text-align: left; }
+.bt-foot { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }
+.bt-foot > img, .bt-foot > .ico { vertical-align: -2px; }
 
 .boss-list, .boss-view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .boss-list .pick-q { margin: 0; }

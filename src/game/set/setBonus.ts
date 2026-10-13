@@ -58,7 +58,7 @@ export function convertible(ctx: Ctx, c: Char, setId: string): boolean {
 }
 
 // база SPD персонажа (как у flat ATK/DEF/HP: уровень по настройке, quirks — по настройке)
-function spdBase(ctx: Ctx, c: Char): number | null {
+export function spdBase(ctx: Ctx, c: Char): number | null {
   const f = c.spd;
   if (!f || !f[0] || !f[1]) return null;
   return f[lv120Of(ctx, c) ? 1 : 0] + (ctx.settings.quirks ? f[2] : 0);
