@@ -10,7 +10,8 @@ the commit bodies on 2026-10-10. The numbering below keeps the old section numbe
 Product background — [GEARPOOL.md](GEARPOOL.md) (obsolete, history) and the Wiki pages `Equipment`, `Upgrading`,
 `Fast-cleanup`.
 
-Conventions. **V** is the value of a hero's layout (piece points + set value − the crit loss of §12). **Points** are decimals inside the model
+Conventions. **V** is the value of a hero's layout (piece points + set value − the crit loss of §12; in the boss team trade
+also − the EFF goal's term of §13). **Points** are decimals inside the model
 and whole thousandths (**milli**, `game/build/points:milli`) wherever two numbers are compared: `milli(p) = round(p·1000)`,
 because six points as a sum of shares can come out 5.999999999999999. `EPS = 1e-9` (`features/gear/pool/base`) is the
 float tolerance for plain decimals. The **+1 point margin** is `THRESHOLD = milli(1)` (`features/gear/model/vs`).
@@ -329,6 +330,8 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (c) the members' gains sorted ascending, compared lexicographically — at an equal sum the variant whose *smaller* gain
    is larger wins («Б → Caren 15, А → Rin 12» beats «А → Caren 20, Б → Rin 7»); (d) the first order. Pairs inside the
    four then swap worn pieces in several slots at once when nobody is worse and at least one is better by the threshold.
+   **With a boss** each member who needs EFF has the EFF goal of §13 inside his V; the sum, the thresholds, the swaps and
+   the order search see it through `keyOf`, nothing else changes.
 7. **The end: no orphans** (`ends:endsOf`; .x/0200-boss E2b Q2, Q6, owner 2026-10-13 — reverses «holes are not filled»,
    owner 2026-10-04). After **every** member's step (a piece a later step takes at cost 2 is no replacement), each piece
    the plan took off a hero — worn at the start, worn by nobody after, still in a pool — goes, in the plan's order of
@@ -556,4 +559,45 @@ EFF and SPD are later tickets.
 8. **Not modelled** (the player lowers N): gems (+3 % each), talisman (7.2…9 %), EE, Singularity of the main, active
    buffs (Valentine, Tamara, Skadi, Noa +50 % after the cap — the reason of outerpedia's «CHC up to 50%»; default N stays
    100, owner). Enhance: every main counts at +10.
+
+## §13 EFF goal in the boss team trade («Эфф ≈ 184 → 222 · 93%»)
+
+.x/0200-boss E3, owner decisions Q1–Q7 and Q3a (2026-10-13, PLAN §5). Only in the team trade on «Команда» with a boss: the
+verdict, the pool, «Надето», the batch and the one-hero trade are unchanged (the hero card doesn't know whom the hero fights).
+
+1. **Who and what.** Every member with builds who needs EFF (rule R, `Char.eff.d`) gets `EffGoal { t, star, bonus }`
+   (`features/trade/model/goal`, `WorldOpts.goals`, composed in `screens/team`): the target **t = the boss's RES at the
+   stage + 1** — the debuff always lands (Q1; no chance setting, no guide numbers); the spot's ★ and the battle bonus
+   (`battleBonus`: the element quirk node, the strongest teammate's transcend team row). The EFF it is held in is the
+   timeline's (Q2): the kit's EFF by the app's count × the typed ratio (`effShown`) + the bonus ‰ of the base (`inBattle`);
+   nothing typed — the app's count, «≈» on the line.
+2. **The term** (`GoalGauge.loss`, subtracted in `keyOf` like the crit loss; `KitKey.goal`). Below t each missing EFF%
+   segment costs **λ = 1 point** (Q3): a debuffer takes EFF while it costs few stats, a far-off one pays little for a real
+   gain in chance (Q5: no special case for an unreachable target). Above t EFF is worth **nothing** (Q3a): the EFF%
+   segments (weight = place weight × credit on the piece) and the EFF set rows that carry points (a stat set, a row not
+   covered by a half) are laid from the EFF that carries none (the hero, the main lines' flat EFF, covered rows) heaviest
+   first, and what lies above t loses its points — a sharp step, no knee (100 % at RES + 1). So surplus EFF goes to whoever
+   lacks it, and a hero far above t takes other stats over EFF.
+3. **The goal's EFF is linear** (no floors): v = mult × (W × (1000 + rate)/1000 + own + flat), mult = (1000 + premium)/1000
+   × typed/at + bonus/1000; one EFF% segment is always `seg` = mult × W × 2.5 %. The shortfall is a sum of whole thousandths —
+   a (the empty kit) − Σ b (per piece: segments and flat EFF) − Σ r (per set: its rows) — so the search splits it by slot
+   exactly. The line prints the game's number (`effOf` with its floors), at most 3 away.
+4. **The kit search** (`kit:bestKit`). The plain best that loses nothing is the best. A target out of reach for every kit
+   (a − Σ max b − rMax > 0) makes the term linear: the usual search on v + b per candidate and bonus + r per set
+   (`linearKit`; the same order of kits). Otherwise `critKit`'s Pareto path with a stronger dominance (`goalDominates`:
+   a's points without its CHC and EFF segments cover b's plus what b's extra segments could bring — a CHC segment its
+   points, an EFF one its points and λ; where a has more segments they are at least as heavy; the same flat EFF from the
+   main; no more CHC from the main) and two bounds: V' ≤ points + b − a + the most rows take off (a branch without EFF carries
+   the whole penalty) and the sets a branch can still finish (`setUp`: the sets begun get some of the slots left, at most two
+   new sets the rest — instead of the best set value anywhere). The oracle is the brute force (`test/trade/goal.test.ts`).
+5. **What the plan shows** (Q6): the ▲/▼ gain and «Статы» stay plain stats (+ sets − crit: `HeroLine.before/after` put the
+   goal's term back); a member with a goal whose EFF changes gets its own row «Эфф ≈ 184 → 222 · 93%» (`HeroLine.eff`: the
+   game's battle EFF before and after, the chance after — `landChance`; ✓ above RES).
+6. **The candidates are as before** (Q4): the goal pulls no piece that fails the member's bar, and a recommended weapon or
+   accessory still outranks points — EFF never beats a passive.
+7. **New inputs — a new walk** (Q7): the walk's target in `ogc.trade` is `team:<ids>|<boss>@<stage>|<id>*<★>,…`; another
+   boss, stage, ★ tried on a spot or team starts a new walk (ticks reset, silently). No boss — no goals, the plan and the
+   target of today.
+8. **Speed** (owner's roster, 14 guide teams, desktop): the worst team 0.6 s (0.7 s without goals), all together 1.6× the
+   plain time — the calculation runs in chunks with «Отмена», as before.
 
