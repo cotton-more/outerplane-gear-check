@@ -263,9 +263,13 @@ describe('around the goal', () => {
 
   it('reasonsAt: a row the boss is immune to goes; a team row stays', () => {
     const v = S.char('Veronica'), a = S.char('Akari');
-    expect(v.turn).toEqual([{ s: 's1', k: 'taunt', fx: '32' }, { s: 's2', k: 'shield' }]);
-    expect(reasonsAt(v, ['32'])).toEqual([{ s: 's2', k: 'shield' }]);
-    expect(reasonsAt(a, ['26', '32'])).toEqual([{ s: 's1', k: 'atk', fx: '18' }]);
+    // E4-6: her S2 shield lands on the ally with the lowest HP (shield1), not on the team
+    expect(v.turn).toEqual([{ s: 's1', k: 'taunt', fx: '32' }, { s: 's2', k: 'shield1' }]);
+    expect(reasonsAt(v, ['32'])).toEqual([{ s: 's2', k: 'shield1' }]);
+    // E4-7: Akari's ATK down rolls 40 % at skill levels 1–2 and 55 % from 3: lv 3 (missing — holds from level 1)
+    expect(reasonsAt(a, ['26', '32'])).toEqual([{ s: 's1', k: 'atk', fx: '18', lv: 3 }]);
+    expect(S.char('Dolly').turn).toEqual([{ s: 's1', k: 'atk', fx: '18', lv: 5 }]); // 30 / 40 / 50 % at levels 1 / 3 / 5
+    expect(S.char('Omega Nadja').turn).toEqual([{ s: 's1', k: 'slow', fx: '26', lv: 5 }]);
     expect(reasonsAt(a, ['18'])).toEqual([]);
     expect(reasonsAt(S.char('Aer'), [])).toEqual([]);
   });

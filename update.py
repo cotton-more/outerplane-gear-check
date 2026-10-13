@@ -690,6 +690,13 @@ TURN_ENEMY_NEG = {"BT_ACTION_GAUGE", "BT_COOL_CHARGE", "BT_COOL2_CHARGE", "BT_CO
 TURN_ENEMY_STAT = {"ST_ATK": "atk", "ST_SPEED": "slow", "ST_CRITICAL_RATE": "crit", "ST_CRITICAL_DMG_RATE": "crit"}
 TURN_TEAM = {"BT_SHIELD_BASED_CASTER": "shield", "BT_SHIELD_BASED_TARGET": "shield", "BT_DMG_REDUCE": "cut",
              "BT_INVINCIBLE": "invul", "BT_IMMUNE": "immune"}
+# Whom a team row reaches decides if its text is true ("the team"): only these two targets are the whole team. A shield on the
+# ally with the lowest HP is its own kind (shield1: "shields the ally with the lowest HP", Veronica S2, Tio S1). Any other
+# partial or single target (MY_TEAM_ONE, _HIGHEST_ATK, _HIGHEST_MAXHP, _ONE_RANDOM, _MAGE, _ATTACKER, _ELEMENT_*_ALL,
+# _DEAD_ALL, or another kind on _LOWEST_HP_RATE) is not a reason: no text fits it. None of them is on a turn-1-ready skill
+# today (outerpedia a31f580 and 93a5234); a new one stays out until someone gives it a kind and a text.
+TURN_TEAM_ALL = {"MY_TEAM", "MY_TEAM_WITHOUT_ME"}
+TURN_SHIELD1_TARGET = "MY_TEAM_LOWEST_HP_RATE"
 # createType = when a row lands. Among the rows the turn kinds come from (ready skills, outerpedia a31f580 and 93a5234) the
 # turn-1 ones are SKILL_FINISH / DAMAGE / SKILL_START (with the cast: Veronica's taunt, Stella's push, Kappa's DEF up),
 # ON_TURN (Veronica's S2 shield, at the start of her turn) and PASSIVE (Ritri's cut, on from the start). The only other one
@@ -700,33 +707,40 @@ TURN_CREATE = {"SKILL_FINISH", "DAMAGE", "SKILL_START", "ON_TURN", "PASSIVE"}
 
 def turn_reasons(src: dict, cid: str) -> list[dict]:
     """The hero's skills ready on turn 1 (S1; S2/S3 with start cooldown 0 at the max skill level, and no resource to
-    collect first) and what they do before the boss acts: [{"s": "s1", "k": kind, "fx"?: glossary effect id}], at most
-    one per (slot, kind), skill order. Only a row that happens by itself counts: no `conditionType` (a status on the
-    caster or target, the target's element, a counterattack... — none is there on turn 1) and a createType from
+    collect first) and what they do before the boss acts: [{"s": "s1", "k": kind, "fx"?: glossary effect id, "lv"?: n}],
+    at most one per (slot, kind), skill order. Only a row that happens by itself counts: no `conditionType` (a status on
+    the caster or target, the target's element, a counterattack... — none is there on turn 1) and a createType from
     TURN_CREATE. An ultimate with BT_SKILL_USING_CONDITION on OWNER_RESOURCE + BT_RESOURCE_USE_SKILL (Maxwell, Bryn,
     Demiurge Stella, Monad Iota) waits for 5 of the unique resource, start cooldown 0 or not: skipped.
     On the boss (a DEBUFF* row on an enemy, roll ≥ 50 % at the max level): ATK / SPD / crit down, priority down, taunt,
     hard CC, cooldown up (any BT_COOL*_CHARGE with a negative value) — fx is the effect the boss may be immune to. On the
-    team (a BUFF row on MY_TEAM…): shield, DEF up, damage cut, invincibility, immunity. The last (max level) row of a
-    (buff, type, stat, target) group speaks for it."""
+    team (a BUFF row on MY_TEAM / MY_TEAM_WITHOUT_ME): shield, DEF up, damage cut, invincibility, immunity; a shield on the
+    ally with the lowest HP — shield1 (see TURN_TEAM_ALL). The last (max level) row of a (buff, type, stat, target) group
+    speaks for it.
+    lv — the lowest skill level (2…5) from which the reason holds at every level up to the max; missing when it holds from
+    level 1 (E4-7: the app assumes the max level, the why line says when a reason needs more). At level n a reason holds
+    when the level's `buffIds` has the buff, the effective row at n exists (rows are sparse by level: the group's row with
+    the highest `level` ≤ n), the row passes the checks above (a boss row's roll ≥ 50 % at n), and — S2/S3 — start cooldown
+    is 0 at n."""
     dchars, dskills, buffs = src["dmgChars"]["characters"], src["dmgChars"]["skills"], src["dmgBuffs"]["buffs"]
     deb = src["glossaries"].get("effectByKey", {}).get("debuff", {})
-    out: list[dict] = []
-    for ent in (dchars.get(cid) or {}).get("skills", []):
-        ds = dskills.get(ent["id"] if isinstance(ent, dict) else str(ent)) or {}
-        slot = EFF_SLOTS.get(ds.get("type"))
-        levels = ds.get("levels") or []
-        if not slot or not levels or (slot != "S1" and (levels[-1].get("startCool") or 0) > 0):
-            continue
+
+    def reasons_at(slot: str, lv: dict) -> dict[str, dict]:
+        """kind → its row (without lv) for the skill at one level; the first row of a kind speaks."""
+        if slot != "S1" and (lv.get("startCool") or 0) > 0:
+            return {}
         last: dict[tuple, dict] = {}
-        for b in levels[-1].get("buffIds", []):
+        for b in lv.get("buffIds", []):
             for r in buffs.get(b, []):
+                if r["level"] > lv["level"]:
+                    continue
                 k = (b, r["type"], r.get("stat"), r.get("targetType"))
                 if k not in last or r["level"] >= last[k]["level"]:
                     last[k] = r
         if (any(r["type"] == "BT_SKILL_USING_CONDITION" and r.get("conditionType") == "OWNER_RESOURCE" for r in last.values())
                 and any(r["type"] == "BT_RESOURCE_USE_SKILL" for r in last.values())):
-            continue
+            return {}
+        out: dict[str, dict] = {}
         for r in last.values():
             t, stat, tgt, v = r["type"], r.get("stat"), r.get("targetType") or "", r.get("value") or 0
             if r.get("conditionType") or r.get("createType") not in TURN_CREATE:
@@ -737,13 +751,33 @@ def turn_reasons(src: dict, cid: str) -> list[dict]:
                     kind, key = TURN_ENEMY_STAT[stat], f"BT_STAT|{stat}"
                 elif t in TURN_ENEMY and (t not in TURN_ENEMY_NEG or v < 0):
                     kind, key = TURN_ENEMY[t], t
-            elif tgt.startswith("MY_TEAM") and r.get("buffDebuffType", "").startswith("BUFF"):
-                kind = TURN_TEAM.get(t) or ("def" if t == "BT_STAT" and stat == "ST_DEF" and v > 0 else None)
-            if not kind or any(x["s"] == slot.lower() and x["k"] == kind for x in out):
+            elif r.get("buffDebuffType", "").startswith("BUFF"):
+                if tgt in TURN_TEAM_ALL:
+                    kind = TURN_TEAM.get(t) or ("def" if t == "BT_STAT" and stat == "ST_DEF" and v > 0 else None)
+                elif tgt == TURN_SHIELD1_TARGET and TURN_TEAM.get(t) == "shield":
+                    kind = "shield1"
+            if not kind or kind in out:
                 continue
-            row: dict = {"s": slot.lower(), "k": kind}
-            if key and deb.get(key):
-                row["fx"] = str(deb[key])
+            out[kind] = {"k": kind, **({"fx": str(deb[key])} if key and deb.get(key) else {})}
+        return out
+
+    out: list[dict] = []
+    for ent in (dchars.get(cid) or {}).get("skills", []):
+        ds = dskills.get(ent["id"] if isinstance(ent, dict) else str(ent)) or {}
+        slot = EFF_SLOTS.get(ds.get("type"))
+        levels = ds.get("levels") or []
+        if not slot or not levels:
+            continue
+        per = [reasons_at(slot, lv) for lv in levels]
+        for kind, r in per[-1].items():
+            if any(x["s"] == slot.lower() and x["k"] == kind for x in out):
+                continue
+            n = len(per) - 1  # the lowest index from which the reason holds at every level up to the max
+            while n > 0 and kind in per[n - 1]:
+                n -= 1
+            row: dict = {"s": slot.lower(), **r}
+            if levels[n]["level"] > 1:
+                row["lv"] = levels[n]["level"]
             out.append(row)
     return out
 

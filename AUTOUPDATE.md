@@ -77,8 +77,8 @@ outerpedia между опубликованной версией и новой 
    ровно у 17 героев (Tanya и Rico 500, остальные 1000); правило R (`d`) — Tamara, Iota, Sigma, Ember, Gnosis Domine, Demiurge Vlada,
    Epsilon, Maxwell да, Francesca, Vlada, Eris, Eliza, Drakhan нет, всего 40–60 героев; EFF трансценда на всю команду
    (`tm`) — Iota, Dahlia, Gnosis Nella да, Gnosis Domine и Iris нет; SPD трансценда (`spdUp`) — Dianne, Mene, Liselotte,
-   Viella на всю команду (+10 на ★6), Claire только себе; причины ходить раньше босса (`turn`) — Akari `s1:atk`, Veronica
-   `s1:taunt,s2:shield`, Iota `s1:push`, у Maxie нет; main Legendary на
+   Viella на всю команду (+10 на ★6), Claire только себе; причины ходить раньше босса (`turn`) — Akari `s1:atk@3`, Veronica
+   `s1:taunt,s2:shield1`, Iota `s1:push`, Demiurge Vlada `s1:cool`, у Ember и Maxie нет; main Legendary на
    T0: перчатки EFF — 50, броня DEF — 500, оружие ATK — 1000.
 4. **Страница работает.** Собранный `docs/index.html` запускается в jsdom: пустой экран, разбор брони и оружия,
    карточка каждого персонажа — без исключений.

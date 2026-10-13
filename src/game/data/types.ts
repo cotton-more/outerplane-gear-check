@@ -72,10 +72,12 @@ export interface Char {
 }
 
 // a turn-1 reason: on the boss — atk, slow (SPD down), crit, push (priority down), taunt, stun, freeze, stone, silence,
-// cool (cooldown up); for the team — shield, def, cut (damage taken down), invul, immune
+// cool (cooldown up); for the team — shield, def, cut (damage taken down), invul, immune; shield1 — a shield on the one ally
+// with the lowest HP (not the whole team: its own text). lv — the lowest skill level the reason holds from (2…5); missing —
+// from level 1. The app assumes the max skill level, so lv only goes to the why line
 export type TurnKind = 'atk' | 'slow' | 'crit' | 'push' | 'taunt' | 'stun' | 'freeze' | 'stone' | 'silence' | 'cool'
-  | 'shield' | 'def' | 'cut' | 'invul' | 'immune';
-export interface TurnReason { s: 's1' | 's2' | 's3'; k: TurnKind; fx?: string }
+  | 'shield' | 'shield1' | 'def' | 'cut' | 'invul' | 'immune';
+export interface TurnReason { s: 's1' | 's2' | 's3'; k: TurnKind; fx?: string; lv?: number }
 
 // Строка бонуса сета числом, в единицах сабстата stat (Attack 2P T4 → ATK% 35). stat — ключ сабстата, если бонус
 // выражается им (8 сетов-статов); иначе null — в статах не выразить (Penetration, Counterattack, сеты-эффекты; у

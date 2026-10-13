@@ -354,7 +354,7 @@ describe('J. обмен вещами', () => {
     const akariRow = [...document.querySelectorAll('#view-team .bt-li')].find((li) => li.textContent?.includes('Akari'))!;
     await click(akariRow.querySelector('.bt-row'));
     const x = [...document.querySelectorAll('#view-team .bt-li')].find((li) => li.textContent?.includes('Akari'))!;
-    expect(x.querySelector('.bt-why')?.textContent).toBe('Moving before the boss matters: S1 lowers the boss\'s ATK.');
+    expect(x.querySelector('.bt-why')?.textContent).toBe('Moving before the boss matters: S1 lowers the boss\'s ATK (from skill level 3).'); // E4-7
     expect([...x.querySelectorAll('.bt-x p')][0].textContent).toMatch(/^SPD \d+ — moves after the boss; to surely move first: 223 \(\+\d+\)\.$/);
     await click(byText('#view-team .tm-go', 'Pick gear'));
     await planReady();

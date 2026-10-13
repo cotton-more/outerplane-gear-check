@@ -614,11 +614,16 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
 9. **Who.** A member with builds whose turn-1 skill acts before the boss does (`Char.turn`, `update.py turn_reasons`): S1
    always, S2/S3 only with start cooldown 0 at the max level; on the boss — ATK, SPD or crit down, priority down, taunt,
    hard CC, cooldown up (a DEBUFF* row on an enemy, roll ≥ 50 %; cooldown up is any `BT_COOL*_CHARGE` with a negative
-   value); for the team — shield, DEF up, damage cut, invincibility, immunity. Only what happens by itself counts: a row
+   value); for the team (a row on `MY_TEAM` / `MY_TEAM_WITHOUT_ME`) — shield, DEF up, damage cut, invincibility, immunity.
+   A shield on the one ally with the lowest HP (`MY_TEAM_LOWEST_HP_RATE`: Veronica S2, Tio S1) is its own kind, `shield1`
+   — «shields the ally with the lowest HP»; every other single-ally or partial-team row is out, no text would be true
+   (none is on a ready skill today). Only what happens by itself counts: a row
    with a `conditionType` (a status on the caster or target, the target's element…), a trigger on another effect's end
    (Monad Iota's Golden Curse) and an ultimate that waits for its unique resource (Demiurge Stella, Monad Iota) are out —
-   Ember's taunt, Sigma's stun, Snow's push. A row the boss is immune to at the stage goes (`reasonsAt`, the effect id
-   against `factsAt().imm`). The app
+   Ember's taunt, Sigma's stun, Snow's push. `lv` — the lowest skill level from which a reason holds (the buff in the
+   level's `buffIds`, its effective row there, a boss roll ≥ 50 %, S2/S3 start cooldown 0; today Akari 3, Dolly 5,
+   Omega Nadja 5), shown on the why line («с 3-го уровня навыка») — the app itself assumes the max level. A row the boss
+   is immune to at the stage goes (`reasonsAt`, the effect id against `factsAt().imm`). The app
    decides (Q1): no per-spot switch, no guide numbers, never a ceiling. The reason is shown on the timeline's expanded row,
    not in the plan (Q7); a member without one has no goal — SPD stays a plain chain stat, the row drops «нужно …».
 10. **The target** is the SPD that surely moves first (Q2): `firstAt(boss)` — the first SPD above boss × 100/95 (`turnOf`,

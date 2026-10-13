@@ -1089,23 +1089,26 @@ export const ru = {
     turnFootDeb: '— шанс, что босс не отразит дебафф.',
     turnEffShort: (v: string, gap: number) => `Эфф ${v} — до RES + 1 не хватает ${gap}.`,
     turnEffOk: (v: string) => `Эфф ${v} — выше RES: дебафф проходит всегда.`,
-    // the SPD sentence (E4 texts, owner 2026-10-13): s — «SPD 148» or with the allies' transcend «SPD 148 (+10 трансценд
-    // союзников)» (turnSpd); «нужно …» only for a member who should move first (a turn-1 reason), the others — the state alone
-    turnSpd: (v: number, bonus: number) => (bonus ? `SPD ${v} (+${bonus} трансценд союзников)` : `SPD ${v}`),
+    // the SPD sentence (E4 texts, owner 2026-10-13): s — «SPD 148» or with the transcend bonus «SPD 148 (+10 трансценд)»
+    // (turnSpd; the bonus is every member's team row plus the hero's own row, so «трансценд» without «союзников»); «нужно …»
+    // only for a member who should move first (a turn-1 reason), the others — the state alone
+    turnSpd: (v: number, bonus: number) => (bonus ? `SPD ${v} (+${bonus} трансценд)` : `SPD ${v}`),
     turnSpdLuck: (s: string, v: number, need: number) => `${s} — чтобы точно ходить раньше босса, нужно ${need} (+${need - v}).`,
     turnSpdFirst: (s: string) => `${s} — точно раньше босса.`,
     turnSpdAfter: (s: string, v: number, need: number) => `${s} — ходит после босса; чтобы точно раньше, нужно ${need} (+${need - v}).`,
     turnSpdLuckOther: (s: string) => `${s} — раньше или позже босса, как повезёт.`,
     turnSpdAfterOther: (s: string) => `${s} — ходит после босса.`,
-    // why moving first matters (E4 Q1, Q7): at most two reasons «S1 снижает ATK босса, S2 ставит щит команде»; far — no chance
-    // even with the fastest kit from the gear (Q5)
+    // why moving first matters (E4 Q1, Q7): at most two reasons «S1 снижает ATK босса, S2 даёт команде неуязвимость»; a reason
+    // that needs a skill level above 1 adds turnLv (E4-7: «S1 снижает ATK босса (с 3-го уровня навыка)»; the app counts the max
+    // level); far — no chance even with the fastest kit from the gear (Q5)
     turnWhy: (reasons: string) => `Ходить раньше босса важно: ${reasons}.`,
+    turnLv: (n: number) => `(с ${n}-го уровня навыка)`,
     turnReason: {
       atk: 'снижает ATK босса', slow: 'замедляет босса', crit: 'снижает крит босса', push: 'отбрасывает босса по шкале хода',
       taunt: 'провоцирует босса', stun: 'накладывает на босса оглушение', freeze: 'накладывает на босса заморозку',
       stone: 'накладывает на босса окаменение', silence: 'накладывает на босса немоту', cool: 'отодвигает навыки босса',
-      shield: 'ставит щит команде', def: 'повышает DEF команды', cut: 'снижает урон по команде', invul: 'даёт команде неуязвимость',
-      immune: 'даёт команде иммунитет',
+      shield: 'ставит щит команде', shield1: 'ставит щит союзнику с меньшим HP', def: 'повышает DEF команды',
+      cut: 'снижает урон по команде', invul: 'даёт команде неуязвимость', immune: 'даёт команде иммунитет',
     },
     turnFar: (most: number) => `Из твоих вещей не догнать: самое большее ${most}.`,
     turnEffOpen: 'Эфф из игры',

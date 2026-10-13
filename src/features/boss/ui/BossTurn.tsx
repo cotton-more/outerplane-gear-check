@@ -5,7 +5,7 @@
 // EFF (rule R), EFF in battle and the chance the debuff lands (game/stat/eff landChance; ✓ above RES). A tap expands the
 // row: EFF short of RES + 1, the SPD that surely moves first, «Эфф из игры» → the EFF sheet (TeamScreen), with the EE hint
 // until the game's number is typed (Q3 detail 1). The boss — a red row in its place with SPD and RES.
-// E4 (owner 2026-10-13): SPD counts the allies' transcend bonus (Q6; «(+10 трансценд союзников)» in the expanded row); the
+// E4 (owner 2026-10-13): SPD counts the allies' transcend bonus (Q6; «(+10 трансценд)» in the expanded row); the
 // expanded row says SPD first, then — for a member whose turn-1 skill acts on the boss or shields the team — why moving first
 // matters and the SPD for it (Q1, Q7), and «не догнать» when even the fastest kit from the gear gives no chance (Q5); the
 // others get the state alone, no «нужно …».
@@ -75,7 +75,7 @@ export function BossTurn({ heroes, boss, spd, res, onEff }: {
         {on && (
           <div className="bt-x">
             <p>{spdText(h, turn)}</p>
-            {h.why.length > 0 && <p className="bt-why">{t.boss.turnWhy(h.why.slice(0, 2).map((r) => `${r.s.toUpperCase()} ${t.boss.turnReason[r.k]}`).join(', '))}</p>}
+            {h.why.length > 0 && <p className="bt-why">{t.boss.turnWhy(h.why.slice(0, 2).map((r) => `${r.s.toUpperCase()} ${t.boss.turnReason[r.k]}${r.lv ? ` ${t.boss.turnLv(r.lv)}` : ''}`).join(', '))}</p>}
             {h.reach !== null && <p className="bt-far">{t.boss.turnFar(h.reach)}</p>}
             {eff && <p>{v > res ? t.boss.turnEffOk(shown) : t.boss.turnEffShort(shown, res + 1 - v)}</p>}
             {eff && (
