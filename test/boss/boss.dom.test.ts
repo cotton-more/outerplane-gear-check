@@ -303,39 +303,64 @@ describe('a boss on «Команда»', () => {
   });
 });
 
-// EFF vs the boss's RES under the team (.x/0200-boss stage D): members who need EFF (rule R) — EFF, the gap to RES + 1 or ✓,
-// the chance the debuff lands; the EE hint until the game's number is typed; a row opens «EFF for X»
-describe('EFF vs RES on «Команда»', () => {
-  const rows = () => $$('#view-team .boss-eff .be-row').map((r) => [r.querySelector('.be-n')?.textContent, r.querySelector('.be-v')?.textContent,
-    r.querySelector('.be-d')?.textContent, r.querySelector('.be-p')?.textContent, r.querySelector('.be-hint')?.textContent ?? null]);
+// «Ход против босса» under the team (.x/0200-boss E1; EFF from stage D): the members and the boss in the order of the first
+// turn — SPD the app knows, luck with its chance, after the boss; members who need EFF (rule R) — EFF in battle and the chance
+// the debuff lands; a tap expands a row (EFF short of RES + 1, the SPD that surely moves first, «EFF from the game» → the sheet
+// with the EE hint until the game's number is typed)
+describe('Turn vs the boss on «Команда»', () => {
+  const li = () => $$('#view-team .boss-turn .bt-li');
+  const rows = () => li().map((r) => [r.querySelector('.bt-n')?.textContent ?? r.textContent, r.className.replace('bt-li ', ''),
+    [...r.querySelectorAll('.bt-s')].map((x) => x.textContent).join(' '), [...r.querySelectorAll('.bt-b')].map((x) => x.textContent).join(' ')]);
+  const row = (name: string) => li().find((r) => r.querySelector('.bt-n')?.textContent === name)!;
   const meteos = async () => {
     await pickBoss('Blazing Knight Meteos');
     await closeSheet();
     await click($('#view-team .boss-fill'));
   };
 
-  it('no boss — no block; Meteos 13 (RES 288): Tamara and Roxie, nothing worn — W + node + the element node in battle, «≈», the EE hint for Tamara', async () => {
+  it('no boss — no block; Meteos 13 (SPD 109, RES 288), nothing worn: SPD = base (Lv100 + quirks), Veronica 106 — luck after the boss; EFF for Tamara and Roxie', async () => {
     await mount();
-    expect($('#view-team .boss-eff')).toBeNull();
+    expect($('#view-team .boss-turn')).toBeNull();
     await meteos();
-    expect($('#view-team .boss-eff h4')?.textContent).toBe('EFF vs RES 288');
-    // Tamara: W 120 + Ranger 50 = 170, in battle + 7 % of 170 (water beats the fire boss) = 181 → −108, lands 48 %; Roxie (water) 120 + 8
+    expect($('#view-team .boss-turn .bt-h')?.textContent).toBe('Turn vs the boss');
+    // Tamara: W 120 + Ranger 50 = 170, in battle + 7 % of 170 (water beats the fire boss) = 181 → lands 48 %; Roxie (water) 120 + 8
+    // Veronica 106 vs 109: between 0.95 and 1.053 — luck, below ½ → after the boss
     expect(rows()).toEqual([
-      ['Tamara', '≈\u2009about 181', '−108', '48 %', 'EE gives EFF ×2 — type EFF from the game ▸'],
-      ['Roxie', '≈\u2009about 128', '−161', '38 %', null],
+      ['Tamara', 'first', '154 ≈\u2009181', '48%'],
+      ['Rin', 'first', '136', ''],
+      ['Roxie', 'first', '124 ≈\u2009128', '38%'],
+      ['Blazing Knight Meteos', 'boss', '109 RES 288', ''],
+      ['Veronica', 'luck', '106', expect.stringMatching(/^first \d\d?%$/)],
     ]);
-    expect($('#view-team .boss-eff .be-foot')?.textContent).toContain('the chance the boss doesn’t resist');
+    expect($('#view-team .boss-turn .bt-foot')?.textContent).toContain('the chance to move before the boss');
+    expect($('#view-team .boss-turn .bt-foot')?.textContent).toContain('the chance the boss doesn’t resist');
+  });
+
+  it('a tap expands a row: EFF short of RES + 1, the SPD that surely moves first; a hero without EFF — SPD only', async () => {
+    await mount();
+    await meteos();
+    await click(row('Tamara').querySelector('.bt-row'));
+    expect(row('Tamara').querySelector('.bt-row')?.getAttribute('aria-expanded')).toBe('true');
+    expect([...row('Tamara').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
+      'EFF ≈\u2009181 — 108 short of RES + 1.', 'SPD 154 — surely before the boss.']);
+    expect(row('Tamara').querySelector('.bt-eff')?.textContent).toBe('EE gives EFF ×2 — type EFF from the game ▸');
+    await click(row('Veronica').querySelector('.bt-row'));
+    expect([...row('Veronica').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
+      `SPD 106 — to surely move before the boss: ${Math.floor((109 * 100) / 95) + 1} (+${Math.floor((109 * 100) / 95) + 1 - 106}).`]);
+    expect(row('Veronica').querySelector('.bt-eff')).toBeNull();
   });
 
   it('a row → «EFF for Tamara»: typed 340 — ✓ 100 %, no hint; stored on the hero', async () => {
     await mount();
     await meteos();
-    await click($('#view-team .boss-eff .be-row'));
+    await click(row('Tamara').querySelector('.bt-row'));
+    await click(row('Tamara').querySelector('.bt-eff'));
     const input = $('.effsheet input') as HTMLInputElement;
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     await act(async () => { set.call(input, '340'); input.dispatchEvent(new Event('input', { bubbles: true })); });
     await click(byText('.effsheet .btn.primary', 'Done'));
-    expect(rows()[0]).toEqual(['Tamara', '351', '✓', '100 %', null]); // 340 typed + water beats fire: 7 % of 170
+    expect(rows()[0]).toEqual(['Tamara', 'first', '154 351', '✓\u2009100%']); // 340 typed + water beats fire: 7 % of 170
+    expect(row('Tamara').querySelector('.bt-eff')?.textContent).toBe('EFF from the game ▸');
     expect(JSON.parse(localStorage.getItem('ogc.gear')!).eff).toEqual({ [id('Tamara')]: { typed: 340, at: 170 } });
   });
 
@@ -349,9 +374,9 @@ describe('EFF vs RES on «Команда»', () => {
     await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Iota'));
     await click($('#view-team .tm-team .tm-sb'));
     await click($$('.drawer.hs-sheet .hs-big button')[5]);
-    const iotaRow = () => $$('#view-team .boss-eff .be-row').find((r) => r.querySelector('.be-n')?.textContent === 'Iota')!;
-    expect(iotaRow().querySelector('.be-v')?.textContent).toBe('≈\u2009about 133'); // 127 at ★6 + Dark 5 % of 120
-    await click(iotaRow());
+    expect([...row('Iota').querySelectorAll('.bt-s')][1].textContent).toBe('≈\u2009133'); // 127 at ★6 + Dark 5 % of 120
+    await click(row('Iota').querySelector('.bt-row'));
+    await click(row('Iota').querySelector('.bt-eff'));
     expect($('.effsheet .eff-v')?.textContent).toBe('≈\u2009about 123');
     const input = $('.effsheet input') as HTMLInputElement;
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;

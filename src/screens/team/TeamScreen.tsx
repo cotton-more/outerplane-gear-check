@@ -7,9 +7,10 @@
 // the guide's teams for the stage replace the general suggestions and «Собрать из гайда» fills the spots; Core Fusion X
 // stands in for X, which the guides list; a spot's guide heroes come from the teams matching the rest of the team. The team is
 // kept per boss and without one in 'ogc.boss' (owner D5; before — React state only, lost on reload).
-// With a boss, under the team — each member's EFF vs its RES (.x/0200-boss stage D, BossEff); a row opens «Эфф для X» —
-// the same sheet as the card's, the typed value is the hero's (GearStore.eff). EFF counts the spot's ★ (like the report)
-// and what battle adds (the element quirk node, a teammate's transcend team row).
+// With a boss, under the team — «Ход против босса» (.x/0200-boss E1, BossTurn): the members and the boss in the order of
+// the first turn (SPD the app knows, game/stat/spd), and each member's EFF vs its RES (stage D); a row's «Эфф из игры»
+// opens «Эфф для X» — the same sheet as the card's, the typed value is the hero's (GearStore.eff). EFF counts the spot's ★
+// (like the report) and what battle adds (the element quirk node, a teammate's transcend team row).
 import { useMemo, useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
@@ -26,9 +27,10 @@ import { useBossStore } from '@/features/boss/useBossStore';
 import { BossRow } from '@/features/boss/ui/BossRow';
 import { BossSheet } from '@/features/boss/ui/BossSheet';
 import { GuideChoice } from '@/features/boss/ui/GuideChoice';
-import { BossEff, type EffRow } from '@/features/boss/ui/BossEff';
+import { BossTurn, type TurnHero } from '@/features/boss/ui/BossTurn';
 import { effView } from '@/features/worn/wearing';
 import { battleBonus, inBattle } from '@/game/stat/eff';
+import { spdOf } from '@/game/stat/spd';
 import { EffSheet } from '@/features/worn/EffSheet';
 import { setEff } from '@/features/gear/model/gear';
 import type { GearApi } from '@/features/gear/store/useGear';
@@ -124,18 +126,20 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
   };
   const undoFill = () => { if (filled?.undo) saveTeam(filled.key, filled.undo); setFilled(null); };
 
-  // EFF vs RES: members who need EFF, in spot order, with the spot's ★; v — EFF in battle against this boss (the element
-  // quirk node, a teammate's transcend team row — game/stat/eff battleBonus, owner F1/F4)
+  // the turn timeline: every member with an SPD the app knows (worn pieces), in spot order; a member who needs EFF — EFF in
+  // battle against this boss (the element quirk node, a teammate's transcend team row — game/stat/eff battleBonus, owner F1/F4)
   const effOfSpot = (m: Spot) => effView({ ...ctx, stars: { ...ctx.stars, [m.id]: starOf(m) } }, idx.CHAR[m.id], gear.store);
   const mates = members.map((m) => ({ c: idx.CHAR[m.id], star: m.star }));
-  const effRows: EffRow[] = facts && boss ? team.flatMap((m) => {
-    const eff = m && effOfSpot(m);
-    if (!m || !eff) return [];
-    const c = idx.CHAR[m.id];
-    return [{ c, eff, v: inBattle(eff.e, eff.shown.v, battleBonus(c, starOf(m), ctx.settings.quirks, boss.element, mates)) }];
+  const wornOf = (id: string) => Object.values(gear.store.worn?.[id] ?? {}).flatMap((p) => (p && gear.store.pieces[p] ? [gear.store.pieces[p]] : []));
+  const turnHeroes: TurnHero[] = facts && boss ? team.flatMap((m) => {
+    const c = m && idx.CHAR[m.id];
+    const spd = c && spdOf(ctx, c, wornOf(c.id));
+    if (!m || !c || !spd) return [];
+    const eff = effOfSpot(m);
+    return [{ c, spd: spd.total, eff, v: eff ? inBattle(eff.e, eff.shown.v, battleBonus(c, starOf(m), ctx.settings.quirks, boss.element, mates)) : 0 }];
   }) : [];
   // the sheet takes the card's ★, not the spot's: the number the player types is the game's, at the hero's real stars
-  const effOpen = effFor && effRows.some((r) => r.c.id === effFor) ? effView(ctx, idx.CHAR[effFor], gear.store) : null;
+  const effOpen = effFor && turnHeroes.some((r) => r.eff && r.c.id === effFor) ? effView(ctx, idx.CHAR[effFor], gear.store) : null;
   const saveEff = (id: string, cal: Parameters<typeof setEff>[2]) => {
     setEffFor(null);
     const next = setEff(gear.store, id, cal);
@@ -152,8 +156,11 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
       <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} />
       {guideTeams.length > 0 && <button type="button" className="boss-fill" onClick={onFill}>{t.boss.fill}</button>}
       {!members.length && !guideTeams.length && <p className="tm-hint muted">{t.team.hint}</p>}
-      {facts && <BossEff rows={effRows} res={facts.res} onOpen={gear.newer ? () => undefined : setEffFor} />}
-      <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
+      {/* a wide window: the team on the left, the turn timeline and the report on the right (one column on a phone) */}
+      <div className="tm-side">
+        {facts && boss && <BossTurn heroes={turnHeroes} boss={boss} spd={facts.spd} res={facts.res} onEff={gear.newer ? () => undefined : setEffFor} />}
+        <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
+      </div>
       <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
         <Sheet title={t.team.pick} onClose={() => setPicking(null)} className="tm-sheet">

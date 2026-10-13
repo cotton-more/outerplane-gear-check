@@ -25,6 +25,8 @@ const NAMES = [
   'filter', 'arrows-exchange',
   // «Партия»: «🔒 · отложено» — a locked piece (until the game's own lock icon is in the data)
   'lock',
+  // «Команда»: «Ход против босса» — the turn line's stopwatch (.x/0200-boss E1)
+  'stopwatch',
 ];
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'icons', 'tabler.ts');
