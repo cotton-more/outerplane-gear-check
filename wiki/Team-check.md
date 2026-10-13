@@ -108,6 +108,14 @@ wear and their own spare (other heroes' spare is never taken; see [Trading gear]
   per hero what to wear, from whom, how much stronger, "Keep as it was", empty slots with "Enter" / "Leave", the order
   under each hero; then "At the end — replacements": the old pieces go to whoever gave theirs, or are parked. **Done** —
   once every line is ticked: the pieces move in the app as you moved them in the game; "Undo" in the message.
+- **With a boss the trade also raises EFF** for the heroes who need it — up to the boss's RES + 1, where the debuff
+  always lands; the EFF is the one the turn timeline shows (the card's EFF + what battle adds). Not at any price: a little
+  stats are given for EFF, EFF above RES + 1 is worth nothing and goes to whoever lacks it; a piece the hero can't use won't
+  come for EFF, and a recommended accessory stays. A hero whose EFF changes gets a row under the stats:
+  "EFF ≈ 184 → 222 · 93%" — EFF before and after and the chance the debuff lands after the trade (✓ — above RES; «≈» — the
+  game's EFF isn't typed). The gain in points stays the stats' own. A hero who can't reach the target gets as close as a few
+  points allow — the chance on the row says how far it is.
+- **Another boss, stage, team or stars on a spot** is a new calculation: the walk starts over with its ticks reset.
 - **Worn gear is never kept with the team:** the trade and the turn timeline always read what the app records as worn now.
 
 ## The report

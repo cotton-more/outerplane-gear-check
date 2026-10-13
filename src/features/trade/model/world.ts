@@ -7,13 +7,14 @@ import type { Char, Combo } from '@/game/data/types';
 import { combosOf, comboProfile, pinnedProfile, pinOf, profileOf, withNeed } from '@/game/build/profile';
 import { comboSig } from '@/game/build/variants';
 import { setValue } from '@/game/set/setValue';
-import type { GearStore, Piece } from '@/features/gear/model/gear';
+import { effCal, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { critBound, critLossOf, gearRank, nonChc, pieceCrit, piecePoints } from '@/features/gear/layout';
 import { MAX_LIT } from '@/game/item/subs';
 import { mainsStat } from '@/game/stat/total';
 import { pieceBar } from '@/features/gear/pool/info';
 import { numOf } from '@/features/gear/pool/base';
 import { milli, wearable } from '@/features/gear/model/vs';
+import { goalGauge, type EffGoal } from './goal';
 import { codeOf, heldOf, type CritGauge, type Gauge, type Hero, type Item, type Worth, type World } from './model';
 
 // заказ «По статам»; набор — подпись связки (comboSig)
@@ -32,6 +33,7 @@ export const orderCombo = (c: Char, order: string): Combo | null =>
 export interface WorldOpts {
   locked?: ReadonlySet<string>;               // переодетые в этом окне (MODEL.md §7 item 4)
   orders?: Readonly<Record<string, string>>;  // герой → заказ; нет — «По статам»
+  goals?: Readonly<Record<string, EffGoal>>;  // a boss on «Команда»: member → the EFF goal (MODEL.md §13); only heroes who need EFF
 }
 
 // the crit part of a gauge (MODEL.md §12 item 6): the same curve and C₀ as layoutValue, over the kit's pieces; Po — the order's
@@ -98,6 +100,8 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
       },
       ...(Po.critOn ? { crit: critGauge(Po, (id) => st.pieces[id]) } : {}),
     };
+    const goal = c.eff?.d && o.goals?.[heroId] ? goalGauge(ctx, c, Pv, Po, effCal(st, heroId), o.goals[heroId], (id) => st.pieces[id]) : null;
+    if (goal) g.goal = goal;
     memo.set(heroId, g);
     return g;
   };

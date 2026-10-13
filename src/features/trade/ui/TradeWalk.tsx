@@ -1,5 +1,6 @@
 // The trade as a walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b, mockups and texts approved by the owner 2026-10-13).
-// Per hero — his line as before (gain by his order, stats was → becomes, sets on and off, parts that can't be built,
+// Per hero — his line as before (gain by his order, stats was → becomes, with a boss the EFF before → after and the chance
+// (E3), sets on and off, parts that can't be built,
 // «Заказ: … ▾») and his steps: «Замок» on his old piece when it stays with him parked (O3), the piece to wear (as the plan drew it:
 // set or item, main, substats, T4, points against the worn one, where it is) with «Оставить как было», a slot kept as it
 // was («вернуть»), an empty slot («Искать: …», «Ввести» / «Оставить»; entered — the piece, its points and what is off).
@@ -22,7 +23,8 @@ import type { Missing } from '@/features/trade/model/plan';
 import { lineGain, tenths, type HeroLine } from '@/features/trade/model/view';
 import type { Line, Walk } from '@/features/trade/model/walk';
 import { isArmor } from '@/game/data';
-import { Icon, SlotIcon } from '@/game/icons/Img';
+import { Icon, SlotIcon, StatIcon } from '@/game/icons/Img';
+import { landChance } from '@/game/stat/eff';
 import { pieceText } from '@/features/gear/ui/pieceText';
 import { partText, setName } from '@/game/set/setName';
 import { HeroFace } from '@/game/hero/HeroFace';
@@ -44,6 +46,18 @@ export type Decide =
 function keyText(t: T, ctx: Ctx, k: SearchKey): string {
   return [k.grade && GRADE_NAME[k.grade], k.set && setName(ctx.idx, k.set),
     k.main && subLabel(k.main), k.sub && t.trade.keySub(subLabel(k.sub)), k.t4 && 'T4'].filter(Boolean).join(' · ');
+}
+
+// the EFF goal (.x/0200-boss E3 Q6): «Эфф ≈ 184 → 222 · 93%» — the battle EFF before and after and the chance the debuff
+// lands after the trade (BossTurn's number); ✓ instead of the chance above RES. Its own row under the stats
+function effPart(t: T, e: NonNullable<HeroLine['eff']>) {
+  const ok = e.b > e.res, p = Math.floor(landChance(e.b, e.res) * 100);
+  return (
+    <span className="tline-s teff" aria-label={ok ? t.trade.effAriaOk(e.b, e.res) : t.trade.effAria(e.b, e.res, p)}>
+      <span aria-hidden="true"><StatIcon stat="EFF" />{t.trade.effLine(e.approx, e.a, e.b)}{' '}
+        {ok ? <span className="ok">✓</span> : <>· <span className="lack">{p}%</span></>}</span>
+    </span>
+  );
 }
 
 function gainText(t: T, l: HeroLine): { text: string; cls: string } {
@@ -246,6 +260,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
                   {crit && ` · ${crit}`}
                 </span>
               )}
+              {l?.eff && l.eff.a !== l.eff.b && effPart(t, l.eff)}
               {sets.length > 0 && <span className="tline-s">{sets.join(', ')}</span>}
             </h4>
             {(missing[hero] ?? []).map((m) => (
