@@ -164,6 +164,11 @@ T4**, **best {set}**, **by stats**, **reserve**. The rest is **"no longer needed
 piece isn't removed by itself: dismantle it in the game and press **"Remove from Caren"**. The app never deletes a piece
 silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). "Rate a piece for Caren" sits at the bottom.
 
+**"P parked"** instead of a reason — a piece a [trade](Trading-gear#at-the-end--replacements) took off and could give to
+nobody: it waits, locked in the game, for a hero who can wear it. The evaluation and the batch don't see it (never feed,
+never dismantled, never a Breakthrough target); the next trade offers it first. The mark goes once someone wears it;
+"Remove from Caren" as usual.
+
 **Only roster characters have gear.** "Equip" on a character outside the roster adds the character to the roster;
 importing a gear code and starting the app add everyone who has gear. Remove Caren from the roster (card → the stars by the name → "Remove from roster") while Caren has gear — a window
 "Remove Caren from the roster? Caren's gear (N) is removed from the app. Unlock it in the game — otherwise it can't be
@@ -275,7 +280,7 @@ for Caren ("Only for · Caren"), "Replace" and ✕. Your gear, the rating mode a
 
 ## Backup
 
-More → "Backup": the **OGC-GEAR8** code — all pieces, what's worn, each hero's pinned set, crit number, in-game EFF, stars and level. Copy it to keep a backup or
+More → "Backup": the **OGC-GEAR9** code — all pieces, what's worn and parked, each hero's pinned set, crit number, in-game EFF, stars and level. Copy it to keep a backup or
 move to another device; "Replace" there loads it instead of everything you had (everyone with gear joins the roster),
 and "Undo" brings the previous gear back. The code has no length limit: with many heroes it is long, and that's fine.
 The older codes still read — OGC-GEAR1 to 4; marks of the old model ("Filling", the chosen build, "Keep worn

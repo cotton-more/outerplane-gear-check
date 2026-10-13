@@ -104,9 +104,10 @@ wear and their own spare (other heroes' spare is never taken; see [Trading gear]
   are kept with the team on this device (one team per boss and one without a boss).
 - **"Pick gear"** — for two to four heroes with builds. With one, it opens the usual trade for that hero. A hero without
   builds on outerpedia stays out — one line under the button says so.
-- **The plan** opens in a window, the same as the trade's: per hero what to wear, from whom, how much stronger; "Don't
-  take"; the order under each hero. **Done** — the pieces move in the app as you moved them in the game (holes stay);
-  "Undo" in the message; pieces taken off and given to nobody are listed in "Free pieces".
+- **The plan** opens in a window — the same walk with ticks as the one-hero trade (see [Trading gear](Trading-gear#the-plan-is-a-walk)):
+  per hero what to wear, from whom, how much stronger, "Keep as it was", empty slots with "Enter" / "Leave", the order
+  under each hero; then "At the end — replacements": the old pieces go to whoever gave theirs, or are parked. **Done** —
+  once every line is ticked: the pieces move in the app as you moved them in the game; "Undo" in the message.
 - **Worn gear is never kept with the team:** the trade and the turn timeline always read what the app records as worn now.
 
 ## The report
