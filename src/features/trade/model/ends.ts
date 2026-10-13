@@ -4,7 +4,8 @@
 // Rin took Caren's helmet → Caren gets Rin's old one; Rin ← Caren ← Stella → Stella) if he can wear it, else to another
 // team member whose slot emptied in this trade and who can, else it is parked on the hero it came off. A replacement the
 // player kept as it was (`kept`, slotKey of the target) leaves the target's slot empty and parks the piece. Holes: every
-// empty slot of a receiver, and every slot this trade emptied that no replacement fills — «Ввести» / «Оставить».
+// empty slot of a receiver («Ввести» / «Оставить» in the walk), and every slot this trade emptied that no replacement
+// fills (receiver: false — not a walk line, O4: the record keeps it empty).
 import type { SlotId } from '@/game/data/types';
 import { halvesIn } from './holes';
 import { SLOT_ORDER, slotKey, wears, type Hero, type World } from './model';

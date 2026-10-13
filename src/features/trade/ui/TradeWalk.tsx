@@ -4,7 +4,7 @@
 // set or item, main, substats, T4, points against the worn one, where it is) with «Оставить как было», a slot kept as it
 // was («вернуть»), an empty slot («Искать: …», «Ввести» / «Оставить»; entered — the piece, its points and what is off).
 // Then «В конце — замены»: replacements (the piece named in full — the game finds it by grade, main and stats; «Оставить
-// как было»), parking, the empty slots of givers. A step
+// как было») and parking; a giver's empty slot is not shown (O4). A step
 // is ticked by its round button; «Сделал · ещё N» until every line is done; «Отмена» asks first (the ticks go).
 import type { SlotId } from '@/game/data/types';
 import { GRADE_NAME, subLabel } from '@/game/data';
@@ -129,7 +129,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
         );
       case 'hole': {
         const P = profile(l.hero);
-        const title = l.receiver ? t.trade.emptySlot(l.slot) : t.trade.holeOf(name(l.hero), l.slot);
+        const title = t.trade.emptySlot(l.slot);
         if (l.entered) {
           const p = formPiece({ ...l.entered, slot: l.slot });
           const a = P ? adviceOf(P, p) : null;
@@ -138,7 +138,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
             <li key={l.key} className="tstep tentered done">
               {tick(l, true, true)}
               <div className="tstep-b">
-                <p className="tstep-h"><SlotIcon slot={l.slot} /><span>{l.receiver ? t.trade.entered(l.slot) : title}</span></p>
+                <p className="tstep-h"><SlotIcon slot={l.slot} /><span>{t.trade.entered(l.slot)}</span></p>
                 {piece(p, l.hero, n !== null ? <span className="tpts up">{t.trade.itemPts(n)}</span> : undefined)}
                 {a?.main && <p className="tadv">{t.trade.advMain(name(l.hero), a.main.map(subLabel).join('/'))}</p>}
                 {a?.look && <p className="tadv">{t.trade.advNone(a.look.map(subLabel).join(', '))}</p>}
@@ -156,7 +156,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
             <li key={l.key} className="tstep tdecl done">
               {tick(l, true, true)}
               <div className="tstep-b tstep-r">
-                <p className="tstep-h"><SlotIcon slot={l.slot} /><span>{l.receiver ? t.trade.left(l.slot) : title}</span></p>
+                <p className="tstep-h"><SlotIcon slot={l.slot} /><span>{t.trade.left(l.slot)}</span></p>
                 {undo(() => onDecide({ kind: 'unleave', hero: l.hero, slot: l.slot }))}
               </div>
             </li>

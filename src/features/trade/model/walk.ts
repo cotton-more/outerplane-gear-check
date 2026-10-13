@@ -3,8 +3,9 @@
 // order, then anyone else who gets a piece), slot by slot: «Замок» on his old piece right before the equip — only when that
 // piece stays with him parked (O3, owner 2026-10-13: a piece that moves to someone is found in the game by grade, main and
 // stats — the line names it in full, a lock would only be one more step); the equip; a slot kept as it
-// was; an empty slot («Ввести» / «Оставить»). Then «В конце — замены»: replacements (kept → parked), parking, the empty
-// slots of heroes who only gave. Each line has a key: a tick survives a recount while its line stays the same.
+// was; an empty slot («Ввести» / «Оставить»). Then «В конце — замены»: replacements (kept → parked), parking. The empty
+// slots of heroes who only gave are not lines (O4, owner 2026-10-13): the record keeps them empty, the player fills them
+// later (evaluation, batch, another team) — «Ввести» is for the re-dressed heroes only. Each line has a key: a tick survives a recount while its line stays the same.
 // «Сделал» only when every line is done — ticked, kept as it was, entered or left empty.
 import type { SlotId } from '@/game/data/types';
 import type { ItemInput } from '@/game/item/item';
@@ -65,7 +66,6 @@ export function walkOf(w0: World, m: Moves, ends: Ends, receivers: readonly stri
   const end: Line[] = [
     ...ends.repl.map((r): Line => ({ kind: 'repl', key: `r:${slotKey(r.to, r.slot)}:${r.item}`, hero: r.to, slot: r.slot, item: r.item, from: r.from, kept: r.kept })),
     ...ends.park.map((p): Line => ({ kind: 'park', key: `p:${p.item}:${p.hero}`, hero: p.hero, slot: p.slot, item: p.item, why: p.why, giver: p.giver })),
-    ...ends.holes.filter((h) => !h.receiver).map(hole),
   ];
   return { heroes, end };
 }

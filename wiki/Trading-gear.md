@@ -78,8 +78,9 @@ Nothing taken off is left without an owner. After all the steps above, the old p
 **whoever gave up theirs in that slot** ("Caren ← Rin's helmet", with the piece in full) if they can wear it — even if it's weak; if
 not (an accessory of another class), to **another team member** whose slot emptied in this trade; otherwise it is
 **parked**: it stays in the "Pool" of the hero it came off, marked "parked", and stays locked in the game. "Keep as it
-was" on a replacement leaves the giver's slot empty and parks the piece. A giver's slot that nothing fills shows
-"Enter" / "Leave" too.
+was" on a replacement leaves the giver's slot empty and parks the piece. A giver's slot that nothing fills is not shown:
+the app records it as empty — put something on later through "Rate", "Batch" or another trade. "Enter" is only for the
+heroes you re-dress.
 
 A **parked** piece is never fed or dismantled and isn't a Breakthrough target: the evaluation and the batch don't see
 it. Any later trade offers it first — into an empty slot of anyone who can wear it, its own hero included. The mark goes

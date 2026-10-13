@@ -64,8 +64,9 @@ describe('the end: replacements and parking', () => {
       'R.helmet ← ch (worn C)',
       'R.armor ← sa (worn S)',
       'R.gloves empty', 'R.shoes empty',
-      'C.helmet ← rh of R', 'S.armor ← ra of R', 'park rx on R (class)', 'V.accessory empty',
+      'C.helmet ← rh of R', 'S.armor ← ra of R', 'park rx on R (class)', // V's empty accessory is no line (O4)
     ]);
+    expect(o.ends.holes.filter((h) => !h.receiver).map((h) => `${h.hero}.${h.slot}`)).toEqual(['V.accessory']); // the record keeps it empty
     // w2: the replacements are worn, the parked piece stays in R's pool unworn
     const by = (id: string) => o.w2.heroes.find((h) => h.id === id)!;
     expect([by('C').worn.helmet, by('S').worn.armor, by('V')?.worn.accessory]).toEqual(['rh', 'ra', undefined]);

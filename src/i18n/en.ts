@@ -703,7 +703,6 @@ export const en: Texts = {
     enter: 'Enter',
     leave: 'Leave',
     left: (slot: string) => `${(SLOT_EN[slot] ?? slot).replace(/^./, (x) => x.toUpperCase())}: left empty`,
-    holeOf: (hero: string, slot: string) => `${hero}: ${(SLOT_EN[slot] ?? slot)} empty`,
     endTitle: 'At the end — replacements',
     endNote: 'once all above is done',
     repl: (to: string, slot: string, from: string) => `${to} ← ${from}’s ${(SLOT_EN[slot] ?? slot)}`,

@@ -337,10 +337,11 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    member** whose slot this trade emptied and who can; else (c) it is **parked** on the hero it came off (§5). The giver
    who gets a replacement may lose it again to the next hero (dressing in turn); the piece a receiver just got is his
    (session lock). A replacement **kept as it was** (`kept`: `slotKey(target, slot)`) leaves the target's slot empty and
-   parks the piece. **Holes**: every empty slot of a receiver and every slot this trade emptied that no replacement fills;
-   the hint names what to look for (`breaks` — a set whose half, §2, switched off with the hole); the player enters the
-   piece he put there from the inventory («Ввести», an entry window in the plan — recorded only on «Сделал», no recount)
-   or leaves it empty.
+   parks the piece. **Holes** of a receiver (a re-dressed hero, a team member): every empty slot — the hint names what to
+   look for (`breaks` — a set whose half, §2, switched off with the hole); the player enters the piece he put there from
+   the inventory («Ввести», an entry window in the plan — recorded only on «Сделал», no recount) or leaves it empty. A
+   giver's slot this trade emptied and no replacement fills is **not shown** (O4, owner 2026-10-13): the record keeps it
+   empty; the player fills it later (evaluation, batch, another team).
 8. **Dressing in turn** (`turn:heroGain`, `turnOrder`; owner, 2026-10-12, 0200 Q1 + Q1a): «Кого переодеть?» shows each
    open hero's gain now — the number on his plan's hero line (`planOf` → `advance` → `lineGain`; «—» when the plan changes
    nothing), counted in chunks after every «Сделал» / «Вернуть» / order change. The first hero re-dressed takes the best,
@@ -353,7 +354,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    replacement, a later member — is found in the game by grade, main and substats, so its line names it in full and needs
    no lock); the equip with its source (worn by X / X's spare / parked on X /
    inventory); a frozen slot («как было»); an empty slot («Ввести» / «Оставить»). Then «В конце — замены»: replacements
-   («Caren ← шлем Rin» with the piece in full, each may be kept as it was), parking, the empty slots of heroes who only gave. A line
+   («Caren ← шлем Rin» with the piece in full, each may be kept as it was), parking (a giver's empty slot is no line, item 7). A line
    has a key — a recount keeps the ticks of unchanged lines. «Сделал» only when every line is done (ticked; kept, entered,
    left count): **one record** (`apply:applyWalk` — moves, replacements, parking, entered pieces) and **one «Вернуть»**
    (the store before, if untouched since). The ticks and decisions live on the device until «Сделал» / «Отмена»

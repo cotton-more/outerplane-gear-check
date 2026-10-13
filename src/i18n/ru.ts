@@ -817,7 +817,6 @@ export const ru = {
     enter: 'Ввести',
     leave: 'Оставить',
     left: (slot: string) => `${cap(NOM[slot])}: оставлено пустым`,
-    holeOf: (hero: string, slot: string) => `${hero}: ${NOM[slot]} пусто`,
     endTitle: 'В конце — замены',
     endNote: 'когда всё выше сделано',
     repl: (to: string, slot: string, from: string) => `${to} ← ${NOM[slot]} ${from}`,

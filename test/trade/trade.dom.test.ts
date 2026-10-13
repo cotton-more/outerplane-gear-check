@@ -305,9 +305,9 @@ describe('J. обмен вещами', () => {
     await planReady();
     expect($('.tline.to .tsrc')?.textContent).toBe('on Aer');
     expect($$('.tline').map((l) => l.querySelector('.tline-n')?.textContent)).not.toContain('Aer');
-    // Aer only in the end: a member (Ais or Akari, no helmet) took Caren's old helmet in her step — Aer's slot is a hole
-    expect($$('.tline:not(.to)')).toEqual([$('.tend')]);
-    expect(byText('.tend .thole', 'Aer: helmet empty')).toBeTruthy();
+    // a member (Ais or Akari, no helmet) took Caren's old helmet in her step — Aer's emptied slot is no line (O4)
+    expect($$('.tline:not(.to)')).toEqual([]);
+    expect(document.querySelector('.drawer.trade')?.textContent).not.toContain('Aer:');
   });
 
   it('one hero with builds — the one-hero trade for her; a hero without builds stays out with a line', async () => {
@@ -345,7 +345,7 @@ describe('J. обмен вещами', () => {
       await open();
       await click(byText('.tend .tstep', 'Aer ←')!.querySelector<HTMLElement>('.tkeep'));
       expect(byText('.tend .tstep-h', 'parked')?.textContent).toContain('— parked');
-      expect(byText('.tend .thole', 'Aer: helmet empty')).toBeTruthy();
+      expect($('.tend .thole')).toBeNull(); // Aer's empty helmet slot is no line (O4): the record keeps it empty
       await walkAll();
       await click(doneBtn());
       const st = stored();
