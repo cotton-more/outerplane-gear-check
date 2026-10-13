@@ -68,18 +68,30 @@ suggests as without a boss.
 
 The guides' notes, tips and requirements (speed, effectiveness) are not copied into the app: they are in English only.
 
-## EFF vs RES
+## Turn vs the boss
 
-With a boss, under the team — the block **"EFF vs RES 288"**: a row for everyone who needs EFF (as on the hero card) —
-their EFF (with "≈" until the game's number is typed), how much is missing to RES + 1 and the chance the boss doesn't
-resist the debuff: "Tamara ≈ 233 −56 64 %". EFF above RES — ✓ and 100 %: the debuff always lands. Below it the boss
-resists about d / (d + 100), where d is the gap: −10 — 9 %, −50 — 33 %, −100 — half. The skill's own chance ("50 % to
-inflict") is separate; EFF doesn't change it. Heroes whose EE gives EFF get a hint until the game's number is typed:
-"EE gives EFF ×2 — type EFF from the game ▸". Tap a row — the same "EFF for …" sheet as on the card
-([Equipment](Equipment)); the number is kept on the hero. The row shows EFF in battle: the card's number plus the element node in Quirks (Light and Dark +5 %, Earth,
-Water and Fire +7 % when the hero's element beats the boss's; with the "Quirks" setting) and a teammate's transcend that
-gives EFF to the whole team (Iota, Dahlia, Alice… +3/+6 %; one, the strongest). EFF counts the stars tried on the spot. Not counted: EFF buffs
-and RES-down in battle (Akari S2), guild raid geas.
+With a boss, under the team — the block **"Turn vs the boss"**: a line on the left with a stopwatch, and the team and the
+boss in the order of the first turn, top to bottom. The boss is the red row in its place, with its SPD and RES.
+
+- **Who moves first.** At battle start each fighter's turn gauge stands at SPD × 100 / the fastest SPD in the fight, plus
+  a hidden random head start of up to 5 % (outerpedia's Stats guide). So a hero above the boss surely moves before it,
+  a hero below it — after it. A dashed row with ⏱ "first 74%" — luck decides: a hero at 0.95 to 1.053 of the boss's SPD
+  may move before or after it (boss 276: from 263 to 290 is luck, 291 and more — surely first). Only the first turn is
+  shown: after it, skills, buffs and pushes decide.
+- **SPD** is what the app knows: the hero's base (level, Quirks), SPD substats, an SPD accessory and the Speed set.
+  Allies' transcend speed bonuses, the EE and battle buffs are invisible — in the game the hero may be faster.
+- **EFF.** Heroes who need EFF (as on the hero card) also show it, with the chance the boss doesn't resist the debuff:
+  "✓ 100%" — EFF above RES, the debuff always lands. Below it the boss resists about d / (d + 100), where d is the gap:
+  −10 — 9 %, −50 — 33 %, −100 — half. The skill's own chance ("50 % to inflict") is separate; EFF doesn't change it.
+  The row shows EFF in battle: the card's number plus the element node in Quirks (Light and Dark +5 %, Earth, Water and
+  Fire +7 % when the hero's element beats the boss's; with the "Quirks" setting) and a teammate's transcend that gives EFF
+  to the whole team (Iota, Dahlia, Alice… +3/+6 %; one, the strongest). EFF counts the stars tried on the spot.
+- **Tap a row** — it opens in place: how much EFF is short of RES + 1, how much SPD surely moves the hero before the
+  boss ("SPD 280 — to surely move before the boss: 291 (+11)") and "EFF from the game ▸" — the same "EFF for …" sheet
+  as on the card ([Equipment](Equipment)); the number is kept on the hero. Heroes whose EE gives EFF get "EE gives EFF ×2
+  — type EFF from the game ▸" there until the game's number is typed.
+
+Not counted: EFF and SPD buffs and RES-down in battle (Akari S2), guild raid geas (they can change the boss's SPD too).
 
 ## The report
 
