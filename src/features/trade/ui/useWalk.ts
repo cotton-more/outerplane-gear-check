@@ -2,6 +2,7 @@
 // target (a hero or a team), kept in 'ogc.trade' until «Сделал» / «Отмена» (✕ keeps them); the entry window's slot; the
 // outcome of the plan with these decisions; «Пересчитано: N» — lines a recount changed (a decline or its undo).
 import { useEffect, useMemo, useState } from 'react';
+import type { Index } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
 import type { ItemInput } from '@/game/item/item';
 import { storage } from '@/shared/storage';
@@ -16,9 +17,10 @@ const toggle = (xs: readonly string[], x: string, on: boolean) => (on ? (xs.incl
 // lines that are a real step — what «Пересчитано» counts
 const steps = (o: Outcome) => linesOfWalk(o.walk).filter((l) => l.kind !== 'kept' && l.kind !== 'hole' && !(l.kind === 'repl' && l.kept));
 
-// target null — nothing picked yet: the stored walk is neither read nor touched
-export function useWalk(target: string | null, persist = true) {
-  const read = (x: string | null) => (x && persist ? readWalk(storage.get(TRADE_KEY, null), x) : NO_DECISIONS);
+// target null — nothing picked yet: the stored walk is neither read nor touched; idx — what the stored walk's pieces are
+// checked against
+export function useWalk(target: string | null, idx: Index, persist = true) {
+  const read = (x: string | null) => (x && persist ? readWalk(storage.get(TRADE_KEY, null), x, idx) : NO_DECISIONS);
   // resumed — the walk came back from the device with ticks («Продолжаю: …»)
   const load = (x: string | null) => { const d = read(x); return { target: x, d, resumed: d.ticks.length > 0 }; };
   const [state, setState] = useState(() => load(target));

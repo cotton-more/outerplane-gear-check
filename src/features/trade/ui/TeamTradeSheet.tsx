@@ -50,7 +50,7 @@ export function TeamTradeSheet({ ctx, gear, roster, team, orders, goals, spdGoal
   const world = useMemo(() => worldOf(ctx, st, roster, { orders, goals, spd: spdGoals }), [ctx, st, roster, orders, goalKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const stamp = useMemo(() => stampOf(st), [st]);
   const teamKey = team.join();
-  const walk = useWalk(targetOf(team, true) + (goalKey ? `|${goalKey}` : ''));
+  const walk = useWalk(targetOf(team, true) + (goalKey ? `|${goalKey}` : ''), idx);
   const [tp, setTp] = useState<{ w: World; frozen: ReadonlySet<string>; tp: TeamPlan } | null>(null);
   useEffect(() => {
     const ac = new AbortController();

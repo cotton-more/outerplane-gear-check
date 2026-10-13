@@ -3,6 +3,7 @@
 // the walk's lines and ticks, one record and one undo.
 import { describe, expect, it } from 'vitest';
 import { applyWalk, stampOf } from '@/features/trade/model/apply';
+import { readWalk } from '@/features/trade/model/stored';
 import { slotKey, type World } from '@/features/trade/model/model';
 import { heroPlan } from '@/features/trade/model/plan';
 import { teamPlan } from '@/features/trade/model/team';
@@ -229,5 +230,36 @@ describe('the record', () => {
     const w = worldOf(ctx, st2, [...ROSTER, HERO.leah], { locked: new Set([HERO.rin]) });
     const took = heroPlan(w, { to: HERO.leah }).plan.changes.map((c) => c.cand.item.id);
     expect(took).not.toContain(k.id);
+  });
+});
+
+describe('the walk read back from the device (E2b-1)', () => {
+  const sets = Object.keys(ctx.idx.SET), weapon = ctx.idx.D.weapons[0].key;
+  const armor = { slot: 'helmet', grade: 'unique', setId: sets[0], itemKey: null, main: null, subs: { SPD: 2, 'HP%': 1 }, bt: 0 };
+  const gun = { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon, main: 'ATK', subs: { SPD: 1 }, bt: 4 };
+  const saved = (entered: Record<string, unknown>) =>
+    ({ v: 1, target: 'hero:a', d: { frozen: [], kept: [], left: [], ticks: ['t1'], entered } });
+  const read = (entered: Record<string, unknown>, withData = true) =>
+    readWalk(saved(entered), 'hero:a', withData ? ctx.idx : undefined);
+
+  it('a piece the data knows is kept', () => {
+    const d = read({ 'a/helmet': armor, 'a/weapon': gun, 'a/gloves': { ...armor, slot: 'gloves', setId: null } });
+    expect(Object.keys(d.entered)).toEqual(['a/helmet', 'a/weapon', 'a/gloves']);
+    expect(d.entered['a/weapon']).toMatchObject({ itemKey: weapon, subs: { SPD: 1 }, bt: 4 });
+    expect(d.ticks).toEqual(['t1']);
+  });
+
+  it('a piece with a stat, set or item the data does not have is dropped; the rest of the walk stays', () => {
+    const d = read({
+      'a/helmet': armor, 'a/armor': { ...armor, slot: 'armor', subs: { SPD: 1, 'NEW%': 2 } }, 'a/gloves': { ...armor, slot: 'gloves', setId: '99999' },
+      'a/weapon': { ...gun, itemKey: '99999' }, 'a/accessory': { ...gun, slot: 'accessory', itemKey: ctx.idx.D.amulets[0].key },
+    });
+    expect(Object.keys(d.entered)).toEqual(['a/helmet', 'a/accessory']);
+    expect(d.ticks).toEqual(['t1']);
+  });
+
+  it('without the data nothing is checked (as before)', () => {
+    const d = read({ 'a/armor': { ...armor, slot: 'armor', subs: { 'NEW%': 2 } }, 'a/gloves': { ...armor, slot: 'gloves', setId: '99999' } }, false);
+    expect(Object.keys(d.entered)).toEqual(['a/armor', 'a/gloves']);
   });
 });

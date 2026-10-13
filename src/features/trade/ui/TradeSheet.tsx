@@ -53,7 +53,7 @@ export function TradeSheet({ ctx, gear, roster, off, start, onApplied, onClose }
   const pickable = useMemo(() => roster.filter((id) => idx.CHAR[id]?.builds.length && !off.has(id)), [roster, idx, off]);
   const world = useMemo(() => worldOf(ctx, st, roster, { locked, orders }), [ctx, st, roster, locked, orders]);
   const stamp = useMemo(() => stampOf(st), [st]);
-  const walk = useWalk(hero ? targetOf([hero], false) : null);
+  const walk = useWalk(hero ? targetOf([hero], false) : null, idx);
   const alive = useRef(true);
   // set on every setup: StrictMode runs setup → cleanup → setup on mount
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
