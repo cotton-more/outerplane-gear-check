@@ -13,6 +13,23 @@ html:not(.narrow) .tm-side > .boss-turn { max-width: 560px; }
 .tm-team { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-top: 4px; }
 .tm-p { position: relative; min-width: 0; display: grid; }
 .tm-slot, .tm-add { min-height: 100px; border-radius: var(--radius-s); }
+/* the build under a spot (.x/0200-boss E2, OrderPill): a small pill — «статы ▾» or the set icons ×N; pinned — gold outline
+   and a pin; the stars button keeps its place above it */
+.tm-pb { gap: 4px; align-content: start; }
+.tm-pb .tm-sb { bottom: 31px; }
+.opill { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 26px; padding: 0 4px;
+  border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 700 11px var(--font-mono);
+  white-space: nowrap; overflow: hidden; }
+.opill.pin { border-color: color-mix(in srgb, var(--star-on) 65%, var(--line-2)); }
+.opill-s { display: inline-flex; align-items: center; gap: 1px; }
+.opill-s > img, .opill-s > .ico { width: 14px; height: 14px; }
+.opill-c { font-size: 9px; color: var(--ink-3); }
+/* two sets in a narrow spot (280–340 px): smaller icons, no ▾ — the pill is still a button */
+@media (max-width: 340px) { .opill.two { gap: 2px; padding: 0 3px; } .opill.two .opill-s > img, .opill.two .opill-s > .ico { width: 12px; height: 12px; } .opill.two .opill-c, .opill.two .opill-pin { display: none; } }
+.opill-pin { width: 11px; height: 11px; color: var(--star-on); }
+.tm-go { width: 100%; min-height: 40px; }
+.tm-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.tm-nob { margin: 0; font-size: 12.5px; color: var(--ink-3); }
 .tm-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 28px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); min-width: 0; }
 .tm-slot .face { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
 .tm-n { max-width: 100%; font-size: 11.5px; font-weight: 600; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

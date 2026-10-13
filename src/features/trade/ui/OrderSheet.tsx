@@ -1,7 +1,9 @@
-// Заказ героя в обмене (MODEL.md §7 item 1): «Заказ: По статам ▾» у героя плана и под плиткой в ромбе — шторка с
-// вариантами: «По статам» и наборы из его билдов (combosOf); у закреплённого — один вариант «Закреплено: …» (жёстко, MODEL.md §6). Выбор живёт в шторке обмена, как «Не брать»: закрыл обмен —
-// заказы забыты. Смена — пересчёт; на другой заказ обмен сам не переключается.
-import type { Char } from '@/game/data/types';
+// Заказ героя в обмене (MODEL.md §7 item 1): «Заказ: По статам ▾» у героя плана — шторка с вариантами: «По статам» и
+// наборы из его билдов (combosOf); у закреплённого — один вариант «Закреплено: …» (жёстко, MODEL.md §6). In the one-hero
+// trade the choice lives in the sheet, like «Не брать» (closed — forgotten); on «Команда» it is the build under a spot
+// (OrderPill), kept with the team in 'ogc.boss' (.x/0200-boss E2). Смена — пересчёт; на другой заказ обмен сам не переключается.
+import type { Char, Combo } from '@/game/data/types';
+import { Icon, SetIcon } from '@/game/icons/Img';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
 import { combosOf } from '@/game/build/profile';
@@ -24,6 +26,20 @@ export function OrderButton({ name, short, onClick }: { name: string; short?: bo
   return (
     <button type="button" className="aimb" title={full} aria-label={short ? full : undefined} onClick={onClick}>
       {short ? <><span className="aimb-n">{name}</span> ▾</> : <span className="aimb-n">{full}</span>}
+    </button>
+  );
+}
+
+// the build under a spot on «Команда» (.x/0200-boss E2): «статы ▾», or the combo's set icons with ×N; pinned — the gold
+// outline and a pin (the pin is the order, hard; changed on the hero's card). label — the full phrase for a screen reader
+export function OrderPill({ ctx, combo, pinned, label, onClick }: {
+  ctx: Ctx; combo: Combo | null; pinned: boolean; label: string; onClick: () => void;
+}) {
+  const t = useT();
+  return (
+    <button type="button" className={`opill${pinned ? ' pin' : ''}${combo && combo.length > 1 ? ' two' : ''}`} aria-label={label} title={label} onClick={onClick}>
+      {combo ? combo.map((p) => <span key={p.set} className="opill-s"><SetIcon set={ctx.idx.SET[p.set]} />{p.n}</span>) : t.trade.byStatsShort}
+      {pinned ? <Icon name="pin" className="opill-pin" /> : <span className="opill-c" aria-hidden="true">▾</span>}
     </button>
   );
 }

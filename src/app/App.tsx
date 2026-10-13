@@ -124,7 +124,7 @@ export function App() {
   const [findOpen, setFindOpen] = useState(false);
   // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
   // или «Ещё» → «Обмен для команды», сразу в режиме «Команда»
-  const [trade, setTrade] = useState<{ hero: string } | 'team' | null>(null);
+  const [trade, setTrade] = useState<{ hero: string | null } | null>(null);
   // pieces taken off in a closed trade window and given to no one (features/trade/model/free): «Свободные вещи», a list only
   const [freeIds, setFreeIds] = useState<string[]>([]);
   const freeNow = useMemo(() => freeOf(new Set(freeIds), gear.store), [freeIds, gear.store]); // «Вернуть» on the toast empties it
@@ -268,7 +268,7 @@ export function App() {
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
-              onTrade={canEquip ? () => setTrade('team') : undefined} />
+              onTrade={canEquip ? () => setTrade({ hero: null }) : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}
               sheetOpen={!!s.charId && layout.sheet && s.tab === 'chars'} onClose={() => dispatch({ type: 'selectChar', id: null })} canWear={canEquip} onTryOn={canEquip && !batchOn ? heroMode.start : undefined}
@@ -277,7 +277,9 @@ export function App() {
               canShare={!tour.run && !gear.newer} />
           </section>
           <section id="view-team" className="view team-view" role="tabpanel" aria-labelledby="tab-team" hidden={s.tab !== 'team'}>
-            <TeamScreen roster={rosterList} off={off} stars={gear.store.stars ?? NO_STARS} ctx={ctx} gear={gear} onChars={() => onTab('chars')} />
+            <TeamScreen roster={rosterList} off={off} stars={gear.store.stars ?? NO_STARS} ctx={ctx} gear={gear} onChars={() => onTab('chars')}
+              canTrade={canEquip && !tour.run} onHeroTrade={(id) => setTrade({ hero: id })} onFree={setFreeIds}
+              onApplied={(text, undo) => say({ text, note: '', tab: 'team', undo: (x) => undo(x) ?? x })} />
           </section>
         </main>
         <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
@@ -312,7 +314,7 @@ export function App() {
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onFind={tour.run ? undefined : () => setFindOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours} onTrade={canEquip ? () => setTrade('team') : undefined}
+            onCode={() => setCodeOpen(true)} onFind={tour.run ? undefined : () => setFindOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours}
             onBatch={onBatch ? () => { onTab('eval'); onBatch(); } : undefined} />
         )}
         {batchOn && layout.narrow && batch.view && s.tab === 'eval' && (
@@ -322,7 +324,7 @@ export function App() {
           <AskSheet title={t.batch.end} text={t.batch.endAsk(batch.batch.items.length)} yes={t.batch.endYes} kind="batch-ask" onYes={batch.endNow} onClose={batch.cancelEnd} />
         )}
         {trade && canEquip && (
-          <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade === 'team' ? null : trade.hero} team={trade === 'team'} onClose={(free) => { setTrade(null); setFreeIds(free); }}
+          <TradeSheet ctx={ctx} gear={gear} roster={rosterList} off={off} start={trade.hero} onClose={(free) => { setTrade(null); setFreeIds(free); }}
             onApplied={(text, undo, after) => say({ text, note: '', tab: s.tab, undo: (x) => undo(x) ?? x, after })} />
         )}
         {freeNow.length > 0 && <FreeSheet ctx={ctx} st={gear.store} ids={freeNow} onClose={() => setFreeIds([])} />}

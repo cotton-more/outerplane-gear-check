@@ -11,6 +11,9 @@
 // the first turn (SPD the app knows, game/stat/spd), and each member's EFF vs its RES (stage D); a row's «Эфф из игры»
 // opens «Эфф для X» — the same sheet as the card's, the typed value is the hero's (GearStore.eff). EFF counts the spot's ★
 // (like the report) and what battle adds (the element quirk node, a teammate's transcend team row).
+// The team trade (.x/0200-boss E2, owner 2026-10-13): under each spot the hero's build (OrderPill; kept with the team in
+// 'ogc.boss' — orders; a pin wins), «Подобрать вещи» → TeamTradeSheet for the 2–4 members with builds (one — the one-hero
+// trade, App), a hero without builds stays out with a line. Worn gear is never kept with the team: the store as it is now.
 import { useMemo, useState } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { checkTeam, type TeamMember } from '@/game/synergy/check';
@@ -34,6 +37,14 @@ import { spdOf } from '@/game/stat/spd';
 import { EffSheet } from '@/features/worn/EffSheet';
 import { setEff } from '@/features/gear/model/gear';
 import type { GearApi } from '@/features/gear/store/useGear';
+import type { GearStore } from '@/features/gear/model/gear';
+import { OrderPill, OrderSheet, orderName } from '@/features/trade/ui/OrderSheet';
+import { TeamTradeSheet, pinnedOrder } from '@/features/trade/ui/TeamTradeSheet';
+import { STATS } from '@/features/trade/model/world';
+import { combosOf, pinOf } from '@/game/build/profile';
+import { comboSig } from '@/game/build/variants';
+import { comboText } from '@/game/build/builds';
+import { tour } from '@/tour/anchors';
 import type { Ctx } from '@/game/context';
 import { useT } from '@/i18n';
 import { AlphaMark } from '@/shared/ui/AlphaMark';
@@ -50,9 +61,12 @@ interface Spot { id: string; want?: number }
 // the message after «Собрать из гайда»; undo — the team before it (none — nothing changed)
 interface Filled { text: string; key: string; undo?: (string | null)[] }
 
-export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
+// canTrade — the trade is available (not during a tour, not on a newer page's gear); onHeroTrade — the one-hero trade for a
+// lone member (App's sheet); onApplied / onFree — «Сделал»'s message with «Вернуть» and «Свободные вещи» (App)
+export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = false, onHeroTrade, onApplied, onFree }: {
   roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>; stars: Readonly<Record<string, number>>;
-  ctx: Ctx; gear: GearApi; onChars: () => void;
+  ctx: Ctx; gear: GearApi; onChars: () => void; canTrade?: boolean; onHeroTrade?: (id: string) => void;
+  onApplied?: (text: string, undo: (st: GearStore) => GearStore | null) => void; onFree?: (ids: string[]) => void;
 }) {
   const t = useT();
   const idx = useIndex();
@@ -65,6 +79,8 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
   const [bossAt, setBossAt] = useState<number | null>(null); // the boss sheet is open (when it was opened — «идёт сейчас»)
   const [choosing, setChoosing] = useState(false); // «Какую команду из гайда?»
   const [effFor, setEffFor] = useState<string | null>(null); // the member whose «Эфф для X» is open
+  const [orderFor, setOrderFor] = useState<string | null>(null); // the member whose build sheet is open
+  const [trading, setTrading] = useState(false); // «Обмен для команды» is open
   const [filled, setFilled] = useTimed<Filled>(6000);
   // the roster without heroes replaced by their Core Fusion
   const mine = useMemo(() => roster.filter((id) => idx.CHAR[id] && !off.has(id)), [roster, idx, off]);
@@ -146,6 +162,25 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
     if (next !== gear.store) gear.set(next);
   };
 
+  // the builds kept with this team (E2): hero → comboSig; none — «По статам»; a pin is the hero's order (hard)
+  const orders = store.orders?.[key] ?? {};
+  const setOrder = (id: string, o: string) => update((s) => {
+    const { [id]: _, ...rest } = s.orders?.[key] ?? {};
+    return { ...s, orders: { ...s.orders, [key]: o === STATS ? rest : { ...rest, [id]: o } } };
+  });
+  const withBuilds = members.filter((m) => idx.CHAR[m.id]?.builds.length).map((m) => m.id);
+  const noBuilds = members.filter((m) => !idx.CHAR[m.id]?.builds.length).map((m) => idx.CHAR[m.id]?.name ?? m.id);
+  const pill = (_: number, id: string) => {
+    const c = idx.CHAR[id];
+    if (!c?.builds.length) return null;
+    const pin = pinOf(c, gear.store.pin?.[id]);
+    const combo = pin ? pin.combo : combosOf(c).find((x) => comboSig(x) === orders[id]) ?? null;
+    const label = pin ? t.team.buildPinAria(c.name, comboText(idx, pin.combo)) : t.team.buildAria(c.name, orderName(ctx, c, orders[id] ?? STATS, t.ui.byStats));
+    return <OrderPill ctx={ctx} combo={combo} pinned={!!pin} label={label} onClick={() => setOrderFor(id)} />;
+  };
+  const onTrade = () => (withBuilds.length === 1 ? onHeroTrade?.(withBuilds[0]) : setTrading(true));
+  const orderC = orderFor ? idx.CHAR[orderFor] : undefined;
+
   const pickable = mine.filter((id) => !members.some((m) => m.id === id))
     .sort((a, b) => compareChars(idx.CHAR[a], idx.CHAR[b]));
   const starred = starring === null ? null : team[starring];
@@ -153,8 +188,14 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
   return (
     <div className="panel tm">
       {B && <BossRow boss={boss} facts={facts} onOpen={() => setBossAt(Date.now())} />}
-      <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} />
-      {guideTeams.length > 0 && <button type="button" className="boss-fill" onClick={onFill}>{t.boss.fill}</button>}
+      <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} below={canTrade ? pill : undefined} />
+      {(guideTeams.length > 0 || (canTrade && withBuilds.length > 0)) && (
+        <div className="tm-acts">
+          {guideTeams.length > 0 && <button type="button" className="boss-fill" onClick={onFill}>{t.boss.fill}</button>}
+          {canTrade && withBuilds.length > 0 && <button type="button" className="btn primary tm-go" onClick={onTrade} {...tour('teamTrade')}>{t.team.goTrade}</button>}
+        </div>
+      )}
+      {canTrade && noBuilds.length > 0 && <p className="tm-nob">{t.team.noBuilds(noBuilds.join(', '), noBuilds.length)}</p>}
       {!members.length && !guideTeams.length && <p className="tm-hint muted">{t.team.hint}</p>}
       {/* a wide window: the team on the left, the turn timeline and the report on the right (one column on a phone) */}
       <div className="tm-side">
@@ -180,6 +221,14 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars }: {
           onClear={() => { update((s) => ({ ...s, boss: null })); setBossAt(null); }} />
       )}
       {effOpen && effFor && <EffSheet c={idx.CHAR[effFor]} eff={effOpen} onClose={() => setEffFor(null)} onSave={(cal) => saveEff(effFor, cal)} />}
+      {orderC && (
+        <OrderSheet c={orderC} ctx={ctx} order={orders[orderC.id] ?? STATS} pinned={pinnedOrder(ctx, gear.store, orderC.id, t)} onClose={() => setOrderFor(null)}
+          onChoose={(o) => { setOrder(orderC.id, o); setOrderFor(null); }} />
+      )}
+      {trading && canTrade && (
+        <TeamTradeSheet ctx={ctx} gear={gear} roster={roster} team={withBuilds} orders={orders} onOrder={setOrder}
+          onApplied={(text, undo) => onApplied?.(text, undo)} onClose={(free) => { setTrading(false); onFree?.(free); }} />
+      )}
       {choosing && <GuideChoice teams={guideTeams} own={own} onPick={fill} onClose={() => setChoosing(false)} />}
       {filled && filled.key === key && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
     </div>

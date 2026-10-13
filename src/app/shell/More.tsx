@@ -22,14 +22,14 @@ import type { InstallInfo } from './Guide';
 import { IconSwitch, LangSwitch } from './Switches';
 
 export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring, rosterApi, gear, onBackup, lang, onLang, gameIcons, onIcons, install, onAppUpdate,
-  onClose, onChars, onTodress, onTeam, onTrade, onCode, onFind, onHelp, onTour, onBatch }: {
+  onClose, onChars, onTodress, onTeam, onCode, onFind, onHelp, onTour, onBatch }: {
   s: AppState; dispatch: Dispatch<Action>; rosterSize: number; todressN: number; news: boolean;
   narrow: boolean;                       // телефон: сверху переходы (на ПК вкладки в шапке)
   touring: boolean;                      // идёт обучение: вместо поля копии — пояснение (на странице пример, не вещи игрока)
   rosterApi: RosterApi; gear: GearApi; onBackup: (text: string) => string;
   lang: Lang; onLang: (l: Lang) => void; gameIcons: boolean; onIcons: (game: boolean) => void;
   install: InstallInfo; onAppUpdate?: () => void;
-  onClose: () => void; onChars: () => void; onTodress: () => void; onTeam: () => void; onTrade?: () => void; onCode: () => void; onHelp: () => void; onTour: () => void;
+  onClose: () => void; onChars: () => void; onTodress: () => void; onTeam: () => void; onCode: () => void; onHelp: () => void; onTour: () => void;
   onFind?: () => void;                   // «Найти вещь» (screens/find); not during a tutorial — its gear is an example
   onBatch?: () => void;                  // «Партия» (features/batch) — on a phone here, on a wide screen next to «Следующий»
 }) {
@@ -47,7 +47,6 @@ export function More({ s, dispatch, rosterSize, todressN, news, narrow, touring,
             </button>
             <button type="button" className="btn" onClick={go(onTodress)}>{t.ui.menuBare(todressN)}</button>
             <button type="button" className="btn" onClick={go(onTeam)}>{t.team.tab} <AlphaMark /></button>
-            {onTrade && <button type="button" className="btn" onClick={go(onTrade)}>{t.trade.teamOpen}</button>}
             {onBatch && <BatchButton onStart={go(onBatch)} />}
           </div>
         )}
