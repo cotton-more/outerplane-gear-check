@@ -97,15 +97,15 @@ describe('a boss on «Команда»', () => {
     expect($('.boss-sheet .boss-guide')?.getAttribute('href')).toBe('https://outerpedia.com/guides/special-request/meteos');
     await click(byText('.boss-sheet .boss-chip', '11'));
     await closeSheet();
-    expect(row()!.textContent).toBe('Boss:Blazing Knight Meteos· 11RES 256▾');
+    expect(row()!.textContent).toBe('Boss:Blazing Knight Meteos· 11SPD 102RES 256▾'); // E4: SPD and RES with icons, the words for screen readers
     // another boss opens at its top stage; back to Meteos — stage 11 again
     await pickBoss('Annihilator');
     expect($('.boss-sheet .boss-chip[aria-pressed="true"]')?.textContent).toBe('Very Hard');
     await closeSheet();
-    expect(row()!.textContent).toContain('Annihilator· Very HardRES 54');
+    expect(row()!.textContent).toContain('Annihilator· Very HardSPD 250RES 54');
     await pickBoss('Blazing Knight Meteos');
     await closeSheet();
-    expect(row()!.textContent).toContain('· 11RES 256');
+    expect(row()!.textContent).toContain('· 11SPD 102RES 256');
     expect(stored()).toMatchObject({ boss: 'sr:meteos', stage: { 'sr:meteos': 10 } }); // an untouched boss stores no stage: the top one
   });
 
