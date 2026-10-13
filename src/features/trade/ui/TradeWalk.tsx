@@ -90,16 +90,19 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
   const lineOf = (l: Line) => {
     const done = ticks.has(l.key);
     switch (l.kind) {
-      case 'lock':
+      case 'lock': {
+        // the parked piece in full (O5): the player checks it is the same in the game and in the app
+        const p = st.pieces[l.item];
         return (
           <li key={l.key} className={`tstep tlock${done ? ' done' : ''}`}>
             {tick(l, done)}
             <div className="tstep-b">
-              <p className="tstep-h"><Icon name="lock" /><span>{t.trade.lock(l.slot, name(l.hero))}</span></p>
-              <p className="tstep-s">{t.trade.lockPark}</p>
+              <p className="tstep-h"><Icon name="lock" /><span>{t.trade.lock(l.slot, name(l.hero))}</span><span className="tsub">· {t.trade.lockPark}</span></p>
+              {p && piece(p, l.hero)}
             </div>
           </li>
         );
+      }
       case 'equip': {
         const p = st.pieces[l.item];
         if (!p) return null;

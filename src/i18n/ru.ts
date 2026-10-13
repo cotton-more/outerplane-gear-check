@@ -808,7 +808,7 @@ export const ru = {
     // the walk (.x/0200-boss E2b, texts approved by the owner 2026-10-13): «Замок» before an equip, «Оставить как было»,
     // the empty slot, «В конце — замены», parking, «Сделал · ещё N», «Отмена» with a confirm
     lock: (slot: string, hero: string) => `Замок: ${({ armor: 'броню' } as Record<string, string>)[slot] ?? NOM[slot]} ${hero}`,
-    lockPark: 'в конце — на парковку',
+    lockPark: 'на парковку',
     tickAria: 'Сделано в игре',
     keep: 'Оставить как было',
     kept: (slot: string) => `${cap(NOM[slot])}: как было`,

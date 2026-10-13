@@ -54,8 +54,8 @@ For each receiver:
   −6.3 → −2.3": crit near their number N counts less (see [Equipment](Equipment#worn), "Crit: 45%");
 - an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
   pieces are there but below T4, "Speed ×2 won't come together: needs T4";
-- **"Lock: Rin's helmet"** — right before a piece goes on, when the hero's old piece will be parked (below): lock it in
-  the game. A piece that goes to someone else gets no lock — its line names it in full (item or set, main, substats):
+- **"Lock: Rin's helmet · parked"** — right before a piece goes on, when the hero's old piece will be parked (below):
+  lock it in the game; the line shows that piece in full, so you can check it's the same one. A piece that goes to someone else gets no lock — its line names it in full (item or set, main, substats):
   once taken off, the game finds it only by grade, main and stats;
 - **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6
   pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Rin's

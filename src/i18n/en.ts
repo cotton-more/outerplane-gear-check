@@ -694,7 +694,7 @@ export const en: Texts = {
     fromInventory: 'in inventory',
     fromParked: (name: string) => `in inventory · parked on ${name}`,
     lock: (slot: string, hero: string) => `Lock: ${hero}’s ${(SLOT_EN[slot] ?? slot)}`,
-    lockPark: 'at the end — parked',
+    lockPark: 'parked',
     tickAria: 'Done in the game',
     keep: 'Keep as it was',
     kept: (slot: string) => `${(SLOT_EN[slot] ?? slot).replace(/^./, (x) => x.toUpperCase())}: as it was`,

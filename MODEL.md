@@ -352,9 +352,10 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    done in the game. Lines per hero (receivers in the plan's order), slot by slot: «Замок: <old piece>» right before the
    equip — only when that piece stays with him **parked** (O3, owner 2026-10-13: a piece that moves to someone — a
    replacement, a later member — is found in the game by grade, main and substats, so its line names it in full and needs
-   no lock); the equip with its source (worn by X / X's spare / parked on X /
+   no lock; the lock line names the parked piece in full, O5 — the player checks the game holds the same piece); the equip with its source (worn by X / X's spare / parked on X /
    inventory); a frozen slot («как было»); an empty slot («Ввести» / «Оставить»). Then «В конце — замены»: replacements
-   («Caren ← шлем Rin» with the piece in full, each may be kept as it was), parking (a giver's empty slot is no line, item 7). A line
+   («Caren ← шлем Rin» with the piece in full, each may be kept as it was); parking has no line of its own — the «Замок» line names the
+   parked piece in full (O5); a giver's empty slot is no line (item 7). A line
    has a key — a recount keeps the ticks of unchanged lines. «Сделал» only when every line is done (ticked; kept, entered,
    left count): **one record** (`apply:applyWalk` — moves, replacements, parking, entered pieces) and **one «Вернуть»**
    (the store before, if untouched since). The ticks and decisions live on the device until «Сделал» / «Отмена»

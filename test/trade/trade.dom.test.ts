@@ -344,7 +344,10 @@ describe('J. обмен вещами', () => {
     it('a replacement kept as it was: Aer\'s helmet stays empty, Caren\'s old one is parked — «P parked» in her Pool', async () => {
       await open();
       await click(byText('.tend .tstep', 'Aer ←')!.querySelector<HTMLElement>('.tkeep'));
-      expect(byText('.tend .tstep-h', 'parked')?.textContent).toContain('— parked');
+      // parked: the lock before Caren's equip names her old helmet in full (O5); no parking line at the end
+      expect($('.tline.to .tlock .tstep-h')?.textContent).toBe('Lock: Caren’s helmet· parked');
+      expect($('.tline.to .tlock .bgear-t')?.textContent).toContain('SPD');
+      expect(byText('.tend .tstep-h', 'parked')).toBeUndefined();
       expect($('.tend .thole')).toBeNull(); // Aer's empty helmet slot is no line (O4): the record keeps it empty
       await walkAll();
       await click(doneBtn());
