@@ -37,7 +37,7 @@ The hero window (tap «+» or a portrait) starts with suggestions:
 
 ## Boss
 
-The row above the spots: «Boss: Meteos · 13 · RES 288 ▾». Tap it to open the boss window.
+The row above the spots: «Boss: Meteos · 13 ▾», with the boss's SPD and RES next to it, each with its icon (the Speed set and RES). Tap it to open the boss window.
 
 - **The list of fights:** Special Request, Dimensional Singularity, Joint Challenge, Guild Raid (the main boss and its
   subs under the raid's name). A fight running now is on top, with its end date. A name search. On the right — RES at
