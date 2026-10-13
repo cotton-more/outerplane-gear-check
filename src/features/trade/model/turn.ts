@@ -12,7 +12,7 @@ export type Gains = ReadonlyMap<string, number | null>;
 export function heroGain(w: World, to: string): number | null {
   const { plan } = planOf(w, { to });
   if (!plan.changes.length) return null;
-  const w1 = advance(w, { plans: [{ to, plan }], fills: [] });
+  const w1 = advance(w, { plans: [{ to, plan }] });
   return lineGain({ before: keyIn(w, to)?.total ?? 0, after: keyIn(w1, to)?.total ?? 0 });
 }
 

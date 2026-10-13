@@ -1,19 +1,20 @@
 // Кандидаты получателя (R5; MODEL.md §7, вопрос 15): свои вещи, надетое других (кроме переодетых в этом окне; члены
-// команды друг другу открыты), снятое этим же расчётом, свободные вещи расчёта. Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
-// не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2), «Не брать», код, который у получателя уже
-// есть, без BT выше (R5.5). Герои без билдов — ни получатели, ни держатели (R2.7).
+// команды друг другу открыты), снятое этим же расчётом, свободные вещи расчёта, parked pieces (anyone's; into an empty slot
+// with no bar — MODEL.md §7 item 2). Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
+// не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2), код, который у получателя уже
+// есть, без BT выше (R5.5). A frozen slot («Оставить как было», MODEL.md §7 item 4): the receiver keeps what he wears there
+// (nothing else is a candidate) and nobody takes it from him. Герои без билдов — ни получатели, ни держатели (R2.7).
 import type { SlotId } from '@/game/data/types';
 import { keyOf } from './kit';
-import { heldOf, SLOT_ORDER, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
+import { heldOf, SLOT_ORDER, slotKey, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 
 export interface CandInput {
   to: string;                       // получатель
   open?: ReadonlySet<string>;       // переодетые, чьё надетое всё же кандидат: члены команды, чей шаг впереди (R3.5)
-  skip?: ReadonlySet<string>;       // «Не брать»: skipKey(вещь, получатель)
+  frozen?: ReadonlySet<string>;     // «Оставить как было»: slotKey(hero, slot)
   free?: readonly string[];         // свободные вещи этого расчёта (R5.4)
 }
-export const skipKey = (itemId: string, heroId: string): string => `${itemId}>${heroId}`;
 
 const NOBODY: Hero = { id: '', rank: -1, locked: false, worn: {}, pool: [] };
 const btOf = (bt: number | null) => bt ?? 0;
@@ -52,12 +53,17 @@ export function candidates(w: World, inp: CandInput): Cands {
     const it = w.items[id];
     if (it) mine.set(it.code, Math.max(mine.get(it.code) ?? 0, btOf(it.bt)));
   }
+  const frozen = (heroId: string, slot: SlotId) => !!inp.frozen?.has(slotKey(heroId, slot));
   const add = (id: string, cost: Cost, holder: Hero | null, loss: Milli, own: boolean) => {
     const item = w.items[id];
     if (!item) return;
     const val = g.value(id);
     if (!val) return;
-    if (!(own && cost === 0) && (!val.ok || inp.skip?.has(skipKey(id, h.id)))) return;
+    const worn = own && cost === 0;
+    if (frozen(h.id, item.slot) && !worn) return;
+    // a parked piece fills an empty slot with no bar: better than nothing (MODEL.md §7 item 2)
+    const open = !!w.parked?.has(id) && !h.worn[item.slot];
+    if (!worn && !val.ok && !open) return;
     if (!own && mine.has(item.code) && btOf(item.bt) <= mine.get(item.code)!) return;
     (out[item.slot] ??= []).push({ item, v: val.v, fit: val.fit, cost, loss, holder: holder ? holder.id : null, rank: holder ? holder.rank : -1 });
   };
@@ -79,7 +85,7 @@ export function candidates(w: World, inp: CandInput): Cands {
       // calculation (a team member's step), or by an earlier «Сделал» of this window (free, World.held) — not held: the swap of
       // two members goes on, and a re-dressed hero's old piece goes to the next
       if (!kw.has(id)) { if (!wornBy.has(id) && !held.has(id)) add(id, 2, k, 0, false); }
-      else if (open && k.worn[it.slot] === id) add(id, 3, k, holderLoss(w, k, gk, it.slot), false);
+      else if (open && k.worn[it.slot] === id && !frozen(k.id, it.slot)) add(id, 3, k, holderLoss(w, k, gk, it.slot), false);
     }
   }
   for (const id of inp.free ?? []) add(id, 2, null, 0, false);

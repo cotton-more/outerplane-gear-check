@@ -41,7 +41,7 @@ with "Undo". More — [Equipment](Equipment#core-fusion).
 
 Everything you mark stays in your browser only — nothing is sent anywhere. To keep it safe or move it to another device
 there's a **backup**: More → "Backup" → "Backup — roster and gear in one code". The code
-(**OGC-GEAR8**) holds the whole roster, each hero's pieces in order, what's worn, the hero's pinned set, crit number, in-game EFF, stars and level. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
+(**OGC-GEAR9**) holds the whole roster, each hero's pieces in order, what's worn and parked, the hero's pinned set, crit number, in-game EFF, stars and level. "Copy" — and save the code wherever is handy (notes, a message to yourself). On the other device paste it into
 the same field and tap **"Replace"**: the roster and gear are replaced by the code, and the message's "Undo" brings the
 old ones back. The code may be split into lines — spaces and line breaks don't matter; a cut or damaged code won't load
 ("The code is damaged or cut off — copy all of it").

@@ -10,6 +10,7 @@ export interface PoolStore {
   pin?: Readonly<Record<string, string>>; // закрепление героя (MODEL.md §6): ключ набора (profile pinKey)
   crit?: Readonly<Record<string, number>>; // the hero's N — how much crit the hero needs (MODEL.md §12 item 1); none — 100
   seq?: number;
+  park?: readonly string[]; // parked pieces (MODEL.md §5): the verdict's pool leaves them out (activePieces)
 }
 
 export const NEWEST = 1e9; // вещь с формы — всегда новее записанных: при равенстве она ничего не вытесняет

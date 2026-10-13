@@ -6,11 +6,9 @@
 // первый порядок. Расчёт — генератором (teamSteps): runTeam уступает поток кусками, «Отмена» — без последствий (J7).
 import type { SlotId } from '@/game/data/types';
 import type { Step } from './apply';
-import { skipKey } from './cands';
 import { type Plan } from './gate';
-import type { HoleFill } from './holes';
 import { keyOf } from './kit';
-import { cmpUse, gains, SLOT_ORDER, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
+import { cmpUse, gains, SLOT_ORDER, slotKey, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 import { advance, movesOf, type Moves } from './moves';
 import { heroPlan, partOn, type Missing } from './plan';
@@ -18,16 +16,14 @@ import { runAll, runChunks } from './chunks';
 
 export const TEAM_SIZE = 4;
 
-export interface TeamInput { team: readonly string[]; skip?: ReadonlySet<string> }
-// шаг плана: член очереди (kind 'hero', с дырами) или обмен пары внутри четвёрки ('swap')
+export interface TeamInput { team: readonly string[]; frozen?: ReadonlySet<string> }
+// шаг плана: член очереди (kind 'hero') или обмен пары внутри четвёрки ('swap')
 export interface TeamStep extends Step {
   kind: 'hero' | 'swap';
   plans: { to: string; plan: Plan }[];
-  fills: HoleFill[];
-  unfilled: Record<string, SlotId[]>;
   missing?: Missing[];      // шаг члена: части его заказа, которым не хватает вещей
 }
-export interface TeamMember { to: string; before: Kit; after: Kit; unfilled: SlotId[]; missing: Missing[] }
+export interface TeamMember { to: string; before: Kit; after: Kit; missing: Missing[] }
 // steps — как считалось (для «Сделал»); moves — что игроку надеть: итог против начала, каждая вещь один раз
 export interface TeamPlan { order: string[]; steps: TeamStep[]; members: TeamMember[]; moves: Moves }
 
@@ -61,7 +57,7 @@ const lex = (a: readonly number[], z: readonly number[]) => { for (let i = 0; i 
 type Slots = Partial<Record<SlotId, Cand>>;
 
 // лучший допустимый обмен пары (R7.1): никому не хуже по R2.5, хотя бы одному лучше по порогу; лучший — по сумме пары
-function bestSwap(w: World, team: readonly string[], skip?: ReadonlySet<string>): TeamStep | null {
+function bestSwap(w: World, team: readonly string[], frozen?: ReadonlySet<string>): TeamStep | null {
   let best: { score: number[]; step: TeamStep } | null = null;
   const heroOf = new Map(w.heroes.map((h) => [h.id, h]));
   for (let i = 0; i < team.length; i++) for (let j = i + 1; j < team.length; j++) {
@@ -69,27 +65,28 @@ function bestSwap(w: World, team: readonly string[], skip?: ReadonlySet<string>)
     if (!hA || !hB) continue;                       // без вещей отдать нечего, а другой потерял бы слот
     const gA = w.gauge(hA.id)!, gB = w.gauge(hB.id)!;
     const kA = kitIn(w, hA.id), kB = kitIn(w, hB.id);
-    const slots = SLOT_ORDER.filter((s) => hA.worn[s] || hB.worn[s]);
+    // a frozen slot («Оставить как было») takes part in no swap
+    const slots = SLOT_ORDER.filter((s) => (hA.worn[s] || hB.worn[s]) && !frozen?.has(slotKey(hA.id, s)) && !frozen?.has(slotKey(hB.id, s)));
     for (let mask = 1; mask < 1 << slots.length; mask++) {
       const picked = slots.filter((_, b) => mask & (1 << b));
       const sA: Slots = { ...kA.slots }, sB: Slots = { ...kB.slots };
       const chA: Plan['changes'] = [], chB: Plan['changes'] = [];
       let ok = true;
-      // вещь id (надета на from в слоте s) — к to
-      const give = (id: string | undefined, from: Hero, to: Hero, g: Gauge, s: SlotId, into: Slots, ch: Plan['changes']) => {
+      // вещь id (надета на from в слоте s) — к получателю с мерилом g
+      const give = (id: string | undefined, from: Hero, g: Gauge, s: SlotId, into: Slots, ch: Plan['changes']) => {
         const was = into[s] ?? null;
         delete into[s];
         if (!id) return;
         const val = g.value(id);
         // чужая вещь, надетая тоже, — только годная для получателя (MODEL.md §7 item 2), как у шага (cands)
-        if (!val || !val.ok || skip?.has(skipKey(id, to.id))) { ok = false; return; }
+        if (!val || !val.ok) { ok = false; return; }
         const c: Cand = { item: w.items[id], v: val.v, fit: val.fit, cost: 3, loss: 0, holder: from.id, rank: from.rank };
         into[s] = c;
         ch.push({ slot: s, cand: c, was });
       };
       for (const s of picked) {
-        give(hB.worn[s], hB, hA, gA, s, sA, chA);
-        give(hA.worn[s], hA, hB, gB, s, sB, chB);
+        give(hB.worn[s], hB, gA, s, sA, chA);
+        give(hA.worn[s], hA, gB, s, sB, chB);
       }
       if (!ok) continue;
       // у получателя уже есть вещь с тем же кодом — нет (R1.2)
@@ -105,9 +102,8 @@ function bestSwap(w: World, team: readonly string[], skip?: ReadonlySet<string>)
       best = {
         score,
         step: {
-          kind: 'swap', fills: [],
+          kind: 'swap',
           plans: [{ to: hA.id, plan: planOf(nA, chA, sA) }, { to: hB.id, plan: planOf(nB, chB, sB) }],
-          unfilled: { [hA.id]: SLOT_ORDER.filter((s) => !sA[s]), [hB.id]: SLOT_ORDER.filter((s) => !sB[s]) },
         },
       };
     }
@@ -144,7 +140,7 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
       let fw = w;
       const all = [...steps];
       for (let n = 0; n < 64; n++) {
-        const s = bestSwap(fw, team, inp.skip);
+        const s = bestSwap(fw, team, inp.frozen);
         if (!s) break;
         all.push(s); fw = advance(fw, s);
       }
@@ -156,9 +152,9 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
     for (const m of team) {
       if (done.includes(m)) continue;
       const ahead = team.filter((x) => x !== m && !done.includes(x));
-      const hp = heroPlan(locked(w, done), { to: m, skip: inp.skip, open: new Set(ahead) });
+      const hp = heroPlan(locked(w, done), { to: m, frozen: inp.frozen, open: new Set(ahead) });
       yield;
-      const step: TeamStep = { kind: 'hero', plans: [{ to: m, plan: hp.plan }], fills: hp.holes.fills, unfilled: { [m]: hp.holes.unfilled }, missing: hp.missing };
+      const step: TeamStep = { kind: 'hero', plans: [{ to: m, plan: hp.plan }], missing: hp.missing };
       yield* walk(advance(w, step), [...done, m], [...steps, step]);
     }
   }
@@ -167,7 +163,7 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
   const members = team.map((to) => {
     const after = kitIn(r.w, to), g = r.w.gauge(to)!;
     const missing = (r.steps.find((s) => s.kind === 'hero' && s.plans[0].to === to)?.missing ?? []).filter((m) => !partOn(g, after.slots, m.part));
-    return { to, before: before.get(to)!, after, unfilled: SLOT_ORDER.filter((s) => !after.slots[s]), missing };
+    return { to, before: before.get(to)!, after, missing };
   });
   // шаги без изменений не нужны ни плану, ни «Сделал»
   const steps = r.steps.filter((s) => s.plans.some((p) => p.plan.changes.length));

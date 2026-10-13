@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // «Обмен вещами»: открытие шторки с карточки героя и с панели ростера («Кого переодеть?»), обмен для команды на «Команде»
 // (.x/0200-boss E2: билд под местом, «Подобрать вещи»), заказ героя, план героя
-// (piece, search key, source, piece cost, «Не брать», stats points), «Сделал» with «Вернуть», the session (stat-sets T7.4) and cancelling the calculation
+// (piece, search key, source, piece cost, stats points), the walk (.x/0200-boss E2b: ticks, «Оставить как было», the end,
+// parking, «Ввести», ticks kept on the device), «Сделал» with «Вернуть», the session (stat-sets T7.4) and cancelling the calculation
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -75,6 +76,12 @@ const gear = (extra: Pc = {}) => G([WEAK, BETTER], { [caren.id]: ['p1'], [aer.id
   { worn: { [caren.id]: { helmet: 'p1' }, [aer.id]: { helmet: 'p2' } }, ...extra });
 const ROSTER = [caren.id, aer.id];
 const hero = (n: string) => byText('.trade-hero', n);
+// do the whole walk: tick every step, leave every empty slot empty
+const walkAll = async () => {
+  for (let b = $('.tstep .ttick[aria-pressed="false"]:not(:disabled)'); b; b = $('.tstep .ttick[aria-pressed="false"]:not(:disabled)')) await click(b);
+  for (let b = byText('.tpill', 'Leave'); b; b = byText('.tpill', 'Leave')) await click(b);
+};
+const doneBtn = () => $('.tact .btn.primary');
 
 describe('J. обмен вещами', () => {
   it('J1: «Trade ▸» на карточке Caren открывает шторку сразу с её планом', async () => {
@@ -96,22 +103,29 @@ describe('J. обмен вещами', () => {
     expect(hero(bare.name)).toBeUndefined();
   });
 
-  it('J3: у вещи в плане — ключ поиска, источник, «Не брать»; у героя — заказ и очки статов; «Не брать» пересчитывает', async () => {
+  it('J3: the walk — the piece (source, points), «Keep as it was»; the order and stats; the end gives Aer Caren\'s old helmet', async () => {
     await mount({ gear: gear(), roster: ROSTER });
     await click(byText('.cd-acts button', 'Trade'));
 
-    expect($('.tmove .bgear-row')).not.toBeNull();
-    expect($('.tmove .tsrc')?.textContent).toBe('on Aer');
-    expect($('.tmove .tpts')?.textContent).toMatch(/^\+[\d.]+ pts$/); // Aer's helmet against Caren's worn helmet
+    expect($('.tline.to .tlock')).toBeNull(); // her old helmet goes to Aer: no lock, the end names it in full (O3)
+    expect($('.tstep .bgear-row')).not.toBeNull();
+    expect($('.tstep .tsrc')?.textContent).toBe('on Aer');
+    expect($('.tstep .tpts')?.textContent).toMatch(/^\+[\d.]+ pts$/); // Aer's helmet against Caren's worn helmet
     expect($('.tline.to .aimb')?.textContent).toBe('Order: By stats ▾'); // заказ — его можно сменить
     expect($('.tline.to .tline-s')?.textContent).toMatch(/^Stats: [\d.]+ → [\d.]+ pts$/);
-    expect(byText('.tmove button', "Don't take")).toBeTruthy();
-    expect($('.tpin')).toBeNull();
-    expect($('.tline:not(.to)')).toBeNull(); // только сам герой: у Aer забирают шлем, его строки нет (владелец, 2026-10-05)
+    expect($('.tend .tend-h')?.textContent).toBe('At the end — replacements once all above is done');
+    expect(byText('.tend .tstep-h', 'Aer ← Caren’s helmet')?.textContent).toBe('Aer ← Caren’s helmet');
+    expect(byText('.tend .tstep', 'Aer ←')?.querySelector('.bgear-t')?.textContent).toContain('SPD'); // the piece in full
+    expect($$('.tline.to .thole')).toHaveLength(5); // her five empty slots: «Enter» / «Leave»
+    expect($('.tact .tdone')?.textContent).toMatch(/^Done · \d+ left$/);
 
-    await click(byText('.tmove button', "Don't take"));
+    await click(byText('.tstep .tkeep', 'Keep as it was'));
 
-    expect($('.tline.to .tmove .tsrc')).toBeNull();
+    expect($('.tline.to .tstep .tsrc')).toBeNull();
+    expect($('.tline.to .tdecl .tstep-h')?.textContent).toBe('Helmet: as it was');
+    expect($('.tend')).toBeNull(); // nothing taken off — no end
+    await click(byText('.tdecl button', 'undo'));
+    expect($('.tstep .tsrc')?.textContent).toBe('on Aer');
   });
 
   // F1 of review 0136, decision 14: Caren over the cap takes Rin's worn CHD helmet for her CHC 6 one — the line names the extra crit
@@ -150,11 +164,17 @@ describe('J. обмен вещами', () => {
     await mount({ gear: gear(), roster: ROSTER });
     const before = localStorage.getItem('ogc.gear');
     await click(byText('.cd-acts button', 'Trade'));
-    await click($('.tact .btn.primary'));
+    await click(doneBtn());
+    expect(localStorage.getItem('ogc.gear')).toBe(before); // «Done · N left»: not yet
+    await walkAll();
+    expect(doneBtn()?.textContent).toBe('Done');
+    await click(doneBtn());
 
     const after = stored();
     expect(localStorage.getItem('ogc.gear')).not.toBe(before);
     expect(after.worn[caren.id].helmet).toBe('p2');
+    expect(after.worn[aer.id].helmet).toBe('p1'); // the replacement: Aer wears Caren's old helmet
+    expect(localStorage.getItem('ogc.trade')).toBe('null'); // the walk is over
     expect($('.gear-toast')?.textContent).toContain('Undo');
 
     await click(byText('.gear-toast button', 'Undo'));
@@ -165,12 +185,13 @@ describe('J. обмен вещами', () => {
     await mount({ gear: gear(), roster: ROSTER });
     await click(byText('.cd-acts button', 'Trade'));
     expect($('.trade-session')).toBeNull();
-    await click($('.tact .btn.primary'));
+    await walkAll();
+    await click(doneBtn());
 
     expect(stored().worn[caren.id].helmet).toBe('p2');
     expect($('.trade-session span')?.textContent).toBe('Re-dressed heroes (✓) keep their gear while the window is open.');
     await click(hero('Aer'));
-    expect($$('.tmove .tsrc').map((x) => x.textContent)).not.toContain('on Caren');
+    expect($$('.tstep .tsrc').map((x) => x.textContent)).not.toContain('on Caren');
   });
 
   // 0200 stage A (Q1 (a) + (c), Q1a): marks in «Who to re-dress?», by name, the re-dressed last with ✓; «Finish»; «Undo»
@@ -189,18 +210,20 @@ describe('J. обмен вещами', () => {
     expect($('.trade-hero .sr-only')?.textContent).toBe('Nothing to change');
 
     await click(hero('Caren'));
-    await click($('.tact .btn.primary'));
+    await walkAll();
+    await click(doneBtn());
     await settle();
-    // Caren's old helmet (p1) was worn when the window opened and is off now: free, so Aer (his slot is empty since Caren took
-    // his) can take it; so can Ais (nothing worn) — a gain, not «—» (before the free pieces it stayed held in Caren's pool)
-    expect(rows()).toEqual([['Aer', expect.stringMatching(/^\+[\d.]+$/), false], ['Ais Wallenstein', expect.stringMatching(/^\+[\d.]+$/), false], ['Caren', '✓', true]]);
+    // Aer wears Caren's old helmet now (the replacement, MODEL.md §7 item 7): nothing better for him; Ais (nothing worn) may
+    // take it from Aer — a gain
+    expect(rows()).toEqual([['Aer', '—', false], ['Ais Wallenstein', expect.stringMatching(/^\+[\d.]+$/), false], ['Caren', '✓', true]]);
     expect(byText('.trade-hero', 'Caren')?.querySelector('.sr-only')?.textContent).toBe('Already re-dressed');
   });
 
   it('«Undo» takes the hero out of the session: no ✓, his gain is back; «Finish» closes the sheet', async () => {
     await mount({ gear: gear(), roster: ROSTER });
     await click(byText('.cd-acts button', 'Trade'));
-    await click($('.tact .btn.primary'));
+    await walkAll();
+    await click(doneBtn());
     await settle();
     expect(rows().find((r) => r[0] === 'Caren')?.[1]).toBe('✓');
 
@@ -210,7 +233,8 @@ describe('J. обмен вещами', () => {
     expect(rows().find((r) => r[0] === 'Caren')?.slice(1)).toEqual([expect.stringMatching(/^\+[\d.]+$/), false]);
 
     await click(hero('Caren'));
-    await click($('.tact .btn.primary'));
+    await walkAll();
+    await click(doneBtn());
     await click(byText('.trade-session button', 'Finish'));
     expect($('.drawer.trade')).toBeNull();
     expect(stored().worn[caren.id].helmet).toBe('p2');
@@ -219,7 +243,8 @@ describe('J. обмен вещами', () => {
   it('«Undo» works under StrictMode too: the hero leaves the session (the unmounted-guard is re-armed on remount)', async () => {
     await mount({ gear: gear(), roster: ROSTER }, {}, {}, true);
     await click(byText('.cd-acts button', 'Trade'));
-    await click($('.tact .btn.primary'));
+    await walkAll();
+    await click(doneBtn());
     await settle();
     expect(rows().find((r) => r[0] === 'Caren')?.[1]).toBe('✓');
 
@@ -280,7 +305,9 @@ describe('J. обмен вещами', () => {
     await planReady();
     expect($('.tline.to .tsrc')?.textContent).toBe('on Aer');
     expect($$('.tline').map((l) => l.querySelector('.tline-n')?.textContent)).not.toContain('Aer');
-    expect($('.tline:not(.to)')).toBeNull();
+    // a member (Ais or Akari, no helmet) took Caren's old helmet in her step — Aer's emptied slot is no line (O4)
+    expect($$('.tline:not(.to)')).toEqual([]);
+    expect(document.querySelector('.drawer.trade')?.textContent).not.toContain('Aer:');
   });
 
   it('one hero with builds — the one-hero trade for her; a hero without builds stays out with a line', async () => {
@@ -292,87 +319,74 @@ describe('J. обмен вещами', () => {
     expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
   });
 
-  // free pieces (MODEL.md §7 items 2 and 8): worn when the window opened, off now, given to no one → «Free pieces» on close
-  describe('free pieces', () => {
-    const FREE3 = [caren.id, aer.id, ais.id];
-    const freeSheet = () => byText('.drawer', 'Free pieces');
-    const oneRedressed = async () => {
-      await mount({ gear: gear(), roster: FREE3 }, { charId: null });
-      await click(byText('.cbar button', 'Trade'));
-      await click(hero('Caren'));
-      await click($('.tact .btn.primary'));
-      await settle();
-    };
+  // the walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b): ticks on the device, «Cancel», parking, the entry window, the team
+  describe('the walk', () => {
+    const open = async () => { await mount({ gear: gear(), roster: ROSTER }); await click(byText('.cd-acts button', 'Trade')); };
 
-    it('«Finish» after Caren took Aer\'s helmet: the sheet lists Caren\'s old helmet, no hero named, nothing stored', async () => {
-      await oneRedressed();
-      const before = localStorage.getItem('ogc.gear');
-      await click(byText('.trade-session button', 'Finish'));
-      expect($('.drawer.trade')).toBeNull();
-      const sheet = freeSheet()!;
-      expect(sheet.classList.contains('trade-free')).toBe(true);
-      expect(sheet.querySelector('h3')?.textContent).toBe('Free pieces');
-      expect(sheet.textContent).toContain("Taken off in this trade and given to no one. In the game they're in your inventory.");
-      expect(sheet.querySelectorAll('.tmove')).toHaveLength(1);
-      const row = sheet.querySelector('.tmove')!;
-      expect(row.textContent).toContain('Speed');
-      expect(row.querySelector('.bgear-t')?.textContent).toContain('SPD'); // substats with levels, as in the plan
-      expect(row.querySelector('.tsrc')).toBeNull();
-      expect(row.querySelector('button')).toBeNull();
-      for (const n of ['Caren', 'Aer']) expect(sheet.textContent).not.toContain(n);
-      expect([...sheet.querySelectorAll('.drawer-b button')]).toEqual([]);
-      expect(localStorage.getItem('ogc.gear')).toBe(before);
-
-      await click(sheet.querySelector<HTMLElement>('.drawer-x'));
-      expect(freeSheet()).toBeUndefined();
-    });
-
-    it('the ✕ of the trade sheet closes it the same way', async () => {
-      await oneRedressed();
-      await click($('.drawer.trade .drawer-x'));
-      expect(freeSheet()).toBeTruthy();
-    });
-
-    it('Aer took the free helmet before closing: no sheet', async () => {
-      await oneRedressed();
-      await click(hero('Aer'));
-      expect($$('.tmove .tsrc').map((x) => x.textContent)).toEqual(['in inventory']); // a free piece is nobody's stock
-      await click($('.tact .btn.primary'));
-      await settle();
-      expect(stored().worn[aer.id].helmet).toBe('p1');
-      await click(byText('.trade-session button', 'Finish'));
-      expect($('.drawer.trade')).toBeNull();
-      expect(freeSheet()).toBeUndefined();
-    });
-
-    it('«Undo» before closing: the piece is worn again — no sheet', async () => {
-      await oneRedressed();
-      await click(byText('.gear-toast button', 'Undo'));
-      await settle();
+    it('✕ keeps the ticks on the device; the same hero\'s trade picks them up; «Cancel» asks and resets them', async () => {
+      await open();
+      const step = () => $('.tline.to button.ttick')!.closest('.tstep')!;
+      await click($('.tline.to button.ttick'));
+      expect(step().classList.contains('done')).toBe(true);
+      expect(JSON.parse(localStorage.getItem('ogc.trade')!).target).toBe(`hero:${caren.id}`);
       await click($('.drawer.trade .drawer-x'));
       expect($('.drawer.trade')).toBeNull();
-      expect(freeSheet()).toBeUndefined();
-    });
-
-    it('nothing re-dressed: closing shows no sheet', async () => {
-      await mount({ gear: gear(), roster: ROSTER });
       await click(byText('.cd-acts button', 'Trade'));
-      await click($('.drawer.trade .drawer-x'));
-      expect($('.drawer')).toBeNull();
+      expect(step().classList.contains('done')).toBe(true);
+      expect($('.tnote')?.textContent).toMatch(/^Picking up: 1 of \d+ ticked\.$/);
+
+      await click(byText('.tact .btn', 'Cancel'));
+      expect($('.ask h3, .ask-t')?.textContent ?? byText('.drawer', 'Reset the ticks?')?.textContent).toContain('Reset the ticks?');
+      await click(byText('.drawer button', 'Reset'));
+      expect(localStorage.getItem('ogc.trade')).toBe('null');
     });
 
-    it('team «Done» that leaves a piece free: the sheet opens with the applied store', async () => {
-      // Caren takes Aer's helmet; her old one is junk (no useful stats), so nobody in the team wears it
-      const junk = P('p1', 'helmet', speed, { RES: 1 }, { lit: { RES: 1 }, bt: 4 });
-      const ids = [caren.id, ais.id, akari.id, D.chars.find((c) => c.name === 'Ame')!.id];
-      await team(ids, G([junk, BETTER], { [caren.id]: ['p1'], [aer.id]: ['p2'] }, { worn: { [caren.id]: { helmet: 'p1' }, [aer.id]: { helmet: 'p2' } } }));
+    it('a replacement kept as it was: Aer\'s helmet stays empty, Caren\'s old one is parked — «P parked» in her Pool', async () => {
+      await open();
+      await click(byText('.tend .tstep', 'Aer ←')!.querySelector<HTMLElement>('.tkeep'));
+      // parked: the lock before Caren's equip names her old helmet in full (O5); no parking line at the end
+      expect($('.tline.to .tlock .tstep-h')?.textContent).toBe('Lock: Caren’s helmet· parked');
+      expect($('.tline.to .tlock .bgear-t')?.textContent).toContain('SPD');
+      expect(byText('.tend .tstep-h', 'parked')).toBeUndefined();
+      expect($('.tend .thole')).toBeNull(); // Aer's empty helmet slot is no line (O4): the record keeps it empty
+      await walkAll();
+      await click(doneBtn());
+      const st = stored();
+      expect(st.park).toEqual(['p1']);
+      expect(st.worn[aer.id]).toBeUndefined();
+      await click(byText('.ctabs button, .cd-tabs button, [role="tab"]', 'Pool'));
+      expect(byText('.pool-row', 'parked')?.querySelector('.pool-why.park')?.textContent).toBe('Pparked');
+    });
+
+    it('«Enter» on an empty slot opens the entry window for that slot; incomplete — «Save» does nothing; «Leave» and «undo»', async () => {
+      await open();
+      const weapon = byText('.tline.to .thole', 'Weapon: empty')!;
+      await click(byText('.tline.to .thole', 'Weapon: empty')!.querySelector<HTMLElement>('.tpill.go'));
+      expect(byText('.drawer.trade-entry h3', 'Weapon for Caren')).toBeTruthy();
+      expect($('.trade-entry .slotrow')).toBeNull(); // the slot is set by the line
+      expect($('.trade-entry .tlive')?.textContent).toBe('Enter all substats: 0 of 4');
+      await click(byText('.trade-entry .tact button', 'Save'));
+      expect($('.drawer.trade-entry')).not.toBeNull();
+      await click(byText('.trade-entry .tact button', 'Cancel'));
+      expect($('.drawer.trade-entry')).toBeNull();
+      expect(weapon.isConnected).toBe(true);
+      await click(byText('.tline.to .thole', 'Weapon: empty')!.querySelector<HTMLElement>('.tpill:not(.go)'));
+      expect(byText('.tline.to .tdecl', 'Weapon: left empty')).toBeTruthy();
+      await click(byText('.tline.to .tdecl', 'Weapon: left empty')!.querySelector<HTMLElement>('.tundo'));
+      expect(byText('.tline.to .thole', 'Weapon: empty')).toBeTruthy();
+    });
+
+    it('team «Done» records the moves and the end at once; one toast', async () => {
+      await team([caren.id, ais.id, akari.id]);
       await click(byText('#view-team .tm-go', 'Pick gear'));
       await planReady();
-      await click($('.tact .btn.primary'));
-
-      expect(stored().worn[caren.id].helmet).toBe('p2');
+      await walkAll();
+      await click(doneBtn());
+      const st = stored();
+      expect(st.worn[caren.id].helmet).toBe('p2');
+      expect([ais.id, akari.id].map((id) => st.worn[id]?.helmet)).toContain('p1'); // taken by a member, not orphaned
+      expect(st.worn[aer.id]).toBeUndefined(); // left empty
       expect($('.drawer.trade')).toBeNull();
-      expect(freeSheet()?.querySelectorAll('.tmove')).toHaveLength(1);
       expect(byText('.gear-toast', 'Team trade saved.')).toBeTruthy();
     });
   });

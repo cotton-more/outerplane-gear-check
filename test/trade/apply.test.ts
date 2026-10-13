@@ -1,9 +1,11 @@
-// «Обмен вещами», применение плана героя (этап 4): E1–E12 и F8 (MODEL.md §10).
+// «Обмен вещами», применение плана героя (этап 4): E1–E12 и F8 (MODEL.md §10) — the moves alone (NO_ENDS); the end
+// (replacements, parking, entered pieces) — test/trade/walk.test.ts.
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
 import { restoreGear } from '@/features/gear/store/gearStore';
-import { applyHero, applyTeam, leftovers, stampOf } from '@/features/trade/model/apply';
+import { applyWalk, leftovers, stampOf, type Applied } from '@/features/trade/model/apply';
+import { NO_ENDS } from '@/features/trade/model/ends';
 import { teamPlan, type TeamPlan } from '@/features/trade/model/team';
 import { candidates } from '@/features/trade/model/cands';
 import { codeOf } from '@/features/trade/model/model';
@@ -22,9 +24,11 @@ const planOf = (changes: Chg[]): HeroPlan => ({
     changes: changes.map((c) => ({ slot: c.slot, cand: cand({ id: c.id, slot: c.slot, v: 1, cost: c.holder === null ? 2 : 3, holder: c.holder }), was: c.was ? cand({ id: c.was, slot: c.slot, v: 1, cost: 0, holder: rin }) : null })),
     losses: [],
   },
-  holes: { fills: [], unfilled: [] },
   missing: [],
 });
+const applyHero = (st: GearStore, o: { to: string; hp: HeroPlan; stamp: string }): Applied | null =>
+  applyWalk(st, { steps: [{ plans: [{ to: o.to, plan: o.hp.plan }] }], ends: NO_ENDS, entered: [] }, o.stamp);
+const applyTeam = (st: GearStore, o: { tp: TeamPlan; stamp: string }): Applied | null => applyWalk(st, { steps: o.tp.steps, ends: NO_ENDS, entered: [] }, o.stamp);
 const go = (st: GearStore, to: string, hp: HeroPlan) => applyHero(st, { to, hp, stamp: stampOf(st) })!;
 const wornOf = (st: GearStore, h: string, slot: SlotId) => st.worn?.[h]?.[slot];
 const inPool = (st: GearStore, h: string, p: Piece) => (st.pools[h] ?? []).includes(p.id);
@@ -204,8 +208,8 @@ describe('H6, H9: «Сделал» команды', () => {
     const tp: TeamPlan = {
       order: [rin, noa],
       steps: [
-        { kind: 'hero', plans: [{ to: rin, plan: planOf([{ slot: 'gloves', id: n.id, holder: noa, was: r.id }, { slot: 'helmet', id: kh.id, holder: karen }]).plan }], fills: [], unfilled: {} },
-        { kind: 'swap', plans: [{ to: noa, plan: planOf([{ slot: 'gloves', id: r.id, holder: rin }]).plan }], fills: [], unfilled: {} },
+        { kind: 'hero', plans: [{ to: rin, plan: planOf([{ slot: 'gloves', id: n.id, holder: noa, was: r.id }, { slot: 'helmet', id: kh.id, holder: karen }]).plan }] },
+        { kind: 'swap', plans: [{ to: noa, plan: planOf([{ slot: 'gloves', id: r.id, holder: rin }]).plan }] },
       ],
       members: [],
       moves: { moves: [], emptied: [] },

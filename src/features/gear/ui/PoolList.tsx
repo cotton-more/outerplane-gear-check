@@ -1,7 +1,8 @@
 // Вкладка «Пул» карточки героя (stat-sets макет 6.0, решение 5): все вещи героя по слотам, справа — почему пул её держит
 // (TEXTS 28, одна причина по старшинству: надета › лучший {сет} на T4 › лучший {сет} › по статам › в запасе). Не держит —
-// «больше не нужна» и «Убрать у X» (MODEL.md §5 item 6, молча ничего не удаляется). Нажатие — карточка вещи. Внизу —
-// «Оценить вещь для X» (режим «для героя»).
+// «больше не нужна» и «Убрать у X» (MODEL.md §5 item 6, молча ничего не удаляется). A parked piece (MODEL.md §5, a trade
+// took it off and nobody can wear it yet) — «P припаркована» instead of a reason, never «больше не нужна». Нажатие — карточка
+// вещи. Внизу — «Оценить вещь для X» (режим «для героя»).
 import { SLOTS } from '@/game/data';
 import type { Char } from '@/game/data/types';
 import { useT, type Texts } from '@/i18n';
@@ -38,14 +39,17 @@ export function PoolList({ c, pieces, hp, ctx, gear, onOpenPiece, onRemoved, onR
     <div className="pool" {...tour('pool')}>
       <ul className="bgear-list">
         {list.map((p) => {
-          const r = hp ? reasonOf(hp.info, p) : null;
-          const unused = !!hp && !r;
+          const parked = !!gear.store.park?.includes(p.id);
+          const r = hp && !parked ? reasonOf(hp.info, p) : null;
+          const unused = !!hp && !r && !parked;
           return (
             <li key={p.id} className={unused ? 'unused' : undefined}>
-              <button type="button" className="bgear-row pool-row" onClick={() => onOpenPiece(p.id)}>
+              <button type="button" className={parked ? 'bgear-row pool-row parked' : 'bgear-row pool-row'} onClick={() => onOpenPiece(p.id)}>
                 <SlotIcon slot={p.slot} />
                 <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                <span className={'pool-why' + (r?.kind === 'worn' ? ' worn' : '')}>{r ? reasonText(t, ctx.idx, r) : unused ? t.fit.unneeded : <BtLabel p={p} />}</span>
+                {parked
+                  ? <span className="pool-why park"><span className="tpk" aria-hidden="true">P</span>{t.fit.parked}</span>
+                  : <span className={'pool-why' + (r?.kind === 'worn' ? ' worn' : '')}>{r ? reasonText(t, ctx.idx, r) : unused ? t.fit.unneeded : <BtLabel p={p} />}</span>}
               </button>
               {unused && !gear.newer && (
                 <p className="pool-unused">

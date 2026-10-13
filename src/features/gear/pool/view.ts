@@ -1,7 +1,7 @@
 // Пул экипировки, вид пула — всё о персонажах с вещами, один раз на хранилище. Обзор и решения — index.ts.
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import type { Piece } from '@/features/gear/model/gear';
+import { activePieces, type Piece } from '@/features/gear/model/gear';
 import type { PoolStore } from './base';
 import { heroPool, type HeroPool, type Pools } from '@/features/gear/verdict';
 
@@ -24,7 +24,8 @@ export function poolView(ctx: Ctx, st: PoolStore): PoolView {
   const hero = (id: string): HeroPool | null => {
     if (heroes.has(id)) return heroes.get(id)!;
     const c = ctx.idx.CHAR[id];
-    const pieces = (st.pools[id] ?? []).map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
+    // parked pieces are not the verdict's (MODEL.md §5): the hero's pool without them
+    const pieces = activePieces(st, id);
     const mine = new Set(pieces.map((p) => p.id));
     const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
     const r = c ? heroPool(ctx, c, pieces, worn, st.pin?.[id], st.crit?.[id]) : null;

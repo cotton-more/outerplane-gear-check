@@ -1,7 +1,7 @@
 // Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
 // размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11), OGC-GEAR5 —
 // с N героя («сколько крита нужно герою», crit), OGC-GEAR6 — со звёздами героя (transcend), OGC-GEAR7 — с эффом из игры
-// (.x/0200-boss Q3), OGC-GEAR8 — с уровнем героя (.x/0205-hero-level).
+// (.x/0200-boss Q3), OGC-GEAR8 — с уровнем героя (.x/0205-hero-level), OGC-GEAR9 — parked pieces (test/gear/park.test.ts).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';
@@ -165,7 +165,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.2 вид: без пробелов, только буквы и цифры после префикса', () => {
-    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR8-[0-9A-Za-z]+$/);
+    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR9-[0-9A-Za-z]+$/);
   });
 
   it('2.7 начинается с OGC-GEAR и номера больше 2; разбор выпущенной версии — «код новее»', () => {
@@ -177,7 +177,7 @@ describe('2. резервная копия', () => {
 
   describe('2.8 целостность', () => {
     const code = encodeBackup(rich(), roster10);
-    const head = 'OGC-GEAR8-'.length;
+    const head = 'OGC-GEAR9-'.length;
     const body = code.slice(head);
     const flip = (s: string, i: number) => s.slice(0, i) + (s[i] === 'a' ? 'b' : 'a') + s.slice(i + 1);
     const sw = [...body].findIndex((ch, i) => i >= 10 && ch !== body[i + 1]); // соседние разные знаки
@@ -196,18 +196,18 @@ describe('2. резервная копия', () => {
     // a code whose CRC is valid but the stars field is out of range (the field is the 3 bits before the EFF and level
     // flags of a stars-only code)
     it.each([0, 7])('звёзды %i при верной сумме — «повреждён»', (n) => {
-      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR8-', ''))!;
+      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR9-', ''))!;
       const bad = [...bits.slice(0, -5), (n >> 2) & 1, (n >> 1) & 1, n & 1, 0, 0];
-      expect(decodeBackup(`OGC-GEAR8-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
-      expect(decodeBackup(`OGC-GEAR8-${seal(bad)}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR9-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
+      expect(decodeBackup(`OGC-GEAR9-${seal(bad)}`)).toBe('broken');
     });
     // the same for the typed EFF: an EFF-only code ends with the two 14-bit numbers and the level flag; 0 and 10 000+ are out of range
     it.each([0, 10000])('эфф %i при верной сумме — «повреждён»', (n) => {
-      const bits = unseal(encodeBackup(store([], {}, { eff: { [CAREN]: { typed: 466, at: 233 } } }), []).replace('OGC-GEAR8-', ''))!;
+      const bits = unseal(encodeBackup(store([], {}, { eff: { [CAREN]: { typed: 466, at: 233 } } }), []).replace('OGC-GEAR9-', ''))!;
       const num = Array.from({ length: 14 }, (_, i) => (n >> (13 - i)) & 1);
-      expect(decodeBackup(`OGC-GEAR8-${seal(bits)}`)).not.toBe('broken');
-      expect(decodeBackup(`OGC-GEAR8-${seal([...bits.slice(0, -29), ...num, ...bits.slice(-15)])}`)).toBe('broken');
-      expect(decodeBackup(`OGC-GEAR8-${seal([...bits.slice(0, -15), ...num, bits.at(-1)!])}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR9-${seal(bits)}`)).not.toBe('broken');
+      expect(decodeBackup(`OGC-GEAR9-${seal([...bits.slice(0, -29), ...num, ...bits.slice(-15)])}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR9-${seal([...bits.slice(0, -15), ...num, bits.at(-1)!])}`)).toBe('broken');
     });
     it('обрезан на любую длину — «повреждён»', () => {
       for (let n = head; n < code.length; n++) expect(decodeBackup(code.slice(0, n))).toBe('broken');
@@ -221,7 +221,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.10 номер формата выше известного — «новее»', () => {
-    expect(decodeBackup('OGC-GEAR9-abc')).toBe('newer');
+    expect(decodeBackup('OGC-GEAR10-abc')).toBe('newer');
     expect(decodeBackup('OGC-GEAR12-abc')).toBe('newer');
   });
 

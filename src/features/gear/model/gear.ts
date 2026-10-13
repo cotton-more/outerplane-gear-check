@@ -55,6 +55,11 @@ export interface GearStore {
   // (lv120). Doesn't depend on the pool; Core Fusion moves it X → CF like the stars (in the game Core Fusion X keeps the
   // hero's level as it keeps the stars)
   lv?: Record<string, 100 | 120>;
+  // parked pieces (MODEL.md §5, .x/0200-boss E2b Q2–Q3): taken off in a trade and given to nobody — they stay in the pool
+  // of the hero they came off, not worn, locked in the game, until someone wears them. Ids in the order parked; park ⊂
+  // pooled and not worn (syncWorn). The verdict, reserves, material and the batch see a pool without them (activePieces);
+  // the trade offers them first. No field — nothing parked
+  park?: string[];
   [extra: string]: unknown;
 }
 
@@ -75,6 +80,22 @@ export function gearedChars(st: GearStore): Map<string, number> {
 // у кого в пуле эта запись
 export const holdersOf = (st: GearStore, id: string): string[] => Object.keys(st.pools).filter((c) => st.pools[c].includes(id));
 
+// parked ids of a store (MODEL.md §5)
+export const parkedOf = (st: { park?: readonly string[] }): Set<string> => new Set(st.park ?? []);
+// a hero's pool as the verdict sees it (MODEL.md §5, .x/0200-boss E2b O2): parked pieces left out — never a Breakthrough
+// target, feed, reserve or the bar a new piece is held against; but — a piece the caller is about to wear (wearFromPool)
+type PoolsOf = { pieces: Readonly<Record<string, Piece>>; pools: Readonly<Record<string, readonly string[]>>; park?: readonly string[] };
+export function activePieces(st: PoolsOf, charId: string, but?: string): Piece[] {
+  const park = parkedOf(st);
+  return (st.pools[charId] ?? []).filter((id) => id === but || !park.has(id)).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
+}
+// park pieces (they must sit in a pool and be worn by nobody — syncWorn drops the rest); nothing new — the same store
+export function parkIn(st: GearStore, ids: readonly string[]): GearStore {
+  const park = [...(st.park ?? [])];
+  for (const id of ids) if (!park.includes(id)) park.push(id);
+  return park.length === (st.park?.length ?? 0) ? st : syncWorn({ ...st, park });
+}
+
 // вещи, которых нет ни в одном пуле, из хранилища убираем; пустые пулы — тоже; затем надетое — по пулам (syncWorn)
 export function gc(st: GearStore): GearStore {
   const pools = Object.fromEntries(Object.entries(st.pools).filter(([, ids]) => ids.length));
@@ -84,8 +105,22 @@ export function gc(st: GearStore): GearStore {
 }
 
 // надетое ⊂ пул: из worn — записи не из пула героя, со слотом не того типа, герои без пула и пустые. Ничего не убрано —
-// то же хранилище; поле опустело — убираем его (пустых не храним)
+// то же хранилище; поле опустело — убираем его (пустых не храним). Then park: only pooled pieces nobody wears (syncPark)
 export function syncWorn(st: GearStore): GearStore {
+  return syncPark(syncWornOnly(st));
+}
+// park ⊂ pooled, not worn, no repeats: a parked piece someone now wears is not parked any more (the mark goes, Q3); a piece
+// that left every pool is gone. Nothing dropped — the same store; empty — no field
+function syncPark(st: GearStore): GearStore {
+  if (!st.park) return st;
+  const pooled = new Set(Object.values(st.pools).flat());
+  const worn = new Set(Object.values(st.worn ?? {}).flatMap((w) => Object.values(w ?? {})));
+  const park = [...new Set(st.park)].filter((id) => typeof id === 'string' && pooled.has(id) && !worn.has(id) && !!st.pieces[id]);
+  if (park.length === st.park.length && park.length) return st;
+  const { park: _, ...rest } = st;
+  return park.length ? { ...rest, park } : rest as GearStore;
+}
+function syncWornOnly(st: GearStore): GearStore {
   if (!st.worn) return st;
   let cut = false;
   const worn: Record<string, Worn> = {};
@@ -109,7 +144,7 @@ export const isWorn = (st: GearStore, charId: string, p: Pick<Piece, 'id' | 'slo
 // которые есть и у других, остаются у них (gc). Dropped — всё, что ушло, для «Вернуть»
 export interface Dropped {
   charId: string; ids: string[]; pieces: Record<string, Piece>; at: number;
-  worn?: Worn; pin?: string; crit?: number; stars?: number; eff?: EffCal; lv?: 100 | 120;
+  worn?: Worn; pin?: string; crit?: number; stars?: number; eff?: EffCal; lv?: 100 | 120; park?: string[];
 }
 export function dropChar(st: GearStore, charId: string): { st: GearStore; dropped: Dropped } {
   const ids = st.pools[charId] ?? [];
@@ -125,8 +160,10 @@ export function dropChar(st: GearStore, charId: string): { st: GearStore; droppe
     ...(Object.keys(stars).length ? { stars } : {}), ...(Object.keys(eff).length ? { eff } : {}),
     ...(Object.keys(lv).length ? { lv } : {}),
   });
+  const parked = ids.filter((id) => st.park?.includes(id) && !next.park?.includes(id));
   const dropped: Dropped = {
     charId, ids,
+    ...(parked.length ? { park: parked } : {}),
     pieces: Object.fromEntries(ids.filter((id) => !next.pieces[id] && st.pieces[id]).map((id) => [id, st.pieces[id]])),
     at: Object.keys(st.pools).indexOf(charId),
     ...(st.worn?.[charId] ? { worn: st.worn[charId] } : {}),
@@ -151,9 +188,10 @@ export function undoDrop(st: GearStore, d: Dropped): GearStore {
   const stars = d.stars !== undefined ? { ...st.stars, [d.charId]: st.stars?.[d.charId] ?? d.stars } : st.stars;
   const eff = d.eff !== undefined ? { ...st.eff, [d.charId]: st.eff?.[d.charId] ?? d.eff } : st.eff;
   const lv = d.lv !== undefined ? { ...st.lv, [d.charId]: st.lv?.[d.charId] ?? d.lv } : st.lv;
+  const park = d.park ? [...(st.park ?? []), ...d.park.filter((id) => !st.park?.includes(id))] : st.park;
   return syncWorn({
     ...st, pieces, pools: Object.fromEntries(entries), ...(worn ? { worn } : {}), ...(pin ? { pin } : {}), ...(crit ? { crit } : {}),
-    ...(stars ? { stars } : {}), ...(eff ? { eff } : {}), ...(lv ? { lv } : {}),
+    ...(stars ? { stars } : {}), ...(eff ? { eff } : {}), ...(lv ? { lv } : {}), ...(park ? { park } : {}),
   });
 }
 
@@ -207,6 +245,7 @@ export function updateIn(idx: Index, st: GearStore, charId: string, id: string, 
   const pool = st.pools[charId].map((x) => (x === id ? nid : x));
   const next: GearStore = { ...st, seq, pieces: { ...st.pieces, [nid]: { ...edited, id: nid } }, pools: { ...st.pools, [charId]: pool } };
   if (isWorn(st, charId, p)) next.worn = { ...st.worn, [charId]: { ...st.worn![charId], [p.slot]: nid } };
+  if (st.park?.includes(id)) next.park = [...st.park, nid]; // the copy is the same parked piece of this hero
   return { st: syncWorn(next), id: nid };
 }
 

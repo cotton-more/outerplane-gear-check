@@ -1,25 +1,24 @@
-// «Сделал» плана героя (R6.6, R8.5, R8.6, R3.2, R4.3–R4.5, R10.6 — MODEL.md §10): одна запись в хранилище.
-// Изменения: вещь уходит из пула держателя (была надета — дыра), входит в пул получателя и надевается; свободная — просто
-// в пул; снятая остаётся в пуле получателя ненадетой. Копии взятого (тот же код) в пуле получателя уходят из пула — их
-// больше нет в приложении (leftovers). Дыры не закрываются (владелец, 2026-10-04). План считали на другом хранилище —
-// null (пересчитать). «Вернуть» — хранилище до шага, если после шага его не трогали.
+// «Сделал» (MODEL.md §7 item 9; R6.6, R3.2, R4.3–R4.5): one record for the whole walk — the plan's moves, then the
+// replacements, the parking and the pieces entered for empty slots (.x/0200-boss E2b Q2–Q7). A move: the piece leaves its
+// holder's pool (was worn — his slot empties), enters the receiver's pool and is worn; the receiver's old piece stays in his
+// pool unworn — then the end decides it: a replacement moves it to the giver and wears it there, parking marks it parked.
+// Copies of a taken piece (same code) in the receiver's pool leave the app (leftovers). An entered piece is a new record,
+// worn in its slot. Counted on another store — null (count again). «Вернуть» — the store before, if nobody touched it since.
 import type { SlotId } from '@/game/data/types';
-import { gc, type GearStore } from '@/features/gear/model/gear';
+import type { ItemInput } from '@/game/item/item';
+import { gc, newPiece, parkIn, today, type GearStore } from '@/features/gear/model/gear';
+import type { Ends } from './ends';
 import type { Plan } from './gate';
-import type { HoleFill } from './holes';
 import { codeOf } from './model';
 import type { HeroPlan } from './plan';
-import type { TeamPlan } from './team';
 
-// отпечаток содержимого: ключи объектов по алфавиту — перечитанное хранилище (useGear: другая вкладка, страница снова на
-// экране) собирает объекты в другом порядке, а содержимое то же
 const canon = (x: unknown): unknown => (Array.isArray(x) ? x.map(canon)
   : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon((x as Record<string, unknown>)[k])])) : x);
 export const stampOf = (st: GearStore): string => JSON.stringify(canon(st));
 
 // пулы и надетое — то, что меняет «Сделал»; один и тот же перенос у применения и у расчёта команды (team.ts)
 export interface Placement { pools: Record<string, string[]>; worn: Record<string, Partial<Record<SlotId, string>>> }
-export interface Step { plans: readonly { to: string; plan: Plan }[]; fills: readonly HoleFill[] }
+export interface Step { plans: readonly { to: string; plan: Plan }[] }
 
 const takenOf = (plans: readonly { plan: Plan }[]) => new Set(plans.flatMap((p) => p.plan.changes.map((c) => c.cand.item.id)));
 // копии взятого в пуле получателя: тот же код, сама вещь не взята никем (R6.6)
@@ -53,7 +52,7 @@ export function moveStep(p: Placement, step: Step, code: (id: string) => string 
 
 // копии, которые после «Сделал» не будут ни в одном пуле: «старый … останется в инвентаре, из приложения уйдёт»
 export function leftovers(st: GearStore, hp: HeroPlan, to: string): string[] {
-  return leftoversOf(st, { plans: [{ to, plan: hp.plan }], fills: hp.holes.fills })[to];
+  return leftoversOf(st, { plans: [{ to, plan: hp.plan }] })[to];
 }
 export function leftoversOf(st: GearStore, step: Step): Record<string, string[]> {
   const taken = takenOf(step.plans);
@@ -63,25 +62,37 @@ export function leftoversOf(st: GearStore, step: Step): Record<string, string[]>
 const codeIn = (st: GearStore) => (id: string) => (st.pieces[id] ? codeOf(st.pieces[id]) : null);
 
 export interface Applied { st: GearStore; undo: (x: GearStore) => GearStore | null }
+// what «Сделал» records: the plan's steps, the end (replacements kept as they were are not done — their pieces park), the
+// pieces entered for empty slots
+export interface Entered { hero: string; slot: SlotId; input: ItemInput }
+export interface TradeRecord { steps: readonly Step[]; ends: Ends; entered: readonly Entered[] }
 
-export const applyHero = (st: GearStore, o: { to: string; hp: HeroPlan; stamp: string }): Applied | null =>
-  applyAll(st, [{ plans: [{ to: o.to, plan: o.hp.plan }], fills: o.hp.holes.fills }], o.stamp);
-
-// команда: шаги по порядку, одно «Сделал» на всех (R7.2)
-export const applyTeam = (st: GearStore, o: { tp: TeamPlan; stamp: string }): Applied | null => applyAll(st, o.tp.steps, o.stamp);
-
-function applyAll(st: GearStore, steps: readonly Step[], stamp: string): Applied | null {
+export function applyWalk(st: GearStore, r: TradeRecord, stamp: string, at = today()): Applied | null {
   if (stampOf(st) !== stamp) return null;
   const p: Placement = {
     pools: Object.fromEntries(Object.entries(st.pools).map(([c, ids]) => [c, [...ids]])),
     worn: Object.fromEntries(Object.entries(st.worn ?? {}).map(([c, w]) => [c, { ...w }])),
   };
-  for (const step of steps) moveStep(p, step, codeIn(st));
+  for (const step of r.steps) moveStep(p, step, codeIn(st));
+  for (const x of r.ends.repl) {
+    if (x.kept) continue;
+    p.pools[x.from] = (p.pools[x.from] ?? []).filter((id) => id !== x.item);
+    if (!(p.pools[x.to] ??= []).includes(x.item)) p.pools[x.to].push(x.item);
+    (p.worn[x.to] ??= {})[x.slot] = x.item;
+  }
   const rest = Object.fromEntries(Object.entries(p.worn).filter(([, w]) => Object.keys(w).length));
   const { worn: _w, ...base } = st;
-  const next = gc({ ...base, pools: p.pools, ...(Object.keys(rest).length ? { worn: rest } : {}) });
+  let next = gc({ ...base, pools: p.pools, ...(Object.keys(rest).length ? { worn: rest } : {}) });
+  for (const e of r.entered) {
+    const made = newPiece(next, { ...e.input, slot: e.slot }, at);
+    next = gc({
+      ...made.st, pools: { ...made.st.pools, [e.hero]: [...(made.st.pools[e.hero] ?? []), made.piece.id] },
+      worn: { ...made.st.worn, [e.hero]: { ...made.st.worn?.[e.hero], [e.slot]: made.piece.id } },
+    });
+  }
+  next = parkIn(next, r.ends.park.map((x) => x.item));
   const after = stampOf(next);
-  // ничего не переехало («Менять нечего» — «Ок») — то же хранилище: ни записи, ни тоста, ни блокировки сеанса
+  // nothing moved («Менять нечего» — «Ок») — the same store: no record, no toast, no session lock
   if (after === stampOf(st)) return { st, undo: () => null };
   return { st: next, undo: (x) => (stampOf(x) === after ? st : null) };
 }

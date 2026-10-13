@@ -5,7 +5,7 @@
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import type { ItemInput } from '@/game/item/item';
-import { pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { activePieces, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { putOn, removeFrom, removeUndo, stashOn, undoPut, type PutResult } from '@/features/gear/pool';
 import { heroPool, verdictOf, type HeroPool, type Pools, type Result, type Same } from '@/features/gear/verdict';
 
@@ -53,11 +53,11 @@ function poolsOf(ctx: Ctx): (st: GearStore) => Pools {
   const cache = new Map<string, { sig: string; hp: HeroPool | null }>();
   return (st) => (id) => {
     const ids = st.pools[id] ?? [];
-    const sig = `${ids.join(',')}|${JSON.stringify(st.worn?.[id] ?? {})}|${st.pin?.[id] ?? ''}|${st.crit?.[id] ?? ''}`;
+    const sig = `${ids.join(',')}|${(st.park ?? []).filter((x) => ids.includes(x)).join(',')}|${JSON.stringify(st.worn?.[id] ?? {})}|${st.pin?.[id] ?? ''}|${st.crit?.[id] ?? ''}`;
     const hit = cache.get(id);
     if (hit && hit.sig === sig) return hit.hp;
     const c = ctx.idx.CHAR[id];
-    const pieces = ids.map((pid) => st.pieces[pid]).filter((p): p is Piece => !!p);
+    const pieces = activePieces(st, id); // parked pieces are never feed, a target or a reserve (MODEL.md §8)
     const mine = new Set(pieces.map((p) => p.id));
     const worn = new Set(Object.values(st.worn?.[id] ?? {}).filter((x): x is string => !!x && mine.has(x)));
     const hp = c ? heroPool(ctx, c, pieces, worn, st.pin?.[id], st.crit?.[id]) : null;

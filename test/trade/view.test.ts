@@ -18,7 +18,7 @@ describe('итог плана по героям', () => {
 
   it('у получателя — очки до и после и включившийся сет; у отдавшего — потеря и чем закрыта дыра', () => {
     const hp = heroPlan(w, { to: 'R' });
-    const step = { plans: [{ to: 'R', plan: hp.plan }], fills: hp.holes.fills };
+    const step = { plans: [{ to: 'R', plan: hp.plan }] };
     const lines = linesOf(w, advance(w, step), ['R'], heroMoves(w, 'R', step));
     const r = lines.find((l) => l.hero === 'R')!, k = lines.find((l) => l.hero === 'K')!;
     expect(r.receiver).toBe(true);
@@ -40,7 +40,7 @@ describe('T7.3: было → станет', () => {
   });
   it('очки статов отдельно от сетов: 6 → 3, V 6 → 13, включилась S ×2', () => {
     const hp = heroPlan(w, { to: 'R' });
-    const step = { plans: [{ to: 'R', plan: hp.plan }], fills: hp.holes.fills };
+    const step = { plans: [{ to: 'R', plan: hp.plan }] };
     const [r] = linesOf(w, advance(w, step), ['R'], heroMoves(w, 'R', step));
     expect([r.ptsBefore, r.ptsAfter]).toEqual([6000, 3000]);
     expect([r.before, r.after]).toEqual([6000, 13000]);
@@ -63,7 +63,7 @@ describe('цена каждой вещи плана', () => {
   });
   it('очки вещи против надетой в слоте, без сетов; рекомендованное оружие — passive', () => {
     const hp = heroPlan(w, { to: 'R' });
-    const step = { plans: [{ to: 'R', plan: hp.plan }], fills: hp.holes.fills };
+    const step = { plans: [{ to: 'R', plan: hp.plan }] };
     const [r] = linesOf(w, advance(w, step), ['R'], heroMoves(w, 'R', step));
     expect(r.worth).toEqual({ weapon: { d: -4000, passive: true }, helmet: { d: -3000, passive: false } });
   });

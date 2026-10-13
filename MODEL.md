@@ -265,6 +265,15 @@ Reasons, in the order they are added (the numbers are cited from code):
 6. **unneeded** — everything else: "no longer needed — dismantle in the game, then Remove" (`reasonOf` picks one reason by
    seniority: worn › best at T4 › best of set › by stats › reserve).
 
+**Parked** (`GearStore.park`; .x/0200-boss E2b Q2, Q3, O2, owner 2026-10-13): a piece a trade took off and could give to
+nobody (§7 item 7) stays in the pool of the hero it came off, not worn, locked in the game, marked «припаркована» in the
+Pool tab instead of a reason. It is **outside** the reasons above: the verdict, reserves, material, the bar a new piece is
+held against, «Надеть»'s removals and the batch see the pool **without** it (`gear:activePieces`) — never feed, never a
+Breakthrough target, never dismantled, never «no longer needed». The trade offers it first (§7 item 2). Invariant: park ⊂
+pooled and not worn (`syncWorn`): the mark goes once someone wears it; «Убрать» removes it as usual; it travels with the
+record (drop / undo, Core Fusion — ids) and is in the backup (OGC-GEAR9). A parked piece whose own hero now wears a better
+one is a later question (owner's follow-up, .x/0200-boss PLAN §5).
+
 `strong` = pieces held for any reason except reserve; `needsT4(P, set)` — Breakthrough to T4 is advised when T4 is needed
 by *every* menu part of the set (Speed/Penetration/Bursting ×2, Immunity ×4).
 
@@ -288,16 +297,21 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (`comboProfile`); other sets count as random ones (rows only). Candidates: his pieces (worn cost 0, spare cost 1), free
    (2) and other heroes' worn (3). **Other heroes' spare is never a candidate** (owner, 2026-10-12, Q1b): it is held for its
    hero (a better piece, Breakthrough; in game locked, not worn). Only the spare held when the calculation started
-   (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. So is a
-   **free piece of the window** (`free:freeOf`; owner, 2026-10-12): worn by someone when the window opened and by nobody
-   now (a «Сделал» took it off its hero) — it leaves `held` (`worldOf` option `free`) and goes to the next hero at cost 2;
-   «Вернуть» wears it again, so it is not free. Not candidates: wrong class, **not passing the receiver's bar
-   (§4; his own worn is always eligible)** — a swap between two team members never hands over a piece unfit for the
-   receiver — "Don't take", a code (content without Breakthrough) he already has at an equal or higher BT.
+   (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. **A parked
+   piece** (§5, `World.parked`; .x/0200-boss E2b Q3) is not held: it is a candidate for anyone at cost 2 (its own hero:
+   cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
+   the usual rules apply. Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
+   eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
+   without Breakthrough) he already has at an equal or higher BT. A **frozen slot** (item 4): only the receiver's own
+   worn piece there, and nobody else takes it. (Was, until E2b: «Не брать» per piece, and the window's «free pieces» —
+   both gone.)
 3. **"Was → becomes"** per hero: points of each piece over the worn one; a part of the order that cannot be built —
    `missingOf`: no piece of the set in enough slots, or pieces exist but are below T4 and the part needs T4.
 4. **Session locks**: a hero re-dressed in this window is `locked`: his worn gear is not taken by later steps (his
-   pool is); team members whose step is ahead stay open.
+   pool is); team members whose step is ahead stay open. **«Оставить как было»** (.x/0200-boss E2b Q1, owner
+   2026-10-13) on a recommended piece freezes **that receiver's slot** (`frozen`: `slotKey(hero, slot)`): nothing comes in
+   (no substitute is searched for him there) and nothing leaves it; the declined piece stays in play for other members;
+   the plan is counted again. A frozen slot takes part in no pair swap.
 5. **Threshold** (`gate:planFor`, `model:gains`) — the same as §3.3: a slot changes only if the kit is better than with the
    *worn* piece by rank, by ≥ 1 point (`THRESHOLD`), or by an effect-set half at not-lower V; `legendOverEpic` (Q7,
    candidate Legendary not worn by anyone else) softens the margin to 0. In a slot where the best kit changes the piece,
@@ -315,22 +329,42 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (c) the members' gains sorted ascending, compared lexicographically — at an equal sum the variant whose *smaller* gain
    is larger wins («Б → Caren 15, А → Rin 12» beats «А → Caren 20, Б → Rin 7»); (d) the first order. Pairs inside the
    four then swap worn pieces in several slots at once when nobody is worse and at least one is better by the threshold.
-7. **Holes** (`holes:fillHoles`; owner, 2026-10-04): a slot whose worn piece went to a receiver is a hole of the hero it
-   was taken from. **Holes are not filled**: a piece taken off a hero stays off until the hero is given a piece through
-   the evaluation. The plan only hints what to look for (`breaks` — a set whose half, §2, switched off with the hole;
-   `unfilled` — the receiver's slots left empty); the Wiki says so too («Trading gear»).
+7. **The end: no orphans** (`ends:endsOf`; .x/0200-boss E2b Q2, Q6, owner 2026-10-13 — reverses «holes are not filled»,
+   owner 2026-10-04). After **every** member's step (a piece a later step takes at cost 2 is no replacement), each piece
+   the plan took off a hero — worn at the start, worn by nobody after, still in a pool — goes, in the plan's order of
+   heroes and then slots: (a) to the **giver** of that slot — the hero at the end of the chain (Rin took Caren's helmet →
+   Caren; Rin ← Caren ← Stella → Stella) — if he can wear it (class; a total miss is fine); else (b) to another **team
+   member** whose slot this trade emptied and who can; else (c) it is **parked** on the hero it came off (§5). The giver
+   who gets a replacement may lose it again to the next hero (dressing in turn); the piece a receiver just got is his
+   (session lock). A replacement **kept as it was** (`kept`: `slotKey(target, slot)`) leaves the target's slot empty and
+   parks the piece. **Holes** of a receiver (a re-dressed hero, a team member): every empty slot — the hint names what to
+   look for (`breaks` — a set whose half, §2, switched off with the hole); the player enters the piece he put there from
+   the inventory («Ввести», an entry window in the plan — recorded only on «Сделал», no recount) or leaves it empty. A
+   giver's slot this trade emptied and no replacement fills is **not shown** (O4, owner 2026-10-13): the record keeps it
+   empty; the player fills it later (evaluation, batch, another team).
 8. **Dressing in turn** (`turn:heroGain`, `turnOrder`; owner, 2026-10-12, 0200 Q1 + Q1a): «Кого переодеть?» shows each
    open hero's gain now — the number on his plan's hero line (`planOf` → `advance` → `lineGain`; «—» when the plan changes
    nothing), counted in chunks after every «Сделал» / «Вернуть» / order change. The first hero re-dressed takes the best,
    the next ones what is left — expected. Order: by name (the player decides whom to re-dress), the re-dressed last in
-   done order with ✓, not pickable; «Закончить» closes the window (locks dropped). When the window closes (✕, «Закончить»,
-   or after a team «Сделал») and free pieces remain — computed from the store after the last apply — App opens «Свободные
-   вещи» (`ui/FreeSheet`): a list of the pieces drawn as in the plan (`ui/PieceRow`), with no hero named; nothing is stored.
+   done order with ✓, not pickable; «Закончить» closes the window (locks dropped). Each hero's plan is the same walk as the
+   team's (item 9); his «Сделал» records it with its end (item 7), so nothing is left free between heroes.
+9. **The walk** (`walk:walkOf`, `outcomeOf`; .x/0200-boss E2b Q7, owner 2026-10-13): the plan is recorded exactly as
+   done in the game. Lines per hero (receivers in the plan's order), slot by slot: «Замок: <old piece>» right before the
+   equip — only when that piece stays with him **parked** (O3, owner 2026-10-13: a piece that moves to someone — a
+   replacement, a later member — is found in the game by grade, main and substats, so its line names it in full and needs
+   no lock; the lock line names the parked piece in full, O5 — the player checks the game holds the same piece); the equip with its source (worn by X / X's spare / parked on X /
+   inventory); a frozen slot («как было»); an empty slot («Ввести» / «Оставить»). Then «В конце — замены»: replacements
+   («Caren ← шлем Rin» with the piece in full, each may be kept as it was); parking has no line of its own — the «Замок» line names the
+   parked piece in full (O5); a giver's empty slot is no line (item 7). A line
+   has a key — a recount keeps the ticks of unchanged lines. «Сделал» only when every line is done (ticked; kept, entered,
+   left count): **one record** (`apply:applyWalk` — moves, replacements, parking, entered pieces) and **one «Вернуть»**
+   (the store before, if untouched since). The ticks and decisions live on the device until «Сделал» / «Отмена»
+   (`ogc.trade`, not in the backup; ✕ keeps them — the same hero's or team's trade picks them up; one walk at a time).
 
 ## §8 Batch plan ("Партия")
 
 `features/batch/plan.ts:planBatch` — one plan for pieces entered as a batch. **No new rules**: every piece goes through
-`verdictOf`; a one-piece batch equals the single verdict on the real roster (0 of 69,000 differ; in synthetic worlds
+`verdictOf` (parked pieces are not in the pools it sees, §5 — never fed, never a target); a one-piece batch equals the single verdict on the real roster (0 of 69,000 differ; in synthetic worlds
 119 of 24,738 differ through the re-plan, item 3). Entry kinds
 (`batch.ts`): a typed piece, "E · worn" by a hero, "🔒" locked set-aside; all hold a position `#n` in the game list.
 

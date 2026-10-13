@@ -1,6 +1,7 @@
 // Мост к приложению: мир обмена из хранилища и данных. Мерило героя — его заказ (MODEL.md §7 item 1): «По статам»,
 // набор из его билдов или, у закреплённого, его закрепление (жёстко, MODEL.md §6); очки, ранг, порог «годная» и ценность сетов — теми же функциями, что лучшая раскладка
-// (features/gear/layout, pool/info). Блокировки сеанса (MODEL.md §7 item 4) — из шторки обмена, не из хранилища.
+// (features/gear/layout, pool/info). Блокировки сеанса (MODEL.md §7 item 4) — из шторки обмена, не из хранилища; parked
+// pieces — from the store (park).
 import type { Ctx } from '@/game/context';
 import type { Char, Combo } from '@/game/data/types';
 import { combosOf, comboProfile, pinnedProfile, pinOf, profileOf, withNeed } from '@/game/build/profile';
@@ -31,7 +32,6 @@ export const orderCombo = (c: Char, order: string): Combo | null =>
 export interface WorldOpts {
   locked?: ReadonlySet<string>;               // переодетые в этом окне (MODEL.md §7 item 4)
   orders?: Readonly<Record<string, string>>;  // герой → заказ; нет — «По статам»
-  free?: ReadonlySet<string>;                 // free pieces of the window (model/free): off the held spare, candidates for any hero
 }
 
 // the crit part of a gauge (MODEL.md §12 item 6): the same curve and C₀ as layoutValue, over the kit's pieces; Po — the order's
@@ -101,8 +101,7 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
     memo.set(heroId, g);
     return g;
   };
-  // free pieces of the window were worn when it opened: they are not the spare held for a hero (MODEL.md §7 item 2)
-  const held = heldOf({ heroes });
-  for (const id of o.free ?? []) held.delete(id);
-  return { heroes, items, gauge, held };
+  // parked pieces wait for anyone (MODEL.md §7 item 2): not the spare held for a hero
+  const parked = new Set((st.park ?? []).filter((id) => items[id]));
+  return { heroes, items, gauge, held: heldOf({ heroes, parked }), parked };
 }

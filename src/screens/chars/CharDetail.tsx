@@ -168,6 +168,8 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   const enter = onTryOn ? (slot: SlotId) => onTryOn(c, slot, undefined, false, true) : undefined;
   const rateFor = onRateFor && !gear.newer && hasBuilds ? () => onRateFor(c) : undefined;
   const why = (p: Piece) => {
+    // parked (MODEL.md §5): outside the pool's reasons — what it is and that nothing feeds on it
+    if (gear.store.park?.includes(p.id)) return t.fit.parkedNote;
     if (!hp) return '';
     const r = reasonOf(hp.info, p);
     return r ? reasonText(t, ctx.idx, r) : t.fit.unneeded;

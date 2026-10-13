@@ -70,13 +70,19 @@ export interface World {
   // (owner, 2026-10-12, Q1b); a piece the same calculation took off is not in it, nor a piece taken off in this window
   // (free, model/free). No set — heldOf(this world)
   held?: ReadonlySet<string>;
+  // parked pieces (MODEL.md §5, §7 item 2): a candidate for anyone, first for an empty slot (no bar there). No set — none
+  parked?: ReadonlySet<string>;
 }
 
-// pieces in a pool that nobody wears
-export function heldOf(w: Pick<World, 'heroes'>): Set<string> {
+// pieces in a pool that nobody wears, but parked ones: those wait for anyone (MODEL.md §7 item 2)
+export function heldOf(w: Pick<World, 'heroes' | 'parked'>): Set<string> {
   const worn = new Set(w.heroes.flatMap((h) => Object.values(h.worn).filter((x): x is string => !!x)));
-  return new Set(w.heroes.flatMap((h) => h.pool.filter((id) => !worn.has(id))));
+  return new Set(w.heroes.flatMap((h) => h.pool.filter((id) => !worn.has(id) && !w.parked?.has(id))));
 }
+// a receiver's slot the player kept as it was («Оставить как было», MODEL.md §7 item 4): nothing in, nothing out
+export const slotKey = (heroId: string, slot: SlotId): string => `${heroId}:${slot}`;
+// can the hero wear the piece at all (class): the gauge knows; a hero without builds — no
+export const wears = (w: World, heroId: string, itemId: string): boolean => !!w.gauge(heroId)?.value(itemId);
 
 export type Cost = 0 | 1 | 2 | 3; // R1.7: надета на получателе, его запас, инвентарь, надета на другом
 

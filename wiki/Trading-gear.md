@@ -40,10 +40,12 @@ While the trade window is open, **what already re-dressed heroes wear** is not t
 sit at the end of the list with ✓ and can't be picked again. "Undo" after "Done" puts the hero back. **"Finish"** closes
 the window — no restrictions remain.
 
-A piece taken off a re-dressed hero is free: any next hero may take it. If nobody took it by the time the window closes,
-the app lists it in "Free pieces".
+A parked piece (below) is the one exception to "spares are never taken": the trade offers it first, to anyone it fits.
 
-## The plan
+## The plan is a walk
+
+The plan is a **walk with ticks**, like the batch walk: do it in the game top to bottom and tick each step. "Done" is
+recorded only when every line is done.
 
 For each receiver:
 
@@ -52,20 +54,43 @@ For each receiver:
   −6.3 → −2.3": crit near their number N counts less (see [Equipment](Equipment#worn), "Crit: 45%");
 - an honest line when the order can't be met: "Immunity ×2 won't come together: no Immunity gloves", or, when the
   pieces are there but below T4, "Speed ×2 won't come together: needs T4";
+- **"Lock: Rin's helmet · parked"** — right before a piece goes on, when the hero's old piece will be parked (below):
+  lock it in the game; the line shows that piece in full, so you can check it's the same one. A piece that goes to someone else gets no lock — its line names it in full (item or set, main, substats):
+  once taken off, the game finds it only by grade, main and stats;
 - **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6
   pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Rin's
-  stock" — the hero's own spare, "in inventory") and how to find it in the game; weapons and accessories also get a substat for Secondary ↓. The
-  plan takes a recommended weapon or accessory even with fewer points — for its passive; such a piece shows "−4.4 pts ·
-  better passive"; if you don't want it — "Don't take";
-- **"Don't take"** — the app offers another piece;
-- **an empty slot** — "Search:" with a hint of what to look for.
+  stock" — the hero's own spare, "in inventory · parked on Rin", "in inventory") and how to find it in the game; weapons
+  and accessories also get a substat for Secondary ↓. The plan takes a recommended weapon or accessory even with fewer
+  points — for its passive; such a piece shows "−4.4 pts · better passive";
+- **"Keep as it was"** — you don't want that piece: the hero's slot stays as it is (nothing comes in, nothing leaves),
+  the rest is counted again; the piece may go to another team member. Ticks of the steps that didn't change stay;
+  "undo" lifts it;
+- **an empty slot** — "Search:" with a hint of what to look for, and two buttons: **"Enter"** — a window right in the
+  plan for the piece you put there from the inventory (grade, set or item, main, substats with segments, T4; the line
+  then shows its points and what is off — a wrong main, none of the needed stats); **"Leave"** — the slot stays empty.
 
 The pieces taken as candidates are good ones for the receiver; what they wear themselves is a candidate always. The
-plan shows only whom you re-dress: the hero or the team members; heroes you take pieces from are not shown. **Holes are
-not filled:** a piece taken off stays off until you enter a new one through "Rate".
+plan shows the heroes you re-dress; heroes you take pieces from appear only at the end.
+
+## At the end — replacements
+
+Nothing taken off is left without an owner. After all the steps above, the old piece of a re-dressed hero goes to
+**whoever gave up theirs in that slot** ("Caren ← Rin's helmet", with the piece in full) if they can wear it — even if it's weak; if
+not (an accessory of another class), to **another team member** whose slot emptied in this trade; otherwise it is
+**parked**: it stays in the "Pool" of the hero it came off, marked "parked", and stays locked in the game. "Keep as it
+was" on a replacement leaves the giver's slot empty and parks the piece. A giver's slot that nothing fills is not shown:
+the app records it as empty — put something on later through "Rate", "Batch" or another trade. "Enter" is only for the
+heroes you re-dress.
+
+A **parked** piece is never fed or dismantled and isn't a Breakthrough target: the evaluation and the batch don't see
+it. Any later trade offers it first — into an empty slot of anyone who can wear it, its own hero included. The mark goes
+once someone wears it.
 
 ## Done, Cancel, Undo
 
-- **Done** — all done in the game: the plan is saved for every affected hero. Right after it — "Undo".
-- **Cancel** — nothing was done in the game: everything stays as it was.
+- **Done** — available once every line is done (a "Keep as it was" and "Leave" count): one record — the moves, the
+  replacements, parking and entered pieces. Right after it — "Undo".
+- The ticks stay **on this device**: close the window with ✕ and carry on later — the same hero's or team's trade picks
+  them up ("Picking up: 5 of 12 ticked"). One walk at a time: opening another hero's trade starts a new one.
+- **Cancel** — asks first, then resets the ticks; nothing changes in the app.
 - A copy that is in no pool after the trade leaves the app (it stays in your game inventory).

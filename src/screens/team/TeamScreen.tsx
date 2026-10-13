@@ -62,11 +62,11 @@ interface Spot { id: string; want?: number }
 interface Filled { text: string; key: string; undo?: (string | null)[] }
 
 // canTrade — the trade is available (not during a tour, not on a newer page's gear); onHeroTrade — the one-hero trade for a
-// lone member (App's sheet); onApplied / onFree — «Сделал»'s message with «Вернуть» and «Свободные вещи» (App)
-export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = false, onHeroTrade, onApplied, onFree }: {
+// lone member (App's sheet); onApplied — «Сделал»'s message with «Вернуть» (App)
+export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = false, onHeroTrade, onApplied }: {
   roster: readonly string[]; off: Pick<ReadonlySet<string>, 'has'>; stars: Readonly<Record<string, number>>;
   ctx: Ctx; gear: GearApi; onChars: () => void; canTrade?: boolean; onHeroTrade?: (id: string) => void;
-  onApplied?: (text: string, undo: (st: GearStore) => GearStore | null) => void; onFree?: (ids: string[]) => void;
+  onApplied?: (text: string, undo: (st: GearStore) => GearStore | null) => void;
 }) {
   const t = useT();
   const idx = useIndex();
@@ -227,7 +227,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
       )}
       {trading && canTrade && (
         <TeamTradeSheet ctx={ctx} gear={gear} roster={roster} team={withBuilds} orders={orders} onOrder={setOrder}
-          onApplied={(text, undo) => onApplied?.(text, undo)} onClose={(free) => { setTrading(false); onFree?.(free); }} />
+          onApplied={(text, undo) => onApplied?.(text, undo)} onClose={() => setTrading(false)} />
       )}
       {choosing && <GuideChoice teams={guideTeams} own={own} onPick={fill} onClose={() => setChoosing(false)} />}
       {filled && filled.key === key && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
