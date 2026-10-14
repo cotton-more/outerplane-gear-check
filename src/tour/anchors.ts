@@ -18,8 +18,8 @@ export const ANCHORS = [
   'batch', // «Партия»: next to «Следующий» on a wide screen, in «Ещё» on a phone
   'share', // «Поделиться» во вкладке «Надето»
   'team', // the four spots on «Команда»
-  'teamBoss', // the boss row at the top of «Команда»
-  'teamTurn', // «Ход против босса» under the team with a boss (.x/0200-boss E1)
+  'teamBoss', // the boss slot beside the team on «Команда» (.x/0206-boss-sheet)
+  'teamTurn', // the turn plan under the team: «Ход против босса» / without a boss «Порядок хода» (.x/0200-boss E1, 0206)
   'teamTrade', // «Подобрать вещи» under the team (.x/0200-boss E2)
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
   'stash', // «Отложить для X» под карточкой вердикта и в строке героя

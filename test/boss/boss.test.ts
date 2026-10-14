@@ -214,20 +214,29 @@ describe('a spot\'s guide heroes follow the matching team (owner 2026-10-12)', (
 
 describe("'ogc.boss'", () => {
   it('round trip; unreadable values dropped', () => {
-    const s: BossStore = { v: 1, boss: 'sr:meteos', stage: { 'sr:meteos': 10 }, teams: { 'sr:meteos': ['a', null, 'b', null], '': [null, null, null, 'c'] } };
+    const s: BossStore = { v: 2, boss: 'sr:meteos', stage: { 'sr:meteos': 10 }, team: ['a', null, 'b', null] };
     expect(restoreBoss(JSON.parse(JSON.stringify(s)))).toEqual(s);
     expect(restoreBoss(null)).toEqual(EMPTY);
-    // the builds kept with a team (E2): strings only, an empty map dropped
-    const o: BossStore = { ...s, orders: { 'sr:meteos': { a: '13x4' } } };
+    // the builds kept with the team (E2): strings only, an empty map dropped
+    const o: BossStore = { ...s, orders: { a: '13x4' } };
     expect(restoreBoss(JSON.parse(JSON.stringify(o)))).toEqual(o);
-    expect(restoreBoss({ ...s, orders: { 'sr:meteos': { a: 5 }, x: 'y' } })).toEqual(s);
-    expect(restoreBoss({ v: 2, boss: 'x' })).toEqual(EMPTY);
-    expect(restoreBoss({ v: 1, boss: 7, stage: { a: 'x', b: 2 }, teams: { a: ['x', 5], b: 'y' } }))
-      .toEqual({ v: 1, boss: null, stage: { b: 2 }, teams: { a: ['x', null, null, null] } });
+    expect(restoreBoss({ ...s, orders: { a: 5 } })).toEqual(s);
+    expect(restoreBoss({ v: 3, boss: 'x' })).toEqual(EMPTY);
+    expect(restoreBoss({ v: 2, boss: 7, stage: { a: 'x', b: 2 }, team: ['x', 5] }))
+      .toEqual({ v: 2, boss: null, stage: { b: 2 }, team: ['x', null, null, null] });
   });
 
-  it('a hero twice in one team: the second spot is emptied; the same id in another team stays', () => {
-    expect(restoreBoss({ v: 1, boss: null, stage: {}, teams: { a: ['x', 'y', 'x', 'y'], b: ['x', null, null, null] } }))
-      .toEqual({ v: 1, boss: null, stage: {}, teams: { a: ['x', 'y', null, null], b: ['x', null, null, null] } });
+  it('a hero twice in the team: the second spot is emptied', () => {
+    expect(restoreBoss({ v: 2, boss: null, stage: {}, team: ['x', 'y', 'x', 'y'] }))
+      .toEqual({ v: 2, boss: null, stage: {}, team: ['x', 'y', null, null] });
+  });
+
+  it('v1 (a team per boss) → one team: the last boss\'s, or the one without a boss when that boss had none (0206 Q3)', () => {
+    const v1 = { v: 1, boss: 'sr:meteos', stage: { 'sr:meteos': 10, 'ds:urd-dark': 3 },
+      teams: { 'sr:meteos': ['a', null, 'b', null], '': [null, null, null, 'c'] }, orders: { 'sr:meteos': { a: '13x4' }, '': { c: '7x2' } } };
+    expect(restoreBoss(v1)).toEqual({ v: 2, boss: 'sr:meteos', stage: { 'sr:meteos': 10, 'ds:urd-dark': 3 }, team: ['a', null, 'b', null], orders: { a: '13x4' } });
+    expect(restoreBoss({ ...v1, boss: null })).toEqual({ v: 2, boss: null, stage: v1.stage, team: [null, null, null, 'c'], orders: { c: '7x2' } });
+    expect(restoreBoss({ ...v1, boss: 'gr:x:main' })).toEqual({ v: 2, boss: 'gr:x:main', stage: v1.stage, team: [null, null, null, 'c'], orders: { c: '7x2' } });
+    expect(restoreBoss({ v: 1, boss: null, stage: {}, teams: {} })).toEqual(EMPTY);
   });
 });

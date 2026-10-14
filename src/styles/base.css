@@ -218,6 +218,7 @@ html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
 .drawer-h.bare { justify-content: flex-end; padding: 4px 4px 0; border-bottom: 0; } /* Sheet bare: only the ✕ */
 .drawer-x { flex: none; width: 40px; height: 40px; border: 0; background: none; font-size: 16px; color: var(--ink-2); border-radius: var(--radius-s); }
 .drawer-b { overflow: auto; overscroll-behavior: contain; padding: 12px 14px 14px; }
+.drawer-f { flex: none; padding: 10px 14px 12px; border-top: 1px solid var(--line); } /* Sheet foot: stays under the scrolling body */
 .drawer .items { max-height: none; overflow: visible; }
 
 /* ---------- низкий экран (разделённый экран с игрой): шапка в одну строку */

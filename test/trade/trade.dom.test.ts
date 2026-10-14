@@ -257,7 +257,7 @@ describe('J. обмен вещами', () => {
   // the team trade on «Команда» (.x/0200-boss E2): the team without a boss from 'ogc.boss', the build under each spot (kept with
   // the team), «Pick gear» → «Team trade» for 2–4 heroes with builds; one — the one-hero trade; a hero without builds stays out
   const team = async (ids: string[], g = gear()) => {
-    await mount({ roster: [...new Set([...ids, aer.id])], gear: g, boss: { v: 1, boss: null, stage: {}, teams: { '': [...ids, null, null, null].slice(0, 4) } } }, { charId: null });
+    await mount({ roster: [...new Set([...ids, aer.id])], gear: g, boss: { v: 2, boss: null, stage: {}, team: [...ids, null, null, null].slice(0, 4) } }, { charId: null });
     await openMore();
     await click(moreButton('Team'));
   };
@@ -277,7 +277,7 @@ describe('J. обмен вещами', () => {
     expect($('.aimsheet')).toBeNull();
     expect(pills()[0].textContent).not.toContain('stats');
     expect(pills()[0].getAttribute('aria-label')).toBe(`Caren’s build: ${combo} — change`);
-    expect(Object.keys(JSON.parse(localStorage.getItem('ogc.boss')!).orders[''])).toEqual([caren.id]);
+    expect(Object.keys(JSON.parse(localStorage.getItem('ogc.boss')!).orders)).toEqual([caren.id]); // one team: the builds belong to it, not to a boss
     expect(stored().pin).toBeUndefined();
   });
 
@@ -324,7 +324,7 @@ describe('J. обмен вещами', () => {
   it('E3: Meteos 13 — Akari takes Aer\'s EFF gloves, her line shows the EFF and the chance; the walk names the boss and stage', async () => {
     const own = P('g1', 'gloves', speed, { SPD: 4, ATK: 2 }), effy = P('g2', 'gloves', speed, { SPD: 4, EFF: 6 });
     const g = G([own, effy], { [akari.id]: ['g1'], [aer.id]: ['g2'] }, { worn: { [akari.id]: { gloves: 'g1' }, [aer.id]: { gloves: 'g2' } } });
-    await mount({ roster: [akari.id, ais.id, aer.id], gear: g, boss: { v: 1, boss: 'sr:meteos', stage: { 'sr:meteos': 12 }, teams: { 'sr:meteos': [akari.id, ais.id, null, null] } } }, { charId: null });
+    await mount({ roster: [akari.id, ais.id, aer.id], gear: g, boss: { v: 2, boss: 'sr:meteos', stage: { 'sr:meteos': 12 }, team: [akari.id, ais.id, null, null] } }, { charId: null });
     await openMore();
     await click(moreButton('Team'));
     await click(byText('#view-team .tm-go', 'Pick gear'));
@@ -348,7 +348,7 @@ describe('J. обмен вещами', () => {
     const acc = P('a1', 'accessory', null, { SPD: 4, EFF: 4 }, { main: 'SPD' });
     const g = G([...mine, ...fast, acc], { [akari.id]: mine.map((p) => p.id as string), [aer.id]: [...fast.map((p) => p.id as string), 'a1'] },
       { worn: { [akari.id]: Object.fromEntries(mine.map((p) => [p.slot, p.id])), [aer.id]: { ...Object.fromEntries(fast.map((p) => [p.slot, p.id])), accessory: 'a1' } } });
-    await mount({ roster: [akari.id, ais.id, aer.id], gear: g, boss: { v: 1, boss: 'sr:grand-calamari', stage: { 'sr:grand-calamari': 12 }, teams: { 'sr:grand-calamari': [akari.id, ais.id, null, null] } } }, { charId: null });
+    await mount({ roster: [akari.id, ais.id, aer.id], gear: g, boss: { v: 2, boss: 'sr:grand-calamari', stage: { 'sr:grand-calamari': 12 }, team: [akari.id, ais.id, null, null] } }, { charId: null });
     await openMore();
     await click(moreButton('Team'));
     const akariRow = [...document.querySelectorAll('#view-team .bt-li')].find((li) => li.textContent?.includes('Akari'))!;

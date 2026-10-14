@@ -187,7 +187,8 @@ describe('«Команда»', () => {
     await setStars(1, 3);
     await click(slot(1));
     await click(sheetHeroes().find((b) => heroName(b) === 'Yuri'));
-    expect(spot(1).textContent).toContain('Yuri');
+    expect(spot(1).querySelector('.tm-slot')?.getAttribute('aria-label')).toBe('Put another hero instead of Yuri'); // no name is printed
+    expect(spot(1).textContent).not.toContain('Yuri');
     expect(spot(1).querySelectorAll('.hs-mini .on')).toHaveLength(1);
     await click($('.vbar .vb-tab')); // ← Evaluate
     await openTeam();
@@ -197,8 +198,8 @@ describe('«Команда»', () => {
     expect($('#view-eval')!.hidden).toBe(false);
     await openTeam();
     expect($$('#view-team .tm-slot')).toHaveLength(1);
-    expect(spot(1).textContent).toContain('Yuri');
-    expect(JSON.parse(localStorage.getItem('ogc.boss')!)).toEqual({ v: 1, boss: null, stage: {}, teams: { '': [null, H.yuri, null, null] } });
+    expect(spot(1).querySelector('.tm-slot')?.getAttribute('aria-label')).toBe('Put another hero instead of Yuri');
+    expect(JSON.parse(localStorage.getItem('ogc.boss')!)).toEqual({ v: 2, boss: null, stage: {}, team: [null, H.yuri, null, null] });
   });
 
   it('the hero sheet: who fits first — outerpedia partners, a skill that starts working; everyone else below', async () => {
