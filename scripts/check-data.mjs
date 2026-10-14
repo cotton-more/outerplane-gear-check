@@ -402,7 +402,7 @@ function dataDiff(A, B) {
     const o = a.get(id);
     if (!o) d.added.push(c.name + (c.builds.length ? '' : ' (пока без билдов)'));
     else if (JSON.stringify(o.builds) !== JSON.stringify(c.builds)) {
-      d.changed.push(c.name);
+      d.changed.push({ name: c.name, lines: buildChanges(o.builds, c.builds, A, B) });
       if (o.builds.length && !c.builds.length) d.lostBuilds.push(c.name);
     }
   }
@@ -415,6 +415,75 @@ function dataDiff(A, B) {
   }
   d.mains = mainChanges(A, B);
   return d;
+}
+
+// Что именно поменялось в билдах героя — строки под «~ обновлены билды» в PR. Билды сопоставляются по имени; у
+// нескольких билдов одна и та же правка (так у outerpedia часто) — одна строка «Speed, Swift Mix — …». «только порядок» —
+// те же элементы в другом порядке. Порядок не пустой звук: первое комбо сетов — основное (evalArmor), подсказка обмена
+// берёт первое подходящее оружие (trade/model/hint); ни на что не влияет только порядок сетов внутри комбо
+function buildChanges(was, now, A, B) {
+  const nameOf = (key, k) => (B[key].find((x) => x.key === k) ?? A[key].find((x) => x.key === k))?.name;
+  const setName = (id) => { const s = B.sets.find((x) => x.id === id) ?? A.sets.find((x) => x.id === id); return s?.short || s?.name || `сет ${id}`; };
+  const combo = (c) => c.map((p) => `${setName(p.set)} ${p.n}`).sort().join(' + ');
+  const charm = (id) => (B.talismans[id] ?? A.talismans[id])?.name || id;
+  const chain = (subs) => subs.map((g) => g.join(' = ')).join(' > ') || '—';
+  const listDiff = (label, a, b, show) => {
+    const plus = b.filter((x) => !a.includes(x)).map((x) => `+ ${show(x)}`);
+    const minus = a.filter((x) => !b.includes(x)).map((x) => `− ${show(x)}`);
+    if (plus.length || minus.length) return [`${label}: ${[...plus, ...minus].join(', ')}`];
+    return same(a, b) ? [] : [`${label}: только порядок — ${a.map(show).join(', ')} → ${b.map(show).join(', ')}`];
+  };
+  const gearDiff = (label, key, a, b) => {
+    const nm = (k) => nameOf(key, k) || k;
+    const mains = (g) => `${g.mains.join('/') || '—'}${g.bad?.length ? ` (${g.bad.map((m) => m + '?').join(', ')})` : ''}`;
+    const out = [];
+    const old = new Map(a.map((g) => [g.key, g]));
+    const fresh = new Map(b.map((g) => [g.key, g]));
+    for (const g of b) if (!old.has(g.key)) out.push(`+ ${label} ${nm(g.key)} (${mains(g)})`);
+    for (const g of a) if (!fresh.has(g.key)) out.push(`− ${label} ${nm(g.key)}`);
+    for (const g of b) {
+      const o = old.get(g.key);
+      if (!o) continue;
+      if (!same(o.mains, g.mains)) out.push(`${label} ${nm(g.key)}: main ${o.mains.join('/') || '—'} → ${g.mains.join('/') || '—'}`);
+      const gone = (o.bad || []).filter((m) => !(g.bad || []).includes(m));
+      const came = (g.bad || []).filter((m) => !(o.bad || []).includes(m));
+      if (gone.length) out.push(`${label} ${nm(g.key)}: outerpedia убрала main ${gone.join(', ')}, которого у предмета не бывает`);
+      if (came.length) out.push(`${label} ${nm(g.key)}: outerpedia советует main ${came.join(', ')}, которого у предмета не бывает`);
+    }
+    if (!out.length && !same(a.map((g) => g.key), b.map((g) => g.key))) {
+      out.push(`${label}: только порядок — ${a.map((g) => nm(g.key)).join(', ')} → ${b.map((g) => nm(g.key)).join(', ')}`);
+    }
+    return out;
+  };
+  const one = (o, b) => {
+    const sa = o.sets.map(combo);
+    const sb = b.sets.map(combo);
+    const out = [];
+    if (!same(sa, sb)) out.push(...listDiff('сеты', sa, sb, (x) => x));
+    else if (!same(o.sets, b.sets)) out.push('сеты: только порядок внутри комбо (ни на что не влияет)');
+    out.push(...gearDiff('оружие', 'weapons', o.weapons, b.weapons), ...gearDiff('аксессуар', 'amulets', o.amulets, b.amulets));
+    out.push(...listDiff('талисманы', o.talismans, b.talismans, charm));
+    if (!same(o.subs, b.subs)) out.push(`сабстаты: ${chain(o.subs)} → ${chain(b.subs)}`);
+    if (o.note !== b.note) out.push(o.note ? (b.note ? 'заметка изменена' : 'заметка убрана') : 'новая заметка');
+    const known = new Set(['name', 'sets', 'weapons', 'amulets', 'talismans', 'subs', 'note']);
+    for (const k of new Set([...Object.keys(o), ...Object.keys(b)])) if (!known.has(k) && !same(o[k], b[k])) out.push(`поле ${k} изменилось`);
+    return out;
+  };
+  // одноимённые билды — по порядку среди одноимённых
+  const keyed = (bs) => { const n = {}; return bs.map((b) => [`${b.name}#${(n[b.name] = (n[b.name] ?? 0) + 1)}`, b]); };
+  const old = new Map(keyed(was));
+  const fresh = new Map(keyed(now));
+  const lines = [];
+  const byChange = new Map(); // правка → билды с ней
+  for (const [k, b] of fresh) {
+    const o = old.get(k);
+    if (!o) { lines.push(`+ билд ${b.name}`); continue; }
+    for (const x of one(o, b)) byChange.set(x, [...(byChange.get(x) ?? []), b.name]);
+  }
+  for (const [k, o] of old) if (!fresh.has(k)) lines.push(`− билд ${o.name}`);
+  for (const [x, names] of byChange) lines.push(`${names.join(', ')} — ${x}`);
+  if (!lines.length && !same(was.map((b) => b.name), now.map((b) => b.name))) lines.push(`только порядок билдов: ${now.map((b) => b.name).join(', ')}`);
+  return lines;
 }
 
 // Смена main у вещи, которая была и раньше, и новая вещь с main не как у остальных в слоте. Страница считает
@@ -585,7 +654,7 @@ function markdown({ ok, oldD, newD, diff, verdicts, byCode, src, code, report, p
   const items = [
     ...diff.added.map((x) => `+ новый персонаж: ${x}`),
     ...diff.lost.map((x) => `− персонаж пропал: ${x}`),
-    ...diff.changed.map((x) => `~ обновлены билды: ${x}`),
+    ...diff.changed.map((x) => [`~ обновлены билды: ${x.name}`, ...cap(x.lines).map((l) => `  - ${l}`)].join('\n')),
     ...diff.items.map((x) => `+ новый ${x}`),
     ...diff.lostItems.map((x) => `− пропал ${x.text}${x.used ? ' (был в билдах)' : ''}`),
     ...(diff.mains || []),

@@ -74,7 +74,8 @@ changed, the build is byte-identical: no extra commits, and a code-only change y
 «Вышли новые данные» (New data is out) banner. On Linux (Actions) the build is the same as on Mac.
 
 The script takes the latest outerpedia commit from GitHub, rebuilds the page and prints what changed:
-new and removed characters, updated builds, renames, new items and sets.
+new and removed characters, updated builds, renames, new items and sets. The PR report (`scripts/check-data.mjs`
+`buildChanges`) also says what changed inside each updated build.
 New characters are marked on the page with a NEW badge. Roster and settings in the browser are preserved.
 If outerpedia changes its data format and some recommendations fail to match, the script reports this separately.
 If the GitHub API is unavailable (limit 60 requests/hour) or the published snapshot for comparison failed to download, the PWA
