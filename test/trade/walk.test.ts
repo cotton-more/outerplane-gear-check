@@ -3,6 +3,7 @@
 // the walk's lines and ticks, one record and one undo.
 import { describe, expect, it } from 'vitest';
 import { applyWalk, stampOf } from '@/features/trade/model/apply';
+import { readWalk } from '@/features/trade/model/stored';
 import { slotKey, type World } from '@/features/trade/model/model';
 import { heroPlan } from '@/features/trade/model/plan';
 import { teamPlan } from '@/features/trade/model/team';
@@ -82,8 +83,24 @@ describe('the end: replacements and parking', () => {
     expect(o.w2.heroes.find((h) => h.id === 'C')).toBeUndefined(); // C gave her only piece and got none back
   });
 
+  // armor keeps the bar in the team trade, so the emptied member gets the piece only at the end
   it('the giver can\'t wear it → another team member whose slot emptied in this trade', () => {
-    // A takes B's accessory (B outside, can't wear A's old one); N takes M's; M's slot emptied → A's old one goes to M
+    // A takes B's helmet (B outside, can't wear A's old one); N takes M's; M's slot emptied → A's old one goes to M
+    const w = mk({ ah: { slot: 'helmet' }, bh: { slot: 'helmet' }, mh: { slot: 'helmet' } }, {
+      A: { worn: { helmet: 'ah' }, value: { ah: 0, bh: 10, mh: 1 } },
+      M: { worn: { helmet: 'mh' }, value: { mh: 0, ah: no, bh: 1 } },
+      N: { value: { mh: 10, ah: 1, bh: 1 } },
+      B: { worn: { helmet: 'bh' }, value: { bh: 0, ah: null } },
+    });
+    const o = team(w, ['A', 'M', 'N']);
+    expect(o.ends.repl.map((r) => [r.to, r.item, r.from])).toEqual([['M', 'ah', 'A']]);
+    expect(o.ends.park).toEqual([]);
+    expect(o.ends.holes.filter((h) => h.slot === 'helmet').map((h) => h.hero)).toEqual(['B']);
+  });
+
+  // a weapon or accessory below the bar is no replacement: the teammate whose own slot the plan emptied takes it in the plan
+  // itself (MODEL.md §7 item 2, the team trade's extra condition)
+  it('a teammate\'s accessory below the bar goes to the member whose slot emptied in the plan itself, nothing is left for the end', () => {
     const w = mk({ aa: { slot: 'accessory' }, ba: { slot: 'accessory' }, ma: { slot: 'accessory' } }, {
       A: { worn: { accessory: 'aa' }, value: { aa: 0, ba: 10, ma: 1 } },
       M: { worn: { accessory: 'ma' }, value: { ma: 0, aa: no, ba: 1 } },
@@ -91,9 +108,10 @@ describe('the end: replacements and parking', () => {
       B: { worn: { accessory: 'ba' }, value: { ba: 0, aa: null } },
     });
     const o = team(w, ['A', 'M', 'N']);
-    expect(o.ends.repl.map((r) => [r.to, r.item, r.from])).toEqual([['M', 'aa', 'A']]);
+    expect(o.ends.repl).toEqual([]);
     expect(o.ends.park).toEqual([]);
-    expect(o.ends.holes.filter((h) => h.slot === 'accessory').map((h) => h.hero)).toEqual(['B']);
+    const worn = (id: string) => o.w2.heroes.find((h) => h.id === id)?.worn.accessory;
+    expect([worn('A'), worn('M'), worn('N')]).toEqual(['ba', 'aa', 'ma']);
   });
 
   it('replacements come after every member\'s step: a piece a later step takes is no replacement; the chain\'s end gets the rest', () => {
@@ -229,5 +247,36 @@ describe('the record', () => {
     const w = worldOf(ctx, st2, [...ROSTER, HERO.leah], { locked: new Set([HERO.rin]) });
     const took = heroPlan(w, { to: HERO.leah }).plan.changes.map((c) => c.cand.item.id);
     expect(took).not.toContain(k.id);
+  });
+});
+
+describe('the walk read back from the device (E2b-1)', () => {
+  const sets = Object.keys(ctx.idx.SET), weapon = ctx.idx.D.weapons[0].key;
+  const armor = { slot: 'helmet', grade: 'unique', setId: sets[0], itemKey: null, main: null, subs: { SPD: 2, 'HP%': 1 }, bt: 0 };
+  const gun = { slot: 'weapon', grade: 'unique', setId: null, itemKey: weapon, main: 'ATK', subs: { SPD: 1 }, bt: 4 };
+  const saved = (entered: Record<string, unknown>) =>
+    ({ v: 1, target: 'hero:a', d: { frozen: [], kept: [], left: [], ticks: ['t1'], entered } });
+  const read = (entered: Record<string, unknown>, withData = true) =>
+    readWalk(saved(entered), 'hero:a', withData ? ctx.idx : undefined);
+
+  it('a piece the data knows is kept', () => {
+    const d = read({ 'a/helmet': armor, 'a/weapon': gun, 'a/gloves': { ...armor, slot: 'gloves', setId: null } });
+    expect(Object.keys(d.entered)).toEqual(['a/helmet', 'a/weapon', 'a/gloves']);
+    expect(d.entered['a/weapon']).toMatchObject({ itemKey: weapon, subs: { SPD: 1 }, bt: 4 });
+    expect(d.ticks).toEqual(['t1']);
+  });
+
+  it('a piece with a stat, set or item the data does not have is dropped; the rest of the walk stays', () => {
+    const d = read({
+      'a/helmet': armor, 'a/armor': { ...armor, slot: 'armor', subs: { SPD: 1, 'NEW%': 2 } }, 'a/gloves': { ...armor, slot: 'gloves', setId: '99999' },
+      'a/weapon': { ...gun, itemKey: '99999' }, 'a/accessory': { ...gun, slot: 'accessory', itemKey: ctx.idx.D.amulets[0].key },
+    });
+    expect(Object.keys(d.entered)).toEqual(['a/helmet', 'a/accessory']);
+    expect(d.ticks).toEqual(['t1']);
+  });
+
+  it('without the data nothing is checked (as before)', () => {
+    const d = read({ 'a/armor': { ...armor, slot: 'armor', subs: { 'NEW%': 2 } }, 'a/gloves': { ...armor, slot: 'gloves', setId: '99999' } }, false);
+    expect(Object.keys(d.entered)).toEqual(['a/armor', 'a/gloves']);
   });
 });

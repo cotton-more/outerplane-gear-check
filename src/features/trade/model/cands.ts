@@ -1,12 +1,13 @@
 // Кандидаты получателя (R5; MODEL.md §7, вопрос 15): свои вещи, надетое других (кроме переодетых в этом окне; члены
 // команды друг другу открыты), снятое этим же расчётом, свободные вещи расчёта, parked pieces (anyone's; into an empty slot
 // with no bar — MODEL.md §7 item 2). Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
-// не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2), код, который у получателя уже
-// есть, без BT выше (R5.5). A frozen slot («Оставить как было», MODEL.md §7 item 4): the receiver keeps what he wears there
-// (nothing else is a candidate) and nobody takes it from him. Герои без билдов — ни получатели, ни держатели (R2.7).
+// не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2; except, in the team trade, a
+// teammate's weapon or accessory where the receiver's own piece is empty or off his list, belowBarOk), код, который у
+// получателя уже есть, без BT выше (R5.5). A frozen slot («Оставить как было», MODEL.md §7 item 4): the receiver keeps what
+// he wears there (nothing else is a candidate) and nobody takes it from him. Герои без билдов — ни получатели, ни держатели (R2.7).
 import type { SlotId } from '@/game/data/types';
 import { keyOf } from './kit';
-import { heldOf, SLOT_ORDER, slotKey, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
+import { belowBarOk, heldOf, SLOT_ORDER, slotKey, type Cand, type Cands, type Cost, type Gauge, type Hero, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 
 export interface CandInput {
@@ -14,6 +15,7 @@ export interface CandInput {
   open?: ReadonlySet<string>;       // переодетые, чьё надетое всё же кандидат: члены команды, чей шаг впереди (R3.5)
   frozen?: ReadonlySet<string>;     // «Оставить как было»: slotKey(hero, slot)
   free?: readonly string[];         // свободные вещи этого расчёта (R5.4)
+  team?: ReadonlySet<string>;       // the team trade's members (MODEL.md §7 item 2); no — the one-hero trade
 }
 
 const NOBODY: Hero = { id: '', rank: -1, locked: false, worn: {}, pool: [] };
@@ -54,6 +56,14 @@ export function candidates(w: World, inp: CandInput): Cands {
     if (it) mine.set(it.code, Math.max(mine.get(it.code) ?? 0, btOf(it.bt)));
   }
   const frozen = (heroId: string, slot: SlotId) => !!inp.frozen?.has(slotKey(heroId, slot));
+  // an extra condition of the team trade, not an exception of the bar (MODEL.md §7 item 2; owner, 2026-10-13): a teammate's
+  // weapon or accessory (worn by him, or taken off by this same calculation — not parked, not his spare) may come below the
+  // receiver's bar when his own piece in that slot is empty or off his list (fit 'no')
+  const mate = (id: string, slot: SlotId, holder: Hero | null): boolean => {
+    if (!holder || holder.id === h.id || !inp.team?.has(h.id) || !inp.team.has(holder.id) || w.parked?.has(id)) return false;
+    const on = h.worn[slot], val = on ? g.value(on) : null;
+    return belowBarOk(slot, val ? val.fit : null);
+  };
   const add = (id: string, cost: Cost, holder: Hero | null, loss: Milli, own: boolean) => {
     const item = w.items[id];
     if (!item) return;
@@ -63,7 +73,7 @@ export function candidates(w: World, inp: CandInput): Cands {
     if (frozen(h.id, item.slot) && !worn) return;
     // a parked piece fills an empty slot with no bar: better than nothing (MODEL.md §7 item 2)
     const open = !!w.parked?.has(id) && !h.worn[item.slot];
-    if (!worn && !val.ok && !open) return;
+    if (!worn && !val.ok && !open && !mate(id, item.slot, holder)) return;
     if (!own && mine.has(item.code) && btOf(item.bt) <= mine.get(item.code)!) return;
     (out[item.slot] ??= []).push({ item, v: val.v, fit: val.fit, cost, loss, holder: holder ? holder.id : null, rank: holder ? holder.rank : -1 });
   };

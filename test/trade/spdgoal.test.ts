@@ -1,12 +1,13 @@
 // The SPD goal in the boss team trade (MODEL.md §13; .x/0200-boss E4): the gauge's SPD against spdOf and its shortfall split
 // exactly, the kit search exact with both goals (bestKit = bruteKit), no SPD goal = today's plans, a member below the target
 // takes SPD from one who doesn't need it, the Speed Set kept for a reachable target, both goals on one member, an unreachable
-// target degrades smoothly; the allies' transcend bonus, the most SPD a kit could give, the turn-1 reasons by the boss's
-// immunities.
+// target degrades smoothly; the allies' transcend bonus, the most SPD a kit could give (over all pieces, and over the trade's
+// own candidates), the turn-1 reasons by the boss's immunities.
 import { describe, expect, it } from 'vitest';
 import type { Piece } from '@/features/gear/model/gear';
 import { profileOf } from '@/game/build/profile';
 import { candidates } from '@/features/trade/model/cands';
+import { tradeSpdReach } from '@/features/trade/model/reach';
 import { bestKit } from '@/features/trade/model/kit';
 import { cmpKit, SLOT_ORDER, type Cand } from '@/features/trade/model/model';
 import { teamPlan } from '@/features/trade/model/team';
@@ -215,19 +216,60 @@ describe('around the goal', () => {
     }
   });
 
+  // E4-1: «Команда» says «не догнать» (and drops the goal) by what the trade itself could give the member (MODEL.md §13 item 12)
+  describe('tradeSpdReach: the trade\'s own candidates, not every piece', () => {
+    // Stella wears her own gear; Aer wears gloves with 6 SPD that pass her bar and a helmet with 6 SPD that fails it
+    const mine = piece('gloves', 'Speed', { ATK: 4, CHC: 4, CHD: 4 }), fast = piece('gloves', 'Speed', { SPD: 6, ATK: 4, CHC: 4, CHD: 2 });
+    const junkHelmet = piece('helmet', 'Speed', { SPD: 6, DEF: 4 }), junkShoes = piece('shoes', 'Speed', { SPD: 6, DEF: 4 });
+    const rest = (['helmet', 'armor', 'shoes'] as const).map((s) => piece(s, 'Speed', { SPD: 2, ATK: 4, CHC: 3 }));
+    const stella = S.char('Demiurge Stella');
+    const wornBy = (st: ReturnType<typeof store>) => Object.values(st.worn ?? {}).flatMap((w) => Object.values(w ?? {}).flatMap((id) => (id ? [st.pieces[id]] : [])));
+    const reach = (st: ReturnType<typeof store>) => tradeSpdReach(ctx, stella, worldOf(ctx, st, [STELLA, AER]), st.pieces);
+
+    it('another hero\'s worn piece that fails the receiver\'s bar is out; one that passes counts', () => {
+      const st = store({ [STELLA]: { pool: [mine, ...rest], worn: [mine, ...rest] }, [AER]: { pool: [fast, junkHelmet], worn: [fast, junkHelmet] } });
+      const w = worldOf(ctx, st, [STELLA, AER]);
+      expect(w.gauge(STELLA)!.value(junkHelmet.id)!.ok).toBe(false);
+      expect(w.gauge(STELLA)!.value(fast.id)!.ok).toBe(true);
+      // the old count — every piece worn by anyone — takes the helmet the trade would never hand over
+      expect(spdReach(ctx, stella, wornBy(st))).toBe(spdOfIds(STELLA, [fast, junkHelmet, rest[1], rest[2]]));
+      expect(reach(st)).toBe(spdOfIds(STELLA, [fast, ...rest])); // Aer's gloves; her own helmet stays
+      expect(reach(st)).toBeLessThan(spdReach(ctx, stella, wornBy(st)));
+    });
+
+    it('a parked piece: into an empty slot with no bar, into a filled one only if it passes', () => {
+      const park = { park: [junkShoes.id] };
+      const empty = store({ [STELLA]: { pool: [mine, ...rest.slice(0, 2)], worn: [mine, ...rest.slice(0, 2)] }, [AER]: { pool: [junkShoes] } }, park);
+      expect(reach(empty)).toBe(spdOfIds(STELLA, [mine, rest[0], rest[1], junkShoes])); // shoes slot empty — better than nothing
+      const filled = store({ [STELLA]: { pool: [mine, ...rest], worn: [mine, ...rest] }, [AER]: { pool: [junkShoes] } }, park);
+      expect(reach(filled)).toBe(spdOfIds(STELLA, [mine, ...rest]));
+    });
+
+    it('someone\'s spare is never reached: the hero\'s pool piece not worn by anyone is held for him', () => {
+      const st = store({ [STELLA]: { pool: [mine, ...rest], worn: [mine, ...rest] }, [AER]: { pool: [fast] } });
+      expect(reach(st)).toBe(spdOfIds(STELLA, [mine, ...rest]));
+    });
+  });
+
   it('the target and the chance: surely first above boss × 100/95; no chance below × 0.95', () => {
     expect(firstAt(276)).toBe(291);
     expect(firstAt(211)).toBe(223);
     expect(turnOf(firstAt(211), 211, []).state).toBe('first');
     expect(anyChance(201, 211)).toBe(true);
     expect(anyChance(200, 211)).toBe(false);
+    expect(anyChance(190, 200)).toBe(false); // exactly 0.95 × the boss: a tie of the extremes, no chance (E1-1)
+    expect(anyChance(191, 200)).toBe(true);
   });
 
   it('reasonsAt: a row the boss is immune to goes; a team row stays', () => {
     const v = S.char('Veronica'), a = S.char('Akari');
-    expect(v.turn).toEqual([{ s: 's1', k: 'taunt', fx: '32' }, { s: 's2', k: 'shield' }]);
-    expect(reasonsAt(v, ['32'])).toEqual([{ s: 's2', k: 'shield' }]);
-    expect(reasonsAt(a, ['26', '32'])).toEqual([{ s: 's1', k: 'atk', fx: '18' }]);
+    // E4-6: her S2 shield lands on the ally with the lowest HP (shield1), not on the team
+    expect(v.turn).toEqual([{ s: 's1', k: 'taunt', fx: '32' }, { s: 's2', k: 'shield1' }]);
+    expect(reasonsAt(v, ['32'])).toEqual([{ s: 's2', k: 'shield1' }]);
+    // E4-7: Akari's ATK down rolls 40 % at skill levels 1–2 and 55 % from 3: lv 3 (missing — holds from level 1)
+    expect(reasonsAt(a, ['26', '32'])).toEqual([{ s: 's1', k: 'atk', fx: '18', lv: 3 }]);
+    expect(S.char('Dolly').turn).toEqual([{ s: 's1', k: 'atk', fx: '18', lv: 5 }]); // 30 / 40 / 50 % at levels 1 / 3 / 5
+    expect(S.char('Omega Nadja').turn).toEqual([{ s: 's1', k: 'slow', fx: '26', lv: 5 }]);
     expect(reasonsAt(a, ['18'])).toEqual([]);
     expect(reasonsAt(S.char('Aer'), [])).toEqual([]);
   });

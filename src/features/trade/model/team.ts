@@ -8,7 +8,7 @@ import type { SlotId } from '@/game/data/types';
 import type { Step } from './apply';
 import { type Plan } from './gate';
 import { keyOf } from './kit';
-import { cmpUse, gains, SLOT_ORDER, slotKey, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
+import { belowBarOk, cmpUse, gains, SLOT_ORDER, slotKey, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 import { advance, movesOf, type Moves } from './moves';
 import { heroPlan, partOn, type Missing } from './plan';
@@ -78,8 +78,9 @@ function bestSwap(w: World, team: readonly string[], frozen?: ReadonlySet<string
         delete into[s];
         if (!id) return;
         const val = g.value(id);
-        // чужая вещь, надетая тоже, — только годная для получателя (MODEL.md §7 item 2), как у шага (cands)
-        if (!val || !val.ok) { ok = false; return; }
+        // чужая вещь, надетая тоже, — только годная для получателя (MODEL.md §7 item 2), как у шага (cands); a weapon or
+        // accessory also below his bar when his piece there (was) is missing or off his list (belowBarOk)
+        if (!val || (!val.ok && !belowBarOk(s, was ? was.fit : null))) { ok = false; return; }
         const c: Cand = { item: w.items[id], v: val.v, fit: val.fit, cost: 3, loss: 0, holder: from.id, rank: from.rank };
         into[s] = c;
         ch.push({ slot: s, cand: c, was });
@@ -132,7 +133,7 @@ const cmpScore = (a: Score, z: Score) => lex(a.use, z.use) || a.others - z.other
 
 export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan | null> {
   if (!teamOk(w0, inp.team)) return null;
-  const team = inp.team;
+  const team = inp.team, mates = new Set(team);
   const before = new Map(team.map((id) => [id, kitIn(w0, id)]));
   let best: Result | null = null;
   function* walk(w: World, done: string[], steps: TeamStep[]): Generator<void, void> {
@@ -152,7 +153,7 @@ export function* teamSteps(w0: World, inp: TeamInput): Generator<void, TeamPlan 
     for (const m of team) {
       if (done.includes(m)) continue;
       const ahead = team.filter((x) => x !== m && !done.includes(x));
-      const hp = heroPlan(locked(w, done), { to: m, frozen: inp.frozen, open: new Set(ahead) });
+      const hp = heroPlan(locked(w, done), { to: m, frozen: inp.frozen, open: new Set(ahead), team: mates });
       yield;
       const step: TeamStep = { kind: 'hero', plans: [{ to: m, plan: hp.plan }], missing: hp.missing };
       yield* walk(advance(w, step), [...done, m], [...steps, step]);

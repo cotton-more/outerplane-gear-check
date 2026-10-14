@@ -303,9 +303,16 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
    the usual rules apply. Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
-   without Breakthrough) he already has at an equal or higher BT. A **frozen slot** (item 4): only the receiver's own
-   worn piece there, and nobody else takes it. (Was, until E2b: «Не брать» per piece, and the window's «free pieces» —
-   both gone.)
+   without Breakthrough) he already has at an equal or higher BT. **One extra condition, in the team trade only** (2–4
+   members; owner, 2026-10-13, review 0203: "not an exception — an extra rule-condition of the team trade"): a **weapon or
+   accessory** that a teammate holds — worn by him (cost 3), or in his pool and taken off by this same calculation (cost 2,
+   holder him; never his spare, never a parked one) — may go to a member **below his bar** when the receiver's own piece in
+   that slot is empty or off his list (`fit` `no`: neither recommended nor a stopgap — `model:belowBarOk`; `cands:candidates`
+   and the pair swap's `was` in `team:bestSwap`). Armor keeps the bar; the rank rule (a recommended weapon or accessory
+   outranks points) is untouched; the one-hero trade and «Кого переодеть?» have no team and keep the bar. (Why: Maxwell wears
+   an Epic necklace off his list; with a teammate's accessory, below his bar, his EFF goes 187 → 298.) A **frozen slot**
+   (item 4): only the receiver's own worn piece there, and nobody else takes it. (Was, until E2b: «Не брать» per piece,
+   and the window's «free pieces» — both gone.)
 3. **"Was → becomes"** per hero: points of each piece over the worn one; a part of the order that cannot be built —
    `missingOf`: no piece of the set in enough slots, or pieces exist but are below T4 and the part needs T4.
 4. **Session locks**: a hero re-dressed in this window is `locked`: his worn gear is not taken by later steps (his
@@ -593,8 +600,9 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
 5. **What the plan shows** (Q6): the ▲/▼ gain and «Статы» stay plain stats (+ sets − crit: `HeroLine.before/after` put the
    goal's term back); a member with a goal whose EFF changes gets its own row «Эфф ≈ 184 → 222 · 93%» (`HeroLine.eff`: the
    game's battle EFF before and after, the chance after — `landChance`; ✓ above RES).
-6. **The candidates are as before** (Q4): the goal pulls no piece that fails the member's bar, and a recommended weapon or
-   accessory still outranks points — EFF never beats a passive.
+6. **The candidates are as before** (Q4): the goal pulls no piece that fails the member's bar (but the team trade's own rule,
+   §7 item 2, lets a teammate's weapon or accessory below the bar into a slot off the member's list; owner, 2026-10-13,
+   review 0203), and a recommended weapon or accessory still outranks points — EFF never beats a passive.
 7. **New inputs — a new walk** (Q7): the walk's target in `ogc.trade` is `team:<ids>|<boss>@<stage>|<id>*<★>,…`; another
    boss, stage, ★ tried on a spot or team starts a new walk (ticks reset, silently). No boss — no goals, the plan and the
    target of today.
@@ -605,8 +613,17 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
 
 9. **Who.** A member with builds whose turn-1 skill acts before the boss does (`Char.turn`, `update.py turn_reasons`): S1
    always, S2/S3 only with start cooldown 0 at the max level; on the boss — ATK, SPD or crit down, priority down, taunt,
-   hard CC, cooldown up (a DEBUFF* row on an enemy, roll ≥ 50 %); for the team — shield, DEF up, damage cut, invincibility,
-   immunity. A row the boss is immune to at the stage goes (`reasonsAt`, the effect id against `factsAt().imm`). The app
+   hard CC, cooldown up (a DEBUFF* row on an enemy, roll ≥ 50 %; cooldown up is any `BT_COOL*_CHARGE` with a negative
+   value); for the team (a row on `MY_TEAM` / `MY_TEAM_WITHOUT_ME`) — shield, DEF up, damage cut, invincibility, immunity.
+   A shield on the one ally with the lowest HP (`MY_TEAM_LOWEST_HP_RATE`: Veronica S2, Tio S1) is its own kind, `shield1`
+   — «shields the ally with the lowest HP»; every other single-ally or partial-team row is out, no text would be true
+   (none is on a ready skill today). Only what happens by itself counts: a row
+   with a `conditionType` (a status on the caster or target, the target's element…), a trigger on another effect's end
+   (Monad Iota's Golden Curse) and an ultimate that waits for its unique resource (Demiurge Stella, Monad Iota) are out —
+   Ember's taunt, Sigma's stun, Snow's push. `lv` — the lowest skill level from which a reason holds (the buff in the
+   level's `buffIds`, its effective row there, a boss roll ≥ 50 %, S2/S3 start cooldown 0; today Akari 3, Dolly 5,
+   Omega Nadja 5), shown on the why line («с 3-го уровня навыка») — the app itself assumes the max level. A row the boss
+   is immune to at the stage goes (`reasonsAt`, the effect id against `factsAt().imm`). The app
    decides (Q1): no per-spot switch, no guide numbers, never a ceiling. The reason is shown on the timeline's expanded row,
    not in the plan (Q7); a member without one has no goal — SPD stays a plain chain stat, the row drops «нужно …».
 10. **The target** is the SPD that surely moves first (Q2): `firstAt(boss)` — the first SPD above boss × 100/95 (`turnOf`,
@@ -618,10 +635,12 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
     later). The game's SPD is linear in the pieces — ⌊B × (1000 + rate)/1000⌋ + 3 × segments + SPD mains, the rate from one
     set (only the Speed Set has SPD rows) — so a − Σ b − Σ r = 333 × (t − SPD) exactly (`test/trade/spdgoal.test.ts`).
 12. **No chance — no goal** (Q5): `spdReach` — the most SPD any kit could give (per slot the fastest piece; for a set with
-    SPD rows each armor slot also tries its best piece of that set, T4 and not) over what the trade can reach (pieces worn by
-    anyone, the member's own pool, parked ones; class-wearable) + the bonus; at or below the boss's "surely after" bound
-    (≈ × 0.95) the goal is off and the timeline says «Из твоих вещей не догнать: самое большее N». With some chance the goal
-    stays, λ caps the cost (an out-of-reach target turns linear, as EFF's).
+    SPD rows each armor slot also tries its best piece of that set, T4 and not) over the trade's own candidates for that
+    member (`reach:tradeSpdReach` = `candidates` of §7 item 2: the receiver's bar, others' spare never, code copies,
+    parked pieces into an empty slot without the bar; class-wearable) + the bonus; at or below the boss's "surely after"
+    bound (≈ × 0.95) the goal is off and the timeline says «Из твоих вещей не догнать: самое большее N». A member without
+    builds has no gauge and no goal; his line counts every piece he could wear (worn by anyone, his pool, parked ones).
+    With some chance the goal stays, λ caps the cost (an out-of-reach target turns linear, as EFF's).
 13. **Both goals on one member** (Q4) — the sum of the two terms. The kit search takes goal terms as a list
     (`kit.ts termsOf`): the plain best that loses nothing to crit and every term; terms out of reach fold into v / the set
     value (`linearKit`); otherwise `critKit` with the dominance per stat (CHC, EFF, SPD segments each against the candidate's

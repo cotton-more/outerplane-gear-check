@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { moveStep } from '@/features/trade/model/apply';
 import { keyOf } from '@/features/trade/model/kit';
 import { heroPlan } from '@/features/trade/model/plan';
-import { slotKey, type Cand, type World } from '@/features/trade/model/model';
+import { slotKey, type Cand, type Fit, type World } from '@/features/trade/model/model';
 import { runTeam, teamOk, teamPlan, type TeamPlan } from '@/features/trade/model/team';
+import { NO_DECISIONS, outcomeOf } from '@/features/trade/model/walk';
 import { synthWorld, type SynthHero } from './helpers';
 
 type Items = Parameters<typeof synthWorld>[0]['items'];
@@ -287,6 +288,93 @@ describe('H. команда', () => {
     const w = mk({ w: { slot: 'weapon' } }, { R: { value: { w: 4 } }, O: { worn: { weapon: 'w' } } });
     expect(teamOk(w, team('R'))).toBe(true);
     expect(got(run(w, ['R']), 'R')).toEqual({ weapon: 'w' });
+  });
+});
+
+// The team trade's extra condition (MODEL.md §7 item 2; owner, 2026-10-13, review 0203): a teammate's weapon or accessory may
+// come below the receiver's bar when his own piece in that slot is empty or off his list (fit 'no'). The one-hero trade, armor
+// and an own piece on the list keep the bar.
+describe('H20: a teammate\'s gear below the bar', () => {
+  const below = { v: 8, fit: 'no' as Fit, ok: false };
+  // R wears ra (3, own fit), K wears ka (5, off his list); ka is below R's bar (8), ra below K's (2). Only the team may take ka
+  const world = (own: Fit, slot: 'weapon' | 'accessory' = 'accessory') => mk({ ra: { slot }, ka: { slot } }, {
+    R: { worn: { [slot]: 'ra' }, value: { ra: { v: 3, fit: own }, ka: below } },
+    K: { worn: { [slot]: 'ka' }, value: { ka: { v: 5, fit: 'no' }, ra: { v: 2, fit: 'no', ok: false } } },
+  });
+  const worn = (w: World, tp: TeamPlan, members: string[], id: string) =>
+    outcomeOf(w, tp.steps, tp.order, team(...members), NO_DECISIONS).w2.heroes.find((h) => h.id === id)?.worn;
+
+  for (const slot of ['accessory', 'weapon'] as const) {
+    it(`${slot} off the receiver's list: the teammate's one below his bar comes; the teammate gets the old one at the end`, () => {
+      const w = world('no', slot);
+      const tp = run(w, ['R', 'K']);
+      expect(got(tp, 'R')).toEqual({ [slot]: 'ka' });
+      expect(changes(tp, 'R')[0].cand).toMatchObject({ cost: 3, holder: 'K' });
+      expect(worn(w, tp, ['R', 'K'], 'R')).toEqual({ [slot]: 'ka' });
+      expect(worn(w, tp, ['R', 'K'], 'K')).toEqual({ [slot]: 'ra' });
+    });
+  }
+  it('an empty slot of the receiver counts as off his list', () => {
+    const w = mk({ ka: { slot: 'accessory' } }, { R: { value: { ka: below } }, K: { worn: { accessory: 'ka' }, value: { ka: { v: 5, fit: 'no' } } } });
+    expect(got(run(w, ['R', 'K']), 'R')).toEqual({ accessory: 'ka' });
+  });
+  it('his own piece is on the list (a stopgap, a recommended one) → the bar holds: nothing is taken', () => {
+    for (const own of ['stopgap', 'rec'] as const) {
+      const tp = run(world(own), ['R', 'K']);
+      expect(got(tp, 'R'), own).toEqual({});
+      expect(tp.steps, own).toEqual([]);
+    }
+  });
+  it('the holder is not on the team → the bar holds', () => {
+    const w = mk({ ra: { slot: 'accessory' }, ka: { slot: 'accessory' } }, {
+      R: { worn: { accessory: 'ra' }, value: { ra: { v: 3, fit: 'no' }, ka: below } },
+      O: { worn: { accessory: 'ka' } },
+    });
+    expect(got(run(w, ['R']), 'R')).toEqual({});
+  });
+  it('a teammate\'s spare, held for him, is never taken', () => {
+    const w = mk({ ra: { slot: 'accessory' }, ks: { slot: 'accessory' } }, {
+      R: { worn: { accessory: 'ra' }, value: { ra: { v: 3, fit: 'no' }, ks: below } },
+      K: { pool: ['ks'], value: { ks: { v: 5, fit: 'no' } } },
+    });
+    expect(got(run(w, ['R', 'K']), 'R')).toEqual({});
+  });
+  it('armor below the receiver\'s bar never goes to a teammate, into an empty slot neither', () => {
+    const armor = (own: boolean) => mk({ rh: { slot: 'helmet' }, kh: { slot: 'helmet' } }, {
+      R: { ...(own ? { worn: { helmet: 'rh' } } : {}), value: { rh: { v: 3, fit: 'no' }, kh: below } },
+      K: { worn: { helmet: 'kh' }, value: { kh: { v: 5, fit: 'no' } } },
+    });
+    for (const own of [true, false]) {
+      const tp = run(armor(own), ['R', 'K']);
+      expect(got(tp, 'R'), String(own)).toEqual({});
+      expect(tp.steps, String(own)).toEqual([]);
+    }
+  });
+  it('the one-hero trade (no team) keeps the bar: heroPlan without `team` takes nothing, with it takes the piece', () => {
+    const w = world('no');
+    expect(heroPlan(w, { to: 'R' }).plan.changes).toEqual([]);
+    expect(heroPlan(w, { to: 'R', team: new Set(['R']) }).plan.changes).toEqual([]);
+    expect(heroPlan(w, { to: 'R', team: new Set(['R', 'K']) }).plan.changes.map((c) => c.cand.item.id)).toEqual(['ka']);
+  });
+
+  // a pair swap of two slots at once: each slot alone is +0.5 for R (under the threshold, no step takes it), both together
+  // +1.0; K is level. The pieces R gets are below his bar; his own ones in those slots are off his list (`own`)
+  describe('the pair swap', () => {
+    const swap = (own: Fit) => mk({ rw: { slot: 'weapon' }, kw: { slot: 'weapon' }, ra: { slot: 'accessory' }, ka: { slot: 'accessory' } }, {
+      R: { worn: { weapon: 'rw', accessory: 'ra' }, value: { rw: { v: 5, fit: 'no' }, ra: { v: 5, fit: own }, kw: { v: 5.5, fit: 'no', ok: false }, ka: { v: 5.5, fit: 'no', ok: false } } },
+      K: { worn: { weapon: 'kw', accessory: 'ka' }, value: { kw: { v: 5, fit: 'no' }, ka: { v: 5, fit: 'no' }, rw: { v: 5, fit: 'no' }, ra: { v: 5, fit: 'no' } } },
+    });
+    it('both of R\'s pieces are off his list → the swap is made, as one step', () => {
+      const tp = run(swap('no'), ['R', 'K']);
+      expect(tp.steps.map((x) => x.kind)).toEqual(['swap']);
+      expect(got(tp, 'R')).toEqual({ weapon: 'kw', accessory: 'ka' });
+      expect(got(tp, 'K')).toEqual({ weapon: 'rw', accessory: 'ra' });
+    });
+    it('one of them is on his list (a stopgap) → that slot keeps the bar, nothing is swapped', () => {
+      const tp = run(swap('stopgap'), ['R', 'K']);
+      expect(tp.steps).toEqual([]);
+      expect(got(tp, 'R')).toEqual({});
+    });
   });
 });
 

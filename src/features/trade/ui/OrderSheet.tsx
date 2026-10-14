@@ -19,13 +19,14 @@ export function orderName(ctx: Ctx, c: Char | undefined, order: string, stats: s
   return combo ? comboText(ctx.idx, combo) : stats;
 }
 
-// short — под плиткой в ромбе (52 px на колонку): только имя заказа и ▾, полная фраза — подсказкой и для диктора
+// short — под плиткой в ромбе (52 px на колонку): только имя заказа и ▾, полная фраза — подсказкой и для диктора.
+// ▾ stays outside the name: in a narrow window a long name ends in an ellipsis, the ▾ (it opens a list) is never cut
 export function OrderButton({ name, short, onClick }: { name: string; short?: boolean; onClick: () => void }) {
   const t = useT();
   const full = t.trade.order(name);
   return (
     <button type="button" className="aimb" title={full} aria-label={short ? full : undefined} onClick={onClick}>
-      {short ? <><span className="aimb-n">{name}</span> ▾</> : <span className="aimb-n">{full}</span>}
+      <span className="aimb-n">{short ? name : full}</span> ▾
     </button>
   );
 }

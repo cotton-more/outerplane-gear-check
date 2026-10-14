@@ -392,7 +392,8 @@ function critKit(g: Gauge, cands: Cands, fix: Fix): Kit {
     for (let a = 0; a < bestK.length; a++) {
       if (bestK[a] === undefined) continue;
       const rest = left - a;
-      const extra = Math.max(0, fresh[Math.min(4, rest)] ?? 0, rest >= 4 ? 2 * fresh[2] : 0);
+      // the new sets: one on any k = 2…rest pieces (a set may be worth less on more), or two on 2 + 2
+      const extra = Math.max(0, ...fresh.slice(2, rest + 1), rest >= 4 ? 2 * fresh[2] : 0);
       r = Math.max(r, bestK[a] + extra);
     }
     setsMemo.set(key, r);

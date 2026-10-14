@@ -229,4 +229,43 @@ describe('C. кандидаты', () => {
     expect(candidates(w1, { to: 'N' }).gloves?.find((c) => c.item.id === 'gD')?.cost).toBe(2);
     expect(ids(candidates(w1, { to: 'N' }), 'helmet')).toEqual([]);
   });
+
+  // MODEL.md §7 item 2, the team trade (owner, 2026-10-13): a teammate's weapon or accessory below the receiver's bar, only
+  // where the receiver's own piece is empty or off his list
+  describe('C11: a teammate\'s gear below the bar (team)', () => {
+    const below = { v: 8, fit: 'no' as const, ok: false };
+    const world = (own: 'no' | 'stopgap' | null, extra: { held?: ReadonlySet<string>; parked?: ReadonlySet<string> } = {}) => ({
+      ...synthWorld({
+        items: { ra: { slot: 'accessory' }, ka: { slot: 'accessory' }, kh: { slot: 'helmet' } },
+        heroes: {
+          R: { ...(own ? { worn: { accessory: 'ra' } } : {}), value: { ra: { v: 3, fit: own ?? 'no' }, ka: below, kh: below } },
+          K: { worn: { accessory: 'ka', helmet: 'kh' }, value: { ka: { v: 5, fit: 'no' }, kh: { v: 5, fit: 'no' } } },
+        },
+      }), ...extra,
+    });
+    const mates = new Set(['R', 'K']);
+    it('worn by a teammate: off the receiver\'s list or an empty slot — a candidate (cost 3), armor and the one-hero trade — not', () => {
+      for (const own of ['no', null] as const) {
+        const c = candidates(world(own), { to: 'R', team: mates });
+        expect(c.accessory?.filter((x) => x.item.id === 'ka').map((x) => [x.cost, x.holder]), String(own)).toEqual([[3, 'K']]);
+        expect(ids(c, 'helmet'), String(own)).toEqual([]);
+        expect(ids(candidates(world(own), { to: 'R' }), 'accessory'), String(own)).not.toContain('ka');
+        expect(ids(candidates(world(own), { to: 'R', team: new Set(['R']) }), 'accessory'), String(own)).not.toContain('ka');
+      }
+    });
+    it('his own piece is on the list — the bar holds', () => {
+      expect(ids(candidates(world('stopgap'), { to: 'R', team: mates }), 'accessory')).toEqual(['ra']);
+    });
+    it('taken off by this same calculation (cost 2) — a candidate; his spare held for him, a parked one — not', () => {
+      const off = { ...world('no'), held: new Set<string>() };
+      const w = (parked: ReadonlySet<string>, held: ReadonlySet<string>) => ({
+        ...off, parked, held,
+        heroes: off.heroes.map((h) => (h.id === 'K' ? { ...h, worn: {}, pool: ['ka', 'kh'] } : h)),
+      });
+      const none = new Set<string>();
+      expect(candidates(w(none, none), { to: 'R', team: mates }).accessory?.map((x) => [x.item.id, x.cost, x.holder])).toEqual([['ra', 0, 'R'], ['ka', 2, 'K']]);
+      expect(ids(candidates(w(none, new Set(['ka'])), { to: 'R', team: mates }), 'accessory')).toEqual(['ra']);
+      expect(ids(candidates(w(new Set(['ka']), none), { to: 'R', team: mates }), 'accessory')).toEqual(['ra']);
+    });
+  });
 });

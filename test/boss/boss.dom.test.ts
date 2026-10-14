@@ -347,9 +347,54 @@ describe('Turn vs the boss on «Команда»', () => {
     await click(row('Veronica').querySelector('.bt-row'));
     expect([...row('Veronica').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual([
       `SPD 106 — to surely move before the boss: ${Math.floor((109 * 100) / 95) + 1} (+${Math.floor((109 * 100) / 95) + 1 - 106}).`,
-      // E4: why — her S2 shield; her S1 taunt goes, Meteos is immune to it
-      'Moving before the boss matters: S2 shields the team.']);
+      // E4: why — her S2 shield (E4-6: on the one ally with the lowest HP, not «the team»); her S1 taunt goes, Meteos is immune
+      // to it; no skill level above 1 needed, so no bracket (E4-7)
+      'Moving before the boss matters: S2 shields the ally with the lowest HP.']);
     expect(row('Veronica').querySelector('.bt-eff')).toBeNull();
+  });
+
+  // E4-7: the app assumes the max skill level; a reason that needs a higher one than 1 says from which (Akari's S1 ATK down:
+  // the roll is 40 % at levels 1–2, 55 % from 3), one that holds from level 1 has no bracket
+  it('the why line says «from skill level 3» for Akari\'s ATK down, and nothing for a reason from level 1', async () => {
+    await mount();
+    await pickBoss('Blazing Knight Meteos');
+    await closeSheet();
+    for (const hero of ['Akari', 'Veronica']) { // an empty team: one spot at a time
+      await click($('#view-team .tm-add'));
+      await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', hero));
+    }
+    await click(row('Akari').querySelector('.bt-row'));
+    expect(row('Akari').querySelector('.bt-why')?.textContent).toBe("Moving before the boss matters: S1 lowers the boss's ATK (from skill level 3).");
+    await click(row('Veronica').querySelector('.bt-row'));
+    expect(row('Veronica').querySelector('.bt-why')?.textContent).not.toContain('skill level');
+  });
+
+  // E4-4: the transcend bonus in the SPD line includes the hero's own row, so it doesn't say «allies'»
+  it('the SPD line with a transcend bonus: «SPD 154 (+10 transcend)», no «allies\'»', async () => {
+    const dianne = id('Dianne');
+    await mount({ roster: [...ROSTER, dianne], stars: { [dianne]: 6 } });
+    await pickBoss('Blazing Knight Meteos');
+    await closeSheet();
+    for (const hero of ['Tamara', 'Dianne']) {
+      await click($('#view-team .tm-add'));
+      await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', hero));
+    }
+    await click(row('Tamara').querySelector('.bt-row'));
+    const spd = row('Tamara').querySelector('.bt-x p')?.textContent ?? '';
+    expect(spd).toMatch(/^SPD \d+ \(\+10 transcend\) — /);
+    expect(spd).not.toContain("allies'");
+  });
+
+  // E4-1: a member with builds whose turn-1 skill matters but who can't catch the boss: no chance from the trade's own
+  // candidates (nothing worn here: her base SPD) — the row says how far her gear goes (the units: test/trade/spdgoal.test.ts)
+  it('a member who can\'t catch the boss (Annihilator, SPD 250): the expanded row says «out of reach: N at most»', async () => {
+    await mount();
+    await pickBoss('Annihilator');
+    await closeSheet();
+    await click($('#view-team .tm-add'));
+    await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Veronica'));
+    await click(row('Veronica').querySelector('.bt-row'));
+    expect(row('Veronica').querySelector('.bt-far')?.textContent).toBe('Out of reach with your gear: 106 at most.');
   });
 
   it('a row → «EFF for Tamara»: typed 340 — ✓ 100 %, no hint; stored on the hero', async () => {

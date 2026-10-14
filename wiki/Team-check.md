@@ -37,7 +37,7 @@ The hero window (tap «+» or a portrait) starts with suggestions:
 
 ## Boss
 
-The row above the spots: «Boss: Meteos · 13 · RES 288 ▾». Tap it to open the boss window.
+The row above the spots: «Boss: Meteos · 13 ▾», with the boss's SPD and RES next to it, each with its icon (the Speed set and RES). Tap it to open the boss window.
 
 - **The list of fights:** Special Request, Dimensional Singularity, Joint Challenge, Guild Raid (the main boss and its
   subs under the raid's name). A fight running now is on top, with its end date. A name search. On the right — RES at
@@ -80,12 +80,15 @@ boss in the order of the first turn, top to bottom. The boss is the red row in i
   shown: after it, skills, buffs and pushes decide.
 - **SPD** is what the app knows: the hero's base (level, Quirks), SPD substats, an SPD accessory, the Speed set and the
   SPD bonus from allies' transcend — Dianne, Mene, Liselotte, Viella… give the whole team +5 at ★4–5 and +10 at ★6, and
-  several of them add up (the turn order counts it, the hero's stat screen doesn't show it; the row says "SPD 148 (+10
-  allies' transcend)"). The EE, talisman and battle buffs are invisible — in the game the hero may be faster.
+  several of them add up, the hero's own row too (the turn order counts it, the hero's stat screen doesn't show it; the
+  row says "SPD 148 (+10 transcend)"). The EE, talisman and battle buffs are invisible — in the game the hero may be faster.
 - **Who should move first.** Not everyone: only a hero whose first move does something before the boss acts — on turn 1
   only S1 is ready (S2 and S3 start on cooldown), so the app looks at S1 (and at S2/S3 that are ready at once): it lowers
-  the boss's ATK, SPD or crit, pushes it back on the turn gauge, taunts it, stuns it, or shields the team, raises its DEF,
-  cuts the damage it takes. An effect the boss is immune to at this stage doesn't count (Meteos ignores taunt). For the
+  the boss's ATK, SPD or crit, pushes it back on the turn gauge, taunts it, stuns it, delays its skills, or shields the
+  team (or the ally with the lowest HP), raises its DEF, cuts the damage it takes. Only what happens by itself counts: an
+  effect with a condition (Ember's taunt needs her own status from S3) or an ultimate that waits for a collected resource
+  doesn't. Nor does an effect the boss is immune to at this stage (Meteos ignores taunt). The app counts the maximum skill
+  level; if an effect needs a higher one than 1, the row says so ("S1 lowers the boss's ATK (from skill level 3)"). For the
   others SPD is just a stat of their chain — a damage dealer doesn't need to beat the boss to its first move.
 - **EFF.** Heroes who need EFF (as on the hero card) also show it, with the chance the boss doesn't resist the debuff:
   "✓ 100%" — EFF above RES, the debuff always lands. Below it the boss resists about d / (d + 100), where d is the gap:
@@ -121,7 +124,8 @@ wear and their own spare (other heroes' spare is never taken; see [Trading gear]
 - **With a boss the trade also raises EFF** for the heroes who need it — up to the boss's RES + 1, where the debuff
   always lands; the EFF is the one the turn timeline shows (the card's EFF + what battle adds). Not at any price: a little
   stats are given for EFF, EFF above RES + 1 is worth nothing and goes to whoever lacks it; a piece the hero can't use won't
-  come for EFF, and a recommended accessory stays. A hero whose EFF changes gets a row under the stats:
+  come for EFF — except a teammate's weapon or accessory when the hero's own in that slot isn't on his list either; a
+  recommended accessory stays. A hero whose EFF changes gets a row under the stats:
   "EFF ≈ 184 → 222 · 93%" — EFF before and after and the chance the debuff lands after the trade (✓ — above RES; «≈» — the
   game's EFF isn't typed). The gain in points stays the stats' own. A hero who can't reach the target gets as close as a few
   points allow — the chance on the row says how far it is.

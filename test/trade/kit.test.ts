@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SlotId } from '@/game/data/types';
 import { bestKit, keyOf } from '@/features/trade/model/kit';
-import { cmpUse, SLOT_ORDER, type Cand, type Gauge, type SetGain } from '@/features/trade/model/model';
+import { cmpKit, cmpUse, SLOT_ORDER, type Cand, type Gauge, type SetGain } from '@/features/trade/model/model';
 import { bruteKit, cand, candsOf, lcg, synthGauge } from './helpers';
 
 const idsOf = (g: Gauge, list: Cand[]) => {
@@ -252,5 +252,47 @@ describe('X2c: мягкий потолок крита — лучший комп�
       for (const slot of SLOT_ORDER) expect(best.slots[slot]?.item.id, `случай ${t} ${slot}`).toBe(brute.slots[slot]?.item.id);
     }
     expect(binding).toBeGreaterThan(60);
+  });
+});
+
+// E3-1: critKit's bound on the sets still to come (setUp) must not lean on "a set is worth no less on more pieces": here a set
+// is worth something on one piece count only, so the best kit gives it exactly that many pieces. The crit gauge makes the plain
+// best lose to crit (the armor piece 'aN' carries one CHC segment), so the search runs the branch and bound; the old bound of
+// the slots left took only the new set on all of them (min(4, rest) pieces) and cut the best kit
+describe('X2d: the set bound does not assume a set grows with its pieces', () => {
+  const kitIds = (slots: Partial<Record<SlotId, Cand>>) => SLOT_ORDER.map((s) => slots[s]?.item.id ?? '-').join(' ');
+  const exact = (worth: Record<string, Record<number, number>>, mains: Record<string, number>, list: Cand[]) => {
+    const g = synthGauge({
+      bonusFn: (set, n) => { const v = worth[set]?.[n] ?? 0; return { v: v * 1000, halves: v ? 1 : 0, eff: 0 }; },
+      crit: { need: 30, c0: 20, items: { aN: { w: 0.8, n: 1 }, ...Object.fromEntries(Object.entries(mains).map(([id, main]) => [id, { main }])) } },
+      vOf: (id) => list.find((c) => c.item.id === id)!.v / 1000,
+    });
+    const c = candsOf(list);
+    const a = bestKit(g, c), b = bruteKit(g, c);
+    expect(a.key.crit, 'crit binds, so the branch and bound ran').toBeGreaterThan(0);
+    expect(cmpKit(a.key, b.key) === 0, 'bestKit = bruteKit').toBe(true); // cmpKit may give -0
+    expect(kitIds(a.slots)).toBe(kitIds(b.slots));
+    return kitIds(a.slots);
+  };
+
+  it('3 slots left: X is worth 5 on exactly 2 pieces (0 on 3), the best kit has no helmet set piece and X on gloves and shoes', () => {
+    // the greedy first kit takes the X helmet (X ×3 = 0) and finds X ×2 only by dropping a piece; the branch of the plain helmet
+    // 'p0' then has a new set on 2 of its 3 slots left (fresh[2]) that the old bound ignored
+    const list = [
+      cand({ id: 'hX', slot: 'helmet', v: 1.5, set: 'X' }), cand({ id: 'p0', slot: 'helmet', v: 1 }),
+      cand({ id: 'aN', slot: 'armor', v: 3 }), cand({ id: 'gX', slot: 'gloves', v: 3, set: 'X' }), cand({ id: 'sX', slot: 'shoes', v: 3, set: 'X' }),
+    ];
+    expect(exact({ X: { 2: 5 } }, {}, list)).toBe('- - p0 aN gX sX');
+  });
+
+  it('4 slots left: Y is worth 5 on exactly 3 pieces (0 on 2 and 4), the second weapon wins with Y on three armor pieces', () => {
+    // two non-dominated weapons: the first (v 9.2) has the CHC main, so crit costs its kits more than the second's (v 9.0); the
+    // second weapon's whole armor search has a new set on 3 of its 4 slots (fresh[3]) that the old bound ignored
+    const list = [
+      cand({ id: 'w1', slot: 'weapon', v: 9.2 }), cand({ id: 'w2', slot: 'weapon', v: 9 }),
+      cand({ id: 'yH', slot: 'helmet', v: 3, set: 'Y' }), cand({ id: 'aN', slot: 'armor', v: 3 }),
+      cand({ id: 'yG', slot: 'gloves', v: 3, set: 'Y' }), cand({ id: 'yS', slot: 'shoes', v: 3, set: 'Y' }),
+    ];
+    expect(exact({ Y: { 3: 5 } }, { w1: 40 }, list)).toBe('w2 - yH aN yG yS');
   });
 });

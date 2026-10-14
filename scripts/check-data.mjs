@@ -144,7 +144,9 @@ function diffCases(was, now, D) {
 }
 
 // каждый билд должен находить себя: Legendary-броня его основного сета с его же первыми сабстатами, ростер — только
-// этот персонаж, — «Оставить». Не нашёл — значит, логика не понимает что-то в записи билда
+// этот персонаж, — «Оставить». Не нашёл — значит, логика не понимает что-то в записи билда.
+// A priority token («ATK») is the stat the build wants; the piece takes its % kind where one exists (ATK%, DEF%, HP%): the
+// app never rates % below flat (owner rule), while flat ATK/HP on the hero's real base (with evolutions) counts half
 function reachability(ogc) {
   const { idx, makeCtx, evaluate, D } = ogc;
   const keys = new Set(D.substats.map((s) => s.key));
@@ -156,7 +158,7 @@ function reachability(ogc) {
       if (!setId) continue;
       const subs = {};
       for (const tok of b.subs.flat()) {
-        const key = keys.has(tok) ? tok : keys.has(tok + '%') ? tok + '%' : null;
+        const key = keys.has(tok + '%') ? tok + '%' : keys.has(tok) ? tok : null;
         if (key && Object.keys(subs).length < 4) subs[key] = 3;
       }
       if (Object.keys(subs).length < 3) continue;
@@ -270,13 +272,25 @@ function problems(D) {
     ...['Gnosis Domine', 'Iris'].filter(tmOf).map((n) => `${n} с tm`)];
   if (D.chars.length && tmBad.length) out.add(`EFF трансценда на всю команду (eff.tm): ${tmBad.join(', ')} — формат skills или buffs изменился?`);
   // SPD from transcend (spdUp, .x/0200-boss E4 Q6): Dianne, Mene, Liselotte, Viella reach the team (+5/+5/+10 at ★4–6), Claire
-  // only herself; the turn-1 reasons (turn, E4 Q1): Akari S1 boss ATK down, Veronica S1 taunt + S2 shield, Iota S1 priority down
+  // only herself; the turn-1 reasons (turn, E4 Q1): Akari S1 boss ATK down (from skill level 3, createRate 400, 400, 550 …: the
+  // «@3» in the anchor is `lv`, E4-7), Veronica S1 taunt + S2 shield on the ally with the lowest HP (shield1, E4-6), Iota S1
+  // priority down, Vlada S1 cooldown up (BT_COOL3_CHARGE); Ember has none — her S1 taunt needs a status her S3 gives (a
+  // conditional row doesn't count)
   const upOf = (n) => D.chars.find((c) => c.name === n)?.spdUp;
   const upBad = [...['Dianne', 'Mene', 'Liselotte', 'Viella'].filter((n) => !(upOf(n)?.tm === 1 && upOf(n)?.t?.[5] === 10)).map((n) => `${n} без командного +10 на ★6`),
     ...(upOf('Claire') && !upOf('Claire').tm ? [] : ['Claire не своя строка'])];
   if (D.chars.length && upBad.length) out.add(`SPD трансценда (spdUp): ${upBad.join(', ')} — формат progression.skill8 или skills изменился?`);
-  const turnOf = (n) => (D.chars.find((c) => c.name === n)?.turn ?? []).map((r) => `${r.s}:${r.k}`).join(',');
-  const turnBad = [['Akari', 's1:atk'], ['Veronica', 's1:taunt,s2:shield'], ['Iota', 's1:push'], ['Maxie', '']].filter(([n, want]) => turnOf(n) !== want)
+  // base stats with the evolution rewards (update.py flat_profile reads damage/characters `evolution`): Mene = 96 SPD from
+  // stats + 2+2+3+4 from evolutions 2–5 = 107 at Lv100 (in the game profile), DEF 510 + 244 = 754. Without the rewards
+  // (outerpedia took `evoRewards` out of progression.json once) 122 of 128 heroes drifted silently: 96 and 510 here
+  const mene = D.chars.find((c) => c.name === 'Mene');
+  if (mene && (mene.spd?.[0] !== 107 || mene.flat?.DEF?.[0] !== 754)) out.add(`база героя без наград эволюций (Mene SPD ${mene.spd?.[0]}, DEF ${mene.flat?.DEF?.[0]}) — формат damage/characters evolution изменился?`);
+  // a Core Fusion hero's own evolution list is empty: it takes the original's (flat_profile, like eff_profile). Core Fusion
+  // Eternal Lv100 ★6 in the game: SPD 199 = 64 from gear + 135 = stats 124 + the original's evolutions 5 + quirk 6
+  const cfEternal = D.chars.find((c) => c.name === 'Core Fusion Eternal');
+  if (cfEternal && cfEternal.spd?.[0] !== 129) out.add(`база Core Fusion без эволюций оригинала (Core Fusion Eternal SPD ${cfEternal.spd?.[0]}, ждём 129) — Core Fusion — эволюции оригинала: damage/characters evolution или originalCharacter изменился?`);
+  const turnOf = (n) => (D.chars.find((c) => c.name === n)?.turn ?? []).map((r) => `${r.s}:${r.k}${r.lv ? `@${r.lv}` : ''}`).join(',');
+  const turnBad = [['Akari', 's1:atk@3'], ['Veronica', 's1:taunt,s2:shield1'], ['Iota', 's1:push'], ['Demiurge Vlada', 's1:cool'], ['Ember', ''], ['Maxie', '']].filter(([n, want]) => turnOf(n) !== want)
     .map(([n, want]) => `${n} «${turnOf(n)}» вместо «${want}»`);
   if (D.chars.length && turnBad.length) out.add(`причины ходить раньше босса (turn): ${turnBad.join(', ')} — формат damage/characters или buffs изменился?`);
   const dCount = D.chars.filter((c) => c.eff?.d).length;
