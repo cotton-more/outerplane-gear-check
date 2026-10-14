@@ -69,6 +69,22 @@ export function gearRank(P: Profile, p: Piece): Fit {
   return r;
 }
 
+// Filler (HISTORY.md 0220): a weapon or accessory that is neither recommended nor a good stopgap, but whose main a build of
+// the hero asks for in that slot (`fit` 'stopgap' — so only at stage «Развитие», D5) — weak substats. Its rank stays 'no';
+// it passes the bar only while the hero's slot is empty (pool/info `eligibleIn`, verdict `heroOutcome`): any piece with a
+// suitable main beats nothing there, the main stat is most of a weapon's or accessory's value (owner 2026-10-14, D1–D7)
+const fillerMemo = new WeakMap<Profile, WeakMap<Piece, boolean>>();
+export function fillerOf(P: Profile, p: Piece): boolean {
+  if (isArmor(p.slot)) return false;
+  const m = memoOf(fillerMemo, P);
+  let r = m.get(p);
+  if (r === undefined) {
+    const input = pieceInput(p);
+    m.set(p, (r = gearRank(P, p) === 'no' && P.c.builds.some((b) => fit(P.ctx, P.c, b, input) === 'stopgap')));
+  }
+  return r;
+}
+
 export interface LayoutValue {
   v: number;            // ptsSum + setSum − critLoss
   ptsSum: number;
@@ -81,6 +97,7 @@ export interface LayoutValue {
   effHalves: number;    // половины сетов-эффектов
   rank: number;         // Σ рангов оружия и аксессуара; пустой слот — 0
   filled: number;
+  gearFilled: number;   // weapon and accessory slots that hold a piece: an empty one loses to any (filler, HISTORY.md 0220)
 }
 
 // вещей каждого сета брони в раскладке и сколько из них на T4
@@ -248,7 +265,7 @@ export function pointsIn(P: Profile, layout: Layout, p: Piece): number {
 
 export function layoutValue(P: Profile, layout: Layout): LayoutValue {
   const ptsBySlot: Partial<Record<SlotId, number>> = {};
-  let ptsSum = 0, rank = 0, filled = 0;
+  let ptsSum = 0, rank = 0, filled = 0, gearFilled = 0;
   for (const slot of ALL) {
     const p = layout[slot];
     if (!p) continue;
@@ -256,7 +273,7 @@ export function layoutValue(P: Profile, layout: Layout): LayoutValue {
     ptsBySlot[slot] = x;
     ptsSum += x;
     filled++;
-    if (!isArmor(slot)) rank += RANK[gearRank(P, p)];
+    if (!isArmor(slot)) { rank += RANK[gearRank(P, p)]; gearFilled++; }
   }
   const sets: SetValue[] = [];
   let setSum = 0, halves = 0, effHalves = 0;
@@ -274,15 +291,17 @@ export function layoutValue(P: Profile, layout: Layout): LayoutValue {
     chc = st.total;
     critLoss = lossOf(P, st.c0, st.segs);
   }
-  return { v: ptsSum + setSum - critLoss, ptsSum, setSum, critLoss, chc, ptsBySlot, sets, halves, effHalves, rank, filled };
+  return { v: ptsSum + setSum - critLoss, ptsSum, setSum, critLoss, chc, ptsBySlot, sets, halves, effHalves, rank, filled, gearFilled };
 }
 
-type Ranked = Pick<LayoutValue, 'rank' | 'v' | 'effHalves'>;
-// MODEL.md §3 item 3: a лучше z — выше ранг оружия или аксессуара; или при том же ранге V больше хотя бы на 1 очко (в тысячных);
+type Ranked = Pick<LayoutValue, 'rank' | 'v' | 'effHalves' | 'gearFilled'>;
+// MODEL.md §3 item 3: a лучше z — больше занятых слотов оружия и аксессуара (пустой хуже любой вещи, HISTORY.md 0220); выше
+// ранг оружия или аксессуара; или при том же ранге V больше хотя бы на 1 очко (в тысячных);
 // или при том же ранге включается половина сета-эффекта при не меньшем V
 // legendOverEpic (owner Q7, 2026-10-09): the layouts differ only by Legendary pieces taking the place of Epic ones — then
 // V not lower is enough, no +1: the Legendary's bigger main stat breaks the tie (see epicToLegend)
 export function better(a: Ranked, z: Ranked, legendOverEpic = false): boolean {
+  if (a.gearFilled !== z.gearFilled) return a.gearFilled > z.gearFilled;
   if (a.rank !== z.rank) return a.rank > z.rank;
   if (milli(a.v) - milli(z.v) >= (legendOverEpic ? 0 : THRESHOLD)) return true;
   return a.effHalves > z.effHalves && milli(a.v) >= milli(z.v);

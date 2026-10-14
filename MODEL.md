@@ -79,6 +79,11 @@ V). English keeps "pts" also for 1.
    - `stopgap` (0): any other piece (Epic, Legendary off the list or with another main) whose main some build of the
      hero asks for in that slot — only at `stage = 'grow'` — and whose substats pass `score:tempOk`: useful ≥ 3, or
      ≥ 2 (Epic) / ≥ 3 (Legendary) useful with ≥ 5 useful segments (`CFG.tempGood/tempGood2/tempYellow`).
+   - **filler** (rank stays `no`, `layout:fillerOf`; HISTORY.md 0220, owner 2026-10-14): a `fit` `stopgap` (suitable main,
+     stage «Развитие») that fails `tempOk`. It passes the bar **only while the hero's slot is empty** — nothing of his pool
+     may stand there (`pool/info:eligibleIn` with the pool; `verdict:heroOutcome` `filler`): an empty weapon/accessory slot
+     loses the whole main stat, so any piece with a suitable main beats it. It reads as a stopgap (`temp`, the Worn tab's
+     «временно»), is never fed and never a Breakthrough target. Weapons and accessories only — armor is untouched (D7).
    - `no` (0): the rest. A stopgap has the same rank as `no` — only `rec` outranks points (owner 2026-10-10: an Epic
      stopgap took an off-list Legendary with the same 2 useful substats and more points, by rank). `stopgap` still
      decides what is kept and fed (§4). Armor adds nothing to the layout's rank (`gearRank` for armor only says whether the set is in
@@ -126,6 +131,7 @@ armor, gloves, shoes.
    `armorOnly` skips the gear slots (tests only). The pinned preview (`worn/wearing:fillOf`) passes armor plus the current
    weapon and accessory as the only gear candidates, so armor CHC is valued with the hero's real C₀ (§12 item 4).
 3. **`better(a, z)`** — when layout `a` is worth switching to from `z` (used for "Equip", "Re-dress", trade steps):
+   0. more filled weapon/accessory slots (`gearFilled`): an empty one loses to any piece (HISTORY.md 0220, filler); or
    a. higher weapon/accessory rank (`Σ RANK`, empty slot = 0) — rank decides before points; or
    b. at equal rank, V higher by at least 1 point (`milli(a.v) − milli(z.v) ≥ THRESHOLD`); or
    c. at equal rank, an effect-set half turns on and V is not lower (`a.effHalves > z.effHalves`).
@@ -175,11 +181,12 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
    In a and b "points" are **points in the current layout** (§12.5): CHC substats counted where the hero's crit leaves
    them, the new piece and each held one as if it stood in its slot. The bar stays plain points.
    Weapons and accessories are never "keep" without wear.
-3. A hero's `temp` flag (`!bar.keep && bar.temp`) turns the stamp to **Stopgap** («Временно»).
+3. A hero's `temp` flag (`filler || (!bar.keep && bar.temp)`) turns the stamp to **Stopgap** («Временно»).
 
 **The piece's outcome** (`Result.kind`; the stamp is always about *the evaluated piece* — owner rule):
 1. **wear** if any hero has wear (sorted by dV, then margin; up to 3 named). Stamp Keep («Оставить») with an "Equip on X"
-   line, or Stopgap if the named hero's `temp` flag is set.
+   line, or Stopgap if the named hero's `temp` flag is set. **Feed beats a filler** (D4): when every wear is a filler and
+   there is material **now** (item 3a), the outcome is material — a Breakthrough step of a recommended piece is for good.
 2. **keep** if any hero has keep (sorted by margin). Stamp Keep («Оставить», "Set aside for X") or Stopgap.
 3. **material** — the piece *is* Breakthrough material, stamp Fodder («Фоддер»):
    a. **now** — `materialTargets`: the hero's pool pieces held by the pool, same kind below T4 (`sameForBt`: armor same
@@ -290,7 +297,8 @@ A hero is "By stats" until the player pins a set. `game/build/profile:Pin` = one
 set unpins at load). Pinned profile (`pinnedProfile`): the chain of the pinned build, halves only for the combo's parts,
 armor of other sets fails the bar (§4), best piece of each pinned-set slot is kept from the first one (§5.3), reserves
 only for the pinned sets. No pin → the hero is wanted by stats only: build-set pieces are kept only for a pinned set, and
-no weak stopgap goes into an empty slot (owner rule "pin = intent"). `worn/wearing:fillOf` gives "k of n" and "what to
+no weak stopgap goes into an empty **armor** slot (owner rule "pin = intent"); an empty weapon/accessory slot takes a filler
+(§1.6, HISTORY.md 0220). `worn/wearing:fillOf` gives "k of n" and "what to
 look for" for a combo; a pin is not moved by Core Fusion.
 
 ## §7 Trade ("Обмен вещами")

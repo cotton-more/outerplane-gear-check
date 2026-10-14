@@ -7,7 +7,7 @@ import type { ItemInput } from '@/game/item/item';
 import { pieceInput, type Piece, type Worn } from '@/features/gear/model/gear';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { poolInfo, pieceBar } from '@/features/gear/pool/info';
-import { piecePoints } from '@/features/gear/layout';
+import { fillerOf, piecePoints } from '@/features/gear/layout';
 import { milli } from '@/features/gear/model/vs';
 import { armorBar } from '@/features/eval/verdict/bar';
 import { scoreBuild } from '@/game/build/score';
@@ -26,8 +26,9 @@ interface World { ctx: Ctx; view: PoolView; v: (x: Piece) => Result | null; hero
 const pinFor = (name: string, short: string): string =>
   pinOptions(char(name)).find((o) => short.split('+').every((s) => o.combo.some((p) => idx.SET[p.set]?.short === s)))!.key;
 const pinned = (name: string, short: string): Profile => pinnedProfile(prof(name), pinOf(char(name), pinFor(name, short))!);
-function world(roster: string[], pools: Record<string, Piece[]> = {}, worn?: Record<string, string[]>, pins: Record<string, string> = {}): World {
-  const ctx = makeCtx(idx, { rosterOnly: true, stage: 'grow', lv120: false, quirks: true }, new Set(roster.map((n) => char(n).id)));
+function world(roster: string[], pools: Record<string, Piece[]> = {}, worn?: Record<string, string[]>, pins: Record<string, string> = {},
+  stage: 'grow' | 'end' = 'grow'): World {
+  const ctx = makeCtx(idx, { rosterOnly: true, stage, lv120: false, quirks: true }, new Set(roster.map((n) => char(n).id)));
   const st = { pieces: {} as Record<string, Piece>, pools: {} as Record<string, string[]>, worn: {} as Record<string, Worn>,
     pin: Object.fromEntries(Object.entries(pins).map(([n, short]) => [char(n).id, pinFor(n, short)])) };
   for (const [name, list] of Object.entries(pools)) {
@@ -83,7 +84,8 @@ describe('T5 вердикт новой вещи', () => {
     expect(r.quiet?.stats).toEqual(['ATK%', 'CHC']);
   });
 
-  it('T5.1б: в лучшей раскладке только надетые вещи и прошедшие порог', () => {
+  // + a filler (HISTORY.md 0220): a weapon/accessory below the bar stands only where nothing worn or passing can
+  it('T5.1б: в лучшей раскладке только надетые вещи, прошедшие порог и заполнители пустого слота', () => {
     const g = gen(51);
     for (const c of twenty().slice(0, 8)) {
       const P = prof(c);
@@ -91,7 +93,10 @@ describe('T5 вердикт новой вещи', () => {
         const pool = randPool(g, P, 3, true);
         const worn = new Set(pool.filter(() => g.rnd() < 0.3).map((p) => p.id));
         const info = poolInfo(P, pool, worn);
-        for (const p of Object.values(info.layout)) expect(worn.has(p.id) || pieceBar(P, p).pass).toBe(true);
+        const ok = (p: Piece) => worn.has(p.id) || pieceBar(P, p).pass;
+        for (const p of Object.values(info.layout)) {
+          expect(ok(p) || (fillerOf(P, p) && !pool.some((q) => q.slot === p.slot && ok(q)))).toBe(true);
+        }
       }
     }
   });
@@ -597,5 +602,59 @@ describe('a stopgap does not outrank points', () => {
     expect(piecePoints(P, steel)).toBeLessThan(piecePoints(P, hope));
     const h = w.v(steel)?.heroes.find((x) => x.c.name === 'Core Fusion Eternal');
     expect(h?.kind).not.toBe('wear');
+  });
+});
+
+// A filler (HISTORY.md 0220, owner 2026-10-14 D1–D7): a weapon or accessory whose main a build of the hero asks for in that
+// slot, below the bar (weak substats), goes into the hero's empty slot — «Временно — надень»; never into a filled slot, never
+// at stage «Эндгейм», never with a main no build asks; a Breakthrough feed of a recommended piece beats it. Fran's builds
+// ask an SPD accessory; Charlotte's list only 1040, so item 1017 is off her list
+describe('0220 filler: a weak weapon/accessory into an empty slot', () => {
+  const weak = (id: string, o: Partial<Piece> = {}) => mk(id, 'accessory', null, { DEF: 2, EFF: 3, HP: 2 }, 0, { grade: 'rare', main: 'SPD', ...o });
+  const good = () => mk('fg', 'accessory', null, { CHC: 2, RES: 2, 'HP%': 3 }, 0, { grade: 'rare', main: 'SPD' });
+
+  it('empty slot: «Надень» on Fran as a stopgap (temp, filler), even at 0 points; the piece itself fails the bar', () => {
+    const w = world(['Fran']);
+    const r = w.v(weak('f1'))!;
+    expect(kindOf(r)).toBe('wear');
+    const h = w.hero('Fran', r);
+    expect(h).toMatchObject({ kind: 'wear', filler: true, temp: true, slotEmpty: true });
+    expect(h.pts).toBe(0); // no useful substat: an empty slot still loses to it (layout better: gearFilled)
+    expect(pieceBar(prof('Fran'), weak('f1')).pass).toBe(false);
+  });
+
+  it('a Legendary off the list with a suitable main is a filler too; a main no build asks is not', () => {
+    const w = world(['Fran']);
+    expect(kindOf(w.v(weak('f1', { grade: 'unique', itemKey: null, lit: { DEF: 2, EFF: 2, HP: 2, RES: 1 }, yellow: { DEF: 2, EFF: 2, HP: 2, RES: 1 } })))).toBe('wear');
+    expect(w.hero('Fran', w.v(weak('f2', { main: 'HP%' }))!).kind).toBe('none');
+  });
+
+  it('slot filled (a worn stopgap, or a worn filler): the weak piece is not worn', () => {
+    expect(world(['Fran'], { Fran: [good()] }).hero('Fran', world(['Fran'], { Fran: [good()] }).v(weak('f1'))!).kind).toBe('none');
+    const w = world(['Fran'], { Fran: [weak('f0')] });
+    expect(w.hero('Fran', w.v(weak('f1'))!)).toMatchObject({ kind: 'none', filler: false });
+  });
+
+  it('a good stopgap replaces a worn filler by points; the filler then is «больше не нужна»', () => {
+    const w = world(['Fran'], { Fran: [weak('f0')] });
+    expect(w.hero('Fran', w.v(good())!)).toMatchObject({ kind: 'wear', filler: false });
+    const after = world(['Fran'], { Fran: [weak('f0'), good()] }, { Fran: ['fg'] });
+    expect(after.view.hero(char('Fran').id)!.info.unneeded.map((p) => p.id)).toEqual(['f0']);
+  });
+
+  it('stage «Эндгейм»: no filler (D5)', () => {
+    const w = world(['Fran'], {}, undefined, {}, 'end');
+    expect(w.hero('Fran', w.v(weak('f1'))!).kind).toBe('none');
+  });
+
+  it('feed beats a filler (D4): 1017 for Charlotte\'s empty slot, and a copy of Fran\'s worn recommended 1017 below T4', () => {
+    const franOwn = mk('fr', 'accessory', null, { CHC: 3, CHD: 2, 'ATK%': 2, EFF: 1 }, 0, { itemKey: '1017', main: 'SPD' });
+    const x = mk('x', 'accessory', null, { DEF: 2, EFF: 2, HP: 2, RES: 1 }, 0, { itemKey: '1017', main: 'SPD' });
+    const solo = world(['Charlotte']);
+    expect(solo.hero('Charlotte', solo.v(x)!)).toMatchObject({ kind: 'wear', filler: true });
+    const both = world(['Charlotte', 'Fran'], { Fran: [franOwn] });
+    const r = both.v(x)!;
+    expect(kindOf(r)).toBe('material now');
+    expect(r.now.map((t) => t.piece.id)).toEqual(['fr']);
   });
 });

@@ -11,7 +11,7 @@ import { sameForBt } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import { pieceInput, type Piece } from '@/features/gear/model/gear';
 import { milli, THRESHOLD } from '@/features/gear/model/vs';
-import { bestLayout, gearRank, piecePoints, pointsIn, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { bestLayout, fillerOf, gearRank, piecePoints, pointsIn, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { numOf } from './base';
 
 const ARMOR: ArmorSlot[] = ['helmet', 'armor', 'gloves', 'shoes'];
@@ -46,8 +46,13 @@ export function pieceBar(P: Profile, p: Piece): Bar {
   return r;
 }
 
-// кто может встать в раскладку (вопросы 10 и 11): надетое и прошедшее порог, в любом слоте
-export const eligibleIn = (P: Profile, wornIds: ReadonlySet<string>) => (p: Piece): boolean => wornIds.has(p.id) || pieceBar(P, p).pass;
+// who may stand in the hero's layout: worn, passing the bar, or a filler (layout `fillerOf`, HISTORY.md 0220) in a weapon or
+// accessory slot where nothing else of `pool` may stand — an empty slot takes any piece with a suitable main
+export function eligibleIn(P: Profile, wornIds: ReadonlySet<string>, pool: readonly Piece[]): (p: Piece) => boolean {
+  const base = (p: Piece) => wornIds.has(p.id) || pieceBar(P, p).pass;
+  const taken = new Set(pool.filter((p) => !isArmor(p.slot) && base(p)).map((p) => p.slot));
+  return (p) => base(p) || (!taken.has(p.slot) && fillerOf(P, p));
+}
 
 // части меню, которым нужен T4 (A11): Speed / Penetration / Bursting ×2 (строки 2P на T0–T3 нет), Immunity ×4
 const needsT4Part = (short: string, n: number): boolean =>
@@ -98,7 +103,7 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   const why = new Map<string, Why[]>();
   const add = (p: Piece, w: Why) => { const l = why.get(p.id) ?? []; if (!l.includes(w)) l.push(w); why.set(p.id, l); };
   const pass = (p: Piece) => pieceBar(P, p).pass;
-  const best = bestLayout(P, pool, { eligible: eligibleIn(P, wornIds) });
+  const best = bestLayout(P, pool, { eligible: eligibleIn(P, wornIds, pool) });
   const worn: Layout = {};
   for (const p of pool) if (wornIds.has(p.id)) { worn[p.slot] = p; add(p, 'worn'); }                     // 1
   for (const p of Object.values(best.layout)) add(p, 'layout');                                         // 2

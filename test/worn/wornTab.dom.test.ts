@@ -364,7 +364,7 @@ describe('worn budget', () => {
   for (const [label, piece] of [
     ['recommended', accessory('a2', { RES: 2, DEF: 1, 'DMG RED%': 1, HP: 1 }, { itemKey: '1017', bt: 4 })],
     ['stopgap', accessory('a178', { CHC: 2, RES: 2, 'HP%': 3 }, { grade: 'rare', bt: 0 })],
-    ['not in builds', accessory('a93', { DEF: 2, EFF: 3, HP: 2 }, { grade: 'rare', bt: 0 })],
+    ['not in builds', accessory('a93', { DEF: 2, EFF: 3, HP: 2 }, { grade: 'rare', bt: 0, main: 'HP%' })], // SPD would be a filler («stopgap»)
   ] as const) {
     it(`Passive: a worn accessory reads «${label}»`, async () => {
       await mount({ gear: gearOf([piece], fran.id), roster: [fran.id] }, { charId: fran.id });

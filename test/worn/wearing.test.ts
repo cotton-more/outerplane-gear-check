@@ -191,7 +191,7 @@ describe('«What to look for» with crit: the current weapon and accessory take 
     expect(f.need.map((x) => x.slot)).toEqual(['helmet', 'gloves', 'shoes']);
     // the old preview (armor alone) kept the Counterattack armor
     const Pc = pinnedProfile(hp.P, pin);
-    expect(bestLayout(Pc, pool, { eligible: eligibleIn(Pc, worn), armorOnly: true }).layout.armor?.id).toBe('e3');
+    expect(bestLayout(Pc, pool, { eligible: eligibleIn(Pc, worn, pool), armorOnly: true }).layout.armor?.id).toBe('e3');
   });
 });
 
@@ -314,12 +314,15 @@ describe('passive of the worn weapon and accessory', () => {
     return wornView(c2, c, st, poolView(c2, st).hero(c.id));
   };
 
-  it('accessory: recommended / stopgap / not in builds (Fran)', () => {
+  // a filler (HISTORY.md 0220: Fran's builds ask SPD, weak substats) reads «stopgap»; another main — not in builds
+  it('accessory: recommended / stopgap / filler / not in builds (Fran)', () => {
     const rec = mk('a2', 'accessory', null, { RES: 2, DEF: 1, 'DMG RED%': 1, HP: 1 }, 4, { itemKey: '1017', main: 'SPD' });
     const stop = mk('a178', 'accessory', null, { CHC: 2, RES: 2, 'HP%': 3 }, 0, { grade: 'rare', main: 'SPD' });
-    const none = mk('a93', 'accessory', null, { DEF: 2, EFF: 3, HP: 2 }, 0, { grade: 'rare', main: 'SPD' });
+    const filler = mk('a93', 'accessory', null, { DEF: 2, EFF: 3, HP: 2 }, 0, { grade: 'rare', main: 'SPD' });
+    const none = mk('a94', 'accessory', null, { DEF: 2, EFF: 3, HP: 2 }, 0, { grade: 'rare', main: 'HP%' });
     expect(viewOf(fran, [rec]).passive).toEqual([{ slot: 'accessory', fit: 'rec' }]);
     expect(viewOf(fran, [stop]).passive).toEqual([{ slot: 'accessory', fit: 'stopgap' }]);
+    expect(viewOf(fran, [filler]).passive).toEqual([{ slot: 'accessory', fit: 'stopgap' }]);
     expect(viewOf(fran, [none]).passive).toEqual([{ slot: 'accessory', fit: 'no' }]);
   });
 

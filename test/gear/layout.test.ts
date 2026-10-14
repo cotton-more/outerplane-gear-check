@@ -363,9 +363,9 @@ describe('ценность раскладки и лучшая раскладка
     expect(pieceBar(Pp, pG).pass).toBe(pieceBar(P, pG).pass);
     const pool = [aD, pG, pB, sH];
     const none = new Set<string>();
-    expect(bestLayout(P, pool, { eligible: eligibleIn(P, none) }).layout.helmet?.id).toBe('sH');
-    expect(bestLayout(Pp, pool, { eligible: eligibleIn(Pp, none) }).layout.helmet).toBeUndefined();
-    expect(bestLayout(Pp, pool, { eligible: eligibleIn(Pp, new Set(['sH'])) }).layout.helmet?.id).toBe('sH');
+    expect(bestLayout(P, pool, { eligible: eligibleIn(P, none, pool) }).layout.helmet?.id).toBe('sH');
+    expect(bestLayout(Pp, pool, { eligible: eligibleIn(Pp, none, pool) }).layout.helmet).toBeUndefined();
+    expect(bestLayout(Pp, pool, { eligible: eligibleIn(Pp, new Set(['sH']), pool) }).layout.helmet?.id).toBe('sH');
     // пул: не надетая чужая — «больше не нужна»; вердикт: чужой сет закреплённому не «Надень» и не «Оставь»
     expect(poolInfo(Pp, pool, none).unneeded.map((p) => p.id)).toEqual(['sH']);
     const bare = heroPool(ctx, anarky, [aD, pG, pB], none, key)!;
