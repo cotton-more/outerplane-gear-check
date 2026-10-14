@@ -9,7 +9,8 @@
    without entering anything: "Keep" and "Stopgap" almost never happen then. For
    narrow sets like Attack and Critical Strike this filters out about half the pieces; for Speed, Immunity and
    Swiftness almost everything is bright — enter those.
-4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third.
+4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third. Except a
+   weapon or accessory while a hero in your roster has that slot empty: enter all substats, it may go to them.
 5. **"T4"** next to the set or item — only if the piece is already at Breakthrough T4; a fresh drop is T0, leave it off.
    **"Fodder"** — this piece is the material: the verdict says which piece of a hero below T4 to feed it to now, or
    keeps it in reserve for a future strong one.
@@ -18,12 +19,15 @@
    step: "Fodder" says where to feed this one now, or keeps it in reserve — up to four per hero (exactly T0 → T4), at
    most eight of one kind for everyone.
 8. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
-   grey, no one needs that main — dismantle. They are stopgaps: no Breakthrough, spare copies go to dismantle.
-9. **Legendary:** the verdict shows which to upgrade; with weak substats — dismantle.
+   grey, no one needs that main — dismantle. They are stopgaps: no Breakthrough, spare copies go to dismantle. A weak one
+   still goes into a hero's empty slot of that kind if their builds ask for its main: "Stopgap — equip on X".
+9. **Legendary:** the verdict shows which to upgrade; with weak substats — dismantle, unless it fills an empty slot
+   ("Stopgap", as in 8).
 
 <img src="https://raw.githubusercontent.com/cotton-more/outerplane-gear-check/main/screenshots/en/5-early-junk.png" width="360" alt="Dismantle after just two substats">
 
-Two useless substats — the verdict comes right away, no need to enter the third.
+Two useless substats — the verdict comes right away, no need to enter the third (unless a hero's slot for that weapon or
+accessory is empty).
 
 Evaluation settings (Progression / Endgame, level and Quirks) are in More → Settings → Evaluation.
 

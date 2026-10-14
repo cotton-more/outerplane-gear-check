@@ -311,3 +311,20 @@ describe('a T4 piece as feed', () => {
     expect(plan.st.pieces.cH.bt).toBe(4);
   });
 });
+
+// A filler (HISTORY.md 0220): two weak SPD accessories for Fran's empty slot — the one with more points is worn, the slot is
+// then filled and the other is dismantled, in either entered order
+describe('0220 filler in a batch', () => {
+  const acc = (id: string, lit: Record<string, number>) => mk(id, 'accessory', null, lit, 0, { grade: 'rare', main: 'SPD' });
+  it('two fillers for one empty slot: the better one is worn, the other is junk', () => {
+    const { ctx, st } = world(['Fran']);
+    const a = acc('A1', { DEF: 2, EFF: 3, HP: 2 }), b = acc('B1', { CHC: 1, DEF: 2, HP: 2 });
+    const fates = (plan: Plan) => plan.lines.filter((l) => !l.off).map((l) => l.fate.kind).sort();
+    for (const order of [[a, b], [b, a]]) {
+      const plan = planBatch(ctx, st, order.map((p) => E(p)));
+      expect(fates(plan)).toEqual(['junk', 'wear']);
+      const worn = plan.lines.find((l) => l.fate.kind === 'wear')!;
+      expect(worn.input.subs).toEqual(b.lit); // CHC is on Fran's chain: B1 has points, A1 none
+    }
+  });
+});

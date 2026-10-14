@@ -15,7 +15,7 @@ import { sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
-import { better, bestLayout, epicToLegend, NEW_ID, piecePoints, pointsIn, type Layout, type LayoutValue } from './layout';
+import { better, bestLayout, epicToLegend, fillerOf, NEW_ID, piecePoints, pointsIn, type Layout, type LayoutValue } from './layout';
 import { coversSlot, eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
 
 // вещь с формы как запись: id NEW_ID — новее всех записанных
@@ -68,6 +68,7 @@ export interface HeroRes {
   dV: number;                    // V лучшей раскладки с ней − V нынешней
   margin: number;                // очки над лучшей держащейся вещью слота (порядок «Оставь», A10)
   slotEmpty: boolean;            // её слот пуст в нынешней раскладке
+  filler: boolean;               // passes only as a filler into that empty slot (layout fillerOf, HISTORY.md 0220)
   replaced: Piece | null;        // «Надень»: вещь её слота, которую она сменит
   rankUp: boolean;               // «Надень» по рангу: оружие или аксессуар из рекомендованных его билдам (MODEL.md §3 item 3)
   alsoWear: Piece[];             // D11: вещи пула, что встают вместе с ней (в нынешней раскладке их в этом слоте не было)
@@ -82,6 +83,10 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const { P, info, wornIds } = hp;
   const pool = hp.pieces.filter((p) => p.id !== x.id);
   const bar = pieceBar(P, x);
+  // a filler (HISTORY.md 0220): a weapon or accessory with a suitable main and weak substats passes only into a slot nothing
+  // else of the hero can fill — then it is a stopgap («Временно — надень…»)
+  const filler = !bar.pass && !info.layout[x.slot] && fillerOf(P, x);
+  const pass = bar.pass || filler;
   const px = piecePoints(P, x);
   // «Оставь» compares points in the current layout: CHC substats counted where the hero's crit leaves them (MODEL.md
   // §12 item 5, decision 3) — x and the held pieces each as if it stood in its slot; the bar stays plain points
@@ -89,13 +94,13 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const vx = val(x);
   const heldHere = pool.filter((p) => p.slot === x.slot && info.strong.has(p.id));
   const top = heldHere.length ? Math.max(...heldHere.map(val)) : 0;
-  const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds) });
+  const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds, [...pool, x]) });
   const uses = withBest.layout[x.slot]?.id === x.id;
   const own = btWorth(P, x) ? (info.reserve.get(reserveKey(x)) ?? []).map((id) => pool.find((p) => p.id === id))
     .filter((p): p is Piece => !!p && sameForBt(x, p)).slice(0, feedsLeft(x)) : [];
   const base: HeroRes = {
-    c: hp.c, kind: 'none', temp: !bar.keep && bar.temp, bar: bar.pass, pts: px, dV: withBest.value.v - info.value.v, margin: vx - top,
-    slotEmpty: !info.layout[x.slot], replaced: null, rankUp: withBest.value.rank > info.value.rank,
+    c: hp.c, kind: 'none', temp: filler || (!bar.keep && bar.temp), bar: pass, pts: px, dV: withBest.value.v - info.value.v, margin: vx - top,
+    slotEmpty: !info.layout[x.slot], filler, replaced: null, rankUp: withBest.value.rank > info.value.rank,
     alsoWear: Object.values(withBest.layout).filter((p) => p.id !== x.id && !wornIds.has(p.id) && info.layout[p.slot]?.id !== p.id),
     parts: partsDiff(info.value, withBest.value), needT4: null,
     reserveBt: own.map((piece) => ({ piece, of: null })),
@@ -103,9 +108,9 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   };
   // 1. «Надень» (вопросы 10, 11): прошла порог, встаёт в лучшую раскладку, и та лучше нынешней (MODEL.md §3 item 3)
   // Q7: a Legendary in place of the Epic of its slot needs no +1 — not worse by points is enough
-  if (bar.pass && uses && better(withBest.value, info.value, epicToLegend(info.layout, withBest.layout))) return { ...base, kind: 'wear', replaced: info.layout[x.slot] ?? null };
+  if (pass && uses && better(withBest.value, info.value, epicToLegend(info.layout, withBest.layout))) return { ...base, kind: 'wear', replaced: info.layout[x.slot] ?? null };
   // 2. «Оставь» — только броня, порог прошла
-  if (!bar.pass || !isArmor(x.slot)) return base;
+  if (!pass || !isArmor(x.slot)) return base;
   if (x.setId && P.pin && P.menuSets.has(x.setId)) {
     // а) a pinned set (owner 2026-10-08, (c): with no pin the hero is wanted by stats — every set goes by б): better by at least 1 point than the one held for the slot and set (a T4 piece — than the best at T4)
     const pair = heldHere.filter((p) => p.setId === x.setId && (x.bt !== 4 || p.bt === 4));
@@ -180,7 +185,8 @@ function quietOf(pools: HeroPool[], x: Piece, heroes: HeroRes[]): Quiet | null {
   for (const hp of pools) {
     const h = heroes.find((r) => r.c === hp.c)!;
     if (h.bar) continue;
-    const forced = bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || eligibleIn(hp.P, hp.wornIds)(p) });
+    const el = eligibleIn(hp.P, hp.wornIds, hp.pieces);
+    const forced = bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || el(p) });
     if (forced.layout[x.slot]?.id !== x.id) continue;
     const dV = forced.value.v - hp.info.value.v;
     if (!geq1(forced.value.v, hp.info.value.v) || (top && dV <= top.dV)) continue;
@@ -261,6 +267,18 @@ function feedFrom(hps: HeroPool[], x: Piece, h: HeroRes): HeroRes {
 // reserves of the piece's kind over all heroes — the ceiling CFG.reserveMax (owner, 2026-10-08)
 const reservesOf = (hps: HeroPool[], x: Piece): number => hps.reduce((n, hp) => n + (hp.info.reserve.get(reserveKey(x))?.length ?? 0), 0);
 
+// While substats are only partly entered there is no roster verdict, and the threshold verdict may call a weak weapon or
+// accessory junk early. A roster hero whose slot for it is empty would wear it as a filler whatever the rest rolls
+// (HISTORY.md 0220), so the early junk waits for every substat (screens/eval useVerdictModel)
+export function fillerWaits(ctx: Ctx, pools: Pools, input: ItemInput): boolean {
+  if (!ctx.scoped || input.unlisted || isArmor(input.slot)) return false;
+  return rosterChars(ctx).some((c) => {
+    if (!wearable(ctx, c, input)) return false;
+    const hp = pools(c.id);
+    return !!hp && !hp.info.layout[input.slot] && c.builds.some((b) => fit(ctx, c, b, input) !== 'no');
+  });
+}
+
 // Вердикт по ростеру; null — не считается: ростера нет («только мои» выключено или он пуст — по порогам, A21), введены
 // не все сабстаты (A20), предмета нет в данных outerpedia (его пассивки и рекомендаций не знаем — как прежде, по
 // thresholds). pools — the hero's pool (for Core Fusion X with X — the one that will be after the transition sheet). twin — the player said
@@ -277,13 +295,18 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: Verdic
   const heroes = hps.map((hp) => feedFrom(hps, x, heroOutcome(hp, x)));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>
     ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, same, ...more });
-  const wear = heroes.filter((h) => h.kind === 'wear').sort((a, z) => z.dV - a.dV || z.margin - a.margin);
-  if (wear.length) return res('wear', { named: wear.slice(0, 3) });
+  // a filler comes after every other wear (HISTORY.md 0220): its gain is the whole piece because the slot was empty, but
+  // it stays only until a better piece drops — the hero who wants this piece (rank, points) is named first, gets the stamp
+  // and the batch's «Надеть»
+  const wear = heroes.filter((h) => h.kind === 'wear').sort((a, z) => Number(a.filler) - Number(z.filler) || z.dV - a.dV || z.margin - a.margin);
+  const ptsOf = (t: Target) => piecePoints(hps.find((hp) => hp.c === t.c)!.P, t.piece);
+  const now = hps.flatMap((hp) => materialTargets(hp, x)).filter((n) => !opts.full?.has(n.piece.id)).sort((a, z) => ptsOf(z) - ptsOf(a));
+  // feed beats a filler (owner 2026-10-14, HISTORY.md 0220 D4): a Breakthrough step of a recommended piece is for good, a
+  // filler only until a better piece drops
+  if (wear.length && !(now.length && wear.every((h) => h.filler))) return res('wear', { named: wear.slice(0, 3) });
   const keep = heroes.filter((h) => h.kind === 'keep').sort((a, z) => z.margin - a.margin);
   if (keep.length) return res('keep', { sub: keep[0].sub, named: keep.slice(0, 3) });
   const quiet = quietOf(hps, x, heroes);
-  const ptsOf = (t: Target) => piecePoints(hps.find((hp) => hp.c === t.c)!.P, t.piece);
-  const now = hps.flatMap((hp) => materialTargets(hp, x)).filter((n) => !opts.full?.has(n.piece.id)).sort((a, z) => ptsOf(z) - ptsOf(a));
   if (now.length) return res('material', { sub: 'now', now, quiet });
   // a Legendary reserve no longer waits behind an Epic one (grade-aware reserveKey): В1а «пусть лежит» is gone
   // the hero who already has it set aside goes first: the title names them

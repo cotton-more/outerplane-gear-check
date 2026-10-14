@@ -14,7 +14,7 @@ import { setValue } from '@/game/set/setValue';
 import { statTotal } from '@/game/stat/total';
 import { effOf, effShown, type Eff, type EffCal, type EffShown } from '@/game/stat/eff';
 import { critNeed, effCal, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { better, bestLayout, epicToLegend, gearRank, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
+import { better, bestLayout, epicToLegend, fillerOf, gearRank, layoutValue, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { milli, namedGain, THRESHOLD, type Fit } from '@/features/gear/model/vs';
 import { eligibleIn } from '@/features/gear/pool/info';
 import { partsDiff, type HeroPool, type PartChange } from '@/features/gear/verdict';
@@ -111,7 +111,8 @@ export function wornView(ctx: Ctx, c: Char, st: GearStore, hp: HeroPool | null):
     build: P?.chain.name ?? '',
     alt: P ? altChains(ctx, c, P.chain, slots.map((s) => s.piece)) : [],
     bonuses: bonusRows(ctx.idx.SET, ARMOR.map((s) => worn[s]).filter((p): p is Piece => !!p)),
-    passive: P ? PASSIVE.filter((s) => worn[s]).map((slot) => ({ slot, fit: gearRank(P, worn[slot]!) })) : [],
+    // a worn filler (HISTORY.md 0220) reads «временно»: it stands in for a better piece, as a stopgap does
+    passive: P ? PASSIVE.filter((s) => worn[s]).map((slot) => ({ slot, fit: fillerOf(P, worn[slot]!) ? 'stopgap' as const : gearRank(P, worn[slot]!) })) : [],
     t4: P ? t4Of(ctx, P, worn) : [],
     redress: hp ? redressOf(hp, worn) : null,
     seek: hp ? seekOf(hp, worn) : [],
@@ -219,7 +220,7 @@ export function fillOf(hp: HeroPool, pin: Pin): Fill {
   const base = hp.P.pin ? withNeed(profileOf(hp.P.ctx, hp.c)!, hp.P.need) : hp.P;
   const Pc = pinnedProfile(base, pin);
   const gear = [hp.info.layout.weapon, hp.info.layout.accessory].filter((p): p is Piece => !!p);
-  const el = eligibleIn(Pc, hp.wornIds);
+  const el = eligibleIn(Pc, hp.wornIds, hp.pieces);
   const pool = [...hp.pieces.filter((p) => isArmor(p.slot)), ...gear];
   const { layout } = bestLayout(Pc, pool, { eligible: (p) => gear.includes(p) || el(p) });
   const counted = new Set<ArmorSlot>();

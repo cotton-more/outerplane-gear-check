@@ -589,7 +589,7 @@ export const en: Texts = {
       'Everything below 6★ and below Epic — dismantle right away.',
       'Go through the inventory by date received: consecutive drops usually come from one run, and the set stays from the previous piece.',
       '**Epic armor:** pick the slot and set and look at the grid. 0–1 bright stats on the piece — dismantle without entering anything: "Keep" and "Stopgap" almost never happen then. For Speed, Immunity and Swiftness almost everything is bright — enter those.',
-      'For Epic, the verdict appears after two useless substats — no need to enter the third.',
+      'For Epic, the verdict appears after two useless substats — no need to enter the third. Except a weapon or accessory while a hero in your roster has that slot empty: enter all substats, it may go to them.',
       '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
       '**Epic Breakthrough** — only Epic armor, and only with the same piece, any substats: an Epic of the same set and slot. One piece — one step; no need to save up four: "Fodder" says which piece to feed this one to now, or keeps it in reserve. Armor marked "Stopgap" can take Breakthrough too: T4 counts toward the set bonus. An Epic weapon or accessory is a stopgap — no Breakthrough, dismantle its copies. A weapon or accessory gets Breakthrough only when it is "Keep": a Legendary from the hero\'s builds with the right main stat.',
       '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: grey — no one needs it, dismantle.',
@@ -599,7 +599,7 @@ export const en: Texts = {
     ],
     helpVerdicts: [
       '**Keep** — worth wearing: equip it on the named hero or keep it for them. A Legendary no worse by points than the worn Epic of that slot is "Equip" too: its main stat is bigger. What to upgrade — in the "Upgrading" block in the details.',
-      '**Stopgap** — wear it until a good one drops: a weapon or accessory without the needed passive, or Epic armor with only one key stat.',
+      '**Stopgap** — wear it until a good one drops: a weapon or accessory without the needed passive, or Epic armor with only one key stat. Into an empty weapon or accessory slot even a weak roll goes as a stopgap, if the hero\'s builds ask for its main stat: an empty slot is worse than any piece.',
       '**Fodder** — this piece is the material: Breakthrough with it now, or keep it in reserve for a future strong one. A hero keeps up to 4 reserves of one kind, all heroes together at most 8 of one kind; the rest is "Dismantle" — lock the reserves in the game. A T4 piece nobody wears is material too: the target goes straight to T4. Legendary armor takes only Legendary material: keep a weak Legendary in reserve even when a good Epic of that set and slot is worn. Don\'t feed a Legendary you replaced to Breakthrough: evaluate it first — it may suit another hero.',
       "**Maybe** — your call: the details say what's in doubt (e.g. it's good for a character outside your roster).",
       '**Dismantle** — nobody needs it: everyone already has as good, or it\'s weak.',

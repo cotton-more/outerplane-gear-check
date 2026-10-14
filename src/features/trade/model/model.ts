@@ -43,7 +43,8 @@ export interface Part { set: string; n: number }
 // ценность сета в раскладке (MODEL.md §2): очки, включённые половины, из них — половины сета-эффекта
 export interface SetGain { v: Milli; halves: number; eff: number }
 // вещь для героя: очки (MODEL.md §1), ранг оружия и аксессуара (MODEL.md §3), годная ли (порог MODEL.md §4; надетое получателя годно всегда)
-export interface Worth { v: Milli; fit: Fit; ok: boolean }
+// filler — a weapon or accessory with a suitable main and weak substats (layout fillerOf, HISTORY.md 0220)
+export interface Worth { v: Milli; fit: Fit; ok: boolean; filler?: boolean }
 
 // Мерило героя — его заказ (MODEL.md §7 item 1): «По статам» (parts пустые, половины — у всех частей меню) или набор (половины —
 // только у его частей)

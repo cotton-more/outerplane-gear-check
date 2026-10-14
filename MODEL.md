@@ -79,6 +79,14 @@ V). English keeps "pts" also for 1.
    - `stopgap` (0): any other piece (Epic, Legendary off the list or with another main) whose main some build of the
      hero asks for in that slot — only at `stage = 'grow'` — and whose substats pass `score:tempOk`: useful ≥ 3, or
      ≥ 2 (Epic) / ≥ 3 (Legendary) useful with ≥ 5 useful segments (`CFG.tempGood/tempGood2/tempYellow`).
+   - **filler** (rank stays `no`, `layout:fillerOf`; HISTORY.md 0220, owner 2026-10-14): a `fit` `stopgap` (suitable main,
+     stage «Развитие») that fails `tempOk`. It passes the bar **only while the hero's slot is empty** — nothing of his pool
+     may stand there (`pool/info:eligibleIn` with the pool; `verdict:heroOutcome` `filler`): an empty weapon/accessory slot
+     loses the whole main stat, so any piece with a suitable main beats it. It reads as a stopgap (`temp`, the Worn tab's
+     «временно»), is never fed and never a Breakthrough target. Weapons and accessories only — armor is untouched (D7).
+     Its outcome doesn't depend on substats, so while they are only partly entered the threshold verdict's early
+     «Разобрать» waits for all of them when a roster hero's slot is empty (`verdict:fillerWaits`). Heroes with no gear
+     entered count as empty (D8); parked pieces don't fill a slot here (D9: the trade offers them).
    - `no` (0): the rest. A stopgap has the same rank as `no` — only `rec` outranks points (owner 2026-10-10: an Epic
      stopgap took an off-list Legendary with the same 2 useful substats and more points, by rank). `stopgap` still
      decides what is kept and fed (§4). Armor adds nothing to the layout's rank (`gearRank` for armor only says whether the set is in
@@ -126,6 +134,7 @@ armor, gloves, shoes.
    `armorOnly` skips the gear slots (tests only). The pinned preview (`worn/wearing:fillOf`) passes armor plus the current
    weapon and accessory as the only gear candidates, so armor CHC is valued with the hero's real C₀ (§12 item 4).
 3. **`better(a, z)`** — when layout `a` is worth switching to from `z` (used for "Equip", "Re-dress", trade steps):
+   0. more filled weapon/accessory slots (`gearFilled`): an empty one loses to any piece (HISTORY.md 0220, filler); or
    a. higher weapon/accessory rank (`Σ RANK`, empty slot = 0) — rank decides before points; or
    b. at equal rank, V higher by at least 1 point (`milli(a.v) − milli(z.v) ≥ THRESHOLD`); or
    c. at equal rank, an effect-set half turns on and V is not lower (`a.effHalves > z.effHalves`).
@@ -159,7 +168,8 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
   (`points:goodPoints`, compared in thousandths, exactly 6.000 passes). `temp` (Epic only, not `keep`) = a stat of the top-2
   places with ≥ 2 segments plus another fully credited one, ≥ 5 segments on the fully credited stats (`armorBar.tempOk`,
   `CFG.epicTempRoll/tempYellow`). A pinned hero (§6) fails for armor of sets outside the pinned combo.
-- **Weapon / accessory**: `keep` = rank `rec`, `temp` = rank `stopgap` (§1.6); points do not take part.
+- **Weapon / accessory**: `keep` = rank `rec`, `temp` = rank `stopgap` (§1.6); points do not take part. A **filler**
+  (§1.6) fails the bar but may still stand in an empty slot (`eligibleIn`) and pass for that hero (`heroOutcome` `filler`).
 - On the owner's roster only 19 of 263 worn pieces reach 6 points, so in practice the old rule does most of the work.
 
 **Outcomes per hero** (`heroOutcome`), in the order tried:
@@ -175,11 +185,13 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
    In a and b "points" are **points in the current layout** (§12.5): CHC substats counted where the hero's crit leaves
    them, the new piece and each held one as if it stood in its slot. The bar stays plain points.
    Weapons and accessories are never "keep" without wear.
-3. A hero's `temp` flag (`!bar.keep && bar.temp`) turns the stamp to **Stopgap** («Временно»).
+3. A hero's `temp` flag (`filler || (!bar.keep && bar.temp)`) turns the stamp to **Stopgap** («Временно»).
 
 **The piece's outcome** (`Result.kind`; the stamp is always about *the evaluated piece* — owner rule):
-1. **wear** if any hero has wear (sorted by dV, then margin; up to 3 named). Stamp Keep («Оставить») with an "Equip on X"
-   line, or Stopgap if the named hero's `temp` flag is set.
+1. **wear** if any hero has wear (fillers last, then by dV, then margin; up to 3 named — HISTORY.md 0220: the hero who
+   wants the piece is named, stamped and dressed by the batch before a hero whose slot is merely empty). Stamp Keep («Оставить») with an "Equip on X"
+   line, or Stopgap if the named hero's `temp` flag is set. **Feed beats a filler** (D4): when every wear is a filler and
+   there is material **now** (item 3a), the outcome is material — a Breakthrough step of a recommended piece is for good.
 2. **keep** if any hero has keep (sorted by margin). Stamp Keep («Оставить», "Set aside for X") or Stopgap.
 3. **material** — the piece *is* Breakthrough material, stamp Fodder («Фоддер»):
    a. **now** — `materialTargets`: the hero's pool pieces held by the pool, same kind below T4 (`sameForBt`: armor same
@@ -290,7 +302,8 @@ A hero is "By stats" until the player pins a set. `game/build/profile:Pin` = one
 set unpins at load). Pinned profile (`pinnedProfile`): the chain of the pinned build, halves only for the combo's parts,
 armor of other sets fails the bar (§4), best piece of each pinned-set slot is kept from the first one (§5.3), reserves
 only for the pinned sets. No pin → the hero is wanted by stats only: build-set pieces are kept only for a pinned set, and
-no weak stopgap goes into an empty slot (owner rule "pin = intent"). `worn/wearing:fillOf` gives "k of n" and "what to
+no weak stopgap goes into an empty **armor** slot (owner rule "pin = intent"); an empty weapon/accessory slot takes a filler
+(§1.6, HISTORY.md 0220). `worn/wearing:fillOf` gives "k of n" and "what to
 look for" for a combo; a pin is not moved by Core Fusion.
 
 ## §7 Trade ("Обмен вещами")
@@ -306,7 +319,8 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. **A parked
    piece** (§5, `World.parked`; HISTORY.md 0200-boss E2b Q3) is not held: it is a candidate for anyone at cost 2 (its own hero:
    cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
-   the usual rules apply. Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
+   the usual rules apply. The receiver's own **filler** (§1.6) likewise goes into his empty slot without the bar, as
+   Redress puts it there (HISTORY.md 0220). Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
    without Breakthrough) he already has at an equal or higher BT. **One extra condition, in the team trade only** (2–4
    members; owner, 2026-10-13, review 0203: "not an exception — an extra rule-condition of the team trade"): a **weapon or

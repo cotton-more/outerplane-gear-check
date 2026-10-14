@@ -108,7 +108,7 @@ describe('X1c: обмен из своего пула = лучшая раскла
         const w = worldOf(ctx, st, [hero]);
         const kit = bestKit(w.gauge(hero)!, candidates(w, { to: hero }));
         const P = withNeed(profileOf(ctx, ctx.idx.CHAR[hero])!, need);
-        const lay = bestLayout(P, pool, { eligible: eligibleIn(P, new Set(worn.map((p) => p.id))) }).value;
+        const lay = bestLayout(P, pool, { eligible: eligibleIn(P, new Set(worn.map((p) => p.id)), pool) }).value;
         checked++;
         if (lay.critLoss > 0) binding++;
         expect([kit.key.rank, kit.key.total / 1000], `случай ${i} N ${need}`).toEqual([lay.rank, expect.closeTo(lay.v, 2)]);

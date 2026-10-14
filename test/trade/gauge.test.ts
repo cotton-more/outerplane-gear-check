@@ -166,7 +166,7 @@ function compare(o: { st: GearStore; roster: readonly string[]; ctx: typeof ctx 
   const kit = bestKit(g, candidates(w, { to: id }));
   const worn = new Set(Object.values(o.st.worn?.[id] ?? {}));
   const own = pool ?? o.st.pools[id].map((x) => o.st.pieces[x]);
-  const lay = bestLayout(P, own, { eligible: eligibleIn(P, worn) }).value;
+  const lay = bestLayout(P, own, { eligible: eligibleIn(P, worn, own) }).value;
   if (kit.key.rank === lay.rank && Math.abs(kit.key.total / 1000 - lay.v) <= TOL) return null;
   return `${id}: обмен rank ${kit.key.rank} V ${kit.key.total / 1000}, раскладка rank ${lay.rank} V ${lay.v}`;
 }

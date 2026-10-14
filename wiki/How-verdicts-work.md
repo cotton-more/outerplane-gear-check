@@ -82,6 +82,11 @@ stars; not marked — the "Default level" in the settings (More → Settings →
 - **Stopgap:** an item without the needed passive (any Epic, a Legendary not in the builds, or "not in the list") with
   a main stat characters want in that slot, **and a good roll**: for an Epic — 3 useful, or 2 useful with 5+ segments;
   for a Legendary — 3 useful. Otherwise — "Dismantle". Keep the best 1–2 per needed main stat.
+- **An empty slot:** if a roster character has nothing in that slot (nothing worn, nothing usable in the Pool), a weak
+  roll will do — as long as the main stat is one their builds ask for: most of a weapon's or accessory's value is the
+  main stat at +10, and an empty slot gives nothing. The verdict is "Stopgap — equip", until something better drops. Once
+  the slot is taken, the next weak piece is "Dismantle" again. If the same piece can feed another character's
+  recommended item in Breakthrough, the verdict is fodder: Breakthrough comes first.
 - The **"Endgame"** stage in the settings turns stopgaps off: everything not recommended goes to dismantle. The
   exception is a brand-new Legendary "not in the list": until it's in the outerpedia data, it gets "Maybe".
 
