@@ -19,11 +19,12 @@ import { heroCodeIn } from '@/features/gear/store/heroCode';
 import { readGearCode } from '@/features/gear/store/gearStore';
 import { decodeBackup } from '@/features/roster/backup';
 import { FindPiece } from '@/screens/find/FindPiece';
+import { ParkedList } from '@/screens/parked/ParkedList';
 import { fitsData } from '@/features/eval/form/formState';
 import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
 import { replacedX } from '@/features/gear/model/fusion';
-import type { GearStore } from '@/features/gear/model/gear';
+import { parkedCount, type GearStore } from '@/features/gear/model/gear';
 import { gearBadges } from '@/features/gear/model/poolVs';
 import { poolView } from '@/features/gear/pool';
 import { useGear, type GearApi } from '@/features/gear/store/useGear';
@@ -120,6 +121,7 @@ export function App() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
+  const [parkedOpen, setParkedOpen] = useState(false);
   // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
   // или «Ещё» → «Обмен для команды», сразу в режиме «Команда»
   const [trade, setTrade] = useState<{ hero: string | null } | null>(null);
@@ -214,6 +216,10 @@ export function App() {
     if (lock?.grade && s.grade !== lock.grade) dispatch({ type: 'grade', grade: lock.grade });
   }, [lock?.grade, s.grade]); // eslint-disable-line react-hooks/exhaustive-deps
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
+  // «Припаркованные · N» in «Ещё» (.x/0204-parked-list): the last «Убрать» closes the sheet
+  const parkedN = useMemo(() => parkedCount(gear.store), [gear.store]);
+  useEffect(() => { if (parkedOpen && !parkedN) setParkedOpen(false); }, [parkedOpen, parkedN]); // «Вернуть» doesn't reopen it
+  const parkedShown = parkedOpen && canEquip && !tour.run;
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });
   // правка в карточке вещи снимает висящее «Вернуть» любого прежнего действия (В3: одно на все): откаты возвращают
@@ -299,7 +305,7 @@ export function App() {
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
         {batchToast && <Toast className="batch-toast" style={toastAt} text={batch.note!} action="" />}
         {moreOpen && (
-          <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
+          <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} parkedN={parkedN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
             rosterApi={ros.rosterUi} gear={gear} onBackup={ros.onBackup}
             lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} install={install} onAppUpdate={appUpdate}
             onClose={() => setMoreOpen(false)} onChars={() => onTab('chars')} onTeam={() => onTab('team')}
@@ -309,7 +315,8 @@ export function App() {
               dispatch({ type: 'selectChar', id: null });
               onTab('chars');
             }}
-            onCode={() => setCodeOpen(true)} onFind={tour.run ? undefined : () => setFindOpen(true)} onHelp={() => setHelpOpen(true)} onTour={onb.openTours}
+            onCode={() => setCodeOpen(true)} onFind={tour.run ? undefined : () => setFindOpen(true)}
+            onParked={canEquip && !tour.run ? () => setParkedOpen(true) : undefined} onHelp={() => setHelpOpen(true)} onTour={onb.openTours}
             onBatch={onBatch ? () => { onTab('eval'); onBatch(); } : undefined} />
         )}
         {batchOn && layout.narrow && batch.view && s.tab === 'eval' && (
@@ -336,6 +343,11 @@ export function App() {
         {findOpen && (
           <Sheet title={t.ui.findPiece} onClose={() => setFindOpen(false)}>
             <FindPiece ctx={ctx} store={gear.store} fits={(item) => fitsData(s, item, ctx.idx)} onOpenChar={(id) => { setFindOpen(false); openChar(id); }} />
+          </Sheet>
+        )}
+        {parkedShown && (
+          <Sheet title={t.ui.parkedTitle} onClose={() => setParkedOpen(false)}>
+            <ParkedList ctx={ctx} gear={gear} order={rosterList} onRemoved={(text, undo) => say({ text, note: '', tab: s.tab, undo })} />
           </Sheet>
         )}
         {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}

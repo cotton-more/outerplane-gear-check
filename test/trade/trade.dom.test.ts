@@ -403,6 +403,9 @@ describe('J. обмен вещами', () => {
       expect(st.worn[aer.id]).toBeUndefined();
       await click(byText('.ctabs button, .cd-tabs button, [role="tab"]', 'Pool'));
       expect(byText('.pool-row', 'parked')?.querySelector('.pool-why.park')?.textContent).toBe('Pparked');
+      // the piece card says the way out (.x/0204-parked-list)
+      await click(byText('.pool-row', 'parked'));
+      expect(byText('.piece p', 'Parked:')?.textContent).toBe('Parked: taken off in a trade, nobody could take it. The trade offers it first; it never goes to feed or dismantling. Not needed? Unlock it in the game and “Remove from Caren”.');
     });
 
     it('«Enter» on an empty slot opens the entry window for that slot; incomplete — «Save» does nothing; «Leave» and «undo»', async () => {

@@ -162,8 +162,9 @@ export function removeFrom(st: GearStore, charId: string, id: string): GearStore
 }
 // «Вернуть» после «Убрать»: запись и её место в пулах этих персонажей — обратно (кто уже снова её держит — не трогаем).
 // wornBy — на ком из них она была надета (isWorn до «Убрать»): снова надета в своём слоте, если слот за эти секунды не
-// заняли. Только это — не снимок worn целиком: он затёр бы выбор, сделанный после «Убрать»
-export function undoRemove(st: GearStore, piece: Piece, holders: readonly string[], wornBy: readonly string[] = []): GearStore {
+// заняли. Только это — не снимок worn целиком: он затёр бы выбор, сделанный после «Убрать». parkAt — the piece was parked
+// (its place in `park`, MODEL.md §5): parked again at that place, unless someone wears it by now (syncWorn drops it then)
+export function undoRemove(st: GearStore, piece: Piece, holders: readonly string[], wornBy: readonly string[] = [], parkAt = -1): GearStore {
   const pools = { ...st.pools };
   for (const c of holders) if (!pools[c]?.includes(piece.id)) pools[c] = [...(pools[c] ?? []), piece.id];
   const next: GearStore = { ...st, pieces: { ...st.pieces, [piece.id]: st.pieces[piece.id] ?? piece }, pools };
@@ -171,10 +172,16 @@ export function undoRemove(st: GearStore, piece: Piece, holders: readonly string
     if (!holders.includes(c) || next.worn?.[c]?.[piece.slot]) continue;
     next.worn = { ...next.worn, [c]: { ...next.worn?.[c], [piece.slot]: piece.id } };
   }
+  if (parkAt >= 0 && !st.park?.includes(piece.id)) {
+    const park = [...(st.park ?? [])];
+    park.splice(Math.min(parkAt, park.length), 0, piece.id);
+    next.park = park;
+  }
   return syncWorn(next);
 }
-// «Убрать у Caren» вместе с данными для «Вернуть» (снять до записи): надета ли она на ней
+// «Убрать у Caren» вместе с данными для «Вернуть» (снять до записи): надета ли она на ней, припаркована ли
 export function removeUndo(st: GearStore, charId: string, piece: Piece): (x: GearStore) => GearStore {
   const wornBy = isWorn(st, charId, piece) ? [charId] : [];
-  return (x) => undoRemove(x, piece, [charId], wornBy);
+  const parkAt = st.park?.indexOf(piece.id) ?? -1;
+  return (x) => undoRemove(x, piece, [charId], wornBy, parkAt);
 }
