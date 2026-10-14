@@ -1,5 +1,6 @@
-// Вкладка «Пул» карточки героя (stat-sets макет 6.0, решение 5): все вещи героя по слотам, справа — почему пул её держит
-// (TEXTS 28, одна причина по старшинству: надета › лучший {сет} на T4 › лучший {сет} › по статам › в запасе). Не держит —
+// Вкладка «Пул» карточки героя (stat-sets макет 6.0, решение 5): вещи героя по слотам, кроме надетых (их показывает «Надето»,
+// owner 2026-10-14), справа — почему пул её держит (TEXTS 28, одна причина по старшинству: лучший {сет} на T4 › лучший {сет}
+// › по статам › в запасе). Не держит —
 // «больше не нужна» и «Убрать у X» (MODEL.md §5 item 6, молча ничего не удаляется). A parked piece (MODEL.md §5, a trade
 // took it off and nobody can wear it yet) — «P припаркована» instead of a reason, never «больше не нужна». Нажатие — карточка
 // вещи. Внизу — «Оценить вещь для X» (режим «для героя»).
@@ -22,7 +23,7 @@ import { BtLabel, PieceName } from './pieceText';
 export const reasonText = (t: Texts, idx: Index, r: Reason): string =>
   (r.kind === 'best' ? t.fit.why.best(setName(idx, r.set)) : r.kind === 'bestT4' ? t.fit.why.bestT4(setName(idx, r.set)) : t.fit.why[r.kind]);
 
-// hp — пул героя по «статам + сетам»; у героя без билдов (null) причин нет
+// pieces — вещи героя без надетых; hp — пул героя по «статам + сетам»; у героя без билдов (null) причин нет
 export function PoolList({ c, pieces, hp, ctx, gear, onOpenPiece, onRemoved, onRateFor }: {
   c: Char; pieces: readonly Piece[]; hp: HeroPool | null; ctx: Ctx; gear: GearApi; onOpenPiece: (id: string) => void;
   onRemoved?: (text: string, note: string, undo: (st: GearStore) => GearStore) => void;
@@ -37,7 +38,8 @@ export function PoolList({ c, pieces, hp, ctx, gear, onOpenPiece, onRemoved, onR
   const list = SLOTS.flatMap(({ id }) => pieces.filter((p) => p.slot === id));
   return (
     <div className="pool" {...tour('pool')}>
-      <ul className="bgear-list">
+      {!list.length && <p className="cd-empty">{t.card.poolEmpty}</p>}
+      {list.length > 0 && <ul className="bgear-list">
         {list.map((p) => {
           const parked = !!gear.store.park?.includes(p.id);
           const r = hp && !parked ? reasonOf(hp.info, p) : null;
@@ -49,7 +51,7 @@ export function PoolList({ c, pieces, hp, ctx, gear, onOpenPiece, onRemoved, onR
                 <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
                 {parked
                   ? <span className="pool-why park"><span className="tpk" aria-hidden="true">P</span>{t.fit.parked}</span>
-                  : <span className={'pool-why' + (r?.kind === 'worn' ? ' worn' : '')}>{r ? reasonText(t, ctx.idx, r) : unused ? t.fit.unneeded : <BtLabel p={p} />}</span>}
+                  : <span className="pool-why">{r ? reasonText(t, ctx.idx, r) : unused ? t.fit.unneeded : <BtLabel p={p} />}</span>}
               </button>
               {unused && !gear.newer && (
                 <p className="pool-unused">
@@ -59,7 +61,7 @@ export function PoolList({ c, pieces, hp, ctx, gear, onOpenPiece, onRemoved, onR
             </li>
           );
         })}
-      </ul>
+      </ul>}
       {onRateFor && !gear.newer && <button type="button" className="btn pool-rate" onClick={onRateFor}>{t.tryon.rateFor(c.name)}</button>}
     </div>
   );

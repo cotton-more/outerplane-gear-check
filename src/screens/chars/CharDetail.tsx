@@ -68,7 +68,10 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
   // ушли с вкладки («← Оценка», #slug, «назад») — карточка вещи закрывается, а не висит поверх «Оценки»
   useEffect(() => { if (!active) { setPieceId(null); setSheet(null); } }, [active]);
   const hp = c ? view.hero(c.id) : null;
-  const pieces = c ? view.of(c.id)?.pieces ?? [] : [];
+  const cp = c ? view.of(c.id) : null;
+  const pieces = cp?.pieces ?? [];
+  // «Пул» without the worn pieces: the «Надето» tab shows them (owner 2026-10-14)
+  const spare = cp ? pieces.filter((p) => !cp.worn.has(p.id)) : [];
   const piece = pieceId ? gear.store.pieces[pieceId] : undefined;
   const shownPiece = active && !!piece && pieces.some((p) => p.id === pieceId);
   useEffect(() => { onPieceOpen?.(shownPiece); }, [shownPiece]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -209,7 +212,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
           {wv && (
             <div className="btabs" role="tablist" aria-label={t.card.tabs} {...tour('btabs')}>
               <button type="button" role="tab" aria-selected={shownTab === 'worn'} onClick={() => setTab('worn')}>{t.card.tabWorn}<span className="bt-n">{wv.count}/6</span></button>
-              <button type="button" role="tab" aria-selected={shownTab === 'pool'} onClick={() => setTab('pool')}>{t.card.tabPool}<span className="bt-n">{pieces.length}</span></button>
+              <button type="button" role="tab" aria-selected={shownTab === 'pool'} onClick={() => setTab('pool')}>{t.card.tabPool}<span className="bt-n">{spare.length}</span></button>
               <button type="button" role="tab" aria-selected={shownTab === 'builds'} onClick={() => setTab('builds')}>{t.card.tabBuilds}</button>
             </div>
           )}
@@ -222,7 +225,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
             <WornGear c={c} wv={wv} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onEnter={live ? enter : undefined} onWearAll={live ? wearEverything : undefined}
               onCrit={live ? () => setSheet('crit') : undefined} onEff={live ? () => setSheet('eff') : undefined} share={shareCode ? <ShareButton code={shareCode} /> : undefined} />
           )}
-          {shownTab === 'pool' && <PoolList c={c} pieces={pieces} hp={hp} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />}
+          {shownTab === 'pool' && <PoolList c={c} pieces={spare} hp={hp} ctx={ctx} gear={gear} onOpenPiece={setPieceId} onRemoved={onGearToast} onRateFor={rateFor} />}
           {shownTab === 'builds' && (
             <>
               {c.builds.length > 1 && (

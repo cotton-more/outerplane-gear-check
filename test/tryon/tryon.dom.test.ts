@@ -639,7 +639,7 @@ describe('«Надето»: режим героя — «Надеть» всег�
 
   it('«Примерить замену» надетой: «Заменить» убирает именно её, надета новая', async () => {
     await mount(onCard, JUNK_HELM, { gear: WORN });
-    await openSpeed();
+    await click(byText('.bgear-row', 'Speed Set')); // a worn piece is on «Надето», not in «Пул»
     await click(byText('.piece-act button', 'Try a replacement'));
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet");
 
