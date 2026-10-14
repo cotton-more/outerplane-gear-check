@@ -6,8 +6,8 @@
 
 Some skills only work while a status is on the hero or on the enemy: Veronica's S1 calls a Dual Attack only while her
 Defense is increased, Philia's S2 hits harder on a Shocked target. The «Team» screen shows which of these conditions
-nobody in your team covers, and who from your roster would. On top you can pick a boss: its RES and immunities at a
-stage, outerpedia's guide teams and a team of your own per boss.
+nobody in your team covers, and who from your roster would. Beside the team you can pick a boss: its RES and immunities
+at a stage, outerpedia's guide teams and the turn order against it — the team stays the same.
 
 ## How to open
 
@@ -15,8 +15,9 @@ The «Team» tab in the header; on a phone — «More» → «Team». Only heroe
 
 ## Picking the team
 
-- Four spots in a row. Tap «+» — a window with the roster list and a name search; tap a hero to put them there.
-- On a hero's spot: the portrait — put another hero there; the **stars** at the bottom — a window with
+- Four spots in a 2×2 square, the boss slot to the right behind «VS». Tap «+» — a window with the roster list and a name
+  search; tap a hero to put them there. The spots show no names — the turn order below has them.
+- On a hero's spot: the portrait — put another hero there; the **stars** on the portrait's foot — a window with
   six stars like the game's transcend, tap the N-th to set ★N; ✕ in the corner — empty the spot. A hero comes in with the
   stars from their card. In the window you can try more: the stars below the card's are locked, the report
   counts the higher ones, but only in this spot — nothing is saved. To change a hero's stars, go to their
@@ -37,19 +38,31 @@ The hero window (tap «+» or a portrait) starts with suggestions:
 
 ## Boss
 
-The row above the spots: «Boss: Meteos · 13 ▾», with the boss's SPD and RES next to it, each with its icon (the Speed set and RES). Tap it to open the boss window.
+The fifth slot, behind «VS» to the right of the team: the boss's portrait with the stage in gold on it, the name below (a
+long one wraps), the boss's SPD and RES with their icons (the Speed set and RES). An empty slot — a skull and «Boss ·
+pick». Tap the slot to open the boss window; **✕** on the slot's corner removes the boss.
+
+**One team for every boss.** Picking, changing or removing the boss never changes the heroes: build a team, pick a boss
+and see how it does; another boss — the same team against another. Change the heroes as usual, by hand or with «Fill
+from the guide».
+
+The boss window is a draft: browse bosses and stages in it, and nothing changes on «Team» until you press the gold
+**«Pick»** at the bottom. ✕ in the window or a tap outside cancels: the boss and stage stay as they were.
 
 - **The list of fights:** Special Request, Dimensional Singularity, Joint Challenge, Guild Raid (the main boss and its
-  subs under the raid's name). A fight running now is on top, with its end date. A name search. On the right — RES at
-  the top stage.
-- **Stage:** Special Request and Guild Raid — a number, Joint Challenge — the difficulty, Singularity — the rank in two
-  rows: the letter and the pluses. A new boss opens at its top stage; the stage you pick is remembered per boss.
-- **RES and SPD** of the boss at that stage. RES counts the Challenge tree in Quirks as open (the four «Reduced Boss
+  subs under the raid's name), each with its portrait. A fight running now is on top, with its end date. A name search.
+  On the right — RES at the top stage. Tap a fight to open its card (not a pick yet).
+- **The card:** the portrait in the colour of the boss's element, the name, the kind of fight (Guild Raid — the raid's
+  name and main or sub), «Other» — the list again.
+- **Stage** (the chosen one in gold): Special Request and Guild Raid — numbers, Joint Challenge — three difficulties,
+  Singularity — the rank: letters and the pluses «— | + | ++». A new boss opens at its top stage; the stage you pick is
+  remembered per boss.
+- **SPD and RES** of the boss at that stage — two numbers with the SPD and RES icons. RES counts the Challenge tree in Quirks as open (the four «Reduced Boss
   Resilience» nodes, −20 %), like outerpedia's guides: if yours are closed, the boss has more RES in your game (Meteos 13:
   360 instead of 288).
 - **Immune to:** «Crowd control» stands for taunt, freeze, stun, petrify, silence and golden curse together (nearly
   every boss has them; tap it for the list), then the rest: «Reduced Defense», «Buff Removal»…
-- **outerpedia guide ↗** — the guide's page. **Other boss** — the list again, **No boss** — clear it.
+- **outerpedia guide ↗** — the guide's page.
 
 ## Team from the guide
 
@@ -63,15 +76,23 @@ your roster), «3 of 4 owned» and who is missing. A team with nobody you own ca
 heroes — they fill two spots only.
 
 With a boss, a spot's window starts with **From the guide for this spot** — your heroes among the guide's alternatives
-for that spot; below, one line names the guide's heroes you don't have. Singularity guides have no teams — the window
-suggests as without a boss.
+for that spot; below, one line names the guide's heroes you don't have.
+
+A **singularity** guide team works differently: it is not four spots but a list of hero groups in order — three to eight
+(the «Fire», «Burned», «Mero» team…). «Fill from the guide» walks the groups and takes your first hero of each until it has
+four; in the team choice window each team shows its name, whom it would put and, faded, the first heroes of groups where
+you have nobody. Any spot's window starts with **From the guide** — all your heroes from this boss's teams.
 
 The guides' notes, tips and requirements (speed, effectiveness) are not copied into the app: they are in English only.
 
-## Turn vs the boss
+## Turn order
 
-With a boss, under the team — the block **"Turn vs the boss"**: a line on the left with a stopwatch, and the team and the
-boss in the order of the first turn, top to bottom. The boss is the red row in its place, with its SPD and RES.
+As soon as the team has heroes, under it — the block **"Turn order"**: a line on the left with a stopwatch, and the heroes
+in the order of the first turn by SPD, top to bottom. Without a boss that's all: SPD, and EFF for heroes who need it; tap a
+row for the SPD with the transcend bonus and «EFF from the game».
+
+With a boss the block is called **"Turn vs the boss"**: the boss is the red row with its portrait in its place, with its
+SPD and RES.
 
 - **Who moves first.** At battle start each fighter's turn gauge stands at SPD × 100 / the fastest SPD in the fight, plus
   a hidden random head start of up to 5 % (outerpedia's Stats guide). So a hero above the boss surely moves before it,
@@ -114,7 +135,7 @@ wear and their own spare (other heroes' spare is never taken; see [Trading gear]
 - **The build** under each hero's stars — what to gear them for: "stats" (the default, all stats and sets of their builds)
   or one of their builds' sets (the set icon and how many pieces: Speed ×4). Tap it to change. A hero with a
   [pinned set](Equipment#pin-a-set) has a gold outline and a pin: the pin is their build, changed on their card. The builds
-  are kept with the team on this device (one team per boss and one without a boss).
+  are kept with the team on this device (one team for every boss).
 - **"Pick gear"** — for two to four heroes with builds. With one, it opens the usual trade for that hero. A hero without
   builds on outerpedia stays out — one line under the button says so.
 - **The plan** opens in a window — the same walk with ticks as the one-hero trade (see [Trading gear](Trading-gear#the-plan-is-a-walk)):
@@ -164,7 +185,7 @@ Only heroes with something to say are listed.
 - Statuses only the hero herself can give (her own mechanic, like Beth's Retribution's Dominion): nothing for the team
   to change, so no line.
 
-The team is kept on this device — one per boss and one without a boss; the last boss and its stage too. It is not in
+The team is kept on this device — one for every boss; the last boss and each boss's stage too. It is not in
 the backup. Stars tried on a spot are not saved.
 
 The skill data comes from outerpedia's game tables and updates with the rest of the data.

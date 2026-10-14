@@ -3,12 +3,13 @@
 // hero's card and are changed only there (owner 2026-10-12): a spot can try higher ★ («what if» — counted in the report,
 // kept in the spot only, never saved), not lower than the card's; not set — the hero's minimum (game/hero/star).
 // Picking a hero and setting ★ — sheets, like the other pickers in the app (owner 2026-10-11).
-// A boss on top (.x/0200-boss stage C, owner Q2): the boss row → its sheet (stage, RES, immunities, guide); with a boss
+// A boss (.x/0200-boss stage C, owner Q2; .x/0206-boss-sheet — the fifth slot behind «VS» beside the team, 2×2): the boss slot
+// → its sheet (stage, RES, immunities, guide; picks on «Выбрать»), ✕ on the slot — no boss; with a boss
 // the guide's teams for the stage replace the general suggestions and «Собрать из гайда» fills the spots; Core Fusion X
-// stands in for X, which the guides list; a spot's guide heroes come from the teams matching the rest of the team. The team is
-// kept per boss and without one in 'ogc.boss' (owner D5; before — React state only, lost on reload).
-// With a boss, under the team — «Ход против босса» (.x/0200-boss E1, BossTurn): the members and the boss in the order of
-// the first turn (SPD the app knows, game/stat/spd), and each member's EFF vs its RES (stage D); a row's «Эфф из игры»
+// stands in for X, which the guides list; a spot's guide heroes come from the teams matching the rest of the team. One team
+// for every boss (0206 Q3: the boss is a lens and never changes the heroes), kept in 'ogc.boss' (owner D5).
+// Under the team — the turn plan (.x/0200-boss E1, BossTurn; 0206: always, without a boss «Порядок хода»): the members (and
+// the boss) in the order of the first turn (SPD the app knows, game/stat/spd), and each member's EFF vs its RES (stage D); a row's «Эфф из игры»
 // opens «Эфф для X» — the same sheet as the card's, the typed value is the hero's (GearStore.eff). EFF counts the spot's ★
 // (like the report) and what battle adds (the element quirk node, a teammate's transcend team row).
 // The team trade (.x/0200-boss E2, owner 2026-10-13): under each spot the hero's build (OrderPill; kept with the team in
@@ -28,9 +29,8 @@ import { TeamPicker } from '@/features/team/ui/TeamPicker';
 import { TeamReport } from '@/features/team/ui/TeamReport';
 import { TeamSlots } from '@/features/team/ui/TeamSlots';
 import { bossOf, factsAt, fillFrom, fitStage, ownOf, spotAlternatives, teamsAt, uniq, type Fill } from '@/features/boss/model/boss';
-import { NO_BOSS } from '@/features/boss/model/stored';
 import { useBossStore } from '@/features/boss/useBossStore';
-import { BossRow } from '@/features/boss/ui/BossRow';
+import { BossSlot } from '@/features/boss/ui/BossSlot';
 import { BossSheet } from '@/features/boss/ui/BossSheet';
 import { GuideChoice } from '@/features/boss/ui/GuideChoice';
 import { BossTurn, type TurnHero } from '@/features/boss/ui/BossTurn';
@@ -61,12 +61,11 @@ import { useTimed } from '@/shared/useTimed';
 
 const RANK = ['S', 'A', 'B', 'C', 'D', 'E'];
 const LACK = 4; // «нет в ростере» names at most this many heroes, then «и ещё N»
-const NONE: (string | null)[] = [null, null, null, null];
 const NO_ORDERS: Readonly<Record<string, string>> = {};
 // a spot: the hero and the ★ tried here (none — the card's)
 interface Spot { id: string; want?: number }
 // the message after «Собрать из гайда»; undo — the team before it (none — nothing changed)
-interface Filled { text: string; key: string; undo?: (string | null)[] }
+interface Filled { text: string; undo?: (string | null)[] }
 
 // canTrade — the trade is available (not during a tour, not on a newer page's gear); onHeroTrade — the one-hero trade for a
 // lone member (App's sheet); onApplied — «Сделал»'s message with «Вернуть» (App)
@@ -80,7 +79,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   const syn = idx.D.synergy;
   const B = idx.D.bosses;
   const [store, update] = useBossStore();
-  const [wants, setWants] = useState<Record<string, number>>({}); // «key|spot|hero» → ★ tried there (this session)
+  const [wants, setWants] = useState<Record<string, number>>({}); // «spot|hero» → ★ tried there (this session)
   const [picking, setPicking] = useState<number | null>(null); // spot whose hero list is open
   const [starring, setStarring] = useState<number | null>(null); // spot whose stars sheet is open
   const [bossAt, setBossAt] = useState<number | null>(null); // the boss sheet is open (when it was opened — «идёт сейчас»)
@@ -96,18 +95,17 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   const own = useMemo(() => ownOf(mineSet, idx.FUSED), [mineSet, idx]);
 
   const boss = B ? bossOf(B, store.boss) : null;
-  const key = boss?.key ?? NO_BOSS;
   const stage = B && boss ? fitStage(B, boss, store.stage[boss.key]) : 0;
   const facts = B && boss ? factsAt(B, boss, stage) : null;
   const guideTeams = boss ? teamsAt(boss, stage) : [];
-  // the stored team of this boss; a hero who left the roster (or became Core Fusion) leaves the spot empty
-  const ids = (store.teams[key] ?? NONE).map((id) => (id && mineSet.has(id) ? id : null));
-  // the builds kept with this team (E2): hero → comboSig; none — «По статам»; a pin is the hero's order (hard)
-  const orders = store.orders?.[key] ?? NO_ORDERS;
+  // the stored team; a hero who left the roster (or became Core Fusion) leaves the spot empty
+  const ids = store.team.map((id) => (id && mineSet.has(id) ? id : null));
+  // the builds kept with the team (E2): hero → comboSig; none — «По статам»; a pin is the hero's order (hard)
+  const orders = store.orders ?? NO_ORDERS;
   // the world of the team trade as it is now (the store, no goals): its candidates tell a member's SPD reach (E4 Q5); built
   // only with a boss — the timeline is the only reader
   const tradeWorld = useMemo(() => (boss ? worldOf(ctx, gear.store, roster, { orders }) : null), [boss, ctx, gear.store, roster, orders]);
-  const team: (Spot | null)[] = ids.map((id, i) => (id ? { id, want: wants[`${key}|${i}|${id}`] } : null));
+  const team: (Spot | null)[] = ids.map((id, i) => (id ? { id, want: wants[`${i}|${id}`] } : null));
 
   // the hero's ★ on the card; the spot's — the card's or the higher one tried here
   const cardStar = (id: string) => heroStar(idx.CHAR[id] ?? { rarity: null }, stars[id]);
@@ -135,24 +133,24 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   if (!syn) return <div className="panel tm"><p className="muted">{t.team.noData}</p></div>;
   if (!mine.length) return <div className="panel tm"><Notice text={t.team.empty} action={t.team.emptyGo} onAction={onChars} /></div>;
 
-  const saveTeam = (k: string, next: (string | null)[]) => update((s) => ({ ...s, teams: { ...s.teams, [k]: next } }));
+  const saveTeam = (next: (string | null)[]) => update((s) => ({ ...s, team: next }));
   // a spot gets another hero or none: the ★ tried there go (the next hero enters with the card's)
   const put = (i: number, id: string | null) => {
-    setWants((w) => Object.fromEntries(Object.entries(w).filter(([k]) => !k.startsWith(`${key}|${i}|`))));
-    saveTeam(key, ids.map((x, j) => (j === i ? id : x)));
+    setWants((w) => Object.fromEntries(Object.entries(w).filter(([k]) => !k.startsWith(`${i}|`))));
+    saveTeam(ids.map((x, j) => (j === i ? id : x)));
   };
   const fill = (f: Fill) => {
     setChoosing(false);
-    if (!f.have) { setFilled({ text: t.boss.noneOwned, key }); return; }
-    setFilled({ text: t.boss.filled(f.have, f.of), key, undo: ids });
-    saveTeam(key, f.team);
+    if (!f.have) { setFilled({ text: t.boss.noneOwned }); return; }
+    setFilled({ text: t.boss.filled(f.have, f.of), undo: ids });
+    saveTeam(f.team);
   };
   // several guide teams: a choice, unless nobody is owned in any of them (the same message as with one team)
   const onFill = () => {
     if (guideTeams.length === 1 || guideTeams.every((g) => !fillFrom(g, own).have)) fill(fillFrom(guideTeams[0], own));
     else setChoosing(true);
   };
-  const undoFill = () => { if (filled?.undo) saveTeam(filled.key, filled.undo); setFilled(null); };
+  const undoFill = () => { if (filled?.undo) saveTeam(filled.undo); setFilled(null); };
 
   // the turn timeline: every member with an SPD the app knows (worn pieces), in spot order; a member who needs EFF — EFF in
   // battle against this boss (the element quirk node, a teammate's transcend team row — game/stat/eff battleBonus, owner F1/F4)
@@ -170,17 +168,18 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
       ...Object.values(gear.store.worn ?? {}).flatMap((w) => Object.values(w ?? {}).filter((x): x is string => !!x))]);
     return spdReach(ctx, c, [...own].flatMap((id) => { const p = gear.store.pieces[id]; return p && wearable(ctx, c, p) ? [p] : []; }));
   };
-  const turnHeroes: TurnHero[] = facts && boss ? team.flatMap((m) => {
+  // without a boss (0206: the plan always shows) — no reasons, no reach; EFF in battle without the element's node
+  const turnHeroes: TurnHero[] = team.flatMap((m) => {
     const c = m && idx.CHAR[m.id];
     const spd = c && spdOf(ctx, c, wornOf(c.id));
     if (!m || !c || !spd) return [];
     const eff = effOfSpot(m);
     const bonus = spdBonus(c, starOf(m), mates);
-    const why = reasonsAt(c, facts.imm);
-    const most = why.length ? reachOf(c) + bonus : 0;
-    return [{ c, spd: spd.total + bonus, bonus, why, reach: why.length && !anyChance(most, facts.spd) ? most : null, eff,
-      v: eff ? inBattle(eff.e, eff.shown.v, battleBonus(c, starOf(m), ctx.settings.quirks, boss.element, mates)) : 0 }];
-  }) : [];
+    const why = facts ? reasonsAt(c, facts.imm) : [];
+    const most = facts && why.length ? reachOf(c) + bonus : 0;
+    return [{ c, spd: spd.total + bonus, bonus, why, reach: facts && why.length && !anyChance(most, facts.spd) ? most : null, eff,
+      v: eff ? inBattle(eff.e, eff.shown.v, battleBonus(c, starOf(m), ctx.settings.quirks, boss?.element ?? null, mates)) : 0 }];
+  });
   // the sheet takes the card's ★, not the spot's: the number the player types is the game's, at the hero's real stars
   const effOpen = effFor && turnHeroes.some((r) => r.eff && r.c.id === effFor) ? effView(ctx, idx.CHAR[effFor], gear.store) : null;
   const saveEff = (id: string, cal: Parameters<typeof setEff>[2]) => {
@@ -190,8 +189,8 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   };
 
   const setOrder = (id: string, o: string) => update((s) => {
-    const { [id]: _, ...rest } = s.orders?.[key] ?? {};
-    return { ...s, orders: { ...s.orders, [key]: o === STATS ? rest : { ...rest, [id]: o } } };
+    const { [id]: _, ...rest } = s.orders ?? {};
+    return { ...s, orders: o === STATS ? rest : { ...rest, [id]: o } };
   });
   const withBuilds = members.filter((m) => idx.CHAR[m.id]?.builds.length).map((m) => m.id);
   const noBuilds = members.filter((m) => !idx.CHAR[m.id]?.builds.length).map((m) => idx.CHAR[m.id]?.name ?? m.id);
@@ -224,8 +223,14 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
   const shown = team.map((m) => m && { id: m.id, star: starOf(m) });
   return (
     <div className="panel tm">
-      {B && <BossRow boss={boss} facts={facts} onOpen={() => setBossAt(Date.now())} />}
-      <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} below={canTrade ? pill : undefined} />
+      {/* the team 2×2, «VS», the boss slot (0206, owner Q4); no boss data in the snapshot — the team alone */}
+      <div className={B ? 'tm-fm' : 'tm-fm solo'}>
+        <TeamSlots team={shown} onPick={setPicking} onStars={setStarring} onRemove={(i) => put(i, null)} below={canTrade ? pill : undefined} />
+        {B && <>
+          <span className="tm-vs" aria-hidden="true"><b>VS</b></span>
+          <BossSlot boss={boss} facts={facts} onOpen={() => setBossAt(Date.now())} onRemove={() => update((s) => ({ ...s, boss: null }))} />
+        </>}
+      </div>
       {(guideTeams.length > 0 || (canTrade && withBuilds.length > 0)) && (
         <div className="tm-acts">
           {guideTeams.length > 0 && <button type="button" className="boss-fill" onClick={onFill}>{t.boss.fill}</button>}
@@ -236,26 +241,24 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
       {!members.length && !guideTeams.length && <p className="tm-hint muted">{t.team.hint}</p>}
       {/* a wide window: the team on the left, the turn timeline and the report on the right (one column on a phone) */}
       <div className="tm-side">
-        {facts && boss && <BossTurn heroes={turnHeroes} boss={boss} spd={facts.spd} res={facts.res} onEff={gear.newer ? () => undefined : setEffFor} />}
+        <BossTurn heroes={turnHeroes} boss={facts ? boss : null} spd={facts?.spd ?? 0} res={facts?.res ?? 0} onEff={gear.newer ? () => undefined : setEffFor} />
         <TeamReport syn={syn} report={report} starOf={(id) => members.find((m) => m.id === id)?.star ?? cardStar(id)} />
       </div>
       <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
         <Sheet title={t.team.pick} onClose={() => setPicking(null)} className="tm-sheet">
-          <TeamPicker syn={syn} fits={fits} guide={guide && { head: t.boss.fromGuide, ...guide }} rest={pickable}
+          <TeamPicker syn={syn} fits={fits} guide={guide && { head: guideTeams.some((g) => g.p) ? t.boss.fromGuidePool : t.boss.fromGuide, ...guide }} rest={pickable}
             emptyTeam={!members.some((m) => m.id !== team[picking]?.id)} search={t.team.search}
             onPick={(id) => { put(picking, id); setPicking(null); }} />
         </Sheet>
       )}
       {starring !== null && starred && (
         <StarSheet c={idx.CHAR[starred.id]} star={starOf(starred)} min={cardStar(starred.id)} onClose={() => setStarring(null)}
-          onStar={(n) => { setWants((w) => ({ ...w, [`${key}|${starring}|${starred.id}`]: n })); setStarring(null); }} />
+          onStar={(n) => { setWants((w) => ({ ...w, [`${starring}|${starred.id}`]: n })); setStarring(null); }} />
       )}
       {B && bossAt !== null && (
-        <BossSheet B={B} boss={boss} stage={stage} now={bossAt} onClose={() => setBossAt(null)}
-          onPick={(k) => update((s) => ({ ...s, boss: k }))}
-          onStage={(i) => boss && update((s) => ({ ...s, stage: { ...s.stage, [boss.key]: i } }))}
-          onClear={() => { update((s) => ({ ...s, boss: null })); setBossAt(null); }} />
+        <BossSheet B={B} boss={boss} stageOf={(b) => fitStage(B, b, store.stage[b.key])} now={bossAt} onClose={() => setBossAt(null)}
+          onPick={(k, i) => { update((s) => ({ ...s, boss: k, stage: { ...s.stage, [k]: i } })); setBossAt(null); }} />
       )}
       {effOpen && effFor && <EffSheet c={idx.CHAR[effFor]} eff={effOpen} onClose={() => setEffFor(null)} onSave={(cal) => saveEff(effFor, cal)} />}
       {orderC && (
@@ -267,7 +270,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
           onApplied={(text, undo) => onApplied?.(text, undo)} onClose={() => setTrading(false)} />
       )}
       {choosing && <GuideChoice teams={guideTeams} own={own} onPick={fill} onClose={() => setChoosing(false)} />}
-      {filled && filled.key === key && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
+      {filled && <Toast className="boss-toast" text={filled.text} action={t.ui.undoAction} onAction={filled.undo ? undoFill : undefined} />}
     </div>
   );
 }

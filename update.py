@@ -241,7 +241,7 @@ def load_sources(source: Path | None, ref: str) -> tuple[dict, dict]:
 
 # outerpedia's guides: recommended teams (teams.json) and titles (meta.json) — one folder per guide, no index file.
 # Rotating boss guides keep one folder per season under versions/: config.json names the fight's encounter groups,
-# guild raid teams are in main.json (with stat requirements) and subA/subB.json
+# guild raid teams are in main.json (with stat requirements) and subA/subB.json; singularity teams are in content.json
 GUIDES_DIR = "src/app/[lang]/guides/_contents"
 GUIDE_FILES = ("teams.json", "meta.json")
 SEASON_FILES = ("config.json", "main.json", "subA.json", "subB.json")
@@ -251,6 +251,8 @@ SEASON_MODES = ("guild-raid", "world-boss", "joint-challenge")
 def guide_file(rel: str) -> bool:
     """rel — a path under GUIDES_DIR: one of the files build_teams and build_bosses read."""
     name = rel.rsplit("/", 1)[-1]
+    if name == "content.json":  # singularity guides: the teams pool (.x/0208-ds-teams); other guides' content.json is texts
+        return rel.startswith("dimensional-singularity/") and rel.count("/") == 2
     return name in GUIDE_FILES or (name in SEASON_FILES and rel.split("/", 1)[0] in SEASON_MODES)
 
 
@@ -1618,6 +1620,8 @@ def build_teams(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
 # route maps without stats) and towers / story bosses are not listed
 BOSS_MODES = {"special-request": "sr", "guild-raid": "gr", "world-boss": "wb", "joint-challenge": "jc",
               "irregular-extermination": "ie", "dimensional-singularity": "ds"}
+# fights whose portraits are downloaded: the app hides world bosses and irregular extermination (.x/0200 D1)
+BOSS_IMAGE_MODES = ("sr", "ds", "jc", "gr")
 ADV_OF = {"atk": "atk", "def": "def", "hp": "hp", "speed": "spd"}
 # BT_REVERSE_HEAL_BASED_* has no glossary key; outerpedia's skill-view.ts shows it as "Fixed Damage" (tooltip 75)
 IMMUNE_FALLBACK = {"BT_REVERSE_HEAL_BASED_TARGET": "75", "BT_REVERSE_HEAL_BASED_CASTER": "75"}
@@ -1718,14 +1722,18 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
     """Boss fights of outerpedia's guides for the boss on «Команда» (.x/0200-boss stage B).
 
     {q: Challenge quirk ‰ on boss RES (−200 at the full tree), t: {table id: [[level, RES, SPD, stage label]…]} (RES raw;
-    identical tables shared), b: [{key, name, mode, element, class, table, imm, group?, live?, guide, teams?}]}.
+    identical tables shared), b: [{key, name, mode, element, class, icon, table, imm, group?, live?, guide, teams?}]}.
+    icon — the portrait of the fight's top-stage boss, monsters.json `icon` (image key `boss:<icon>`, see image_paths);
     imm — immunities by stage, runs over the rows of the fight's table: [[first row, ids]…], the first run starts at 0 and a
     new run only where the set changes (the row's boss monster changes it); ids — outerpedia glossary effect ids (`effects`;
     names for them are the app's own strings, not in the data), sorted; the stage's set is the last run whose first row ≤
     the stage's row;
     live — [start, battle end] of the latest season (world boss, guild raid, joint challenge); teams — the guide's teams
-    for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}]}] (guild raid
-    requirements as the guide writes them: "268", "518/259", "≤180"). Guide texts are not taken (no Russian, D4).
+    for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}], p?: 1, l?: label}]
+    (guild raid requirements as the guide writes them: "268", "518/259", "≤180"). A singularity guide's teams (content.json)
+    are pools: p: 1, s — 3–8 groups of heroes (alternatives inside a group, empty groups dropped; four groups make the
+    team), l — the team's name: {e: element}, {x: glossary effect id} or {h: hero id} (a character, or the first hero of the
+    first group for a title-only or unnamed team). Guide texts are not taken (no Russian, D4).
     None — the guide list was not fetched."""
     files = src.get("guides")
     if files is None:
@@ -1745,6 +1753,32 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
                     warn.add(f"боссы outerpedia: герой «{name}» ({where}) не найден в данных")
             if got:
                 out.append(got)
+        return out
+
+    def sing_teams(body, where: str) -> list[dict]:
+        """A singularity guide's content.json teams → pool teams (p: 1, l: label); fewer than two groups — skipped."""
+        deb, buf = (gl.get("effectByKey") or {}).get("debuff", {}), (gl.get("effectByKey") or {}).get("buff", {})
+        out = []
+        for t in (body or {}).get("teams") or []:
+            s = ids_of([g.get("characters") or [] for g in t.get("groups") or []], where)
+            if len(s) < 2:
+                continue
+            label = None
+            if t.get("element"):
+                label = {"e": str(t["element"])}
+            elif t.get("effect"):
+                bt = str(t["effect"])
+                x = deb.get(bt) or deb.get(re.sub(r"\d+", "", bt)) or buf.get(bt) or buf.get(re.sub(r"\d+", "", bt))
+                if x and str(x) in gl.get("effects", {}):
+                    label = {"x": str(x)}
+                else:
+                    warn.add(f"боссы outerpedia: эффект «{bt}» ({where}, команда) не найден в glossary — имя по герою")
+            elif t.get("character"):
+                if t["character"] in by_name:
+                    label = {"h": by_name[t["character"]]}
+            if label is None:
+                label = {"h": s[0][0]}
+            out.append({"s": s, "p": 1, "l": label})
         return out
 
     def group_dungeons(group: str) -> list[tuple[str, dict]]:
@@ -1801,7 +1835,7 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
             parts.append(("", group_dungeons(meta.get("group") or ""), teams))
         elif mode == "dimensional-singularity":
             dk = sing.get(meta.get("bossId") or "")
-            parts.append(("", [(dk, enc[dk])] if dk in enc else [], []))
+            parts.append(("", [(dk, enc[dk])] if dk in enc else [], sing_teams(files.get(gdir + "/content.json"), gdir)))
         elif mode == "guild-raid":
             ver, cfg = newest(gdir, "config.json", lambda x: bool(x.get("main")))
             vmain, main = newest(gdir, "main.json", lambda x: bool(x.get("teams")))
@@ -1863,9 +1897,13 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
                 "mode": BOSS_MODES[mode],
                 "element": top.get("element"),
                 "class": top.get("class"),
+                "icon": top.get("icon"),
                 "table": tid,
                 "imm": imm,
             }
+            if not fight["icon"]:
+                del fight["icon"]  # old snapshots lack it too
+                warn.add(f"боссы outerpedia: {fight['key']} — у босса нет icon в monsters.json, портрета не будет")
             if mode == "guild-raid":
                 fight["group"] = en((season or {}).get("title")) or re.sub(r"\s+Guild Raid Guide$", "", en(meta.get("title")))
             if season and season.get("start") and (season.get("battleEnd") or season.get("end")):
@@ -2025,7 +2063,18 @@ def image_paths(data: dict) -> dict[str, str]:
         paths[f"elem:{el}"] = f"/images/ui/elem/IG_Turn_Element_{el.capitalize()}.webp"
     for g, frame in (("rare", "Rare"), ("unique", "Unique")):
         paths[f"frame:{g}"] = f"/images/ui/bg/TI_Slot_{frame}.webp"
+    for b in (data.get("bosses") or {}).get("b", []):
+        if b["mode"] in BOSS_IMAGE_MODES and b.get("icon"):
+            paths[f"boss:{b['icon']}"] = f"/images/ui/boss/MT_{b['icon']}.webp"
     return paths
+
+
+def image_fallback(key: str) -> str | None:
+    """Another CDN path for a key whose own path has no image: a hero as a boss (guild raid subs) has no boss portrait,
+    only the hero's face icon (the monster icon is the character icon)."""
+    if key.startswith("boss:"):
+        return f"/images/characters/faceicon/FI_{key[len('boss:'):]}.webp"
+    return None
 
 
 def is_webp(blob: bytes) -> bool:
@@ -2048,13 +2097,13 @@ def migrate_old_cache(cache: Path) -> None:
     log(f"Кэш иконок перенесён из {OLD_CACHE_DIR.name}/ в {cache} ({moved} файлов)")
 
 
-def fetch_images(paths: dict[str, str], cache: Path, warn: Warnings, refresh: bool) -> dict[str, bytes]:
-    """Картинки по ключам. Кэш повторяет пути CDN: <cache>/images/equipment/X.webp."""
+def fetch_images(paths: dict[str, str], cache: Path, warn: Warnings, refresh: bool) -> dict[str, tuple[str, bytes]]:
+    """Картинки по ключам: {key: (путь, байты)}. Кэш повторяет пути CDN: <cache>/images/equipment/X.webp.
+    No image at the key's own path — image_fallback(key) is tried; the returned path is the one the image was found at."""
     cache.mkdir(parents=True, exist_ok=True)
     max_age = 30 * 24 * 3600  # иконки на CDN иногда обновляют — раз в месяц перекачиваем
 
-    def fetch(item: tuple[str, str]) -> tuple[str, bytes | None]:
-        key, path = item
+    def fetch(path: str) -> bytes | None:
         file = cache / path.strip("/")
         blob = b""
         if file.exists() and not refresh and time.time() - file.stat().st_mtime < max_age:
@@ -2073,17 +2122,28 @@ def fetch_images(paths: dict[str, str], cache: Path, warn: Warnings, refresh: bo
             elif file.exists() and is_webp(file.read_bytes()):
                 blob = file.read_bytes()  # CDN недоступен — берём старую копию
             else:
-                return key, None
-        return key, blob
+                return None
+        return blob
 
-    out: dict[str, bytes] = {}
-    missing = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
-        for key, blob in pool.map(fetch, paths.items()):
-            if blob:
-                out[key] = blob
-            else:
-                missing.append(key)
+    def fetch_all(wanted: set[str]) -> dict[str, bytes | None]:
+        # each path is fetched once: two keys with the same path would write the same <file>.tmp at the same time
+        ordered = sorted(wanted)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
+            return dict(zip(ordered, pool.map(fetch, ordered)))
+
+    got = fetch_all(set(paths.values()))
+    out: dict[str, tuple[str, bytes]] = {}
+    retry: dict[str, str] = {}  # key → its fallback path
+    for key, path in paths.items():
+        if got[path]:
+            out[key] = (path, got[path])
+        elif (alt := image_fallback(key)) is not None:
+            retry[key] = alt
+    alt_got = fetch_all(set(retry.values())) if retry else {}
+    for key, alt in retry.items():
+        if alt_got[alt]:
+            out[key] = (alt, alt_got[alt])
+    missing = [k for k in paths if k not in out]
     if missing:
         warn.add(f"Не скачались картинки ({len(missing)}): {', '.join(missing[:8])}{'…' if len(missing) > 8 else ''}")
     return out
@@ -2092,12 +2152,12 @@ def fetch_images(paths: dict[str, str], cache: Path, warn: Warnings, refresh: bo
 def collect_images(data: dict, embed: bool, warn: Warnings, refresh: bool = False) -> dict[str, str]:
     """Одиночная страница: картинки встраиваются как data URI (или ссылками на CDN при --no-embed)."""
     paths = image_paths(data)
-    if not embed:
+    if not embed:  # plain links: the fallback (image_fallback) can't be chosen without fetching, so own paths only
         return {k: IMG_BASE + p for k, p in paths.items()}
     cache = default_cache_dir()
     migrate_old_cache(cache)
     blobs = fetch_images(paths, cache, warn, refresh)
-    return {k: "data:image/webp;base64," + base64.b64encode(b).decode("ascii") for k, b in blobs.items()}
+    return {k: "data:image/webp;base64," + base64.b64encode(b).decode("ascii") for k, (_, b) in blobs.items()}
 
 
 # --------------------------------------------------------------------------- PWA
@@ -2189,9 +2249,9 @@ def build_pwa(site: Path, data: dict, fragment_for, warn: Warnings, refresh: boo
     blobs = fetch_images(paths, img_dir, warn, refresh)
     keep = set()
     data["img"] = {}
-    for key, path in paths.items():
+    for key in paths:
         if key in blobs:
-            rel = "img/" + path.strip("/")
+            rel = "img/" + blobs[key][0].strip("/")  # the path it was found at (may be the fallback)
             data["img"][key] = rel
             keep.add((site / rel).resolve())
     for f in img_dir.rglob("*"):

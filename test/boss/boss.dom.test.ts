@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-// A boss on «Команда» (.x/0200-boss stage C): the row and its sheet, stages, «Собрать из гайда» with «Вернуть», a team per
-// boss in 'ogc.boss', the guide's heroes in a spot's sheet, several guide teams; old data without bosses — no row.
+// A boss on «Команда» (.x/0200-boss stage C; .x/0206-boss-sheet): the boss slot behind «VS» and its sheet (a draft: the boss and
+// stage are written on «Pick», ✕ / outside / Esc cancel), stages, «Собрать из гайда» with «Вернуть», one team for every boss
+// in 'ogc.boss' (v2), the guide's heroes in a spot's sheet, several guide teams, the turn plan with and without a boss;
+// old data without bosses — no slot.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';
@@ -62,51 +64,108 @@ const click = async (el: HTMLElement | null | undefined) => {
   await act(async () => el.click());
 };
 const byText = (sel: string, text: string) => $$(sel).find((b) => b.textContent?.includes(text));
-const row = () => $('#view-team .boss-row');
-const names = () => $$('#view-team .tm-team > *').map((s) => s.querySelector('.tm-n')?.textContent ?? '+');
+// the boss slot: «Boss · pick» when empty, else the div with the sheet's button and ✕
+const slot = () => $('#view-team .boss-slot');
+const slotBtn = () => $('#view-team .boss-slot.empty, #view-team .boss-sb');
+const slotText = () => slot()!.textContent;
+// the spots read the hero from the portrait button's label (no name is printed); an empty spot — «+»
+const names = () => $$('#view-team .tm-team > *').map((s) => s.querySelector('.tm-slot')?.getAttribute('aria-label')?.replace('Put another hero instead of ', '') ?? '+');
 const stored = () => JSON.parse(localStorage.getItem('ogc.boss')!);
-const pickBoss = async (name: string) => {
-  await click(row());
-  if (!$('.boss-sheet .boss-list')) await click(byText('.boss-sheet .linkbtn', 'Other boss'));
+// open the sheet, find the boss in the list (a card is shown for the current boss: «Other» first) and open its card
+const openCard = async (name: string) => {
+  await click(slotBtn());
+  if (!$('.boss-sheet .boss-list')) await click($('.boss-sheet .boss-co'));
   await click(byText('.boss-sheet .boss-li', name));
 };
+// …and «Pick» writes it and closes the sheet
+const pickBoss = async (name: string) => {
+  await openCard(name);
+  await click($('.boss-sheet .boss-go'));
+};
 const closeSheet = () => click($('.drawer .drawer-x'));
+const pressed = () => $$('.boss-sheet .boss-chips [aria-pressed="true"], .boss-sheet .boss-seg [aria-pressed="true"]').map((b) => b.textContent);
 
 describe('a boss on «Команда»', () => {
-  it('old data without bosses: no row, no «Fill», the team works as before', async () => {
+  it('old data without bosses: no slot, no «VS», no «Fill», the four spots work as before', async () => {
     await mount({ bosses: false });
-    expect(row()).toBeNull();
+    expect(slot()).toBeNull();
+    expect($('#view-team .tm-vs')).toBeNull();
+    expect($('#view-team .tm-fm.solo .tm-team')).not.toBeNull();
     expect($('#view-team .boss-fill')).toBeNull();
     expect($$('#view-team .tm-add')).toHaveLength(4);
   });
 
-  it('the row → the list (no world boss) → Meteos at its top stage; another stage; the stage is kept per boss', async () => {
+  it('the slot → the list (no world boss) → a card, nothing picked yet → «Pick»: Meteos at its top stage; another stage; the stage is kept per boss', async () => {
     await mount();
-    expect(row()!.textContent).toBe('Boss:none▾');
-    await click(row());
-    expect($$('.boss-sheet .tm-ph').map((p) => p.textContent)).toEqual(['Special Request', 'Dimensional Singularity', 'Joint Challenge', 'Guild Raid']);
+    expect($('#view-team .tm-vs')?.textContent).toBe('VS');
+    expect($('#view-team .tm-fm > .tm-team')).not.toBeNull();
+    expect(slot()!.classList.contains('empty')).toBe(true);
+    expect(slotText()).toBe('Bosspick');
+    await click(slotBtn());
+    expect($$('.boss-sheet .boss-gh').map((p) => p.textContent)).toEqual(['Special Request', 'Dimensional Singularity', 'Joint Challenge', 'Guild Raid']);
     expect(byText('.boss-sheet .boss-li', 'Venion')).toBeUndefined();
     expect(byText('.boss-sheet .boss-li', 'Irregular Queen')).toBeUndefined();
-    await click(byText('.boss-sheet .boss-li', 'Blazing Knight Meteos'));
-    // the sheet shows the boss: stage 13, RES 288, SPD 109, immunities with «Crowd control»
-    expect($('.boss-sheet .boss-chip[aria-pressed="true"]')?.textContent).toBe('13');
-    expect($$('.boss-sheet .boss-facts b').map((b) => b.textContent)).toEqual(['288', '109']);
+    await click(byText('.boss-sheet .boss-li', 'Blazing Knight Meteos')); // a row opens the card, it does not pick
+    expect($('.boss-sheet .boss-list')).toBeNull();
+    expect($('#view-team .boss-slot')!.classList.contains('empty')).toBe(true);
+    // the card shows the boss: stage 13, SPD 109, RES 288, immunities with «Crowd control»
+    expect(pressed()).toEqual(['13']);
+    expect($$('.boss-sheet .boss-facts b').map((b) => b.textContent)).toEqual(['109', '288']);
     expect($$('.boss-sheet .boss-imm button, .boss-sheet .boss-i').map((b) => b.textContent)).toEqual(['Crowd control ▸', 'Reduced Defense', 'Priority Decrease']);
     await click($('.boss-sheet .boss-cc'));
     expect($$('.boss-sheet .boss-i.cc').map((b) => b.textContent)).toEqual(['Taunted', 'Frozen', 'Stunned', 'Petrified', 'Silenced', 'Golden Curse']);
     expect($('.boss-sheet .boss-guide')?.getAttribute('href')).toBe('https://outerpedia.com/guides/special-request/meteos');
-    await click(byText('.boss-sheet .boss-chip', '11'));
-    await closeSheet();
-    expect(row()!.textContent).toBe('Boss:Blazing Knight Meteos· 11SPD 102RES 256▾'); // E4: SPD and RES with icons, the words for screen readers
+    await click(byText('.boss-sheet .boss-chips button', '11'));
+    expect(localStorage.getItem('ogc.boss')).toBeNull(); // still a draft
+    await click($('.boss-sheet .boss-go'));
+    expect($('.boss-sheet')).toBeNull();
+    expect(slot()!.tagName).toBe('DIV');
+    expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toBe('Boss: Blazing Knight Meteos, stage 11 — change');
+    expect(slotText()).toContain('11');
+    expect(slotText()).toContain('Blazing Knight Meteos');
+    expect($$('#view-team .boss-sv > span').map((x) => x.textContent!.replace(/\s/g, ''))).toEqual(['102', '256']); // SPD, RES: icons, no words
+    expect(stored()).toMatchObject({ v: 2, boss: 'sr:meteos', stage: { 'sr:meteos': 10 } });
     // another boss opens at its top stage; back to Meteos — stage 11 again
-    await pickBoss('Annihilator');
-    expect($('.boss-sheet .boss-chip[aria-pressed="true"]')?.textContent).toBe('Very Hard');
-    await closeSheet();
-    expect(row()!.textContent).toContain('Annihilator· Very HardSPD 250RES 54');
+    await openCard('Annihilator');
+    expect(pressed()).toEqual(['Very Hard']);
+    await click($('.boss-sheet .boss-go'));
+    expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toBe('Boss: Annihilator, stage Very Hard — change');
+    expect(slotText()).toContain('V. Hard'); // the joint challenge's short stage on the slot
+    expect($$('#view-team .boss-sv > span').map((x) => x.textContent!.replace(/\s/g, ''))).toEqual(['250', '54']);
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
-    expect(row()!.textContent).toContain('· 11SPD 102RES 256');
-    expect(stored()).toMatchObject({ boss: 'sr:meteos', stage: { 'sr:meteos': 10 } }); // an untouched boss stores no stage: the top one
+    expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toBe('Boss: Blazing Knight Meteos, stage 11 — change');
+    expect(stored()).toMatchObject({ boss: 'sr:meteos', stage: { 'sr:meteos': 10 } });
+  });
+
+  // the sheet is a draft (.x/0206 Q2): ✕, a tap outside and Esc leave the boss and the stage as they were
+  it('the draft: ✕, a tap outside and Esc after changing the stage or the boss store nothing', async () => {
+    await mount();
+    await click(slotBtn());
+    await click(byText('.boss-sheet .boss-li', 'Blazing Knight Meteos'));
+    await click(byText('.boss-sheet .boss-chips button', '11'));
+    await closeSheet(); // no boss before → still none
+    expect($('.boss-sheet')).toBeNull();
+    expect(slot()!.classList.contains('empty')).toBe(true);
+    expect(localStorage.getItem('ogc.boss')).toBeNull();
+    await pickBoss('Blazing Knight Meteos'); // top stage, 13
+    const before = localStorage.getItem('ogc.boss');
+    expect(stored()).toMatchObject({ boss: 'sr:meteos', stage: { 'sr:meteos': 12 } });
+    // a stage and another boss tried in the sheet, then cancelled three ways
+    const cancels = [closeSheet, () => click($('.drawer-back')), () => act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); })];
+    for (const cancel of cancels) {
+      await click(slotBtn());
+      await click(byText('.boss-sheet .boss-chips button', '9'));
+      await click($('.boss-sheet .boss-co'));
+      await click(byText('.boss-sheet .boss-li', 'Annihilator'));
+      await click(byText('.boss-sheet .boss-seg button', 'Normal'));
+      await cancel();
+      expect($('.boss-sheet')).toBeNull();
+      expect(localStorage.getItem('ogc.boss')).toBe(before);
+      expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toBe('Boss: Blazing Knight Meteos, stage 13 — change');
+    }
+    // the sheet opens at the current boss and its stage, not at what was tried
+    await click(slotBtn());
+    expect(pressed()).toEqual(['13']);
   });
 
   it('«Fill from the guide» with a partial roster; «Undo» brings the team back', async () => {
@@ -114,65 +173,77 @@ describe('a boss on «Команда»', () => {
     await click($('#view-team .tm-add'));
     await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Akari'));
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
-    // a boss without a team of its own: empty spots (Akari stays in the «no boss» team)
-    expect(names()).toEqual(['+', '+', '+', '+']);
+    // one team for every boss: Akari stays where she was, the boss only turns on «Fill»
+    expect(names()).toEqual(['Akari', '+', '+', '+']);
     await click($('#view-team .boss-fill'));
     expect(names()).toEqual(['Veronica', 'Tamara', 'Rin', 'Roxie']); // no Luna → Veronica; no Laplace → Rin
+    expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
+    await click($('.toast button'));
+    expect(names()).toEqual(['Akari', '+', '+', '+']);
+    expect($('.toast')).toBeNull();
+  });
+
+  it('the «Undo» toast is not tied to a boss: another boss or none leaves it, and «Undo» still brings the team back', async () => {
+    await mount();
+    await pickBoss('Blazing Knight Meteos');
+    await click($('#view-team .boss-fill'));
+    expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
+    await pickBoss('Annihilator');
+    expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
+    await click($('#view-team .boss-slot > .tm-x'));
+    expect(slot()!.classList.contains('empty')).toBe(true);
     expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
     await click($('.toast button'));
     expect(names()).toEqual(['+', '+', '+', '+']);
     expect($('.toast')).toBeNull();
   });
 
-  it('the «Undo» toast belongs to the boss it was shown for: switching the boss hides it', async () => {
+  it('one team for every boss: it survives a boss pick, a change, the slot\'s ✕ and a reload', async () => {
     await mount();
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
-    expect($('.toast')?.textContent).toBe('From the guide: 4 of 4.Undo');
-    await click(row());
-    await click(byText('.boss-sheet .btn', 'No boss'));
-    expect($('.toast')).toBeNull();
-    await pickBoss('Annihilator');
-    await closeSheet();
-    expect($('.toast')).toBeNull();
-  });
-
-  it('a team per boss and one without a boss, kept over a reload', async () => {
-    await mount();
+    const team = ['Veronica', 'Tamara', 'Rin', 'Roxie'];
+    expect(names()).toEqual(team);
+    await pickBoss('Annihilator'); // another boss: the same heroes
+    expect(names()).toEqual(team);
+    expect($('#view-team .boss-slot > .tm-x')?.getAttribute('aria-label')).toBe('Remove the boss');
+    await click($('#view-team .boss-slot > .tm-x')); // no boss: the same heroes
+    expect(slot()!.classList.contains('empty')).toBe(true);
+    expect(slotText()).toBe('Bosspick');
+    expect(names()).toEqual(team);
+    expect(stored()).toMatchObject({ v: 2, boss: null, team: team.map(id) });
+    expect(stored().teams).toBeUndefined();
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
-    await click($('#view-team .boss-fill'));
-    await click(row());
-    await click(byText('.boss-sheet .btn', 'No boss'));
-    expect(row()!.textContent).toBe('Boss:none▾');
-    expect(names()).toEqual(['+', '+', '+', '+']);
-    expect(stored().teams['sr:meteos']).toEqual(['Veronica', 'Tamara', 'Rin', 'Roxie'].map(id));
-    await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
+    expect(names()).toEqual(team);
     await act(async () => root?.unmount());
     root = null;
     document.body.innerHTML = '';
     await mount({ boss: stored() });
-    expect(row()!.textContent).toContain('Blazing Knight Meteos');
-    expect(names()).toEqual(['Veronica', 'Tamara', 'Rin', 'Roxie']);
+    expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toContain('Blazing Knight Meteos');
+    expect(names()).toEqual(team);
+    await click($('#view-team .boss-slot > .tm-x'));
+    await act(async () => root?.unmount());
+    root = null;
+    document.body.innerHTML = '';
+    await mount({ boss: stored() }); // the removal is kept over a reload too, the team with it
+    expect(slot()!.classList.contains('empty')).toBe(true);
+    expect(names()).toEqual(team);
   });
 
   it('a hero who left the roster leaves the spot empty; a stored boss no longer listed — no boss', async () => {
-    await mount({ roster: ROSTER.filter((x) => x !== id('Tamara')), boss: { v: 1, boss: 'sr:meteos', stage: {}, teams: { 'sr:meteos': ['Veronica', 'Tamara', 'Rin', 'Roxie'].map(id) } } });
+    await mount({ roster: ROSTER.filter((x) => x !== id('Tamara')), boss: { v: 2, boss: 'sr:meteos', stage: {}, team: ['Veronica', 'Tamara', 'Rin', 'Roxie'].map(id) } });
     expect(names()).toEqual(['Veronica', '+', 'Rin', 'Roxie']);
     await act(async () => root?.unmount());
     root = null;
     document.body.innerHTML = '';
-    await mount({ boss: { v: 1, boss: 'wb:harshna', stage: {}, teams: {} } });
-    expect(row()!.textContent).toBe('Boss:none▾');
+    await mount({ boss: { v: 2, boss: 'wb:harshna', stage: {}, team: [id('Veronica'), null, null, null] } });
+    expect(slot()!.classList.contains('empty')).toBe(true);
+    expect(names()).toEqual(['Veronica', '+', '+', '+']);
   });
 
   it("a spot's sheet with a boss: the guide's heroes for the spot instead of «Fit the team», who is not in the roster", async () => {
     await mount();
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
     await click($('#view-team .tm-team .tm-slot'));
     expect($$('.drawer.tm-sheet .tm-ph').map((p) => p.textContent)).toEqual(['From the guide for this spot', 'Everyone else']);
@@ -186,7 +257,6 @@ describe('a boss on «Команда»', () => {
   it('several guide teams → a choice; a team with nobody owned can\'t be picked; a 2-hero core fills 2 spots', async () => {
     await mount();
     await pickBoss('Gornolf');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
     const rows = $$('.boss-choice .boss-tc button') as HTMLButtonElement[];
     expect(rows).toHaveLength(6);
@@ -202,7 +272,6 @@ describe('a boss on «Команда»', () => {
   it('nobody from the guide in the roster: a message, the team unchanged', async () => {
     await mount({ roster: [id('Akari')] });
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
     expect(names()).toEqual(['+', '+', '+', '+']);
     expect($('.toast')?.textContent).toBe('None of this guide’s heroes are in your roster.');
@@ -213,11 +282,9 @@ describe('a boss on «Команда»', () => {
     const cf = id('Core Fusion Eternal');
     await mount({ roster: [cf, id('Akari')] });
     await pickBoss("Dek'Ril");
-    await closeSheet();
     await click($$('#view-team .tm-add')[1]);
     expect($$('.drawer.tm-sheet .tm-fit').map((b) => b.textContent)).toEqual(['Core Fusion Eternal']);
     expect($('.drawer.tm-sheet .tm-gn')?.textContent).toBe('Also in the guide: Astei, Liselotte, Tio — not in your roster.');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
     expect(names()).toEqual(['+', 'Core Fusion Eternal', '+', '+']);
     expect($('.toast')?.textContent).toBe('From the guide: 1 of 4.Undo');
@@ -226,7 +293,6 @@ describe('a boss on «Команда»', () => {
   it('several guide teams: a Core Fusion counts as owned in «n of m» and is not named missing', async () => {
     await mount({ roster: [id('Core Fusion Eternal'), id('Akari')] });
     await pickBoss('Scientific Inheritance Devotee');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
     const rows = $$('.boss-choice .boss-tc button') as HTMLButtonElement[];
     expect(rows.map((b) => b.querySelector('.boss-th')!.textContent)).toEqual(['0 of 4 owned', '1 of 4 owned', '0 of 4 owned', '0 of 4 owned']);
@@ -242,7 +308,6 @@ describe('a boss on «Команда»', () => {
     const roster = ['Monad Eva', 'Maxie', 'Vlada', 'Akari', 'Ember', 'Bell Cranel'].map(id);
     await mount({ roster });
     await pickBoss('Gornolf');
-    await closeSheet();
     const guide = () => ({ fits: $$('.drawer.tm-sheet .tm-fit').map((b) => b.textContent), note: $('.drawer.tm-sheet .tm-gn')?.textContent ?? null });
     const open = (i: number) => click($$('#view-team .tm-team .tm-add, #view-team .tm-team .tm-slot')[i]);
     const pick = async (i: number, name: string) => { await open(i); await click(byText('.drawer.tm-sheet .tm-fit', name)); };
@@ -260,7 +325,7 @@ describe('a boss on «Команда»', () => {
     await act(async () => root?.unmount());
     root = null;
     document.body.innerHTML = '';
-    await mount({ roster, boss: { v: 1, boss: 'gr:frost-legion:main', stage: {}, teams: { 'gr:frost-legion:main': [id('Ember'), id('Maxie'), null, null] } } });
+    await mount({ roster, boss: { v: 2, boss: 'gr:frost-legion:main', stage: {}, team: [id('Ember'), id('Maxie'), null, null] } });
     await open(3);
     expect(guide()).toEqual({ fits: ['Bell Cranel', 'Vlada'], note: 'Also in the guide: Sterope, Demiurge Drakhan, Monad Iota — not in your roster.' });
   });
@@ -270,7 +335,6 @@ describe('a boss on «Команда»', () => {
     const teams: GuideTeams = { guides: {}, list: [{ g: [], s: [[id('Akari')], [id('Maxie')], [], []] }] };
     await mount({ roster: ['Caren', 'Tamara', 'Rin', 'Roxie', 'Maxie', 'Vlada', 'Akari'].map(id), teams });
     await pickBoss('Masterless Guardian');
-    await closeSheet();
     await click($('#view-team .tm-add'));
     expect($('.drawer.tm-sheet .tm-gn')?.textContent).toBe('Also in the guide: Veronica, Christina, Ember, Tio and 8 more — not in your roster.');
     expect($$('.drawer.tm-sheet .tm-ph').map((p) => p.textContent)).toEqual(['From the guide for this spot', 'Most often in outerpedia teams', 'Everyone else']);
@@ -280,26 +344,47 @@ describe('a boss on «Команда»', () => {
   it('several guide teams and nobody owned in any: the message, no choice sheet', async () => {
     await mount({ roster: [id('Akari')] });
     await pickBoss('Scientific Inheritance Devotee');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
     expect($('.boss-choice')).toBeNull();
     expect(names()).toEqual(['+', '+', '+', '+']);
     expect($('.toast')?.textContent).toBe('None of this guide’s heroes are in your roster.');
   });
 
-  it('singularity: no guide teams — no «Fill»; ranks in two rows, a letter keeps the pluses', async () => {
+  it('singularity: ranks in two rows, a letter keeps the pluses', async () => {
     await mount();
-    await pickBoss('Urd (Dark)');
-    const rows = $$('.boss-sheet .boss-chips');
+    await openCard('Urd (Dark)');
+    const rows = $$('.boss-sheet .boss-chips, .boss-sheet .boss-seg');
     expect(rows).toHaveLength(2);
     expect(rows[1].textContent).toBe('—+++');
-    await click(byText('.boss-sheet .boss-chip', 'AA'));
-    expect($$('.boss-sheet .boss-chip[aria-pressed="true"]').map((b) => b.textContent)).toEqual(['AA', '++']);
-    await click([...rows[1].querySelectorAll<HTMLElement>('.boss-chip')][0]);
-    expect($$('.boss-sheet .boss-chip[aria-pressed="true"]').map((b) => b.textContent)).toEqual(['AA', '—']);
-    await closeSheet();
-    expect(row()!.textContent).toContain('Urd (Dark)· AA');
-    expect($('#view-team .boss-fill')).toBeNull();
+    await click(byText('.boss-sheet .boss-chips button', 'AA'));
+    expect(pressed()).toEqual(['AA', '++']);
+    await click(rows[1].querySelectorAll<HTMLElement>('button')[0]);
+    expect(pressed()).toEqual(['AA', '—']);
+    await click($('.boss-sheet .boss-go'));
+    expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toContain('Urd (Dark), stage AA');
+    expect(slotText()).toContain('Urd (Dark)');
+  });
+
+  // singularity guides list pools of hero groups, not spots (.x/0208-ds-teams, owner (a)): Urd (Dark) — Light, Mero, Gnosis Beth
+  it('singularity teams: named, «Fill» takes the first owned hero of each group until four; any spot lists the team\'s heroes', async () => {
+    await mount();
+    await pickBoss('Urd (Dark)');
+    await click($('#view-team .boss-fill'));
+    const rows = $$('.boss-choice .boss-tc button') as HTMLButtonElement[];
+    expect(rows.map((b) => b.querySelector('.boss-tl')?.textContent)).toEqual(['Light', 'Mero', 'Gnosis Beth']);
+    expect(rows.map((b) => b.querySelector('.boss-th')!.textContent)).toEqual(['2 of 4 owned', '1 of 4 owned', '3 of 4 owned']);
+    // the light team: Akari (group 2) and Monad Eva (group 4), then the first heroes of the groups nobody owns, faded
+    expect(rows[0].querySelectorAll('.boss-tf > span')).toHaveLength(4);
+    expect(rows[0].querySelectorAll('.boss-tf > span.no')).toHaveLength(2);
+    expect(rows[0].querySelector('.boss-tm')!.textContent).toBe('missing: Demiurge Luna, Mystic Sage Ame');
+    await click(rows[2]);
+    expect(names()).toEqual(['Roxie', 'Akari', 'Monad Eva', '+']);
+    expect($('.toast')?.textContent).toBe('From the guide: 3 of 4.Undo');
+    // the empty spot: «From the guide» (no positions in a pool) — the matching team's heroes not on the team yet
+    await click($('#view-team .tm-add'));
+    expect($$('.drawer.tm-sheet .tm-ph').map((p) => p.textContent)).toEqual(['From the guide', 'Everyone else']);
+    expect($$('.drawer.tm-sheet .tm-fit').map((b) => b.textContent)).toEqual(['Maxie']);
+    expect($('.drawer.tm-sheet .tm-gn')?.textContent).toBe('Also in the guide: Gnosis Beth — not in your roster.');
   });
 });
 
@@ -314,13 +399,12 @@ describe('Turn vs the boss on «Команда»', () => {
   const row = (name: string) => li().find((r) => r.querySelector('.bt-n')?.textContent === name)!;
   const meteos = async () => {
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     await click($('#view-team .boss-fill'));
   };
 
-  it('no boss — no block; Meteos 13 (SPD 109, RES 288), nothing worn: SPD = base (Lv100 + quirks), Veronica 106 — luck after the boss; EFF for Tamara and Roxie', async () => {
+  it('Meteos 13 (SPD 109, RES 288), nothing worn: SPD = base (Lv100 + quirks), Veronica 106 — luck after the boss; EFF for Tamara and Roxie', async () => {
     await mount();
-    expect($('#view-team .boss-turn')).toBeNull();
+    expect($('#view-team .boss-turn')).toBeNull(); // nobody in the team — no plan
     await meteos();
     expect($('#view-team .boss-turn .bt-h')?.textContent).toBe('Turn vs the boss');
     // Tamara: W 120 + Ranger 50 = 170, in battle + 7 % of 170 (water beats the fire boss) = 181 → lands 48 %; Roxie (water) 120 + 8
@@ -334,6 +418,33 @@ describe('Turn vs the boss on «Команда»', () => {
     ]);
     expect($('#view-team .boss-turn .bt-foot')?.textContent).toContain('the chance to move before the boss');
     expect($('#view-team .boss-turn .bt-foot')?.textContent).toContain('the chance the boss doesn’t resist');
+  });
+
+  // 0206 (owner 2026-10-14): the plan shows with members and without a boss — «Turn order», in SPD order, nothing about luck or debuffs
+  it('no boss: the plan «Turn order» for the members — no boss row, no badges; a boss turns it into «Turn vs the boss» with his row', async () => {
+    await mount();
+    expect($('#view-team .boss-turn')).toBeNull();
+    for (const hero of ['Veronica', 'Tamara']) {
+      await click($('#view-team .tm-add'));
+      await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', hero));
+    }
+    expect($('#view-team .boss-turn .bt-h')?.textContent).toBe('Turn order');
+    expect(li().map((r) => r.querySelector('.bt-n')?.textContent)).toEqual(['Tamara', 'Veronica']); // SPD 154, 106
+    expect($('#view-team .boss-turn .bt-li.boss')).toBeNull();
+    expect(li().map((r) => r.className)).toEqual(['bt-li', 'bt-li']);
+    expect($$('#view-team .boss-turn .bt-b')).toHaveLength(0);
+    expect($('#view-team .boss-turn .bt-foot')?.textContent).not.toContain('boss');
+    // a row still expands: SPD, and EFF from the game for Tamara
+    await click(row('Tamara').querySelector('.bt-row'));
+    expect([...row('Tamara').querySelectorAll('.bt-x p')].map((p) => p.textContent)).toEqual(['SPD 154']);
+    expect(row('Tamara').querySelector('.bt-eff')).not.toBeNull();
+    await pickBoss('Blazing Knight Meteos');
+    expect($('#view-team .boss-turn .bt-h')?.textContent).toBe('Turn vs the boss');
+    expect(li().map((r) => r.querySelector('.bt-n')?.textContent)).toEqual(['Tamara', 'Blazing Knight Meteos', 'Veronica']);
+    expect($('#view-team .boss-turn .bt-li.boss .face')).not.toBeNull(); // the boss's portrait
+    await click($('#view-team .boss-slot > .tm-x'));
+    expect($('#view-team .boss-turn .bt-h')?.textContent).toBe('Turn order');
+    expect($('#view-team .boss-turn .bt-li.boss')).toBeNull();
   });
 
   it('a tap expands a row: the SPD that surely moves first, why, EFF short of RES + 1; a hero without EFF — SPD only', async () => {
@@ -358,7 +469,6 @@ describe('Turn vs the boss on «Команда»', () => {
   it('the why line says «from skill level 3» for Akari\'s ATK down, and nothing for a reason from level 1', async () => {
     await mount();
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     for (const hero of ['Akari', 'Veronica']) { // an empty team: one spot at a time
       await click($('#view-team .tm-add'));
       await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', hero));
@@ -374,7 +484,6 @@ describe('Turn vs the boss on «Команда»', () => {
     const dianne = id('Dianne');
     await mount({ roster: [...ROSTER, dianne], stars: { [dianne]: 6 } });
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     for (const hero of ['Tamara', 'Dianne']) {
       await click($('#view-team .tm-add'));
       await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', hero));
@@ -390,7 +499,6 @@ describe('Turn vs the boss on «Команда»', () => {
   it('a member who can\'t catch the boss (Annihilator, SPD 250): the expanded row says «out of reach: N at most»', async () => {
     await mount();
     await pickBoss('Annihilator');
-    await closeSheet();
     await click($('#view-team .tm-add'));
     await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Veronica'));
     await click(row('Veronica').querySelector('.bt-row'));
@@ -416,7 +524,6 @@ describe('Turn vs the boss on «Команда»', () => {
     const iota = id('Iota');
     await mount({ roster: [...ROSTER, iota], stars: { [iota]: 4 } });
     await pickBoss('Blazing Knight Meteos');
-    await closeSheet();
     await click($('#view-team .tm-add'));
     await click(byText('.drawer.tm-sheet .trade-hero, .drawer.tm-sheet .tm-fit', 'Iota'));
     await click($('#view-team .tm-team .tm-sb'));

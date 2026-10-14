@@ -331,6 +331,18 @@ function problems(D) {
       for (const t of f.teams ?? []) {
         for (const h of [...t.s.flat(), ...(t.r ?? []).map((r) => r.h)]) if (!ids.has(h)) out.add(`босс ${f.key}: в команде гайда герой ${h}, которого нет в данных`);
       }
+      // singularity: the guide's teams are pools (p: 1, 2+ groups) named by an element (e), an effect (x) or a hero (h)
+      if (f.mode === 'ds') {
+        const pools = (f.teams ?? []).filter((t) => t.p === 1);
+        if (!pools.length) out.add(`босс ${f.key}: нет команд-пулов из content.json гайда (teams с p: 1)`);
+        for (const t of pools) {
+          const l = t.l;
+          if (t.s.length < 2) out.add(`босс ${f.key}: в пуле меньше двух групп`);
+          if (!l || [l.e, l.x, l.h].filter((v) => typeof v === 'string').length !== 1) out.add(`босс ${f.key}: у команды-пула нет подписи l (e, x или h)`);
+          else if (l.x !== undefined && !STATUS_RU.has(l.x)) out.add(`босс ${f.key}: подпись команды — эффект ${l.x} без имени (team.status в src/i18n)`);
+          else if (l.h !== undefined && !ids.has(l.h)) out.add(`босс ${f.key}: подпись команды — герой ${l.h}, которого нет в данных`);
+        }
+      }
     }
     const top = (key, label) => B.t[B.b.find((f) => f.key === key)?.table]?.find((r) => r[3] === label)?.[1];
     if (top('sr:meteos', '13') !== 360) out.add(`Meteos этап 13: RES ${top('sr:meteos', '13')}, ждём 360`);
@@ -338,6 +350,21 @@ function problems(D) {
     // world boss ladder of the right boss: league 4 is A 360, and the second boss takes over at S (350)
     if (top('wb:harshna', '4:A') !== 360) out.add(`Harshna лига 4 этап A: RES ${top('wb:harshna', '4:A')}, ждём 360`);
     if (top('wb:harshna', '4:S') !== 350) out.add(`Harshna лига 4 этап S: RES ${top('wb:harshna', '4:S')}, ждём 350 (второй босс)`);
+    // portraits (update.py image_paths, BOSS_IMAGE_MODES): every fight the app lists has an icon and its image; a hero as a
+    // boss (guild raid sub) has no boss portrait and takes the hero's face icon instead (image_fallback)
+    const fightIcon = (key) => B.b.find((f) => f.key === key)?.icon;
+    if (fightIcon('sr:meteos') !== '4076002' || !D.img?.['boss:4076002']) out.add(`Meteos: icon ${fightIcon('sr:meteos')} (ждём 4076002) или нет картинки boss:4076002`);
+    if (fightIcon('gr:planetary-control-unit:subA') !== '2000099' || !D.img?.['boss:2000099']) {
+      out.add(`Planetary Control Unit subA: icon ${fightIcon('gr:planetary-control-unit:subA')} (ждём 2000099) или нет запасной картинки boss:2000099 (faceicon героя-монстра)`);
+    }
+    for (const f of B.b.filter((x) => ['sr', 'ds', 'jc', 'gr'].includes(x.mode))) {
+      if (!f.icon) out.add(`босс ${f.key}: нет icon (портрет)`);
+      else if (!D.img?.[`boss:${f.icon}`]) out.add(`босс ${f.key}: нет картинки boss:${f.icon}`);
+    }
+    // Chimera's guide has one team, named by the element: fire, with Titia in it
+    const titia = D.chars.find((c) => c.name === 'Titia')?.id;
+    const chim = B.b.find((f) => f.key === 'ds:chimera')?.teams?.find((t) => t.l?.e === 'fire');
+    if (!titia || !chim?.s.some((g) => g.includes(titia))) out.add('ds:chimera: нет команды {e: fire} с Титией (content.json гайда сингулярности)');
     if (B.q !== -200) out.add(`Challenge quirk на RES боссов ${B.q} ‰, ждём −200`);
     // the boss sheet names every immunity with the app's own strings (team.status in src/i18n)
     for (const id of new Set(B.b.flatMap((b) => b.imm.flatMap(([, ids]) => ids)))) {

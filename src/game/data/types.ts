@@ -170,14 +170,19 @@ export type BossRow = [number, number, number, string];
 // jc joint challenge, ie irregular extermination, ds dimensional singularity
 export type BossMode = 'sr' | 'gr' | 'wb' | 'jc' | 'ie' | 'ds';
 // a guide team: hero ids per slot (alternatives in guide order); st — the stages it is for (none = all); r — guild
-// raid requirements as the guide writes them ("268", "518/259", "≤180"; trans — transcend ★)
-export interface BossTeam { st?: [number, number]; s: string[][]; r?: { h: string; eff?: string; spd?: string; trans?: string }[] }
+// raid requirements as the guide writes them ("268", "518/259", "≤180"; trans — transcend ★).
+// p — a pool (singularity guides' content.json, .x/0208-ds-teams): s is 3–8 groups of heroes in the guide's order, not four
+// spots — four of them make the team; l — its name as the guide gives it: an element (e), an effect (x — glossary effect
+// id, as the immunities), a hero (h; a title-only or unnamed team — its first group's first hero)
+export type BossTeamLabel = { e: string } | { x: string } | { h: string };
+export interface BossTeam { st?: [number, number]; s: string[][]; r?: { h: string; eff?: string; spd?: string; trans?: string }[]; p?: 1; l?: BossTeamLabel }
 export interface Boss {
   key: string; // "sr:meteos", "gr:frost-legion:subA"
   name: string;
   mode: BossMode;
   element: string;
   class: string;
+  icon?: string; // top-stage boss portrait: image key `boss:<icon>` (missing in old snapshots)
   table: string; // key of Bosses.t
   imm: [number, string[]][]; // immunities by stage: runs [first row, ids]; the stage's set is the last run whose first row ≤ the stage's row (row = index in Bosses.t[table]); ids — outerpedia glossary effect ids (`effects`), names are the app's own strings
   group?: string; // guild raid: the raid's name
