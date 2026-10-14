@@ -178,6 +178,7 @@ export interface Boss {
   mode: BossMode;
   element: string;
   class: string;
+  icon?: string; // top-stage boss portrait: image key `boss:<icon>` (missing in old snapshots)
   table: string; // key of Bosses.t
   imm: [number, string[]][]; // immunities by stage: runs [first row, ids]; the stage's set is the last run whose first row ≤ the stage's row (row = index in Bosses.t[table]); ids — outerpedia glossary effect ids (`effects`), names are the app's own strings
   group?: string; // guild raid: the raid's name

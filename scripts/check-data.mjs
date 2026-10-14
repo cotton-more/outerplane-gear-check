@@ -338,6 +338,17 @@ function problems(D) {
     // world boss ladder of the right boss: league 4 is A 360, and the second boss takes over at S (350)
     if (top('wb:harshna', '4:A') !== 360) out.add(`Harshna лига 4 этап A: RES ${top('wb:harshna', '4:A')}, ждём 360`);
     if (top('wb:harshna', '4:S') !== 350) out.add(`Harshna лига 4 этап S: RES ${top('wb:harshna', '4:S')}, ждём 350 (второй босс)`);
+    // portraits (update.py image_paths, BOSS_IMAGE_MODES): every fight the app lists has an icon and its image; a hero as a
+    // boss (guild raid sub) has no boss portrait and takes the hero's face icon instead (image_fallback)
+    const fightIcon = (key) => B.b.find((f) => f.key === key)?.icon;
+    if (fightIcon('sr:meteos') !== '4076002' || !D.img?.['boss:4076002']) out.add(`Meteos: icon ${fightIcon('sr:meteos')} (ждём 4076002) или нет картинки boss:4076002`);
+    if (fightIcon('gr:planetary-control-unit:subA') !== '2000099' || !D.img?.['boss:2000099']) {
+      out.add(`Planetary Control Unit subA: icon ${fightIcon('gr:planetary-control-unit:subA')} (ждём 2000099) или нет запасной картинки boss:2000099 (faceicon героя-монстра)`);
+    }
+    for (const f of B.b.filter((x) => ['sr', 'ds', 'jc', 'gr'].includes(x.mode))) {
+      if (!f.icon) out.add(`босс ${f.key}: нет icon (портрет)`);
+      else if (!D.img?.[`boss:${f.icon}`]) out.add(`босс ${f.key}: нет картинки boss:${f.icon}`);
+    }
     if (B.q !== -200) out.add(`Challenge quirk на RES боссов ${B.q} ‰, ждём −200`);
     // the boss sheet names every immunity with the app's own strings (team.status in src/i18n)
     for (const id of new Set(B.b.flatMap((b) => b.imm.flatMap(([, ids]) => ids)))) {
