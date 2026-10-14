@@ -247,7 +247,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
       <p className="tm-alpha muted small"><AlphaMark /> {t.team.alphaHint}</p>
       {picking !== null && (
         <Sheet title={t.team.pick} onClose={() => setPicking(null)} className="tm-sheet">
-          <TeamPicker syn={syn} fits={fits} guide={guide && { head: t.boss.fromGuide, ...guide }} rest={pickable}
+          <TeamPicker syn={syn} fits={fits} guide={guide && { head: guideTeams.some((g) => g.p) ? t.boss.fromGuidePool : t.boss.fromGuide, ...guide }} rest={pickable}
             emptyTeam={!members.some((m) => m.id !== team[picking]?.id)} search={t.team.search}
             onPick={(id) => { put(picking, id); setPicking(null); }} />
         </Sheet>

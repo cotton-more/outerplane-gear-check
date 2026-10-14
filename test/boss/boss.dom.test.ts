@@ -350,7 +350,7 @@ describe('a boss on «Команда»', () => {
     expect($('.toast')?.textContent).toBe('None of this guide’s heroes are in your roster.');
   });
 
-  it('singularity: no guide teams — no «Fill»; ranks in two rows, a letter keeps the pluses', async () => {
+  it('singularity: ranks in two rows, a letter keeps the pluses', async () => {
     await mount();
     await openCard('Urd (Dark)');
     const rows = $$('.boss-sheet .boss-chips, .boss-sheet .boss-seg');
@@ -363,7 +363,28 @@ describe('a boss on «Команда»', () => {
     await click($('.boss-sheet .boss-go'));
     expect($('#view-team .boss-sb')?.getAttribute('aria-label')).toContain('Urd (Dark), stage AA');
     expect(slotText()).toContain('Urd (Dark)');
-    expect($('#view-team .boss-fill')).toBeNull();
+  });
+
+  // singularity guides list pools of hero groups, not spots (.x/0208-ds-teams, owner (a)): Urd (Dark) — Light, Mero, Gnosis Beth
+  it('singularity teams: named, «Fill» takes the first owned hero of each group until four; any spot lists the team\'s heroes', async () => {
+    await mount();
+    await pickBoss('Urd (Dark)');
+    await click($('#view-team .boss-fill'));
+    const rows = $$('.boss-choice .boss-tc button') as HTMLButtonElement[];
+    expect(rows.map((b) => b.querySelector('.boss-tl')?.textContent)).toEqual(['Light', 'Mero', 'Gnosis Beth']);
+    expect(rows.map((b) => b.querySelector('.boss-th')!.textContent)).toEqual(['2 of 4 owned', '1 of 4 owned', '3 of 4 owned']);
+    // the light team: Akari (group 2) and Monad Eva (group 4), then the first heroes of the groups nobody owns, faded
+    expect(rows[0].querySelectorAll('.boss-tf > span')).toHaveLength(4);
+    expect(rows[0].querySelectorAll('.boss-tf > span.no')).toHaveLength(2);
+    expect(rows[0].querySelector('.boss-tm')!.textContent).toBe('missing: Demiurge Luna, Mystic Sage Ame');
+    await click(rows[2]);
+    expect(names()).toEqual(['Roxie', 'Akari', 'Monad Eva', '+']);
+    expect($('.toast')?.textContent).toBe('From the guide: 3 of 4.Undo');
+    // the empty spot: «From the guide» (no positions in a pool) — the matching team's heroes not on the team yet
+    await click($('#view-team .tm-add'));
+    expect($$('.drawer.tm-sheet .tm-ph').map((p) => p.textContent)).toEqual(['From the guide', 'Everyone else']);
+    expect($$('.drawer.tm-sheet .tm-fit').map((b) => b.textContent)).toEqual(['Maxie']);
+    expect($('.drawer.tm-sheet .tm-gn')?.textContent).toBe('Also in the guide: Gnosis Beth — not in your roster.');
   });
 });
 

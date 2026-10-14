@@ -76,8 +76,12 @@ your roster), «3 of 4 owned» and who is missing. A team with nobody you own ca
 heroes — they fill two spots only.
 
 With a boss, a spot's window starts with **From the guide for this spot** — your heroes among the guide's alternatives
-for that spot; below, one line names the guide's heroes you don't have. Singularity guides have no teams — the window
-suggests as without a boss.
+for that spot; below, one line names the guide's heroes you don't have.
+
+A **singularity** guide team works differently: it is not four spots but a list of hero groups in order — three to eight
+(the «Fire», «Burned», «Mero» team…). «Fill from the guide» walks the groups and takes your first hero of each until it has
+four; in the team choice window each team shows its name, whom it would put and, faded, the first heroes of groups where
+you have nobody. Any spot's window starts with **From the guide** — all your heroes from this boss's teams.
 
 The guides' notes, tips and requirements (speed, effectiveness) are not copied into the app: they are in English only.
 

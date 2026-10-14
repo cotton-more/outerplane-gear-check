@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import type { Boss, Dataset } from '@/game/data/types';
+import type { Boss, BossTeam, Dataset } from '@/game/data/types';
 import {
   bossGroups, bossOf, factsAt, fillFrom, fitStage, immunitiesAt, immunityChips, ownOf, rankParts, resAt, spotAlternatives, teamsAt, topStage,
 } from '@/features/boss/model/boss';
@@ -115,7 +115,7 @@ describe('guide teams', () => {
     expect(teamsAt(c, 9)).toEqual([c.teams![0]]);
     expect(teamsAt(c, 10)).toEqual([c.teams![1]]);
     expect(teamsAt(boss('sr:meteos'), 0)).toHaveLength(1);
-    expect(teamsAt(boss('ds:urd-dark'), 0)).toEqual([]);
+    expect(teamsAt(boss('ds:urd-dark'), 0).map((t) => t.p)).toEqual([1, 1, 1]); // singularity: pool teams on every rank (0208)
   });
 
   it('«Собрать из гайда» with a partial roster: the first owned alternative per spot; empty spots name the guide\'s first', () => {
@@ -146,6 +146,25 @@ describe('guide teams', () => {
     const fl = boss('gr:frost-legion:main').teams!;
     expect(spotAlternatives(fl, 0)).toEqual(['Omega Nadja', 'Monad Eva', 'Ember', 'Demiurge Saeran'].map(id));
     expect(spotAlternatives(fl, 3)).toEqual(['Sterope', 'Ember', 'Bell Cranel', 'Demiurge Drakhan', 'Vlada', 'Monad Iota'].map(id));
+  });
+
+  // a singularity team is a pool of groups in the guide's order (.x/0208-ds-teams, owner (a)): Meteos' water team shape
+  const pool: BossTeam = { p: 1, l: { e: 'water' }, s: [['Luna', 'Veronica'], ['Poolside Trickster Regina'], ['Monad Eva'], ['Laplace'], ['Tamara', 'Roxie']].map((g) => g.map(id)) };
+
+  it('a pool: the first owned hero of each group in guide order until four; missing — groups with nobody owned, as many as spots stay empty', () => {
+    expect(fillFrom(pool, ownOf(ids('Veronica', 'Monad Eva', 'Tamara', 'Roxie'))))
+      .toEqual({ team: [id('Veronica'), id('Monad Eva'), id('Tamara'), null], have: 3, of: 4, missing: [id('Poolside Trickster Regina')] });
+    // enough groups owned: four, the rest of the pool unused
+    expect(fillFrom(pool, ownOf(ids('Luna', 'Poolside Trickster Regina', 'Monad Eva', 'Laplace', 'Tamara'))))
+      .toMatchObject({ team: ['Luna', 'Poolside Trickster Regina', 'Monad Eva', 'Laplace'].map(id), have: 4, of: 4, missing: [] });
+    expect(fillFrom({ ...pool, s: pool.s.slice(0, 3) }, ownOf(new Set()))).toMatchObject({ have: 0, of: 3, missing: pool.s.slice(0, 3).map((g) => g[0]) });
+  });
+
+  it('a pool in the picker: any spot gets every hero of the matching pool teams', () => {
+    const other: BossTeam = { p: 1, s: [['Gnosis Beth'], ['Akari', 'Maxie']].map((g) => g.map(id)) };
+    expect(spotAlternatives([pool, other], 2, [id('Veronica'), null, null, null]))
+      .toEqual(['Luna', 'Veronica', 'Poolside Trickster Regina', 'Monad Eva', 'Laplace', 'Tamara', 'Roxie'].map(id));
+    expect(spotAlternatives([pool, other], 0)).toEqual([...pool.s.flat(), ...other.s.flat()]);
   });
 });
 

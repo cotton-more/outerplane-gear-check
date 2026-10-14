@@ -86,17 +86,34 @@ export const ownOf = (owned: Pick<ReadonlySet<string>, 'has'>, fused: Readonly<R
 
 // «Собрать из гайда»: on each of the guide's spots the first alternative the player has (guide order; `own` resolves a
 // Core Fusion), one not already put on an earlier spot; spots past the guide's (a core of 2) stay empty. have — spots
-// filled, of — the guide's spots; missing — the first alternative of each spot left empty (to name it)
+// filled, of — the guide's spots; missing — the first alternative of each spot left empty (to name it).
+// A pool (singularity, .x/0208-ds-teams, owner 2026-10-14 (a)): the groups in the guide's order, the first owned hero of
+// each into the next free spot until four; of — four (fewer groups — their count); missing — the first hero of each group
+// with nobody owned, as many as spots stay empty
 export interface Fill { team: (string | null)[]; have: number; of: number; missing: string[] }
+const firstOwned = (alts: readonly string[], own: Own, taken: readonly (string | null)[]) => {
+  for (const h of alts) {
+    const mine = own(h);
+    if (mine && !taken.includes(mine)) return mine;
+  }
+  return null;
+};
 export function fillFrom(t: BossTeam, own: Own): Fill {
   const team: (string | null)[] = [null, null, null, null];
   const missing: string[] = [];
-  t.s.slice(0, 4).forEach((alts, j) => {
-    let id: string | null = null;
-    for (const h of alts) {
-      const mine = own(h);
-      if (mine && !team.includes(mine)) { id = mine; break; }
+  if (t.p) {
+    const groups = t.s.filter((g) => g.length);
+    let k = 0;
+    for (const g of groups) {
+      const id = k < 4 ? firstOwned(g, own, team) : null;
+      if (id) team[k++] = id;
+      else if (k < 4) missing.push(g[0]);
     }
+    const of = Math.min(4, groups.length);
+    return { team, have: k, of, missing: missing.slice(0, of - k) };
+  }
+  t.s.slice(0, 4).forEach((alts, j) => {
+    const id = firstOwned(alts, own, team);
     team[j] = id;
     if (!id && alts.length) missing.push(alts[0]);
   });
@@ -106,11 +123,13 @@ export function fillFrom(t: BossTeam, own: Own): Fill {
 // the picker of spot j with a boss: the guide's alternatives for that spot, guide order, no repeats. Over the stage's
 // teams that match the rest of `team` (owner 2026-10-12: position j means something different from team to team of a
 // guild raid): every other filled spot's hero is among the team's alternatives at that same spot (a Core Fusion standing
-// in for its base hero counts); empty spots match anything. No team matches — over all of them
+// in for its base hero counts); empty spots match anything. No team matches — over all of them. A pool team has no
+// positions: it matches when every other hero is in any of its groups, and offers all of them
 export function spotAlternatives(teams: readonly BossTeam[], j: number, team: readonly (string | null)[] = [], own: Own = (id) => id): string[] {
-  const fits = (t: BossTeam) => team.every((h, i) => !h || i === j || (t.s[i] ?? []).some((a) => a === h || own(a) === h));
+  const is = (h: string) => (a: string) => a === h || own(a) === h;
+  const fits = (t: BossTeam) => team.every((h, i) => !h || i === j || (t.p ? t.s.flat() : t.s[i] ?? []).some(is(h)));
   const matching = teams.filter(fits);
-  return uniq((matching.length ? matching : teams).flatMap((t) => t.s[j] ?? []));
+  return uniq((matching.length ? matching : teams).flatMap((t) => (t.p ? t.s.flat() : t.s[j] ?? [])));
 }
 
 // outerpedia's guide page (English — the site has no Russian)

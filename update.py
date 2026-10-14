@@ -241,7 +241,7 @@ def load_sources(source: Path | None, ref: str) -> tuple[dict, dict]:
 
 # outerpedia's guides: recommended teams (teams.json) and titles (meta.json) — one folder per guide, no index file.
 # Rotating boss guides keep one folder per season under versions/: config.json names the fight's encounter groups,
-# guild raid teams are in main.json (with stat requirements) and subA/subB.json
+# guild raid teams are in main.json (with stat requirements) and subA/subB.json; singularity teams are in content.json
 GUIDES_DIR = "src/app/[lang]/guides/_contents"
 GUIDE_FILES = ("teams.json", "meta.json")
 SEASON_FILES = ("config.json", "main.json", "subA.json", "subB.json")
@@ -251,6 +251,8 @@ SEASON_MODES = ("guild-raid", "world-boss", "joint-challenge")
 def guide_file(rel: str) -> bool:
     """rel — a path under GUIDES_DIR: one of the files build_teams and build_bosses read."""
     name = rel.rsplit("/", 1)[-1]
+    if name == "content.json":  # singularity guides: the teams pool (.x/0208-ds-teams); other guides' content.json is texts
+        return rel.startswith("dimensional-singularity/") and rel.count("/") == 2
     return name in GUIDE_FILES or (name in SEASON_FILES and rel.split("/", 1)[0] in SEASON_MODES)
 
 
@@ -1727,8 +1729,11 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
     names for them are the app's own strings, not in the data), sorted; the stage's set is the last run whose first row ≤
     the stage's row;
     live — [start, battle end] of the latest season (world boss, guild raid, joint challenge); teams — the guide's teams
-    for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}]}] (guild raid
-    requirements as the guide writes them: "268", "518/259", "≤180"). Guide texts are not taken (no Russian, D4).
+    for the fight: [{st?: [first, last stage], s: hero ids per slot, r?: [{h, eff?, spd?, trans?}], p?: 1, l?: label}]
+    (guild raid requirements as the guide writes them: "268", "518/259", "≤180"). A singularity guide's teams (content.json)
+    are pools: p: 1, s — 3–8 groups of heroes (alternatives inside a group, empty groups dropped; four groups make the
+    team), l — the team's name: {e: element}, {x: glossary effect id} or {h: hero id} (a character, or the first hero of the
+    first group for a title-only or unnamed team). Guide texts are not taken (no Russian, D4).
     None — the guide list was not fetched."""
     files = src.get("guides")
     if files is None:
@@ -1748,6 +1753,32 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
                     warn.add(f"боссы outerpedia: герой «{name}» ({where}) не найден в данных")
             if got:
                 out.append(got)
+        return out
+
+    def sing_teams(body, where: str) -> list[dict]:
+        """A singularity guide's content.json teams → pool teams (p: 1, l: label); fewer than two groups — skipped."""
+        deb, buf = (gl.get("effectByKey") or {}).get("debuff", {}), (gl.get("effectByKey") or {}).get("buff", {})
+        out = []
+        for t in (body or {}).get("teams") or []:
+            s = ids_of([g.get("characters") or [] for g in t.get("groups") or []], where)
+            if len(s) < 2:
+                continue
+            label = None
+            if t.get("element"):
+                label = {"e": str(t["element"])}
+            elif t.get("effect"):
+                bt = str(t["effect"])
+                x = deb.get(bt) or deb.get(re.sub(r"\d+", "", bt)) or buf.get(bt) or buf.get(re.sub(r"\d+", "", bt))
+                if x and str(x) in gl.get("effects", {}):
+                    label = {"x": str(x)}
+                else:
+                    warn.add(f"боссы outerpedia: эффект «{bt}» ({where}, команда) не найден в glossary — имя по герою")
+            elif t.get("character"):
+                if t["character"] in by_name:
+                    label = {"h": by_name[t["character"]]}
+            if label is None:
+                label = {"h": s[0][0]}
+            out.append({"s": s, "p": 1, "l": label})
         return out
 
     def group_dungeons(group: str) -> list[tuple[str, dict]]:
@@ -1804,7 +1835,7 @@ def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
             parts.append(("", group_dungeons(meta.get("group") or ""), teams))
         elif mode == "dimensional-singularity":
             dk = sing.get(meta.get("bossId") or "")
-            parts.append(("", [(dk, enc[dk])] if dk in enc else [], []))
+            parts.append(("", [(dk, enc[dk])] if dk in enc else [], sing_teams(files.get(gdir + "/content.json"), gdir)))
         elif mode == "guild-raid":
             ver, cfg = newest(gdir, "config.json", lambda x: bool(x.get("main")))
             vmain, main = newest(gdir, "main.json", lambda x: bool(x.get("teams")))
