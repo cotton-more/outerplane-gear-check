@@ -77,7 +77,7 @@ Rules live in: update.py comments over `build_synergy` / `SYN_*`, check.ts heade
 - Stage 3 mockup (owner approved 2026-10-11), `MOCKUP.md`: one row of four slots (not the trade diamond — split screen is short), report only heroes with something to say, quiet ✓ line from an ally, none for her own source in time, ⚠ block with «Дадут:» heroes (6 shown, «ещё N»), the «what is not checked» note in Help not on screen, transcend stars like the game's (six gold stars, tap the N-th; owner «сделай покрасивее»). Phone: «Команда» in «Ещё»; wide window: third header tab, landscape slots left / report right. Pictures were made by injecting the markup into the real preview build (`mockup/shoot.mjs`).
 - Stage 4–5 screen, tour tip `team` (news), Help, Wiki; then `team-2` (owner: ✕ on the spot removes, ★ at its foot opens a stars sheet, portrait opens the hero sheet, another hero keeps the spot's ★).
 - 0171 `suggest`: score = shared outerpedia teams with the team heroes (different slots; the same slot is an alternative) + `FIX_NONE` 3 / `FIX_SELF` 1.5 per team skill the candidate starts; empty team — number of outerpedia teams the hero is in; hero sheet «Подойдут команде» above the plain list; report lines start with the effect («S1: двойная атака — Повышение защиты даёт Kappa»); «α» mark (header, «Ещё», line on screen, Help, Wiki); tip `teamPick`.
-**Owner decisions** (DECISIONS.md; code cites «.x/0170 decision 6», «Q2»).
+**Owner decisions** (DECISIONS.md; code cites «HISTORY.md 0170 decision 6», «Q2»).
 - 1: a separate «Команда» screen, 4 heroes picked by hand; focus-team integration later. 2: self-only coverage → ⚠ «only from herself» plus heroes that would give it.
 - 3 (superseded by 0190, 2026-10-12): ★ was picked on the screen, default ★6, not remembered; now a spot starts at the card's ★, may try higher, never lower, saves nothing. 4: fixes only from the existing roster, never «if you had Stella». 5 (superseded by 0200: the team is now kept in `ogc.boss`): nothing saved in the MVP.
 - 6 (owner's in-game check 2026-10-09): at battle start Veronica (Defender) has NO Increased Defense status → class passives are not a status; only real status applications (rows with a tooltip id) are providers.
@@ -102,7 +102,7 @@ Rules live in: update.py comments over `build_synergy` / `SYN_*`, check.ts heade
 - PENDING 3 — Russian status names and slot labels (S1/S2/S3/Burst) against the Russian client: not recorded as reviewed.
 
 ## 0180 Hero card lines, and the walk→main merge review (0160)
-Folders: `.x/0180-card` (+ `.x/0160-merge-review`, source of its findings)). Merged: straight on `main` (owner: «можно сразу в main»), pushed 2026-10-10: `dc9fd9f` set header lines, `928bb0f` set value on «Что искать», `d4f1491` T4 line, `2e3e07c` budget, `3fdc1bc` tips + DEVELOPMENT. The review's own fixes landed on `walk` (e.g. `bed2e7f`, `810e181`, `cabe478`, `b9fafa5` MODEL.md, `9cf1038` DEVELOPMENT) and `walk` merged as `699d1eb` (2026-10-10). Code: `src/features/worn/wearing.ts` (`seekOf`/`seekGain`, `t4Of`, `WornView.passive`), `WornSets.tsx` (+ `setBlocksOf` in `features/gear/ui/pieceText.tsx`), `WornBudget.tsx`, `WornGear.tour.ts`; tests `test/worn/wearing.test.ts`, `wornSets.test.ts`, `wornTab.dom.test.ts`.
+Folders: `.x/0180-card` (+ `.x/0160-merge-review`, source of its findings). Merged: straight on `main` (owner: «можно сразу в main»), pushed 2026-10-10: `dc9fd9f` set header lines, `928bb0f` set value on «Что искать», `d4f1491` T4 line, `2e3e07c` budget, `3fdc1bc` tips + DEVELOPMENT. The review's own fixes landed on `walk` (e.g. `bed2e7f`, `810e181`, `cabe478`, `b9fafa5` MODEL.md, `9cf1038` DEVELOPMENT) and `walk` merged as `699d1eb` (2026-10-10). Code: `src/features/worn/wearing.ts` (`seekOf`/`seekGain`, `t4Of`, `WornView.passive`), `WornSets.tsx` (+ `setBlocksOf` in `features/gear/ui/pieceText.tsx`), `WornBudget.tsx`, `WornGear.tour.ts`; tests `test/worn/wearing.test.ts`, `wornSets.test.ts`, `wornTab.dom.test.ts`.
 Rules live in: DEVELOPMENT.md «Where things are» (`features/worn` row), Wiki `Equipment` / `Экипировка` (Worn: points, budget, set lines, T4 line, «What to look for»), Help (`t.ui.help` Worn + «Pool and "Re-dress"»), tips `wornTab` rev 3 and `wornBudget` (both `news: true`); the review's rules in MODEL.md (§8, §10 tags Q1–Q7).
 
 **Why.** The merge review of `walk` (75 commits, 246 files, no blocker; 41,200 piece/chain pairs re-computed independently) also asked what the hero card still does not tell: which set to chase, what a set is worth, what T4 would add. Owner picked the cheap lines; on the owner roster the Pool tab repeated Worn for 56 of 59 heroes and «Что искать» showed for 16 heroes, sets only, no value.
@@ -130,7 +130,7 @@ Rules live in: DEVELOPMENT.md «Where things are» (`features/worn` row), Wiki `
 **Checks.** Done: implementation checked against prototypes on the owner roster (27 seek rows, 21 shown with identical gains, 6 hidden; T4 lines same gains and pieces; oracle `impl/oracle.test.ts`); `task tour:check` sizes/themes. Pending / never done (review «Not checked»): the game's Dismantle-list order and whether it equals the inventory list (B10, why walk `#n` is dropped after a Breakthrough), the Breakthrough material list, the hero slot list, the «P» mark and how a locked piece looks, a non-English client, real Android WebView/fonts, the real 800–900-piece backlog (all batches synthetic).
 
 ## 0190 / 0195 / 0197 Hero stars — transcend ★ per hero, one star element
-Folders: `.x/0190-hero-stars`, `.x/0195-hero-stars-review`, `.x/0197-stars-roster`). Merged: `8c146f9` (2026-10-12, branch `stars`), then `12aaf75` + `eddcdfe` (0197, merged `7e61c08`, 2026-10-12). Code: `src/game/hero/{Stars.tsx,star.ts}`, `src/game/stat/total.ts` (`ownStat`, `trans`), `src/game/context.ts` (`Ctx.stars`), `src/features/gear/model/{gear,fusion}.ts` (`stars`, `setStars`, `starsTo`), `src/features/gear/store/gearStore.ts` (`restoreStars`), `src/features/roster/{backup,useRosterUi,CharTile}`, `src/screens/chars/{CharDetail,CharHead}.tsx`, `src/screens/team/TeamScreen.tsx`, `update.py` (`trans_steps`, `trans_level`, `unique_passive`, `crit_profile`).
+Folders: `.x/0190-hero-stars`, `.x/0195-hero-stars-review`, `.x/0197-stars-roster`. Merged: `8c146f9` (2026-10-12, branch `stars`), then `12aaf75` + `eddcdfe` (0197, merged `7e61c08`, 2026-10-12). Code: `src/game/hero/{Stars.tsx,star.ts}`, `src/game/stat/total.ts` (`ownStat`, `trans`), `src/game/context.ts` (`Ctx.stars`), `src/features/gear/model/{gear,fusion}.ts` (`stars`, `setStars`, `starsTo`), `src/features/gear/store/gearStore.ts` (`restoreStars`), `src/features/roster/{backup,useRosterUi,CharTile}`, `src/screens/chars/{CharDetail,CharHead}.tsx`, `src/screens/team/TeamScreen.tsx`, `update.py` (`trans_steps`, `trans_level`, `unique_passive`, `crit_profile`).
 Rules live in: MODEL.md §12 items 1–3, 8; DEVELOPMENT.md Storage («`stars` (hero → transcend ★ 1…6…»), `heroCode` note, `game/hero` rows; Wiki `Characters-and-guild-code`, `Equipment`, `Team-check` (EN/RU); Help `t.ui.helpChars` («★★★★★☆ by the name»), `t.ui.helpTeamItems`; tour tip `heroStars` (rev 1, `news`).
 
 **Why.** The app assumed every hero was ★3, the owner's are ★4…6. Transcend gives some heroes crit (Poolside Trickster Regina +65 % from ★5: the card said 50 %, the game 100 %); the owner lowered N by hand. Ticket «right after the 0135 crit stages».
@@ -189,7 +189,7 @@ Rules live in: code header comments of `find.ts` / `FindPiece.tsx`; Wiki `Charac
 
 ## 0200-boss A–D — dressing in turn, boss data, boss on «Команда», hero EFF (reviews 0201, 0202)
 Folders: `.x/0200-boss` (IDEA, RESEARCH, PLAN, START-PROMPT-A..D, `data/`, `mock/`, `shots-A/C/D`), reviews `.x/0201-boss-review-ab`,
-`.x/0202-boss-review-cd`). Merged (all 2026-10-12, not published then): A `9bdb75f` · B `18e9a51` · review A+B
+`.x/0202-boss-review-cd`. Merged (all 2026-10-12, not published then): A `9bdb75f` · B `18e9a51` · review A+B
 `8e46cba` · C `8c2e366` · D + review C+D `49687e9`. Code: `features/trade/model/{turn,chunks}.ts`, `update.py` (`build_bosses`,
 `eff_profile`, `needs_eff`, `main_values`), `game/data/types.ts` (`Bosses`, `Char.eff`), `features/boss/`, `game/stat/eff.ts`,
 `features/worn/{EffSheet.tsx,wearing.ts}`, `GearStore.eff`, `scripts/check-data.mjs`.
@@ -470,7 +470,7 @@ Rules live in: MODEL.md §5 (Parked — "The way out"), DEVELOPMENT.md «screens
 **Checks.** Shots exist (folder `shots/`), both themes; no result notes were kept. No in-game checks pending; the premise (unlocked in the game → ownerless → comes back in dismantling) is the owner's stated game behaviour, not re-verified by us.
 
 ## 0205 Hero level per hero — Lv 100 / 120 in the star sheet
-Folders: `.x/0205-hero-level`). Merged: `35b92d8` (2026-10-12, branch `hero-level` from 49687e9; commits `e8ae24d`, `928b06c`, `ec038a8`, `dc33276`). Code: `src/game/hero/level.ts` (`lv120Of`), `src/game/context.ts` (`Ctx.lv`), `src/features/gear/model/gear.ts` (`lv`), `store/gearStore.ts`, `src/features/roster/backup.ts` (OGC-GEAR8), `src/game/hero/Stars.tsx` (level pill), `src/screens/chars/{CharDetail,BuildView}.tsx`.
+Folders: `.x/0205-hero-level`. Merged: `35b92d8` (2026-10-12, branch `hero-level` from 49687e9; commits `e8ae24d`, `928b06c`, `ec038a8`, `dc33276`). Code: `src/game/hero/level.ts` (`lv120Of`), `src/game/context.ts` (`Ctx.lv`), `src/features/gear/model/gear.ts` (`lv`), `store/gearStore.ts`, `src/features/roster/backup.ts` (OGC-GEAR8), `src/game/hero/Stars.tsx` (level pill), `src/screens/chars/{CharDetail,BuildView}.tsx`.
 Rules live in: DEVELOPMENT.md Storage («`lv` (hero → …100 or 120…»), Wiki `Characters-and-guild-code`, `Equipment`, Help `helpChars` + settings note `levelNote` (`t.ui.help…`), tip `heroStars` rev 2 (`news`). MODEL.md §0 and §1.3 (the marked level wins over `lv120`).
 
 **Why.** Lv 100 is easy, Lv 120 slow and expensive — one global «Lv 120» switch is wrong for most rosters.
@@ -483,7 +483,7 @@ Rules live in: DEVELOPMENT.md Storage («`lv` (hero → …100 or 120…»), Wik
 **Checks.** Done: `task test` 2467, `task tour:check`, golden unchanged. Pending: none.
 
 ## 0206 Boss slot and sheet — the boss as a fifth slot behind «VS»
-Folders: `.x/0206-boss-sheet`). Merged: `59e98e1` (2026-10-14, with 0208; commits 76249f6 data,
+Folders: `.x/0206-boss-sheet`. Merged: `59e98e1` (2026-10-14, with 0208; commits 76249f6 data,
 ae43736 UI). Code: `src/features/boss/ui/{BossSlot,BossFace,BossSheet,stageText}.tsx`, `src/features/boss/model/stored.ts`
 (`ogc.boss` v2), `src/features/team/ui/TeamSlots.tsx`, `src/shared/ui/Sheet.tsx` (`foot`), `src/styles/team.css`, `update.py`
 (`build_bosses` icon, `fetch_images`).
@@ -515,7 +515,7 @@ duplicate paths (same `.tmp`) — images keyed by icon, fetched once. The approv
 **Checks.** Shots 10 scenes × 6 sizes × 2 themes + EN; `task tour:check` green. No in-game check needed.
 
 ## 0208 Singularity guide teams — named pools of hero groups
-Folders: `.x/0208-ds-teams`). Merged: `59e98e1` (2026-10-14; commit 1a649d2). Code:
+Folders: `.x/0208-ds-teams`. Merged: `59e98e1` (2026-10-14; commit 1a649d2). Code:
 `src/features/boss/model/boss.ts` (`fillFrom`, pool teams), `src/features/boss/ui/GuideChoice.tsx`, `src/game/data/types.ts`
 (`BossTeam.p`, `l`), `update.py` (ds teams from `content.json`), `scripts/check-data.mjs`.
 Rules live in: DEVELOPMENT.md «Where things are» (`features/boss` «Собрать из гайда»; `game/data` `Dataset.bosses`); Wiki
