@@ -1,4 +1,4 @@
-// A hero's EFF from what the app knows (.x/0200-boss RESEARCH §1.2, the game's CalcFinalStat):
+// A hero's EFF from what the app knows (HISTORY.md 0200-boss RESEARCH §1.2, the game's CalcFinalStat):
 //   EFF = ⌊(⌊W · (1000 + gear rate)/1000⌋ + gear flat + own flat) · (1000 + premium)/1000⌋
 // W — white EFF (subclass and level: `lv120`); gear rate ‰ — EFF% substats (2.5 % a segment) and Effectiveness set rows,
 // both of W only; gear flat — the main lines (every glove's EFF, an accessory's EFF main) at +10 by tier; own flat — the
@@ -64,7 +64,7 @@ export function landChance(eff: number, res: number): number {
   return 1 - (Math.floor(Math.fround(1000 / Math.fround(1 + Math.fround(100 / d)))) + 1) / 1001;
 }
 
-// EFF in battle against a boss (.x/0200-boss review C+D, owner F1 and F4): what the stat screen doesn't show but is live
+// EFF in battle against a boss (HISTORY.md 0200-boss review C+D, owner F1 and F4): what the stat screen doesn't show but is live
 // when a skill's debuffs roll the resist — added to the premium sum, so it adds that many ‰ of the base (hero + gear):
 // - the element quirk node (with `quirks`): Light and Dark +5 % on every skill; Earth, Water, Fire +7 % when the hero's
 //   element beats the boss's (water → fire → earth → water) — read as +5 % for Light/Dark until the game says otherwise;

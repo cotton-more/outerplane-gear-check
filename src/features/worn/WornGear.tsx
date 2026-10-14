@@ -74,7 +74,7 @@ function CritLine({ c, crit, onClick }: { c: Char; crit: WornCrit; onClick?: () 
     : <p className={cls} {...tour('wcrit')}>{body}</p>;
 }
 
-// «Эфф: ≈ 233» (.x/0200-boss stage D): the same quiet line as crit — the EFF icon, the number in bold; no bar (no EFF target
+// «Эфф: ≈ 233» (HISTORY.md 0200-boss stage D): the same quiet line as crit — the EFF icon, the number in bold; no bar (no EFF target
 // before stage E). A tap opens «Эфф для X» (EffSheet)
 function EffLine({ eff, onClick }: { eff: WornEff; onClick?: () => void }) {
   const t = useT();

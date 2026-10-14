@@ -424,7 +424,7 @@ describe('«Надето»: the hero\'s crit «Crit: 45%»', () => {
   });
 });
 
-// «EFF» (.x/0200-boss stage D): the line under crit for heroes who need EFF (rule R), «≈» until the game's number is typed;
+// «EFF» (HISTORY.md 0200-boss stage D): the line under crit for heroes who need EFF (rule R), «≈» until the game's number is typed;
 // tap → «EFF for X»: the typed value is kept as a factor over the app's count
 describe('«Надето»: the hero\'s EFF «EFF: ≈ 233»', () => {
   const akari = D.chars.find((c) => c.name === 'Akari')!;
@@ -555,7 +555,7 @@ describe('«Надето»: the hero\'s stars', () => {
   });
 });
 
-// The hero's level (.x/0205): «Level [100][120][default]» in the star sheet; a mark keeps the level when the settings default
+// The hero's level (HISTORY.md 0205): «Level [100][120][default]» in the star sheet; a mark keeps the level when the settings default
 // flips; «· Lv 120» after the stars; EFF and flat vs % follow it
 describe('«Надето»: the hero\'s level', () => {
   const akari = D.chars.find((c) => c.name === 'Akari')!;

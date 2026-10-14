@@ -1,4 +1,4 @@
-// The SPD goal in the boss team trade (MODEL.md §13; .x/0200-boss E4): the gauge's SPD against spdOf and its shortfall split
+// The SPD goal in the boss team trade (MODEL.md §13; HISTORY.md 0200-boss E4): the gauge's SPD against spdOf and its shortfall split
 // exactly, the kit search exact with both goals (bestKit = bruteKit), no SPD goal = today's plans, a member below the target
 // takes SPD from one who doesn't need it, the Speed Set kept for a reachable target, both goals on one member, an unreachable
 // target degrades smoothly; the allies' transcend bonus, the most SPD a kit could give (over all pieces, and over the trade's

@@ -9,7 +9,7 @@ export const ANCHORS = [
   'wchain', // the chain with segment sums on «Надето»
   'wbudget', // the «Надето» heading that opens into stats, sets and passive
   'wcrit', // «Крит: 45%» under the chain on «Надето»
-  'weff', // «Эфф: ≈ 233» under the crit line on «Надето» (.x/0200-boss stage D)
+  'weff', // «Эфф: ≈ 233» under the crit line on «Надето» (HISTORY.md 0200-boss stage D)
   'hstars', // six stars before «Attacker · DPS» in the card header
   'pin', // «Закрепить набор» / «Закреплено: …» в карточке героя
   'fusion', // пометка «заменён Core Fusion X» на плитке X
@@ -18,9 +18,9 @@ export const ANCHORS = [
   'batch', // «Партия»: next to «Следующий» on a wide screen, in «Ещё» on a phone
   'share', // «Поделиться» во вкладке «Надето»
   'team', // the four spots on «Команда»
-  'teamBoss', // the boss slot beside the team on «Команда» (.x/0206-boss-sheet)
-  'teamTurn', // the turn plan under the team: «Ход против босса» / without a boss «Порядок хода» (.x/0200-boss E1, 0206)
-  'teamTrade', // «Подобрать вещи» under the team (.x/0200-boss E2)
+  'teamBoss', // the boss slot beside the team on «Команда» (HISTORY.md 0206)
+  'teamTurn', // the turn plan under the team: «Ход против босса» / without a boss «Порядок хода» (HISTORY.md 0200-boss E1, 0206)
+  'teamTrade', // «Подобрать вещи» under the team (HISTORY.md 0200-boss E2)
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
   'stash', // «Отложить для X» под карточкой вердикта и в строке героя
 ] as const;

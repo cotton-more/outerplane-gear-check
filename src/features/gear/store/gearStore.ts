@@ -122,7 +122,7 @@ const restoreCrit = (raw: unknown): Record<string, number> =>
 const restoreStars = (raw: unknown): Record<string, number> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, number] => Number.isInteger(e[1]) && (e[1] as number) >= 1 && (e[1] as number) <= 6));
 
-// the typed stat-screen EFF (.x/0200-boss Q3): hero → {typed, at}, integers 1…EFF_MAX; anything else is dropped (the read
+// the typed stat-screen EFF (HISTORY.md 0200-boss Q3): hero → {typed, at}, integers 1…EFF_MAX; anything else is dropped (the read
 // is then «не целиком»)
 const okEff = (n: unknown) => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= EFF_MAX;
 const restoreEff = (raw: unknown): Record<string, EffCal> =>
@@ -131,7 +131,7 @@ const restoreEff = (raw: unknown): Record<string, EffCal> =>
     return okEff(r.typed) && okEff(r.at) && Object.keys(r).length === 2 ? [[id, { typed: r.typed as number, at: r.at as number }]] : [];
   }));
 
-// the hero's level (.x/0205-hero-level): hero → exactly 100 or 120; anything else is dropped (the read is then «не целиком»)
+// the hero's level (HISTORY.md 0205): hero → exactly 100 or 120; anything else is dropped (the read is then «не целиком»)
 const restoreLevel = (raw: unknown): Record<string, 100 | 120> =>
   Object.fromEntries(Object.entries(record(raw)).filter((e): e is [string, 100 | 120] => e[1] === 100 || e[1] === 120));
 

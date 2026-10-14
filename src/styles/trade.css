@@ -1,4 +1,4 @@
-/* «Обмен вещами» (features/trade): шторка, план (обмен для команды — с «Команды», .x/0200-boss E2). Телефон 280–420 px — основной размер. */
+/* «Обмен вещами» (features/trade): шторка, план (обмен для команды — с «Команды», HISTORY.md 0200-boss E2). Телефон 280–420 px — основной размер. */
 .drawer.trade, .drawer.trade-entry { max-width: 560px; }
 .trade-b { display: grid; gap: 10px; }
 .trade-q { margin: 0 0 6px; font-weight: 600; font-size: 14px; }
@@ -22,7 +22,7 @@
 .trade-session .btn { flex: none; }
 .trade-busy { margin: 0; display: flex; align-items: center; gap: 12px; font-weight: 600; }
 
-/* план — обход (.x/0200-boss E2b): шаг — круглая галочка и сам шаг */
+/* план — обход (HISTORY.md 0200-boss E2b): шаг — круглая галочка и сам шаг */
 /* one shrinking track, not `auto`: a long order name ellipsizes in its pill instead of widening every card past the sheet's right gutter */
 .tplan { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 10px; font-size: 12.5px; }
 .tplan .bgear-row .ico, .tplan .bgear-row img { width: 18px; height: 18px; }
@@ -40,13 +40,13 @@
 .tgain.down { color: var(--junk); }
 .tline-s { flex-basis: 100%; font-size: 12px; font-weight: 500; color: var(--ink-2); }
 .tline-s .down { color: var(--junk); }
-/* the EFF goal part (.x/0200-boss E3): the stat icon as on «Ход против босса», the chance amber, ✓ green */
+/* the EFF goal part (HISTORY.md 0200-boss E3): the stat icon as on «Ход против босса», the chance amber, ✓ green */
 .teff img, .teff .ico { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
 .teff .ico { margin-right: 7px; } /* the «%» badge sits past the outline's corner */
 .teff img.gstat { width: 11px; height: 11px; padding: 1px; }
 .teff .lack { color: var(--temp); font-weight: 700; }
 .teff .ok { color: var(--keep); font-weight: 700; }
-/* the SPD goal's row (.x/0200-boss E4): the Speed Set's icon, as on the timeline */
+/* the SPD goal's row (HISTORY.md 0200-boss E4): the Speed Set's icon, as on the timeline */
 .tspd > span { display: inline-flex; align-items: center; } /* the Speed Set's framed icon sat ~3 px low on the baseline */
 .tspd img, .tspd .ico { width: 13px; height: 13px; margin-right: 4px; }
 .tspd .ok, .tspd .lack, .tspd .sep { margin-left: .25em; } /* flex drops the spaces */
@@ -69,7 +69,7 @@
 .tsrc { grid-column: 2 / 4; font-size: 11px; color: var(--ink-3); }
 .tplan .bgear-t .tok.sort { box-shadow: inset 0 0 0 1px var(--accent); }
 
-/* the walk (.x/0200-boss E2b, mockups approved 2026-10-13): a step is a card with a round tick on the left; done — dimmed,
+/* the walk (HISTORY.md 0200-boss E2b, mockups approved 2026-10-13): a step is a card with a round tick on the left; done — dimmed,
    the tick stays at full strength; a lock, an empty slot and a declined step — dashed, no fill */
 .tsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .tstep { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 9px 7px 7px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }

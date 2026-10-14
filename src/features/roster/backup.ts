@@ -6,9 +6,9 @@
 // повторяются («Speed», «13x4»), подписей мало — номер в словаре короткий.
 // From OGC-GEAR5 — the hero's N («сколько крита нужно герою», crit): a flag and 7 bits, only for heroes who changed it from 100.
 // From OGC-GEAR6 — the hero's in-game stars (1…6, transcend): a flag and 3 bits, after the N field; a hero with only stars is in the list too.
-// From OGC-GEAR7 — the typed stat-screen EFF (.x/0200-boss Q3): a flag and two 14-bit numbers (typed, the app's EFF then), after the stars.
-// From OGC-GEAR9 — parked pieces (.x/0200-boss E2b): after a hero's worn slots a flag, then one bit per pool piece.
-// From OGC-GEAR8 — the hero's level (.x/0205-hero-level): a flag and 1 bit (0 — 100, 1 — 120), after the EFF; a hero with only a level is in the list too.
+// From OGC-GEAR7 — the typed stat-screen EFF (HISTORY.md 0200-boss Q3): a flag and two 14-bit numbers (typed, the app's EFF then), after the stars.
+// From OGC-GEAR9 — parked pieces (HISTORY.md 0200-boss E2b): after a hero's worn slots a flag, then one bit per pool piece.
+// From OGC-GEAR8 — the hero's level (HISTORY.md 0205): a flag and 1 bit (0 — 100, 1 — 120), after the EFF; a hero with only a level is in the list too.
 // Не переносится (решение 3): незнакомые поля, номера вещей (выдаются заново), порядок ростера, отдельные «жёлтые».
 // Общая запись (вещь в пулах двух героев) становится двумя копиями.
 // OGC-GEAR8 (no parking), OGC-GEAR7 (no level), OGC-GEAR6 (no EFF), OGC-GEAR5 (no stars), OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.

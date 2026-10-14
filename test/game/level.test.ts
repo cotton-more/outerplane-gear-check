@@ -1,4 +1,4 @@
-// The hero's level (.x/0205-hero-level): a level marked on the card (Ctx.lv, 100 or 120) wins over the `lv120` setting —
+// The hero's level (HISTORY.md 0205): a level marked on the card (Ctx.lv, 100 or 120) wins over the `lv120` setting —
 // «Уровень по умолчанию» — for every reader: flat vs % (flatFactor), white EFF (effOf); other heroes follow the default.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';

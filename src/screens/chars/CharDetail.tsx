@@ -144,7 +144,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const next = setCrit(gear.store, c.id, n);
     if (next !== gear.store) gear.set(next);
   };
-  // the typed stat-screen EFF (.x/0200-boss Q3): saved on «Готово», no message (like N); null — «Сбросить»
+  // the typed stat-screen EFF (HISTORY.md 0200-boss Q3): saved on «Готово», no message (like N); null — «Сбросить»
   const saveEff = (cal: EffCal | null) => {
     setSheet(null);
     const next = setEff(gear.store, c.id, cal);
@@ -156,7 +156,7 @@ export function CharDetail({ charId, ctx, view, rosterApi, gear, active, sheetOp
     const next = setStars(gear.store, c.id, k);
     if (next !== gear.store) gear.set(next);
   };
-  // the hero's level (.x/0205): 100 / 120 marks the hero, «по умолчанию» forgets the mark; the sheet stays open (the row
+  // the hero's level (HISTORY.md 0205): 100 / 120 marks the hero, «по умолчанию» forgets the mark; the sheet stays open (the row
   // shows what is set), no message
   const lv120 = lv120Of(ctx, c), marked = levelOf(gear.store, c.id) !== null;
   const saveLevel = (v: 100 | 120 | null) => {

@@ -65,7 +65,7 @@ const saved = () => JSON.parse(localStorage.getItem('ogc.state')!);
 const nav = () => $$('.more-nav button').map((b) => b.textContent);
 
 describe('1. шторка «Ещё» на телефоне', () => {
-  it('16. первая группа — переходы: ★ Персонажи, «To dress · N», «Team» (the team trade lives there, .x/0200-boss E2); после неё — действия и настройки', async () => {
+  it('16. первая группа — переходы: ★ Персонажи, «To dress · N», «Team» (the team trade lives there, HISTORY.md 0200-boss E2); после неё — действия и настройки', async () => {
     await mount({ roster: [caren.id, kappa.id], gear: GEAR });
     await openMore();
     expect($('.more')?.firstElementChild?.classList.contains('more-nav')).toBe(true);

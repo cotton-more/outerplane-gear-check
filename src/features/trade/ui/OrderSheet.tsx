@@ -1,7 +1,7 @@
 // Заказ героя в обмене (MODEL.md §7 item 1): «Заказ: По статам ▾» у героя плана — шторка с вариантами: «По статам» и
 // наборы из его билдов (combosOf); у закреплённого — один вариант «Закреплено: …» (жёстко, MODEL.md §6). In the one-hero
 // trade the choice lives in the sheet, like «Не брать» (closed — forgotten); on «Команда» it is the build under a spot
-// (OrderPill), kept with the team in 'ogc.boss' (.x/0200-boss E2). Смена — пересчёт; на другой заказ обмен сам не переключается.
+// (OrderPill), kept with the team in 'ogc.boss' (HISTORY.md 0200-boss E2). Смена — пересчёт; на другой заказ обмен сам не переключается.
 import type { Char, Combo } from '@/game/data/types';
 import { Icon, SetIcon } from '@/game/icons/Img';
 import { useT } from '@/i18n';
@@ -31,7 +31,7 @@ export function OrderButton({ name, short, onClick }: { name: string; short?: bo
   );
 }
 
-// the build under a spot on «Команда» (.x/0200-boss E2): «статы ▾», or the combo's set icons with ×N; pinned — the gold
+// the build under a spot on «Команда» (HISTORY.md 0200-boss E2): «статы ▾», or the combo's set icons with ×N; pinned — the gold
 // outline and a pin (the pin is the order, hard; changed on the hero's card). label — the full phrase for a screen reader
 export function OrderPill({ ctx, combo, pinned, label, onClick }: {
   ctx: Ctx; combo: Combo | null; pinned: boolean; label: string; onClick: () => void;

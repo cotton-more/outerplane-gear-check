@@ -101,8 +101,8 @@ SPD and RES.
   shown: after it, skills, buffs and pushes decide.
 - **SPD** is what the app knows: the hero's base (level, Quirks), SPD substats, an SPD accessory, the Speed set and the
   SPD bonus from allies' transcend — Dianne, Mene, Liselotte, Viella… give the whole team +5 at ★4–5 and +10 at ★6, and
-  several of them add up, the hero's own row too (the turn order counts it, the hero's stat screen doesn't show it; the
-  row says "SPD 148 (+10 transcend)"). The EE, talisman and battle buffs are invisible — in the game the hero may be faster.
+  several of them add up, the hero's own row too (the turn order counts it; the hero's own row is already in the SPD on
+  their stat screen, the allies' rows are added only in battle; the row says "SPD 148 (+10 transcend)"). The EE, talisman and battle buffs are invisible — in the game the hero may be faster.
 - **Who should move first.** Not everyone: only a hero whose first move does something before the boss acts — on turn 1
   only S1 is ready (S2 and S3 start on cooldown), so the app looks at S1 (and at S2/S3 that are ready at once): it lowers
   the boss's ATK, SPD or crit, pushes it back on the turn gauge, taunts it, stuns it, delays its skills, or shields the
@@ -182,6 +182,7 @@ Only heroes with something to say are listed.
 - Class passives and transcend "+N% ally DEF" passives: in the game they don't give the status (checked in game on
   Veronica). Chain and Dual Attack procs and effects that fire on an event («when hit», «on death») don't count either.
 - Enemy buffs (Fenrir's «target has a Barrier») and boss immunities.
+- Buffs that work only for one element or only against bosses, and exclusive-equipment effects.
 - Statuses only the hero herself can give (her own mechanic, like Beth's Retribution's Dominion): nothing for the team
   to change, so no line.
 

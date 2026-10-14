@@ -1,7 +1,7 @@
-// The hero sheet of a team spot (.x/0171-team-suggest): first who fits the team — recommended together with its heroes in
+// The hero sheet of a team spot (HISTORY.md 0171): first who fits the team — recommended together with its heroes in
 // outerpedia's teams, and whose skills start working (owner 2026-10-11: outerpedia first); with an empty team — who is
 // most often in outerpedia's teams. Below — everyone else by name. One name search for both.
-// With a boss (.x/0200-boss stage C) — guide: the guide's heroes for this spot replace «Подойдут команде» (owner
+// With a boss (HISTORY.md 0200-boss stage C) — guide: the guide's heroes for this spot replace «Подойдут команде» (owner
 // 2026-10-12), with one line naming the guide's heroes not in the roster; when none of them is in the roster, the
 // suggestions stay under that line (C3).
 import { useState } from 'react';

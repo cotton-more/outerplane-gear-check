@@ -66,7 +66,7 @@ export interface ChainSum { key: string; seg: number; credit: number; sep: '' | 
 // and the hero's N («сколько крита нужно герою», the sheet). Only for a hero with CHC in the chain who wears something, and only with data
 // that has the hero's CHC and main values (an old snapshot would show a number far below the game's)
 export interface WornCrit { total: number; own: number; stars: number; need: number } // own — the hero's part: base, class, quirks; stars — transcend at the hero's ★
-// «Эфф: ≈ 233» (.x/0200-boss stage D): EFF the app knows from the worn pieces and the hero (game/stat/eff), calibrated by the
+// «Эфф: ≈ 233» (HISTORY.md 0200-boss stage D): EFF the app knows from the worn pieces and the hero (game/stat/eff), calibrated by the
 // player's typed stat-screen value (cal). Only for heroes who need EFF against a boss's RES (rule R, Char.eff.d)
 export interface WornEff { e: Eff; shown: EffShown; cal: EffCal | null }
 // another chain of the hero's builds, for reference (owner, 2026-10-07): the first build with it names it

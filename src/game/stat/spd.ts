@@ -1,4 +1,4 @@
-// A hero's SPD from what the app knows (.x/0200-boss E1, owner: the app's count only, no typed value), the game's
+// A hero's SPD from what the app knows (HISTORY.md 0200-boss E1, owner: the app's count only, no typed value), the game's
 // CalcFinalStat like EFF (game/stat/eff): SPD = ⌊B · (1000 + gear rate)/1000⌋ + gear flat. B — the hero's base SPD (level
 // by `lv120Of`, quirks by the setting — the same base the Speed Set's rows are counted on, game/set/setBonus spdBase);
 // gear rate ‰ — the Speed Set rows (% of B, the T4 rule of bonusRows); gear flat — SPD substats (3 a segment, ≤ 6 segments)
@@ -30,9 +30,10 @@ export function spdOf(ctx: Ctx, c: Char, pieces: readonly StatPiece[]): Spd | nu
   return { base, gear: total - base, total };
 }
 
-// SPD the transcend passives add in battle (.x/0200-boss E4 Q6; outerpedia's priority formula: «Ally Speed transcend bonus»,
+// SPD the transcend passives add in battle (HISTORY.md 0200-boss E4 Q6; outerpedia's priority formula: «Ally Speed transcend bonus»,
 // Dianne + Mene + Demiurge Delta = 30, so the rows add up): every member's team row at that member's ★ (the hero's own
-// included) and the hero's self-only row. The stat screen doesn't show it; the turn order counts it
+// included) and the hero's self-only row. The bearer's own row is already in their stat screen's SPD (checked in game 2026-10-14,
+// Mene ★6); teammates' rows are added only in battle — the turn order counts both (MODEL.md §14)
 export interface SpdMate { c: Pick<Char, 'id' | 'spdUp'>; star: number }
 const upAt = (m: SpdMate) => m.c.spdUp?.t[m.star - 1] ?? 0;
 export function spdBonus(c: Pick<Char, 'id' | 'spdUp'>, star: number, mates: readonly SpdMate[]): number {

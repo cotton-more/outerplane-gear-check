@@ -251,7 +251,7 @@ function problems(D) {
   const rangers = D.chars.filter((c) => c.class === 'ranger');
   if (rangers.length && !rangers.every((c) => c.eff?.r === 50)) out.add('EFF: не у всех Ranger узел квирков +50 (eff.r) — формат quirks изменился?');
   // EE premium (eff.ee, ‰) and rule R (eff.d): the 17 heroes whose Exclusive Equipment gives a permanent self EFF premium
-  // (Tanya and Rico +50 %, the rest +100 %), and who needs EFF against a boss's RES (.x/0200-boss RESEARCH §1.5)
+  // (Tanya and Rico +50 %, the rest +100 %), and who needs EFF against a boss's RES (HISTORY.md 0200-boss RESEARCH §1.5)
   const EE_HEROES = ['Tanya', 'Rico', 'Alice', 'Beth', 'Eternal', 'Sterope', 'Tamara', 'Christina', 'Akari', 'Iota', 'Kuro',
     'Gnosis Nella', 'Ember', 'Omega Nadja', 'Core Fusion Snow', 'Resonance Eliza', 'Core Fusion Eternal'];
   const eeNow = D.chars.filter((c) => c.eff?.ee).map((c) => c.name);
@@ -271,7 +271,7 @@ function problems(D) {
   const tmBad = [...['Iota', 'Dahlia', 'Gnosis Nella'].filter((n) => !tmOf(n)).map((n) => `${n} без tm`),
     ...['Gnosis Domine', 'Iris'].filter(tmOf).map((n) => `${n} с tm`)];
   if (D.chars.length && tmBad.length) out.add(`EFF трансценда на всю команду (eff.tm): ${tmBad.join(', ')} — формат skills или buffs изменился?`);
-  // SPD from transcend (spdUp, .x/0200-boss E4 Q6): Dianne, Mene, Liselotte, Viella reach the team (+5/+5/+10 at ★4–6), Claire
+  // SPD from transcend (spdUp, HISTORY.md 0200-boss E4 Q6): Dianne, Mene, Liselotte, Viella reach the team (+5/+5/+10 at ★4–6), Claire
   // only herself; the turn-1 reasons (turn, E4 Q1): Akari S1 boss ATK down (from skill level 3, createRate 400, 400, 550 …: the
   // «@3» in the anchor is `lv`, E4-7), Veronica S1 taunt + S2 shield on the ally with the lowest HP (shield1, E4-6), Iota S1
   // priority down, Vlada S1 cooldown up (BT_COOL3_CHARGE); Ember has none — her S1 taunt needs a status her S3 gives (a

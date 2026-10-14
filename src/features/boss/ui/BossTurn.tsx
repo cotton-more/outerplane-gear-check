@@ -1,4 +1,4 @@
-// «Ход против босса» under the team (.x/0200-boss E1, owner 2026-10-13: one column instead of «Эфф против RES»): a turn
+// «Ход против босса» under the team (HISTORY.md 0200-boss E1, owner 2026-10-13: one column instead of «Эфф против RES»): a turn
 // line on the left with a stopwatch on top; the team and the boss in the order of the first turn (model/turn: the start
 // gauge with its hidden head start — above the boss surely first, dashed — luck with its chance, grey — after; only the
 // first turn). A row: face, name, SPD (the Speed Set's icon; game/stat/spd — what the app knows) and, for a hero who needs

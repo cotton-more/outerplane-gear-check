@@ -2,7 +2,7 @@
 // team slot, a report header and the card header; StarPick — tap the N-th star (min — stars below it are lit and can't be
 // picked: the hero's minimum on the card, the card's ★ in Team); StarSheet — the sheet with the pick (none without onStar)
 // and the caller's actions below it (the card: «Убрать из ростера»); what the stars give is not shown here, it just counts.
-// With `level` (the card, .x/0205) — under the stars one pill «по умолчанию | Lv 100 | Lv 120» (owner 2026-10-12: a
+// With `level` (the card, HISTORY.md 0205) — under the stars one pill «по умолчанию | Lv 100 | Lv 120» (owner 2026-10-12: a
 // three-way switch): «по умолчанию» chosen — the level the settings give is lit pale gold; a level chosen — bright gold.
 import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';

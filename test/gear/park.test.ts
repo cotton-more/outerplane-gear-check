@@ -1,4 +1,4 @@
-// Parked pieces (MODEL.md §5; .x/0200-boss E2b Q3, O2): park ⊂ pooled and not worn; the mark goes once someone wears the
+// Parked pieces (MODEL.md §5; HISTORY.md 0200-boss E2b Q3, O2): park ⊂ pooled and not worn; the mark goes once someone wears the
 // piece; it travels with the record (drop / undo, Core Fusion); the verdict, reserves and the batch see a pool without it;
 // the backup OGC-GEAR9 keeps it, OGC-GEAR8 still reads.
 import { describe, expect, it } from 'vitest';
@@ -61,7 +61,7 @@ describe('storage', () => {
   });
 });
 
-describe('«Припаркованные» (.x/0204-parked-list)', () => {
+describe('«Припаркованные» (HISTORY.md 0204)', () => {
   // Caren: w worn, p parked; Rin: a parked boots piece r, a parked helmet h and an unparked x
   const two = (): GearStore => {
     const s = st(true);

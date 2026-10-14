@@ -313,7 +313,7 @@ export const ru = {
     critSplit: (hero: number, gear: number, stars: number) => `Герой ${hero}% · ${stars > 0 ? `звёзды ${stars}% · ` : ''}вещи ${gear}%`,
     // the stars button in the card header (PLAN 0190 T1): six small stars before «Attacker · DPS»
     starsAria: (name: string, n: number, lv120: boolean) => `Звёзды ${name}: ★${n}${lv120 ? ', Lv 120' : ''} — поменять или убрать из ростера`,
-    // after the stars in the card header, only for a hero at 120 (.x/0205)
+    // after the stars in the card header, only for a hero at 120 (HISTORY.md 0205)
     lv120Mark: '· Lv 120',
     critTitle: (name: string) => `Крит для ${name}`,
     critAbout: 'Сколько крита нужно герою. Ближе к этому числу крит ценится меньше, выше — не ценится. Понизь, если крит дают камни, талисман или команда.',
@@ -322,7 +322,7 @@ export const ru = {
     critMore: 'Больше',
     critReset: 'Сбросить',
     critGo: 'Готово',
-    // «Эфф: ≈ 233» on «Надето» (.x/0200-boss stage D): heroes who need EFF against a boss's RES; «≈» — the app's estimate
+    // «Эфф: ≈ 233» on «Надето» (HISTORY.md 0200-boss stage D): heroes who need EFF against a boss's RES; «≈» — the app's estimate
     // (nothing typed or gear changed since); the sheet keeps the player's stat-screen value
     effLine: 'Эфф:',
     effApprox: 'примерно',
@@ -398,7 +398,7 @@ export const ru = {
     findPiece: 'Найти вещь',
     findGo: 'Найти',
     findHint: 'Код вещи — в вердикте («Код для чата») и в карточке вещи. Ищется вещь с теми же статами в том же порядке.',
-    // «Припаркованные» (screens/parked, .x/0204-parked-list): every parked piece by hero, «Убрать» per row
+    // «Припаркованные» (screens/parked, HISTORY.md 0204): every parked piece by hero, «Убрать» per row
     parkedMenu: (n: number) => `Припаркованные · ${n}`,
     parkedTitle: 'Припаркованные вещи',
     parkedTop: 'Сняты в обмене, и никому не подошли — в игре они под замком. Не нужна — сними замок в игре и нажми «Убрать»: вещь станет бесхозной и снова попадёт в оценку при разборе.',
@@ -630,7 +630,7 @@ export const ru = {
     rosterToggle: (name: string, own: boolean) => `${name} — ${own ? 'убрать из ростера' : 'добавить в ростер'}`,
     // the star sheet (card and Team): the title and the six stars
     stars: (name: string) => `Звёзды: ${name}`,
-    // the card's star sheet with the hero's level (.x/0205): «Lv 100 | Lv 120» and the «по умолчанию» tick
+    // the card's star sheet with the hero's level (HISTORY.md 0205): «Lv 100 | Lv 120» and the «по умолчанию» tick
     starsLevel: (name: string) => `Звёзды и уровень: ${name}`,
     levelHero: 'Уровень героя',
     levelDefault: 'по умолчанию',
@@ -741,7 +741,7 @@ export const ru = {
       '**Порядок хода** — под командой, как только в ней есть герои: сверху вниз — порядок первого хода по скорости. С боссом он называется **Ход против босса**, босс — красная строка со своим портретом на своём месте. Кто выше босса — ходит раньше него наверняка; ниже — после. Пунктир с ⏱ «раньше 74%» — решает удача: в начале боя у каждого скрытый случайный разгон до 5 %, поэтому герой со скоростью от 0,95 до 1,053 скорости босса может походить и раньше, и позже. Скорость — что знает приложение: база (уровень, Quirks), сабстаты, аксессуар с SPD, Speed set и бонус скорости от трансценда союзников (Mene, Dianne, Liselotte, Viella…); EE, талисман и баффы в бою не видны — в игре герой может быть быстрее. Показан только первый ход: дальше всё решают навыки и баффы.',
       'У каждого, кому нужен эфф, — значок эффа и шанс, что босс не отразит дебафф; «✓ 100%» — эфф выше RES, дебафф проходит всегда. Эфф боевой: к числу с карточки добавлены узел стихии в Quirks (Light и Dark +5 %, остальные +7 %, если стихия героя сильнее стихии босса) и трансцендентность союзника, которая даёт эфф всей команде (самая сильная). Нажми строку — сколько эффа не хватает до RES + 1; тем, чей первый ход ослабляет босса или защищает команду, — почему им важно ходить раньше и сколько скорости для этого нужно; и «Эфф из игры» — вписать число с экрана героя.',
       'Каждая строка начинается с того, что даёт статус: «**S1: двойная атака** — Повышение защиты даёт Kappa». **⚠ Никто не даёт** — статус нужен навыку, а в команде его не даёт никто. **⚠ Только от своего** — даёт сам герой, но позже, чем он нужен (число — перезарядка на старте боя, как на значке навыка), или только своим Burst. Ниже — **Дадут:** герои ростера, которые его дают; «с ★N» — только с этих звёзд; герой команды с недостающими звёздами — первым. **✓** тихой строкой — статус даёт союзник.',
-      'В отчёте о статусах не учитываются: шансы наложения, порядок ходов, пассивки классов (в игре они не дают статус), события («когда получает урон»), бафы врага и иммунитеты боссов. Статусы, которые даёт только сам герой (его механика), не показываются.',
+      'В отчёте о статусах не учитываются: шансы наложения, порядок ходов, пассивки классов (в игре они не дают статус), события («когда получает урон»), бафы врага и иммунитеты боссов, бафы только для одной стихии или только против боссов, эффекты эксклюзивной экипировки. Статусы, которые даёт только сам герой (его механика), не показываются.',
       'Команда запоминается на этом устройстве — одна на всех боссов, с билдами героев; последний босс и этап каждого босса тоже. В резервную копию не входит. Звёзды, примеренные на месте, не сохраняются. Функция в альфе: может ошибаться и ещё поменяется.',
     ],
     helpCode: 'Код для гильдии',
@@ -796,7 +796,7 @@ export const ru = {
     pickHero: 'Кого переодеть?',
     noHeroes: 'В ростере нет героев с билдами — отметь их звездой на «Персонажах».',
     counting: 'Считаю…',
-    byStatsShort: 'статы', // the build pill under a spot on «Команда» (.x/0200-boss E2)
+    byStatsShort: 'статы', // the build pill under a spot on «Команда» (HISTORY.md 0200-boss E2)
     cancel: 'Отмена',
     done: 'Сделал',
     ok: 'Ок',
@@ -811,7 +811,7 @@ export const ru = {
     fromStock: (name: string) => `в инвентаре · запас ${name}`,
     fromInventory: 'в инвентаре',
     fromParked: (name: string) => `в инвентаре · припаркована у ${name}`,
-    // the walk (.x/0200-boss E2b, texts approved by the owner 2026-10-13): «Замок» before an equip, «Оставить как было»,
+    // the walk (HISTORY.md 0200-boss E2b, texts approved by the owner 2026-10-13): «Замок» before an equip, «Оставить как было»,
     // the empty slot, «В конце — замены», parking, «Сделал · ещё N», «Отмена» with a confirm
     lock: (slot: string, hero: string) => `Замок: ${({ armor: 'броню' } as Record<string, string>)[slot] ?? NOM[slot]} ${hero}`,
     lockPark: 'на парковку',
@@ -860,11 +860,11 @@ export const ru = {
     weaker: (pts: number, _more = false) => `Статы станут слабее на ${dec(pts)} очк.`,
     // the kit's extra crit before and after (decision 14), the «Надето» budget's word: «Лишний крит −6,3 → −2,3»
     critPart: (a: number, b: number) => `Лишний крит ${minus(a)} → ${minus(b)}`,
-    // the EFF goal on a member's line (.x/0200-boss E3 Q6): «Эфф ≈ 184 → 222», then « · 93%» or «✓»
+    // the EFF goal on a member's line (HISTORY.md 0200-boss E3 Q6): «Эфф ≈ 184 → 222», then « · 93%» or «✓»
     effLine: (approx: boolean, a: number, b: number) => `Эфф ${approx ? '≈ ' : ''}${a} → ${b}`,
     effAria: (b: number, res: number, p: number) => `Эфф после обмена ${b} против RES ${res}: дебафф ляжет в ${p}% случаев`,
     effAriaOk: (b: number, res: number) => `Эфф после обмена ${b} выше RES ${res}: дебафф ляжет всегда`,
-    // the SPD goal on a member's line (.x/0200-boss E4 Q7): «Скорость 138 → 232», then « · 74%» or «✓»
+    // the SPD goal on a member's line (HISTORY.md 0200-boss E4 Q7): «Скорость 138 → 232», then « · 74%» or «✓»
     spdLine: (a: number, b: number) => `Скорость ${a} → ${b}`,
     spdAria: (b: number, p: number) => `Скорость после обмена ${b}: раньше босса в ${p} % боёв`,
     spdAriaOk: (b: number) => `Скорость после обмена ${b}: точно раньше босса`,
@@ -969,7 +969,7 @@ export const ru = {
     walkEnd: 'Всё сделано — Записать план',
   },
 
-  // «Команда» (team check, .x/0170-team-synergy; screen approved by the owner 2026-10-11)
+  // «Команда» (team check, HISTORY.md 0170; screen approved by the owner 2026-10-11)
   team: {
     tab: 'Команда',
     alpha: 'альфа',
@@ -983,7 +983,7 @@ export const ru = {
     addMember: 'Место в команде',
     replace: (name: string) => `Поставить другого вместо ${name}`,
     removeMember: (name: string) => `Убрать из команды: ${name}`,
-    // the team trade on «Команда» (.x/0200-boss E2, texts approved by the owner 2026-10-13): the button, the build pill for a
+    // the team trade on «Команда» (HISTORY.md 0200-boss E2, texts approved by the owner 2026-10-13): the button, the build pill for a
     // screen reader (build — «По статам» / «Speed ×4»), heroes without builds (names joined, n — how many)
     goTrade: 'Подобрать вещи',
     buildAria: (name: string, build: string) => `Билд ${name}: ${build} — сменить`,
@@ -1008,7 +1008,7 @@ export const ru = {
       cd: 'короче перезарядка', prio: 'приоритет', prioDown: '−приоритет врагу', atkDown: '−атака врагу',
       defDown: '−защита врагу', slow: '−скорость врагу', other: 'эффект навыка',
     } as Record<string, string>,
-    // the hero sheet: who fits the team (.x/0171-team-suggest)
+    // the hero sheet: who fits the team (HISTORY.md 0171)
     fitHead: 'Подойдут команде',
     popularHead: 'Чаще всего в командах outerpedia',
     restHead: 'Остальные',
@@ -1058,9 +1058,9 @@ export const ru = {
     // statuses:end
   },
 
-  // a boss on «Команда» (.x/0200-boss stage C; texts approved by the owner 2026-10-12)
+  // a boss on «Команда» (HISTORY.md 0200-boss stage C; texts approved by the owner 2026-10-12)
   boss: {
-    // the boss slot beside the team (.x/0206-boss-sheet, texts approved by the owner 2026-10-14): empty — «Босс · выбрать»;
+    // the boss slot beside the team (HISTORY.md 0206, texts approved by the owner 2026-10-14): empty — «Босс · выбрать»;
     // slotAria — the filled slot for screen readers; remove — its ✕
     slot: 'Босс',
     slotPick: 'выбрать',
@@ -1085,7 +1085,7 @@ export const ru = {
     fill: 'Собрать из гайда',
     filled: (have: number, of: number) => `Из гайда: ${have} из ${of}.`,
     noneOwned: 'В ростере нет героев из этого гайда.',
-    // the turn timeline under the team (.x/0200-boss E1, texts approved by the owner 2026-10-13): heroes and the boss in the
+    // the turn timeline under the team (HISTORY.md 0200-boss E1, texts approved by the owner 2026-10-13): heroes and the boss in the
     // order of the first turn; luck — the chance to move before the boss; a debuffer's chance the debuff lands; an expanded
     // row — EFF to RES + 1, the SPD that surely moves first, the EFF sheet (the hint for an EE hero with nothing typed — Q3
     // detail 1; x — «2», «1,5»). v — the EFF as shown («≈ 197»)
@@ -1128,7 +1128,7 @@ export const ru = {
     have: (have: number, of: number) => `есть ${have} из ${of}`,
     missing: (names: string) => `нет: ${names}`,
     fromGuide: 'Из гайда на это место',
-    fromGuidePool: 'Из гайда', // singularity: the guide's teams are pools, not spots (.x/0208-ds-teams)
+    fromGuidePool: 'Из гайда', // singularity: the guide's teams are pools, not spots (HISTORY.md 0208)
     teamEl: { fire: 'Огонь', water: 'Вода', earth: 'Земля', light: 'Свет', dark: 'Тьма' } as Record<string, string>, // a singularity team named by its element
     notOwned: (names: string) => `Ещё в гайде: ${names} — нет в ростере.`,
   },

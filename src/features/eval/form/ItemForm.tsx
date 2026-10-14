@@ -1,5 +1,5 @@
 // The piece's form below the slot row — one for «Оценка» (screens/eval EvalPanel) and the trade's entry window
-// (features/trade EntrySheet, .x/0200-boss E2b Q4–Q5): grade + set or main (armor — and «T4») → for a Legendary weapon or
+// (features/trade EntrySheet, HISTORY.md 0200-boss E2b Q4–Q5): grade + set or main (armor — and «T4») → for a Legendary weapon or
 // accessory the item row with «T4» → the substat grid → the rows with segments; the set, item, main and substat pickers.
 // zone — what stands in the grid's place (the verdict card on «Оценка»); none — the grid. lock / ask — a batch of one kind
 // (features/batch). anchors — the tour's anchors: only the «Оценка» form has them (the entry window lies over the trade).

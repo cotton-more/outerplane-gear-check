@@ -1,4 +1,4 @@
-// «Обмен вещами», the end of a plan (MODEL.md §7 item 7; .x/0200-boss E2b Q2): a hole is filled at the end — the giver
+// «Обмен вещами», the end of a plan (MODEL.md §7 item 7; HISTORY.md 0200-boss E2b Q2): a hole is filled at the end — the giver
 // gets the receiver's old piece; a receiver's empty slots are holes («Ввести» / «Оставить»); a hole that switched a set's
 // half off says so (breaks — the search hint, R9.2). Parking and team cases — test/trade/walk.test.ts.
 import { describe, expect, it } from 'vitest';

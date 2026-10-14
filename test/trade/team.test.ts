@@ -126,7 +126,7 @@ describe('H. команда', () => {
     it('четыре разных героя с мерилом — можно', () => {
       expect(teamOk(w, ['R', 'K', 'E1', 'E2'])).toBe(true);
     });
-    // owner 2026-10-13 (.x/0200-boss E2): a team on «Команда» may be incomplete — two to four
+    // owner 2026-10-13 (HISTORY.md 0200-boss E2): a team on «Команда» may be incomplete — two to four
     it('двое и трое — можно; один и пятеро — нельзя', () => {
       expect(teamOk(w, ['R', 'K'])).toBe(true);
       expect(teamOk(w, ['R', 'K', 'E1'])).toBe(true);

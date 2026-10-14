@@ -1,4 +1,4 @@
-// The most SPD a member could get from the trade (.x/0200-boss E4; MODEL.md §13 item 12, Q5: «the member's fastest kit from
+// The most SPD a member could get from the trade (HISTORY.md 0200-boss E4; MODEL.md §13 item 12, Q5: «the member's fastest kit from
 // the candidates»): `spdReach` over the pieces of his own candidates (`candidates`, all slots) — so what the timeline calls
 // out of reach is what the trade can't give either: the receiver's bar (his own worn is always eligible), no one's spare,
 // no code he already has at an equal or higher BT, parked pieces into an empty slot with no bar (MODEL.md §7 item 2).

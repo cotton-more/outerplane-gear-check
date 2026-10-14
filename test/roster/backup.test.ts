@@ -1,7 +1,7 @@
 // Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): вещь в коде, ростер и экипировка туда и обратно,
 // размер, целостность, совместимость с выпущенными версиями; OGC-GEAR4 — с закреплением (stat-sets PLAN Д11), OGC-GEAR5 —
 // с N героя («сколько крита нужно герою», crit), OGC-GEAR6 — со звёздами героя (transcend), OGC-GEAR7 — с эффом из игры
-// (.x/0200-boss Q3), OGC-GEAR8 — с уровнем героя (.x/0205-hero-level), OGC-GEAR9 — parked pieces (test/gear/park.test.ts).
+// (HISTORY.md 0200-boss Q3), OGC-GEAR8 — с уровнем героя (HISTORY.md 0205), OGC-GEAR9 — parked pieces (test/gear/park.test.ts).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

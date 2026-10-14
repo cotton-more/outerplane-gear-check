@@ -3,7 +3,7 @@
 // пока шторка открыта (сеанс, строка о нём над выбором с «Закончить»). «Кого переодеть?» (0200 stage A, MODEL.md §7 item 8):
 // by name, at each hero the gain of his plan now (counted in chunks after every «Сделал» / «Вернуть»), the re-dressed last
 // with ✓, not pickable. Смена заказа — пересчёт (R7.3). The team trade lives on «Команда» (TeamTradeSheet,
-// .x/0200-boss E2, owner 2026-10-13): this sheet is the one-hero trade only — «dressing in turn».
+// HISTORY.md 0200-boss E2, owner 2026-10-13): this sheet is the one-hero trade only — «dressing in turn».
 // The plan is a walk (TradeWalk, MODEL.md §7 item 9): «Оставить как было» — counted again; its end gives every piece taken
 // off an owner. «Сделал» — одна запись (features/trade/model/apply applyWalk) with the replacements, parking and entered
 // pieces, сообщение с «Вернуть» — у App (onApplied). The walk's decisions and ticks stay on the device until «Сделал» /

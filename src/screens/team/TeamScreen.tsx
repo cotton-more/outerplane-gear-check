@@ -1,21 +1,21 @@
-// «Команда» (.x/0170-team-synergy): up to four roster heroes with their transcend ★ → which skill conditions depend on a
+// «Команда» (HISTORY.md 0170): up to four roster heroes with their transcend ★ → which skill conditions depend on a
 // status nobody in the team gives, and who from the roster would give it (game/synergy checkTeam). The ★ come from the
 // hero's card and are changed only there (owner 2026-10-12): a spot can try higher ★ («what if» — counted in the report,
 // kept in the spot only, never saved), not lower than the card's; not set — the hero's minimum (game/hero/star).
 // Picking a hero and setting ★ — sheets, like the other pickers in the app (owner 2026-10-11).
-// A boss (.x/0200-boss stage C, owner Q2; .x/0206-boss-sheet — the fifth slot behind «VS» beside the team, 2×2): the boss slot
+// A boss (HISTORY.md 0200-boss stage C, owner Q2; HISTORY.md 0206 — the fifth slot behind «VS» beside the team, 2×2): the boss slot
 // → its sheet (stage, RES, immunities, guide; picks on «Выбрать»), ✕ on the slot — no boss; with a boss
 // the guide's teams for the stage replace the general suggestions and «Собрать из гайда» fills the spots; Core Fusion X
 // stands in for X, which the guides list; a spot's guide heroes come from the teams matching the rest of the team. One team
 // for every boss (0206 Q3: the boss is a lens and never changes the heroes), kept in 'ogc.boss' (owner D5).
-// Under the team — the turn plan (.x/0200-boss E1, BossTurn; 0206: always, without a boss «Порядок хода»): the members (and
+// Under the team — the turn plan (HISTORY.md 0200-boss E1, BossTurn; 0206: always, without a boss «Порядок хода»): the members (and
 // the boss) in the order of the first turn (SPD the app knows, game/stat/spd), and each member's EFF vs its RES (stage D); a row's «Эфф из игры»
 // opens «Эфф для X» — the same sheet as the card's, the typed value is the hero's (GearStore.eff). EFF counts the spot's ★
 // (like the report) and what battle adds (the element quirk node, a teammate's transcend team row).
-// The team trade (.x/0200-boss E2, owner 2026-10-13): under each spot the hero's build (OrderPill; kept with the team in
+// The team trade (HISTORY.md 0200-boss E2, owner 2026-10-13): under each spot the hero's build (OrderPill; kept with the team in
 // 'ogc.boss' — orders; a pin wins), «Подобрать вещи» → TeamTradeSheet for the 2–4 members with builds (one — the one-hero
 // trade, App), a hero without builds stays out with a line. Worn gear is never kept with the team: the store as it is now.
-// With a boss the trade also raises the EFF of members who need it (.x/0200-boss E3): goals from the boss's RES and the spots;
+// With a boss the trade also raises the EFF of members who need it (HISTORY.md 0200-boss E3): goals from the boss's RES and the spots;
 // and the SPD of members who should move before the boss (E4): a turn-1 skill that works on it, a chance to get there.
 import { useMemo, useState } from 'react';
 import type { Char } from '@/game/data/types';
@@ -203,7 +203,7 @@ export function TeamScreen({ roster, off, stars, ctx, gear, onChars, canTrade = 
     return <OrderPill ctx={ctx} combo={combo} pinned={!!pin} label={label} onClick={() => setOrderFor(id)} />;
   };
   const onTrade = () => (withBuilds.length === 1 ? onHeroTrade?.(withBuilds[0]) : setTrading(true));
-  // with a boss the team trade raises the EFF of members who need it to RES + 1 (.x/0200-boss E3, MODEL.md §13): in the
+  // with a boss the team trade raises the EFF of members who need it to RES + 1 (HISTORY.md 0200-boss E3, MODEL.md §13): in the
   // timeline's number — the spot's ★, the battle bonus (owner Q2); the key names every input, so another boss, stage, ★ or
   // team is a new calculation and a new walk (owner Q7)
   const goals = Object.fromEntries(facts && boss ? members.filter((m) => idx.CHAR[m.id]?.eff?.d && withBuilds.includes(m.id)).map((m) => {

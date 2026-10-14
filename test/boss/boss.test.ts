@@ -1,4 +1,4 @@
-// A boss on «Команда» (features/boss, .x/0200-boss stage C): the list order, RES with the Challenge quirk, stages,
+// A boss on «Команда» (features/boss, HISTORY.md 0200-boss stage C): the list order, RES with the Challenge quirk, stages,
 // immunities, guide teams by stage, «Собрать из гайда» with a partial roster, the stored 'ogc.boss'.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -148,7 +148,7 @@ describe('guide teams', () => {
     expect(spotAlternatives(fl, 3)).toEqual(['Sterope', 'Ember', 'Bell Cranel', 'Demiurge Drakhan', 'Vlada', 'Monad Iota'].map(id));
   });
 
-  // a singularity team is a pool of groups in the guide's order (.x/0208-ds-teams, owner (a)): Meteos' water team shape
+  // a singularity team is a pool of groups in the guide's order (HISTORY.md 0208, owner (a)): Meteos' water team shape
   const pool: BossTeam = { p: 1, l: { e: 'water' }, s: [['Luna', 'Veronica'], ['Poolside Trickster Regina'], ['Monad Eva'], ['Laplace'], ['Tamara', 'Roxie']].map((g) => g.map(id)) };
 
   it('a pool: the first owned hero of each group in guide order until four; missing — groups with nobody owned, as many as spots stay empty', () => {

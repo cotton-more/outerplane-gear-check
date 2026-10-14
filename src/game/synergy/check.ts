@@ -1,4 +1,4 @@
-// Team check (.x/0170-team-synergy): skill conditions in a team that depend on a status nobody gives.
+// Team check (HISTORY.md 0170): skill conditions in a team that depend on a status nobody gives.
 // Pure — the Team screen draws the report. Data: Dataset.synergy (update.py build_synergy).
 import type { SkillSlot, SynGive, SynNeed, Synergy } from '@/game/data/types';
 
@@ -64,6 +64,9 @@ export function checkTeam(syn: Synergy, team: TeamMember[], roster: Iterable<str
       const by = team.filter((m) => m.id !== id && gives(m.id).some((g) => live(g, m.id) && reaches(g, n.on, false))).map((m) => m.id);
       const mine = gives(id).filter((g) => live(g, id) && reaches(g, n.on, true));
       const own = earliest(mine);
+      // her own source is quietly ok when it is steady and ready in time: give.cd ≤ need.cd (need.cd — the start cooldown of
+      // the earliest S1–S3 slot that needs it; Lisha CF: S2 gives PEN on turn 4, S3 needs it from turn 5). Later, or only a
+      // burst — 'self' (⚠ with the cooldown number); no own source — 'none' (HISTORY.md 0170 decision 2, Q3)
       const inTime = mine.some((g) => steady(g) && g.cd <= n.cd);
       const verdict: NeedVerdict = by.length || inTime ? 'ok' : own ? 'self' : 'none';
       const fix: Fix[] = [];

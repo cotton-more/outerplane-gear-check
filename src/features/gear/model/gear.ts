@@ -47,15 +47,15 @@ export interface GearStore {
   // hero → in-game ★1…6 (transcend); no entry — not set. Doesn't depend on the pool; Core Fusion moves it X → CF with
   // the pieces, the game keeps the stars (owner, Z7) — unlike pin and N
   stars?: Record<string, number>;
-  // hero → the stat-screen EFF the player typed and the app's EFF at that moment (.x/0200-boss Q3, game/stat/eff
+  // hero → the stat-screen EFF the player typed and the app's EFF at that moment (HISTORY.md 0200-boss Q3, game/stat/eff
   // effShown): the card shows the app's EFF × typed / at. No entry — not typed. Like crit and stars: doesn't depend on the
   // pool, Core Fusion moves it X → CF (shown with «≈» there: CF's own count differs)
   eff?: Record<string, EffCal>;
-  // hero → the white-stat level marked on the card, 100 or 120 (.x/0205-hero-level); no entry — the settings default
+  // hero → the white-stat level marked on the card, 100 or 120 (HISTORY.md 0205); no entry — the settings default
   // (lv120). Doesn't depend on the pool; Core Fusion moves it X → CF like the stars (in the game Core Fusion X keeps the
   // hero's level as it keeps the stars)
   lv?: Record<string, 100 | 120>;
-  // parked pieces (MODEL.md §5, .x/0200-boss E2b Q2–Q3): taken off in a trade and given to nobody — they stay in the pool
+  // parked pieces (MODEL.md §5, HISTORY.md 0200-boss E2b Q2–Q3): taken off in a trade and given to nobody — they stay in the pool
   // of the hero they came off, not worn, locked in the game, until someone wears them. Ids in the order parked; park ⊂
   // pooled and not worn (syncWorn). The verdict, reserves, material and the batch see a pool without them (activePieces);
   // the trade offers them first. No field — nothing parked
@@ -82,14 +82,14 @@ export const holdersOf = (st: GearStore, id: string): string[] => Object.keys(st
 
 // parked ids of a store (MODEL.md §5)
 export const parkedOf = (st: { park?: readonly string[] }): Set<string> => new Set(st.park ?? []);
-// a hero's pool as the verdict sees it (MODEL.md §5, .x/0200-boss E2b O2): parked pieces left out — never a Breakthrough
+// a hero's pool as the verdict sees it (MODEL.md §5, HISTORY.md 0200-boss E2b O2): parked pieces left out — never a Breakthrough
 // target, feed, reserve or the bar a new piece is held against; but — a piece the caller is about to wear (wearFromPool)
 type PoolsOf = { pieces: Readonly<Record<string, Piece>>; pools: Readonly<Record<string, readonly string[]>>; park?: readonly string[] };
 export function activePieces(st: PoolsOf, charId: string, but?: string): Piece[] {
   const park = parkedOf(st);
   return (st.pools[charId] ?? []).filter((id) => id === but || !park.has(id)).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 }
-// «Ещё» → «Припаркованные» (.x/0204-parked-list): parked pieces by the hero whose pool holds them — heroes in `order`
+// «Ещё» → «Припаркованные» (HISTORY.md 0204): parked pieces by the hero whose pool holds them — heroes in `order`
 // (the roster's), the rest after them; a hero's pieces in slot order. A record two heroes share is under both
 export interface ParkedGroup { hero: string; pieces: Piece[] }
 export function parkedGroups(st: GearStore, order: readonly string[]): ParkedGroup[] {
@@ -326,7 +326,7 @@ export function setLevel(st: GearStore, charId: string, v: 100 | 120 | null): Ge
   return next;
 }
 
-// the typed stat-screen EFF (.x/0200-boss Q3): typed — what the game shows, at — the app's EFF then; null — not typed
+// the typed stat-screen EFF (HISTORY.md 0200-boss Q3): typed — what the game shows, at — the app's EFF then; null — not typed
 export const EFF_MAX = 9999;
 export const effCal = (st: Pick<GearStore, 'eff'>, charId: string): EffCal | null => st.eff?.[charId] ?? null;
 // store it (typed and at — integers 1…EFF_MAX) or drop it (null — «Сбросить»). Anything else or nothing changed — the same store
