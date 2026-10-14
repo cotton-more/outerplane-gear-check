@@ -41,6 +41,9 @@ in between). `.x/README.md` is the index:
 - Work moved — update the status: **active**, **deferred** (owner postponed it), **done** (shipped or answered). For
   done, say where it landed (merged commit or branch) and whether the folder can be deleted ("can delete" /
   "delete after merge").
+- Before a done folder can be deleted: its rules go into MODEL.md / DEVELOPMENT.md / Wiki / Help, and its story into a
+  `HISTORY.md` section (why, what was built, owner decisions with their tags, hard parts, not built and why, checks).
+  Code comments cite `HISTORY.md NNNN …`, never `.x/`.
 - Don't delete folders yourself — the owner does, or asks you to.
 
 ## Tour (`src/tour/`)
