@@ -164,22 +164,31 @@ describe('«Переодеть» и «Надеть»', () => {
   });
 });
 
-describe('«Надеть» в карточке вещи и «надета» в «Пуле»', () => {
+// «Пул» without the worn pieces (owner 2026-10-14): they are on «Надето»; the tab counts only the rest
+describe('«Надеть» в карточке вещи; «Пул» без надетых', () => {
   const pool = () => G([WEAK, BETTER], { [caren.id]: ['p1', 'p2'] }, { worn: { [caren.id]: { helmet: 'p1' } } });
   const toPool = () => click(byText('.btabs [role="tab"]', 'Pool'));
 
-  it('у надетой вещи в «Пуле» — «worn», у ненадетой — своя причина', async () => {
+  it('«Пул» — только ненадетая вещь, со своей причиной; счётчик вкладки — 1', async () => {
     await mount({ gear: pool() });
+    expect(byText('.btabs [role="tab"]', 'Pool')?.textContent).toBe('Pool1');
     await toPool();
-    const why = $$('.pool-why').map((w) => w.textContent);
-    expect(why[0]).toBe('worn');
-    expect(why[1]).not.toBe('worn');
+    expect($$('.pool-row')).toHaveLength(1);
+    expect($('.pool-why')?.textContent).not.toBe('worn');
+  });
+
+  it('всё надето: «Пул» пуст — строка вместо списка, «Оценить вещь» остаётся', async () => {
+    await mount({ gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
+    await toPool();
+    expect($$('.pool-row')).toHaveLength(0);
+    expect($('.pool .cd-empty')?.textContent).toBe('Nothing besides what is worn.');
+    expect($('.pool-rate')?.textContent).toBe('Rate a piece for Caren');
   });
 
   it('ненадетая вещь: «Wear» в карточке надевает её, тост, «Вернуть»', async () => {
     await mount({ gear: pool() });
     await toPool();
-    await click($$('.pool-row')[1]);
+    await click($$('.pool-row')[0]);
     await click(byText('.piece-act button', 'Wear'));
 
     expect(stored().worn[caren.id].helmet).toBe('p2');
@@ -188,10 +197,10 @@ describe('«Надеть» в карточке вещи и «надета» в �
     expect(stored().worn[caren.id].helmet).toBe('p1');
   });
 
-  it('надетая вещь: кнопки «Wear» в карточке нет', async () => {
+  it('надетая вещь (с «Надето»): кнопки «Wear» в карточке нет', async () => {
     await mount({ gear: pool() });
-    await toPool();
-    await click($$('.pool-row')[0]);
+    await click($$('.bgear-row')[0]);
+    expect($('.piece')?.textContent).toContain('worn');
     expect(byText('.piece-act button', 'Wear')).toBeUndefined();
   });
 });

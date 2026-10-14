@@ -530,7 +530,7 @@ describe('карточка персонажа', () => {
     const ps = four({ 'DEF%': 2, EFF: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ps.map((p) => p.id as string) }, { worn: wornOf(ps) }) });
 
-    expect($$('.btabs [role="tab"]').map((b) => b.textContent)).toEqual(['Worn4/6', 'Pool4', 'Builds']);
+    expect($$('.btabs [role="tab"]').map((b) => b.textContent)).toEqual(['Worn4/6', 'Pool0', 'Builds']);
     expect($('.btabs [aria-selected="true"]')?.textContent).toBe('Worn4/6');
     expect($('.bgear-set .wset-h span')?.textContent).toBe('Speed ×4 · T? · Speed +25% · mark Breakthrough');
     expect($('.bgear-set')?.textContent).not.toContain("not in Caren's builds");
@@ -615,7 +615,7 @@ describe('карточка персонажа', () => {
     const weak = P('p1', 'helmet', speed, { RES: 1 }), strong = P('p2', 'helmet', speed, { 'DEF%': 3, CHC: 3, CHD: 3 }), glove = P('p3', 'gloves', speed, { CHC: 1 });
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([glove, weak, strong], { [caren.id]: ['p3', 'p1', 'p2'], [rin.id]: ['p2'] }, { worn: { [caren.id]: { gloves: 'p3' } }, pin: pinned('Speed', speed) }), roster: [caren.id, rin.id] });
     await click(byText('.btabs [role="tab"]', 'Pool'));
-    expect($$('.pool-row .pool-why').map((w) => w.textContent)).toEqual(['no longer needed', 'best Speed', 'worn']);
+    expect($$('.pool-row .pool-why').map((w) => w.textContent)).toEqual(['no longer needed', 'best Speed']); // worn gloves — only on «Надето»
     expect($('.pool')?.textContent).not.toContain('Rin');
     expect([...$('.pool')!.children].at(-1)?.textContent).toBe('Rate a piece for Caren');
     await click(byText('.pool-unused button', 'Remove from Caren'));

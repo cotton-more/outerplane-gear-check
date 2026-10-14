@@ -160,10 +160,11 @@ roster nor the gear. More — [Characters and guild code](Characters-and-guild-c
 
 ### Pool
 
-All the hero's pieces by slot, and on the right the reason each is kept (one, by seniority): **worn**, **best {set} at
-T4**, **best {set}**, **by stats**, **reserve**. The rest is **"no longer needed"**: the layouts use better ones. Such a
+The hero's pieces by slot, except the worn ones — those are on Worn. On the right, the reason each is kept (one, by
+seniority): **best {set} at T4**, **best {set}**, **by stats**, **reserve**. The rest is **"no longer needed"**: the layouts use better ones. Such a
 piece isn't removed by itself: dismantle it in the game and press **"Remove from Caren"**. The app never deletes a piece
-silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). "Rate a piece for Caren" sits at the bottom.
+silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). Everything worn — instead of the list, "Nothing
+besides what is worn.". "Rate a piece for Caren" sits at the bottom.
 
 **"P parked"** instead of a reason — a piece a [trade](Trading-gear#at-the-end--replacements) took off and could give to
 nobody: it waits, locked in the game, for a hero who can wear it. The evaluation and the batch don't see it (never feed,

@@ -31,7 +31,7 @@ The verdict details have an "Upgrading" block: what to invest in this particular
 When and how much to Reforge is your call: how it lands can't be guessed, and the verdict doesn't count it. A piece is
 rated as it is — by the segments lit right now. Did a Reforge or Breakthrough? Record what you got:
 
-- **a character's piece** — tap it in the Pool and fix the segments, "T4" and an Epic's 4th substat
+- **a character's piece** — tap it on Worn or in the Pool and fix the segments, "T4" and an Epic's 4th substat
   ([Equipment](Equipment#pool)); or tap "Try a replacement" there, enter the piece as it is now and
   "Replace";
 - **a piece in the inventory** — enter it again: the verdict updates.
