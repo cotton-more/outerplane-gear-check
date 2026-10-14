@@ -285,6 +285,10 @@ function problems(D) {
   // (outerpedia took `evoRewards` out of progression.json once) 122 of 128 heroes drifted silently: 96 and 510 here
   const mene = D.chars.find((c) => c.name === 'Mene');
   if (mene && (mene.spd?.[0] !== 107 || mene.flat?.DEF?.[0] !== 754)) out.add(`база героя без наград эволюций (Mene SPD ${mene.spd?.[0]}, DEF ${mene.flat?.DEF?.[0]}) — формат damage/characters evolution изменился?`);
+  // a Core Fusion hero's own evolution list is empty: it takes the original's (flat_profile, like eff_profile). Core Fusion
+  // Eternal Lv100 ★6 in the game: SPD 199 = 64 from gear + 135 = stats 124 + the original's evolutions 5 + quirk 6
+  const cfEternal = D.chars.find((c) => c.name === 'Core Fusion Eternal');
+  if (cfEternal && cfEternal.spd?.[0] !== 129) out.add(`база Core Fusion без эволюций оригинала (Core Fusion Eternal SPD ${cfEternal.spd?.[0]}, ждём 129) — Core Fusion — эволюции оригинала: damage/characters evolution или originalCharacter изменился?`);
   const turnOf = (n) => (D.chars.find((c) => c.name === n)?.turn ?? []).map((r) => `${r.s}:${r.k}${r.lv ? `@${r.lv}` : ''}`).join(',');
   const turnBad = [['Akari', 's1:atk@3'], ['Veronica', 's1:taunt,s2:shield1'], ['Iota', 's1:push'], ['Demiurge Vlada', 's1:cool'], ['Ember', ''], ['Maxie', '']].filter(([n, want]) => turnOf(n) !== want)
     .map(([n, want]) => `${n} «${turnOf(n)}» вместо «${want}»`);

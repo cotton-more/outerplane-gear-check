@@ -428,8 +428,8 @@ def flat_profile(src: dict, cid: str, c: dict) -> dict:
     %-сабстат шмота умножает только собственную базу персонажа (уровень + эволюции + flat-quirks),
     поэтому один сегмент ATK% стоит база×4%, а flat ATK — ровно +40.
     Evolution rewards come from damage/characters.json (`evolution`: ST_ATK/ST_DEF/ST_HP/ST_SPEED per evolution number;
-    progression.json lost `evoRewards` in outerpedia e01cc14), from the hero's own entry only: a Core Fusion hero's is
-    empty there, so its flat/SPD stay without evolutions (eff_profile, unlike this, falls back to the original's).
+    progression.json lost `evoRewards` in outerpedia e01cc14). A Core Fusion hero's own entry is empty: it takes the
+    original's evolutions (checked in game: Core Fusion Eternal SPD = own stats + the original's evolutions + quirk).
     Возвращает {"ATK": [база@100, база@макс.LB, quirks], "DEF": [...], "HP": [...], "SPD": [...]}. SPD — та же база
     для бонуса Speed Set (он в % от базы персонажа); у SPD нет роста по уровню, поэтому проверка базы — только min > 0.
     """
@@ -441,7 +441,9 @@ def flat_profile(src: dict, cid: str, c: dict) -> dict:
     levels = sorted({base_cap, *[x["maxLevel"] for x in lb]})
     stat_slug = {"ST_ATK": "atk", "ST_DEF": "def", "ST_HP": "hp", "ST_SPEED": "speed"}
     rewards: dict[int, dict[str, int]] = {}  # evolution number → {slug: reward}
-    for e in (src["dmgChars"]["characters"].get(cid) or {}).get("evolution") or []:
+    dchars = src["dmgChars"]["characters"]
+    evo = (dchars.get(cid) or {}).get("evolution") or (dchars.get(str(c.get("originalCharacter") or "")) or {}).get("evolution") or []
+    for e in evo:
         for x in e.get("rewards", []):
             if slug := stat_slug.get(x.get("stat")):
                 got = rewards.setdefault(e["level"], {})
