@@ -1,4 +1,4 @@
-// A boss on «Команда» (.x/0200-boss stage C): the list of fights, a stage's facts (RES with the Challenge quirk, SPD,
+// A boss on «Команда» (HISTORY.md 0200-boss stage C): the list of fights, a stage's facts (RES with the Challenge quirk, SPD,
 // immunities) and the guide teams for the stage. Pure: no React, no storage.
 // Owner 2026-10-12: only special request, singularity, joint challenge and guild raid are listed (D1 — world boss and
 // irregular extermination stay in the data, hidden here); RES always with the full Challenge tree, like outerpedia (D2).
@@ -87,7 +87,7 @@ export const ownOf = (owned: Pick<ReadonlySet<string>, 'has'>, fused: Readonly<R
 // «Собрать из гайда»: on each of the guide's spots the first alternative the player has (guide order; `own` resolves a
 // Core Fusion), one not already put on an earlier spot; spots past the guide's (a core of 2) stay empty. have — spots
 // filled, of — the guide's spots; missing — the first alternative of each spot left empty (to name it).
-// A pool (singularity, .x/0208-ds-teams, owner 2026-10-14 (a)): the groups in the guide's order, the first owned hero of
+// A pool (singularity, HISTORY.md 0208, owner 2026-10-14 (a)): the groups in the guide's order, the first owned hero of
 // each into the next free spot until four; of — four (fewer groups — their count); missing — the first hero of each group
 // with nobody owned, as many as spots stay empty
 export interface Fill { team: (string | null)[]; have: number; of: number; missing: string[] }

@@ -1,4 +1,4 @@
-// Team check (game/synergy/check.ts) on the outerpedia extract test/fixtures/synergy.json (.x/0170-team-synergy).
+// Team check (game/synergy/check.ts) on the outerpedia extract test/fixtures/synergy.json (HISTORY.md 0170).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { Dataset, Synergy } from '@/game/data/types';

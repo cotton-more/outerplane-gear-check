@@ -1,4 +1,4 @@
-// Who to add to the team (.x/0171-team-suggest; owner 2026-10-11: outerpedia's recommended teams first, skill statuses
+// Who to add to the team (HISTORY.md 0171; owner 2026-10-11: outerpedia's recommended teams first, skill statuses
 // as an extra reason). Pure — the Team screen's hero sheet shows the list above the plain one.
 import type { GuideTeams, SkillSlot, Synergy } from '@/game/data/types';
 import { checkTeam, type TeamMember } from './check';

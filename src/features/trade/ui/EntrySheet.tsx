@@ -1,4 +1,4 @@
-// «Ввести» in the trade walk (.x/0200-boss E2b Q4–Q5, owner 2026-10-13): the piece the player put into an empty slot from
+// «Ввести» in the trade walk (HISTORY.md 0200-boss E2b Q4–Q5, owner 2026-10-13): the piece the player put into an empty slot from
 // the inventory, entered right in the plan — no trip to «Оценка». The slot is set by the line; the rest is the form's
 // (features/eval/form ItemForm): grade, set or item, main, substats with their segments, «T4». Under it, live: what the
 // piece gives the hero and what is off (wrong main, none of the needed stats), or how many substats are still missing.

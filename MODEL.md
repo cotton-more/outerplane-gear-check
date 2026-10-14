@@ -18,7 +18,7 @@ float tolerance for plain decimals. The **+1 point margin** is `THRESHOLD = mill
 Items are recorded as `Piece` (`features/gear/model/gear`): slot, grade (`rare` = Epic, `unique` = Legendary), set,
 item key, main, `lit` (segments 1–6 per substat), `bt` (0–4, `null` = unknown, counts as below T4). A piece typed on the
 form is a `Piece` with id `NEW_ID`, newer than every record (`layout:NEW_ID`). Settings that change numbers:
-`lv120`, `quirks` (hero base for flat credit and SPD rows), `stage` ('grow' keeps stopgaps, 'end' does not),
+`lv120` (only the default: a level marked on the hero's card wins — `Ctx.lv`, `game/hero/level:lv120Of`), `quirks` (hero base for flat credit and SPD rows), `stage` ('grow' keeps stopgaps, 'end' does not),
 `rosterOnly` (`game/context:Ctx`).
 
 **Display.** Points are printed with one decimal everywhere (`i18n:dec`, `fit.pts`; the Wiki too). A gain is named in
@@ -61,8 +61,8 @@ V). English keeps "pts" also for 1.
    substats, flat and %, and one item can roll both; each counts for its own segments at the *same* place. `X%` has
    credit 1. Flat `X` has credit by the hero's flat factor `r = min(1, flatFactor)`: `r ≥ 0.9` → 1, `r ≥ 0.6` → ½,
    else 0 (`CFG.flatFull/flatHalf`, `score:flatCredit`). `flatFactor` = the flat tick over the % tick applied to the
-   hero's own base (level 100/120 by `lv120`, plus quirks by `quirks`; medians `CFG.flatFallback` without data). So flat
-   credit is a step function — flipping `lv120` moves 109 of 285 hero-axis pairs. Flat axes that credit 0 for the hero
+   hero's own base (level 100/120: the hero's marked level, else the `lv120` default — `lv120Of`; plus quirks by `quirks`; medians `CFG.flatFallback` without data). So flat
+   credit is a step function — flipping `lv120` moves 109 of 285 hero-axis pairs (for heroes without a marked level). Flat axes that credit 0 for the hero
    are `uselessFor` and count as "closed" for `takenByMain` (a helmet with main HP% leaves only flat HP, usually 0).
 4. **Main stat gives no points.** Fixed main lines (armor by set/slot/grade, weapon base flat ATK) and the chosen main
    only *block* substats (`mains:itemMains`: the game blocks a substat with the same stat **and** the same flat/%
@@ -211,7 +211,9 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
    inventory** (owner, 2026-10-01), never "the one on the hero". A copy of a worn piece is compared as is: below T4 an
    exact copy is material for the worn piece it copies when that one is worth a Breakthrough (§4.3a) — «Фоддер»; at
    equal T4 nobody gains and it is «Разобрать» («already as good»; «Спорно» if only outside heroes want it); a T4 copy
-   of a worn piece below T4 is feed that lifts it straight to T4.
+   of a worn piece below T4 is feed that lifts it straight to T4. «Найти вещь» (More, `features/gear/find`) uses the same
+   `samePiece` (Breakthrough ignored: a code has none) over every pool, worn records included; it only answers who wears
+   the piece or has it set aside and never changes the verdict or the batch (owner, 2026-10-12).
 
 **Feed (`reserveBt`).** A good new piece eats reserves of its kind: the hero's own first (`heroOutcome`), then other
 heroes' (`feedFrom`), up to `feedsLeft = 4 − bt` (T0 → T4). Not for a stopgap weapon/accessory, not when the piece
@@ -266,7 +268,7 @@ Reasons, in the order they are added (the numbers are cited from code):
 6. **unneeded** — everything else: "no longer needed — dismantle in the game, then Remove" (`reasonOf` picks one reason by
    seniority: worn › best at T4 › best of set › by stats › reserve).
 
-**Parked** (`GearStore.park`; .x/0200-boss E2b Q2, Q3, O2, owner 2026-10-13): a piece a trade took off and could give to
+**Parked** (`GearStore.park`; HISTORY.md 0200-boss E2b Q2, Q3, O2, owner 2026-10-13): a piece a trade took off and could give to
 nobody (§7 item 7) stays in the pool of the hero it came off, not worn, locked in the game, marked «припаркована» in the
 Pool tab instead of a reason. It is **outside** the reasons above: the verdict, reserves, material, the bar a new piece is
 held against, «Надеть»'s removals and the batch see the pool **without** it (`gear:activePieces`) — never feed, never a
@@ -274,7 +276,7 @@ Breakthrough target, never dismantled, never «no longer needed». The trade off
 pooled and not worn (`syncWorn`): the mark goes once someone wears it; «Убрать» removes it as usual («Вернуть» parks it
 again in its place, `removeUndo`); it travels with the
 record (drop / undo, Core Fusion — ids) and is in the backup (OGC-GEAR9). A parked piece whose own hero now wears a better
-one is a later question (owner's follow-up, .x/0200-boss PLAN §5). **The way out** is the player's (.x/0204-parked-list):
+one is a later question (owner's follow-up, HISTORY.md 0204). **The way out** is the player's (HISTORY.md 0204):
 unlock it in the game, then «Убрать» — in the card or in «Ещё» → «Припаркованные · N» (every parked piece by hero,
 `parkedGroups`); in the game it becomes ownerless and comes up again when dismantling.
 
@@ -302,7 +304,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (2) and other heroes' worn (3). **Other heroes' spare is never a candidate** (owner, 2026-10-12, Q1b): it is held for its
    hero (a better piece, Breakthrough; in game locked, not worn). Only the spare held when the calculation started
    (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. **A parked
-   piece** (§5, `World.parked`; .x/0200-boss E2b Q3) is not held: it is a candidate for anyone at cost 2 (its own hero:
+   piece** (§5, `World.parked`; HISTORY.md 0200-boss E2b Q3) is not held: it is a candidate for anyone at cost 2 (its own hero:
    cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
    the usual rules apply. Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
@@ -319,7 +321,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
 3. **"Was → becomes"** per hero: points of each piece over the worn one; a part of the order that cannot be built —
    `missingOf`: no piece of the set in enough slots, or pieces exist but are below T4 and the part needs T4.
 4. **Session locks**: a hero re-dressed in this window is `locked`: his worn gear is not taken by later steps (his
-   pool is); team members whose step is ahead stay open. **«Оставить как было»** (.x/0200-boss E2b Q1, owner
+   pool is); team members whose step is ahead stay open. **«Оставить как было»** (HISTORY.md 0200-boss E2b Q1, owner
    2026-10-13) on a recommended piece freezes **that receiver's slot** (`frozen`: `slotKey(hero, slot)`): nothing comes in
    (no substitute is searched for him there) and nothing leaves it; the declined piece stays in play for other members;
    the plan is counted again. A frozen slot takes part in no pair swap.
@@ -331,7 +333,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (`kit:bestKit`) is the exact armor search with branch-and-bound over the same key as §3 (`cmpKit`: rank, V, filled,
    Legendary, lower cost, lower loss, holder rank, record age). V of a kit includes its crit loss (§12.6).
 6. **Team trade objective** (`team:teamSteps`, `scoreOf`; owner, 2026-10-02: heroes are equal, no priorities). The team
-   trade is opened from «Команда» («Подобрать вещи», .x/0200-boss E2, owner 2026-10-13) for **two to four** members with
+   trade is opened from «Команда» («Подобрать вещи», HISTORY.md 0200-boss E2, owner 2026-10-13) for **two to four** members with
    builds (`teamOk`; was exactly four); each member's order is the build under his spot, kept with the team (`ogc.boss`),
    never the worn gear — the trade reads the store as it is. The
    exact search tries all orders of the members (24 for four) and keeps the order with the best result, compared in this
@@ -342,7 +344,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    four then swap worn pieces in several slots at once when nobody is worse and at least one is better by the threshold.
    **With a boss** each member who needs EFF has the EFF goal of §13 inside his V; the sum, the thresholds, the swaps and
    the order search see it through `keyOf`, nothing else changes.
-7. **The end: no orphans** (`ends:endsOf`; .x/0200-boss E2b Q2, Q6, owner 2026-10-13 — reverses «holes are not filled»,
+7. **The end: no orphans** (`ends:endsOf`; HISTORY.md 0200-boss E2b Q2, Q6, owner 2026-10-13 — reverses «holes are not filled»,
    owner 2026-10-04). After **every** member's step (a piece a later step takes at cost 2 is no replacement), each piece
    the plan took off a hero — worn at the start, worn by nobody after, still in a pool — goes, in the plan's order of
    heroes and then slots: (a) to the **giver** of that slot — the hero at the end of the chain (Rin took Caren's helmet →
@@ -361,7 +363,7 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    the next ones what is left — expected. Order: by name (the player decides whom to re-dress), the re-dressed last in
    done order with ✓, not pickable; «Закончить» closes the window (locks dropped). Each hero's plan is the same walk as the
    team's (item 9); his «Сделал» records it with its end (item 7), so nothing is left free between heroes.
-9. **The walk** (`walk:walkOf`, `outcomeOf`; .x/0200-boss E2b Q7, owner 2026-10-13): the plan is recorded exactly as
+9. **The walk** (`walk:walkOf`, `outcomeOf`; HISTORY.md 0200-boss E2b Q7, owner 2026-10-13): the plan is recorded exactly as
    done in the game. Lines per hero (receivers in the plan's order), slot by slot: «Замок: <old piece>» right before the
    equip — only when that piece stays with him **parked** (O3, owner 2026-10-13: a piece that moves to someone — a
    replacement, a later member — is found in the game by grade, main and substats, so its line names it in full and needs
@@ -489,6 +491,12 @@ elements").
 longer exist; each comment that carries one still states the rule, and the rules are in this file and in DEVELOPMENT.md.
 Comments that say «решение владельца 2026-10-01/02» come from the eval-only feature review.
 
+**Feature tags since 2026-10-11.** `HISTORY.md NNNN …` (a folder number, then a stage or decision: `HISTORY.md 0200-boss
+E2b Q3`, `HISTORY.md 0205`) points at a section of [HISTORY.md](HISTORY.md), which explains every tag the comments carry:
+boss stages A–D and E1–E4 / E2b with owner decisions numbered per stage, review findings (A1, C1, F1, E4-5, IG-1), hero
+stars Z1–Z10, team check decisions 1–6 and Q1–Q6, crit «decision N» / «owner Q-A» (`HISTORY.md 0135`; the rules are §12).
+In `test/`, «T4.2 / T4.2b» (layout) and «X1c / X2c» (trade) are the crit oracles.
+
 **Trade tags** (`features/trade`, `test/trade`; history — the rules are in §7). `R#.#` are requirement numbers of the lost
 trade `SPEC.md`, as far as the code shows: R1 piece identity (R1.2 the code without Breakthrough, R1.7 the cost
 classes 0–3), R2 the metric and order (R2.2 whole thousandths, R2.5 the full order of kits, R2.6 the world as at the moment
@@ -518,9 +526,10 @@ experiment answers them:
 
 ## §12 Crit soft cap («Крит: 45%»)
 
-Owner decisions 1–15 of `.x/0135-stat-targets` (outside git). In the game crit chance (CHC) is clamped at 100 % after gear
-and passive buffs (`CStatValue_SetFinalValue.cs`), so linear points kept rewarding CHC a hero no longer uses. Only CHC;
-EFF and SPD are later tickets.
+Owner decisions 1–15 of `HISTORY.md 0135` (outside git). In the game crit chance (CHC) is clamped at 100 % after gear
+and passive buffs (`CStatValue_SetFinalValue.cs`), so linear points kept rewarding CHC a hero no longer uses. Only CHC:
+EFF and SPD have goals only inside the boss team trade (§13); the verdict, the pool, «Надето» and the batch keep them
+linear — no EFF or SPD target is stored on a hero (we don't know whom the hero will fight; owner 2026-10-13).
 
 1. **N** — «сколько крита нужно герою», an integer 0…100 per hero, default 100 (`GearStore.crit`, the sheet on «Надето»).
    The player lowers it for what the app does not see: gems, talisman, EE, team buffs (they only add,
@@ -530,7 +539,7 @@ EFF and SPD are later tickets.
 2. **The curve.** Per CHC %: f = 1 up to the knee N − 15 (not below 0), linear down to 0 at N, 0 above N
    (`game/stat/curve`). **C₀** — crit that carries no points: the hero (base 5 %, Striker class passive +5 %, awakening
    quirks +10 % by the `quirks` setting — `Char.chc`), the transcend stars' CHC (`Char.chc.trans` at the hero's ★ — `Ctx.stars`, the card's
-   stars; not set → the hero's minimum ★1–★3, where no hero has it; the passive counts before the 100 % clamp, so it is just a smaller N), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
+   stars; not set → the hero's minimum ★1–★3, where no hero has it; the passive counts before the 100 % clamp, so it is just a smaller N; only plain ★1…6 are stored — the passive's level changes at ★4 / ★5 / ★6 (`update.py trans_level`), the «+» steps change only HP/ATK/DEF rates the app does not use), CHC main lines at +10 by Breakthrough tier (`mainValues`, `bt`
    null = T0), CHC set rows that carry no points (covered by a half, or of an effect set). **Segments** — the layout's
    CHC substats (≤ 6 per piece, 3 % each, weight = place weight × credit *on that piece*: a main that closes an earlier
    stat moves CHC up) and the CHC rows of stat sets that are not covered by a half (owner Q-A, B: the Critical Hit set's
@@ -572,7 +581,7 @@ EFF and SPD are later tickets.
 
 ## §13 EFF and SPD goals in the boss team trade («Эфф ≈ 184 → 222 · 93%», «Скорость 138 → 232 ✓»)
 
-.x/0200-boss E3, owner decisions Q1–Q7 and Q3a (2026-10-13, PLAN §5). Only in the team trade on «Команда» with a boss: the
+HISTORY.md 0200-boss E3, owner decisions Q1–Q7 and Q3a (2026-10-13, PLAN §5). Only in the team trade on «Команда» with a boss: the
 verdict, the pool, «Надето», the batch and the one-hero trade are unchanged (the hero card doesn't know whom the hero fights).
 
 1. **Who and what.** Every member with builds who needs EFF (rule R, `Char.eff.d`) gets `EffGoal { t, star, bonus }`
@@ -612,7 +621,7 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
 8. **Speed** (owner's roster, 14 guide teams, desktop): the worst team 0.6 s (0.7 s without goals), all together 1.6× the
    plain time — the calculation runs in chunks with «Отмена», as before.
 
-**The SPD goal** (.x/0200-boss E4, owner decisions Q1–Q7, 2026-10-13) — the same plumbing, a second term:
+**The SPD goal** (HISTORY.md 0200-boss E4, owner decisions Q1–Q7, 2026-10-13) — the same plumbing, a second term:
 
 9. **Who.** A member with builds whose turn-1 skill acts before the boss does (`Char.turn`, `update.py turn_reasons`): S1
    always, S2/S3 only with start cooldown 0 at the max level; on the boss — ATK, SPD or crit down, priority down, taunt,
@@ -653,3 +662,24 @@ verdict, the pool, «Надето», the batch and the one-hero trade are unchan
     icon (`HeroLine.spd`: SPD with the bonus before and after, the chance after — `turnOf`); only for goal members whose SPD
     changes; the gain stays plain stats. Speed (owner's roster, 11 guide teams + a singularity, desktop): the worst team
     0.62 s (E3 0.59 s), all together E4 3.0 s vs E3 2.8 s (`probe-E4/timing.txt`) — auto-run kept.
+
+## §14 Turn order (the game rule behind «Ход против босса» and the SPD goal)
+
+The client sample has no turn code; the rule is outerpedia's Stats guide (tested in game by the community), confirmed by
+the owner in game on 2026-10-14 (Meteos 13, 30 readings of the start-of-battle % on the turn icon, with and without Mene ★6).
+Code: `game/stat/turn` (`turnOf`, `firstAt`, `anyChance`, `luckPct`).
+1. A priority gauge, not rounds: every unit fills in proportion to SPD, acts at 100 %, then resets. At battle start a
+   unit stands at SPD × 100 / the top SPD of the fight (the boss included) plus a hidden random 0…5 points; a unit at
+   100 % or above acts at once (several — the higher gauge first).
+2. So a hero surely moves before the boss only above boss × 100/95 (≈ × 1.053; boss 276 → 291), surely after at or below
+   boss × 0.95, luck between (the chance over both head starts, uniform and independent). The team's top SPD cancels out
+   while both start below 100. Only the first turn is shown: later turns depend on a reset rule that is not confirmed,
+   and on pushes, buffs and stuns.
+3. SPD = what the app knows (`spdOf`: base with evolutions by level and quirks, the Speed Set rows on the base, SPD
+   substats, an accessory's SPD main) + the transcend SPD rows (`spdBonus`). The bearer's own row is already in the SPD on
+   their stat screen; teammates' rows are added only in battle (in game: the boss read 50–52 % with Mene, impossible
+   without her +10 on the allies).
+4. Not counted (the app is a lower bound): EE, talisman, battle-start SPD buffs (`.x/0207-battle-start-spd`, deferred),
+   priority pushes, guild-raid geas (boss SPD ±30/50 %, ally SPD +30 %, priority bans), boss self-buffs. The Challenge
+   quirk does not touch SPD. Guide SPD numbers are mostly run-order slots or ceilings («≤ 180»), not "beat the boss" —
+   the app does not use them.

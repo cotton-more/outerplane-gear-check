@@ -136,8 +136,9 @@ the EE, the talisman or gems, and the EE doubles EFF for many debuffers (Tamara:
 the line — the sheet "EFF for Tamara": the number, "Hero 170 · gear 63" and the **"In game"** field. Type EFF from the
 hero's screen in the game and the "≈" goes. The number is kept as a factor over the app's count (466 / 233 = ×2):
 re-dress the hero and the line recounts itself, with "≈" again and a quiet line in the sheet, "Gear changed since you
-typed it" — check the game when convenient. "Reset" forgets the number. Enhance isn't recorded: gear counts at +10. For
-now EFF is only shown — it doesn't change the verdict or trade.
+typed it" — check the game when convenient. "Reset" forgets the number. Enhance isn't recorded: gear counts at +10. EFF
+doesn't change the verdict, the pool, the batch or the one-hero trade: we don't know which boss a hero will fight. Only
+the team trade on «Team» with a boss raises it (see [Team check](Team-check)).
 
 **"Re-dress: +6.8 pts ▸"** appears above the slots when a layout made from the hero's own pieces is better than what's
 worn by 1+ point (a Legendary in place of an Epic — already at equal points), turns on an effect-set bonus or puts on a recommended weapon or accessory (then the button says

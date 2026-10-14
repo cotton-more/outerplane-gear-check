@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // «Обмен вещами»: открытие шторки с карточки героя и с панели ростера («Кого переодеть?»), обмен для команды на «Команде»
-// (.x/0200-boss E2: билд под местом, «Подобрать вещи»), заказ героя, план героя
-// (piece, search key, source, piece cost, stats points), the walk (.x/0200-boss E2b: ticks, «Оставить как было», the end,
+// (HISTORY.md 0200-boss E2: билд под местом, «Подобрать вещи»), заказ героя, план героя
+// (piece, search key, source, piece cost, stats points), the walk (HISTORY.md 0200-boss E2b: ticks, «Оставить как было», the end,
 // parking, «Ввести», ticks kept on the device), «Сделал» with «Вернуть», the session (stat-sets T7.4) and cancelling the calculation
 // команды. Данные — только из test/fixtures, не владельца. Логика — test/trade.*.test.ts.
 import { readFileSync } from 'node:fs';
@@ -14,7 +14,7 @@ import { TIPS } from '@/tour/registry';
 import { moreButton, openMore } from '../app/more';
 
 const D: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/data.json', 'file://' + __filename)), 'utf8'));
-// «Команда» needs the skills data (the team trade lives there, .x/0200-boss E2)
+// «Команда» needs the skills data (the team trade lives there, HISTORY.md 0200-boss E2)
 D.synergy = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/synergy.json', 'file://' + __filename)), 'utf8'));
 const DONE = { v: 1, first: 'done', invited: true, seen: {}, known: Object.fromEntries(TIPS.map((tp) => [tp.id, tp.rev])), tips: false };
 const caren = D.chars.find((c) => c.name === 'Caren')!;
@@ -254,7 +254,7 @@ describe('J. обмен вещами', () => {
     expect(rows().find((r) => r[0] === 'Caren')?.slice(1)).toEqual([expect.stringMatching(/^\+[\d.]+$/), false]);
   });
 
-  // the team trade on «Команда» (.x/0200-boss E2): the team without a boss from 'ogc.boss', the build under each spot (kept with
+  // the team trade on «Команда» (HISTORY.md 0200-boss E2): the team without a boss from 'ogc.boss', the build under each spot (kept with
   // the team), «Pick gear» → «Team trade» for 2–4 heroes with builds; one — the one-hero trade; a hero without builds stays out
   const team = async (ids: string[], g = gear()) => {
     await mount({ roster: [...new Set([...ids, aer.id])], gear: g, boss: { v: 2, boss: null, stage: {}, team: [...ids, null, null, null].slice(0, 4) } }, { charId: null });
@@ -319,7 +319,7 @@ describe('J. обмен вещами', () => {
     expect($('.tplan .tline.to .tline-n')?.textContent).toContain('Caren');
   });
 
-  // the EFF goal (.x/0200-boss E3): with a boss the members who need EFF get «EFF ≈ a → b · p%» on their line; the walk is
+  // the EFF goal (HISTORY.md 0200-boss E3): with a boss the members who need EFF get «EFF ≈ a → b · p%» on their line; the walk is
   // the boss's and the stage's (owner Q7: new inputs — a new calculation)
   it('E3: Meteos 13 — Akari takes Aer\'s EFF gloves, her line shows the EFF and the chance; the walk names the boss and stage', async () => {
     const own = P('g1', 'gloves', speed, { SPD: 4, ATK: 2 }), effy = P('g2', 'gloves', speed, { SPD: 4, EFF: 6 });
@@ -340,7 +340,7 @@ describe('J. обмен вещами', () => {
     expect(JSON.parse(localStorage.getItem('ogc.trade')!).target).toMatch(new RegExp(`^team:${akari.id},${ais.id}\\|sr:meteos@12\\|${akari.id}\\*\\d,${ais.id}\\*\\d$`));
   });
 
-  // the SPD goal (.x/0200-boss E4): Akari's S1 lowers the boss's ATK and Grand Calamari isn't immune to it — the timeline says
+  // the SPD goal (HISTORY.md 0200-boss E4): Akari's S1 lowers the boss's ATK and Grand Calamari isn't immune to it — the timeline says
   // why she should move first; the trade raises her SPD to 223 (surely first at boss 211) and her line shows «SPD a → b ✓»
   it('E4: Grand Calamari 13 — Akari\'s row says why she should move first; her plan line shows the SPD before and after', async () => {
     const mine = ['helmet', 'armor', 'gloves', 'shoes'].map((s, i) => P(`m${i}`, s, speed, { ATK: 2, HP: 2 }));
@@ -366,7 +366,7 @@ describe('J. обмен вещами', () => {
     expect($$('.tline.to').find((l) => l.querySelector('.tline-n')?.textContent?.includes('Ais'))?.querySelector('.tspd') ?? null).toBeNull();
   });
 
-  // the walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b): ticks on the device, «Cancel», parking, the entry window, the team
+  // the walk (MODEL.md §7 items 7 and 9; HISTORY.md 0200-boss E2b): ticks on the device, «Cancel», parking, the entry window, the team
   describe('the walk', () => {
     const open = async () => { await mount({ gear: gear(), roster: ROSTER }); await click(byText('.cd-acts button', 'Trade')); };
 
@@ -403,7 +403,7 @@ describe('J. обмен вещами', () => {
       expect(st.worn[aer.id]).toBeUndefined();
       await click(byText('.ctabs button, .cd-tabs button, [role="tab"]', 'Pool'));
       expect(byText('.pool-row', 'parked')?.querySelector('.pool-why.park')?.textContent).toBe('Pparked');
-      // the piece card says the way out (.x/0204-parked-list)
+      // the piece card says the way out (HISTORY.md 0204)
       await click(byText('.pool-row', 'parked'));
       expect(byText('.piece p', 'Parked:')?.textContent).toBe('Parked: taken off in a trade, nobody could take it. The trade offers it first; it never goes to feed or dismantling. Not needed? Unlock it in the game and “Remove from Caren”.');
     });

@@ -1,5 +1,5 @@
 /* «Команда» (screens/team, features/team): slots, transcend stars, report. Phone 280–420 px first; a wide window and
-   the landscape phone (812×375) put the slots left and the report right. Mockups: .x/0170-team-synergy/MOCKUP.md */
+   the landscape phone (812×375) put the slots left and the report right. Layout decisions: HISTORY.md 0170 (stage 3) */
 .tm { display: grid; gap: 12px; padding: 12px; align-content: start; }
 html:not(.narrow) .tm { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); align-items: start; padding: 16px; }
 html:not(.narrow) .tm > :not(.tm-side) { grid-column: 1; }
@@ -9,7 +9,7 @@ html:not(.narrow) .tm > :not(.tm-side) { grid-column: 1; }
 html:not(.narrow) .tm > .tm-side { grid-column: 2; grid-row: 1 / span 8; gap: 16px; }
 html:not(.narrow) .tm-side > .boss-turn { max-width: 560px; }
 
-/* the team 2×2, «VS» and the boss slot (.x/0206-boss-sheet, owner 2026-10-14; mockup mock/MOCKUP.html): the spot size --w
+/* the team 2×2, «VS» and the boss slot (HISTORY.md 0206, owner 2026-10-14; mockup mock/MOCKUP.html): the spot size --w
    follows the width of the column (container), the boss slot takes the rest; no bosses in the snapshot — the four in a row */
 .tm-fm { container-type: inline-size; --w: 54px; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: stretch; gap: 6px; padding-top: 6px; }
 .tm-fm.solo { grid-template-columns: minmax(0, 1fr); }
@@ -32,7 +32,7 @@ html:not(.narrow) .tm-side > .boss-turn { max-width: 560px; }
 .tm-sb .hs-mini .on svg { fill: #f0b030; } /* the dark foot in both themes: the dark theme's star gold */
 .tm-x { position: absolute; top: -6px; right: -6px; z-index: 1; width: 20px; height: 20px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line-2); color: var(--ink-2); font-size: 11px; line-height: 1; }
 .tm-add { border: 1.5px dashed var(--line-2); background: none; color: var(--ink-3); font-size: 22px; }
-/* the build under a spot (.x/0200-boss E2, OrderPill): a small pill — «статы ▾» or the set icons ×N; pinned — gold outline
+/* the build under a spot (HISTORY.md 0200-boss E2, OrderPill): a small pill — «статы ▾» or the set icons ×N; pinned — gold outline
    and a pin */
 .opill { display: inline-flex; align-items: center; justify-content: center; gap: 2px; max-width: calc(var(--w) + 16px); min-height: 22px; padding: 0 6px;
   border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 700 10.5px var(--font-mono);
@@ -87,7 +87,7 @@ html:not(.narrow) .tm-side > .boss-turn { max-width: 560px; }
 .tm-alpha { margin: 0; }
 html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 
-/* a boss on «Команда» (features/boss, .x/0200-boss stage C; .x/0206-boss-sheet): the boss slot beside the team, its sheet
+/* a boss on «Команда» (features/boss, HISTORY.md 0200-boss stage C; HISTORY.md 0206): the boss slot beside the team, its sheet
    with the list or the card, «Собрать из гайда» and the choice of guide teams.
    The slot: a tall card in the boss's red — the portrait with the stage in gold on its foot, the name (wraps, up to five lines),
    SPD and RES with their icons; ✕ on the corner; empty — dashed, a skull, «Босс · выбрать» */
@@ -118,7 +118,7 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .noface > .ico, .noface > img { width: 50%; height: 50%; }
 .boss-fill { width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: var(--radius-s); background: var(--accent-soft); color: var(--accent); font: 700 13.5px var(--font-body); }
 .tm-gn { margin: 0; }
-/* «Ход против босса» (BossTurn, .x/0200-boss E1, mockup MOCKUP-E1 v3): the turn line on the left (accent, fading down) with a
+/* «Ход против босса» (BossTurn, HISTORY.md 0200-boss E1, mockup MOCKUP-E1 v3): the turn line on the left (accent, fading down) with a
    stopwatch on top; a node per fighter — blue: surely before the boss, dashed amber: luck, grey: after; the boss — a red
    row with a bigger red node. A row: face, name, SPD (the Speed Set's icon) and EFF under the name, badges on the right;
    a tap opens the row in place */
@@ -235,7 +235,7 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-tc { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .boss-tc button { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: 13px var(--font-body); }
 .boss-tc button:disabled { opacity: .6; }
-.boss-tl { grid-column: 1 / -1; font: 700 12.5px var(--font-display); } /* a singularity team's name (.x/0208-ds-teams) */
+.boss-tl { grid-column: 1 / -1; font: 700 12.5px var(--font-display); } /* a singularity team's name (HISTORY.md 0208) */
 .boss-tf { display: flex; gap: 4px; }
 .boss-tf > span, .boss-tf > i { width: 34px; height: 34px; }
 .boss-tf .face { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; display: block; }

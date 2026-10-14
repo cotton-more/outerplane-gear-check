@@ -53,7 +53,7 @@ export interface Gauge {
   value(itemId: string): Worth | null; // null — герой не может носить (класс)
   bonus(set: string, n: number, n4: number): SetGain;
   crit?: CritGauge;                   // the crit soft cap (MODEL.md §12 item 6); no — the hero has no CHC in the chain
-  goal?: GoalGauge;                   // the EFF goal against a boss (MODEL.md §13; .x/0200-boss E3); no — no boss or the hero needs no EFF
+  goal?: GoalGauge;                   // the EFF goal against a boss (MODEL.md §13; HISTORY.md 0200-boss E3); no — no boss or the hero needs no EFF
   spd?: SpdGauge;                     // the SPD goal (MODEL.md §13; E4): the member should move before the boss; no — no boss, no reason or no chance
 }
 // What crit costs a kit (MODEL.md §12 item 6): the loss of the CHC substats and crit set rows on the hero's curve for the kit's

@@ -1,6 +1,6 @@
 // «Какую команду из гайда?» — a stage with several guide teams (guild raid: 4–6). A row per team: on each guide spot
 // the hero «Собрать» would put (a Core Fusion for its base hero; faded — the first alternative, nobody owned), «есть 2 из 4», who is missing. A team
-// with nobody owned can't be picked. A singularity pool team (.x/0208-ds-teams): its name on top («Огонь», «Горение», «Mero»),
+// with nobody owned can't be picked. A singularity pool team (HISTORY.md 0208): its name on top («Огонь», «Горение», «Mero»),
 // the four «Собрать» would put from its groups, then the first heroes of the groups nobody owns (faded).
 import type { BossTeam, BossTeamLabel } from '@/game/data/types';
 import { useIndex } from '@/game/data/IndexContext';

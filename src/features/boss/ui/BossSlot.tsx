@@ -1,4 +1,4 @@
-// The boss slot beside the team on «Команда» (.x/0206-boss-sheet, owner 2026-10-14: the boss as the fifth slot behind «VS»,
+// The boss slot beside the team on «Команда» (HISTORY.md 0206, owner 2026-10-14: the boss as the fifth slot behind «VS»,
 // replacing the boss row): the boss's portrait with the stage in gold on its foot, the name (wraps — a long one
 // makes the slot taller, never clipped), SPD with the Speed Set's icon and RES with the RES icon (no words; the words stay for
 // screen readers). Tap — the boss sheet; ✕ on the corner — no boss (the team stays: one team for every boss, Q3). No boss —

@@ -1,8 +1,8 @@
 // What «Команда» remembers on this device — 'ogc.boss' (owner D5, 2026-10-12): the last boss, the stage per boss and the
 // team. Not in the backup (like the page settings). Hero ids only: the ★ tried in a spot are never saved (they come from the
-// hero's card). orders (.x/0200-boss E2, owner 2026-10-13) — each member's build for the team trade: hero → the combo's
+// hero's card). orders (HISTORY.md 0200-boss E2, owner 2026-10-13) — each member's build for the team trade: hero → the combo's
 // signature (comboSig; none — «По статам»). Worn gear is never kept here: «Команда» always reads what the app records as worn.
-// v2 (.x/0206-boss-sheet Q3, owner 2026-10-14): one team for every boss — the boss is a lens, picking, changing or removing
+// v2 (HISTORY.md 0206 Q3, owner 2026-10-14): one team for every boss — the boss is a lens, picking, changing or removing
 // it never changes the heroes. v1 kept a team (and its builds) per boss plus one without a boss (key ''): the team that was
 // on screen survives — the last boss's, or the one without a boss when that boss had none.
 export interface BossStore {

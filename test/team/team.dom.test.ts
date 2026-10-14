@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // «Команда» (screens/team): open from «Ещё» on a phone, pick heroes and ★, the report reacts; the team is kept in
-// 'ogc.boss' (owner D5, .x/0200-boss), the ★ tried here are not (they come from the hero's card; Team only tries higher ones).
+// 'ogc.boss' (owner D5, HISTORY.md 0200-boss), the ★ tried here are not (they come from the hero's card; Team only tries higher ones).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { act, createElement } from 'react';

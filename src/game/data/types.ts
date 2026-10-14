@@ -53,17 +53,17 @@ export interface Char {
   // `quirks` setting). Missing in old snapshots: no «Крит: 45%» line. trans — CHC of the transcend passive by the
   // in-game ★1…6, ‰ (the bearer's own sheet); only for the heroes whose stars give crit
   chc?: { base: number; cls: number; quirk: number; trans?: number[] };
-  // EFF from sources that are always on (update.py eff_profile; the game's formula in .x/0200-boss RESEARCH §1.2):
+  // EFF from sources that are always on (update.py eff_profile; the game's formula in HISTORY.md 0200-boss RESEARCH §1.2):
   // w — white EFF [Lv100, Lv120] (the `lv120` setting picks one); r — flat quirk node (Ranger +50, by `quirks`); p — a
   // passive's permanent premium, ‰ (Core Fusion Notia +500, only at Core Fusion level 5 = fusion passive level 2; the
   // data assumes it maxed); t — transcend passive by the in-game ★1…6: r premium ‰, f flat; tm — 1 when that t.r
   // premium is a MY_TEAM row: it reaches every ally in battle (+3 % ★4–5, +6 % ★6; Gnosis Nella +6 % from ★4), not only
   // the bearer's own sheet; without tm it is self-only. Heroes with both kinds of rows are not flagged (none today);
   // ee — the EE's permanent self premium, ‰ (the app can't know whether the player owns the EE or its level: used only
-  // for the «type EFF from the game» hint, never added to the sheet); d — 1 when the hero needs EFF against a boss's RES (rule R, .x/0200-boss
+  // for the «type EFF from the game» hint, never added to the sheet); d — 1 when the hero needs EFF against a boss's RES (rule R, HISTORY.md 0200-boss
   // RESEARCH §1.5). Missing in old snapshots
   eff?: { w: [number, number]; r?: number; p?: number; t?: { r?: number[]; f?: number[] }; tm?: 1; ee?: number; d?: 1 };
-  // SPD the transcend passive adds in battle (update.py spd_up, .x/0200-boss E4 Q6): t — flat by the in-game ★1…6; tm — 1 when it
+  // SPD the transcend passive adds in battle (update.py spd_up, HISTORY.md 0200-boss E4 Q6): t — flat by the in-game ★1…6; tm — 1 when it
   // reaches every ally (outerpedia's "Ally Speed transcend bonus"), else the hero alone. Missing — no such row (or an old snapshot)
   spdUp?: { t: number[]; tm?: 1 };
   // why the hero should move before the boss (update.py turn_reasons, E4 Q1): a skill ready on turn 1 and what it does — to the
@@ -162,7 +162,7 @@ export interface Synergy {
 // heroes (ids); g — the guides that recommend it (keys of guides: guide path → its English title)
 export interface GuideTeams { guides: Record<string, string>; list: { g: string[]; s: string[][] }[] }
 
-// Boss fights of outerpedia's guides (update.py build_bosses, .x/0200-boss). A table row per stage: [level, RES, SPD,
+// Boss fights of outerpedia's guides (update.py build_bosses, HISTORY.md 0200-boss). A table row per stage: [level, RES, SPD,
 // label]; RES raw, before the account's Challenge quirk q (‰, −200 at the full tree: RES × (1000 + q)/1000).
 // label: "7" — stage, "4:SS" — world boss league:rank, "AA+" — singularity rank, "normal"/"hard"/"very_hard"
 export type BossRow = [number, number, number, string];
@@ -171,7 +171,7 @@ export type BossRow = [number, number, number, string];
 export type BossMode = 'sr' | 'gr' | 'wb' | 'jc' | 'ie' | 'ds';
 // a guide team: hero ids per slot (alternatives in guide order); st — the stages it is for (none = all); r — guild
 // raid requirements as the guide writes them ("268", "518/259", "≤180"; trans — transcend ★).
-// p — a pool (singularity guides' content.json, .x/0208-ds-teams): s is 3–8 groups of heroes in the guide's order, not four
+// p — a pool (singularity guides' content.json, HISTORY.md 0208): s is 3–8 groups of heroes in the guide's order, not four
 // spots — four of them make the team; l — its name as the guide gives it: an element (e), an effect (x — glossary effect
 // id, as the immunities), a hero (h; a title-only or unnamed team — its first group's first hero)
 export type BossTeamLabel = { e: string } | { x: string } | { h: string };

@@ -1,4 +1,4 @@
-// «Ещё» → «Припаркованные» (.x/0204-parked-list, owner 2026-10-13): every parked piece (MODEL.md §5) by the hero whose pool
+// «Ещё» → «Припаркованные» (HISTORY.md 0204, owner 2026-10-13): every parked piece (MODEL.md §5) by the hero whose pool
 // holds it — face and name, then the pieces in full as the trade walk draws them, «Убрать» per row. The way out of a parked
 // piece is the player's: unlock it in the game, then «Убрать» here — the same removal as the card's «Убрать у X», with
 // «Вернуть» in the message (park mark included). The last removal empties the list: App closes the sheet

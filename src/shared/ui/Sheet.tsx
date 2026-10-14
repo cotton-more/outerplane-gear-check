@@ -21,7 +21,7 @@ export function popPlace(at: Point, box: { w: number; h: number; bodyTop: number
 }
 
 // bare — the title only for screen readers (the sheet says by itself what it is): the header is just the ✕; foot — a bar
-// under the scrolling body that stays in view (the boss sheet's «Выбрать», .x/0206-boss-sheet)
+// under the scrolling body that stays in view (the boss sheet's «Выбрать», HISTORY.md 0206)
 export function Sheet({ title, onClose, children, className, at, bare = false, foot }: {
   title: string; onClose: () => void; children: ReactNode; className?: string; at?: Point; bare?: boolean; foot?: ReactNode;
 }) {

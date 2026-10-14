@@ -33,10 +33,10 @@ export interface HeroLine {
 // The cost of a move by the hero's order: the piece's points minus the points of the one worn in this slot before the plan (sets — in the hero's line, not here);
 // passive — a weapon or accessory of a higher rank (a recommended item): the plan takes it even with fewer points
 export interface Worth { d: Milli; passive: boolean }
-// «Эфф ≈ 184 → 222 · 93%» (.x/0200-boss E3 Q6): the game's battle EFF of the worn kit before and after, the boss's RES (the
+// «Эфф ≈ 184 → 222 · 93%» (HISTORY.md 0200-boss E3 Q6): the game's battle EFF of the worn kit before and after, the boss's RES (the
 // target − 1), «≈» — no stat-screen EFF typed
 export interface EffLine { a: number; b: number; res: number; approx: boolean }
-// «Скорость 138 → 232 ✓» (.x/0200-boss E4 Q7): SPD in the turn order (+ the allies' transcend bonus) before and after, the
+// «Скорость 138 → 232 ✓» (HISTORY.md 0200-boss E4 Q7): SPD in the turn order (+ the allies' transcend bonus) before and after, the
 // boss's SPD (the chance after)
 export interface SpdLine { a: number; b: number; boss: number }
 

@@ -22,7 +22,7 @@ export interface Ctx {
   // hero → in-game ★ from the store (`gear.ts stars`): facts about the hero, like the quirks setting; N — a wish — stays in
   // the profile. No entry — not set: no crit from stars is counted
   stars: Readonly<Record<string, number>>;
-  // hero → the level marked on the card (100 or 120, `gear.ts lv`, .x/0205); no entry — the `lv120` setting (the default)
+  // hero → the level marked on the card (100 or 120, `gear.ts lv`, HISTORY.md 0205); no entry — the `lv120` setting (the default)
   lv: Readonly<Record<string, number>>;
   inScope: (c: Char) => boolean;
   outScope: (c: Char) => boolean; // «не в ростере» при «только мои»: кандидат, но не свой

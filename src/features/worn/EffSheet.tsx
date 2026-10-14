@@ -1,4 +1,4 @@
-// «Эфф: ≈ 233» and the sheet «Эфф для X» (.x/0200-boss stage D, Q3): the hero's EFF the app knows (game/stat/eff) and the
+// «Эфф: ≈ 233» and the sheet «Эфф для X» (HISTORY.md 0200-boss stage D, Q3): the hero's EFF the app knows (game/stat/eff) and the
 // player's stat-screen value. The sheet: the number (with «≈» when it is an estimate), «Герой 170 · вещи 63 · ×2», a quiet
 // line when gear changed since typing (owner: keep it for now), the field «В игре» (empty — the app's number in grey),
 // «Сбросить» (forget the typed value), the text, «Готово». Saved on «Готово»: the typed number with the app's EFF now

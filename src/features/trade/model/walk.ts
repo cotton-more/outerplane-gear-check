@@ -1,4 +1,4 @@
-// The trade as a walk with ticks (MODEL.md §7 item 9; .x/0200-boss E2b Q7, owner 2026-10-13): the plan's moves, the
+// The trade as a walk with ticks (MODEL.md §7 item 9; HISTORY.md 0200-boss E2b Q7, owner 2026-10-13): the plan's moves, the
 // replacements, parking and the empty slots as lines to do in the game top to bottom. Per hero (the receivers in the plan's
 // order, then anyone else who gets a piece), slot by slot: «Замок» on his old piece right before the equip — only when that
 // piece stays with him parked (O3, owner 2026-10-13: a piece that moves to someone is found in the game by grade, main and

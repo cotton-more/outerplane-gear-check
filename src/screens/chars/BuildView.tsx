@@ -71,7 +71,7 @@ function PrioHint({ c, b, ctx }: { c: Char; b: Build; ctx: Ctx }) {
   const t = useT();
   if (!axes.length) return null;
   const { quirks } = ctx.settings;
-  const lv120 = lv120Of(ctx, c); // the hero's level (.x/0205): marked on the card or the default
+  const lv120 = lv120Of(ctx, c); // the hero's level (HISTORY.md 0205): marked on the card or the default
   return (
     <>
       <ul className="prio-hint">

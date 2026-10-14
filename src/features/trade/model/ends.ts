@@ -1,4 +1,4 @@
-// The end of a trade (MODEL.md §7 item 7; .x/0200-boss E2b Q2, Q6, owner 2026-10-13): nothing is left without an owner.
+// The end of a trade (MODEL.md §7 item 7; HISTORY.md 0200-boss E2b Q2, Q6, owner 2026-10-13): nothing is left without an owner.
 // A piece the plan took off a hero (worn at the start, worn by nobody after, still in a pool) goes, after every member's
 // step — so a piece a later step takes is not a replacement — to the giver of that slot (the hero at the end of the chain:
 // Rin took Caren's helmet → Caren gets Rin's old one; Rin ← Caren ← Stella → Stella) if he can wear it, else to another

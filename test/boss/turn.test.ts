@@ -1,4 +1,4 @@
-// Who moves first against the boss (.x/0200-boss E1, features/boss/model/turn; rules data/turn/TURN.md): the start gauge
+// Who moves first against the boss (HISTORY.md 0200-boss E1, features/boss/model/turn; rules MODEL.md §14): the start gauge
 // SPD × 100 / top SPD plus a hidden head start of 0…5 — surely first above ≈ boss × 1.053, surely after at or below ≈ × 0.95,
 // luck between; and the hero's SPD the app knows (game/stat/spd: base by level and quirks, the Speed Set rows on the base,
 // SPD substats 3 a segment, an accessory's SPD main).

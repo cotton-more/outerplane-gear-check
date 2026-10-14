@@ -1,4 +1,4 @@
-// The trade as a record (MODEL.md §7 items 4, 7, 9; .x/0200-boss E2b Q1–Q7): «Оставить как было» freezes the receiver's
+// The trade as a record (MODEL.md §7 items 4, 7, 9; HISTORY.md 0200-boss E2b Q1–Q7): «Оставить как было» freezes the receiver's
 // slot, the end gives every piece taken off an owner (giver → emptied member → parking), parked pieces wait for anyone,
 // the walk's lines and ticks, one record and one undo.
 import { describe, expect, it } from 'vitest';

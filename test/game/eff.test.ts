@@ -1,8 +1,8 @@
-// A hero's EFF from what the app knows (game/stat/eff): the game's formula (.x/0200-boss RESEARCH §1.2) — W by level, the
+// A hero's EFF from what the app knows (game/stat/eff): the game's formula (HISTORY.md 0200-boss RESEARCH §1.2) — W by level, the
 // gear rate on W (EFF% substats, Effectiveness rows), main flats, the Ranger node by `quirks`, transcend at the hero's ★;
 // the typed stat-screen value as a factor (effShown); the chance a debuff lands (landChance, RESEARCH §1.1).
 // `../fixtures/hero-eff.json` — per hero W at Lv100/120, the Ranger node, transcend by ★ and a passive premium, from the
-// research probe (.x/0200-boss/data/heroeff, outerpedia dc83b4a), independent of update.py.
+// research probe (HISTORY.md 0200-boss stage D, outerpedia dc83b4a), independent of update.py.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIndex } from '@/game/data';

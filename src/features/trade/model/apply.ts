@@ -1,5 +1,5 @@
 // «Сделал» (MODEL.md §7 item 9; R6.6, R3.2, R4.3–R4.5): one record for the whole walk — the plan's moves, then the
-// replacements, the parking and the pieces entered for empty slots (.x/0200-boss E2b Q2–Q7). A move: the piece leaves its
+// replacements, the parking and the pieces entered for empty slots (HISTORY.md 0200-boss E2b Q2–Q7). A move: the piece leaves its
 // holder's pool (was worn — his slot empties), enters the receiver's pool and is worn; the receiver's old piece stays in his
 // pool unworn — then the end decides it: a replacement moves it to the giver and wears it there, parking marks it parked.
 // Copies of a taken piece (same code) in the receiver's pool leave the app (leftovers). An entered piece is a new record,

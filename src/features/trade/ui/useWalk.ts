@@ -1,4 +1,4 @@
-// The walk's state in a trade sheet (MODEL.md §7 item 9; .x/0200-boss E2b O1): the player's decisions and ticks for one
+// The walk's state in a trade sheet (MODEL.md §7 item 9; HISTORY.md 0200-boss E2b O1): the player's decisions and ticks for one
 // target (a hero or a team), kept in 'ogc.trade' until «Сделал» / «Отмена» (✕ keeps them); the entry window's slot; the
 // outcome of the plan with these decisions; «Пересчитано: N» — lines a recount changed (a decline or its undo).
 import { useEffect, useMemo, useState } from 'react';

@@ -216,7 +216,7 @@ export function App() {
     if (lock?.grade && s.grade !== lock.grade) dispatch({ type: 'grade', grade: lock.grade });
   }, [lock?.grade, s.grade]); // eslint-disable-line react-hooks/exhaustive-deps
   const rosterList = useMemo(() => rosterApi.list(), [roster]); // eslint-disable-line react-hooks/exhaustive-deps
-  // «Припаркованные · N» in «Ещё» (.x/0204-parked-list): the last «Убрать» closes the sheet
+  // «Припаркованные · N» in «Ещё» (HISTORY.md 0204): the last «Убрать» closes the sheet
   const parkedN = useMemo(() => parkedCount(gear.store), [gear.store]);
   useEffect(() => { if (parkedOpen && !parkedN) setParkedOpen(false); }, [parkedOpen, parkedN]); // «Вернуть» doesn't reopen it
   const parkedShown = parkedOpen && canEquip && !tour.run;

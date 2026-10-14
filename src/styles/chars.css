@@ -308,7 +308,7 @@ html.xs .bgear-t { grid-row: 3; }
   border-radius: var(--radius-s); background: var(--surface); color: var(--ink); font: inherit; text-align: center; }
 .crit-reset { margin-left: auto; min-height: 44px; }
 .crit-reset:disabled { color: var(--ink-3); text-decoration: none; }
-/* «Эфф для X» (EffSheet, .x/0200-boss stage D): the hero's face and the number, «Герой 170 · вещи 63 · ×2», the quiet stale
+/* «Эфф для X» (EffSheet, HISTORY.md 0200-boss stage D): the hero's face and the number, «Герой 170 · вещи 63 · ×2», the quiet stale
    line, the field «В игре» with «Сбросить» on the right (the crit sheet's look) */
 .eff-h { display: flex; align-items: center; gap: 12px; }
 .eff-h > :first-child { width: 48px; height: 48px; flex: none; }
@@ -400,7 +400,7 @@ html .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 2; } /* и на узком
 .hs-big .on svg { fill: var(--star-on); stroke: var(--star-on); }
 .hs-big button:disabled svg { opacity: .45; }
 .hs-act { display: flex; justify-content: center; margin-top: 8px; }
-/* the hero's level under the stars (.x/0205; owner: it belongs to the stars' sheet, so it wears their gold): one pill as
+/* the hero's level under the stars (HISTORY.md 0205; owner: it belongs to the stars' sheet, so it wears their gold): one pill as
    wide as the stars — «по умолчанию» (a little wider; two lines at 280 px) and two level halves; the level in force is gold — bright when
    chosen on the hero, pale while «по умолчанию» gives it; «по умолчанию» chosen — a raised neutral chip */
 .lv-pill { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); gap: 3px; width: 100%; max-width: 320px; margin: 2px auto 8px; padding: 3px;

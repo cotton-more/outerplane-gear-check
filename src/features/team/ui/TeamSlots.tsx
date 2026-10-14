@@ -1,8 +1,8 @@
-// The four team spots: 2×2 beside the boss slot (.x/0206-boss-sheet, owner 2026-10-14; one row when the snapshot has no
+// The four team spots: 2×2 beside the boss slot (HISTORY.md 0206, owner 2026-10-14; one row when the snapshot has no
 // bosses — screens/team lays them out). An empty spot is «+». A hero (owner 2026-10-11): tap the portrait — pick another
 // hero, ✕ in the corner — remove, the stars on the portrait's foot — set ★ (TeamScreen opens the sheets); no name on the spot
 // (0206 mockup: the turn plan below names them; the buttons say it to screen readers). below — what hangs under a hero's spot
-// (the build for the team trade, .x/0200-boss E2 — composed by screens/team).
+// (the build for the team trade, HISTORY.md 0200-boss E2 — composed by screens/team).
 import type { ReactNode } from 'react';
 import { useIndex } from '@/game/data/IndexContext';
 import { HeroFace } from '@/game/hero/HeroFace';

@@ -1,6 +1,6 @@
 // Карточка героя: строка приоритета сабстатов (что значат › и =, серые) на вкладке «Билды»; вкладки «Надето · Пул ·
 // Билды» (rev 6, stat-sets этап 6); «Переодеть» и оценка по вещам героя — статы и сеты вместе (gear rev 3)
-// heroStars rev 2 — the star sheet holds the hero's level too (.x/0205; owner 2026-10-12: text OK, in «Что нового»)
+// heroStars rev 2 — the star sheet holds the hero's level too (HISTORY.md 0205; owner 2026-10-12: text OK, in «Что нового»)
 import { defineTips } from '@/tour/types';
 
 export default defineTips(

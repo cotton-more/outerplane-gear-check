@@ -61,7 +61,7 @@ export function keyOfHole(P: Profile, slot: SlotId, breaksSet: string | null): S
   return { grade: null, set: isArmor(slot) ? breaksSet : null, main, sub, sort: sub, t4: false };
 }
 
-// A piece entered for an empty slot in the walk (.x/0200-boss E2b Q4): its points for the hero (MODEL.md §1) and what is
+// A piece entered for an empty slot in the walk (HISTORY.md 0200-boss E2b Q4): its points for the hero (MODEL.md §1) and what is
 // off — the main is none of the mains the hero's builds recommend for this slot (a weapon or accessory), or none of its
 // substats counts for the hero (look — the first chain stats a substat of this slot can be)
 export interface Advice { pts: number; main: string[] | null; look: string[] | null }

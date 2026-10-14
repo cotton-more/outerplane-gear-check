@@ -1,4 +1,4 @@
-// The boss sheet (mockups OK 2026-10-12, .x/0200-boss/mock; redesigned in .x/0206-boss-sheet, owner 2026-10-14): a draft —
+// The boss sheet (mockups OK 2026-10-12, HISTORY.md 0200-boss stage C; redesigned in HISTORY.md 0206, owner 2026-10-14): a draft —
 // the boss and the stage change freely inside, «Команда» changes only on the gold «Выбрать» (Q2); ✕, a tap outside or Esc
 // cancel (the boss and stage stay as before). Removing the boss is the ✕ on the boss slot, not here.
 // The card: the portrait on a wash of the boss's element, the name, the kind (guild raid — the raid and main / sub), «Другой»;

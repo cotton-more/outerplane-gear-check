@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// A boss on «Команда» (.x/0200-boss stage C; .x/0206-boss-sheet): the boss slot behind «VS» and its sheet (a draft: the boss and
+// A boss on «Команда» (HISTORY.md 0200-boss stage C; HISTORY.md 0206): the boss slot behind «VS» and its sheet (a draft: the boss and
 // stage are written on «Pick», ✕ / outside / Esc cancel), stages, «Собрать из гайда» with «Вернуть», one team for every boss
 // in 'ogc.boss' (v2), the guide's heroes in a spot's sheet, several guide teams, the turn plan with and without a boss;
 // old data without bosses — no slot.
@@ -137,7 +137,7 @@ describe('a boss on «Команда»', () => {
     expect(stored()).toMatchObject({ boss: 'sr:meteos', stage: { 'sr:meteos': 10 } });
   });
 
-  // the sheet is a draft (.x/0206 Q2): ✕, a tap outside and Esc leave the boss and the stage as they were
+  // the sheet is a draft (HISTORY.md 0206 Q2): ✕, a tap outside and Esc leave the boss and the stage as they were
   it('the draft: ✕, a tap outside and Esc after changing the stage or the boss store nothing', async () => {
     await mount();
     await click(slotBtn());
@@ -365,7 +365,7 @@ describe('a boss on «Команда»', () => {
     expect(slotText()).toContain('Urd (Dark)');
   });
 
-  // singularity guides list pools of hero groups, not spots (.x/0208-ds-teams, owner (a)): Urd (Dark) — Light, Mero, Gnosis Beth
+  // singularity guides list pools of hero groups, not spots (HISTORY.md 0208, owner (a)): Urd (Dark) — Light, Mero, Gnosis Beth
   it('singularity teams: named, «Fill» takes the first owned hero of each group until four; any spot lists the team\'s heroes', async () => {
     await mount();
     await pickBoss('Urd (Dark)');
@@ -388,7 +388,7 @@ describe('a boss on «Команда»', () => {
   });
 });
 
-// «Ход против босса» under the team (.x/0200-boss E1; EFF from stage D): the members and the boss in the order of the first
+// «Ход против босса» under the team (HISTORY.md 0200-boss E1; EFF from stage D): the members and the boss in the order of the first
 // turn — SPD the app knows, luck with its chance, after the boss; members who need EFF (rule R) — EFF in battle and the chance
 // the debuff lands; a tap expands a row (EFF short of RES + 1, the SPD that surely moves first, «EFF from the game» → the sheet
 // with the EE hint until the game's number is typed)

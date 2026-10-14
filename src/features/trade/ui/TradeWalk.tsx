@@ -1,4 +1,4 @@
-// The trade as a walk (MODEL.md §7 items 7 and 9; .x/0200-boss E2b, mockups and texts approved by the owner 2026-10-13).
+// The trade as a walk (MODEL.md §7 items 7 and 9; HISTORY.md 0200-boss E2b, mockups and texts approved by the owner 2026-10-13).
 // Per hero — his line as before (gain by his order, stats was → becomes, with a boss the EFF before → after and the chance
 // (E3), sets on and off, parts that can't be built,
 // «Заказ: … ▾») and his steps: «Замок» on his old piece when it stays with him parked (O3), the piece to wear (as the plan drew it:
@@ -49,7 +49,7 @@ function keyText(t: T, ctx: Ctx, k: SearchKey): string {
     k.main && subLabel(k.main), k.sub && t.trade.keySub(subLabel(k.sub)), k.t4 && 'T4'].filter(Boolean).join(' · ');
 }
 
-// the EFF goal (.x/0200-boss E3 Q6): «Эфф ≈ 184 → 222 · 93%» — the battle EFF before and after and the chance the debuff
+// the EFF goal (HISTORY.md 0200-boss E3 Q6): «Эфф ≈ 184 → 222 · 93%» — the battle EFF before and after and the chance the debuff
 // lands after the trade (BossTurn's number); ✓ instead of the chance above RES. Its own row under the stats
 function effPart(t: T, e: NonNullable<HeroLine['eff']>) {
   const ok = e.b > e.res, p = Math.floor(landChance(e.b, e.res) * 100);
@@ -61,7 +61,7 @@ function effPart(t: T, e: NonNullable<HeroLine['eff']>) {
   );
 }
 
-// the SPD goal (.x/0200-boss E4 Q7): «Скорость 138 → 232 ✓» / «· 74%» — SPD in the turn order before and after and the
+// the SPD goal (HISTORY.md 0200-boss E4 Q7): «Скорость 138 → 232 ✓» / «· 74%» — SPD in the turn order before and after and the
 // chance to move before the boss after the trade (BossTurn's number); its own row under the EFF row, the Speed Set's icon
 function spdPart(t: T, ctx: Ctx, s: NonNullable<HeroLine['spd']>) {
   const tu = turnOf(s.b, s.boss, []), ok = tu.state === 'first', p = tu.state === 'luck' ? luckPct(tu.p) : 0;

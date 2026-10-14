@@ -1,4 +1,4 @@
-// «Обмен для команды» (.x/0200-boss E2, owner 2026-10-13): the team trade, opened by «Подобрать вещи» on «Команда» for
+// «Обмен для команды» (HISTORY.md 0200-boss E2, owner 2026-10-13): the team trade, opened by «Подобрать вещи» on «Команда» for
 // its 2–4 heroes with builds (model/team teamOk). The calculation starts at once (runTeam in chunks: «Считаю…» and
 // «Отмена» — closes the window); the plan is a walk (TradeWalk, MODEL.md §7 item 9; E2b): the members, then «В конце —
 // замены» (others' holes filled by the members' old pieces, parking). Each member's order (build) comes from «Команда»,
@@ -34,7 +34,7 @@ export function pinnedOrder(ctx: Ctx, st: GearStore, id: string, t: ReturnType<t
   return p ? t.card.pinned(comboText(ctx.idx, p.combo)) : null;
 }
 
-// goals — a boss on «Команда»: member → the EFF goal (MODEL.md §13; .x/0200-boss E3), spdGoals — → the SPD goal (E4); goalKey
+// goals — a boss on «Команда»: member → the EFF goal (MODEL.md §13; HISTORY.md 0200-boss E3), spdGoals — → the SPD goal (E4); goalKey
 // names its inputs (boss, stage,
 // members and their ★) — the world is counted again and the walk is another one when it changes (owner Q7)
 export function TeamTradeSheet({ ctx, gear, roster, team, orders, goals, spdGoals, goalKey = '', onOrder, onApplied, onClose }: {

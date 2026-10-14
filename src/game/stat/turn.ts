@@ -1,4 +1,4 @@
-// Who moves first — the team or the boss (.x/0200-boss E1; rules: data/turn/TURN.md, from outerpedia's Stats guide, tested
+// Who moves first — the team or the boss (HISTORY.md 0200-boss E1; rules: MODEL.md §14, from outerpedia's Stats guide, tested
 // in game by the community — the client sample has no turn code). The turn gauge: at battle start a unit stands at
 // SPD × 100 / the top SPD of the fight (the boss included) plus a hidden random head start of 0…5 points; it fills in
 // proportion to SPD and the unit acts at 100 (several at 100 or above — the higher gauge first). So a hero surely moves

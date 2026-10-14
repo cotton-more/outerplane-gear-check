@@ -1,4 +1,4 @@
-// The EFF goal in the boss team trade (MODEL.md §13; .x/0200-boss E3): the gauge's EFF against effOf, the kit search exact with
+// The EFF goal in the boss team trade (MODEL.md §13; HISTORY.md 0200-boss E3): the gauge's EFF against effOf, the kit search exact with
 // the goal (bestKit = bruteKit), no goal = today's plans, a debuffer below the target takes the EFF gloves, an unreachable
 // target gives up no set for one EFF, two debuffers — the EFF goes to whoever lacks it, EFF above the target is worth nothing,
 // the plan line carries the EFF before and after.

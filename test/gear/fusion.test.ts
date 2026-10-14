@@ -386,7 +386,7 @@ describe('Core Fusion: звёзды и N идут за вещами (Z7, PLAN 01
   });
 });
 
-// the typed stat-screen EFF (.x/0200-boss Q3): stored like N and ★ — set / reset, drop and «Вернуть», Core Fusion moves it,
+// the typed stat-screen EFF (HISTORY.md 0200-boss Q3): stored like N and ★ — set / reset, drop and «Вернуть», Core Fusion moves it,
 // a hero out of the roster loses it, the store reads it back
 describe('эфф из игры (eff)', () => {
   const cal = { typed: 466, at: 233 };
@@ -430,7 +430,7 @@ describe('эфф из игры (eff)', () => {
   });
 });
 
-// the hero's level (.x/0205-hero-level): stored like ★ — set / reset, drop and «Вернуть», Core Fusion moves it, a hero out of
+// the hero's level (HISTORY.md 0205): stored like ★ — set / reset, drop and «Вернуть», Core Fusion moves it, a hero out of
 // the roster loses it, the store reads it back
 describe('уровень героя (lv)', () => {
   it('setLevel: 100 и 120, то же — то же хранилище, null — поле уходит; не 100 и не 120 не пишется', () => {

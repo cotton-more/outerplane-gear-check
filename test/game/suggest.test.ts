@@ -1,5 +1,5 @@
 // Who to add (game/synergy/suggest.ts): outerpedia's recommended teams first, skill statuses as an extra reason
-// (.x/0171-team-suggest). Fixtures: test/fixtures/teams.json and synergy.json from the same outerpedia commit.
+// (HISTORY.md 0171). Fixtures: test/fixtures/teams.json and synergy.json from the same outerpedia commit.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { GuideTeams, Synergy } from '@/game/data/types';

@@ -1,4 +1,4 @@
-// The walk on the device (MODEL.md §7 item 9; .x/0200-boss E2b O1, owner 2026-10-13): 'ogc.trade' keeps one walk — its
+// The walk on the device (MODEL.md §7 item 9; HISTORY.md 0200-boss E2b O1, owner 2026-10-13): 'ogc.trade' keeps one walk — its
 // target (one hero or a team) and the player's decisions and ticks — until «Сделал» or «Отмена»; ✕ keeps it, and the
 // same hero's or team's trade picks it up. Another target — the old walk is replaced. Not in the backup. What doesn't
 // read (another shape, a stranger slot) is dropped; given the data's index, so is an entered piece with a stat, set or item

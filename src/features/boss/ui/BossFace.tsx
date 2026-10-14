@@ -1,4 +1,4 @@
-// The boss's portrait (.x/0206-boss-sheet Q1, owner 2026-10-14: portraits everywhere — the slot, the list, the card, the
+// The boss's portrait (HISTORY.md 0206 Q1, owner 2026-10-14: portraits everywhere — the slot, the list, the card, the
 // turn plan): outerpedia's boss art by Boss.icon (update.py; a hero-monster sub takes the hero's face). A snapshot without
 // icons — the element icon in its place.
 import type { Boss } from '@/game/data/types';

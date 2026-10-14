@@ -251,7 +251,7 @@ SEASON_MODES = ("guild-raid", "world-boss", "joint-challenge")
 def guide_file(rel: str) -> bool:
     """rel — a path under GUIDES_DIR: one of the files build_teams and build_bosses read."""
     name = rel.rsplit("/", 1)[-1]
-    if name == "content.json":  # singularity guides: the teams pool (.x/0208-ds-teams); other guides' content.json is texts
+    if name == "content.json":  # singularity guides: the teams pool (HISTORY.md 0208); other guides' content.json is texts
         return rel.startswith("dimensional-singularity/") and rel.count("/") == 2
     return name in GUIDE_FILES or (name in SEASON_FILES and rel.split("/", 1)[0] in SEASON_MODES)
 
@@ -650,7 +650,7 @@ EFF_IGNORE_RESIST = ("DEBUFF_IGNORE_RESIST", "DEBUFF_IGNORE_ALL")
 
 
 def needs_eff(src: dict, cid: str) -> bool:
-    """Rule R (.x/0200-boss RESEARCH §1.5): the hero's own debuffs get resisted, so EFF matters. A row counts when it is on
+    """Rule R (HISTORY.md 0200-boss RESEARCH §1.5): the hero's own debuffs get resisted, so EFF matters. A row counts when it is on
     S1/S2/S3, a DEBUFF* row on an enemy target, a status (STATUS_FAMILY; not a modifier or damage), resistable (not
     IGNORE_RESIST / IGNORE_ALL) and its application roll is ≥ 50 % at the max skill level; not hard CC and not taunt.
     Then: any such row on S1 or S2, or a DoT / stat-down on S3. Cooldown up (BT_COOL3_CHARGE), AP charge down
@@ -679,7 +679,7 @@ def needs_eff(src: dict, cid: str) -> bool:
 
 
 def spd_up(src: dict, cid: str) -> dict | None:
-    """SPD the hero's transcend passive adds in battle (.x/0200-boss E4 Q6; outerpedia's Stats guide: the "Ally Speed
+    """SPD the hero's transcend passive adds in battle (HISTORY.md 0200-boss E4 Q6; outerpedia's Stats guide: the "Ally Speed
     transcend bonus" is added to SPD in the priority formula, e.g. Dianne + Mene + Demiurge Delta = 30): {"t": flat by the
     in-game ★1…6, "tm"?: 1 — the row reaches every ally (a MY_TEAM row), else the hero alone}. The skill8 rows of
     `speed` / `add`; conditional stacking rows (Ryu Lion's BT_STAT on turn) aren't skill8 rows and stay out. None — no row."""
@@ -694,7 +694,7 @@ def spd_up(src: dict, cid: str) -> dict | None:
     return {"t": t, **({"tm": 1} if team else {})}
 
 
-# What a hero's first move does to the boss's first move or for the team (.x/0200-boss E4 Q1): the reason to move before
+# What a hero's first move does to the boss's first move or for the team (HISTORY.md 0200-boss E4 Q1): the reason to move before
 # the boss. Enemy rows: kind by BT type / stat; the glossary key (debuff side) lets the app drop a row the boss is immune to.
 TURN_ENEMY = {"BT_AGGRO": "taunt", "BT_STUN": "stun", "BT_FREEZE": "freeze", "BT_STONE": "stone", "BT_SILENCE": "silence",
               "BT_ACTION_GAUGE": "push", "BT_COOL_CHARGE": "cool", "BT_COOL2_CHARGE": "cool", "BT_COOL3_CHARGE": "cool"}
@@ -1342,7 +1342,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
 # --------------------------------------------------------------------------- синергия команды
 
 # Skill type -> slot. Chain/dual attacks, class passives and the rest are not counted: a chain proc is not reliable
-# (owner, .x/0170 Q2), class passives give no status (owner's in-game check, decision 6).
+# (owner, HISTORY.md 0170 Q2), class passives give no status (owner's in-game check, decision 6).
 SYN_SLOT = {"first": "s1", "second": "s2", "ultimate": "s3", "burst_1": "burst", "burst_2": "burst", "burst_3": "burst",
             "unique_passive": "passive", "fusion_passive": "passive"}
 SYN_CALLER = {"SKT_FIRST": "s1", "SKT_SECOND": "s2", "SKT_ULTIMATE": "s3", "SKT_BURST_1": "burst", "SKT_BURST_2": "burst",
@@ -1387,7 +1387,7 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
 
     Only real status applications count: a row needs a tooltip id (or a BT_STAT key the glossary maps to one).
     Passive "+N% DEF" rows without a status icon (class passives, BT_STAT_PREMIUM) are not the status — owner's
-    in-game check (.x/0170 decision 6). Transcend gating: unique_passive level L -> the first transcend step with
+    in-game check (HISTORY.md 0170 decision 6). Transcend gating: unique_passive level L -> the first transcend step with
     skillLevel >= L; burst_2/burst_3 -> the first step that unlocks them. Stars are the in-game ★ (showStar)."""
     gl = src["glossaries"]
     effects, by_tip, by_key = gl.get("effects", {}), gl.get("effectByTooltip", {}), gl.get("effectByKey", {})
@@ -1402,7 +1402,11 @@ def build_synergy(src: dict, warn: Warnings, debug: bool = False) -> dict:
         return str(by_tip.get(t, t))
 
     # outerpedia's own digest names a status on rows without a tooltip ("SYS_BUFF_ATTACK_UP"); unnamed ones are
-    # in-skill tweaks (S3 "+30% PEN while attacking"), not a status the hero holds
+    # in-skill tweaks (S3 "+30% PEN while attacking"), not a status the hero holds. Label-only rows (Anarky S2 DEF, Ame ★5
+    # ATK, Rin / Rin CF ATK and CRIT DMG) count by the skill text; open in-game check: after Anarky's S2, does Veronica's S1
+    # Dual Attack trigger? If not, drop label-only rows (HISTORY.md 0170 Checks). Transcend-passive «+N% ally DEF»
+    # (BT_STAT_PREMIUM, no tooltip: Stella, Rhona, Kanon…) is treated like a class passive — not a status (Q1, not checked
+    # in game)
     labelled = {e["buff"] for sk in skills.values() for e in sk.get("effects", []) if e.get("buff") and e.get("label")}
 
     def status_of(r: dict, b: str) -> str | None:
@@ -1616,11 +1620,11 @@ def build_teams(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
 
 # --------------------------------------------------------------------------- боссы
 
-# boss guides the app lists, in this order (.x/0200-boss D1); hidden guides (adventure license — closed, monad gate —
+# boss guides the app lists, in this order (HISTORY.md 0200-boss D1); hidden guides (adventure license — closed, monad gate —
 # route maps without stats) and towers / story bosses are not listed
 BOSS_MODES = {"special-request": "sr", "guild-raid": "gr", "world-boss": "wb", "joint-challenge": "jc",
               "irregular-extermination": "ie", "dimensional-singularity": "ds"}
-# fights whose portraits are downloaded: the app hides world bosses and irregular extermination (.x/0200 D1)
+# fights whose portraits are downloaded: the app hides world bosses and irregular extermination (HISTORY.md 0200-boss D1)
 BOSS_IMAGE_MODES = ("sr", "ds", "jc", "gr")
 ADV_OF = {"atk": "atk", "def": "def", "hp": "hp", "speed": "spd"}
 # BT_REVERSE_HEAL_BASED_* has no glossary key; outerpedia's skill-view.ts shows it as "Fixed Damage" (tooltip 75)
@@ -1719,7 +1723,7 @@ def immune_ids(gl: dict, mon: dict) -> list[str]:
 
 
 def build_bosses(src: dict, chars: list[dict], warn: Warnings) -> dict | None:
-    """Boss fights of outerpedia's guides for the boss on «Команда» (.x/0200-boss stage B).
+    """Boss fights of outerpedia's guides for the boss on «Команда» (HISTORY.md 0200-boss stage B).
 
     {q: Challenge quirk ‰ on boss RES (−200 at the full tree), t: {table id: [[level, RES, SPD, stage label]…]} (RES raw;
     identical tables shared), b: [{key, name, mode, element, class, icon, table, imm, group?, live?, guide, teams?}]}.

@@ -1,5 +1,5 @@
 // The goals of the boss team trade: EFF (E3) and SPD (E4, at the end).
-// The EFF goal of a debuffer in the boss team trade (.x/0200-boss E3; MODEL.md §13): a soft term inside V, like the crit
+// The EFF goal of a debuffer in the boss team trade (HISTORY.md 0200-boss E3; MODEL.md §13): a soft term inside V, like the crit
 // loss (MODEL.md §12 item 6). The member's battle EFF against the boss — the app's count × the typed ratio + what battle adds
 // at the spot's ★ (owner Q2, as «Ход против босса») — is held against the target RES + 1 (Q1, the debuff always lands):
 // - below it each missing EFF% segment costs λ = 1 point (Q3), so the search reaches for EFF while it costs few stats;
@@ -195,7 +195,7 @@ export function goalGauge(ctx: Ctx, c: Char, Pv: Profile, Po: Profile, cal: EffC
   };
 }
 
-// The SPD goal of a member who should move before the boss (.x/0200-boss E4; MODEL.md §13): the target is the SPD that surely
+// The SPD goal of a member who should move before the boss (HISTORY.md 0200-boss E4; MODEL.md §13): the target is the SPD that surely
 // moves first (Q2, the timeline's «нужно»), held against the kit's SPD + the team's transcend bonus (Q6, game/stat/spd
 // spdBonus); below it each missing SPD segment (3 SPD) costs λ = 1 point (Q3), above it SPD keeps its chain points — no surplus
 // step. The game's SPD is linear in the pieces: ⌊B × (1000 + Speed Set rate)/1000⌋ + 3 × segments + SPD mains, and the rate
