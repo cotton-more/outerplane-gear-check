@@ -144,7 +144,9 @@ function diffCases(was, now, D) {
 }
 
 // каждый билд должен находить себя: Legendary-броня его основного сета с его же первыми сабстатами, ростер — только
-// этот персонаж, — «Оставить». Не нашёл — значит, логика не понимает что-то в записи билда
+// этот персонаж, — «Оставить». Не нашёл — значит, логика не понимает что-то в записи билда.
+// A priority token («ATK») is the stat the build wants; the piece takes its % kind where one exists (ATK%, DEF%, HP%): the
+// app never rates % below flat (owner rule), while flat ATK/HP on the hero's real base (with evolutions) counts half
 function reachability(ogc) {
   const { idx, makeCtx, evaluate, D } = ogc;
   const keys = new Set(D.substats.map((s) => s.key));
@@ -156,7 +158,7 @@ function reachability(ogc) {
       if (!setId) continue;
       const subs = {};
       for (const tok of b.subs.flat()) {
-        const key = keys.has(tok) ? tok : keys.has(tok + '%') ? tok + '%' : null;
+        const key = keys.has(tok + '%') ? tok + '%' : keys.has(tok) ? tok : null;
         if (key && Object.keys(subs).length < 4) subs[key] = 3;
       }
       if (Object.keys(subs).length < 3) continue;
