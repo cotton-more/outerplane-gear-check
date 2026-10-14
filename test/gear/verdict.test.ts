@@ -12,7 +12,8 @@ import { milli } from '@/features/gear/model/vs';
 import { armorBar } from '@/features/eval/verdict/bar';
 import { scoreBuild } from '@/game/build/score';
 import { itemMains } from '@/game/item/mains';
-import { verdictOf, type HeroRes, type Result } from '@/features/gear/verdict';
+import { fillerWaits, verdictOf, type HeroRes, type Result } from '@/features/gear/verdict';
+import { evaluate } from '@/features/eval/verdict/evaluate';
 import { ARMOR, char, gen, idx, mk, prof, randArmor, randPool, setId, twenty, type Gen } from './statSets';
 import { pinnedProfile, pinOf, pinOptions, type Profile } from '@/game/build/profile';
 
@@ -656,5 +657,31 @@ describe('0220 filler: a weak weapon/accessory into an empty slot', () => {
     const r = both.v(x)!;
     expect(kindOf(r)).toBe('material now');
     expect(r.now.map((t) => t.piece.id)).toEqual(['fr']);
+  });
+
+  it('a filler is named after a hero who wants the piece (review M1): 1017 recommended for Fran over her better stopgap', () => {
+    const fg = mk('fg', 'accessory', null, { CHC: 3, CHD: 3, 'ATK%': 3 }, 0, { grade: 'rare', main: 'SPD' });
+    const x = mk('x', 'accessory', null, { DEF: 2, EFF: 2, HP: 2, RES: 1 }, 0, { itemKey: '1017', main: 'SPD' });
+    const w = world(['Charlotte', 'Fran'], { Fran: [fg] });
+    const r = w.v(x)!;
+    const char_ = w.hero('Charlotte', r), fran = w.hero('Fran', r);
+    expect(char_).toMatchObject({ kind: 'wear', filler: true });
+    expect(fran).toMatchObject({ kind: 'wear', filler: false, rankUp: true });
+    expect(char_.dV).toBeGreaterThan(fran.dV); // by gain alone Charlotte would come first
+    expect(r.named.map((h) => h.c.name)).toEqual(['Fran', 'Charlotte']);
+  });
+
+  // review B1: with substats partly entered there is no roster verdict yet; the threshold verdict's early junk waits while a
+  // roster hero's slot is empty (screens/eval useVerdictModel)
+  it('fillerWaits: a hero\'s empty slot for this main — the early junk waits; slot filled, main nobody asks, armor — not', () => {
+    const part: ItemInput = { slot: 'accessory', grade: 'rare', setId: null, itemKey: null, main: 'SPD', subs: { DEF: 2, HP: 1 } };
+    const empty = world(['Fran']);
+    expect(evaluate(empty.ctx, part).v).toBe('junk');
+    const pools = (w: World) => (id: string) => w.view.hero(id);
+    expect(fillerWaits(empty.ctx, pools(empty), part)).toBe(true);
+    const full = world(['Fran'], { Fran: [weak('f0')] });
+    expect(fillerWaits(full.ctx, pools(full), part)).toBe(false);
+    expect(fillerWaits(empty.ctx, pools(empty), { ...part, main: 'HP%' })).toBe(false);
+    expect(fillerWaits(world(['Fran'], {}, undefined, {}, 'end').ctx, pools(empty), part)).toBe(false);
   });
 });

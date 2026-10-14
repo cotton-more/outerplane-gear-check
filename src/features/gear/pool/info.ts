@@ -10,7 +10,7 @@ import { itemMains } from '@/game/item/mains';
 import { sameForBt } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import { pieceInput, type Piece } from '@/features/gear/model/gear';
-import { milli, THRESHOLD } from '@/features/gear/model/vs';
+import { milli, THRESHOLD, wearable } from '@/features/gear/model/vs';
 import { bestLayout, fillerOf, gearRank, piecePoints, pointsIn, type Layout, type LayoutValue } from '@/features/gear/layout';
 import { numOf } from './base';
 
@@ -50,7 +50,8 @@ export function pieceBar(P: Profile, p: Piece): Bar {
 // accessory slot where nothing else of `pool` may stand — an empty slot takes any piece with a suitable main
 export function eligibleIn(P: Profile, wornIds: ReadonlySet<string>, pool: readonly Piece[]): (p: Piece) => boolean {
   const base = (p: Piece) => wornIds.has(p.id) || pieceBar(P, p).pass;
-  const taken = new Set(pool.filter((p) => !isArmor(p.slot) && base(p)).map((p) => p.slot));
+  // a worn piece the hero's class can't wear leaves the slot empty, as in bestLayout and verdict heroOutcome
+  const taken = new Set(pool.filter((p) => !isArmor(p.slot) && base(p) && wearable(P.ctx, P.c, p)).map((p) => p.slot));
   return (p) => base(p) || (!taken.has(p.slot) && fillerOf(P, p));
 }
 

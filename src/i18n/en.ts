@@ -589,7 +589,7 @@ export const en: Texts = {
       'Everything below 6★ and below Epic — dismantle right away.',
       'Go through the inventory by date received: consecutive drops usually come from one run, and the set stays from the previous piece.',
       '**Epic armor:** pick the slot and set and look at the grid. 0–1 bright stats on the piece — dismantle without entering anything: "Keep" and "Stopgap" almost never happen then. For Speed, Immunity and Swiftness almost everything is bright — enter those.',
-      'For Epic, the verdict appears after two useless substats — no need to enter the third.',
+      'For Epic, the verdict appears after two useless substats — no need to enter the third. Except a weapon or accessory while a hero in your roster has that slot empty: enter all substats, it may go to them.',
       '"Keep" — lock it so you don\'t dismantle it by accident; "Stopgap" — wear it until you find better.',
       '**Epic Breakthrough** — only Epic armor, and only with the same piece, any substats: an Epic of the same set and slot. One piece — one step; no need to save up four: "Fodder" says which piece to feed this one to now, or keeps it in reserve. Armor marked "Stopgap" can take Breakthrough too: T4 counts toward the set bonus. An Epic weapon or accessory is a stopgap — no Breakthrough, dismantle its copies. A weapon or accessory gets Breakthrough only when it is "Keep": a Legendary from the hero\'s builds with the right main stat.',
       '**Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: grey — no one needs it, dismantle.',

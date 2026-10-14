@@ -29,6 +29,7 @@ idea lives now: a kept `.x` folder, or nowhere) · **Checks** (in-game checks do
 | 0205 | Hero level per hero — Lv 100 / 120 in the star sheet |
 | 0206 | Boss slot and sheet — the boss as a fifth slot behind «VS» |
 | 0208 | Singularity guide teams — named pools of hero groups |
+| 0220 | Filler — a weak weapon or accessory with a suitable main goes into an empty slot |
 
 ## 0135 Crit soft cap «Крит: 45%» — CHC above the hero's need stops paying; one number N per hero
 Folders: `.x/0135-stat-targets` (IDEA, RESEARCH, PLAN, DECISIONS 1–15, JOURNAL, START-PROMPT); review `0136` (already deleted by the owner 2026-10-11, probes kept in `.x/0175-tools/crit/`). Merged: `493198b` (2026-10-11, branch `crit`, not published then; commits `cb62832` stage 1, `9ee558d` stage 2, `0d5a922` stage 3, `93cc555`/`1472b15`/`1cbea71` card+sheet redesign, `615a2c5` stage 4 docs, `d9f75ce`..`800f0e9` review fixes F1–F11). Follow-up: hero stars add CHC from transcend (`.x/0190-hero-stars`, `46161c4`/`7f4c9e1`). Code: `src/game/stat/{curve,total}.ts`, `src/features/gear/layout.ts` (`critBinds`, `critBest`, `critLoss`, `pointsIn`), `src/features/gear/pool/info.ts`, `src/features/gear/verdict.ts`, `src/features/gear/store/gearStore.ts` (`crit`, `restoreCrit`), `src/features/trade/model/{kit,world,model}.ts` (`CritGauge`, `KitKey.crit`), `src/features/worn/{WornGear,WornBudget,CritSheet,wearing}.tsx`, `update.py` (`crit_profile`, `main_values`).
@@ -534,3 +535,49 @@ every hero of the matching teams under «Из гайда».
 of `BossTeam.s` didn't fit, hence `p`. Data was there at a31f580 too, so the fixture got ds teams only.
 **Not built.** Singularity weekly rotation (0200 §3, later). Tour: no change (the tip already names «Собрать из гайда»).
 **Checks.** Shots `shots/11-ds-choice-*`. No in-game check needed.
+
+## 0220 Filler — a weak weapon or accessory with a suitable main goes into an empty slot
+Folders: `.x/0220-empty-slot-filler` (`PLAN.md`, `REVIEW-PROMPT.md`, `REVIEW.md`, probes in `probe/`). Branch `filler`:
+`57cf102` + review fixes (not merged yet). Code: `fillerOf` and `better()` step 0 (`gearFilled`) in
+`src/features/gear/layout.ts`, `eligibleIn` in `src/features/gear/pool/info.ts`, `heroOutcome` `filler`, the `wear` order,
+D4 and `fillerWaits` in `src/features/gear/verdict.ts`, the early junk in `src/screens/eval/useVerdictModel.ts`, the Worn
+tab's «временно» in `src/features/worn/wearing.ts`, the trade's own filler in `src/features/trade/model/cands.ts`.
+Rules live in: MODEL.md §1.6 (filler), §3 (`better` step 0), §4 (bar, outcome order), §6, §7 item 2; Help (Stopgap item,
+"two useless substats" item); Wiki `How-verdicts-work` / `Как-считается-вердикт`, `Fast-cleanup` / `Быстрый-разбор`.
+Tour: not needed (no new UI; the «Временно» tip still holds).
+
+**Why.** Owner 2026-10-14: rating accessories, every one came out «Разобрать» while heroes had no accessory at all. On a
+weapon or accessory the main stat at +10 is most of the value (accessory ATK% main: Legendary 65 %, Epic 58.5 %; typical
+substats ≈ +15–25 % in total), so an empty slot loses far more than weak substats do. What decides is the empty slot, not
+the grade ("Epic soft, Legendary strict" did not follow from the numbers).
+**What we built.**
+- A **filler**: a weapon or accessory whose main a build of the hero asks for in that slot (`fit` `stopgap`), below the
+  stopgap bar (weak substats); its rank stays `no`. It passes for a hero only while that slot is empty — nothing worn,
+  nothing passing in his pool (`eligibleIn`, `heroOutcome`). Stamp «Временно — надень на X»; once worn it is the hero's
+  worn piece; the next weak piece for that slot is junk; when a better piece replaces it, it is «больше не нужна».
+- `better()` step 0: more filled weapon/accessory slots wins — an empty slot loses to any piece, even at 0 points.
+- Wear order: fillers after every other wear, so the hero who wants the piece is named, stamped and dressed by the batch
+  first (review M1).
+- While substats are only partly entered, the threshold verdict's early «Разобрать» waits («отметь остальные») when a
+  roster hero's slot is empty (`fillerWaits`, review B1): a filler's outcome doesn't depend on substats.
+- Trade: the receiver's own filler goes into his empty slot without the bar, as Redress puts it there (review m4).
+- The Worn tab reads a worn filler as «временно» (22 worn pieces on the owner's roster).
+**Owner decisions.** D1 an empty slot in the app is empty in the game. D2 the whole roster now, not waiting for a focus
+team (`.x/0150-focus`). D3 a recommended weapon/accessory still outranks points. D4 feed beats a filler: when every wear is
+a filler and a Breakthrough target exists now, the piece is «Фоддер». D5 only at stage «Развитие». D6 no new strings, no
+«Что нового». D7 armor untouched. D8 (review Q1) heroes with no gear entered count as empty — they really are naked in
+the game (56 empty weapon/accessory slots on the owner's roster). D9 (review Q2) parked pieces don't fill a slot here;
+the trade offers them. D10 (review m1) «Только для X» in the D4 case keeps «Фоддер — но у X слот пуст: надень, пока нет
+лучше»: the stamp gives the answer, the mode says what the piece does for X.
+**Hard parts.**
+- "Empty" has to agree everywhere: `eligibleIn` (the pool), `heroOutcome` (`!info.layout[slot]`) and `better()`. A worn
+  piece the class can't wear counts as empty in all of them (review m6).
+- Gain alone put fillers first: a filler's dV is the whole piece, a recommended piece over a better stopgap can have
+  dV ≤ 0 and win by rank (51 of 970 Legendary verdicts on the owner's roster named a filler hero first, M1).
+- The early junk is decided before the roster verdict exists (`verdictOf` returns null on partial input), so the wait
+  lives in the screen, not in the threshold verdict (`features/eval` can't import `features/gear`).
+**Not built / dropped.** Armor (D7). A filler for the focus team only — waits for `.x/0150-focus`. Counting parked pieces
+(D9).
+**Checks.** Owner's roster probes (`probe/`): the M1 order 51 → 0 of 970; the B1 case (Epic HP% weapon, DEF 1 + HP 1)
+waits instead of «Разбирай»; D4 material over a filler 15 of 970. Bench (`scripts/bench-pool.mjs`): no measurable change
+(one verdict 5.7 → 5.8 ms). No in-game check pending.

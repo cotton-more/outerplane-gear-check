@@ -17,7 +17,7 @@ import type { GearStore } from '@/features/gear/model/gear';
 import { storeFor } from '@/features/gear/model/fusion';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { charVs, type CharVs } from '@/features/gear/model/poolVs';
-import { verdictOf, type Result, type Same } from '@/features/gear/verdict';
+import { fillerWaits, verdictOf, type Result, type Same } from '@/features/gear/verdict';
 import { resultHead } from '@/features/gear/ui/outcomeText';
 import { pieceLabel } from '@/features/gear/ui/pieceText';
 import { heroNote, heroTitle, type Hero } from '@/features/tryon/tryon';
@@ -31,7 +31,8 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
   const armor = isArmor(input.slot);
   const head = resultHead(t, idx, r, input, pieceLabel(t, idx));
   let out: Verdict;
-  if (head) out = { ...raw, ...head, lines: [...head.lines, ...hints], sections: [] };
+  // a filler for the first named hero: the footer's "a stopgap needs a good roll" would say the opposite (HISTORY.md 0220)
+  if (head) out = { ...raw, ...head, lines: [...head.lines, ...hints], sections: [], ...(r.kind === 'wear' && r.named[0]?.filler ? { foot: '' } : {}) };
   else if (r.kind === 'maybe') {
     const names = namesLine(r.maybe.map((c) => ({ c })), t.more, 4);
     out = {
@@ -73,7 +74,14 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   // вердикт зависит только от предмета, настроек и пулов — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
   const key = JSON.stringify(input);
-  const raw = useMemo(() => evaluate(ctx, input), [ctx, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // early «Разбирай» on a few substats waits while a roster hero's slot for it is empty: a filler whatever the rest rolls
+  // (gear/verdict fillerWaits, HISTORY.md 0220) — «отметь остальные», as when the rest could still make it
+  const raw = useMemo(() => {
+    const r = evaluate(ctx, input);
+    const n = Object.keys(input.subs).length, of = dropSubs(input.grade);
+    if (batch || r.v !== 'junk' || !n || n >= of || !fillerWaits(ctx, (id) => view.hero(id), input)) return r;
+    return { ...r, v: 'idle' as const, title: t.verdict.markRest(n, of), lines: [], sections: r.sections.map((sec) => ({ ...sec, collapsed: false })) };
+  }, [ctx, key, view, batch]); // eslint-disable-line react-hooks/exhaustive-deps
   // «Надеть» на героя, у которого будет окно перехода Core Fusion (Core Fusion X при X с вещами), делает putOn после
   // «Да» — на хранилище, где вещи X уже у него (features/gear/model/fusion storeFor): его исход и кнопка — по этому виду пула.
   // Окна не будет или вещи не переходят — общий вид. В обучении окон нет (fusionGate)

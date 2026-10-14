@@ -84,6 +84,9 @@ V). English keeps "pts" also for 1.
      may stand there (`pool/info:eligibleIn` with the pool; `verdict:heroOutcome` `filler`): an empty weapon/accessory slot
      loses the whole main stat, so any piece with a suitable main beats it. It reads as a stopgap (`temp`, the Worn tab's
      «временно»), is never fed and never a Breakthrough target. Weapons and accessories only — armor is untouched (D7).
+     Its outcome doesn't depend on substats, so while they are only partly entered the threshold verdict's early
+     «Разобрать» waits for all of them when a roster hero's slot is empty (`verdict:fillerWaits`). Heroes with no gear
+     entered count as empty (D8); parked pieces don't fill a slot here (D9: the trade offers them).
    - `no` (0): the rest. A stopgap has the same rank as `no` — only `rec` outranks points (owner 2026-10-10: an Epic
      stopgap took an off-list Legendary with the same 2 useful substats and more points, by rank). `stopgap` still
      decides what is kept and fed (§4). Armor adds nothing to the layout's rank (`gearRank` for armor only says whether the set is in
@@ -165,7 +168,8 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
   (`points:goodPoints`, compared in thousandths, exactly 6.000 passes). `temp` (Epic only, not `keep`) = a stat of the top-2
   places with ≥ 2 segments plus another fully credited one, ≥ 5 segments on the fully credited stats (`armorBar.tempOk`,
   `CFG.epicTempRoll/tempYellow`). A pinned hero (§6) fails for armor of sets outside the pinned combo.
-- **Weapon / accessory**: `keep` = rank `rec`, `temp` = rank `stopgap` (§1.6); points do not take part.
+- **Weapon / accessory**: `keep` = rank `rec`, `temp` = rank `stopgap` (§1.6); points do not take part. A **filler**
+  (§1.6) fails the bar but may still stand in an empty slot (`eligibleIn`) and pass for that hero (`heroOutcome` `filler`).
 - On the owner's roster only 19 of 263 worn pieces reach 6 points, so in practice the old rule does most of the work.
 
 **Outcomes per hero** (`heroOutcome`), in the order tried:
@@ -184,7 +188,8 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
 3. A hero's `temp` flag (`filler || (!bar.keep && bar.temp)`) turns the stamp to **Stopgap** («Временно»).
 
 **The piece's outcome** (`Result.kind`; the stamp is always about *the evaluated piece* — owner rule):
-1. **wear** if any hero has wear (sorted by dV, then margin; up to 3 named). Stamp Keep («Оставить») with an "Equip on X"
+1. **wear** if any hero has wear (fillers last, then by dV, then margin; up to 3 named — HISTORY.md 0220: the hero who
+   wants the piece is named, stamped and dressed by the batch before a hero whose slot is merely empty). Stamp Keep («Оставить») with an "Equip on X"
    line, or Stopgap if the named hero's `temp` flag is set. **Feed beats a filler** (D4): when every wear is a filler and
    there is material **now** (item 3a), the outcome is material — a Breakthrough step of a recommended piece is for good.
 2. **keep** if any hero has keep (sorted by margin). Stamp Keep («Оставить», "Set aside for X") or Stopgap.
@@ -314,7 +319,8 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. **A parked
    piece** (§5, `World.parked`; HISTORY.md 0200-boss E2b Q3) is not held: it is a candidate for anyone at cost 2 (its own hero:
    cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
-   the usual rules apply. Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
+   the usual rules apply. The receiver's own **filler** (§1.6) likewise goes into his empty slot without the bar, as
+   Redress puts it there (HISTORY.md 0220). Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
    without Breakthrough) he already has at an equal or higher BT. **One extra condition, in the team trade only** (2–4
    members; owner, 2026-10-13, review 0203: "not an exception — an extra rule-condition of the team trade"): a **weapon or

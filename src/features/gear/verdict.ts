@@ -185,7 +185,8 @@ function quietOf(pools: HeroPool[], x: Piece, heroes: HeroRes[]): Quiet | null {
   for (const hp of pools) {
     const h = heroes.find((r) => r.c === hp.c)!;
     if (h.bar) continue;
-    const forced = bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || eligibleIn(hp.P, hp.wornIds, hp.pieces)(p) });
+    const el = eligibleIn(hp.P, hp.wornIds, hp.pieces);
+    const forced = bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || el(p) });
     if (forced.layout[x.slot]?.id !== x.id) continue;
     const dV = forced.value.v - hp.info.value.v;
     if (!geq1(forced.value.v, hp.info.value.v) || (top && dV <= top.dV)) continue;
@@ -266,6 +267,18 @@ function feedFrom(hps: HeroPool[], x: Piece, h: HeroRes): HeroRes {
 // reserves of the piece's kind over all heroes — the ceiling CFG.reserveMax (owner, 2026-10-08)
 const reservesOf = (hps: HeroPool[], x: Piece): number => hps.reduce((n, hp) => n + (hp.info.reserve.get(reserveKey(x))?.length ?? 0), 0);
 
+// While substats are only partly entered there is no roster verdict, and the threshold verdict may call a weak weapon or
+// accessory junk early. A roster hero whose slot for it is empty would wear it as a filler whatever the rest rolls
+// (HISTORY.md 0220), so the early junk waits for every substat (screens/eval useVerdictModel)
+export function fillerWaits(ctx: Ctx, pools: Pools, input: ItemInput): boolean {
+  if (!ctx.scoped || input.unlisted || isArmor(input.slot)) return false;
+  return rosterChars(ctx).some((c) => {
+    if (!wearable(ctx, c, input)) return false;
+    const hp = pools(c.id);
+    return !!hp && !hp.info.layout[input.slot] && c.builds.some((b) => fit(ctx, c, b, input) !== 'no');
+  });
+}
+
 // Вердикт по ростеру; null — не считается: ростера нет («только мои» выключено или он пуст — по порогам, A21), введены
 // не все сабстаты (A20), предмета нет в данных outerpedia (его пассивки и рекомендаций не знаем — как прежде, по
 // thresholds). pools — the hero's pool (for Core Fusion X with X — the one that will be after the transition sheet). twin — the player said
@@ -282,7 +295,10 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: Verdic
   const heroes = hps.map((hp) => feedFrom(hps, x, heroOutcome(hp, x)));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>
     ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, same, ...more });
-  const wear = heroes.filter((h) => h.kind === 'wear').sort((a, z) => z.dV - a.dV || z.margin - a.margin);
+  // a filler comes after every other wear (HISTORY.md 0220): its gain is the whole piece because the slot was empty, but
+  // it stays only until a better piece drops — the hero who wants this piece (rank, points) is named first, gets the stamp
+  // and the batch's «Надеть»
+  const wear = heroes.filter((h) => h.kind === 'wear').sort((a, z) => Number(a.filler) - Number(z.filler) || z.dV - a.dV || z.margin - a.margin);
   const ptsOf = (t: Target) => piecePoints(hps.find((hp) => hp.c === t.c)!.P, t.piece);
   const now = hps.flatMap((hp) => materialTargets(hp, x)).filter((n) => !opts.full?.has(n.piece.id)).sort((a, z) => ptsOf(z) - ptsOf(a));
   // feed beats a filler (owner 2026-10-14, HISTORY.md 0220 D4): a Breakthrough step of a recommended piece is for good, a

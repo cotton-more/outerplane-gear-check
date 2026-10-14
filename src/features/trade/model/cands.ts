@@ -1,6 +1,6 @@
 // Кандидаты получателя (R5; MODEL.md §7, вопрос 15): свои вещи, надетое других (кроме переодетых в этом окне; члены
 // команды друг другу открыты), снятое этим же расчётом, свободные вещи расчёта, parked pieces (anyone's; into an empty slot
-// with no bar — MODEL.md §7 item 2). Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
+// with no bar — MODEL.md §7 item 2), his own filler into his empty slot (HISTORY.md 0220). Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
 // не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2; except, in the team trade, a
 // teammate's weapon or accessory where the receiver's own piece is empty or off his list, belowBarOk), код, который у
 // получателя уже есть, без BT выше (R5.5). A frozen slot («Оставить как было», MODEL.md §7 item 4): the receiver keeps what
@@ -72,7 +72,8 @@ export function candidates(w: World, inp: CandInput): Cands {
     const worn = own && cost === 0;
     if (frozen(h.id, item.slot) && !worn) return;
     // a parked piece fills an empty slot with no bar: better than nothing (MODEL.md §7 item 2)
-    const open = !!w.parked?.has(id) && !h.worn[item.slot];
+    // so does the receiver's own filler (HISTORY.md 0220): Redress (pool/info eligibleIn) wears it into his empty slot too
+    const open = (!!w.parked?.has(id) || (own && !!val.filler)) && !h.worn[item.slot];
     if (!worn && !val.ok && !open && !mate(id, item.slot, holder)) return;
     if (!own && mine.has(item.code) && btOf(item.bt) <= mine.get(item.code)!) return;
     (out[item.slot] ??= []).push({ item, v: val.v, fit: val.fit, cost, loss, holder: holder ? holder.id : null, rank: holder ? holder.rank : -1 });
