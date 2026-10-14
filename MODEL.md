@@ -271,9 +271,12 @@ nobody (§7 item 7) stays in the pool of the hero it came off, not worn, locked 
 Pool tab instead of a reason. It is **outside** the reasons above: the verdict, reserves, material, the bar a new piece is
 held against, «Надеть»'s removals and the batch see the pool **without** it (`gear:activePieces`) — never feed, never a
 Breakthrough target, never dismantled, never «no longer needed». The trade offers it first (§7 item 2). Invariant: park ⊂
-pooled and not worn (`syncWorn`): the mark goes once someone wears it; «Убрать» removes it as usual; it travels with the
+pooled and not worn (`syncWorn`): the mark goes once someone wears it; «Убрать» removes it as usual («Вернуть» parks it
+again in its place, `removeUndo`); it travels with the
 record (drop / undo, Core Fusion — ids) and is in the backup (OGC-GEAR9). A parked piece whose own hero now wears a better
-one is a later question (owner's follow-up, .x/0200-boss PLAN §5).
+one is a later question (owner's follow-up, .x/0200-boss PLAN §5). **The way out** is the player's (.x/0204-parked-list):
+unlock it in the game, then «Убрать» — in the card or in «Ещё» → «Припаркованные · N» (every parked piece by hero,
+`parkedGroups`); in the game it becomes ownerless and comes up again when dismantling.
 
 `strong` = pieces held for any reason except reserve; `needsT4(P, set)` — Breakthrough to T4 is advised when T4 is needed
 by *every* menu part of the set (Speed/Penetration/Bursting ×2, Immunity ×4).

@@ -3,10 +3,10 @@
 // the backup OGC-GEAR9 keeps it, OGC-GEAR8 still reads.
 import { describe, expect, it } from 'vitest';
 import { makeCtx } from '@/game/context';
-import { activePieces, dropChar, parkIn, syncWorn, undoDrop, type GearStore, type Piece } from '@/features/gear/model/gear';
+import { activePieces, dropChar, parkedCount, parkedGroups, parkIn, syncWorn, undoDrop, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { switchFusion } from '@/features/gear/model/fusion';
 import { loadGear, readsWhole } from '@/features/gear/store/gearStore';
-import { poolView, removeFrom, wearFromPool } from '@/features/gear/pool';
+import { poolView, removeFrom, removeUndo, wearFromPool } from '@/features/gear/pool';
 import { verdictOf } from '@/features/gear/verdict';
 import { inputOfPiece, planBatch } from '@/features/batch/plan';
 import { decodeBackup, encodeBackup, type Backup } from '@/features/roster/backup';
@@ -58,6 +58,44 @@ describe('storage', () => {
     const sw = switchFusion(idx, [base], s, fusion)!;
     expect(sw.st.pools[fusion]).toEqual(['w', 'p']);
     expect(sw.st.park).toEqual(['p']);
+  });
+});
+
+describe('«Припаркованные» (.x/0204-parked-list)', () => {
+  // Caren: w worn, p parked; Rin: a parked boots piece r, a parked helmet h and an unparked x
+  const two = (): GearStore => {
+    const s = st(true);
+    const r = mk('r', 'shoes', 'Speed', WEAK), h = helm('h', WEAK), x = helm('x', GOOD);
+    return { ...s, pieces: { ...s.pieces, r, h, x }, pools: { ...s.pools, [RIN]: ['r', 'x', 'h'] }, park: ['p', 'r', 'h'] };
+  };
+  it('grouped by hero in roster order, pieces in slot order; heroes outside the order after it; counted', () => {
+    const g = (order: string[]) => parkedGroups(two(), order).map((x) => `${x.hero === CAREN ? 'C' : 'R'}:${x.pieces.map((p) => p.id).join('')}`);
+    expect(g([RIN, CAREN])).toEqual(['R:hr', 'C:p']);
+    expect(g([CAREN, RIN])).toEqual(['C:p', 'R:hr']);
+    expect(g([RIN])).toEqual(['R:hr', 'C:p']);
+    expect(parkedCount(two())).toBe(3);
+    expect(parkedGroups(st(false), [CAREN])).toEqual([]);
+    expect(parkedCount(st(false))).toBe(0);
+  });
+  it('«Убрать» drops the piece from the pool and the park; «Вернуть» brings both back, in the same place', () => {
+    const s = two(), r = s.pieces.r;
+    const undo = removeUndo(s, RIN, r);
+    const gone = removeFrom(s, RIN, 'r');
+    expect(gone.pools[RIN]).toEqual(['x', 'h']);
+    expect(gone.park).toEqual(['p', 'h']);
+    expect(gone.pieces.r).toBeUndefined();
+    const back = undo(gone);
+    expect(back.pools[RIN]).toEqual(['x', 'h', 'r']);
+    expect(back.park).toEqual(['p', 'r', 'h']);
+    expect(back.pieces.r).toEqual(r);
+  });
+  it('«Вернуть» of an unparked piece parks nothing; the last parked one removed and undone — the field comes back', () => {
+    const s = two();
+    expect(removeUndo(s, RIN, s.pieces.x)(removeFrom(s, RIN, 'x')).park).toEqual(['p', 'r', 'h']);
+    const one = st(true);
+    const gone = removeFrom(one, CAREN, 'p');
+    expect(gone.park).toBeUndefined();
+    expect(removeUndo(one, CAREN, one.pieces.p)(gone).park).toEqual(['p']);
   });
 });
 

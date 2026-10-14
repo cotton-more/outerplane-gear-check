@@ -429,3 +429,52 @@ describe('«Find a piece»', () => {
     expect($('.find .codein .err')).toBeTruthy();
   });
 });
+
+// 0204 (owner 2026-10-13): «Parked · N» — every parked piece by hero, «Remove» per row, «Undo» in the message; hidden at 0
+describe('«Parked»', () => {
+  const gear = {
+    v: 3, seq: 3, pieces: { p1: P('p1', 'helmet', { SPD: 1 }), p2: P('p2', 'shoes', { CHC: 2 }), p3: P('p3', 'helmet', { HP: 1 }) },
+    pools: { [caren.id]: ['p1'], [rin.id]: ['p2', 'p3'] }, park: ['p1', 'p2', 'p3'],
+  };
+  const heads = () => $$('.parked-h').map((h) => h.textContent);
+  const rows = () => $$('.parked .parked-rm').map((b) => b.getAttribute('aria-label')?.replace(/ /g, ' '));
+
+  it('hidden with nothing parked', async () => {
+    await mount({ roster: [caren.id], gear: GEAR });
+    await openMore();
+    expect(moreButton('Parked')).toBeUndefined();
+  });
+
+  it('counted; heroes in roster order, pieces in slot order; the top line says the way out', async () => {
+    await mount({ roster: [rin.id, caren.id], gear });
+    await openMore();
+    await click(moreButton('Parked · 3'));
+    expect($('.more')).toBeNull();
+    expect($('.parked > p')?.textContent).toContain('Unlock it in the game and tap “Remove”');
+    expect(heads()).toEqual(['Rin', 'Caren']);
+    expect(rows()).toEqual(['Remove from Rin: helmet Speed Set', 'Remove from Rin: boots Speed Set', 'Remove from Caren: helmet Speed Set']);
+  });
+
+  it('«Remove» takes the row away, «Undo» brings it back; the last one closes the sheet', async () => {
+    await mount({ roster: [caren.id, rin.id], gear: { ...gear, pools: { [caren.id]: ['p1'] }, park: ['p1'] } });
+    await openMore();
+    await click(moreButton('Parked · 1'));
+    await click($('.parked .parked-rm'));
+    expect($('.parked')).toBeNull();
+    expect($('.gear-toast')?.textContent).toContain('Removed from Caren.');
+    await click($('.gear-toast button'));
+    expect($('.parked')).toBeNull(); // «Undo» doesn't reopen it
+    await openMore();
+    expect(moreButton('Parked · 1')).toBeTruthy();
+  });
+
+  it('two heroes: one «Remove» leaves the other group; «Undo» puts it back in its place', async () => {
+    await mount({ roster: [caren.id, rin.id], gear });
+    await openMore();
+    await click(moreButton('Parked · 3'));
+    await click($$('.parked .parked-rm')[0]);
+    expect(heads()).toEqual(['Rin']);
+    await click($('.gear-toast button'));
+    expect(heads()).toEqual(['Caren', 'Rin']);
+  });
+});

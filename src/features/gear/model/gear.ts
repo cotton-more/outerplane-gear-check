@@ -3,7 +3,7 @@
 // вердикте): сегменты (1–6, один уровень) и «T4» — как на форме; сделал в игре Reforge или Breakthrough — правка в
 // шторке вещи (updateIn). Enhance не храним: считаем +10. Пулы независимы (В9): «Надеть» всегда кладёт новую запись;
 // старая общая запись (из прежних версий) делится, когда её правят у одного героя.
-import type { Index } from '@/game/data';
+import { SLOTS, type Index } from '@/game/data';
 import type { Grade, SlotId } from '@/game/data/types';
 import { subAllowed } from '@/game/item/mains';
 import { CRIT_NEED, pinOf, pinOptions } from '@/game/build/profile';
@@ -89,6 +89,20 @@ export function activePieces(st: PoolsOf, charId: string, but?: string): Piece[]
   const park = parkedOf(st);
   return (st.pools[charId] ?? []).filter((id) => id === but || !park.has(id)).map((id) => st.pieces[id]).filter((p): p is Piece => !!p);
 }
+// «Ещё» → «Припаркованные» (.x/0204-parked-list): parked pieces by the hero whose pool holds them — heroes in `order`
+// (the roster's), the rest after them; a hero's pieces in slot order. A record two heroes share is under both
+export interface ParkedGroup { hero: string; pieces: Piece[] }
+export function parkedGroups(st: GearStore, order: readonly string[]): ParkedGroup[] {
+  const park = parkedOf(st);
+  if (!park.size) return [];
+  const heroes = [...order.filter((c) => st.pools[c]), ...Object.keys(st.pools).filter((c) => !order.includes(c))];
+  return heroes.map((hero) => ({
+    hero,
+    pieces: SLOTS.flatMap(({ id: slot }) => st.pools[hero].filter((id) => park.has(id)).map((id) => st.pieces[id]).filter((p) => p?.slot === slot)),
+  })).filter((g) => g.pieces.length);
+}
+export const parkedCount = (st: GearStore): number => parkedGroups(st, []).reduce((n, g) => n + g.pieces.length, 0);
+
 // park pieces (they must sit in a pool and be worn by nobody — syncWorn drops the rest); nothing new — the same store
 export function parkIn(st: GearStore, ids: readonly string[]): GearStore {
   const park = [...(st.park ?? [])];

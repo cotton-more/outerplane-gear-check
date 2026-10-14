@@ -86,7 +86,8 @@ heroes you re-dress.
 
 A **parked** piece is never fed or dismantled and isn't a Breakthrough target: the evaluation and the batch don't see
 it. Any later trade offers it first — into an empty slot of anyone who can wear it, its own hero included. The mark goes
-once someone wears it.
+once someone wears it. All parked pieces — More → "Parked": not needed? Unlock it in the game and "Remove" — the
+piece becomes ownerless and comes up again when you dismantle. Its piece card says the same.
 
 ## Done, Cancel, Undo
 
