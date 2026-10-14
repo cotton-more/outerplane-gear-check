@@ -278,6 +278,11 @@ function problems(D) {
   const upBad = [...['Dianne', 'Mene', 'Liselotte', 'Viella'].filter((n) => !(upOf(n)?.tm === 1 && upOf(n)?.t?.[5] === 10)).map((n) => `${n} без командного +10 на ★6`),
     ...(upOf('Claire') && !upOf('Claire').tm ? [] : ['Claire не своя строка'])];
   if (D.chars.length && upBad.length) out.add(`SPD трансценда (spdUp): ${upBad.join(', ')} — формат progression.skill8 или skills изменился?`);
+  // base stats with the evolution rewards (update.py flat_profile reads damage/characters `evolution`): Mene = 96 SPD from
+  // stats + 2+2+3+4 from evolutions 2–5 = 107 at Lv100 (in the game profile), DEF 510 + 244 = 754. Without the rewards
+  // (outerpedia took `evoRewards` out of progression.json once) 122 of 128 heroes drifted silently: 96 and 510 here
+  const mene = D.chars.find((c) => c.name === 'Mene');
+  if (mene && (mene.spd?.[0] !== 107 || mene.flat?.DEF?.[0] !== 754)) out.add(`база героя без наград эволюций (Mene SPD ${mene.spd?.[0]}, DEF ${mene.flat?.DEF?.[0]}) — формат damage/characters evolution изменился?`);
   const turnOf = (n) => (D.chars.find((c) => c.name === n)?.turn ?? []).map((r) => `${r.s}:${r.k}${r.lv ? `@${r.lv}` : ''}`).join(',');
   const turnBad = [['Akari', 's1:atk@3'], ['Veronica', 's1:taunt,s2:shield1'], ['Iota', 's1:push'], ['Demiurge Vlada', 's1:cool'], ['Ember', ''], ['Maxie', '']].filter(([n, want]) => turnOf(n) !== want)
     .map(([n, want]) => `${n} «${turnOf(n)}» вместо «${want}»`);

@@ -421,28 +421,38 @@ def parse_priority(raw: str) -> list[list[str]]:
     return tiers
 
 
-def flat_profile(c: dict, prog: dict) -> dict:
+def flat_profile(src: dict, cid: str, c: dict) -> dict:
     """База персонажа для сравнения flat и % сабстатов ATK/DEF/HP.
 
     Порт getSubstatFlatProfile() + whiteStatsAt() из outerpedia (src/lib/data/char-progression.ts):
     %-сабстат шмота умножает только собственную базу персонажа (уровень + эволюции + flat-quirks),
     поэтому один сегмент ATK% стоит база×4%, а flat ATK — ровно +40.
+    Evolution rewards come from damage/characters.json (`evolution`: ST_ATK/ST_DEF/ST_HP/ST_SPEED per evolution number;
+    progression.json lost `evoRewards` in outerpedia e01cc14), from the hero's own entry only: a Core Fusion hero's is
+    empty there, so its flat/SPD stay without evolutions (eff_profile, unlike this, falls back to the original's).
     Возвращает {"ATK": [база@100, база@макс.LB, quirks], "DEF": [...], "HP": [...], "SPD": [...]}. SPD — та же база
     для бонуса Speed Set (он в % от базы персонажа); у SPD нет роста по уровню, поэтому проверка базы — только min > 0.
     """
+    prog = src["progression"]
     rarity = str(c.get("rarity"))
     rungs = prog.get("evolutions", {}).get(rarity, [])
     lb = prog.get("limitBreak", {}).get(f"{rarity}_{c.get('element')}", [])
     base_cap = min(x["requireLevel"] for x in lb) if lb else max([1] + [r["level"] for r in rungs if r["level"] <= 100])
     levels = sorted({base_cap, *[x["maxLevel"] for x in lb]})
-    rewards = prog.get("evoRewards", {}).get(c["id"], {})
+    stat_slug = {"ST_ATK": "atk", "ST_DEF": "def", "ST_HP": "hp", "ST_SPEED": "speed"}
+    rewards: dict[int, dict[str, int]] = {}  # evolution number → {slug: reward}
+    for e in (src["dmgChars"]["characters"].get(cid) or {}).get("evolution") or []:
+        for x in e.get("rewards", []):
+            if slug := stat_slug.get(x.get("stat")):
+                got = rewards.setdefault(e["level"], {})
+                got[slug] = got.get(slug, 0) + x["value"]
     axes = (("ATK", "atk"), ("DEF", "def"), ("HP", "hp"), ("SPD", "speed"))
     at: dict[str, dict[int, int]] = {ax: {} for ax, _ in axes}
     for level in levels:
         cum: dict[str, int] = {}
         for r in rungs:
             if r["level"] <= level:
-                for slug, v in rewards.get(str(r["ev"]), {}).items():
+                for slug, v in rewards.get(r["ev"], {}).items():
                     cum[slug] = cum.get(slug, 0) + v
         modifier = 0 if level <= 100 else next((x.get("statModifier", 0) for x in lb if x["maxLevel"] >= level), 0)
         for axis, slug in axes:
@@ -1221,7 +1231,7 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
             # у outerpedia билда нет — покажем хотя бы сеты, которые советует сама игра
             entry["gameSets"] = [str(x) for x in (c.get("recommendedSets") or [])]
         entry["rankPvp"] = cur.get("rankPvp")
-        entry["flat"] = flat_profile({**c, "id": cid}, src["progression"])
+        entry["flat"] = flat_profile(src, cid, c)
         entry["spd"] = entry["flat"].pop("SPD")  # база SPD для бонуса Speed Set: [lv100, макс. Limit Break, quirks]
         entry["chc"] = crit_profile(src, cid, c)
         entry["eff"] = eff_profile(src, cid, c)
