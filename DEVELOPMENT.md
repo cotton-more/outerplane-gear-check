@@ -44,7 +44,7 @@ task build:single # standalone page outerplane-gear.html (+ build/artifact.html)
 task check        # check the built docs/ against the published one (same as the site bot does)
 task preview      # site as on Pages at http://localhost:8000: current code on data from docs/ (in build/preview)
 task screenshots  # retake screenshots for README and Wiki, both languages (needs Chrome)
-task tour:check   # run the tutorial tour in Chrome at five sizes and two themes, frames — build/tour-check/
+task tour:check   # run the tutorial tour in Chrome at four sizes (Screen sizes) and two themes, frames — build/tour-check/
 task publish      # pull main → tests → docs/ → checks → commit → push → wait for Pages deploy
 ```
 
@@ -204,7 +204,7 @@ without its own icon is drawn as a hexagon; the data update report will remind y
 
 **Less on screen** (owner): fewer badges and words, less logic. Don't tell the player what the game already shows (the piece's
 stats, its main, what the slot holds now) — a line must say something the game doesn't. A new badge or sentence has to earn its
-place in the small windows the app lives in (280–420px).
+place in the small windows the app lives in (the phone split, about 411 × 363 — «Screen sizes»).
 
 **Light-theme contrast.** Text colours that stand on `--surface-2` keep at least 4.5:1 (WCAG AA): the hero-name element colours
 (`.htag`: fire 4.78, water 4.64, earth 4.96, light 5.12, dark 5.13) and `--legend` (4.98); the numbers are in a comment in
@@ -218,6 +218,25 @@ instantly. Grid, substat rows, slot, grade and verdict text are not animated —
 
 All thresholds are in the `CFG` block in `src/game/config.ts`; after editing, rebuild the page (`task build:pwa` or `task build:single`)
 and, if verdicts changed intentionally, update the golden (`task golden:update`).
+
+## Screen sizes
+
+The app is built and checked for the owner's devices only (owner, 2026-10-15; nobody else's devices are known):
+
+| Where | Window | `task tour:check` |
+|---|---|---|
+| computer (daily use: the game on the phone, the app here) | 2056 × 1202, and 1280 × 800 for a laptop | ✓ both |
+| Pixel 11 Pro split with the game, stacked | 411 × 564 (426 × 586 at «Max» resolution) | ✓ |
+| the same, side by side | 411 × 363 (437 × 378) | ✓ |
+
+- **Width.** Nothing is laid out narrower than `MIN_W` = 410 (`shared/layout/useLayout`): a narrower window shows the same page
+  laid out at 410 and scaled down with `zoom` (smaller text, no sideways scroll). So there are no `max-width` media rules
+  under 410 — don't add any. Steps above it: `narrow` < 720 (phone layout, verdict bar at the bottom), `xs` < 560,
+  `sheet` < 900, `wide` ≥ 1100. At 2056 the page is a centred 1240 px column (`.app`).
+- **Height.** One step: a window up to `SHORT_H` = 480 is short (the side-by-side split); every short-window CSS rule is
+  `@media (max-height: 480px)` and `layout.tall` is its opposite (tutorial and tips are offered only when tall). Keep the
+  step away from the real heights (363–378 and 564–586).
+- A layout change to the form, the verdict or the tour — `task tour:check` (both tours at these four sizes, both themes).
 
 ## Tests
 
@@ -277,7 +296,7 @@ strip — `place.ts`). Texts — the
   and the roster are untouched, «Надеть» in the tour doesn't add to the roster and doesn't offer «Вернуть». A step knows its tab (`home`) and layer
   (`layer: 'card' | 'sheet'` — full-screen character card or sheet: the strip doesn't collapse into a banner). The tour places the example
   piece in the form itself (`onStep`). At the end — previous tab, character, form and hero mode are restored.
-- The tutorial itself is offered only in windows at least 560px tall (`layout.tall`): a split-screen strip has
+- The tutorial itself is offered only in windows taller than 480px (`layout.tall`): the side-by-side split strip has
   too little room. The «Обучение» button in «Ещё» and Help always works.
 - A long-time player (has marked characters or closed the «Как пользоваться» (How to use) card) doesn't get the tour — just the
   «Появилось обучение» strip once. `ogc.state` can't tell them apart: the page writes it from the first view.
@@ -288,7 +307,7 @@ strip — `place.ts`). Texts — the
   will be shown again. A tour step changed — fix its text; a step's `rev` is only recorded for now; long-time players learn about
   the change via a tip with `news`.
 - **In-flow tips** (`tips.ts`, `TipLayer.tsx`): one at a time, no more than three per launch, no more often than once per 20 s and after
-  a 1.5 s pause in input; only in windows from 560px, not during a tour and not over other strips. Seen — as soon as
+  a 1.5 s pause in input; only in windows taller than 480px, not during a tour and not over other strips. Seen — as soon as
   it is shown (owner, 2026-10-11): closed, its anchor pressed or left on its own (anchor gone, `when` no longer true), it
   doesn't come back; every tip stays in Help, «Показать подсказки заново» brings them all back.
 - **What's new**: a tip with `news: true` that is absent from `ogc.tour.known` or present there with a lower `rev`. On first

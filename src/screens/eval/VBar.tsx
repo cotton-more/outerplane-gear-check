@@ -10,12 +10,11 @@ import { barTitle } from './VerdictCard';
 //   Оценка:    [☰ «Ещё», ★ ростер] [вердикт или подсказка — нажми, подробности шторкой] [Следующий]
 //   Персонажи: [← Оценка] [вердикт текущей вещи — нажми, вернёшься к оценке]
 //   Команда:   [← Оценка] (the team screen is not about the piece in the form)
-// compact — самая узкая ширина: штампа нет, заголовок целиком («Оставляй — подходит 26 персонажам»), вердикт виден и по цвету.
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
 // Подсказка и «что ввести дальше» (вердикт idle) — приглушённой строкой со стрелкой до трёх строк, вердикт — штампом:
 // сразу видно, где «сделай это», а где результат. quiet — идёт обучение: что делать, говорит его полоса, здесь не дублируем.
-export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen, resetLabel, marks }: {
-  r: VerdictData; news: boolean; show: boolean; compact: boolean; stampless: boolean; hint: string | null; quiet: boolean; tab: Tab; rosterSize: number;
+export function VBar({ r, news, show, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen, resetLabel, marks }: {
+  r: VerdictData; news: boolean; show: boolean; stampless: boolean; hint: string | null; quiet: boolean; tab: Tab; rosterSize: number;
   resetLabel?: string; // «В партию · #8» in the batch mode
   marks?: React.ReactNode; // and «E», «🔒» before it (features/batch BatchMarks)
   onTab: (t: Tab) => void; onMenu: () => void; onReset: () => void; onOpen: () => void;
@@ -37,7 +36,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
   if (!show) return null;
   const evalTab = tab === 'eval';
   return (
-    <div className={`vbar v-${r.v}${compact ? ' compact' : ''}`} id="vbar">
+    <div className={`vbar v-${r.v}`} id="vbar">
       {flash > 0 && <span key={flash} className="vb-flash" aria-hidden="true" />}
       {evalTab
         ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <span className="vb-ros"> <span className="vb-star">★</span>{rosterSize}</span>}</button>
@@ -48,7 +47,7 @@ export function VBar({ r, news, show, compact, stampless, hint, quiet, tab, rost
           ? !quiet && <span className="vt vt-hint">{hint ?? r.title}</span>
           : evalTab && stampless
             ? <span className="vt vt-more">{t.ui.details}</span>
-            : <>{!compact && <span className="stamp">{t.ui.verdictLabel[r.v]}</span>}<span className="vt">{compact ? r.title : barTitle(r)}</span></>}
+            : <><span className="stamp">{t.ui.verdictLabel[r.v]}</span><span className="vt">{barTitle(r)}</span></>}
         {evalTab && <span className="vb-more" aria-hidden="true">▴</span>}
       </button>}
       {evalTab && marks}

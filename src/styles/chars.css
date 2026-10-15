@@ -27,20 +27,6 @@ html.narrow .cbar { padding: 10px 12px 0; }
 .cbar-chip { min-height: 32px; padding-right: 8px; }
 .cbar-chip > span:last-child { color: var(--ink-3); font-size: 11px; margin-left: 2px; }
 .cfilter { display: grid; gap: 10px; justify-items: start; }
-/* узкие окна (разделённый экран): «Обмен» одним значком — подпись остаётся для диктора; на 280px кнопки режимов ещё плотнее,
-   чтобы вся строка (★ Мои N · Доодеть N · Все и «Обмен») поместилась без переноса */
-@media (max-width: 400px) {
-  .cbar-tl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .cbar-trade { padding: 0 9px; }
-  .cmode { gap: 4px; }
-}
-@media (max-width: 320px) {
-  html.narrow .cbar { padding-inline: 8px; }
-  .cbar-row { gap: 6px; }
-  .cmode { gap: 3px; }
-  .cmode .fbtn { padding: 4px 5px; font-size: 12px; }
-  .cbar-trade { padding: 0 8px; }
-}
 .cwrap { position: relative; min-width: 0; }
 .ctile { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); text-align: center; min-width: 0; height: 100%; }
 .ctile img.face, .ctile .noimg.face { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
@@ -286,8 +272,8 @@ html.xs .bgear-t { grid-row: 3; }
 .cb-me b { position: absolute; top: calc(100% + 6px); padding: 0 6px; border-radius: 999px; background: var(--surface-3); color: var(--ink);
   font: 700 11px var(--font-mono); line-height: 18px; white-space: nowrap; }
 .crit-bar.near .cb-me b { background: var(--temp-soft); color: var(--temp); }
-/* short windows (landscape 812×375, 420×390): a compact bar, so the number row stays above the sticky «Готово» */
-@media (max-height: 430px) {
+/* short windows (side-by-side split, 411×363): a compact bar, so the number row stays above the sticky «Готово» */
+@media (max-height: 480px) {
   .crit-bar:not(.mini) { height: 68px; }
   .crit-bar:not(.mini) .cb-track { top: 30px; }
   .cb-need { top: 14px; height: 26px; }

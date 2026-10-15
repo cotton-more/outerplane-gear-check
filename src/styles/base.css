@@ -221,8 +221,9 @@ html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
 .drawer-f { flex: none; padding: 10px 14px 12px; border-top: 1px solid var(--line); } /* Sheet foot: stays under the scrolling body */
 .drawer .items { max-height: none; overflow: visible; }
 
-/* ---------- низкий экран (разделённый экран с игрой): шапка в одну строку */
-@media (max-height: 560px) {
+/* ---------- низкий экран (разделённый экран с игрой): шапка в одну строку.
+   Every short-window rule in the styles uses this one height, max-height: 480px — useLayout SHORT_H (layout.tall) */
+@media (max-height: 480px) {
   .top { flex-wrap: nowrap; padding-block: 4px 6px; gap: 8px; }
   .brand { margin-right: 0; }
   .brand > div { display: none; }

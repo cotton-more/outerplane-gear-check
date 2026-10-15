@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 
+// Sizes the app is built and checked for (owner, 2026-10-15; DEVELOPMENT.md «Screen sizes»): the owner's computer
+// (2056×1202, and 1280×800) and a Pixel split in half — stacked 411×564, side by side 411×363. Nothing is laid out
+// narrower than MIN_W: a narrower window shows the same page scaled down (measure)
+export const MIN_W = 410;
+// a window up to this height is «short» (side-by-side split, ~363–378); the stacked split (~564–586) is not. The CSS
+// rules for short windows use the same number: @media (max-height: 480px)
+export const SHORT_H = 480;
+
 export interface Layout {
   narrow: boolean;  // < 720: вердикт под вводом, плашка вердикта внизу экрана
   xs: boolean;      // < 560
-  tiny: boolean;    // < 380: нижняя плашка без штампа
   sheet: boolean;   // < 900: билды персонажа — полноэкранной шторкой
   wide: boolean;    // ≥ 1100
-  tall: boolean;    // высота ≥ 560: весь экран или половина в портрете, а не полоска разделённого экрана
+  tall: boolean;    // height > SHORT_H: not the side-by-side split strip
   desktopModeOnPhone: boolean;
 }
 
@@ -22,14 +29,14 @@ export interface Viewport { innerWidth: number; innerHeight: number; screenWidth
 // Ширину экрана берём по ориентации самого окна, а не screen.width как есть: на iPhone screen.width всегда портретный,
 // а Android во время поворота ещё отдаёт старое значение — иначе ландшафт выглядел бы как «Версия для ПК»
 // (страница увеличена в 2+ раза, мобильная раскладка).
+// A window narrower than MIN_W is laid out at MIN_W and scaled down to fit — smaller text, no sideways scroll.
 export function measure(v: Viewport): { width: number; zoom: number; desktopModeOnPhone: boolean } {
   const landscape = v.innerWidth > v.innerHeight;
   const screenW = landscape ? Math.max(v.screenWidth, v.screenHeight) : Math.min(v.screenWidth, v.screenHeight);
   const desktopModeOnPhone = v.coarse && screenW > 0 && screenW < 720 && v.innerWidth > screenW * 1.25;
   // масштабируем страницу обратно до ширины телефона: текст нормального размера, раскладка мобильная
-  return desktopModeOnPhone
-    ? { width: screenW, zoom: v.innerWidth / screenW, desktopModeOnPhone }
-    : { width: v.innerWidth, zoom: 1, desktopModeOnPhone };
+  const width = Math.max(desktopModeOnPhone ? screenW : v.innerWidth, MIN_W);
+  return { width, zoom: v.innerWidth / width, desktopModeOnPhone };
 }
 
 // Классы на <html> читает CSS; зовём до первого рендера, чтобы не мигала раскладка.
@@ -40,10 +47,10 @@ export function applyLayout(): Layout {
     innerWidth: window.innerWidth, innerHeight: window.innerHeight,
     screenWidth: screen.width, screenHeight: screen.height, coarse: matchMedia('(pointer: coarse)').matches,
   });
-  if (m.desktopModeOnPhone) r.style.zoom = String(m.zoom);
+  if (m.zoom !== 1) r.style.zoom = String(m.zoom);
   const w = m.width;
-  const tall = window.innerHeight / m.zoom >= 560;
-  const layout = { narrow: w < 720, xs: w < 560, tiny: w < 380, sheet: w < 900, wide: w >= 1100, tall, desktopModeOnPhone: m.desktopModeOnPhone };
+  const tall = window.innerHeight / m.zoom > SHORT_H;
+  const layout = { narrow: w < 720, xs: w < 560, sheet: w < 900, wide: w >= 1100, tall, desktopModeOnPhone: m.desktopModeOnPhone };
   r.classList.toggle('narrow', layout.narrow);
   r.classList.toggle('xs', layout.xs);
   r.classList.toggle('sheet', layout.sheet);

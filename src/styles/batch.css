@@ -47,12 +47,6 @@ html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 html.narrow .vbar .batch-marks { flex: none; gap: 4px; }
 html.narrow .vbar .bmark-b { min-width: 40px; min-height: 44px; padding: 0 8px; justify-content: center; }
 html.narrow .vbar .bm-long { display: none; }
-/* under 380px (VBar compact) the bar is ☰ · E · 🔒 · «Add · #2 · gloves»: the roster count and the hint «Batch · 1» go
-   (the strip above the form says it), the hint's place stays as the gap */
-html.narrow .vbar.compact:has(.batch-marks) { gap: 6px; padding-left: 10px; padding-right: 10px; }
-html.narrow .vbar.compact:has(.batch-marks) .vb-ros, html.narrow .vbar.compact:has(.batch-marks) .vb-main .vt { display: none; }
-html.narrow .vbar.compact .bmark-b { min-width: 36px; padding: 0 6px; }
-html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 /* the lock in a row: after the number */
 .batch .bgear-n .ico-lock { width: 14px; height: 14px; color: #fff; } /* over .bgear-row .ico's grey (chars.css) */
 /* «E» picker: square tiles, the round portrait over the name (prefix in a small line above it, like the hero list) */
@@ -114,9 +108,9 @@ html.narrow .vbar.compact:has(.batch-marks) .vb-reset { max-width: 50%; }
 html:not(.narrow) .eval.batch-result { grid-template-columns: minmax(0, 1fr); }
 html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: none; width: 100%; max-width: 900px; margin: 0 auto; }
 .batch-back { justify-self: start; margin: 0 0 6px; }
-/* a short window (landscape, 420×390 split screen): the title bar is tighter and the action bar goes to the end of the
+/* a short window (side-by-side split, 411×363): the title bar is tighter and the action bar goes to the end of the
    content instead of staying over it — the title bar plus the bar took 28% of 390px and cut the first step */
-@media (max-height: 460px) {
+@media (max-height: 480px) {
   .drawer.batch-full .drawer-h { padding-block: 2px; }
   .batch-sheet .batch-acts, .batch-col .batch-acts { position: static; padding: 2px 0 6px; }
   .batch { gap: 8px; }

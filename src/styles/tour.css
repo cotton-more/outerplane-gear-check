@@ -14,6 +14,15 @@
 .tour-t { margin-bottom: 8px !important; }
 .tour-b { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tour-x { margin-left: auto; min-width: 36px; min-height: 36px; border: 0; border-radius: var(--radius-s); background: none; color: var(--ink-2); font-size: 15px; }
+/* a short window (side-by-side split, 411×363): a step's buttons go up beside «Step 3 of 5» — the strip is ~40 px lower */
+@media (max-height: 480px) {
+  .tour-strip:has(> .tour-k) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding-block: 6px 8px; }
+  .tour-strip:has(> .tour-k) > p:not(.tour-k) { grid-column: 1 / -1; }
+  .tour-strip:has(> .tour-k) > .tour-b { grid-row: 1; grid-column: 2; }
+  .tour-strip:has(> .tour-k) .tour-k { margin-bottom: 0 !important; }
+  .tour-strip:has(> .tour-k) .tour-t:last-of-type { margin-bottom: 0 !important; }
+  .tour-strip:has(> .tour-k) .tour-b .btn { min-height: 36px; padding-block: 4px; }
+}
 /* узкая плашка: вне формы или при открытом окне; .low — снизу, над карточкой персонажа во весь экран */
 .tour-strip.tour-pill { top: 0; display: flex; align-items: center; gap: 10px; padding: 4px 4px 4px 14px; margin-top: calc(6px + env(safe-area-inset-top, 0px)); font-size: 13px; }
 .tour-strip.tour-pill.low { top: auto; }
@@ -24,7 +33,9 @@
 .tour-strip.tour-invite { z-index: 36; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tour-invite > span { flex: 1 1 180px; }
 html.narrow body.has-vbar .tour-invite { bottom: 66px; }
-@media (max-height: 560px) { html.narrow body.has-vbar .tour-invite { bottom: 52px; } }
+@media (max-height: 480px) { html.narrow body.has-vbar .tour-invite { bottom: 52px; } }
+/* a short window during the tour: room below the page, so a step's target can scroll up to the top and the strip fit under it (TourLayer) */
+@media (max-height: 480px) { body.touring, html.narrow body.has-vbar.touring { padding-bottom: calc(var(--vbar-h, 0px) + 50vh); } }
 .guide .guide-tour { margin: 0 0 12px; }
 .tour-off { margin: -2px 0 8px !important; color: var(--temp); font-weight: 600; }
 /* подсказка по ходу: та же полоса, рамка — пунктиром, чтобы не путать с шагом тура */

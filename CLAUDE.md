@@ -15,12 +15,13 @@ Architecture, build and tests — [DEVELOPMENT.md](DEVELOPMENT.md). For players 
 - `task test` — types and all tests; run before every commit.
 - `task preview` — the site as it would be on Pages, from current code (`build/preview`); does not touch `docs/`.
 - `task golden:update` — only when verdicts changed on purpose; then review the `test/golden.json` diff.
-- `task tour:check` — after layout changes to the form or verdict: runs the tour in Chrome at five sizes and both themes.
+- `task tour:check` — after layout changes to the form or verdict: runs the tour in Chrome at the four sizes of DEVELOPMENT.md «Screen sizes», both themes.
 
 ## Rules
 
-- Main use case: a phone in split screen next to the game, 280–420px wide; also landscape 812×375 and 420×390.
-  Check layout at these sizes and in the dark theme.
+- Sizes: the owner's computer (2056×1202, 1280×800) and a phone split with the game — 411×564 stacked, 411×363 side by
+  side (DEVELOPMENT.md «Screen sizes»). Narrower than 410 the page only scales down: no width rules under it. Check layout
+  at these sizes and in the dark theme.
 - Code is organized by feature: `src/features/<feature>`, dependencies only point down — `shared` → `game` → `features` →
   `screens` → `app`; `screens/` composes layouts from different features. Which folder owns what — the "Where things are"
   table in DEVELOPMENT.md.

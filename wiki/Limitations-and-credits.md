@@ -16,6 +16,8 @@ Builds are outerpedia's curated recommendations ([outerpedia](https://github.com
   copies T4 takes come from guides and in-game checks — the game data doesn't have them.
 - Yellow and orange segments (from Reforge) aren't told apart: you enter all that are lit, 1–6, and the piece is rated
   as it is. Future Reforges don't count in the verdict.
+- The app is made for a computer and for half of a phone screen next to the game (about 410 px wide). In a narrower
+  window the whole page shrinks to fit: smaller text, no sideways scrolling.
 - The class versions of Briareos/Gorgon have the same name: the class shows in the icon and the passive's suffix.
 - The effect of EFF% and RES% substats isn't fully clear from the game data, so they're judged by build priorities only.
 

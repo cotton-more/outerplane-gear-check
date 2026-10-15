@@ -57,7 +57,7 @@ tasks:
     cmds: [node scripts/screenshots.mjs]
 
   tour:check:
-    desc: 'Пройти тур обучения в Chrome на пяти размерах экрана и в двух темах; кадры — build/tour-check/'
+    desc: 'Пройти тур обучения в Chrome на четырёх размерах экрана и в двух темах; кадры — build/tour-check/'
     deps: [build:app]
     cmds: [node scripts/tour-check.mjs]
 

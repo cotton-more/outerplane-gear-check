@@ -4,6 +4,7 @@
 // На примере рамки показывают точные кнопки, а остальное приглушено — но нажимается: ошибку можно поправить.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { SHORT_H } from '@/shared/layout/useLayout';
 import { Rich } from '@/shared/ui/Rich';
 import { useT } from '@/i18n';
 import type { Tab } from '@/shared/tab';
@@ -32,6 +33,13 @@ function Dim({ rings, vw }: { rings: Rect[]; vw: number }) {
 }
 
 // tours — какие туры предложить в «Какое обучение?»
+// The strip's lowest edge: above the verdict bar; in a short window (side-by-side split) it may cover the bar when the
+// step points at nothing in it — 363 px leave no room for the strip and two targets above the bar (gear step 3)
+function stripLow(g: Pick<Geom, 'rings' | 'bottom' | 'vh'>): number {
+  const bar = g.bottom || g.vh;
+  return g.vh <= SHORT_H && !g.rings.some((r) => r.top + r.height > bar) ? g.vh : bar;
+}
+
 export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
   tour: TourApi; c: TourCtx; rosterEmpty: boolean; tours: TourId[]; onTab: (t: Tab) => void; onRoster: () => void;
 }) {
@@ -73,6 +81,13 @@ export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
     return () => cancelAnimationFrame(id);
   }, [run !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // a short window has no page left below the form: body.touring gives room to scroll a target up to the top (tour.css)
+  useEffect(() => {
+    if (!run) return;
+    document.body.classList.add('touring');
+    return () => document.body.classList.remove('touring');
+  }, [run !== null]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // новый шаг: прокрутить к нему, если он за краем экрана или под плашкой вердикта
   const stepNo = run?.phase.kind === 'step' ? run.phase.i : -1;
   useLayoutEffect(() => {
@@ -86,7 +101,15 @@ export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
     // в карточке и шторке (layer) — к верху: низ низкого экрана остаётся полосе (над «← К списку» — scroll-margin);
     // шаг, который может идти и в шторке, на самой странице прокручивается как обычно
     const top = step?.layer === 'card' || (step?.layer === 'sheet' && !!el.closest('.drawer'));
-    if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: top ? 'start' : 'center', behavior: still ? 'auto' : 'smooth' });
+    // the strip fits neither below nor above the target where it is (short side-by-side split, 411×363): the target goes
+    // to the top, the strip below it. Its height — the strip still showing the last step
+    const h = strip.current?.offsetHeight ?? 0;
+    const rs = (el.closest('.drawer') ? targets(selsRef.current, true) : targets(selsRef.current, false)).map((x) => rect(x.getBoundingClientRect()));
+    const all = union(rs) ?? rect(r);
+    const free = stripLow({ rings: rs, bottom, vh: window.innerHeight });
+    const squeezed = !!h && place({ top: all.top, bottom: all.top + all.height }, 0, free, h) === 'pill' && all.height <= free - h - 8;
+    if (squeezed) el.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    else if (r.top < 0 || r.bottom > bottom) el.scrollIntoView({ block: top ? 'start' : 'center', behavior: still ? 'auto' : 'smooth' });
   }, [stepNo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!run) return null;
@@ -100,8 +123,9 @@ export function TourLayer({ tour, c, rosterEmpty, tours, onTab, onRoster }: {
   // её кнопка «← К списку»). Шаг в карточке или в шторке (layer) — обычная полоса. Цель выше свободного места (вердикт
   // колонкой на ПК) — обычная полоса снизу, поверх низа цели
   const pill = away || (g.overlay && !step?.layer);
-  const side = pill ? (g.card ? 'pill-low' : 'pill') : place(box, 0, g.bottom || g.vh, g.h) === 'top' ? 'top' : 'bottom';
-  const above = { bottom: Math.max(0, g.vh - (g.bottom || g.vh)) };
+  const low = stripLow(g);
+  const side = pill ? (g.card ? 'pill-low' : 'pill') : place(box, 0, low, g.h) === 'top' ? 'top' : 'bottom';
+  const above = { bottom: Math.max(0, g.vh - low) };
   const stripStyle = side === 'bottom' || side === 'pill-low' ? above : side === 'top' ? { top: 0 } : undefined;
 
   const closeBtn = <CloseButton className="tour-x" label={t.tour.close} onClick={tour.close} />;

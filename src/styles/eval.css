@@ -192,7 +192,7 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .seg .muted { margin-right: 4px; }
 
 /* низкий экран (разделённый экран с игрой): форма целиком помещается над плашкой вердикта */
-@media (max-height: 560px) {
+@media (max-height: 480px) {
   .form { padding: 6px 10px 8px; gap: 6px; }
   .slot { min-height: 40px; }
   .slot img, .slot .noimg, .slot .ico { width: 28px; height: 28px; }
@@ -224,7 +224,7 @@ html.narrow .actions .btn.primary { display: none; } /* на телефоне «
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 36; display: flex; align-items: center; gap: 14px; padding: 6px 6px 6px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface-3); color: var(--ink); font-size: 13.5px; box-shadow: 0 6px 18px rgb(0 0 0 / .25); white-space: nowrap; text-wrap: balance; }
 .toast button { min-height: 36px; padding: 6px 12px; border: 0; border-radius: var(--radius-s); background: var(--surface); color: var(--accent); font-weight: 700; font-size: 13.5px; }
 html.narrow body.has-vbar .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
-@media (max-height: 560px) { html.narrow body.has-vbar .toast { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-height: 480px) { html.narrow body.has-vbar .toast { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); } }
 
 /* сетка сабстатов на форме: 7×2, пары по параметру одна над другой (%-статы над flat); ярче — нужны билдам выбранного сета */
 .subzone { display: grid; min-height: 84px; }
@@ -255,7 +255,7 @@ html.narrow .grid-hint { display: none; }
 /* телефон: под формой ничего нет — «Следующий» на нижней плашке, остальное в «Ещё» (☰) */
 html.narrow .eval-in .actions { display: none; }
 /* разделённый экран с игрой: Legendary из 4 сабстатов с карточкой вердикта помещается над плашкой без прокрутки */
-@media (max-height: 460px) {
+@media (max-height: 480px) {
   html.narrow .app { padding-top: calc(env(safe-area-inset-top, 0px) + 4px); }
   .form { padding: 4px 8px 6px; gap: 4px; }
   .slot { min-height: 38px; }
@@ -282,5 +282,3 @@ html.narrow .eval-in .actions { display: none; }
 .tryon-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tryon-x { margin-left: auto; flex: none; min-width: 40px; min-height: 32px; border: 0; border-radius: var(--radius-s); background: none; color: var(--ink-2); font-size: 15px; }
 .tryon-x:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--ink); }
-/* 280px: имя важнее лица */
-@media (max-width: 320px) { .tryon .face { display: none; } }
