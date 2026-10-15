@@ -13,8 +13,9 @@ const PRECACHE = __FILES__;
 
 self.addEventListener('install', (event) => {
   // новая версия ждёт, пока страница её не включит: посреди оценки не перезагружаемся.
-  // cache: 'reload' — мимо HTTP-кэша браузера: иначе под новой версией может лечь старая страница
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.map((url) => new Request(url, { cache: 'reload' })))));
+  // cache: 'reload' — мимо HTTP-кэша браузера: иначе под новой версией может лечь старая страница. Set — addAll rejects a
+  // duplicate request, and the whole install fails (update.py dedupes too)
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([...new Set(PRECACHE)].map((url) => new Request(url, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', (event) => {
