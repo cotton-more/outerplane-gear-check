@@ -46,13 +46,15 @@ export function pieceBar(P: Profile, p: Piece): Bar {
   return r;
 }
 
-// who may stand in the hero's layout: worn, passing the bar, or a filler (layout `fillerOf`, HISTORY.md 0220) in a weapon or
-// accessory slot where nothing else of `pool` may stand — an empty slot takes any piece with a suitable main
-export function eligibleIn(P: Profile, wornIds: ReadonlySet<string>, pool: readonly Piece[]): (p: Piece) => boolean {
+// who may stand in the hero's layout: worn, passing the bar, or the piece being rated (`fresh`) as a filler (layout
+// `fillerOf`, HISTORY.md 0220) in a weapon or accessory slot where nothing else of `pool` may stand — an empty slot takes
+// any piece with a suitable main. A weak piece set aside in the pool never fills a slot: in the game it lies locked in the
+// inventory and the slot is empty (owner 2026-10-15, like parked pieces — D9)
+export function eligibleIn(P: Profile, wornIds: ReadonlySet<string>, pool: readonly Piece[], fresh?: Piece): (p: Piece) => boolean {
   const base = (p: Piece) => wornIds.has(p.id) || pieceBar(P, p).pass;
   // a worn piece the hero's class can't wear leaves the slot empty, as in bestLayout and verdict heroOutcome
   const taken = new Set(pool.filter((p) => !isArmor(p.slot) && base(p) && wearable(P.ctx, P.c, p)).map((p) => p.slot));
-  return (p) => base(p) || (!taken.has(p.slot) && fillerOf(P, p));
+  return (p) => base(p) || (p === fresh && !taken.has(p.slot) && fillerOf(P, p));
 }
 
 // части меню, которым нужен T4 (A11): Speed / Penetration / Bursting ×2 (строки 2P на T0–T3 нет), Immunity ×4

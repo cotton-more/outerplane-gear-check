@@ -25,7 +25,7 @@ import { worldOf } from '@/features/trade/model/world';
 export interface SynthCrit { need: number; c0: number; items: Record<string, { w?: number; n?: number; main?: number }> }
 export function synthGauge(o: {
   key?: string; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>; effect?: readonly string[];
-  value?: Record<string, number | { v: number; fit: Fit; ok?: boolean; filler?: boolean } | null>; bonusFn?: (set: string, n: number, n4: number) => SetGain;
+  value?: Record<string, number | { v: number; fit: Fit; ok?: boolean } | null>; bonusFn?: (set: string, n: number, n4: number) => SetGain;
   crit?: SynthCrit; vOf?: (id: string) => number;
 } = {}): Gauge {
   const cr = o.crit;
@@ -47,7 +47,7 @@ export function synthGauge(o: {
     value(id) {
       const x = o.value?.[id];
       if (x === undefined || x === null) return null;
-      return typeof x === 'number' ? { v: milli(x), fit: 'no', ok: true } : { v: milli(x.v), fit: x.fit, ok: x.ok ?? true, ...(x.filler ? { filler: true } : {}) };
+      return typeof x === 'number' ? { v: milli(x), fit: 'no', ok: true } : { v: milli(x.v), fit: x.fit, ok: x.ok ?? true };
     },
     bonus(set, n, n4) {
       if (o.bonusFn) return o.bonusFn(set, n, n4);
@@ -170,7 +170,7 @@ export function loadOwner(): Owner {
 // Порядок героев = ростер. Ключ вещи в value — id; значение — очки или { v, fit }
 export interface SynthHero {
   worn?: Partial<Record<SlotId, string>>; pool?: string[]; locked?: boolean;
-  value?: Record<string, number | { v: number; fit: Fit; ok?: boolean; filler?: boolean } | null>; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>;
+  value?: Record<string, number | { v: number; fit: Fit; ok?: boolean } | null>; parts?: Part[]; bonus?: Record<string, { 2?: number; 4?: number }>;
   effect?: string[];
 }
 export function synthWorld(o: { items: Record<string, { slot: SlotId; set?: string; code?: string; bt?: number; t4?: boolean }>; heroes: Record<string, SynthHero> }): World {

@@ -94,7 +94,7 @@ export function heroOutcome(hp: HeroPool, x: Piece): HeroRes {
   const vx = val(x);
   const heldHere = pool.filter((p) => p.slot === x.slot && info.strong.has(p.id));
   const top = heldHere.length ? Math.max(...heldHere.map(val)) : 0;
-  const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds, [...pool, x]) });
+  const withBest = bestLayout(P, [...pool, x], { eligible: eligibleIn(P, wornIds, [...pool, x], x) });
   const uses = withBest.layout[x.slot]?.id === x.id;
   const own = btWorth(P, x) ? (info.reserve.get(reserveKey(x)) ?? []).map((id) => pool.find((p) => p.id === id))
     .filter((p): p is Piece => !!p && sameForBt(x, p)).slice(0, feedsLeft(x)) : [];

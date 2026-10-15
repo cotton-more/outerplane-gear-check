@@ -8,7 +8,7 @@ import { combosOf, comboProfile, pinnedProfile, pinOf, profileOf, withNeed } fro
 import { comboSig } from '@/game/build/variants';
 import { setValue } from '@/game/set/setValue';
 import { effCal, type GearStore, type Piece } from '@/features/gear/model/gear';
-import { critBound, critLossOf, fillerOf, gearRank, nonChc, pieceCrit, piecePoints } from '@/features/gear/layout';
+import { critBound, critLossOf, gearRank, nonChc, pieceCrit, piecePoints } from '@/features/gear/layout';
 import { MAX_LIT } from '@/game/item/subs';
 import { mainsStat } from '@/game/stat/total';
 import { pieceBar } from '@/features/gear/pool/info';
@@ -91,7 +91,7 @@ export function worldOf(ctx: Ctx, st: GearStore, roster: readonly string[], o: W
       value(itemId) {
         if (vals.has(itemId)) return vals.get(itemId)!;
         const p = st.pieces[itemId];
-        const r = p && wearable(ctx, c, p) ? { v: milli(piecePoints(Pv, p)), fit: gearRank(Pv, p), ok: pieceBar(Pv, p).pass, ...(fillerOf(Pv, p) ? { filler: true } : {}) } : null;
+        const r = p && wearable(ctx, c, p) ? { v: milli(piecePoints(Pv, p)), fit: gearRank(Pv, p), ok: pieceBar(Pv, p).pass } : null;
         vals.set(itemId, r);
         return r;
       },

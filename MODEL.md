@@ -87,7 +87,9 @@ V). English keeps "pts" also for 1.
      «временно»), is never fed and never a Breakthrough target. Weapons and accessories only — armor is untouched (D7).
      Its outcome doesn't depend on substats, so while they are only partly entered the threshold verdict's early
      «Разобрать» waits for all of them when a roster hero's slot is empty (`verdict:fillerWaits`). Heroes with no gear
-     entered count as empty (D8); parked pieces don't fill a slot here (D9: the trade offers them).
+     entered count as empty (D8); parked pieces don't fill a slot here (D9: the trade offers them); nor does a weak piece
+     set aside unworn in his pool — it lies locked in the game's inventory (D12, owner 2026-10-15): only the piece being
+     rated may stand in the layout as a filler (`eligibleIn` `fresh`); the set-aside one is a reserve or «больше не нужна».
    - `no` (0): the rest. A stopgap has the same rank as `no` — only `rec` outranks points (owner 2026-10-10: an Epic
      stopgap took an off-list Legendary with the same 2 useful substats and more points, by rank). `stopgap` still
      decides what is kept and fed (§4). Armor adds nothing to the layout's rank (`gearRank` for armor only says whether the set is in
@@ -170,7 +172,8 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
   places with ≥ 2 segments plus another fully credited one, ≥ 5 segments on the fully credited stats (`armorBar.tempOk`,
   `CFG.epicTempRoll/tempYellow`). A pinned hero (§6) fails for armor of sets outside the pinned combo.
 - **Weapon / accessory**: `keep` = rank `rec`, `temp` = rank `stopgap` (§1.6); points do not take part. A **filler**
-  (§1.6) fails the bar but may still stand in an empty slot (`eligibleIn`) and pass for that hero (`heroOutcome` `filler`).
+  (§1.6) fails the bar but the piece being rated may still stand in an empty slot (`eligibleIn`) and pass for that hero
+  (`heroOutcome` `filler`); a weak piece already in the pool and not worn never fills a slot (D12).
 - On the owner's roster only 19 of 263 worn pieces reach 6 points, so in practice the old rule does most of the work.
 
 **Outcomes per hero** (`heroOutcome`), in the order tried:
@@ -320,8 +323,8 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    (`World.held`): a piece a team member's step took off is a candidate at cost 2, so two members still swap. **A parked
    piece** (§5, `World.parked`; HISTORY.md 0200-boss E2b Q3) is not held: it is a candidate for anyone at cost 2 (its own hero:
    cost 1, his spare), and into an **empty** slot it needs no bar — anything is better than nothing; into a filled slot
-   the usual rules apply. The receiver's own **filler** (§1.6) likewise goes into his empty slot without the bar, as
-   Redress puts it there (HISTORY.md 0220). Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
+   the usual rules apply. The receiver's own weak set-aside piece is no candidate, not even into his empty slot: it fills
+   no slot (§1.6, HISTORY.md 0220 D12). Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
    without Breakthrough) he already has at an equal or higher BT. **One extra condition, in the team trade only** (2–4
    members; owner, 2026-10-13, review 0203: "not an exception — an extra rule-condition of the team trade"): a **weapon or

@@ -570,7 +570,13 @@ the game (56 empty weapon/accessory slots on the owner's roster). D9 (review Q2)
 the trade offers them. D10 (review m1) «Только для X» in the D4 case keeps «Фоддер — но у X слот пуст: надень, пока нет
 лучше»: the stamp gives the answer, the mode says what the piece does for X. D11 (2026-10-15, after the merge) a Legendary
 whose item the hero's builds list but with a main they don't take is a filler too — its passive works with any main (owner's
-Saint's Ring with CDMG RED% got «запас» for Primine, whose builds take it with DMG RED%, while her slot was empty).
+Saint's Ring with CDMG RED% got «запас» for Primine, whose builds take it with DMG RED%, while her slot was empty). D12
+(2026-10-15, branch `unworn-filler`) a weak piece set aside unworn in the hero's pool fills no slot — in the game it lies
+locked in the inventory and the slot is empty: «то, что отложено в пул, — то, что пойдёт на корм» (owner). Before, such a
+piece (Saeran's 1019 · RES) stood in her current layout as a filler, so the Saint's Ring was «Отложить для Saeran»
+instead of «Временно — надень». Only the piece being rated may be a filler (`eligibleIn` `fresh`); the trade no longer
+offers the receiver's own weak set-aside piece into his empty slot (review m4 reversed, to keep the trade = the best
+layout, test X1). Owner's roster: Alice's unworn 1018 · CHC left her layout and became a reserve.
 **Hard parts.**
 - "Empty" has to agree everywhere: `eligibleIn` (the pool), `heroOutcome` (`!info.layout[slot]`) and `better()`. A worn
   piece the class can't wear counts as empty in all of them (review m6).
