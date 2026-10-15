@@ -568,7 +568,9 @@ a filler and a Breakthrough target exists now, the piece is «Фоддер». D5
 «Что нового». D7 armor untouched. D8 (review Q1) heroes with no gear entered count as empty — they really are naked in
 the game (56 empty weapon/accessory slots on the owner's roster). D9 (review Q2) parked pieces don't fill a slot here;
 the trade offers them. D10 (review m1) «Только для X» in the D4 case keeps «Фоддер — но у X слот пуст: надень, пока нет
-лучше»: the stamp gives the answer, the mode says what the piece does for X.
+лучше»: the stamp gives the answer, the mode says what the piece does for X. D11 (2026-10-15, after the merge) a Legendary
+whose item the hero's builds list but with a main they don't take is a filler too — its passive works with any main (owner's
+Saint's Ring with CDMG RED% got «запас» for Primine, whose builds take it with DMG RED%, while her slot was empty).
 **Hard parts.**
 - "Empty" has to agree everywhere: `eligibleIn` (the pool), `heroOutcome` (`!info.layout[slot]`) and `better()`. A worn
   piece the class can't wear counts as empty in all of them (review m6).
