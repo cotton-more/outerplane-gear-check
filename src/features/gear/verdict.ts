@@ -180,13 +180,18 @@ export function maybeFor(ctx: Ctx, x: Piece): Char[] {
 // Тихая строка (вопрос 12): слабая вещь (порог не прошла) дала бы герою прирост V ≥ 1. stats — что искать: первые два
 // стата его цепочки, которые бывают сабстатом на этой вещи
 export interface Quiet { c: Char; dV: number; slotEmpty: boolean; stats: string[] }
+// the hero's best layout with the piece let in whatever its bar: what a weak piece would give if it stood (the quiet line,
+// the hero list's gain in features/gear/model/heroList)
+export function forcedBest(hp: HeroPool, x: Piece): { layout: Layout; value: LayoutValue } {
+  const el = eligibleIn(hp.P, hp.wornIds, hp.pieces);
+  return bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || el(p) });
+}
 function quietOf(pools: HeroPool[], x: Piece, heroes: HeroRes[]): Quiet | null {
   let top: Quiet | null = null;
   for (const hp of pools) {
     const h = heroes.find((r) => r.c === hp.c)!;
     if (h.bar) continue;
-    const el = eligibleIn(hp.P, hp.wornIds, hp.pieces);
-    const forced = bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || el(p) });
+    const forced = forcedBest(hp, x);
     if (forced.layout[x.slot]?.id !== x.id) continue;
     const dV = forced.value.v - hp.info.value.v;
     if (!geq1(forced.value.v, hp.info.value.v) || (top && dV <= top.dV)) continue;
