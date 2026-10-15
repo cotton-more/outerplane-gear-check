@@ -267,7 +267,10 @@ was never worn in the game: it leaves the pool even if the pool would hold it as
 `wearFromPool` option `promised`, the ids «Надеть в игре» still owes). Only the slot's worn record is looked up in that
 set (`ops:supersededOf`) — a reserve is never worn, so the option can't drop one; the rest of the pool is judged as above,
 without the superseded record (it can only free roles, never cost another piece its place). The piece sits in the game
-inventory and is rated again as a new one.
+inventory and is rated again as a new one. Owner, review 2 (2026-10-15): superseded → P1 leaves; P0, the piece the game
+still has on, leaves too if it is still a record in the hero's pool (the first line's `was`, set when the piece stayed there
+as a reserve); P1's `fed` reserves (other heroes' records its Breakthrough was to eat) go back into their pools; the new
+line carries no «taken off» note. «Вернуть» of that «Надеть» undoes all of it (`screens/eval useFormFlow equipOn`).
 
 **Worn and the pool are what the player recorded.** `worn` is written only by the player's own actions — «Equip»
 (`putOn`, `wearFromPool`), «Yes, all worn» (`wearAll`: only when the hero holds at most one piece per slot and wears

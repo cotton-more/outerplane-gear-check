@@ -1,6 +1,6 @@
 // «Надеть в игре» (features/ingame, HISTORY.md 0230): a line per hero and slot, live while the app has that record worn
 // there; a second «Надеть» replaces the line; «Вернуть» brings back the one it replaced; a superseded promise leaves the
-// pool (features/gear/pool putOn promised) and the new line keeps the first line's «taken off»; storage.
+// pool (features/gear/pool putOn promised) and the new line carries no «taken off» note; storage.
 import { describe, expect, it } from 'vitest';
 import { EMPTY_GEAR, updateIn, type GearStore } from '@/features/gear/model/gear';
 import { putOn, removeFrom, wearFromPool, type PutResult } from '@/features/gear/pool';
@@ -49,6 +49,33 @@ describe('lines', () => {
     expect(undoLine(two.b, two.line, two.prev).lines).toEqual([one.line]);
     const three = equip(two.b, two.st, caren.id, GOOD);
     expect(undoLine(three.b, two.line, two.prev)).toBe(three.b);
+  });
+
+  it('F2: superseded, then ticked, then «Вернуть» of the «Надеть»: the first promise comes back', () => {
+    const one = equip(NO_INGAME, EMPTY_GEAR, caren.id, MID);
+    const two = equip(one.b, one.st, caren.id, GOOD);
+    const ticked = removeLine(two.b, two.line.id)!.next;
+    expect(ticked.lines).toEqual([]);
+    expect(undoLine(ticked, two.line, two.prev).lines).toEqual([one.line]);
+    // the slot has a line again (a later «Надеть»): nothing comes back
+    const later = equip(ticked, two.st, caren.id, MID);
+    expect(undoLine(later.b, two.line, two.prev)).toBe(later.b);
+    // without prev, a gone line is a no-op
+    expect(undoLine(ticked, two.line, null)).toBe(ticked);
+  });
+
+  it('`was`: the piece the game takes off, when it stayed in the pool (lock); not on feed or none; a superseding line has none', () => {
+    const strong = equip(NO_INGAME, EMPTY_GEAR, caren.id, GOOD);
+    const weak = putOn(ctx, strong.st, caren.id, WEAK);
+    expect(lineOf(weak, weak.st, caren.id, null)).toMatchObject({ off: 'lock', was: strong.r.id });
+    expect(equip(NO_INGAME, EMPTY_GEAR, caren.id, MID).line.was).toBeUndefined();
+    const e0 = putOn(ctx, EMPTY_GEAR, caren.id, piece('helmet', 'Speed', { 'DEF%': 1, CHC: 1 }, 'rare'));
+    const e1 = putOn(ctx, e0.st, caren.id, piece('helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 2 }, 'rare'));
+    expect(lineOf(e1, e1.st, caren.id, null).was).toBeUndefined();
+    const l1 = lineOf(weak, weak.st, caren.id, null);
+    const l2 = lineOf(weak, weak.st, caren.id, l1);
+    expect(l2.off).toBeUndefined();
+    expect(l2.was).toBeUndefined();
   });
 
   it('the tick removes a line; «Вернуть» puts it back in its place', () => {
@@ -134,7 +161,7 @@ describe('live = the record is worn there', () => {
 });
 
 describe('superseded promise', () => {
-  it('P1 promised, P2 on the same slot: P1 leaves the pool (not kept), the line now promises P2 and keeps P1\'s «taken off»', () => {
+  it('P1 promised, P2 on the same slot: P1 leaves the pool (not kept), the line now promises P2 and carries no «taken off» note', () => {
     // P0 — an Epic worn in the game; P1 replaces it (material — feed); then P2, a weaker piece found by name, on the slot
     const p0 = putOn(ctx, EMPTY_GEAR, caren.id, piece('helmet', 'Speed', { 'DEF%': 1, CHC: 1 }, 'rare'));
     const one = equip(NO_INGAME, p0.st, caren.id, piece('helmet', 'Speed', { 'DEF%': 4, CHC: 3, CHD: 3, SPD: 2 }, 'rare'));
@@ -145,7 +172,8 @@ describe('superseded promise', () => {
     expect(two.prev).toEqual(one.line);
     expect(two.r.removed.map((p) => p.id)).toEqual([one.r.id]);
     expect(two.st.pools[caren.id]).toEqual([two.r.id]);
-    expect(two.b.lines).toEqual([{ ...two.line, piece: two.r.id, off: 'feed' }]);
+    expect(two.line.off).toBeUndefined();
+    expect(two.b.lines).toEqual([two.line]);
     expect(two.b.lines).toHaveLength(1);
   });
 
@@ -191,8 +219,9 @@ describe('storage', () => {
       { ...line, snap: { ...line.snap, id: 'p7' } }, { ...line, snap: { ...line.snap, grade: 'epic' } },
       { ...line, snap: { ...line.snap, lit: { NOPE: 2 } } }, { ...line, snap: { ...line.snap, lit: { CHC: 9 } } },
       { ...line, snap: { ...line.snap, bt: 7 } }, { ...line, snap: null }, { ...line, off: 'sell' },
-      { ...line, fed: 'x' }, { ...line, fed: [{ hero: kappa.id, snap: null }] },
+      { ...line, was: 7 }, { ...line, fed: 'x' }, { ...line, fed: [{ hero: kappa.id, snap: null }] },
     ];
+    expect(restoreIngame({ v: 1, lines: [{ ...line, was: 'p0' }] }, idx).lines).toEqual([{ ...line, was: 'p0' }]);
     const other = { ...line, id: 'k', hero: kappa.id };
     const read = restoreIngame({ v: 1, lines: [...bad, other, { ...other, id: 'twice' }] }, idx);
     expect(read.lines).toEqual([other]);

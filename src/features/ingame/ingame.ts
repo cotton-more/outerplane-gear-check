@@ -5,8 +5,10 @@
 // - Live = the app still has that record worn in that slot (computed, never stored): a trade, a re-dress on the card, a
 //   removal or a Core Fusion move drops the line by itself. Dead lines are dropped from storage on read and on every write.
 // - One line per hero and slot: a second «Надеть» on the slot replaces the line in place. When the slot's record was
-//   itself a live promise (superseded), it never went on in the game: the pool lets it go (features/gear/pool planPut
-//   promised) and the new line keeps the first line's «taken off» — the game still has that piece on.
+//   itself a live promise (superseded), it never went on in the game: P1 leaves the pool (features/gear/pool planPut
+//   promised); P0, the piece the game still has on, leaves too if the first line's `was` says it is still a record in the
+//   pool (it was a reserve); P1's `fed` reserves go back to their heroes. The new line carries no «taken off» note — P0
+//   just drops into the inventory (useFormFlow equipOn does the pool work; «Вернуть» undoes all of it).
 // - Editing a record shared by two heroes copies it to a new id (gear.ts updateIn), so a promise on it drops: accepted,
 //   rare (a fresh promised record has one holder).
 // - Written only by «Надеть» / «Заменить» from «Оценка» (screens/eval useFormFlow); «Вернуть» of that message puts back
@@ -24,7 +26,9 @@ export const INGAME_KEY = 'ingame';
 export type Off = 'lock' | 'feed';
 // another hero's reserve the new piece's Breakthrough eats (useFormFlow fed): its hero and the piece as it was
 export interface Fed { hero: string; snap: Piece }
-export interface Line { id: string; hero: string; slot: SlotId; piece: string; snap: Piece; off?: Off; fed?: Fed[] }
+// was — the record of the piece the game takes off, when it stayed in the hero's pool as a reserve (the `lock` case):
+// a superseding «Надеть» takes it out of the pool as well
+export interface Line { id: string; hero: string; slot: SlotId; piece: string; snap: Piece; off?: Off; was?: string; fed?: Fed[] }
 export interface Ingame { v: 1; lines: Line[] }
 export const NO_INGAME: Ingame = { v: 1, lines: [] };
 
@@ -64,12 +68,13 @@ export function offOf(r: WearResult & { piece: Piece }, st: GearStore, hero: str
 }
 
 // The line of a «Надеть»: r — the put, st — the store after it, prev — the live line of that slot before it (lineAt on the
-// store before). A superseded promise (prev) keeps its «taken off»: the game still has that piece on, not prev's
+// store before). A superseded promise (prev) leaves no «taken off» note: the piece is just taken off in the game
 export function lineOf(r: WearResult & { piece: Piece }, st: GearStore, hero: string, prev: Line | null, fed: readonly Fed[] = []): Line {
-  const off = prev ? prev.off : offOf(r, st, hero);
+  const off = prev ? undefined : offOf(r, st, hero);
+  const was = !prev && r.wasWorn && r.wasWorn !== r.id && st.pools[hero]?.includes(r.wasWorn) ? r.wasWorn : undefined;
   return {
     id: idOf(hero, r.slot, r.id), hero, slot: r.slot, piece: r.id, snap: r.piece,
-    ...(off ? { off } : {}), ...(fed.length ? { fed: [...fed] } : {}),
+    ...(off ? { off } : {}), ...(was ? { was } : {}), ...(fed.length ? { fed: [...fed] } : {}),
   };
 }
 
@@ -84,10 +89,14 @@ export function addLine(b: Ingame, st: GearStore, line: Line): Ingame {
   return { ...b, lines: next };
 }
 // «Вернуть» of that «Надеть»: the line goes and the one it replaced (prev) comes back in its place. The slot's line is
-// another by now (a later «Надеть») — nothing changes
+// another by now (a later «Надеть») — nothing changes; ticked since — prev comes back
 export function undoLine(b: Ingame, line: Line, prev: Line | null): Ingame {
   const i = b.lines.findIndex((l) => l.id === line.id);
-  if (i < 0) return b;
+  if (i < 0) {
+    // the line was ticked since: the promise it superseded still stands (put back last, unless the slot has a line again)
+    if (!prev || b.lines.some((l) => l.hero === prev.hero && l.slot === prev.slot)) return b;
+    return { ...b, lines: [...b.lines, prev] };
+  }
   const lines = b.lines.slice();
   if (prev) lines[i] = prev; else lines.splice(i, 1);
   return { ...b, lines };
@@ -158,6 +167,7 @@ function lineOfRaw(raw: unknown, idx: Index): Line | null {
   const snap = snapOf(r.snap, idx);
   if (!snap || snap.id !== r.piece || snap.slot !== r.slot) return null;
   if (r.off !== undefined && r.off !== 'lock' && r.off !== 'feed') return null;
+  if (r.was !== undefined && !str(r.was)) return null;
   let fed: Fed[] | undefined;
   if (r.fed !== undefined) {
     if (!Array.isArray(r.fed)) return null;
@@ -171,7 +181,7 @@ function lineOfRaw(raw: unknown, idx: Index): Line | null {
   }
   return {
     id: r.id, hero: r.hero, slot: r.slot as SlotId, piece: r.piece, snap,
-    ...(r.off ? { off: r.off as Off } : {}), ...(fed?.length ? { fed } : {}),
+    ...(r.off ? { off: r.off as Off } : {}), ...(r.was ? { was: r.was } : {}), ...(fed?.length ? { fed } : {}),
   };
 }
 export function restoreIngame(raw: unknown, idx: Index): Ingame {

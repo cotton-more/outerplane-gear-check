@@ -8,7 +8,7 @@ import type { ItemInput } from '@/game/item/item';
 import type { Texts } from '@/i18n';
 import { itemInput, type FormAction, type FormState } from '@/features/eval/form/formState';
 import type { GearStore, Piece } from '@/features/gear/model/gear';
-import { putOn, removeFrom, removeUndo, stashOn, undoPut, undoWear, wearFromPool, type PoolView, type PutResult } from '@/features/gear/pool';
+import { putOn, removeFrom, removeUndo, undoRemove, stashOn, undoPut, undoWear, wearFromPool, type PoolView, type PutResult } from '@/features/gear/pool';
 import type { Same } from '@/features/gear/verdict';
 import { nextToWear, type CharVs } from '@/features/gear/model/poolVs';
 import type { HeroGroup, HeroRow } from '@/features/gear/model/heroList';
@@ -22,6 +22,7 @@ import { lineAt, lineOf, promisedOf, type Fed } from '@/features/ingame/ingame';
 import type { IngameApi } from '@/features/ingame/useIngame';
 import { setName } from '@/game/set/setName';
 
+const sameRecord = (a: Piece, b: Piece) => a.slot === b.slot && a.grade === b.grade && a.setId === b.setId && a.itemKey === b.itemKey && a.main === b.main;
 const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
 
 export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, via, heroVs, replace, tview, list, same, canEquip, touring, narrow,
@@ -115,6 +116,26 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, via, 
     const fed = (h?.reserveBt ?? []).filter((f) => f.of && f.of.id !== c.id).map((f) => ({ of: f.of!, piece: f.piece }));
     let st = r.st;
     const backs: ((x: GearStore) => GearStore)[] = [];
+    // a superseded promise (prev): its fed reserves were never eaten in the game — back into their heroes' pools (a record
+    // already there is left alone; one that is gone with another piece under its id stays gone)
+    for (const f of prev?.fed ?? []) {
+      const have = st.pieces[f.snap.id];
+      if (st.pools[f.hero]?.includes(f.snap.id) || (have && !sameRecord(have, f.snap))) continue;
+      st = undoRemove(st, f.snap, [f.hero]);
+      backs.unshift((x) => removeFrom(x, f.hero, f.snap.id));
+    }
+    // ... and the piece the game takes off (P0, a reserve of the hero) just drops into the inventory: it leaves the pool
+    if (prev?.was && st.pools[c.id]?.includes(prev.was)) {
+      const back = removeUndo(st, c.id, st.pieces[prev.was]), at = st.pools[c.id].indexOf(prev.was), id = prev.was;
+      // «Вернуть» puts it back where it stood in the pool (undoRemove appends)
+      backs.unshift((x) => {
+        if (x.pools[c.id]?.includes(id)) return x;
+        const y = back(x), pl = [...(y.pools[c.id] ?? [])];
+        pl.splice(Math.min(at, pl.length - 1), 0, pl.pop()!);
+        return { ...y, pools: { ...y.pools, [c.id]: pl } };
+      });
+      st = removeFrom(st, c.id, id);
+    }
     for (const f of fed) { backs.unshift(removeUndo(st, f.of.id, f.piece)); st = removeFrom(st, f.of.id, f.piece.id); }
     const fedLines: Fed[] = fed.map((f) => ({ hero: f.of.id, snap: f.piece }));
     const line = promise ? lineOf(r, st, c.id, prev, fedLines) : null;

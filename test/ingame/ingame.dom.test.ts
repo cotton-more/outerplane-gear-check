@@ -137,6 +137,51 @@ describe('superseded promise', () => {
   });
 });
 
+// owner answers (review 2, Q1 / Q2): a superseded promise — P1 leaves, P0 (the piece the game still has on, a reserve) leaves
+// too, P1's fed reserves go back; «Вернуть» undoes all of it (F2, the tick between, is a unit test: the list is a sheet here)
+describe('superseded promise: P0, fed reserves, F2', () => {
+  const rin = D.chars.find((c) => c.name === 'Rin')!;
+  const W1 = { ...P1, lit: { 'DEF%': 1, CHC: 1, CHD: 1, HP: 1 }, yellow: { 'DEF%': 1, CHC: 1, CHD: 1, HP: 1 }, bt: 0 }; // a weak promised helmet
+  const P0 = { ...P1, id: 'p0', lit: { 'DEF%': 1, CHC: 1, SPD: 1, EFF: 1 }, yellow: { 'DEF%': 1, CHC: 1, SPD: 1, EFF: 1 }, bt: 0 };
+  const P2 = { ...P1, id: 'p2', slot: 'gloves' };            // another slot, a reserve of Caren: never promised
+  const R = { ...P1, id: 'p5', lit: { 'DEF%': 1, SPD: 1, CHC: 1, EFF: 1 }, bt: 0 };
+  const L1 = { id: `${caren.id}:helmet:p1`, hero: caren.id, slot: 'helmet', piece: 'p1', snap: W1 };
+  const gear = (pool: string[]) => ({ v: 3, seq: 5, pieces: { p0: P0, p1: W1, p2: P2, p5: R }, pools: { [caren.id]: pool, [rin.id]: [] as string[] }, worn: { [caren.id]: { helmet: 'p1' } } });
+  const BIG = { setId: speed, subs: { 'DEF%': 4, CHC: 3, CHD: 3, SPD: 2 } };
+  const pool = (h: string) => stored('gear').pools[h] as string[];
+
+  it('lock case: P0 and P1 leave, Rin\'s reserve returns, a non-promised reserve stays; «Вернуть» undoes all, L1 included', async () => {
+    const l1 = { ...L1, off: 'lock', was: 'p0', fed: [{ hero: rin.id, snap: R }] };
+    await mount({ slot: 'helmet', grade: 'unique' }, BIG, { gear: gear(['p0', 'p1', 'p2']), ingame: { v: 1, lines: [l1] }, roster: [caren.id] });
+    await click($('.vc-equip'));
+    expect(pool(caren.id)).not.toContain('p0');
+    expect(pool(caren.id)).not.toContain('p1');
+    expect(pool(caren.id)).toContain('p2');
+    expect(pool(rin.id)).toEqual(['p5']);
+    expect(lines()).toHaveLength(1);
+    expect(lines()[0]).not.toHaveProperty('off');
+    expect(lines()[0]).not.toHaveProperty('was');
+    expect(lines()[0]).not.toHaveProperty('fed');
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(pool(caren.id)).toEqual(['p0', 'p1', 'p2']);
+    expect(pool(rin.id) ?? []).toEqual([]);
+    expect(stored('gear').worn[caren.id].helmet).toBe('p1');
+    expect(lines()).toEqual([l1]);
+  });
+
+  it('P0 not in the pool (feed / none): nothing extra is removed; a fed reserve already back is not doubled', async () => {
+    const l1 = { ...L1, fed: [{ hero: rin.id, snap: R }] };
+    await mount({ slot: 'helmet', grade: 'unique' }, BIG, { gear: { ...gear(['p1', 'p2']), pools: { [caren.id]: ['p1', 'p2'], [rin.id]: ['p5'] } }, ingame: { v: 1, lines: [l1] }, roster: [caren.id] });
+    await click($('.vc-equip'));
+    expect(pool(caren.id)).toContain('p2');
+    expect(pool(caren.id)).not.toContain('p1');
+    expect(pool(rin.id)).toEqual(['p5']);
+    await click(byText('.gear-toast button', 'Undo'));
+    expect(pool(rin.id)).toEqual(['p5']);
+    expect(lines()).toEqual([l1]);
+  });
+});
+
 // HISTORY.md 0230 addendum: the same piece entered again while its promise is live — the guard, no button on the card
 describe('the same-piece guard for a promised piece', () => {
   const rin = D.chars.find((c) => c.name === 'Rin')!;
