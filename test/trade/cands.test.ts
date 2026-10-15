@@ -269,15 +269,14 @@ describe('C. кандидаты', () => {
     });
   });
 
-  // HISTORY.md 0220: Redress (pool/info eligibleIn) wears the hero's own filler into his empty slot — the trade offers it too
-  it('C12: his own filler (below the bar) into his empty slot — a candidate (cost 1); into a filled slot, or not a filler — not', () => {
-    const world = (worn: boolean, filler: boolean) => synthWorld({
+  // owner 2026-10-15: a weak piece set aside in the hero's own pool fills no slot (pool/info eligibleIn) — not even his
+  // empty one; only his worn piece stays a candidate
+  it('C12: his own weak set-aside piece (below the bar) is no candidate, even into his empty slot', () => {
+    const world = (worn: boolean) => synthWorld({
       items: { ra: { slot: 'accessory' }, rf: { slot: 'accessory' } },
-      heroes: { R: { ...(worn ? { worn: { accessory: 'ra' } } : {}), pool: ['rf'], value: { ra: { v: 3, fit: 'stopgap' }, rf: { v: 1, fit: 'no', ok: false, filler } } } },
+      heroes: { R: { ...(worn ? { worn: { accessory: 'ra' } } : {}), pool: ['rf'], value: { ra: { v: 3, fit: 'stopgap' }, rf: { v: 1, fit: 'no', ok: false } } } },
     });
-    expect(candidates(world(false, true), { to: 'R' }).accessory?.map((x) => [x.item.id, x.cost])).toEqual([['rf', 1]]);
-    expect(bestKit(world(false, true).gauge('R')!, candidates(world(false, true), { to: 'R' })).slots.accessory?.item.id).toBe('rf');
-    expect(ids(candidates(world(true, true), { to: 'R' }), 'accessory')).toEqual(['ra']);
-    expect(ids(candidates(world(false, false), { to: 'R' }), 'accessory')).toEqual([]);
+    expect(ids(candidates(world(false), { to: 'R' }), 'accessory')).toEqual([]);
+    expect(ids(candidates(world(true), { to: 'R' }), 'accessory')).toEqual(['ra']);
   });
 });

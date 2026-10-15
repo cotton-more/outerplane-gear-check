@@ -638,6 +638,14 @@ describe('0220 filler: a weak weapon/accessory into an empty slot', () => {
     expect(w.hero('Fran', w.v(weak('f1'))!)).toMatchObject({ kind: 'none', filler: false });
   });
 
+  // owner 2026-10-15 (Saint's Ring for Saeran): a weak piece set aside unworn in her pool lies locked in the game's inventory —
+  // the slot is empty, the new filler is «Надень»; the set-aside one stays out of the layout
+  it('a weak set-aside (unworn) piece fills no slot: the next filler is still «Надень»', () => {
+    const w = world(['Fran'], { Fran: [weak('f0')] }, { Fran: [] });
+    expect(w.view.hero(char('Fran').id)!.info.layout.accessory).toBeUndefined();
+    expect(w.hero('Fran', w.v(weak('f1'))!)).toMatchObject({ kind: 'wear', filler: true, slotEmpty: true });
+  });
+
   it('a good stopgap replaces a worn filler by points; the filler then is «больше не нужна»', () => {
     const w = world(['Fran'], { Fran: [weak('f0')] });
     expect(w.hero('Fran', w.v(good())!)).toMatchObject({ kind: 'wear', filler: false });

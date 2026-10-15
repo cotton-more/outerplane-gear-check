@@ -82,7 +82,7 @@ stars; not marked — the "Default level" in the settings (More → Settings →
 - **Stopgap:** an item without the needed passive (any Epic, a Legendary not in the builds, or "not in the list") with
   a main stat characters want in that slot, **and a good roll**: for an Epic — 3 useful, or 2 useful with 5+ segments;
   for a Legendary — 3 useful. Otherwise — "Dismantle". Keep the best 1–2 per needed main stat.
-- **An empty slot:** if a roster character has nothing in that slot (nothing worn, nothing usable in the Pool), a weak
+- **An empty slot:** if a roster character has nothing in that slot (nothing worn, nothing usable in the Pool — a weak piece set aside there doesn't count: in the game it lies locked in the inventory), a weak
   roll will do — as long as the main stat is one their builds ask for: most of a weapon's or accessory's value is the
   main stat at +10, and an empty slot gives nothing. A Legendary their builds list fits with any main: its passive works
   anyway (Saint's Ring with CDMG RED% for a hero whose builds take it with DMG RED%). The verdict is "Stopgap — equip", until something better drops. Once
