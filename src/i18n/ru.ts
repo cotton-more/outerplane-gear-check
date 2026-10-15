@@ -272,6 +272,10 @@ export const ru = {
     // похоже, оценивают ту же отложенную вещь ещё раз
     same: (slot: string, piece: string, name: string, date: string) =>
       `Похоже, это ${piece}, ${by(slot, 'отложенный', 'отложенная', 'отложенное', 'отложенные')} для ${name}${date ? ' ' + date : ''}. Если это ${by(slot, 'он', 'она', 'оно', 'они')} — ничего не делай.`,
+    // the same piece promised in «Надеть в игре» (HISTORY.md 0230 addendum, TEXTS S1): worn in the app, not yet in the game.
+    // No date: a promise line keeps none
+    samePromised: (slot: string, piece: string, name: string) =>
+      `Похоже, это ${piece}, ${by(slot, 'обещанный', 'обещанная', 'обещанное', 'обещанные')} ${name} в «Надеть в игре». Если это ${by(slot, 'он', 'она', 'оно', 'они')} — ничего не делай.`,
     // the piece only looks like a set-aside one: it's a second copy — offers come back (owner, 2026-10-07)
     twin: (slot: string) => by(slot, 'Это другой', 'Это другая', 'Это другое', 'Это другие'),
   },

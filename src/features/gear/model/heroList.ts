@@ -88,7 +88,8 @@ const ORDER: ListKind[] = ['replace', 'empty', 'stash'];
 // stamp is the stamp's hero even at a smaller gain — a rank-up weapon, a filler at 0 points); the «Отложить» heroes of today's
 // verdict (an «Оставь» named hero, a reserve); when the piece looks like one already set aside (the same-piece guard) the
 // rows lose their buttons: the «Оставь» rows keep their «держи» pill, the other heroes' rows too; there is no reserve row
-// and no «Отложить»; only the holder keeps «Заменить» on a wear-kind row (it wears that very record)
+// and no «Отложить»; only the holder keeps «Заменить» on a wear-kind row (it wears that very record). A promised look-alike
+// (same.promised) leaves no button at all: its record is already worn
 export function heroList(ctx: Ctx, viewOf: (charId: string) => PoolView, item: ItemInput, res: Result | null): HeroGroup[] {
   if (!res) return [];
   const same = res.same;
@@ -101,7 +102,7 @@ export function heroList(ctx: Ctx, viewOf: (charId: string) => PoolView, item: I
   for (const h of res.heroes) {
     const id = h.c.id;
     const s = stash.get(id);
-    const row = heroRow(ctx, viewOf(id), id, item, { h, stash: s, star: id === star, guarded: !!same && (same.c.id !== id || !!s) });
+    const row = heroRow(ctx, viewOf(id), id, item, { h, stash: s, star: id === star, guarded: !!same && (same.c.id !== id || !!s || !!same.promised) });
     if (!row) continue;
     if (s) { byKind.stash.push(row); continue; }
     if (!named.has(id) && (milli(row.gain) < THRESHOLD || (h.slotEmpty && !mainFits(ctx, h, item)))) continue;

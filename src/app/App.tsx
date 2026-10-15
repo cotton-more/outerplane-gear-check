@@ -31,7 +31,7 @@ import { takeModelNote } from '@/features/gear/store/stored';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { useIngame } from '@/features/ingame/useIngame';
-import { countOf, sectionsOf, type Line } from '@/features/ingame/ingame';
+import { countOf, promisedAll, sectionsOf, type Line } from '@/features/ingame/ingame';
 import { IngameBody, IngameList } from '@/features/ingame/ui/IngameList';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
 import { useBatchMode } from '@/features/batch/useBatchMode';
@@ -163,9 +163,14 @@ export function App() {
     load: (item) => dispatch({ type: 'load', item }), toEval: () => onTab('eval'), closeVerdict: () => setVerdictOpen(false), setFormUndo,
   });
   const { hero, replace, dropReplace } = heroMode;
+  // «Надеть в игре» (features/ingame): promises of «Надеть», against the player's own store (never the tour's)
+  const ingame = useIngame(idx, realGear.store, !touring && !realGear.newer);
+  // the verdict's same-piece guard covers a promised record too (HISTORY.md 0230 addendum); none in a tour or on the demo
+  const promised = useMemo(() => (touring || gear.store !== realGear.store ? undefined : promisedAll(ingame.value, realGear.store)),
+    [touring, gear.store, ingame.value, realGear.store]);
   const vm = useVerdictModel({
     idx, t, ctx, s, store: gear.store, roster, view, hero: batchOn ? null : hero, replace, touring, narrow: layout.narrow, onEval: s.tab === 'eval',
-    batch: batchOn,
+    batch: batchOn, promised,
   });
   const { input, shown, tview, offNote, cardShown, hint, sameLine, onTwin } = vm;
   const onb = useOnboarding({
@@ -178,8 +183,6 @@ export function App() {
   const { tour, news } = onb;
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
-  // «Надеть в игре» (features/ingame): promises of «Надеть», against the player's own store (never the tour's)
-  const ingame = useIngame(idx, realGear.store, !touring && !realGear.newer);
   // the list under the form / in the phone sheet: what is still owed in the game. A tap = done: the line goes, «Вернуть» for 8 s
   const igSections = useMemo(() => sectionsOf(ingame.value, realGear.store), [ingame.value, realGear.store]);
   const igN = tour.run ? 0 : countOf(ingame.value, realGear.store);

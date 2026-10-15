@@ -45,6 +45,9 @@ export function pruned(b: Ingame, st: GearStore): Ingame {
 // the records the hero still owes in the game — the option of «Надеть» (features/gear/pool putOn promised)
 export const promisedOf = (b: Ingame, st: GearStore, hero: string): Set<string> =>
   new Set(b.lines.filter((l) => l.hero === hero && isLive(st, l)).map((l) => l.piece));
+// the records promised to anyone — the same-piece guard of the verdict (features/gear/verdict VerdictOpts promised)
+export const promisedAll = (b: Ingame, st: GearStore): Set<string> =>
+  new Set(b.lines.filter((l) => isLive(st, l)).map((l) => l.piece));
 // the live line of a hero's slot
 export const lineAt = (b: Ingame, st: GearStore, hero: string, slot: SlotId): Line | null =>
   b.lines.find((l) => l.hero === hero && l.slot === slot && isLive(st, l)) ?? null;

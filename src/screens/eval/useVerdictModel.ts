@@ -52,11 +52,13 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
   return { ...out, lines: [...same, ...out.lines], plan: upgradePlan(ctx, input, out) };
 }
 
-// «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»
-const sameText = (t: Texts, idx: Index, same: Same): string =>
-  t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
+// «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»; promised in «Надеть в игре» — «…,
+// обещанный Aer в «Надеть в игре». …» (TEXTS S1)
+const sameText = (t: Texts, idx: Index, same: Same): string => same.promised
+  ? t.fit.samePromised(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name)
+  : t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
 
-export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false }: {
+export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false, promised }: {
   idx: Index; t: Texts; ctx: Ctx;
   s: FormState; store: GearStore; roster: ReadonlySet<string>;
   view: PoolView;                 // вид пула на хранилище — один раз на хранилище
@@ -64,6 +66,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   touring: boolean;
   narrow: boolean; onEval: boolean; // телефон; вкладка «Оценка» открыта
   batch?: boolean;                // «Партия»: pieces are entered without a verdict (MODEL.md §8)
+  promised?: ReadonlySet<string>; // records with a live promise in «Надеть в игре» (features/ingame promisedAll): the guard
 }) {
   // вердикт зависит только от предмета, настроек и пулов — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
@@ -100,9 +103,10 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const [twinAt, setTwinAt] = useState<string | null>(null);
   const twin = twinAt === key;
   // исход по ростеру; null — по порогам (ростера нет) или введены не все сабстаты
-  const res = useMemo(() => (batch ? null : verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin })), [ctx, viewOf, key, twin, batch]); // eslint-disable-line react-hooks/exhaustive-deps
+  const res = useMemo(() => (batch ? null : verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin, promised })), [ctx, viewOf, key, twin, batch, promised]); // eslint-disable-line react-hooks/exhaustive-deps
   // Guard: while it looks like a set-aside piece, only the hero who has it keeps a button — «Надеть» wears that very
-  // record (useFormFlow). Others get no «Надеть» or «Отложить» until «Это другой»: one helmet, two records otherwise
+  // record (useFormFlow). Others get no «Надеть» or «Отложить» until «Это другой»: one helmet, two records otherwise.
+  // A promised look-alike (same.promised) leaves nobody a button: its record is already worn
   const same = res?.same ?? null;
   const quietRow = (x: CharVs): CharVs => ({ ...x, useful: false, stash: false });
   const verdict = useMemo(() => (res && raw.v !== 'idle' ? fromResult(ctx, raw, res, input) : raw), [ctx, raw, res]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -111,7 +115,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const heroVs = useMemo(() => {
     if (!hero) return null;
     const x = charVs(ctx, tview, hero.c.id, input, { replace, wear: true });
-    if (x && same && same.c.id !== hero.c.id) return quietRow(x);
+    if (x && same && (same.c.id !== hero.c.id || same.promised)) return quietRow(x);
     // «Отложить для X» и в режиме героя: вещь ему «Оставь» или запас (В6 ревью этапа 10), и она, похоже, у него ещё не
     // отложена
     const forHim = x && (x.h.kind === 'keep' || (res?.kind === 'material' && res.sub === 'reserve' && res.reserve.some((c) => c.id === hero.c.id)));

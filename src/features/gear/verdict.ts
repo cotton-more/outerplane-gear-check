@@ -185,17 +185,24 @@ export function forcedBest(hp: HeroPool, x: Piece): { layout: Layout; value: Lay
 // Та же вещь, отложенная раньше (решение владельца 2026-10-06): у героя ростера ненадетая запись с тем же сетом или
 // item, slot, grade, main and all substats at the same levels. The verdict is computed without it, and the line says:
 // «похоже, это она — ничего не делай». Substats are compared in the order typed — the form keeps it, Help asks for the
-// game's order, and the same stats in another order are another piece (owner, 2026-10-07)
-export interface Same { c: Char; piece: Piece }
+// game's order, and the same stats in another order are another piece (owner, 2026-10-07).
+// A promised piece (HISTORY.md 0230 addendum, owner 2026-10-15): a worn record with a live line in «Надеть в игре» — worn
+// in the app, still in the game's inventory. Entered again it would be offered to another hero: one piece promised twice.
+// Any grade, Epic too; promised: true — no hero keeps a button (the record is already worn)
+export interface Same { c: Char; piece: Piece; promised?: true }
 export const samePiece = (p: Piece, x: Piece): boolean => {
   const a = Object.entries(p.lit), b = Object.entries(x.lit);
   return p.slot === x.slot && p.grade === x.grade && p.setId === x.setId && p.itemKey === x.itemKey && p.main === x.main
     && a.length === b.length && a.every(([k, n], i) => b[i][0] === k && b[i][1] === n);
 };
-function sameOf(hps: HeroPool[], x: Piece): Same | null {
+function sameOf(hps: HeroPool[], x: Piece, promised?: ReadonlySet<string>): Same | null {
   for (const hp of hps) {
     const piece = hp.pieces.find((p) => !hp.wornIds.has(p.id) && samePiece(p, x));
     if (piece) return { c: hp.c, piece };
+  }
+  if (promised?.size) for (const hp of hps) {
+    const piece = hp.pieces.find((p) => hp.wornIds.has(p.id) && promised.has(p.id) && samePiece(p, x));
+    if (piece) return { c: hp.c, piece, promised: true };
   }
   return null;
 }
@@ -210,7 +217,7 @@ export interface Result {
   reserve: Char[];            // reserve (items 3b, 3c)
   overEpic?: boolean;         // reserve: reserve[0] holds a good Epic of this set and slot, this Legendary waits for a good Legendary
   maybe: Char[];              // «Спорно»
-  same: Same | null;          // похоже, это отложенная раньше вещь (её запись в расчёт не входит)
+  same: Same | null;          // похоже, это отложенная раньше вещь или обещанная в «Надеть в игре» (её запись в расчёт не входит)
 }
 
 // герои ростера, которым вещь можно оценить: с билдами и не заменённые своим Core Fusion
@@ -256,13 +263,14 @@ export function fillerWaits(ctx: Ctx, pools: Pools, input: ItemInput): boolean {
 // thresholds). pools — the hero's pool (for Core Fusion X with X — the one that will be after the transition sheet). twin — the player said
 // «Это другой»: the look-alike set-aside record is another piece, so it stays in its pool and there is no same.
 // Batch plan (features/batch): skip — heroes left out for this piece («Не брать»); full — material targets that already
-// get four pieces in the plan
-export interface VerdictOpts { twin?: boolean; skip?: ReadonlySet<string>; full?: ReadonlySet<string> }
+// get four pieces in the plan. promised — records with a live promise in «Надеть в игре» over all heroes (screens/eval
+// useVerdictModel): the same-piece guard covers them too; the batch plan doesn't pass it
+export interface VerdictOpts { twin?: boolean; skip?: ReadonlySet<string>; full?: ReadonlySet<string>; promised?: ReadonlySet<string> }
 export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: VerdictOpts = {}): Result | null {
   if (!ctx.scoped || input.unlisted || Object.keys(input.subs).length < dropSubs(input.grade)) return null;
   const x = formPiece(input);
   const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x) && !opts.skip?.has(c.id)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
-  const same = opts.twin ? null : sameOf(all, x);
+  const same = opts.twin ? null : sameOf(all, x, opts.promised);
   const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds, hp.P.pin?.key, hp.P.need)! : hp)) : all;
   const heroes = hps.map((hp) => feedFrom(hps, x, heroOutcome(hp, x)));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>

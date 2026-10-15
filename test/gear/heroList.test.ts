@@ -8,7 +8,7 @@ import { pieceInput, type Piece, type Worn } from '@/features/gear/model/gear';
 import { poolView } from '@/features/gear/pool';
 import { piecePoints } from '@/features/gear/layout';
 import { heroList, heroRow, LIST_CAP, type HeroGroup } from '@/features/gear/model/heroList';
-import { verdictOf } from '@/features/gear/verdict';
+import { verdictOf, type VerdictOpts } from '@/features/gear/verdict';
 import { char, idx, mk, prof, setId } from './statSets';
 
 const inputOf = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt === 4 ? 4 : p.bt === null ? null : 0 });
@@ -25,10 +25,10 @@ function world(roster: string[], pools: Record<string, Piece[]> = {}, worn: Reco
     st.worn[id] = Object.fromEntries(list.filter((p) => on.includes(p.id)).map((p) => [p.slot, p.id]));
   }
   const view = poolView(ctx, st);
-  const res = (x: Piece) => verdictOf(ctx, view.hero, inputOf(x));
+  const res = (x: Piece, opts: VerdictOpts = {}) => verdictOf(ctx, view.hero, inputOf(x), opts);
   return {
     res,
-    list: (x: Piece) => heroList(ctx, () => view, inputOf(x), res(x)),
+    list: (x: Piece, opts: VerdictOpts = {}) => heroList(ctx, () => view, inputOf(x), res(x, opts)),
     row: (name: string, x: Piece, any = false) => heroRow(ctx, view, char(name).id, inputOf(x), { any }),
   };
 }
@@ -177,6 +177,57 @@ describe('heroList: «Отложить»', () => {
     expect(kinds(gs)).toEqual(['stash']);
     expect(gs[0].rows).toHaveLength(1);
     expect(gs[0].rows[0]).toMatchObject({ stash: 'keep', action: null, star: true });
+  });
+});
+
+// HISTORY.md 0230 addendum (owner 2026-10-15): a piece worn by «Надеть» but not yet put on in the game (a live promise in
+// «Надеть в игре») entered again — the guard holds it as the same piece; nobody keeps a button, Epic too
+describe('heroList: the same-piece guard for a promised piece', () => {
+  const legH = () => mk('pH', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 }, 0);
+  const epicH = () => mk('pE', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2 }, 0, { grade: 'rare' });
+  const rows = (gs: HeroGroup[]) => gs.flatMap((g) => [...g.rows, ...g.more]);
+  for (const [grade, piece] of [['Legendary', legH], ['Epic', epicH]] as const) {
+    describe(grade, () => {
+      const w = () => world(['Caren', 'Rin', 'Aer'], { Caren: [piece()] });
+      const again = () => ({ ...piece(), id: 'x' });
+      const promised = new Set([piece().id]);
+
+      it('promised: same.promised, no row has a button (the holder neither)', () => {
+        expect(w().res(again(), { promised })!.same).toMatchObject({ c: { name: 'Caren' }, piece: { id: piece().id }, promised: true });
+        const all = rows(w().list(again(), { promised }));
+        expect(all.length).toBeGreaterThan(0);
+        expect(all.every((r) => r.action === null)).toBe(true);
+        expect(all.some((r) => r.stash === 'reserve')).toBe(false);
+      });
+
+      it('not promised (ticked off, dropped or worn by hand): a new piece as before — buttons stay', () => {
+        for (const opts of [{}, { promised: new Set<string>() }]) {
+          expect(w().res(again(), opts)!.same).toBeNull();
+          expect(rows(w().list(again(), opts)).some((r) => r.action !== null)).toBe(true);
+        }
+      });
+
+      it('«Это другой»: no same, the offers come back — a second real copy goes to another hero', () => {
+        const r = w().res(again(), { promised, twin: true })!;
+        expect(r.same).toBeNull();
+        const all = rows(w().list(again(), { promised, twin: true }));
+        expect(all.filter((x) => x.vs.c.name !== 'Caren').some((x) => x.action === 'wear')).toBe(true);
+      });
+    });
+  }
+
+  it('the verdict is counted without the promised record: the holder\'s slot is as if empty', () => {
+    const w = world(['Caren'], { Caren: [legH()] });
+    const x = { ...legH(), id: 'x' };
+    expect(w.res(x)!.heroes[0].slotEmpty).toBe(false);
+    expect(w.res(x, { promised: new Set(['pH']) })!.heroes[0].slotEmpty).toBe(true);
+  });
+
+  it('a set-aside look-alike wins over a promised one and keeps its holder\'s button', () => {
+    const w = world(['Caren', 'Rin'], { Caren: [legH()], Rin: [{ ...legH(), id: 'rH' }] }, { Rin: [] });
+    const r = w.res({ ...legH(), id: 'x' }, { promised: new Set(['pH']) })!;
+    expect(r.same).toMatchObject({ c: { name: 'Rin' }, piece: { id: 'rH' } });
+    expect(r.same!.promised).toBeUndefined();
   });
 });
 

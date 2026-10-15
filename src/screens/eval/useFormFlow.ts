@@ -107,7 +107,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, via, 
     const promised = promise ? promisedOf(ingame.value, base, c.id) : null;
     const prev = promise ? lineAt(ingame.value, base, c.id, input.slot) : null;
     // it looks like the piece set aside for this very hero (guard): «Надеть» wears that record, no second one
-    const wore = same?.c.id === c.id && !rep ? wearFromPool(ctx, base, c.id, same.piece.id, promised) : null;
+    const wore = same?.c.id === c.id && !same.promised && !rep ? wearFromPool(ctx, base, c.id, same.piece.id, promised) : null;
     const r: PutResult = wore ? { ...wore, piece: wore.st.pieces[wore.id] } : putOn(ctx, base, c.id, input, { replace: rep, promised });
     // the feed line named other heroes' reserves («из запаса Aer»): they go to this one's Breakthrough — their records
     // leave with this «Надеть», as the hero's own reserves do (planPut); «Вернуть» brings them back

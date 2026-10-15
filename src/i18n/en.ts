@@ -225,6 +225,7 @@ export const en: Texts = {
     date: (at) => (at ? `${MONTH_EN[+at.slice(5, 7) - 1]} ${+at.slice(8, 10)}` : ''),
     stashedOne: (_slot, piece, subs, date) => `It's the ${piece} · ${subs}, set aside${date ? ` (${date})` : ''}.`,
     same: (_slot, piece, name, date) => `Looks like the ${piece} set aside for ${name}${date ? ` (${date})` : ''}. If it is — do nothing.`,
+    samePromised: (_slot, piece, name) => `Looks like the ${piece} promised to ${name} in "Equip in game". If it is — do nothing.`,
     twin: (slot) => (plEn(slot) ? "It's a different pair" : "It's a different one"),
   },
 

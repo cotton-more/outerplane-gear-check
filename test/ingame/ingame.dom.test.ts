@@ -137,6 +137,31 @@ describe('superseded promise', () => {
   });
 });
 
+// HISTORY.md 0230 addendum: the same piece entered again while its promise is live — the guard, no button on the card
+describe('the same-piece guard for a promised piece', () => {
+  const rin = D.chars.find((c) => c.name === 'Rin')!;
+  const worn = { ...GEAR, worn: { [caren.id]: { helmet: 'p1' } } };
+  const live = { id: `${caren.id}:helmet:p1`, hero: caren.id, slot: 'helmet', piece: 'p1', snap: P1 };
+  const SAME = { setId: speed, subs: P1.lit };
+  const note = () => $('.vcard')?.textContent ?? document.body.textContent ?? '';
+
+  it('promised: the card says so and has no «Надеть»; «Это другой» brings the offers back', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, SAME, { gear: worn, ingame: { v: 1, lines: [live] }, roster: [caren.id, rin.id] });
+    expect(note()).toContain('promised to Caren in "Equip in game". If it is — do nothing.');
+    expect($('.vc-equip')).toBeNull();
+    await click($('.vc-twin'));
+    expect(document.body.textContent).not.toContain('promised to Caren');
+    expect($('.vc-equip')).not.toBeNull();
+  });
+
+  it('worn by hand (no line): a new piece as before', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, SAME, { gear: worn, roster: [caren.id, rin.id] });
+    expect(document.body.textContent).not.toContain('Looks like');
+    expect($('.vc-twin')).toBeNull();
+    expect($('.vc-equip')).not.toBeNull();
+  });
+});
+
 describe('read', () => {
   it('a dead line (the record no longer worn there) and a malformed one are dropped on read and written back', async () => {
     const worn = { ...GEAR, worn: { [caren.id]: { helmet: 'p1' } } };
