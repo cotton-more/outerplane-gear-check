@@ -138,8 +138,12 @@ export function App() {
   const batch = useBatchMode({ idx, t, ctx, gear, dispatch, persist: !touring, narrow: layout.narrow, say });
   const batchOn = batch.on && !touring && ctx.scoped;
 
-  // обновление: новые данные — плашка сверху; только приложение — «Готова новая версия» в «Ещё» (app/usePwa)
-  const pwa = usePwa(idx.D.meta.commit);
+  // обновление: новые данные — плашка сверху; только приложение — «Готова новая версия» в «Ещё» (app/usePwa), and it
+  // switches on by itself when a reload loses nothing (owner, 2026-10-15): never in a tour; in the background — any time
+  // (the tab, settings and the half-entered piece are saved); on screen — no substat on the form, no sheet or dialog, no
+  // message with «Вернуть», not typing
+  const pwa = usePwa(idx.D.meta.commit, (hidden) => !touring && (hidden || (!Object.keys(s.subs).length && !msg && !formUndo
+    && !document.querySelector('[role="dialog"]') && !document.activeElement?.matches('input, textarea, select'))));
   const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
   const install: InstallInfo = { canInstall: pwa.canInstall, onInstall: pwa.install, ios: pwa.iosInstall };
   const charName = (id: string) => heroName(idx, id);
