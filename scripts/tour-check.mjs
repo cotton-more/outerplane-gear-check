@@ -1,4 +1,4 @@
-// Оба тура («Оценка вещи» и «Экипировка») в настоящем браузере на пяти размерах экрана, в светлой и тёмной теме:
+// Оба тура («Оценка вещи» и «Экипировка») в настоящем браузере на четырёх размерах экрана (DEVELOPMENT.md «Screen sizes»), в светлой и тёмной теме:
 // тур проходится на примере до конца, и на каждом шаге полоса целиком в окне и не закрывает то, на что показывает
 // рамка. Ещё — полоса «Только для» с самым длинным именем героя из данных не раздвигает страницу вбок, а на ПК
 // сообщение после «Надеть» не ложится на колонку вердикта.
@@ -14,8 +14,8 @@ const ROOT = resolve(import.meta.dirname, '..');
 const SITE = join(ROOT, process.env.SITE || 'docs');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const OUT = join(ROOT, 'build/tour-check');
-// телефон узкий и обычный, полоска разделённого экрана, ландшафт, ПК
-const SIZES = [[280, 640], [360, 740], [420, 390], [812, 375], [1280, 800]];
+// the owner's devices (DEVELOPMENT.md «Screen sizes»): Pixel split side by side and stacked, a laptop window, the owner's computer
+const SIZES = [[411, 363], [411, 564], [1280, 800], [2056, 1202]];
 
 const app = join(ROOT, 'build/app/index.html');
 if (!existsSync(app)) throw new Error('нет build/app/index.html — сначала task build:app');

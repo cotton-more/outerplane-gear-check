@@ -1,4 +1,4 @@
-/* «Обмен вещами» (features/trade): шторка, план (обмен для команды — с «Команды», HISTORY.md 0200-boss E2). Телефон 280–420 px — основной размер. */
+/* «Обмен вещами» (features/trade): шторка, план (обмен для команды — с «Команды», HISTORY.md 0200-boss E2). Sizes: useLayout (MIN_W, SHORT_H). */
 .drawer.trade, .drawer.trade-entry { max-width: 560px; }
 .trade-b { display: grid; gap: 10px; }
 .trade-q { margin: 0 0 6px; font-weight: 600; font-size: 14px; }
@@ -114,5 +114,5 @@
 .tlive.wait { background: var(--surface-2); color: var(--ink-3); }
 .tlive .tpts { font-size: 12.5px; }
 .tentry .tact { bottom: -14px; }
-/* a short window (landscape phone 812×375, 420×390): the footer scrolls with the walk — sticky it left ~95 px of steps */
-@media (max-height: 460px) { .twalk .tact { position: static; } }
+/* a short window (side-by-side split, 411×363): the footer scrolls with the walk — sticky it left ~95 px of steps */
+@media (max-height: 480px) { .twalk .tact { position: static; } }

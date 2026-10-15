@@ -1,5 +1,5 @@
 // Полоса над формой в режиме «для героя» (features/tryon/tryon): «Только для · [лицо] Caren» и ✕ — снова для всех.
-// Одна строка: в ландшафте 812×375 и в окне 420×390 форма не должна уехать вниз.
+// One line: in the short side-by-side split (411×363) the form must not slide down.
 import type { Char } from '@/game/data/types';
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';

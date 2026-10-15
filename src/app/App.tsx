@@ -287,7 +287,7 @@ export function App() {
               onApplied={(text, undo) => say({ text, note: '', tab: 'team', undo: (x) => undo(x) ?? x })} />
           </section>
         </main>
-        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} compact={layout.tiny} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
+        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
           hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length).replace(/ /g, '\u00A0') : t.batch.empty) : hint}
           resetLabel={batchNext} marks={batchMarks} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
           onOpen={batchOn ? () => batch.show('list') : () => setVerdictOpen(true)} />

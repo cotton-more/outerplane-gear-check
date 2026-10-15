@@ -1,5 +1,5 @@
 // The strip above the form in the batch mode, like «Только для · Caren»: «Партия · 7», «Список ▸», ✕. One line: in
-// landscape 812×375 and in a 420×390 window the form must not slide down. Its short notes are a toast (App).
+// the short side-by-side split (411×363) the form must not slide down. Its short notes are a toast (App).
 // «E» and «🔒» are next to «В партию» (BatchMarks)
 import { useT } from '@/i18n';
 import { CloseButton } from '@/shared/ui/CloseButton';

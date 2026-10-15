@@ -1,5 +1,5 @@
-/* «Команда» (screens/team, features/team): slots, transcend stars, report. Phone 280–420 px first; a wide window and
-   the landscape phone (812×375) put the slots left and the report right. Layout decisions: HISTORY.md 0170 (stage 3) */
+/* «Команда» (screens/team, features/team): slots, transcend stars, report. A window from 720 px wide puts
+   the slots left and the report right. Layout decisions: HISTORY.md 0170 (stage 3) */
 .tm { display: grid; gap: 12px; padding: 12px; align-content: start; }
 html:not(.narrow) .tm { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); align-items: start; padding: 16px; }
 html:not(.narrow) .tm > :not(.tm-side) { grid-column: 1; }
@@ -149,7 +149,6 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .bt-s > img.gstat, .bt-b > img.gstat, .bt-foot > img.gstat { width: 11px; height: 11px; padding: 1px; }
 .bt-bd { grid-column: 3; grid-row: 1 / span 2; display: grid; gap: 3px; justify-items: end; }
 .bt-b { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 999px; font: 700 11.5px var(--font-mono); white-space: nowrap; }
-@media (max-width: 340px) { .bt-bw { display: none; } }
 .bt-b.ok { color: var(--keep); background: var(--keep-soft); }
 .bt-b.lack { color: var(--temp); background: var(--temp-soft); }
 .bt-x { display: grid; gap: 4px; margin: 0 8px 8px 47px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-2); }
@@ -224,7 +223,7 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-guide { justify-self: start; padding: 2px 0; color: var(--accent); font-weight: 600; font-size: 13px; text-decoration: none; }
 .boss-go { width: 100%; min-height: 44px; border-radius: 999px; border: 1px solid var(--star-on); color: #1b1300; font: 800 14px var(--font-display); letter-spacing: .02em;
   background: linear-gradient(180deg, color-mix(in srgb, var(--star-on) 70%, #fff), var(--star-on)); box-shadow: 0 2px 10px color-mix(in srgb, var(--star-on) 40%, transparent); }
-/* a short window (landscape phone 812×375, 420×390): a smaller portrait and a 44 px confirm leave room for the stages */
+/* a short window (side-by-side split, 411×363): a smaller portrait and a 44 px confirm leave room for the stages */
 @media (max-height: 480px) {
   .boss-cf { width: 56px; height: 56px; }
   .boss-card { padding: 8px; gap: 2px 10px; }
@@ -246,6 +245,3 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-tm { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
 /* the toast after «Собрать из гайда»: one line, like the batch notes (left: 50% would halve its width) */
 .toast.boss-toast { width: max-content; max-width: calc(100vw - 32px); }
-@media (max-width: 330px) {
-  .boss-tf > span, .boss-tf > i, .boss-tf .face { width: 28px; height: 28px; }
-}

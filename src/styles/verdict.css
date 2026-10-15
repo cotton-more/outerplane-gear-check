@@ -61,7 +61,7 @@ html.narrow .vbar .vb-more { flex: none; color: var(--ink-3); font-size: 12px; }
 .vdrawer .drawer-b { padding: 0; }
 .vdrawer .verdict .v-head { border-radius: 0; }
 html.narrow .vbar.v-idle .stamp { display: none; }
-@media (max-height: 560px) {
+@media (max-height: 480px) {
   html.narrow body.has-vbar { --vbar-h: 60px; }
   html.narrow .vbar { padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)); }
   html.narrow .vbar .vb-main, html.narrow .vbar .vb-reset { min-height: 40px; }
@@ -89,11 +89,10 @@ html.xs .vbar .vb-reset { flex: 0 1 auto; max-width: 40%; padding: 6px 10px; lin
 .vcard .vc-chain { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; overflow: hidden; }
 .vcard .vc-chain > b { flex: none; }
 .vcard .vc-chain .chain { flex-wrap: nowrap; overflow: hidden; }
-@media (max-height: 460px) { .vcard { min-height: 76px; padding: 5px 9px 6px; gap: 2px; } }
+@media (max-height: 480px) { .vcard { min-height: 76px; padding: 5px 9px 6px; gap: 2px; } }
 html.narrow .vbar .vt-more { color: var(--ink-3); font-weight: 600; }
 /* подсказка и «что ввести дальше» — приглушённо, со стрелкой, до трёх строк (вердикт — штампом, две строки) */
 html.narrow .vbar .vt-hint { font-size: 12.5px; font-weight: 500; line-height: 1.2; color: var(--ink-2); -webkit-line-clamp: 3; }
-html.narrow .vbar.compact .vt-hint { font-size: 12px; -webkit-line-clamp: 4; } /* 280–380px: рядом «Следующий», строки короткие */
 html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent); font-weight: 700; }
 /* цепочка приоритета: ok — есть и засчитан, half — за ½, low — есть, но далеко, miss — нет на предмете, no — лишний */
 .chain { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; }
@@ -148,11 +147,6 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .equip-subs .tok { display: inline-flex; align-items: center; gap: 4px; font: 600 12px var(--font-mono); color: var(--ink-2); }
 .equip-subs .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }
 .equip-row:disabled { cursor: default; opacity: .75; } /* «уже надета» — надевать нечего */
-/* до 340px чип («ломает сет», «рекомендованная») — под именем: рядом он сжимал имя и «сейчас: …» в столбик */
-@media (max-width: 339px) {
-  .vs-h, .equip-row { grid-template-columns: 36px minmax(0, 1fr); }
-  .vs-h > .vs, .equip-row > .vs { grid-column: 2; justify-self: start; }
-}
 .gear-toast { white-space: normal; width: min(440px, calc(100vw - 24px)); z-index: 42; } /* надели из подробностей — видно и поверх шторки */
 /* узкое окно (280–320px): «Вернуть» сбоку оставляла тексту ≈ 140px — 7–8 строк; текст уже 220px — кнопка под ним, справа */
 .gear-toast { flex-wrap: wrap; gap: 4px 14px; }
