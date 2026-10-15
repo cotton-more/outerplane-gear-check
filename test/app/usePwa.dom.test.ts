@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 // Обновление PWA (app/usePwa) на поддельном service worker: новые данные — плашка (update 'data'), только правки
-// приложения — строка в подвале ('app'). Само включается только обновление приложения и только при холодном запуске
-// (worker ждал уже при загрузке страницы); пришедшее посреди работы ждёт кнопки.
+// приложения — строка в подвале ('app'). Само включается только обновление приложения: при холодном запуске (worker
+// ждал уже при загрузке страницы) или посреди работы в тихую минуту — страница ушла в фон или 10 с без касаний, и
+// страница (quiet) говорит, что перезагрузка ничего не потеряет (owner, 2026-10-15).
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePwa } from '@/app/usePwa';
 
 const PAGE = '090f6abeddf4c2dc000c836f956f6a0c3aa2101d';
@@ -40,6 +41,7 @@ let reg: FakeReg;
 let controller: object | null;
 let root: Root | null = null;
 let api: ReturnType<typeof usePwa>;
+let quiet: (hidden: boolean) => boolean = () => false;
 
 beforeAll(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -49,11 +51,11 @@ beforeAll(() => {
     value: { get controller() { return controller; }, register: () => Promise.resolve(reg), addEventListener() {}, removeEventListener() {} },
   });
 });
-beforeEach(() => { reg = new FakeReg(); controller = {}; });
-afterEach(async () => { await act(async () => root?.unmount()); root = null; });
+beforeEach(() => { reg = new FakeReg(); controller = {}; quiet = () => false; });
+afterEach(async () => { await act(async () => root?.unmount()); root = null; vi.useRealTimers(); });
 
 function Probe() {
-  api = usePwa(PAGE);
+  api = usePwa(PAGE, (hidden) => quiet(hidden));
   return null;
 }
 // регистрация, вопрос worker'у и ответ через MessageChannel — несколько задач цикла событий
@@ -83,7 +85,7 @@ describe('usePwa: какое обновление и когда оно вклю�
     expect(w.sent).toContain('skipWaiting');
   });
 
-  it('обновление приложения пришло посреди работы — строка в подвале, само не включается', async () => {
+  it('обновление приложения пришло посреди работы — строка в подвале; пока страница не скажет «тихо», само не включается', async () => {
     await open();
     expect(api.update).toBeNull();
     const w = new FakeWorker(PAGE);
@@ -125,6 +127,44 @@ describe('usePwa: какое обновление и когда оно вклю�
     await settle();
     expect(api.update).toBe('app');
     expect(w.sent).not.toContain('skipWaiting');
+  });
+
+  it('app update mid-work: switches on by itself after 10 s without a tap, only when the page says nothing is lost', async () => {
+    await open();
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    let busy = true;
+    quiet = () => !busy;
+    const w = new FakeWorker(PAGE);
+    reg.arrive(w);
+    await settle();
+    expect(api.update).toBe('app');
+    act(() => { vi.advanceTimersByTime(12_000); });
+    expect(w.sent).not.toContain('skipWaiting'); // half-entered piece, a sheet…
+    act(() => { window.dispatchEvent(new Event('pointerdown')); busy = false; vi.advanceTimersByTime(8_000); });
+    expect(w.sent).not.toContain('skipWaiting'); // the last tap was 8 s ago
+    act(() => { vi.advanceTimersByTime(4_000); });
+    expect(w.sent.filter((m) => m === 'skipWaiting')).toHaveLength(1);
+  });
+
+  it('app update mid-work: the page goes to the background — switches on at once; new data never does', async () => {
+    await open();
+    quiet = (hidden) => hidden;
+    const app = new FakeWorker(PAGE);
+    reg.arrive(app);
+    await settle();
+    const hide = () => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+    };
+    hide();
+    expect(app.sent).toContain('skipWaiting');
+    const data = new FakeWorker(NEWER);
+    reg.arrive(data);
+    await settle();
+    expect(api.update).toBe('data');
+    hide();
+    expect(data.sent).not.toContain('skipWaiting');
   });
 
   it('первая установка (страницей ещё никто не управляет) — ни плашки, ни строки', async () => {

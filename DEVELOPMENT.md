@@ -110,6 +110,13 @@ it (`ogc:info` via `MessageChannel`) and compares `DATA` with its own `meta.comm
 данные» banner with «Обновить» (Update). Same, no response (sw.js from earlier releases), or the page has no commit — only the
 app was updated: at the top of «Ещё» «Готова новая версия» (A new version is ready) with «Обновить», and if the worker was already waiting at
 page load (cold start), the page activates it itself and reloads — the item in the form is in `ogc.item`.
+Mid-work an app update also switches on by itself at a quiet moment (owner, 2026-10-15: in split screen the app is
+never cold-started or hidden, so it never updated): the page went to the background, or 10 s without a tap with no
+substat on the form, no sheet or dialog (`[role="dialog"]`), no «Вернуть» message and no focused input (App's `quiet`);
+never during a tour. New data still waits for the banner. The page asks for a new version every 30 min while visible,
+and on coming back to it.
+`sw.js` precaches with `Cache.addAll`, which rejects duplicate requests and fails the whole install — the file list
+must stay unique (`update.py` and the worker both dedupe; 2026-10-14 two shared portraits stopped every update).
 Don't change the `'skipWaiting'` string in `sw.js`: pages from earlier releases send it too.
 
 ## `src/` layout

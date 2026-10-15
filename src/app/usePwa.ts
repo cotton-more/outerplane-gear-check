@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
@@ -44,7 +44,15 @@ export function askWorker(w: ServiceWorker, ms = 1500): Promise<WorkerInfo | nul
 // - другие данные — 'data', плашка «Вышли новые данные»;
 // - те же — 'app', обновилось только приложение: «Готова новая версия» в «Ещё», а если worker ждал уже при загрузке
 //   страницы (холодный запуск) — включаем сразу, перезагрузка; недовведённая вещь — в ogc.item.
-export function usePwa(dataVersion: string | null) {
+// An app update switches on by itself at a quiet moment (owner, 2026-10-15): on the phone in split screen the app is never
+// cold-started nor hidden, so it never got updates. quiet(hidden) — the page says whether a reload loses nothing now: the
+// page went to the background, or QUIET_MS without a tap and nothing half-done (App). New versions are looked for every
+// CHECK_MS while the page is visible, not only on coming back to it.
+const CHECK_MS = 30 * 60_000;
+const QUIET_MS = 10_000;
+export function usePwa(dataVersion: string | null, quiet: (hidden: boolean) => boolean = () => false) {
+  const quietRef = useRef(quiet);
+  quietRef.current = quiet;
   const [pending, setPending] = useState<{ w: ServiceWorker; kind: UpdateKind } | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
 
@@ -54,6 +62,7 @@ export function usePwa(dataVersion: string | null) {
     let reg: ServiceWorkerRegistration | null = null;
     let alive = true;
     let asked = 0;
+    let check: ReturnType<typeof setInterval> | undefined;
     // сравниваем с открытой страницей, а не с прежним ждущим: пришло обновление приложения, поверх него — с данными,
     // новый worker вытесняет прежний — нужна плашка данных. Ответ worker'а, которого уже вытеснили, не считается
     const found = async (w: ServiceWorker, boot: boolean) => {
@@ -75,6 +84,7 @@ export function usePwa(dataVersion: string | null) {
       r.addEventListener('updatefound', () => { if (r.installing) track(r.installing); });
       // проверяем обновление каждый раз, когда возвращаешься в приложение
       document.addEventListener('visibilitychange', onVisible);
+      check = setInterval(() => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }, CHECK_MS);
     }).catch(() => { /* без service worker страница просто работает онлайн */ });
 
     let reloading = false;
@@ -86,12 +96,36 @@ export function usePwa(dataVersion: string | null) {
     window.addEventListener('appinstalled', onInstalled);
     return () => {
       alive = false;
+      clearInterval(check);
       document.removeEventListener('visibilitychange', onVisible);
       sw.removeEventListener('controllerchange', onControllerChange);
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, [dataVersion]);
+
+  // an app update waits for a quiet moment: checked on every tick and when the page goes to the background
+  useEffect(() => {
+    if (pending?.kind !== 'app') return;
+    const w = pending.w;
+    let last = Date.now(), sent = false;
+    const touch = () => { last = Date.now(); };
+    const tryNow = () => {
+      const hidden = document.visibilityState === 'hidden';
+      if (sent || !(hidden || Date.now() - last >= QUIET_MS) || !quietRef.current(hidden)) return;
+      sent = true;
+      w.postMessage('skipWaiting'); // перезагрузит onControllerChange
+    };
+    const tick = setInterval(tryNow, 2000);
+    const events = ['pointerdown', 'keydown', 'input'] as const;
+    for (const e of events) window.addEventListener(e, touch, true);
+    document.addEventListener('visibilitychange', tryNow);
+    return () => {
+      clearInterval(tick);
+      for (const e of events) window.removeEventListener(e, touch, true);
+      document.removeEventListener('visibilitychange', tryNow);
+    };
+  }, [pending]);
 
   const applyUpdate = useCallback(() => pending?.w.postMessage('skipWaiting'), [pending]);
   const install = useCallback(() => {
