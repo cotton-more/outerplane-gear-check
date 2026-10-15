@@ -30,6 +30,7 @@ idea lives now: a kept `.x` folder, or nowhere) · **Checks** (in-game checks do
 | 0206 | Boss slot and sheet — the boss as a fifth slot behind «VS» |
 | 0208 | Singularity guide teams — named pools of hero groups |
 | 0220 | Filler — a weak weapon or accessory with a suitable main goes into an empty slot |
+| 0230 | Hero list under the verdict stamp, and «Надеть в игре» — the promises «Надеть» leaves for the game |
 
 ## 0135 Crit soft cap «Крит: 45%» — CHC above the hero's need stops paying; one number N per hero
 Folders: `.x/0135-stat-targets` (IDEA, RESEARCH, PLAN, DECISIONS 1–15, JOURNAL, START-PROMPT); review `0136` (already deleted by the owner 2026-10-11, probes kept in `.x/0175-tools/crit/`). Merged: `493198b` (2026-10-11, branch `crit`, not published then; commits `cb62832` stage 1, `9ee558d` stage 2, `0d5a922` stage 3, `93cc555`/`1472b15`/`1cbea71` card+sheet redesign, `615a2c5` stage 4 docs, `d9f75ce`..`800f0e9` review fixes F1–F11). Follow-up: hero stars add CHC from transcend (`.x/0190-hero-stars`, `46161c4`/`7f4c9e1`). Code: `src/game/stat/{curve,total}.ts`, `src/features/gear/layout.ts` (`critBinds`, `critBest`, `critLoss`, `pointsIn`), `src/features/gear/pool/info.ts`, `src/features/gear/verdict.ts`, `src/features/gear/store/gearStore.ts` (`crit`, `restoreCrit`), `src/features/trade/model/{kit,world,model}.ts` (`CritGauge`, `KitKey.crit`), `src/features/worn/{WornGear,WornBudget,CritSheet,wearing}.tsx`, `update.py` (`crit_profile`, `main_values`).
@@ -589,3 +590,114 @@ layout, test X1). Owner's roster: Alice's unworn 1018 · CHC left her layout and
 **Checks.** Owner's roster probes (`probe/`): the M1 order 51 → 0 of 970; the B1 case (Epic HP% weapon, DEF 1 + HP 1)
 waits instead of «Разбирай»; D4 material over a filler 15 of 970. Bench (`scripts/bench-pool.mjs`): no measurable change
 (one verdict 5.7 → 5.8 ms). No in-game check pending.
+
+## 0230 Hero list under the verdict stamp, and «Надеть в игре» — the promises «Надеть» leaves for the game
+Folder: `.x/0230-verdict-notebook` (`IDEA.md`, `RESEARCH.md`, `DESIGN.md`, `TEXTS.md`, `PLAN.md` with the journal,
+`ADDENDUM-same-promise.md`, `HELP-DRAFT.md`, `mockup/`, `probe/`, `shots/`, `review-1/`, `review-2/`). Branch `ingame`,
+merged into `main` `fb1a000` and published 2026-10-15. Commits: stage 1 `bc4036e`, stage 2 `76c16f6`, stage 3 `a3d2f31`,
+stage 4 `206eda7`, addendum `87d31b6`, Help/Wiki `b73edef`; review 1 fixes `b503eda`, `786aa36`; review 2 fixes `aff648c`,
+`71243d4`, `38471c1`, `ef33620`. Part C of the idea (screen sizes) shipped separately as `4e4df1a`.
+Code: `heroList` / `starOf` / `heroRow` in `src/features/gear/model/heroList.ts`; `HeroList`, `HeroSingle`, `NextHeroes` in
+`src/features/gear/ui/HeroList.tsx`; `forcedBest` and `sameOf` (`promised`) in `src/features/gear/verdict.ts`; the new
+feature `src/features/ingame/` (`ingame.ts` store and selectors, `useIngame.ts`, `ui/IngameList.tsx`); `promised` in
+`putOn` / `planPut` / `wearFromPool` (`src/features/gear/pool/ops.ts`); `TryOn.via` in `src/features/tryon/tryon.ts`; the
+write hook in `useFormFlow.equipOn` (`src/screens/eval/useFormFlow.ts`); `gameSubs` and `gradeTone` moved to
+`src/features/gear/ui/pieceText.tsx`.
+Rules live in: MODEL.md §5 (superseded promise); DEVELOPMENT.md («`src/` layout»: `ingame` after `gear`, «Where things
+are», storage `ogc.ingame`); Help «Экипировка» («Надеть», «Кому даст», «Надеть в игре»); Wiki `Экипировка` / `Equipment`
+(sections «Кому даст» and «Надеть в игре»), `Как-считается-вердикт` / `How-verdicts-work`.
+Tour: tip `vs` rev 4 (text T1, anchors the list and the phone chips line); tip `ingame` rev 1 (T2, «Что нового»); tip
+`equipAll` removed with its anchor.
+
+**Why.** Owner 2026-10-15: rating pieces one by one next to the game, the owner wants to see at once what a piece gives each hero
+and by how much, then choose: wear, set aside or dismantle. The verdict named at most three heroes («Сейчас на
+персонажах» listed whoever the verdict named, not what heroes wear), threw away the per-hero gains it already computed
+for the whole roster (`res.heroes`, ~3 ms per piece), and hid the rest behind «Надеть на…» → «Кому надеть?». Probe on
+the owner's roster (77 heroes, 175 of 462 slots empty): a median piece helps 0 named heroes on screen but up to 54 heroes
+≥ 1 point; 37 % of random drops showed no hero at all. Second problem: locking and dismantling happen in the inventory
+at once, but equipping means leaving it (find the hero, find the piece, come back, filter again), so «Надеть» in the app
+ran ahead of the game with nothing to remind the player.
+**What we built.**
+- **Hero list** (stages 1–2) replaces «Сейчас на персонажах», «Надеть на…», the «Кому надеть?» sheet, the chain rows with
+  «X станет сильнее на N», the chain legend and the quiet line. Groups «Вместо надетого» / «В пустой слот» / «Отложить»
+  with headings and no common one; the group holding the stamp's hero (★) first, then replace → empty → stash; 3 rows +
+  «ещё N ▸» opening in place (`Expand`); rows sorted by gain, ★ pinned first. A row: portrait, name, ★, «+N» (or «держи» /
+  «запас»), the note «вместо N очк.» or «включит / выключит Set ×N», and a button «Надеть» / «Заменить» / «Отложить».
+  «Подробно» adds «даст» (the piece's substats coloured for the hero) and «было» (the worn piece's substats and points).
+  Name search «Другой герой — имя…» stays at the end, «Прокачка» and the chat code under it. Hero mode keeps one row
+  (`HeroSingle`).
+- **Desktop:** the page stays a 1240 column, form 600 | verdict 624; the switch «Кратко | Подробно» is the gold pill of
+  the star controls (React state, not stored). **Phone:** the card keeps stamp, title, the pick's «+N» and the big
+  button; under it `NextHeroes` («Sigma +7,4 · Maxie +6,5 · ещё 51 ▸») opens the «Вердикт» sheet, where a tap on a row
+  expands its detail in place; the sheet head is lean so the first row shows at 411 × 363.
+- **Membership** (`heroList`): gain ≥ 1 point (`THRESHOLD`); the heroes the stamp names, even below 1 point (a rank-up
+  weapon, a filler at 0); the «Отложить» heroes of today's verdict, in its order (a reserve hero appears only there). A
+  piece below a hero's bar shows what it would give if it stood (`forcedBest`, split out of the old quiet line), so
+  «Разобрать» pieces still list their heroes (D `HLNR HFTC`: Delta +2,8, Kanon +2,8, 26 heroes). A weapon or accessory
+  into an empty slot only for a hero whose build takes its main or recommends it (`fillerFits` or `fit 'rec'`).
+- **«Надеть в игре»** (stages 3–4), feature `ingame`, key `ogc.ingame` v1 `{ v, lines }`, not in the backup. A line: hero,
+  slot, record id, a snapshot for display, `off` ('lock' / 'feed'), `was` (P0's id when it stayed a reserve), `fed`
+  (other heroes' reserves the new piece's Breakthrough eats). Live = the hero still wears that record in that slot and
+  the snapshot's slot / grade / set / item / main still match (a backup import reuses ids); computed, never stored; dead
+  lines are dropped on read and write. Sections by hero in first-promise order, slots in game order; under a line N3
+  «Снятое — под замок», N4 «Снятое — в Breakthrough этой», N5 «Breakthrough этой — корм: запас Aer (сними замок)».
+  Desktop: under the form; phone: a count badge on ☰, the top row of «Ещё» (hidden at 0), a full-height sheet. A tap on
+  the line (a themed tick, shared with the batch walk) = kept: the line goes, N6 with «Вернуть» for 8 s.
+- **What writes a line** (`equipOn`): «Надеть» / «Заменить» on «Оценка» — the card, the list, name search — and hero mode
+  entered by «Оценить вещь для X» (`TryOn.via 'rate'`). Never: «Ввести» (`'enter'`), «Примерить замену» (`'replace'`),
+  the card's «Да, всё надето» / «Переодеть», trade «Сделал», batch «Записать план», «Отложить». The «Надеть» message
+  ends with N2 «— в «Надеть в игре»»; its «Вернуть» removes the line.
+- **Superseded promise** (P1 promised, then P2 wins the same slot before the game walk): P1 leaves the app (`putOn`
+  `promised`: only the slot's worn record is looked up, so a reserve can never be dropped; `features/gear` doesn't import
+  `ingame`), the message adds N8 «Прежняя вещь из «Надеть в игре» убрана — она в инвентаре, оцени её заново.», P1's `fed`
+  reserves come back to their heroes, P0 leaves the pool if it was a reserve (`was`), the new line has no «Снятое — …»
+  note. «Вернуть» undoes all of it, also after the new line was ticked (review 2 F2).
+- **Addendum — the same-piece guard covers promises:** a piece entered again that matches a worn record with a live line
+  (any grade, Epic too) is `same` with `promised: true` (`VerdictOpts.promised` from `promisedAll`; empty in a tour or on
+  the demo store; batch plans don't pass it). The verdict is counted without that record, no hero gets a button, the
+  card says S1 «Похоже, это шлем, обещанный Caren в «Надеть в игре». Если это он — ничего не делай.», «Это другой»
+  lifts it.
+- Head text V2: «По билдам не нужна: кому она годная, тем уже надето не хуже» replaces «Никого не улучшит…», which
+  contradicted a 26-row list under it.
+**Owner decisions.** Research (`RESEARCH.md` §7): **Q1** (b) the list = every hero ≥ 1 point plus the set-aside heroes;
+the stamp stays the app's advice. **Q1b** (after the sketch) every group 3 rows + «ещё N» at every size, the ★ group
+first — so the first row under the stamp is the stamp's hero. **Q2** (a) the stamp and verdict rules unchanged: armor
+into an empty slot stays list-only (0220 D7), golden unchanged. **Q3** (a)+(b) a quick one-line row and a detailed one
+with «даст» / «было». **Q4** (a) group headings only. **Q5** (b) the list is a set of *promises* written by «Надеть» and
+hero-mode «Оценить»; locking is done in the game at once, so «Отложить» writes nothing; a superseded promise just leaves
+the app. **Q6** (a) a tap = kept, the line goes; the list shows only what is owed and hides at 0. **Q7** (a) one desktop
+layout (form 600 | verdict 624, the list under the form), the phone badge + «Ещё» row + sheet. **Q8** (a) the name
+«Надеть в игре» / "Equip in game" («Блокнот» rejected). Texts H, V, N, T, S, H17 and the news line approved in
+`TEXTS.md`; T1 EN shortened to the 160-character tip limit; T1 stays as is though the phone has no «Подробно»; «Что нового»
+for T2 only. Phone sheet names aren't links to the hero card (the row toggles). Review 1: **Q1** keep the heroes line on
+the phone card under «Разобрать» (same rule as desktop); **Q2** hero mode without the chain chips; **Q3** ★ gets
+`aria-label` «выбор вердикта». Addendum (owner, after review 1): identical pieces exist, Epic especially — a promised
+piece must not be given twice; no stored «temporary» flag. Review 2: **Q1** (A) a superseded promise gives its `fed`
+reserves back; the superseded rule itself stays simple (KISS: no advice about P1, even in a chain); **Q2** «just take it
+off» — no fate note on supersede, P0 leaves the pool if still a record; **Q3** after «Примерить замену» is used up,
+hero mode works as «Оценить» (`noReplace` → `'rate'`, «Вернуть» restores `'replace'`); **Q4** (A) in rate mode every
+«Надеть» / «Заменить» writes a line, worn in the game or not (one tap clears it); **Q5** a Core Fusion move dropping X's
+lines is fine — the game never has X and its CF at once.
+**Hard parts.**
+- **Gain below the bar.** `dV` is 0 when a piece fails the hero's bar (the best layout leaves it out); without
+  `forcedBest` the junk pieces' lists were almost empty. The stamp's hero isn't always the top gain (`NCQJ MTE` names
+  Saeran +3,8 while Rin would get +9,0), hence ★ pinned first.
+- **The same-piece guard and the list** (review 1 B1): under «Оставь» the holder of a re-entered set-aside piece got
+  «Заменить» for it; stash rows under `same` are now guarded. The promised `same` guards every row, the head and the card.
+- **Supersede and undo compose** in one `backs` chain in `equipOn`: P1's fed reserves restored, P0 removed, the new
+  piece's fed reserves removed — undone in reverse after `undoPut`, then `undoLine` (which also restores the first line
+  when the second was ticked meanwhile).
+- **Messages:** the N6 tick toast waited behind the «Надеть» message and ran out unseen; now the newest wins and a hidden
+  one keeps its timer (review 2 F3). The form's «Вернуть» still waits behind both, as before.
+- **Write sources in hero mode** needed `TryOn.via`: «Ввести», «Примерить замену» and «Оценить» look the same once in
+  the mode; old stored modes without `via` write nothing.
+**Not built / dropped.** «Очистить» for the list (no approved text, nothing owed stays). A switch on the phone (a tap per
+row instead). Text S2 (no place shows it: the no-roster verdict is null, batch doesn't pass `promised`). A date in S1
+(lines store none). Advice about the superseded P1 (KISS). Moving lines with a Core Fusion switch (Q5). Re-keying a line
+when a shared record is copied on edit (accepted, rare; `ingame.ts` header). The armor filler in the stamp (Q2).
+Parked owner idea: drop «Примерить замену» altogether (rate normally, then «Убрать у X» for the old piece) — nowhere yet.
+**Checks.** Probe (`probe/heroList.md`) on the owner's backup 2026-10-14: pieces A–E give the sketch's groups and counts
+(A 18 + 36, B 17 + 25, C 1 + 13 + 1, D 1 + 25, E 2; Mene / Dianne cut by the main rule). Golden unchanged throughout;
+`task test` 2629, `task tour:check` green at the four sizes, both themes; shot sets of stages 2 and 4 and both reviews.
+N3–N5 lines in the shots were a display fixture (the backup had no such piece); unit tests cover real data for each.
+Pending in the game: walk a real «Надеть в игре» list (lock / Breakthrough notes against what the game shows).
