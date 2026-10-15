@@ -62,7 +62,7 @@ With a roster every hero is looked at separately, and the verdict depends not on
   worth less, and nothing above N (100 by default; set it on the card). Example: at 80% crit six CHC segments in second
   place are worth 3.3 points instead of 4.8, so CHC 2 + CHD 4 (4.2) wins. The "good piece" bar above still counts plain
   points ([Equipment](Equipment#worn)).
-- Then comes the outcome per hero: "Equip", "Keep for…", material, "Maybe", "Dismantle" ([Equipment](Equipment#the-stamp)).
+- Then comes the outcome per hero: "Equip", "Keep for…", material, "Maybe", "Dismantle" ([Equipment](Equipment#the-stamp)); under the stamp, the list of heroes it gives at least 1 point ([Equipment](Equipment#who-it-helps-the-hero-list-under-the-stamp)).
 
 ## Flat ATK/DEF/HP vs %
 

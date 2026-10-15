@@ -40,15 +40,10 @@ needed for its Breakthrough. **"T?"** shows on old records with no Breakthrough 
 **You rate a new piece** — from the inventory: a fresh drop or one taken off a hero. The piece is compared as it is — by
 the segments that are lit and "T4": Reforges still ahead don't count.
 
-Only from a verdict: enter a piece as usual, open the details and press **"Equip on…"** — or the button under the card
-on a phone. **"Equip" records the piece as worn in its slot.** A verdict offers it to the heroes who gain the most
-points. Another hero — search by name in "Equip on whom?" or tap "Rate a piece for Caren": there "Equip" is on every
-piece, even a useless one — that's how you record what the hero wears in the game. "Equip on whom?" has a row per
-roster hero saying what happens: "Equip — +4.2 pts", "Replace helmet — +1.8 pts · turns on Speed ×2". Name search covers
-all characters, not just the roster — except those replaced by Core Fusion.
+Only from a verdict: enter a piece as usual and press **"Equip"** on a hero in the list under the stamp — or the button under the card on a phone. **"Equip" records the piece as worn in its slot** and adds it to **"Equip in game"** (below). The list is every roster hero the piece makes at least 1 point stronger, in three groups: "Instead of worn", "Into an empty slot" and "Set aside"; each shows three rows, biggest gain first, and "N more ▸" opens the rest. ★ is who the verdict picks. A row has "+4.2", what changes ("instead of 2.2 pts", "turns on Speed ×2") and a button — "Equip", "Replace" or "Set aside"; "Detailed" (on a computer) adds what the piece gives the hero and what was there. Another hero — search by name under the list, all characters, not just the roster, except those replaced by Core Fusion — or tap "Rate a piece for Caren": there "Equip" is on every piece, even a useless one — that's how you record what the hero wears in the game.
 
-Under the verdict card: **"Equip on Caren"** or **"Replace Caren's helmet"**, and **"or — Rin"** when someone else
-gains too. If other pieces of the hero's layout change with it (the new piece completes a set), the verdict names
+Under the verdict card: **"Equip on Caren"** or **"Replace Caren's helmet"**, and **the line of heroes** ("Rin +3.1 · 4 more ▸")
+when someone else gains too: tap it for the whole list. If other pieces of the hero's layout change with it (the new piece completes a set), the verdict names
 them: "Also put on from Caren's pieces: …".
 
 **"Equip" records the piece as worn and removes what the hero no longer needs** — a piece the new layout pushed out
@@ -78,7 +73,7 @@ A check for one character. It starts from the character card: **"Rate a piece fo
 tab, **"Enter"** on an empty slot of the Worn tab (the slot goes onto the form), **"Try a replacement"** on a piece
 (the slot and set go onto the form) — they turn on the same mode.
 
-Above the form — the **"Only for · Caren ✕"** strip. While it's there: the card line, "On your characters now" and
+Above the form — the **"Only for · Caren ✕"** strip. While it's there: the card line, the hero list and
 "Equip" are only about Caren; the stamp is shared, over the whole roster. "Next" keeps the mode; ✕ — everyone again.
 The title speaks about Caren: "equip on Caren", "better than on Caren", "keep for Caren", "Caren already has as good" or
 "weak for Caren" — and the "Equip on Caren" button stays even on a useless piece: tap it if Caren wears it in the game. If the slot already has a worn piece, it says "Replace Caren's
@@ -208,20 +203,35 @@ slot. A pinned hero's order in a trade is one: the pin ([Trading gear](Trading-g
 set with the same chain stays, the pin moves by itself; if it drops the set, the app unpins it and tells you.
 Removing the hero from the roster unpins it (the message has Undo).
 
-## "On your characters now" in the verdict
+## "Who it helps": the hero list under the stamp
 
-A row per roster hero who gains from the piece — the biggest gain first, up to three heroes.
+Every roster hero the piece makes at least 1 point stronger, plus those the verdict offers "Set aside". Three groups — "Instead of
+worn", "Into an empty slot", "Set aside"; the group with the ★ (the verdict's pick) comes first. A group shows its three biggest
+gains, "N more ▸" opens the rest.
 
-- **+N pts** — how much stronger the hero gets with the piece; **turns on / turns off** — a set bonus;
-- **Equip** / **Replace** — as under the card; "Replace" when the slot already has a worn piece;
-- for a weapon or accessory the **passive matters more than substats**: recommended against not recommended is better,
-  stopgap against recommended is worse (rank decides before points).
+- **+N** — how much stronger the hero gets with the piece; **instead of N pts** — what is worn now; **turns on / turns off** — a set
+  bonus; in "Set aside" **keep** or **reserve** instead of a number;
+- **Equip** / **Replace** / **Set aside** — the button on the row;
+- **Detailed** (on a computer; on a phone tap the row) — what the piece gives the hero: substats green if they count, yellow half,
+  grey if not; and what was in the slot;
+- for a weapon or accessory the **passive matters more than substats**: recommended against not recommended is better, stopgap
+  against recommended is worse (rank decides before points).
 
-A piece that is **weak** for a hero but would be better than what's worn is never offered to wear. A quiet line says
-whom it would help most and what to look for: "Caren has no helmet — this one is weak; a good one has ATK and CHC."
-Equipping it anyway is your call ("Rate a piece for Caren" → "Equip").
+The stamp is the app's advice; the list is what else you could do. A weak piece that beats what's worn stays "Fodder" or
+"Dismantle", but a hero it makes at least 1 point stronger is still in the list with a button — equipping it is your call.
 
-### The stamp
+## "Equip in game"
+
+"Equip" records the piece at once, and in the game you put it on later — this is what's left, hero by hero. A line is the slot, the
+piece and its substats as the game shows them; under it, when needed: "Taken off — lock it" (the old piece stays as the hero's
+reserve), "Taken off — feed it to this one's Breakthrough" (an old Epic is the new piece's material), "Breakthrough for this one —
+feed: Aer's reserve (unlock it)". Done in the game — tap the line: it goes, "Undo" brings it back. A line also goes by itself when
+the app no longer has the piece worn on that hero (a trade, a re-dress, "Remove from…"). A new "Equip" on the same slot replaces
+the line, and the earlier piece leaves the app — it is in your inventory, rate it again. The list is under the form (on a phone —
+More → "Equip in game", a count on ☰); with nothing left it isn't shown. "Set aside" and "Enter" write nothing there: you lock in the game at once. Entered the same piece again — the verdict recognises
+it ("Looks like the … promised to … in "Equip in game"") and gives no buttons; "It's a different one" if it really is a second copy.
+
+## The stamp
 
 The stamp is always about **the piece being rated**:
 
@@ -257,8 +267,8 @@ Epsilon.
   Eternal?": **all of Eternal's gear moves to Core Fusion Eternal**, along with what's marked worn and its stars, and Eternal turns
   inactive. The same window comes up for "Equip on Core Fusion Eternal" and "Rate a piece for Core Fusion Eternal".
 - **Inactive Eternal** keeps its place in the list, Core Fusion Eternal right after it (whichever of the pair is in the
-  roster), marked "replaced by Core Fusion Eternal": the verdict doesn't consider Eternal, and Eternal isn't in "Equip
-  on whom?" or in rating for a character.
+  roster), marked "replaced by Core Fusion Eternal": the verdict doesn't consider Eternal, and Eternal isn't in the hero
+  list or in rating for a character.
 - **The star on Eternal** — a window "Switch back to Eternal?": Core Fusion Eternal leaves the roster, Core Fusion
   Eternal's gear moves to Eternal.
 - After "Yes" — a message with "Undo"; "Cancel" changes nothing. The stars and the crit number go with the pieces; the pinned set is
