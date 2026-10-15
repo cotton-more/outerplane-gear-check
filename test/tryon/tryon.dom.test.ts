@@ -437,7 +437,7 @@ describe('replace — на одну введённую вещь', () => {
 
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
-    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'rate' });
   });
 
   it('«Следующий», хороший шлем другого билда: «Надеть» убирает только вытесненный, p1 из прежнего replace на месте', async () => {
@@ -461,7 +461,7 @@ describe('replace — на одну введённую вещь', () => {
     await tryReplace();
 
     await click($('.slot[aria-label="Gloves"]'));
-    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'rate' });
     await click($('.slot[aria-label="Helmet"]'));
     await enter(MID.subs);
 
@@ -491,7 +491,7 @@ describe('replace — на одну введённую вещь', () => {
     await click($('.toast:not(.gear-toast) button'));
 
     expect(stored('state').slot).toBe('gloves');
-    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'rate' });
   });
 
   it('«Заменить» снимает replace; «Вернуть» — p1 на месте и та же кнопка «Заменить»', async () => {
@@ -500,7 +500,7 @@ describe('replace — на одну введённую вещь', () => {
 
     await click($('.vc-equip'));
     expect(stored('gear').pools[caren.id]).toEqual(['p2']);
-    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'rate' });
 
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored('gear').pools[caren.id]).toEqual(['p1']);

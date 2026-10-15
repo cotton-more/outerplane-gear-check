@@ -96,6 +96,32 @@ describe('what writes a line', () => {
     expect(stored('ingame')).toBeNull();
   });
 
+  it('after «Примерить замену» is used up the mode is «Оценить вещь для X»: the next «Надеть» writes a line', async () => {
+    await mount(onCard, NEW);
+    await toPool();
+    await click(byText('.pool-row', 'Speed Set'));
+    await click(byText('.piece-act button', 'Try a replacement'));
+    await click($('.vc-equip'));
+    expect(stored('ingame')).toBeNull();
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'rate' });
+    await click(byText('.pick', 'Pick set'));
+    await click($(`.set[data-tour-item="Speed"]`));
+    await enter({ 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 });
+    await click($('.vc-equip'));
+    expect(lines().map((l) => l.hero)).toEqual([caren.id]); // one line for the next piece
+  });
+
+  it('«Оценить вещь для Caren», a weak piece over her worn one: «Заменить» writes a line', async () => {
+    const worn = { ...P1, id: 'p1', yellow: { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }, lit: { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 } };
+    const gear = { v: 3, seq: 1, pieces: { p1: worn }, pools: { [caren.id]: ['p1'] }, worn: { [caren.id]: { helmet: 'p1' } } };
+    await mount(onCard, { setId: speed, subs: { HP: 1, DEF: 1, ATK: 1, 'RES%': 1 } }, { gear });
+    await toPool();
+    await click($('.pool-rate'));
+    await click($('.vc-equip'));
+    expect(stored('gear').worn[caren.id].helmet).not.toBe('p1');
+    expect(lines().map((l) => [l.hero, l.slot])).toEqual([[caren.id, 'helmet']]);
+  });
+
   it('hero mode from «Ввести» on an empty slot — no line', async () => {
     await mount({ ...onCard, slot: 'gloves' }, {});
     await click(byText('.bgear-empty', 'Armor')?.querySelector<HTMLElement>('.bgear-act button:last-child'));

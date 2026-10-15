@@ -56,7 +56,7 @@ export function useHeroMode({ idx, gear, form, demoTry, touring, off, narrow, fu
   // форме — та же кнопка «Заменить». Режим за эти секунды сменили (другой герой, своя замена, ✕) — не трогаем
   const backReplace = (charId: string, rep: string | null) => {
     const cur = tryNow.current;
-    if (rep && cur?.charId === charId && !cur.replace) tryOn.set({ ...cur, replace: rep });
+    if (rep && cur?.charId === charId && !cur.replace) tryOn.set({ ...cur, replace: rep, via: 'replace' }); // noReplace made it 'rate'
   };
   // правка в карточке вещи: общую запись скопировали (новый id у этого героя), а это запись replace его режима — replace
   // идёт за копией (иначе «Заменить» пропадёт)

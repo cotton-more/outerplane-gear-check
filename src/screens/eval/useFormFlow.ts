@@ -101,10 +101,11 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, via, 
     const rep = hero?.c.id === c.id ? replace : null;
     const base = sw?.st ?? gear.store;
     // «Надеть в игре» (features/ingame): a new piece from the inventory is a promise — the card, the hero list, name search,
-    // hero mode from «Оценить вещь для X». Hero mode from «Ввести» or «Примерить замену» and «Носит в игре — запишем как
-    // надетое» enter what the game already has on: no line. Not in a tour. prev — the slot's live promise: the new piece
+    // hero mode in rate mode («Оценить вещь для X», also after «Примерить замену» is used up): every «Надеть» /
+    // «Заменить» is a line, «Носит в игре» or not (already worn in the game — one tap clears it). Hero mode from «Ввести»
+    // or «Примерить замену» itself enters what the game already has on: no line. Not in a tour. prev — the slot's live promise: the new piece
     // supersedes it, and its record leaves the pool (putOn promised)
-    const promise = !touring && (!hero || (via === 'rate' && !heroVs?.asWorn));
+    const promise = !touring && (!hero || via === 'rate');
     const promised = promise ? promisedOf(ingame.value, base, c.id) : null;
     const prev = promise ? lineAt(ingame.value, base, c.id, input.slot) : null;
     // it looks like the piece set aside for this very hero (guard): «Надеть» wears that record, no second one

@@ -26,10 +26,11 @@ import { setName } from '@/game/set/setName';
 export type TryOnVia = 'enter' | 'replace' | 'rate';
 export const TRYON_VIA: readonly TryOnVia[] = ['enter', 'replace', 'rate'];
 export interface TryOn { charId: string; replace?: string; via?: TryOnVia }
-// тот же режим без replace (на одну вещь — App снимает его)
+// тот же режим без replace (на одну вещь — App снимает его). The replacement is used up: a 'replace' mode becomes 'rate'
+// («Оценить вещь для X»), so a later «Надеть» is a promise again (HISTORY.md 0230 review 2, Q3). 'enter' stays
 export function noReplace(t: TryOn): TryOn {
   const { replace, ...rest } = t;
-  return rest;
+  return rest.via === 'replace' ? { ...rest, via: 'rate' } : rest;
 }
 export interface Hero { c: Char }
 
