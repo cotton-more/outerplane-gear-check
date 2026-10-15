@@ -2306,7 +2306,9 @@ def build_pwa(site: Path, data: dict, fragment_for, warn: Warnings, refresh: boo
     (site / "index.html").write_text(page, encoding="utf-8")
     (site / ".nojekyll").write_text("")
 
-    files = ["./", "index.html", "manifest.webmanifest"] + [f"icons/{f.name}" for f in sorted(icons.glob("*.png"))] + sorted(data["img"].values())
+    # set: two image keys may share a file (a hero's face and a boss portrait), and Cache.addAll rejects duplicate requests —
+    # the new service worker would never install, and nobody gets the update (2026-10-14: FI_2000052, FI_2000099)
+    files = ["./", "index.html", "manifest.webmanifest"] + [f"icons/{f.name}" for f in sorted(icons.glob("*.png"))] + sorted(set(data["img"].values()))
     digest = hashlib.sha1()
     for rel in files[1:]:
         digest.update(rel.encode())
