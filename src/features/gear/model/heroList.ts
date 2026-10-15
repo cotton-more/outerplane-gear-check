@@ -3,7 +3,7 @@
 // слот», «Отложить»; the group holding the hero the stamp names (★) goes first, then replace → empty → stash. Each group shows
 // LIST_CAP rows, the rest wait in `more` («ещё N ▸»). The stamp itself stays the app's advice (features/gear/verdict): this list
 // only shows what else the player could do. Hero mode keeps its single row (screens/eval useVerdictModel heroVs); name search
-// builds its rows with heroRow(…, { any: true }), as the «Кому надеть?» sheet did. Data only: the texts are the UI's.
+// builds its rows with heroRow(…, { any: true }), as the old «who to wear on» sheet did. Data only: the texts are the UI's.
 import { isArmor } from '@/game/data';
 import type { Ctx } from '@/game/context';
 import { scoreBuild, type Part } from '@/game/build/score';
@@ -28,7 +28,7 @@ export interface Was { piece: Piece; pts: number; marks: Part[]; worn: boolean }
 export interface HeroRow {
   vs: CharVs;                      // the hero, the outcome (vs.h), the piece's substat marks for him (vs.chain.parts), buttons
   gain: number;                    // points the hero gains: dV; a piece below his bar — what it would give if it stood
-                                   // (forcedBest, the quiet line's computation)
+                                   // (forcedBest)
   star: boolean;                   // the hero the stamp names
   action: ListAction | null;       // the button; null — the same-piece guard: it looks like a piece set aside for another hero
   stash: 'keep' | 'reserve' | null; // a «Отложить» row: «держи» / «запас» instead of a number
@@ -86,23 +86,22 @@ const ORDER: ListKind[] = ['replace', 'empty', 'stash'];
 // The list for the verdict (normal mode only). viewOf — the pool view «Надеть» acts on for that hero (useVerdictModel viewOf:
 // after the Core Fusion switch for X's CF). Membership: gain ≥ THRESHOLD; the heroes the stamp names (the first row under the
 // stamp is the stamp's hero even at a smaller gain — a rank-up weapon, a filler at 0 points); the «Отложить» heroes of today's
-// verdict (an «Оставь» named hero, a reserve), unless the piece looks like one already set aside (the same-piece guard:
-// those rows lose their buttons, and there is no «Отложить»)
+// verdict (an «Оставь» named hero, a reserve); when the piece looks like one already set aside (the same-piece guard) the
+// rows lose their buttons: the «Оставь» rows keep their «держи» pill, the other heroes' rows too; there is no reserve row
+// and no «Отложить»; only the holder keeps «Заменить» on a wear-kind row (it wears that very record)
 export function heroList(ctx: Ctx, viewOf: (charId: string) => PoolView, item: ItemInput, res: Result | null): HeroGroup[] {
   if (!res) return [];
   const same = res.same;
   const star = starOf(res);
   const stash = new Map<string, 'keep' | 'reserve'>();
-  if (!same) {
-    if (res.kind === 'keep') for (const h of res.named) stash.set(h.c.id, 'keep');
-    if (res.kind === 'material' && res.sub === 'reserve') for (const c of res.reserve) if (!stash.has(c.id)) stash.set(c.id, 'reserve');
-  }
+  if (res.kind === 'keep') for (const h of res.named) stash.set(h.c.id, 'keep');
+  if (!same && res.kind === 'material' && res.sub === 'reserve') for (const c of res.reserve) if (!stash.has(c.id)) stash.set(c.id, 'reserve');
   const named = new Set(res.named.map((h) => h.c.id));
   const byKind: Record<ListKind, HeroRow[]> = { replace: [], empty: [], stash: [] };
   for (const h of res.heroes) {
     const id = h.c.id;
     const s = stash.get(id);
-    const row = heroRow(ctx, viewOf(id), id, item, { h, stash: s, star: id === star, guarded: !!same && same.c.id !== id });
+    const row = heroRow(ctx, viewOf(id), id, item, { h, stash: s, star: id === star, guarded: !!same && (same.c.id !== id || !!s) });
     if (!row) continue;
     if (s) { byKind.stash.push(row); continue; }
     if (!named.has(id) && (milli(row.gain) < THRESHOLD || (h.slotEmpty && !mainFits(ctx, h, item)))) continue;

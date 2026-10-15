@@ -52,13 +52,13 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
   const idx = useIndex();
   const c = row.vs.c;
   const notes: string[] = [];
-  if (row.was) notes.push(t.fit.instead(t.fit.pts(row.was.pts)));
+  if (row.was && !row.stash) notes.push(t.fit.instead(t.fit.pts(row.was.pts)));
   if (row.parts.on.length) notes.push(t.fit.rowOn(row.parts.on.map((p) => partText(idx, p)).join(', ')));
   if (row.parts.off.length) notes.push(t.fit.rowOff(row.parts.off.map((p) => partText(idx, p)).join(', ')));
   const act = row.action === 'stash' ? onStash : row.action ? onEquip : undefined;
   const btn = row.action === 'stash' ? { icon: 'archive' as const, text: t.fit.btnStash } : row.action === 'replace' ? { icon: 'replace' as const, text: t.fit.btnReplace } : { icon: 'check' as const, text: t.fit.btnEquip };
   const pill = row.stash ? <span className="vs fill">{row.stash === 'keep' ? t.fit.chipKeep : t.fit.chipReserve}</span>
-    : namedGain(row.gain) ? <span className="vs up"><Icon name="trending-up" />{t.fit.chipGain(t.fit.pts(row.gain))}</span> : null;
+    : namedGain(row.gain) ? <span className="vs up"><Icon name="trending-up" />+{t.fit.pts(row.gain)}</span> : null;
   const button = act && row.action && (
     <button type="button" className="btn vs-act hl-btn" onClick={() => act(c)} {...(row.action === 'stash' ? tour('stash') : {})}><Icon name={btn.icon} />{btn.text}</button>
   );

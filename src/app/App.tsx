@@ -93,7 +93,7 @@ export function App() {
   // значки из игры или свои (Ещё → Настройки); кто выбрал сам, остаётся при своём, без выбора — из игры
   const [gameIcons, setGameIcons] = useState(() => storage.get('gameIcons', true));
   const changeIcons = (game: boolean) => { storage.set('gameIcons', game); setGameIcons(game); };
-  // экипировка: что надето в билдах; сравнение с ней — раздел «Сейчас на персонажах» в подробностях вердикта.
+  // экипировка: что надето в билдах; сравнение с ней — список героев (HeroList) под вердиктом.
   // Вердикт по ростеру — «статы + сеты» (features/gear/verdict): «Надень», «Оставь», материал Breakthrough, запас
   const realGear = useGear(idx, !touring);
   // тур «Экипировка» — на примере (src/tour/gear.ts): своя экипировка и свой режим героя в памяти, записи игрока не трогаются.
@@ -103,7 +103,7 @@ export function App() {
     ? { store: demo.store, set: (st: GearStore) => setDemo((d) => d && { ...d, store: st }), newer: false }
     : touring ? { ...realGear, set: () => {} } : realGear), [demo, realGear, touring]);
   const demoTry = demo ? { value: demo.tryOn, set: (v: TryOn | null) => setDemo((d) => d && { ...d, tryOn: v }) } : null;
-  // Core Fusion (features/gear/model/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в «Кому надеть?» и не герой режима «для героя»
+  // Core Fusion (features/gear/model/fusion): есть CF — X неактивен (X → CF): не кандидат вердикта, не в списке героев и не герой режима «для героя»
   const off = useMemo(() => replacedX(idx, roster, gear.store.pools), [idx, roster, gear.store.pools]);
   const ctx = useMemo(() => makeCtx(idx, s.settings, roster, t, off, gear.store.stars ?? NO_STARS, gear.store.lv ?? NO_LV),
     [idx, s.settings, roster, t, off, gear.store.stars, gear.store.lv]);

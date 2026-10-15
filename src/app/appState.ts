@@ -39,7 +39,7 @@ export function reducer(s: AppState, a: Action): AppState {
       // вещь на форму (код гильдии, «Вернуть», обучение) — и сразу к оценке
       return { ...formReducer(s, a), tab: 'eval' };
     case 'openChar': {
-      // персонаж из вердикта, «Сейчас на персонажах», адреса #slug: карточка открывается всегда
+      // персонаж из вердикта, список героев под вердиктом, адреса #slug: карточка открывается всегда
       const next: AppState = { ...s, tab: 'chars', charId: a.id };
       if (a.reveal === 'keep') return next;
       return { ...next, cel: '', ccl: '', cq: a.reveal === 'filters+name' ? a.name ?? '' : '', cMode: 'all' };

@@ -1,5 +1,5 @@
 // Чип героя по вещи с формы («статы + сеты»): «▲ +2,5 очк.» — она ему «Надень», «держи» — «Оставь»; подпись кнопки
-// «Надеть на X» / «Заменить шлем X». Карточка вердикта, «Сейчас на персонажах», «Кому надеть?».
+// «Надеть на X» / «Заменить шлем X». Карточка вердикта и режим героя (HeroSingle).
 import { useT, type Texts } from '@/i18n';
 import type { CharVs } from '@/features/gear/model/poolVs';
 import { namedGain } from '@/features/gear/model/vs';

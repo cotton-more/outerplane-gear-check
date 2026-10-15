@@ -1,5 +1,5 @@
 // Кнопка «Надеть на X» / «Заменить шлем X» — то, что сделает «Надеть» (poolVs replaces); под карточкой вердикта и в
-// «Сейчас на персонажах». good — исход держит штамп (вещь герою нужна): кнопка выделена. place — класс места.
+// списке героев (HeroList). good — исход держит штамп (вещь герою нужна): кнопка выделена. place — класс места.
 import { useT } from '@/i18n';
 import type { CharVs } from '@/features/gear/model/poolVs';
 import { Icon } from '@/game/icons/Img';

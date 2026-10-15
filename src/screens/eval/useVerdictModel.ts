@@ -106,7 +106,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const same = res?.same ?? null;
   const quietRow = (x: CharVs): CharVs => ({ ...x, useful: false, stash: false });
   const verdict = useMemo(() => (res && raw.v !== 'idle' ? fromResult(ctx, raw, res, input) : raw), [ctx, raw, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  // «Сейчас на персонажах»: герои, которых назвал вердикт (до трёх); в режиме героя — одна строка героя: «Надеть на X»
+  // режим героя — одна строка героя: «Надеть на X»
   // есть всегда («Надето»: ввод надетого в игре), с «Примерить замену» — «Заменить»
   const heroVs = useMemo(() => {
     if (!hero) return null;

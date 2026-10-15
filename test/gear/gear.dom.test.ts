@@ -79,7 +79,7 @@ describe('«Надеть» и «Вернуть»', () => {
   it('строка Caren (вещей нет): «+6.6 pts», «Equip» — вещь у неё, «Вернуть» — как было', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW);
     await click($('.vcard'));
-    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toBe('+6.6 pts');
+    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toBe('+6.6');
     expect(hlBtn('Caren')?.textContent).toBe('Equip');
     await click(hlBtn('Caren'));
 
@@ -453,7 +453,7 @@ describe('«Кому надеть?»', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([WEAK], { [caren.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
     await click($('.vcard'));
 
-    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toBe('+2 pts');
+    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toBe('+2');
     expect(hlBtn('Caren')?.textContent).toBe('Replace');
     expect($$('.hl-row')).toHaveLength(1);
     // the old sheet's «show also not-by-build» toggle and item header are gone with the sheet
@@ -462,7 +462,7 @@ describe('«Кому надеть?»', () => {
     await hlFind('kap');
     expect(hlRow('Kappa')).toBeTruthy();
     expect(hlBtn('Kappa')?.textContent).toBe('Equip');
-    expect(hlRow('Kappa')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect(hlRow('Kappa')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+$/);
     // a hero whose builds don't want Speed Set: not in the list, but a name search is an explicit choice (TEXTS 23)
     const noSpeed = D.chars.find((c) => c.builds.length && !c.builds.some((b) => b.sets.flat().some((p) => p.set === speed)))!;
     await hlFind(noSpeed.name.toLowerCase());
@@ -513,7 +513,7 @@ describe('«Кому надеть?»', () => {
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: speed, subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }, { worn: allWorn(pcs) }) });
     await click($('.vcard'));
     expect(hlBtn('Caren')?.textContent).toBe('Replace');
-    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+$/);
     expect(hlRow('Caren')?.querySelector('.hl-note')?.textContent).toMatch(/turns on Speed ×4/);
   });
 
@@ -523,7 +523,7 @@ describe('«Кому надеть?»', () => {
     await mount({ slot: 'gloves', grade: 'unique' }, { setId: speed, subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }, { worn: allWorn(pcs) }) });
     await click($('.vcard'));
     expect(hlBtn('Caren')?.textContent).toBe('Replace');
-    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect(hlRow('Caren')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+$/);
     expect(hlRow('Caren')?.querySelector('.hl-note')?.textContent).not.toMatch(/turns on/);
   });
 
@@ -1173,7 +1173,7 @@ describe('«По статам» у каждого героя (находка 28)
     await click($('.vcard'));
     await hlFind('demiurge drakhan');
     const row = hlRow(drakhan.name)!;
-    expect(row.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect(row.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+$/);
     expect(row.querySelector('.hl-btn')?.textContent).toBe('Equip');
     await click(row.querySelector<HTMLElement>('.hl-btn'));
     expect(stored().pools[drakhan.id]).toHaveLength(1);
@@ -1206,7 +1206,7 @@ describe('вердикт «статы + сеты»', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, RIN_GOOD, { roster: [rin.id, valentine.id, delta.id, caren.id] });
     expect($('.vcard .vc-title')?.textContent).toBe('equip on Rin');
     await click($('.vcard'));
-    expect(rows()).toEqual([['Rin', '+3 pts'], ['Valentine', '+3 pts'], ['Delta', '+2.5 pts']]);
+    expect(rows()).toEqual([['Rin', '+3'], ['Valentine', '+3'], ['Delta', '+2.5']]);
     expect($$('.hl-btn').map((b) => b.textContent)).toEqual(['Equip', 'Equip', 'Equip']);
     expect($('.v-equip')?.textContent).toBe('Equip on Rin'); // the head button: the stamp's hero
   });
@@ -1361,7 +1361,7 @@ describe('вердикт «статы + сеты»', () => {
     // the quiet line under the verdict is gone: the weak piece is a row of the list with its gain over what Rin wears
     await click($('.vcard'));
     expect($('.vc-note')).toBeNull();
-    expect(hlRow('Rin')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect(hlRow('Rin')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+$/);
     expect(hlRow('Rin')?.querySelector('.hl-note')?.textContent).toMatch(/^instead of [\d.]+ pts$/);
   });
 

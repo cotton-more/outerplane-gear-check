@@ -167,6 +167,17 @@ describe('heroList: «Отложить»', () => {
     const rows = gs.flatMap((g) => [...g.rows, ...g.more]);
     expect(rows.map((r) => [r.vs.c.name, r.action])).toEqual([['Caren', 'replace'], ['Aer', null], ['Rin', null]]);
   });
+
+  // the holder of a piece that is «Оставь» for them: the stamp says keep, so no button may swap their worn piece for it
+  it('the same-piece guard + «Оставь»: one «держи» row, no button', () => {
+    const ah = mk('ah', 'helmet', 'Attack', { 'DEF%': 6, CHC: 6, CHD: 2, SPD: 2 });
+    const w = world(['Caren'], { Caren: [...cDefs(), { ...ah, id: 'ah0' }] }, { Caren: ['cH', 'cA', 'cG', 'cS'] });
+    expect(w.res(ah)).toMatchObject({ kind: 'keep', same: { c: { name: 'Caren' } } });
+    const gs = w.list(ah);
+    expect(kinds(gs)).toEqual(['stash']);
+    expect(gs[0].rows).toHaveLength(1);
+    expect(gs[0].rows[0]).toMatchObject({ stash: 'keep', action: null, star: true });
+  });
 });
 
 describe('heroRow: name search', () => {

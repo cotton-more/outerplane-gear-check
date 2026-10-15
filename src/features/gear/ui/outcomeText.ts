@@ -1,5 +1,5 @@
 // Слова вердикта «статы + сеты» (stat-sets TEXTS.md): штамп, заголовок и строки по исходу вещи (features/gear/verdict) —
-// для панели вердикта, карточки и «Сейчас на персонажах». Штамп — про оцениваемую вещь (PLAN Д2).
+// для панели вердикта, карточки и списка героев (HeroList). Штамп — про оцениваемую вещь (PLAN Д2).
 import { isArmor, type Index } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import type { Texts } from '@/i18n';
@@ -51,7 +51,7 @@ export function heroLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, lab
 }
 
 // штамп, заголовок и строки по исходу. «Надень» и «Оставь» — без строк: что даёт каждому названному герою, говорит
-// «Сейчас на персонажах» (PLAN Д3). «Спорно» и «Разобрать» — в useVerdictModel, где есть прежний вердикт по порогам
+// списка героев (PLAN Д3). «Спорно» и «Разобрать» — в useVerdictModel, где есть прежний вердикт по порогам
 export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput, label: Label): { v: VerdictKind; title: string; lines: string[] } | null {
   const F = t.fit;
   const h = r.named[0];

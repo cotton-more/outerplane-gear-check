@@ -293,7 +293,7 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     await click(row.querySelector<HTMLElement>('.hl-btn'));
     await click(askBtn('Yes, Core Fusion Eternal'));
     expect(label).toBe('Equip');
-    expect(gain).toMatch(/^\+[\d.]+ pts$/);
+    expect(gain).toMatch(/^\+[\d.]+$/);
     expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\./);
   });
 });

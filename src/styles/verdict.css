@@ -128,7 +128,6 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .vs-h .face { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--surface-3); }
 .vs-h .nm { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-width: 0; }
 .vs-h .nm button { border: 0; background: none; padding: 0; font: inherit; color: var(--ink); }
-.vs-h .bn { font-size: 12px; color: var(--ink-3); }
 .vs { display: inline-flex; align-items: center; gap: 4px; font: 700 11.5px/1 var(--font-mono); padding: 4px 6px; border-radius: 5px; white-space: nowrap; border: 1px solid transparent; }
 .vs.up { background: var(--keep-soft); color: var(--keep); }
 .vs.down, .vs.breaks { background: var(--junk-soft); color: var(--junk); }
@@ -196,8 +195,7 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 /* «ещё N ▸»: the shared Expand, as a quiet link under the rows; its own arrow hidden (the text has one) */
 .hl-more { padding: 0 12px 8px; }
 .hl-more .xp { border: 0; background: none; }
-.hl-more .xp-h { min-height: 32px; justify-content: center; padding: 0; font-size: 12.5px; color: var(--accent); }
-.hl-more .xp-h { display: flex; }
+.hl-more .xp-h { display: flex; min-height: 32px; justify-content: center; padding: 0; font-size: 12.5px; color: var(--accent); }
 .hl-more .xp-c { display: none; }
 .hl-more .xp-b { padding: 0; }
 .hl-more .hl-list { padding: 0; }
