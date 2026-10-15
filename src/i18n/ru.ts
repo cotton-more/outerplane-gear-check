@@ -1245,7 +1245,7 @@ export const ru = {
       teamTrade: 'команда: обмен вещами для команды',
       heroStars: 'уровень героя у звёзд: 100 или 120 для каждого',
       trade: 'обмен: обход с галочками, замены и парковка',
-      ingame: 'Надеть в игре: что осталось надеть, по героям', // not in TEXTS.md: from T2, to approve
+      ingame: 'надеть в игре: что осталось надеть, по героям',
     },
     newsStrip: (first: string, more: number) => `Новое: ${first}${more ? ` и ещё ${more}` : ''}.`,
     newsShow: 'Показать',

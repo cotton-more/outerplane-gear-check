@@ -1066,7 +1066,7 @@ export const en: Texts = {
       teamTrade: 'team: the team trade',
       heroStars: 'hero level by the stars: 100 or 120 for each',
       trade: 'trade: a walk with ticks, replacements and parking',
-      ingame: 'equip in game: what is left to put on, hero by hero', // not in TEXTS.md: from T2, to approve
+      ingame: 'equip in game: what’s left to put on, hero by hero',
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',
