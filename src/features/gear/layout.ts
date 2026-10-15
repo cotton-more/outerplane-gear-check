@@ -4,6 +4,10 @@
 // (по вещи или пусто на слот), максимум V.
 import { isArmor } from '@/game/data';
 import type { ArmorSlot, GearKind, SlotId } from '@/game/data/types';
+import { gearList } from '@/game/build/builds';
+import type { Char } from '@/game/data/types';
+import type { Ctx } from '@/game/context';
+import type { ItemInput } from '@/game/item/item';
 import { pointsOf, subWeightOn } from '@/game/build/points';
 import type { Profile } from '@/game/build/profile';
 import { scoreBuild, tempOk } from '@/game/build/score';
@@ -69,8 +73,17 @@ export function gearRank(P: Profile, p: Piece): Fit {
   return r;
 }
 
+// What a filler needs of the item, substats aside (HISTORY.md 0220): stage «Развитие» (D5), and a build of the hero asks for
+// its main in that slot (`fit`), or lists its item — a Legendary whose main the builds don't take still brings the passive
+// they want (owner 2026-10-15, D11: Saint's Ring with CDMG RED% for Primine, whose builds take it with DMG RED%)
+export function fillerFits(ctx: Ctx, c: Char, item: Pick<ItemInput, 'slot' | 'grade' | 'setId' | 'itemKey' | 'main'>): boolean {
+  if (isArmor(item.slot) || ctx.settings.stage !== 'grow' || !wearable(ctx, c, item)) return false;
+  const listed = (b: Char['builds'][number]) => item.grade === 'unique' && !!item.itemKey && gearList(b, item.slot as GearKind).some((g) => g.key === item.itemKey);
+  return c.builds.some((b) => fit(ctx, c, b, item) !== 'no' || listed(b));
+}
+
 // Filler (HISTORY.md 0220): a weapon or accessory that is neither recommended nor a good stopgap, but whose main a build of
-// the hero asks for in that slot (`fit` 'stopgap' — so only at stage «Развитие», D5) — weak substats. Its rank stays 'no';
+// the hero asks for in that slot, or whose item a build lists (`fillerFits`) — weak substats or an off-list main. Its rank stays 'no';
 // it passes the bar only while the hero's slot is empty (pool/info `eligibleIn`, verdict `heroOutcome`): any piece with a
 // suitable main beats nothing there, the main stat is most of a weapon's or accessory's value (owner 2026-10-14, D1–D7)
 const fillerMemo = new WeakMap<Profile, WeakMap<Piece, boolean>>();
@@ -80,7 +93,7 @@ export function fillerOf(P: Profile, p: Piece): boolean {
   let r = m.get(p);
   if (r === undefined) {
     const input = pieceInput(p);
-    m.set(p, (r = gearRank(P, p) === 'no' && P.c.builds.some((b) => fit(P.ctx, P.c, b, input) === 'stopgap')));
+    m.set(p, (r = gearRank(P, p) === 'no' && fillerFits(P.ctx, P.c, input)));
   }
   return r;
 }

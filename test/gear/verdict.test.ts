@@ -314,14 +314,16 @@ describe('T5 вердикт новой вещи', () => {
     expect([kindOf(again), again.same?.c.name, names(again.reserve)]).toEqual(['material reserve', 'Aer', ['Aer', 'Caren']]);
   });
 
+  // her slot holds a worn Epic: into an empty one the off-main copy would be a filler (HISTORY.md 0220 D11, next test)
   it('T5.7а (вопрос 14): аксессуар Fran не с тем main → запас; второй — тоже (до 4); годный → «Надень» и запасные ему в Breakthrough', () => {
     const acc = (id: string, main: string, bt: 0 | 4 = 0) => mk(id, 'accessory', null, { CHD: 2, 'ATK%': 2, RES: 2, 'HP%': 2 }, bt, { itemKey: '1017', main });
+    const epic = mk('fe', 'accessory', null, { CHC: 2, RES: 2, 'HP%': 3 }, 0, { grade: 'rare', main: 'SPD' });
     const bad = acc('xBad', 'CHC');
     expect(pieceBar(prof('Fran'), bad).pass).toBe(false);
-    const r1 = world(['Fran']).v(bad)!;
+    const r1 = world(['Fran'], { Fran: [epic] }).v(bad)!;
     expect(kindOf(r1)).toBe('material reserve');
     expect(names(r1.reserve)).toEqual(['Fran']);
-    const w2 = world(['Fran'], { Fran: [bad] }, { Fran: [] });
+    const w2 = world(['Fran'], { Fran: [epic, bad] }, { Fran: ['fe'] });
     expect(kindOf(w2.v({ ...acc('xBad2', 'CHC'), lit: { CHD: 3, 'ATK%': 2, RES: 2, 'HP%': 2 } }))).toBe('material reserve');
     const r3 = w2.v(acc('xGood', 'SPD'))!;
     expect(r3.kind).toBe('wear');
@@ -657,6 +659,16 @@ describe('0220 filler: a weak weapon/accessory into an empty slot', () => {
     const r = both.v(x)!;
     expect(kindOf(r)).toBe('material now');
     expect(r.now.map((t) => t.piece.id)).toEqual(['fr']);
+  });
+
+  // owner 2026-10-15 (D11): a Legendary whose item her builds list, with a main they don't take (1017 with CHC; Fran's builds
+  // take it with SPD) still brings the passive — into an empty slot it is a filler, not a reserve
+  it('a listed Legendary with an off-list main: filler into an empty slot (D11); not at «Эндгейм», not into a filled slot', () => {
+    const off = mk('xo', 'accessory', null, { CHD: 2, 'ATK%': 2, RES: 2, 'HP%': 2 }, 0, { itemKey: '1017', main: 'CHC' });
+    const w = world(['Fran']);
+    expect(w.hero('Fran', w.v(off)!)).toMatchObject({ kind: 'wear', filler: true, temp: true });
+    expect(kindOf(world(['Fran'], {}, undefined, {}, 'end').v(off)!)).not.toBe('wear');
+    expect(kindOf(world(['Fran'], { Fran: [weak('f0')] }).v(off)!)).toBe('material reserve');
   });
 
   it('a filler is named after a hero who wants the piece (review M1): 1017 recommended for Fran over her better stopgap', () => {

@@ -21,6 +21,7 @@
 8. **Epic weapon and accessory:** in "Endgame" — dismantle; in "Progression" the main stat first: if its button is
    grey, no one needs that main — dismantle. They are stopgaps: no Breakthrough, spare copies go to dismantle. A weak one
    still goes into a hero's empty slot of that kind if their builds ask for its main: "Stopgap — equip on X".
+   A Legendary from their builds goes there with any main.
 9. **Legendary:** the verdict shows which to upgrade; with weak substats — dismantle, unless it fills an empty slot
    ("Stopgap", as in 8).
 

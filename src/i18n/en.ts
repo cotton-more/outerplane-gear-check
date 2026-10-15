@@ -599,7 +599,7 @@ export const en: Texts = {
     ],
     helpVerdicts: [
       '**Keep** — worth wearing: equip it on the named hero or keep it for them. A Legendary no worse by points than the worn Epic of that slot is "Equip" too: its main stat is bigger. What to upgrade — in the "Upgrading" block in the details.',
-      '**Stopgap** — wear it until a good one drops: a weapon or accessory without the needed passive, or Epic armor with only one key stat. Into an empty weapon or accessory slot even a weak roll goes as a stopgap, if the hero\'s builds ask for its main stat: an empty slot is worse than any piece.',
+      '**Stopgap** — wear it until a good one drops: a weapon or accessory without the needed passive, or Epic armor with only one key stat. Into an empty weapon or accessory slot even a weak roll goes as a stopgap, if the hero\'s builds ask for its main stat or list that Legendary (its passive works with any main): an empty slot is worse than any piece.',
       '**Fodder** — this piece is the material: Breakthrough with it now, or keep it in reserve for a future strong one. A hero keeps up to 4 reserves of one kind, all heroes together at most 8 of one kind; the rest is "Dismantle" — lock the reserves in the game. A T4 piece nobody wears is material too: the target goes straight to T4. Legendary armor takes only Legendary material: keep a weak Legendary in reserve even when a good Epic of that set and slot is worn. Don\'t feed a Legendary you replaced to Breakthrough: evaluate it first — it may suit another hero.',
       "**Maybe** — your call: the details say what's in doubt (e.g. it's good for a character outside your roster).",
       '**Dismantle** — nobody needs it: everyone already has as good, or it\'s weak.',

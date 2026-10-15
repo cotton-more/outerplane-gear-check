@@ -15,7 +15,7 @@ import { sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
-import { better, bestLayout, epicToLegend, fillerOf, NEW_ID, piecePoints, pointsIn, type Layout, type LayoutValue } from './layout';
+import { better, bestLayout, epicToLegend, fillerFits, fillerOf, NEW_ID, piecePoints, pointsIn, type Layout, type LayoutValue } from './layout';
 import { coversSlot, eligibleIn, geq1, listedFor, needsT4, offBar, pieceBar, poolInfo, reserveKey, type PoolInfo } from './pool/info';
 
 // вещь с формы как запись: id NEW_ID — новее всех записанных
@@ -275,7 +275,7 @@ export function fillerWaits(ctx: Ctx, pools: Pools, input: ItemInput): boolean {
   return rosterChars(ctx).some((c) => {
     if (!wearable(ctx, c, input)) return false;
     const hp = pools(c.id);
-    return !!hp && !hp.info.layout[input.slot] && c.builds.some((b) => fit(ctx, c, b, input) !== 'no');
+    return !!hp && !hp.info.layout[input.slot] && fillerFits(ctx, c, input);
   });
 }
 

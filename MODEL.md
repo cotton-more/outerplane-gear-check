@@ -80,7 +80,8 @@ V). English keeps "pts" also for 1.
      hero asks for in that slot — only at `stage = 'grow'` — and whose substats pass `score:tempOk`: useful ≥ 3, or
      ≥ 2 (Epic) / ≥ 3 (Legendary) useful with ≥ 5 useful segments (`CFG.tempGood/tempGood2/tempYellow`).
    - **filler** (rank stays `no`, `layout:fillerOf`; HISTORY.md 0220, owner 2026-10-14): a `fit` `stopgap` (suitable main,
-     stage «Развитие») that fails `tempOk`. It passes the bar **only while the hero's slot is empty** — nothing of his pool
+     stage «Развитие») that fails `tempOk`, or a Legendary whose item a build lists with a main no build takes there
+     (`layout:fillerFits`, D11 2026-10-15: its passive works with any main). It passes the bar **only while the hero's slot is empty** — nothing of his pool
      may stand there (`pool/info:eligibleIn` with the pool; `verdict:heroOutcome` `filler`): an empty weapon/accessory slot
      loses the whole main stat, so any piece with a suitable main beats it. It reads as a stopgap (`temp`, the Worn tab's
      «временно»), is never fed and never a Breakthrough target. Weapons and accessories only — armor is untouched (D7).
