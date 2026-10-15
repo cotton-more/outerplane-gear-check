@@ -4,7 +4,7 @@
 // scripts/autoupdate.sh). DATA — версия данных: коммит outerpedia снимка, меняется только с новыми данными.
 // Страница спрашивает ждущий worker, что в нём, и решает: новые данные — плашка «Обновить», только правки
 // приложения — строка в подвале, а при следующем запуске оно ставится само (src/hooks/usePwa.ts).
-const VERSION = 'afc7a83b83e5';
+const VERSION = '25d0c4299bdf';
 const DATA = "5ec7dbf4c6bb904928b176f28619cbcef90f776f";
 const CACHE = 'ogc-' + VERSION;
 const FONTS = 'ogc-fonts';
@@ -68,7 +68,6 @@ const PRECACHE = [
   "img/images/characters/faceicon/FI_2000050.webp",
   "img/images/characters/faceicon/FI_2000051.webp",
   "img/images/characters/faceicon/FI_2000052.webp",
-  "img/images/characters/faceicon/FI_2000052.webp",
   "img/images/characters/faceicon/FI_2000053.webp",
   "img/images/characters/faceicon/FI_2000054.webp",
   "img/images/characters/faceicon/FI_2000055.webp",
@@ -115,7 +114,6 @@ const PRECACHE = [
   "img/images/characters/faceicon/FI_2000096.webp",
   "img/images/characters/faceicon/FI_2000097.webp",
   "img/images/characters/faceicon/FI_2000098.webp",
-  "img/images/characters/faceicon/FI_2000099.webp",
   "img/images/characters/faceicon/FI_2000099.webp",
   "img/images/characters/faceicon/FI_2000100.webp",
   "img/images/characters/faceicon/FI_2000101.webp",
@@ -288,8 +286,9 @@ const PRECACHE = [
 
 self.addEventListener('install', (event) => {
   // новая версия ждёт, пока страница её не включит: посреди оценки не перезагружаемся.
-  // cache: 'reload' — мимо HTTP-кэша браузера: иначе под новой версией может лечь старая страница
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.map((url) => new Request(url, { cache: 'reload' })))));
+  // cache: 'reload' — мимо HTTP-кэша браузера: иначе под новой версией может лечь старая страница. Set — addAll rejects a
+  // duplicate request, and the whole install fails (update.py dedupes too)
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([...new Set(PRECACHE)].map((url) => new Request(url, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', (event) => {
