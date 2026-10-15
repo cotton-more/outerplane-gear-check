@@ -21,7 +21,6 @@ import { decodeBackup } from '@/features/roster/backup';
 import { FindPiece } from '@/screens/find/FindPiece';
 import { ParkedList } from '@/screens/parked/ParkedList';
 import { fitsData } from '@/features/eval/form/formState';
-import { EquipSheet } from '@/features/gear/ui/EquipSheet';
 import { GEAR_MSG_MS, type GearMsg } from '@/features/gear/ui/gearMsg';
 import { replacedX } from '@/features/gear/model/fusion';
 import { parkedCount, type GearStore } from '@/features/gear/model/gear';
@@ -116,7 +115,6 @@ export function App() {
 
   // открытые шторки и окна
   const [verdictOpen, setVerdictOpen] = useState(false);
-  const [equipOpen, setEquipOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
@@ -153,7 +151,7 @@ export function App() {
 
   const ros = useRosterUi({
     idx, t, rosterApi, gear, touring, off, tab: s.tab, msg, say,
-    onAsk: () => { setVerdictOpen(false); setEquipOpen(false); },
+    onAsk: () => { setVerdictOpen(false); },
   });
   const heroMode = useHeroMode({
     idx, gear, form: s, demoTry, touring, off, narrow: layout.narrow,
@@ -165,7 +163,7 @@ export function App() {
     idx, t, ctx, s, store: gear.store, roster, view, hero: batchOn ? null : hero, replace, touring, narrow: layout.narrow, onEval: s.tab === 'eval',
     batch: batchOn,
   });
-  const { input, shown, vsList, tview, offNote, cardShown, hint, sameLine, onTwin } = vm;
+  const { input, shown, tview, offNote, cardShown, hint, sameLine, onTwin } = vm;
   const onb = useOnboarding({
     idx, s, dispatch, roster, layout, nSubs: vm.nSubs, shown, material: vm.res?.kind === 'material',
     worn: vm.res?.kind === 'junk' && vm.res.heroes.some((h) => h.bar),
@@ -177,9 +175,9 @@ export function App() {
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
   const flow = useFormFlow({
-    idx, t, ctx, s, dispatch, gear, input, hero, heroVs: vm.heroVs, replace, tview, vsList, same: vm.same, canEquip, touring, narrow: layout.narrow,
+    idx, t, ctx, s, dispatch, gear, input, hero, heroVs: vm.heroVs, replace, tview, list: vm.list, same: vm.same, canEquip, touring, narrow: layout.narrow,
     dropReplace, backReplace: heroMode.backReplace, formUndo, setFormUndo,
-    closeVerdict: () => setVerdictOpen(false), closeEquip: () => setEquipOpen(false),
+    closeVerdict: () => setVerdictOpen(false),
     fusionGate: ros.fusionGate, joinRoster: ros.joinRoster, say,
   });
   const { doEquip, doStash, nextNote } = flow;
@@ -229,8 +227,12 @@ export function App() {
   // правка в карточке вещи снимает висящее «Вернуть» любого прежнего действия (В3: одно на все): откаты возвращают
   // запись по id, а её за эти секунды поправили или скопировали (gear updateIn, REFUTE-5); replace режима героя — за копией
   const onPieceEdit = (charId: string, was: string, now: string) => { say(null); heroMode.followEdit(charId, was, now); };
-  // «Кому надеть?» — not while the piece looks like one already set aside (guard): it would add a second record
-  const onEquipPick = !canEquip || hero || vm.same ? undefined : () => { setVerdictOpen(false); setEquipOpen(true); };
+  // the verdict's hero list: «Надеть» / «Отложить» on a row; name search — not in hero mode and not while the piece looks like
+  // one already set aside (guard): it would add a second record
+  const listProps = {
+    ctx, viewOf: vm.viewOf, list: vm.list, heroVs: vm.heroVs, canSearch: !hero && !vm.same,
+    onEquip: !canEquip ? undefined : doEquip, onStash: !canEquip ? undefined : doStash,
+  };
   // сообщения с «Вернуть»: экипировки — на вкладке, где сделано; формы — на «Оценке», если нет первого
   const gearToast = !!msg && msg.tab === s.tab && !tour.run;
   const formToast = !!formUndo && s.tab === 'eval' && !tour.run && !gearToast;
@@ -261,15 +263,15 @@ export function App() {
         <main>
           <section id="view-eval" className={batchResult && !layout.narrow ? 'view eval batch-result' : 'view eval'} role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             {!(batchResult && !layout.narrow) && <EvalPanel s={s} dispatch={formDispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
-              hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={vsList[0] ?? null} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
-              other={flow.cardOther} onEquipOther={flow.cardOther ? (v) => doEquip(v.c) : undefined} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
+              hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={flow.cardVs} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
+              next={flow.cardNext} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
               marks={layout.narrow ? undefined : batchMarks}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} ask={batchOn ? batch.ask : null} />}
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
-              : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} />)}
+              : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} />)}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
@@ -305,7 +307,6 @@ export function App() {
           <FusionAsk base={charName(idx.CHAR[ros.fusionAsk.to]?.fusionOf ?? ros.fusionAsk.to)} toFusion={!!idx.CHAR[ros.fusionAsk.to]?.fusionOf} n={ros.fusionAsk.n}
             onYes={ros.doSwitch} onClose={ros.closeFusionAsk} />
         )}
-        {equipOpen && !tour.run && <EquipSheet ctx={ctx} viewOf={vm.viewOf} item={input} onEquip={doEquip} onClose={() => setEquipOpen(false)} />}
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
         {batchToast && <Toast className="batch-toast" style={toastAt} text={batch.note!} action="" />}
         {moreOpen && (
@@ -357,7 +358,7 @@ export function App() {
         {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); onb.clearHelpNews(); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={onb.openTours} tips={<TipsHelp tour={tour} news={onb.helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} vs={vsList} offNote={offNote} nextNote={nextNote} onEquip={!canEquip ? undefined : (v) => doEquip(v.c)} onStash={!canEquip ? undefined : (v) => doStash(v.c)} onEquipPick={onEquipPick} onTwin={onTwin} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>

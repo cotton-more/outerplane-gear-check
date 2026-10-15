@@ -1,6 +1,6 @@
 // Вердикт экрана «Оценка»: оценка по порогам (features/eval/verdict evaluate) — без ростера и пока введены не все
 // сабстаты (A20, A21); с ростером — исход по «статам + сетам» (features/gear/verdict): штамп, заголовок и строки
-// (features/gear/ui/outcomeText), до трёх героев в «Сейчас на персонажах», тихая строка (вопрос 12). В режиме героя
+// (features/gear/ui/outcomeText), список героев под штампом (heroList). В режиме героя
 // (features/tryon) — его строка, «Надеть» и заголовок про него.
 import { useMemo, useState } from 'react';
 import { FLAT, isArmor, type Index } from '@/game/data';
@@ -18,6 +18,7 @@ import { storeFor } from '@/features/gear/model/fusion';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { charVs, type CharVs } from '@/features/gear/model/poolVs';
 import { fillerWaits, verdictOf, type Result, type Same } from '@/features/gear/verdict';
+import { heroList } from '@/features/gear/model/heroList';
 import { resultHead } from '@/features/gear/ui/outcomeText';
 import { pieceLabel } from '@/features/gear/ui/pieceText';
 import { heroNote, heroTitle, type Hero } from '@/features/tryon/tryon';
@@ -54,13 +55,6 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
 // «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»
 const sameText = (t: Texts, idx: Index, same: Same): string =>
   t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
-
-// тихая строка (вопрос 12): слабая вещь дала бы герою больше, чем есть
-const quietLine = (t: Texts, r: Result | null, slot: string): string | null => {
-  const q = r?.quiet;
-  if (!q) return null;
-  return q.slotEmpty ? t.fit.quietEmpty(q.c.name, slot, q.stats) : t.fit.quietBetter(q.c.name, t.fit.pts(q.dV), q.stats);
-};
 
 export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false }: {
   idx: Index; t: Texts; ctx: Ctx;
@@ -123,19 +117,10 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
     const forHim = x && (x.h.kind === 'keep' || (res?.kind === 'material' && res.sub === 'reserve' && res.reserve.some((c) => c.id === hero.c.id)));
     return x && forHim && !same ? { ...x, stash: true } : x;
   }, [ctx, tview, hero, key, replace, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  const vsList = useMemo((): CharVs[] => {
-    if (verdict.v === 'idle') return [];
-    if (hero) return heroVs ? [heroVs] : [];
-    // «Отложить для X» — for «Оставь» and a reserve, while the piece doesn't look like one already set aside (guard)
-    const named = (res?.named ?? []).map((h) => {
-      const x = charVs(ctx, viewOf(h.c.id), h.c.id, input, { h, stash: h.kind === 'keep' && !same });
-      return x && same && same.c.id !== h.c.id ? quietRow(x) : x;
-    });
-    const reserve = res?.kind === 'material' && res.sub === 'reserve' && !same ? res.reserve.map((c) => charVs(ctx, viewOf(c.id), c.id, input, { stash: true })) : [];
-    return [...named, ...reserve].filter((x): x is CharVs => !!x);
-  }, [ctx, viewOf, verdict, hero, heroVs, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  // строка под карточкой: в режиме героя — про героя (features/tryon/tryon heroNote), иначе — тихая строка (вопрос 12)
-  const offNote = verdict.v === 'idle' ? null : hero ? heroNote(t, ctx, hero.c, input, heroVs) : quietLine(t, res, s.slot);
+  // the hero list under the stamp (features/gear/model/heroList); hero mode has its single row instead (heroVs)
+  const list = useMemo(() => (verdict.v === 'idle' || hero ? [] : heroList(ctx, viewOf, input, res)), [ctx, viewOf, verdict, hero, res]); // eslint-disable-line react-hooks/exhaustive-deps
+  // строка под карточкой: в режиме героя — про героя (features/tryon/tryon heroNote)
+  const offNote = verdict.v === 'idle' || !hero ? null : heroNote(t, ctx, hero.c, input, heroVs);
   // штамп общий, а заголовок после « — » в режиме героя — и про него
   const shown = useMemo(() => (hero ? { ...verdict, title: heroTitle(t, verdict, hero.c, heroVs, res?.named[0]?.c.id ?? null) } : verdict),
     [t, verdict, hero, heroVs, res]);
@@ -149,5 +134,5 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   // the guard's line on the phone card and «Это другой» on the card and in the details
   const sameLine = same ? sameText(t, idx, same) : null;
   const onTwin = same ? () => setTwinAt(key) : undefined;
-  return { input, raw, res, viewOf, tview, heroVs, verdict, vsList, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin };
+  return { input, raw, res, viewOf, tview, heroVs, verdict, list, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin };
 }

@@ -3,7 +3,7 @@
 export const ANCHORS = [
   'slot', 'grade', 'pick', 'item', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', // подсказки модулей
-  'tryon', 'gequip', 'gslots', 'gpiece', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
+  'tryon', 'gequip', 'gslots', 'gpiece', 'vs', 'bgear', // экипировка: тур и подсказки
   'pool', // вкладка «Пул» в карточке героя
   'wtab', // вкладка «Надето» в карточке героя
   'wchain', // the chain with segment sums on «Надето»

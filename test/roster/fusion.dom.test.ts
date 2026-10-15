@@ -62,6 +62,10 @@ async function mount(state: Record<string, unknown>, item: Record<string, unknow
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 const $$ = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)];
 const click = async (el: HTMLElement | null | undefined) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
+// the hero list (0230 B): a row by hero name, its button, name search under the list
+const hlRow = (name: string) => $$('.hl-row').find((r) => r.querySelector('.hl-nm b')?.textContent?.includes(name));
+const hlBtn = (name: string) => hlRow(name)?.querySelector<HTMLElement>('.hl-btn');
+const hlFind = (v: string) => type($('.hl-find input') as HTMLInputElement, v);
 const byText = (sel: string, text: string) => $$(sel).find((e) => e.textContent?.includes(text));
 const stored = () => JSON.parse(localStorage.getItem('ogc.gear') ?? 'null');
 const roster = () => JSON.parse(localStorage.getItem('ogc.roster')!);
@@ -126,8 +130,7 @@ describe('нормализация записана целиком', () => {
     const gear = G([P('p9', 'armor', speed, { SPD: 2 })], { [eternal.id]: ['p9'] });
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear, roster: [caren.id, eternal.id, cfEternal.id] });
     await click($('.vcard'));
-    await click($('.v-equip'));
-    await click(byText('.equip-row', 'Caren') as HTMLElement);
+    await click(hlBtn('Caren'));
     expect({ roster: roster(), cf: stored().pools[cfEternal.id], x: stored().pools[eternal.id] })
       .toEqual({ roster: [caren.id, cfEternal.id], cf: ['p9'], x: undefined });
   });
@@ -199,9 +202,8 @@ describe('окна перехода', () => {
   it('«Надеть на Core Fusion», X в ростере — окно; «Да» — вещь у Core Fusion, строка в сообщении; «Вернуть» — и вещь, и X', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, eternal.id] });
     await click($('.vcard'));
-    await click($('.v-equip'));
-    await type($('.equip-q input') as HTMLInputElement, 'core fusion eter');
-    await click(byText('.equip-row', 'Core Fusion Eternal') as HTMLElement);
+    await hlFind('core fusion eter');
+    await click(hlBtn('Core Fusion Eternal'));
     await click(askBtn('Yes, Core Fusion Eternal'));
 
     expect(roster()).toEqual([caren.id, cfEternal.id]);
@@ -214,9 +216,8 @@ describe('окна перехода', () => {
   it('«Надеть на Core Fusion» — «Отмена»: вещь не надета, ростер тот же', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, eternal.id] });
     await click($('.vcard'));
-    await click($('.v-equip'));
-    await type($('.equip-q input') as HTMLInputElement, 'core fusion eter');
-    await click(byText('.equip-row', 'Core Fusion Eternal') as HTMLElement);
+    await hlFind('core fusion eter');
+    await click(hlBtn('Core Fusion Eternal'));
     await click(askBtn('Cancel'));
     expect({ gear: stored(), roster: roster() }).toEqual({ gear: null, roster: [caren.id, eternal.id] });
   });
@@ -232,43 +233,44 @@ describe('окна перехода', () => {
 });
 
 // «Надеть» на Core Fusion при X с вещами — putOn после «Да», по пулу, где вещи X уже у
-// него; строка «Кому надеть?» считается по тому же пулу («статы + сеты»: прирост в очках, «Заменить» — если в слоте есть
+// него; строка списка героев считается по тому же пулу («статы + сеты»: прирост в очках, «Заменить» — если в слоте есть
 // надетая или «Надеть» уберёт вещь слота)
 describe('«Надеть на Core Fusion» при X с вещами: строка — по пулу после перехода (П9)', () => {
   const HIT = { setId: speed, subs: { SPD: 4, 'ATK%': 3, CHC: 3, CHD: 3 } };
   const pick = async () => {
     await click($('.vcard'));
-    await click($('.v-equip'));
-    await type($('.equip-q input') as HTMLInputElement, 'core fusion eter');
-    return byText('.equip-row', 'Core Fusion Eternal') as HTMLElement;
+    await hlFind('core fusion eter');
+    return hlRow('Core Fusion Eternal') as HTMLElement;
   };
 
-  it('у X надет слабый Speed-шлем: строка «Replace helmet…», после «Да» — «Replaced», шлем X убран', async () => {
+  it('у X надет слабый Speed-шлем: строка «Replace», после «Да» — «Replaced», шлем X убран', async () => {
     const gear = { ...G([P('e1', 'helmet', speed, { HP: 1, RES: 1, DEF: 1, ATK: 1 }), P('e2', 'armor', set('Attack'), { SPD: 3, EFF: 3, CHC: 3, 'ATK%': 3 })], { [eternal.id]: ['e1', 'e2'] }),
       worn: { [eternal.id]: { helmet: 'e1', armor: 'e2' } } };
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
     const row = await pick();
-    const label = row.querySelector('.act')?.textContent;
+    const label = row.querySelector('.hl-btn')?.textContent;
 
-    await click(row);
+    await click(row.querySelector<HTMLElement>('.hl-btn'));
     await click(askBtn('Yes, Core Fusion Eternal'));
 
-    expect(label).toMatch(/^Replace helmet/);
+    expect(label).toBe('Replace');
     expect($('.gear-toast span')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
     expect(stored().pools[cfEternal.id]).not.toContain('e1');
   });
 
   // «Уже есть» нет (решение владельца 2026-10-01): та же вещь у X — после перехода она ему ничего не даёт; найден по
-  // name — «Надеть» with no gain (TEXTS 23). It looks like X's set-aside piece: «Кому надеть?» only after «Это другой»
+  // name — «Надеть» with no gain (TEXTS 23). It looks like X's set-aside piece: the hero list only after «Это другой»
   // (owner, 2026-10-07)
   it('у X та же вещь: строка без прироста — после перехода она ему ничего не даёт', async () => {
     const gear = G([P('e1', 'helmet', speed, HIT.subs)], { [eternal.id]: ['e1'] });
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { gear, roster: [eternal.id] });
     await click($('.vcard'));
-    expect($('.v-equip')).toBeNull();
+    // new list: the piece's own hero keeps his row (equipping him wears the set-aside record, useFormFlow wearFromPool)
+    expect($('.v-equip')?.textContent).toBe('Equip on Eternal');
     await click($('.v-twin'));
     const row = await pick();
-    expect(row.querySelector('.act')?.textContent).toBe('Equip');
+    expect(row.querySelector('.hl-btn')?.textContent).toBe('Equip');
+    expect(row.querySelector('.vs.up')).toBeNull(); // no gain pill
   });
 
   it('режим героя Core Fusion, X с вещами появился после его начала: кнопка под карточкой — по пулу после перехода', async () => {
@@ -283,13 +285,15 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     expect($('.gear-toast span')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
   });
 
-  it('X без вещей — строка по пустому пулу, как без Core Fusion: «Equip — +N pts», тост «On Core Fusion Eternal: helmet.»', async () => {
+  it('X без вещей — строка по пустому пулу, как без Core Fusion: строка «+N pts» и «Equip», тост «On Core Fusion Eternal: helmet.»', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, HIT, { roster: [eternal.id] });
     const row = await pick();
-    const label = row.querySelector('.act')?.textContent;
-    await click(row);
+    const label = row.querySelector('.hl-btn')?.textContent;
+    const gain = row.querySelector('.vs.up')?.textContent;
+    await click(row.querySelector<HTMLElement>('.hl-btn'));
     await click(askBtn('Yes, Core Fusion Eternal'));
-    expect(label).toMatch(/^Equip — \+[\d.]+ pts$/);
+    expect(label).toBe('Equip');
+    expect(gain).toMatch(/^\+[\d.]+ pts$/);
     expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\./);
   });
 });
@@ -424,13 +428,13 @@ describe('список и карточка X', () => {
     expect($('.cd-head h2')?.textContent).toBe('Eternal');
   });
 
-  it('«Кому надеть?» при Core Fusion X: X нет ни в списке, ни в поиске по имени', async () => {
+  it('список героев при Core Fusion X: X нет ни в списке, ни в поиске по имени', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { roster: [caren.id, cfEternal.id] });
     await click($('.vcard'));
-    await click($('.v-equip'));
-    const names = () => $$('.equip-row .nm b').map((e) => e.textContent);
-    await type($('.equip-q input') as HTMLInputElement, 'eter');
-    expect(names().filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
+    const names = (sel: string) => $$(sel + ' .hl-row .hl-nm b').map((e) => e.textContent);
+    await hlFind('eter');
+    expect(names('.hl-find').filter((n) => n?.includes('Eternal'))).toEqual(['Core Fusion Eternal']);
+    expect(names('.hl').filter((n) => n === 'Eternal')).toEqual([]);
   });
 });
 

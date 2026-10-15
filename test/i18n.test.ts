@@ -159,28 +159,16 @@ describe('строки GEARPOOL', () => {
     expect(enUi.oldMaterial('shoes', 'Speed')).toBe("The Speed boots can feed the new ones' Breakthrough.");
   });
 
-  it('«сейчас» у надетой: bt 0 — «ниже T4», bt 1–3 и 4 — как есть, null — «не указан»', () => {
-    expect(ru.vsWorn('Legendary', 0)).toBe('сейчас: Legendary, Breakthrough T0–T3');
-    expect(ru.vsWorn('Legendary', 2)).toBe('сейчас: Legendary, Breakthrough T2');
-    expect(ru.vsWorn('Legendary', null)).toBe('сейчас: Legendary, Breakthrough не указан');
-    expect(enUi.vsWorn('Legendary', 0)).toBe('now: Legendary, Breakthrough T0–T3');
-    expect(enUi.vsWorn('Legendary', 4)).toBe('now: Legendary, Breakthrough T4');
-  });
-
   // stat-sets TEXTS.md: points — to tenths without trailing zeros (as in «Надето» and «Обмене»), a comma in RU; the slot's gender in reserve phrases
-  it('«статы + сеты»: очки «2,5 / 2.5», запас по роду слота, «A и B» в тихой строке, RU/EN', () => {
+  it('«статы + сеты»: очки «2,5 / 2.5», запас по роду слота, RU/EN', () => {
     const F = TEXTS.ru.fit, E = TEXTS.en.fit;
     expect([F.pts(2.5), F.pts(8.25), F.pts(2.954), F.pts(1), F.pts(4.87), E.pts(2.5), E.pts(4.87), E.pts(1)]).toEqual(['2,5', '8,3', '3', '1', '4,9', '2.5', '4.9', '1']);
-    expect(F.gain('Caren', F.pts(1.95))).toBe('Caren станет сильнее на 2 очк.');
-    expect(F.gain('Caren', F.pts(1.64))).toBe('Caren станет сильнее на 1,6 очк.');
     expect(['helmet', 'armor', 'gloves'].map((sl) => F.reserveWhy('Caren', 'Speed', sl))).toEqual([
       'У Caren начат Speed, а Speed-шлема нет. Придёт сильный — этот пойдёт ему в Breakthrough.',
       'У Caren начат Speed, а Speed-брони нет. Придёт сильная — эта пойдёт ей в Breakthrough.',
       'У Caren начат Speed, а Speed-перчаток нет. Придут сильные — эти пойдут им в Breakthrough.',
     ]);
     expect(F.keepBest('Speed', 'gloves', 'Caren')).toBe('Оставляй — лучшие Speed-перчатки у Caren');
-    expect(F.quietEmpty('Rin', 'shoes', ['ATK%', 'CHC'])).toBe('У Rin нет ботинок — эта слабая, годная будет с ATK% и CHC.');
-    expect(E.quietBetter('Rin', '1.8', ['ATK%', 'CHC'])).toBe('Rin wears worse now (+1.8 pts), but this one is weak too — a good one has ATK% and CHC.');
     expect([F.chipRank('accessory'), F.chipRank('weapon')]).toEqual(['рекомендованный', 'рекомендованное']);
   });
 });

@@ -1,9 +1,10 @@
 /* ---------- оценка: раскладка */
 .eval { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-html:not(.narrow) .eval { grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); align-items: start; }
+html:not(.narrow) .eval { grid-template-columns: minmax(0, 1fr) minmax(340px, 400px); align-items: start; }
 /* высоту липкой колонки до низа окна считает useFillViewport; здесь — запасной вариант до первого замера */
 html:not(.narrow) .eval-out { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 170px); overflow: auto; overscroll-behavior: contain; }
-html.wide .eval { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
+/* 0230: the page is a 1240 column — the form 600, the verdict 624 (the hero list needs the width) */
+html.wide .eval { grid-template-columns: minmax(0, 600px) minmax(0, 624px); }
 
 /* компактная форма: весь ввод предмета помещается в половину экрана без прокрутки */
 /* колонка не шире панели: строка без переноса (полоса «Примерка» с длинным именем) иначе растянула бы всю форму */

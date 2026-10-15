@@ -23,22 +23,23 @@ import { VerdictCard } from './VerdictCard';
 import { TryOnStrip } from '@/features/tryon/TryOnStrip';
 import type { Char } from '@/game/data/types';
 import type { CharVs } from '@/features/gear/model/poolVs';
-import { chipLabel } from '@/features/gear/ui/VsChip';
+import type { HeroRow } from '@/features/gear/model/heroList';
+import { NextHeroes } from '@/features/gear/ui/HeroList';
 import { EquipButton } from '@/features/gear/ui/EquipButton';
 import { BatchButton } from '@/features/batch/ui/BatchButton';
 
 // hero — режим «для героя»: полоса над слотами, ✕ — onTryOnEnd; heroNote — строка про героя под карточкой (features/tryon/tryon
 // heroNote: не носит, не нужна, «По статам», ничего не даст). vs — лучший исход для строки карточки;
 // onEquip — кнопка «Надеть на Caren» / «Заменить шлем Caren» под карточкой (нет — кнопки нет); other и onEquipOther —
-// вторая, «или — Rin · Speed ▸»: сразу Rin. Нажата «T4» — «· T4» в подписи обеих. Кнопка только ради ввода надетого
+// next — строка следующих героев «Sigma +7,4 · Maxie +6,5 · ещё 51 ▸» (0230), её нажатие открывает шторку вердикта. Нажата «T4» — «· T4» в подписи. Кнопка только ради ввода надетого
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: where the form goes after it. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, other, onEquipOther, onStash, sameLine = null, onTwin, strip = null, nextLabel, marks, onBatch, lock = null, ask = null }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, next = [], onStash, sameLine = null, onTwin, strip = null, nextLabel, marks, onBatch, lock = null, ask = null }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
-  other?: CharVs | null; onEquipOther?: (vs: CharVs) => void;
+  next?: HeroRow[];               // the heroes after the pick, in the list's order: the line under the card, a tap opens the sheet
   onStash?: (vs: CharVs) => void; // «Отложить для X» под карточкой (у «Оставь» и запаса)
   sameLine?: string | null; onTwin?: () => void;
   strip?: React.ReactNode;        // «Партия · 7 · Список ▸ ✕» instead of the hero strip (features/batch)
@@ -66,24 +67,17 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         </div>
         <ItemForm s={s} dispatch={dispatch} ctx={ctx} hint={hint} lock={lock} ask={ask} zone={cardShown ? <>
               <VerdictCard r={verdict} onOpen={onOpenVerdict} vs={vs} named={!hero} note={sameLine} />
-              {/* «Надеть» и «или — Rin · Speed ▸» — в один ряд; не влезают — вторая переносится */}
-              {((vs && onEquip) || (other && onEquipOther) || (vs && onStash) || onTwin) && (
+              {/* «Надеть» / «Отложить» — в один ряд; не влезают — вторая переносится */}
+              {((vs && onEquip) || (vs && onStash) || onTwin) && (
                 <div className="vc-acts">
                   {onTwin && <button type="button" className="btn vc-twin" onClick={onTwin}>{t.fit.twin(s.slot)}</button>}
                   {vs && onStash && <button type="button" className="btn vc-stash" onClick={() => onStash(vs)} {...tour('stash')}><Icon name="archive" />{t.fit.stash(vs.c.name)}</button>}
                   {vs && onEquip && (
                     <EquipButton place="vc-equip" x={vs} slot={t.ui.slotAcc[s.slot]} t4={!!t4} good={vs.h.kind === 'wear'} onEquip={onEquip} />
                   )}
-                  {other && onEquipOther && (
-                    <button type="button" className="btn vc-other" onClick={() => onEquipOther(other)}>
-                      {/* подпись = действие (Р7): заменит — «или — заменить шлем Caren · +2,5 очк.» */}
-                      {other.replaces
-                        ? t.ui.orReplace(t.ui.slotAcc[s.slot], other.c.name, (chipLabel(t, other) ?? '') + t4)
-                        : t.ui.orOther(other.c.name, (chipLabel(t, other) ?? '') + t4)}
-                    </button>
-                  )}
                 </div>
               )}
+              {next.length > 0 && <NextHeroes rows={next} onOpen={onOpenVerdict} />}
               {vs?.asWorn && !vs.replaces && onEquip && <p className="vc-wear">{t.ui.equipAsWorn}</p>}
               {nextNote && vs && onEquip && <p className="vc-next">{nextNote}</p>}
               {heroNote && <p className="vc-note">{heroNote}</p>}

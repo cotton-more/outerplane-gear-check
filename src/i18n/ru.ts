@@ -201,7 +201,6 @@ export const ru = {
     wearBetter: (name: string) => `Оставляй — лучше, чем на ${name}`,
     tempEmpty: (name: string) => `Временно — надень на ${name}, пока нет лучше`,
     tempBetter: (name: string) => `Временно — лучше, чем на ${name}, пока нет лучше`,
-    gain: (name: string, pts: string) => `${name} станет сильнее на ${pts} очк.`,
     parts: (on: string[], off: string[]) => [on.length ? `включится: ${on.join(', ')}` : '', off.length ? `выключится: ${off.join(', ')}` : ''].filter(Boolean).join(' · '),
     alsoWear: (name: string, pieces: string[]) => `Вместе с ней надень из вещей ${name}: ${pieces.join(', ')}.`,
     keepBest: (set: string, slot: string, name: string, temp = false) => `${temp ? 'Временно' : 'Оставляй'} — ${by(slot, 'лучший', 'лучшая', 'лучшее', 'лучшие')} ${set}-${NOM[slot]} у ${name}`,
@@ -228,20 +227,27 @@ export const ru = {
     feed: (set: string, slot: string, name: string) => `${by(slot, 'Слабый', 'Слабая', 'Слабое', 'Слабые')} ${set}-${NOM[slot]} из запаса ${name} — в Breakthrough этой.`,
     feedItem: (item: string, name: string) => `Слабый ${item} из запаса ${name} — в Breakthrough этой.`,
     feedMany: (n: number, names: string[]) => `В Breakthrough этой — ${n} из запаса ${andList(names)} (любые из отложенных).`,
-    quietBetter: (name: string, pts: string, stats: string[]) => `На ${name} сейчас хуже (+${pts} очк.), но и эта слабая — годная будет с ${andList(stats)}.`,
-    quietEmpty: (name: string, slot: string, stats: string[]) => `У ${name} нет ${GEN[slot]} — эта слабая, годная будет с ${andList(stats)}.`,
     junkBy: (names: string[]) => `Разбирай — уже не хуже у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
     // чип героя в «Сейчас на персонажах» и на карточке
     chipGain: (pts: string) => `+${pts} очк.`,
     chipKeep: 'держи',
+    // the hero list under the verdict (0230 TEXTS H)
+    listReplace: 'Вместо надетого',
+    listEmpty: 'В пустой слот',
+    listStash: 'Отложить',
+    more: (n: number) => `ещё ${n} ▸`,
+    instead: (pts: string) => `вместо ${pts} очк.`,
+    rowOff: (part: string) => `выключит ${part}`,
+    btnEquip: 'Надеть', btnReplace: 'Заменить', btnStash: 'Отложить',
+    viewBrief: 'Кратко', viewDetail: 'Подробно', viewSwitch: 'Кратко · Подробно',
+    gives: 'даст', wasLabel: 'было', wasPts: (pts: string) => `— ${pts} очк.`,
+    chipLegend: 'Зелёный — идёт герою в счёт, жёлтый — наполовину, серый — не идёт.',
+    findHero: 'Другой герой — имя…', noHero: 'Нет героя с таким именем.',
     chipRank: (slot: string) => by(slot, 'рекомендованный', 'рекомендованная', 'рекомендованное', 'рекомендованные'),
     // «Надень» по рангу: пассивка важнее сабстатов (MODEL.md §3 item 3)
     rankUp: (name: string) => `Этот предмет рекомендуют билды ${name}, надетый — нет: пассивка важнее сабстатов.`,
     // «Кому надеть?»: строка героя (pts null — прироста нет: герой найден по имени)
-    rowEquip: (pts: string | null) => (pts ? `Надеть — +${pts} очк.` : 'Надеть'),
-    rowReplace: (slot: string, pts: string | null) => (pts ? `Заменить ${slot} — +${pts} очк.` : `Заменить ${slot}`),
-    rowOn: (part: string) => ` · включит ${part}`,
-    rowNote: 'Здесь — кому вещь сейчас даст больше всего. Другого героя найди по имени: «Надеть» запишет её на нём.',
+    rowOn: (part: string) => `включит ${part}`,
     // тост после «Надеть»: лишнее в пуле убрано (PLAN Д7)
     pruned: (name: string) => `Лишнее убрано — ${name} это больше не нужно.`,
     // another hero's reserve went to Breakthrough of the equipped piece (feed line «из запаса Aer»): its record is removed
@@ -463,26 +469,16 @@ export const ru = {
     segCap: (max: number) => `Больше ${max} сегментов на вещи не бывает — проверь сабстаты.`,
     subRemove: (k: string) => `Убрать ${k}`,
     chainTail: (k: string) => `${k} есть на вещи, но дальше четвёртого места — для порога «годная» не считается, очки за него идут`,
-    // экипировка: слоты и надетое (features/gear/model/gear, features/gear/model/vs; features/gear/ui/VsSection, EquipSheet, features/worn)
+    // экипировка: слоты и надетое (features/gear/model/gear, features/gear/model/vs; features/gear/ui/HeroList, features/worn)
     slotNames: { weapon: 'Оружие', accessory: 'Аксессуар', helmet: 'Шлем', armor: 'Броня', gloves: 'Перчатки', shoes: 'Ботинки' } as Record<string, string>,
     slotAcc: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броню', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
     slotNom: { weapon: 'оружие', accessory: 'аксессуар', helmet: 'шлем', armor: 'броня', gloves: 'перчатки', shoes: 'ботинки' } as Record<string, string>,
-    vsTitle: 'Сейчас на персонажах',
-    vsWorn: (grade: string, bt: number | null) => `сейчас: ${grade}, Breakthrough ${bt === null ? 'не указан' : bt === 0 ? 'T0–T3' : 'T' + bt}`,
     equipTo: (name: string) => `Надеть на ${name}`,
     replaceOn: (slot: string, name: string) => `Заменить ${slot} ${name}`,
     // режим героя: кнопка есть только чтобы записать надетое (вещь сама ему ничего не даёт)
     equipAsWorn: 'Носит в игре — нажми, запишем как надетое',
     // над «Следующий» при вводе надетого: после «Надеть» форма — на этом слоте (slotNames)
     nextWear: (slot: string) => `Дальше: ${slot}`,
-    equipPick: 'Надеть на…',
-    equipSheet: 'Кому надеть?',
-    equipSearch: 'Имя персонажа',
-    equipNone: 'Ни одному билду она ничего не даст. Найди персонажа по имени — «Надеть» запишет её как надетую.',
-    equipNoneQ: 'Никому с таким именем она ничего не даст.',
-    orOther: (name: string, build: string) => `или — ${name} · ${build} ▸`,
-    // вторая кнопка заменяет вещь героя (Р7): slot — в винительном («шлем», «броню», «перчатки»)
-    orReplace: (slot: string, name: string, build: string) => `или — заменить ${slot} ${name} · ${build} ▸`,
     removedFrom: (name: string) => `Убрано у ${name}.`,
     // карточка персонажа (GEARPOOL)
     byStats: 'По статам',
@@ -759,7 +755,7 @@ export const ru = {
 
   // --- «Разобрать» с ростером (screens/eval useVerdictModel): всем, кому она годная, уже надето не хуже
   worn: {
-    line: '**Никого не улучшит**: всем, кому она подходит, уже надето не хуже. Сама по себе вещь неплохая.',
+    line: '**По билдам не нужна**: кому она годная, тем уже надето не хуже.',
     stale: 'Разобрал вещь в игре — убери её в карточке персонажа, и вердикт пересчитается.',
   },
 
@@ -1182,10 +1178,9 @@ export const ru = {
       gear: 'Оценка сама берёт лучшее из вещей героя — статы и сеты вместе. Из своих можно на 1+ очко лучше — появится «Переодеть».',
       piece: 'Сделал в игре Reforge или Breakthrough — поправь здесь сегменты и «T4», как на вещи в игре: сравнение идёт по тому, что есть.',
       tryStrip: 'Оценка только для этого персонажа: строка карточки и «Надеть» — про этого персонажа, штамп — общий. ✕ — снова для всех.',
-      vs: 'Сколько очков герой выиграет с вещью. «Включится / выключится» — бонусы сетов. Кнопка — надеть или заменить.',
+      vs: 'Кому даст. Все, кого вещь усилит хотя бы на 1 очко: вместо надетого, в пустой слот, в запас. ★ — кого советует вердикт. «Подробно» — что даст и что было.',
       stash: 'Оставляй, но пока не надевать? Нажми «Отложить» — вещь запишется герою, и следующие вещи будут сравниваться с ней.',
       cardEquip: 'Надень одной кнопкой под карточкой: вещь запишется надетой. Что герою больше не нужно, уйдёт из его вещей — приложение скажет.',
-      equipAll: 'Здесь — кому вещь даст больше всего очков. Другого героя найди по имени: «Надеть» запишет её как надетую.',
       material: 'Фоддер, а не разбор: вещь пойдёт в Breakthrough такой же вещи героя не на T4 или ляжет в запас, пока не придёт сильная.',
       worn: 'Вещь неплохая, но всем, кому она подходит, уже надето не хуже — поэтому «Разобрать». Разобрал вещь в игре — убери её в карточке персонажа.',
       pool: 'Вещи героя, кроме надетых, и зачем каждая: лучшая своего сета, по статам, запас. «Больше не нужна» — разбери в игре и убери здесь.',

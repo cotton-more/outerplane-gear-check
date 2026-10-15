@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Режим «для героя» на телефоне (360px; прежде — примерка билда): из карточки персонажа — «Оценить вещь для Caren»,
 // «Примерить» и «Примерить замену»; полоса «Только для · Caren» над формой; строка и «Надеть» — только про героя, по
-// всем его билдам; «Заменить шлем Caren» — сразу ей, без «Кому надеть?»; «Следующий» режим не сбрасывает, ✕ — снимает;
+// всем его билдам; «Заменить шлем Caren» — сразу ей, без списка героев; «Следующий» режим не сбрасывает, ✕ — снимает;
 // после перезапуска режим тот же; вещь, которую вводили, — в «Вернуть».
 // Шаг 10 «Оценка — единственный ввод»: на полосе только имя (было «Caren · Speed»); вещь не по билду предустановки —
 // не «не по билду», а исход по всем билдам и строка героя (heroNote)
@@ -82,7 +82,7 @@ describe('режим «для героя»', () => {
 
     await click($('.vcard'));
     expect($$('.v-vs .vs-row')).toHaveLength(1);
-    expect($('.v-equip')).toBeNull(); // «Кому надеть?» в режиме героя не нужно
+    expect($('.v-equip')).toBeNull(); // the hero list isn't there in hero mode
     await click(byText('.vs-act', "Replace Caren's helmet"));
     expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
   });
@@ -226,12 +226,14 @@ describe('режим «для героя»: вход, одна строка, з�
     expect(stored('item').subs).toEqual(NEW.subs); // вещь на форме та же
     await click($('.vcard'));
     expect($$('.v-vs .vs-row').map((r) => r.querySelector('.nm b')?.textContent)).toEqual(['Caren']);
-    expect($('.v-equip')).toBeNull(); // «Кому надеть?» в режиме героя не нужно
+    expect($('.v-equip')).toBeNull(); // the hero list isn't there in hero mode
 
     await click($('.tryon-x'));
     expect(stored('tryon')).toBeNull();
     expect($('.tryon')).toBeNull();
-    expect($$('.v-vs .vs-row').map((r) => r.querySelector('.nm b')?.textContent).sort()).toEqual(['Caren', 'Kappa']);
+    // for everyone again: the hero list (rows of heroes the piece gains for) instead of the single row
+    expect($('.v-vs')).toBeNull();
+    expect($$('.hl-row .hl-nm b').map((b) => b.textContent).sort()).toEqual(['Caren', 'Kappa']);
   });
 
   // Transistone (В-А2): в игре шлем A сменил DEF% на RES — ввели заново, он хуже записи. «Примерить замену» у A —

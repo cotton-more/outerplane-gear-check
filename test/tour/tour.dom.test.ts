@@ -550,8 +550,9 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
     await click($('.vcard'));
     expect($('.drawer')).toBeTruthy();
-    // ▲ лучше шлема Caren: строка героя — прирост в очках («статы + сеты»)
-    expect($('.v-vs')?.textContent).toMatch(/Caren gets \+[\d.]+ pts/);
+    // «Try a replacement» is hero mode: its single row (HeroSingle) — the hero's gain in points and the replace button
+    expect($('.v-vs .vs-row .vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect($('.v-vs .vs-act')?.textContent).toBe("Replace Caren's helmet");
     expect(strip()).toContain(T.gearStepOf(3, 5));
     expect(strip()).not.toContain(T.inSheet);
     await click(byText('.tour-strip button', T.next));
