@@ -228,7 +228,7 @@ export const ru = {
     feedItem: (item: string, name: string) => `Слабый ${item} из запаса ${name} — в Breakthrough этой.`,
     feedMany: (n: number, names: string[]) => `В Breakthrough этой — ${n} из запаса ${andList(names)} (любые из отложенных).`,
     junkBy: (names: string[]) => `Разбирай — уже не хуже у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
-    // чип героя в «Сейчас на персонажах» и на карточке
+    // hero chip in the hero list (HeroList) and on the card
     chipGain: (pts: string) => `+${pts} очк.`,
     pickStar: 'выбор вердикта', // H17: the ★'s label
     chipKeep: 'держи',
@@ -247,7 +247,7 @@ export const ru = {
     chipRank: (slot: string) => by(slot, 'рекомендованный', 'рекомендованная', 'рекомендованное', 'рекомендованные'),
     // «Надень» по рангу: пассивка важнее сабстатов (MODEL.md §3 item 3)
     rankUp: (name: string) => `Этот предмет рекомендуют билды ${name}, надетый — нет: пассивка важнее сабстатов.`,
-    // «Кому надеть?»: строка героя (pts null — прироста нет: герой найден по имени)
+    // the hero list (HeroList): hero row (pts null — прироста нет: герой найден по имени)
     rowOn: (part: string) => `включит ${part}`,
     // тост после «Надеть»: лишнее в пуле убрано (PLAN Д7)
     pruned: (name: string) => `Лишнее убрано — ${name} это больше не нужно.`,

@@ -47,13 +47,16 @@ export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>)
 // сета или предмета нет в данных (вещь из кода показа с более новых данных) — «нет в твоих данных»
 // The name in the grade's colour — red Legendary, blue Epic (no «L»/«E» chip: owner 2026-10-12, as the batch rows had it,
 // Q4); the set's icon too where it is our own outline. batch — a row of the batch: armor is its slot word alone
+// the grade's name colour class
+export const gradeTone = (grade: Piece['grade'] | undefined) => (grade === 'unique' ? 'legend' : 'epic');
+
 export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boolean }) {
   const t = useT();
   const armor = isArmor(p.slot);
   const unknown = p.setId ? !ctx.idx.SET[p.setId] : !!p.itemKey && !ctx.idx.ITEM[p.slot as GearKind]?.[p.itemKey];
   const name = batch && armor ? t.ui.slotNom[p.slot] : unknown ? t.ui.notInData : nameOf(ctx, p);
   const main = p.setId ? null : p.main;
-  const tone = ` gname ${p.grade === 'unique' ? 'legend' : 'epic'}`;
+  const tone = ` gname ${gradeTone(p.grade)}`;
   return (
     <>
       {/* the set's icon by the name — easier to match against the game (owner 2026-10-12); batch rows name the set in the title */}
@@ -70,7 +73,7 @@ export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boole
 export function Painted({ text, what, grade }: { text: string; what: string; grade: Piece['grade'] }) {
   const i = what ? text.indexOf(what) : -1;
   if (i < 0) return <>{text}</>;
-  return <>{text.slice(0, i)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{what}</span>{text.slice(i + what.length)}</>;
+  return <>{text.slice(0, i)}<span className={`gname ${gradeTone(grade)}`}>{what}</span>{text.slice(i + what.length)}</>;
 }
 
 // Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма без «T4», В4); 1–3 — прежняя правка; «T?» — не указан

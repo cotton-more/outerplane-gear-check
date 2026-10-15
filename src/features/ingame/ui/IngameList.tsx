@@ -8,7 +8,7 @@ import { HeroName, heroName } from '@/game/hero/HeroName';
 import { useT } from '@/i18n';
 import { Toggle } from '@/shared/ui/Toggle';
 import { tour } from '@/tour/anchors';
-import { gameSubs, PieceName } from '@/features/gear/ui/pieceText';
+import { gameSubs, gradeTone, PieceName } from '@/features/gear/ui/pieceText';
 import type { Section } from '../ingame';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -26,7 +26,7 @@ export function IngameBody({ ctx, sections, onTick }: { ctx: Ctx; sections: read
             <ol className="bgear-list">
               {lines.map(({ line, now }) => {
                 const word = cap(t.ui.slotNom[line.slot]);
-                const tone = now.grade === 'unique' ? 'legend' : 'epic';
+                const tone = gradeTone(now.grade);
                 return (
                   <li key={line.id} className="bgear-row bstep">
                     <Toggle className="bstep-l" checked={false} label={`${t.ingame.tick}: ${word}`} onChange={() => onTick(line.id)}>

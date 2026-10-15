@@ -7,6 +7,8 @@
 // - One line per hero and slot: a second «Надеть» on the slot replaces the line in place. When the slot's record was
 //   itself a live promise (superseded), it never went on in the game: the pool lets it go (features/gear/pool planPut
 //   promised) and the new line keeps the first line's «taken off» — the game still has that piece on.
+// - Editing a record shared by two heroes copies it to a new id (gear.ts updateIn), so a promise on it drops: accepted,
+//   rare (a fresh promised record has one holder).
 // - Written only by «Надеть» / «Заменить» from «Оценка» (screens/eval useFormFlow); «Вернуть» of that message puts back
 //   the line it replaced, or none.
 import { GRADES, SLOT, SLOTS, type Index } from '@/game/data';
