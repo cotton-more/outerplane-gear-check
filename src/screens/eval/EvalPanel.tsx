@@ -35,13 +35,14 @@ import { BatchButton } from '@/features/batch/ui/BatchButton';
 // (vs.asWorn, подпись «Надеть на X», не «Заменить») — под ней «Носит в игре — нажми…». nextNote — «Дальше: Ботинки» под кнопкой
 // «Надеть» / «Заменить»: where the form goes after it. sameLine and onTwin — the piece looks like one already set aside
 // (guard, useVerdictModel): the card says so and «Это другой» brings the offers back
-export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, next = [], onStash, sameLine = null, onTwin, strip = null, nextLabel, marks, onBatch, lock = null, ask = null }: {
+export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset, nextNote = null, onOpenVerdict, hero, heroNote, onTryOnEnd, vs, onEquip, next = [], onStash, sameLine = null, onTwin, below = null, strip = null, nextLabel, marks, onBatch, lock = null, ask = null }: {
   s: FormState; dispatch: Dispatch<FormAction>; ctx: Ctx; verdict: VerdictData; cardShown: boolean; hint: string | null;
   onReset: () => void; nextNote?: string | null; onOpenVerdict: () => void;
   hero?: { c: Char } | null; heroNote?: string | null; onTryOnEnd?: () => void; vs?: CharVs | null; onEquip?: (vs: CharVs) => void;
   next?: HeroRow[];               // the heroes after the pick, in the list's order: the line under the card, a tap opens the sheet
   onStash?: (vs: CharVs) => void; // «Отложить для X» под карточкой (у «Оставь» и запаса)
   sameLine?: string | null; onTwin?: () => void;
+  below?: React.ReactNode;        // under the form panel, in the left column: «Надеть в игре» (wide screen)
   strip?: React.ReactNode;        // «Партия · 7 · Список ▸ ✕» instead of the hero strip (features/batch)
   nextLabel?: string;             // «В партию · #8» / «Сохранить #3» instead of «Следующий»
   marks?: React.ReactNode;        // «E» and «🔒» after it (features/batch BatchMarks)
@@ -53,6 +54,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   const t4 = s.t4 ? t.ui.withT4 : '';
 
   return (
+    <div className="eval-left">
     <div className="panel eval-in" id="eval-in">
       <div className="form">
         {strip ?? (hero && onTryOnEnd && <TryOnStrip c={hero.c} onEnd={onTryOnEnd} />)}
@@ -93,6 +95,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
         </span>
       </div>
 
+    </div>
+    {below}
     </div>
   );
 }

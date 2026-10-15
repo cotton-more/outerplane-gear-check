@@ -71,6 +71,11 @@ html.narrow .vbar .bm-long { display: none; }
 .batch .bstep { display: block; padding: 0; }
 .bstep-l { display: flex; align-items: flex-start; gap: 10px; box-sizing: border-box; width: 100%; min-height: 40px; padding: 6px 8px; font-size: inherit; color: inherit; }
 .bstep-l input { flex: none; width: 22px; height: 22px; margin: 0; }
+/* the tick: a rounded square, a quiet ring when empty, an accent fill with a check once ticked (no native look) */
+.bstep-l input { appearance: none; -webkit-appearance: none; position: relative; box-sizing: border-box; border: 2px solid var(--ink-3); border-radius: 7px; background: var(--surface); cursor: pointer; }
+.bstep-l:hover input { border-color: var(--accent); }
+.bstep-l input:checked { border-color: var(--accent); background: var(--accent); }
+.bstep-l input:checked::after { content: ""; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid var(--surface); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
 .bstep:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .bstep-t { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; padding-top: 2px; }
 .bstep-m { color: var(--ink-2); }
@@ -119,3 +124,23 @@ html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: 
 .batch-sheet .batch-back { margin: 6px 14px 0; } /* the tap area above it (.hit) is clipped by the sheet's scroll box: room for it */
 .bworn { grid-column: 2 / -1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
 .gname { font-weight: 600; }
+
+/* «Надеть в игре» (features/ingame/ui/IngameList): the panel under the form on a wide screen, the batch-full sheet on a phone;
+   a line is the walk's equip step (.bstep) */
+.eval-left { display: grid; gap: 16px; min-width: 0; align-content: start; }
+.ig-panel { padding: 12px 12px 14px; }
+.ig-h { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ig-body { display: grid; gap: 12px; }
+.ig-sheet .ig-body { padding: 6px 14px 16px; }
+.ig-hero .parked-h .face { width: 28px; height: 28px; }
+.ig-piece { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.ig-piece .pset { margin: 0; }
+.ig-fate { color: var(--ink-3); }
+/* 600 px column: the substats go two to a line, so three lines fit under the form */
+html.wide .ig-panel .bstep-subs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 28px; }
+html.wide .ig-panel .bstep-subs > span { max-width: none; }
+/* the count on the bar's ☰ and the top row of «Ещё» */
+.vbar .vb-tab { position: relative; }
+.vb-ig { position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--accent); color: var(--surface); font: 700 11.5px/19px var(--font-body); text-align: center; box-shadow: 0 0 0 2px var(--surface); }
+.more-ig { display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; min-height: 46px; font-size: 14px; font-weight: 700; }
+.more-ig-go { margin-left: auto; color: var(--ink-3); }

@@ -31,6 +31,8 @@ import { takeModelNote } from '@/features/gear/store/stored';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
 import { useIngame } from '@/features/ingame/useIngame';
+import { countOf, sectionsOf, type Line } from '@/features/ingame/ingame';
+import { IngameBody, IngameList } from '@/features/ingame/ui/IngameList';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
 import { useBatchMode } from '@/features/batch/useBatchMode';
 import { BatchStrip } from '@/features/batch/ui/BatchStrip';
@@ -121,6 +123,7 @@ export function App() {
   const [codeOpen, setCodeOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
   const [parkedOpen, setParkedOpen] = useState(false);
+  const [ingameOpen, setIngameOpen] = useState(false);
   // «Обмен вещами» (features/trade): шторка; hero — открыта с карточки «К обмену ▸» (сразу план героя), иначе — из списка
   // или «Ещё» → «Обмен для команды», сразу в режиме «Команда»
   const [trade, setTrade] = useState<{ hero: string | null } | null>(null);
@@ -177,6 +180,11 @@ export function App() {
   const canEquip = (!tour.run || !!demo) && !gear.newer;
   // «Надеть в игре» (features/ingame): promises of «Надеть», against the player's own store (never the tour's)
   const ingame = useIngame(idx, realGear.store, !touring && !realGear.newer);
+  // the list under the form / in the phone sheet: what is still owed in the game. A tap = done: the line goes, «Вернуть» for 8 s
+  const igSections = useMemo(() => sectionsOf(ingame.value, realGear.store), [ingame.value, realGear.store]);
+  const igN = tour.run ? 0 : countOf(ingame.value, realGear.store);
+  const [tickMsg, setTickMsg] = useTimed<{ line: Line; at: number }>(8000);
+  const onTick = (id: string) => { const r = ingame.tick(id); if (r) setTickMsg(r); };
   const flow = useFormFlow({
     idx, t, ctx, s, dispatch, gear, input, hero, via: heroMode.via, ingame, heroVs: vm.heroVs, replace, tview, list: vm.list, same: vm.same, canEquip, touring, narrow: layout.narrow,
     dropReplace, backReplace: heroMode.backReplace, formUndo, setFormUndo,
@@ -224,6 +232,7 @@ export function App() {
   // «Припаркованные · N» in «Ещё» (HISTORY.md 0204): the last «Убрать» closes the sheet
   const parkedN = useMemo(() => parkedCount(gear.store), [gear.store]);
   useEffect(() => { if (parkedOpen && !parkedN) setParkedOpen(false); }, [parkedOpen, parkedN]); // «Вернуть» doesn't reopen it
+  useEffect(() => { if (ingameOpen && (!igN || !layout.narrow)) setIngameOpen(false); }, [ingameOpen, igN, layout.narrow]); // the last tick closes the sheet; «Вернуть» doesn't reopen it
   const parkedShown = parkedOpen && canEquip && !tour.run;
   // «Убрать у Caren» в карточке персонажа: сообщение с «Вернуть» — на «Персонажах»
   const onGearToast = (text: string, note: string, undo: (st: GearStore) => GearStore) => say({ text, note, tab: 'chars', undo });
@@ -238,16 +247,17 @@ export function App() {
   };
   // сообщения с «Вернуть»: экипировки — на вкладке, где сделано; формы — на «Оценке», если нет первого
   const gearToast = !!msg && msg.tab === s.tab && !tour.run;
-  const formToast = !!formUndo && s.tab === 'eval' && !tour.run && !gearToast;
+  const tickToast = !!tickMsg && s.tab === 'eval' && !tour.run && !gearToast;
+  const formToast = !!formUndo && s.tab === 'eval' && !tour.run && !gearToast && !tickToast;
   // the batch's short notes («В этой партии — Attack-броня…», «Введены не все сабстаты…») — a toast: a line in the page
   // made the form jump (owner 2026-10-08)
   const batchToast = batchOn && !!batch.note && s.tab === 'eval' && !gearToast && !formToast;
-  const toastAt = useToastPlace((gearToast || formToast || batchToast) && !layout.narrow, s.tab === 'eval' ? 'eval-in' : 'char-list');
+  const toastAt = useToastPlace((gearToast || formToast || batchToast || tickToast) && !layout.narrow, s.tab === 'eval' ? 'eval-in' : 'char-list');
   // телефон: сообщение экипировки лежит и поверх шторки вердикта — внизу шторки место, чтобы строку под ним прокрутить
   useEffect(() => {
-    document.body.classList.toggle('toast-on', gearToast && layout.narrow);
+    document.body.classList.toggle('toast-on', (gearToast || tickToast) && layout.narrow);
     return () => document.body.classList.remove('toast-on');
-  }, [gearToast, layout.narrow]);
+  }, [gearToast, tickToast, layout.narrow]);
 
   return (
     <LangContext.Provider value={t}>
@@ -267,6 +277,7 @@ export function App() {
           <section id="view-eval" className={batchResult && !layout.narrow ? 'view eval batch-result' : 'view eval'} role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
             {!(batchResult && !layout.narrow) && <EvalPanel s={s} dispatch={formDispatch} ctx={ctx} verdict={shown} cardShown={cardShown} hint={layout.narrow ? null : hint}
               hero={hero} heroNote={offNote} onTryOnEnd={() => heroMode.tryOn.set(null)} vs={flow.cardVs} onEquip={flow.cardEquip ? (v) => doEquip(v.c) : undefined}
+              below={layout.narrow ? undefined : <IngameList ctx={ctx} sections={igSections} n={igN} onTick={onTick} />}
               next={flow.cardNext} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
@@ -292,7 +303,7 @@ export function App() {
               onApplied={(text, undo) => say({ text, note: '', tab: 'team', undo: (x) => undo(x) ?? x })} />
           </section>
         </main>
-        <VBar r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
+        <VBar ingameN={igN} r={shown} news={news.length > 0} quiet={!!tour.run} show={layout.narrow} stampless={cardShown} tab={s.tab} rosterSize={roster.size}
           hint={batchOn ? (batch.batch.items.length ? t.batch.strip(batch.batch.items.length).replace(/ /g, '\u00A0') : t.batch.empty) : hint}
           resetLabel={batchNext} marks={batchMarks} onTab={onTab} onMenu={() => setMoreOpen(true)} onReset={onReset}
           onOpen={batchOn ? () => batch.show('list') : () => setVerdictOpen(true)} />
@@ -310,10 +321,14 @@ export function App() {
           <FusionAsk base={charName(idx.CHAR[ros.fusionAsk.to]?.fusionOf ?? ros.fusionAsk.to)} toFusion={!!idx.CHAR[ros.fusionAsk.to]?.fusionOf} n={ros.fusionAsk.n}
             onYes={ros.doSwitch} onClose={ros.closeFusionAsk} />
         )}
+        {tickToast && tickMsg && (
+          <Toast className="gear-toast" style={toastAt} text={t.ingame.done(t.ui.slotNom[tickMsg.line.slot], heroName(idx, tickMsg.line.hero))} action={t.ui.undoAction}
+            onAction={() => { ingame.untick(tickMsg.line, tickMsg.at); setTickMsg(null); }} />
+        )}
         {formToast && <Toast style={toastAt} text={t.ui.undoText} action={t.ui.undoAction} onAction={flow.onUndo} />}
         {batchToast && <Toast className="batch-toast" style={toastAt} text={batch.note!} action="" />}
         {moreOpen && (
-          <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} parkedN={parkedN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
+          <More s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} ingameN={igN} onIngame={igN && !tour.run ? () => setIngameOpen(true) : undefined} parkedN={parkedN} news={news.length > 0} narrow={layout.narrow} touring={!!tour.run}
             rosterApi={ros.rosterUi} gear={gear} onBackup={ros.onBackup}
             lang={lang} onLang={changeLang} gameIcons={gameIcons} onIcons={changeIcons} install={install} onAppUpdate={appUpdate}
             onClose={() => setMoreOpen(false)} onChars={() => onTab('chars')} onTeam={() => onTab('team')}
@@ -351,6 +366,11 @@ export function App() {
         {findOpen && (
           <Sheet title={t.ui.findPiece} onClose={() => setFindOpen(false)}>
             <FindPiece ctx={ctx} store={gear.store} fits={(item) => fitsData(s, item, ctx.idx)} onOpenChar={(id) => { setFindOpen(false); openChar(id); }} />
+          </Sheet>
+        )}
+        {ingameOpen && layout.narrow && igN > 0 && (
+          <Sheet title={t.ingame.title(igN)} onClose={() => setIngameOpen(false)} className="vdrawer batch-sheet batch-full ig-sheet">
+            <IngameBody ctx={ctx} sections={igSections} onTick={onTick} />
           </Sheet>
         )}
         {parkedShown && (

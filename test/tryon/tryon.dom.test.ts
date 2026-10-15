@@ -330,7 +330,7 @@ describe('штамп по вещам героев', () => {
 
     await click($('.vc-equip'));
 
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet");
     expect($('.gear-toast small')).toBeNull();
   });
 

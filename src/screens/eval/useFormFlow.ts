@@ -147,9 +147,12 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, via, 
     // Р4: была надетая её слота (её держат билды — осталась в пуле) — тоже «Заменено», как на кнопке (poolVs replaces)
     const mine = r.removed.filter((p) => p.slot === r.piece.slot), pruned = r.removed.filter((p) => p.slot !== r.piece.slot);
     const wasOn = !!r.wasWorn && r.was.includes(r.wasWorn);
-    const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
+    const base1 = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
       : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : t.ui.equipped(c.name, r.piece.slot, t4);
+    // N2: a written line is named in the message; N8: the promise it superseded is gone from the app
+    const text = line ? t.ingame.toList(base1) : base1;
     const notes: string[] = [];
+    if (line && prev) notes.push(t.ingame.superseded);
     // a superseded promise (prev) never went on in the game: no advice about it (it is rated again from the inventory)
     notes.push(...removedNotes(r, prev ? mine.filter((p) => p.id !== prev.piece) : mine, rep));
     // вопрос 6, PLAN Д7: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»

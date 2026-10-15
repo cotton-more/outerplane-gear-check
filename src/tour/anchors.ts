@@ -22,6 +22,7 @@ export const ANCHORS = [
   'teamTurn', // the turn plan under the team: «Ход против босса» / without a boss «Порядок хода» (HISTORY.md 0200-boss E1, 0206)
   'teamTrade', // «Подобрать вещи» under the team (HISTORY.md 0200-boss E2)
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
+  'ingame', // «Надеть в игре»: the list under the form (wide screen) or its row in «Ещё» (phone) (HISTORY.md 0230)
   'stash', // «Отложить для X» под карточкой вердикта и в строке героя
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];

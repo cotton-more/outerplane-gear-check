@@ -13,7 +13,7 @@ export const TIP_ORDER = [
   'features/roster/FusionAsk', 'features/worn/WornGear', 'features/gear/ui/PoolList', 'screens/chars/PieceSheet', 'features/worn/ShareButton',
   'features/eval/form/BtChip', 'features/eval/verdict/Chain', 'features/eval/code/ItemCode',
   'features/eval/form/StatGrid', 'features/eval/form/SubPicker', 'features/eval/form/SubRows', 'features/tryon/TryOnStrip',
-  'screens/eval/VerdictPanel', 'features/gear/ui/HeroList',
+  'screens/eval/VerdictPanel', 'features/gear/ui/HeroList', 'features/ingame/ui/IngameList',
   'features/trade/ui/TradeSheet',
   'features/batch/ui/BatchButton',
   'screens/team/TeamScreen', 'features/boss/ui/BossSlot', 'features/boss/ui/BossTurn', 'features/trade/ui/TeamTradeSheet',

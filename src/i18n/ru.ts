@@ -230,6 +230,7 @@ export const ru = {
     junkBy: (names: string[]) => `Разбирай — уже не хуже у ${names.length > 2 ? `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}` : names.join(' и ')}`,
     // чип героя в «Сейчас на персонажах» и на карточке
     chipGain: (pts: string) => `+${pts} очк.`,
+    pickStar: 'выбор вердикта', // H17: the ★'s label
     chipKeep: 'держи',
     // the hero list under the verdict (0230 TEXTS H)
     listReplace: 'Вместо надетого',
@@ -791,6 +792,16 @@ export const ru = {
     toList: (text: string) => `${text.replace(/\.$/, '')} — в «Надеть в игре».`,
     // N8: «Надеть» pushed out an earlier promised piece (superseded) — a note of that message
     superseded: 'Прежняя вещь из «Надеть в игре» убрана — она в инвентаре, оцени её заново.',
+    // N1: the heading, the sheet's title, the row in «Ещё», the badge's label
+    title: (n: number) => `Надеть в игре · ${n}`,
+    // N3 / N4 / N5: under a line — what the game does with the taken-off piece, whose reserve feeds the new one
+    lock: 'Снятое — под замок',
+    feed: 'Снятое — в Breakthrough этой',
+    fed: (hero: string) => `Breakthrough этой — корм: запас ${hero} (сними замок)`,
+    // N6: the tap's message (slot — the word «перчатки»)
+    done: (slot: string, hero: string) => `Надето в игре: ${slot} ${hero}.`,
+    // N7: the tick's label
+    tick: 'Надел в игре',
   },
 
   // «Обмен вещами» (R10 — MODEL.md §10): шторка обмена, план, закрепление героя
@@ -1186,6 +1197,7 @@ export const ru = {
       gear: 'Оценка сама берёт лучшее из вещей героя — статы и сеты вместе. Из своих можно на 1+ очко лучше — появится «Переодеть».',
       piece: 'Сделал в игре Reforge или Breakthrough — поправь здесь сегменты и «T4», как на вещи в игре: сравнение идёт по тому, что есть.',
       tryStrip: 'Оценка только для этого персонажа: строка карточки и «Надеть» — про этого персонажа, штамп — общий. ✕ — снова для всех.',
+      ingame: 'Надеть в игре. «Надеть» записывает вещь сразу, а в игре её надевать потом. Здесь — что осталось, по героям. Надел — нажми строку.', // TEXTS T2
       vs: 'Кому даст. Все, кого вещь усилит хотя бы на 1 очко: вместо надетого, в пустой слот, в запас. ★ — кого советует вердикт. «Подробно» — что даст и что было.',
       stash: 'Оставляй, но пока не надевать? Нажми «Отложить» — вещь запишется герою, и следующие вещи будут сравниваться с ней.',
       cardEquip: 'Надень одной кнопкой под карточкой: вещь запишется надетой. Что герою больше не нужно, уйдёт из его вещей — приложение скажет.',
@@ -1229,6 +1241,7 @@ export const ru = {
       teamTrade: 'команда: обмен вещами для команды',
       heroStars: 'уровень героя у звёзд: 100 или 120 для каждого',
       trade: 'обмен: обход с галочками, замены и парковка',
+      ingame: 'Надеть в игре: что осталось надеть, по героям', // not in TEXTS.md: from T2, to approve
     },
     newsStrip: (first: string, more: number) => `Новое: ${first}${more ? ` и ещё ${more}` : ''}.`,
     newsShow: 'Показать',

@@ -68,7 +68,7 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
         <div className="hl-l1">
           <button type="button" className="hl-tog" aria-expanded={detail} onClick={onToggle}>
             <HeroFace c={c} />
-            <span className="hl-nm"><b><HeroName c={c} /></b>{row.star && <span className="hl-star" aria-hidden="true">★</span>}</span>
+            <span className="hl-nm"><b><HeroName c={c} /></b>{row.star && <span className="hl-star" role="img" aria-label={t.fit.pickStar}>★</span>}</span>
             {pill}
             <span className="hl-note">{notes.join(' · ')}</span>
           </button>
@@ -79,7 +79,7 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
           <HeroFace c={c} />
           <span className="hl-nm">
             <button type="button" onClick={() => onOpenChar(c.id)}><b><HeroName c={c} /></b></button>
-            {row.star && <span className="hl-star" aria-hidden="true">★</span>}
+            {row.star && <span className="hl-star" role="img" aria-label={t.fit.pickStar}>★</span>}
           </span>
           {pill}
           <span className="hl-note">{notes.join(' · ')}</span>

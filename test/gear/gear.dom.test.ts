@@ -83,7 +83,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect(hlBtn('Caren')?.textContent).toBe('Equip');
     await click(hlBtn('Caren'));
 
-    expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: helmet');
     expect($('.gear-toast small')).toBeNull();
     // bt 0: форма брони без «T4» — ниже T4 (В4, шаг 3; было null — форма Breakthrough не знала)
     expect(stored()).toMatchObject({ v: 3, pools: { [caren.id]: ['p1'] }, pieces: { p1: { slot: 'helmet', setId: speed, yellow: NEW.subs, bt: 0 } } });
@@ -99,7 +99,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.vcard .vc-title')?.textContent).toBe('better than on Caren');
     expect($('.vcard .vc-vs')?.textContent).toBe('+2 ptsCaren');
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet");
     // the old helmet at T4 is Caren's best Speed helmet at T4 (MODEL.md §5 item 3, Speed pinned): it stays in the pool
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2']);
     expect($('.vcard')).toBeNull();
@@ -150,7 +150,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
     await click($('.vc-equip'));
 
-    expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots');
     expect($('.gear-toast small')?.textContent).toContain('Extras removed — Caren no longer needs them.');
     expect(stored().pools[caren.id]).toEqual(['p2', 'p3', 'p4', 'p5']);
     await click(byText('.gear-toast button', 'Undo'));
@@ -166,7 +166,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.v-equip')?.textContent).toMatch(/^Equip.* · T4$/);
     await click($('.v-equip'));
 
-    expect($('.gear-toast')?.textContent).toContain('On Caren: boots · T4.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots · T4');
     expect($('.gear-toast small')?.textContent).toContain('Extras removed — Caren no longer needs them.');
     expect(stored().pieces.p5.bt).toBe(4);
     await click(byText('.gear-toast button', 'Undo'));
@@ -296,7 +296,7 @@ describe('такая же вещь у другого (окна «Это шлем
     expect($('.twin')).toBeNull();
     expect(byText('.drawer', "Is this Kappa's helmet?")).toBeUndefined();
     expect(stored()).toMatchObject({ seq: 2, pools: { [kappa.id]: ['p1'], [caren.id]: ['p2'] }, pieces: { p1: { bt: 2 }, p2: { bt: 0, lit } } });
-    expect($('.gear-toast')?.textContent).toContain('On Caren: helmet.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: helmet');
     expect($('.gear-toast')?.textContent).not.toContain('Kappa');
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools).toEqual({ [kappa.id]: ['p1'] });
@@ -318,7 +318,7 @@ describe('«Заменить»: что со старой', () => {
 
     await click($('.vc-equip'));
 
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet");
     expect($('.gear-toast small')?.textContent).toBe('Old helmet — evaluate it first: it may suit another hero.');
     expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
     expect(stored().pools[rin.id]).toEqual(['p2', 'p3', 'p4']);
@@ -331,7 +331,7 @@ describe('«Заменить»: что со старой', () => {
 
     await click($('.vc-equip'));
 
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · T4.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet · T4");
     expect($('.gear-toast small')?.textContent).toBe('Old helmet — evaluate it first: it may suit another hero.');
   });
 
@@ -342,7 +342,7 @@ describe('«Заменить»: что со старой', () => {
     await mount({ slot: 'helmet', grade: 'unique' }, NEW, { gear: G([helm], { [caren.id]: ['p1'], [kappa.id]: ['p1'] }, { worn: { [caren.id]: { helmet: 'p1' } } }) });
     await click($('.vcard'));
     await click(hlBtn('Caren'));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's helmet");
     expect($('.gear-toast')?.textContent).not.toContain('Kappa');
     expect(stored().pools[kappa.id]).toEqual(['p1']);
     expect($$('.gear-toast button').map((b) => b.textContent)).toEqual(['Undo']);
@@ -358,7 +358,7 @@ describe('«Надеть»: что уходит из пула и что пише
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: speed, subs: { CHC: 3, CHD: 2, 'DEF%': 1, HP: 1 } }, { gear: G(pcs, { [caren.id]: ['p1', 'p2', 'p3', 'p4'] }) });
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots');
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
   });
 
@@ -376,7 +376,7 @@ describe('«Надеть»: что уходит из пула и что пише
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }, { worn }) });
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's boots");
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed.");
+    expect($('.gear-toast')?.textContent).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed");
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p6']);
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools[caren.id].sort()).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
@@ -400,7 +400,7 @@ describe('«Надеть»: что уходит из пула и что пише
     await click($('.vcard'));
     await click(hlBtn('Caren'));
     const toast = $('.gear-toast')?.textContent ?? '';
-    expect(toast).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed.");
+    expect(toast).toContain("Replaced: Caren's boots — the old Attack and Immunity ones are removed");
     expect(toast).not.toContain('Kappa');
     expect(stored().pools[kappa.id]).toEqual(['p4']);
   });
@@ -413,7 +413,7 @@ describe('«Надеть»: что уходит из пула и что пише
     await mount({ slot: 'shoes', grade: 'unique' }, { setId: set('Immunity'), subs: { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 1 } }, { gear: G(pcs, { [caren.id]: pcs.map((p) => p.id as string) }) });
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren');
     await click($('.vc-equip'));
-    expect($('.gear-toast')?.textContent).toContain('On Caren: boots.');
+    expect($('.gear-toast')?.textContent).toContain('On Caren: boots');
     expect(stored().pools[caren.id]).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
   });
 });
@@ -1178,7 +1178,7 @@ describe('«По статам» у каждого героя (находка 28)
     await click(row.querySelector<HTMLElement>('.hl-btn'));
     expect(stored().pools[drakhan.id]).toHaveLength(1);
     // «Надето», В4: «По статам» не называется в «где стоит» — тост без «Засчитано» (было — «Counts in "By stats".»)
-    expect($('.gear-toast')?.textContent).toBe('On Demiurge Drakhan: armor.Undo');
+    expect($('.gear-toast')?.textContent).toBe('On Demiurge Drakhan: armor — added to "Equip in game".Undo');
   });
 
   it('Caren со Speed-шлемом, Swiftness-ботинки через поиск: тост без «Засчитано» — ни в «By stats», ни в её билдах (В4)', async () => {
@@ -1189,7 +1189,7 @@ describe('«По статам» у каждого героя (находка 28)
     const row = hlRow('Caren')!;
     expect(row.querySelector('.hl-btn')?.textContent).toMatch(/^Equip/);
     await click(row.querySelector<HTMLElement>('.hl-btn'));
-    expect($('.gear-toast')?.textContent).toBe('On Caren: boots.Undo');
+    expect($('.gear-toast')?.textContent).toBe('On Caren: boots — added to "Equip in game".Undo');
   });
 
 });

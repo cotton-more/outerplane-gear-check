@@ -254,7 +254,7 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     await click(askBtn('Yes, Core Fusion Eternal'));
 
     expect(label).toBe('Replace');
-    expect($('.gear-toast span')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet.");
+    expect($('.gear-toast span')?.textContent).toContain("Replaced: Core Fusion Eternal's helmet");
     expect(stored().pools[cfEternal.id]).not.toContain('e1');
   });
 
@@ -294,7 +294,7 @@ describe('«Надеть на Core Fusion» при X с вещами: строк
     await click(askBtn('Yes, Core Fusion Eternal'));
     expect(label).toBe('Equip');
     expect(gain).toMatch(/^\+[\d.]+$/);
-    expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet\./);
+    expect($('.gear-toast span')?.textContent).toMatch(/^On Core Fusion Eternal: helmet/);
   });
 });
 

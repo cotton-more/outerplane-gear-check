@@ -196,6 +196,7 @@ export const en: Texts = {
     feedMany: (n, names) => `Feed ${n} from ${andEn(names)}'s reserve into this one (any of the set-aside ones).`,
     junkBy: (names) => `Dismantle — already as good on ${names.length > 2 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(' and ')}`,
     chipGain: (pts) => `+${pts} pts`,
+    pickStar: 'the verdict\'s pick', // H17: the ★'s label
     chipKeep: 'keep',
     listReplace: 'Instead of worn',
     listEmpty: 'Into an empty slot',
@@ -676,6 +677,12 @@ export const en: Texts = {
   ingame: {
     toList: (text) => `${text.replace(/\.$/, '')} — added to "Equip in game".`,
     superseded: 'The earlier piece from "Equip in game" is removed: it\'s in your inventory, rate it again.',
+    title: (n) => `Equip in game · ${n}`,
+    lock: 'Taken off — lock it',
+    feed: 'Taken off — feed it to this one\'s Breakthrough',
+    fed: (hero) => `Breakthrough for this one — feed: ${hero}'s reserve (unlock it)`,
+    done: (slot, hero) => `Done in the game: ${hero}'s ${slot}.`,
+    tick: 'Equipped in the game',
   },
   trade: {
     title: 'Trade gear',
@@ -1015,6 +1022,7 @@ export const en: Texts = {
       gear: 'Evaluation picks the best of the hero\'s own pieces — stats and sets together. When own pieces do 1+ pt better, “Re-dress” shows up.',
       piece: 'Did a Reforge or Breakthrough in the game? Fix the segments and “T4” here, as on the piece in the game: comparisons use what\'s there.',
       tryStrip: 'Rating for this character only: the card line and “Equip” are for this character; the stamp is shared. ✕ — everyone again.',
+      ingame: 'Equip in game. “Equip” records the piece at once; in the game you put it on later. Here is what’s left, hero by hero. Done — tap the line.', // TEXTS T2
       vs: 'Who it helps. Everyone it makes 1+ pt stronger: instead of worn, empty slot, set aside. ★ = the verdict’s pick. “Detailed”: what it gives and replaces.', // TEXTS T1 short (owner 2026-10-15; tips ≤ 160)
       stash: 'Keep it but don\'t equip yet? Tap Set aside — it\'s recorded for the hero, and new pieces get compared with it.',
       cardEquip: 'Equip with one button under the card: the piece is recorded as worn. Whatever the hero no longer needs leaves their gear — the app says so.',
@@ -1057,6 +1065,7 @@ export const en: Texts = {
       teamTrade: 'team: the team trade',
       heroStars: 'hero level by the stars: 100 or 120 for each',
       trade: 'trade: a walk with ticks, replacements and parking',
+      ingame: 'equip in game: what is left to put on, hero by hero', // not in TEXTS.md: from T2, to approve
     },
     newsStrip: (first: string, more: number) => `New: ${first}${more ? ` and ${more} more` : ''}.`,
     newsShow: 'Show',
