@@ -233,6 +233,27 @@ describe('the same-piece guard for a promised piece', () => {
   });
 });
 
+describe('message priority (F3)', () => {
+  it('«Надеть», then a tick while its message is up: N6 shows over it, its «Вернуть» restores the line', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 2056 });
+    try {
+      await mount({ slot: 'helmet', grade: 'unique' }, NEW);
+      await click($('.v-equip'));
+      expect(lines()).toHaveLength(1);
+      expect($$('.gear-toast')).toHaveLength(1);
+      await click($('.ig-body .bstep-l'));
+      expect(lines()).toHaveLength(0);
+      const toast = $$('.gear-toast');
+      expect(toast).toHaveLength(1);
+      expect(toast[0].textContent).toContain('Caren');
+      await click(byText('.gear-toast button', 'Undo'));
+      expect(lines()).toHaveLength(1);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    }
+  });
+});
+
 describe('read', () => {
   it('a dead line (the record no longer worn there) and a malformed one are dropped on read and written back', async () => {
     const worn = { ...GEAR, worn: { [caren.id]: { helmet: 'p1' } } };

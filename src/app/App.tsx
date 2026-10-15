@@ -187,7 +187,10 @@ export function App() {
   const igSections = useMemo(() => sectionsOf(ingame.value, realGear.store), [ingame.value, realGear.store]);
   const igN = tour.run ? 0 : countOf(ingame.value, realGear.store);
   const [tickMsg, setTickMsg] = useTimed<{ line: Line; at: number }>(8000);
-  const onTick = (id: string) => { const r = ingame.tick(id); if (r) setTickMsg(r); };
+  // the newest message wins: a tick shows over a gear message still up, a new gear message over a tick (F3)
+  const [tickNewer, setTickNewer] = useState(false);
+  useEffect(() => { if (msg) setTickNewer(false); }, [msg]);
+  const onTick = (id: string) => { const r = ingame.tick(id); if (r) { setTickMsg(r); setTickNewer(true); } };
   const flow = useFormFlow({
     idx, t, ctx, s, dispatch, gear, input, hero, via: heroMode.via, ingame, heroVs: vm.heroVs, replace, tview, list: vm.list, same: vm.same, canEquip, touring, narrow: layout.narrow,
     dropReplace, backReplace: heroMode.backReplace, formUndo, setFormUndo,
@@ -249,7 +252,9 @@ export function App() {
     onEquip: !canEquip ? undefined : doEquip, onStash: !canEquip ? undefined : doStash,
   };
   // сообщения с «Вернуть»: экипировки — на вкладке, где сделано; формы — на «Оценке», если нет первого
-  const gearToast = !!msg && msg.tab === s.tab && !tour.run;
+  // a hidden older message keeps its own timer and shows again if the newer one ends first
+  const tickOver = !!tickMsg && tickNewer && s.tab === 'eval';
+  const gearToast = !!msg && msg.tab === s.tab && !tour.run && !tickOver;
   const tickToast = !!tickMsg && s.tab === 'eval' && !tour.run && !gearToast;
   const formToast = !!formUndo && s.tab === 'eval' && !tour.run && !gearToast && !tickToast;
   // the batch's short notes («В этой партии — Attack-броня…», «Введены не все сабстаты…») — a toast: a line in the page
