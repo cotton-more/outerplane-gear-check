@@ -64,6 +64,12 @@ html.narrow .vbar .vb-more { flex: none; color: var(--ink-3); font-size: 12px; }
 html.narrow .vdrawer .verdict .v-head { padding: 10px 14px 10px; gap: 6px; }
 html.narrow .vdrawer .verdict .v-equip { min-height: 34px; padding: 3px 14px; font-size: 13px; }
 html.narrow .vdrawer .verdict .stamp { font-size: 16px; padding: 5px 9px 4px; box-shadow: none; }
+/* a short window (411 × 363): the head's lines are one step smaller, so the first row of the list stays on the sheet */
+@media (max-height: 400px) {
+  html.narrow .vdrawer .verdict .v-head { padding: 8px 14px 8px; gap: 4px; }
+  html.narrow .vdrawer .verdict .v-summary { font-size: 14px; line-height: 1.25; }
+  html.narrow .vdrawer .verdict .v-pick p { font-size: 12px; line-height: 1.3; }
+}
 html.narrow .vbar.v-idle .stamp { display: none; }
 @media (max-height: 480px) {
   html.narrow body.has-vbar { --vbar-h: 60px; }
@@ -212,7 +218,8 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .hl-tog .vs { grid-area: p; }
 .hl-tog .hl-note { grid-area: t; flex: none; font-size: 11.5px; color: var(--ink-3); }
 .hl-tog:empty { display: none; }
-.hl-row.is-compact .hl-btn { min-width: 0; padding: 3px 9px; margin-left: 0; }
+.hl-row.is-compact .hl-btn { min-width: 0; min-height: 34px; padding: 3px 9px; margin-left: 0; }
+.hl-row.is-compact .hl-l1 { min-height: 40px; }
 .hl-row.is-compact .hl-d { padding-left: 40px; }
 .hl-row.is-compact .hl-legend { padding: 2px 0 2px 40px; font-size: 11.5px; }
 html.narrow .hl-row:has(.hl-tog[aria-expanded="true"]) { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
