@@ -30,6 +30,7 @@ import { useGear, type GearApi } from '@/features/gear/store/useGear';
 import { takeModelNote } from '@/features/gear/store/stored';
 import type { TryOn } from '@/features/tryon/tryon';
 import { useHeroMode } from '@/features/tryon/useHeroMode';
+import { useIngame } from '@/features/ingame/useIngame';
 import { TradeSheet } from '@/features/trade/ui/TradeSheet';
 import { useBatchMode } from '@/features/batch/useBatchMode';
 import { BatchStrip } from '@/features/batch/ui/BatchStrip';
@@ -174,8 +175,10 @@ export function App() {
   const { tour, news } = onb;
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
+  // «Надеть в игре» (features/ingame): promises of «Надеть», against the player's own store (never the tour's)
+  const ingame = useIngame(idx, realGear.store, !touring && !realGear.newer);
   const flow = useFormFlow({
-    idx, t, ctx, s, dispatch, gear, input, hero, heroVs: vm.heroVs, replace, tview, list: vm.list, same: vm.same, canEquip, touring, narrow: layout.narrow,
+    idx, t, ctx, s, dispatch, gear, input, hero, via: heroMode.via, ingame, heroVs: vm.heroVs, replace, tview, list: vm.list, same: vm.same, canEquip, touring, narrow: layout.narrow,
     dropReplace, backReplace: heroMode.backReplace, formUndo, setFormUndo,
     closeVerdict: () => setVerdictOpen(false),
     fusionGate: ros.fusionGate, joinRoster: ros.joinRoster, say,

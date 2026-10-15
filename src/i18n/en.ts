@@ -673,6 +673,10 @@ export const en: Texts = {
     replace: 'Try a replacement',
   },
 
+  ingame: {
+    toList: (text) => `${text.replace(/\.$/, '')} — added to "Equip in game".`,
+    superseded: 'The earlier piece from "Equip in game" is removed: it\'s in your inventory, rate it again.',
+  },
   trade: {
     title: 'Trade gear',
     open: 'Trade ▸',

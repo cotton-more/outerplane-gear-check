@@ -785,6 +785,14 @@ export const ru = {
     replace: 'Примерить замену',
   },
 
+  // «Надеть в игре» (features/ingame, HISTORY.md 0230): the promises of «Надеть»
+  ingame: {
+    // N2: the end of the «Надеть» message — the message's own last full stop gives way to it
+    toList: (text: string) => `${text.replace(/\.$/, '')} — в «Надеть в игре».`,
+    // N8: «Надеть» pushed out an earlier promised piece (superseded) — a note of that message
+    superseded: 'Прежняя вещь из «Надеть в игре» убрана — она в инвентаре, оцени её заново.',
+  },
+
   // «Обмен вещами» (R10 — MODEL.md §10): шторка обмена, план, закрепление героя
   trade: {
     title: 'Обмен вещами',

@@ -1,5 +1,6 @@
 // Что делает форма «Оценки» после ввода: «Следующий» и «Вернуть» формы, «Надеть» из карточки, вердикта и «Кому
 // надеть?» — новая запись в пуле героя (features/gear/pool putOn), сообщение с «Вернуть», форма — как после «Следующий».
+// «Надеть» of a new piece is also a promise in «Надеть в игре» (features/ingame).
 import type { Dispatch } from 'react';
 import type { Index } from '@/game/data';
 import type { Char, SlotId } from '@/game/data/types';
@@ -17,16 +18,20 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { GearMsg } from '@/features/gear/ui/gearMsg';
 import { itemCaption } from '@/features/gear/ui/pieceText';
 import type { Switched } from '@/features/roster/useRosterUi';
-import type { Hero } from '@/features/tryon/tryon';
+import type { Hero, TryOnVia } from '@/features/tryon/tryon';
+import { lineAt, lineOf, promisedOf, type Fed } from '@/features/ingame/ingame';
+import type { IngameApi } from '@/features/ingame/useIngame';
 import { setName } from '@/game/set/setName';
 
 const both = (f?: () => void, g?: () => void) => (f || g ? () => { f?.(); g?.(); } : undefined);
 
-export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroVs, replace, tview, list, same, canEquip, touring, narrow,
-  dropReplace, backReplace, formUndo, setFormUndo, closeVerdict, fusionGate, joinRoster, say }: {
+export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, via, heroVs, replace, tview, list, same, canEquip, touring, narrow,
+  dropReplace, backReplace, formUndo, setFormUndo, closeVerdict, fusionGate, joinRoster, say, ingame }: {
   idx: Index; t: Texts; ctx: Ctx;
   s: FormState; dispatch: Dispatch<FormAction>; gear: GearApi; input: ItemInput;
   hero: Hero | null; heroVs: CharVs | null; replace: string | null; tview: PoolView; list: HeroGroup[];
+  via: TryOnVia | null;                  // how hero mode was entered (TryOn.via)
+  ingame: IngameApi;                     // «Надеть в игре»
   same: Same | null;                     // the piece looks like one set aside for same.c (guard, useVerdictModel)
   canEquip: boolean;                     // не во время обучения (кроме примера) и не на чужой версии экипировки
   touring: boolean; narrow: boolean;
@@ -95,9 +100,16 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
   const equipOn = (c: Char, sw: Switched | null) => {
     const rep = hero?.c.id === c.id ? replace : null;
     const base = sw?.st ?? gear.store;
+    // «Надеть в игре» (features/ingame): a new piece from the inventory is a promise — the card, the hero list, name search,
+    // hero mode from «Оценить вещь для X». Hero mode from «Ввести» or «Примерить замену» and «Носит в игре — запишем как
+    // надетое» enter what the game already has on: no line. Not in a tour. prev — the slot's live promise: the new piece
+    // supersedes it, and its record leaves the pool (putOn promised)
+    const promise = !touring && (!hero || (via === 'rate' && !heroVs?.asWorn));
+    const promised = promise ? promisedOf(ingame.value, base, c.id) : null;
+    const prev = promise ? lineAt(ingame.value, base, c.id, input.slot) : null;
     // it looks like the piece set aside for this very hero (guard): «Надеть» wears that record, no second one
-    const wore = same?.c.id === c.id && !rep ? wearFromPool(ctx, base, c.id, same.piece.id) : null;
-    const r: PutResult = wore ? { ...wore, piece: wore.st.pieces[wore.id] } : putOn(ctx, base, c.id, input, { replace: rep });
+    const wore = same?.c.id === c.id && !rep ? wearFromPool(ctx, base, c.id, same.piece.id, promised) : null;
+    const r: PutResult = wore ? { ...wore, piece: wore.st.pieces[wore.id] } : putOn(ctx, base, c.id, input, { replace: rep, promised });
     // the feed line named other heroes' reserves («из запаса Aer»): they go to this one's Breakthrough — their records
     // leave with this «Надеть», as the hero's own reserves do (planPut); «Вернуть» brings them back
     const h = wore ? undefined : rows.find((r) => r.vs.c.id === c.id)?.vs.h;
@@ -105,6 +117,8 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     let st = r.st;
     const backs: ((x: GearStore) => GearStore)[] = [];
     for (const f of fed) { backs.unshift(removeUndo(st, f.of.id, f.piece)); st = removeFrom(st, f.of.id, f.piece.id); }
+    const fedLines: Fed[] = fed.map((f) => ({ hero: f.of.id, snap: f.piece }));
+    const line = promise ? lineOf(r, st, c.id, prev, fedLines) : null;
     const undo = (x: GearStore) => {
       const y = wore ? undoWear(x, c.id, wore) : undoPut(x, c.id, r);
       const z = backs.reduce((acc, b) => b(acc), y);
@@ -125,6 +139,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     setFormUndo(null);
     if (narrow) document.getElementById('eval-in')?.scrollIntoView({ block: 'start' });
     if (touring) return;
+    if (line) ingame.add(line, st);
     // «· T4» — нажата «T4» на форме (В4): с каким Breakthrough вещь легла в пул
     const t4 = input.bt === 4 ? t.ui.withT4 : '';
     // В1: «Заменено» — только про вещи её слота; вытесненные из всех билдов в других слотах — строкой prunedNote (без
@@ -136,7 +151,8 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     const text = mine.length > 1 ? t.ui.replacedMany(c.name, r.piece.slot, [...new Set(mine.map(pieceLabel))], t4)
       : mine.length || wasOn ? t.ui.replaced(c.name, r.piece.slot, t4) : t.ui.equipped(c.name, r.piece.slot, t4);
     const notes: string[] = [];
-    notes.push(...removedNotes(r, mine, rep));
+    // a superseded promise (prev) never went on in the game: no advice about it (it is rated again from the inventory)
+    notes.push(...removedNotes(r, prev ? mine.filter((p) => p.id !== prev.piece) : mine, rep));
     // вопрос 6, PLAN Д7: убранные в других слотах не перечисляем — одна строка «Лишнее убрано…»
     if (pruned.length) notes.push(t.fit.pruned(c.name));
     if (fed.length === 1) notes.push(t.fit.fed(fed[0].piece.slot, pieceLabel(fed[0].piece), fed[0].of.name, !!fed[0].piece.setId));
@@ -145,7 +161,7 @@ export function useFormFlow({ idx, t, ctx, s, dispatch, gear, input, hero, heroV
     say({
       text, note: notes.join(' '), tab: 'eval',
       undo,
-      after: both(both(joined, sw?.after), () => { dispatch({ type: 'load', item: was }); backReplace(c.id, rep); }),
+      after: both(both(joined, sw?.after), () => { dispatch({ type: 'load', item: was }); backReplace(c.id, rep); if (line) ingame.undo(line, prev); }),
     });
   };
   // что стало с убранными вещами её слота (mine; другие слоты — строкой prunedNote): такая же Epic — материал новой,

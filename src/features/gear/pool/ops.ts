@@ -41,18 +41,29 @@ export const replaceOf = (mine: readonly Piece[], slot: SlotId, replace?: string
 // сетов, запас), а с новой надетой — нет. Новую не убирает никогда (она надета). Ставшее ненужным раньше не трогаем:
 // строка «больше не нужна» и «Убрать у X». Каждую убранную вернёт «Вернуть» (undoPut). worn — надетое героя (слот → id).
 // replace — id записи из «Примерить замену» (решение владельца «заменить в любом случае» — (а)): она уходит всегда.
-// Записи нет в его пуле (чужая, уже убранная) или она другого слота — как без replace
+// Записи нет в его пуле (чужая, уже убранная) или она другого слота — как без replace.
+// promised — the records «Надеть в игре» still owes (features/ingame; HISTORY.md 0230): the slot's worn record, when it is
+// one of them, was never worn in the game — the new piece supersedes it and it leaves the pool (no reserve). Only the slot's
+// worn record is looked up in the set: any other record, promised or not, is judged by the pool as before (supersededOf)
 export interface PutPlan { removed: Piece[] }
-export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, worn: Readonly<Worn> = {}, replace?: string | null, pin?: string | null, need?: number | null): PutPlan {
+export function planPut(ctx: Ctx, c: Char, mine: readonly Piece[], piece: Piece, worn: Readonly<Worn> = {}, replace?: string | null, pin?: string | null, need?: number | null, promised?: ReadonlySet<string> | null): PutPlan {
   const out = replaceOf(mine, piece.slot, replace);
+  const sup = supersededOf(mine, piece.slot, worn, promised);
+  const forced = [out, sup].filter((p): p is Piece => !!p);
   const P = profileFor(ctx, c, pin, need);
-  if (!P) return { removed: out ? [out] : [] };
-  const rest = out ? mine.filter((p) => p !== out) : mine;
+  if (!P) return { removed: [...new Set(forced)] };
+  const rest = mine.filter((p) => !forced.includes(p));
   const ids = new Set(mine.map((p) => p.id));
   const on = Object.values(worn).filter((id): id is string => !!id && ids.has(id));
   const before = poolInfo(P, mine, new Set(on));
   const after = poolInfo(P, [...rest, piece], new Set([...on.filter((id) => id !== worn[piece.slot]), piece.id]));
-  return { removed: mine.filter((p) => p === out || (before.why.has(p.id) && !after.why.has(p.id))) };
+  return { removed: mine.filter((p) => forced.includes(p) || (before.why.has(p.id) && !after.why.has(p.id))) };
+}
+// the record a promised «Надеть» supersedes (planPut promised): the slot's worn record, if it is in his pool and promised.
+// Nothing else is ever picked — a reserve isn't worn, so the set can't reach it
+export function supersededOf(mine: readonly Piece[], slot: SlotId, worn: Readonly<Worn>, promised?: ReadonlySet<string> | null): Piece | undefined {
+  const id = worn[slot];
+  return id && promised?.has(id) ? mine.find((p) => p.id === id && p.slot === slot) : undefined;
 }
 
 // Что сделает «Надеть» вещи с формы на персонажа — по хранилищу вида пула, без записи: от этого подпись «Заменить» /
@@ -68,13 +79,15 @@ export function planFor(ctx: Ctx, view: PoolView, charId: string, x: ItemInput, 
 // Надеть вещь на персонажа (и в режиме героя, и из вердикта): всегда новая запись, даже если у него (или у другого)
 // такая же — в Оценку вводят новую вещь из инвентаря (решение владельца 2026-10-01), пулы независимы (В9); она же —
 // надетая его слота. Лишнее вытеснит planPut. replace — «Примерить замену» (planPut): эта запись уходит всегда
-export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { at?: string; replace?: string | null } = {}): PutResult {
+// promised — planPut: the slot's worn record leaves when «Надеть в игре» still owes it
+export function putOn(ctx: Ctx, st: GearStore, charId: string, x: ItemInput, opts: { at?: string; replace?: string | null; promised?: ReadonlySet<string> | null } = {}): PutResult {
   const c = ctx.idx.CHAR[charId];
   const mine = poolPieces(st, charId);
   const was = st.pools[charId] ?? [];
   const made = newPiece(st, x, opts.at ?? today());
   const { piece } = made;
-  const { removed } = c ? planPut(ctx, c, mine, piece, st.worn?.[charId], opts.replace, st.pin?.[charId], st.crit?.[charId]) : { removed: [] };
+  const { removed } = c ? planPut(ctx, c, mine, piece, st.worn?.[charId], opts.replace, st.pin?.[charId], st.crit?.[charId], opts.promised)
+    : { removed: [] };
   const gone = new Set(removed.map((p) => p.id));
   const pool = [...was.filter((id) => !gone.has(id)), piece.id];
   const next = gc(setWorn({ ...made.st, pools: { ...made.st.pools, [charId]: pool } }, charId, piece.slot, piece.id));
@@ -115,8 +128,8 @@ export function undoPut(st: GearStore, charId: string, r: PutResult): GearStore 
 
 // Надеть вещь из пула героя (надел в игре): в её слоте — она, ничего не создаёт. Прежняя надетая слота остаётся в пуле,
 // если её держат билды, иначе уходит (как у putOn: removed — для prunedNote и «Вернуть»). Записи нет в его пуле или
-// она уже надета — null
-export function wearFromPool(ctx: Ctx, st: GearStore, charId: string, id: string): WearResult | null {
+// она уже надета — null. promised — as in planPut: the slot's worn record leaves when «Надеть в игре» still owes it
+export function wearFromPool(ctx: Ctx, st: GearStore, charId: string, id: string, promised?: ReadonlySet<string> | null): WearResult | null {
   const p = st.pieces[id];
   if (!p || !st.pools[charId]?.includes(id) || isWorn(st, charId, p)) return null;
   const c = ctx.idx.CHAR[charId];
@@ -124,7 +137,8 @@ export function wearFromPool(ctx: Ctx, st: GearStore, charId: string, id: string
   // убыть может только прежняя надетая её слота — если пул её больше не держит (features/gear/pool/info)
   const P = c ? profileFor(ctx, c, st.pin?.[charId], st.crit?.[charId]) : null;
   const on = new Set([...Object.values({ ...st.worn?.[charId], [p.slot]: id })].filter((x): x is string => !!x));
-  const gone = P && old && !poolInfo(P, poolPieces(st, charId, id), on).why.has(old) ? old : null;
+  const sup = old && promised?.has(old) ? old : null;
+  const gone = sup ?? (P && old && !poolInfo(P, poolPieces(st, charId, id), on).why.has(old) ? old : null);
   const was = st.pools[charId];
   const removed = gone ? [st.pieces[gone]] : [];
   const next = gc(setWorn({ ...st, pools: { ...st.pools, [charId]: was.filter((x) => x !== gone) } }, charId, p.slot, id));

@@ -5,7 +5,8 @@ import { makeCtx } from '@/game/context';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
 import { entriesOf, fitsKind, kindOf, NEW_BATCH, putItem, removeItem, restoreBatch, type Batch, type BatchEntry } from '@/features/batch/batch';
 import { inputOfPiece, planBatch, type Plan } from '@/features/batch/plan';
-import { gameSubs, rowOf, walkOf } from '@/features/batch/walk';
+import { rowOf, walkOf } from '@/features/batch/walk';
+import { gameSubs } from '@/features/gear/ui/pieceText';
 import { char, idx, mk } from '../gear/statSets';
 
 function world(roster: string[], pools: Record<string, Piece[]> = {}, worn?: Record<string, string[]>) {

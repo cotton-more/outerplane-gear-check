@@ -75,7 +75,7 @@ describe('режим «для героя»', () => {
 
     expect(stored('state').tab).toBe('eval');
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
-    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1', via: 'replace' });
     expect(stored('item').subs).toEqual(NEW.subs);
     // в ростере только Caren — другим вещь не нужна: после « — » только про неё
     expect($('.vcard .vc-title')?.textContent).toBe('better than on Caren');
@@ -220,7 +220,7 @@ describe('режим «для героя»: вход, одна строка, з�
     await click($('.pool-rate'));
 
     expect(stored('state').tab).toBe('eval');
-    expect(stored('tryon')).toEqual({ charId: caren.id });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'rate' });
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
     expect($('.tryon-x')?.getAttribute('aria-label')).toBe('Rate for everyone');
     expect(stored('item').subs).toEqual(NEW.subs); // вещь на форме та же
@@ -243,7 +243,7 @@ describe('режим «для героя»: вход, одна строка, з�
     await mount(onCard, worse);
     await openSpeed();
     await click(byText('.piece-act button', 'Try a replacement'));
-    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1', via: 'replace' });
     expect($('.vcard .vc-vs')).toBeNull(); // хуже записи — прироста нет, чипа нет
 
     await click(byText('.vc-equip', "Replace Caren's helmet"));
@@ -437,7 +437,7 @@ describe('replace — на одну введённую вещь', () => {
 
     expect($('.vc-equip')?.textContent).toBe('Equip on Caren'); // шаг 5 «Надето»: в режиме героя «Надеть» есть всегда
     expect($('.tryon')?.textContent).toBe('Only for·Caren✕');
-    expect(stored('tryon')).toEqual({ charId: caren.id });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
   });
 
   it('«Следующий», хороший шлем другого билда: «Надеть» убирает только вытесненный, p1 из прежнего replace на месте', async () => {
@@ -461,7 +461,7 @@ describe('replace — на одну введённую вещь', () => {
     await tryReplace();
 
     await click($('.slot[aria-label="Gloves"]'));
-    expect(stored('tryon')).toEqual({ charId: caren.id });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
     await click($('.slot[aria-label="Helmet"]'));
     await enter(MID.subs);
 
@@ -480,18 +480,18 @@ describe('replace — на одну введённую вещь', () => {
     await click($('.set[data-tour-item="Defense"]'));
 
     expect(stored('item').subs.HP).toBe(2);
-    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1', via: 'replace' });
   });
 
   it('«Вернуть» формы (вещь, которую вводили до «Примерить замену») снимает replace', async () => {
     await mount({ ...onCard, slot: 'gloves' }, { setId: speed, subs: JUNK }, { gear: G([strong], { [caren.id]: ['p1'] }) });
     await tryReplace();
-    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1', via: 'replace' });
 
     await click($('.toast:not(.gear-toast) button'));
 
     expect(stored('state').slot).toBe('gloves');
-    expect(stored('tryon')).toEqual({ charId: caren.id });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
   });
 
   it('«Заменить» снимает replace; «Вернуть» — p1 на месте и та же кнопка «Заменить»', async () => {
@@ -500,11 +500,11 @@ describe('replace — на одну введённую вещь', () => {
 
     await click($('.vc-equip'));
     expect(stored('gear').pools[caren.id]).toEqual(['p2']);
-    expect(stored('tryon')).toEqual({ charId: caren.id });
+    expect(stored('tryon')).toEqual({ charId: caren.id, via: 'replace' });
 
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored('gear').pools[caren.id]).toEqual(['p1']);
-    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1' });
+    expect(stored('tryon')).toEqual({ charId: caren.id, replace: 'p1', via: 'replace' });
     expect($('.vc-equip')?.textContent).toBe(REPLACE);
   });
 

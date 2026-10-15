@@ -20,7 +20,12 @@ import { setName } from '@/game/set/setName';
 // replace — id записи его пула из «Примерить замену»; есть ли она ещё в пуле, проверяет тот, кто её использует
 // (planPut, charVs: replaceOf) — запись могли убрать и после чтения из хранилища. Старые build и combo (предустановка
 // формы по билду) читаем и отбрасываем (restoreTryOn), не пишем
-export interface TryOn { charId: string; replace?: string }
+// via — how the mode was entered (HISTORY.md 0230): «Ввести» on an empty slot ('enter'), «Примерить замену» ('replace'),
+// «Оценить вещь для X» ('rate'). Only 'rate' rates a new piece from the inventory: its «Надеть» is a promise for «Надеть
+// в игре» (features/ingame); the other two enter what the game already has on. Older stored modes have none — no promise
+export type TryOnVia = 'enter' | 'replace' | 'rate';
+export const TRYON_VIA: readonly TryOnVia[] = ['enter', 'replace', 'rate'];
+export interface TryOn { charId: string; replace?: string; via?: TryOnVia }
 // тот же режим без replace (на одну вещь — App снимает его)
 export function noReplace(t: TryOn): TryOn {
   const { replace, ...rest } = t;
@@ -35,7 +40,8 @@ export function restoreTryOn(raw: unknown, idx: Index): TryOn | null {
   const r = raw as Record<string, unknown>;
   const c = typeof r.charId === 'string' ? idx.CHAR[r.charId] : undefined;
   if (!c) return null;
-  return { charId: c.id, ...(typeof r.replace === 'string' && r.replace ? { replace: r.replace } : {}) };
+  const via = TRYON_VIA.find((v) => v === r.via);
+  return { charId: c.id, ...(typeof r.replace === 'string' && r.replace ? { replace: r.replace } : {}), ...(via ? { via } : {}) };
 }
 
 // цель режима героя. Герой без билдов (его так не включить, а в хранилище бывает от старых данных) — режима героя нет

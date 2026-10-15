@@ -12,6 +12,16 @@ import { useT } from '@/i18n';
 import { useIndex } from '@/game/data/IndexContext';
 import { SetIcon } from '@/game/icons/Img';
 
+// substats as the game's middle panel shows them: «LV 3 Crit Chance +9.0%», «LV 2 Attack +80» — the batch walk's equip and
+// lock lines, «Надеть в игре» (features/ingame)
+export function gameSubs(idx: Index, subs: Record<string, number>): string[] {
+  return Object.entries(subs).map(([k, n]) => {
+    const s = idx.SUB[k];
+    const v = s ? s.step * n : 0;
+    return `LV ${n} ${idx.D.statNames[k] ?? k} +${s?.pct ? v.toFixed(1) + '%' : Math.round(v)}`;
+  });
+}
+
 // A weapon or accessory named in a phrase, one rule everywhere (owner 2026-10-09, Q4): a Legendary — its item, an Epic —
 // the game's name (EPIC_NAME), then the main: «Noblewoman's Guile · HP%», «Steel Sword · ATK%»; main unknown — «Steel Sword»
 type Named = Pick<Piece, 'slot' | 'grade' | 'itemKey' | 'main'>;

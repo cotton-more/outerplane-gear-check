@@ -5,5 +5,5 @@
 export type { PoolStore } from './base';
 export { poolView } from './view';
 export type { CharPool, PoolView } from './view';
-export { replaceOf, planPut, planFor, putOn, stashOn, undoPut, wearFromPool, undoWear, wearAll, undoWearAll, removeFrom, undoRemove, removeUndo } from './ops';
+export { replaceOf, supersededOf, planPut, planFor, putOn, stashOn, undoPut, wearFromPool, undoWear, wearAll, undoWearAll, removeFrom, undoRemove, removeUndo } from './ops';
 export type { WearResult, PutResult, PutPlan, WearAllResult } from './ops';
