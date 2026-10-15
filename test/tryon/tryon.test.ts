@@ -30,6 +30,10 @@ describe('режим «для героя»: что хранится', () => {
     expect(restoreTryOn({ charId: caren.id }, idx)).toEqual({ charId: caren.id });
     expect(restoreTryOn({ charId: caren.id, build: 'Pen', combo: '11x4' }, idx)).toEqual({ charId: caren.id });
     expect(restoreTryOn({ charId: caren.id, build: 3 }, idx)).toEqual({ charId: caren.id });
+    // how the mode was entered (HISTORY.md 0230): one of the three, anything else — none
+    expect(restoreTryOn({ charId: caren.id, via: 'rate' }, idx)).toEqual({ charId: caren.id, via: 'rate' });
+    expect(restoreTryOn({ charId: caren.id, replace: 'p1', via: 'replace' }, idx)).toEqual({ charId: caren.id, replace: 'p1', via: 'replace' });
+    expect(restoreTryOn({ charId: caren.id, via: 'card' }, idx)).toEqual({ charId: caren.id });
   });
 
   it.each([

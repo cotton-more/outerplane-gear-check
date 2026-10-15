@@ -157,11 +157,8 @@ describe('вердикт и пул (decision 3)', () => {
     expect(hp.info.why.has('p9')).toBe(false);
   });
 
-  it('тихая строка не зовёт искать CHC, когда крит у колена', () => {
+  it('крит у колена в раскладке Caren', () => {
     const worn = [acc(), ...crit4(), hB()];
-    const weak = { ...mk('w', 'helmet', 'Attack', { CHC: 1, CHD: 1, 'DEF%': 1, SPD: 1 }), id: 'new' };
-    const r = verdictOf(ctx, poolView(ctx, st(worn, worn)).hero, inputOf(weak));
-    if (r?.quiet) expect(r.quiet.stats).not.toContain('CHC');
     const hp = poolView(ctx, st(worn, worn)).hero(char('Caren').id)!;
     expect(hp.info.value.chc).toBeGreaterThanOrEqual(85);
   });

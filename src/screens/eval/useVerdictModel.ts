@@ -1,6 +1,6 @@
 // Вердикт экрана «Оценка»: оценка по порогам (features/eval/verdict evaluate) — без ростера и пока введены не все
 // сабстаты (A20, A21); с ростером — исход по «статам + сетам» (features/gear/verdict): штамп, заголовок и строки
-// (features/gear/ui/outcomeText), до трёх героев в «Сейчас на персонажах», тихая строка (вопрос 12). В режиме героя
+// (features/gear/ui/outcomeText), список героев под штампом (heroList). В режиме героя
 // (features/tryon) — его строка, «Надеть» и заголовок про него.
 import { useMemo, useState } from 'react';
 import { FLAT, isArmor, type Index } from '@/game/data';
@@ -18,6 +18,7 @@ import { storeFor } from '@/features/gear/model/fusion';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { charVs, type CharVs } from '@/features/gear/model/poolVs';
 import { fillerWaits, verdictOf, type Result, type Same } from '@/features/gear/verdict';
+import { heroList } from '@/features/gear/model/heroList';
 import { resultHead } from '@/features/gear/ui/outcomeText';
 import { pieceLabel } from '@/features/gear/ui/pieceText';
 import { heroNote, heroTitle, type Hero } from '@/features/tryon/tryon';
@@ -51,18 +52,13 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
   return { ...out, lines: [...same, ...out.lines], plan: upgradePlan(ctx, input, out) };
 }
 
-// «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»
-const sameText = (t: Texts, idx: Index, same: Same): string =>
-  t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
+// «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»; promised in «Надеть в игре» — «…,
+// обещанный Aer в «Надеть в игре». …» (TEXTS S1)
+const sameText = (t: Texts, idx: Index, same: Same): string => same.promised
+  ? t.fit.samePromised(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name)
+  : t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
 
-// тихая строка (вопрос 12): слабая вещь дала бы герою больше, чем есть
-const quietLine = (t: Texts, r: Result | null, slot: string): string | null => {
-  const q = r?.quiet;
-  if (!q) return null;
-  return q.slotEmpty ? t.fit.quietEmpty(q.c.name, slot, q.stats) : t.fit.quietBetter(q.c.name, t.fit.pts(q.dV), q.stats);
-};
-
-export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false }: {
+export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false, promised }: {
   idx: Index; t: Texts; ctx: Ctx;
   s: FormState; store: GearStore; roster: ReadonlySet<string>;
   view: PoolView;                 // вид пула на хранилище — один раз на хранилище
@@ -70,6 +66,7 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   touring: boolean;
   narrow: boolean; onEval: boolean; // телефон; вкладка «Оценка» открыта
   batch?: boolean;                // «Партия»: pieces are entered without a verdict (MODEL.md §8)
+  promised?: ReadonlySet<string>; // records with a live promise in «Надеть в игре» (features/ingame promisedAll): the guard
 }) {
   // вердикт зависит только от предмета, настроек и пулов — не пересчитываем его на каждый ввод в поиске
   const input = itemInput(s);
@@ -106,36 +103,28 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const [twinAt, setTwinAt] = useState<string | null>(null);
   const twin = twinAt === key;
   // исход по ростеру; null — по порогам (ростера нет) или введены не все сабстаты
-  const res = useMemo(() => (batch ? null : verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin })), [ctx, viewOf, key, twin, batch]); // eslint-disable-line react-hooks/exhaustive-deps
+  const res = useMemo(() => (batch ? null : verdictOf(ctx, (id) => viewOf(id).hero(id), input, { twin, promised })), [ctx, viewOf, key, twin, batch, promised]); // eslint-disable-line react-hooks/exhaustive-deps
   // Guard: while it looks like a set-aside piece, only the hero who has it keeps a button — «Надеть» wears that very
-  // record (useFormFlow). Others get no «Надеть» or «Отложить» until «Это другой»: one helmet, two records otherwise
+  // record (useFormFlow). Others get no «Надеть» or «Отложить» until «Это другой»: one helmet, two records otherwise.
+  // A promised look-alike (same.promised) leaves nobody a button: its record is already worn
   const same = res?.same ?? null;
   const quietRow = (x: CharVs): CharVs => ({ ...x, useful: false, stash: false });
   const verdict = useMemo(() => (res && raw.v !== 'idle' ? fromResult(ctx, raw, res, input) : raw), [ctx, raw, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  // «Сейчас на персонажах»: герои, которых назвал вердикт (до трёх); в режиме героя — одна строка героя: «Надеть на X»
+  // режим героя — одна строка героя: «Надеть на X»
   // есть всегда («Надето»: ввод надетого в игре), с «Примерить замену» — «Заменить»
   const heroVs = useMemo(() => {
     if (!hero) return null;
     const x = charVs(ctx, tview, hero.c.id, input, { replace, wear: true });
-    if (x && same && same.c.id !== hero.c.id) return quietRow(x);
+    if (x && same && (same.c.id !== hero.c.id || same.promised)) return quietRow(x);
     // «Отложить для X» и в режиме героя: вещь ему «Оставь» или запас (В6 ревью этапа 10), и она, похоже, у него ещё не
     // отложена
     const forHim = x && (x.h.kind === 'keep' || (res?.kind === 'material' && res.sub === 'reserve' && res.reserve.some((c) => c.id === hero.c.id)));
     return x && forHim && !same ? { ...x, stash: true } : x;
   }, [ctx, tview, hero, key, replace, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  const vsList = useMemo((): CharVs[] => {
-    if (verdict.v === 'idle') return [];
-    if (hero) return heroVs ? [heroVs] : [];
-    // «Отложить для X» — for «Оставь» and a reserve, while the piece doesn't look like one already set aside (guard)
-    const named = (res?.named ?? []).map((h) => {
-      const x = charVs(ctx, viewOf(h.c.id), h.c.id, input, { h, stash: h.kind === 'keep' && !same });
-      return x && same && same.c.id !== h.c.id ? quietRow(x) : x;
-    });
-    const reserve = res?.kind === 'material' && res.sub === 'reserve' && !same ? res.reserve.map((c) => charVs(ctx, viewOf(c.id), c.id, input, { stash: true })) : [];
-    return [...named, ...reserve].filter((x): x is CharVs => !!x);
-  }, [ctx, viewOf, verdict, hero, heroVs, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  // строка под карточкой: в режиме героя — про героя (features/tryon/tryon heroNote), иначе — тихая строка (вопрос 12)
-  const offNote = verdict.v === 'idle' ? null : hero ? heroNote(t, ctx, hero.c, input, heroVs) : quietLine(t, res, s.slot);
+  // the hero list under the stamp (features/gear/model/heroList); hero mode has its single row instead (heroVs)
+  const list = useMemo(() => (verdict.v === 'idle' || hero ? [] : heroList(ctx, viewOf, input, res)), [ctx, viewOf, verdict, hero, res]); // eslint-disable-line react-hooks/exhaustive-deps
+  // строка под карточкой: в режиме героя — про героя (features/tryon/tryon heroNote)
+  const offNote = verdict.v === 'idle' || !hero ? null : heroNote(t, ctx, hero.c, input, heroVs);
   // штамп общий, а заголовок после « — » в режиме героя — и про него
   const shown = useMemo(() => (hero ? { ...verdict, title: heroTitle(t, verdict, hero.c, heroVs, res?.named[0]?.c.id ?? null) } : verdict),
     [t, verdict, hero, heroVs, res]);
@@ -149,5 +138,5 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   // the guard's line on the phone card and «Это другой» on the card and in the details
   const sameLine = same ? sameText(t, idx, same) : null;
   const onTwin = same ? () => setTwinAt(key) : undefined;
-  return { input, raw, res, viewOf, tview, heroVs, verdict, vsList, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin };
+  return { input, raw, res, viewOf, tview, heroVs, verdict, list, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin };
 }

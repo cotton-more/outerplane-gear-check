@@ -351,7 +351,7 @@ describe('давний игрок', () => {
     await mount();
     // вместо неё теперь «Новое»: давнему игроку подсказки с news — новые
     expect($('.tour-invite')?.textContent).not.toContain(T.invite);
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 16)); // and also pin, move, bt, batch, wornChain, wornTab, wornBudget, wornCrit, wornEff, team, teamPick, teamBoss, teamTurn, teamTrade, heroStars, trade
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 17)); // and also pin, move, bt, batch, wornChain, wornTab, wornBudget, wornCrit, wornEff, team, teamPick, teamBoss, teamTurn, teamTrade, heroStars, trade, ingame
   });
 
   it('новичок закрыл карточку «Понятно» — от тура отказался, полосы «Появилось обучение» нет', async () => {
@@ -432,7 +432,7 @@ describe('подсказки по ходу и «Что нового»', () => {
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {
     await mount({ welcomeHidden: true, tour: { ...done, known: {} } }); // вышли после его первого запуска
-    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 16)); // and also pin, move, bt, batch, wornChain, wornTab, wornBudget, wornCrit, wornEff, team, teamPick, teamBoss, teamTurn, teamTrade, heroStars, trade
+    expect($('.tour-invite')?.textContent).toContain(T.newsStrip(T.news.more, 17)); // and also pin, move, bt, batch, wornChain, wornTab, wornBudget, wornCrit, wornEff, team, teamPick, teamBoss, teamTurn, teamTrade, heroStars, trade, ingame
     await click(byText('.tour-invite button', 'Later'));
     expect($('.tour-invite')).toBeNull();
     expect($('.vb-tab.has-news')).toBeTruthy();
@@ -550,8 +550,9 @@ describe('тур «Экипировка» на примере', () => {
     await click(byText('.piece-act button', 'Try a replacement'));
     await click($('.vcard'));
     expect($('.drawer')).toBeTruthy();
-    // ▲ лучше шлема Caren: строка героя — прирост в очках («статы + сеты»)
-    expect($('.v-vs')?.textContent).toMatch(/Caren gets \+[\d.]+ pts/);
+    // «Try a replacement» is hero mode: its single row (HeroSingle) — the hero's gain in points and the replace button
+    expect($('.v-vs .vs-row .vs.up')?.textContent).toMatch(/^\+[\d.]+ pts$/);
+    expect($('.v-vs .vs-act')?.textContent).toBe("Replace Caren's helmet");
     expect(strip()).toContain(T.gearStepOf(3, 5));
     expect(strip()).not.toContain(T.inSheet);
     await click(byText('.tour-strip button', T.next));

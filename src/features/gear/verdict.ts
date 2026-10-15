@@ -7,10 +7,9 @@ import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
 import { buildsOf, combosWith } from '@/game/build/builds';
 import { partKey, profileFor, type Profile } from '@/game/build/profile';
-import { scoreBuild, tempOk, uselessFor } from '@/game/build/score';
-import { itemMains, subAllowed, subForms } from '@/game/item/mains';
+import { scoreBuild, tempOk } from '@/game/build/score';
+import { itemMains } from '@/game/item/mains';
 import { dropSubs } from '@/game/item/subs';
-import { CRIT_KNEE } from '@/game/stat/curve';
 import { sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
@@ -177,52 +176,33 @@ export function maybeFor(ctx: Ctx, x: Piece): Char[] {
   return [...out.values()];
 }
 
-// Тихая строка (вопрос 12): слабая вещь (порог не прошла) дала бы герою прирост V ≥ 1. stats — что искать: первые два
-// стата его цепочки, которые бывают сабстатом на этой вещи
-export interface Quiet { c: Char; dV: number; slotEmpty: boolean; stats: string[] }
-function quietOf(pools: HeroPool[], x: Piece, heroes: HeroRes[]): Quiet | null {
-  let top: Quiet | null = null;
-  for (const hp of pools) {
-    const h = heroes.find((r) => r.c === hp.c)!;
-    if (h.bar) continue;
-    const el = eligibleIn(hp.P, hp.wornIds, hp.pieces);
-    const forced = bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || el(p) });
-    if (forced.layout[x.slot]?.id !== x.id) continue;
-    const dV = forced.value.v - hp.info.value.v;
-    if (!geq1(forced.value.v, hp.info.value.v) || (top && dV <= top.dV)) continue;
-    top = { c: hp.c, dV, slotEmpty: h.slotEmpty, stats: lookFor(hp.P, x, hp.info.value.chc) };
-  }
-  return top;
+// the hero's best layout with the piece let in whatever its bar: what a weak piece would give if it stood (the hero
+// list's gain in features/gear/model/heroList)
+export function forcedBest(hp: HeroPool, x: Piece): { layout: Layout; value: LayoutValue } {
+  const el = eligibleIn(hp.P, hp.wornIds, hp.pieces);
+  return bestLayout(hp.P, [...hp.pieces.filter((p) => p.id !== x.id), x], { eligible: (p) => p.id === x.id || el(p) });
 }
-// crit — the hero's CHC in the current layout: from N − 15 on, CHC is not worth looking for (MODEL.md §12 item 2)
-function lookFor(P: Profile, x: Piece, crit: number | null): string[] {
-  const input = { slot: x.slot, grade: x.grade, setId: x.setId, itemKey: x.itemKey, main: x.main };
-  const useless = uselessFor(P.ctx, P.c);
-  const capped = crit !== null && crit >= P.need - CRIT_KNEE;
-  const out: string[] = [];
-  for (const tok of P.chain.subs.flat()) {
-    if (capped && tok.trim() === 'CHC') continue;
-    const k = subForms(tok.trim()).sort((a, z) => Number(z.endsWith('%')) - Number(a.endsWith('%'))).find((f) => P.ctx.idx.SUB[f] && subAllowed(P.ctx.idx, input, f) && !useless.includes(f));
-    if (k && !out.includes(k)) out.push(k);
-    if (out.length === 2) break;
-  }
-  return out;
-}
-
 // Та же вещь, отложенная раньше (решение владельца 2026-10-06): у героя ростера ненадетая запись с тем же сетом или
 // item, slot, grade, main and all substats at the same levels. The verdict is computed without it, and the line says:
 // «похоже, это она — ничего не делай». Substats are compared in the order typed — the form keeps it, Help asks for the
-// game's order, and the same stats in another order are another piece (owner, 2026-10-07)
-export interface Same { c: Char; piece: Piece }
+// game's order, and the same stats in another order are another piece (owner, 2026-10-07).
+// A promised piece (HISTORY.md 0230 addendum, owner 2026-10-15): a worn record with a live line in «Надеть в игре» — worn
+// in the app, still in the game's inventory. Entered again it would be offered to another hero: one piece promised twice.
+// Any grade, Epic too; promised: true — no hero keeps a button (the record is already worn)
+export interface Same { c: Char; piece: Piece; promised?: true }
 export const samePiece = (p: Piece, x: Piece): boolean => {
   const a = Object.entries(p.lit), b = Object.entries(x.lit);
   return p.slot === x.slot && p.grade === x.grade && p.setId === x.setId && p.itemKey === x.itemKey && p.main === x.main
     && a.length === b.length && a.every(([k, n], i) => b[i][0] === k && b[i][1] === n);
 };
-function sameOf(hps: HeroPool[], x: Piece): Same | null {
+function sameOf(hps: HeroPool[], x: Piece, promised?: ReadonlySet<string>): Same | null {
   for (const hp of hps) {
     const piece = hp.pieces.find((p) => !hp.wornIds.has(p.id) && samePiece(p, x));
     if (piece) return { c: hp.c, piece };
+  }
+  if (promised?.size) for (const hp of hps) {
+    const piece = hp.pieces.find((p) => hp.wornIds.has(p.id) && promised.has(p.id) && samePiece(p, x));
+    if (piece) return { c: hp.c, piece, promised: true };
   }
   return null;
 }
@@ -237,8 +217,7 @@ export interface Result {
   reserve: Char[];            // reserve (items 3b, 3c)
   overEpic?: boolean;         // reserve: reserve[0] holds a good Epic of this set and slot, this Legendary waits for a good Legendary
   maybe: Char[];              // «Спорно»
-  quiet: Quiet | null;        // тихая строка у материала, запаса и «Разобрать»
-  same: Same | null;          // похоже, это отложенная раньше вещь (её запись в расчёт не входит)
+  same: Same | null;          // похоже, это отложенная раньше вещь или обещанная в «Надеть в игре» (её запись в расчёт не входит)
 }
 
 // герои ростера, которым вещь можно оценить: с билдами и не заменённые своим Core Fusion
@@ -284,17 +263,18 @@ export function fillerWaits(ctx: Ctx, pools: Pools, input: ItemInput): boolean {
 // thresholds). pools — the hero's pool (for Core Fusion X with X — the one that will be after the transition sheet). twin — the player said
 // «Это другой»: the look-alike set-aside record is another piece, so it stays in its pool and there is no same.
 // Batch plan (features/batch): skip — heroes left out for this piece («Не брать»); full — material targets that already
-// get four pieces in the plan
-export interface VerdictOpts { twin?: boolean; skip?: ReadonlySet<string>; full?: ReadonlySet<string> }
+// get four pieces in the plan. promised — records with a live promise in «Надеть в игре» over all heroes (screens/eval
+// useVerdictModel): the same-piece guard covers them too; the batch plan doesn't pass it
+export interface VerdictOpts { twin?: boolean; skip?: ReadonlySet<string>; full?: ReadonlySet<string>; promised?: ReadonlySet<string> }
 export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: VerdictOpts = {}): Result | null {
   if (!ctx.scoped || input.unlisted || Object.keys(input.subs).length < dropSubs(input.grade)) return null;
   const x = formPiece(input);
   const all = rosterChars(ctx).filter((c) => wearable(ctx, c, x) && !opts.skip?.has(c.id)).map((c) => pools(c.id)).filter((h): h is HeroPool => !!h);
-  const same = opts.twin ? null : sameOf(all, x);
+  const same = opts.twin ? null : sameOf(all, x, opts.promised);
   const hps = same ? all.map((hp) => (hp.c === same.c ? heroPool(ctx, hp.c, hp.pieces.filter((p) => p !== same.piece), hp.wornIds, hp.P.pin?.key, hp.P.need)! : hp)) : all;
   const heroes = hps.map((hp) => feedFrom(hps, x, heroOutcome(hp, x)));
   const res = (kind: Kind, more: Partial<Result> = {}): Result =>
-    ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], quiet: null, same, ...more });
+    ({ kind, heroes, named: [], now: [], reserve: [], maybe: [], same, ...more });
   // a filler comes after every other wear (HISTORY.md 0220): its gain is the whole piece because the slot was empty, but
   // it stays only until a better piece drops — the hero who wants this piece (rank, points) is named first, gets the stamp
   // and the batch's «Надеть»
@@ -306,13 +286,12 @@ export function verdictOf(ctx: Ctx, pools: Pools, input: ItemInput, opts: Verdic
   if (wear.length && !(now.length && wear.every((h) => h.filler))) return res('wear', { named: wear.slice(0, 3) });
   const keep = heroes.filter((h) => h.kind === 'keep').sort((a, z) => z.margin - a.margin);
   if (keep.length) return res('keep', { sub: keep[0].sub, named: keep.slice(0, 3) });
-  const quiet = quietOf(hps, x, heroes);
-  if (now.length) return res('material', { sub: 'now', now, quiet });
+  if (now.length) return res('material', { sub: 'now', now });
   // a Legendary reserve no longer waits behind an Epic one (grade-aware reserveKey): В1а «пусть лежит» is gone
   // the hero who already has it set aside goes first: the title names them
   const rh = reservesOf(hps, x) >= CFG.reserveMax ? [] : hps.filter((hp, i) => reserveFor(hp, x, heroes[i])).sort((a, z) => Number(z.c === same?.c) - Number(a.c === same?.c));
-  if (rh.length) return res('material', { sub: 'reserve', reserve: rh.map((hp) => hp.c), overEpic: overEpic(rh[0], x), quiet });
+  if (rh.length) return res('material', { sub: 'reserve', reserve: rh.map((hp) => hp.c), overEpic: overEpic(rh[0], x) });
   const maybe = maybeFor(ctx, x);
-  if (maybe.length) return res('maybe', { maybe, quiet });
-  return res('junk', { quiet });
+  if (maybe.length) return res('maybe', { maybe });
+  return res('junk');
 }

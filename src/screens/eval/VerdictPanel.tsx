@@ -17,17 +17,26 @@ import { useIndex } from '@/game/data/IndexContext';
 import { Rich } from '@/shared/ui/Rich';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Chain } from '@/features/eval/verdict/Chain';
+import type { Char } from '@/game/data/types';
+import type { Ctx } from '@/game/context';
+import type { PoolView } from '@/features/gear/pool';
 import type { CharVs } from '@/features/gear/model/poolVs';
+import type { HeroGroup } from '@/features/gear/model/heroList';
 import { Icon } from '@/game/icons/Img';
-import { VsSection } from '@/features/gear/ui/VsSection';
+import { HeroList, HeroSingle, OutcomeLines } from '@/features/gear/ui/HeroList';
+import { EquipButton } from '@/features/gear/ui/EquipButton';
 import { ShareCode } from '@/features/eval/code/ItemCode';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 
-// vs — «Сейчас на персонажах» (features/gear/model/poolVs); onEquip — надеть из этого раздела; onEquipPick — «Кому надеть?»
+// list — the hero list (features/gear/model/heroList; normal mode), heroVs — hero mode's single row (poolVs); ctx and viewOf —
+// for the list's name search; onEquip / onStash — «Надеть» / «Отложить» on a hero
 interface Props {
   r: VerdictData; s: FormState; dispatch: Dispatch<FormAction>; onOpenChar: (id: string) => void;
-  vs?: CharVs[]; onEquip?: (vs: CharVs) => void; onEquipPick?: () => void; onStash?: (vs: CharVs) => void;
+  ctx: Ctx; viewOf: (charId: string) => PoolView;
+  list?: HeroGroup[]; heroVs?: CharVs | null; onEquip?: (c: Char) => void; onStash?: (c: Char) => void;
+  canSearch?: boolean;     // name search under the list: not in hero mode and not while the piece looks like one set aside (guard)
+  compact?: boolean;       // the phone's sheet: rows expand in place, no switch (HeroList)
   nextNote?: string | null; // «Дальше: Ботинки» под кнопкой «Надеть» (режим героя, ввод надетого)
   offNote?: string | null; // режим «для героя»: строка про героя (features/tryon/tryon heroNote) — не носит, не нужна, «По статам»
   onTwin?: () => void;      // the piece looks like one already set aside: «Это другой» under the reasons (guard)
@@ -41,7 +50,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEquipPick, onStash, offNote, nextNote, onTwin }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, ctx, viewOf, list = [], heroVs = null, onEquip, onStash, canSearch = false, compact = false, offNote, nextNote, onTwin }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -49,6 +58,11 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEq
   const icon = item && s.grade === 'unique' ? item.icon : set ? (isArmor(s.slot) && set.pieces[s.slot]) || set.icon : null;
   const nSubs = Object.keys(s.subs).length;
   const input = itemInput(s);
+  // the pick: the row the stamp names (★) — its button is the head's one primary button, its extra lines (why keep, what goes
+  // with it, the feeds) sit under it.
+  const pick = list.flatMap((g) => [...g.rows, ...g.more]).find((x) => x.star) ?? null;
+  const pickAct = pick?.action === 'stash' ? onStash : pick?.action ? onEquip : undefined;
+  const slotAcc = t.ui.slotAcc[s.slot];
   return (
     <>
       <div className={`v-head v-${r.v}`}>
@@ -64,10 +78,14 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEq
         <p className="v-summary">{r.title}</p>
         {r.lines.length > 0 && <ul className="v-reasons">{r.lines.map((l, i) => <li key={i}><Rich text={l} /></li>)}</ul>}
         {r.v !== 'idle' && onTwin && <button type="button" className="btn v-twin" onClick={onTwin}>{t.fit.twin(s.slot)}</button>}
-        {r.v !== 'idle' && onEquipPick && <button type="button" className="btn v-equip" onClick={onEquipPick}><Icon name="check" />{t.ui.equipPick}</button>}
+        {pick && pickAct && (pick.action === 'stash'
+          ? <button type="button" className="btn v-equip good" onClick={() => pickAct(pick.vs.c)} {...tour('gequip')}><Icon name="archive" />{t.fit.stash(pick.vs.c.name)}</button>
+          : <EquipButton place="v-equip" x={pick.vs} slot={slotAcc} t4={input.bt === 4} good onEquip={(x) => pickAct(x.c)} />)}
+        {pick && <div className="v-pick"><OutcomeLines x={pick.vs} item={input} brief /></div>}
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
-      {onEquip && <VsSection list={vs} item={input} slot={t.ui.slotAcc[s.slot]} t4={input.bt === 4} nextNote={nextNote} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
+      {heroVs && onEquip && <HeroSingle x={heroVs} item={input} slot={slotAcc} t4={input.bt === 4} nextNote={nextNote} onEquip={(x) => onEquip(x.c)} onStash={onStash && ((x) => onStash(x.c))} onOpenChar={onOpenChar} />}
+      {!heroVs && onEquip && r.v !== 'idle' && <HeroList groups={list} ctx={ctx} viewOf={viewOf} item={input} search={canSearch} compact={compact} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>
@@ -79,7 +97,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, vs = [], onEquip, onEq
         <VerdictSection key={sec.title} sec={sec} r={r} expand={s.expand} nSubs={nSubs} setId={set?.id ?? null} dispatch={dispatch} onOpenChar={onOpenChar} />
       ))}
       <div className="v-foot">
-        {nSubs > 0 && <span>{t.ui.tierLegend}</span>}
+        {nSubs > 0 && r.sections.some((sec) => sec.rows.length) && <span>{t.ui.tierLegend}</span>}
         <span>{r.foot}</span>
       </div>
     </>
@@ -170,7 +188,7 @@ export function VerdictSheet(props: Props & { onClose: () => void }) {
   const t = useT();
   return (
     <Sheet title={t.ui.verdict} onClose={onClose} className="vdrawer">
-      <div className="verdict"><VerdictBody {...rest} onOpenChar={(id) => { onClose(); onOpenChar(id); }} /></div>
+      <div className="verdict"><VerdictBody {...rest} compact onOpenChar={(id) => { onClose(); onOpenChar(id); }} /></div>
     </Sheet>
   );
 }

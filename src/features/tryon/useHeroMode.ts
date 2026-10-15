@@ -1,5 +1,5 @@
 // Режим «для героя» на странице (features/tryon/tryon): чей он (у тура «Экипировка» — свой, на примере), цель, запись
-// «Примерить замену» и вход из карточки персонажа. Строка карточки, «Сейчас на персонажах» и «Надеть» — только про героя,
+// «Примерить замену» и вход из карточки персонажа. Строка карточки, список героев (HeroList) и «Надеть» — только про героя,
 // по всем его билдам; штамп общий. На время обучения режима нет (кроме примера тура «Экипировка»).
 import { useEffect, useMemo, useRef } from 'react';
 import { isArmor, type Index } from '@/game/data';
@@ -10,7 +10,7 @@ import type { GearApi } from '@/features/gear/store/useGear';
 import type { Switched } from '@/features/roster/useRosterUi';
 import { itemInput, type FormState } from '@/features/eval/form/formState';
 import { hasItem } from '@/tour/useTour';
-import { heroTarget, noReplace, tryOnPreset, type TryOn } from './tryon';
+import { heroTarget, noReplace, tryOnPreset, type TryOn, type TryOnVia } from './tryon';
 import { useTryOn } from './useTryOn';
 
 type TryOnApi = { value: TryOn | null; set: (next: TryOn | null) => void };
@@ -39,6 +39,8 @@ export function useHeroMode({ idx, gear, form, demoTry, touring, off, narrow, fu
   // «Примерить замену»: запись, которую «Надеть» заменит в любом случае (features/gear/pool planPut); её уже нет в пуле или она
   // другого слота — как без неё
   const replace = hero ? tryOn.value?.replace ?? null : null;
+  // how the mode was entered (TryOn.via): only «Оценить вещь для X» makes «Надеть» a promise (features/ingame)
+  const via = hero ? tryOn.value?.via ?? null : null;
   // replace — на одну введённую вещь (решение владельца 2026-10-01/02): снимают «Следующий», load другой вещи (код,
   // «Вернуть» формы), смена слота на форме (ниже) и «Надеть»; режим героя остаётся. tryOn.set пишет и ogc.tryon — иначе
   // после перезапуска замена вернулась бы. Режима героя нет (обучение, X при Core Fusion) — не трогаем
@@ -54,7 +56,7 @@ export function useHeroMode({ idx, gear, form, demoTry, touring, off, narrow, fu
   // форме — та же кнопка «Заменить». Режим за эти секунды сменили (другой герой, своя замена, ✕) — не трогаем
   const backReplace = (charId: string, rep: string | null) => {
     const cur = tryNow.current;
-    if (rep && cur?.charId === charId && !cur.replace) tryOn.set({ ...cur, replace: rep });
+    if (rep && cur?.charId === charId && !cur.replace) tryOn.set({ ...cur, replace: rep, via: 'replace' }); // noReplace made it 'rate'
   };
   // правка в карточке вещи: общую запись скопировали (новый id у этого героя), а это запись replace его режима — replace
   // идёт за копией (иначе «Заменить» пропадёт)
@@ -72,7 +74,9 @@ export function useHeroMode({ idx, gear, form, demoTry, touring, off, narrow, fu
     if (!fusionGate(c.id, (sw) => { go(); switchToast(sw, 'eval'); })) go();
   };
   const tryOnGo = (c: Char, slot?: SlotId, from?: Piece, replacing = false, slotOnly = false) => {
-    const next: TryOn = { charId: c.id, ...(replacing && from ? { replace: from.id } : {}) };
+    // where the mode came from (TryOn.via): a replacement, a slot to enter, or «Оценить вещь для X» (no slot)
+    const via: TryOnVia = replacing && from ? 'replace' : slot ? 'enter' : 'rate';
+    const next: TryOn = { charId: c.id, ...(replacing && from ? { replace: from.id } : {}), via };
     tryOn.set(next);
     joinRoster(c.id);
     closeVerdict();
@@ -86,5 +90,5 @@ export function useHeroMode({ idx, gear, form, demoTry, touring, off, narrow, fu
     } else toEval();
     if (narrow) requestAnimationFrame(() => document.getElementById('eval-in')?.scrollIntoView({ block: 'start' }));
   };
-  return { tryOn, hero, replace, dropReplace, backReplace, followEdit, start };
+  return { tryOn, hero, replace, via, dropReplace, backReplace, followEdit, start };
 }

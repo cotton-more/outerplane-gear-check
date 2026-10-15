@@ -16,7 +16,6 @@
 // moved yet. A piece the batch doesn't hold (a taken-off piece with no «E» entry, a set-aside record) is named by its
 // description instead of a number.
 import type { Char, SlotId } from '@/game/data/types';
-import type { Index } from '@/game/data';
 import type { Piece } from '@/features/gear/model/gear';
 import type { ItemInput } from '@/game/item/item';
 import { slotOf, type Batch } from './batch';
@@ -44,15 +43,6 @@ export type Step =
       mats: { where: Where; input: ItemInput }[] };
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
-}
-
-// substats as the game's middle panel shows them: «LV 3 Crit Chance +9.0%», «LV 2 Attack +80»
-export function gameSubs(idx: Index, subs: Record<string, number>): string[] {
-  return Object.entries(subs).map(([k, n]) => {
-    const s = idx.SUB[k];
-    const v = s ? s.step * n : 0;
-    return `LV ${n} ${idx.D.statNames[k] ?? k} +${s?.pct ? v.toFixed(1) + '%' : Math.round(v)}`;
-  });
 }
 
 export function walkOf(batch: Batch, plan: Plan): Walk {

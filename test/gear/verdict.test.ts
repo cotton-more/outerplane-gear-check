@@ -69,7 +69,7 @@ describe('T5 вердикт новой вещи', () => {
     expect(r.named[0].slotEmpty).toBe(true);
   });
 
-  it('T5.1а (вопрос 11): слабая вещь лучше надетой — не «Надень»; тихая строка называет героя и прирост', () => {
+  it('T5.1а (вопрос 11): слабая вещь лучше надетой — не «Надень»', () => {
     const old = mk('old', 'helmet', 'Attack', { CHC: 3, CHD: 2, RES: 1, EFF: 1 });
     const w = world(['Rin'], { Rin: [old] });
     const weak = mk('wk', 'helmet', 'Attack', { 'ATK%': 4, CHC: 2, RES: 1, EFF: 1 });
@@ -79,10 +79,6 @@ describe('T5 вердикт новой вещи', () => {
     const r = w.v(weak)!;
     expect(r.kind).not.toBe('wear');
     expect(r.kind).not.toBe('keep');
-    expect(r.quiet?.c.name).toBe('Rin');
-    expect(r.quiet?.slotEmpty).toBe(false);
-    expect(r.quiet!.dV).toBeCloseTo(piecePoints(P, weak) - piecePoints(P, old), 9);
-    expect(r.quiet?.stats).toEqual(['ATK%', 'CHC']);
   });
 
   // + a filler (HISTORY.md 0220): a weapon/accessory below the bar stands only where nothing worn or passing can

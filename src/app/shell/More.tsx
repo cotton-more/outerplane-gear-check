@@ -21,9 +21,10 @@ import { About } from './About';
 import type { InstallInfo } from './Guide';
 import { IconSwitch, LangSwitch } from './Switches';
 
-export function More({ s, dispatch, rosterSize, todressN, parkedN, news, narrow, touring, rosterApi, gear, onBackup, lang, onLang, gameIcons, onIcons, install, onAppUpdate,
+export function More({ s, dispatch, rosterSize, todressN, ingameN = 0, onIngame, parkedN, news, narrow, touring, rosterApi, gear, onBackup, lang, onLang, gameIcons, onIcons, install, onAppUpdate,
   onClose, onChars, onTodress, onTeam, onCode, onFind, onParked, onHelp, onTour, onBatch }: {
   s: AppState; dispatch: Dispatch<Action>; rosterSize: number; todressN: number; news: boolean;
+  ingameN?: number;                      // «Надеть в игре»: lines owed; the row only on a phone and only when > 0
   parkedN: number;                       // parked pieces (screens/parked): the item only when there are some
   narrow: boolean;                       // телефон: сверху переходы (на ПК вкладки в шапке)
   touring: boolean;                      // идёт обучение: вместо поля копии — пояснение (на странице пример, не вещи игрока)
@@ -33,6 +34,7 @@ export function More({ s, dispatch, rosterSize, todressN, parkedN, news, narrow,
   onClose: () => void; onChars: () => void; onTodress: () => void; onTeam: () => void; onCode: () => void; onHelp: () => void; onTour: () => void;
   onFind?: () => void;                   // «Найти вещь» (screens/find); not during a tutorial — its gear is an example
   onParked?: () => void;                 // «Припаркованные» (screens/parked); not during a tutorial or with a newer tab's gear
+  onIngame?: () => void;                 // «Надеть в игре» (features/ingame): the full-height sheet
   onBatch?: () => void;                  // «Партия» (features/batch) — on a phone here, on a wide screen next to «Следующий»
 }) {
   const t = useT();
@@ -42,6 +44,9 @@ export function More({ s, dispatch, rosterSize, todressN, parkedN, news, narrow,
   return (
     <Sheet title={t.ui.more} onClose={onClose}>
       <div className="more">
+        {narrow && ingameN > 0 && onIngame && (
+          <button type="button" className="btn more-ig" onClick={go(onIngame)}><span>{t.ingame.title(ingameN)}</span><span className="more-ig-go" aria-hidden="true">▸</span></button>
+        )}
         {narrow && (
           <div className="more-nav">
             <button type="button" className="btn" onClick={go(onChars)}>

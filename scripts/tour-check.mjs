@@ -116,7 +116,7 @@ async function tryonWidth(w, h) {
   await page.close();
 }
 
-// ПК: «Надеть» в «Сейчас на персонажах» — сообщение с «Вернуть» над колонкой формы, а не на колонке вердикта
+// ПК: «Надеть» в строке списка героев — сообщение с «Вернуть» над колонкой формы, а не на колонке вердикта
 async function toastPlace(w, h) {
   const tag = `сообщение ${w}×${h}`;
   const page = await browser.newPage();
@@ -140,7 +140,7 @@ async function toastPlace(w, h) {
   await page.goto(url, { waitUntil: 'networkidle0' });
   await new Promise((r) => setTimeout(r, 600));
   const m = await page.evaluate(async () => {
-    document.querySelector('.v-vs .vs-act')?.click();
+    document.querySelector('.hl-row .hl-btn')?.click();
     await new Promise((r) => setTimeout(r, 400));
     const t = document.querySelector('.gear-toast')?.getBoundingClientRect();
     const col = document.querySelector('.eval-out')?.getBoundingClientRect();

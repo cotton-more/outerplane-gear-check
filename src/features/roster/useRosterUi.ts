@@ -27,7 +27,7 @@ export function useRosterUi({ idx, t, rosterApi, gear, touring, off, tab, msg, s
   off: ReadonlyMap<string, string>; // X → его Core Fusion, который его заменил (features/gear/model/fusion replacedX)
   tab: Tab;                      // вкладка сейчас — там и сообщение
   msg: GearMsg | null; say: (m: GearMsg | null) => void;
-  onAsk: () => void;             // перед окном перехода: закрыть шторки вердикта и «Кому надеть?»
+  onAsk: () => void;             // перед окном перехода: закрыть шторку вердикта
 }) {
   const charName = (id: string) => heroName(idx, id);
   // Core Fusion (features/gear/model/fusion). Нормализация (загрузка, импорт, пакетные добавления) — одно сообщение со списком

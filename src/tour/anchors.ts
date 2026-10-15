@@ -3,7 +3,7 @@
 export const ANCHORS = [
   'slot', 'grade', 'pick', 'item', 'sets', 'grid', 'rows', 'subpick', 'verdict', 'next', // главный тур
   'star', 'maincell', 'fourth', 'submove', 'chain', 'code', 'btabs', 'prio', // подсказки модулей
-  'tryon', 'gequip', 'gslots', 'gpiece', 'vs', 'equipall', 'bgear', // экипировка: тур и подсказки
+  'tryon', 'gequip', 'gslots', 'gpiece', 'vs', 'bgear', // экипировка: тур и подсказки
   'pool', // вкладка «Пул» в карточке героя
   'wtab', // вкладка «Надето» в карточке героя
   'wchain', // the chain with segment sums on «Надето»
@@ -22,6 +22,7 @@ export const ANCHORS = [
   'teamTurn', // the turn plan under the team: «Ход против босса» / without a boss «Порядок хода» (HISTORY.md 0200-boss E1, 0206)
   'teamTrade', // «Подобрать вещи» under the team (HISTORY.md 0200-boss E2)
   'more', // «Ещё»: ☰ на нижней плашке (телефон) и ⋯ в шапке (ПК)
+  'ingame', // «Надеть в игре»: the list under the form (wide screen) or the ☰ badge on the bottom bar (phone, VBar `.vb-ig`) (HISTORY.md 0230)
   'stash', // «Отложить для X» под карточкой вердикта и в строке героя
 ] as const;
 export type Anchor = (typeof ANCHORS)[number];

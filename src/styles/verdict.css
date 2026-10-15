@@ -60,6 +60,16 @@ html.narrow .vbar .vt { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 6
 html.narrow .vbar .vb-more { flex: none; color: var(--ink-3); font-size: 12px; }
 .vdrawer .drawer-b { padding: 0; }
 .vdrawer .verdict .v-head { border-radius: 0; }
+/* the phone's sheet: a lean head — the list is what the sheet is for (0230 stage 2b; at 411 × 363 the head took two thirds) */
+html.narrow .vdrawer .verdict .v-head { padding: 10px 14px 10px; gap: 6px; }
+html.narrow .vdrawer .verdict .v-equip { min-height: 34px; padding: 3px 14px; font-size: 13px; }
+html.narrow .vdrawer .verdict .stamp { font-size: 16px; padding: 5px 9px 4px; box-shadow: none; }
+/* a short window (411 × 363): the head's lines are one step smaller, so the first row of the list stays on the sheet */
+@media (max-height: 400px) {
+  html.narrow .vdrawer .verdict .v-head { padding: 8px 14px 8px; gap: 4px; }
+  html.narrow .vdrawer .verdict .v-summary { font-size: 14px; line-height: 1.25; }
+  html.narrow .vdrawer .verdict .v-pick p { font-size: 12px; line-height: 1.3; }
+}
 html.narrow .vbar.v-idle .stamp { display: none; }
 @media (max-height: 480px) {
   html.narrow body.has-vbar { --vbar-h: 60px; }
@@ -113,20 +123,17 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .match .chains { grid-column: 2 / 4; display: grid; gap: 4px; }
 .match .chain-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; }
 .match-div { list-style: none; margin: 6px 8px 0; padding: 8px 0 2px; border-top: 1px dashed var(--line-2); font-size: 12px; color: var(--ink-3); }
-/* экипировка в вердикте (VsSection, EquipSheet): «Сейчас на персонажах» и «Кому надеть?» */
+/* equipment in the verdict (HeroList): the head's button, hero mode's single row (HeroSingle) and the hero list (0230) */
 .v-equip, .v-twin { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 5px 12px; font-size: 13px; }
 .v-equip .ico, .vs-act .ico, .vs-stash .ico, .vs .ico { width: 15px; height: 15px; }
 .v-vs { padding: 12px 16px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
-.v-vs h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 .v-vs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .vs-row { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .vs-row p { margin: 0; font-size: 12.5px; }
 .vs-h { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
-.vs-h .face, .equip-row .face { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--surface-3); }
-.vs-h .nm, .equip-row .nm { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-width: 0; }
+.vs-h .face { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--surface-3); }
+.vs-h .nm { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-width: 0; }
 .vs-h .nm button { border: 0; background: none; padding: 0; font: inherit; color: var(--ink); }
-.vs-h .bn, .equip-row .bn { font-size: 12px; color: var(--ink-3); }
-.vs-worn { flex-basis: 100%; font-size: 11.5px; color: var(--ink-3); }
 .vs { display: inline-flex; align-items: center; gap: 4px; font: 700 11.5px/1 var(--font-mono); padding: 4px 6px; border-radius: 5px; white-space: nowrap; border: 1px solid transparent; }
 .vs.up { background: var(--keep-soft); color: var(--keep); }
 .vs.down, .vs.breaks { background: var(--junk-soft); color: var(--junk); }
@@ -135,18 +142,6 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .vs.worn { background: var(--surface); color: var(--keep); border-color: color-mix(in srgb, var(--keep) 40%, transparent); }
 .vs-act, .vs-stash { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 5px 12px; font-size: 13px; }
 .vs-act.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
-.equip { display: grid; gap: 10px; }
-.equip-q input { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); font: inherit; }
-.equip-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: min(420px, 55vh); overflow: auto; overscroll-behavior: contain; }
-.equip-row { width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
-.equip-row .muted { flex-basis: 100%; }
-.equip-row .act { flex-basis: 100%; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.equip-item { display: grid; gap: 6px; padding: 8px 10px; border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--line); }
-.equip-item p { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; }
-.equip-item img, .equip-item .noimg, .equip-item .ico { flex: none; width: 20px; height: 20px; object-fit: contain; color: var(--ink-2); }
-.equip-subs .tok { display: inline-flex; align-items: center; gap: 4px; font: 600 12px var(--font-mono); color: var(--ink-2); }
-.equip-subs .tok i { font-style: normal; min-width: 15px; padding: 1px 3px; border-radius: 3px; background: color-mix(in srgb, var(--seg-y) 85%, var(--surface)); color: #1b1300; text-align: center; }
-.equip-row:disabled { cursor: default; opacity: .75; } /* «уже надета» — надевать нечего */
 .gear-toast { white-space: normal; width: min(440px, calc(100vw - 24px)); z-index: 42; } /* надели из подробностей — видно и поверх шторки */
 /* узкое окно (280–320px): «Вернуть» сбоку оставляла тексту ≈ 140px — 7–8 строк; текст уже 220px — кнопка под ним, справа */
 .gear-toast { flex-wrap: wrap; gap: 4px 14px; }
@@ -168,9 +163,72 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .vc-equip, .vc-stash, .vc-twin { flex: 2 1 auto; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; }
 .vc-equip.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
 .vc-equip .ico, .vc-stash .ico { width: 16px; height: 16px; }
-/* GEARPOOL: «или — Rin · Speed ▸» под карточкой (в ряду с «Надеть», перенесённая — во всю ширину), «Ещё: …» в строке
-   персонажа, чипы «начнёт», «только статы» */
-.vc-other { flex: 1 1 auto; min-height: 36px; background: transparent; color: var(--ink-2); font-size: 13px; }
 .v-off { margin: 0; padding: 0 16px 10px; font-size: 13px; }
 /* режим «для героя»: строка про героя под карточкой (не носит, не нужна, «По статам») */
 .vc-note, .vc-wear, .vc-next { margin: 6px 0 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+
+/* the head's one primary button for the pick and the lines under it (why keep, what goes with it) */
+.v-equip { min-height: 42px; padding: 6px 18px; font-size: 14px; font-weight: 700; }
+.v-equip.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); background: var(--keep-soft); }
+.v-equip .ico { width: 17px; height: 17px; }
+.v-pick { display: grid; gap: 4px; }
+.v-pick:empty { display: none; }
+.v-pick p { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+
+/* the hero list (HeroList, 0230): the switch is the gold pill of the star controls (.lv-pill / .lv-seg of chars.css) */
+.hl-bar { display: flex; justify-content: flex-end; padding: 12px 16px 2px; }
+.hl-seg.lv-pill { display: inline-grid; grid-template-columns: repeat(2, auto); width: auto; max-width: none; margin: 0; }
+.hl-seg .lv-seg { min-height: 30px; padding: 0 16px; font: 600 13px/1 var(--font-body); color: var(--ink-2); cursor: pointer; }
+.hl-seg .lv-seg.on { font-weight: 700; }
+.hl-legend { margin: 0; padding: 4px 16px 0; }
+.hl-grp + .hl-grp { border-top: 1px solid var(--line); margin-top: 4px; }
+.hl-list { list-style: none; margin: 0; padding: 4px 12px 6px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.hl-row { padding: 4px 8px 4px 5px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.hl-row.is-pick { border-color: color-mix(in srgb, var(--star-on) 50%, transparent); }
+.hl-l1 { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.hl-l1 .face { flex: none; width: 32px; height: 32px; border-radius: 7px; object-fit: cover; background: var(--surface-3); }
+.hl-nm { flex: 0 0 188px; min-width: 0; display: flex; align-items: baseline; gap: 6px; font-size: 13.5px; }
+.hl-nm button { min-width: 0; padding: 0; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; }
+.hl-nm b { min-width: 0; display: flex; font-weight: 600; }
+.hl-star { flex: none; color: var(--star-on); font-size: 13px; line-height: 1; }
+.hl-note { flex: 1 1 0; min-width: 0; font-size: 12.5px; line-height: 1.25; color: var(--ink-2); }
+.hl-btn { flex: none; min-width: 94px; min-height: 30px; padding: 3px 10px; font-size: 12.5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-left: auto; }
+.hl-btn .ico { width: 14px; height: 14px; }
+.hl-d { display: flex; align-items: baseline; gap: 8px; padding: 1px 0 3px 40px; font-size: 12px; }
+.hl-dk { flex: none; width: 34px; color: var(--ink-3); }
+.hl-d .bgear-t { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.hl-pts { margin-left: 4px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+/* «ещё N ▸»: the shared Expand, as a quiet link under the rows; its own arrow hidden (the text has one) */
+.hl-more { padding: 0 12px 8px; }
+.hl-more .xp { border: 0; background: none; }
+.hl-more .xp-h { display: flex; min-height: 32px; justify-content: center; padding: 0; font-size: 12.5px; color: var(--accent); }
+.hl-more .xp-c { display: none; }
+.hl-more .xp-b { padding: 0; }
+.hl-more .hl-list { padding: 0; }
+.hl-find { padding: 6px 16px 14px; display: grid; gap: 8px; }
+.hl-find .hl-list { padding: 0; }
+.hl-find input { width: 100%; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); font: inherit; }
+.hl-find p { margin: 0; }
+/* the phone's sheet (0230 stage 2b): a row is one toggle button (face, name, pill, note under) and the row's own button; a tap on
+   the toggle expands «даст» / «было» in place */
+.hl-tog { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "f n p" "f t t"; align-items: center; gap: 0 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hl-tog .face { grid-area: f; align-self: center; }
+.hl-tog .hl-nm { grid-area: n; flex: none; min-width: 0; overflow: hidden; }
+.hl-tog .hl-nm b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-width: 0; }
+.hl-tog .vs { grid-area: p; }
+.hl-tog .hl-note { grid-area: t; flex: none; font-size: 11.5px; color: var(--ink-3); }
+.hl-tog:empty { display: none; }
+.hl-row.is-compact .hl-btn { min-width: 0; min-height: 34px; padding: 3px 9px; margin-left: 0; }
+.hl-row.is-compact .hl-l1 { min-height: 40px; }
+.hl-row.is-compact .hl-d { padding-left: 40px; }
+.hl-row.is-compact .hl-legend { padding: 2px 0 2px 40px; font-size: 11.5px; }
+html.narrow .hl-row:has(.hl-tog[aria-expanded="true"]) { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+
+/* the phone card's line of the next heroes (NextHeroes): one button, chips and the tail */
+.vc-heroes { width: 100%; margin-top: 6px; min-height: 40px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); font: inherit; text-align: left; overflow: hidden; }
+.vh-chip { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; }
+.vh-chip .face { flex: none; width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: var(--surface-3); }
+.vh-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.vh-v { flex: none; font: 700 12px/1 var(--font-mono); color: var(--keep); }
+.vh-v.fill { color: var(--ink-2); }
+.vh-more { flex: none; margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }

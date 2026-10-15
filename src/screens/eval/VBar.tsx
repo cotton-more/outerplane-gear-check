@@ -13,7 +13,8 @@ import { barTitle } from './VerdictCard';
 // stampless — вердикт уже на карточке формы, на плашке не повторяем; hint — подсказка вместо заголовка (сет выбран, сабстатов нет).
 // Подсказка и «что ввести дальше» (вердикт idle) — приглушённой строкой со стрелкой до трёх строк, вердикт — штампом:
 // сразу видно, где «сделай это», а где результат. quiet — идёт обучение: что делать, говорит его полоса, здесь не дублируем.
-export function VBar({ r, news, show, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen, resetLabel, marks }: {
+export function VBar({ ingameN = 0, r, news, show, stampless, hint, quiet, tab, rosterSize, onTab, onMenu, onReset, onOpen, resetLabel, marks }: {
+  ingameN?: number; // «Надеть в игре»: lines owed — a count on ☰
   r: VerdictData; news: boolean; show: boolean; stampless: boolean; hint: string | null; quiet: boolean; tab: Tab; rosterSize: number;
   resetLabel?: string; // «В партию · #8» in the batch mode
   marks?: React.ReactNode; // and «E», «🔒» before it (features/batch BatchMarks)
@@ -39,7 +40,7 @@ export function VBar({ r, news, show, stampless, hint, quiet, tab, rosterSize, o
     <div className={`vbar v-${r.v}`} id="vbar">
       {flash > 0 && <span key={flash} className="vb-flash" aria-hidden="true" />}
       {evalTab
-        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <span className="vb-ros"> <span className="vb-star">★</span>{rosterSize}</span>}</button>
+        ? <button type="button" className={news ? 'vb-tab has-news' : 'vb-tab'} aria-label={t.ui.more} onClick={onMenu} {...tour('more')}>☰{rosterSize > 0 && <span className="vb-ros"> <span className="vb-star">★</span>{rosterSize}</span>}{ingameN > 0 && <span className="vb-ig" role="img" aria-label={t.ingame.title(ingameN)} {...tour('ingame')}>{ingameN}</span>}</button>
         : <button type="button" className="vb-tab" onClick={() => onTab('eval')}>{t.ui.toEval}</button>}
       {tab !== 'team' && <button type="button" className="vb-main" aria-label={evalTab ? t.ui.verdictDetails : t.ui.backToEval} {...(evalTab && tour('verdict'))}
         onClick={evalTab ? onOpen : () => onTab('eval')}>

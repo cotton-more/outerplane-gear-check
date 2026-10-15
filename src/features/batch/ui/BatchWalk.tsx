@@ -13,8 +13,8 @@ import { AskSheet } from '@/shared/ui/AskSheet';
 import { Toggle } from '@/shared/ui/Toggle';
 import type { Batch } from '@/features/batch/batch';
 import type { Plan } from '@/features/batch/plan';
-import { gameSubs, rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
-import { batchCaption, capLine, itemCaption, Painted } from '@/features/gear/ui/pieceText';
+import { rowOf, type Kept, type Step, type Walk, type Where } from '@/features/batch/walk';
+import { batchCaption, capLine, gameSubs, gradeTone, itemCaption, Painted } from '@/features/gear/ui/pieceText';
 import { formPiece } from '@/features/gear/verdict';
 import { inputOfPiece } from '@/features/batch/plan';
 import { SubToken } from '@/game/item/SubToken';
@@ -54,7 +54,7 @@ interface Bt { piece: ItemInput; n: number; mats: ReactNode[] }
 const Chips = ({ x }: { x: ItemInput }) => <span className="bt-chips">{Object.entries(x.subs).map(([k, v]) => <SubToken key={k} stat={k} lit={v} />)}</span>;
 // a piece of the feed: the item in the grade's colour (a weapon or accessory), then its substats as chips
 function MatLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
-  return <>{!isArmor(x.slot) && <span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}{x.bt === 4 ? '\u00A0·\u00A0T4' : ''}</span>}<Chips x={x} /></>;
+  return <>{!isArmor(x.slot) && <span className={`gname ${gradeTone(x.grade)}`}>{itemCaption(ctx.idx, x)}{x.bt === 4 ? '\u00A0·\u00A0T4' : ''}</span>}<Chips x={x} /></>;
 }
 function BtCard({ ctx, t, bt }: { ctx: Ctx; t: Texts; bt: Bt }) {
   const x = bt.piece;
@@ -66,7 +66,7 @@ function BtCard({ ctx, t, bt }: { ctx: Ctx; t: Texts; bt: Bt }) {
       <span className="bt-card">
         {isArmor(x.slot)
           ? <span className="bt-top"><Chips x={x} />{pips}</span>
-          : <><span className="bt-top"><span className={`gname ${x.grade === 'unique' ? 'legend' : 'epic'}`}>{itemCaption(ctx.idx, x)}</span>{pips}</span><Chips x={x} /></>}
+          : <><span className="bt-top"><span className={`gname ${gradeTone(x.grade)}`}>{itemCaption(ctx.idx, x)}</span>{pips}</span><Chips x={x} /></>}
       </span>
       <span className="bt-feed" aria-label={t.batch.btFeed}>
         {bt.mats.map((m, i) => <span key={i} className="bt-mat">{m}</span>)}
@@ -82,7 +82,7 @@ function PieceLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
   const t4 = x.bt === 4;
   // armor: the substats alone («T4 · HP 1, EFF% 2»); a weapon or accessory: «Sublime Melody · HP% · T4 · DMG UP% 3, …»
   if (isArmor(x.slot)) return <>{t4 && <b>T4 · </b>}{subsText(x.subs)}</>;
-  return <><span className={x.grade === 'unique' ? 'gname legend' : 'gname epic'}>{itemCaption(ctx.idx, x)}</span>{t4 && <b>{'\u00A0·\u00A0T4'}</b>} · {subsText(x.subs)}</>;
+  return <><span className={`gname ${gradeTone(x.grade)}`}>{itemCaption(ctx.idx, x)}</span>{t4 && <b>{'\u00A0·\u00A0T4'}</b>} · {subsText(x.subs)}</>;
 }
 
 // for whom a kept piece stays: «для Gnosis Domine», «для Valentine · запас»; the piece is in the title (row, place, #n)
@@ -165,7 +165,7 @@ export function BatchWalk({ ctx, batch, plan, walk, what, onTick, onDone }: {
                           {no && <span className="bstep-no">{no}</span>}
                           <b>{paint ? withItem(title, hero, paint.what, paint.grade) : withHero(title, hero)}</b>
                         </span>
-                        {cap && <span className={`bstep-m gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{cap}</span>}
+                        {cap && <span className={`bstep-m gname ${gradeTone(grade)}`}>{cap}</span>}
                         {kept && <span className="bstep-k">{withWait(kept.text, kept.c, t, ctx, kept.x)}</span>}
                         {more.map((m, i) => <span key={i} className="bstep-m">{m}</span>)}
                         {bt && <BtCard ctx={ctx} t={t} bt={bt} />}

@@ -13,7 +13,7 @@ import { namedGain } from '@/features/gear/model/vs';
 import { wornAtEnd, type Fate, type Line, type Off, type Plan } from '@/features/batch/plan';
 import { BatchPiece } from './BatchList';
 import { withHero } from '@/game/hero/HeroTag';
-import { capLine, itemCaption, Painted } from '@/features/gear/ui/pieceText';
+import { capLine, gradeTone, itemCaption, Painted } from '@/features/gear/ui/pieceText';
 import type { ItemInput } from '@/game/item/item';
 import { isArmor } from '@/game/data';
 
@@ -38,7 +38,7 @@ export function withWait(text: string, c: Char | null, t: Texts, ctx: Ctx, x: It
 export function withItem(text: string, c: Char | null, what: string, grade: ItemInput['grade']): ReactNode {
   const i = what ? text.indexOf(what) : -1;
   if (i < 0) return withHero(text, c);
-  return <>{withHero(text.slice(0, i), c)}<span className={`gname ${grade === 'unique' ? 'legend' : 'epic'}`}>{what}</span>{withHero(text.slice(i + what.length), c)}</>;
+  return <>{withHero(text.slice(0, i), c)}<span className={`gname ${gradeTone(grade)}`}>{what}</span>{withHero(text.slice(i + what.length), c)}</>;
 }
 
 // the piece a «Корм для #n» line feeds, by its line: the hero who gets or keeps it and its slot (owner 2026-10-09: «Корм для

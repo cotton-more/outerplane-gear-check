@@ -1,5 +1,5 @@
 // Слова вердикта «статы + сеты» (stat-sets TEXTS.md): штамп, заголовок и строки по исходу вещи (features/gear/verdict) —
-// для панели вердикта, карточки и «Сейчас на персонажах». Штамп — про оцениваемую вещь (PLAN Д2).
+// для панели вердикта, карточки и списка героев (HeroList). Штамп — про оцениваемую вещь (PLAN Д2).
 import { isArmor, type Index } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import type { Texts } from '@/i18n';
@@ -9,7 +9,6 @@ import { subsText } from '@/game/text';
 import type { Piece } from '@/features/gear/model/gear';
 import type { VerdictKind } from '@/features/eval/verdict/verdict';
 import type { HeroRes, Result } from '@/features/gear/verdict';
-import { namedGain } from '@/features/gear/model/vs';
 
 type Label = (p: Piece) => string;
 const itemName = (idx: Index, x: Pick<ItemInput, 'slot' | 'itemKey' | 'main'>): string =>
@@ -29,16 +28,16 @@ function feedLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Lab
   return [feed, stashedLine(t, piece, label)];
 }
 
-// строки героя: «Надень» — прирост, половины, вещи пула вместе с ней; «Оставь» — почему держать; запасная — ей в Breakthrough
-export function heroLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Label): string[] {
+// строки героя: «Надень» — половины, вещи пула вместе с ней; «Оставь» — почему держать; запасная — ей в Breakthrough
+// brief — under the verdict's pick: the gain and the set parts are in his row of the list (0230), the rest stays
+export function heroLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, label: Label, brief = false): string[] {
   const F = t.fit;
   const out: string[] = [];
   const name = h.c.name;
   if (h.kind === 'wear') {
-    if (namedGain(h.dV)) out.push(F.gain(name, F.pts(h.dV)));
     if (h.rankUp) out.push(F.rankUp(name));
     const parts = F.parts(h.parts.on.map((p) => partText(idx, p)), h.parts.off.map((p) => partText(idx, p)));
-    if (parts) out.push(parts);
+    if (parts && !brief) out.push(parts);
     if (h.alsoWear.length) out.push(F.alsoWear(name, h.alsoWear.map(label)));
   } else if (h.kind === 'keep' && item.setId) {
     const set = setName(idx, item.setId);
@@ -52,7 +51,7 @@ export function heroLines(t: Texts, idx: Index, h: HeroRes, item: ItemInput, lab
 }
 
 // штамп, заголовок и строки по исходу. «Надень» и «Оставь» — без строк: что даёт каждому названному герою, говорит
-// «Сейчас на персонажах» (PLAN Д3). «Спорно» и «Разобрать» — в useVerdictModel, где есть прежний вердикт по порогам
+// списка героев (PLAN Д3). «Спорно» и «Разобрать» — в useVerdictModel, где есть прежний вердикт по порогам
 export function resultHead(t: Texts, idx: Index, r: Result, item: ItemInput, label: Label): { v: VerdictKind; title: string; lines: string[] } | null {
   const F = t.fit;
   const h = r.named[0];
