@@ -133,6 +133,7 @@ html:not(.narrow) .eval.batch-result .batch-col { position: static; max-height: 
 .ig-body { display: grid; gap: 12px; }
 .ig-sheet .ig-body { padding: 6px 14px 16px; }
 .ig-hero .parked-h .face { width: 28px; height: 28px; }
+.ig-hero .parked-h .ico, .ig-hero .parked-h .ce, .ig-hero .parked-h > img { width: 18px; height: 18px; flex: none; }
 .ig-piece { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .ig-piece .pset { margin: 0; }
 .ig-fate { color: var(--ink-3); }

@@ -4,6 +4,7 @@
 // (the page says it in a message with «Вернуть»). No lines — nothing drawn (no empty state).
 import type { Ctx } from '@/game/context';
 import { HeroFace } from '@/game/hero/HeroFace';
+import { ClassIcon } from '@/game/icons/Img';
 import { HeroName, heroName } from '@/game/hero/HeroName';
 import { useT } from '@/i18n';
 import { Toggle } from '@/shared/ui/Toggle';
@@ -22,7 +23,7 @@ export function IngameBody({ ctx, sections, onTick }: { ctx: Ctx; sections: read
         const c = ctx.idx.CHAR[hero];
         return (
           <section key={hero} className="bstage ig-hero" aria-label={heroName(ctx.idx, hero)}>
-            <h4 className="parked-h">{c && <HeroFace c={c} />}{c ? <HeroName c={c} /> : <span>{hero}</span>}</h4>
+            <h4 className="parked-h">{c && <HeroFace c={c} />}{c ? <HeroName c={c} /> : <span>{hero}</span>}{c && <ClassIcon cls={c.class} el={c.element} />}</h4>
             <ol className="bgear-list">
               {lines.map(({ line, now }) => {
                 const word = cap(t.ui.slotNom[line.slot]);
