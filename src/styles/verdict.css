@@ -183,11 +183,20 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .hl-legend { margin: 0; padding: 4px 16px 0; }
 .hl-grp + .hl-grp { border-top: 1px solid var(--line); margin-top: 4px; }
 .hl-list { list-style: none; margin: 0; padding: 4px 12px 6px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+/* a narrow verdict column (a small window, not the phone sheet): the row's note («вместо N очк.») takes its own line
+   under the name instead of a sliver between the gain and the button */
+.hl-list { container-type: inline-size; }
+.hl-note:empty { display: none; }
+@container (max-width: 460px) {
+  .hl-l1 { flex-wrap: wrap; row-gap: 0; }
+  .hl-l1 > .hl-nm { flex: 1 1 0; }
+  .hl-l1 > .hl-note { order: 1; flex: 1 0 100%; padding-left: 40px; }
+}
 .hl-row { padding: 4px 8px 4px 5px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .hl-row.is-pick { border-color: color-mix(in srgb, var(--star-on) 50%, transparent); }
 .hl-l1 { display: flex; align-items: center; gap: 8px; min-height: 36px; }
 .hl-l1 .face { flex: none; width: 32px; height: 32px; border-radius: 7px; object-fit: cover; background: var(--surface-3); }
-.hl-nm { flex: 0 0 188px; min-width: 0; display: flex; align-items: baseline; gap: 6px; font-size: 13.5px; }
+.hl-nm { flex: 0 1 188px; min-width: 0; display: flex; align-items: baseline; gap: 6px; font-size: 13.5px; }
 .hl-nm button { min-width: 0; padding: 0; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; }
 .hl-nm b { min-width: 0; display: flex; font-weight: 600; }
 .hl-star { flex: none; color: var(--star-on); font-size: 13px; line-height: 1; }
@@ -200,7 +209,7 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .hl-pts { margin-left: 4px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
 /* «ещё N ▾» / «свернуть ▴»: a quiet link under the rows; the hidden rows open inside the same list */
 .hl-more { display: flex; justify-content: center; padding: 0 12px 8px; }
-.hl-tog { min-height: 32px; padding: 0 12px; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+.hl-fold { min-height: 32px; padding: 0 12px; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
 .hl-find { padding: 6px 16px 14px; display: grid; gap: 8px; }
 .hl-find .hl-list { padding: 0; }
 .hl-find input { width: 100%; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); font: inherit; }

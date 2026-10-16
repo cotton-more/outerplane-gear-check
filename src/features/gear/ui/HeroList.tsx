@@ -149,7 +149,7 @@ export function HeroList({ groups, ctx, viewOf, item, search, compact = false, o
               <ul className="hl-list">{rows(open[g.kind] ? [...g.rows, ...g.more] : g.rows)}</ul>
               {g.more.length > 0 && (
                 <div className="hl-more">
-                  <button type="button" className="hl-tog" aria-expanded={!!open[g.kind]} onClick={() => setOpen({ ...open, [g.kind]: !open[g.kind] })}>
+                  <button type="button" className="hl-fold" aria-expanded={!!open[g.kind]} onClick={() => setOpen({ ...open, [g.kind]: !open[g.kind] })}>
                     {open[g.kind] ? t.fit.fold : t.fit.unfold(g.more.length)}
                   </button>
                 </div>
