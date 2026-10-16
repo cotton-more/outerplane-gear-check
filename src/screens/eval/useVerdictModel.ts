@@ -53,10 +53,12 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
 }
 
 // «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»; promised in «Надеть в игре» — «…,
-// обещанный Aer в «Надеть в игре». …» (TEXTS S1)
-const sameText = (t: Texts, idx: Index, same: Same): string => same.promised
-  ? t.fit.samePromised(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name)
-  : t.fit.same(same.piece.slot, pieceLabel(t, idx)(same.piece), same.c.name, t.fit.date(same.piece.at));
+// обещанный Aer в «Надеть в игре». …» (TEXTS S1). The piece and the hero are bold, so the line stands out among the reasons
+const sameText = (t: Texts, idx: Index, same: Same): string => {
+  const piece = `**${pieceLabel(t, idx)(same.piece)}**`, name = `**${same.c.name}**`;
+  return same.promised ? t.fit.samePromised(same.piece.slot, piece, name)
+    : t.fit.same(same.piece.slot, piece, name, t.fit.date(same.piece.at));
+};
 
 export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, replace, touring, narrow, onEval, batch = false, promised }: {
   idx: Index; t: Texts; ctx: Ctx;
