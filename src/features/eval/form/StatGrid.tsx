@@ -14,6 +14,8 @@ import { StatIcon } from '@/game/icons/Img';
 // mains — у аксессуара без main: сетка сначала выбирает main (он в игре сверху предмета), потом сабстаты.
 // Flat-статы main не бывают — на их местах PEN% и CDMG RED%, которые бывают только main; остальные на своих местах.
 // Выбранный main отмечен в сетке «main»; нажатие снимает его, и сетка снова выбирает main.
+// A main with no cell among the substats (PEN%, CDMG RED%, flat EFF, flat RES) — kept by «Следующий предмет» — goes to
+// the free bottom-left cell (corner), so it can be cleared from the grid too, not only in the main window.
 // blocked — сабстаты, которых на предмете не бывает из-за main (фиксированного у брони и оружия или выбранного):
 // клетка с пометкой «main». Игра сравнивает стат вместе с видом: flat EFF в main не мешает сабстату EFF% —
 // у аксессуара с main EFF клетка EFF% остаётся обычной (main тогда виден в поле main над сеткой).
@@ -29,9 +31,9 @@ const gap = (i: number) => <span key={`gap${i}`} className="sg-gap" aria-hidden=
 // подписи — не длиннее пяти знаков: в разделённом экране клетка ~24 px. CDMG RED% — «CD↓%»: «CDMG↓» обрезалось бы в «DMG↓»
 const SHORT: Record<string, string> = { 'DMG UP%': 'DMG↑%', 'DMG RED%': 'DMG↓%', 'CDMG RED%': 'CD↓%' };
 
-export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onMain }: {
+export function StatGrid({ subs, main, blocked, full, useful, mains, corner = false, onPick, onMain }: {
   subs: Subs; main: string | null; blocked: Set<string>; full: boolean; useful: Map<string, number> | null;
-  mains: MainOption[] | null; onPick: (key: string, cell: HTMLElement) => void; onMain: (key: string) => void;
+  mains: MainOption[] | null; corner?: boolean; onPick: (key: string, cell: HTMLElement) => void; onMain: (key: string) => void;
 }) {
   const t = useT();
   if (mains) {
@@ -50,10 +52,15 @@ export function StatGrid({ subs, main, blocked, full, useful, mains, onPick, onM
       </div>
     );
   }
+  const loose = corner && main && !GRID.some((k) => k === main && blocked.has(k)) ? main : null;
   return (
     <div className="statgrid" role="group" aria-label={t.ui.addSub}>
       {GRID.map((k, i) => {
-        if (k === null) return gap(i);
+        if (k === null) return loose ? (
+          <button key={`gap${i}`} type="button" className={`sg is-main${long(SHORT[loose] ?? loose)}`} title={t.ui.mainCell(loose)} onClick={() => onMain(loose)}>
+            <small>main</small><span>{SHORT[loose] ?? loose}</span>
+          </button>
+        ) : gap(i);
         if (blocked.has(k) && !(k in subs)) {
           // выбранный main снимается нажатием; фиксированная строка (HP% шлема, flat ATK оружия) — нет
           const chosen = k === main;

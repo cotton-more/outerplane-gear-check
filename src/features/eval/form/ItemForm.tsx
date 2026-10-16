@@ -114,7 +114,7 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
       </div>
       {!armor && !epic && <div className="formrow">{itemField}{btChip}</div>}
       <div className="subzone" {...mark(tour('grid'))}>
-        {zone ?? <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} onMain={pickMain} onPick={tapGrid} />}
+        {zone ?? <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} corner={!armor && opts.length > 0} onMain={pickMain} onPick={tapGrid} />}
       </div>
       {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
       <SubRows subs={s.subs} grade={s.grade} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
