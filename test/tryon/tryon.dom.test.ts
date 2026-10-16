@@ -265,7 +265,7 @@ describe('режим «для героя»: вход, одна строка, з�
   it('замена в любом случае без прироста (оружие не по билду): кнопка «Заменить», без чипа и без «ничего не даст»', async () => {
     const sword = { id: 'p2', slot: 'weapon', grade: 'unique', setId: null, itemKey: '3', main: 'ATK%', yellow: { CHC: 2, CHD: 2 }, lit: { CHC: 2, CHD: 2 }, bt: null, at: '' };
     const gear = { ...GEAR, seq: 2, pieces: { ...GEAR.pieces, p2: sword }, pools: { [caren.id]: ['p1', 'p2'] } };
-    await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: '3', main: 'ATK%', subs: { RES: 1, EFF: 1, 'DMG UP%': 1, ATK: 1 } },
+    await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: '3', main: 'ATK%', subs: { RES: 1, EFF: 1, 'DMG UP%': 1, HP: 1 } },
       { gear, tryon: { charId: caren.id, replace: 'p2' } });
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's weapon");
     expect($('.vc-note')).toBeNull();

@@ -114,7 +114,7 @@ describe('what writes a line', () => {
   it('«Оценить вещь для Caren», a weak piece over her worn one: «Заменить» writes a line', async () => {
     const worn = { ...P1, id: 'p1', yellow: { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 }, lit: { 'DEF%': 3, CHC: 3, CHD: 3, SPD: 3 } };
     const gear = { v: 3, seq: 1, pieces: { p1: worn }, pools: { [caren.id]: ['p1'] }, worn: { [caren.id]: { helmet: 'p1' } } };
-    await mount(onCard, { setId: speed, subs: { HP: 1, DEF: 1, ATK: 1, 'RES%': 1 } }, { gear });
+    await mount(onCard, { setId: speed, subs: { HP: 1, DEF: 1, ATK: 1, RES: 1 } }, { gear });
     await toPool();
     await click($('.pool-rate'));
     await click($('.vc-equip'));

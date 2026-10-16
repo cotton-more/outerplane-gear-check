@@ -130,11 +130,13 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   // штамп общий, а заголовок после « — » в режиме героя — и про него
   const shown = useMemo(() => (hero ? { ...verdict, title: heroTitle(t, verdict, hero.c, heroVs, res?.named[0]?.c.id ?? null) } : verdict),
     [t, verdict, hero, heroVs, res]);
-  // телефон: готовый вердикт встаёт карточкой на место сетки (все сабстаты или уже ясно, что в разбор)
+  // телефон: готовый вердикт встаёт карточкой на место сетки, когда введены все сабстаты. A junk verdict waits for them too
+  // (it used to replace the grid at once): the hero list under the stamp (HISTORY.md 0230) is counted from the substats,
+  // so a «Разобрать» piece may still replace someone's worn one
   const nSubs = Object.keys(s.subs).length;
   // Без вердикта (не выбран сет, main или предмет) карточка не встаёт: на её месте остаётся сетка, а то, чего не хватает,
   // выделено на форме (EvalPanel need); вопрос — на плашке внизу
-  const cardShown = narrow && onEval && !batch && verdict.v !== 'idle' && (nSubs >= dropSubs(s.grade) || verdict.v === 'junk');
+  const cardShown = narrow && onEval && !batch && verdict.v !== 'idle' && nSubs >= dropSubs(s.grade);
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint : null;
   // the guard's line on the phone card and «Это другой» on the card and in the details
