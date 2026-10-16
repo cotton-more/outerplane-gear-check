@@ -202,6 +202,8 @@ export const en: Texts = {
     listEmpty: 'Into an empty slot',
     listStash: 'Set aside',
     more: (n) => `${n} more ▸`,
+    unfold: (n) => `${n} more ▾`,
+    fold: 'show less ▴',
     instead: (pts) => `instead of ${pts} pts`,
     rowOff: (part) => `turns off ${part}`,
     btnEquip: 'Equip', btnReplace: 'Replace', btnStash: 'Set aside',

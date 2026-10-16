@@ -18,7 +18,6 @@ import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
 import { SubToken } from '@/game/item/SubToken';
 import { Icon } from '@/game/icons/Img';
-import { Expand } from '@/shared/ui/Expand';
 import { tour } from '@/tour/anchors';
 import { VsChip } from './VsChip';
 import { EquipButton } from './EquipButton';
@@ -146,12 +145,13 @@ export function HeroList({ groups, ctx, viewOf, item, search, compact = false, o
           {groups.map((g) => (
             <div key={g.kind} className="hl-grp">
               <div className="v-list-h"><h3>{head[g.kind]}</h3></div>
-              <ul className="hl-list">{rows(g.rows)}</ul>
+              {/* the hidden rows join the same list; the toggle stays under it and says what the next tap does */}
+              <ul className="hl-list">{rows(open[g.kind] ? [...g.rows, ...g.more] : g.rows)}</ul>
               {g.more.length > 0 && (
                 <div className="hl-more">
-                  <Expand title={t.fit.more(g.more.length)} open={!!open[g.kind]} onToggle={(o) => setOpen({ ...open, [g.kind]: o })}>
-                    <ul className="hl-list">{rows(g.more)}</ul>
-                  </Expand>
+                  <button type="button" className="hl-tog" aria-expanded={!!open[g.kind]} onClick={() => setOpen({ ...open, [g.kind]: !open[g.kind] })}>
+                    {open[g.kind] ? t.fit.fold : t.fit.unfold(g.more.length)}
+                  </button>
                 </div>
               )}
             </div>

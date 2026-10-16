@@ -237,6 +237,9 @@ export const ru = {
     listEmpty: 'В пустой слот',
     listStash: 'Отложить',
     more: (n: number) => `ещё ${n} ▸`,
+    // the hero list's toggle under a group: opens the hidden rows below, then folds them back
+    unfold: (n: number) => `ещё ${n} ▾`,
+    fold: 'свернуть ▴',
     instead: (pts: string) => `вместо ${pts} очк.`,
     rowOff: (part: string) => `выключит ${part}`,
     btnEquip: 'Надеть', btnReplace: 'Заменить', btnStash: 'Отложить',
