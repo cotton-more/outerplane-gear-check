@@ -55,6 +55,20 @@ const rinWorld = () => mk({
 });
 
 describe('the end: replacements and parking', () => {
+  it('replacements go hero by hero, slots in order (owner 2026-10-17: not C helmet, S helmet, C gloves)', () => {
+    const w = mk({
+      rh: { slot: 'helmet' }, ch: { slot: 'helmet' }, dh: { slot: 'helmet' }, sh: { slot: 'helmet' },
+      dg: { slot: 'gloves' }, cg: { slot: 'gloves' },
+    }, {
+      R: { worn: { helmet: 'rh' }, value: { rh: 2, ch: 10, dh: 1, sh: 1 } },
+      D: { worn: { helmet: 'dh', gloves: 'dg' }, value: { dh: 2, sh: 10, rh: 1, ch: 1, dg: 2, cg: 10 } },
+      C: { worn: { helmet: 'ch', gloves: 'cg' }, value: { ch: 5, rh: 1, dh: 1, cg: 5, dg: 1 } },
+      S: { worn: { helmet: 'sh' }, value: { sh: 5, dh: 1, rh: 1 } },
+    });
+    const o = team(w, ['R', 'D']);
+    expect(o.walk.end.map(short)).toEqual(['C.helmet ← rh of R', 'C.gloves ← dg of D', 'S.helmet ← dh of D']);
+  });
+
   it('the giver gets the old piece; a class-locked one parks on the hero it came off; only the parked one is locked (O3)', () => {
     const o = hero(rinWorld(), 'R');
     expect(o.ends.repl.map((r) => [r.to, r.slot, r.item, r.from])).toEqual([['C', 'helmet', 'rh', 'R'], ['S', 'armor', 'ra', 'R']]);
