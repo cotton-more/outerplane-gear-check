@@ -14,6 +14,7 @@ import { upgradePlan } from '@/features/eval/verdict/upgrade';
 import type { Verdict } from '@/features/eval/verdict/verdict';
 import { itemInput, type FormState } from '@/features/eval/form/formState';
 import type { GearStore } from '@/features/gear/model/gear';
+import { holdersOf } from '@/features/gear/find';
 import { storeFor } from '@/features/gear/model/fusion';
 import { poolView, type PoolView } from '@/features/gear/pool';
 import { charVs, type CharVs } from '@/features/gear/model/poolVs';
@@ -139,8 +140,15 @@ export function useVerdictModel({ idx, t, ctx, s, store, roster, view, hero, rep
   const cardShown = narrow && onEval && !batch && verdict.v !== 'idle' && nSubs >= dropSubs(s.grade);
   // сет выбран, сабстатов нет: подсказка «ярких 0–1 — в разбор» (на телефоне — на плашке, иначе под сеткой)
   const hint = isArmor(s.slot) && s.setId && !nSubs && verdict.v !== 'junk' ? t.ui.triageHint : null;
+  // who already has this very piece, worn or in a pool (owner 2026-10-17): a summary under the verdict, the verdict doesn't
+  // change. Once a substat is in — without them every piece of the set would match
+  const holders = useMemo(() => {
+    if (batch || touring || !nSubs) return null;
+    const h = holdersOf(store, input);
+    return h.worn.length || h.stash.length ? h : null;
+  }, [store, key, batch, touring, nSubs]); // eslint-disable-line react-hooks/exhaustive-deps
   // the guard's line on the phone card and «Это другой» on the card and in the details
   const sameLine = same ? sameText(t, idx, same) : null;
   const onTwin = same ? () => setTwinAt(key) : undefined;
-  return { input, raw, res, viewOf, tview, heroVs, verdict, list, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin };
+  return { input, raw, res, viewOf, tview, heroVs, verdict, list, offNote, shown, nSubs, cardShown, hint, same, sameLine, onTwin, holders };
 }

@@ -8,6 +8,7 @@ import { useT } from '@/i18n';
 import { CodeInput } from '@/features/eval/code/ItemCode';
 import { holdersOf } from '@/features/gear/find';
 import type { GearStore } from '@/features/gear/model/gear';
+import { Holders } from '@/features/gear/ui/Holders';
 import { PieceName } from '@/features/gear/ui/pieceText';
 import { formPiece } from '@/features/gear/verdict';
 
@@ -18,9 +19,6 @@ export function FindPiece({ ctx, store, fits, onOpenChar }: {
   const t = useT();
   const [item, setItem] = useState<ItemInput | null>(null);
   const h = item ? holdersOf(store, item) : null;
-  const names = (ids: string[]) => ids.map((id, i) => (
-    <span key={id}>{i > 0 && ', '}<button type="button" className="linkbtn" onClick={() => onOpenChar(id)}>{ctx.idx.CHAR[id]?.name ?? id}</button></span>
-  ));
   const p = item && formPiece(item);
   return (
     <div className="find">
@@ -29,8 +27,7 @@ export function FindPiece({ ctx, store, fits, onOpenChar }: {
         <div className="find-res" aria-live="polite">
           <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
           <p className="muted small">{subsText(p.lit)}</p>
-          {h.worn.length > 0 && <p>{t.ui.findWorn} {names(h.worn)}</p>}
-          {h.stash.length > 0 && <p>{t.ui.findStash} {names(h.stash)}</p>}
+          <Holders idx={ctx.idx} h={h} className="find-who" onOpenChar={onOpenChar} />
           {!h.worn.length && !h.stash.length && <p className="muted">{t.ui.findNone}</p>}
         </div>
       )}

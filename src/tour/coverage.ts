@@ -31,6 +31,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/gear/ui/EquipButton.tsx': 'helper',        // кнопка «Надеть»: её объясняют подсказки вердикта и тур «Экипировка»
   'features/gear/ui/VsChip.tsx': 'helper',             // чип исхода в «Сейчас на персонажах» и карточке вердикта: их подсказки его объясняют
   'features/gear/ui/pieceText.tsx': 'helper',          // подписи вещи в строках экипировки
+  'features/gear/ui/Holders.tsx': 'helper',            // «Worn by: X / In the pool of: Y» under the verdict and in «Find a piece»: says itself what it is
   'screens/find/FindPiece.tsx': 'helper',               // «Find a piece» in More: its hint line says what to paste and what it looks for
   'screens/parked/ParkedList.tsx': 'helper',            // «Parked · N» in More: its top line says what to do (unlock in the game, Remove)
   'features/roster/BackupIO.tsx': 'helper',            // «Резервная копия» в «Ещё»: подпись говорит, что это

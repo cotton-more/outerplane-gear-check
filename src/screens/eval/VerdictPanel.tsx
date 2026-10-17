@@ -28,6 +28,8 @@ import { EquipButton } from '@/features/gear/ui/EquipButton';
 import { ShareCode } from '@/features/eval/code/ItemCode';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
+import type { Holders as HoldersData } from '@/features/gear/find';
+import { Holders } from '@/features/gear/ui/Holders';
 
 // list — the hero list (features/gear/model/heroList; normal mode), heroVs — hero mode's single row (poolVs); ctx and viewOf —
 // for the list's name search; onEquip / onStash — «Надеть» / «Отложить» on a hero
@@ -40,6 +42,7 @@ interface Props {
   nextNote?: string | null; // «Дальше: Ботинки» под кнопкой «Надеть» (режим героя, ввод надетого)
   offNote?: string | null; // режим «для героя»: строка про героя (features/tryon/tryon heroNote) — не носит, не нужна, «По статам»
   onTwin?: () => void;      // the piece looks like one already set aside: «Это другой» under the reasons (guard)
+  holders?: HoldersData | null; // who already has this very piece, worn or in a pool: a summary under the head
 }
 
 // Широкий экран: вердикт липкой колонкой справа от формы — во всю высоту до низа окна.
@@ -50,7 +53,7 @@ export function Verdict(props: Props) {
 }
 
 // Содержимое вердикта — в колонке справа или в шторке, которая открывается с плашки внизу.
-export function VerdictBody({ r, s, dispatch, onOpenChar, ctx, viewOf, list = [], heroVs = null, onEquip, onStash, canSearch = false, compact = false, offNote, nextNote, onTwin }: Props) {
+export function VerdictBody({ r, s, dispatch, onOpenChar, ctx, viewOf, list = [], heroVs = null, onEquip, onStash, canSearch = false, compact = false, offNote, nextNote, onTwin, holders }: Props) {
   const idx = useIndex();
   const t = useT();
   const item = !isArmor(s.slot) && s.itemKey ? idx.ITEM[s.slot as GearKind][s.itemKey] : undefined;
@@ -84,6 +87,7 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, ctx, viewOf, list = []
         {pick && <div className="v-pick"><OutcomeLines x={pick.vs} item={input} brief /></div>}
       </div>
       {offNote && <p className="v-off muted">{offNote}</p>}
+      {holders && r.v !== 'idle' && <Holders idx={idx} h={holders} className="v-holders" onOpenChar={onOpenChar} />}
       {heroVs && onEquip && <HeroSingle x={heroVs} item={input} slot={slotAcc} t4={input.bt === 4} nextNote={nextNote} onEquip={(x) => onEquip(x.c)} onStash={onStash && ((x) => onStash(x.c))} onOpenChar={onOpenChar} />}
       {!heroVs && onEquip && r.v !== 'idle' && <HeroList groups={list} ctx={ctx} viewOf={viewOf} item={input} search={canSearch} compact={compact} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (

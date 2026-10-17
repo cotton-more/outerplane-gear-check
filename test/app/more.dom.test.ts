@@ -415,15 +415,36 @@ describe('«Find a piece»', () => {
   it('worn by Caren, set aside for Rin (another order is another piece); Caren\'s name opens her card', async () => {
     await mount({ roster: [caren.id, rin.id], gear });
     await find('OGC ' + code);
-    expect($$('.find-res p').map((p) => p.textContent?.replace(/\u00A0/g, ' '))).toEqual(['Speed Set', 'SPD 2, CHC 3, DEF% 1', 'Worn by: Caren', 'Set aside for: Rin']);
+    expect($$('.find-res p').map((p) => p.textContent?.replace(/\u00A0/g, ' '))).toEqual(['Speed Set', 'SPD 2, CHC 3, DEF% 1', 'Worn by: Caren', 'In the pool of: Rin']);
     await click($$('.find-res .linkbtn').find((b) => b.textContent === 'Caren'));
     expect([$('.find'), saved().tab, saved().charId]).toEqual([null, 'chars', caren.id]);
+  });
+
+  // owner 2026-10-17: the evaluated piece says the same — a summary under the verdict, names open the cards
+  it('the verdict of the same piece names who has it: worn by Caren, in Rin\'s pool', async () => {
+    setWidth(1280); // the verdict column (on the phone — under the card once every substat is in)
+    try {
+      await mount({ roster: [caren.id, rin.id], gear, state: { tab: 'eval', slot: 'helmet' }, item: { grade: 'unique', setId: speed, subs } });
+    } finally { setWidth(360); }
+    const who = $('.v-holders');
+    expect([...who!.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Worn by: Caren', 'In the pool of: Rin']);
+    await click([...who!.querySelectorAll<HTMLElement>('.linkbtn')].find((b) => b.textContent === 'Rin'));
+    expect([saved().tab, saved().charId]).toEqual(['chars', rin.id]);
+  });
+
+  it('a different piece: no summary', async () => {
+    setWidth(1280);
+    try {
+      await mount({ roster: [caren.id, rin.id], gear, state: { tab: 'eval', slot: 'helmet' }, item: { grade: 'unique', setId: speed, subs: { SPD: 1, CHC: 3, 'DEF%': 1 } } });
+    } finally { setWidth(360); }
+    expect($('.verdict .v-head')).toBeTruthy();
+    expect($('.v-holders')).toBeNull();
   });
 
   it('nobody has it; a broken code — the error line', async () => {
     await mount({ roster: [caren.id], gear: GEAR });
     await find(code);
-    expect($('.find-res')?.textContent).toContain('Nobody has it, worn or set aside.');
+    expect($('.find-res')?.textContent).toContain('Nobody has it, worn or in a pool.');
     await type($('.find .codein input') as HTMLInputElement, 'OGC ZZZZ');
     await act(async () => { ($('.find .codein') as HTMLFormElement).requestSubmit(); });
     expect($('.find .codein .err')).toBeTruthy();

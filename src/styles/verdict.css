@@ -164,6 +164,11 @@ html.narrow body.toast-on .drawer-b { padding-bottom: calc(150px + env(safe-area
 .vc-equip.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
 .vc-equip .ico, .vc-stash .ico { width: 16px; height: 16px; }
 .v-off { margin: 0; padding: 0 16px 10px; font-size: 13px; }
+/* who already has this very piece (features/gear/ui/Holders): a quiet summary under the head and under the phone card */
+.v-holders { display: grid; padding: 8px 16px 0; font-size: 13px; color: var(--ink-2); }
+.v-holders p, .vc-holders p { margin: 0; }
+.vc-holders { margin: 6px 0 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+.v-holders .linkbtn, .vc-holders .linkbtn { font-weight: 600; }
 /* режим «для героя»: строка про героя под карточкой (не носит, не нужна, «По статам») */
 .vc-note, .vc-wear, .vc-next { margin: 6px 0 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
 

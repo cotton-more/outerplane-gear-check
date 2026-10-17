@@ -97,6 +97,7 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
 .find-res { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .find-res p { margin: 0; }
 .find-res .linkbtn { font-weight: 600; }
+.find-who { display: contents; }
 .codein p { flex-basis: 100%; margin: 0; }
 .codein .err { color: var(--junk); font-size: 13.5px; font-weight: 600; }
 .subgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }

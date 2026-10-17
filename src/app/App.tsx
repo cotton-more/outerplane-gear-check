@@ -42,6 +42,7 @@ import { AskSheet } from '@/shared/ui/AskSheet';
 import { makeCtx, NO_LV, NO_STARS } from '@/game/context';
 import { useIndex } from '@/game/data/IndexContext';
 import { heroName } from '@/game/hero/HeroName';
+import { Holders } from '@/features/gear/ui/Holders';
 import { GameIconsContext } from '@/game/icons/Img';
 import type { ItemInput } from '@/game/item/item';
 import { dropSubs } from '@/game/item/subs';
@@ -288,12 +289,13 @@ export function App() {
               below={layout.narrow ? undefined : <IngameList ctx={ctx} sections={igSections} n={igN} onTick={onTick} />}
               next={flow.cardNext} onStash={flow.cardStash ? (v) => doStash(v.c) : undefined}
               onReset={onReset} nextNote={nextNote} onOpenVerdict={() => setVerdictOpen(true)} sameLine={sameLine} onTwin={onTwin}
+              holders={vm.holders && <Holders idx={idx} h={vm.holders} className="vc-holders" onOpenChar={openChar} />}
               strip={batchOn ? <BatchStrip n={batch.batch.items.length} onList={() => batch.show('list')} onEnd={batch.end} /> : null}
               marks={layout.narrow ? undefined : batchMarks}
               nextLabel={batchNext} onBatch={layout.narrow ? undefined : onBatch} lock={lock} ask={batchOn ? batch.ask : null} />}
             {!layout.narrow && (batchOn
               ? <aside key={batch.view ?? 'list'} className="panel verdict eval-out batch-col" id="verdict"><h3 className="batch-h">{batchTitle(t, batch)}</h3><BatchPanel ctx={ctx} m={batch} /></aside>
-              : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} />)}
+              : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} holders={vm.holders} />)}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
             <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
@@ -389,7 +391,7 @@ export function App() {
         {shownCode && <ShareCard code={shownCode} ctx={ctx} onClose={() => setShown(null)} />}
         {helpOpen && <Sheet title={t.ui.help} onClose={() => { setHelpOpen(false); onb.clearHelpNews(); }}><LangSwitch lang={lang} onLang={changeLang} /><Help install={install} onTour={onb.openTours} tips={<TipsHelp tour={tour} news={onb.helpNews} />} /></Sheet>}
         {verdictOpen && layout.narrow && s.tab === 'eval' && (
-          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} onClose={() => setVerdictOpen(false)} />
+          <VerdictSheet r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} holders={vm.holders} onClose={() => setVerdictOpen(false)} />
         )}
       </div>
     </GameIconsContext.Provider>
