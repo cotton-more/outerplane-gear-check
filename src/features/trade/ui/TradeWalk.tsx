@@ -92,7 +92,10 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
   // у закреплённого — цепочка его билда (MODEL.md §0)
   const profile = (id: string) => (idx.CHAR[id] ? profileFor(ctx, idx.CHAR[id], st.pin?.[id]) : null);
   const byHero = new Map(lines.map((l) => [l.hero, l]));
-  const from = (s: Source) => (s.kind === 'worn' ? t.trade.fromWorn(name(s.hero)) : s.kind === 'stock' ? t.trade.fromStock(name(s.hero))
+  // worn: the giver's round portrait before the name, like the game's item panel
+  const from = (s: Source) => (s.kind === 'worn'
+    ? <>{t.trade.fromWorn} {idx.CHAR[s.hero] && <HeroFace c={idx.CHAR[s.hero]} round />}{name(s.hero)}</>
+    : s.kind === 'stock' ? t.trade.fromStock(name(s.hero))
     : s.kind === 'parked' ? t.trade.fromParked(name(s.hero)) : t.trade.fromInventory);
   const empty = !walk.heroes.length && !walk.end.length;
 

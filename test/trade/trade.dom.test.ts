@@ -110,6 +110,7 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tlock')).toBeNull(); // her old helmet goes to Aer: no lock, the end names it in full (O3)
     expect($('.tstep .bgear-row')).not.toBeNull();
     expect($('.tstep .tsrc')?.textContent).toBe('on Aer');
+    expect($('.tstep .tsrc .face-round')).toBeTruthy(); // the giver's round portrait
     expect($('.tstep .tpts')?.textContent).toMatch(/^\+[\d.]+ pts$/); // Aer's helmet against Caren's worn helmet
     expect($('.tline.to .aimb')?.textContent).toBe('Order: By stats ▾'); // заказ — его можно сменить
     expect($('.tline.to .tline-s')?.textContent).toMatch(/^Stats: [\d.]+ → [\d.]+ pts$/);

@@ -58,7 +58,7 @@ For each receiver:
   lock it in the game; the line shows that piece in full, so you can check it's the same one. A piece that goes to someone else gets no lock — its line names it in full (item or set, main, substats):
   once taken off, the game finds it only by grade, main and stats;
 - **what to put on**, by slot; under each piece, small — how many points it gives over what is worn in that slot ("+1.6
-  pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren", "in inventory · Rin's
+  pts"; sets don't count here, they are in the hero's line), where it comes from ("on Caren" — with Caren's round portrait, "in inventory · Rin's
   stock" — the hero's own spare, "in inventory · parked on Rin", "in inventory") and how to find it in the game; weapons
   and accessories also get a substat for Secondary ↓. The plan takes a recommended weapon or accessory even with fewer
   points — for its passive; such a piece shows "−4.4 pts · better passive";

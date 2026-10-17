@@ -68,6 +68,7 @@
 .tpts.up { color: var(--keep); }
 .tpts.down { color: var(--junk); }
 .tsrc { grid-column: 2 / 4; font-size: 11px; color: var(--ink-3); }
+.tsrc .face-round { width: 18px; height: 18px; margin-right: 3px; border-width: 1px; vertical-align: -5px; }
 .tplan .bgear-t .tok.sort { box-shadow: inset 0 0 0 1px var(--accent); }
 
 /* the walk (HISTORY.md 0200-boss E2b, mockups approved 2026-10-13): a step is a card with a round tick on the left; done — dimmed,
