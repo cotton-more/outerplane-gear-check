@@ -89,7 +89,7 @@
 .tstep-b { display: grid; gap: 3px; min-width: 0; }
 .tstep-r { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 8px; }
 .tstep-h { margin: 0; display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 700; font-size: 13px; line-height: 1.3; }
-.tstep-h .ico, .tstep-h img { width: 16px; height: 16px; flex: none; }
+.tstep-h .ico, .tstep-h img, .tstep-h .ce { width: 16px; height: 16px; flex: none; }
 .tstep-s { margin: 0; font-size: 12px; color: var(--ink-3); }
 .tstep-a { margin: 0; text-align: right; }
 .tsub { color: var(--ink-3); font-weight: 600; }

@@ -77,7 +77,7 @@ at the end.
 ## At the end — replacements
 
 Nothing taken off is left without an owner. After all the steps above, the old piece of a re-dressed hero goes to
-**whoever gave up theirs in that slot** ("Caren ← Rin's helmet", with the piece in full) if they can wear it — even if it's weak; if
+**whoever gave up theirs in that slot** ("Caren ← Rin's helmet", the class icon in the element's colour by the name, the piece in full) if they can wear it — even if it's weak; if
 not (an accessory of another class), to **another team member** whose slot emptied in this trade; otherwise it is
 **parked**: it stays in the "Pool" of the hero it came off, marked "parked", and stays locked in the game. "Keep as it
 was" on a replacement leaves the giver's slot empty and parks the piece. A giver's slot that nothing fills is not shown:

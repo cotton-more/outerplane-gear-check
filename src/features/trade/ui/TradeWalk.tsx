@@ -23,7 +23,7 @@ import type { Missing } from '@/features/trade/model/plan';
 import { lineGain, tenths, type HeroLine } from '@/features/trade/model/view';
 import type { Line, Walk } from '@/features/trade/model/walk';
 import { isArmor } from '@/game/data';
-import { Icon, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
+import { ClassIcon, Icon, SetIcon, SlotIcon, StatIcon } from '@/game/icons/Img';
 import { landChance } from '@/game/stat/eff';
 import { luckPct, turnOf } from '@/game/stat/turn';
 import { pieceText } from '@/features/gear/ui/pieceText';
@@ -209,8 +209,17 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
       }
       case 'repl': {
         const p = st.pieces[l.item];
-        // the slot icon only on the kept line: otherwise the piece row below draws it
-        const title = <p className="tstep-h">{l.kept && <SlotIcon slot={l.slot} />}<span>{t.trade.repl(name(l.hero), l.slot, name(l.from))}</span></p>;
+        const c = idx.CHAR[l.hero];
+        // the slot icon only on the kept line: otherwise the piece row below draws it; the receiver's class icon in his
+        // element's colour helps find him in the game
+        const title = (
+          <p className="tstep-h">
+            {l.kept && <SlotIcon slot={l.slot} />}
+            <span>{name(l.hero)}</span>{' '}
+            {c && <ClassIcon cls={c.class} el={c.element} />}
+            <span>{t.trade.repl(l.slot, name(l.from))}</span>
+          </p>
+        );
         if (l.kept) {
           return (
             <li key={l.key} className="tstep tdecl done">
