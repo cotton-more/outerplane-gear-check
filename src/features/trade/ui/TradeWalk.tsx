@@ -273,6 +273,7 @@ export function TradeWalk({ ctx, st, walk, lines, missing, ticks, left, recount,
             <h4 className="tline-h">
               {c && <HeroFace c={c} />}
               <span className="tline-n">{c ? <HeroName c={c} /> : name(hero)}</span>
+              {c && <ClassIcon cls={c.class} el={c.element} />}
               <OrderButton name={orderName(hero)} onClick={() => onOrder(hero)} />
               {g && <span className={`tgain ${g.cls}`}>{g.text}</span>}
               {l && (

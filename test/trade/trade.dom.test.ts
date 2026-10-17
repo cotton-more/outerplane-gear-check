@@ -115,6 +115,7 @@ describe('J. обмен вещами', () => {
     expect($('.tline.to .tline-s')?.textContent).toMatch(/^Stats: [\d.]+ → [\d.]+ pts$/);
     expect($('.tend .tend-h')?.textContent).toBe('At the end — replacements once all above is done');
     expect(byText('.tend .tstep-h', 'Aer ← Caren’s helmet')?.textContent).toBe('Aer ← Caren’s helmet');
+    expect($('.tline.to .tline-h .tline-n + [class*="el-"]')).toBeTruthy(); // the hero's class icon by the name
     // the receiver's class icon in her element's colour, right after her name
     expect(byText('.tend .tstep-h', 'Aer ←')?.querySelector('span + [class*="el-"]')).toBeTruthy();
     expect(byText('.tend .tstep', 'Aer ←')?.querySelector('.bgear-t')?.textContent).toContain('SPD'); // the piece in full
