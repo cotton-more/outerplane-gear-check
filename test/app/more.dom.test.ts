@@ -416,7 +416,7 @@ describe('«Find a piece»', () => {
     await mount({ roster: [caren.id, rin.id], gear });
     await find('OGC ' + code);
     expect($$('.find-res p').map((p) => p.textContent?.replace(/\u00A0/g, ' '))).toEqual(['Speed Set', 'SPD 2, CHC 3, DEF% 1', 'Worn by: Caren', 'In the pool of: Rin']);
-    await click($$('.find-res .linkbtn').find((b) => b.textContent === 'Caren'));
+    await click($$('.find-res .hold-n').find((b) => b.textContent === 'Caren'));
     expect([$('.find'), saved().tab, saved().charId]).toEqual([null, 'chars', caren.id]);
   });
 
@@ -428,7 +428,8 @@ describe('«Find a piece»', () => {
     } finally { setWidth(360); }
     const who = $('.v-holders');
     expect([...who!.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Worn by: Caren', 'In the pool of: Rin']);
-    await click([...who!.querySelectorAll<HTMLElement>('.linkbtn')].find((b) => b.textContent === 'Rin'));
+    expect(who!.querySelectorAll('.hold-n [class*="el-"]')).toHaveLength(2); // plain name + the class icon in the element's colour
+    await click([...who!.querySelectorAll<HTMLElement>('.hold-n')].find((b) => b.textContent === 'Rin'));
     expect([saved().tab, saved().charId]).toEqual(['chars', rin.id]);
   });
 
