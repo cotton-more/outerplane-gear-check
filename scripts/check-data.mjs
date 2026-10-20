@@ -305,7 +305,8 @@ function problems(D) {
   const B = D.bosses;
   if (!B) out.add('нет боссов outerpedia (bosses): не получен список гайдов?');
   else {
-    if (B.b.length < 55) out.add(`боссов всего ${B.b.length} (ждём ≥ 55) — формат гайдов или encounters изменился?`);
+    // a single fight may go: outerpedia hides a guide while it reworks it (meta.json hidden) — «Боссы» warns, not fails
+    if (!B.b.length) out.add('боссов нет ни одного — формат гайдов или encounters изменился?');
     for (const f of B.b) {
       const rows = B.t[f.table];
       if (!rows?.length) { out.add(`босс ${f.key}: нет таблицы этапов ${f.table}`); continue; }
@@ -397,7 +398,7 @@ function problems(D) {
 function dataDiff(A, B) {
   const a = new Map(A.chars.map((c) => [c.id, c]));
   const b = new Map(B.chars.map((c) => [c.id, c]));
-  const d = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [] };
+  const d = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [], bosses: [], lostBosses: [] };
   for (const [id, c] of b) {
     const o = a.get(id);
     if (!o) d.added.push(c.name + (c.builds.length ? '' : ' (пока без билдов)'));
@@ -413,6 +414,10 @@ function dataDiff(A, B) {
     for (const [k, x] of now) if (!was.has(k)) d.items.push(`${label} ${x.name}`);
     for (const [k, x] of was) if (!now.has(k)) d.lostItems.push({ text: `${label} ${x.name}`, used: x.users > 0 });
   }
+  const fights = (D) => new Map((D.bosses?.b ?? []).map((f) => [f.key, `${f.name} (${f.key})`]));
+  const [fa, fb] = [fights(A), fights(B)];
+  for (const [k, x] of fb) if (!fa.has(k)) d.bosses.push(x);
+  for (const [k, x] of fa) if (!fb.has(k)) d.lostBosses.push(x);
   d.mains = mainChanges(A, B);
   return d;
 }
@@ -657,6 +662,8 @@ function markdown({ ok, oldD, newD, diff, verdicts, byCode, src, code, report, p
     ...diff.changed.map((x) => [`~ обновлены билды: ${x.name}`, ...cap(x.lines).map((l) => `  - ${l}`)].join('\n')),
     ...diff.items.map((x) => `+ новый ${x}`),
     ...diff.lostItems.map((x) => `− пропал ${x.text}${x.used ? ' (был в билдах)' : ''}`),
+    ...diff.bosses.map((x) => `+ новый босс: ${x}`),
+    ...diff.lostBosses.map((x) => `− босс пропал: ${x}`),
     ...(diff.mains || []),
   ];
   L.push(...(items.length ? items.map((x) => `- ${x}`) : ['Персонажи, билды и предметы те же.']), '');
@@ -740,7 +747,7 @@ async function main() {
   });
 
   // 2. правдоподобие: ничего заметного не пропало
-  let diff = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [], mains: [] };
+  let diff = { added: [], lost: [], lostBuilds: [], changed: [], items: [], lostItems: [], bosses: [], lostBosses: [], mains: [] };
   await guarded('Ничего не пропало', () => {
     diff = dataDiff(oldD, newD);
     const oc = oldD.meta.counts;
@@ -753,6 +760,13 @@ async function main() {
       ...lostUsed.map((x) => `пропал ${x}, который был в билдах`),
       ...(buildsDrop > LIMITS.buildsDrop ? [`билдов стало меньше на ${Math.round(buildsDrop * 100)}%: ${oc.builds} → ${nc.builds}`] : []),
     ]);
+  });
+
+  // a boss fight gone from the data: not an error — outerpedia hides a guide while it reworks it (Drakhan 2026-10-20);
+  // the fight returns with the guide. The «Команда» boss list just lacks it until then
+  await guarded('Боссы', () => {
+    if (diff.lostBosses.length) check('Боссы', 'warn', [...cap(diff.lostBosses).map((x) => `босс пропал: ${x}`),
+      'outerpedia скрыла гайд (hidden в meta.json) или поменялся формат — на «Команде» его не будет, пока не вернётся']);
   });
 
   // 3. целостность записи: ссылки билдов ведут на существующие сеты, предметы, сабстаты
