@@ -701,3 +701,21 @@ Parked owner idea: drop «Примерить замену» altogether (rate nor
 `task test` 2629, `task tour:check` green at the four sizes, both themes; shot sets of stages 2 and 4 and both reviews.
 N3–N5 lines in the shots were a display fixture (the backup had no such piece); unit tests cover real data for each.
 Pending in the game: walk a real «Надеть в игре» list (lock / Breakthrough notes against what the game shows).
+
+## 0240 Hero birthdays — a greeting once a year, the gold ★ leaves the tiles
+Folder: `.x/0240-birthday` (`IDEA.md`). Owner idea 2026-10-20: a notice on a hero's birthday, shown once, simple but
+pretty. Built and merged into `main` `1f7dae1` 2026-10-20.
+Code: `bday` / `gift` in `update.py` (outerpedia `profile.birthday` "MM/DD", `gift` present_01…05) and `Char` in
+`src/game/data/types.ts`; `src/features/roster/birthday.ts` (person = base name + day, `birthdaysOn`, `ogc.bday` seen per
+year), `useBirthdays.ts`, `BirthdayCard.tsx` (+ `.tour.ts`), the cake in `CharTile.tsx`; styles in `chars.css`, the
+entrance in `motion.css`; Tabler `cake`, `gift`.
+Owner decisions: Q1 roster heroes only; Q2 only on the day itself, no belated greeting; Q3 the favourite gift line, our
+own Russian names (Наука, Роскошь, Магический предмет, Ремесло, Дар природы); Q4 the gold ★ badge on roster tiles goes
+(it was only decorative; replaces 0197 «tile gold ★ = badge»), the grey ☆ still adds, a roster hero is managed from the
+card; on the birthday the corner shows a cake all day; Q5 texts approved; Q6 a «Что нового» tip (`bday`, on the grey ☆).
+Hard parts: variants share the base hero's day while two people may share a name (Vlada 02/27, Demiurge Vlada 08/14) —
+hence base + day; the card counts as seen when it shows (a reload doesn't repeat it), with a page-own memory so it can't
+come back without storage; the day is re-read when the page returns on screen (the app stays open past midnight).
+Not built: belated greetings (Q2), a cake on the hero card header, confetti animation (motion rules: entrance only).
+Checks: `test/roster/charList.dom.test.ts` «день рождения»; `check-data` fails when fewer than 90 % of heroes have a
+birthday; screenshots at the four sizes, both themes (faked 10/23 and 10/24).
