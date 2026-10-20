@@ -89,7 +89,7 @@ describe('обновление: загрузка и перенос v1', () => {
 
     expect($('.gear-toast span')?.textContent).toBe('Core Fusion Eternal kept in the roster: Eternal is replaced, their gear removed.');
     expect($('.pool summary')).toBeNull();
-    expect(tile('Core Fusion Eternal')?.querySelector('.star')?.getAttribute('aria-label')).toBe('In roster');
+    expect(tile('Core Fusion Eternal')?.querySelector('.star')).toBeNull(); // in the roster: no ☆ (0240)
     expect({ pools: stored().pools, roster: roster() }).toEqual({ pools: { [cfEternal.id]: ['p2'] }, roster: [cfEternal.id] });
   });
 

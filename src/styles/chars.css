@@ -403,3 +403,36 @@ html .rd-row .bgear-t { grid-column: 2 / 4; grid-row: 2; } /* и на узком
 .lv-seg:disabled { opacity: .6; }
 .cd-lv { margin-left: 5px; font-size: 11px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 .hs-big [aria-pressed="true"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--star-on) 60%, transparent)); }
+
+/* hero birthday (features/roster/BirthdayCard, HISTORY.md 0240): a card above the page — the element's soft tint and static
+   confetti dots (the element's colour and gold), portraits with a gold cake; the tile's corner holds the same cake all day */
+#bdaynote { margin: 0 0 12px; }
+.bday { --dot: color-mix(in srgb, var(--elc) 70%, transparent); --gold: color-mix(in srgb, var(--star-on) 75%, transparent);
+  position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 44px 12px 12px; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--elc) 40%, transparent); border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 12% 12%, var(--gold) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 30% 88%, var(--dot) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 47% 10%, var(--dot) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 63% 90%, var(--gold) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 78% 14%, var(--gold) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 84% 78%, var(--dot) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 96% 46%, var(--gold) 0 2.5px, transparent 3px),
+    linear-gradient(115deg, color-mix(in srgb, var(--elc) 15%, var(--surface)), color-mix(in srgb, var(--star-on) 9%, var(--surface))); }
+.bday-faces { display: flex; flex: none; gap: 10px; }
+.bday-face { position: relative; width: 52px; height: 52px; padding: 0; border: 2px solid var(--elc); border-radius: 12px; background: var(--surface-2); }
+.bday-face .face { display: block; width: 100%; height: 100%; border: 0; border-radius: 10px; object-fit: cover; }
+.bday-cake { position: absolute; right: -7px; bottom: -7px; width: 22px; height: 22px; padding: 3px; border-radius: 50%;
+  background: var(--star-on); color: var(--surface); box-shadow: 0 0 0 2px var(--surface); }
+.bday-t { display: grid; gap: 4px; min-width: 0; }
+.bday-t b { font: 700 15px/1.3 var(--font-display); color: var(--ink); }
+.bday-g { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; line-height: 1.35; color: var(--ink-2); }
+.bday-g .ico { width: 16px; height: 16px; margin-top: 1px; color: var(--elc); }
+.bday-x { position: absolute; top: 4px; right: 4px; min-width: 36px; min-height: 36px; padding: 0; border: 0; background: none; color: var(--ink-2); font-size: 15px; }
+html.narrow .bday { gap: 12px; padding: 10px 40px 10px 10px; }
+html.narrow .bday-face { width: 44px; height: 44px; border-radius: 10px; }
+html.narrow .bday-face .face { border-radius: 8px; }
+html.narrow .bday-t b { font-size: 14px; }
+html.narrow .bday-g { font-size: 12.5px; }
+.star.cake { color: var(--star-on); pointer-events: none; }
+.star.cake .ico { width: 18px; height: 18px; }

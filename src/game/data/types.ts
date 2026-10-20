@@ -44,6 +44,10 @@ export interface Char {
   role: string | null;
   free: boolean;
   fusionOf?: string; // у Core Fusion — id обычного героя: Core Fusion X заменяет X в ростере
+  // birthday "MM/DD" and favourite gift type 1…5 (Science, Luxury, Magic Tool, Craftwork, Natural Object; names —
+  // t.bday.gifts) — the birthday card (features/roster/birthday). Missing in old snapshots: no card
+  bday?: string;
+  gift?: number;
   builds: Build[];
   gameSets?: string[];
   rankPvp: string | null;

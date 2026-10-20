@@ -1227,6 +1227,15 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         }
         if c.get("originalCharacter"):
             entry["fusionOf"] = str(c["originalCharacter"])  # Core Fusion X заменяет X: id обычного героя
+        # birthday "MM/DD" and favourite gift type 1–5 (present_01…05: Science, Luxury, Magic Tool, Craftwork, Natural
+        # Object) — the birthday card on the hero list (HISTORY.md 0240); a variant shares its base hero's day
+        bday = str((c.get("profile") or {}).get("birthday") or "")
+        if re.fullmatch(r"(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])", bday):
+            entry["bday"] = bday
+        else:
+            warn.add(f"{entry['name']}: день рождения «{bday}» не в формате MM/DD — поздравления не будет")
+        if m := re.fullmatch(r"present_0([1-5])", str(c.get("gift") or "")):
+            entry["gift"] = int(m.group(1))
         names_seen.setdefault(entry["name"].lower(), []).append(entry)
         who = entry["name"] or entry["slug"]
         for b in src["reco"].get(cid, []) or []:

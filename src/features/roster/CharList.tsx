@@ -14,6 +14,7 @@ import { CharTile } from './CharTile';
 interface Props {
   s: ListState; dispatch: Dispatch<ListAction>; rosterApi: RosterApi; geared: ReadonlyMap<string, number>;
   off: ReadonlyMap<string, string>; todressN: number;
+  bday: ReadonlySet<string>; // roster heroes whose birthday is today: the tile's cake (useBirthdays)
   onTrade?: () => void; // «Обмен» (features/trade, сразу режим «Команда») — кнопка на панели, когда у кого-то есть вещи
 }
 
@@ -32,7 +33,7 @@ function fusionOrder(list: Char[], partner: (id: string) => string | undefined, 
   return out;
 }
 
-export function CharList({ s, dispatch, rosterApi, geared, off, todressN, onTrade }: Props) {
+export function CharList({ s, dispatch, rosterApi, geared, off, todressN, bday, onTrade }: Props) {
   const idx = useIndex();
   const t = useT();
   const { D } = idx;
@@ -52,7 +53,7 @@ export function CharList({ s, dispatch, rosterApi, geared, off, todressN, onTrad
       <CharBar s={s} dispatch={dispatch} rosterSize={roster.size} todressN={todressN} onTrade={onTrade && nGeared > 0 ? onTrade : undefined} />
       <div className="cgrid" id="cgrid">
         {shown.length ? shown.map((c) => (
-          <CharTile key={c.id} c={c} own={roster.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)}
+          <CharTile key={c.id} c={c} own={roster.has(c.id)} bday={bday.has(c.id)} selected={s.charId === c.id} isNew={idx.NEW.has(c.id)} gear={geared.get(c.id)} off={off.has(c.id)}
             partnerName={idx.CHAR[partner(c.id) ?? '']?.name}
             onSelect={() => dispatch({ type: 'selectChar', id: c.id })} onToggle={() => rosterApi.toggle(c.id)} />
         )) : <p className="empty">{allDressed ? t.ui.allDressed : t.ui.nobodyFound}</p>}

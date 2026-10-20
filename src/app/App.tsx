@@ -14,6 +14,8 @@ import { FusionAsk } from '@/features/roster/FusionAsk';
 import { RosterRemoveAsk } from '@/features/roster/RosterRemoveAsk';
 import { useRoster } from '@/features/roster/useRoster';
 import { useRosterUi } from '@/features/roster/useRosterUi';
+import { useBirthdays } from '@/features/roster/useBirthdays';
+import { BirthdayCard } from '@/features/roster/BirthdayCard';
 import { CodeInput } from '@/features/eval/code/ItemCode';
 import { heroCodeIn } from '@/features/gear/store/heroCode';
 import { readGearCode } from '@/features/gear/store/gearStore';
@@ -182,6 +184,7 @@ export function App() {
     closeSheets: () => { setHelpOpen(false); setVerdictOpen(false); },
   });
   const { tour, news } = onb;
+  const bday = useBirthdays(idx.D.chars, roster, !!tour.run || onb.welcomeShown);
   // надеть нельзя во время обучения и когда экипировку сохранила более новая версия страницы (useGear.newer)
   const canEquip = (!tour.run || !!demo) && !gear.newer;
   // the list under the form / in the phone sheet: what is still owed in the game. A tap = done: the line goes, «Вернуть» for 8 s
@@ -281,6 +284,7 @@ export function App() {
           </div>
         )}
         {modelNote && <div id="modelnote"><Notice text={modelNote.marks ? `${t.ui.modelNote} ${t.ui.modelNoteMarks}` : t.ui.modelNote} action={t.ui.gotIt} onAction={() => setModelNote(null)} /></div>}
+        {bday.card && <div id="bdaynote"><BirthdayCard people={bday.card} onOpen={(id) => { bday.close(); openChar(id); }} onClose={bday.close} /></div>}
         {onb.welcomeShown && <Welcome install={install} onTour={layout.tall ? () => onb.startTour('core') : undefined} onRoster={() => onTab('chars')} onClose={onb.hideWelcome} />}
         <main>
           <section id="view-eval" className={batchResult && !layout.narrow ? 'view eval batch-result' : 'view eval'} role="tabpanel" aria-labelledby="tab-eval" hidden={s.tab !== 'eval'}>
@@ -298,7 +302,7 @@ export function App() {
               : <Verdict r={shown} s={s} dispatch={dispatch} onOpenChar={openChar} {...listProps} offNote={offNote} nextNote={nextNote} onTwin={onTwin} holders={vm.holders} />)}
           </section>
           <section id="view-chars" className="view chars" role="tabpanel" aria-labelledby="tab-chars" hidden={s.tab !== 'chars'}>
-            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN}
+            <CharList s={s} dispatch={dispatch} rosterApi={ros.rosterUi} geared={geared} off={off} todressN={todressN} bday={bday.today}
               onTrade={canEquip ? () => setTrade({ hero: null }) : undefined} />
             <CharDetail key={(s.charId ?? '') + (demo ? ':demo' : '')} charId={s.charId} ctx={ctx} view={view} rosterApi={ros.rosterUi} gear={gear} active={s.tab === 'chars'} onOpenChar={openChar}
               onGearToast={onGearToast} onPieceEdit={onPieceEdit}

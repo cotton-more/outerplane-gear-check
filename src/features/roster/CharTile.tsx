@@ -1,17 +1,18 @@
 // Плитка героя в списке и в ромбе команды обмена: портрет, стихия и класс, имя (приставка Core Fusion — строкой над
-// именем), «NEW», сколько надето, пометка заменённого в паре; в углу — звезда ростера: серая — кнопка «в ростер», золотая — значок.
+// именем), «NEW», сколько надето, пометка заменённого в паре; в углу — серая звезда «в ростер» у героя не из ростера,
+// у героя ростера пусто, а в его день рождения — торт (HISTORY.md 0240).
 import type { ReactNode } from 'react';
 import type { Char } from '@/game/data/types';
 import { HeroFace } from '@/game/hero/HeroFace';
 import { HeroName } from '@/game/hero/HeroName';
-import { ClassIcon } from '@/game/icons/Img';
+import { ClassIcon, Icon } from '@/game/icons/Img';
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 
 // gear — сколько вещей отмечено надетым: «N/6» на плитке у героя с вещами; off — заменён в паре: пометка, приглушён.
 // corner — своя кнопка в углу вместо звезды ростера; null — пустой угол (ромб команды обмена)
-export function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSelect, onToggle, corner }: {
-  c: Char; own?: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; partnerName?: string; onSelect: () => void; onToggle?: () => void;
+export function CharTile({ c, own, bday, selected, isNew, gear, off, partnerName, onSelect, onToggle, corner }: {
+  c: Char; own?: boolean; bday?: boolean; selected: boolean; isNew: boolean; gear: number | undefined; off: boolean; partnerName?: string; onSelect: () => void; onToggle?: () => void;
   corner?: ReactNode;
 }) {
   const t = useT();
@@ -26,10 +27,10 @@ export function CharTile({ c, own, selected, isNew, gear, off, partnerName, onSe
         {off && <span className="coff" {...tour('fusion')}>{t.ui.fusionOffMark(c.fusionOf ? (partnerName ?? c.name) : c.name, !!c.fusionOf)}</span>}
       </button>
       {corner !== undefined ? corner : (
-        // owner 2026-10-12 (0197): the gold ★ is only a badge — a tap on it is a tap on the tile; a hero leaves the roster
-        // only from the card's star sheet
+        // owner 2026-10-20 (0240): the gold ★ badge is gone — a roster hero is managed only from the card's star sheet;
+        // the corner holds the birthday cake for that whole day
         own
-          ? <span className="star on" role="img" aria-label={t.ui.inRosterMark}>★</span>
+          ? bday && <span className="star cake" role="img" aria-label={t.bday.cake} title={t.bday.cake}><Icon name="cake" /></span>
           : <button type="button" className="star" {...tour('star')} aria-pressed={false} aria-label={t.ui.rosterToggle(c.name, false)} onClick={onToggle}>☆</button>
       )}
     </div>

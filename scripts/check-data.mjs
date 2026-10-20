@@ -302,6 +302,8 @@ function problems(D) {
     if (got !== want) out.add(`main ${stat} ${slot === 'armor' ? 'брони' : 'оружия'} Legendary на +10 T0: ${got}, ждём ${want} (mainValues)`);
   }
   // boss fights (update.py build_bosses): count, RES by stage, heroes of the guide teams, two known numbers
+  // birthdays (update.py, HISTORY.md 0240): every hero has one in outerpedia's profile
+  if (D.chars.filter((c) => c.bday).length < D.chars.length * 0.9) out.add('дни рождения (bday) есть меньше чем у 90% героев — формат profile.birthday изменился?');
   const B = D.bosses;
   if (!B) out.add('нет боссов outerpedia (bosses): не получен список гайдов?');
   else {

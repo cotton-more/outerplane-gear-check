@@ -27,6 +27,8 @@ const NAMES = [
   'lock',
   // «Команда»: «Ход против босса» — the turn line's stopwatch (HISTORY.md 0200-boss E1)
   'stopwatch',
+  // hero birthday (HISTORY.md 0240): the card's and the tile's cake, the favourite gift line
+  'cake', 'gift',
 ];
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'game', 'icons', 'tabler.ts');

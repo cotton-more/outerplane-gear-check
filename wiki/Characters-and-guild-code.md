@@ -6,8 +6,13 @@
 
 The second tab ("Characters" in the header on a computer, ☰ → "Characters" on a phone): search by name and every outerpedia build — sets with alternatives, weapon and
 accessory with the main stat, substat priority with a flat/% hint, talismans, a note. The grey star ☆ on the portrait adds a character to your
-roster, the gold ★ means they're already in it (just a badge: tapping it opens the card); with "only my characters" checked (More → Settings), the evaluation considers only them. A link like
+roster; roster heroes have no star on the tile (manage them on the card); with "only my characters" checked (More → Settings), the evaluation considers only them. A link like
 `…/#demiurge-stella` opens a character directly.
+
+**Birthdays.** On the birthday of a hero from your roster a greeting appears at the top of the page: their portrait with
+a cake and their favourite gift type (Science, Luxury, Magic Tool, Craftwork or Natural Object), several heroes born the
+same day share one card. It shows once a year: ✕ closes it, the portrait opens the hero's card. All that day the hero's
+tile has a cake where the grey star would be. Only on the day itself — a missed birthday waits for next year.
 
 Above the grid are two rows: search with the filter button, and the list mode with the **Trade** button. The mode is
 **Mine** (everyone you star, with builds and without, alphabetical; a hero without builds has a grey portrait),

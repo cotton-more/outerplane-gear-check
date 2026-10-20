@@ -265,12 +265,12 @@ describe('панель над сеткой (SPEC 4)', () => {
   });
 });
 
-// 0197 (owner 2026-10-12): золотая ★ на плитке — значок; из ростера — только карточка → звёзды → «Remove from roster»
+// 0197 (owner 2026-10-12): из ростера — только карточка → звёзды → «Remove from roster»; 0240 (owner 2026-10-20): у героя
+// ростера на плитке звезды нет вовсе (золотая ★ была только значком)
 describe('звезда на плитке', () => {
-  it('серая ☆ — кнопка «add to roster»; золотая ★ — значок «In roster», не кнопка', async () => {
+  it('серая ☆ — кнопка «add to roster»; у героя ростера угол пуст', async () => {
     await mount({ roster: [caren.id], state: { tab: 'chars', cOwned: false } });
-    const star = tileOf('Caren')!.parentElement!.querySelector<HTMLElement>('.star')!;
-    expect([star.tagName, star.getAttribute('aria-label'), star.textContent]).toEqual(['SPAN', 'In roster', '★']);
+    expect(tileOf('Caren')!.parentElement!.querySelector('.star')).toBeNull();
     const grey = $$('#cgrid .star').find((e) => e.tagName === 'BUTTON')!;
     expect([grey.textContent, grey.getAttribute('aria-label')]).toEqual(['☆', expect.stringMatching(/ — add to roster$/)]);
   });
@@ -282,6 +282,44 @@ describe('звезда на плитке', () => {
     expect([$$('.hs-big button').length, $('.hs-act .btn')?.textContent]).toEqual([6, 'Remove from roster']);
     await click($('.hs-act .btn'));
     expect([JSON.parse(localStorage.getItem('ogc.roster')!), $('.hs-big'), $('.cd-head .cd-stars'), $('.cd-name .cd-star')?.textContent]).toEqual([[], null, null, '☆']);
+  });
+});
+
+// 0240 (owner 2026-10-20): день рождения героя ростера — карточка над страницей раз в год, торт на плитке весь день
+describe('день рождения', () => {
+  const md = () => { const d = new Date(); return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`; };
+  afterEach(() => { for (const c of [caren, kappa]) { delete c.bday; delete c.gift; } });
+
+  it('герой ростера: поздравление с подарком и торт на плитке; после перезапуска карточки нет, торт есть', async () => {
+    Object.assign(caren, { bday: md(), gift: 2 });
+    await mount({ roster: [caren.id], state: { tab: 'chars', cOwned: false } });
+    expect([$('.bday b')?.textContent, $('.bday-g')?.textContent]).toEqual(['Happy birthday, Caren!', 'Favourite gifts — Luxury']);
+    const cake = () => tileOf('Caren')!.parentElement!.querySelector('.star.cake')?.getAttribute('aria-label');
+    expect(cake()).toBe('Birthday today');
+    expect(Object.values(JSON.parse(localStorage.getItem('ogc.bday')!))).toEqual([new Date().getFullYear()]);
+    await click($('.bday-x'));
+    expect($('.bday')).toBeNull();
+    await restart();
+    expect([$('.bday'), cake()]).toEqual([null, 'Birthday today']);
+  });
+
+  it('не из ростера — ни карточки, ни торта; двое в один день — одна карточка', async () => {
+    Object.assign(kappa, { bday: md() });
+    await mount({ roster: [caren.id], state: { tab: 'chars', cOwned: false } });
+    expect([$('.bday'), $('.star.cake')]).toEqual([null, null]);
+    await restart();
+    Object.assign(caren, { bday: md(), gift: 1 });
+    localStorage.setItem('ogc.roster', JSON.stringify([caren.id, kappa.id]));
+    await restart();
+    expect([$$('.bday-face').length, $('.bday b')?.textContent, $('.bday-g')?.textContent])
+      .toEqual([2, 'Birthday today: Caren and Kappa', 'Gifts: Caren — Science']);
+  });
+
+  it('портрет открывает карточку героя', async () => {
+    Object.assign(caren, { bday: md() });
+    await mount({ roster: [caren.id], state: { tab: 'eval' } });
+    await click($('.bday-face'));
+    expect([$('.bday'), $('.cd-head')?.textContent?.includes('Caren')]).toEqual([null, true]);
   });
 });
 
