@@ -704,7 +704,7 @@ Pending in the game: walk a real «Надеть в игре» list (lock / Break
 
 ## 0240 Hero birthdays — a greeting once a year, the gold ★ leaves the tiles
 Folder: `.x/0240-birthday` (`IDEA.md`). Owner idea 2026-10-20: a notice on a hero's birthday, shown once, simple but
-pretty. Built and merged into `main` `1f7dae1` 2026-10-20.
+pretty. Built and merged into `main` `5041a44` 2026-10-20.
 Code: `bday` / `gift` in `update.py` (outerpedia `profile.birthday` "MM/DD", `gift` present_01…05) and `Char` in
 `src/game/data/types.ts`; `src/features/roster/birthday.ts` (person = base name + day, `birthdaysOn`, `ogc.bday` seen per
 year), `useBirthdays.ts`, `BirthdayCard.tsx` (+ `.tour.ts`), the cake in `CharTile.tsx`; styles in `chars.css`, the
