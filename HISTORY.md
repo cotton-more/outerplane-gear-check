@@ -719,3 +719,20 @@ come back without storage; the day is re-read when the page returns on screen (t
 Not built: belated greetings (Q2), a cake on the hero card header, confetti animation (motion rules: entrance only).
 Checks: `test/roster/charList.dom.test.ts` «день рождения»; `check-data` fails when fewer than 90 % of heroes have a
 birthday; screenshots at the four sizes, both themes (faked 10/23 and 10/24).
+
+## 0250 Trade — weak armor of the ordered set counts when it completes the set
+Folder: `.x/0250-set-below-bar` (`NOTES.md`). Owner case 2026-10-24: Poolside Trickster Regina, order Penetration ×4; Bryn
+wears the only Penetration set, every piece below her bar (`pieceBar`), so none was a candidate and the plan said «no
+Penetration helmet, armor, gloves, shoes» although the pieces exist. Merged into `main` `3b94f4a` 2026-10-24.
+Code: `Cand.below`, `setNeeds` in `src/features/trade/model/model.ts`; marked in `cands.ts` (armor of `g.parts` sets only);
+checked at the leaves of `bestArmor` / `critKit` (`kit.ts`, pruning key `pruneKey` = set, T4, below), in the threshold window
+(`gate.ts`) and in the pair swap (`team.ts`).
+Owner decisions: options A (always skip the bar), B (only where the set's halves need the piece), C (a share of the bonus
+per piece), D (keep strict, fix the message) — **B** chosen; the trade order stays **soft** (the set wins only by V), a pin
+is the way to insist on a set.
+Hard parts: my first comparison (25.3 vs 20.7) left out that under a set order other sets still count by their rows —
+Attack ×2 7.5, Critical Hit ×2 4.0 — so the real one is 25.3 vs 32.2 and Regina's order keeps Attack + Critical Hit; with
+Penetration pinned, B brings Bryn's four. A weak piece must not stand in for a fit one of its set when the set can't come
+together — hence `below` in the pruning key. With Bryn in the same team the sum decides and he keeps his set.
+Not built: a «missing» line that names pieces held as someone's spare (they are never candidates, Q1b).
+Checks: `test/trade/below.test.ts` (Regina ×4, three slots, strong stats, ×2 part's third piece, pruning, «By stats», team).
