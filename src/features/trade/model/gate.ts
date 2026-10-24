@@ -6,7 +6,7 @@
 // Принятое — в fix; комплект пересчитывается с ним, поэтому «уже принятые замены» учитываются у следующих слотов.
 import type { SlotId } from '@/game/data/types';
 import { bestKit, FIT, keyOf, type Fix } from './kit';
-import { gains, GEAR_SLOTS, legendOverEpic, SLOT_ORDER, type Cand, type Cands, type Gauge, type Kit } from './model';
+import { ARMOR_SLOTS, gains, GEAR_SLOTS, legendOverEpic, setNeeds, SLOT_ORDER, type Cand, type Cands, type Gauge, type Kit } from './model';
 import { THRESHOLD, type Milli } from '@/features/gear/model/vs';
 
 const isGear = (slot: SlotId) => GEAR_SLOTS.includes(slot);
@@ -33,7 +33,9 @@ export function planFor(g: Gauge, cands: Cands): Plan {
     if (!w) { fix[slot] = b; continue; }                   // неотмеченный слот порога не имеет (R5.6)
     if (!b || b.item.id === w.item.id) { fix[slot] = w; continue; }
     const opts = (cands[slot] ?? []).filter((c) => {
-      const k = keyOf(g, { ...best.slots, [slot]: c });
+      const kit = { ...best.slots, [slot]: c };
+      if (!setNeeds(g, ARMOR_SLOTS.map((s) => kit[s]))) return false; // a piece below the bar only for its set (HISTORY.md 0250)
+      const k = keyOf(g, kit);
       const window = best.key.total - k.total;
       if (window < 0 || window >= THRESHOLD) return false;
       if (k.halves !== best.key.halves || k.eff !== best.key.eff) return false;

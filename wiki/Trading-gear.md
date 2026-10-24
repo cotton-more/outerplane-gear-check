@@ -71,8 +71,10 @@ For each receiver:
 
 The pieces taken as candidates are good ones for the receiver; what they wear themselves is a candidate always. In the
 team trade there is one more case: a teammate's weapon or accessory may come even if it isn't good enough, when the hero's
-own in that slot isn't on his list either. The plan shows the heroes you re-dress; heroes you take pieces from appear only
-at the end.
+own in that slot isn't on his list either. And armor of the set the order asks for may come even if it isn't good enough
+on its own — only when it makes that set: four weak Penetration pieces come with the ×4 bonus if together they beat the
+hero's stats; three of them, or a third piece for a ×2 bonus, don't. The plan shows the heroes you re-dress; heroes you
+take pieces from appear only at the end.
 
 ## At the end — replacements
 

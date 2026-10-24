@@ -337,7 +337,12 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    the usual rules apply. The receiver's own weak set-aside piece is no candidate, not even into his empty slot: it fills
    no slot (§1.6, HISTORY.md 0220 D12). Not candidates: wrong class, **not passing the receiver's bar (§4; his own worn is always
    eligible)** — a swap between two team members never hands over a piece unfit for the receiver — a code (content
-   without Breakthrough) he already has at an equal or higher BT. **One extra condition, in the team trade only** (2–4
+   without Breakthrough) he already has at an equal or higher BT. **Armor of the order's set below the bar** (HISTORY.md
+   0250, owner 2026-10-24, option B) is a candidate marked `below`: a kit may hold it only where its set's halves need it —
+   without the piece the set has fewer halves (`model:setNeeds`; checked at every leaf of the kit search, in the threshold's
+   window and in the pair swap; the pruning key is set, T4 and `below`, so a weak piece never pushes out a fit one of its
+   set). The order stays soft: the set wins only by V (Regina's weak Penetration ×4, 7.8 + 17.5, loses to Attack ×2 +
+   Critical Hit ×2, 20.7 + 7.5 + 4.0; pinned, it comes). **One extra condition, in the team trade only** (2–4
    members; owner, 2026-10-13, review 0203: "not an exception — an extra rule-condition of the team trade"): a **weapon or
    accessory** that a teammate holds — worn by him (cost 3), or in his pool and taken off by this same calculation (cost 2,
    holder him; never his spare, never a parked one) — may go to a member **below his bar** when the receiver's own piece in

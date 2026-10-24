@@ -2,12 +2,12 @@
 // приложение собрало бы по его заказу, если бы все кандидаты лежали в его пуле (features/gear/layout bestLayout):
 // оружие и аксессуар — по слоту (ранг, потом очки), броня — перебор слотов, максимум V.
 // Слоты независимы по пользе и по ничьим (суммы и порядок по слотам), поэтому лучшее по частям = лучшее целиком.
-// Отсечение брони точное: в слоте из вещей одного ключа (сет, T4) остаётся лучшая по (очки, цена, потеря, ростер,
+// Отсечение брони точное: в слоте из вещей одного ключа (сет, T4, ниже порога — setNeeds) остаётся лучшая по (очки, цена, потеря, ростер,
 // старшинство) — сеты и их ценность у них одни и те же. Мягкий потолок крита (MODEL.md §12 item 6) связывает слоты: когда крит
 // получателя может дойти до колена с этими кандидатами, работает critKit — как critBest лучшей раскладки.
 import type { SlotId } from '@/game/data/types';
 import { LAMBDA, SPD_MILLI, type GoalTerm } from './goal';
-import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, SLOT_ORDER, type Cand, type Cands, type CritGauge, type Fit, type Gauge, type Kit, type KitKey } from './model';
+import { ARMOR_SLOTS, cmpKit, GEAR_SLOTS, isLegend, setNeeds, SLOT_ORDER, type Cand, type Cands, type CritGauge, type Fit, type Gauge, type Kit, type KitKey } from './model';
 
 // only a recommended item outranks points (its passive); a stopgap and the rest — by points (owner 2026-10-10)
 export const FIT: Record<Fit, number> = { rec: 1, stopgap: 0, no: 0 };
@@ -84,12 +84,16 @@ function plainKit(g: Gauge, cands: Cands, fix: Fix): Kit {
   return { slots, key: keyOf(g, slots) };
 }
 
-// кандидаты слота брони после отсечения: пусто + лучшая вещь на ключ (сет, T4)
+// the pruning key of an armor piece: set, T4, and below the bar (setNeeds) — a piece below the bar may not stand alone, so
+// it never pushes out a weaker one of its set that may
+const pruneKey = (c: Cand) => `${c.item.set}:${c.item.t4}:${!!c.below}`;
+
+// кандидаты слота брони после отсечения: пусто + лучшая вещь на ключ (сет, T4, below)
 function armorOptions(cands: Cands, fix: Fix, slot: SlotId): (Cand | null)[] {
   if (slot in fix) return [fix[slot] ?? null];
   const best = new Map<string, Cand>();
   for (const c of cands[slot] ?? []) {
-    const k = `${c.item.set}:${c.item.t4}`;
+    const k = pruneKey(c);
     const b = best.get(k);
     if (!b || betterInSlot(c, b)) best.set(k, c);
   }
@@ -132,6 +136,7 @@ function bestArmor(g: Gauge, cands: Cands, fix: Fix): (Cand | null)[] {
   let vSum = 0, filled = 0;
 
   const leaf = () => {
+    if (!setNeeds(g, cur)) return;
     let total = vSum;
     for (let s = 0; s < S; s++) if (cnt[s] >= 2) total += bonus(s, cnt[s], cnt4[s]);
     if (best) {
@@ -302,7 +307,7 @@ function critKit(g: Gauge, cands: Cands, fix: Fix): Kit {
   const opts = ARMOR_SLOTS.map((slot): (Cand | null)[] => {
     if (slot in fix) return [fix[slot] ?? null];
     const byKey = new Map<string, Cand[]>();
-    for (const c of cands[slot] ?? []) { const k = `${c.item.set}:${c.item.t4}`; byKey.set(k, [...(byKey.get(k) ?? []), c]); }
+    for (const c of cands[slot] ?? []) { const k = pruneKey(c); byKey.set(k, [...(byKey.get(k) ?? []), c]); }
     const keep = [...byKey.values()].flatMap((xs) => front(g, xs.sort(byOrder(betterInSlot))));
     // with a goal the pieces rich in what the goals count first: a strong kit early cuts more
     const by = (c: Cand) => c.v + terms.reduce((s, x) => s + x.b(c.item.id), 0);
@@ -358,6 +363,7 @@ function critKit(g: Gauge, cands: Cands, fix: Fix): Kit {
   const uAt = () => { for (let j = 0; j < masks.length; j++) uNow[j] = gearU[j] + uSum[j]; return uNow; };
   let g2: (Cand | null)[] = [null, null];
   const leaf = () => {
+    if (!setNeeds(g, cur)) return;
     let lin = gearV + vSum;
     for (let s = 0; s < S; s++) if (cnt[s] >= 2) lin += bonus(s, cnt[s], cnt4[s]);
     if (best && cap(lin, uAt(), 4) < best.key.total) return; // the crit loss and the goals only lower V

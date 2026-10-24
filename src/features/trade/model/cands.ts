@@ -3,7 +3,8 @@
 // with no bar — MODEL.md §7 item 2). Not his own weak set-aside piece: it fills no slot (pool/info eligibleIn, owner
 // 2026-10-15). Запас других — нет (owner, 2026-10-12, Q1b). Не кандидаты: не по классу,
 // не годная для получателя (порог MODEL.md §4; своё надетое годно всегда, MODEL.md §3 item 2; except, in the team trade, a
-// teammate's weapon or accessory where the receiver's own piece is empty or off his list, belowBarOk), код, который у
+// teammate's weapon or accessory where the receiver's own piece is empty or off his list, belowBarOk; and armor of the
+// order's set — marked below, the kit holds it only where its set needs it, model setNeeds), код, который у
 // получателя уже есть, без BT выше (R5.5). A frozen slot («Оставить как было», MODEL.md §7 item 4): the receiver keeps what
 // he wears there (nothing else is a candidate) and nobody takes it from him. Герои без билдов — ни получатели, ни держатели (R2.7).
 import type { SlotId } from '@/game/data/types';
@@ -65,6 +66,7 @@ export function candidates(w: World, inp: CandInput): Cands {
     const on = h.worn[slot], val = on ? g.value(on) : null;
     return belowBarOk(slot, val ? val.fit : null);
   };
+  const forSet = (set: string | null) => !!set && g.parts.some((p) => p.set === set);
   const add = (id: string, cost: Cost, holder: Hero | null, loss: Milli, own: boolean) => {
     const item = w.items[id];
     if (!item) return;
@@ -74,9 +76,11 @@ export function candidates(w: World, inp: CandInput): Cands {
     if (frozen(h.id, item.slot) && !worn) return;
     // a parked piece fills an empty slot with no bar: better than nothing (MODEL.md §7 item 2)
     const open = !!w.parked?.has(id) && !h.worn[item.slot];
-    if (!worn && !val.ok && !open && !mate(id, item.slot, holder)) return;
+    const below = !worn && !val.ok && !open && !mate(id, item.slot, holder);
+    // below the bar — only armor of the order's set, as a piece its set needs (model setNeeds; HISTORY.md 0250)
+    if (below && !forSet(item.set)) return;
     if (!own && mine.has(item.code) && btOf(item.bt) <= mine.get(item.code)!) return;
-    (out[item.slot] ??= []).push({ item, v: val.v, fit: val.fit, cost, loss, holder: holder ? holder.id : null, rank: holder ? holder.rank : -1 });
+    (out[item.slot] ??= []).push({ item, v: val.v, fit: val.fit, cost, loss, holder: holder ? holder.id : null, rank: holder ? holder.rank : -1, ...(below ? { below: true as const } : {}) });
   };
   const wornIds = (k: Hero) => new Set(Object.values(k.worn).filter((x): x is string => !!x));
   // свои: надетое — 0, запас — 1

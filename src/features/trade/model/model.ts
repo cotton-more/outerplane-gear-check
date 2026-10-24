@@ -102,9 +102,27 @@ export interface Cand {
   loss: Milli;              // сколько теряет держатель, если опустеет только этот слот; запас, свободная, своя — 0
   holder: string | null;    // null — свободная вещь
   rank: number;             // место держателя в ростере; свободная — −1
+  below?: true;             // armor of the order's set below the receiver's bar: only as a piece its set needs (setNeeds)
 }
 
 export type Cands = Partial<Record<SlotId, readonly Cand[]>>;
+
+// MODEL.md §7 item 2 (HISTORY.md 0250, owner 2026-10-24): a piece of the order's set below the receiver's bar comes only for its
+// set — a kit may hold it when its set's halves need it (without the piece the set has fewer halves). Bryn's weak Penetration ×4
+// goes to Regina with the bonus; three weak pieces of a ×4 set, or a third one of a ×2 part, do not
+export function setNeeds(g: Gauge, arm: readonly (Cand | null | undefined)[]): boolean {
+  if (!arm.some((c) => c?.below)) return true;
+  const n = new Map<string, number>(), n4 = new Map<string, number>();
+  for (const c of arm) {
+    const s = c?.item.set;
+    if (s) { n.set(s, (n.get(s) ?? 0) + 1); if (c.item.t4) n4.set(s, (n4.get(s) ?? 0) + 1); }
+  }
+  return arm.every((c) => {
+    if (!c?.below || !c.item.set) return true;
+    const s = c.item.set, k = n.get(s)!, k4 = n4.get(s) ?? 0;
+    return g.bonus(s, k, k4).halves > g.bonus(s, k - 1, k4 - (c.item.t4 ? 1 : 0)).halves;
+  });
+}
 
 // rank — Σ рангов оружия и аксессуара; total — V; pts — очки вещей без сетов; halves / eff — включённые половины (все и
 // сетов-эффектов); crit — the crit loss already subtracted from total (MODEL.md §12 item 6; shown on the plan line, not

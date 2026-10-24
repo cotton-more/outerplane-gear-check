@@ -8,7 +8,7 @@ import type { SlotId } from '@/game/data/types';
 import type { Step } from './apply';
 import { type Plan } from './gate';
 import { keyOf } from './kit';
-import { belowBarOk, cmpUse, gains, SLOT_ORDER, slotKey, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
+import { ARMOR_SLOTS, belowBarOk, cmpUse, gains, setNeeds, SLOT_ORDER, slotKey, type Cand, type Gauge, type Hero, type Kit, type KitKey, type World } from './model';
 import type { Milli } from '@/features/gear/model/vs';
 import { advance, movesOf, type Moves } from './moves';
 import { heroPlan, partOn, type Missing } from './plan';
@@ -79,9 +79,13 @@ function bestSwap(w: World, team: readonly string[], frozen?: ReadonlySet<string
         if (!id) return;
         const val = g.value(id);
         // чужая вещь, надетая тоже, — только годная для получателя (MODEL.md §7 item 2), как у шага (cands); a weapon or
-        // accessory also below his bar when his piece there (was) is missing or off his list (belowBarOk)
-        if (!val || (!val.ok && !belowBarOk(s, was ? was.fit : null))) { ok = false; return; }
-        const c: Cand = { item: w.items[id], v: val.v, fit: val.fit, cost: 3, loss: 0, holder: from.id, rank: from.rank };
+        // accessory also below his bar when his piece there (was) is missing or off his list (belowBarOk); armor of his
+        // order's set below the bar — as a piece its set needs (setNeeds below, HISTORY.md 0250)
+        if (!val) { ok = false; return; }
+        const item = w.items[id];
+        const below = !val.ok && !belowBarOk(s, was ? was.fit : null);
+        if (below && !(item.set && g.parts.some((p) => p.set === item.set))) { ok = false; return; }
+        const c: Cand = { item, v: val.v, fit: val.fit, cost: 3, loss: 0, holder: from.id, rank: from.rank, ...(below ? { below: true as const } : {}) };
         into[s] = c;
         ch.push({ slot: s, cand: c, was });
       };
@@ -89,7 +93,7 @@ function bestSwap(w: World, team: readonly string[], frozen?: ReadonlySet<string
         give(hB.worn[s], hB, gA, s, sA, chA);
         give(hA.worn[s], hA, gB, s, sB, chB);
       }
-      if (!ok) continue;
+      if (!ok || !setNeeds(gA, ARMOR_SLOTS.map((s) => sA[s])) || !setNeeds(gB, ARMOR_SLOTS.map((s) => sB[s]))) continue;
       // у получателя уже есть вещь с тем же кодом — нет (R1.2)
       const leaving = new Set(picked.flatMap((s) => [hA.worn[s], hB.worn[s]]).filter((x): x is string => !!x));
       const dup = (h: Hero, ch: Plan['changes']) => ch.some((c) => h.pool.some((id) => !leaving.has(id) && w.items[id]?.code === c.cand.item.code));
