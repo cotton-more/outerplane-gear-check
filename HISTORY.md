@@ -736,3 +736,24 @@ Penetration pinned, B brings Bryn's four. A weak piece must not stand in for a f
 together — hence `below` in the pruning key. With Bryn in the same team the sum decides and he keeps his set.
 Not built: a «missing» line that names pieces held as someone's spare (they are never candidates, Q1b).
 Checks: `test/trade/below.test.ts` (Regina ×4, three slots, strong stats, ×2 part's third piece, pruning, «By stats», team).
+
+## 0260 «Надето» as the game's piece cards
+Folder: `.x/0260-worn-cards` (`PLAN.md`). Owner 2026-10-25: from time to time they walk every hero in the game (sorted by
+Combat Power) and compare what is worn with «Надето» on the computer, to catch a wrong assignment or a forgotten re-dress.
+Chips (`ATK% 2`) against the game's `LV 2 Attack +8.0%` meant translating in the head; the owner proposed game-like cards.
+Code: `src/features/worn/WornCard.tsx` (the card), `gameMains` / `gameSub` / `PieceName noMain` in
+`src/features/gear/ui/pieceText.tsx`, the grids in `WornGear.tsx`, `.wcards` / `.wcard` / `.wst` in `src/styles/chars.css`;
+`update.py` adds the game's names of the main-only labels to `statNames` (PEN% «Penetration», CDMG RED% «Crit DMG Reduc»).
+Layout (owner): weapon | accessory, a gap, helmet | armor, gloves | boots; T and points as badges by the name; stats in a
+column — the main lines (fixed first, then the chosen one, as the game's card), then `LV n · name · value` per substat,
+coloured by credit as the chips were. Two per row by a container query (≥ 440 px), else one.
+Owner decisions: C1 — the game's English names in both app languages, never translated («Как называется в игре так и в
+приложении. НЕ ПЕРЕВОДИ.»); C2 — first «T? → the T0 value with ?», revised once it turned out the tier isn't stored
+(294 of the owner's 314 worn pieces are «T0–T3», only 8 at T4): a main line shows its number only at an exact tier (T4, an
+old T1–T3 mark), otherwise the name alone; C3 — on a phone the same card, one per row.
+Hard parts: values come from data, not typed — substat `step × LV` (exact), main `mainValues[slot][grade][line][tier]`;
+checked against the owner's screenshot (Epic Steel Sword: Attack 900, Health 36.0%, LV 2 Attack +8.0%, LV 3 Speed +9,
+LV 3 Crit DMG +12.0%). A percent main is a label with «%» or CHC/CHD; flat EFF/RES and SPD are points.
+Not built: storing the exact Breakthrough tier (would bring exact main numbers everywhere, at the cost of input В4 removed).
+Checks: `test/gear/gear.dom.test.ts` (main lines with and without a number, substat rows in the game's words); layout at
+411×564, 1280×800, 2056×1202, dark theme, with the owner's backup (Mystic Sage Ame, Demiurge Stella with T4 pieces).

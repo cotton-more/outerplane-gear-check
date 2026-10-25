@@ -15,15 +15,14 @@ import { EffNum } from './EffSheet';
 import type { GearApi } from '@/features/gear/store/useGear';
 import { SlotIcon, StatIcon } from '@/game/icons/Img';
 import { CritBar, CritText, critZone } from './CritSheet';
-import { tour, tourItem } from '@/tour/anchors';
-import { BtLabel, PieceName } from '@/features/gear/ui/pieceText';
+import { tour } from '@/tour/anchors';
 import { Pts, WornSets } from './WornSets';
 import { BUDGET_ID, WornBudget } from './WornBudget';
 import { namedGain } from '@/features/gear/model/vs';
 import { setName } from '@/game/set/setName';
-import { SubToken } from '@/game/item/SubToken';
 import { subLabel } from '@/game/data';
 import { Rich } from '@/shared/ui/Rich';
+import { WornCard } from './WornCard';
 import type { CSSProperties } from 'react';
 import type { ChainSum } from './wearing';
 
@@ -84,11 +83,6 @@ function EffLine({ eff, onClick }: { eff: WornEff; onClick?: () => void }) {
     : <p className="wcrit weff" {...tour('weff')}>{body}</p>;
 }
 
-// строка вещи: нажатие открывает шторку вещи; в карточке показа — не кнопка
-const Row = ({ onClick, slot, shown, children }: { onClick?: () => void; slot: SlotId; shown: boolean; children: ReactNode }) => (onClick
-  ? <button type="button" className="bgear-row" onClick={onClick} {...(shown ? {} : tourItem(slot))}>{children}</button>
-  : <div className="bgear-row">{children}</div>);
-
 // onEnter — «Ввести» у пустого слота; onWearAll — «Да, всё надето». Нет их — обучение и новая версия страницы: слоты
 // показываются, действий нет. share — «Поделиться» у заголовка (ShareButton). shown — карточка показа чужого героя
 // (DEVELOPMENT.md "features/worn"): строки вещей не кнопки, якорей обучения нет, «Что искать» нет; pinned — его закреплённый набор.
@@ -134,35 +128,33 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, on
         {wv.crit && !shown && <CritLine c={c} crit={wv.crit} onClick={onCrit} />}
         {wv.eff && !shown && <EffLine eff={wv.eff} onClick={onEff} />}
         <WornSets idx={idx} wv={wv} t4={!shown} />
-        <ul className="bgear-list" {...(shown ? {} : tour('gslots'))}>
-          {SLOTS.map(({ id: slot }) => {
-            const s = wv.slots.find((x) => x.slot === slot)!;
-            const p = s.piece;
-            return (
-              // a little air between the weapon + accessory and the armor (owner 2026-10-12): the rows don't run together
-              <li key={slot} className={slot === 'helmet' ? 'bgear-armor' : undefined}>
-                {p ? (
-                  <Row onClick={onOpenPiece && (() => onOpenPiece(p.id))} slot={slot} shown={shown}>
-                    <SlotIcon slot={slot} />
-                    <span className="bgear-n"><PieceName ctx={ctx} p={p} /></span>
-                    <BtLabel p={p} />
-                    <span className="bgear-t">
-                      {s.tokens.map((k) => <SubToken key={k.key} stat={k.key} lit={k.lit} credit={k.credit} />)}
-                      {wv.value && <b className="wpts bgear-pts">{pt(t, wv.value.ptsBySlot[slot] ?? 0)}</b>}
-                    </span>
-                  </Row>
-                ) : (
-                  <div className="bgear-empty">
-                    <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
-                    <span className="bgear-act">
-                      {onEnter && <button type="button" className="btn small" onClick={() => onEnter(slot)}>{t.ui.wornEnter}</button>}
-                    </span>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        {/* game-like cards (owner 2026-10-25, HISTORY.md 0260): weapon | accessory, a gap, then helmet | armor, gloves | boots;
+            one per row where two don't fit (container query, chars.css) */}
+        <div className="wcards" {...(shown ? {} : tour('gslots'))}>
+          {[SLOTS.slice(0, 2), SLOTS.slice(2)].map((group) => (
+            <ul key={group[0].id} className="bgear-list wgrid">
+              {group.map(({ id: slot }) => {
+                const s = wv.slots.find((x) => x.slot === slot)!;
+                const p = s.piece;
+                return (
+                  <li key={slot}>
+                    {p ? (
+                      <WornCard ctx={ctx} p={p} tokens={s.tokens} shown={shown} onClick={onOpenPiece && (() => onOpenPiece(p.id))}
+                        pts={wv.value && <b className="wpts bgear-pts">{pt(t, wv.value.ptsBySlot[slot] ?? 0)}</b>} />
+                    ) : (
+                      <div className="bgear-empty">
+                        <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
+                        <span className="bgear-act">
+                          {onEnter && <button type="button" className="btn small" onClick={() => onEnter(slot)}>{t.ui.wornEnter}</button>}
+                        </span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ))}
+        </div>
       </div>
       {!shown && wv.seek.length > 0 && (
         <div className="seek">

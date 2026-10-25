@@ -6,20 +6,36 @@ import type { Ctx } from '@/game/context';
 import type { Bt } from '@/game/item/item';
 import type { BonusRow } from '@/game/set/setBonus';
 import type { Texts } from '@/i18n';
-import type { Piece } from '@/features/gear/model/gear';
 import { partText, setName } from '@/game/set/setName';
 import { useT } from '@/i18n';
 import { useIndex } from '@/game/data/IndexContext';
 import { SetIcon } from '@/game/icons/Img';
+import { itemMains } from '@/game/item/mains';
+import { mainRaw } from '@/game/stat/total';
+import { pieceInput, type Piece } from '@/features/gear/model/gear';
 
 // substats as the game's middle panel shows them: «LV 3 Crit Chance +9.0%», «LV 2 Attack +80» — the batch walk's equip and
 // lock lines, «Надеть в игре» (features/ingame)
 export function gameSubs(idx: Index, subs: Record<string, number>): string[] {
-  return Object.entries(subs).map(([k, n]) => {
-    const s = idx.SUB[k];
-    const v = s ? s.step * n : 0;
-    return `LV ${n} ${idx.D.statNames[k] ?? k} +${s?.pct ? v.toFixed(1) + '%' : Math.round(v)}`;
+  return Object.entries(subs).map(([k, n]) => { const g = gameSub(idx, k, n); return `LV ${n} ${g.name} ${g.value}`; });
+}
+// The main lines in the game's words, in the game card's order: the fixed lines (a weapon's Attack, armor's own), then the chosen
+// main. A value at +10 only where the tier is exact — T4 or an old T1–T3 mark; «T0–T3» or «T?» — no number (owner
+// 2026-10-25, HISTORY.md 0260 C2): the tier isn't stored, the number would be a guess
+const PCT_MAIN = /%$|^CH[CD]$/; // CHC 400 = 40.0%; flat EFF/RES and SPD are points
+export function gameMains(ctx: Ctx, p: Piece): { key: string; name: string; value: string | null }[] {
+  const lines = itemMains(ctx.idx, pieceInput(p)).lines;
+  const exact = p.bt !== null && p.bt > 0;
+  return [...lines.filter((l) => l !== p.main), ...lines.filter((l) => l === p.main)].map((l) => {
+    const raw = exact ? mainRaw(ctx, p, l) : 0;
+    return { key: l, name: ctx.idx.D.statNames[l] ?? l, value: raw ? (PCT_MAIN.test(l) ? (raw / 10).toFixed(1) + '%' : String(raw)) : null };
   });
+}
+// one substat in the game's words: the game's English name (never translated, owner 2026-10-25) and «+8.0%» / «+9»
+export function gameSub(idx: Index, k: string, n: number): { name: string; value: string } {
+  const s = idx.SUB[k];
+  const v = s ? s.step * n : 0;
+  return { name: idx.D.statNames[k] ?? k, value: `+${s?.pct ? v.toFixed(1) + '%' : Math.round(v)}` };
 }
 
 // A weapon or accessory named in a phrase, one rule everywhere (owner 2026-10-09, Q4): a Legendary — its item, an Epic —
@@ -50,12 +66,12 @@ export const batchCaption = (t: Texts, idx: Index, p: Named & Pick<Piece, 'bt'>)
 // the grade's name colour class
 export const gradeTone = (grade: Piece['grade'] | undefined) => (grade === 'unique' ? 'legend' : 'epic');
 
-export function PieceName({ ctx, p, batch }: { ctx: Ctx; p: Piece; batch?: boolean }) {
+export function PieceName({ ctx, p, batch, noMain }: { ctx: Ctx; p: Piece; batch?: boolean; noMain?: boolean }) {
   const t = useT();
   const armor = isArmor(p.slot);
   const unknown = p.setId ? !ctx.idx.SET[p.setId] : !!p.itemKey && !ctx.idx.ITEM[p.slot as GearKind]?.[p.itemKey];
   const name = batch && armor ? t.ui.slotNom[p.slot] : unknown ? t.ui.notInData : nameOf(ctx, p);
-  const main = p.setId ? null : p.main;
+  const main = p.setId || noMain ? null : p.main;
   const tone = ` gname ${gradeTone(p.grade)}`;
   return (
     <>

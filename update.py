@@ -1330,7 +1330,10 @@ def build_dataset(src: dict, prov: dict, warn: Warnings) -> dict:
         },
         "classes": {k: en(class_names.get(k, {})) or k.title() for k in CLASS_ORDER},
         "elements": {k: en(element_names.get(k, {})) or k.title() for k in ELEMENT_ORDER},
-        "statNames": {lab: en(stat_names.get(o["stat"], {})) for o in substats for lab in [o["key"]]},
+        # the game's English names: substats, and the main-only labels (PEN% «Penetration», CDMG RED% «Crit DMG Reduc») —
+        # «Надето» shows main lines in the game's words (HISTORY.md 0260)
+        "statNames": {**{STAT_ABBR[s]: en(v) for s, v in stat_names.items() if STAT_ABBR.get(s) in main_labels and en(v)},
+                      **{lab: en(stat_names.get(o["stat"], {})) for o in substats for lab in [o["key"]]}},
         "substats": substats,
         "slotIcons": slot_icons,
         "mainLabels": main_labels,

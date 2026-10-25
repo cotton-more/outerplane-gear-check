@@ -137,7 +137,6 @@ html:not(.sheet) .cd-top { display: none; }
 .bgear { padding: 12px 16px 0; display: grid; gap: 8px; }
 .bgear h4 { margin: 0; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
 .bgear-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.bgear-list .bgear-armor { margin-top: 8px; } /* «Надето»: the armor starts after a gap — weapon and accessory above it */
 /* тур прокручивает к вещи в карточке во весь экран: не под липкую «← К списку» */
 .bgear-row { scroll-margin-top: 64px; width: 100%; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--ink); text-align: left; font: inherit; }
 /* the compact row of the batch and of the trade plan: a narrower icon column and tighter padding */
@@ -161,6 +160,25 @@ html.xs .bgear-t { grid-row: 3; }
 .bgear-empty .btn { min-height: 32px; padding: 4px 10px; font-size: 12.5px; }
 /* в пуле по вещи на слот, ничего не надето: «Да, всё надето» */
 .bgear-none { display: grid; gap: 8px; justify-items: start; padding: 10px 12px; border: 1px dashed var(--line-2); border-radius: var(--radius-s); }
+/* «Надето» as the game's piece cards (HISTORY.md 0260): weapon | accessory, a gap, the armor in pairs; one card per row where
+   two would be under ~215 px (a phone, owner C3). Stats in a column: «LV 2  Attack  +8.0%», the value flush right */
+.wcards { container-type: inline-size; display: grid; gap: 14px; }
+.wgrid { grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 440px) { .wgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wgrid > li { display: grid; }
+.bgear-row.wcard { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 10px 9px; }
+.wcard-h { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wcard-h .bgear-n { flex: 1; }
+.wcard-st { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+.wst { display: contents; }
+.wst-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wst-v { text-align: right; font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.wst.main .wst-n { grid-column: 1 / 3; font-weight: 600; color: var(--ink); }
+.wst.main .wst-v { color: var(--ink); }
+.wst.main + .wst:not(.main) > span { padding-top: 4px; } /* a little air between the main lines and the substats, as in game */
+.wst-lv { font: 600 11px var(--font-mono); color: var(--ink-3); }
+.wst.ok .wst-n, .wst.ok .wst-v { color: var(--keep); }
+.wst.half .wst-n, .wst.half .wst-v { color: var(--temp); }
 .bgear-none p { margin: 0; font-size: 13px; color: var(--ink-2); }
 /* значок сета у названия (PieceName): игровой — тёмный кружок, свой — контур в рамке; читается в обеих темах */
 .bgear-row .bgear-n .pset, .piece-n .pset { box-sizing: border-box; width: 18px; height: 18px; flex: none; }

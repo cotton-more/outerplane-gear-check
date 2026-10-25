@@ -91,8 +91,13 @@ below) next to "Trade ▸".
 
 ### Worn
 
-What the hero wears in the game now: six slots with substats colored by the hero's points, Breakthrough ("T4",
-"T0–T3") and only the set bonuses that are turned on. Armor shows the set icon before its name, as in the game. An empty slot has **"Enter"**: "Rate" opens for that slot, and
+What the hero wears in the game now: six pieces as cards, like the game's — weapon and accessory, then the armor in
+pairs (helmet and armor, gloves and boots; one per row on a phone). A card shows Breakthrough ("T4", "T0–T3") and the
+piece's points next to its name, then the stats in a column in the game's words: the main lines ("Attack", "Health"),
+then the substats, "LV 2 Attack +8.0%" — check them against the game's piece card line by line. A main line has its
+number only at T4: below T4 the exact Breakthrough tier isn't recorded. A substat is coloured by the hero's points: green
+counts in full, yellow at half. Above the cards — only the set bonuses that are turned on. Armor shows the set icon
+before its name, as in the game. An empty slot has **"Enter"**: "Rate" opens for that slot, and
 after "Equip" the form moves to the next empty one. If the hero has at most one piece per slot, "Yes, all worn"
 replaces the entry.
 
@@ -101,7 +106,7 @@ Next to the heading are the **points of what is worn** ("Worn · 6 of 6 · 37.7 
 the sets add, **Extra crit** — what crit above the hero's need takes off (see Crit below; only when there is some),
 **Passive** — what a weapon and an accessory give outside the points: "recommended" (an item from the
 hero's builds with the right main), "stopgap" or "not in builds". A recommended passive goes in before any substats.
-Each piece shows its points on the right under its substats. Under the heading is
+Each piece shows its points on the right of its name. Under the heading is
 the hero's **stat chain** in its order (first — the most valuable) and how many segments all worn pieces give each stat:
 `ATK% 6 / ATK 8 › CHC 8 › CHD 12 › SPD 9 › DMG UP% 4`. Green counts in full, yellow (flat) at half, paler — fewer
 segments; dashed — a chain stat no worn piece gives. It's the chain the points are counted on: the pinned set's or

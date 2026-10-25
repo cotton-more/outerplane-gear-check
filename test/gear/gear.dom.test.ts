@@ -551,7 +551,7 @@ describe('карточка персонажа', () => {
     expect($('.btabs [aria-selected="true"]')?.textContent).toBe('Worn4/6');
     expect($('.bgear-set .wset-h span')?.textContent).toBe('Speed ×4 · T? · Speed +25% · mark Breakthrough');
     expect($('.bgear-set')?.textContent).not.toContain("not in Caren's builds");
-    expect($$('.bgear-row')[0].querySelectorAll('.tok')[0].className).toBe('tok ok');
+    expect($$('.bgear-row')[0].querySelectorAll('.wst:not(.main)')[0].className).toBe('wst ok');
     expect($('.bgear-m')?.textContent).toBe('T?');
     expect($('.want-btn')).toBeNull();
     await click($('.bgear-row'));
@@ -622,7 +622,17 @@ describe('карточка персонажа', () => {
     const ps = [P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 }, { bt: 4 }), P('p2', 'weapon', null, { CHC: 2, SPD: 1 }, { grade: 'rare', main: caren.builds[0].weapons[0].mains[0] })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2'] }, { worn: wornOf(ps) }) });
     expect($$('.bgear-m').map((m) => m.textContent)).toEqual(['T?', 'T4']);
-    await click(byText('.bgear-row', 'Speed'));
+    // the game's card (HISTORY.md 0260): main lines first (a weapon's Attack, then its main), a number only at an exact tier;
+    // substats as «LV n · the game's name · value»
+    const [weapon, helmet] = $$('.wcard');
+    const mains = (c: Element) => [...c.querySelectorAll('.wst.main')].map((m) => [m.querySelector('.wst-n')!.textContent, m.querySelector('.wst-v')!.textContent]);
+    expect(mains(weapon)[0]).toEqual(['Attack', '']);
+    expect(mains(weapon).every(([, v]) => v === '')).toBe(true); // T? — no number
+    expect(mains(helmet)).toEqual([['Health', expect.stringMatching(/^\d+\.\d%$/)]]); // T4 — exact
+    expect([...weapon.querySelectorAll('.wst:not(.main)')].map((r) => [...r.children].map((x) => x.textContent))).toEqual([
+      ['LV 2', 'Crit Chance', '+6.0%'], ['LV 1', 'Speed', '+3'],
+    ]);
+    await click(byText('.bgear-row', 'Speed Set'));
     await click($('.piece .btchip'));
     expect(stored().pieces.p1.bt).toBe(0);
     expect($$('.bgear-m')[1].textContent).toBe('T0–T3');
