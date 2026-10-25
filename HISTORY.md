@@ -723,7 +723,7 @@ birthday; screenshots at the four sizes, both themes (faked 10/23 and 10/24).
 ## 0250 Trade — weak armor of the ordered set counts when it completes the set
 Folder: `.x/0250-set-below-bar` (`NOTES.md`). Owner case 2026-10-24: Poolside Trickster Regina, order Penetration ×4; Bryn
 wears the only Penetration set, every piece below her bar (`pieceBar`), so none was a candidate and the plan said «no
-Penetration helmet, armor, gloves, shoes» although the pieces exist. Merged into `main` `3b94f4a` 2026-10-24.
+Penetration helmet, armor, gloves, shoes» although the pieces exist. Merged into `main` `c11e7f9` 2026-10-24.
 Code: `Cand.below`, `setNeeds` in `src/features/trade/model/model.ts`; marked in `cands.ts` (armor of `g.parts` sets only);
 checked at the leaves of `bestArmor` / `critKit` (`kit.ts`, pruning key `pruneKey` = set, T4, below), in the threshold window
 (`gate.ts`) and in the pair swap (`team.ts`).
