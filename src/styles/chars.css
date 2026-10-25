@@ -165,10 +165,11 @@ html.xs .bgear-t { grid-row: 3; }
 .wcards { container-type: inline-size; display: grid; gap: 14px; }
 .wgrid { grid-template-columns: minmax(0, 1fr); }
 @container (min-width: 440px) { .wgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.wgrid > li { display: grid; }
-.bgear-row.wcard { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 10px 9px; }
+.wgrid > li { display: grid; min-width: 0; } /* a grid item never grows past its column: long content wraps or ellipsizes */
+.bgear-row.wcard { min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 10px 9px; }
 .wcard-h { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.wcard-h .bgear-n { flex: 1; }
+.wcard-h .bgear-n { flex: 1; white-space: normal; }
+.wcard-h .bgear-n .pn { overflow: visible; overflow-wrap: anywhere; } /* the whole name, on two lines if needed — as in game */
 .wcard-h .frame { width: 34px; height: 34px; border-radius: 6px; }
 .wcard-h .frame > img { width: 100%; height: 100%; } /* over .bgear-row img (22 px): the grade frame and the item fill the frame */
 .wcard-st { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }

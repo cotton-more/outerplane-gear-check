@@ -763,6 +763,10 @@ which knew percent substats by those ids, published CHD, DMG UP%, DMG RED% as fl
 move (scoring reads the mode, unchanged), only the game-style values (cards, «Надеть в игре», batch walk). Fix: percent by
 label (`PCT_LABELS`), both ids in `SET_BONUS_STAT`; `check-data.mjs` checks every substat's step against `SUB_STEP`, so a
 rename like this is red before publishing.
+Follow-up 3: a long Legendary name («Search and Destroy», «Charmer's Golden Chalice») pushed its card past the column
+(the grid item grew to the name's nowrap width). The name now wraps, the cell has `min-width: 0`. Checked with a probe over
+all 78 of the owner's roster heroes (468 cards) at 411×363, 411×564, 720, 900, 1100, 1280, 2056 wide: nothing out of a
+card or a column (the old code: 20 heroes).
 Not built: storing the exact Breakthrough tier (would bring exact main numbers everywhere, at the cost of input В4 removed).
 Checks: `test/gear/gear.dom.test.ts` (main lines with and without a number, substat rows in the game's words); layout at
 411×564, 1280×800, 2056×1202, dark theme, with the owner's backup (Mystic Sage Ame, Demiurge Stella with T4 pieces).
