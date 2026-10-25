@@ -2,5 +2,5 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'more', rev: 1, at: 'more', news: true },
+  { id: 'more', rev: 1, since: '2026-10-05', at: 'more', news: true },
 );

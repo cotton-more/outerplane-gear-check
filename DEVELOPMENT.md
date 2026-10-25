@@ -312,10 +312,13 @@ strip — `place.ts`). Texts — the
 - **In-flow tips** (`tips.ts`, `TipLayer.tsx`): one at a time, no more than three per launch, no more often than once per 20 s and after
   a 1.5 s pause in input; only in windows taller than 480px, not during a tour and not over other strips. Seen — as soon as
   it is shown (owner, 2026-10-11): closed, its anchor pressed or left on its own (anchor gone, `when` no longer true), it
-  doesn't come back; every tip stays in Help, «Показать подсказки заново» brings them all back.
+  doesn't come back; every tip stays in Help, «Показать подсказки заново» brings them all back. Help's list (`TipsHelp`,
+  `tips.ts helpTips`; owner, 2026-10-25): on top at most 10 — the player's unseen news first, then tips whose `since`
+  (the date the tip shipped at its `rev`; `rev + 1` → today) is within 14 days, newest first; the rest are folded under
+  «Остальные подсказки · N» in `TIP_ORDER`.
 - **What's new**: a tip with `news: true` that is absent from `ogc.tour.known` or present there with a lower `rev`. On first
-  launch everything in the app goes into `known` at once, so new = exactly what appeared after it; no release
-  date needed. A long-time player (`first: skipped`, came before the tutorial) doesn't know about `news` tips yet — they're
+  launch everything in the app goes into `known` at once, so new = exactly what appeared after it (`since` only
+  orders Help's list). A long-time player (`first: skipped`, came before the tutorial) doesn't know about `news` tips yet — they're
   new for them. Chrome runs (`tour-check`, `screenshots`) write `known` with all tips —
   `scripts/known-tips.mjs`. The «Новое» (New) strip appears on its own; «Позже» (Later) — a dot on ☰ («⋯» on desktop) and on Help in «Ещё» until viewed;
   «Показать» — the first new tip right away. Opening Help also counts as viewing.

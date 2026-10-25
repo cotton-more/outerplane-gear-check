@@ -53,9 +53,10 @@ in between). `.x/README.md` is the index:
   (`src/tour/registry.ts`, display order), texts in `ru.ts` and `en.ts`.
   A utility component, or one the main tour already explains — an entry in `src/tour/coverage.ts` with the reason.
   `test/tour/tour.test.ts` fails on a component with neither and says what to do.
-- Behavior a tip explains changed — `rev + 1`; a tour step changed (`core.ts`, `gear.ts`) — fix its text. If long-time
-  players should hear about it — a tip with `news: true` and an entry in `tour.news`. No release date needed: "new" means
-  what the player didn't have at first launch (`ogc.tour.known`).
+- Behavior a tip explains changed — `rev + 1` and `since` = today; a tour step changed (`core.ts`, `gear.ts`) — fix its
+  text. A new tip — `since` = today too (Help shows the last two weeks' tips on top, the rest folded). If long-time
+  players should hear about it — a tip with `news: true` and an entry in `tour.news`; "new" means what the player didn't
+  have at first launch (`ogc.tour.known`).
 - Moved or renamed an element with `data-tour` — move the anchor (`anchors.ts`).
 - Propose tip text to the owner first, in both languages, and ask whether to show it as "What's new".
 - End every reply that changes `src/app`, `src/screens`, `src/features`, `src/game` or `src/shared` with the line

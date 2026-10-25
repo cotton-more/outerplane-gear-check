@@ -2,6 +2,6 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'replace', rev: 1, at: 'rows', when: (c) => c.s.tab === 'eval' && c.nSubs >= 2 },
-  { id: 'fourth', rev: 2, at: 'fourth', when: (c) => c.s.tab === 'eval' && c.s.grade === 'rare' && c.nSubs === 3 },
+  { id: 'replace', rev: 1, since: '2026-09-27', at: 'rows', when: (c) => c.s.tab === 'eval' && c.nSubs >= 2 },
+  { id: 'fourth', rev: 2, since: '2026-10-02', at: 'fourth', when: (c) => c.s.tab === 'eval' && c.s.grade === 'rare' && c.nSubs === 3 },
 );

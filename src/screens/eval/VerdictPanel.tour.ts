@@ -9,10 +9,10 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'temp', rev: 1, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.verdict.v === 'temp' },
-  { id: 'cardEquip', rev: 7, at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
-  { id: 'material', rev: 3, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.material },
-  { id: 'worn', rev: 2, at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
+  { id: 'temp', rev: 1, since: '2026-09-27', at: 'verdict', when: (c) => c.s.tab === 'eval' && c.verdict.v === 'temp' },
+  { id: 'cardEquip', rev: 7, since: '2026-10-06', at: 'gequip', when: (c) => c.s.tab === 'eval' && c.narrow && !c.verdictOpen },
+  { id: 'material', rev: 3, since: '2026-10-06', at: 'verdict', when: (c) => c.s.tab === 'eval' && c.material },
+  { id: 'worn', rev: 2, since: '2026-09-29', at: 'verdict', when: (c) => c.s.tab === 'eval' && c.worn },
   // «Отложить для X» (решение владельца 2026-10-06): без «Что нового» — владелец так решил
-  { id: 'stash', rev: 1, at: 'stash', when: (c) => c.s.tab === 'eval' },
+  { id: 'stash', rev: 1, since: '2026-10-06', at: 'stash', when: (c) => c.s.tab === 'eval' },
 );

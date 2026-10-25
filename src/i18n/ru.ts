@@ -1272,6 +1272,8 @@ export const ru = {
     tipsOff: 'выкл',
     tipsReset: 'Показать подсказки заново',
     newBadge: 'новое',
+    tipsRest: (n: number) => `Остальные подсказки · ${n}`,
+    tipsAll: (n: number) => `Все подсказки · ${n}`,
     steps: {
       slot: (x: StepText): string => x.demo
         ? `Для примера возьмём броню Epic: нажми ${x.narrow ? 'значок брони (футболка)' : '**Armor**'} и **E**.${x.keys ? ' Или клавиши 4 и E.' : ''}`

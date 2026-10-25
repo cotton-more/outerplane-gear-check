@@ -7,9 +7,9 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'wornTab', rev: 3, at: 'wtab', news: true, when: (c) => c.s.tab === 'chars' },
-  { id: 'wornChain', rev: 1, at: 'wchain', news: true, when: (c) => c.s.tab === 'chars' },
-  { id: 'wornBudget', rev: 1, at: 'wbudget', news: true, when: (c) => c.s.tab === 'chars' },
-  { id: 'wornCrit', rev: 1, at: 'wcrit', news: true, when: (c) => c.s.tab === 'chars' },
-  { id: 'wornEff', rev: 1, at: 'weff', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'wornTab', rev: 3, since: '2026-10-10', at: 'wtab', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'wornChain', rev: 1, since: '2026-10-07', at: 'wchain', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'wornBudget', rev: 1, since: '2026-10-10', at: 'wbudget', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'wornCrit', rev: 1, since: '2026-10-11', at: 'wcrit', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'wornEff', rev: 1, since: '2026-10-12', at: 'weff', news: true, when: (c) => c.s.tab === 'chars' },
 );

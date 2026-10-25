@@ -1090,6 +1090,8 @@ export const en: Texts = {
     tipsOff: 'off',
     tipsReset: 'Show tips again',
     newBadge: 'new',
+    tipsRest: (n: number) => `Other tips · ${n}`,
+    tipsAll: (n: number) => `All tips · ${n}`,
     steps: {
       slot: (x: StepText) => x.demo
         ? `As an example, take Epic armor: tap ${x.narrow ? 'the armor icon (a shirt)' : '**Armor**'} and **E**.${x.keys ? ' Or press 4 and E.' : ''}`

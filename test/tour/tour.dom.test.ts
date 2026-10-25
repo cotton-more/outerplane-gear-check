@@ -417,7 +417,7 @@ describe('подсказки по ходу и «Что нового»', () => {
     }
   }, 10_000);
 
-  it('в Справке новые подсказки — вверху списка, остальные — по порядку', async () => {
+  it('в Справке новые подсказки — вверху списка (новее — выше), старые свёрнуты', async () => {
     const known = Object.fromEntries(TIPS.filter((tp) => tp.id !== 'team' && tp.id !== 'teamPick').map((tp) => [tp.id, tp.rev]));
     await mount({ welcomeHidden: true, tour: { ...done, known } });
     await click(byText('.tour-invite button', 'Later'));
@@ -425,9 +425,12 @@ describe('подсказки по ходу и «Что нового»', () => {
     await click($('.more .has-news'));
     const items = [...document.querySelectorAll<HTMLElement>('.tips-help li')];
     expect(items.slice(0, 2).map((li) => !!li.querySelector('.tour-new'))).toEqual([true, true]);
-    expect(items[0].textContent).toContain(T.tips.team);
-    expect(items[1].textContent).toContain(T.tips.teamPick);
+    expect(items[0].textContent).toContain(T.tips.teamPick); // 2026-10-12
+    expect(items[1].textContent).toContain(T.tips.team);     // 2026-10-11
     expect(items.slice(2).some((li) => li.querySelector('.tour-new'))).toBe(false);
+    expect($('.tips-help > ul')!.children.length).toBeLessThanOrEqual(10);
+    expect(($('.tips-rest') as HTMLDetailsElement).open).toBe(false);
+    expect(items).toHaveLength(TIPS.length);
   });
 
   it('после обновления — полоса «Новое»; «Позже» — точка на ☰ и «Справке»; открыл Справку — просмотрено', async () => {

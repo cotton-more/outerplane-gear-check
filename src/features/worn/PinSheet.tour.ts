@@ -3,5 +3,5 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'pin', rev: 1, at: 'pin', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'pin', rev: 1, since: '2026-10-06', at: 'pin', news: true, when: (c) => c.s.tab === 'chars' },
 );

@@ -11,7 +11,7 @@ import { place } from '@/tour/place';
 import { TIP_COUNTS, TIP_ORDER, TIPS } from '@/tour/registry';
 import { TOURS } from '@/tour/tours';
 import { bootTour, markSeen, mergeTour, type TourStore } from '@/tour/store';
-import { LIMITS, newsOf, nextTip } from '@/tour/tips';
+import { helpTips, HELP_TOP, LIMITS, newsOf, nextTip } from '@/tour/tips';
 import type { StepText, Tip, TourCtx } from '@/tour/types';
 
 // компоненты — всё в src, кроме самого обучения (src/tour) и точки входа; путь — от src/
@@ -95,7 +95,7 @@ describe('хранилище ogc.tour', () => {
   });
 
   it('давний игрок пришёл раньше обучения: подсказки с news для него новые, новичку — нет', () => {
-    const news: Tip = { id: 'move', rev: 1, at: 'submove', news: true };
+    const news: Tip = { id: 'move', rev: 1, since: '2026-09-27', at: 'submove', news: true };
     const now = { slot: 1, move: 1 };
     expect(newsOf([news], bootTour(null, { roster: 3, welcomeHidden: false }, now, ['move']))).toEqual([news]);
     expect(newsOf([news], bootTour(null, { roster: 0, welcomeHidden: false }, now, ['move']))).toEqual([]);
@@ -167,8 +167,8 @@ describe('подсказки модулей', () => {
 
   const st = (patch: Partial<TourStore> = {}): TourStore =>
     ({ v: 1, first: 'done', invited: true, seen: {}, known: {}, tips: true, tipsAt: 0, resetAt: 0, ...patch });
-  const tipA: Tip = { id: 'star', rev: 1, at: 'star' };
-  const tipB: Tip = { id: 'code', rev: 1, at: 'code', when: () => false };
+  const tipA: Tip = { id: 'star', rev: 1, since: '2026-09-27', at: 'star' };
+  const tipB: Tip = { id: 'code', rev: 1, since: '2026-09-27', at: 'code', when: () => false };
   const c = {} as TourCtx;
   const all = () => true;
 
@@ -207,5 +207,32 @@ describe('подсказка «Все уже носят не хуже»', () => 
 
   it('только на оценке и только когда штамп понизили по надетому', () => {
     expect([ctx('eval', true), ctx('eval', false), ctx('chars', true)].map((c) => worn.when!(c))).toEqual([true, false, false]);
+  });
+});
+
+// Справка (owner, 2026-10-25): сверху — новые за две недели и не виденные, не больше HELP_TOP, остальные свёрнуты
+describe('подсказки в Справке', () => {
+  it('у каждой подсказки дата выпуска её ревизии, не из будущего', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    for (const t of TIPS) {
+      expect(t.since, t.id).toMatch(/^20\d\d-\d\d-\d\d$/);
+      expect(t.since <= today, t.id).toBe(true);
+    }
+  });
+
+  const tip = (id: string, since: string) => ({ id, rev: 1, since, at: 'more' }) as unknown as Tip;
+  it('сверху — за две недели, новые раньше; остальные — в прежнем порядке', () => {
+    const a = tip('a', '2026-10-01'), b = tip('b', '2026-10-12'), c = tip('c', '2026-10-20'), d = tip('d', '2026-10-11');
+    const { top, rest } = helpTips([a, b, c, d], [], '2026-10-25');
+    expect(top.map((t) => t.id)).toEqual(['c', 'b', 'd']);
+    expect(rest).toEqual([a]);
+  });
+  it('не виденная новость — первой, даже старая; сверху не больше HELP_TOP', () => {
+    const old = tip('old', '2026-09-01');
+    const fresh = Array.from({ length: HELP_TOP + 2 }, (_, i) => tip('f' + i, '2026-10-20'));
+    expect(helpTips([old, tip('x', '2026-09-02')], [old], '2026-10-25').top).toEqual([old]);
+    const { top, rest } = helpTips([...fresh, old], [old], '2026-10-25');
+    expect(top).toEqual([old, ...fresh.slice(0, HELP_TOP - 1)]);
+    expect(rest).toEqual(fresh.slice(HELP_TOP - 1));
   });
 });

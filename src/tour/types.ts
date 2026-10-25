@@ -63,6 +63,7 @@ export type TipId = keyof Texts['tour']['tips'];
 export interface Tip {
   id: TipId;
   rev: number;    // поменялось то, что подсказка объясняет, — rev + 1: покажется снова (и в «Что нового», если news)
+  since: string;  // 'YYYY-MM-DD' the tip shipped at this rev (rev + 1 — that day's date): Help puts the newest on top (helpTips)
   at: Anchor;
   when?: (c: TourCtx) => boolean;
   news?: boolean; // попадает в «Что нового»; короткая строка — tour.news[id]

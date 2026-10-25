@@ -4,9 +4,9 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'prio', rev: 1, at: 'prio', when: (c) => c.s.tab === 'chars' },
-  { id: 'builds', rev: 7, at: 'btabs', when: (c) => c.s.tab === 'chars' },
-  { id: 'gear', rev: 3, at: 'bgear', when: (c) => c.s.tab === 'chars' },
+  { id: 'prio', rev: 1, since: '2026-09-27', at: 'prio', when: (c) => c.s.tab === 'chars' },
+  { id: 'builds', rev: 7, since: '2026-10-14', at: 'btabs', when: (c) => c.s.tab === 'chars' },
+  { id: 'gear', rev: 3, since: '2026-10-06', at: 'bgear', when: (c) => c.s.tab === 'chars' },
   // the stars under the name (PLAN 0190): crit from transcend stars counts; Team takes the stars from the card
-  { id: 'heroStars', rev: 2, at: 'hstars', news: true, when: (c) => c.s.tab === 'chars' },
+  { id: 'heroStars', rev: 2, since: '2026-10-12', at: 'hstars', news: true, when: (c) => c.s.tab === 'chars' },
 );

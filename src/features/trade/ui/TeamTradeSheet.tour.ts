@@ -6,5 +6,5 @@
 import { defineTips } from '@/tour/types';
 
 export default defineTips(
-  { id: 'teamTrade', rev: 4, at: 'teamTrade', news: true, when: (c) => c.s.tab === 'team' },
+  { id: 'teamTrade', rev: 4, since: '2026-10-13', at: 'teamTrade', news: true, when: (c) => c.s.tab === 'team' },
 );
