@@ -335,7 +335,9 @@ State, roster, language, partially entered item and completed tutorial (`ogc.tou
 are compatible across versions, unknown roster ids are not erased. The link `…/#demiurge-stella` opens a character, `…/#OGH…` — the shared hero card (the code is read before
 `useHashRoute` rewrites the URL; it doesn't stay in the URL, nothing is written to storage).
 If the browser opened the page in «Версия для ПК» (Desktop site) mode, `useLayout` detects it via `screen.width` and returns the
-mobile layout.
+mobile layout. It zooms the page up to the phone's width (`zoom` ≈ 2.4 on a Pixel), and Chrome multiplies viewport units by that zoom: a
+sheet with `max-height: 88vh` ran off the top of the screen. So sizes tied to the window are in `%` of a fixed element (the
+sheet's backdrop, a fixed toast's viewport), never `vh`/`vw`/`dvh` on anything visible in the phone layout.
 
 Character list: `ogc.state.cOwned` — «Мои» mode (true; «Доодеть» after restart is also «Мои»), false — no mode pressed, every hero
 with builds (there is no «Все» button any more: a second tap on the pressed mode releases it; internally `cMode: 'all'`); the old

@@ -244,4 +244,4 @@ html:not(.narrow) .tm > .tm-alpha { grid-column: 1; }
 .boss-th.full { color: var(--keep); }
 .boss-tm { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
 /* the toast after «Собрать из гайда»: one line, like the batch notes (left: 50% would halve its width) */
-.toast.boss-toast { width: max-content; max-width: calc(100vw - 32px); }
+.toast.boss-toast { width: max-content; max-width: calc(100% - 32px); }

@@ -91,7 +91,7 @@ html.narrow .vbar .bm-long { display: none; }
 .bstep-subs .sv { font-variant-numeric: tabular-nums; }
 /* the batch's short notes as a toast (App batchToast): no button, the text wraps within the screen; yellow — not an
    error, but it should catch the eye (owner 2026-10-08) */
-.toast.batch-toast { width: max-content; max-width: calc(100vw - 32px); padding: 8px 14px; white-space: normal; text-align: center;
+.toast.batch-toast { width: max-content; max-width: calc(100% - 32px); padding: 8px 14px; white-space: normal; text-align: center;
   border-color: var(--temp); background: var(--temp-soft); }
 .bstep-k { font-weight: 600; }
 /* Breakthrough (BatchWalk BtCard): the target as a card with its tier pips, the feed hanging under it on a thin line */
@@ -107,7 +107,7 @@ html.narrow .vbar .bm-long { display: none; }
 .bt-mat::before { content: '⤷'; position: absolute; left: -14px; top: 0; color: var(--ink-3); }
 /* the plan and the walk take the screen (owner 2026-10-09): a full-height sheet on a phone, the form's column on a wide
    screen (App batchResult); «← К списку» on top */
-.drawer.batch-full { height: 100dvh; max-height: 100dvh; border-radius: 0; }
+.drawer.batch-full { height: 100%; max-height: 100%; border-radius: 0; }
 /* the title carries the batch's kind («Batch · 11 · Legendary weapon»): it wraps at 280px instead of ending with «…» */
 .batch-sheet .drawer-h h3 { white-space: normal; text-wrap: balance; line-height: 1.25; }
 html:not(.narrow) .eval.batch-result { grid-template-columns: minmax(0, 1fr); }

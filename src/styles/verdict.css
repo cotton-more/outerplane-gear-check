@@ -142,7 +142,7 @@ html.narrow .vbar .vt-hint::before { content: '→ ' / ''; color: var(--accent);
 .vs.worn { background: var(--surface); color: var(--keep); border-color: color-mix(in srgb, var(--keep) 40%, transparent); }
 .vs-act, .vs-stash { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 5px 12px; font-size: 13px; }
 .vs-act.good { border-color: color-mix(in srgb, var(--keep) 55%, transparent); color: var(--keep); }
-.gear-toast { white-space: normal; width: min(440px, calc(100vw - 24px)); z-index: 42; } /* надели из подробностей — видно и поверх шторки */
+.gear-toast { white-space: normal; width: min(440px, calc(100% - 24px)); z-index: 42; } /* надели из подробностей — видно и поверх шторки */
 /* узкое окно (280–320px): «Вернуть» сбоку оставляла тексту ≈ 140px — 7–8 строк; текст уже 220px — кнопка под ним, справа */
 .gear-toast { flex-wrap: wrap; gap: 4px 14px; }
 .gear-toast span { display: grid; gap: 2px; flex: 1 1 220px; }

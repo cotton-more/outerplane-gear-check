@@ -209,10 +209,12 @@ html.narrow .brand p { display: none; }
 
 /* ---------- шторка снизу (.drawer; класс .sheet занят раскладкой на <html>): окна выбора и подробности вердикта */
 body.drawer-lock { overflow: hidden; }
+/* heights in % of the backdrop (= the window), not vh: under the zoom of the phone's «Desktop site» mode (useLayout measure)
+   vh grows with the zoom and the sheet ran off the top of the screen (owner, 2026-10-25) */
 .drawer-back { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; background: rgb(0 0 0 / .4); }
-.drawer { width: 100%; max-width: 640px; max-height: 88vh; display: flex; flex-direction: column; background: var(--surface); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgb(0 0 0 / .18); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.drawer { width: 100%; max-width: 640px; max-height: 88%; display: flex; flex-direction: column; background: var(--surface); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgb(0 0 0 / .18); padding-bottom: env(safe-area-inset-bottom, 0px); }
 html:not(.narrow) .drawer-back { align-items: center; }
-html:not(.narrow) .drawer { border-radius: 14px; max-height: 80vh; }
+html:not(.narrow) .drawer { border-radius: 14px; max-height: 80%; }
 .drawer-h { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--line); }
 .drawer-h h3 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drawer-h.bare { justify-content: flex-end; padding: 4px 4px 0; border-bottom: 0; } /* Sheet bare: only the ✕ */
