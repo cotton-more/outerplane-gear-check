@@ -4,7 +4,9 @@
 // as the chips elsewhere. A tap opens the piece sheet; on the shared card it is not a button
 import type { ReactNode } from 'react';
 import type { Ctx } from '@/game/context';
-import type { SlotId } from '@/game/data/types';
+import type { GearKind, SlotId } from '@/game/data/types';
+import { isArmor } from '@/game/data';
+import { Frame, SlotIcon } from '@/game/icons/Img';
 import type { Piece } from '@/features/gear/model/gear';
 import { BtLabel, gameMains, gameSub, PieceName } from '@/features/gear/ui/pieceText';
 import { tourItem } from '@/tour/anchors';
@@ -13,9 +15,13 @@ import type { WornToken } from './wearing';
 export function WornCard({ ctx, p, tokens, pts, onClick, shown }: {
   ctx: Ctx; p: Piece; tokens: WornToken[]; pts: ReactNode; onClick?: () => void; shown: boolean;
 }) {
+  // a Legendary weapon or accessory — its own picture, as in game (owner 2026-10-25); an Epic or an unknown item — the slot's;
+  // armor — the set's icon before its name (PieceName)
+  const item = !isArmor(p.slot) && p.itemKey ? ctx.idx.ITEM[p.slot as GearKind]?.[p.itemKey] : undefined;
   const body = (
     <>
       <span className="wcard-h">
+        {isArmor(p.slot) ? null : item ? <Frame item={item} /> : <SlotIcon slot={p.slot} />}
         <span className="bgear-n"><PieceName ctx={ctx} p={p} noMain /></span>
         <BtLabel p={p} />
         {pts}

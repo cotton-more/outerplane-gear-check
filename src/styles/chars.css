@@ -169,6 +169,8 @@ html.xs .bgear-t { grid-row: 3; }
 .bgear-row.wcard { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 10px 9px; }
 .wcard-h { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .wcard-h .bgear-n { flex: 1; }
+.wcard-h .frame { width: 34px; height: 34px; border-radius: 6px; }
+.wcard-h .frame > img { width: 100%; height: 100%; } /* over .bgear-row img (22 px): the grade frame and the item fill the frame */
 .wcard-st { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
 .wst { display: contents; }
 .wst-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -754,6 +754,8 @@ old T1–T3 mark), otherwise the name alone; C3 — on a phone the same card, on
 Hard parts: values come from data, not typed — substat `step × LV` (exact), main `mainValues[slot][grade][line][tier]`;
 checked against the owner's screenshot (Epic Steel Sword: Attack 900, Health 36.0%, LV 2 Attack +8.0%, LV 3 Speed +9,
 LV 3 Crit DMG +12.0%). A percent main is a label with «%» or CHC/CHD; flat EFF/RES and SPD are points.
+Follow-up (owner, same day): a Legendary weapon or accessory shows its own picture (`Frame`) by the name, an Epic the
+slot's icon, armor the set's.
 Not built: storing the exact Breakthrough tier (would bring exact main numbers everywhere, at the cost of input В4 removed).
 Checks: `test/gear/gear.dom.test.ts` (main lines with and without a number, substat rows in the game's words); layout at
 411×564, 1280×800, 2056×1202, dark theme, with the owner's backup (Mystic Sage Ame, Demiurge Stella with T4 pieces).
