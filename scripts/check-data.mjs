@@ -185,9 +185,24 @@ const SET_BONUS = {
   Penetration: [11, 9, null, 20], Speed: [13, 12, null, 25], 'Critical Strike': [33, 22, 20, 15], Mitigation: [38, 27, 25, 20],
 };
 
+// 6★ substat per segment, as the game shows it (LV 1): key → [step, percent]. outerpedia 17ec57c renamed three stat ids and
+// update.py read CHD, DMG UP%, DMG RED% as flat (+80 instead of +8.0%) with no red check (HISTORY.md 0260) — a step that
+// drifts from this table is a new problem
+const SUB_STEP = {
+  ATK: [40, false], 'ATK%': [4, true], DEF: [40, false], 'DEF%': [4, true], HP: [73, false], 'HP%': [3, true], SPD: [3, false],
+  CHC: [3, true], CHD: [4, true], 'DMG UP%': [2, true], 'DMG RED%': [2.4, true], EFF: [2.5, true], RES: [2.5, true],
+};
+
 // «подписи» проблем в записи данных: сверяются старые с новыми, ошибка — только новая подпись
 function problems(D) {
   const out = new Set();
+  for (const s of D.substats) {
+    const want = SUB_STEP[s.key];
+    if (!want) out.add(`substat ${s.key}: not in SUB_STEP (scripts/check-data.mjs) — check its step in game and add it`);
+    else if (s.step !== want[0] || s.pct !== want[1]) {
+      out.add(`substat ${s.key}: ${s.step}${s.pct ? '%' : ''} per segment instead of ${want[0]}${want[1] ? '%' : ''} — did outerpedia rename its stat id? (update.py PCT_LABELS, STAT_ABBR)`);
+    }
+  }
   const sets = new Set(D.sets.map((s) => s.id));
   const items = { weapon: new Set(D.weapons.map((i) => i.key)), accessory: new Set(D.amulets.map((i) => i.key)) };
   const subKeys = new Set(D.substats.map((s) => s.key));

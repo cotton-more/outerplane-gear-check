@@ -177,6 +177,7 @@ html.xs .bgear-t { grid-row: 3; }
 .wst-v { text-align: right; font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
 .wst.main .wst-n { grid-column: 1 / 3; font-weight: 600; color: var(--ink); }
 .wst.main .wst-v { color: var(--ink); }
+.wst.main .wst-v.none { color: var(--ink-3); } /* no number below T4: only «%» marks a percent line */
 .wst.main + .wst:not(.main) > span { padding-top: 4px; } /* a little air between the main lines and the substats, as in game */
 .wst-lv { font: 600 11px var(--font-mono); color: var(--ink-3); }
 .wst.ok .wst-n, .wst.ok .wst-v { color: var(--keep); }

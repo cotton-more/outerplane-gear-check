@@ -626,8 +626,8 @@ describe('карточка персонажа', () => {
     // substats as «LV n · the game's name · value»
     const [weapon, helmet] = $$('.wcard');
     const mains = (c: Element) => [...c.querySelectorAll('.wst.main')].map((m) => [m.querySelector('.wst-n')!.textContent, m.querySelector('.wst-v')!.textContent]);
-    expect(mains(weapon)[0]).toEqual(['Attack', '']);
-    expect(mains(weapon).every(([, v]) => v === '')).toBe(true); // T? — no number
+    expect(mains(weapon)[0]).toEqual(['Attack', '']);         // T? — no number; flat
+    expect(mains(weapon).slice(1).every(([, v]) => v === '%' || v === '')).toBe(true); // a percent main keeps its «%»
     expect(mains(helmet)).toEqual([['Health', expect.stringMatching(/^\d+\.\d%$/)]]); // T4 — exact
     expect([...weapon.querySelectorAll('.wst:not(.main)')].map((r) => [...r.children].map((x) => x.textContent))).toEqual([
       ['LV 2', 'Crit Chance', '+6.0%'], ['LV 1', 'Speed', '+3'],

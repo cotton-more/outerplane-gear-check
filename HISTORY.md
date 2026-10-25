@@ -756,6 +756,13 @@ checked against the owner's screenshot (Epic Steel Sword: Attack 900, Health 36.
 LV 3 Crit DMG +12.0%). A percent main is a label with «%» or CHC/CHD; flat EFF/RES and SPD are points.
 Follow-up (owner, same day): a Legendary weapon or accessory shows its own picture (`Frame`) by the name, an Epic the
 slot's icon, armor the set's.
+Follow-up 2: below T4 a weapon's two main lines read «Attack» and «Attack» (ATK, ATK%) — a percent line keeps a grey «%»
+where the number would be. The same screenshot showed «LV 2 Crit DMG +80»: outerpedia 17ec57c (data PR #7) renamed three
+substat ids (critical_dmg_rate → critical_dmg, dmg_boost → damage_boost, dmg_reduce_rate → dmg_reduce) and update.py,
+which knew percent substats by those ids, published CHD, DMG UP%, DMG RED% as flat (step 40 / 20 / 24). Verdicts didn't
+move (scoring reads the mode, unchanged), only the game-style values (cards, «Надеть в игре», batch walk). Fix: percent by
+label (`PCT_LABELS`), both ids in `SET_BONUS_STAT`; `check-data.mjs` checks every substat's step against `SUB_STEP`, so a
+rename like this is red before publishing.
 Not built: storing the exact Breakthrough tier (would bring exact main numbers everywhere, at the cost of input В4 removed).
 Checks: `test/gear/gear.dom.test.ts` (main lines with and without a number, substat rows in the game's words); layout at
 411×564, 1280×800, 2056×1202, dark theme, with the owner's backup (Mystic Sage Ame, Demiurge Stella with T4 pieces).

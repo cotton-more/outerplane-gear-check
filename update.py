@@ -979,6 +979,10 @@ def build_families(kind: str, table: dict, families: list, pools: dict, passives
     return items, member_key
 
 
+# labels whose value is a percent though the game's mode is «flat» (in ‰: CHC 30 = 3.0%)
+PCT_LABELS = {"CHC", "CHD", "DMG UP%", "DMG RED%", "PEN%", "CDMG RED%"}
+
+
 def substat_pool(pools: dict, key: str = "106") -> list[dict]:
     """Пул сабстатов 6★: метка, значение за сегмент, максимум (6 сегментов)."""
     out = []
@@ -988,8 +992,9 @@ def substat_pool(pools: dict, key: str = "106") -> list[dict]:
         lab = option_label(o)
         if not lab:
             continue
-        pct = o.get("mode") == "rate" or o.get("stat") in (
-            "critical_rate", "critical_dmg_rate", "dmg_boost", "dmg_reduce_rate", "pierce_power_rate", "e_cri_dmg_reduce")
+        # percent by the label, not by outerpedia's stat name: 17ec57c (2026-10-25) renamed critical_dmg_rate → critical_dmg,
+        # dmg_boost → damage_boost, dmg_reduce_rate → dmg_reduce (STAT_ABBR knows both), and a name list read CHD as flat
+        pct = o.get("mode") == "rate" or lab in PCT_LABELS
         step = o["value"] / 10 if pct else o["value"]
         out.append({"key": lab, "step": step, "pct": pct, "stat": o["stat"], "mode": o.get("mode")})
     return out
@@ -1081,7 +1086,7 @@ def main_lines(src: dict, pools: dict, substats: list[dict], sets: list[dict], w
 # Прочие (Penetration, Counterattack, Mitigation, Lifesteal, Bursting, сеты-эффекты) — stat None: в статах не выразить.
 SET_BONUS_STAT = {
     "atk": ("ATK%", "rate"), "def": ("DEF%", "rate"), "hp": ("HP%", "rate"), "speed": ("SPD", "rate"),
-    "critical_rate": ("CHC", "add"), "critical_dmg_rate": ("CHD", "add"),
+    "critical_rate": ("CHC", "add"), "critical_dmg_rate": ("CHD", "add"), "critical_dmg": ("CHD", "add"),
     "buff_chance": ("EFF", "add"), "buff_resist": ("RES", "add"),
 }
 

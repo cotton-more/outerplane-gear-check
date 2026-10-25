@@ -28,7 +28,7 @@ export function WornCard({ ctx, p, tokens, pts, onClick, shown }: {
       </span>
       <span className="wcard-st">
         {gameMains(ctx, p).map((m) => (
-          <span key={m.key} className="wst main"><span className="wst-n">{m.name}</span><span className="wst-v">{m.value}</span></span>
+          <span key={m.key} className="wst main"><span className="wst-n">{m.name}</span>{m.value ? <span className="wst-v">{m.value}</span> : <span className="wst-v none">{m.pct ? '%' : ''}</span>}</span>
         ))}
         {tokens.map((k) => {
           const g = gameSub(ctx.idx, k.key, k.lit);
