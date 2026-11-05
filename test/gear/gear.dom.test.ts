@@ -1372,7 +1372,7 @@ describe('вердикт «статы + сеты»', () => {
     await click($('.vcard'));
     expect($('.vc-note')).toBeNull();
     expect(hlRow('Rin')?.querySelector('.vs.up')?.textContent).toMatch(/^\+[\d.]+$/);
-    expect(hlRow('Rin')?.querySelector('.hl-note')?.textContent).toMatch(/^instead of [\d.]+ pts$/);
+    expect(hlRow('Rin')?.querySelector('.hl-note')?.textContent).toMatch(/^instead of Attack helmet \([\d.]+ pts\)$/);
   });
 
   it('список вещей героя: слабый шлем рядом с сильным — «больше не нужна» и «Убрать у Caren»', async () => {

@@ -214,11 +214,11 @@ Every roster hero the piece makes at least 1 point stronger, plus those the verd
 worn", "Into an empty slot", "Set aside"; the group with the ★ (the verdict's pick) comes first. A group shows its three biggest
 gains, "N more ▸" opens the rest.
 
-- **+N** — how much stronger the hero gets with the piece; **instead of N pts** — what is worn now; **turns on / turns off** — a set
+- **+N** — how much stronger the hero gets with the piece; **instead of Ether Blade · HP% (N pts)** — what is worn now and what it gives; **turns on / turns off** — a set
   bonus; in "Set aside" **keep** or **reserve** instead of a number;
 - **Equip** / **Replace** / **Set aside** — the button on the row;
 - **Detailed** (on a computer; on a phone tap the row) — what the piece gives the hero: substats green if they count, yellow half,
-  grey if not; and what was in the slot;
+  grey if not; and what was in the slot: the worn piece's name and its substats;
 - for a weapon or accessory the **passive matters more than substats**: recommended against not recommended is better, stopgap
   against recommended is worse (rank decides before points).
 

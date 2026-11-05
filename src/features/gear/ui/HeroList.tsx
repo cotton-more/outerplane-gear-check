@@ -22,7 +22,7 @@ import { tour } from '@/tour/anchors';
 import { VsChip } from './VsChip';
 import { EquipButton } from './EquipButton';
 import { heroLines } from './outcomeText';
-import { usePieceLabel } from './pieceText';
+import { gradeTone, Painted, usePieceLabel } from './pieceText';
 
 // rows a name search shows
 const FOUND_CAP = 8;
@@ -49,9 +49,12 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
 }) {
   const t = useT();
   const idx = useIndex();
+  const label = usePieceLabel();
   const c = row.vs.c;
   const notes: string[] = [];
-  if (row.was && !row.stash) notes.push(t.fit.instead(t.fit.pts(row.was.pts)));
+  // the worn piece by name: in the brief note, or opening the detail's «было» row (owner 2026-11-05)
+  const wasName = row.was ? label(row.was.piece) : '';
+  if (row.was && !row.stash) notes.push(detail ? t.fit.instead(t.fit.pts(row.was.pts)) : t.fit.insteadOf(wasName, t.fit.pts(row.was.pts)));
   if (row.parts.on.length) notes.push(t.fit.rowOn(row.parts.on.map((p) => partText(idx, p)).join(', ')));
   if (row.parts.off.length) notes.push(t.fit.rowOff(row.parts.off.map((p) => partText(idx, p)).join(', ')));
   const act = row.action === 'stash' ? onStash : row.action ? onEquip : undefined;
@@ -69,7 +72,7 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
             <HeroFace c={c} />
             <span className="hl-nm"><b><HeroName c={c} /></b>{row.star && <span className="hl-star" role="img" aria-label={t.fit.pickStar}>★</span>}</span>
             {pill}
-            <span className="hl-note">{notes.join(' · ')}</span>
+            <span className="hl-note"><Painted text={notes.join(' · ')} what={detail ? '' : wasName} grade={row.was?.piece.grade ?? 'rare'} /></span>
           </button>
           {button}
         </div>
@@ -81,7 +84,7 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
             {row.star && <span className="hl-star" role="img" aria-label={t.fit.pickStar}>★</span>}
           </span>
           {pill}
-          <span className="hl-note">{notes.join(' · ')}</span>
+          <span className="hl-note"><Painted text={notes.join(' · ')} what={detail ? '' : wasName} grade={row.was?.piece.grade ?? 'rare'} /></span>
           {button}
         </div>
       )}
@@ -90,7 +93,7 @@ function HeroRowView({ row, item, detail, compact = false, legend = false, onTog
       )}
       {detail && row.was && (
         <div className="hl-d"><span className="hl-dk">{t.fit.wasLabel}</span>
-          <span className="bgear-t"><Subs parts={row.was.marks} lit={row.was.piece.lit} /><span className="hl-pts">{t.fit.wasPts(t.fit.pts(row.was.pts))}</span></span>
+          <span className="bgear-t"><span className={`hl-was gname ${gradeTone(row.was.piece.grade)}`}>{wasName}</span><Subs parts={row.was.marks} lit={row.was.piece.lit} /><span className="hl-pts">{t.fit.wasPts(t.fit.pts(row.was.pts))}</span></span>
         </div>
       )}
       {detail && legend && <p className="hl-legend muted small">{t.fit.chipLegend}</p>}
