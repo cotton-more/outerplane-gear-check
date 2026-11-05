@@ -280,6 +280,13 @@ describe('the walk read back from the device (E2b-1)', () => {
     expect(d.ticks).toEqual(['t1']);
   });
 
+  it('bt: with the btx marker the exact T is kept (T1–T3 too); without it a saved 0 is «T?», 4 stays', () => {
+    const w = (btx: boolean, bt: unknown) => readWalk({ ...saved({ 'a/helmet': { ...armor, bt } }), ...(btx ? { btx: true } : {}) }, 'hero:a', ctx.idx).entered['a/helmet'].bt;
+    expect([0, 1, 2, 3, 4].map((b) => w(true, b))).toEqual([0, 1, 2, 3, 4]);
+    expect([w(true, null), w(true, 9)]).toEqual([null, null]);
+    expect([0, 1, 2, 3, 4, undefined].map((b) => w(false, b))).toEqual([null, 1, 2, 3, 4, null]);
+  });
+
   it('a piece with a stat, set or item the data does not have is dropped; the rest of the walk stays', () => {
     const d = read({
       'a/helmet': armor, 'a/armor': { ...armor, slot: 'armor', subs: { SPD: 1, 'NEW%': 2 } }, 'a/gloves': { ...armor, slot: 'gloves', setId: '99999' },

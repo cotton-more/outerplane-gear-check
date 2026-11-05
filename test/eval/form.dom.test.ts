@@ -162,7 +162,7 @@ describe('Breakthrough T0–T4 на форме (HISTORY.md 0270)', () => {
     expect(rows.map((r) => [...r.children].map((c) => c.getAttribute('data-tour') ?? c.className.split(' ')[0]))).toEqual([['grade', 'pick'], ['item', 'bt']]);
   });
 
-  it('оружие: другой предмет снимает «T4», клавиша T — нажимает', async () => {
+  it('оружие: другой предмет снимает «T4»', async () => {
     const [a, b] = D.weapons.filter((i) => i.grade === 'unique' && i.star === 6);
     await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: a.key, main: a.mains[0], t4: true });
     expect(pressed()).toBe('T4');
@@ -170,9 +170,6 @@ describe('Breakthrough T0–T4 на форме (HISTORY.md 0270)', () => {
     await click($('[data-tour="item"]'));
     await click([...document.querySelectorAll<HTMLElement>('.drawer .item')].find((el) => el.textContent?.includes(b.name)));
     expect(pressed()).toBe('T0');
-
-    await key('t');
-    expect(pressed()).toBe('T1');
   });
 
   // Anarky: годная Pen-броня Epic T0 в пуле; новая Pen-броня Epic с мусором — материал её Breakthrough. С «T4» новая
@@ -229,23 +226,17 @@ describe('Breakthrough T0–T4 на форме (HISTORY.md 0270)', () => {
     expect(pressed()).toBe('T0');
   });
 
-  it('клавиша T (и Е на русской раскладке) — на ступень выше, после T4 снова T0; в поле ввода — нет', async () => {
+  it('the T / Е key does nothing now (no hotkey for Breakthrough)', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed') });
     await key('t');
-    expect(pressed()).toBe('T1');
     await key('е');
-    await key('t');
-    await key('t');
-    expect(pressed()).toBe('T4');
-    await key('t');
     expect(pressed()).toBe('T0');
+  });
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    document.body.append(input);
-    await act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true })); });
-
-    expect(pressed()).toBe('T0');
+  it('an unknown T (an old record) shows «T?» with no segment pressed on the form', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed'), bt: null });
+    expect(document.querySelector('[data-tour="bt"]')?.classList.contains('unknown')).toBe(true);
+    expect(pressed()).toBeFalsy();
   });
 
   it('a segment sets the exact T: «Надеть» input carries it (persisted as bt)', async () => {

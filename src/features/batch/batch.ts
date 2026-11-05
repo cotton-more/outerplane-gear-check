@@ -3,7 +3,7 @@
 import { GRADES, SLOT, isArmor, type Index } from '@/game/data';
 import type { GearKind, Grade, SlotId } from '@/game/data/types';
 import { MAX_LIT, MAX_SUBS, type Subs } from '@/game/item/subs';
-import { isBt, type ItemInput } from '@/game/item/item';
+import { legacyBt, type ItemInput } from '@/game/item/item';
 import type { Entry } from './plan';
 
 // An entry is one piece of the game list, in its order (MODEL.md §8): a piece as entered; «E» — a piece worn
@@ -119,7 +119,7 @@ function inputOf(raw: unknown, idx: Index, exact: boolean): ItemInput | null {
     subs[k] = v as number;
   }
   if (Object.keys(subs).length > MAX_SUBS) return null;
-  const bt = exact ? (isBt(r.bt) ? r.bt : null) : r.bt === 4 ? 4 : null;
+  const bt = legacyBt(r.bt, exact);
   return { slot, grade, setId, itemKey, main, unlisted: r.unlisted === true, subs, bt };
 }
 

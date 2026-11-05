@@ -5,12 +5,14 @@
 // the data doesn't have («Сделал» writes it into 'ogc.gear').
 import { GRADES, SLOTS, isArmor, type Index } from '@/game/data';
 import type { GearKind, Grade, SlotId } from '@/game/data/types';
-import type { ItemInput } from '@/game/item/item';
+import { legacyBt, type ItemInput } from '@/game/item/item';
 import { MAX_LIT, MAX_SUBS } from '@/game/item/subs';
 import { NO_DECISIONS, type Decisions } from './walk';
 
 export const TRADE_KEY = 'trade';
-export interface StoredWalk { v: 1; target: string; d: Decisions }
+// btx — the entered pieces' bt is exact (HISTORY.md 0270, like Batch/GearStore btx): without it a walk was saved by the
+// «T4» toggle, where bt 0 meant «below T4» and reads as unknown («T?»)
+export interface StoredWalk { v: 1; target: string; d: Decisions; btx?: true }
 // the walk's target: a hero or a team (members in their order)
 export const targetOf = (ids: readonly string[], team: boolean): string => `${team ? 'team' : 'hero'}:${ids.join(',')}`;
 
@@ -19,7 +21,7 @@ const str = (x: unknown): string | null => (typeof x === 'string' ? x : null);
 // the data has the piece's stats, and its set (armor) or item (weapon, accessory) when one is named
 const known = (idx: Index, i: ItemInput): boolean => Object.keys(i.subs).every((k) => idx.SUB[k])
   && (isArmor(i.slot) ? !i.setId || !!idx.SET[i.setId] : !i.itemKey || !!idx.ITEM[i.slot as GearKind][i.itemKey]);
-function input(x: unknown, idx?: Index): ItemInput | null {
+function input(x: unknown, idx: Index | undefined, exact: boolean): ItemInput | null {
   if (!x || typeof x !== 'object') return null;
   const r = x as Record<string, unknown>;
   if (!SLOTS.some((s) => s.id === r.slot) || !GRADES.includes(r.grade as Grade)) return null;
@@ -27,7 +29,7 @@ function input(x: unknown, idx?: Index): ItemInput | null {
     .filter((e): e is [string, number] => Number.isInteger(e[1]) && (e[1] as number) >= 1 && (e[1] as number) <= MAX_LIT).slice(0, MAX_SUBS);
   const i: ItemInput = {
     slot: r.slot as SlotId, grade: r.grade as Grade, setId: str(r.setId), itemKey: str(r.itemKey), main: str(r.main),
-    ...(r.unlisted === true ? { unlisted: true } : {}), subs: Object.fromEntries(subs), bt: r.bt === 4 ? 4 : 0,
+    ...(r.unlisted === true ? { unlisted: true } : {}), subs: Object.fromEntries(subs), bt: legacyBt(r.bt, exact),
   };
   return idx && !known(idx, i) ? null : i;
 }
@@ -38,7 +40,7 @@ export function readWalk(raw: unknown, target: string, idx?: Index): Decisions {
   if (w.v !== 1 || w.target !== target || !w.d || typeof w.d !== 'object') return NO_DECISIONS;
   const d = w.d as unknown as Record<string, unknown>;
   const entered = Object.fromEntries(Object.entries(d.entered && typeof d.entered === 'object' ? d.entered as Record<string, unknown> : {})
-    .flatMap(([k, x]) => { const i = input(x, idx); return i ? [[k, i]] : []; }));
+    .flatMap(([k, x]) => { const i = input(x, idx, w.btx === true); return i ? [[k, i]] : []; }));
   return { frozen: strings(d.frozen), kept: strings(d.kept), left: strings(d.left), entered, ticks: strings(d.ticks) };
 }
 // nothing decided — nothing to keep (the key is cleared)

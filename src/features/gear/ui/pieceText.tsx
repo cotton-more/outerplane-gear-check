@@ -94,16 +94,15 @@ export function Painted({ text, what, grade }: { text: string; what: string; gra
   return <>{text.slice(0, i)}<span className={`gname ${gradeTone(grade)}`}>{what}</span>{text.slice(i + what.length)}</>;
 }
 
-// Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
-export const btText = (_t: Texts, bt: Bt | null): string => (bt === null ? 'T?' : 'T' + bt);
+// Breakthrough вещи в строке: «T0»–«T4» — точная ступень; «T?» — не указана (старые записи)
+export const btText = (bt: Bt | null): string => (bt === null ? 'T?' : 'T' + bt);
 // Breakthrough отдельной меткой — во всех строках вещей одинаково (Р-3, решение владельца 2026-10-05): в карточке билда и на
 // «Надето» — своей колонкой (на телефоне — второй строкой), в списке вещей, плане обмена и «Переодеть» — первой во второй
 // строке (.bgear-meta), метки идут столбиком. У любой вещи, и у Epic оружия и аксессуара
 // t4Only — a batch row (Q4): the tier only at T4, nothing for T0–T3 or an unknown one
 export function BtLabel({ p, t4Only }: { p: Pick<Piece, 'slot' | 'grade' | 'bt'>; t4Only?: boolean }) {
-  const t = useT();
   if (t4Only && p.bt !== 4) return null;
-  return <span className="bgear-m">{btText(t, p.bt)}</span>;
+  return <span className="bgear-m">{btText(p.bt)}</span>;
 }
 
 // текст бонуса из данных: T4 — p2/p4, T0–T3 — p2base/p4base

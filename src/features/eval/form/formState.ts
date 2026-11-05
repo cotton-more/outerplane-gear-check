@@ -17,7 +17,7 @@ export interface FormState {
   main: string | null;
   unlisted: boolean;                // Legendary оружие/аксессуар, которого нет в списке: оценка по main stat
   subs: Subs;                       // уровень сабстата — сколько сегментов горит в игре, 1–6
-  bt: Bt;                           // Breakthrough T0–T4 (HISTORY.md 0270): a fresh drop is T0. Every piece has one
+  bt: Bt | null;                    // Breakthrough T0–T4 (HISTORY.md 0270): a fresh drop is T0; null — «T?», an old record loaded for editing
   expand: Record<string, boolean>;  // раскрытые секции вердикта
   // настройки оценки
   settings: Settings;
@@ -35,7 +35,6 @@ export type FormAction =
   | { type: 'replaceSub'; from: string; to: string }
   | { type: 'roll'; key: string; n: number }
   | { type: 'bt'; bt: Bt }
-  | { type: 'btNext' } // hotkey T: one step up, after T4 back to T0
   | { type: 'clearSubs' }
   | { type: 'reset'; slot?: SlotId; batch?: boolean } // slot — «Дальше: {слот}» after «Надеть» when a worn piece is entered; batch — after «В партию»
   | { type: 'load'; item: ItemInput }
@@ -65,14 +64,14 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       return { ...s, ...item, grade: a.grade, bt: 0, expand: {} };
     }
     case 'set': {
-      const bt: Bt = a.setId === s.setId ? s.bt : 0; // другой сет — другая вещь
+      const bt: Bt | null = a.setId === s.setId ? s.bt : 0; // другой сет — другая вещь
       return a.setId ? { ...s, setId: a.setId, bt, expand: {} } : { ...s, setId: null, bt };
     }
     case 'item': {
       // main, отмеченный до предмета, остаётся, если такой у предмета бывает. Другой предмет — другая вещь: Breakthrough — снова T0,
       // как при смене сета брони (main — нет: такая же для Breakthrough — тот же предмет при любом main)
       const main = s.main && a.mains?.includes(s.main) ? s.main : null;
-      const bt: Bt = !!a.itemKey && a.itemKey === s.itemKey ? s.bt : 0;
+      const bt: Bt | null = !!a.itemKey && a.itemKey === s.itemKey ? s.bt : 0;
       return a.itemKey ? { ...s, itemKey: a.itemKey, main, unlisted: false, bt, expand: {} } : { ...s, itemKey: null, main: null, unlisted: false, bt };
     }
     case 'unlisted':
@@ -110,8 +109,6 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       return withSubs(s, { ...s.subs, [a.key]: a.n });
     case 'bt':
       return isBt(a.bt) ? { ...s, bt: a.bt } : s;
-    case 'btNext':
-      return { ...s, bt: ((s.bt + 1) % 5) as Bt };
     case 'clearSubs':
       return { ...s, subs: {} };
     case 'reset':
@@ -126,9 +123,9 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       if (a.batch) return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null };
       return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null, main: s.main };
     case 'load': {
-      // Breakthrough of the input; unknown («T?», null — an old record) loads as T0, the form has no «T?»
+      // Breakthrough of the input as it is; unknown («T?», null — an old record) stays unknown, nothing is made up
       const { bt, ...item } = a.item;
-      return { ...s, ...EMPTY_ITEM, ...item, bt: isBt(bt) ? bt : 0 };
+      return { ...s, ...EMPTY_ITEM, ...item, bt: isBt(bt) ? bt : null };
     }
     case 'expand':
       return { ...s, expand: { ...s.expand, [a.key]: true } };
@@ -148,12 +145,12 @@ export const itemInput = (s: FormState): ItemInput => ({
 // --- недовведённый предмет: отдельный ключ 'ogc.item'. Android выгружает PWA из памяти, пока ты в игре, —
 // после перезапуска продолжаешь с того же места; «Сброс» очищает.
 
-// bt — only above T0 (T1–T4); t4: true — written before HISTORY.md 0270 (the «T4» toggle), read as T4. An old tab
-// doesn't know bt and simply won't read it
-export type PersistedItem = Pick<FormState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'> & { bt?: Bt; t4?: true };
+// bt — T1–T4 as is, null when unknown, no field = T0 (HISTORY.md 0270); t4: true — also written at T4 for an older cached
+// page (the «T4» toggle), and read as T4 when there is no bt
+export type PersistedItem = Pick<FormState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'> & { bt?: Bt | null; t4?: true };
 
 export const toPersistedItem = (s: FormState): PersistedItem =>
-  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs, ...(s.bt ? { bt: s.bt } : {}) });
+  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs, ...(s.bt === null ? { bt: null } : s.bt ? { bt: s.bt } : {}), ...(s.bt === 4 ? { t4: true as const } : {}) });
 
 // сохранённый предмет → состояние; всё, что не сходится с текущими данными, слотом и грейдом, отбрасывается
 export function restoreItem<S extends FormState>(s: S, saved: unknown, idx: Index): S {
@@ -180,7 +177,7 @@ export function restoreItem<S extends FormState>(s: S, saved: unknown, idx: Inde
   // вердикт мог бы отправить настоящую в разбор); сет, предмет и main остаются. Предел — наибольший из грейдов: ввод
   // набирает до 22 у Legendary, а смена грейда сумму не режет — такая Epic после перезапуска должна вернуться как была
   const fits = levelSum(subs) <= Math.max(...GRADES.map(levelCap));
-  return { ...s, setId, itemKey, main, unlisted, subs: fits ? subs : {}, bt: isBt(r.bt) ? r.bt : r.t4 === true ? 4 : 0 };
+  return { ...s, setId, itemKey, main, unlisted, subs: fits ? subs : {}, bt: isBt(r.bt) ? r.bt : r.bt === null ? null : r.t4 === true ? 4 : 0 };
 }
 
 // предмет из кода гильдии подходит к текущим данным: restoreItem ничего не отбросил.

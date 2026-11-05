@@ -19,6 +19,11 @@ export interface ItemInput {
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
 export const isBt = (v: unknown): v is Bt => v === 0 || v === 1 || v === 2 || v === 3 || v === 4;
+// A stored bt → Bt | null (HISTORY.md 0270). exact — the record was written with a «bt is exact» marker: a valid 0–4 is kept,
+// anything else is unknown (null). Not exact — written by the «T4» toggle era: 4 stays T4, 1–3 stay (old edits wrote them),
+// 0 meant «below T4» and anything else is unknown: null
+export const legacyBt = (raw: unknown, exact: boolean): Bt | null =>
+  exact ? (isBt(raw) ? raw : null) : raw === 4 || raw === 1 || raw === 2 || raw === 3 ? raw : null;
 
 // Breakthrough ведём у любой вещи («T4» на форме и в шторке, метка в строках): у брони — бонус сета и материал такой же
 // вещи, у оружия и аксессуара — материал такого же предмета (MODEL.md §4; у Epic — там же).

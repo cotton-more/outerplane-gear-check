@@ -32,7 +32,7 @@ export function useWalk(target: string | null, idx: Index, persist = true) {
   const [mark, setMark] = useState<Set<string> | null>(null); // the step keys before a recount
   useEffect(() => {
     if (!persist || !target) return;
-    storage.set(TRADE_KEY, emptyWalk(d) ? null : { v: 1, target, d });
+    storage.set(TRADE_KEY, emptyWalk(d) ? null : { v: 1, target, d, btx: true });
   }, [d, target, persist]);
   const set = (f: (x: Decisions) => Decisions) => setState((s) => ({ ...s, d: f(s.d) }));
   return {

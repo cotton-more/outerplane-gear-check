@@ -8,7 +8,7 @@ import type { Grade, SlotId } from '@/game/data/types';
 import { entryTo, normalizeStored, withMap, type Normalized } from '@/features/gear/model/fusion';
 import { EFF_MAX, gc, type GearStore, type Piece, type Worn } from '@/features/gear/model/gear';
 import type { EffCal } from '@/game/stat/eff';
-import type { Bt } from '@/game/item/item';
+import { legacyBt, type Bt } from '@/game/item/item';
 import { MAX_SUBS, type Subs, MAX_LIT } from '@/game/item/subs';
 
 // v1: вещи лежали в билдах («персонаж/билд» → слот → id)
@@ -168,11 +168,13 @@ export const needsExactBt = (raw: unknown): boolean => {
 function exactBt<T>(raw: T): T {
   if (!needsExactBt(raw)) return raw;
   const r = raw as Record<string, unknown>;
-  const pieces = Object.fromEntries(Object.entries(record(r.pieces)).map(([id, x]) => {
-    const p = record(x);
-    return [id, p.bt === 0 ? { ...p, bt: null } : x];
+  // a malformed pieces (not a plain object) stays as it is, so readsWhole still protects it
+  if (!r.pieces || typeof r.pieces !== 'object' || Array.isArray(r.pieces)) return { ...r, btx: true } as T;
+  const pieces = Object.fromEntries(Object.entries(r.pieces as Record<string, unknown>).map(([id, x]) => {
+    if (!x || typeof x !== 'object' || Array.isArray(x) || !('bt' in x)) return [id, x];
+    return [id, { ...x, bt: legacyBt((x as { bt: unknown }).bt, false) }];
   }));
-  return { ...r, btx: true, ...(r.pieces !== undefined ? { pieces } : {}) } as T;
+  return { ...r, btx: true, pieces } as T;
 }
 
 // из хранилища или кода: v1 — проверка v1 и перенос; v2 и v3 — проверка (у v2 — без полей прежней модели); иначе (мусор, более новая версия) — пусто.

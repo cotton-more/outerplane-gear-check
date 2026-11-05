@@ -149,13 +149,6 @@ describe('reducer: Breakthrough T0–T4 (HISTORY.md 0270)', () => {
     expect(reducer(helm(), { type: 'bt', bt: 7 as never }).bt).toBe(0);
   });
 
-  it('hotkey T steps up and wraps after T4', () => {
-    const seq: number[] = [];
-    let s = helm();
-    for (let i = 0; i < 6; i++) { s = reducer(s, { type: 'btNext' }); seq.push(s.bt); }
-    expect(seq).toEqual([1, 2, 3, 4, 0, 1]);
-  });
-
   it('grade, other set, slot and «Следующий» reset to T0; the same set keeps it', () => {
     const on = reducer(helm(), { type: 'bt', bt: 2 });
     expect([reducer(on, { type: 'grade', grade: 'rare' }).bt, reducer(on, { type: 'set', setId: '21' }).bt,
@@ -163,21 +156,31 @@ describe('reducer: Breakthrough T0–T4 (HISTORY.md 0270)', () => {
     expect(reducer(on, { type: 'set', setId: '13' }).bt).toBe(2);
   });
 
-  it('load takes the exact T; «T?» (null, no field) loads as T0', () => {
+  it('load takes the exact T; «T?» (null, no field) stays unknown, and a round trip does not make up T0', () => {
     const item = { slot: 'shoes' as const, grade: 'unique' as const, setId: '13', itemKey: null, main: null, unlisted: false, subs: { SPD: 2 } };
     for (const bt of [0, 1, 2, 3, 4] as const) {
       const s = reducer(helm(), { type: 'load', item: { ...item, bt } });
       expect([s.bt, itemInput(s).bt]).toEqual([bt, bt]);
     }
-    expect(reducer(reducer(helm(), { type: 'bt', bt: 3 }), { type: 'load', item: { ...item, bt: null } }).bt).toBe(0);
-    expect(reducer(reducer(helm(), { type: 'bt', bt: 3 }), { type: 'load', item }).bt).toBe(0);
+    expect(reducer(reducer(helm(), { type: 'bt', bt: 3 }), { type: 'load', item: { ...item, bt: null } }).bt).toBeNull();
+    expect(reducer(reducer(helm(), { type: 'bt', bt: 3 }), { type: 'load', item }).bt).toBeNull();
+    const unknown = reducer(helm(), { type: 'load', item: { ...item, bt: null } });
+    expect(itemInput(unknown).bt).toBeNull();
+    expect(reducer(unknown, { type: 'set', setId: unknown.setId }).bt).toBeNull();
+    expect(reducer(unknown, { type: 'reset' }).bt).toBe(0);
+    expect(reducer(unknown, { type: 'bt', bt: 2 }).bt).toBe(2);
+    const back = restoreItem(fresh({ slot: 'shoes', grade: 'unique' }), JSON.parse(JSON.stringify(toPersistedItem(unknown))), idx);
+    expect(back.bt).toBeNull();
+    expect(toPersistedItem(unknown).bt).toBeNull();
+    expect(toPersistedItem(reducer(helm(), { type: 'bt', bt: 4 }))).toMatchObject({ bt: 4, t4: true });
+    expect(toPersistedItem(reducer(helm(), { type: 'bt', bt: 3 }))).not.toHaveProperty('t4');
   });
 
   it('persisted item: T1–T4 round-trip as bt, T0 not written; old t4: true reads as T4', () => {
     for (const bt of [1, 2, 3, 4] as const) {
       const saved = JSON.parse(JSON.stringify(toPersistedItem(reducer(helm(), { type: 'bt', bt }))));
       expect(saved.bt).toBe(bt);
-      expect(saved).not.toHaveProperty('t4');
+      expect(saved.t4).toBe(bt === 4 ? true : undefined);
       expect(restoreItem(fresh({ slot: 'helmet', grade: 'unique' }), saved, idx).bt).toBe(bt);
     }
     expect(toPersistedItem(helm())).not.toHaveProperty('bt');
@@ -259,7 +262,7 @@ describe('reducer: «T4» (Breakthrough брони, В4; у Legendary оружи
   it('load — другая вещь: «T4» по её Breakthrough (bt 4), само поле bt в состояние не попадает', () => {
     const item = { slot: 'shoes' as const, grade: 'unique' as const, setId: '13', itemKey: null, main: null, unlisted: false, subs: { SPD: 2 } };
     const on = t4();
-    expect(reducer(on, { type: 'load', item }).bt).toBe(0);
+    expect(reducer(on, { type: 'load', item }).bt).toBeNull();
     expect(reducer(on, { type: 'load', item: { ...item, bt: 0 } }).bt).toBe(0);
     const t = reducer(fresh(), { type: 'load', item: { ...item, bt: 4 } });
     expect(t.bt).toBe(4);

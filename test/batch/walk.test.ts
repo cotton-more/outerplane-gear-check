@@ -44,10 +44,10 @@ describe('batch v2', () => {
   });
 
   // HISTORY.md 0270: a batch without btx — bt 0 was the «T4» toggle's «below T4» → «T?»; with btx T0–T4 are exact
-  it('batch bt: old 0 → null, 4 kept; a new batch keeps T0–T4 through JSON', () => {
+  it('batch bt: old 0 → null, 1–4 kept; a new batch keeps T0–T4 through JSON', () => {
     const at = (bt: unknown) => ({ ...inputOfPiece(weak('a')), bt });
     const old = restoreBatch({ v: 2, items: [0, 4, null, 2].map((bt) => ({ kind: 'piece', input: at(bt) })), skip: [], twin: [], done: [] }, idx)!;
-    expect(old.items.map((e) => (e.kind === 'piece' ? e.input.bt : 'x'))).toEqual([null, 4, null, null]);
+    expect(old.items.map((e) => (e.kind === 'piece' ? e.input.bt : 'x'))).toEqual([null, 4, null, 2]);
     const b = batchOf([0, 1, 2, 3, 4, null].map((bt) => ({ kind: 'piece', input: at(bt) }) as BatchEntry));
     const back = restoreBatch(JSON.parse(JSON.stringify(b)), idx)!;
     expect([back.btx, back.items.map((e) => (e.kind === 'piece' ? e.input.bt : 'x'))]).toEqual([true, [0, 1, 2, 3, 4, null]]);

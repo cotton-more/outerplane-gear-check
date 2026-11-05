@@ -10,7 +10,7 @@ import { buildKey } from '@/game/build/variants';
 import { normalizeFusion, switchFusion } from '@/features/gear/model/fusion';
 import { decodeGear, encodeGear, loadGear, newerGear, readsWhole, restoreGear, unfuseChar } from '@/features/gear/store/gearStore';
 import { planFor, planPut, poolView, putOn, stashOn, removeFrom, removeUndo, undoPut, undoRemove, undoWear, undoWearAll, wearAll, wearFromPool } from '@/features/gear/pool';
-import type { ItemInput } from '@/game/item/item';
+import { legacyBt, type ItemInput } from '@/game/item/item';
 import { pinOptions, profileOf } from '@/game/build/profile';
 import { poolInfo } from '@/features/gear/pool/info';
 
@@ -962,5 +962,29 @@ describe('звёзды героя — in-game ★1…6 (stars, transcend; PLAN 0
   it('перенос v1 звёзд не знает: поле из v1 не переносится', () => {
     const raw = v1([rec('p1', helmet({ CHC: 2 }))], { [K]: { helmet: 'p1' } }, { stars: { [CAREN]: 5 } });
     expect(restoreGear(raw, idx).stars).toBeUndefined();
+  });
+});
+
+describe('legacy Breakthrough readers (HISTORY.md 0270)', () => {
+  const p = (bt: unknown, id = 'p1') => ({ ...rec(id, helmet({ CHC: 2 })), bt });
+  const st = (extra: Record<string, unknown>) => ({ v: 3, seq: 1, pieces: { p1: p(0) }, pools: { [CAREN]: ['p1'] }, ...extra });
+
+  it('legacyBt: exact keeps 0–4 else null; not exact keeps 1–4, 0 and junk are null', () => {
+    const raws = [0, 1, 2, 3, 4, 9, null, '4', undefined];
+    expect(raws.map((r) => legacyBt(r, true))).toEqual([0, 1, 2, 3, 4, null, null, null, null]);
+    expect(raws.map((r) => legacyBt(r, false))).toEqual([null, 1, 2, 3, 4, null, null, null, null]);
+  });
+
+  it('a store without btx: bt 0 → null once, 1–4 kept; with btx a 0 is a real T0', () => {
+    const old = loadGear(st({ pieces: { p1: p(0), p2: p(2, 'p2'), p3: p(4, 'p3') }, pools: { [CAREN]: ['p1', 'p2', 'p3'] } }), idx, [CAREN]).st;
+    expect([old.pieces.p1.bt, old.pieces.p2.bt, old.pieces.p3.bt]).toEqual([null, 2, 4]);
+    expect(loadGear(st({ btx: true }), idx, [CAREN]).st.pieces.p1.bt).toBe(0);
+  });
+
+  it('a malformed pieces stays untouched by the bt migration, so readsWhole still refuses it', () => {
+    for (const pieces of [[1, 2], 'junk', 7]) {
+      expect(readsWhole(st({ pieces, pools: {} }), idx)).toBe(false);
+    }
+    expect(readsWhole(st({ pieces: { p1: p(2) } }), idx)).toBe(true);
   });
 });
