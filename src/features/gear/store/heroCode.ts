@@ -4,6 +4,8 @@
 // Набор — отпечатком имени билда и подписи (24 бита): узнаётся, даже если outerpedia переставила билды, и код не растёт
 // от длины имени (≤ 64 знаков). Версия 2 (stat-sets PLAN Д11); код версии 1 нёс на том же месте выбранный билд — поле
 // читается и пропускается, карточка — без набора.
+// Version 3 (HISTORY.md 0270): the same bits, a piece's T0 is a real T0; versions 1–2 wrote T0 for the «T4» toggle's
+// «below T4» — read as «T?» (null).
 import { SLOTS, type Index } from '@/game/data';
 import type { SlotId } from '@/game/data/types';
 import { pinOptions } from '@/game/build/profile';
@@ -12,7 +14,7 @@ import type { Piece } from '@/features/gear/model/gear';
 import { readBody, writeBody, type PieceBody } from './pieceCode';
 
 export const HERO_PREFIX = 'OGH';
-const VERSION = 2;
+const VERSION = 3;
 // герой: обычный (2000000 + n), Core Fusion (2700000 + n) или любой номер как есть
 const BASES = [2000000, 2700000, 0];
 const HASH_BITS = 24;
@@ -61,17 +63,17 @@ export function decodeHero(code: string): HeroShare | 'newer' | 'broken' {
     const r = new BitReader(bits);
     const v = r.get(4);
     if (v > VERSION) return 'newer';
-    if (v !== VERSION && v !== 1) return 'broken';
+    if (v < 1) return 'broken';
     const base = BASES[r.get(2)];
     if (base === undefined) return 'broken';
     const heroId = String(base + r.vlq(7));
     const slots: HeroShare['slots'] = {};
-    for (const { id: slot } of SLOTS) if (r.get(1)) slots[slot] = readBody(r, slot);
+    for (const { id: slot } of SLOTS) if (r.get(1)) slots[slot] = readBody(r, slot, v > 2);
     // поле набора: 0 — нет (v1), 1 — «По статам» (не закреплён), 2 — отпечаток; у v1 — выбранного билда, пропускаем
     const k = r.get(2);
     const hash = k === 2 ? r.get(HASH_BITS) : null;
     if (k === 3 || r.left) return 'broken';
-    return { heroId, slots, pin: v === VERSION ? hash : null };
+    return { heroId, slots, pin: v > 1 ? hash : null };
   } catch {
     return 'broken';
   }

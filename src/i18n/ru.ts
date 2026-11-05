@@ -543,12 +543,11 @@ export const ru = {
     allDressed: 'Все одеты полностью — у каждого 6/6.',
     gearTile: (n: number) => `надето ${n} из 6`,
     pieceTitle: (slot: string, name: string) => `${slot} · ${name}`,
-    btChip: 'T4',
-    btAria: 'Вещь на Breakthrough T4',
-    btTitle: 'Вещь уже на T4 — бонус сета посчитается как у T4',
-    // у Legendary оружия и аксессуара сета нет — «T4» только про материал такого же предмета (решение владельца 2026-10-01/02)
-    btTitleItem: 'Вещь уже на T4 — такие же ей в Breakthrough больше не нужны',
-    btBelow: 'T0–T3',
+    btGroup: 'Breakthrough',
+    btUnknown: 'Breakthrough не указан — нажми настоящий T',
+    btTitle: 'Breakthrough T0–T4 — бонус сета считается с T4',
+    // у Legendary оружия и аксессуара сета нет — подсказка только про материал такого же предмета (решение владельца 2026-10-01/02)
+    btTitleItem: 'Breakthrough T0–T4 — на T4 такие же больше не нужны',
     withT4: ' · T4',
     pieceEditNote: (name: string) => `Сделал в игре Reforge или Breakthrough — поправь сегменты и «T4»: билды соберутся заново. Transistone сменил стат — введи вещь заново и «Надеть», а эту — «Убрать у ${name}».`,
     // кнопка уровня в карточке вещи — для диктора: «5 сегментов» (жёлтых и оранжевых больше нет, Н1)

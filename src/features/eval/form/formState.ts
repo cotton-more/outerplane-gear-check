@@ -6,7 +6,7 @@ import { epicMains, legendMains } from '@/game/build/builds';
 import { itemMains } from '@/game/item/mains';
 import type { Settings } from '@/game/context';
 import { MAX_SUBS, levelCap, levelSum, withinCap, type Subs, MAX_LIT } from '@/game/item/subs';
-import type { ItemInput } from '@/game/item/item';
+import { isBt, type Bt, type ItemInput } from '@/game/item/item';
 
 export interface FormState {
   // предмет на панели оценки
@@ -17,7 +17,7 @@ export interface FormState {
   main: string | null;
   unlisted: boolean;                // Legendary оружие/аксессуар, которого нет в списке: оценка по main stat
   subs: Subs;                       // уровень сабстата — сколько сегментов горит в игре, 1–6
-  t4: boolean;                      // Breakthrough T4; не нажата — ниже T4 (T0–T3). Есть у любой вещи
+  bt: Bt;                           // Breakthrough T0–T4 (HISTORY.md 0270): a fresh drop is T0. Every piece has one
   expand: Record<string, boolean>;  // раскрытые секции вердикта
   // настройки оценки
   settings: Settings;
@@ -34,7 +34,8 @@ export type FormAction =
   | { type: 'sub'; key: string; n?: number } // n — уровень нового сабстата (окно уровня после сетки); нет — 1
   | { type: 'replaceSub'; from: string; to: string }
   | { type: 'roll'; key: string; n: number }
-  | { type: 't4' }
+  | { type: 'bt'; bt: Bt }
+  | { type: 'btNext' } // hotkey T: one step up, after T4 back to T0
   | { type: 'clearSubs' }
   | { type: 'reset'; slot?: SlotId; batch?: boolean } // slot — «Дальше: {слот}» after «Надеть» when a worn piece is entered; batch — after «В партию»
   | { type: 'load'; item: ItemInput }
@@ -42,9 +43,9 @@ export type FormAction =
   | { type: 'settings'; patch: Partial<Settings> }
   | { type: 'settingsOpen'; open: boolean };
 
-// «T4» — у каждой вещи своя: сбрасывается вместе с предметом (слот, «Следующий», load), а ещё при смене грейда и того,
+// Breakthrough (T0–T4) — у каждой вещи своя: сбрасывается вместе с предметом (слот, «Следующий», load), а ещё при смене грейда и того,
 // что делает вещь «такой же» для Breakthrough (game/item sameForBt, features/gear/verdict): сета брони, предмета оружия и аксессуара
-export const EMPTY_ITEM = { setId: null, itemKey: null, main: null, unlisted: false, subs: {}, t4: false, expand: {} };
+export const EMPTY_ITEM = { setId: null, itemKey: null, main: null, unlisted: false, subs: {}, bt: 0 as Bt, expand: {} };
 
 // правка сабстатов, которая поднимает сумму уровней выше предела (subs levelCap), не срабатывает
 const withSubs = <S extends FormState>(s: S, subs: Subs): S => (withinCap(s.grade, s.subs, subs) ? { ...s, subs } : s);
@@ -61,22 +62,22 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       // и аксессуаров те же main на обоих грейдах, а на форме он отмечен рядом с грейдом или в сетке
       // Сумма выше предела нового грейда (Legendary → Epic) остаётся: предел запрещает только рост
       const item = isArmor(s.slot) ? {} : { itemKey: null, unlisted: false };
-      return { ...s, ...item, grade: a.grade, t4: false, expand: {} };
+      return { ...s, ...item, grade: a.grade, bt: 0, expand: {} };
     }
     case 'set': {
-      const t4 = s.t4 && a.setId === s.setId; // другой сет — другая вещь
-      return a.setId ? { ...s, setId: a.setId, t4, expand: {} } : { ...s, setId: null, t4 };
+      const bt: Bt = a.setId === s.setId ? s.bt : 0; // другой сет — другая вещь
+      return a.setId ? { ...s, setId: a.setId, bt, expand: {} } : { ...s, setId: null, bt };
     }
     case 'item': {
-      // main, отмеченный до предмета, остаётся, если такой у предмета бывает. Другой предмет — другая вещь: «T4» снимается,
+      // main, отмеченный до предмета, остаётся, если такой у предмета бывает. Другой предмет — другая вещь: Breakthrough — снова T0,
       // как при смене сета брони (main — нет: такая же для Breakthrough — тот же предмет при любом main)
       const main = s.main && a.mains?.includes(s.main) ? s.main : null;
-      const t4 = s.t4 && !!a.itemKey && a.itemKey === s.itemKey;
-      return a.itemKey ? { ...s, itemKey: a.itemKey, main, unlisted: false, t4, expand: {} } : { ...s, itemKey: null, main: null, unlisted: false, t4 };
+      const bt: Bt = !!a.itemKey && a.itemKey === s.itemKey ? s.bt : 0;
+      return a.itemKey ? { ...s, itemKey: a.itemKey, main, unlisted: false, bt, expand: {} } : { ...s, itemKey: null, main: null, unlisted: false, bt };
     }
     case 'unlisted':
       // main «нет в списке» — любой из слота; был предмет из списка — это другая вещь
-      return { ...s, itemKey: null, unlisted: true, t4: s.t4 && s.unlisted, expand: {} };
+      return { ...s, itemKey: null, unlisted: true, bt: s.unlisted ? s.bt : 0, expand: {} };
     case 'main': {
       const main = s.main === a.main ? null : a.main;
       const subs = { ...s.subs };
@@ -107,8 +108,10 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       // уровень 1–6: сколько сегментов горит в игре (жёлтые и оранжевые вместе)
       if (!(a.key in s.subs) || !Number.isInteger(a.n) || a.n < 1 || a.n > MAX_LIT) return s;
       return withSubs(s, { ...s.subs, [a.key]: a.n });
-    case 't4':
-      return { ...s, t4: !s.t4 };
+    case 'bt':
+      return isBt(a.bt) ? { ...s, bt: a.bt } : s;
+    case 'btNext':
+      return { ...s, bt: ((s.bt + 1) % 5) as Bt };
     case 'clearSubs':
       return { ...s, subs: {} };
     case 'reset':
@@ -123,9 +126,9 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
       if (a.batch) return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null };
       return { ...s, ...EMPTY_ITEM, setId: isArmor(s.slot) ? s.setId : null, main: s.main };
     case 'load': {
-      // Breakthrough входа — в «T4»; само поле bt в состояние не попадает
+      // Breakthrough of the input; unknown («T?», null — an old record) loads as T0, the form has no «T?»
       const { bt, ...item } = a.item;
-      return { ...s, ...EMPTY_ITEM, ...item, t4: bt === 4 };
+      return { ...s, ...EMPTY_ITEM, ...item, bt: isBt(bt) ? bt : 0 };
     }
     case 'expand':
       return { ...s, expand: { ...s.expand, [a.key]: true } };
@@ -136,20 +139,21 @@ export function formReducer<S extends FormState>(s: S, a: FormAction): S {
   }
 }
 
-// вещь с формы — с Breakthrough: «T4» → 4, иначе ниже T4 (0, В4)
+// вещь с формы — с её Breakthrough T0–T4
 export const itemInput = (s: FormState): ItemInput => ({
   slot: s.slot, grade: s.grade, setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs,
-  bt: s.t4 ? 4 : 0,
+  bt: s.bt,
 });
 
 // --- недовведённый предмет: отдельный ключ 'ogc.item'. Android выгружает PWA из памяти, пока ты в игре, —
 // после перезапуска продолжаешь с того же места; «Сброс» очищает.
 
-// t4 — только нажатая: старая вкладка его не знает и просто не прочтёт
-export type PersistedItem = Pick<FormState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'> & { t4?: true };
+// bt — only above T0 (T1–T4); t4: true — written before HISTORY.md 0270 (the «T4» toggle), read as T4. An old tab
+// doesn't know bt and simply won't read it
+export type PersistedItem = Pick<FormState, 'setId' | 'itemKey' | 'main' | 'unlisted' | 'subs'> & { bt?: Bt; t4?: true };
 
 export const toPersistedItem = (s: FormState): PersistedItem =>
-  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs, ...(s.t4 ? { t4: true as const } : {}) });
+  ({ setId: s.setId, itemKey: s.itemKey, main: s.main, unlisted: s.unlisted, subs: s.subs, ...(s.bt ? { bt: s.bt } : {}) });
 
 // сохранённый предмет → состояние; всё, что не сходится с текущими данными, слотом и грейдом, отбрасывается
 export function restoreItem<S extends FormState>(s: S, saved: unknown, idx: Index): S {
@@ -176,7 +180,7 @@ export function restoreItem<S extends FormState>(s: S, saved: unknown, idx: Inde
   // вердикт мог бы отправить настоящую в разбор); сет, предмет и main остаются. Предел — наибольший из грейдов: ввод
   // набирает до 22 у Legendary, а смена грейда сумму не режет — такая Epic после перезапуска должна вернуться как была
   const fits = levelSum(subs) <= Math.max(...GRADES.map(levelCap));
-  return { ...s, setId, itemKey, main, unlisted, subs: fits ? subs : {}, t4: r.t4 === true };
+  return { ...s, setId, itemKey, main, unlisted, subs: fits ? subs : {}, bt: isBt(r.bt) ? r.bt : r.t4 === true ? 4 : 0 };
 }
 
 // предмет из кода гильдии подходит к текущим данным: restoreItem ничего не отбросил.

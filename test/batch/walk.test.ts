@@ -43,6 +43,20 @@ describe('batch v2', () => {
     expect(c).not.toHaveProperty('choice');                     // the old «Спорно» choice is dropped (2026-10-10)
   });
 
+  // HISTORY.md 0270: a batch without btx — bt 0 was the «T4» toggle's «below T4» → «T?»; with btx T0–T4 are exact
+  it('batch bt: old 0 → null, 4 kept; a new batch keeps T0–T4 through JSON', () => {
+    const at = (bt: unknown) => ({ ...inputOfPiece(weak('a')), bt });
+    const old = restoreBatch({ v: 2, items: [0, 4, null, 2].map((bt) => ({ kind: 'piece', input: at(bt) })), skip: [], twin: [], done: [] }, idx)!;
+    expect(old.items.map((e) => (e.kind === 'piece' ? e.input.bt : 'x'))).toEqual([null, 4, null, null]);
+    const b = batchOf([0, 1, 2, 3, 4, null].map((bt) => ({ kind: 'piece', input: at(bt) }) as BatchEntry));
+    const back = restoreBatch(JSON.parse(JSON.stringify(b)), idx)!;
+    expect([back.btx, back.items.map((e) => (e.kind === 'piece' ? e.input.bt : 'x'))]).toEqual([true, [0, 1, 2, 3, 4, null]]);
+  });
+
+  it('inputOfPiece passes the exact T through', () => {
+    for (const bt of [0, 1, 2, 3, 4, null] as const) expect(inputOfPiece({ ...weak('a'), bt }).bt).toBe(bt);
+  });
+
   it('entries of the plan carry their game positions; E and 🔒 are not planned', () => {
     const b = batchOf([{ kind: 'worn', c: char('Caren').id, slot: 'helmet' }, piece(weak('a')), { kind: 'lock', slot: 'helmet' }, piece(good('g'))]);
     expect(entriesOf(b).map((e) => e.n)).toEqual([2, 4]);

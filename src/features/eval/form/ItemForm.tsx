@@ -86,7 +86,7 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
       placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at={at('item' as const)} need={need === 'item'} />
   );
   const mainField = <PickField value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at={at('pick' as const)} need={need === 'main'} />;
-  const btChip = <BtChip on={s.t4} armor={armor} anchor={anchors} onToggle={() => dispatch({ type: 't4' })} />;
+  const btChip = <BtChip value={s.bt} armor={armor} anchor={anchors} onPick={(bt) => dispatch({ type: 'bt', bt })} />;
 
   return (
     <>
@@ -102,13 +102,13 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
         </div>
         {armor
           ? <>
-            <PickField value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet}
+            <PickField className="pick-set" value={set && <><SetIcon set={set} /><span className="pick-t">{set.short}<span className="pick-sfx"> Set</span></span></>} placeholder={t.ui.pickSet}
               onClick={() => (lock?.set && s.setId === lock.set ? lock.explain() : setOpen('set'))} locked={!!lock?.set && s.setId === lock.set} at={at('pick' as const)} need={need === 'set'} />
             {btChip}
           </>
           : <>
             {mainField}
-            {/* у Epic предмета на форме нет — «T4» рядом с main */}
+            {/* у Epic предмета на форме нет — Breakthrough рядом с main */}
             {epic && btChip}
           </>}
       </div>

@@ -54,7 +54,9 @@ export function writeBody(w: BitWriter, p: PieceBody): void {
   w.put(n, SUBS_BITS);
 }
 
-export function readBody(r: BitReader, slot: SlotId): Omit<Piece, 'id' | 'at'> {
+// exact — the code's bt is exact (HISTORY.md 0270: OGC-GEAR10+, hero code v3+); an older code wrote T0 for the «T4»
+// toggle's «below T4», read as null («T?»)
+export function readBody(r: BitReader, slot: SlotId, exact: boolean): Omit<Piece, 'id' | 'at'> {
   const grade = GRADES[r.get(1)];
   const armor = isArmor(slot);
   let setId: string | null = null, itemKey: string | null = null, main: string | null = null, unlisted = false;
@@ -84,6 +86,6 @@ export function readBody(r: BitReader, slot: SlotId): Omit<Piece, 'id' | 'at'> {
     lit[k] = ((v - 1) % LIT) + 1;
   }
   if (n > 5) throw new RangeError('bt');
-  const bt = n === 0 ? null : ((n - 1) as Bt);
+  const bt = n === 0 || (n === 1 && !exact) ? null : ((n - 1) as Bt);
   return { slot, grade, setId, itemKey, main, ...(unlisted ? { unlisted: true } : {}), yellow: yellowOf(lit), lit, bt };
 }

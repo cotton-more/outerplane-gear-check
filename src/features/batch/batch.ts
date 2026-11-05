@@ -3,7 +3,7 @@
 import { GRADES, SLOT, isArmor, type Index } from '@/game/data';
 import type { GearKind, Grade, SlotId } from '@/game/data/types';
 import { MAX_LIT, MAX_SUBS, type Subs } from '@/game/item/subs';
-import type { ItemInput } from '@/game/item/item';
+import { isBt, type ItemInput } from '@/game/item/item';
 import type { Entry } from './plan';
 
 // An entry is one piece of the game list, in its order (MODEL.md §8): a piece as entered; «E» — a piece worn
@@ -15,8 +15,10 @@ export type BatchEntry =
   | { kind: 'worn'; c: string; slot: SlotId }
   | { kind: 'lock'; slot: SlotId; input?: ItemInput };
 // done — walk steps ticked ✓. A saved «choice» (the «Спорно» lines' «Отложить / Разобрать», gone 2026-10-10) is ignored
-export interface Batch { v: 2; items: BatchEntry[]; skip: string[]; twin: number[]; done: string[] }
-export const NEW_BATCH: Batch = { v: 2, items: [], skip: [], twin: [], done: [] };
+// btx — the entries' bt is exact (HISTORY.md 0270, like GearStore btx): without it bt 0 was the «T4» toggle's «below T4»,
+// read as null («T?»)
+export interface Batch { v: 2; items: BatchEntry[]; skip: string[]; twin: number[]; done: string[]; btx?: true }
+export const NEW_BATCH: Batch = { v: 2, items: [], skip: [], twin: [], done: [], btx: true };
 
 // the pieces the plan computes, with their positions; E and 🔒 entries are in the store already (worn, reserves)
 export const entriesOf = (b: Batch): Entry[] => b.items.flatMap((e, i) => (e.kind === 'piece' ? [{ n: i + 1, input: e.input, twin: b.twin.includes(i + 1) }] : []));
@@ -99,7 +101,7 @@ export const toggleDone = (b: Batch, step: string): Batch =>
   ({ ...b, done: b.done.includes(step) ? b.done.filter((x) => x !== step) : [...b.done, step] });
 
 // a saved entry → the piece, or null when it doesn't fit the current data (a set, item or stat this data doesn't have)
-function inputOf(raw: unknown, idx: Index): ItemInput | null {
+function inputOf(raw: unknown, idx: Index, exact: boolean): ItemInput | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const slot = r.slot as SlotId, grade = r.grade as Grade;
@@ -117,7 +119,7 @@ function inputOf(raw: unknown, idx: Index): ItemInput | null {
     subs[k] = v as number;
   }
   if (Object.keys(subs).length > MAX_SUBS) return null;
-  const bt = r.bt === 4 ? 4 : r.bt === null ? null : 0;
+  const bt = exact ? (isBt(r.bt) ? r.bt : null) : r.bt === 4 ? 4 : null;
   return { slot, grade, setId, itemKey, main, unlisted: r.unlisted === true, subs, bt };
 }
 
@@ -134,7 +136,8 @@ export function restoreBatch(raw: unknown, idx: Index): Batch | null {
     done: v === 2 ? strings(r.done) : [],
   };
   const raws = Array.isArray(r.items) ? r.items : [];
-  const kept = raws.map((x) => (v === 1 ? pieceOf(inputOf(x, idx)) : entryOfRaw(x, idx)));
+  const exact = r.btx === true;
+  const kept = raws.map((x) => (v === 1 ? pieceOf(inputOf(x, idx, exact)) : entryOfRaw(x, idx, exact)));
   b = { ...b, items: kept.map((x) => x ?? { kind: 'lock', slot: 'helmet' }) };
   // drop the broken ones from the end, so the numbers of the others shift like a removal
   for (let n = kept.length; n >= 1; n--) if (!kept[n - 1]) b = removeItem(b, n);
@@ -143,14 +146,14 @@ export function restoreBatch(raw: unknown, idx: Index): Batch | null {
   return b;
 }
 const pieceOf = (input: ItemInput | null): BatchEntry | null => (input ? { kind: 'piece', input } : null);
-function entryOfRaw(raw: unknown, idx: Index): BatchEntry | null {
+function entryOfRaw(raw: unknown, idx: Index, exact: boolean): BatchEntry | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const slot = r.slot as SlotId;
-  if (r.kind === 'piece') return pieceOf(inputOf(r.input, idx));
+  if (r.kind === 'piece') return pieceOf(inputOf(r.input, idx, exact));
   if (typeof r.slot !== 'string' || !SLOT[slot]) return null;
   if (r.kind === 'lock') {
-    const input = r.input === undefined ? null : inputOf(r.input, idx);
+    const input = r.input === undefined ? null : inputOf(r.input, idx, exact);
     return input && input.slot === slot ? { kind: 'lock', slot, input } : { kind: 'lock', slot };
   }
   if (r.kind === 'worn' && typeof r.c === 'string' && idx.CHAR[r.c]) return { kind: 'worn', c: r.c, slot };

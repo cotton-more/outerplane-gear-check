@@ -11,13 +11,14 @@ export interface ItemInput {
   main: string | null;
   unlisted?: boolean; // Legendary оружие/аксессуар, которого нет в данных outerpedia
   subs: Subs;
-  // Breakthrough с формы (у любой вещи): 4 — «T4», 0 — ниже T4 (T0–T3). Поля нет или null — не указан (старые входы,
-  // эталон, Epic оружие и аксессуар до 0060), считается ниже T4. Вердикт evaluate его не читает — только пул
+  // Breakthrough с формы (у любой вещи): T0–T4 exactly (HISTORY.md 0270; before it 0 meant «below T4»). Поля нет или
+  // null — не указан (старые входы, эталон, Epic оружие и аксессуар до 0060), считается ниже T4. Вердикт evaluate его не читает — только пул
   // (сборка и исходы — у брони, материал — у всех)
-  bt?: 0 | 4 | null;
+  bt?: Bt | null;
 }
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
+export const isBt = (v: unknown): v is Bt => v === 0 || v === 1 || v === 2 || v === 3 || v === 4;
 
 // Breakthrough ведём у любой вещи («T4» на форме и в шторке, метка в строках): у брони — бонус сета и материал такой же
 // вещи, у оружия и аксессуара — материал такого же предмета (MODEL.md §4; у Epic — там же).

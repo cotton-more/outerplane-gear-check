@@ -1,4 +1,4 @@
-// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): ростер и экипировка — «OGC-GEAR9-» и base62 с CRC-32
+// Резервная копия одним кодом (DEVELOPMENT.md "Storage and URLs"): ростер и экипировка — «OGC-GEAR10-» и base62 с CRC-32
 // (shared/bits). Номер после OGC-GEAR больше 2: выпущенные версии читают такой код как «новее — обнови страницу».
 // В коде — весь ростер (и герои, которых нет в данных), у каждого героя с вещами — пул в прежнем порядке (вещь —
 // запись SPEC 1 и дата) и надетое, у каждого закрепившего — закреплённый набор (stat-sets PLAN Д11): по имени билда и
@@ -9,6 +9,8 @@
 // From OGC-GEAR7 — the typed stat-screen EFF (HISTORY.md 0200-boss Q3): a flag and two 14-bit numbers (typed, the app's EFF then), after the stars.
 // From OGC-GEAR9 — parked pieces (HISTORY.md 0200-boss E2b): after a hero's worn slots a flag, then one bit per pool piece.
 // From OGC-GEAR8 — the hero's level (HISTORY.md 0205): a flag and 1 bit (0 — 100, 1 — 120), after the EFF; a hero with only a level is in the list too.
+// From OGC-GEAR10 — a piece's Breakthrough is exact (HISTORY.md 0270): T0 is a real T0. The bits are the same; up to OGC-GEAR9 the «T4» toggle
+// wrote T0 for «below T4, exact unknown» — read as «T?» (null).
 // Не переносится (решение 3): незнакомые поля, номера вещей (выдаются заново), порядок ростера, отдельные «жёлтые».
 // Общая запись (вещь в пулах двух героев) становится двумя копиями.
 // OGC-GEAR8 (no parking), OGC-GEAR7 (no level), OGC-GEAR6 (no EFF), OGC-GEAR5 (no stars), OGC-GEAR4 (no N) and OGC-GEAR3 (before pinning) still read: выбранный билд, «Не отдавать» и «Собираю / Не собираю» в нём пропускаются.
@@ -21,7 +23,7 @@ import { readGearCode } from '@/features/gear/store/gearStore';
 import { heroCodeIn } from '@/features/gear/store/heroCode';
 import { parseRoster } from './rosterCode';
 
-const VERSION = 9;
+const VERSION = 10;
 const CRIT_BITS = 7; // N 0…100
 const STAR_BITS = 3; // ★ 1…6
 const EFF_BITS = 14; // EFF 1…EFF_MAX (9999)
@@ -167,7 +169,7 @@ function read(r: BitReader, v: number): Backup {
     return s;
   };
   const name = () => word(names, nameBits);
-  const st: GearStore = { v: 3, seq: 0, pieces: {}, pools: {} };
+  const st: GearStore = { v: 3, seq: 0, pieces: {}, pools: {}, btx: true }; // bt already read by the code's version (readBody exact)
   const roster: string[] = [];
   const worn: Record<string, Worn> = {}, pin: Record<string, string> = {}, crit: Record<string, number> = {}, stars: Record<string, number> = {};
   const eff: Record<string, EffCal> = {}, lv: Record<string, 100 | 120> = {};
@@ -177,7 +179,7 @@ function read(r: BitReader, v: number): Backup {
     const pool: Piece[] = [];
     for (let n = r.get(1) ? r.vlq(3) + 1 : 0; n > 0; n--) {
       const slot = readSlot(r);
-      const body = readBody(r, slot);
+      const body = readBody(r, slot, v > 9);
       const day = days[r.get(dayBits)];
       if (day === undefined) throw new RangeError('day');
       pool.push({ id: 'p' + ++st.seq, ...body, at: dateOf(day) });
@@ -234,7 +236,7 @@ function read(r: BitReader, v: number): Backup {
   };
 }
 
-// Что вставили в поле «Резервная копия» (SPEC 2.4): код копии (OGC-GEAR3 … OGC-GEAR9); старый код экипировки (OGC-GEAR1, OGC-GEAR2 — как
+// Что вставили в поле «Резервная копия» (SPEC 2.4): код копии (OGC-GEAR3 … OGC-GEAR10); старый код экипировки (OGC-GEAR1, OGC-GEAR2 — как
 // есть, проверит loadGear); старый код ростера (slug или id через пробел, запятую, точку с запятой) — узнанные герои;
 // код новее; новый код, но повреждён; код героя или ссылка показа; прочее
 export type Pasted =

@@ -123,27 +123,29 @@ describe('свежая Epic с тремя сабстатами — без Reforg
 
 // «T4» рядом с сетом (шаг 8): бонус сета считается по Breakthrough — у каждой вещи свой. Решение владельца 2026-10-01/02:
 // и рядом с предметом Legendary оружия и аксессуара — материал такого же предмета
-describe('«T4» на форме', () => {
+describe('Breakthrough T0–T4 на форме (HISTORY.md 0270)', () => {
   const set = (short: string) => D.sets.find((s) => s.short === short)!.id;
-  const chip = () => $('.formrow .btchip');
-  const pressed = () => chip()?.getAttribute('aria-pressed');
+  const chip = () => $('.formrow .btseg');
+  // the pressed segment: 'T0'…'T4', null — none
+  const pressed = () => chip()?.querySelector('[aria-pressed="true"]')?.getAttribute('aria-label') ?? null;
+  const seg = (n: number) => chip()?.querySelector<HTMLElement>(`[aria-label="T${n}"]`) ?? null;
   const click = async (el: HTMLElement | null | undefined) => { if (!el) throw new Error('нет элемента'); await act(async () => el.click()); };
   const key = async (k: string) => { await act(async () => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); }); };
 
   it.each(['helmet', 'armor', 'gloves', 'shoes'])('броня (%s): «T4» есть, не нажата; подпись и подсказка — из текстов', async (slot) => {
     await mount({ slot, grade: 'unique' }, { setId: set('Speed') });
-    expect(pressed()).toBe('false');
-    expect(chip()?.textContent).toBe('T4');
-    expect(chip()?.getAttribute('aria-label')).toBe('Piece at Breakthrough T4');
-    expect(chip()?.getAttribute('title')).toBe('Already at T4 — its set bonus counts at T4');
+    expect(pressed()).toBe('T0');
+    expect([...chip()!.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['0', '1', '2', '3', '4']);
+    expect(chip()?.getAttribute('aria-label')).toBe('Breakthrough');
+    expect(chip()?.getAttribute('title')).toBe('Breakthrough T0–T4 — the set bonus counts from T4');
   });
 
   // было (В4): у оружия и аксессуара «T4» нет. Теперь у Legendary — в строке предмета, подсказка без бонуса сета
   it.each(['weapon', 'accessory'])('Legendary %s: «T4» в строке предмета, не нажата; подсказка — про Breakthrough, не про сет', async (slot) => {
     await mount({ slot, grade: 'unique' }, {});
-    expect(pressed()).toBe('false');
+    expect(pressed()).toBe('T0');
     expect(chip()?.closest('.formrow')?.querySelector('[data-tour="item"]')).toBeTruthy();
-    expect(chip()?.getAttribute('title')).toBe('Already at T4 — no more copies needed for its Breakthrough');
+    expect(chip()?.getAttribute('title')).toBe('Breakthrough T0–T4 — at T4 no more copies are needed');
   });
 
   // было: у Epic «T4» нет. Теперь: есть, в одном ряду с грейдом и main (предмета у Epic нет)
@@ -163,14 +165,14 @@ describe('«T4» на форме', () => {
   it('оружие: другой предмет снимает «T4», клавиша T — нажимает', async () => {
     const [a, b] = D.weapons.filter((i) => i.grade === 'unique' && i.star === 6);
     await mount({ slot: 'weapon', grade: 'unique' }, { itemKey: a.key, main: a.mains[0], t4: true });
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T4');
 
     await click($('[data-tour="item"]'));
     await click([...document.querySelectorAll<HTMLElement>('.drawer .item')].find((el) => el.textContent?.includes(b.name)));
-    expect(pressed()).toBe('false');
+    expect(pressed()).toBe('T0');
 
     await key('t');
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T1');
   });
 
   // Anarky: годная Pen-броня Epic T0 в пуле; новая Pen-броня Epic с мусором — материал её Breakthrough. С «T4» новая
@@ -187,9 +189,9 @@ describe('«T4» на форме', () => {
     expect($('.vcard .stamp')?.textContent).toBe('Fodder');
     expect($('.vcard .vc-title')?.textContent).toBe("Breakthrough for Anarky's armor");
 
-    await click(chip());
+    await click(seg(4));
 
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T4');
     expect($('.vcard .stamp')?.textContent).toBe('Fodder');
     await click($('.vcard'));
     expect($('.v-plan, .vdrawer')?.textContent).toContain("Do it now: this one is T4 — Anarky's armor goes straight to T4.");
@@ -197,49 +199,61 @@ describe('«T4» на форме', () => {
 
   it('правка сабстата «T4» не снимает; «Следующий» — снимает', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed'), subs: { SPD: 1, CHC: 1 } });
-    await click(chip());
+    await click(seg(4));
     await click($('.subrow .roll-b button:nth-child(3)'));
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T4');
 
     await click($('.actions .btn.primary'));
 
-    expect(pressed()).toBe('false');
+    expect(pressed()).toBe('T0');
   });
 
   it('смена грейда снимает «T4»', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed'), t4: true });
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T4');
 
     await click($('.grade.rare'));
 
-    expect(pressed()).toBe('false');
+    expect(pressed()).toBe('T0');
   });
 
   it('смена сета снимает «T4»; тот же сет — нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed'), t4: true });
     await click($('[data-tour="pick"]'));
     await click($('.drawer [data-tour-item="Speed"]'));
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T4');
 
     await click($('[data-tour="pick"]'));
     await click($('.drawer [data-tour-item="Attack"]'));
 
-    expect(pressed()).toBe('false');
+    expect(pressed()).toBe('T0');
   });
 
-  it('клавиша T (и Е на русской раскладке) нажимает и отжимает «T4»; в поле ввода — нет', async () => {
+  it('клавиша T (и Е на русской раскладке) — на ступень выше, после T4 снова T0; в поле ввода — нет', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed') });
     await key('t');
-    expect(pressed()).toBe('true');
+    expect(pressed()).toBe('T1');
     await key('е');
-    expect(pressed()).toBe('false');
+    await key('t');
+    await key('t');
+    expect(pressed()).toBe('T4');
+    await key('t');
+    expect(pressed()).toBe('T0');
 
     const input = document.createElement('input');
     input.type = 'text';
     document.body.append(input);
     await act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true })); });
 
-    expect(pressed()).toBe('false');
+    expect(pressed()).toBe('T0');
+  });
+
+  it('a segment sets the exact T: «Надеть» input carries it (persisted as bt)', async () => {
+    await mount({ slot: 'helmet', grade: 'unique' }, { setId: set('Speed'), bt: 2 });
+    expect(pressed()).toBe('T2');
+    await click(seg(3));
+    expect(pressed()).toBe('T3');
+    expect(JSON.parse(localStorage.getItem('ogc.item')!)).toMatchObject({ bt: 3 });
   });
 });
 

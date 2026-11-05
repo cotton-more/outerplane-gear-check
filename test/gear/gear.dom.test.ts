@@ -29,7 +29,7 @@ type Pc = Record<string, unknown>;
 const P = (id: string, slot: string, setId: string | null, yellow: Record<string, number>, o: Pc = {}): Pc =>
   ({ id, slot, grade: 'unique', setId, itemKey: null, main: null, yellow, lit: yellow, bt: null, at: '', ...o });
 const G = (pieces: Pc[], pools: Record<string, string[]>, o: Pc = {}) =>
-  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, ...o });
+  ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, btx: true, ...o }); // btx — today's store (HISTORY.md 0270)
 // a pinned set (owner 2026-10-08, (c)): only then are build-set pieces kept by set («best Speed», «Оставь (а)»)
 const pinned = (build: string, set: string) => ({ [caren.id]: `${caren.id}/${build}#${set}x4` });
 const WEAK = P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 2, SPD: 1, EFF: 1 }, { lit: { 'DEF%': 2, CHC: 2, SPD: 2, EFF: 3 }, bt: 4 });
@@ -111,11 +111,11 @@ describe('«Надеть» и «Вернуть»', () => {
     await click($('.vc-equip'));
 
     const st = JSON.parse(localStorage.getItem('ogc.state')!), item = JSON.parse(localStorage.getItem('ogc.item')!);
-    expect({ slot: st.slot, grade: st.grade, setId: item.setId, subs: item.subs, t4: item.t4 ?? false }).toEqual({ slot: 'helmet', grade: 'unique', setId: speed, subs: {}, t4: false });
-    expect($('.btchip')?.getAttribute('aria-pressed')).toBe('false');
+    expect({ slot: st.slot, grade: st.grade, setId: item.setId, subs: item.subs, bt: item.bt ?? 0 }).toEqual({ slot: 'helmet', grade: 'unique', setId: speed, subs: {}, bt: 0 });
+    expect($('.formrow .btseg [aria-pressed="true"]')?.getAttribute('aria-label')).toBe('T0');
     await click(byText('.gear-toast button', 'Undo'));
     expect(stored().pools[caren.id]).toEqual(['p1']);
-    expect(JSON.parse(localStorage.getItem('ogc.item')!)).toMatchObject({ setId: speed, subs: NEW.subs, t4: true });
+    expect(JSON.parse(localStorage.getItem('ogc.item')!)).toMatchObject({ setId: speed, subs: NEW.subs, bt: 4 });
     expect($('.vc-equip')?.textContent).toBe("Replace Caren's helmet · T4");
   });
 
@@ -231,7 +231,7 @@ describe('«Надеть» и «Вернуть»', () => {
     expect($('.gear-toast')).toBeNull(); // сообщение — на вкладке, где сделано
     await click(byText('.btabs [role="tab"]', 'Pool'));
     await click($('.pool-row'));
-    await click($('.piece .btchip')); // «T4» снята — ниже T4
+    await click($('.piece .btseg [aria-label="T0"]')); // T0
     await click($('.drawer-x'));
     await click($('.vbar .vb-tab'));
 
@@ -556,9 +556,9 @@ describe('карточка персонажа', () => {
     expect($('.want-btn')).toBeNull();
     await click($('.bgear-row'));
     await click($$('.piece .roll-b')[0].querySelectorAll('button')[2] as HTMLElement); // DEF% — уровень 3
-    await click($('.piece .btchip'));
+    await click($('.piece .btseg [aria-label="T4"]'));
     expect(stored().pieces.p1).toMatchObject({ yellow: { 'DEF%': 3 }, lit: { 'DEF%': 3 }, bt: 4 });
-    expect($('.piece .btchip')?.getAttribute('aria-pressed')).toBe('true');
+    expect($('.piece .btseg [aria-label="T4"]')?.getAttribute('aria-pressed')).toBe('true');
     expect($('.piece')?.textContent).toContain('worn');
   });
 
@@ -604,21 +604,22 @@ describe('карточка персонажа', () => {
   });
 
   // решение владельца 2026-10-01/02: у Legendary оружия «T4» — тоже (материал такого же предмета); у Epic — как у всех
-  it('шторка Legendary оружия: «T4» правится, метка в слоте — «T0–T3» → «T4»', async () => {
+  it('шторка Legendary оружия: T правится, метка в слоте — «T0» → «T4»', async () => {
     const w = caren.builds[0].weapons[0];
     const ps = [P('p1', 'weapon', null, { CHC: 2, SPD: 1 }, { itemKey: w.key, main: w.mains[0], bt: 0 })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1'] }, { worn: wornOf(ps) }) });
-    expect($('.bgear-m')?.textContent).toBe('T0–T3');
+    expect($('.bgear-m')?.textContent).toBe('T0');
 
     await click($('.bgear-row'));
-    expect($('.piece .btchip')?.getAttribute('title')).toBe('Already at T4 — no more copies needed for its Breakthrough');
-    await click($('.piece .btchip'));
+    expect($('.piece .btseg')?.getAttribute('title')).toBe('Breakthrough T0–T4 — at T4 no more copies are needed');
+    expect($('.piece .btseg [aria-pressed="true"]')?.getAttribute('aria-label')).toBe('T0');
+    await click($('.piece .btseg [aria-label="T4"]'));
 
     expect(stored().pieces.p1.bt).toBe(4);
     expect($('.bgear-m')?.textContent).toBe('T4');
   });
 
-  it('у брони «T4» снята — ниже T4: в строке «Надето» «T0–T3»; у Epic оружия «T4» есть, старая запись — «T?»', async () => {
+  it('у брони T0 — в строке «Надето» «T0»; у Epic оружия «T4» есть, старая запись — «T?»', async () => {
     const ps = [P('p1', 'helmet', speed, { 'DEF%': 2, CHC: 1 }, { bt: 4 }), P('p2', 'weapon', null, { CHC: 2, SPD: 1 }, { grade: 'rare', main: caren.builds[0].weapons[0].mains[0] })];
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G(ps, { [caren.id]: ['p1', 'p2'] }, { worn: wornOf(ps) }) });
     expect($$('.bgear-m').map((m) => m.textContent)).toEqual(['T?', 'T4']);
@@ -633,9 +634,9 @@ describe('карточка персонажа', () => {
       ['LV 2', 'Crit Chance', '+6.0%'], ['LV 1', 'Speed', '+3'],
     ]);
     await click(byText('.bgear-row', 'Speed Set'));
-    await click($('.piece .btchip'));
+    await click($('.piece .btseg [aria-label="T0"]'));
     expect(stored().pieces.p1.bt).toBe(0);
-    expect($$('.bgear-m')[1].textContent).toBe('T0–T3');
+    expect($$('.bgear-m')[1].textContent).toBe('T0');
   });
 
   it('«Пул»: вещи по слотам, справа — почему держится; ненужная — «no longer needed» и «Убрать у Caren» с «Вернуть»; внизу — «Rate a piece for Caren»', async () => {
@@ -728,7 +729,7 @@ describe('карточка персонажа', () => {
     await mount({ tab: 'chars', charId: caren.id }, {}, { gear: G([helm], { [caren.id]: ['p1'] }) });
     await openPiece();
     await click($$('.piece .roll-b')[0].querySelectorAll<HTMLElement>('button')[4]);
-    await click($('.piece .btchip'));
+    await click($('.piece .btseg [aria-label="T4"]'));
     expect(stored().pieces.p1).toMatchObject({ lit: { 'DEF%': 5, CHC: 6, CHD: 6, SPD: 6 }, bt: 4 });
   });
 
@@ -754,7 +755,7 @@ describe('карточка персонажа', () => {
     expect($('.piece')).toBeTruthy();
     expect(stored().pools).toEqual({ [caren.id]: ['p2'], [rin.id]: ['p1'] });
     expect(stored().pieces.p1.lit).toEqual({ 'DEF%': 2, CHC: 1 });
-    await click($('.piece .btchip'));
+    await click($('.piece .btseg [aria-label="T4"]'));
     expect(Object.keys(stored().pieces).sort()).toEqual(['p1', 'p2']);
     expect(stored().pieces.p2).toMatchObject({ lit: { 'DEF%': 2, CHC: 3 }, bt: 4 });
   });
@@ -878,10 +879,10 @@ describe('меню, плитки, код копии, другая вкладка
   });
 
   // DEVELOPMENT.md "Storage and URLs": одна резервная копия — ростер и вещи; старый код экипировки (OGC-GEAR2) «Заменить» читает как раньше
-  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR9, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
+  it('резервная копия в «Ещё» → «Backup» — OGC-GEAR10, ростер и вещи; старый код OGC-GEAR2 — «Вернуть» возвращает прежнее', async () => {
     await mount({ tab: 'chars' }, {}, { gear: G([P('p1', 'helmet', speed, { SPD: 1 }, { bt: 4 })], { [caren.id]: ['p1'] }) });
     const ta = await openBackup();
-    expect(ta.value.startsWith('OGC-GEAR9-')).toBe(true);
+    expect(ta.value.startsWith('OGC-GEAR10-')).toBe(true);
     const { encodeGear } = await import('@/features/gear/store/gearStore');
     const { decodeBackup } = await import('@/features/roster/backup');
     const b = decodeBackup(ta.value) as { roster: string[]; raw: { pieces: Record<string, { lit: object; bt: number }> } };
@@ -899,7 +900,7 @@ describe('меню, плитки, код копии, другая вкладка
   it('код, сохранённый более новой версией, — «обнови страницу»', async () => {
     await mount({ tab: 'chars' }, {});
     const ta = await openBackup();
-    ta.value = 'OGC-GEAR10-abc';
+    ta.value = 'OGC-GEAR11-abc';
     await click([...ta.closest('.roster-io')!.querySelectorAll<HTMLElement>('.btn')].find((b) => b.textContent === 'Replace'));
     expect(ta.closest('.roster-io')?.textContent).toContain('A newer page saved this code — reload the page.');
   });
@@ -923,7 +924,7 @@ describe('меню, плитки, код копии, другая вкладка
     expect(byText('.btabs [role="tab"]', 'Pool')?.textContent).toBe('Pool2');
     await click(byText('.btabs [role="tab"]', 'Pool'));
     await click($('.pool-row'));
-    await click($('.piece .btchip'));
+    await click($('.piece .btseg [aria-label="T4"]'));
     expect(Object.keys(stored().pieces)).toEqual(['p1', 'p2']);
     expect(stored().pieces.p1.bt).toBe(4);
   });

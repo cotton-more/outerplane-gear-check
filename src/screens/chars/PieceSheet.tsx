@@ -69,7 +69,7 @@ export function PieceSheet({ c, p, ctx, gear, why, worn, onClose, onEdit, onTry,
       <div className="piece" {...tour('gpiece')}>
         <div className="piece-top">
           <p className="piece-n"><PieceName ctx={ctx} p={p} /></p>
-          <BtChip anchor={false} armor={isArmor(p.slot)} on={p.bt === 4} onToggle={() => onEdit({ bt: p.bt === 4 ? 0 : 4 })} />
+          <BtChip anchor={false} armor={isArmor(p.slot)} value={p.bt} onPick={(bt) => onEdit({ bt })} />
         </div>
         <p className="muted small">{why}</p>
         <div className="subrows">

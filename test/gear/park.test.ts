@@ -123,9 +123,9 @@ describe('the verdict and the batch do not see it (O2)', () => {
 
 describe('backup', () => {
   const round = (s: GearStore, roster: string[]): Backup => decodeBackup(encodeBackup(s, roster)) as Backup;
-  it('OGC-GEAR9: the parked piece comes back parked, in its place in the pool', () => {
+  it('OGC-GEAR10: the parked piece comes back parked, in its place in the pool', () => {
     const code = encodeBackup(st(true), [CAREN]);
-    expect(code).toMatch(/^OGC-GEAR9-/);
+    expect(code).toMatch(/^OGC-GEAR10-/);
     const b = round(st(true), [CAREN]);
     const ids = b.raw.pools[CAREN];
     expect(b.raw.park).toEqual([ids[1]]);
@@ -139,7 +139,7 @@ describe('backup', () => {
     expect(new Set(b.roster)).toEqual(new Set([CAREN, RIN]));
     const ids = b.raw.pools[CAREN];
     expect(ids.map((id) => [b.raw.pieces[id].slot, b.raw.pieces[id].bt, b.raw.pieces[id].lit])).toEqual([
-      ['helmet', 4, { CHC: 2, SPD: 1 }], ['helmet', 0, { HP: 1, ATK: 2 }]]);
+      ['helmet', 4, { CHC: 2, SPD: 1 }], ['helmet', null, { HP: 1, ATK: 2 }]]); // GEAR8 T0 → «T?» (HISTORY.md 0270)
     expect(b.raw.worn).toEqual({ [CAREN]: { helmet: ids[0] } });
     expect(b.raw.lv).toEqual({ [CAREN]: 120 });
     expect(b.raw.park).toBeUndefined();

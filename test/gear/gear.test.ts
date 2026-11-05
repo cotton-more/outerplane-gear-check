@@ -37,7 +37,7 @@ describe('перенос v1 → v3 (design-final §F, stat-sets PLAN Д11)', () 
   it('1. одна запись в нескольких билдах персонажа — один id в его пуле; «Собираю» и билды v1 не хранятся', () => {
     const p1 = rec('p1', helmet({ CHC: 2 }));
     const st = restoreGear(v1([p1], { [K]: { helmet: 'p1' }, [K2]: { helmet: 'p1' } }), idx);
-    expect(st).toEqual({ v: 3, seq: 1, pieces: { p1 }, pools: { [CAREN]: ['p1'] } });
+    expect(st).toEqual({ v: 3, seq: 1, pieces: { p1 }, pools: { [CAREN]: ['p1'] }, btx: true });
   });
 
   it('2. запись у двух персонажей — в оба пула, без копии', () => {
@@ -113,7 +113,7 @@ describe('перенос v1 → v3 (design-final §F, stat-sets PLAN Д11)', () 
 describe('хранилище v3 и код копии', () => {
   it('v3: id без вещей и повторы выброшены, пустые пулы убраны; незнакомые поля — как есть', () => {
     const raw = { ...v2([rec('p1', helmet({ CHC: 1 }))], { [CAREN]: ['p1', 'p1', 'p9'], [KAPPA]: ['p9'], x: 'no' as never }), extra: 1 };
-    expect(restoreGear(raw, idx)).toEqual({ v: 3, seq: 1, pieces: raw.pieces, pools: { [CAREN]: ['p1'] }, extra: 1 });
+    expect(restoreGear(raw, idx)).toEqual({ v: 3, seq: 1, pieces: raw.pieces, pools: { [CAREN]: ['p1'] }, extra: 1, btx: true });
   });
 
   it('gc: вещь, которой нет ни в одном пуле, стирается', () => {
@@ -132,7 +132,7 @@ describe('хранилище v3 и код копии', () => {
     const st = v2([rec('p1', helmet({ CHC: 2 }))], { [CAREN]: ['p1'] });
     const code = encodeGear(st);
     expect(code.startsWith('OGC-GEAR2 ')).toBe(true);
-    expect(decodeGear(code, idx)).toEqual(st);
+    expect(decodeGear(code, idx)).toEqual({ ...st, btx: true });
     const b64 = (x: unknown) => btoa(JSON.stringify(x)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     expect(decodeGear('OGC-GEAR1 ' + b64(v1([rec('p1', helmet({ CHC: 2 }))], { [K]: { helmet: 'p1' } })), idx)).toMatchObject({ v: 3, pools: { [CAREN]: ['p1'] } });
     expect(decodeGear('OGC-GEAR3 ' + b64({ v: 3 }), idx)).toBe('newer');

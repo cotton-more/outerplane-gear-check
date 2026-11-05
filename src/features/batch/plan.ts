@@ -86,8 +86,8 @@ function dropBack(before: GearStore, c: string, p: Piece): (x: GearStore) => Gea
 }
 // a recorded target of a feed is worn by its hero when the plan ends — or set aside (the hero wears another piece in the game)
 export const wornAtEnd = (st: GearStore, t: { c: Char; piece: Piece }): boolean => st.worn?.[t.c.id]?.[t.piece.slot] === t.piece.id;
-// a recorded piece as a form input (its own «T4»)
-export const inputOfPiece = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt === 4 ? 4 : p.bt === null ? null : 0 });
+// a recorded piece as a form input (its own Breakthrough, exact T0–T4 or «T?»)
+export const inputOfPiece = (p: Piece): ItemInput => ({ ...pieceInput(p), bt: p.bt });
 
 // One physical piece — one line: a later «Надень» may take off or drop a record the plan itself made for line L. Such a
 // record never gets a taken-off line; L is fixed instead — eaten as a reserve → «Корм» for the piece that ate it (in

@@ -32,12 +32,25 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .pick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
 .pick.empty { border-style: dashed; background: transparent; color: var(--ink-3); font-weight: 500; }
-/* «T4» рядом с сетом брони или предметом Legendary оружия и аксессуара: нажата — заливка, как у выбранных кнопок формы;
-   ужимается поле сета или предмета (имя — многоточием), «T4» — нет. На узком экране без « Set» в имени: «Speed» видно
-   целиком */
-.btchip { flex: none; min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); font: 700 13px/1 var(--font-mono); color: var(--ink-2); }
-.btchip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--ink); }
-html.xs .btchip { min-width: 40px; padding: 0 6px; }
+/* Breakthrough T0–T4 (features/eval/form BtChip, HISTORY.md 0270) рядом с сетом брони или предметом / main оружия и
+   аксессуара: the gold pill of the star controls (.lv-pill / .lv-seg of chars.css), compact — «T» and five digits. The set
+   or item field shrinks (имя — многоточием), the pill doesn't; in a narrow row (< 340 px) it takes its own line under them.
+   «T?» (an old record, card only) — no segment pressed, the «T?» mark in full ink */
+.lv-pill.btseg { display: inline-flex; flex: none; align-items: center; gap: 1px; width: auto; max-width: none; margin: 0; padding: 2px; }
+.btseg-t { padding: 0 3px 0 7px; font: 700 12px/1 var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.btseg.unknown .btseg-t { color: var(--ink); }
+.btseg .lv-seg { min-width: 26px; min-height: 38px; padding: 0 4px; font: 700 13.5px/1 var(--font-mono); color: var(--ink-2); cursor: pointer; }
+.formrow:has(> .btseg) { flex-wrap: wrap; }
+/* a phone (the page is 410 px there): the T segments take the room, so the set field keeps only its icon — the picker
+   and wider screens show the name (owner 2026-11-05, HISTORY.md 0270) */
+@media (max-width: 559px) {
+  .formrow > .pick-set:not(.empty) { flex: none; }
+  .formrow > .pick-set:not(.empty) .pick-t { display: none; }
+}
+@container (max-width: 340px) {
+  .formrow > .btseg { flex: 1 0 100%; }
+  .formrow > .btseg .lv-seg { flex: 1 1 0; }
+}
 html.xs .pick-sfx { display: none; }
 /* строка уже 260px (280px: 222px; 310px: 252px): грейды уже, у поля без ▾ и значок поменьше — имени сета остаётся
    ≈ 50px («Speed»); на 251–259 без этого «Speed» уже резался до «Sp…» */
@@ -201,7 +214,8 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
   .form { padding: 6px 10px 8px; gap: 6px; }
   .slot { min-height: 40px; }
   .slot img, .slot .noimg, .slot .ico { width: 28px; height: 28px; }
-  .grade, .pick, .btchip { min-height: 40px; }
+  .grade, .pick { min-height: 40px; }
+  .btseg .lv-seg { min-height: 34px; }
   .grade { width: 40px; }
   .subrows { gap: 4px; }
   .subrow .roll-b button { height: 38px; }
@@ -265,7 +279,8 @@ html.narrow .eval-in .actions { display: none; }
   .form { padding: 4px 8px 6px; gap: 4px; }
   .slot { min-height: 38px; }
   .slot img, .slot .noimg, .slot .ico { width: 26px; height: 26px; }
-  .grade, .pick, .btchip { min-height: 38px; }
+  .grade, .pick { min-height: 38px; }
+  .btseg .lv-seg { min-height: 32px; }
   .grade { width: 38px; }
   .subzone { min-height: 76px; }
   .sg { min-height: 36px; }

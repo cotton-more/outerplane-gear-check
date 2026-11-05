@@ -409,7 +409,7 @@ describe('replace — на одну введённую вещь', () => {
   const P = (id: string, setId: string, lit: Record<string, number>, o: Pc = {}): Pc =>
     ({ id, slot: 'helmet', grade: 'unique', setId, itemKey: null, main: null, yellow: lit, lit, bt: 4, at: '', ...o });
   const G = (pieces: Pc[], pools: Record<string, string[]>) =>
-    ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools });
+    ({ v: 3, seq: pieces.length, pieces: Object.fromEntries(pieces.map((p) => [p.id, p])), pools, btx: true });
   const strong = P('p1', speed, { 'DEF%': 4, CHC: 4, CHD: 4, SPD: 4 });
   const JUNK = { RES: 1, EFF: 1, HP: 1, ATK: 1 };
   const MID = { setId: speed, subs: { 'DEF%': 3, CHC: 3, RES: 2, HP: 1 } }; // хуже p1 — «Заменить» только из replace
@@ -516,7 +516,7 @@ describe('replace — на одну введённую вещь', () => {
     await click($('#tab-chars'));
     await openSpeed();
 
-    await click($('.piece .btchip'));
+    await click($('.piece .btseg [aria-label="T4"]'));
     expect(stored('gear').pools).toEqual({ [caren.id]: ['p2'], [rin.id]: ['p1'] });
     expect(stored('tryon')).toMatchObject({ charId: caren.id, replace: 'p2' });
     await click($('.drawer-x'));

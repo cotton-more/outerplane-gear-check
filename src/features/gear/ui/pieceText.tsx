@@ -95,7 +95,7 @@ export function Painted({ text, what, grade }: { text: string; what: string; gra
 }
 
 // Breakthrough вещи в строке: «T4»; «T0–T3» — ниже T4 (форма без «T4», В4); 1–3 — прежняя правка; «T?» — не указан
-export const btText = (t: Texts, bt: Bt | null): string => (bt === null ? 'T?' : bt === 0 ? t.ui.btBelow : 'T' + bt);
+export const btText = (_t: Texts, bt: Bt | null): string => (bt === null ? 'T?' : 'T' + bt);
 // Breakthrough отдельной меткой — во всех строках вещей одинаково (Р-3, решение владельца 2026-10-05): в карточке билда и на
 // «Надето» — своей колонкой (на телефоне — второй строкой), в списке вещей, плане обмена и «Переодеть» — первой во второй
 // строке (.bgear-meta), метки идут столбиком. У любой вещи, и у Epic оружия и аксессуара

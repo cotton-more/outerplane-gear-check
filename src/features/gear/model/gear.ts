@@ -9,7 +9,7 @@ import { subAllowed } from '@/game/item/mains';
 import { CRIT_NEED, pinOf, pinOptions } from '@/game/build/profile';
 import { comboSig } from '@/game/build/variants';
 import { DROP_LEVEL, MAX_LIT, MAX_SUBS, withinCap, type Subs } from '@/game/item/subs';
-import { type Bt, type ItemInput } from '@/game/item/item';
+import { isBt, type Bt, type ItemInput } from '@/game/item/item';
 import type { EffCal } from '@/game/stat/eff';
 
 
@@ -60,10 +60,16 @@ export interface GearStore {
   // pooled and not worn (syncWorn). The verdict, reserves, material and the batch see a pool without them (activePieces);
   // the trade offers them first. No field — nothing parked
   park?: string[];
+  // «bt is exact» (HISTORY.md 0270): pieces' bt 0 means a real T0. Before it the «T4» toggle wrote 0 for «below T4,
+  // exact unknown»; a store without the mark is read once with bt 0 → null («T?», counted as below T4 as before) and
+  // written back with the mark (gearStore exactBt, stored). A mark instead of v: 4 — an older cached tab keeps reading the
+  // store (v > 3 would make it read empty and never write); it keeps unknown fields, so the mark survives its writes.
+  // Every store the page makes has it: EMPTY_GEAR, loadGear, the backup code
+  btx?: true;
   [extra: string]: unknown;
 }
 
-export const EMPTY_GEAR: GearStore = { v: 3, seq: 0, pieces: {}, pools: {} };
+export const EMPTY_GEAR: GearStore = { v: 3, seq: 0, pieces: {}, pools: {}, btx: true };
 export const today = () => new Date().toISOString().slice(0, 10);
 
 // запись как вход сравнения: уровень сабстата — сколько горит (lit), жёлтые и оранжевые вместе (один уровень)
@@ -235,7 +241,7 @@ export function newPiece(st: GearStore, item: ItemInput, at = today()): { st: Ge
 // 4-й сабстат — только допустимый на этом предмете (mains subAllowed, как на форме) и новый.
 // UI ОБЯЗАН снять висящее «Вернуть» соседнего действия при правке (В3: одно на все): undoRemove / undoDrop / undoPut /
 // unfuseChar возвращают запись по id, а её поправили или скопировали
-export interface PieceEdit { lit?: Subs; bt?: 0 | 4; add?: string }
+export interface PieceEdit { lit?: Subs; bt?: Bt; add?: string }
 export function updateIn(idx: Index, st: GearStore, charId: string, id: string, patch: PieceEdit, at = today()): { st: GearStore; id: string } {
   const same = { st, id };
   const p = st.pieces[id];
@@ -248,7 +254,7 @@ export function updateIn(idx: Index, st: GearStore, charId: string, id: string, 
     lit[patch.add] = 1;
   }
   if (!withinCap(p.grade, p.lit, lit)) return same;
-  const bt = patch.bt !== undefined && (patch.bt === 0 || patch.bt === 4) ? patch.bt : p.bt;
+  const bt = isBt(patch.bt) ? patch.bt : p.bt;
   const keys = Object.keys(lit);
   if (bt === p.bt && keys.length === Object.keys(p.lit).length && keys.every((k) => lit[k] === p.lit[k])) return same;
   const edited: Piece = { ...p, yellow: yellowOf(lit), lit, bt, at };

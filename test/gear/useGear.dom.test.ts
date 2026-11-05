@@ -19,7 +19,7 @@ const idx = createIndex(D);
 const speed = D.sets.find((s) => s.short === 'Speed')!.id;
 const PIECE = { id: 'p1', slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, yellow: { CHC: 2 }, lit: { CHC: 2 }, bt: null, at: '', note: 'x' };
 // v3 с незнакомым полем вещи: на загрузке не переписывается (Caren в ростере — исправлять нечего)
-const RAW = { v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] } };
+const RAW = { v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] }, btx: true };
 // v1 и v2 из прежних версий: в v2 — надетое и поля прежней модели («Собираю», autoNew, выбранный билд, булавка, билды v1)
 const V1 = { v: 1, seq: 1, pieces: { p1: PIECE }, builds: { '2000089/Speed': { slots: { helmet: 'p1' }, at: '' } } };
 const V2 = {
@@ -49,6 +49,28 @@ async function render(persist: boolean) {
 const stored = () => localStorage.getItem('ogc.gear');
 
 describe('useGear', () => {
+  // HISTORY.md 0270: a store without the «bt is exact» mark — bt 0 was the «T4» toggle's «below T4»: read as «T?» and
+  // written back with the mark at once; after that a real T0 stays T0
+  it('bt migration: unmarked bt 0 → null once, written with btx; marked T0–T4 kept', async () => {
+    const pc = (bt: number | null) => ({ ...PIECE, bt });
+    const { btx: _, ...unmarked } = RAW;
+    localStorage.setItem('ogc.gear', JSON.stringify({ ...unmarked, seq: 3, pieces: { p1: pc(0), p2: { ...pc(4), id: 'p2' }, p3: { ...pc(null), id: 'p3' } },
+      pools: { '2000089': ['p1', 'p2', 'p3'] } }));
+    await render(true);
+    const once = JSON.parse(stored()!);
+    expect([once.btx, once.pieces.p1.bt, once.pieces.p2.bt, once.pieces.p3.bt]).toEqual([true, null, 4, null]);
+
+    await act(async () => root?.unmount());
+    root = null;
+    const exact = { ...RAW, seq: 5, pieces: Object.fromEntries([0, 1, 2, 3, 4].map((bt) => ['p' + (bt + 1), { ...pc(bt), id: 'p' + (bt + 1) }])),
+      pools: { '2000089': ['p1', 'p2', 'p3', 'p4', 'p5'] } };
+    const text = JSON.stringify(exact);
+    localStorage.setItem('ogc.gear', text);
+    await render(true);
+    expect(stored()).toBe(text);
+    expect(Object.values(api.store.pieces).map((p) => p.bt)).toEqual([0, 1, 2, 3, 4]);
+  });
+
   it('при загрузке без исправлений хранилище не переписывается (незнакомое поле на месте, строка та же)', async () => {
     const text = JSON.stringify(RAW);
     localStorage.setItem('ogc.gear', text);
@@ -63,7 +85,7 @@ describe('useGear', () => {
     await render(true);
 
     const once = stored();
-    expect(JSON.parse(once!)).toEqual({ v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] }, worn: { '2000089': { helmet: 'p1' } } });
+    expect(JSON.parse(once!)).toEqual({ v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] }, worn: { '2000089': { helmet: 'p1' } }, btx: true });
     expect(api.store).toEqual(JSON.parse(once!));
     await act(async () => root?.unmount());
     root = null;
@@ -74,7 +96,7 @@ describe('useGear', () => {
   it('T8.1 v1: перенос в v3 записан при загрузке, вещь в пуле Caren', async () => {
     localStorage.setItem('ogc.gear', JSON.stringify(V1));
     await render(true);
-    expect(JSON.parse(stored()!)).toEqual({ v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] } });
+    expect(JSON.parse(stored()!)).toEqual({ v: 3, seq: 1, pieces: { p1: PIECE }, pools: { '2000089': ['p1'] }, btx: true });
   });
 
   it('T8.1 v2 с сабом не из данных — перенос в памяти, на загрузке не пишется (Р17)', async () => {

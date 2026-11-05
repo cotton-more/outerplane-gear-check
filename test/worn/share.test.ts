@@ -95,7 +95,18 @@ describe('3.2 код героя', () => {
 
   it('код новее этой версии — «новее»', async () => {
     const { BitWriter, seal } = await import('@/shared/bits');
-    expect(decodeHero('OGH' + seal(new BitWriter().put(3, 4).put(0, 20).bits))).toBe('newer');
+    expect(decodeHero('OGH' + seal(new BitWriter().put(4, 4).put(0, 20).bits))).toBe('newer');
+  });
+
+  // HISTORY.md 0270: v3 keeps T0; v2 (the same bits) wrote T0 for the «T4» toggle's «below T4» → «T?»
+  it('hero code v3 keeps T0–T4 and «T?»; v2 reads T0 as «T?»', async () => {
+    const { BitWriter, seal, unseal } = await import('@/shared/bits');
+    const code = codeOf(caren, wearing(caren, SIX()));
+    const bts = (h: HeroShare) => Object.values(h.slots).map((p) => p!.bt);
+    expect(bts(back(code))).toEqual([4, 0, null, 4, null, 4]);
+    const bits = unseal(code.slice(3))!;
+    const v2 = decodeHero('OGH' + seal([...new BitWriter().put(2, 4).bits, ...bits.slice(4)])) as HeroShare;
+    expect(bts(v2)).toEqual([4, null, null, 4, null, 4]);
   });
 
   // stat-sets PLAN Д11: OGH v1 (до закрепления) нёс на месте набора отпечаток выбранного билда — читается, поле пропущено

@@ -20,7 +20,7 @@ const idx = createIndex(D);
 const lisha = D.chars.find((c) => c.name === 'Lisha')!.id;
 const cfLisha = D.chars.find((c) => c.name === 'Core Fusion Lisha')!.id;
 const settings = { rosterOnly: false, stage: 'grow' as const, lv120: false, quirks: true };
-const form: FormState = { slot: 'helmet', grade: 'unique', setId: null, itemKey: null, main: null, unlisted: false, subs: {}, t4: false, expand: {}, settings, settingsOpen: false };
+const form: FormState = { slot: 'helmet', grade: 'unique', setId: null, itemKey: null, main: null, unlisted: false, subs: {}, bt: 0, expand: {}, settings, settingsOpen: false };
 let root: Root | null = null;
 
 beforeAll(() => { (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true; });

@@ -15,7 +15,7 @@
 import type { Index } from '@/game/data';
 import { changed } from '@/features/gear/model/fusion';
 import { fixPins } from '@/features/gear/model/gear';
-import { loadGear, newerGear, oldMarks, oldModel, readsWhole, type Loaded } from './gearStore';
+import { loadGear, needsExactBt, newerGear, oldMarks, oldModel, readsWhole, type Loaded } from './gearStore';
 import { storage } from '@/shared/storage';
 
 export interface Stored extends Loaded { newer: boolean }
@@ -41,7 +41,8 @@ export function readStored(idx: Index): Stored {
   const unreadable = (key: string, v: unknown) => v === null && storage.raw(key) !== null;
   const whole = readsWhole(raw, idx) && !unreadable('gear', raw) && !unreadable('roster', list)
     && (list === null || (Array.isArray(list) && list.length === roster.length));
-  const migrated = raw !== null && typeof raw === 'object' && ((raw as { v?: unknown }).v === 1 || (raw as { v?: unknown }).v === 2);
+  // v1/v2 → v3, or bt 0 → «T?» once (HISTORY.md 0270, gearStore exactBt)
+  const migrated = raw !== null && typeof raw === 'object' && ((raw as { v?: unknown }).v === 1 || (raw as { v?: unknown }).v === 2 || needsExactBt(raw));
   const page = idx.D.meta?.commitDate ?? '';
   const seen = storage.get<unknown>('dataSeen', null);
   const fresh = !page || typeof seen !== 'string' || page >= seen;

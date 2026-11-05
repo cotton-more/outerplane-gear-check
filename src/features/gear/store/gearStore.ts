@@ -158,12 +158,29 @@ function restoreV3(r: Partial<GearStore>, idx: Index): GearStore {
   });
 }
 
+// HISTORY.md 0270: a store without the «bt is exact» mark (GearStore btx) — its bt 0 is the old «below T4» of the «T4»
+// toggle, exact T unknown: read as null («T?») once and mark the store. Not a loss for readsWhole (the migration is on
+// purpose); stored writes the marked store back at once
+export const needsExactBt = (raw: unknown): boolean => {
+  const r = record(raw);
+  return (r.v === 1 || r.v === 2 || r.v === 3) && r.btx !== true;
+};
+function exactBt<T>(raw: T): T {
+  if (!needsExactBt(raw)) return raw;
+  const r = raw as Record<string, unknown>;
+  const pieces = Object.fromEntries(Object.entries(record(r.pieces)).map(([id, x]) => {
+    const p = record(x);
+    return [id, p.bt === 0 ? { ...p, bt: null } : x];
+  }));
+  return { ...r, btx: true, ...(r.pieces !== undefined ? { pieces } : {}) } as T;
+}
+
 // из хранилища или кода: v1 — проверка v1 и перенос; v2 и v3 — проверка (у v2 — без полей прежней модели); иначе (мусор, более новая версия) — пусто.
 // Затем ростер и Core Fusion (features/gear/model/fusion normalizeStored): все с вещами — в ростер, есть X и Core Fusion X — остаётся
 // Core Fusion; fixes и added — что поменялось (запись и сообщение после загрузки, импорт)
 export type Loaded = Normalized;
 export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): Loaded {
-  const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown };
+  const r = exactBt((raw && typeof raw === 'object' ? raw : {}) as { v?: unknown });
   if (r.v === 1) return migrateV1(restoreV1(r as Partial<GearStoreV1>, idx), idx, roster);
   return normalizeStored(idx, roster, r.v === 2 || r.v === 3 ? restoreV3(r as Partial<GearStore>, idx) : EMPTY);
 }
@@ -174,7 +191,7 @@ export function loadGear(raw: unknown, idx: Index, roster: readonly string[]): L
 // каждой загрузке (stat-sets IMPACT §8). v1 — сверка с проверкой v1. Нет данных — нечего терять; мусор — теряется
 export function readsWhole(raw: unknown, idx: Index): boolean {
   if (raw == null) return true;
-  const r = (typeof raw === 'object' ? raw : {}) as { v?: unknown; seq?: unknown };
+  const r = exactBt((typeof raw === 'object' ? raw : {}) as { v?: unknown; seq?: unknown });
   if (r.v === 1) {
     const read = restoreV1(r as Partial<GearStoreV1>, idx);
     return covers({ ...r, seq: read.seq }, read);
@@ -194,7 +211,7 @@ function covers(a: unknown, b: unknown): boolean {
 // хранилище без сообщений нормализации; decodeGear — код копии целиком. Страница берёт loadGear и readGearCode (нужен
 // ростер и что поменяла нормализация), эти два — короткий путь для тестов
 export const restoreGear = (raw: unknown, idx: Index, roster: readonly string[] = []): GearStore => loadGear(raw, idx, roster).st;
-const EMPTY: GearStore = { v: 3, seq: 0, pieces: {}, pools: {} };
+const EMPTY: GearStore = { v: 3, seq: 0, pieces: {}, pools: {}, btx: true };
 // хранилище прежней модели (v1, v2) с вещами: игрок жил с выбором билда — разовое сообщение о переносе (features/gear/store/stored)
 export const oldModel = (raw: unknown): boolean => {
   const r = (raw && typeof raw === 'object' ? raw : {}) as { v?: unknown; pieces?: unknown };

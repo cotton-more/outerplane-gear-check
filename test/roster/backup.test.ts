@@ -133,7 +133,7 @@ describe('2. резервная копия', () => {
 
     const back = round(st, roster10).raw;
 
-    expect(Object.keys(back).sort()).toEqual(['pieces', 'pin', 'pools', 'seq', 'v', 'worn']);
+    expect(Object.keys(back).sort()).toEqual(['btx', 'pieces', 'pin', 'pools', 'seq', 'v', 'worn']);
     expect(Object.values(back.pieces).some((p) => 'enh' in p)).toBe(false);
     expect(meaning(back)).toEqual(meaning(rich()));
   });
@@ -165,7 +165,7 @@ describe('2. резервная копия', () => {
   });
 
   it('2.2 вид: без пробелов, только буквы и цифры после префикса', () => {
-    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR9-[0-9A-Za-z]+$/);
+    expect(encodeBackup(rich(), roster10)).toMatch(/^OGC-GEAR10-[0-9A-Za-z]+$/);
   });
 
   it('2.7 начинается с OGC-GEAR и номера больше 2; разбор выпущенной версии — «код новее»', () => {
@@ -177,7 +177,7 @@ describe('2. резервная копия', () => {
 
   describe('2.8 целостность', () => {
     const code = encodeBackup(rich(), roster10);
-    const head = 'OGC-GEAR9-'.length;
+    const head = 'OGC-GEAR10-'.length;
     const body = code.slice(head);
     const flip = (s: string, i: number) => s.slice(0, i) + (s[i] === 'a' ? 'b' : 'a') + s.slice(i + 1);
     const sw = [...body].findIndex((ch, i) => i >= 10 && ch !== body[i + 1]); // соседние разные знаки
@@ -196,18 +196,18 @@ describe('2. резервная копия', () => {
     // a code whose CRC is valid but the stars field is out of range (the field is the 3 bits before the EFF and level
     // flags of a stars-only code)
     it.each([0, 7])('звёзды %i при верной сумме — «повреждён»', (n) => {
-      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR9-', ''))!;
+      const bits = unseal(encodeBackup(store([], {}, { stars: { [CAREN]: 5 } }), []).replace('OGC-GEAR10-', ''))!;
       const bad = [...bits.slice(0, -5), (n >> 2) & 1, (n >> 1) & 1, n & 1, 0, 0];
-      expect(decodeBackup(`OGC-GEAR9-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
-      expect(decodeBackup(`OGC-GEAR9-${seal(bad)}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR10-${seal(bits)}`)).not.toBe('broken'); // the untouched code reads
+      expect(decodeBackup(`OGC-GEAR10-${seal(bad)}`)).toBe('broken');
     });
     // the same for the typed EFF: an EFF-only code ends with the two 14-bit numbers and the level flag; 0 and 10 000+ are out of range
     it.each([0, 10000])('эфф %i при верной сумме — «повреждён»', (n) => {
-      const bits = unseal(encodeBackup(store([], {}, { eff: { [CAREN]: { typed: 466, at: 233 } } }), []).replace('OGC-GEAR9-', ''))!;
+      const bits = unseal(encodeBackup(store([], {}, { eff: { [CAREN]: { typed: 466, at: 233 } } }), []).replace('OGC-GEAR10-', ''))!;
       const num = Array.from({ length: 14 }, (_, i) => (n >> (13 - i)) & 1);
-      expect(decodeBackup(`OGC-GEAR9-${seal(bits)}`)).not.toBe('broken');
-      expect(decodeBackup(`OGC-GEAR9-${seal([...bits.slice(0, -29), ...num, ...bits.slice(-15)])}`)).toBe('broken');
-      expect(decodeBackup(`OGC-GEAR9-${seal([...bits.slice(0, -15), ...num, bits.at(-1)!])}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR10-${seal(bits)}`)).not.toBe('broken');
+      expect(decodeBackup(`OGC-GEAR10-${seal([...bits.slice(0, -29), ...num, ...bits.slice(-15)])}`)).toBe('broken');
+      expect(decodeBackup(`OGC-GEAR10-${seal([...bits.slice(0, -15), ...num, bits.at(-1)!])}`)).toBe('broken');
     });
     it('обрезан на любую длину — «повреждён»', () => {
       for (let n = head; n < code.length; n++) expect(decodeBackup(code.slice(0, n))).toBe('broken');
@@ -220,8 +220,22 @@ describe('2. резервная копия', () => {
     expect(meaning((decodeBackup(split) as Backup).raw)).toEqual(meaning(rich()));
   });
 
+  // HISTORY.md 0270: the bits are the same; up to OGC-GEAR9 T0 was the «T4» toggle's «below T4» → «T?»
+  it('2.11 OGC-GEAR10 keeps T0–T4 and «T?»; OGC-GEAR9 reads T0 as «T?», T1–T4 as they are', () => {
+    const ps = ([null, 0, 1, 2, 3, 4] as const).map((bt) => P('helmet', { setId: set('Speed'), bt }));
+    const st = store(ps, { [CAREN]: ps.map((p) => p.id) });
+    const code = encodeBackup(st, [CAREN]);
+    expect(code.startsWith('OGC-GEAR10-')).toBe(true);
+    const bts = (b: Backup) => b.raw.pools[CAREN].map((id) => b.raw.pieces[id].bt);
+    const now = decodeBackup(code) as Backup;
+    expect([bts(now), now.raw.btx]).toEqual([[null, 0, 1, 2, 3, 4], true]);
+    expect(loadGear(now.raw, idx, [CAREN]).st.pools[CAREN].map((id) => loadGear(now.raw, idx, [CAREN]).st.pieces[id].bt)).toEqual([null, 0, 1, 2, 3, 4]);
+    const old = decodeBackup(code.replace('OGC-GEAR10-', 'OGC-GEAR9-')) as Backup;
+    expect(bts(old)).toEqual([null, null, 1, 2, 3, 4]);
+  });
+
   it('2.10 номер формата выше известного — «новее»', () => {
-    expect(decodeBackup('OGC-GEAR10-abc')).toBe('newer');
+    expect(decodeBackup('OGC-GEAR11-abc')).toBe('newer');
     expect(decodeBackup('OGC-GEAR12-abc')).toBe('newer');
   });
 
@@ -238,7 +252,7 @@ describe('2. резервная копия', () => {
 
     expect(new Set(b.roster)).toEqual(new Set([CAREN, KAPPA, RIN, ANARKY]));
     expect(meaning(b.raw)).toEqual(meaning(was));
-    expect(Object.keys(b.raw).sort()).toEqual(['pieces', 'pools', 'seq', 'v', 'worn']);
+    expect(Object.keys(b.raw).sort()).toEqual(['btx', 'pieces', 'pools', 'seq', 'v', 'worn']);
   });
 
   // код выпущенной версии (OGC-GEAR4, до N героя): у Caren шлем Critical Hit T4 надет, Epic аксессуар CHC в пуле, набор
@@ -246,7 +260,7 @@ describe('2. резервная копия', () => {
   it('OGC-GEAR4 читается: ростер, пулы, надетое и закрепление — как были; N нет ни у кого', () => {
     const V4 = 'OGC-GEAR4-5FuSLopk01xvOAdOZxrQU5hUCyjDGaSk68R3nNam3ZE2aDbT4';
     const helmet = P('helmet', { setId: '4', bt: 4, at: '2026-10-01' });
-    const acc = P('accessory', { grade: 'rare', main: 'CHC', ...sub({ CHD: 3 }), bt: 0, at: '2026-10-02' });
+    const acc = P('accessory', { grade: 'rare', main: 'CHC', ...sub({ CHD: 3 }), bt: null, at: '2026-10-02' }); // GEAR4 T0 — the old «below T4» → «T?» (HISTORY.md 0270)
     const was = store([helmet, acc], { [CAREN]: [helmet.id, acc.id] },
       { worn: { [CAREN]: { helmet: helmet.id } }, pin: { [CAREN]: `${CAREN}/Speed#13x4` } });
 

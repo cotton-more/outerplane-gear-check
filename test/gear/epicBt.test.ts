@@ -41,10 +41,10 @@ const JUNK_W = epic('weapon', 'ATK%', { RES: 1, EFF: 1, HP: 1 });
 describe('4.1 «T4» на форме у Epic оружия и аксессуара', () => {
   it.each(['weapon', 'accessory'] as const)('%s: T переключает, «Надеть» с нажатой — T4, без неё — T0–T3', (slot) => {
     const s = { ...fromPersisted(null, idx), slot, grade: 'rare' as const, main: 'ATK%' };
-    const on = reducer(s, { type: 't4' });
-    expect(on.t4).toBe(true);
+    const on = reducer(s, { type: 'bt', bt: 4 });
+    expect(on.bt).toBe(4);
     expect(itemInput(on).bt).toBe(4);
-    expect(itemInput(reducer(on, { type: 't4' })).bt).toBe(0);
+    expect(itemInput(reducer(on, { type: 'bt', bt: 0 })).bt).toBe(0);
   });
 });
 

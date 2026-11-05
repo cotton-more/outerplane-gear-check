@@ -28,7 +28,7 @@ export function shownStore(idx: Index, s: HeroShare): GearStore {
   const key = pinKeyOf(idx, s.heroId, s.pin);
   const ids = Object.keys(pieces);
   return {
-    v: 3, seq: n, pieces, pools: ids.length ? { [s.heroId]: ids } : {},
+    v: 3, seq: n, pieces, pools: ids.length ? { [s.heroId]: ids } : {}, btx: true,
     ...(ids.length ? { worn: { [s.heroId]: worn } } : {}),
     ...(key ? { pin: { [s.heroId]: key } } : {}),
   };

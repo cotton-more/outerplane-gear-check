@@ -52,7 +52,7 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
   ask?: BatchAsk | null;          // the next batch piece picks its slot / grade again: none pressed, the row highlighted
 }) {
   const t = useT();
-  const t4 = s.t4 ? t.ui.withT4 : '';
+  const t4 = s.bt === 4 ? t.ui.withT4 : '';
 
   return (
     <div className="eval-left">
