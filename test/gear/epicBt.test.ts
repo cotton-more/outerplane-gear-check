@@ -199,3 +199,17 @@ describe('exact T in the Breakthrough advice', () => {
 it('4.8 код вещи для чата у Epic оружия на T4 — тот же, что без T4', () => {
   expect(encodeItem({ ...WORN_W, bt: 4 })).toBe(encodeItem({ ...WORN_W, bt: 0 }));
 });
+
+describe('one count of the steps left in the advice', () => {
+  const helmet = (grade: 'rare' | 'unique', bt: Bt): ItemInput => ({ slot: 'helmet', grade, setId: speed, itemKey: null, main: null, subs: {}, bt });
+  it('Epic set armor at T2 names the need once (no btLeft); Legendary keeps btLeft', () => {
+    const keep = { v: 'keep' } as Verdict;
+    expect(upgradePlan(ctx, helmet('rare', 2), keep).some((l) => l === ru.plan.btLeft(2))).toBe(false);
+    expect(upgradePlan(ctx, helmet('unique', 2), keep)).toContain(ru.plan.btLeft(2));
+  });
+  it('stopgap armor at T2 gets the T line, at T4 btDone', () => {
+    const temp = { v: 'temp' } as Verdict;
+    expect(upgradePlan(ctx, helmet('rare', 2), temp)).toEqual([ru.plan.enhance, ru.plan.tempArmor, ru.plan.btLeft(2)]);
+    expect(upgradePlan(ctx, helmet('rare', 4), temp)).toEqual([ru.plan.enhance, ru.plan.btDone]);
+  });
+});

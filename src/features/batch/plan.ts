@@ -4,7 +4,7 @@
 // piece feeds a keeper of its grade, set and slot instead of going to dismantle. One piece — one fate.
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import type { Bt, ItemInput } from '@/game/item/item';
+import { FEEDS, feedsLeft, type Bt, type ItemInput } from '@/game/item/item';
 import { activePieces, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { putOn, removeFrom, removeUndo, stashOn, undoPut, type PutResult } from '@/features/gear/pool';
 import { heroPool, verdictOf, type HeroPool, type Pools, type Result, type Same } from '@/features/gear/verdict';
@@ -18,8 +18,8 @@ export type Target = { entry: number } | { c: Char; piece: Piece };
 export type Fate =
   // instead — the worn piece of the slot it replaces; rankUp — it goes on for its passive (a recommended weapon or accessory),
   // dV — the points it adds (negative when the passive wins at a cost: the row names the cost, owner Q6)
-  | { kind: 'wear'; c: Char; instead: Piece | null; t4: boolean; rankUp: boolean; dV: number }
-  | { kind: 'keep'; c: Char; t4: boolean; held?: boolean }          // held — a taken-off piece the hero's pool still keeps
+  | { kind: 'wear'; c: Char; instead: Piece | null; t4: boolean; endBt?: Bt; rankUp: boolean; dV: number }
+  | { kind: 'keep'; c: Char; t4: boolean; endBt?: Bt; held?: boolean }          // held — a taken-off piece the hero's pool still keeps
   | { kind: 'reserve'; c: Char }
   | { kind: 'feed'; to: Target }
   | { kind: 'same'; same: Same }
@@ -46,9 +46,6 @@ export interface Plan {
 
 // «Не брать»: the key of a line and a hero left out for it
 export const skipKey = (line: string, hero: string): string => `${line}>${hero}`;
-const FEEDS = 4;                     // one piece — one Breakthrough step, T0 → T4
-// how many feeds a target takes: 4 − T; «T?» (null) counts from 0, up to four as before (MODEL.md §8 item 2)
-const capOf = (p: Pick<Piece, 'bt'>): number => FEEDS - (p.bt ?? 0);
 
 // pools of a store copy: a hero whose pool, worn and pin didn't change keeps the pool computed before
 function poolsOf(ctx: Ctx): (st: GearStore) => Pools {
@@ -125,7 +122,6 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   const madeBy = new Map<string, string>();     // every record the plan made → its line
   const feeds = new Map<string, number>();      // target record → pieces it gets
   const full = new Set<string>();
-  let wornFed = false;
   const fates = new Map<string, Fate>();
   type OffLine = { id: string; n: number } & Off;
   const offs: OffLine[] = [];                   // lines of pieces the plan takes from heroes
@@ -142,16 +138,23 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   };
 
   // feed the best target of a «material now» verdict: one of the 4 − T it takes, or all of them from a T4 piece — the game
-  // lifts the target straight to T4 (owner 2026-10-09). A full target is not offered again (verdictOf full)
-  const feedTo = (r: Result, x: ItemInput): Fate => {
-    const tg = r.now[0];
-    const cap = capOf(tg.piece);
-    const k = x.bt === 4 ? cap : Math.min(cap, (feeds.get(tg.piece.id) ?? 0) + 1);
-    feeds.set(tg.piece.id, k);
-    if (k >= cap) full.add(tg.piece.id);
-    const of = made.get(tg.piece.id);
-    if (of === undefined) wornFed = true;
-    return { kind: 'feed', to: of !== undefined ? { entry: of } : { c: tg.c, piece: tg.piece } };
+  // lifts the target straight to T4 (owner 2026-10-09). A target at its cap is never fed: it joins `full` and the verdict is
+  // asked again (the next target, or nothing — «Разобрать»)
+  const feedTo = (first: Result, x: ItemInput, ask: (full: ReadonlySet<string>) => Result | null): Fate => {
+    let r: Result | null = first;
+    const skipFull = new Set(full);
+    for (let i = 0; i < 64; i++) {
+      if (!r || r.kind !== 'material' || r.sub !== 'now') return { kind: 'junk' };
+      const tg = r.now[0];
+      const cap = feedsLeft(tg.piece), had = feeds.get(tg.piece.id) ?? 0;
+      if (had >= cap) { full.add(tg.piece.id); skipFull.add(tg.piece.id); r = ask(skipFull); continue; }
+      const k = x.bt === 4 ? cap : had + 1;
+      feeds.set(tg.piece.id, k);
+      if (k >= cap) full.add(tg.piece.id);
+      const of = made.get(tg.piece.id);
+      return { kind: 'feed', to: of !== undefined ? { entry: of } : { c: tg.c, piece: tg.piece } };
+    }
+    return { kind: 'junk' };
   };
 
   // one piece: its verdict on the current copy, the decision applied to it. n — the entry (for a taken-off piece — the
@@ -182,11 +185,10 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       const h = r.named[0];
       const eaten = (p: Piece) => {
         const L = madeBy.get(p.id);
-        const k = (feeds.get(res.id) ?? 0) + 1, cap = capOf(res.piece);
+        const k = (feeds.get(res.id) ?? 0) + 1, cap = feedsLeft(res.piece);
         if (!L || !h.reserveBt.some((f) => f.piece.id === p.id) || fates.get(L)?.kind !== 'reserve' || k > cap) return;
         feeds.set(res.id, k);
         if (k >= cap) full.add(res.id);
-        if (!entry) wornFed = true;
         fates.set(L, { kind: 'feed', to: entry ? { entry: n } : { c, piece: res.piece } });
       };
       // a set-aside record of its slot the new one pushes out (the hero's weak reserve) is a piece in the game too: a line
@@ -216,7 +218,7 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       madeBy.set(res.id, line);
       return r.kind === 'keep' ? { kind: 'keep', c, t4: false } : { kind: 'reserve', c };
     }
-    if (r.kind === 'material' && r.sub === 'now') return feedTo(r, input);
+    if (r.kind === 'material' && r.sub === 'now') return feedTo(r, input, (f) => verdictOf(ctx, pools(st), input, { twin, skip: skipOf(line), full: f }));
     // «Спорно» — good only for heroes outside the roster: dismantled (owner 2026-10-10: nothing is kept for a hero you
     // don't have; material for your own was checked before it)
     return { kind: 'junk' };
@@ -246,8 +248,8 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     if (f.kind !== 'junk' && !stranded) continue;
     const x = inputOfLine(id);
     const r = x && verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: keysOf(own, id), full });
-    if (stranded && x) feeds.delete(stranded);
-    if (x && r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r, x.input));
+    if (stranded && x) { feeds.delete(stranded); full.delete(stranded); }
+    if (x && r?.kind === 'material' && r.sub === 'now') fates.set(id, feedTo(r, x.input, (f) => verdictOf(ctx, pools(st), x.input, { twin: x.twin, skip: keysOf(own, id), full: f })));
     else if (stranded && x) fates.set(id, { kind: 'junk' });
   }
 
@@ -270,17 +272,20 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     if (p.bt === null) { if (k >= FEEDS) newBt.set(id, 4); }
     else newBt.set(id, Math.min(4, p.bt + k) as Bt);
   }
-  wornFed = [...feeds].some(([id, k]) => !made.has(id) && st.pieces[id]?.bt === null && k < FEEDS);
+  const wornFed = [...feeds].some(([id, k]) => !made.has(id) && st.pieces[id]?.bt === null && k < FEEDS);
   for (const [id] of newBt) if (!made.has(id)) ops.push({ bt: id, was: st.pieces[id].bt });
   if (newBt.size) st = { ...st, pieces: { ...st.pieces, ...Object.fromEntries([...newBt].map(([id, bt]) => [id, { ...st.pieces[id], bt }])) } };
   const t4 = [...newBt].filter(([, bt]) => bt === 4).map(([id]) => id);
-  const t4Of = new Set(t4.map((id) => made.get(id)!));
+  const t4Of = new Set(t4.filter((id) => made.has(id)).map((id) => made.get(id)!));
+  // the end T of a new piece the plan feeds short of T4 — on its line like «T4» (a «T?» piece stays unmarked)
+  const endOf = new Map<number, Bt>([...newBt].filter(([id, bt]) => made.has(id) && bt < 4).map(([id, bt]) => [made.get(id)!, bt]));
 
   const lines: Line[] = [];
   entries.forEach((e, i) => {
     const n = e.n ?? i + 1;
     let fate = fates.get(String(n))!;
     if ((fate.kind === 'wear' || fate.kind === 'keep') && t4Of.has(n)) fate = { ...fate, t4: true };
+    else if ((fate.kind === 'wear' || fate.kind === 'keep') && endOf.has(n)) fate = { ...fate, endBt: endOf.get(n) };
     lines.push({ id: String(n), n, input: e.input, fate });
     for (const o of offs.filter((x) => x.n === n && fates.has(x.id))) {
       lines.push({ id: o.id, n, off: { c: o.c, piece: o.piece, was: o.was }, input: inputOfPiece(o.piece), fate: fates.get(o.id)! });

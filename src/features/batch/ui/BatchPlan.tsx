@@ -49,14 +49,18 @@ function targetOf(plan: Plan, n: number): { c: Char; slot: SlotId } | null {
   return l && f && (f.kind === 'wear' || f.kind === 'keep' || f.kind === 'reserve') ? { c: f.c, slot: l.input.slot } : null;
 }
 
+// «T4 after feeding» — or the T the plan ends at when the piece is fed short of T4 (a known T only)
+const t4Mark = (t: Texts, f: { t4: boolean; endBt?: number }): string =>
+  f.t4 ? t.batch.t4 : f.endBt !== undefined ? t.batch.t4.replace('4', String(f.endBt)) : '';
+
 export function fateText(t: Texts, f: Fate, plan: Plan, ctx: Ctx, x: ItemInput): string {
   switch (f.kind) {
     case 'wear': {
       // a recommended Legendary that wins by its passive and loses points says what it costs, like the trade plan (Q6)
       const cost = f.rankUp && namedGain(-f.dV) ? ` · ${t.trade.itemPts(f.dV)}, ${t.trade.passive}` : '';
-      return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + cost + (f.t4 ? t.batch.t4 : '');
+      return (f.instead ? t.batch.replace(f.c.name, f.instead.slot) : t.batch.wear(f.c.name)) + cost + t4Mark(t, f);
     }
-    case 'keep': return t.batch.keep(f.c.name) + (f.t4 ? t.batch.t4 : '');
+    case 'keep': return t.batch.keep(f.c.name) + t4Mark(t, f);
     case 'reserve': return t.batch.reserve(f.c.name, waitText(t, ctx, f.c, x));
     case 'feed': {
       if ('entry' in f.to) { const g = targetOf(plan, f.to.entry); return t.batch.feedEntry(f.to.entry, g?.slot ?? null, g?.c.name ?? null); }

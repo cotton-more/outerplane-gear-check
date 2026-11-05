@@ -18,6 +18,10 @@ export interface ItemInput {
 }
 
 export type Bt = 0 | 1 | 2 | 3 | 4;
+// one piece — one Breakthrough step, T0 → T4
+export const FEEDS = 4;
+// how many feeds a piece still takes to T4: 4 − T (exact T0–T4, HISTORY.md 0270); «T?» (null) counts from T0 — four
+export const feedsLeft = (x: { bt?: Bt | null }): number => Math.max(0, FEEDS - (x.bt ?? 0));
 export const isBt = (v: unknown): v is Bt => v === 0 || v === 1 || v === 2 || v === 3 || v === 4;
 // A stored bt → Bt | null (HISTORY.md 0270). exact — the record was written with a «bt is exact» marker: a valid 0–4 is kept,
 // anything else is unknown (null). Not exact — written by the «T4» toggle era: 4 stays T4, 1–3 stay (old edits wrote them),

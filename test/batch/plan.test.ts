@@ -330,6 +330,20 @@ describe('exact T: feeds by the target\'s T', () => {
     expect(p2.lines.map((l) => l.fate.kind)).toEqual(['junk', 'feed']);
     expect(p2.st.pieces.cH.bt).toBe(4);
   });
+  it('never over-feeds: no target gets more than 4 − T pieces, however many weak copies come', () => {
+    const { ctx, st } = world(['Caren', 'Aer'], { Caren: [sG(), sB(), { ...good('cH'), bt: 3 }], Aer: [sG('aG'), sB('aB'), { ...good('aH'), bt: 2 }] });
+    const plan = planBatch(ctx, st, weaks(6));
+    const got: Record<string, number> = {};
+    for (const l of plan.lines) if (l.fate.kind === 'feed' && !('entry' in l.fate.to)) got[l.fate.to.piece.id] = (got[l.fate.to.piece.id] ?? 0) + 1;
+    expect(got.cH ?? 0).toBeLessThanOrEqual(1);
+    expect(got.aH ?? 0).toBeLessThanOrEqual(2);
+    expect(plan.lines.filter((l) => l.fate.kind === 'feed').length).toBe((got.cH ?? 0) + (got.aH ?? 0));
+  });
+  it('a piece fed short of T4 carries its end T on the line', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB()] });
+    const plan = planBatch(ctx, st, [E({ ...good('g'), bt: 1 }), ...weaks(1)]);
+    expect(plan.lines[0].fate).toMatchObject({ kind: 'wear', t4: false, endBt: 2 });
+  });
   it('a new piece at T2 worn by the plan takes two of the batch\'s weak copies, the third is dismantled; its line says T4', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB()] });
     const plan = planBatch(ctx, st, [E({ ...good('g'), bt: 2 }), ...weaks(3)]);

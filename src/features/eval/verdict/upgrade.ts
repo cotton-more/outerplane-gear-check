@@ -27,7 +27,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       if (s.bt === 4) { if (set || item) out.push(P.btDone); }
       else if (set) out.push(epic ? P.btArmorEpic(piece, set.short, 4 - (s.bt ?? 0)) : P.btArmorLegend(piece, set.short));
       else if (item) out.push(P.btGear(item.name));
-      if (s.bt && s.bt < 4 && (set || item)) out.push(P.btLeft(s.bt));
+      if (s.bt && s.bt < 4 && (item || (set && !epic))) out.push(P.btLeft(s.bt));
       if (epic) out.push(P.noTransistone);
       return out;
     }
@@ -35,7 +35,7 @@ export function upgradePlan(ctx: Ctx, s: ItemInput, res: Verdict): string[] {
       // a stopgap weapon or accessory (Epic too) gets no Breakthrough: their copies are dismantled (owner 2026-10-09,
       // was «ступени из разбора»). A stopgap armor piece may take it: T4 counts toward the set bonus
       // (owner Q1, 2026-10-09)
-      return [P.enhance, armor ? (s.bt === 4 ? P.btDone : P.tempArmor) : P.tempNoInvest];
+      return [P.enhance, ...(armor ? (s.bt === 4 ? [P.btDone] : [P.tempArmor, ...(s.bt && s.bt < 4 && set ? [P.btLeft(s.bt)] : [])]) : [P.tempNoInvest])];
     case 'fodder':
       if (set) return [P.fodderArmor(piece, set.short)];
       return item ? [P.fodderGear(item.name)] : [];

@@ -10,7 +10,7 @@ import { partKey, profileFor, type Profile } from '@/game/build/profile';
 import { scoreBuild, tempOk } from '@/game/build/score';
 import { itemMains } from '@/game/item/mains';
 import { dropSubs } from '@/game/item/subs';
-import { sameForBt, type ItemInput } from '@/game/item/item';
+import { feedsLeft, sameForBt, type ItemInput } from '@/game/item/item';
 import { armorBar } from '@/features/eval/verdict/bar';
 import type { Piece } from './model/gear';
 import { fit, wearable } from './model/vs';
@@ -25,8 +25,6 @@ export const formPiece = (x: ItemInput): Piece => ({
 
 // a reserve the new piece eats in its Breakthrough; of — whose it is when it's another hero's, null — the hero's own
 export interface Fed { piece: Piece; of: Char | null }
-// how many feeds a piece still takes to T4: 4 − T (exact T0–T4, HISTORY.md 0270); «T?» (null) counts from T0 — four
-const feedsLeft = (x: Pick<Piece, 'bt'>): number => Math.max(0, CFG.reservePerHero - (x.bt ?? 0));
 // worth a Breakthrough (owner 2026-10-09): armor that passes the bar; a weapon or accessory only when it is «Оставить» —
 // a Legendary from the hero's list with the right main. A weapon or accessory stopgap (any Epic, a Legendary off the list)
 // gets replaced: the verdict says «не вкладывай», so nothing feeds it and its spare copies are dismantled. An Epic armor
