@@ -29,16 +29,15 @@ There is **no build to pick**. The app takes the best of the hero's pieces itsel
 **Set bonuses follow the pieces' Breakthrough.** ×2 at T4 when at least two pieces of the set are T4, otherwise ×2
 T0–T3; ×4 at T4 when all four are T4, otherwise ×4 T0–T3. Speed, Penetration and Bursting have no ×2 below T4, and their
 ×4 T0–T3 is the whole bonus. Examples: Speed T4 T4 → +13%; Speed T4 T4 T0 → +13%; Speed T4 T4 T0 T0 → +25%; Speed T4 ×4
-→ 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A piece's Breakthrough is the **"T4"** button next to the set (on a
+→ 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A piece's Breakthrough is set exactly, **T0…T4**, with five segments like the diamonds in the game, next to the set (on a
 Legendary weapon or accessory — next to the item, on an Epic one — next to the main stat) on the form and on the piece
-card: on — T4, off — T0–T3. Weapons and accessories have no set — there "T4" is only about material: no more copies are
-needed for its Breakthrough. **"T?"** shows on old records with no Breakthrough set: such a piece counts as below T4
-(T0–T3) — in the game it may already be T4.
+card. Weapons and accessories have no set — there T is only about material: at T4 no more copies are needed for its
+Breakthrough. **"T?"** shows on old records with no T set: such a piece counts as below T4 until you tap its real T.
 
 ## How a piece reaches a character
 
 **You rate a new piece** — from the inventory: a fresh drop or one taken off a hero. The piece is compared as it is — by
-the segments that are lit and "T4": Reforges still ahead don't count.
+the segments that are lit and T: Reforges still ahead don't count.
 
 Only from a verdict: enter a piece as usual and press **"Equip"** on a hero in the list under the stamp — or the button under the card on a phone. **"Equip" records the piece as worn in its slot** and adds it to **"Equip in game"** (below). The list is every roster hero the piece makes at least 1 point stronger, in three groups: "Instead of worn", "Into an empty slot" and "Set aside"; each shows three rows, biggest gain first, and "N more ▸" opens the rest. ★ is who the verdict picks. A row has "+4.2", what changes ("instead of 2.2 pts", "turns on Speed ×2") and a button — "Equip", "Replace" or "Set aside"; "Detailed" (on a computer) adds what the piece gives the hero and what was there. Another hero — search by name under the list, all characters, not just the roster, except those replaced by Core Fusion — or tap "Rate a piece for Caren": there "Equip" is on every piece, even a useless one — that's how you record what the hero wears in the game.
 
@@ -63,7 +62,7 @@ the game has two such pieces (a filter by set and slot shows both), tap **"It's 
 Caren's as a separate piece and the usual buttons come back. The same stats in another order are another piece
 anyway — type substats in the game's order.
 
-**Upgraded a worn piece in the game** (Reforge, Breakthrough)? Fix its segments and "T4" on the piece card (see below).
+**Upgraded a worn piece in the game** (Reforge, Breakthrough)? Fix its segments and T on the piece card (see below).
 Or tap "Try a replacement" there, enter the piece as it is now and "Replace": to the app it's a new piece, and the old
 record goes.
 
@@ -92,10 +91,10 @@ below) next to "Trade ▸".
 ### Worn
 
 What the hero wears in the game now: six pieces as cards, like the game's — weapon and accessory, then the armor in
-pairs (helmet and armor, gloves and boots; one per row on a phone). A card shows Breakthrough ("T4", "T0–T3") and the
+pairs (helmet and armor, gloves and boots; one per row on a phone). A card shows Breakthrough ("T0"…"T4") and the
 piece's points next to its name, then the stats in a column in the game's words: the main lines ("Attack", "Health"),
 then the substats, "LV 2 Attack +8.0%" — check them against the game's piece card line by line. A main line has its
-number only at T4: below T4 the exact Breakthrough tier isn't recorded. A substat is coloured by the hero's points: green
+number only at T4. A substat is coloured by the hero's points: green
 counts in full, yellow at half. Above the cards — only the set bonuses that are turned on. Armor shows the set icon
 before its name, a Legendary weapon or accessory its own picture, as in the game. An empty slot has **"Enter"**: "Rate" opens for that slot, and
 after "Equip" the form moves to the next empty one. If the hero has at most one piece per slot, "Yes, all worn"
@@ -163,7 +162,7 @@ roster nor the gear. More — [Characters and guild code](Characters-and-guild-c
 The hero's pieces by slot, except the worn ones — those are on Worn. On the right, the reason each is kept (one, by
 seniority): **best {set} at T4**, **best {set}**, **by stats**, **reserve**. The rest is **"no longer needed"**: the layouts use better ones. Such a
 piece isn't removed by itself: dismantle it in the game and press **"Remove from Caren"**. The app never deletes a piece
-silently. Each piece also shows its Breakthrough ("T4", "T0–T3"). Everything worn — instead of the list, "Nothing
+silently. Each piece also shows its Breakthrough ("T0"…"T4"). Everything worn — instead of the list, "Nothing
 besides what is worn.". "Rate a piece for Caren" sits at the bottom.
 
 **"P parked"** instead of a reason — a piece a [trade](Trading-gear#at-the-end--replacements) took off and could give to
@@ -180,7 +179,7 @@ the roster." with "Undo", "Cancel" — nothing. "Replace" with a roster code kee
 Tap a piece to fix it after upgrading in the game. The edit is narrow — only what upgrading changes:
 - **segments** — how many are lit on the substat in the game, 1–6, with no yellow/orange split. A piece's segments add
   up to at most 22 on a Legendary and 17 on an Epic;
-- **"T4"** — you did Breakthrough T4; off — T0–T3 (on any piece, Epic weapons and accessories too);
+- **T0…T4** — the piece's Breakthrough, five segments (on any piece, Epic weapons and accessories too);
 - **"+ 4th substat"** on an Epic with three — the first Reforge added a fourth;
 - **Transistone** changed a stat — that's not an edit: enter the piece again and "Equip", and "Remove from Caren" this
   one;

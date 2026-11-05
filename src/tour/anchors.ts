@@ -13,7 +13,7 @@ export const ANCHORS = [
   'hstars', // six stars before «Attacker · DPS» in the card header
   'pin', // «Закрепить набор» / «Закреплено: …» в карточке героя
   'fusion', // пометка «заменён Core Fusion X» на плитке X
-  'bt', // «T4» рядом с сетом брони: вещь уже на Breakthrough T4
+  'bt', // T0…T4 рядом с сетом брони: Breakthrough вещи
   'trade', // «К обмену ▸» в карточке персонажа
   'batch', // «Партия»: next to «Следующий» on a wide screen, in «Ещё» on a phone
   'share', // «Поделиться» во вкладке «Надето»

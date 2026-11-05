@@ -51,7 +51,7 @@ function targetOf(plan: Plan, n: number): { c: Char; slot: SlotId } | null {
 
 // «T4 after feeding» — or the T the plan ends at when the piece is fed short of T4 (a known T only)
 const t4Mark = (t: Texts, f: { t4: boolean; endBt?: number }): string =>
-  f.t4 ? t.batch.t4 : f.endBt !== undefined ? t.batch.t4.replace('4', String(f.endBt)) : '';
+  f.t4 ? t.batch.t4(4) : f.endBt !== undefined ? t.batch.t4(f.endBt) : '';
 
 export function fateText(t: Texts, f: Fate, plan: Plan, ctx: Ctx, x: ItemInput): string {
   switch (f.kind) {

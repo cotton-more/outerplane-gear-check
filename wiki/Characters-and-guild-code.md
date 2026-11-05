@@ -75,7 +75,7 @@ The verdict details and a character's piece card have a code, for example `OGC K
 into the game chat (8–11 letters, the chat limit is 50 characters). Whoever gets it opens More → "Enter code" and types it in: the code has only letters,
 case and spaces don't matter, and a check letter catches typos. Everyone gets the evaluation for their own roster and
 settings. A piece with 5–6 segments (after Reforge) gets a code 1–2 letters longer; app versions from October 2026 read
-it, an older one says the code has an error until it updates. "T4" isn't part of the code.
+it, an older one says the code has an error until it updates. T isn't part of the code.
 
 **Whose piece is it?** More → "Find a piece": paste a piece's code and the app shows who wears it and whose pool has
 it (a name opens the hero's card). A piece you enter on "Evaluate" shows the same by itself, under the verdict: "Worn by: …", "In the pool of: …" (the name with the class icon in the element's colour); it doesn't change the verdict. It looks for the same stats in the same order at the same levels; Breakthrough

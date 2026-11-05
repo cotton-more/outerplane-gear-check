@@ -11,7 +11,7 @@
    Swiftness almost everything is bright — enter those.
 4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third. Except a
    weapon or accessory while a hero in your roster has that slot empty: enter all substats, it may go to them.
-5. **"T4"** next to the set or item — only if the piece is already at Breakthrough T4; a fresh drop is T0, leave it off.
+5. **T0…T4** next to the set or item — the piece's exact Breakthrough, five segments like the diamonds in the game; a fresh drop is T0, leave it.
    **"Fodder"** — this piece is the material: the verdict says which piece of a hero below T4 to feed it to now, or
    keeps it in reserve for a future strong one.
 6. **"Keep"** — lock it so you don't dismantle it by accident. **"Stopgap"** — wear it until you find better.
@@ -66,8 +66,8 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
    the plan takes off a hero gets its own line right under it ("Caren's removed helmet …"; for a weapon or accessory
    also which item it is). A recommended weapon or accessory goes on for its passive even when its substats are
    weaker — the line says what it costs: "Equip on Caren — instead of the weapon · −4.9 pts, better passive". One
-   target takes up to four pieces; a new piece fed four times reaches T4 ("· T4 after feeding"). Four feeds take a worn
-   piece to T4 too — "Record the plan" marks "T4" itself; fewer than four — once it's at T4, tap "T4" on its card. A
+   target takes only the feed it lacks (4 − T); a piece fed to T4 reads "· T4 after feeding", a shorter feed — "· T3 after
+   feeding" and so on. "Record the plan" writes the piece's new T itself; a piece with "T?" gets up to four — tap its real T on its card. A
    piece that looks like one already set aside asks: "Same as Hilde's set-aside (Oct 5)? Then do nothing." — if you
    have two of them, tap "It's a different one". **"Don't take"** on a line — plan it again without that hero. A piece
    that would suit only heroes outside your roster is "Dismantle": there's no one to set it aside for.
@@ -85,11 +85,11 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
       weapon or accessory names the main stat it waits for: "…once a Spirit of Unification · PEN% drops", the item in red), and the substats to check. A lock means "in someone's
       Pool": whose — on the hero's card, the Pool tab.
    3. **Breakthrough:** "Caren's helmet → Breakthrough: up to 4" — any piece from the game's list works (the app
-      doesn't know the exact tier below T4, the game takes no more than it needs); what the game doesn't take goes to
+      doesn't know the exact T — "T?" — the game takes no more than it needs); what the game doesn't take goes to
       the dismantle. Material is interchangeable, worn and locked pieces aren't in that list, so a set-aside piece
       can't be fed by mistake; "first unlock 2 set-aside" — when the plan feeds a reserve. A target you set aside is
       named so: "Gnosis Domine's set-aside helmet (…) → Breakthrough: up to 4". Below — the target as a card: its item
-      (a weapon or accessory), all its substats and the tiers this feed adds (◆◆◇◇ +2; four pieces — T4); under it,
+      (a weapon or accessory), all its substats and the tiers this feed adds (◆◆◇◇ +2; for a known T — "T1 → T3"); under it,
       on a line, each piece of feed by its substats, a weapon or accessory with its item first.
       A Legendary weapon or accessory takes only copies of the same item, so heroes get different amounts of feed.
    4. **Dismantle — in one selection, last:** "Select in the game: 7" — after the Breakthrough, so nothing meant as feed

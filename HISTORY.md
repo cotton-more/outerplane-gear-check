@@ -770,3 +770,26 @@ card or a column (the old code: 20 heroes).
 Not built: storing the exact Breakthrough tier (would bring exact main numbers everywhere, at the cost of input В4 removed).
 Checks: `test/gear/gear.dom.test.ts` (main lines with and without a number, substat rows in the game's words); layout at
 411×564, 1280×800, 2056×1202, dark theme, with the owner's backup (Mystic Sage Ame, Demiurge Stella with T4 pieces).
+
+## 0270 Exact Breakthrough T0–T4
+Folder: `.x/0270-bt-level` (`DECISIONS.md`). Owner 2026-11-05: store a piece's real T so the app stops saying "do it if
+you haven't" and sees at once that a piece takes no more feed (stopgap or dismantle). Before, the form and card had only
+a «T4» toggle; stored 0 meant "below T4, exact unknown".
+Built in three checkpoints, each reviewed (Opus, medium) and fixed:
+1. Data + input (`eb00b97`, `9811eb3`): five segments «T 0 1 2 3 4» (`BtChip`) on the form and the piece card; the form
+   holds `bt | null` and starts a fresh piece at T0; the gear store's one-time migration (marker `btx`, store stays v3 so
+   older cached tabs still read it) turns the toggle's 0 into null «T?»; backup OGC-GEAR10 and hero code v3 keep a real
+   T0, older codes read 0 as «T?»; `legacyBt` (game/item) is the one reading of pre-0270 values for gear, batch
+   (`ogc.batch`) and trade walk (`ogc.trade`, marker `btx`).
+2. Logic (`89f26c9`, `79091c8`): `FEEDS` / `feedsLeft` (game/item) shared by the verdict and the batch plan; a target
+   takes at most 4 − T feeds and a capped target is never fed (the piece is judged again); the end mark is T + n with an
+   Undo op, shown on the plan line («· T2 после корма»); the walk card shows the T it has as filled pips, the new ones in
+   gain colour, «T1 → T3»; advice for a known T names the steps left (`btNowLeft`, `btLeft`, `btDone`). «T?» behaves as
+   before. Reserve cap per hero unchanged: a reserve waits for a fresh piece, which arrives at T0.
+3. Texts, tour (`bt` rev 2 with news, `piece` rev 3), Help and Wiki pairs.
+Owner decisions: T1 five segments; T2 old "below T4" records → «T?» until tapped; T3 no hotkey for T (rare action, the
+T/Е toggle removed); T4 on a phone (< 560 px) the set field shows only its icon so the T pill stays on the row; texts and
+«What's new» approved 2026-11-05.
+Accepted, not fixed: an older cached tab after the migration still writes 0 meaning "below T4", which the new page reads
+as T0 — the same class as two open tabs (out of scope).
+Checks: `task test` 2689 green, `task tour:check` 4 sizes × 2 themes; golden unchanged.

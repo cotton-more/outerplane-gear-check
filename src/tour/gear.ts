@@ -37,7 +37,7 @@ export function gearDemo(idx: Index): GearDemo | null {
 export const GEAR: Step[] = [
   // «Надето»: рамка на шлеме — нажми, откроется карточка вещи
   { id: 'gBuild', rev: 2, home: 'chars', layer: 'card', at: () => ['gslots'], pin: () => ['gslots:helmet'], done: (c) => c.pieceOpen },
-  // карточка вещи: сегменты и «T4»; «Примерить замену» — оценка для Caren (тур кладёт на форму пример)
+  // карточка вещи: сегменты и T; «Примерить замену» — оценка для Caren (тур кладёт на форму пример)
   // рамка — на кнопке: вокруг всей карточки полоса на низком экране легла бы поверх неё
   { id: 'gPiece', rev: 2, home: 'chars', layer: 'sheet', at: () => ['gpiece'], pin: () => ['gpiece:try'], done: (c) => c.tryOn && c.s.tab === 'eval' },
   // полоса «Только для · Caren» и карточка вердикта (на широком — колонка вердикта): посмотреть и «Дальше». Режим героя
