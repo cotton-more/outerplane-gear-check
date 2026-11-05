@@ -308,7 +308,7 @@ held against, «Надеть»'s removals and the batch see the pool **without**
 Breakthrough target, never dismantled, never «no longer needed». The trade offers it first (§7 item 2). Invariant: park ⊂
 pooled and not worn (`syncWorn`): the mark goes once someone wears it; «Убрать» removes it as usual («Вернуть» parks it
 again in its place, `removeUndo`); it travels with the
-record (drop / undo, Core Fusion — ids) and is in the backup (OGC-GEAR9). A parked piece whose own hero now wears a better
+record (drop / undo, Core Fusion — ids) and is in the backup (OGC-GEAR9+). A parked piece whose own hero now wears a better
 one is a later question (owner's follow-up, HISTORY.md 0204). **The way out** is the player's (HISTORY.md 0204):
 unlock it in the game, then «Убрать» — in the card or in «Ещё» → «Припаркованные · N» (every parked piece by hero,
 `parkedGroups`); in the game it becomes ownerless and comes up again when dismantling.
