@@ -16,6 +16,8 @@ const minus = (x: number) => (Math.round(x * 10) ? `−${dec(x)}` : '0');
 const SLOT_EN: Record<string, string> = { weapon: 'weapon', accessory: 'accessory', helmet: 'helmet', armor: 'armor', gloves: 'gloves', shoes: 'boots' };
 const MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const plEn = (slot: string) => slot === 'gloves' || slot === 'shoes';
+// Breakthrough steps left to T4 (HISTORY.md 0270): «one more step», «three more steps»
+const stepsEn = (n: number) => `${['', 'one', 'two', 'three', 'four'][n] ?? n} more step${n === 1 ? '' : 's'}`;
 // «A and B», «A, B and C»
 const andEn = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
 
@@ -40,8 +42,10 @@ export const en: Texts = {
     enhance: '**Enhance** to +10 right away: it raises the main stat.',
     btArmorLegend: (piece, set) =>
       `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — any Legendary ${piece} ${set} Set (that very fodder) or Armor Glunite; one piece per tier.`,
-    btArmorEpic: (piece, set) =>
-      `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — the same piece: Epic ${piece} ${set} Set (substats don't matter) or Glunite. Until this one is T4, don't dismantle such Epics — you need 4.`,
+    btArmorEpic: (piece, set, need = 4) =>
+      `**Breakthrough** to T4: +5% main stat per tier and a stronger set bonus. Material — the same piece: Epic ${piece} ${set} Set (substats don't matter) or Glunite. Until this one is T4, don't dismantle such Epics — you need ${need === 1 ? 'one more' : need}.`,
+    btLeft: (bt) => `It's T${bt} now: ${stepsEn(4 - bt)} to T4.`,
+    btDone: '**Breakthrough** — already T4.',
     btGear: (name) =>
       `**Breakthrough** to T4 — a must: the passive grows toward T4, plus +20% main stat. Material — copies of ${name} (any main stat) or Refined Glunite.`,
     noTransistone: "**Transistone** — don't: per the outerpedia guide they go only to Irregular gear and red armor.",
@@ -183,6 +187,7 @@ export const en: Texts = {
     keepStatsWhy: (set, name) => `${set} isn't in ${name}'s builds, but nothing stronger exists for this slot.`,
     btNow: (slot, name) => `Fodder — Breakthrough for ${name}'s ${SLOT_EN[slot]}`,
     btNowWhy: (slot, name) => `Do it now: ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? "aren't" : "isn't"} T4 yet. One piece — one step.`,
+    btNowLeft: (slot, name, bt) => `Do it now: ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? 'are' : 'is'} T${bt} — ${stepsEn(4 - bt)} to T4.`,
     btNowT4: (slot, name) => `Do it now: this one is T4 — ${name}'s ${SLOT_EN[slot]} ${plEn(slot) ? 'go' : 'goes'} straight to T4.`,
     reserve: (set, slot, name) => `Fodder — reserve for ${name}'s ${set} ${SLOT_EN[slot]}`,
     reserveWhy: (name, set, slot) => `${name} has started ${set} but no ${set} ${SLOT_EN[slot]}. When a strong one drops, feed this one to it.`,
@@ -808,7 +813,7 @@ export const en: Texts = {
     feedEntry: (n, slot, name) => (slot && name ? `Feed to #${n} · ${name}'s ${SLOT_EN[slot]}` : `Feed to #${n}`),
     feedWorn: (slot, name) => `Feed to ${name}'s ${SLOT_EN[slot]}`,
     feedStash: (slot, name) => `Feed to ${name}'s set-aside ${SLOT_EN[slot]}`,
-    wornNote: 'Feeding worn pieces: up to 4 each — at T4, tap "T4" on the piece card.',
+    wornNote: 'Feeding «T?» pieces: up to 4 each — after the Breakthrough, tap their T on the piece card.',
     junk: 'Dismantle',
     none: "Can't plan: the item isn't in outerpedia data",
     same: (_slot, name, date) => `Same as ${name}'s set-aside${date ? ` (${date})` : ''}? Then do nothing.`,

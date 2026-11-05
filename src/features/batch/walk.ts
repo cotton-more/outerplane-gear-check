@@ -17,7 +17,7 @@
 // description instead of a number.
 import type { Char, SlotId } from '@/game/data/types';
 import type { Piece } from '@/features/gear/model/gear';
-import type { ItemInput } from '@/game/item/item';
+import type { Bt, ItemInput } from '@/game/item/item';
 import { slotOf, type Batch } from './batch';
 import { inputOfPiece, wornAtEnd, type Fate, type Line, type Plan, type Target } from './plan';
 
@@ -38,11 +38,19 @@ export type Step =
   | { key: string; stage: 4; where: Where[]; inputs: ItemInput[]; unlock: number; left: boolean }
   // target — the worn piece of a hero, or a piece named by its description (set aside — a piece the plan keeps for a hero,
   // of this batch or recorded); piece — the target's own record (its name in the step), mats — the planned feed, each to
-  // check (owner 2026-10-09: a Legendary item takes only copies of itself)
+  // check (owner 2026-10-09: a Legendary item takes only copies of itself). from — the target's T before the feed, null —
+  // «T?»; to — its T after (T + n, a T4 piece in the feed lifts it to T4), null — «T?» fed fewer than four (HISTORY.md 0270)
   | { key: string; stage: 3; target: { worn: Char; slot: SlotId } | { where: Exclude<Where, { n: number }> }; piece: ItemInput | null; n: number; unlock: number;
-      mats: { where: Where; input: ItemInput }[] };
+      mats: { where: Where; input: ItemInput }[]; from: Bt | null; to: Bt | null };
 export interface Walk {
   steps: Step[];       // in walk order: stage 1…4
+}
+
+// the target's T before and after the feed: one piece — one step, a T4 piece fills it to T4; «T?» is known only at T4
+export function btRange(from: Bt | null, mats: readonly { input: ItemInput }[]): { from: Bt | null; to: Bt | null } {
+  const gain = mats.some((m) => m.input.bt === 4) ? 4 : mats.length;
+  if (from === null) return { from, to: gain >= 4 ? 4 : null };
+  return { from, to: Math.min(4, from + gain) as Bt };
 }
 
 export function walkOf(batch: Batch, plan: Plan): Walk {
@@ -64,7 +72,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   const lock: Extract<Step, { stage: 2 }>[] = [];
   const junk: { where: Where; input: ItemInput }[] = [];
   let unlockJunk = 0;                              // set-aside records among them: locked in the game, the dismantle skips them
-  const feeds = new Map<string, Omit<Extract<Step, { stage: 3 }>, 'key' | 'stage'>>();
+  const feeds = new Map<string, Omit<Extract<Step, { stage: 3 }>, 'key' | 'stage' | 'from' | 'to'>>();
   const lineOf = (n: number) => plan.lines.find((l) => l.n === n && !l.off);
   // why an entry line's piece stays; a taken-off piece has its description instead (no number)
   const keptOf = (l: Line | undefined, f: Fate | undefined): Kept | null => {
@@ -135,7 +143,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
   const first = equip.filter((s) => !takesOff(s)), second = equip.filter((s) => takesOff(s));
   const heroes = [...new Set(first.map((s) => s.c.id))];
   first.sort((a, z) => heroes.indexOf(a.c.id) - heroes.indexOf(z.c.id));
-  const bt: Extract<Step, { stage: 3 }>[] = [...feeds].map(([k, x]) => ({ key: `bt:${k}`, stage: 3, ...x }));
+  const bt: Extract<Step, { stage: 3 }>[] = [...feeds].map(([k, x]) => ({ key: `bt:${k}`, stage: 3, ...x, ...btRange(x.piece?.bt ?? null, x.mats) }));
   // dismantle: in the order of the batch; pieces with no number after them
   junk.sort((a, z) => ('n' in a.where ? a.where.n : Infinity) - ('n' in z.where ? z.where.n : Infinity));
   const dz: Extract<Step, { stage: 4 }>[] = junk.length

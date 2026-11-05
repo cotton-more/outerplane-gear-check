@@ -99,6 +99,7 @@ html.narrow .vbar .bm-long { display: none; }
 .bt-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .bt-pips { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; font: 600 11px/1 var(--font-mono); color: var(--ink-3); white-space: nowrap; }
 .bt-pips i { width: 7px; height: 7px; margin: 0 1px; border: 1.5px solid var(--ink-3); transform: rotate(45deg); }
+.bt-pips i.have { background: var(--ink-3); }
 .bt-pips i.gain { border-color: var(--accent); background: var(--accent); }
 .bt-pips i:last-of-type { margin-right: 4px; }
 .bt-chips { display: flex; flex-wrap: wrap; gap: 4px; }

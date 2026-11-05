@@ -197,7 +197,9 @@ describe('plan of a batch', () => {
     const eaten = plan.ops.flatMap((o) => ('r' in o && o.c === caren ? o.r.removed : []));
     expect(eaten).toHaveLength(1);
     expect(plan.lines[2].fate).toMatchObject({ kind: 'feed', to: { c: { name: 'Caren' }, piece: { id: plan.st.worn?.[caren]?.helmet } } });
-    expect(plan.wornFed).toBe(true);
+    // the moved helmet is T0 (exact, HISTORY.md 0270): one feed marks it T1 — no «T?» footnote
+    expect(plan.wornFed).toBe(false);
+    expect(plan.st.pieces[plan.st.worn![caren]!.helmet!].bt).toBe(1);
     expect(problems(st, plan)).toEqual([]);
   });
 
@@ -272,11 +274,69 @@ describe('«T4» on a recorded piece fed four times', () => {
     expect(undoPlan(plan.st, plan).pieces.cH.bt).toBe(0);
   });
 
-  it('fed fewer than four — not marked, the footnote stays', () => {
-    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), good('cH')] });
+  it('a «T?» piece fed fewer than four — not marked, the footnote stays', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: null }] });
     const plan = planBatch(ctx, st, [E(weak('w1'))]);
     expect(plan.t4).toEqual([]);
+    expect(plan.st.pieces.cH.bt).toBe(null);
+    expect(plan.ops.some((o) => 'bt' in o)).toBe(false);
     expect(plan.wornFed).toBe(true);
+  });
+  it('a «T?» piece fed four times — T4, no footnote (as before)', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: null }] });
+    const plan = planBatch(ctx, st, ['w1', 'w2', 'w3', 'w4'].map((id, i) => E({ ...weak(id), lit: { SPD: 1, RES: 1 + (i % 2), EFF: 1 + (i >> 1), HP: 1 } })));
+    expect(plan.t4).toEqual(['cH']);
+    expect(plan.wornFed).toBe(false);
+    expect(undoPlan(plan.st, plan).pieces.cH.bt).toBe(null);
+  });
+});
+
+// HISTORY.md 0270: a target at T takes at most 4 − T feeds; the plan marks it T + n
+describe('exact T: feeds by the target\'s T', () => {
+  const weaks = (n: number, bt: 0 | 4 | null = 0) => Array.from({ length: n }, (_, i) => E({ ...weak(`w${i}`), lit: { SPD: 1, RES: 1 + (i % 2), EFF: 1 + (i >> 1), HP: 1 }, bt }));
+  it('a T2 target takes two; the third piece is dismantled; marked T4, «Вернуть» gives T2 back', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: 2 }] });
+    const plan = planBatch(ctx, st, weaks(3));
+    expect(plan.lines.map((l) => l.fate.kind).sort()).toEqual(['feed', 'feed', 'junk']);
+    expect(plan.t4).toEqual(['cH']);
+    expect(plan.st.pieces.cH.bt).toBe(4);
+    expect(plan.ops.filter((o) => 'bt' in o)).toEqual([{ bt: 'cH', was: 2 }]);
+    expect(plan.wornFed).toBe(false);
+    expect(undoPlan(plan.st, plan).pieces.cH.bt).toBe(2);
+  });
+  it('the spare feed goes to the next target: a T3 target takes one, the other goes to a T0 one', () => {
+    const { ctx, st } = world(['Caren', 'Aer'], { Caren: [sG(), sB(), { ...good('cH'), bt: 3 }], Aer: [sG('aG'), sB('aB'), { ...good('aH'), bt: 0 }] });
+    const plan = planBatch(ctx, st, weaks(2));
+    const to = plan.lines.map((l) => (l.fate.kind === 'feed' && !('entry' in l.fate.to) ? l.fate.to.piece.id : l.fate.kind));
+    expect(to.filter((x) => x === 'cH').length).toBeLessThanOrEqual(1);
+    expect(to.every((x) => x === 'cH' || x === 'aH')).toBe(true);
+    expect([plan.st.pieces.cH.bt, plan.st.pieces.aH.bt]).toEqual(to.includes('cH') ? [4, 1] : [3, 2]);
+  });
+  it('end mark T + n: a T1 target fed once is T2 (not T4), «Вернуть» gives T1 back', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: 1 }] });
+    const plan = planBatch(ctx, st, weaks(1));
+    expect(plan.st.pieces.cH.bt).toBe(2);
+    expect(plan.t4).toEqual([]);
+    expect(plan.ops.filter((o) => 'bt' in o)).toEqual([{ bt: 'cH', was: 1 }]);
+    expect(undoPlan(plan.st, plan).pieces.cH.bt).toBe(1);
+  });
+  it('a T3 target and a T4 feed piece: one step to T4; a T2 target takes the T4 piece and the weak one is dismantled', () => {
+    const a = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: 3 }] });
+    const p1 = planBatch(a.ctx, a.st, weaks(1, 4));
+    expect(p1.lines[0].fate).toMatchObject({ kind: 'feed', to: { piece: { id: 'cH' } } });
+    expect(p1.st.pieces.cH.bt).toBe(4);
+    const b = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: 2 }] });
+    const p2 = planBatch(b.ctx, b.st, [...weaks(1), E({ ...weak('t4'), lit: { SPD: 1, RES: 3, EFF: 3, HP: 1 }, bt: 4 })]);
+    expect(p2.lines.map((l) => l.fate.kind)).toEqual(['junk', 'feed']);
+    expect(p2.st.pieces.cH.bt).toBe(4);
+  });
+  it('a new piece at T2 worn by the plan takes two of the batch\'s weak copies, the third is dismantled; its line says T4', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB()] });
+    const plan = planBatch(ctx, st, [E({ ...good('g'), bt: 2 }), ...weaks(3)]);
+    expect(plan.lines.map((l) => l.fate.kind)).toEqual(['wear', ...plan.lines.slice(1).map((l) => l.fate.kind)]);
+    expect(plan.lines.slice(1).map((l) => l.fate.kind).sort()).toEqual(['feed', 'feed', 'junk']);
+    expect(plan.lines[0].fate).toMatchObject({ kind: 'wear', t4: true });
+    expect(plan.ops.some((o) => 'bt' in o)).toBe(false);                  // a record the plan made: «Вернуть» removes it, mark and all
   });
 });
 

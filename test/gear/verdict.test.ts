@@ -298,6 +298,14 @@ describe('T5 вердикт новой вещи', () => {
       expect(h.kind).toBe('wear');
       expect(h.reserveBt.map((f) => f.of?.name ?? 'own')).toEqual(['own', 'own', 'Aer', 'Aer']);
     });
+
+    // HISTORY.md 0270: a new piece at T takes 4 − T feeds; «T?» counts from 0
+    it.each([[0, 4], [1, 3], [2, 2], [3, 1], [4, 0], [null, 4]] as const)('a good helmet at T%s eats %i reserves', (bt, n) => {
+      const pools = { Caren: [sG, sB, weak(0), weak(1)], Aer: [...aer, weak(2), weak(3), weak(4)] };
+      const w = world(['Caren', 'Aer'], pools, wearing);
+      const h = w.hero('Caren', verdictOf(w.ctx, w.view.hero, { ...inputOf(mk('G', 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0)), bt })!);
+      expect(h.reserveBt).toHaveLength(n);
+    });
   });
 
   it('owner 2026-10-07: a good piece for Caren feeds on Aer\'s reserve; rated again, the weak one names Aer first', () => {

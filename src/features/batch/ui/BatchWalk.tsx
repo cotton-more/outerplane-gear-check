@@ -46,10 +46,11 @@ function DescLine({ ctx, t, w }: { ctx: Ctx; t: Texts; w: Exclude<Where, { n: nu
 // caption line of a weapon or accessory, for whom the kept piece stays, lines under it, and — for an equip and a lock —
 // the substats as a column, line for line as the game's middle panel shows them (owner 2026-10-08)
 interface StepText { title: string; hero: Char | null; paint?: { what: string; grade: ItemInput['grade'] }; no?: string; cap?: string; grade?: ItemInput['grade']; kept?: { text: string; c: Char | null; x: ItemInput }; more: ReactNode[]; subs?: string[]; bt?: Bt }
-// a Breakthrough step (owner 2026-10-10, «target card + pips»): the target as a card — its item, all its substats and how
-// many tiers this feed adds (◆ per piece, «+2»; four always reach T4 — «T4»: the app knows only T4 or not, so no «T0 →»)
-// — and the feed hanging under it
-interface Bt { piece: ItemInput; n: number; mats: ReactNode[] }
+// a Breakthrough step (owner 2026-10-10, «target card + pips»): the target as a card — its item, all its substats and its
+// tiers: the T it has as filled pips, the ones this feed adds in the gain colour, «T1 → T3» (HISTORY.md 0270). A «T?»
+// target (an old record) has no start: only the added pips, «+2», or «T4» when the feed reaches it — and the feed hanging
+// under it
+interface Bt { piece: ItemInput; n: number; from: number | null; to: number | null; mats: ReactNode[] }
 
 const Chips = ({ x }: { x: ItemInput }) => <span className="bt-chips">{Object.entries(x.subs).map(([k, v]) => <SubToken key={k} stat={k} lit={v} />)}</span>;
 // a piece of the feed: the item in the grade's colour (a weapon or accessory), then its substats as chips
@@ -58,8 +59,9 @@ function MatLine({ ctx, x }: { ctx: Ctx; x: ItemInput }) {
 }
 function BtCard({ ctx, t, bt }: { ctx: Ctx; t: Texts; bt: Bt }) {
   const x = bt.piece;
-  const n = Math.min(4, bt.n), to = n >= 4 ? 'T4' : `+${n}`;
-  const pips = <span className="bt-pips" aria-label={to}>{[1, 2, 3, 4].map((k) => <i key={k} className={k <= n ? 'gain' : ''} />)}{to}</span>;
+  const from = bt.from ?? 0, upTo = bt.to ?? Math.min(4, bt.n);
+  const to = bt.from !== null ? `T${bt.from} → T${upTo}` : upTo >= 4 ? 'T4' : `+${upTo}`;
+  const pips = <span className="bt-pips" aria-label={to}>{[1, 2, 3, 4].map((k) => <i key={k} className={k <= from ? 'have' : k <= upTo ? 'gain' : ''} />)}{to}</span>;
   // armor has no item to name (the title says the slot): the pips go at the end of the substats' line
   return (
     <>
@@ -120,7 +122,7 @@ function stepText(ctx: Ctx, t: Texts, s: Step): StepText {
       const mats = s.mats.map(({ where: w, input: x }) => ('n' in w ? <MatLine ctx={ctx} x={x} /> : <DescLine ctx={ctx} t={t} w={w} />));
       const unlock = s.unlock ? [t.batch.btUnlock(s.unlock)] : [];
       const paint = 'worn' in tg ? undefined : paintOf(ctx, t, tg.where);
-      if (s.piece) return { title: t.batch.btStep(where, s.n), hero, paint, more: unlock, bt: { piece: s.piece, n: s.n, mats } };
+      if (s.piece) return { title: t.batch.btStep(where, s.n), hero, paint, more: unlock, bt: { piece: s.piece, n: s.n, from: s.from, to: s.to, mats } };
       return { title: t.batch.btStep(where, s.n), hero, paint, cap, grade: undefined, more: [...unlock, t.batch.btFeed, ...mats.map((m, i) => <span key={i}>{m}</span>)] };
     }
     case 4: {

@@ -16,6 +16,7 @@ import { verdictOf } from '@/features/gear/verdict';
 import { fromPersisted, reducer } from '@/app/appState';
 import { itemInput } from '@/features/eval/form/formState';
 import type { Bt, ItemInput } from '@/game/item/item';
+import { resultHead } from '@/features/gear/ui/outcomeText';
 
 const D: Dataset = JSON.parse(readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'));
 const idx = createIndex(D);
@@ -162,6 +163,36 @@ describe('4.6 «Прокачка»', () => {
     expect(upgradePlan(ctx, helmet, temp)).toEqual([ru.plan.enhance, ru.plan.tempArmor]);
     expect(upgradePlan(ctx, { ...JUNK_W, grade: 'unique', itemKey: '781' }, temp)).toEqual([ru.plan.enhance, ru.plan.tempNoInvest]);
     expect(upgradePlan(ctx, JUNK_W, { v: 'junk' } as Verdict)).toEqual([]);
+  });
+});
+
+// HISTORY.md 0270: a known T states the exact need; «T?» keeps the old hedge
+describe('exact T in the Breakthrough advice', () => {
+  const helmet = (subs: Record<string, number>, bt?: Bt | null): ItemInput => ({ slot: 'helmet', grade: 'unique', setId: speed, itemKey: null, main: null, subs, ...(bt !== undefined ? { bt } : {}) });
+  const WORN = { 'DEF%': 2, CHC: 2, CHD: 1, SPD: 1 }, JUNK = { RES: 1, EFF: 1, HP: 1, 'DMG RED%': 1 };
+  const why = (bt: Bt | null, feed?: Bt) => {
+    const item = helmet(JUNK, feed);
+    return resultHead(ru, idx, judge(item, wearing(helmet(WORN), bt)), item, () => '')!.lines[0];
+  };
+  it.each([[0, 'четыре ступени'], [1, 'три ступени'], [2, 'две ступени'], [3, 'одна ступень']] as const)('target T%i: «ещё %s»', (bt, steps) => {
+    expect(why(bt)).toBe(`Сделай сейчас: шлем Caren на T${bt} — до T4 ещё ${steps}.`);
+  });
+  it('target «T?» — the old line; a T4 feed piece — «сразу T4»', () => {
+    expect(why(null)).toBe(ru.fit.btNowWhy('helmet', 'Caren'));
+    expect(why(2, 4)).toBe(ru.fit.btNowT4('helmet', 'Caren'));
+    expect(TEXTS.en.fit.btNowLeft('gloves', 'Caren', 3)).toBe("Do it now: Caren's gloves are T3 — one more step to T4.");
+  });
+  it('«Прокачка» of a kept piece: T1–T3 — steps left; T4 — done; T0 and «T?» — as before', () => {
+    const keep = { v: 'keep' } as Verdict;
+    const legend = ru.plan.btArmorLegend('Helmet', 'Speed');
+    expect(upgradePlan(ctx, helmet({}), keep)).toEqual([ru.plan.enhance, legend]);
+    expect(upgradePlan(ctx, helmet({}, null), keep)).toEqual([ru.plan.enhance, legend]);
+    expect(upgradePlan(ctx, helmet({}, 0), keep)).toEqual([ru.plan.enhance, legend]);
+    expect(upgradePlan(ctx, helmet({}, 2), keep)).toEqual([ru.plan.enhance, legend, 'Сейчас T2: до T4 ещё две ступени.']);
+    expect(upgradePlan(ctx, helmet({}, 4), keep)).toEqual([ru.plan.enhance, ru.plan.btDone]);
+    expect(upgradePlan(ctx, { ...helmet({}, 3), grade: 'rare' }, keep)[1]).toMatch(/нужна ещё одна\.$/);
+    expect(upgradePlan(ctx, { ...helmet({}, null), grade: 'rare' }, keep)[1]).toMatch(/нужно 4 штуки\.$/);
+    expect(upgradePlan(ctx, helmet({}, 4), { v: 'temp' } as Verdict)).toEqual([ru.plan.enhance, ru.plan.btDone]);
   });
 });
 

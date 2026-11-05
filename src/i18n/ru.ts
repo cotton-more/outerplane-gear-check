@@ -10,6 +10,8 @@ const plural = (n: number, one: string, few: string, many: string): string => {
   if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
   return many;
 };
+// Breakthrough steps left to T4 (HISTORY.md 0270): «одна ступень», «три ступени»
+const stepsRu = (n: number) => `${['', 'одна', 'две', 'три', 'четыре'][n] ?? n} ${plural(n, 'ступень', 'ступени', 'ступеней')}`;
 const persons = (n: number) => `${n} ${plural(n, 'персонаж', 'персонажа', 'персонажей')}`;
 const personsGen = (n: number) => `${n} ${plural(n, 'персонажа', 'персонажей', 'персонажей')}`;
 const personsDat = (n: number) => `${n} ${plural(n, 'персонажу', 'персонажам', 'персонажам')}`;
@@ -61,8 +63,12 @@ export const ru = {
     enhance: '**Enhance** до +10 — сразу: растит main stat.',
     btArmorLegend: (piece: string, set: string) =>
       `**Breakthrough** до T4: +5% к main stat за ступень и сильнее бонус сета. Материал — любой Legendary ${piece} ${set} Set (тот самый фоддер) или Armor Glunite; одна вещь — одна ступень.`,
-    btArmorEpic: (piece: string, set: string) =>
-      `**Breakthrough** до T4: +5% к main stat за ступень и сильнее бонус сета. Материал — такая же вещь: Epic ${piece} ${set} Set (сабстаты не важны) или Glunite. Пока эта не на T4, такие Epic из разбора не выбрасывай — нужно 4 штуки.`,
+    // need — how many such Epics the piece still takes: 4 − T (T known), 4 for «T?»
+    btArmorEpic: (piece: string, set: string, need = 4) =>
+      `**Breakthrough** до T4: +5% к main stat за ступень и сильнее бонус сета. Материал — такая же вещь: Epic ${piece} ${set} Set (сабстаты не важны) или Glunite. Пока эта не на T4, такие Epic из разбора не выбрасывай — ${need === 1 ? 'нужна ещё одна' : `нужно ${need} штуки`}.`,
+    // the piece's T is known (HISTORY.md 0270): T1–T3 — how many steps are left; T4 — nothing to do
+    btLeft: (bt: number) => `Сейчас T${bt}: до T4 ещё ${stepsRu(4 - bt)}.`,
+    btDone: '**Breakthrough** — уже T4.',
     btGear: (name: string) =>
       `**Breakthrough** до T4 — обязательно: к T4 усиливается пассивка, и +20% к main stat. Материал — копии ${name} (годятся и с другим main stat) или Refined Glunite.`,
     noTransistone: '**Transistone** — не трать: по гайду outerpedia их тратят только на Irregular и красную броню.',
@@ -210,6 +216,8 @@ export const ru = {
     keepStatsWhy: (set: string, name: string) => `${set} не из билдов ${name}, но в этом слоте ничего сильнее нет.`,
     btNow: (slot: string, name: string) => `Фоддер — Breakthrough для ${GEN[slot]} ${name}`,
     btNowWhy: (slot: string, name: string) => `Сделай сейчас: ${NOM[slot]} ${name} ещё не на T4. Одна вещь — одна ступень.`,
+    // the target's T is known (HISTORY.md 0270): the exact need instead of «ещё не на T4»
+    btNowLeft: (slot: string, name: string, bt: number) => `Сделай сейчас: ${NOM[slot]} ${name} на T${bt} — до T4 ещё ${stepsRu(4 - bt)}.`,
     // a T4 piece as feed lifts the target straight to T4 (owner 2026-10-09)
     btNowT4: (slot: string, name: string) => `Сделай сейчас: эта на T4 — ${NOM[slot]} ${name} сразу ${by(slot, 'станет', 'станет', 'станет', 'станут')} T4.`,
     reserve: (set: string, slot: string, name: string) => `Фоддер — запас для ${set}-${GEN[slot]} ${name}`,
@@ -950,7 +958,7 @@ export const ru = {
     feedWorn: (slot: string, name: string) => `Корм для ${GEN[slot]} ${name}`,
     // the target is a set-aside piece: the hero wears another one in the game
     feedStash: (slot: string, name: string) => `Корм для ${by(slot, 'отложенного', 'отложенной', 'отложенного', 'отложенных')} ${GEN[slot]} ${name}`,
-    wornNote: 'Корм надетым: до 4 на вещь — дошла до T4, отметь «T4» в карточке вещи.',
+    wornNote: 'Корм вещам «T?»: до 4 на вещь — после Breakthrough отметь их T в карточке вещи.',
     junk: 'Разобрать',
     none: 'Не посчитать: предмета нет в данных outerpedia',
     same: (slot: string, name: string, date: string) =>

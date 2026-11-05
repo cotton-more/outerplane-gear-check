@@ -4,7 +4,7 @@
 // piece feeds a keeper of its grade, set and slot instead of going to dismantle. One piece — one fate.
 import type { Char } from '@/game/data/types';
 import type { Ctx } from '@/game/context';
-import type { ItemInput } from '@/game/item/item';
+import type { Bt, ItemInput } from '@/game/item/item';
 import { activePieces, pieceInput, type GearStore, type Piece } from '@/features/gear/model/gear';
 import { putOn, removeFrom, removeUndo, stashOn, undoPut, type PutResult } from '@/features/gear/pool';
 import { heroPool, verdictOf, type HeroPool, type Pools, type Result, type Same } from '@/features/gear/verdict';
@@ -32,21 +32,23 @@ export interface Line { id: string; n: number; off?: Off; input: ItemInput; fate
 export type Op =
   | { c: string; r: PutResult }                                          // «Надень» (putOn) or «Отложи» (stashOn)
   | { c: string; drop: Piece; back: (x: GearStore) => GearStore }        // another hero's reserve leaves (removeFrom)
-  | { bt: string; was: Piece['bt'] };                                    // a recorded piece fed four times gets «T4»
+  | { bt: string; was: Piece['bt'] };                                    // a recorded piece the plan feeds gets its new T
 export interface Counts { wear: number; keep: number; feed: number; junk: number }
 export interface Plan {
   lines: Line[];
-  st: GearStore;                     // the store after the plan, «T4» marks included
+  st: GearStore;                     // the store after the plan, T marks included (MODEL.md §8 item 5)
   ops: Op[];                         // in the order made; «Вернуть» undoes them newest first
-  t4: string[];                      // records the plan feeds four times — «T4» on «Записать план»: any tier below T4 + 4
-                                     // feeds is T4 (owner 2026-10-08: Viella's worn gloves weren't marked)
-  wornFed: boolean;                  // a recorded piece gets fewer than 4: the «до 4 — остановись на T4» footnote
+  t4: string[];                      // records the plan feeds up to T4 — «T4» on «Записать план»: T + feeds reaches 4, a «T?»
+                                     // record with four feeds (owner 2026-10-08: Viella's worn gloves weren't marked)
+  wornFed: boolean;                  // a recorded «T?» piece gets fewer than 4: the «до 4 — остановись на T4» footnote
   counts: Counts;
 }
 
 // «Не брать»: the key of a line and a hero left out for it
 export const skipKey = (line: string, hero: string): string => `${line}>${hero}`;
 const FEEDS = 4;                     // one piece — one Breakthrough step, T0 → T4
+// how many feeds a target takes: 4 − T; «T?» (null) counts from 0, up to four as before (MODEL.md §8 item 2)
+const capOf = (p: Pick<Piece, 'bt'>): number => FEEDS - (p.bt ?? 0);
 
 // pools of a store copy: a hero whose pool, worn and pin didn't change keeps the pool computed before
 function poolsOf(ctx: Ctx): (st: GearStore) => Pools {
@@ -139,13 +141,14 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     return o;
   };
 
-  // feed the best target of a «material now» verdict: one of its four, or all four from a T4 piece — the game lifts the
-  // target straight to T4 (owner 2026-10-09)
+  // feed the best target of a «material now» verdict: one of the 4 − T it takes, or all of them from a T4 piece — the game
+  // lifts the target straight to T4 (owner 2026-10-09). A full target is not offered again (verdictOf full)
   const feedTo = (r: Result, x: ItemInput): Fate => {
     const tg = r.now[0];
-    const k = (feeds.get(tg.piece.id) ?? 0) + (x.bt === 4 ? FEEDS : 1);
+    const cap = capOf(tg.piece);
+    const k = x.bt === 4 ? cap : Math.min(cap, (feeds.get(tg.piece.id) ?? 0) + 1);
     feeds.set(tg.piece.id, k);
-    if (k >= FEEDS) full.add(tg.piece.id);
+    if (k >= cap) full.add(tg.piece.id);
     const of = made.get(tg.piece.id);
     if (of === undefined) wornFed = true;
     return { kind: 'feed', to: of !== undefined ? { entry: of } : { c: tg.c, piece: tg.piece } };
@@ -175,14 +178,14 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
         if (!res.removed.some((p) => p.id === was.id)) fates.set(o.id, { kind: 'keep', c, t4: false, held: true });
       }
       // a reserve this new piece eats (its verdict's reserveBt — the hero's own or other heroes', feedFrom): one the plan
-      // made for line L is fed to it — L says so (owner 2026-10-07: not planned again), one of its four feeds
+      // made for line L is fed to it — L says so (owner 2026-10-07: not planned again), one of the 4 − T feeds it takes
       const h = r.named[0];
       const eaten = (p: Piece) => {
         const L = madeBy.get(p.id);
-        const k = (feeds.get(res.id) ?? 0) + 1;
-        if (!L || !h.reserveBt.some((f) => f.piece.id === p.id) || fates.get(L)?.kind !== 'reserve' || k > FEEDS) return;
+        const k = (feeds.get(res.id) ?? 0) + 1, cap = capOf(res.piece);
+        if (!L || !h.reserveBt.some((f) => f.piece.id === p.id) || fates.get(L)?.kind !== 'reserve' || k > cap) return;
         feeds.set(res.id, k);
-        if (k >= FEEDS) full.add(res.id);
+        if (k >= cap) full.add(res.id);
         if (!entry) wornFed = true;
         fates.set(L, { kind: 'feed', to: entry ? { entry: n } : { c, piece: res.piece } });
       };
@@ -257,12 +260,20 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
     else if (f.kind === 'wear' && st.worn?.[f.c.id]?.[st.pieces[id].slot] !== id) fates.set(line, { kind: 'keep', c: f.c, t4: false });
   }
 
-  // «T4»: a piece the plan feeds four times — a new one (Q6) or a recorded one: from any tier below T4, four feeds reach
-  // T4 (the game takes no more than it needs). A recorded one's mark is an op of its own, for «Вернуть»
-  const t4 = [...feeds].filter(([id, k]) => k >= FEEDS && st.pieces[id] && st.pieces[id].bt !== 4).map(([id]) => id);
-  for (const id of t4) if (!made.has(id)) ops.push({ bt: id, was: st.pieces[id].bt });
-  if (t4.length) st = { ...st, pieces: { ...st.pieces, ...Object.fromEntries(t4.map((id) => [id, { ...st.pieces[id], bt: 4 as const }])) } };
-  wornFed = [...feeds].some(([id, k]) => !made.has(id) && k < FEEDS);
+  // The new T of every piece the plan feeds — a new one (Q6) or a recorded one: T + feeds (a T4 piece among them filled
+  // it, k = 4 − T). A «T?» piece is marked only when four feeds reach T4 from any tier (the game takes no more than it
+  // needs); fewer leave it «T?» and raise the footnote. A recorded one's mark is an op of its own, for «Вернуть»
+  const newBt = new Map<string, Bt>();
+  for (const [id, k] of feeds) {
+    const p = st.pieces[id];
+    if (!p || p.bt === 4 || k <= 0) continue;
+    if (p.bt === null) { if (k >= FEEDS) newBt.set(id, 4); }
+    else newBt.set(id, Math.min(4, p.bt + k) as Bt);
+  }
+  wornFed = [...feeds].some(([id, k]) => !made.has(id) && st.pieces[id]?.bt === null && k < FEEDS);
+  for (const [id] of newBt) if (!made.has(id)) ops.push({ bt: id, was: st.pieces[id].bt });
+  if (newBt.size) st = { ...st, pieces: { ...st.pieces, ...Object.fromEntries([...newBt].map(([id, bt]) => [id, { ...st.pieces[id], bt }])) } };
+  const t4 = [...newBt].filter(([, bt]) => bt === 4).map(([id]) => id);
   const t4Of = new Set(t4.map((id) => made.get(id)!));
 
   const lines: Line[] = [];

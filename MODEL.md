@@ -232,7 +232,7 @@ Heroes replaced by their Core Fusion (`ctx.off`) and heroes that cannot wear the
    the piece or has it set aside and never changes the verdict or the batch (owner, 2026-10-12).
 
 **Feed (`reserveBt`).** A good new piece eats reserves of its kind: the hero's own first (`heroOutcome`), then other
-heroes' (`feedFrom`), up to `feedsLeft = 4 − bt` (T0 → T4). Not for a stopgap weapon/accessory, not when the piece
+heroes' (`feedFrom`), up to `feedsLeft = 4 − T` (the new piece's exact T; «T?» counts as T0 — up to 4). Not for a stopgap weapon/accessory, not when the piece
 fails the bar. **Breakthrough rules by kind:** armor — every piece that passes the bar (Epic stopgap armor is fed, Q1);
 weapon/accessory — only "Keep" (rec); **Epic weapons/accessories are never fed or targets** (no Epic is `rec`), spare
 Epic copies go to dismantle; a T4 piece nobody wears = feed. "Upgrading" lines (`eval/verdict/upgrade:upgradePlan`)
@@ -240,11 +240,13 @@ follow: Keep → Enhance + Breakthrough; Stopgap → Enhance; Stopgap armor may 
 do not.
 
 **Below T4 the advice is Breakthrough** (owner, 2026-10-01, "pool is truth"): what is in the pool is what is in the
-game, so the app does not second-guess an unmarked "T4". For a held piece below T4 the line is the game action
-(«Breakthrough it to T4 — …», «Do it now: … isn't T4 yet»), never "check, maybe you forgot to mark T4". A form piece
-without «T4» is T0–T3; `bt = null` is only an old record, shown «T?» and counted below T4 (no hint to "mark" it). Tapping
-«T4» on a card is what the player does after the Breakthrough was done in the game (the plan's footnote «up to 4 each —
-at T4, tap "T4"» says so).
+game, so the app does not second-guess the recorded T. For a held piece below T4 the line is the game action, never
+"check, maybe you forgot to mark T4". A piece's T is exact, T0–T4 (HISTORY.md 0270); `bt = null` is only an old record,
+shown «T?» and counted below T4 with up to 4 feeds (no hint to "mark" it). With a known T the line states the need:
+«Do it now: … is T2 — two more steps to T4» (`fit.btNowLeft`), and «Upgrading» adds «It's T2 now: two more steps» to a
+kept piece (`plan.btLeft`; an Epic's «you need N» = 4 − T) or says «already T4» (`plan.btDone`); «T?» keeps the hedge
+(«… isn't T4 yet», `fit.btNowWhy`). Tapping the T on a card is what the player does after the Breakthrough was done in
+the game.
 
 **After Equip** (`gear/model/material:oldFate`): the taken-off same-kind piece is material for the new one (Epic, below
 T4), "evaluate first" (Legendary), or nothing (Epic weapon/accessory, new piece already T4).
@@ -292,6 +294,10 @@ Reasons, in the order they are added (the numbers are cited from code):
    slot, a Legendary one only by a Legendary), and the hero is not pinned to another set; weapon/accessory — `listedFor`
    with no held copy of the item. Per kind (`reserveKey`: armor `set:slot:grade`, gear `item:key`) at most
    `CFG.reservePerHero = 4` per hero, strongest first; the cap of 8 over all heroes is applied by the verdict (§4.3b).
+   The cap does not shrink with a held piece's T (HISTORY.md 0270): a reserve exists only while the hero holds no strong
+   piece it could feed (armor: none of that set and slot, `coversSlot`; weapon/accessory: no good copy), so it waits for
+   a piece that has not dropped yet, which comes at T0 and takes four; once a strong piece is held the reserves stop being
+   reserves and that piece eats at most 4 − T of them.
 6. **unneeded** — everything else: "no longer needed — dismantle in the game, then Remove" (`reasonOf` picks one reason by
    seniority: worn › best at T4 › best of set › by stats › reserve).
 
@@ -422,8 +428,9 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    decides a fate.
 2. **Decisions are applied to a copy of the store** with the usual operations (`putOn`, `stashOn`, `removeFrom`), so
    later pieces see earlier keepers. Wear → `putOn` (the piece it replaces and other heroes' reserves it eats get lines
-   of their own); keep/reserve → `stashOn`; material-now → feed (`feeds` per target, up to `FEEDS = 4`; a T4 piece counts
-   as all four and the target is `full`, not offered again); «Спорно» (only heroes outside the roster want it) is junk.
+   of their own); keep/reserve → `stashOn`; material-now → feed (`feeds` per target, up to `capOf = 4 − T`, «T?»
+   up to 4; a T4 piece fills what is left and the target is `full`, not offered again — the spare feed goes to the next
+   target or to dismantle); «Спорно» (only heroes outside the roster want it) is junk.
 3. **One piece — one fate.** A record the plan itself made and a later "Equip" takes off or drops is fixed: eaten → "feed"
    for the eater; held → "set aside"; gone → **re-plan round** without that hero for that line (`skipKey`, an internal
    "Don't take", not saved). Rounds only add exclusions, at most one per entry — bounded (the rare "Equip → dismantle"
@@ -433,12 +440,16 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
    and a feed makes none); if it is now material it feeds (a piece taken off one hero and worn by another can
    feed a piece that reached a hero later); a stranded feed that finds no target becomes junk, and its count is dropped
    so "T4" never lands on a gone record.
-5. **T4 marks**: any piece fed four times (new or recorded, any tier below T4) gets "T4" — an op `{bt}` for "Undo";
-   a recorded piece fed fewer than four times raises the footnote. Counts: wear, keep (+ reserves), feed, junk.
+5. **T marks**: a fed piece with a known T gets T + n (n feeds; a T4 piece in them — T4), a recorded one through an
+   op `{bt, was}` for "Undo" (a record the plan made goes away with its own undo). A «T?» piece gets "T4" only when fed
+   four times (from any tier the game takes no more than it needs); a recorded «T?» piece fed fewer than four keeps «T?»
+   and raises the footnote (tap its T after the Breakthrough). Counts: wear, keep (+ reserves), feed, junk.
 6. **Undo** (`undoPlan`): the operations' own undos, newest first, not a snapshot. "Record the plan" saves the plan's final
    store after the walk; recording only at the walk's end.
 7. The **walk** (`walk.ts`) turns the plan into steps by game screen: equip → lock → Breakthrough → dismantle (dismantle
-   last, so no feed is dismantled by mistake). Only equip and lock use positions; Breakthrough and dismantle name pieces
+   last, so no feed is dismantled by mistake). The Breakthrough card shows the target's T as filled pips and the steps
+   the feed adds in the gain colour, «T1 → T3» (`walk:btRange`; a T4 piece in the feed fills it to T4); a «T?» target
+   shows only the added pips, «+n», or «T4» when the feed reaches four. Only equip and lock use positions; Breakthrough and dismantle name pieces
    by stats ("several identical in the game — take the first"). The titles: equip «Hero → caption» with a quiet grey
    «№ k» (the place in the hero's slot list) on the right; lock «Ряд r, p-й · #n» (the game's grid is 10 per row,
    `PER_ROW`). Reserves, caps and Breakthrough rules are those of §4–§5.

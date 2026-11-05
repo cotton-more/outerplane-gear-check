@@ -136,7 +136,9 @@ export function poolInfo(P: Profile, pool: readonly Piece[], wornIds: ReadonlySe
   // 5: in reserve — weak pieces per «set + slot» when the set is started by a held piece but none is held in this slot; at T4
   // never material (D6). Weapon and accessory (item 3c) — copies of the recommended item while no good one exists.
   // Armor: reserves per grade; a held Epic doesn't cancel a Legendary reserve (coversSlot). Up to CFG.reservePerHero of
-  // one kind (owner, 2026-10-08: a full T0 → T4); the ceiling over all heroes is the verdict's (verdictOf)
+  // one kind (owner, 2026-10-08: a full T0 → T4); the ceiling over all heroes is the verdict's (verdictOf). Not fewer for a
+  // held piece's T (HISTORY.md 0270): a reserve waits for a strong piece the hero doesn't hold yet (a new drop, T0); a
+  // strong piece held ends the reserve, and it eats at most 4 − T (verdict feedsLeft)
   const reserve = new Map<string, string[]>();
   for (const p of sorted) {
     if (strong.has(p.id) || p.bt === 4 || pass(p) || (reserve.get(reserveKey(p))?.length ?? 0) >= CFG.reservePerHero) continue;

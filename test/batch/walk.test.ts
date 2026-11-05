@@ -5,7 +5,7 @@ import { makeCtx } from '@/game/context';
 import type { GearStore, Piece, Worn } from '@/features/gear/model/gear';
 import { entriesOf, fitsKind, kindOf, NEW_BATCH, putItem, removeItem, restoreBatch, type Batch, type BatchEntry } from '@/features/batch/batch';
 import { inputOfPiece, planBatch, type Plan } from '@/features/batch/plan';
-import { rowOf, walkOf } from '@/features/batch/walk';
+import { btRange, rowOf, walkOf } from '@/features/batch/walk';
 import { gameSubs } from '@/features/gear/ui/pieceText';
 import { char, idx, mk } from '../gear/statSets';
 
@@ -99,6 +99,24 @@ describe('the walk', () => {
     expect(walk.steps[1]).toMatchObject({ stage: 3, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
     // the taken-off Epic suits only heroes outside the roster: dismantled where its «E» is (owner 2026-10-10: no «Спорно»)
     expect(walk.steps[2]).toMatchObject({ stage: 4, where: [{ n: 1 }] });
+  });
+
+  // HISTORY.md 0270: the Breakthrough step carries the target's T before and after the feed
+  it('btRange: T + feeds, a T4 piece fills to T4; «T?» is known only when the feed reaches T4', () => {
+    const m = (...bts: (0 | 4 | null)[]) => bts.map((bt) => ({ input: { ...inputOfPiece(weak('m')), bt } }));
+    expect(btRange(1, m(0, 0))).toEqual({ from: 1, to: 3 });
+    expect(btRange(2, m(0, 0))).toEqual({ from: 2, to: 4 });
+    expect(btRange(3, m(4))).toEqual({ from: 3, to: 4 });
+    expect(btRange(0, m(null))).toEqual({ from: 0, to: 1 });
+    expect(btRange(null, m(0, 0))).toEqual({ from: null, to: null });
+    expect(btRange(null, m(0, 0, 0, 0))).toEqual({ from: null, to: 4 });
+    expect(btRange(null, m(4))).toEqual({ from: null, to: 4 });
+  });
+  it('a worn T1 helmet fed by two weak copies: the step says T1 → T3', () => {
+    const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), { ...good('cH'), bt: 1 }] });
+    const b = batchOf([piece(weak('w1', 0)), piece(weak('w2', 1))]);
+    const walk = walkOf(b, planBatch(ctx, st, entriesOf(b)));
+    expect(walk.steps.find((s) => s.stage === 3)).toMatchObject({ n: 2, from: 1, to: 3 });
   });
 
   it('the equip number is in the hero\'s list of that slot: boots first, then armor — the armor is No. 1 among armor, #2 in the batch', () => {
