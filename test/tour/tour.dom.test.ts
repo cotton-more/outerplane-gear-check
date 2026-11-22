@@ -402,8 +402,9 @@ describe('подсказки по ходу и «Что нового»', () => {
     }
   }, 10_000);
 
-  // решение владельца 2026-10-01/02: «T4» и у Legendary оружия — подсказка bt (одна на все вещи) встаёт у его кнопки
-  it('первая вещь — Legendary оружие: подсказка «T4» у кнопки в строке предмета', async () => {
+  // решение владельца 2026-10-01/02: «T4» и у Legendary оружия — подсказка bt (одна на все вещи) встаёт у его кнопки;
+  // since 2026-11-22 T sits in the main's row (owner: grade + item, then main + T)
+  it('первая вещь — Legendary оружие: подсказка «T» у кнопки в ряду main', async () => {
     const orig = Element.prototype.getClientRects;
     Element.prototype.getClientRects = function () { return [{}] as unknown as DOMRectList; };
     try {
@@ -411,7 +412,7 @@ describe('подсказки по ходу и «Что нового»', () => {
       await mount({ welcomeHidden: true, tour: { ...done, seen }, state: { tab: 'eval', slot: 'weapon', grade: 'unique' } });
       await wait(LIMITS.idleMs + 700);
       expect($('.tour-tip')?.textContent).toContain(T.tips.bt);
-      expect($('[data-tour="bt"]')?.closest('.formrow')?.querySelector('[data-tour="item"]')).toBeTruthy();
+      expect($('[data-tour="bt"]')?.closest('.formrow')?.querySelector('[data-tour="pick"]')).toBeTruthy();
     } finally {
       Element.prototype.getClientRects = orig;
     }

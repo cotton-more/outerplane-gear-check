@@ -29,9 +29,8 @@ There is **no build to pick**. The app takes the best of the hero's pieces itsel
 **Set bonuses follow the pieces' Breakthrough.** ×2 at T4 when at least two pieces of the set are T4, otherwise ×2
 T0–T3; ×4 at T4 when all four are T4, otherwise ×4 T0–T3. Speed, Penetration and Bursting have no ×2 below T4, and their
 ×4 T0–T3 is the whole bonus. Examples: Speed T4 T4 → +13%; Speed T4 T4 T0 → +13%; Speed T4 T4 T0 T0 → +25%; Speed T4 ×4
-→ 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A piece's Breakthrough is set exactly, **T0…T4**, with five segments like the diamonds in the game, next to the set (on a
-Legendary weapon or accessory — next to the item, on an Epic one — next to the main stat) on the form and on the piece
-card. Weapons and accessories have no set — there T is only about material: at T4 no more copies are needed for its
+→ 13 + 12 = 25%; Attack T4 T4 T0 T0 → 35 + 20 = 55%. A piece's Breakthrough is set exactly, **T0…T4**, with five segments like the diamonds in the game, on the form next to the set
+(on a weapon or accessory — next to the main stat), on the piece card next to its name. Weapons and accessories have no set — there T is only about material: at T4 no more copies are needed for its
 Breakthrough. **"T?"** shows on old records with no T set: such a piece counts as below T4 until you tap its real T.
 
 ## How a piece reaches a character

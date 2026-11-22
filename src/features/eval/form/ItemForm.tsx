@@ -4,7 +4,7 @@
 // zone — what stands in the grid's place (the verdict card on «Оценка»); none — the grid. lock / ask — a batch of one kind
 // (features/batch). anchors — the tour's anchors: only the «Оценка» form has them (the entry window lies over the trade).
 import { useEffect, useMemo, useState, type Dispatch, type ReactNode } from 'react';
-import { GRADE_NAME, GRADES, isArmor, subLabel } from '@/game/data';
+import { EPIC_NAME, GRADE_NAME, GRADES, isArmor, subLabel } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import { useT } from '@/i18n';
 import type { Ctx } from '@/game/context';
@@ -116,13 +116,11 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
               onClick={() => (lock?.set && s.setId === lock.set ? lock.explain() : setOpen('set'))} locked={!!lock?.set && s.setId === lock.set} at={at('pick' as const)} need={need === 'set'} />
             {btChip}
           </>
-          : <>
-            {mainField}
-            {/* у Epic предмета на форме нет — Breakthrough рядом с main */}
-            {epic && btChip}
-          </>}
+          // a weapon or accessory (owner 2026-11-22): the grade and what the piece is — a Legendary's item, an Epic's game name
+          // (nothing to pick) — then the main and T in a row of their own, the same for both grades, so the form doesn't jump
+          : epic ? <span className="pick-static">{EPIC_NAME[kind]}</span> : itemField}
       </div>
-      {!armor && !epic && <div className="formrow">{itemField}{btChip}</div>}
+      {!armor && <div className="formrow">{mainField}{btChip}</div>}
       <div className="subzone" {...mark(tour('grid'))}>
         {zone ?? <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} current={mainOpen ? s.main : null} onMain={mainMode ? gridMain : pickMain} onPick={tapGrid} />}
       </div>

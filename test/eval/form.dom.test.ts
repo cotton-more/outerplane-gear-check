@@ -171,26 +171,25 @@ describe('Breakthrough T0–T4 на форме (HISTORY.md 0270)', () => {
     expect(chip()?.getAttribute('title')).toBe('Breakthrough T0–T4 — the set bonus counts from T4');
   });
 
-  // было (В4): у оружия и аксессуара «T4» нет. Теперь у Legendary — в строке предмета, подсказка без бонуса сета
-  it.each(['weapon', 'accessory'])('Legendary %s: «T4» в строке предмета, не нажата; подсказка — про Breakthrough, не про сет', async (slot) => {
+  // было (В4): у оружия и аксессуара «T4» нет; 0270 — у Legendary в строке предмета, у Epic — после main. С 2026-11-22
+  // (owner): два ряда при любом грейде — грейд + предмет (у Epic — его имя в игре, выбирать нечего), затем main + T
+  it.each(['weapon', 'accessory'])('Legendary %s: T — в ряду main, не нажата; подсказка — про Breakthrough, не про сет', async (slot) => {
     await mount({ slot, grade: 'unique' }, {});
     expect(pressed()).toBe('T0');
-    expect(chip()?.closest('.formrow')?.querySelector('[data-tour="item"]')).toBeTruthy();
+    expect(chip()?.closest('.formrow')?.querySelector('[data-tour="pick"]')).toBeTruthy();
     expect(chip()?.getAttribute('title')).toBe('Breakthrough T0–T4 — at T4 no more copies are needed');
   });
 
-  // было: у Epic «T4» нет. Теперь: есть, в одном ряду с грейдом и main (предмета у Epic нет)
-  it.each(['weapon', 'accessory'])('Epic %s: «T4» — в ряду грейда, после main', async (slot) => {
-    await mount({ slot, grade: 'rare' }, {});
-    const rows = [...document.querySelectorAll('.form .formrow')];
-    expect(rows).toHaveLength(1);
-    expect(rows[0].lastElementChild?.getAttribute('data-tour')).toBe('bt');
+  const layout = () => [...document.querySelectorAll('.form .formrow')].map((r) => [...r.children].map((c) => c.getAttribute('data-tour') ?? c.className.split(' ')[0]));
+  it.each(['weapon', 'accessory'])('Legendary %s: грейд + предмет, затем main + T', async (slot) => {
+    await mount({ slot, grade: 'unique' }, {});
+    expect(layout()).toEqual([['grade', 'item'], ['pick', 'bt']]);
   });
 
-  it('Legendary аксессуар: main — рядом с грейдом, предмет и «T4» — второй строкой, как у оружия', async () => {
-    await mount({ slot: 'accessory', grade: 'unique' }, {});
-    const rows = [...document.querySelectorAll('.form .formrow')];
-    expect(rows.map((r) => [...r.children].map((c) => c.getAttribute('data-tour') ?? c.className.split(' ')[0]))).toEqual([['grade', 'pick'], ['item', 'bt']]);
+  it.each([['weapon', 'Steel Sword'], ['accessory', 'Steel Necklace']])('Epic %s: те же два ряда, вместо предмета — «%s»', async (slot, name) => {
+    await mount({ slot, grade: 'rare' }, {});
+    expect(layout()).toEqual([['grade', 'pick-static'], ['pick', 'bt']]);
+    expect($('.pick-static')?.textContent).toBe(name);
   });
 
   it('оружие: другой предмет снимает «T4»', async () => {

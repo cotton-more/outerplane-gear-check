@@ -7,7 +7,7 @@ const LEVELS: readonly Bt[] = [0, 1, 2, 3, 4];
 // Breakthrough of the piece, exactly T0–T4 (HISTORY.md 0270; before it — one «T4» toggle): five segments in the gold pill
 // of the star controls (.lv-pill / .lv-seg of chars.css). A fresh drop is T0. The gold fills the pill like a bar from the «T»
 // mark up to the chosen level (owner 2026-11-22): T2 lights «T 0 1 2». У брони — рядом с сетом: бонус сета считается
-// как у T4; у оружия и аксессуара — рядом с предметом (у Epic — с main): сета нет, на T4 такие же ей в Breakthrough больше
+// как у T4; у оружия и аксессуара — рядом с main во втором ряду формы (owner 2026-11-22): сета нет, на T4 такие же ей в Breakthrough больше
 // не нужны (features/gear/verdict). armor — какая подсказка.
 // value null — «T?»: an old record (below T4 by the old toggle, or before it); no segment pressed until the player taps one.
 // Тот же ряд — в карточке вещи персонажа (screens/chars PieceSheet); там anchor = false: якорь «bt» — только у формы

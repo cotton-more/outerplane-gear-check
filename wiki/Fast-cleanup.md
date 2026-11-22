@@ -11,7 +11,7 @@
    Swiftness almost everything is bright — enter those.
 4. After **two useless substats** on an Epic the verdict appears right away — no need to enter the third. Except a
    weapon or accessory while a hero in your roster has that slot empty: enter all substats, it may go to them.
-5. **T0…T4** next to the set or item — the piece's exact Breakthrough, five segments like the diamonds in the game; a fresh drop is T0, leave it.
+5. **T0…T4** next to the set or main stat — the piece's exact Breakthrough, five segments like the diamonds in the game; a fresh drop is T0, leave it.
    **"Fodder"** — this piece is the material: the verdict says which piece of a hero below T4 to feed it to now, or
    keeps it in reserve for a future strong one.
 6. **"Keep"** — lock it so you don't dismantle it by accident. **"Stopgap"** — wear it until you find better.

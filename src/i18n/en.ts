@@ -577,7 +577,7 @@ export const en: Texts = {
     helpInput: 'Entering an item',
     helpInputItems: [
       '**Armor** — the set: it\'s in the name after "of" (Etheric Gloves of Speed → Speed Set).',
-      '**T0…T4** next to the set, item or main stat (on an Epic weapon or accessory) — the piece\'s Breakthrough, like the diamonds in the game: tap the right T. For armor its set bonus (Speed ×2 and others) counts at T4; at T4 no more copies are needed for its Breakthrough. A fresh drop is T0 — leave it. "T?" on an older record means T isn\'t set: it counts as below T4 until you tap the real one.',
+      '**T0…T4** next to the set (armor) or the main stat (weapon, accessory) — the piece\'s Breakthrough, like the diamonds in the game: tap the right T. For armor its set bonus (Speed ×2 and others) counts at T4; at T4 no more copies are needed for its Breakthrough. A fresh drop is T0 — leave it. "T?" on an older record means T isn\'t set: it counts as below T4 until you tap the real one.',
       '**Legendary weapon and accessory** — find the item and mark the main stat. The list is alphabetical; when the search leaves one item, it lights up and gets picked by itself. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
       '**Main stat** of a weapon — ATK%, HP% or DEF% next to the grade; of an accessory — the first tap in the grid, after that the grid marks substats, and the main stands in gold above it: tap it to pick another, the substats stay. Grey — a main nobody needs. Tap the chosen one again to remove it.',
