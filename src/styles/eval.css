@@ -36,10 +36,19 @@ html.narrow .slot > span:not(.ico) { display: none; }
    аксессуара: the gold pill of the star controls (.lv-pill / .lv-seg of chars.css), compact — «T» and five digits. The set
    or item field shrinks (имя — многоточием), the pill doesn't; in a narrow row (< 340 px) it takes its own line under them.
    «T?» (an old record, card only) — no segment pressed, the «T?» mark in full ink */
-.lv-pill.btseg { display: inline-flex; flex: none; align-items: center; gap: 1px; width: auto; max-width: none; margin: 0; padding: 2px; }
-.btseg-t { padding: 0 3px 0 7px; font: 700 12px/1 var(--font-mono); color: var(--ink-3); white-space: nowrap; }
+.lv-pill.btseg { display: inline-flex; flex: none; align-items: stretch; gap: 0; width: auto; max-width: none; margin: 0; padding: 2px; }
+.btseg-t { display: inline-flex; align-items: center; min-width: 22px; padding: 0 3px 0 9px; border-radius: 999px 0 0 999px;
+  font: 700 12px/1 var(--font-mono); color: var(--ink-3); white-space: nowrap; }
 .btseg.unknown .btseg-t { color: var(--ink); }
-.btseg .lv-seg { min-width: 26px; min-height: 38px; padding: 0 4px; font: 700 13.5px/1 var(--font-mono); color: var(--ink-2); cursor: pointer; }
+.lv-pill.btseg .lv-seg { min-width: 26px; min-height: 38px; padding: 0 4px; border: 0; border-radius: 0; font: 700 13.5px/1 var(--font-mono);
+  color: var(--ink-2); cursor: pointer; }
+.lv-pill.btseg .lv-seg:not(.fill):hover { color: var(--ink); }
+/* the fill: one gold bar from the «T» mark to the chosen digit, its ends concentric with the pill (the chosen digit is the
+   rounded right end); the same vertical gradient on every part, so the joins don't show */
+.lv-pill.btseg .fill { background: linear-gradient(180deg, color-mix(in srgb, var(--star-on) 78%, #fff), var(--star-on));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), inset 0 -1px 0 rgb(0 0 0 / .1); color: color-mix(in srgb, var(--surface) 62%, transparent); }
+.lv-pill.btseg .lv-seg.fill.on { border-radius: 0 999px 999px 0; color: var(--surface); box-shadow: inset 0 1px 0 rgb(255 255 255 / .22),
+  inset 0 -1px 0 rgb(0 0 0 / .1), 4px 0 10px -4px color-mix(in srgb, var(--star-on) 55%, transparent); }
 .formrow:has(> .btseg) { flex-wrap: wrap; }
 /* a phone (the page is 410 px there): the T segments take the room, so the set field keeps only its icon — the picker
    and wider screens show the name (owner 2026-11-05, HISTORY.md 0270) */
