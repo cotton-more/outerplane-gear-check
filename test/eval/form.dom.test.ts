@@ -188,8 +188,8 @@ describe('Breakthrough T0–T4 на форме (HISTORY.md 0270)', () => {
 
   it.each([['weapon', 'Steel Sword'], ['accessory', 'Steel Necklace']])('Epic %s: те же два ряда, вместо предмета — «%s»', async (slot, name) => {
     await mount({ slot, grade: 'rare' }, {});
-    expect(layout()).toEqual([['grade', 'pick-static'], ['pick', 'bt']]);
-    expect($('.pick-static')?.textContent).toBe(name);
+    expect(layout()).toEqual([['grade', 'lv-pill'], ['pick', 'bt']]);
+    expect($('.itempill.fixed')?.textContent).toBe(name);
   });
 
   it('оружие: другой предмет снимает «T4»', async () => {

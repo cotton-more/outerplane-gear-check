@@ -5,6 +5,7 @@
   --surface-2: #f4f6f9;
   --gstat-bg: #3b4252; /* game stat icons are white: a dark square under them (img.gstat) */
   --surface-3: #e5e9f0;
+  --raise: #ffffff; /* a picked segment of the form's pills (T, main, item): a raised plate, owner 2026-11-22 */
   --ink: #121722;
   --ink-2: #454f60;
   --ink-3: #5f6979;
@@ -49,6 +50,7 @@
     --surface-2: #1a2029;
     --gstat-bg: transparent;
     --surface-3: #232b36;
+    --raise: #333d4d;
     --ink: #e7ebf1;
     --ink-2: #b0bacb;
     --ink-3: #8b97aa;
@@ -86,6 +88,7 @@
   --surface-2: #1a2029;
   --gstat-bg: transparent;
   --surface-3: #232b36;
+  --raise: #333d4d;
   --ink: #e7ebf1;
   --ink-2: #b0bacb;
   --ink-3: #8b97aa;

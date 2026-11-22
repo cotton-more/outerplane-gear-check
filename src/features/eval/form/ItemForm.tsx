@@ -17,7 +17,7 @@ import { mainOptions, setSubDemand } from './lists';
 import type { FormAction, FormState } from './formState';
 import { BtChip } from './BtChip';
 import { ItemPicker } from './ItemPicker';
-import { MainChip, MainPill } from './MainPill';
+import { ItemPill, MainChip, MainPill } from './MainPill';
 import { PickField } from './PickField';
 import { SetPicker } from './SetPicker';
 import { SubPicker } from './SubPicker';
@@ -90,7 +90,7 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
       : weapon ? (!s.main ? 'main' : !epic && !found ? 'item' : null)
         : epic || s.unlisted ? (s.main ? null : 'main') : found ? null : 'item';
   const itemField = (
-    <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
+    <ItemPill value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : null}
       placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at={at('item' as const)} need={need === 'item'} />
   );
   const mainField = weapon
@@ -118,7 +118,7 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
           </>
           // a weapon or accessory (owner 2026-11-22): the grade and what the piece is — a Legendary's item, an Epic's game name
           // (nothing to pick) — then the main and T in a row of their own, the same for both grades, so the form doesn't jump
-          : epic ? <span className="pick-static">{EPIC_NAME[kind]}</span> : itemField}
+          : epic ? <ItemPill value={null} placeholder={EPIC_NAME[kind]} fixed /> : itemField}
       </div>
       {!armor && <div className="formrow">{mainField}{btChip}</div>}
       <div className="subzone" {...mark(tour('grid'))}>

@@ -33,7 +33,7 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .pick-c { flex: none; color: var(--ink-3); font-size: 12px; }
 .pick.empty { border-style: dashed; background: transparent; color: var(--ink-3); font-weight: 500; }
 /* Breakthrough T0–T4 (features/eval/form BtChip, HISTORY.md 0270) рядом с сетом брони / main оружия и аксессуара (their
-   second row, owner 2026-11-22): the gold pill of the star controls (.lv-pill / .lv-seg of chars.css), compact — «T» and five digits. The set
+   second row, owner 2026-11-22): the pill of the star controls (.lv-pill / .lv-seg of chars.css; picked — a raised plate, not their gold), compact — «T» and five digits. The set
    or item field shrinks (имя — многоточием), the pill doesn't; in a narrow row (< 340 px) it takes its own line under them.
    «T?» (an old record, card only) — no segment pressed, the «T?» mark in full ink */
 .lv-pill.btseg { display: inline-flex; flex: none; align-items: stretch; gap: 0; width: auto; max-width: none; margin: 0; padding: 2px; }
@@ -43,33 +43,44 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .lv-pill.btseg .lv-seg { min-width: 26px; min-height: 38px; padding: 0 4px; border: 0; border-radius: 0; font: 700 13.5px/1 var(--font-mono);
   color: var(--ink-2); cursor: pointer; }
 .lv-pill.btseg .lv-seg:not(.fill):hover { color: var(--ink); }
-/* the fill: one gold bar from the «T» mark to the chosen digit, its ends concentric with the pill (the chosen digit is the
-   rounded right end); the same vertical gradient on every part, so the joins don't show */
-.lv-pill.btseg .fill { background: linear-gradient(180deg, color-mix(in srgb, var(--star-on) 78%, #fff), var(--star-on));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), inset 0 -1px 0 rgb(0 0 0 / .1); color: color-mix(in srgb, var(--surface) 62%, transparent); }
-.lv-pill.btseg .lv-seg.fill.on { border-radius: 0 999px 999px 0; color: var(--surface); box-shadow: inset 0 1px 0 rgb(255 255 255 / .22),
-  inset 0 -1px 0 rgb(0 0 0 / .1), 4px 0 10px -4px color-mix(in srgb, var(--star-on) 55%, transparent); }
+/* the fill: one raised plate (--raise, white in the light theme) from the «T» mark to the chosen digit, its ends concentric
+   with the pill (the chosen digit is the rounded right end). No gold (owner 2026-11-22: too loud, not the game's palette).
+   The shadow is a blur-free line under each part, so the joins don't show */
+.lv-pill.btseg .fill { background: var(--raise); box-shadow: 0 1px 0 rgb(0 0 0 / .16); color: var(--ink-3); }
+.lv-pill.btseg .lv-seg.fill.on { border-radius: 0 999px 999px 0; border-color: transparent; background: var(--raise); box-shadow: 0 1px 0 rgb(0 0 0 / .16);
+  color: var(--ink); } /* over the star controls' gold .lv-seg.on (chars.css) */
 .formrow:has(> .btseg) { flex-wrap: wrap; }
-/* the main without a window (features/eval/form MainPill.tsx, owner 2026-11-22). A weapon: ATK% / HP% / DEF% in the gold pill
+/* the main without a window (features/eval/form MainPill.tsx, owner 2026-11-22). A weapon: ATK% / HP% / DEF% in the pill
    of the star controls next to the grade, as tall as the grade buttons; grey — a main nobody needs (tappable), faded — one the
-   item can't have. An accessory: the chosen main as a gold chip, a tap puts the grid back to picking it; none yet — a quiet
-   «Main ↓» pointing at the grid */
+   item can't have. An accessory: the chosen main in a pill, a tap puts the grid back to picking it; none yet — a quiet
+   «Main ↓» pointing at the grid. The picked one is a raised plate (--raise), not gold (owner 2026-11-22) */
 .lv-pill.mainpill { display: inline-flex; flex: 1 1 auto; align-items: stretch; gap: 2px; width: auto; max-width: none; margin: 0; padding: 2px; }
 .mainpill .lv-seg { flex: 1 1 0; min-width: 48px; min-height: 38px; padding: 0 8px; font: 700 13px/1 var(--font-mono); color: var(--ink-2); cursor: pointer; }
 .mainpill .lv-seg.grey { color: var(--ink-3); font-weight: 500; }
 .mainpill .lv-seg:disabled { opacity: .35; cursor: default; }
 .mainpill.need { border-color: var(--accent); background: var(--accent-soft); }
-/* an Epic weapon or accessory: its game name («Steel Sword») where a Legendary has the item field — nothing to pick */
-.pick-static { flex: 1 1 120px; min-width: 0; display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink-3); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lv-pill.mainchip { display: inline-flex; flex: 1 1 auto; align-items: stretch; gap: 2px; width: auto; max-width: none; margin: 0; padding: 2px; cursor: pointer; font: inherit; color: inherit; }
+.lv-pill.mainchip, .lv-pill.itempill { display: inline-flex; flex: 1 1 auto; align-items: stretch; gap: 2px; width: auto; max-width: none; margin: 0; padding: 2px; cursor: pointer; font: inherit; color: inherit; }
 .mainchip .lv-seg { flex: none; min-width: 64px; min-height: 38px; padding: 0 14px; font: 700 13.5px/1 var(--font-mono); }
-.mainchip .mc-act { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 0 10px; color: var(--ink-3); font: 600 12.5px/1 var(--font-body); }
-.mainchip.open { border-color: var(--star-on); box-shadow: 0 0 0 1px var(--star-on); }
+.mainchip .mc-act, .itempill .mc-act { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 0 10px; color: var(--ink-3); font: 600 12.5px/1 var(--font-body); }
+/* the picked segment of the main and item pills: the same raised plate, no gold (owner 2026-11-22, variant А) */
+.lv-pill.mainpill .lv-seg.on, .lv-pill.mainchip .lv-seg.on, .lv-pill.itempill .lv-seg.on { background: var(--raise); color: var(--ink);
+  border-color: var(--line-2); box-shadow: 0 1px 3px rgb(0 0 0 / .16); }
+.mainchip.open { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .mainchip.open .mc-act { color: var(--ink); }
 .mainchip.empty { cursor: default; }
-.mainchip .mc-none { flex: 1 1 auto; display: flex; align-items: center; min-height: 38px; padding: 0 14px; color: var(--ink-3); font-size: 13px; }
-.mainchip.empty.need { border-color: var(--accent); background: var(--accent-soft); }
-.mainchip.empty.need .mc-none { color: var(--accent); font-weight: 600; }
+/* the item pill (ItemPill): the raised plate holds the item's picture and name (ellipsis), «сменить» after it; an Epic's
+   game name sits in it greyed, nothing to tap */
+.lv-pill.itempill { flex: 1 1 120px; min-width: 0; }
+.itempill .lv-seg { flex: 0 1 auto; min-width: 0; min-height: 38px; justify-content: flex-start; gap: 7px; padding: 0 14px 0 6px; font: 600 13.5px/1 var(--font-body); }
+.itempill .lv-seg .frame, .itempill .lv-seg img { width: 30px; height: 30px; flex: none; border-radius: 999px; }
+.itempill .pick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.itempill .mc-act { flex: 0 0 auto; }
+.itempill .ip-car { display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: var(--ink-3); }
+.itempill.fixed { cursor: default; }
+.itempill.fixed .mc-none { font-weight: 600; }
+.mainchip .mc-none, .itempill .mc-none { flex: 1 1 auto; display: flex; align-items: center; min-height: 38px; padding: 0 14px; color: var(--ink-3); font-size: 13px; }
+.mainchip.empty.need, .itempill.empty.need { border-color: var(--accent); background: var(--accent-soft); }
+.mainchip.empty.need .mc-none, .itempill.empty.need .mc-none { color: var(--accent); font-weight: 600; }
 .statgrid.main-mode .sg.cur { border: 2px solid var(--star-on); background: color-mix(in srgb, var(--star-on) 18%, var(--surface-2)); }
 /* a phone (the page is 410 px there): the T segments take the room, so the set field keeps only its icon — the picker
    and wider screens show the name (owner 2026-11-05, HISTORY.md 0270) */
@@ -246,8 +257,7 @@ html.xs .subrow .roll-b button.after { min-width: 26px; }
   .slot img, .slot .noimg, .slot .ico { width: 28px; height: 28px; }
   .grade, .pick { min-height: 40px; }
   .btseg .lv-seg, .mainpill .lv-seg { min-height: 34px; }
-  .mainchip .lv-seg, .mainchip .mc-none { min-height: 34px; }
-  .pick-static { min-height: 40px; }
+  .mainchip .lv-seg, .mainchip .mc-none, .itempill .lv-seg, .itempill .mc-none { min-height: 34px; }
   .grade { width: 40px; }
   .subrows { gap: 4px; }
   .subrow .roll-b button { height: 38px; }
@@ -313,8 +323,7 @@ html.narrow .eval-in .actions { display: none; }
   .slot img, .slot .noimg, .slot .ico { width: 26px; height: 26px; }
   .grade, .pick { min-height: 38px; }
   .btseg .lv-seg, .mainpill .lv-seg { min-height: 32px; }
-  .mainchip .lv-seg, .mainchip .mc-none { min-height: 32px; }
-  .pick-static { min-height: 38px; }
+  .mainchip .lv-seg, .mainchip .mc-none, .itempill .lv-seg, .itempill .mc-none { min-height: 32px; }
   .grade { width: 38px; }
   .subzone { min-height: 76px; }
   .sg { min-height: 36px; }
