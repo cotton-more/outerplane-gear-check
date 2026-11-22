@@ -4,7 +4,7 @@
 // scripts/autoupdate.sh). DATA — версия данных: коммит outerpedia снимка, меняется только с новыми данными.
 // Страница спрашивает ждущий worker, что в нём, и решает: новые данные — плашка «Обновить», только правки
 // приложения — строка в подвале, а при следующем запуске оно ставится само (src/hooks/usePwa.ts).
-const VERSION = 'abad24a1bdc4';
+const VERSION = '1ccd2554887e';
 const DATA = "40b0ec94d3ebc990cfdc39314a3299ec363cadac";
 const CACHE = 'ogc-' + VERSION;
 const FONTS = 'ogc-fonts';
