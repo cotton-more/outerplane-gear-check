@@ -253,6 +253,8 @@ html.xs .bgear-t { grid-row: 3; }
 /* points of a worn piece — at the end of its substat row; of a set — after its last bonus line */
 .wpts { font: 600 12px var(--font-mono); color: var(--ink-2); }
 .bgear-pts { margin-left: auto; align-self: center; }
+.bgear-pts.good { color: var(--keep); } /* ≥ 6 points: a good piece by points (WornGear ptsTone) */
+.bgear-pts.nil { color: var(--ink-3); font-weight: 500; } /* 0: the substats give the hero nothing */
 /* the chain with segment sums (WornGear WornChain): the chain's colours, the fill and border weaker with fewer segments
    (--k, 0…1 within one colour). Text is the colour mixed with ink: contrast ≥ 4.5 on the strongest fill in both themes
    (on the plain colour it fell to ~3 — owner: CHD 13, HP 5 blended into the fill) */

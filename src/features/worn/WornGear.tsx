@@ -25,9 +25,15 @@ import { Rich } from '@/shared/ui/Rich';
 import { WornCard } from './WornCard';
 import type { CSSProperties } from 'react';
 import type { ChainSum } from './wearing';
+import { milli } from '@/game/build/points';
 
 // points to one decimal («37,7», «3,4») — fit.pts rounds itself
 const pt = (t: ReturnType<typeof useT>, x: number) => t.fit.pts(x);
+// a card's points in colour (owner 2026-11-22): green — a good piece by points alone (6, the bar of MODEL §4), grey — the
+// substats give the hero nothing, neutral otherwise. By the number as shown (one decimal): a 5.96 reads «6» and is green, a
+// 0.04 reads «0» and is grey. A recommended weapon at 0 is still right — its passive isn't points. Only what the number
+// measures: the armor bar's old rule and the passive rank don't colour it
+const ptsTone = (x: number): string => { const m = milli(x); return m >= 5950 ? ' good' : m < 50 ? ' nil' : ''; };
 
 // The hero's chain with segment sums from the worn pieces (wearing chainSums): green — counts in full, yellow — at ½
 // (flat), paler — fewer segments, but the colour stays recognisable; dashed — nothing worn gives the stat.
@@ -140,7 +146,7 @@ export function WornGear({ c, wv, ctx, gear, onOpenPiece, onEnter, onWearAll, on
                   <li key={slot}>
                     {p ? (
                       <WornCard ctx={ctx} p={p} tokens={s.tokens} shown={shown} onClick={onOpenPiece && (() => onOpenPiece(p.id))}
-                        pts={wv.value && <b className="wpts bgear-pts">{pt(t, wv.value.ptsBySlot[slot] ?? 0)}</b>} />
+                        pts={wv.value && <b className={'wpts bgear-pts' + ptsTone(wv.value.ptsBySlot[slot] ?? 0)}>{pt(t, wv.value.ptsBySlot[slot] ?? 0)}</b>} />
                     ) : (
                       <div className="bgear-empty">
                         <SlotIcon slot={slot} /><span>{t.ui.slotNames[slot]}</span>
