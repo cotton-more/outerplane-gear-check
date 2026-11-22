@@ -9,9 +9,11 @@ const ctx = makeCtx(idx, { rosterOnly: false, stage: 'grow', lv120: false, quirk
 const sword = (bt: 0 | 4 | null) => mk('w', 'weapon', null, { CHD: 2, CHC: 3, SPD: 1 }, bt, { grade: 'rare', itemKey: null, main: 'ATK%' });
 
 describe('the game card of a worn piece', () => {
-  it('main lines: the fixed Attack first, then the chosen main; below T4 no number, a percent line keeps «%»', () => {
-    expect(gameMains(ctx, sword(0)).map((m) => [m.name, m.value, m.pct])).toEqual([['Attack', null, false], ['Attack', null, true]]);
-    expect(gameMains(ctx, sword(null)).map((m) => m.value)).toEqual([null, null]);
+  it('main lines: the fixed Attack first, then the chosen main; «T?» — no number, a percent line keeps «%»', () => {
+    expect(gameMains(ctx, sword(null)).map((m) => [m.name, m.value, m.pct])).toEqual([['Attack', null, false], ['Attack', null, true]]);
+  });
+  it('T0 is an exact tier since 0270: Epic weapon ATK 900, ATK% 45.0%', () => {
+    expect(gameMains(ctx, sword(0)).map((m) => [m.name, m.value])).toEqual([['Attack', '900'], ['Attack', '45.0%']]);
   });
   it('at T4 the numbers are exact: Epic weapon ATK 1080, ATK% 54.0%', () => {
     expect(gameMains(ctx, sword(4)).map((m) => [m.name, m.value])).toEqual([['Attack', '1080'], ['Attack', '54.0%']]);

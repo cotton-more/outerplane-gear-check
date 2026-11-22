@@ -94,7 +94,7 @@ What the hero wears in the game now: six pieces as cards, like the game's — we
 pairs (helmet and armor, gloves and boots; one per row on a phone). A card shows Breakthrough ("T0"…"T4") and the
 piece's points next to its name, then the stats in a column in the game's words: the main lines ("Attack", "Health"),
 then the substats, "LV 2 Attack +8.0%" — check them against the game's piece card line by line. A main line has its
-number only at T4. A substat is coloured by the hero's points: green
+number at a known T (T0–T4); an old «T?» record has none. A substat is coloured by the hero's points: green
 counts in full, yellow at half. Above the cards — only the set bonuses that are turned on. Armor shows the set icon
 before its name, a Legendary weapon or accessory its own picture, as in the game. An empty slot has **"Enter"**: "Rate" opens for that slot, and
 after "Equip" the form moves to the next empty one. If the hero has at most one piece per slot, "Yes, all worn"

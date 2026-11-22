@@ -20,13 +20,13 @@ export function gameSubs(idx: Index, subs: Record<string, number>): string[] {
   return Object.entries(subs).map(([k, n]) => { const g = gameSub(idx, k, n); return `LV ${n} ${g.name} ${g.value}`; });
 }
 // The main lines in the game's words, in the game card's order: the fixed lines (a weapon's Attack, armor's own), then the chosen
-// main. A value at +10 only where the tier is exact — T4 or an old T1–T3 mark; «T0–T3» or «T?» — no number (owner
-// 2026-10-25, HISTORY.md 0260 C2): the tier isn't stored, the number would be a guess. pct — a percent line: without a number
-// the card still shows «%», else a weapon's «Attack» and «Attack» (ATK and ATK%) look the same (owner, same day)
+// main. A value at +10 at every known tier T0–T4 (since 0270 the tier is exact); «T?» — no number (owner 2026-10-25,
+// HISTORY.md 0260 C2): the tier isn't stored, the number would be a guess. pct — a percent line: without a number the card
+// still shows «%», else a weapon's «Attack» and «Attack» (ATK and ATK%) look the same (owner, same day)
 const PCT_MAIN = /%$|^CH[CD]$/; // CHC 400 = 40.0%; flat EFF/RES and SPD are points
 export function gameMains(ctx: Ctx, p: Piece): { key: string; name: string; value: string | null; pct: boolean }[] {
   const lines = itemMains(ctx.idx, pieceInput(p)).lines;
-  const exact = p.bt !== null && p.bt > 0;
+  const exact = p.bt !== null;
   return [...lines.filter((l) => l !== p.main), ...lines.filter((l) => l === p.main)].map((l) => {
     const raw = exact ? mainRaw(ctx, p, l) : 0;
     const pct = PCT_MAIN.test(l);
