@@ -64,13 +64,15 @@ const weak = (id: string) => mk(id, 'helmet', 'Speed', { SPD: 1, RES: 1, EFF: 1,
 const good = (id: string) => mk(id, 'helmet', 'Speed', { 'DEF%': 3, CHC: 3, CHD: 2, SPD: 3 }, 0);
 
 describe('plan of a batch', () => {
-  it('Rin case in one batch: the good Legendary is worn, the weak one feeds it — whatever the entered order', () => {
+  it('Rin case in one batch: the good Legendary is worn, the weak one feeds it — whatever the entered order; the taken-off Epic goes to the inventory', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const a = planBatch(ctx, st, [E(weak('L1')), E(good('L2'))]);
-    expect(a.lines.map((l) => [l.id, l.fate.kind])).toEqual([['1', 'feed'], ['2', 'wear'], ['2~1', 'junk']]);
+    expect(a.lines.map((l) => [l.id, l.fate.kind])).toEqual([['1', 'feed'], ['2', 'wear'], ['2~1', 'inventory']]);
     expect(a.lines[0].fate).toMatchObject({ kind: 'feed', to: { entry: 2 } });
     expect(a.lines[1].fate).toMatchObject({ kind: 'wear', c: { name: 'Caren' }, instead: { id: 'eH' } });
     expect(a.lines[2].off).toMatchObject({ c: { name: 'Caren' }, piece: { id: 'eH' } });
+    // owner 2026-11-22: a taken-off Epic gets no advice and leaves the hero's records
+    expect(a.st.pools[char('Caren').id] ?? []).not.toContain('eH');
     const b = planBatch(ctx, st, [E(good('L2')), E(weak('L1'))]);
     expect(fatesOf(b)).toEqual(fatesOf(a));
     expect(a.counts).toEqual({ wear: 1, keep: 0, feed: 1, junk: a.lines[2].fate.kind === 'junk' ? 1 : 0 });

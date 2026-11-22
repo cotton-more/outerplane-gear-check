@@ -68,6 +68,7 @@ export function fateText(t: Texts, f: Fate, plan: Plan, ctx: Ctx, x: ItemInput):
     }
     case 'same': return t.batch.same(f.same.piece.slot, f.same.c.name, t.fit.date(f.same.piece.at));
     case 'junk': return t.batch.junk;
+    case 'inventory': return t.batch.inventory;
     default: return t.batch.none;
   }
 }

@@ -89,16 +89,15 @@ describe('the walk', () => {
     expect(gameSubs(idx, { CHC: 3, ATK: 2 })).toEqual(['LV 3 Crit Chance +9.0%', 'LV 2 Attack +' + Math.round(idx.SUB.ATK.step * 2)]);
   });
 
-  it('owner case: Caren on an Epic helmet; a good Legendary, a weak one — equip, Breakthrough, dismantle the Epic', () => {
+  it('owner case: Caren on an Epic helmet; a good Legendary, a weak one — equip, Breakthrough; the Epic just comes off', () => {
     const { ctx, st } = world(['Caren'], { Caren: [sG(), sB(), epicHelm()] });
     const b = batchOf([{ kind: 'worn', c: char('Caren').id, slot: 'helmet' }, piece(weak('w')), piece(good('g'))]);
     const plan = planBatch(ctx, st, entriesOf(b));
     const walk = walkOf(b, plan);
-    expect(walk.steps.map((s) => s.stage)).toEqual([1, 3, 4]);
+    expect(walk.steps.map((s) => s.stage)).toEqual([1, 3]);
     expect(walk.steps[0]).toMatchObject({ stage: 1, c: { name: 'Caren' }, slot: 'helmet', k: 3 });
     expect(walk.steps[1]).toMatchObject({ stage: 3, target: { worn: { name: 'Caren' }, slot: 'helmet' }, n: 1, unlock: 0, mats: [{ where: { n: 2 } }] });
-    // the taken-off Epic suits only heroes outside the roster: dismantled where its «E» is (owner 2026-10-10: no «Спорно»)
-    expect(walk.steps[2]).toMatchObject({ stage: 4, where: [{ n: 1 }] });
+    // the taken-off Epic: «В инвентарь», no step — the equip took it off (owner 2026-11-22; was: dismantled, 2026-10-10)
   });
 
   // HISTORY.md 0270: the Breakthrough step carries the target's T before and after the feed

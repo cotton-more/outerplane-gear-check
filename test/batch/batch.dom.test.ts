@@ -323,7 +323,8 @@ describe('«Партия»: обход по шагам', () => {
     await mount({ setId: speed, subs: {} }, { batch: { v: 2, items, skip: [], twin: [], choice: {}, done: [] } });
     await click($('.batch-strip .batch-list'));
     await click(byText('.batch button', 'Plan it'));
-    // Caren's removed Epic helmet suits only heroes outside the roster: dismantled, nothing to decide (owner 2026-10-10)
+    // Caren's removed Epic helmet: «To the inventory», no step (owner 2026-11-22; was: dismantled, 2026-10-10)
+    expect(byText('.batch-plan .bfate', 'To the inventory')).toBeTruthy();
     expect($('.bdecide')).toBeNull();
     expect(byText('.batch button', 'Walk ▸')?.hasAttribute('disabled')).toBe(false);
     await click(byText('.batch button', 'Walk ▸'));
@@ -331,7 +332,6 @@ describe('«Партия»: обход по шагам', () => {
     expect(steps.map((s) => s.querySelector('.bstep-h > b')?.textContent)).toEqual([
       'Caren → helmet',
       "Caren's helmet → Breakthrough: up\u00A0to\u00A01",
-      'Select in the game: 1',                             // last: nothing meant as feed is dismantled (owner 2026-10-09)
     ]);
     expect(steps[0].querySelector('.bstep-no')?.textContent).toBe('No.\u00A03');         // her slot list: the «E» entry (#1), the weak one (#2), this (#3) — a quiet hint on the right
     expect(steps[0].textContent).toContain('LV 3 Defense +');
@@ -339,14 +339,11 @@ describe('«Партия»: обход по шагам', () => {
     expect(steps[1].querySelectorAll('.bt-card .tok')).toHaveLength(4);                           // …and all its substats
     expect(steps[1].querySelector('.bt-mat')?.textContent).toBe('SPD1RES%1EFF%1HP1');              // the feed, piece by piece: its stats — no number, armor has no name
     expect($$('.bwalk .bstage > p').map((x) => x.textContent)).toEqual(["Any piece from the game's list works. What the game doesn't take — dismantle."]);   // once, under «Breakthrough»
-    expect(steps[2].textContent).toContain('DEF%\u00A03');                    // the taken-off helmet, by its stats (no «#n» at this stage)
-    expect(steps[2].textContent).not.toContain('#');
-    expect(steps[2].textContent?.endsWith("+ feed the Breakthrough didn't take")).toBe(true);
-    expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 3');
+    expect($('.drawer-h h3')?.textContent).toBe('Walk · 0 of 2');
     // the whole card is the checkbox's label: a tap on the step's text ticks it, a second one unticks it
     await click(steps[0].querySelector('.bstep-h > b'));
     expect(batch().done).toEqual(['eq:3']);
-    expect($('.drawer-h h3')?.textContent).toBe('Walk · 1 of 3');
+    expect($('.drawer-h h3')?.textContent).toBe('Walk · 1 of 2');
     expect((document.querySelector('.bwalk .bstep input') as HTMLInputElement).checked).toBe(true);
     expect($('.bwalk .bstep input')?.getAttribute('aria-label')).toBe(steps[0].querySelector('.bstep-h > b')?.textContent);
     await click(steps[0].querySelector('.bstep-h > b'));

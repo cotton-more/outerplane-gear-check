@@ -464,6 +464,10 @@ It reuses the model: `world:worldOf` builds each hero's **gauge** from `piecePoi
 10. **Display order**: plan lines are *shown* in the entered order (`#n`), not the processing order of item 1. The line of
     a piece the plan takes off a hero (`off`: the worn piece a new one replaces, a set-aside record it pushes out) sits
     right under the entry that caused it; such lines are decided after all entries, in the order the pieces came off.
+    **A taken-off worn Epic is not decided** (owner 2026-11-22): fate `inventory` («В инвентарь»), no walk step (the equip
+    already took it off), and the hero's record goes too if the pool still kept it (`removeFrom`, undone with the plan).
+    No advice where an Epic goes — the player may rate it later; only a taken-off Legendary is worn by another, set aside or
+    fed. Was: every taken-off piece got the usual verdict (an Epic could be worn by another hero, fed or dismantled).
 11. **«Record the plan» recomputes** (`useBatchMode.done`): the plan is made again on the *current* store at the tap,
     never applied stale — the batch can live for days in `ogc.batch` and the worn pieces may have changed meanwhile.
     Then the plan's store is written, the batch is cleared and a message with «Вернуть» (item 6) is shown.

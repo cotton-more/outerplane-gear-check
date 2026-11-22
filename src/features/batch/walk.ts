@@ -135,7 +135,7 @@ export function walkOf(batch: Batch, plan: Plan): Walk {
         if (l.off?.was === 'stash') x.unlock++;
         break;
       }
-      default: break; // «нет в данных» — not touched
+      default: break; // «нет в данных» — not touched; «в инвентарь» — a taken-off Epic, the equip step already took it off
     }
   }
   // stage 1: a piece taken off one hero and worn by another — after the equip that takes it off; then by hero, as met

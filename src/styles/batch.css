@@ -24,6 +24,7 @@
 html.narrow .b-same .bfate { grid-column: 2 / -1; }
 html.narrow .btwin { grid-column: 2 / -1; justify-self: start; }
 .b-junk .bfate { color: var(--junk); }
+.b-inventory .bfate { color: var(--ink-3); } /* a taken-off Epic: no advice, it just comes off (owner 2026-11-22) */
 .boff { margin-left: 18px; width: calc(100% - 18px); }
 .boff-n { grid-column: 1 / -1; color: var(--ink-2); }
 .boff .bfate { grid-column: 1 / 3; }

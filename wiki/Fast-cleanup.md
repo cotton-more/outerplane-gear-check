@@ -64,7 +64,8 @@ anything else. Both grades? Two batches: Legendary first, then Epic — the seco
 3. **"Plan it"** — a line per piece: "Equip on Caren", "Equip on Caren — instead of the helmet", "Set aside for Rin",
    "Feed to #4 · Kappa's helmet", "Feed to Kappa's helmet", "Feed to Kappa's set-aside helmet", "Dismantle". A piece
    the plan takes off a hero gets its own line right under it ("Caren's removed helmet …"; for a weapon or accessory
-   also which item it is). A recommended weapon or accessory goes on for its passive even when its substats are
+   also which item it is). A removed Legendary gets a place: worn by another hero, set aside, fed. A removed Epic just goes
+   "To the inventory": no advice, the hero forgets it; rate it later if you like. A recommended weapon or accessory goes on for its passive even when its substats are
    weaker — the line says what it costs: "Equip on Caren — instead of the weapon · −4.9 pts, better passive". One
    target takes only the feed it lacks (4 − T); a piece fed to T4 reads "· T4 after feeding", a shorter feed — "· T3 after
    feeding" and so on. "Record the plan" writes the piece's new T itself; a piece with "T?" gets up to four — tap its real T on its card. A

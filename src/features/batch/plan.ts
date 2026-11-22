@@ -24,6 +24,9 @@ export type Fate =
   | { kind: 'feed'; to: Target }
   | { kind: 'same'; same: Same }
   | { kind: 'junk' }
+  // a taken-off Epic (owner 2026-11-22): «в инвентарь» — no advice where it goes, the hero forgets it; the player may rate it
+  // later. Only a taken-off Legendary is planned on (worn by another, set aside, fed)
+  | { kind: 'inventory' }
   | { kind: 'none' };                                               // no verdict: the item isn't in outerpedia data
 // a piece the plan takes from a hero: was — how the hero held it, 'worn' (taken off) or 'stash' (a set-aside record)
 export interface Off { c: Char; piece: Piece; was: 'worn' | 'stash' }
@@ -130,9 +133,9 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
   const held = (o: OffLine) => { const f = fates.get(o.id); return f?.kind === 'keep' && !!f.held; };
   // a recorded piece the plan takes: its line under entry n. One piece — one line: if it has one already and the pool
   // kept it (held), a later «Надень» took it after all — that line is decided again
-  const takeOff = (n: number, c: Char, piece: Piece, was: Off['was']): OffLine => {
+  const takeOff = (n: number, c: Char, piece: Piece, was: Off['was'], later = true): OffLine => {
     const o = offs.find((x) => x.piece.id === piece.id);
-    if (!o) { const x = { id: offId(n), n, c, piece, was }; offs.push(x); todo.push(x); return x; }
+    if (!o) { const x = { id: offId(n), n, c, piece, was }; offs.push(x); if (later) todo.push(x); return x; }
     if (held(o)) { fates.delete(o.id); todo.push(o); }
     return o;
   };
@@ -176,7 +179,15 @@ function pass(ctx: Ctx, pools: (st: GearStore) => Pools, base: GearStore, entrie
       const was = res.wasWorn ? before.pieces[res.wasWorn] ?? null : null;
       // the worn piece of its slot comes off in the game: a line of its own (Q4) — the pool dropped it, or still keeps it.
       // A record the plan made is not a new piece: its own line is fixed after the pass
-      if (was && !madeBy.has(was.id)) {
+      if (was && !madeBy.has(was.id) && was.grade === 'rare') {
+        // an Epic just comes off (owner 2026-11-22): its line says «в инвентарь»; a record the pool still kept leaves too
+        const o = takeOff(n, c, was, 'worn', false);
+        fates.set(o.id, { kind: 'inventory' });
+        if (st.pools[c.id]?.includes(was.id)) {
+          ops.push({ c: c.id, drop: was, back: dropBack(st, c.id, was) });
+          st = removeFrom(st, c.id, was.id);
+        }
+      } else if (was && !madeBy.has(was.id)) {
         const o = takeOff(n, c, was, 'worn');
         if (!res.removed.some((p) => p.id === was.id)) fates.set(o.id, { kind: 'keep', c, t4: false, held: true });
       }
