@@ -9,9 +9,9 @@ import type { MainOption } from './lists';
 // a fixed order (the pill keeps its width); one the chosen item can't have is disabled, one nobody needs is grey (tappable).
 // A tap on the chosen one clears it, as the grid's «main» cell does.
 //
-// MainChip — an accessory has 4–12 mains: the first tap in the grid picks it (StatGrid main mode), then it sits here as a
-// gold chip; a tap puts the grid back to picking the main (`open`), the substats stay. No main yet — a quiet line pointing
-// at the grid.
+// MainChip — an accessory has 4–12 mains: the first tap in the grid picks it (StatGrid main mode), then it sits here in a
+// pill as wide as a weapon's (the gold main and «сменить»); a tap puts the grid back to picking the main (`open`), the
+// substats stay. No main yet — the same pill with «Main ↓» pointing at the grid. So the second row is always «main pill + T».
 const SHORT: Record<string, string> = { 'DMG UP%': 'DMG↑%', 'DMG RED%': 'DMG↓%', 'CDMG RED%': 'CD↓%' };
 
 export function MainPill({ all, opts, main, need, at, onPick }: {
@@ -37,10 +37,12 @@ export function MainChip({ main, open, need, at, onToggle }: {
   main: string | null; open: boolean; need: boolean; at?: Anchor; onToggle: () => void;
 }) {
   const t = useT();
-  if (!main) return <span className={need ? 'mainchip-none need' : 'mainchip-none'} {...(at && tour(at))}>{t.ui.mainInGrid}</span>;
+  // the same pill as a weapon's, as wide (owner 2026-11-22: the row is always «main pill + T»): empty — «Main ↓» inside;
+  // chosen — the main as the gold segment and «сменить» after it
+  if (!main) return <span className={need ? 'lv-pill mainchip empty need' : 'lv-pill mainchip empty'} {...(at && tour(at))}><span className="mc-none">{t.ui.mainInGrid}</span></span>;
   return (
-    <button type="button" className={open ? 'mainchip open' : 'mainchip'} aria-expanded={open} title={t.ui.mainChange} onClick={onToggle} {...(at && tour(at))}>
-      <span>{SHORT[main] ?? main}</span><small>{open ? t.ui.mainChipOpen : t.ui.mainChipChange}</small>
+    <button type="button" className={open ? 'lv-pill mainchip open' : 'lv-pill mainchip'} aria-expanded={open} title={t.ui.mainChange} onClick={onToggle} {...(at && tour(at))}>
+      <span className="lv-seg on">{SHORT[main] ?? main}</span><span className="mc-act">{open ? t.ui.mainChipOpen : t.ui.mainChipChange}</span>
     </button>
   );
 }
