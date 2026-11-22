@@ -3,7 +3,7 @@
 // accessory the item row with «T4» → the substat grid → the rows with segments; the set, item, main and substat pickers.
 // zone — what stands in the grid's place (the verdict card on «Оценка»); none — the grid. lock / ask — a batch of one kind
 // (features/batch). anchors — the tour's anchors: only the «Оценка» form has them (the entry window lies over the trade).
-import { useMemo, useState, type Dispatch, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type ReactNode } from 'react';
 import { GRADE_NAME, GRADES, isArmor, subLabel } from '@/game/data';
 import type { GearKind } from '@/game/data/types';
 import { useT } from '@/i18n';
@@ -11,13 +11,13 @@ import type { Ctx } from '@/game/context';
 import { MAX_SUBS, withinCap } from '@/game/item/subs';
 import { blocksOf, itemMains as mainLines } from '@/game/item/mains';
 import { tour, tourItem } from '@/tour/anchors';
-import { Frame, GradeFrame, SetIcon, StatIcon } from '@/game/icons/Img';
+import { Frame, GradeFrame, SetIcon } from '@/game/icons/Img';
 import { Sheet, type Point } from '@/shared/ui/Sheet';
 import { mainOptions, setSubDemand } from './lists';
 import type { FormAction, FormState } from './formState';
 import { BtChip } from './BtChip';
 import { ItemPicker } from './ItemPicker';
-import { MainPicker } from './MainPicker';
+import { MainChip, MainPill } from './MainPill';
 import { PickField } from './PickField';
 import { SetPicker } from './SetPicker';
 import { SubPicker } from './SubPicker';
@@ -26,7 +26,7 @@ import { StatGrid } from './StatGrid';
 import { SubRows, type CapAt } from './SubRows';
 
 // sub: какой стат заменяем; level: какой стат добавляем — окно уровня у центра нажатой клетки (at); fourth — 4-й у Epic
-type Open = null | 'set' | 'item' | 'main' | 'fourth' | { sub: string } | { level: string; at: Point };
+type Open = null | 'set' | 'item' | 'fourth' | { sub: string } | { level: string; at: Point };
 
 const none = {};
 
@@ -68,12 +68,20 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
   const item = !armor && !epic && s.itemKey ? ITEM[kind][s.itemKey] : undefined;
   const itemMains = (key: string) => { const it = ITEM[kind][key]; return it ? [...it.mains, ...it.extraMains] : []; };
   const weapon = s.slot === 'weapon';
-  const mainValue = s.main ? <><StatIcon stat={s.main} main />{s.main}</> : undefined;
   const opts = useMemo(() => (armor ? [] : mainOptions(ctx, kind, item, epic)), [ctx, armor, kind, item, epic]);
-  // for an accessory and a weapon (owner 2026-10-09) with no main the grid picks the main first — in the game it is at the top of the piece; for a weapon
-  // it is only ATK%, DEF% or HP% — the rest is disabled in the grid
-  const mainMode = !armor && !s.main && opts.length > 0 ? opts : null;
+  // the main without a window (owner 2026-11-22, MainPill.tsx): a weapon — the gold pill next to the grade (all the slot's
+  // mains, the item's own enabled), the grid is for substats from the start; an accessory — with no main the grid picks it
+  // first (in the game it is at the top of the piece, owner 2026-10-09), then the chip; the chip reopens that mode (mainOpen)
+  const pillAll = useMemo(() => (weapon ? mainOptions(ctx, kind, undefined, epic).map((o) => o.key) : []), [ctx, weapon, kind, epic]);
+  const [mainOpen, setMainOpen] = useState(false);
+  useEffect(() => setMainOpen(false), [s.slot, s.grade, s.itemKey]);
+  const mainMode = !armor && !weapon && (!s.main || mainOpen) && opts.length > 0 ? opts : null;
   const pickMain = (main: string) => dispatch({ type: 'main', main, blocks: blocksOf(ctx.idx, main) });
+  // in the reopened grid the chosen main just closes it (a tap doesn't clear it there); another one replaces it
+  const gridMain = (main: string) => {
+    if (mainOpen) { setMainOpen(false); if (main === s.main) return; }
+    pickMain(main);
+  };
   // сабстаты уже вводят, а сет, main или предмет не выбран — без него вердикта нет: выделяем, чего не хватает
   const started = Object.keys(s.subs).length > 0;
   const found = !!s.itemKey || s.unlisted;
@@ -85,7 +93,9 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
     <PickField value={item ? <><Frame item={item} /><span className="pick-t">{item.name}</span></> : s.unlisted ? t.ui.unlisted : undefined}
       placeholder={t.ui.findGear(kind)} onClick={() => setOpen('item')} at={at('item' as const)} need={need === 'item'} />
   );
-  const mainField = <PickField value={mainValue} placeholder={t.ui.mainInGrid} onClick={() => setOpen('main')} at={at('pick' as const)} need={need === 'main'} />;
+  const mainField = weapon
+    ? <MainPill all={pillAll} opts={opts} main={s.main} need={need === 'main'} at={at('pick' as const)} onPick={pickMain} />
+    : <MainChip main={s.main} open={mainOpen} need={need === 'main'} at={at('pick' as const)} onToggle={() => setMainOpen((x) => !x)} />;
   const btChip = <BtChip value={s.bt} armor={armor} anchor={anchors} onPick={(bt) => dispatch({ type: 'bt', bt })} />;
 
   return (
@@ -114,9 +124,9 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
       </div>
       {!armor && !epic && <div className="formrow">{itemField}{btChip}</div>}
       <div className="subzone" {...mark(tour('grid'))}>
-        {zone ?? <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} corner={!armor && opts.length > 0} onMain={pickMain} onPick={tapGrid} />}
+        {zone ?? <StatGrid subs={s.subs} main={s.main} blocked={im.blocked} full={full} useful={useful} mains={mainMode} current={mainOpen ? s.main : null} onMain={mainMode ? gridMain : pickMain} onPick={tapGrid} />}
       </div>
-      {(hint || mainMode) && <p className="grid-hint">{hint ?? t.ui.mainFirst}</p>}
+      {(hint || mainMode) && <p className="grid-hint">{hint ?? (mainOpen && s.main ? t.ui.mainChange : t.ui.mainFirst)}</p>}
       <SubRows subs={s.subs} grade={s.grade} fourth={epic} cap={cap} onCap={setCap} dispatch={dispatch} onPick={(editing) => setOpen({ sub: editing })} onAddFourth={() => setOpen('fourth')} />
 
       {open === 'set' && (
@@ -127,14 +137,14 @@ export function ItemForm({ s, dispatch, ctx, zone, hint = null, lock = null, ask
       {open === 'item' && (
         <Sheet title={t.ui.legendaryGear(kind)} onClose={close}>
           <ItemPicker ctx={ctx} kind={kind} current={s.itemKey}
-            onPick={(key) => { dispatch({ type: 'item', itemKey: key, mains: itemMains(key) }); close(); }}
+            onPick={(key) => {
+              const mains = itemMains(key);
+              dispatch({ type: 'item', itemKey: key, mains });
+              // an item with one main (Ether Blade — HP% only, Ether Amulet — PEN% only): nothing to choose, it is set
+              if (mains.length === 1 && s.main !== mains[0]) pickMain(mains[0]);
+              close();
+            }}
             onUnlisted={() => { dispatch({ type: 'unlisted' }); close(); }} />
-        </Sheet>
-      )}
-      {open === 'main' && (
-        <Sheet title={item ? `Main stat · ${item.name}` : epic ? t.ui.mainEpic(kind) : t.ui.mainUnlisted} onClose={close}>
-          <MainPicker ctx={ctx} kind={kind} item={item} epic={epic} current={s.main}
-            onPick={(main) => { if (main !== s.main) pickMain(main); close(); }} />
         </Sheet>
       )}
       {open === 'fourth' && (

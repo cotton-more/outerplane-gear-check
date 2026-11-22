@@ -24,7 +24,7 @@ export const COVERAGE: Record<string, Coverage> = {
   'features/eval/form/EvalSettings.tsx': 'helper',     // настройки оценки: подписи говорят сами за себя
   'features/eval/form/ItemPicker.tsx': 'core',         // окно выбора Legendary по названию — шаг «сет или предмет»
   'features/eval/form/LevelAsk.tsx': 'core',           // окно уровня после нажатия в сетке — шаг «сетка»; очевидно само (владелец: в «Что нового» не нужно)
-  'features/eval/form/MainPicker.tsx': 'core',         // окно main — тот же шаг
+  'features/eval/form/MainPill.tsx': 'core',           // main on the form (weapon pill, accessory chip) — the core «pick» step
   'features/eval/form/PickField.tsx': 'helper',        // поле, открывающее окно выбора
   'features/eval/form/RosterOnlyToggle.tsx': 'helper', // «Только мой ростер» — настройка оценки, подпись говорит сама
   'features/eval/form/SetPicker.tsx': 'core',          // окно сетов — шаг «сет»

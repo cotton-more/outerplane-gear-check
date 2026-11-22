@@ -44,14 +44,16 @@ async function mount(state: Record<string, unknown>, item: Record<string, unknow
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 
 describe('без вердикта карточки нет, нужное поле выделено', () => {
-  // owner 2026-10-09: a weapon's main is picked in the grid, like an accessory's — only ATK%, DEF%, HP% are on
-  it('Epic оружие: сабстаты есть, main нет — сетка выбирает main (ATK% / DEF% / HP%), поле main выделено; выбрал main — карточка', async () => {
+  // owner 2026-11-22: a weapon's main is the gold pill next to the grade (ATK% / HP% / DEF%), the grid is for substats at once
+  const pill = () => [...document.querySelectorAll<HTMLButtonElement>('.mainpill .lv-seg')];
+  const pillBtn = (k: string) => pill().find((b) => b.textContent === k)!;
+  it('Epic оружие: сабстаты есть, main нет — main в «таблетке» у грейда, она выделена; сетка — сабстаты; выбрал main — карточка', async () => {
     await mount({ slot: 'weapon', grade: 'rare' }, { subs: { SPD: 1, CHC: 1, CHD: 1 } });
     expect($('.vcard')).toBeNull();
-    expect($('.statgrid.main-mode')).toBeTruthy();
-    expect([...document.querySelectorAll<HTMLButtonElement>('.statgrid.main-mode .sg:not([disabled])')].map((b) => b.getAttribute('aria-label')).sort()).toEqual(['ATK%', 'DEF%', 'HP%']);
+    expect($('.statgrid.main-mode')).toBeNull();
+    expect(pill().filter((b) => !b.disabled).map((b) => b.textContent).sort()).toEqual(['ATK%', 'DEF%', 'HP%']);
     expect($('[data-tour="pick"].need')).toBeTruthy();
-    await act(async () => $('.statgrid.main-mode .sg[aria-label="ATK%"]')!.click());
+    await act(async () => pillBtn('ATK%').click());
     expect($('[data-tour="pick"].need')).toBeNull();
     expect($('.vcard')).toBeTruthy();
     expect($('.vcard .stamp')?.textContent).not.toBe('…');
@@ -67,22 +69,51 @@ describe('без вердикта карточки нет, нужное поле
     expect($('[data-tour="pick"].need')).toBeTruthy();
   });
 
-  it('оружие: main ATK% выбран в сетке — клетка ATK% становится «main» и сабстатом не бывает; нажатие снимает main', async () => {
+  it('оружие: main ATK% в «таблетке» — клетка ATK% становится «main» и сабстатом не бывает; нажатие снимает main', async () => {
     await mount({ slot: 'weapon', grade: 'rare' }, {});
-    await act(async () => $('.statgrid.main-mode .sg[aria-label="ATK%"]')!.click());
-    expect($('.statgrid.main-mode')).toBeNull();
+    await act(async () => pillBtn('ATK%').click());
+    expect(pillBtn('ATK%').getAttribute('aria-pressed')).toBe('true');
     const cell = $('.statgrid .sg.is-main');
     expect(cell?.textContent).toContain('ATK%');
     await act(async () => cell!.click());
-    expect($('.statgrid.main-mode')).toBeTruthy();
+    expect(pill().some((b) => b.getAttribute('aria-pressed') === 'true')).toBe(false);
+    expect($('.statgrid.main-mode')).toBeNull();
   });
 
   it('Legendary оружие с main, но без предмета: выделено поле предмета', async () => {
     await mount({ slot: 'weapon', grade: 'unique' }, { subs: { SPD: 1 } });
-    expect($('[data-tour="pick"].need')).toBeTruthy(); // the main first — in the grid
-    await act(async () => $('.statgrid.main-mode .sg:not([disabled])')!.click());
+    expect($('[data-tour="pick"].need')).toBeTruthy(); // the main first — the pill
+    await act(async () => pill().find((b) => !b.disabled)!.click());
     expect($('[data-tour="item"].need')).toBeTruthy();
     expect($('[data-tour="pick"].need')).toBeNull();
+  });
+
+  it('предмет с одним main (Ether Blade — только HP%): main ставится сам, остальные в «таблетке» недоступны', async () => {
+    await mount({ slot: 'weapon', grade: 'unique' }, { main: 'ATK%' });
+    await act(async () => $('[data-tour="item"]')!.click());
+    const blade = [...document.querySelectorAll<HTMLButtonElement>('.drawer button.item')].find((b) => b.textContent?.includes('Ether Blade'))!;
+    await act(async () => blade.click());
+    expect(pillBtn('HP%').getAttribute('aria-pressed')).toBe('true');
+    expect(pill().filter((b) => b.disabled).map((b) => b.textContent).sort()).toEqual(['ATK%', 'DEF%']);
+  });
+
+  // an accessory: the first tap in the grid is the main, then the gold chip; the chip puts the grid back, the substats stay
+  it('аксессуар: main из сетки встаёт чипом; чип возвращает выбор main, другой main заменяет, сабстаты остаются', async () => {
+    await mount({ slot: 'accessory', grade: 'rare' }, {});
+    expect($('.statgrid.main-mode')).toBeTruthy();
+    await act(async () => $('.statgrid.main-mode .sg[aria-label="CHD"]')!.click());
+    expect($('.mainchip')?.textContent).toContain('CHD');
+    expect($('.statgrid.main-mode')).toBeNull();
+    await act(async () => $('.statgrid .sg[aria-label="SPD"], .statgrid .sg[title="SPD"]')?.click());
+    await act(async () => $('.mainchip')!.click());
+    expect($('.statgrid.main-mode .sg.cur')?.getAttribute('aria-label')).toBe('CHD');
+    // the same main again — closes, keeps it
+    await act(async () => $('.statgrid.main-mode .sg.cur')!.click());
+    expect($('.mainchip')?.textContent).toContain('CHD');
+    await act(async () => $('.mainchip')!.click());
+    await act(async () => $('.statgrid.main-mode .sg[aria-label="RES"]')!.click());
+    expect($('.mainchip')?.textContent).toContain('RES');
+    expect($('.statgrid.main-mode')).toBeNull();
   });
 });
 

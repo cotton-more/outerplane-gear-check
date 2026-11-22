@@ -59,10 +59,10 @@ There is no footer under the page.
      **Legendary weapon and accessory** — find the item and mark the main stat (the list is alphabetical; when the search leaves
      one item, it lights up and gets picked by itself; brand new and not listed yet — "not listed"); **Epic weapon and accessory** — just the main stat;
      the piece's Breakthrough — tap its exact **T0…T4** next to the set or item (five segments, like the diamonds in the game; a fresh drop is T0, leave it);
-   - **main stat** on a weapon or accessory — the first tap in the grid: until the main is chosen, the grid picks it (in
-     the game it's on top of the piece; a weapon: ATK%, DEF% or HP%), then the substats. Tap the "main" cell to remove
-     it and pick another. Grey —
-     no one needs that main;
+   - **main stat** of a weapon — ATK%, HP% or DEF%, a gold button next to the grade; the grid is for substats right away. Of an
+     accessory — the first tap in the grid: until the main is chosen, the grid picks it (in the game it's on top of the piece),
+     then the substats, and the main stands in gold above the grid — tap it and the grid picks the main again, the substats
+     stay. Grey — no one needs that main. An item with one main (Ether Blade — HP% only) gets it by itself;
    - **substats** — tap them in the grid in order, as in the game; each tap opens a window with buttons 1–6 — pick how
      many segments are lit in the game (a fresh drop has up to 4). Tap outside the window and the stat isn't added;
      to fix the segments later — buttons 1–6 in the stat's row.

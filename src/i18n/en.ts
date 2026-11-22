@@ -359,8 +359,6 @@ export const en: Texts = {
     hkReset: 'next',
     setSheet: 'Set — in the name after "of"',
     legendaryGear: (k) => `Legendary ${noun(k)}`,
-    mainEpic: (k) => `Main stat · Epic ${noun(k)}`,
-    mainUnlisted: 'Main stat · not listed',
     codeSheet: 'Item code',
     replaceSub: (k) => `Replace ${k}`,
     addFourth: '4th substat',
@@ -386,11 +384,7 @@ export const en: Texts = {
     notInBuilds: 'not in builds',
     nothingFound: (cls) => `Nothing found. Check the spelling${cls ? ' or clear the class filter' : ''}.`,
     unlistedButton: 'Not listed — judge by main stat',
-    classVersions: 'Class versions share one name — the class shows in the passive suffix: Aggression — Striker, Determination — Defender, Precision — Ranger, Mystery — Mage, Blessing — Healer.',
     fixedOnly: 'Fixed copies only (events, Dimensional Supply)',
-    wanted: 'needed',
-    wantedNote: (scoped, fixed) => `"needed" — what builds${scoped ? ' of your characters' : ''} ask for with this passive${fixed ? '; dashed — fixed copies only' : ''}.`,
-    demandNote: (scoped, k) => `The number: how many${scoped ? ' of your' : ''} characters need this main in the ${noun(k)} slot.`,
     setDemandNote: (scoped, withBuilds) => `The number: how many${scoped ? ' of your' : ''} characters need the set${scoped ? '' : ` (of ${persons(withBuilds)} with builds)`}.`,
     deadSets: 'Not in any outerpedia build — usually dismantle:',
     perSegment: (step) => ` · +${step} per segment`,
@@ -492,6 +486,9 @@ export const en: Texts = {
     mainGroup: 'Main stat',
     mainInGrid: 'Main ↓',
     mainFirst: 'Main stat first — in the game it is on top of the piece, then the substats in order. Grey — no one needs that main.',
+    mainChange: 'Pick another main — the substats stay. Tap the same one to keep it.',
+    mainChipChange: 'change',
+    mainChipOpen: 'pick ↓',
     mainCell: (k) => `Main stat ${k} — tap to remove`,
     fixedMainCell: (k) => `${k} is this slot's main stat: it never rolls as a substat here`,
     usefulTitle: (k, credit) => `${k}${credit >= 1 ? ' — needed by builds with this set' : credit > 0 ? ' — needed, but far down the priority (½)' : ' — no build with this set needs it'}`,
@@ -582,7 +579,7 @@ export const en: Texts = {
       '**T0…T4** next to the set, item or main stat (on an Epic weapon or accessory) — the piece\'s Breakthrough, like the diamonds in the game: tap the right T. For armor its set bonus (Speed ×2 and others) counts at T4; at T4 no more copies are needed for its Breakthrough. A fresh drop is T0 — leave it. "T?" on an older record means T isn\'t set: it counts as below T4 until you tap the real one.',
       '**Legendary weapon and accessory** — find the item and mark the main stat. The list is alphabetical; when the search leaves one item, it lights up and gets picked by itself. Brand new and not listed yet — "not listed".',
       '**Epic weapon and accessory** (Steel…) — no passive, straight to the main stat.',
-      '**Main stat** on a weapon or accessory — the first tap in the grid (a weapon: ATK%, DEF% or HP%), after that the grid marks substats. Brighter — a main someone needs. Tap the chosen one again to remove it.',
+      '**Main stat** of a weapon — ATK%, HP% or DEF% next to the grade; of an accessory — the first tap in the grid, after that the grid marks substats, and the main stands in gold above it: tap it to pick another, the substats stay. Grey — a main nobody needs. Tap the chosen one again to remove it.',
       '**Substats** — tap them in the grid; brighter ones are needed by builds with the chosen set. Stats sit in pairs by parameter, one above the other: ATK% over ATK, HP% over HP, DEF% over DEF, CHC over CHD, DMG UP% over DMG RED%, EFF% over RES%. A cell marked main never rolls as a substat on this piece — it is already in the main (HP% on helmets and boots, flat DEF on chest armor and gloves, flat ATK on weapons). A flat EFF or flat RES main doesn\'t block EFF% and RES% substats — in the game they are different stats. The grid has all 13 substats in the game; PEN%, CDMG RED%, flat EFF and flat RES never roll as substats — only as mains.',
       '**Segments** — how many are lit on the substat in the game, 1–6 (yellow and orange together). You pick them in the window right after tapping the grid; tap outside the window and the stat isn\'t added. To fix them — the buttons in the row. A fresh drop has up to 4. The verdict takes the piece as it is: Reforges still ahead don\'t count.',
       '**4th substat on an Epic** — usually an Epic drops with three and the first Reforge adds a fourth; some drop with four. If the piece has one — "+ 4th substat" under the rows.',
@@ -1027,7 +1024,7 @@ export const en: Texts = {
     tips: {
       more: 'Evaluation settings, backup, language and help are in “More”.',
       star: 'Star your characters — the check will use them instead of every hero in the game.',
-      accMain: 'On a weapon or accessory, the first tap in the grid is the main stat, as at the top of the piece in the game. Then come the substats.',
+      accMain: 'On an accessory the first tap in the grid is the main stat, as on top of the piece in the game. To change it, tap the gold main above the grid.',
       mainCell: 'A “main” cell is a stat in the main line: it never rolls as a substat.',
       fourth: 'An Epic can have a 4th substat — from the first Reforge or straight from the drop. Mark it, it may save the piece.',
       replace: 'Tap a stat in its row to replace or remove it. Handy for entering the next piece over the last one.',
@@ -1104,7 +1101,7 @@ export const en: Texts = {
       pick: (x: StepText) => x.demo ? 'Tap the set field and pick **Speed Set**.' : x.kind === 'armor'
         ? 'Pick the set — it is in the item name after “of”.'
         : x.kind === 'weapon'
-          ? `Mark the main stat: the first tap in the grid — ATK%, DEF% or HP%${x.legend ? '; then find the weapon by name: the passive depends on it' : ''}.`
+          ? `Mark the main stat — ATK%, HP% or DEF% next to the grade${x.legend ? '; then find the weapon by name: the passive depends on it' : ''}.`
           : x.legend
             ? 'Find the accessory by name — the passive and possible mains depend on it.'
             : 'Mark the main stat: the first tap in the grid is the main, then come the substats.',
