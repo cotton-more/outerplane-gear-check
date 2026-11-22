@@ -29,8 +29,9 @@ Architecture, build and tests — [DEVELOPMENT.md](DEVELOPMENT.md). For players 
   elements" in DEVELOPMENT.md. When a piece of layout repeats a second time, move it there.
 - UI strings only in `src/i18n/ru.ts` and `en.ts` (one `Texts` type). No Russian text elsewhere in `src` except comments
   (`test/i18n.test.ts`).
-- Animations only in `src/styles/motion.css`: entrance only, plus a short pulse that marks an automatic choice
-  (`m-pick`); ≤200 ms, `transform` and `opacity`; never animate inputs (grid, rows, slot, grade).
+- Animations only in `src/styles/motion.css`, `transform` and `opacity`, ≤200 ms (the batch fly — 300 ms); off with
+  «reduce motion». An input answers at once: what you tapped shows its new state instantly — motion may follow it (the
+  T plate), never delay it or block the next tap.
 - `docs/` is built by the bot after push — never commit the build together with code.
 - If something the player sees changed — update the Wiki in both languages and Help (`t.ui.help…`).
 

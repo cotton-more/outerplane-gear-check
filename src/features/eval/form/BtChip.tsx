@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { useT } from '@/i18n';
 import { tour } from '@/tour/anchors';
 import type { Bt } from '@/game/item/item';
@@ -13,13 +14,31 @@ const LEVELS: readonly Bt[] = [0, 1, 2, 3, 4];
 // Тот же ряд — в карточке вещи персонажа (screens/chars PieceSheet); там anchor = false: якорь «bt» — только у формы
 export function BtChip({ value, onPick, armor, anchor = true }: { value: Bt | null; onPick: (bt: Bt) => void; armor: boolean; anchor?: boolean }) {
   const t = useT();
+  // the plate is one layer under the digits (owner 2026-11-22: animate a change of T): --fill is where the chosen digit
+  // ends, measured — the label and digits differ in width and stretch in a narrow row; it slides there (motion.css)
+  const track = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = track.current;
+    if (!el) return;
+    const place = () => {
+      const on = el.querySelector<HTMLElement>('.lv-seg.on');
+      el.style.setProperty('--fill', on ? `${on.offsetLeft + on.offsetWidth}px` : '0px');
+    };
+    place();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [value]);
   return (
     <div className={value === null ? 'lv-pill btseg unknown' : 'lv-pill btseg'} role="group" aria-label={t.ui.btGroup}
       title={value === null ? t.ui.btUnknown : armor ? t.ui.btTitle : t.ui.btTitleItem} {...(anchor ? tour('bt') : {})}>
-      <span className={value === null ? 'btseg-t' : 'btseg-t fill'} aria-hidden="true">{value === null ? 'T?' : 'T'}</span>
-      {LEVELS.map((n) => (
-        <button key={n} type="button" className={value === n ? 'lv-seg fill on' : value !== null && n < value ? 'lv-seg fill' : 'lv-seg'} aria-pressed={value === n} aria-label={'T' + n} onClick={() => onPick(n)}>{n}</button>
-      ))}
+      <div ref={track} className="btseg-track">
+        <span className="btseg-plate" aria-hidden="true" />
+        <span className={value === null ? 'btseg-t' : 'btseg-t fill'} aria-hidden="true">{value === null ? 'T?' : 'T'}</span>
+        {LEVELS.map((n) => (
+          <button key={n} type="button" className={value === n ? 'lv-seg fill on' : value !== null && n < value ? 'lv-seg fill' : 'lv-seg'} aria-pressed={value === n} aria-label={'T' + n} onClick={() => onPick(n)}>{n}</button>
+        ))}
+      </div>
     </div>
   );
 }

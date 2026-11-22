@@ -43,12 +43,16 @@ html.narrow .slot > span:not(.ico) { display: none; }
 .lv-pill.btseg .lv-seg { min-width: 26px; min-height: 38px; padding: 0 4px; border: 0; border-radius: 0; font: 700 13.5px/1 var(--font-mono);
   color: var(--ink-2); cursor: pointer; }
 .lv-pill.btseg .lv-seg:not(.fill):hover { color: var(--ink); }
-/* the fill: one raised plate (--raise, white in the light theme) from the «T» mark to the chosen digit, its ends concentric
-   with the pill (the chosen digit is the rounded right end). No gold (owner 2026-11-22: too loud, not the game's palette).
-   The shadow is a blur-free line under each part, so the joins don't show */
-.lv-pill.btseg .fill { background: var(--raise); box-shadow: 0 1px 0 rgb(0 0 0 / .16); color: var(--ink-3); }
-.lv-pill.btseg .lv-seg.fill.on { border-radius: 0 999px 999px 0; border-color: transparent; background: var(--raise); box-shadow: 0 1px 0 rgb(0 0 0 / .16);
-  color: var(--ink); } /* over the star controls' gold .lv-seg.on (chars.css) */
+/* the fill: one raised plate (--raise, white in the light theme) from the «T» mark to the chosen digit — a layer under
+   the digits in a rounded track, shifted so its right end meets the chosen digit (--fill, BtChip); its ends concentric with
+   the pill. No gold (owner 2026-11-22: too loud, not the game's palette). It slides on a change of T (motion.css) */
+.btseg-track { position: relative; display: flex; flex: 1 1 auto; align-items: stretch; overflow: hidden; border-radius: 999px; }
+.btseg-plate { position: absolute; inset: 0; border-radius: 999px; background: var(--raise); box-shadow: inset 0 -1px 0 rgb(0 0 0 / .16);
+  transform: translateX(calc(var(--fill, 0px) - 100%)); }
+.btseg.unknown .btseg-plate { visibility: hidden; }
+.btseg-track > :not(.btseg-plate) { position: relative; }
+.lv-pill.btseg .fill { color: var(--ink-3); }
+.lv-pill.btseg .lv-seg.fill.on { border-color: transparent; background: none; box-shadow: none; color: var(--ink); } /* over the star controls' gold .lv-seg.on (chars.css) */
 .formrow:has(> .btseg) { flex-wrap: wrap; }
 /* the main without a window (features/eval/form MainPill.tsx, owner 2026-11-22). A weapon: ATK% / HP% / DEF% in the pill
    of the star controls next to the grade, as tall as the grade buttons; grey — a main nobody needs (tappable), faded — one the
@@ -91,6 +95,7 @@ html.narrow .slot > span:not(.ico) { display: none; }
 @container (max-width: 340px) {
   .formrow > .btseg { flex: 1 0 100%; }
   .formrow > .btseg .lv-seg { flex: 1 1 0; }
+  .formrow > .btseg .btseg-track { width: 100%; }
 }
 html.xs .pick-sfx { display: none; }
 /* строка уже 260px (280px: 222px; 310px: 252px): грейды уже, у поля без ▾ и значок поменьше — имени сета остаётся

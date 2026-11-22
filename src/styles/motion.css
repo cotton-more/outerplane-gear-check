@@ -1,7 +1,7 @@
-/* Анимации — только появление, 150–200 мс и только сдвиг и прозрачность: на слабом телефоне в разделённом экране
-   это не тормозит. Закрывается всё сразу: закрытое окно не должно ловить нажатия. Сетка, строки сабстатов, слот,
-   грейд и текст вердикта не анимируются — нажатие отзывается мгновенно. «Уменьшить движение» в системе выключает всё
-   (base.css, prefers-reduced-motion). */
+/* Анимации — 150–200 мс (полёт в «Партии» — 300) и только сдвиг и прозрачность: на слабом телефоне в разделённом экране
+   это не тормозит. Закрывается всё сразу: закрытое окно не должно ловить нажатия. An input answers at once (owner
+   2026-11-22, was «inputs never move»): what was tapped shows its new state instantly — motion may follow it (the T plate),
+   never delay it or block the next tap. «Уменьшить движение» в системе выключает всё (base.css, prefers-reduced-motion). */
 @keyframes m-fade { from { opacity: 0; } }
 @keyframes m-rise { from { opacity: 0; transform: translateY(8px); } }
 @keyframes m-sheet { from { opacity: .6; transform: translateY(40px); } }
@@ -16,6 +16,10 @@ html:not(.narrow) .drawer { animation-name: m-pop; }
 html.sheet .char-detail.open { animation: m-sheet .2s cubic-bezier(.2, .8, .2, 1); }
 /* окно уровня сабстата у клетки (Sheet at) — ввод: появляется сразу, кнопка уже под пальцем */
 .drawer-back.pop, .drawer-back.pop > .drawer { animation: none; }
+
+/* Breakthrough T0–T4 (BtChip): the plate slides to the chosen level — the one input that moves (owner 2026-11-22: asked for
+   it). Only transform, 180 ms; the digit itself answers at once */
+.btseg-plate { transition: transform .18s cubic-bezier(.2, .8, .2, 1); }
 
 /* карточка вердикта на месте сетки, полосы обучения и подсказок, «Вернуть» */
 .vcard { animation: m-rise .18s ease-out; }
