@@ -1,7 +1,7 @@
 // Какое обновление ждёт (app/usePwa): «Вышли новые данные» — только когда ждущий worker ответил и версия данных у него
 // другая, чем у открытой страницы. Всё остальное — обновление приложения: про новые данные без доказательства не говорим.
 import { describe, expect, it } from 'vitest';
-import { askWorker, updateKind } from '@/app/usePwa';
+import { askWorker, updatedTo, updateKind } from '@/app/usePwa';
 
 const PAGE = '090f6abeddf4c2dc000c836f956f6a0c3aa2101d';
 const NEWER = '43a5d2db1c7e0f9a8b6d5e4f3a2b1c0d9e8f7a6b';
@@ -59,5 +59,15 @@ describe('askWorker', () => {
     const t0 = Date.now();
     await expect(askWorker(w, 10_000)).resolves.toBeNull();
     expect(Date.now() - t0).toBeLessThan(1000);
+  });
+});
+
+// «Приложение обновлено · hash» (owner 2026-11-22): only when the page ran another build before; the first run says nothing
+describe('updatedTo', () => {
+  it('another build before — its own hash; the same build or the first run — nothing', () => {
+    expect(updatedTo('3ebf85d', '289f937')).toBe('289f937');
+    expect(updatedTo('289f937', '289f937')).toBeNull();
+    expect(updatedTo(null, '289f937')).toBeNull();
+    expect(updatedTo('3ebf85d', '')).toBeNull();
   });
 });

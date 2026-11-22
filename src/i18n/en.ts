@@ -322,6 +322,7 @@ export const en: Texts = {
     aboutCounts: (chars, withBuilds, builds) => `${persons(chars)}, ${withBuilds} with builds, ${builds} builds.`,
     aboutUpdatePwa: 'New outerpedia data brings an "Update" banner; app improvements install by themselves on the next launch.',
     updateReady: 'A new version is ready.',
+    appUpdated: (hash) => `App updated · ${hash}`,
     aboutUpdateSingle: 'Update the data:',
     aboutUpdateSingleWhere: 'in the project folder.',
     rights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Builds are the work of the outerpedia authors; the tool is not affiliated with VA Games or with outerpedia.',

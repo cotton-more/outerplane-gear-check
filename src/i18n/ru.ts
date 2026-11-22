@@ -400,6 +400,7 @@ export const ru = {
     aboutUpdatePwa: 'Новые данные outerpedia — плашка «Обновить»; улучшения приложения ставятся сами при следующем запуске.',
     // пока ждёт обновление только приложения — вместо aboutUpdatePwa, с кнопкой updateAction
     updateReady: 'Готова новая версия.',
+    appUpdated: (hash: string) => `Приложение обновлено · ${hash}`,
     aboutUpdateSingle: 'Обновить данные:',
     aboutUpdateSingleWhere: 'в папке проекта.',
     rights: 'This content is an unofficial fan creation. All related IP rights belong to VA Games Co., Ltd. Неофициальный фан-проект: все права на игру принадлежат VA Games Co., Ltd., билды — работа авторов outerpedia. Инструмент не связан ни с издателем, ни с outerpedia.',

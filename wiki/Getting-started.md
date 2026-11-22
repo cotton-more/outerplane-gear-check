@@ -16,7 +16,8 @@ works in the browser, installs on a phone as an app, works offline too. Language
 
 You get an icon: the app opens without the address bar and fits a split screen next to the game.
 When new outerpedia data comes out, an "Update" banner appears when you open it; app improvements install by
-themselves: on launch, or in a pause when nothing is started on the form — the page just reloads.
+themselves: on launch, or in a pause when nothing is started on the form — the page just reloads and says "App updated ·
+…" with the version from "About". The app looks for a new version every 5 minutes while it's on screen.
 
 ## Tutorial
 

@@ -9,6 +9,10 @@ interface InstallPrompt extends Event {
 const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
 
+// «Приложение обновлено · 289f937» (owner 2026-11-22): the build this page last ran (ogc.build) vs its own; the very first
+// run (nothing stored) says nothing. Returns the hash to name, or null
+export const updatedTo = (prev: string | null, now: string): string | null => (prev && now && prev !== now ? now : null);
+
 // ответ worker'а на { type: 'ogc:info' } (pwa/sw.template.js): версия приложения и версия данных — коммит outerpedia
 export interface WorkerInfo { version?: unknown; data?: unknown }
 // 'data' — вышли новые данные: плашка «Обновить»; 'app' — только правки приложения: «Готова новая версия» в «Ещё»
@@ -47,8 +51,10 @@ export function askWorker(w: ServiceWorker, ms = 1500): Promise<WorkerInfo | nul
 // An app update switches on by itself at a quiet moment (owner, 2026-10-15): on the phone in split screen the app is never
 // cold-started nor hidden, so it never got updates. quiet(hidden) — the page says whether a reload loses nothing now: the
 // page went to the background, or QUIET_MS without a tap and nothing half-done (App). New versions are looked for every
-// CHECK_MS while the page is visible, not only on coming back to it.
-const CHECK_MS = 30 * 60_000;
+// CHECK_MS while the page is visible, not only on coming back to it, and when the window gets focus (on the computer moving
+// between windows doesn't hide the page). 5 min, not 30 (owner 2026-11-22: after a push the open app took up to half an
+// hour); one look is sw.js, ~17 KB.
+const CHECK_MS = 5 * 60_000;
 const QUIET_MS = 10_000;
 export function usePwa(dataVersion: string | null, quiet: (hidden: boolean) => boolean = () => false) {
   const quietRef = useRef(quiet);
@@ -73,6 +79,7 @@ export function usePwa(dataVersion: string | null, quiet: (hidden: boolean) => b
       if (boot && kind === 'app') w.postMessage('skipWaiting'); // перезагрузит onControllerChange
     };
     const onVisible = () => { if (document.visibilityState === 'visible' && reg) reg.update().catch(() => {}); };
+    const onFocus = () => { if (reg) reg.update().catch(() => {}); };
     // пришло посреди работы — само не включаем: плашка или «Готова новая версия» в «Ещё»
     const track = (w: ServiceWorker) => w.addEventListener('statechange', () => { if (w.state === 'installed' && sw.controller) void found(w, false); });
     sw.register('sw.js').then((r) => {
@@ -84,6 +91,7 @@ export function usePwa(dataVersion: string | null, quiet: (hidden: boolean) => b
       r.addEventListener('updatefound', () => { if (r.installing) track(r.installing); });
       // проверяем обновление каждый раз, когда возвращаешься в приложение
       document.addEventListener('visibilitychange', onVisible);
+      window.addEventListener('focus', onFocus);
       check = setInterval(() => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }, CHECK_MS);
     }).catch(() => { /* без service worker страница просто работает онлайн */ });
 
@@ -98,6 +106,7 @@ export function usePwa(dataVersion: string | null, quiet: (hidden: boolean) => b
       alive = false;
       clearInterval(check);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
       sw.removeEventListener('controllerchange', onControllerChange);
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
       window.removeEventListener('appinstalled', onInstalled);

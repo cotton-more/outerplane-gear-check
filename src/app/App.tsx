@@ -72,7 +72,7 @@ import { useAppState } from './useAppState';
 import { heroFromHash, slugFromHash, useHashRoute } from './useHashRoute';
 import { useHotkeys } from './useHotkeys';
 import { useOnboarding, type Demo } from './useOnboarding';
-import { usePwa } from './usePwa';
+import { updatedTo, usePwa } from './usePwa';
 
 export function App() {
   const idx = useIndex();
@@ -147,6 +147,13 @@ export function App() {
   // switches on by itself when a reload loses nothing (owner, 2026-10-15): never in a tour; in the background — any time
   // (the tab, settings and the half-entered piece are saved); on screen — no substat on the form, no sheet or dialog, no
   // message with «Вернуть», not typing
+  // a new build since the last run: say so once, with its hash (as in «О приложении»)
+  useEffect(() => {
+    if (!window.OGC_PWA) return;
+    const to = updatedTo(storage.get<string | null>('build', null), __BUILD__.hash);
+    storage.set('build', __BUILD__.hash);
+    if (to) say({ text: t.ui.appUpdated(to), note: '', tab: s.tab });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const pwa = usePwa(idx.D.meta.commit, (hidden) => !touring && (hidden || (!Object.keys(s.subs).length && !msg && !formUndo
     && !document.querySelector('[role="dialog"]') && !document.activeElement?.matches('input, textarea, select'))));
   const appUpdate = pwa.update === 'app' ? pwa.applyUpdate : undefined;
