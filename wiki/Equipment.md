@@ -56,7 +56,8 @@ without "worn". It sits in their Pool and later pieces are compared with it.
 
 **The same piece rated again.** The game shows no date or id on a piece, so after a day you may rate a set-aside piece
 once more. The verdict recognizes it — same set, slot, grade, main and the same substats **in the same order** — and
-says "Looks like the … set aside for Caren (Oct 7). If it is — do nothing." Then nobody else gets "Equip" or "Set aside":
+instead of a verdict shows a blue **"Already yours"** stamp: "Do nothing if it is that one. Looks like the … set aside for
+Caren (Oct 7)." There is no hero list, nobody else gets "Equip" or "Set aside":
 one helmet would become two records. Only Caren keeps "Equip" — it wears that very record, no second one appears. If
 the game has two such pieces (a filter by set and slot shows both), tap **"It's a different one"**: the verdict counts
 Caren's as a separate piece and the usual buttons come back. The same stats in another order are another piece

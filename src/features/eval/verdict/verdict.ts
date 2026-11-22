@@ -1,7 +1,8 @@
 // Результат оценки предмета — что показывает панель вердикта.
 import type { Row } from '@/game/build/score';
 
-export type VerdictKind = 'idle' | 'keep' | 'temp' | 'maybe' | 'fodder' | 'junk';
+// same — the piece looks like one already set aside or promised (owner 2026-11-22): no verdict until «Это другой»
+export type VerdictKind = 'idle' | 'keep' | 'temp' | 'maybe' | 'fodder' | 'junk' | 'same';
 
 export interface Section {
   title: string;

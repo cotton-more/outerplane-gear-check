@@ -48,13 +48,15 @@ function fromResult(ctx: Ctx, raw: Verdict, r: Result, input: ItemInput): Verdic
       : raw.v === 'junk' ? { ...raw, sections: [] }
       : { ...raw, v: 'junk', title: armor ? t.armor.junkTitle : t.gear.junkRosterTitle, lines: hints, sections: [] };
   }
-  // похоже, это отложенная раньше вещь — первой строкой (решение владельца 2026-10-06)
-  const same = r.same ? [sameText(t, idx, r.same)] : [];
-  return { ...out, lines: [...same, ...out.lines], plan: upgradePlan(ctx, input, out) };
+  // похоже, это отложенная раньше вещь: no verdict at all — the stamp «Уже есть», «Ничего не делай, если это он» and what it
+  // looks like; the real verdict comes back with «Это другой» (owner 2026-11-22; was: the first line of the reasons, 2026-10-06,
+  // easy to miss under a stamp saying the opposite)
+  if (r.same) return { v: 'same', title: t.fit.sameTitle(input.slot), lines: [sameText(t, idx, r.same)], sections: [], foot: '', plan: [] };
+  return { ...out, plan: upgradePlan(ctx, input, out) };
 }
 
-// «Похоже, это Speed-шлем, отложенный для Aer 07.10. Если это он — ничего не делай.»; promised in «Надеть в игре» — «…,
-// обещанный Aer в «Надеть в игре». …» (TEXTS S1). The piece and the hero are bold, so the line stands out among the reasons
+// «Похоже, это Speed-шлем, отложенный для Aer 07.10.»; promised in «Надеть в игре» — «…, обещанный Aer в «Надеть в игре».»
+// (TEXTS S1). The piece and the hero are bold
 const sameText = (t: Texts, idx: Index, same: Same): string => {
   const piece = `**${pieceLabel(t, idx)(same.piece)}**`, name = `**${same.c.name}**`;
   return same.promised ? t.fit.samePromised(same.piece.slot, piece, name)

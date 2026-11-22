@@ -80,7 +80,8 @@ export function EvalPanel({ s, dispatch, ctx, verdict, cardShown, hint, onReset,
                   )}
                 </div>
               )}
-              {next.length > 0 && <NextHeroes rows={next} onOpen={onOpenVerdict} />}
+              {/* «Уже есть» (owner 2026-11-22): no heroes to offer it to until «Это другой» */}
+              {next.length > 0 && verdict.v !== 'same' && <NextHeroes rows={next} onOpen={onOpenVerdict} />}
               {vs?.asWorn && !vs.replaces && onEquip && <p className="vc-wear">{t.ui.equipAsWorn}</p>}
               {nextNote && vs && onEquip && <p className="vc-next">{nextNote}</p>}
               {heroNote && <p className="vc-note">{heroNote}</p>}

@@ -18,6 +18,9 @@
 .v-fodder { --v: var(--fodder); --v-soft: var(--fodder-soft); }
 .v-junk { --v: var(--junk); --v-soft: var(--junk-soft); }
 .v-idle { --v: var(--idle); --v-soft: var(--idle-soft); }
+/* «Уже есть»: the piece looks like one already set aside or promised — information, not a verdict (owner 2026-11-22) */
+.v-same { --v: var(--accent); --v-soft: var(--accent-soft); }
+.vcard.v-same .vc-line { white-space: normal; -webkit-line-clamp: unset; display: block; overflow: visible; }
 .v-sec { border-top: 1px solid var(--line); }
 .v-list-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 12px 16px 4px; }
 .v-list-h h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }

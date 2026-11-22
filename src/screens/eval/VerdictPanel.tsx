@@ -89,7 +89,8 @@ export function VerdictBody({ r, s, dispatch, onOpenChar, ctx, viewOf, list = []
       {offNote && <p className="v-off muted">{offNote}</p>}
       {holders && r.v !== 'idle' && <Holders idx={idx} h={holders} className="v-holders" onOpenChar={onOpenChar} />}
       {heroVs && onEquip && <HeroSingle x={heroVs} item={input} slot={slotAcc} t4={input.bt === 4} nextNote={nextNote} onEquip={(x) => onEquip(x.c)} onStash={onStash && ((x) => onStash(x.c))} onOpenChar={onOpenChar} />}
-      {!heroVs && onEquip && r.v !== 'idle' && <HeroList groups={list} ctx={ctx} viewOf={viewOf} item={input} search={canSearch} compact={compact} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
+      {/* «Уже есть»: no hero list — only the head's button «Надеть на X» for the hero who has the piece (it wears that very record) */}
+      {!heroVs && onEquip && r.v !== 'idle' && r.v !== 'same' && <HeroList groups={list} ctx={ctx} viewOf={viewOf} item={input} search={canSearch} compact={compact} onEquip={onEquip} onStash={onStash} onOpenChar={onOpenChar} />}
       {r.plan.length > 0 && (
         <div className="v-plan">
           <h3>{t.plan.title}</h3>

@@ -218,7 +218,8 @@ describe('the same-piece guard for a promised piece', () => {
 
   it('promised: the card says so and has no «Надеть»; «Это другой» brings the offers back', async () => {
     await mount({ slot: 'helmet', grade: 'unique' }, SAME, { gear: worn, ingame: { v: 1, lines: [live] }, roster: [caren.id, rin.id] });
-    expect(note()).toContain('promised to Caren in "Equip in game". If it is — do nothing.');
+    expect(note()).toContain('promised to Caren in "Equip in game".');
+    expect(note()).toContain('Do nothing if it is that one');
     expect($('.vc-equip')).toBeNull();
     await click($('.vc-twin'));
     expect(document.body.textContent).not.toContain('promised to Caren');

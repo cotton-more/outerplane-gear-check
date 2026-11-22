@@ -144,7 +144,9 @@ describe('small plan texts', () => {
     expect(TEXTS.en.fit.date('2026-12-31')).toBe('Dec 31');
     expect(TEXTS.en.fit.date('')).toBe('');
     expect(TEXTS.ru.fit.date('2026-10-05')).toBe('05.10');
-    expect(TEXTS.en.fit.same('helmet', 'Speed helmet', 'Hilde', 'Oct 5')).toBe('Looks like the Speed helmet set aside for Hilde (Oct 5). If it is — do nothing.');
+    expect(TEXTS.en.fit.same('helmet', 'Speed helmet', 'Hilde', 'Oct 5')).toBe('Looks like the Speed helmet set aside for Hilde (Oct 5).');
+    expect(TEXTS.en.fit.sameTitle('helmet')).toBe('Do nothing if it is that one');
+    expect(TEXTS.ru.fit.sameTitle('helmet')).toBe('Ничего не делай, если это он');
     expect(TEXTS.en.fit.stashedOne('helmet', 'Speed helmet', 'SPD 1', 'Oct 5')).toBe("It's the Speed helmet · SPD 1, set aside (Oct 5).");
   });
   it('a substat token has a no-break space inside: «DMG RED% 1» never wraps between its parts', () => {

@@ -9,6 +9,7 @@
 | **Fodder** | keep it for Breakthrough: an item with the needed passive but the wrong main stat, this piece is the material: Breakthrough of the same piece a hero has below T4 right now, or a reserve for a future strong one ([Equipment](Equipment#the-stamp)) |
 | **Maybe** | your call: the details say what's in doubt (for example, the piece is good for a character outside your roster) |
 | **Dismantle** | nobody needs it: everyone already has as good, or it's weak ([Equipment](Equipment#the-stamp)) |
+| **Already yours** | looks like a piece you already set aside or promised to a hero in "Equip in game" — do nothing. Two of them in the game — "It's a different one", and the usual verdict comes ([Equipment](Equipment)) |
 
 ## Priority chain
 
